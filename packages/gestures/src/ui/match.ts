@@ -417,17 +417,14 @@ export function matchSpec(
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
-    case 'contextMenu': {
-      if (e.kind !== 'contextmenu') return false;
+    // Each happens at a point, so its target is what the event classified
+    // there: for a long-press, the affordance its press landed on.
+    case 'contextMenu':
+    case 'longPress':
+    case 'hover': {
+      if (e.kind !== 'contextmenu' && e.kind !== 'longpress' && e.kind !== 'hover') return false;
+      if (e.kind !== spec.kind.toLowerCase()) return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
-    }
-
-    case 'longPress': {
-      if (e.kind !== 'longpress') return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
-      // A long-press begins as a press, so its target is what was under the
-      // finger in scene terms: the affordance the press classified.
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 

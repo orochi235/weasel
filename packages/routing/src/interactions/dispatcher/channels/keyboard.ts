@@ -1,8 +1,21 @@
 /** The keyboard channel: window keydown and keyup as `key` and `key-held` input. */
-import { activatesFocusedControl, isEditableTarget } from '../../keyHelpers';
+import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
 import type { Dispatcher } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
+
+/**
+ * True when AltGr typed the character `e` reports. A layout that types `[` with
+ * AltGr reports Ctrl and Alt held with it, which are part of the keystroke
+ * rather than a chord. A key that reports its own unshifted letter or digit
+ * typed nothing through AltGr: Firefox on Windows reports AltGraph for a plain
+ * Ctrl+Alt too, and that one is a chord.
+ */
+function typedWithAltGraph(e: KeyboardEvent): boolean {
+  if (!e.ctrlKey || !e.altKey || e.key.length !== 1 || !e.getModifierState?.('AltGraph')) return false;
+  const base = /^(?:Key|Digit)(.)$/.exec(e.code)?.[1];
+  return base === undefined || base.toLowerCase() !== e.key.toLowerCase();
+}
 
 export function keyboardInput(core: DispatchCore): {
   onKeyDown: (e: KeyboardEvent) => void;
@@ -20,7 +33,7 @@ export function keyboardInput(core: DispatchCore): {
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.defaultPrevented || isEditableTarget(e.target) || activatesFocusedControl(e)) return;
+    if (e.defaultPrevented || isEditableTarget(e.target) || focusedControlOwnsKey(e)) return;
     // Every dispatcher hears keys on window; only the one holding them acts.
     if (!core.holdsKeys()) return;
 
@@ -35,7 +48,14 @@ export function keyboardInput(core: DispatchCore): {
       return;
     }
 
-    // Dispatch both key and key-held forms unconditionally. The dispatcher
+    if (press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey })) return;
+    // The chord as reported comes first, so a binding that names Ctrl+Alt keeps it.
+    if (typedWithAltGraph(e)) press(e, { altKey: false, ctrlKey: false });
+  };
+
+  /** Dispatch `e` as both `key` and `key-held` with `mods` for its Alt and Ctrl. True when either was handled. */
+  const press = (e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boolean }): boolean => {
+    // Both forms dispatch unconditionally. The dispatcher
     // de-dupes naturally because each form uses a different gestureId and
     // different GestureSpec kind. The dispatcher returns 'unhandled' when no
     // binding matches the alternate form, so there's no double-fire risk.
@@ -44,8 +64,7 @@ export function keyboardInput(core: DispatchCore): {
       kind: 'key',
       key: e.key,
       ...codeOf(e),
-      altKey: e.altKey,
-      ctrlKey: e.ctrlKey,
+      ...mods,
       metaKey: e.metaKey,
       shiftKey: e.shiftKey,
       repeat: e.repeat,
@@ -61,8 +80,7 @@ export function keyboardInput(core: DispatchCore): {
       key: e.key,
       ...codeOf(e),
       phase: 'down',
-      altKey: e.altKey,
-      ctrlKey: e.ctrlKey,
+      ...mods,
       metaKey: e.metaKey,
       shiftKey: e.shiftKey,
     };
@@ -73,9 +91,9 @@ export function keyboardInput(core: DispatchCore): {
       heldKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), on: heldOn });
     }
 
-    if (keyResult === 'handled' || heldResult === 'handled') {
-      e.preventDefault();
-    }
+    const handled = keyResult === 'handled' || heldResult === 'handled';
+    if (handled) e.preventDefault();
+    return handled;
   };
 
   const onKeyUp = (e: KeyboardEvent) => {

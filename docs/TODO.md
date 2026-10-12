@@ -183,33 +183,13 @@ Priority tags:
   device, since jsdom sends no native event. If real, drop the native event while a touch pointer
   whose long-press fired is still held.
 
-- **(P2) Modes: "is this tool allowed in this mode" is answered three ways with two different
-  rules.** `eligibleForMode` in `packages/modes/src/modeDefinition.ts` allows a tool when any of its
-  capability tags is allowed and refuses a tool with no tags; `isToolEligible` in
-  `packages/core/src/canvas/SceneCanvas.tsx` is a hand copy of it; the dispatcher
-  (`assembleScopedBindings` in `packages/routing/src/interactions/dispatcher/dispatcher.ts`, with
-  `liveScope` in `packages/routing/src/contributions/eligibility.ts`) requires every tag to be
-  allowed and lets a tool with no tags through. So a tool tagged `['navigation', 'creates-shapes']`
-  in a mode without `creates-shapes` shows enabled in `ToolPalette`, activates, and then has all its
-  bindings dropped: active and dead. A tool with no `capabilities` is the reverse: grayed out and
-  unactivatable, but live if already active or ambient. Every built-in tool carries one tag, so only
-  a consumer tool hits it. Decide any-versus-every and the empty case once, as one predicate over
-  `(allowedCapabilities, tags)` in `@weasel-js/modes`, and have all three call it.
-
-- **(P3) A key typed with AltGr cannot match a binding.** A layout that types `[` with AltGr
-  reports `ctrlKey` and `altKey`, which the strict modifier match in
-  `packages/gestures/src/ui/match.ts` rejects. Dropping both flags while
-  `getModifierState('AltGraph')` holds is the usual fix, and needs checking in real browsers:
-  Firefox on Windows reports AltGraph for a plain Ctrl+Alt too, which would then stop matching.
-
-- **(P3) Route-conflict check: `mod` is never compared with the key it resolves to.** In
-  `packages/routing/src/tools/routing/reflection/conflicts.ts`, `mods: { mod: true }` and
-  `mods: { ctrl: true }` land in different buckets though both match Ctrl off a Mac at equal
-  specificity. Bucketing per platform finds it, and then reports `viewport.zoom` against itself:
-  its `mod` wheel binding and its `ctrl` one (the trackpad pinch) are a deliberate duplicate with
-  the same params. Undecided: either a tie between two bindings of one action with equal params
-  stops counting as a conflict, which `conflicts.test.ts` ("checks a lone action against itself")
-  asserts the opposite of today, or `viewport.zoom` drops the duplicate some other way.
+- **(P3) AltGr matching is unchecked in a real browser.** A key typed with AltGr now matches a
+  binding for its character: the keyboard channel
+  (`packages/routing/src/interactions/dispatcher/channels/keyboard.ts`) dispatches the chord as
+  reported, and when nothing takes it and `getModifierState('AltGraph')` holds, dispatches again
+  without Ctrl and Alt. Only jsdom has seen it. Left to check on Windows, with a layout that has
+  AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
+  which Firefox reports AltGraph too, is still read as a chord.
 
 - **(P3) The pointer channel is still one closure.**
   `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` (about 1,170 lines) keeps
@@ -279,11 +259,6 @@ have shipped. What remains:
   contract has no layer-list subscription. That costs one skipped frame per change. If
   `CanvasAdapter` gains a layer-list version or subscription, key the layer memo on that and drop
   the poll.
-
-- **(P3) `useHostAnchor`: a host that moves without resizing is not followed.** Unverified, from
-  reading `packages/core/src/canvas/useHostAnchor.ts`: it recomputes on scroll, window resize, and a
-  size change of the host or panel, so a sibling collapsing beside the host shifts it with none of
-  those firing, and the dev HUDs stay where the host was. The doc says it tracks reflows.
 
 ---
 
@@ -962,15 +937,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   checked 2026-10-07. The installed 1.21.1 was read again on 2026-10-11: no
   `PortalProvider` in `dist/exports/index.*`, its types, or as a file under `dist/exports/`.
 
-- **(P3) The grammar names no hover gesture.** The loupe now routes its peek key
-  and its wheel through the dispatcher, but aiming the lens is still a plain
-  `pointermove` listener in `packages/labkit/src/loupe/useLoupe.ts`, because
-  `GESTURE_DESCRIPTORS` has no continuous-motion entry. Every other consumer that
-  wants to follow the pointer without a press — a coordinate readout, an
-  eyedropper preview, a hover ruler, `CustomShaderDemo`'s cursor-following
-  panels — hand-attaches the same listener. Adding one
-  is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
-  action, and `docs/taxonomy.md` would need to say what a hover binding claims.
+- **(P3) Hover reports motion only, and nothing in the kit binds it yet.** `hover` is a gesture
+  now (`HoverSpec`; `docs/taxonomy.md`, "Gesture"): an immediate action bound to it runs on every
+  unpressed pointer move. It does not say when the pointer leaves the surface or passes from one
+  target to another, so the loupe (`packages/labkit/src/loupe/useLoupe.ts`), which puts its lens
+  away on `pointerleave`, still hand-attaches both listeners, and so does `CustomShaderDemo`.
+  Wants a leave signal (and a decision on whether crossing between targets is one), then the loupe's
+  aim and the demo's cursor-following panels moved onto bindings. Only jsdom has run a hover binding.
 
 - **(P3) Split `Properties.module.css`.** It is 73 KB and styles the panel, list, rows, group,
   subpanel, cards, and every field in one file, with three generated stance blocks inside it. Its
@@ -1324,18 +1297,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
   changes what existing rail forms look like, which is why it is a decision.
 
-
-- **(P3) ui/routing: "is this key press aimed at a text field" is answered twice.** `isTextEntry`
-  (`packages/ui/src/components/BandEditor/track.ts`) says yes for input, textarea, select, and
-  `isContentEditable`; `isEditableTarget` (`packages/routing/src/interactions/keyHelpers.ts`,
-  re-exported by core) says yes for input, textarea, and contenteditable but not select, and also
-  reads the `contenteditable` attribute. `BandEditor` and `Timeline` use the first, the gesture
-  dispatcher and `keyState` the second. Make one definition (deciding whether a `<select>` counts)
-  and have ui import it; `isTextEntry` also sits in a `BandEditor` module that `Timeline` now
-  reaches into. What turns on `<select>`: counting it stops a tool hotkey from firing under its
-  type-ahead, and also stops Delete and Cmd+Z in the dispatcher for as long as focus rests on a
-  select after a choice is made, which is every bound key, modifier chords included
-  (`useGestureDispatcher.tsx`).
 
 - **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On
   a `px` scale with a step at 16, drag its thumb to 20 and back in one drag: near the start the

@@ -17,7 +17,7 @@
  * `interactions/actions/move/action.ts`.
  */
 import type { PolygonPath } from '@weasel-js/geom';
-import { getActiveModeFor } from '@weasel-js/modes';
+import { capabilitiesAllowed, getActiveModeFor } from '@weasel-js/modes';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
@@ -760,18 +760,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const liveToolsRef = useLatest<ToolsApi | null>(toolsTakeover ?? internalTools);
   const getActiveModeRef = useLatest(getActiveMode);
   //
-  // `isToolEligible` mirrors `eligibleForMode` (packages/modes) — the same
-  // predicate `ToolPalette` uses to grey a button out. Without a mode
-  // registry every tool stays activatable.
+  // Without a mode registry every tool stays activatable.
   const isToolEligible = useCallback((toolId: string): boolean => {
     const getMode = getActiveModeRef.current;
     if (!getMode) return true;
-    const registry = liveToolsRef.current?.registry;
-    const caps = registry?.[toolId]?.eligibility.capabilities ?? [];
-    if (caps.length === 0) return false;
-    const allowed = getMode().allowedCapabilities;
-    for (const c of caps) if (allowed.has(c)) return true;
-    return false;
+    const caps = liveToolsRef.current?.registry?.[toolId]?.eligibility.capabilities;
+    return capabilitiesAllowed(getMode().allowedCapabilities, caps);
   }, [getActiveModeRef, liveToolsRef]);
 
 

@@ -23,7 +23,7 @@ export function liveScope(
   state: EligibilityState,
 ): BindingScope | null {
   const tags = eligibility.capabilities;
-  if (tags && tags.length > 0 && state.allows && !state.allows(tags)) return null;
+  if (tags && state.allows && !state.allows(tags)) return null;
   if (state.engagedIds?.has(id)) return 'hotkey';
   if (eligibility.focus && state.focusedId === id) return 'active';
   if (eligibility.always || eligibility.claimed) return 'ambient';

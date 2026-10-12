@@ -81,6 +81,7 @@ export type {
   PointerIdentity,
   PointerDownEvent,
   PointerMoveEvent,
+  HoverEvent,
   PointerUpEvent,
   PointerCancelEvent,
   ClickEvent,
@@ -97,7 +98,7 @@ export type {
 export type {
   GestureSpec,
   KeySpec, KeyHeldSpec, WheelSpec, PinchSpec, ClickSpec, DoubleClickSpec, DragSpec,
-  PointerDownSpec, LongPressSpec,
+  PointerDownSpec, HoverSpec, LongPressSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
   DropSpec, PasteSpec,
   ModSpec, TargetSpec, TargetPredicate, PhaseSpec,
@@ -115,3 +116,4 @@ export { specificity } from './ui/specificity';
 // Click-vs-drag travel
 export { DRAG_THRESHOLD_PX, pastDragThreshold } from './ui/dragThreshold';
 export { CONTROL_SELECTOR, isInControlWithin } from './ui/controlTarget';
+export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from './ui/keyOwner';

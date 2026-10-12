@@ -367,6 +367,18 @@ describe('keyboard', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('leaves a select in a band its type-ahead, and still merges on Delete', () => {
+    const { container, onChange } = setup({
+      selectedIndex: 2,
+      renderBand: (band: Band<string>) => <select defaultValue={band.data}><option>{band.data}</option></select>,
+    });
+    const select = container.querySelectorAll('select')[2];
+    fireEvent.keyDown(select, { key: 'x' });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(select, { key: 'Delete' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves Cmd/Ctrl+X alone so cut still reaches the platform', () => {
     const { bodies, onChange } = setup({ selectedIndex: 2 });
     fireEvent.keyDown(bodies()[2], { key: 'x', metaKey: true });

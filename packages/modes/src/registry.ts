@@ -1,6 +1,5 @@
 import { createReflectable, type Reflection } from '@weasel-js/registry';
-import { IMPLICIT_TAGS } from './capabilities';
-import type { ModeDefinition } from './modeDefinition';
+import { allowedCapabilitiesOf, type ModeDefinition } from './modeDefinition';
 
 /** Options for `createModeRegistry`: the modes to register and which one is
  *  active at startup. */
@@ -70,7 +69,7 @@ export interface ActiveMode {
 
 /** A mode definition as a canvas gates on it. */
 export function activeModeOf(mode: ModeDefinition): ActiveMode {
-  return { id: mode.id, allowedCapabilities: new Set<string>([...mode.allows, ...IMPLICIT_TAGS]) };
+  return { id: mode.id, allowedCapabilities: allowedCapabilitiesOf(mode) };
 }
 
 /** A reader for the registry's active mode, as `<SceneCanvas modes>` builds

@@ -25,6 +25,7 @@ import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import type { InputEvent } from './matcher';
 import { LONG_PRESS_MS } from './longPressState';
+import { underPointer, type UnderPointer } from './underPointer';
 import type { BodyTarget } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { resolveCursorTier } from '@weasel-js/cursor';
@@ -733,6 +734,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         clientX: e.clientX, clientY: e.clientY,
         altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
       };
+      // A held pointer's moves are its drag's; an unpressed one's are a hover.
+      if (held.size === 0) {
+        const where = underPointer(target(), lastHover, w);
+        hoverFacts = { at: lastHover, where };
+        dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY, ...where });
+      }
       refreshHoverCursor();
     };
 
@@ -817,6 +824,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       pushPaintedPointer();
     }
 
+    /** What the last move found under the pointer, so its hover and its cursor hit-test once. */
+    let hoverFacts: { at: object; where: UnderPointer } | null = null;
+
     function resolveHoverCursor(): void {
       if (!canvas || !lastHover) return;
       // Mid-gesture the prediction is meaningless — what matters is what the
@@ -832,23 +842,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // pinned pointer is never unpinned by a hover refresh.
       routeAt(null, h.clientX, h.clientY);
       const w = toWorld(h.clientX, h.clientY);
-      const affordance = target().affordanceAt?.(w) ?? undefined;
-      if (affordance?.cursor) {
-        applyHoverCursor(affordance.cursor);
+      const where = hoverFacts?.at === h ? hoverFacts.where : underPointer(target(), h, w);
+      if (where.affordance?.cursor) {
+        applyHoverCursor(where.affordance.cursor);
         return;
       }
-      const hoverBody = target().classifyTarget?.(w);
-      const bodyTarget = hoverBody?.body;
-      const bodyKind = hoverBody?.kind;
-      const where = {
-        altKey: h.altKey,
-        ctrlKey: h.ctrlKey,
-        metaKey: h.metaKey,
-        shiftKey: h.shiftKey,
-        ...(affordance !== undefined ? { affordance } : {}),
-        ...(bodyTarget !== undefined ? { bodyTarget } : {}),
-        ...(bodyKind !== undefined ? { bodyKind } : {}),
-      };
       const ctx = ctxNow();
       const press: InputEvent = {
         kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where,

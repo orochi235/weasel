@@ -213,6 +213,23 @@ export interface PointerDownSpec {
 }
 
 /**
+ * The pointer moving over the surface with no button pressed. Fires on every
+ * such move; a held pointer's moves belong to its drag and fire nothing here.
+ *
+ * A hover binding claims nothing. Every live binding that matches the move
+ * runs, not only the best one, and the move still reaches the hover-cursor
+ * pump. There is no press to own, so bind an immediate action, not an ongoing
+ * one. Its params carry `worldX` / `worldY`, `clientX` / `clientY`,
+ * `affordance`, `bodyTarget`, and `mods`.
+ */
+export interface HoverSpec {
+  kind: 'hover';
+  target?: TargetSpec;
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
+/**
  * Press held past the long-press threshold without crossing the drag
  * threshold. Synthesized by `useGestureDispatcher` from the pointer stream.
  *
@@ -282,6 +299,7 @@ export type GestureSpec =
   | ContextMenuSpec
   | DragSpec
   | PointerDownSpec
+  | HoverSpec
   | LongPressSpec
   | MultiTouchSpec
   | MultiTouchTapSpec
