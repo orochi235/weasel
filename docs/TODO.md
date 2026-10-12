@@ -1704,12 +1704,11 @@ only story runner in the repo.
   selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the
   result in `animateOnSetPose` and `animateLifecycle` through two `as never` casts, hands that to
   `useSelectTool` / `useTools`, and then calls `adapter.setPose` / `adapter.insertNode` from button
-  handlers, so those writes skip the op pipeline and undo. It also re-renders React once per
-  animator tick (`bumpTick`) to repaint per-card scale and alpha. `<SceneCanvas>` should take the
+  handlers, so those writes skip the op pipeline and undo. `<SceneCanvas>` should take the
   wrappers itself (an `animate={{ setPose, lifecycle }}` option, or a `SurfaceContribution` that
-  wraps the adapter the canvas already builds), so the demo keeps `features={['pick', 'move']}`, its
-  buttons call `scene.setPose` / `scene.add`, and per-node effects repaint through `redrawOn` /
-  `requestRedraw`.
+  wraps the adapter the canvas already builds), so the demo keeps `features={['pick', 'move']}` and
+  its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
+  canvas's adapter, so the seat has to say where a scene-level write gets animated.
 
 - **(P3) draw: no command palette, no toast host, and no first-run notice.** The actions registry
   lists every action by stable id, so a palette is a port of `apps/site/CommandPalette`; save
