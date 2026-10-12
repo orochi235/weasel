@@ -1222,7 +1222,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   target in a passive effect, a render behind the pointer, so a release in the same task as the
   last move read the previous row's target or none. `PrefSchemaEditor`'s `onPaletteDrop` gets
   around it with `flushSync`; any other caller dropping onto a `Tree` from outside has the same
-  race. To decide: whether `Tree` offers a synchronous "target at this point".
+  race. Ruled 2026-10-11: `Tree` resolves the target from the pointer's position at the drop, and
+  the editor's `flushSync` comes out.
 
 - **(P3) `subPages` overlaps a group's `as`.** `PrefsForm`'s form-wide `subPages` prop decides
   what `as: 'page'` on a nested group should. Ruled 2026-10-11: `subPages` goes; a nested group
@@ -1252,13 +1253,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
   react-aria tab also carries.
 
-- **(P1.5) A number's `unit` in a labkit schema can only be code.** It is an object of
-  `toDisplay`/`fromDisplay` functions, so it cannot be written to JSON, set in `PrefSchemaEditor`,
-  or kept in a draft (a draft holds code as a pointer into the source schema, which a new leaf has
-  none of). In astv's settings every unit is an identity conversion carrying a suffix. Proposed,
-  not agreed: a unit may be `{ suffix, accepts }` with the conversion implied, the function form
-  staying for what data cannot say. `.showIf` had the same problem and takes a condition as data
-  now.
+- **(P1.5) A number's `unit` can only be code.** It is an object of `toDisplay`/`fromDisplay`
+  functions, so it cannot be written to JSON, set in `PrefSchemaEditor`, or kept in a draft (a
+  draft holds code as a pointer into the source schema, which a new leaf has none of). Ruled
+  2026-10-11: a unit may also be data with a linear conversion, `{ suffix, scale, offset, accepts }`,
+  where identity is `scale: 1`; that covers every unit astv writes, degrees over radians, and
+  every unit a `UnitSystem` builds, and is the shape an `accepts` entry already has. The function
+  form stays for what is not linear.
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
