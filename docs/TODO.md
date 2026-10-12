@@ -852,28 +852,28 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P3) `arrayAdapter` has no `poseTarget`** — it has no overrides table to show a moving pose
-  through, so `tweenPose` and `springPose` over it still write each frame and replace each other.
-- **(P3) Reading 10k targets costs about 3× the `onTick` path** — one pass of
-  `tests/perf/bench/animator-on-blits.bench.ts` on teitou, 2026-10-11: 0.53 ms a frame for 10k
-  tweens storing through `onTick`, 1.50 ms on 10k targets read after the frame. Not profiled;
-  `read` builds an axes array and a value object per call. The earlier costs of moving the
-  values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling) were accepted on
-  2026-10-04 and 2026-10-08; their tables are in `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`.
-- **(P3) Holds on a rig turn the short way from the committed pose, not from each other** —
-  rotations of 3 and −3 over a bind of 0 meet at 0, where the deleted `blendPoses` met at π.
-  Pinned in `packages/core/src/animation/rig/poseHolds.test.tsx`. Meeting between the holds
-  needs a blits channel that lerps angles, in place of the sum the codec's lanes use.
-- **(P3) A hold over some of a rig's joints** — a hold covers every joint, so an arm solved by
-  IK at full strength cannot sit beside clips holding the body; the rig demo samples the body
-  from a track to work around it.
-- **(P3) A coast that a `tweenPose` interrupts drops out with a visible jump.**
-- **(P3) An offset canceled under a full-weight hold loses what it had left on screen** — it
-  commits its remaining travel, but the hold stands in front of the committed value.
-- **(P3) `<SceneCanvas>` does not expose the camera's `viewTarget`** — its camera animator is
-  private, and a target is no use without the animator that moves it.
+- **(P3) Reading 10k targets costs about 3× the `onTick` path, all of it in `target.read()`** —
+  one pass of `tests/perf/bench/animator-on-blits.bench.ts` on teitou, 2026-10-11: 0.53 ms a
+  frame for 10k tweens storing through `onTick`, 1.50 ms on 10k targets read after the frame.
+  A probe under vitest on orochi the same day split it: the frame costs the same either way
+  (0.79 ms against 0.86 ms), and 10k reads cost 1.2 ms, about 120 ns each. Hand-written `axes`
+  in place of the ones `createTarget` works out for an object of numbers bring the reads to
+  0.88 ms. What is left is the array `axes.to` builds and the value `axes.from` builds on every
+  read; building the value from a copy of a sample object was tried and was slower. A fix is a
+  read that fills the caller's buffer, or axes that map without the array between. The earlier
+  costs of moving the values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling)
+  were accepted on 2026-10-04 and 2026-10-08; their tables are in
+  `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`. This one has not been.
+- **(P3) A tween or spring started on a target under a full-weight hold shows its whole travel
+  on top of the hold** — it commits its destination, which the hold stands in front of, and its
+  offset is added over the hold, so the value on screen jumps by the travel and settles back.
+  With no hold the two cancel and nothing moves as it starts. Seen in
+  `useAnimator.hold.test.tsx` ("hands what a canceled offset left under it to the next
+  animation"), not fixed: whether an offset under a hold should show at all is a call on the
+  model, since a hold at a weight below 1 shows part of the committed value.
 - **(P3) Whether blits moves into the monorepo as its own `@weasel-js` package** — open since
-  2026-09-30. `@weasel-js/core` depends on `@msb235/blits` pinned exactly.
+  2026-09-30. `@weasel-js/core` depends on `@msb235/blits` pinned exactly, at 0.8.1; the blits
+  checkout in `~/src/blits` was at 0.10.0 on 2026-10-11.
 
 ### Earlier deferrals
 
@@ -962,13 +962,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
-
-- **(P2) A layout drop is not a move behavior.** `actions/move/` is split by phase, with the layout
-  pass and reparent-on-drop as commit paths inside it.
-  The behavior contract now has what a layout drop needs (`MoveEnd.translateOps`, `onSettled`,
-  previews for any id). What is left, in
-  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md`, is lifting both paths
-  out as `MoveBehavior`s.
 
 - **(P2) `resize.ts` (698) and `rotate.ts` (353) are built like `move.ts` was.** Each is a scratch
   interface every helper takes whole and a `commitX` closure inside `start()`. They take the split
@@ -1213,47 +1206,55 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
   500 ms `RAIL_OPEN_MS` timer).
 
-- **(P3) `Tree` reports an outside drag's target only from an effect.** `useTreeDrag.ts` writes the
-  target in a passive effect, a render behind the pointer, so a release in the same task as the
-  last move read the previous row's target or none. `PrefSchemaEditor`'s `onPaletteDrop` gets
-  around it with `flushSync`; any other caller dropping onto a `Tree` from outside has the same
-  race. To decide: whether `Tree` offers a synchronous "target at this point".
+- **(P3) `Tree` keeps `onExternalTarget` beside `dropRef`.** `TreeDropHandle.targetAt(point)`
+  answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
+  effect, a render behind, and its docstring says so. Whether it should go is not decided.
 
-- **(P3) `subPages` overlaps a group's `as`.** `PrefsForm`'s form-wide `subPages` prop decides
-  what `as: 'page'` on a nested group should. Ruled 2026-10-11: `subPages` goes; a nested group
-  with `as` unset is a section, and one that wants a page of its own says `as: 'page'`; `foldable`
-  stays a prop on the form, since folding is how the rail is drawn and not what a group is; and a
-  rail holding both kinds marks the open page as open and, under it, the section in view as
-  current. That leaves `RailLayout` deciding per entry from `as`, where it runs in one mode for
-  the whole form today, the second mark, and `PrefSchemaEditor`'s live preview, the one caller of
-  `subPages` outside tests. `as: 'page'` still means nothing where there is no rail
-  (`ControlPanel`, the columns and list layouts, any `PrefSection`) and draws as the default.
+- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists every
+  nested group, a section of its page unless it is `as: 'page'`. (1) A foldable rail unfolds an
+  entry only while the open page is it or under it, so a section with sections of its own stays
+  shut while the reader scrolls through them, and its entry carries the current mark for them.
+  Whether the section in view should unfold the entries above it is open; it would move the rail
+  under a reader who is scrolling. (2) A top-level group that is not a page (`as: 'section'`
+  beside the root's loose leaves) is drawn on the root's own page and gets no entry, where the
+  same group one level down gets one. (3) A section's rail entry and a nested page's look the
+  same until one is chosen.
+
+- **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
+  is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the
+  scrollport's edge (measured: the heading's top at 10px with 10px of padding), where the
+  comment on the rule says the offset is measured from the edge. Whether rows scrolling under it
+  show in that strip has not been looked at. `RailLayout`'s `stuckAbove` adds the padding for the
+  same reason.
 
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
 
-- **(P3) `SelectionPanel`'s `selected` does not reach paired rows or sections.** `selected` and
-  `onSelect` cover single-leaf rows, object-leaf fields, and bar cells, and `PrefSchemaEditor`'s
-  section preview selects with its tree through them. A `pair` row and a section heading, tab, or
-  panel neither mark nor report, which with core's default node properties leaves Position, Size,
-  and the stroke's cap and join row dead in that preview. Ruled 2026-10-11: a `pair` row is marked
-  when any of its leaves is selected, and a press on it reports its first leaf, as a fused `Bar`
-  cell does; a section is named in `selected` by its own key, in the one list with leaf paths, and
-  `PrefSchemaEditor` refuses a section key that equals a leaf's path. Only a top-level section
-  draws a heading, so only those can be selected.
+- **(P3) What `SelectionPanel`'s `selected` still does not reach.** A `pair` row and a top-level
+  section under a heading, in a tab, or in a panel mark and report now. Left: a cell a bar fuses
+  from a run of flags is marked only for its first leaf, so a later flag in `selected` marks
+  nothing (seen in a browser, in a section `as: 'bar'`); doing it needs the panel's `renderers`
+  where the marks are worked out, since a renderer decides whether flags fuse. A top-level
+  section drawn `as: 'bar'` or `as: 'fragment'`, or with no name, draws no heading, tab, or panel,
+  and its key marks and reports nothing: whether it should is not ruled. Cmd or Ctrl on a press of
+  a tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
+  so the press arrives as the focus it causes, which carries no modifier.
 
 - **(P3) Loose ends beside the selection mark, none checked further.** The fragment mark in
   `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
   `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
-  react-aria tab also carries.
+  react-aria tab also carries. That is a drawn bug too: `PrefsForm` puts `data-pref-path` on each
+  tab, so the open tab of a run always wears the selection mark, with nothing selected (seen in a
+  browser: `outline-style: solid`). `SelectionPanel` names its tab with `data-pref-rail` instead
+  and marks the tab's panel.
 
-- **(P1.5) A number's `unit` in a labkit schema can only be code.** It is an object of
-  `toDisplay`/`fromDisplay` functions, so it cannot be written to JSON, set in `PrefSchemaEditor`,
-  or kept in a draft (a draft holds code as a pointer into the source schema, which a new leaf has
-  none of). In astv's settings every unit is an identity conversion carrying a suffix. Proposed,
-  not agreed: a unit may be `{ suffix, accepts }` with the conversion implied, the function form
-  staying for what data cannot say. `.showIf` had the same problem and takes a condition as data
-  now.
+- **(P3) Loose ends beside a number's unit as data.** A unit is data (`PrefLinearUnit`) or code,
+  read through `resolvePrefUnit`. `PrefSchemaEditor` edits a number's default, and its auto value,
+  in the stored unit and not the one the leaf shows. The text tool's percent unit
+  (`useTextTool.ts`) is still code, for the rounding it does on the way back to the stored value,
+  so the run properties do not export as a literal. Nothing reads a unit's `format` yet. A unit
+  whose accepted suffix is all digits moves to the front of the list, as an object's integer keys
+  do.
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
@@ -1566,8 +1567,20 @@ only story runner in the repo.
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. By a grep of `render: () =>`, that is about 300 of the 508
-  stories. Each needs rewriting to draw from `args` before it gains controls.
+  would read them. By a grep of `render: () =>`, that is about 230 of the 508
+  stories, and 39 story files have no story that takes args. A story drawing one
+  instance in a plain configuration is the kind to rewrite around `args`, the way
+  `Tooltip`'s `Basic` is; a matrix or a hand-built composition stays as it is.
+  Where a component's props are a union or generic, as `ToggleBar`'s and
+  `PropertyField`'s are, its stories pass a few named args and the other controls
+  do nothing. Where a story holds a value in state, as `Timeline`'s playhead and
+  `Jog`'s index are, the control only sets where it starts.
+
+- **(P3) A control read from a string-union prop lists its options in the compiler's order.**
+  `controlFor` (`packages/forge/src/vite/propTypes.ts`) takes a union's members as the checker
+  returns them, which is not the order the type was written in: `Button`'s `variant` reads link,
+  ghost, primary, secondary. Reading the order from the declaration's type node would fix it where
+  the union is written out, and leave an aliased or computed union as it is.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
@@ -1657,7 +1670,9 @@ only story runner in the repo.
   `labkit/src/controls/compoundRows.browser.test.tsx`,
   `PatternPicker/PatternPicker.browser.test.tsx`, and
   `core/src/features/text/overlayAlignment.browser.test.tsx`. The last two pass when run alone
-  on this machine at the commit that failed. The suite runs the `browser` project beside eight
+  on this machine at the commit that failed. `Prefs/PrefsRail.marks.browser.test.tsx` failed once
+  on teitou the same way, on an assertion and not a timeout: its scroll had not settled inside
+  the 3 s it polls for, 422 px from where it ends. The suite runs the `browser` project beside eight
   others on one node. Not measured: whether the timeouts follow the node's load, and whether
   running `browser` on its own, or with fewer workers, ends them.
 

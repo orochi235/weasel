@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import { createPortal, flushSync } from 'react-dom';
+import { createPortal } from 'react-dom';
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
-import { filterTree, Tree, treeBranchIds, type TreeDragEffect } from '../Tree';
+import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeDropHandle } from '../Tree';
 import type { PrefRenderer } from '../Prefs';
 import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
@@ -102,6 +102,17 @@ function addTargetOf(schema: SchemaRoot, lead: string | null): { parent: string 
   return { parent, index: sibs.indexOf(keyOf(lead)) + 1 };
 }
 
+/** Where the bar's aliases of the selected prefs go: together after the one that leads, to be dragged where they
+ *  belong. Null when one of what is selected has no alias to make, or they do not fit there. */
+function aliasTargetOf(schema: SchemaRoot, selected: readonly string[], lead: string | null, maxDepth: number | undefined, pageless: boolean): SchemaTarget | null {
+  if (lead === null || !selected.every((p) => nodeAt(schema, p)) || !selected.every((p) => canAlias(schema, p))) return null;
+  const parent = parentPath(lead);
+  const fits = selected.every((p) => treeTakesNew(schema, aliasOf(schema, p), parent, maxDepth, pageless));
+  if (!fits && !(parent === null && !isPrefSection(schema))) return null;
+  const sibs = Object.keys(childrenOf(nodeAt(schema, parent) ?? schema) ?? {});
+  return { parentPath: parent, index: sibs.indexOf(keyOf(lead)) + 1 };
+}
+
 export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
   const pageless = over !== undefined;
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
@@ -158,31 +169,24 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   /** What a drag would set down: the nodes themselves, or aliases of them. */
   const landing = (ids: readonly string[], effect: TreeDragEffect): SchemaNode[] =>
     effect === 'link' ? ids.map((id) => aliasOf(schema, id)) : nodesAt(ids);
-  /** Where the bar's aliases of the selected prefs go: together after the one that leads, to be dragged where they
-   *  belong. Null when one of what is selected has no alias to make, or they do not fit there. */
-  const aliasAt = ((): SchemaTarget | null => {
-    if (readOnly || lead === null || !selected.every((p) => nodeAt(schema, p)) || !canLand(selected, 'link')) return null;
-    const parent = parentPath(lead);
-    const fits = landing(selected, 'link').every((made) => treeTakesNew(schema, made, parent, maxDepth, pageless));
-    if (!fits && !(parent === null && !isPrefSection(schema))) return null;
-    const sibs = Object.keys(childrenOf(nodeAt(schema, parent) ?? schema) ?? {});
-    return { parentPath: parent, index: sibs.indexOf(keyOf(lead)) + 1 };
-  })();
+  const aliasAt = readOnly ? null : aliasTargetOf(schema, selected, lead, maxDepth, pageless);
 
   // A drag from the palette: over the tree it lands where the tree marks, and elsewhere wherever `outside` takes it.
   const [paletteDrag, setPaletteDrag] = useState<PaletteDrag | null>(null);
-  const treeTarget = useRef<{ parentId: string | null; index: number } | null>(null);
+  // The same, as of the event in hand: the tree asks `canDrop` at a drop no render has caught up with.
+  const carrying = useRef<PaletteDrag | null>(null);
+  const treeDrop = useRef<TreeDropHandle>(null);
   /** The nodes a palette drag would set down: the ones the schema holds at its paths, else the one it makes. */
   const carried = (drag: PaletteDrag): SchemaNode[] => (drag.from ? nodesAt(drag.from) : [drag.node]);
   const onPaletteDrag = (drag: PaletteDrag | null) => {
+    carrying.current = drag;
     setPaletteDrag(drag);
     if (drag) outside?.over(carried(drag), [], drag);
     else outside?.end();
   };
   const onPaletteDrop = (drag: PaletteDrag) => {
-    // The tree answers a drag from an effect, a render after the pointer moved; a drop is asked about where it was let go.
-    flushSync(() => setPaletteDrag(drag));
-    const at = treeTarget.current;
+    carrying.current = drag;
+    const at = treeDrop.current?.targetAt(drag) ?? null;
     const target = at ? schemaTarget(schema, at.parentId, at.index, pageless) : outside?.target(carried(drag), [], drag) ?? null;
     if (!target) return;
     if (drag.from !== undefined) {
@@ -257,7 +261,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         selectedIds={selected}
         onSelectionChange={onPick}
         externalDrag={paletteDrag}
-        onExternalTarget={(t) => { treeTarget.current = t; }}
+        dropRef={treeDrop}
         // A copy or an alias is new where it lands, so the place it is dropped is asked about it with no paths, as for a palette's node.
         onDragOutside={(ids, point, effect) => {
           // Let go over the unplaced list, a node comes off its page.
@@ -278,8 +282,9 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
           // A place among the rows shown is not that place among all of them.
           if (readOnly || sought !== '') return false;
           if (ids.length === 0) {
-            if (paletteDrag === null) return false;
-            return paletteDrag.from === undefined ? treeTakesNew(schema, paletteDrag.node, t.parentId, maxDepth, pageless) : takes(paletteDrag.from, t.parentId);
+            const held = carrying.current;
+            if (held === null) return false;
+            return held.from === undefined ? treeTakesNew(schema, held.node, t.parentId, maxDepth, pageless) : takes(held.from, t.parentId);
           }
           if (effect === 'link') return canLand(ids, effect) && landing(ids, effect).every((node) => treeTakesNew(schema, node, t.parentId, maxDepth, pageless));
           return takes(ids, t.parentId);

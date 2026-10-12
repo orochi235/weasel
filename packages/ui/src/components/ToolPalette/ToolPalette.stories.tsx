@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ToolPalette } from './ToolPalette';
+import { ToolPalette, type ToolPaletteProps } from './ToolPalette';
 import type { AnyTool, ToolsApi } from '@weasel-js/core';
 import {
   SelectIcon,
@@ -47,26 +47,29 @@ function makeFakeToolsApi(list: AnyTool[], active: string, setActive: (id: strin
   } as unknown as ToolsApi;
 }
 
-function FullDemo({ orientation }: { orientation?: 'vertical' | 'horizontal' }) {
+function FullDemo(props: Partial<ToolPaletteProps>) {
   const [active, setActive] = useState<string>('select');
   const tools = makeFakeToolsApi(fullList(), active, setActive);
-  return <ToolPalette tools={tools} orientation={orientation} />;
+  return <ToolPalette {...props} tools={tools} />;
 }
 
-function MinimalDemo() {
+function MinimalDemo(props: Partial<ToolPaletteProps>) {
   const [active, setActive] = useState<string>('select');
   const tools = makeFakeToolsApi(minimalList(), active, setActive);
-  return <ToolPalette tools={tools} />;
+  return <ToolPalette {...props} tools={tools} />;
 }
 
-export const Default: Story = { render: () => <FullDemo /> };
-export const Horizontal: Story = { render: () => <FullDemo orientation="horizontal" /> };
-export const Minimal: Story = { render: () => <MinimalDemo /> };
+export const Default: Story = { render: (args) => <FullDemo {...args} /> };
+export const Horizontal: Story = {
+  args: { orientation: 'horizontal' },
+  render: (args) => <FullDemo {...args} />,
+};
+export const Minimal: Story = { render: (args) => <MinimalDemo {...args} /> };
 
 // Focus the active tool and try ArrowDown / ArrowUp / Home / End — the
 // palette manages a roving tabindex across all buttons regardless of group.
 export const KeyboardNav: Story = {
-  render: () => <FullDemo />,
+  render: (args) => <FullDemo {...args} />,
   parameters: {
     docs: {
       description: {

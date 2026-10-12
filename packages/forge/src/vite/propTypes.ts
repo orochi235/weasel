@@ -13,13 +13,28 @@ export interface PropReader {
   read(file: string): PropTable | null;
 }
 
-const IN_PACKAGE = /[\\/]node_modules[\\/]/;
+/** React's own declarations and TypeScript's libraries: every DOM attribute and event handler an element takes. */
+const PLATFORM = /[\\/]node_modules[\\/](@types[\\/]react(-dom)?|typescript)[\\/]/;
+
+/** Narrows which props get a control. */
+export interface PropControlsOptions {
+  /**
+   * Leaves out a prop declared in a file this answers true for, given the file's absolute path. Props that React's
+   * types or TypeScript's libraries declare are always left out.
+   */
+  skip?: (declaredIn: string) => boolean;
+}
 
 /**
  * Reads component props through the project's own TypeScript, so a prop's type is what the compiler resolves it to.
  * `stories` are the program's roots, named up front so the program is built once. Null without `typescript`.
  */
-export async function createPropReader(root: string, stories: () => readonly string[]): Promise<PropReader | null> {
+export async function createPropReader(
+  root: string,
+  stories: () => readonly string[],
+  { skip }: PropControlsOptions = {},
+): Promise<PropReader | null> {
+  const skipped = (file: string) => PLATFORM.test(file) || skip?.(file) === true;
   let tsm: typeof ts;
   try {
     tsm = (await import('typescript')).default;
@@ -68,7 +83,7 @@ export async function createPropReader(root: string, stories: () => readonly str
       if (!program || !source) return null;
       const checker = program.getTypeChecker();
       const props = componentProps(tsm, checker, source);
-      return props ? propTable(tsm, checker, props, source) : null;
+      return props ? propTable(tsm, checker, props, source, skipped) : null;
     },
   };
 }
@@ -97,18 +112,23 @@ function componentProps(tsm: typeof ts, checker: ts.TypeChecker, source: ts.Sour
 }
 
 /** An argType for each prop a control can edit: a boolean, a string, a number, or a union of string literals. */
-function propTable(tsm: typeof ts, checker: ts.TypeChecker, props: ts.Type, at: ts.SourceFile): PropTable {
+function propTable(
+  tsm: typeof ts,
+  checker: ts.TypeChecker,
+  props: ts.Type,
+  at: ts.SourceFile,
+  skipped: (file: string) => boolean,
+): PropTable {
   const argTypes: Record<string, ArgType> = {};
   const sources = new Set<string>();
   for (const prop of checker.getPropertiesOfType(checker.getApparentType(props))) {
     const files = (prop.getDeclarations() ?? []).map((declaration) => declaration.getSourceFile().fileName);
-    // What a package declares is the platform's surface, every DOM attribute included, and not the component's own.
-    if (files.length > 0 && files.every((file) => IN_PACKAGE.test(file))) continue;
+    if (files.length > 0 && files.every(skipped)) continue;
     const argType = controlFor(tsm, checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(prop, at)));
     if (!argType) continue;
     const description = tsm.displayPartsToString(prop.getDocumentationComment(checker)).replace(/\s+/g, ' ').trim();
     argTypes[prop.getName()] = description ? { ...argType, description } : argType;
-    for (const file of files) if (!IN_PACKAGE.test(file)) sources.add(file);
+    for (const file of files) if (!/[\\/]node_modules[\\/]/.test(file)) sources.add(file);
   }
   return { argTypes, sources: [...sources] };
 }

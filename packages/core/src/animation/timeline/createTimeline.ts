@@ -1,5 +1,6 @@
 import type { AnimationHandle } from '../types';
-import { createBooker, firstAfter, firstAtOrAfter } from './booking';
+import { createBooker } from './booking';
+import { createEventFirer } from './fireEvents';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
@@ -44,6 +45,12 @@ function tracksEnd(tracks: Track[], explicit?: number): number {
   return max;
 }
 
+function notify(set: Set<() => void>): void {
+  for (const cb of set) {
+    try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
+  }
+}
+
 /**
  * Create a timeline as a registered animator animation.
  *
@@ -83,11 +90,6 @@ export function createTimeline(
 
   const subscribers = new Set<() => void>();
   const playbackSubscribers = new Set<() => void>();
-  const notify = (set: Set<() => void>): void => {
-    for (const cb of set) {
-      try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
-    }
-  };
   const playbackChanged = (): void => notify(playbackSubscribers);
 
   const loopOpt = opts.loop ?? false;
@@ -103,38 +105,9 @@ export function createTimeline(
       playhead: () => playhead,
     })
     : null;
-  let warnedUnbooked = false;
-
   const sampler = createTrackSampler(hold);
 
-  // Track indexes from the root down to the track being fired, for `report`.
-  const path: number[] = [];
-  const fireEvents = (tracks: Track[], from: number, to: number, fromOpen: boolean): void => {
-    for (let k = 0; k < tracks.length; k += 1) {
-      const track = tracks[k];
-      if (track.kind === 'event') {
-        const end = firstAfter(track.events, to);
-        const first = (fromOpen ? firstAtOrAfter : firstAfter)(track.events, from);
-        for (let i = first; i < end; i += 1) {
-          const ev = track.events[i];
-          ev.fire?.(to - ev.t);
-          if (report?.watched) {
-            path.push(k);
-            report.fire(track, path, ev, to - ev.t);
-            path.pop();
-          }
-          if (ev.book && !booker && !warnedUnbooked) {
-            warnedUnbooked = true;
-            console.warn('timeline: an event has `book` but the timeline has no `booking` clock; it never books.');
-          }
-        }
-      } else if (track.kind === 'timeline') {
-        path.push(k);
-        fireEvents(track.timeline.tracks, from - track.at, to - track.at, fromOpen);
-        path.pop();
-      }
-    }
-  };
+  const fireEvents = createEventFirer(report, booker !== null);
 
   // Flush the outgoing pass's tail before re-arming, or an event between the
   // last tick and `duration` is dropped whenever a frame straddles the seam.
@@ -203,8 +176,7 @@ export function createTimeline(
     if (first) playbackChanged();
   };
 
-  const progress = (): number => (duration > 0 ? playhead / duration : 1);
-  const seed = { id, cancelKey: opts.cancelKey, tick, onCancel, kind: 'timeline' as const, label: opts.label, progress };
+  const seed = { id, cancelKey: opts.cancelKey, tick, onCancel, kind: 'timeline' as const, label: opts.label, progress: () => (duration > 0 ? playhead / duration : 1) };
   const base = register(seed);
 
   // A paused entry's scale is zero, so `virtualNow` never advances and the
@@ -226,6 +198,10 @@ export function createTimeline(
     base.setTimeScale(wantScale);
   };
 
+  // Not left to the next frame: whoever seeks or edits and then reads a target sees it.
+  const sampleNow = (): void => {
+    if (live && playhead >= 0 && playhead < duration) sampler.apply(opts.tracks, playhead);
+  };
   return {
     ...base,
     // Not just `onCancel`: cancelling a finished timeline never reaches the
@@ -246,6 +222,7 @@ export function createTimeline(
       prevOpen = true;
       booker?.seek();
       rearm();
+      sampleNow();
       playbackChanged();
     },
     time: () => playhead,
@@ -263,6 +240,7 @@ export function createTimeline(
       duration = tracksEnd(opts.tracks, opts.duration);
       booker?.retract();
       rearm();
+      sampleNow();
       notify(subscribers);
     },
     subscribe(cb) {

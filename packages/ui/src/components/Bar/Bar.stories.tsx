@@ -2,8 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState, type ReactNode } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar } from './Bar';
-import type { BarOrientation } from './BarLayout';
+import { Bar, type BarProps } from './Bar';
 import s from './Bar.stories.module.css';
 
 const meta: Meta<typeof Bar> = {
@@ -96,16 +95,15 @@ function Host({ children }: { children: (snap: boolean) => ReactNode }) {
   );
 }
 
-function TextBar({ orientation }: { orientation?: BarOrientation }) {
+function TextBar(args: BarProps) {
   const [values, setValues] = useState<Record<string, unknown>>({ size: 12, align: 'left', color: '#7ec8e3' });
   return (
     <Host>
       {() => (
-        <div className={orientation === 'vertical' ? s.rail : s.strip}>
+        <div className={args.orientation === 'vertical' ? s.rail : s.strip}>
           <Bar
+            {...args}
             schema={TEXT}
-            label="Text"
-            orientation={orientation}
             values={values}
             onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))}
           />
@@ -117,11 +115,11 @@ function TextBar({ orientation }: { orientation?: BarOrientation }) {
 
 /** Fields and actions on one line. Each section is a run between dividers,
  *  and the panel group opens from a button. */
-export const FieldsAndActions: Story = { render: () => <TextBar /> };
+export const FieldsAndActions: Story = { args: { label: 'Text' }, render: (args) => <TextBar {...args} /> };
 
 /** Down a side there is no room beside a field, so every leaf but an action
  *  opens from a button. */
-export const Vertical: Story = { render: () => <TextBar orientation="vertical" /> };
+export const Vertical: Story = { args: { label: 'Text', orientation: 'vertical' }, render: (args) => <TextBar {...args} /> };
 
 const CONDITIONED: PrefGroup = {
   name: 'Text',
@@ -141,11 +139,12 @@ const CONDITIONED: PrefGroup = {
 
 /** `enableIf` and `showIf`: with Snap off, Step is disabled, Angle is not drawn, and Guides opens to a disabled row. */
 export const Conditions: Story = {
-  render: function ConditionsStory() {
+  args: { label: 'Snapping' },
+  render: function ConditionsStory(args) {
     const [values, setValues] = useState<Record<string, unknown>>({ snap: false, step: 8, angle: 45 });
     return (
       <div className={s.strip}>
-        <Bar schema={CONDITIONED} label="Snapping" values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
+        <Bar {...args} schema={CONDITIONED} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
       </div>
     );
   },

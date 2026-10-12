@@ -2,7 +2,7 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/pose
 import { documentPose, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
 import { axesOf } from './engine/axes';
-import { createTarget, type Target, type TargetAxes } from './target';
+import { createTarget, stateOf, type Target, type TargetAxes } from './target';
 
 /** What {@link createPoseTarget} takes. */
 export interface PoseTargetOptions<TPose> {
@@ -72,11 +72,45 @@ export function liveAxes<TPose>(
   return { count, angles, to: (p) => current().to(p), from: (a) => current().from(a) };
 }
 
+/** How a container's pose target carries its descendants, for {@link scenePoseTarget}. */
+export interface PoseCascade<TPose> {
+  /** Commits `pose` to the container, moving its descendants' poses with it. */
+  write(pose: TPose): void;
+  /** The descendants, each at the pose to show it at while the container shows at `pose`. */
+  beside(pose: TPose): Iterable<readonly [NodeId, TPose]>;
+}
+
+/** Shows a moving container's descendants through overrides of their own, and takes them back
+ *  as it rests. A descendant something else already overrides is left to it. */
+function riders<TPose>(overrides: PoseOverrides<TPose>, cascade: PoseCascade<TPose>): (pose: TPose | null) => void {
+  const riding = new Map<NodeId, PoseOverride<TPose>>();
+  return (pose) => {
+    const seen = new Set<NodeId>();
+    for (const [id, beside] of pose === null ? [] : cascade.beside(pose)) {
+      let entry = riding.get(id);
+      if (!entry) {
+        if (overrides.has(id)) continue;
+        riding.set(id, entry = {});
+        overrides.set(id, entry);
+      }
+      entry.pose = beside;
+      seen.add(id);
+    }
+    for (const [id, entry] of riding) {
+      if (seen.has(id)) continue;
+      if (overrides.get(id) === entry) overrides.clear(id);
+      riding.delete(id);
+    }
+  };
+}
+
 function build<TPose>(
   opts: PoseTargetOptions<TPose>,
   onRest?: () => void,
   /** Whether something else has written the committed pose since an animation last did. */
   overwritten?: () => boolean,
+  /** Told the pose on screen each time it is shown, and null as the node comes to rest. */
+  ride?: (pose: TPose | null) => void,
 ): Target<TPose> | null {
   const { overrides } = opts;
   const id = opts.id as NodeId;
@@ -96,10 +130,12 @@ function build<TPose>(
         // Installed once per run: an override laid over it since, a drag's, is not taken back.
         if (!installed) overrides.set(id, entry);
         installed = true;
+        ride?.(pose);
         return;
       }
       installed = false;
       if (overrides.get(id) === entry) overrides.clear(id);
+      ride?.(null);
       onRest?.();
     },
     publish: publisherOf(overrides),
@@ -139,22 +175,29 @@ function samePose(a: unknown, b: unknown): boolean {
  * a caller that wants the move in history records its own op first.
  *
  * Undefined for a node that is not in the scene, or whose pose has no axes. `descriptor`
- * defaults to `RECT_POSE_DESCRIPTOR` and is read the first time a node's target is made.
+ * defaults to `RECT_POSE_DESCRIPTOR`. With `cascade`, for a container whose descendants hold
+ * poses of their own, a commit goes through `cascade.write` and the descendants are shown
+ * traveling beside the container. Both are read the first time a node's target is made.
  */
 export function scenePoseTarget<TPose>(
   scene: PoseTargetScene<TPose>,
   id: string,
   descriptor?: PoseDescriptor<TPose>,
+  cascade?: PoseCascade<TPose>,
 ): Target<TPose> | undefined {
   let made = sceneTargets.get(scene.overrides);
   if (!made) {
     made = new Map();
     sceneTargets.set(scene.overrides, made);
   }
-  const held = made.get(id) as Target<TPose> | undefined;
-  if (held) return held;
   const nid = id as NodeId;
   const node = scene.get(nid);
+  const by = descriptor ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
+  const held = made.get(id) as Target<TPose> | undefined;
+  // A pose that has changed shape at rest, a polygon given more points, needs axes made for it.
+  const fits = !held || held.active || !node
+    || poseAxes(by, documentPose(scene, node))?.count === stateOf(held).axes.count;
+  if (held && fits) return held;
   if (!node) return undefined;
   // A node removed mid-flight keeps answering with the last pose it had.
   let last = documentPose(scene, node);
@@ -164,7 +207,7 @@ export function scenePoseTarget<TPose>(
   let target: Target<TPose> | null = null;
   target = build<TPose>({
     id,
-    descriptor: descriptor ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
+    descriptor: by,
     overrides: scene.overrides,
     get() {
       const n = scene.get(nid);
@@ -175,7 +218,7 @@ export function scenePoseTarget<TPose>(
     set(pose) {
       const n = scene.get(nid);
       if (!n) return;
-      if (!samePose(n.pose, pose)) scene.untracked(() => scene.setPose(nid, pose));
+      if (!samePose(n.pose, pose)) scene.untracked(() => (cascade ? cascade.write(pose) : scene.setPose(nid, pose)));
       mine = scene.get(nid)?.pose;
     },
   }, () => {
@@ -183,7 +226,7 @@ export function scenePoseTarget<TPose>(
   }, () => {
     const n = scene.get(nid);
     return !!n && mine !== undefined && !samePose(n.pose, mine);
-  });
+  }, cascade && riders(scene.overrides, cascade));
   if (!target) return undefined;
   made.set(id, target as Target<unknown>);
   return target;

@@ -6,6 +6,7 @@ import type { RectPose } from '../../core/scene/types';
 import { moveGestureAdapter } from '../../interactions/actions/move/gestureAdapter';
 import type { GestureContext } from 'interactions/gestures/types';
 import { moveEnd } from 'interactions/actions/testUtils';
+import { tweenPose } from '../poseHelpers';
 import { scenePoseTarget } from '../poseTarget';
 import { useAnimator } from '../useAnimator';
 import { momentum, type MomentumOptions } from './momentum';
@@ -119,6 +120,31 @@ describe('momentum over a scene', () => {
     expect(scene.get(a)!.pose.x).toBe(5);
     expect(shown().x).toBe(5);
     expect(scene.historyEntries().length).toBe(entries + 1);
+  });
+
+  it('springs what it had left to nothing when a tweenPose takes the node, so the node does not jump', () => {
+    const { clock, animator, scene, a, shown, settle, entries } = flick();
+    clock.advance(16);
+    clock.advance(16);
+    const before = shown().x;
+    expect(before).toBeGreaterThan(20);
+    const adapter = {
+      getPose: (id: string) => scene.get(id as never)!.pose,
+      setPose: (id: string, pose: RectPose) => scene.setPose(id as never, pose),
+      poseTarget: (id: string) => scenePoseTarget(scene, id),
+    };
+    tweenPose(animator, adapter, { id: a, to: at(200), ms: 300, recordOp: false });
+    expect(shown().x).toBeCloseTo(before);
+    // Dropping out with what it had traveled would put the node back near 20 here.
+    clock.advance(16);
+    expect(shown().x).toBeGreaterThanOrEqual(before);
+    clock.advance(16);
+    expect(shown().x).toBeGreaterThan(before);
+    settle();
+    expect(scene.get(a)!.pose.x).toBe(200);
+    expect(shown().x).toBe(200);
+    expect(scene.overrides.has(a)).toBe(false);
+    expect(scene.historyEntries().length).toBe(entries);
   });
 
   it('a new drag of the coasting node stops it and records it where it stands', () => {

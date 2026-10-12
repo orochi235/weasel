@@ -21,19 +21,28 @@ function panelRows(root: PrefSection): Array<[tree: string, panel: string]> {
   return out;
 }
 
-/**
- * The path a properties panel draws a row at for the node at tree path `path`: a leaf's own key, and a field's
- * under its leaf's, the sections on the way adding nothing. Null for a section, and for a path that names no node.
- */
-export function panelPathOf(root: PrefSection, path: string): string | null {
-  return panelRows(root).find(([tree]) => tree === path)?.[1] ?? null;
+/** Whether `key` is a section at the top of `root`: the one kind a panel names by its key, which is its tree path too. */
+function isTopSection(root: PrefSection, key: string): boolean {
+  return Object.hasOwn(root.members, key) && !isPrefLeaf(root.members[key]!);
 }
 
-/** The tree path of the row a panel draws at `panelPath`, or of the nearest leaf it lies in. Null when there is none. */
+/**
+ * What a properties panel names the node at tree path `path`: a leaf by its own key, a field by its key under its
+ * leaf's, the sections on the way adding nothing, and a top-level section by its key. Null for any other section,
+ * which the panel draws no heading for, and for a path that names no node.
+ */
+export function panelPathOf(root: PrefSection, path: string): string | null {
+  return panelRows(root).find(([tree]) => tree === path)?.[1] ?? (isTopSection(root, path) ? path : null);
+}
+
+/**
+ * The tree path of what a panel names `panelPath`: the row it draws there or the nearest leaf that lies in, else
+ * the top-level section of that key. Null when there is none.
+ */
 export function treePathOfPanel(root: PrefSection, panelPath: string): string | null {
   let best: [string, string] | undefined;
   for (const row of panelRows(root)) {
     if (pathWithin(row[1], panelPath) && (best === undefined || row[1].length > best[1].length)) best = row;
   }
-  return best?.[0] ?? null;
+  return best?.[0] ?? (isTopSection(root, panelPath) ? panelPath : null);
 }

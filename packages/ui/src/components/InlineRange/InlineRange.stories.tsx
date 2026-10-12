@@ -50,5 +50,5 @@ export const AcrossItsRange: Story = {
 };
 
 export const Disabled: Story = {
-  render: () => <InlineRange aria-label="Disabled" min={0} max={100} value={40} disabled readOnly />,
+  args: { 'aria-label': 'Disabled', min: 0, max: 100, value: 40, disabled: true, readOnly: true },
 };

@@ -66,6 +66,7 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
     min: optNumber('Min', 'Lowest value.'),
     max: optNumber('Max', 'Highest value.'),
     step: optNumber('Step', 'Increment.'),
+    unit: { kind: 'unit', name: 'Unit', description: 'What it is shown and typed in, over the unit it is stored in: stored = shown × scale + offset, shown to that many places. A suffix it also takes is typed in place of its own, where shown = typed × that suffix\'s scale + its offset.', default: undefined },
     control: control(['input', 'slider']),
     endless: choice('Endless', 'Which ends run to infinity.', ['min', 'max', 'both']),
   },

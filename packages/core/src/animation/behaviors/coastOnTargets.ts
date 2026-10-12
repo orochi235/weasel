@@ -1,8 +1,9 @@
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
-import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
-import { stateOf, type Target, type TargetState } from '../target';
+import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { stateOf, type Target, type TargetAxes, type TargetState } from '../target';
 import type { AnimationHandle } from '../types';
+import { poseKey } from '../poseHelpers';
 import { clampCorner, coastKey, sameBounds, type Coast, type CoastArgs } from './coast';
 
 interface Rider<TPose> {
@@ -18,6 +19,20 @@ interface Rider<TPose> {
   startY: number;
   vx: number;
   vy: number;
+}
+
+/** A world velocity as the rate of change of a pose at `at`. */
+function poseVelocity<TPose>(
+  ax: TargetAxes<TPose>,
+  d: PoseDescriptor<TPose>,
+  at: TPose,
+  vx: number,
+  vy: number,
+): TPose {
+  const base = ax.to(at);
+  const alongX = ax.to(translatePoseViaDescriptor(at, 1, 0, d));
+  const alongY = ax.to(translatePoseViaDescriptor(at, 0, 1, d));
+  return ax.from(base.map((b, i) => vx * (alongX[i]! - b) + vy * (alongY[i]! - b)));
 }
 
 /**
@@ -38,12 +53,8 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
     adapter.getNode(r.id) !== undefined && sameBounds(d.getBounds(r.state.get()), d.getBounds(r.seen));
 
   const launch = (r: Rider<TPose>, from: TPose | undefined, vx: number, vy: number): void => {
-    const ax = r.state.axes;
     const at = from ?? r.state.get();
-    const base = ax.to(at);
-    const alongX = ax.to(translatePoseViaDescriptor(at, 1, 0, d));
-    const alongY = ax.to(translatePoseViaDescriptor(at, 0, 1, d));
-    const velocity = ax.from(base.map((b, i) => vx * (alongX[i]! - b) + vy * (alongY[i]! - b)));
+    const velocity = poseVelocity(r.state.axes, d, at, vx, vy);
     const corner = d.getBounds(at);
     r.startX = corner.x;
     r.startY = corner.y;
@@ -68,17 +79,36 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
     commitFlick();
   };
 
-  /** Takes `r` out of the coast where another writer left its node. */
-  const drop = (r: Rider<TPose>): void => {
+  /**
+   * Takes `r` out of the coast where another writer left its node. Where that writer is another
+   * animation on the node, the node is still short of `left` by what the coast had traveled, at
+   * `own`: a spring carries that to nothing from the coast's speed, joining the node's moves.
+   */
+  const drop = (r: Rider<TPose>, own: TPose): void => {
     const left = r.state.get();
     riders.delete(r.id);
     r.handle?.cancel();
     r.state.set(left);
+    if (r.target.active && adapter.getNode(r.id) !== undefined) {
+      const moved = d.getBounds(left);
+      const was = d.getBounds(r.seen);
+      const corner = d.getBounds(own);
+      const vx = r.vx - drag * (corner.x - (moved.x - was.x) - r.startX);
+      const vy = r.vy - drag * (corner.y - (moved.y - was.y) - r.startY);
+      animator.spring<TPose>({
+        target: r.target,
+        from: own,
+        to: left,
+        velocity: poseVelocity(r.state.axes, d, own, vx, vy),
+        cancelKey: poseKey(r.id),
+        interrupt: false,
+      });
+    }
     halted(r);
   };
 
   function tick(r: Rider<TPose>, own: TPose): void {
-    if (!ours(r)) { drop(r); return; }
+    if (!ours(r)) { drop(r, own); return; }
     const corner = d.getBounds(own);
     const { nx, ny, hitX, hitY } = clampCorner(bounds, corner.x, corner.y);
     if (!hitX && !hitY) return;

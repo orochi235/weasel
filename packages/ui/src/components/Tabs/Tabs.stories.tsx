@@ -10,8 +10,8 @@ export default meta;
 type Story = StoryObj<typeof Tabs>;
 
 export const Horizontal: Story = {
-  render: () => (
-    <Tabs>
+  render: (args) => (
+    <Tabs {...args}>
       <TabList aria-label="Sections">
         <Tab id="props">Props</Tab>
         <Tab id="events">Events</Tab>
@@ -25,8 +25,9 @@ export const Horizontal: Story = {
 };
 
 export const Vertical: Story = {
-  render: () => (
-    <Tabs orientation="vertical">
+  args: { orientation: 'vertical' },
+  render: (args) => (
+    <Tabs {...args}>
       <TabList aria-label="Sections">
         <Tab id="props">Props</Tab>
         <Tab id="events">Events</Tab>
@@ -40,8 +41,8 @@ export const Vertical: Story = {
 };
 
 export const WithDisabled: Story = {
-  render: () => (
-    <Tabs>
+  render: (args) => (
+    <Tabs {...args}>
       <TabList aria-label="Sections">
         <Tab id="a">Available</Tab>
         <Tab id="b" isDisabled>Disabled</Tab>

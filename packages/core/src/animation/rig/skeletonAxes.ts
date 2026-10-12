@@ -5,6 +5,19 @@ const FIELDS = ['x', 'y', 'rotation', 'scaleX', 'scaleY'] as const satisfies rea
 const ROTATION = FIELDS.indexOf('rotation');
 
 /**
+ * The axes of `skeletonAxes(skeleton)` that belong to `joints`, for a hold or a track over part
+ * of a rig: `animator.hold({ target: rig.target, value: pose, axes: jointAxes(skeleton, arm) })`.
+ */
+export function jointAxes(skeleton: Skeleton, joints: readonly string[]): number[] {
+  const n = FIELDS.length;
+  return joints.flatMap((name) => {
+    const j = skeleton.joints.findIndex((joint) => joint.name === name);
+    if (j < 0) throw new Error(`jointAxes: the skeleton has no joint "${name}"`);
+    return FIELDS.map((_, f) => j * n + f);
+  });
+}
+
+/**
  * How a {@link Pose} of `skeleton` maps to the numbers an animation moves: five per joint in
  * skeleton order (`x`, `y`, `rotation`, `scaleX`, `scaleY`), every rotation an angle, so a pose
  * blends the short way round. A joint or field the pose leaves out reads as its identity, and a

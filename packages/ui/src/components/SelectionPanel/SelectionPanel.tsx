@@ -8,14 +8,14 @@ import {
 } from '@weasel-js/core';
 import { commitLeaf } from './commitLeaf';
 import type { PropertyRenderer } from './renderContext';
-import { absentValue, classifyKind, kindBreakdown, panelLeafKey, type AnyNode } from './model';
+import { absentValue, classifyKind, kindBreakdown, type AnyNode } from './model';
 import { conditionedSections } from './conditions';
 import type { MarkHiddenProps } from '../Prefs/hidden';
 import { prefFieldChoices } from '../Prefs/schema';
 import { useSelectedRow, type PrefSelectHow } from '../Prefs/selection';
 import type { PanelCellScope } from './panelCells';
 import { panelSections } from './panelSections';
-import { PanelMarksContext, panelShownPath, type PanelMarks } from './selection';
+import { PanelMarksContext, panelMarkedPaths, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
 export type { PropertyRenderContext, PropertyRenderer } from './renderContext';
@@ -43,16 +43,19 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
   /** Rendered when the selection is empty. */
   emptyState?: ReactNode;
   /**
-   * Paths of the rows to mark: a leaf's key in the schema (`data.fill`), or a
-   * field of an object leaf under its leaf's (`data.stroke.width`). Each time
-   * the last one changes the panel brings it into view, opening the tab that
-   * holds it. A path the panel draws no row for marks the row it lies inside,
-   * or nothing.
+   * What to mark: a leaf by its key in the schema (`data.fill`), a field of
+   * an object leaf under its leaf's (`data.stroke.width`), and a top-level
+   * section drawn under a heading, as a tab, or as a panel by its own key.
+   * Leaves a `pair` draws in one row share its mark.
+   * Each time the last one changes the panel brings it into view, opening
+   * the tab that holds it. A path the panel draws no row for marks the row
+   * it lies inside, or nothing.
    */
   selected?: readonly string[];
-  /** The reader pressed or focused into a row. `how.toggle` is true when Cmd
-   *  or Ctrl was held. A press on one of several marked rows is reported on
-   *  its click. */
+  /** The reader pressed or focused into a row, reported as `selected` names
+   *  it: a paired row as its first leaf, and a section's heading, tab, or
+   *  panel as the section's key. `how.toggle` is true when Cmd or Ctrl was
+   *  held. A press on one of several marked rows is reported on its click. */
   onSelect?: (path: string, how: PrefSelectHow) => void;
   className?: string;
 }
@@ -101,8 +104,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     const leaf = leaves.get(path);
     return leaf && absentValue(leaf);
   };
-  const drawnRows = sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const)));
-  const shown = (props.selected ?? NO_MARKS).map((path) => panelShownPath(drawnRows, path)).filter((path): path is string => path !== null);
+  const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
   const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
 

@@ -47,7 +47,8 @@ export interface SpringPoseOptions<TPose> {
   onDone?: () => void;
 }
 
-const cancelKeyFor = (id: string): string => `pose:${id}`;
+/** The cancel key every move of node `id`'s pose shares. */
+export const poseKey = (id: string): string => `pose:${id}`;
 
 function recordTransformOp<TPose>(
   adapter: PoseAnimationAdapter<TPose>,
@@ -64,9 +65,10 @@ function recordTransformOp<TPose>(
 /**
  * Animate one node's pose to `to` over `ms`.
  *
- * On an adapter with `poseTarget`, which a scene-backed one has, the destination is committed
- * as the move starts and the travel is shown through the scene's pose overrides, so the
- * document holds `to` throughout and nothing is written per frame. Moves on one node add: a
+ * On an adapter with `poseTarget`, the destination is committed as the move starts. A
+ * scene-backed adapter shows the travel through the scene's pose overrides, so the document
+ * holds `to` throughout and nothing is written per frame; an `arrayAdapter` is written the
+ * pose on screen each frame and `to` as the move ends. Moves on one node add: a
  * second `tweenPose` bends the first toward its own destination and cancels nothing. They share
  * the key `pose:<id>` for `cancelKey`, `pauseKey`, and `isActive`.
  *
@@ -74,8 +76,8 @@ function recordTransformOp<TPose>(
  * returns the node to where it started. Undone mid-flight, the node comes to rest on the
  * undone pose.
  *
- * An adapter without `poseTarget`, and a pose with no axes (a path), keep the older behavior:
- * `setPose` is written each frame, and a new move on the node cancels the one running.
+ * An adapter without `poseTarget`, and a pose its descriptor gives no axes for, keep the older
+ * behavior: `setPose` is written each frame, and a new move on the node cancels the one running.
  */
 export function tweenPose<TPose>(
   animator: Animator,
@@ -84,7 +86,7 @@ export function tweenPose<TPose>(
 ): AnimationHandle {
   const recordOp = opts.recordOp ?? true;
   const label = opts.opLabel ?? 'animate';
-  const cancelKey = cancelKeyFor(opts.id);
+  const cancelKey = poseKey(opts.id);
   const target = adapter.poseTarget?.(opts.id, opts.geometry);
   if (target) {
     const committed = stateOf(target).get();
@@ -134,7 +136,7 @@ export function springPose<TPose>(
 ): AnimationHandle {
   const recordOp = opts.recordOp ?? true;
   const label = opts.opLabel ?? 'animate';
-  const cancelKey = cancelKeyFor(opts.id);
+  const cancelKey = poseKey(opts.id);
   const target = adapter.poseTarget?.(opts.id, opts.geometry);
   if (target) {
     // Read ahead of the op: the spring starts from the pose on screen, wherever that commit

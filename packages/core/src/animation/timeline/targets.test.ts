@@ -88,7 +88,7 @@ describe('a sampled track on a target', () => {
     expect(b.shown.at(-1)).toBeCloseTo(30, 9);
   });
 
-  it('shows a seek while paused at the next frame', () => {
+  it('shows a seek while paused at once on its target, and at the next frame', () => {
     const { animator, frame } = setup();
     const b = box(0);
     let tl!: TimelineHandle;
@@ -99,14 +99,17 @@ describe('a sampled track on a target', () => {
     frame(40);
     expect(b.shown.at(-1)).toBeCloseTo(20, 9);
     act(() => { tl.seek(80); });
+    // A simulation that seeks a clip and draws in the same frame reads the pose it seeked to.
+    expect(b.target.read()).toBeCloseTo(80, 9);
     frame(60);
     expect(b.shown.at(-1)).toBeCloseTo(80, 9);
     act(() => { animator.pause(); tl.seek(35); });
+    expect(b.target.read()).toBeCloseTo(35, 9);
     frame(80);
     expect(b.shown.at(-1)).toBeCloseTo(35, 9);
   });
 
-  it('shows an edit while paused at the next frame', () => {
+  it('shows an edit while paused at once on its target, and at the next frame', () => {
     const { animator, frame } = setup();
     const b = box(0);
     const track = ramp(b.target);
@@ -116,6 +119,7 @@ describe('a sampled track on a target', () => {
     frame(50);
     act(() => { tl.pause(); });
     act(() => { tl.edit(() => { track.keys[1].value = 200; }); });
+    expect(b.target.read()).toBeCloseTo(100, 9);
     frame(70);
     expect(b.shown.at(-1)).toBeCloseTo(100, 9);
   });

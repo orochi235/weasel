@@ -14,11 +14,11 @@ type Story = StoryObj<typeof ThemeSwitcher>;
 /** Wired to `useColorModePreference`; the readout shows what `auto` resolves
  *  to. Shift-click steps backwards. */
 export const WithPreferenceHook: Story = {
-  render: function Render() {
+  render: function Render({ ariaLabel, size, variant }) {
     const { preference, setPreference, mode } = useColorModePreference();
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <ThemeSwitcher value={preference} onChange={setPreference} />
+        <ThemeSwitcher value={preference} onChange={setPreference} ariaLabel={ariaLabel} size={size} variant={variant} />
         <span>
           {preference} → {mode}
         </span>

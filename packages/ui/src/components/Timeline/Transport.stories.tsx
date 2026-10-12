@@ -1,6 +1,6 @@
 import { useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Transport } from './Transport';
+import { Transport, type TransportProps } from './Transport';
 
 const meta: Meta<typeof Transport> = {
   title: 'ui/Transport',
@@ -8,22 +8,26 @@ const meta: Meta<typeof Transport> = {
 };
 export default meta;
 
+type Story = StoryObj<typeof Transport>;
+
 /** Every control wired to state, with nothing playing it: the scrub bar and
  *  reverse switch appear because their handlers are given. */
-function Harness({ scrub = true, reverse = true }: { scrub?: boolean; reverse?: boolean }): ReactElement {
-  const [paused, setPaused] = useState(true);
-  const [loop, setLoop] = useState<boolean | number>(true);
-  const [rate, setRate] = useState(1);
-  const [backward, setBackward] = useState(false);
-  const [playhead, setPlayhead] = useState(4200);
+function Harness(
+  { args, scrub = true, reverse = true }: { args: TransportProps; scrub?: boolean; reverse?: boolean },
+): ReactElement {
+  const [paused, setPaused] = useState(args.paused);
+  const [loop, setLoop] = useState(args.loop);
+  const [rate, setRate] = useState(args.rate);
+  const [backward, setBackward] = useState(args.reverse ?? false);
+  const [playhead, setPlayhead] = useState(args.playhead);
   return (
     <div style={{ width: 640 }}>
       <Transport
+        {...args}
         paused={paused}
         loop={loop}
         rate={rate}
         playhead={playhead}
-        duration={12000}
         onPlay={() => setPaused(false)}
         onPause={() => setPaused(true)}
         onLoopChange={setLoop}
@@ -35,5 +39,11 @@ function Harness({ scrub = true, reverse = true }: { scrub?: boolean; reverse?: 
   );
 }
 
-export const Full: StoryObj = { render: () => <Harness /> };
-export const PlayOnly: StoryObj = { render: () => <Harness scrub={false} reverse={false} /> };
+export const Full: Story = {
+  args: { paused: true, loop: true, rate: 1, playhead: 4200, duration: 12000, reverse: false },
+  render: (args) => <Harness args={args} />,
+};
+export const PlayOnly: Story = {
+  args: { paused: true, loop: true, rate: 1, playhead: 4200, duration: 12000 },
+  render: (args) => <Harness args={args} scrub={false} reverse={false} />,
+};

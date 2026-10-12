@@ -11,7 +11,8 @@ import {
   visiblePrefSubtree,
 } from './helpers';
 import type { PrefGroup } from './groups';
-import { prefUnit, type PrefNumber, type PrefNumberUnit } from './schema';
+import type { PrefNumber } from './schema';
+import { prefUnit, type PrefNumberUnit } from './unit';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',

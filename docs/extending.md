@@ -308,6 +308,9 @@ Each action pins the proposed/result shape; pick the matching alias
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
   or the action's default ops (move emits one `createTransformOp` per id).
+  Every behavior's `onEnd` runs, with `end.answered` true once an earlier one
+  has answered or thrown; after a throw nothing commits, and the first error
+  is rethrown once all have run.
 - A move behavior that claims the commit but places only some of the
   dragged nodes returns `end.translateOps(ids)` beside its own ops: the
   action's default translate for those dragged roots and the descendants
@@ -317,8 +320,8 @@ Each action pins the proposed/result shape; pick the matching alias
 - `onSettled` runs once per gesture, after the commit's ops have applied (or
   the cancel has run) and the preview overrides are gone — the place to act
   on the pose the document now holds. `committed` is false when the gesture
-  was canceled, aborted by a behavior, or released with nothing to commit,
-  and true otherwise: the action or a behavior made the commit, a behavior
+  was canceled, aborted by a behavior, released with nothing to commit, or
+  refused by a container its ops dropped something into, and true otherwise: the action or a behavior made the commit, a behavior
   claiming it with no ops included. For move, resize, and rotate it is the
   value `onGestureEnd` receives. Move, resize, rotate, insert, and
   lasso-select call it, and every behavior's runs even if another's throws.
@@ -335,6 +338,49 @@ Each action pins the proposed/result shape; pick the matching alias
 - `packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
 - `packages/core/src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
 - `packages/core/src/interactions/actions/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
+
+### Move behaviors
+
+Everything a move does beyond translating the selection is a behavior. The move
+action itself captures the drag at press, runs the chain on each pointer move
+and on release, and commits a plain translate when no behavior claims the
+commit.
+
+The chain is the binding's behaviors in array order, then the two the action
+adds itself:
+
+| Behavior | From | What it does | Turned on by |
+|---|---|---|---|
+| `snap(strategy)` | `@weasel-js/core` | Shifts the whole selection so its first node lands where the strategy says. | `selectTool.snap`, or in `behaviors` |
+| `snapToGrid`, `snapToGuides`, `alignMoveBehavior` | `@weasel-js/guides/move` for the first two, `@weasel-js/guides` for `alignMoveBehavior` | Snap to a grid, to ruler guides, or to other nodes' edges and centers. | in `behaviors` |
+| `snapToContainer(...)` | `@weasel-js/core/move` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
+| `snapBackOrDelete(...)` | `@weasel-js/core/move` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
+| `momentum(...)` | `@weasel-js/core` | Keeps a flicked node coasting after release, and records the whole flick as one undo step. | in `behaviors` |
+| layout drop | the move action | Drops the selection into the layout container under it: previews the slot and the siblings that make room, and commits the container's `commitDrop`. Released outside every layout container, each source container's `releaseDrop` decides, and a node let go outside its container leaves it. | a layout on a container (`ContainerNode.layout`, or `<SceneCanvas layouts>`) |
+| reparent on drop | the move action | Reparents the selection under the node the pointer is released over, keeping where it was dropped. | the move binding's `reparentOnDrop: 'top' \| 'above'` param |
+
+Order decides two things:
+
+- **Shaping.** Each behavior's `onMove` sees the drag as the ones before it
+  left it, so the layout drop, which runs last, places the selection where a
+  snap already put it.
+- **Who commits.** On release the first behavior to return ops owns the commit.
+  A binding's behavior that claims it preempts a layout drop, and a layout drop
+  preempts a reparent. `end.answered` tells a later behavior that this has
+  happened.
+
+The two the action adds are built from its deps for each drag, and are not
+exported: a layout is configured on its container, and reparenting by the
+binding's param. They use the same hooks as any other behavior:
+
+| Hook | Layout drop | Reparent on drop |
+|---|---|---|
+| `onMove` | Picks the container, places each dragged node, and returns the displaced siblings as `poses` and `opaque`; with a reflow transition it glides them there | — |
+| `onEnd` | Returns the drop's ops, or the release and exit ops with the default translate for what no container claimed; aborts the commit when a drop or release it took has nothing to write | Returns reparent, layer, and transform ops for the node under `end.pointer` |
+| `onSettled` | Settles each glide onto the pose the document now holds | — |
+
+`end.pointer` is where the pointer was let go, in world coordinates; without one
+on the release, it is the last move's.
 
 ## Non-rect poses
 

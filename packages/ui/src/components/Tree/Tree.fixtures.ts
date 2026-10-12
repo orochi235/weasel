@@ -30,8 +30,13 @@ export function applyCopy(nodes: readonly TreeNode[], ids: readonly string[], t:
     }
   };
   find(nodes);
+  return insertAt(nodes, copies, t);
+}
+
+/** `added` set among `t.parentId`'s children at `t.index`. */
+export function insertAt(nodes: readonly TreeNode[], added: readonly TreeNode[], t: TreeDropTarget): TreeNode[] {
   const insert = (list: readonly TreeNode[], parent: string | null): TreeNode[] => {
-    if (parent === t.parentId) return [...list.slice(0, t.index), ...copies, ...list.slice(t.index)];
+    if (parent === t.parentId) return [...list.slice(0, t.index), ...added, ...list.slice(t.index)];
     return list.map((n) => (n.children ? { ...n, children: insert(n.children, n.id) } : n));
   };
   return insert(nodes, null);

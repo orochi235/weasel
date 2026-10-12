@@ -20,12 +20,13 @@ const COLORS = [
 ];
 
 export const OptionsArray: Story = {
-  render: () => <ComboBox label="Color" options={COLORS} placeholder="Type to filter…" />,
+  args: { label: 'Color', options: COLORS, placeholder: 'Type to filter…' },
 };
 
 export const ExplicitChildren: Story = {
-  render: () => (
-    <ComboBox label="Color" defaultSelectedKey="g">
+  args: { label: 'Color', defaultSelectedKey: 'g' },
+  render: (args) => (
+    <ComboBox {...args}>
       <ComboBoxItem id="r">Red</ComboBoxItem>
       <ComboBoxItem id="g">Green</ComboBoxItem>
       <ComboBoxItem id="b" isDisabled>Blue (unavailable)</ComboBoxItem>

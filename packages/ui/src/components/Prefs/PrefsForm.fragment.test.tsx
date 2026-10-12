@@ -38,9 +38,8 @@ describe('a fragment group', () => {
     expect(onChange).toHaveBeenCalledWith('view.glue.snap', true);
   });
 
-  it('gets no rail entry, with or without sub-pages', () => {
+  it('gets no rail entry', () => {
     expect(prefRailItems(SCHEMA).map((i) => i.path)).toEqual(['view']);
-    expect(prefRailItems(SCHEMA, true).map((i) => i.path)).toEqual(['view']);
   });
 
   it('at the top level puts its rows on the root\'s own page', () => {

@@ -12,12 +12,12 @@ type Story = StoryObj<typeof FontWeightSelect>;
 
 /** No family has registered faces here, so it offers the nine CSS weights. */
 export const CssWeights: Story = {
-  render: () => {
+  render: (args) => {
     const [weight, setWeight] = useState(400);
-    return <FontWeightSelect value={weight} onChange={setWeight} />;
+    return <FontWeightSelect {...args} value={weight} onChange={setWeight} />;
   },
 };
 
 export const Mixed: Story = {
-  render: () => <FontWeightSelect mixed onChange={() => {}} />,
+  args: { mixed: true, onChange: () => {} },
 };

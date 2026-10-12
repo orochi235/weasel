@@ -48,4 +48,23 @@ describe('SceneCanvas camera animator', () => {
     act(() => { ref.current!.stopViewAnimation(); });
     expect(camera.isActive()).toBe(false);
   });
+
+  it('hands out the camera target and its animator, where a second animation adds to a glide', () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    render(<SceneCanvas<D, L, P> ref={ref} scene={scene} width={400} height={200} />);
+    const { target, animator } = ref.current!.camera;
+    expect([...built]).toEqual([animator]);
+
+    const to = { x: 100, y: 0, scale: { x: 2, y: 2 } };
+    act(() => { ref.current!.animateView(to, { ms: 400 }); });
+    expect(target.active).toBe(true);
+    const x = target.read().x;
+    act(() => { animator.tween({ target, from: { ...to, x: 130 }, to, ms: 200 }); });
+    expect(target.read().x).toBeCloseTo(x + 30, 6);
+    expect(animator.live()).toHaveLength(2);
+
+    act(() => { ref.current!.stopViewAnimation(); });
+    expect(animator.live()).toHaveLength(1);
+  });
 });

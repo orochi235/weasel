@@ -26,11 +26,10 @@ export interface DropTarget {
  *  only hits are the moved subtree itself). */
 export function resolveDropTarget(
   session: MoveSession,
-  at: { x: number; y: number } | null,
+  at: { x: number; y: number },
 ): DropTarget | null {
   const dep = session.nodeAtPoint;
   if (!dep) return null;
-  if (!at) return null;
 
   // Exclude moved roots + their descendants. Otherwise we'd happily
   // reparent a node into itself (or under one of its own children).

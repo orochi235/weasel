@@ -1,7 +1,7 @@
 import { stateOf } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { absorb, axesFor, bump, minus, norm, plus, travel } from './offsets';
+import { axesFor, bump, keep, minus, norm, plus, takeUp, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
 
 /**
@@ -37,7 +37,7 @@ export function startOffsetPhysics<T>(
     velocity ??= ctx.velocityUnder(o.cancelKey, s as never);
     ctx.interrupt(o.cancelKey, seed);
   }
-  const committed = ax.to(s.get());
+  const committed = dest ? takeUp(s) : ax.to(s.get());
   const start = travel(ax, given ?? committed, dest ?? committed);
 
   ctx.targets.attach(s as never);
@@ -51,12 +51,12 @@ export function startOffsetPhysics<T>(
   bump(s as never, start, 1);
 
   let left = false;
-  const leave = (keep: boolean): void => {
+  const leave = (commit: boolean): void => {
     if (left) return;
     left = true;
     const own = codec.own(id);
     if (own) {
-      if (keep) absorb(s, own.value);
+      if (commit) keep(s, own.value);
       bump(s as never, own.value, -1);
     }
     codec.stop(id);

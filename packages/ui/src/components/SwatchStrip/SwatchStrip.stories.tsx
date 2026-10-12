@@ -31,7 +31,7 @@ const BRAND: SwatchPalette = {
  *  that color to the head of the recent row. The store is in memory here, so
  *  a reload starts empty. */
 export const Default: Story = {
-  render: () => {
+  render: (args) => {
     const [store] = useState(() => {
       const s = createRecentColorsStore({ storage: null });
       s.record(['#ee6c4dff', '#3d5a8080', '#98c1d9ff']);
@@ -41,7 +41,7 @@ export const Default: Story = {
     return (
       <RecentColorsProvider store={store}>
         <ColorField value={fill ?? '#000000'} alpha onChange={setFill} aria-label="Fill" />
-        <SwatchStrip value={fill} onChange={setFill} palettes={[...BUILTIN_PALETTES, BRAND]} />
+        <SwatchStrip {...args} value={fill} onChange={setFill} palettes={[...BUILTIN_PALETTES, BRAND]} />
       </RecentColorsProvider>
     );
   },
