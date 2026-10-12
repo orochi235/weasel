@@ -99,7 +99,22 @@ class SlotDep<TPose> implements DerivedDep<TPose> {
   }
 }
 
-/** `(node) => the path it derives`, read through {@link sceneDepLookup}. */
+/** Whether something outside `node`'s data says what path it shows: it derives one, or a
+ *  pose override carries one. The gate both scene walks check before resolving a path. */
+export function showsComputedPath<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  node: { id: NodeId; dependsOn?: readonly NodeId[] | 'children' },
+): boolean {
+  return node.dependsOn !== undefined || scene.overrides.read(node.id)?.path !== undefined;
+}
+
+/**
+ * `(node) => the path it shows in place of its data's`: a pose override's `path`, else the
+ * one it derives, read through {@link sceneDepLookup}.
+ *
+ * An override path is in the scene's own frame, so a reader painting through a `toPose` is
+ * answered the derived path alone.
+ */
 export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
@@ -108,7 +123,10 @@ export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
   const depOf = sceneDepLookup(scene, toPose, poseComposition);
   const slot = memoSlotFor(toPose, poseComposition);
   const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
-  return (node) => resolveDerivedPath(node, depOf, childrenOf, slot);
+  const derived = (node: Node<TData, TLayer, TPose>): Path | null =>
+    resolveDerivedPath(node, depOf, childrenOf, slot);
+  if (toPose !== undefined) return derived;
+  return (node) => scene.overrides.read(node.id)?.path ?? derived(node);
 }
 
 const toPoseScopes = new WeakMap<object, { local?: NodeMemoScope; world?: NodeMemoScope }>();
@@ -132,8 +150,8 @@ function memoSlotFor<TPose>(
 }
 
 /**
- * Wrap a `drawOne` so a node that derives its geometry arrives at the painter
- * with the resolved path. The painter has no scene handle and so cannot read
+ * Wrap a `drawOne` so a node that derives its geometry, or whose pose override
+ * carries a path, arrives at the painter with the resolved path. The painter has no scene handle and so cannot read
  * the dependencies' poses itself; both scene walks wrap here instead.
  *
  * A node that derives nothing passes the caller's `ctx` through untouched —
@@ -148,7 +166,9 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
 ): SceneViewDrawOne<TData, TLayer, TPose> {
   const derivedPathOf = sceneDerivedPathOf(scene, toPose, poseComposition);
   return (node, pose, view, ctx) => {
-    if (node.dependsOn === undefined) return drawOne(node, pose, view, ctx);
+    if (toPose !== undefined ? node.dependsOn === undefined : !showsComputedPath(scene, node)) {
+      return drawOne(node, pose, view, ctx);
+    }
     return drawOne(node, pose, view, { ...ctx, derivedPath: derivedPathOf(node) });
   };
 }

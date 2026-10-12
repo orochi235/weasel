@@ -1,3 +1,4 @@
+import type { Path } from '@weasel-js/geom';
 import { createEmitter } from '@weasel-js/registry';
 import { kit, last, mix, mul, patch } from '@msb235/blits';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
@@ -28,13 +29,13 @@ export function createPoseOverrides<TPose>(
   let generation = 0;
 
   const folded = mix<NodeId, PoseOverride<TPose>>(
-    kit<PoseOverride<TPose>>({ pose: last<NonNullable<TPose>>(), alpha: mul() }),
+    kit<PoseOverride<TPose>>({ pose: last<NonNullable<TPose>>(), alpha: mul(), path: last<Path>() }),
   );
   folded.cue({
     patch: patch<NodeId, PoseOverride<TPose>>(
       0,
       (_phase, id) => entries.get(id) ?? (NOTHING as PoseOverride<TPose>),
-      { writes: ['pose', 'alpha'] },
+      { writes: ['pose', 'alpha', 'path'] },
     ),
   });
   // Mix time only has to move between publishes, so a probe after one never

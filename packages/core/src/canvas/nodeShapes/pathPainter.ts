@@ -9,6 +9,7 @@ import { pathInPoseFrame } from '@weasel-js/geom';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
+import { DERIVED_PAINTER } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
 import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';
 import { paintsPose, poseBoxBounds } from './poseBox';
@@ -24,7 +25,10 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized: a pure function of `(data, pose)`, and `pathInPoseFrame`
   // allocates on every call but the identity (`kind: 'rect'`) branch. See
   // PAINT_SLOT.
-  paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
+  paint: (node, pose, ctx) => ctx?.derivedPath != null
+    // A pose override's path stands in for `data.path`, already where it is drawn.
+    ? DERIVED_PAINTER.paint(node, pose, ctx)
+    : withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as {
       path: Path;
       fill?: FillStyle | null;
@@ -52,7 +56,8 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     };
     return [cmd];
   }), ctx),
-  silhouette: (node, pose) => {
+  silhouette: (node, pose, ctx) => {
+    if (ctx?.derivedPath != null) return ctx.derivedPath;
     const d = node.data as { path: Path };
     return pathInPoseFrame(d.path, pose);
   },

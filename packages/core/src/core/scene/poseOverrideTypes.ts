@@ -1,3 +1,4 @@
+import type { Path } from '@weasel-js/geom';
 import type { NodeId } from './types';
 
 /**
@@ -18,6 +19,11 @@ export interface PoseOverride<TPose> {
   pose?: TPose;
   /** Multiplied into the node's painted alpha, on top of any `alphaFor`. */
   alpha?: number;
+  /** Replaces the geometry the node paints and is picked by: the path in its data, or the one
+   *  it derives. It is in the frame a painter draws in, so give `pose` beside it, as the
+   *  path's bounds with no rotation, or the pose's turn is applied to the path again and the
+   *  selection chrome stays on the old box. A skinned rig is the writer. */
+  path?: Path;
 }
 
 /**
