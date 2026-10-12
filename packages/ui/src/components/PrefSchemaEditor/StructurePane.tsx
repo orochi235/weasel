@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { isPrefSection, type PrefGroup } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { filterTree, Tree, treeBranchIds, type TreeDragEffect } from '../Tree';
 import type { PrefRenderer } from '../Prefs';
