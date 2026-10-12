@@ -1664,9 +1664,10 @@ only story runner in the repo.
   on this machine at the commit that failed. `Prefs/PrefsRail.marks.browser.test.tsx` failed once
   on teitou the same way, on an assertion and not a timeout: its scroll had not settled inside
   the 3 s it polls for, 422 px from where it ends. `labkit/src/lab/LabLightbox.browser.test.tsx`
-  ("an expanded trial keeps its marks over it and takes new ones") timed out once on teitou at
-  `68e9d70bb`, in a run where `compoundRows` also failed; both had passed on the same node minutes
-  before, at that merge's second parent. The suite runs the `browser` project beside eight
+  ("an expanded trial keeps its marks over it and takes new ones") hit the 15 s test timeout on
+  teitou in two of four full runs on 2026-10-11, at `68e9d70bb` and `de222e61f`, and passed in
+  the two between; alone on this machine at `de222e61f` it passed 3 of 3. `compoundRows` failed
+  twice the same evening on an assertion, and its wait was hardened in `de222e61f`. The suite runs the `browser` project beside eight
   others on one node. Not measured: whether the timeouts follow the node's load, and whether
   running `browser` on its own, or with fewer workers, ends them.
 
