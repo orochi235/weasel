@@ -20,7 +20,7 @@
     "longestFunction": 135
   },
   "packages/core/src/animation/timeline/createTimeline.ts": {
-    "longestFunction": 216
+    "longestFunction": 189
   },
   "packages/core/src/animation/types.ts": {
     "lines": 491
