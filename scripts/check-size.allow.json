@@ -283,11 +283,11 @@
     "longestFunction": 263
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "lines": 669,
-    "longestFunction": 542
+    "lines": 649,
+    "longestFunction": 523
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 246
+    "longestFunction": 227
   },
   "packages/minimap/src/MinimapCanvas.tsx": {
     "longestFunction": 155

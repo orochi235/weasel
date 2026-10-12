@@ -12,8 +12,6 @@ import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
-import { resolveAutoConfig } from '../config/autoConfig';
-import { hasConfigPath, schemaNodeAtPath } from '../config/path';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
@@ -30,6 +28,7 @@ import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
 import { UndockedSections } from './UndockedSections';
 import { useTrialKeys } from './useTrialKeys';
+import { useTrialWrites } from './useTrialWrites';
 
 /** The trial's loupe as its chrome sees it: a switch and its position. */
 export interface LoupeBindings {
@@ -52,6 +51,9 @@ export interface TrialChromeProps {
   instrument: Instrument;
   isLastTrial: boolean;
   undoBindings?: UndoBindings;
+  /** The trial's one config write, which `Trial` hands its instrument too.
+   *  Omitted, a chrome mounted without a trial makes its own. */
+  setConfig?: (path: string, value: unknown) => void;
   /** Supplied when the instrument declares a `job`. */
   job?: JobHandle;
   /** Supplied while a lens is mounted in the trial. The lens itself is the
@@ -87,6 +89,7 @@ export function TrialChrome({
   instrument,
   isLastTrial,
   undoBindings,
+  setConfig: setConfigProp,
   job,
   loupe,
   trialChrome,
@@ -104,8 +107,6 @@ export function TrialChrome({
   const updateTrialSidebarWidth = useStore(storeCtx.store, (s) => s.updateTrialSidebarWidth);
   const setTrialTitle = useStore(storeCtx.store, (s) => s.setTrialTitle);
   const setTrialSectionCollapsed = useStore(storeCtx.store, (s) => s.setTrialSectionCollapsed);
-  const updateTrialConfig = useStore(storeCtx.store, (s) => s.updateTrialConfig);
-  const updateTrialState = useStore(storeCtx.store, (s) => s.updateTrialState);
   const undockPanelAction = useStore(storeCtx.store, (s) => s.undockPanel);
   const dockPanelAction = useStore(storeCtx.store, (s) => s.dockPanel);
   const undockedPanels = useStore(storeCtx.store, (s) => s.undockedPanels);
@@ -123,6 +124,13 @@ export function TrialChrome({
 
   const configSchema = useConfigSchema(instrument);
   const { auto } = useResolvedConfig(configSchema, record.config, record.auto);
+  const ownWrites = useTrialWrites({
+    store: storeCtx.store,
+    trialId,
+    instrument,
+    schema: configSchema,
+  });
+  const setConfig = setConfigProp ?? ownWrites.setConfig;
 
   const title = record.title ?? instrument.title ?? instrument.name;
   const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
@@ -165,30 +173,7 @@ export function TrialChrome({
       configFields: instrument.config ? [] : (instrument.configSchema?.() ?? []),
       config: record.config,
       auto,
-      setConfig: (path, value) => {
-        // Read from the store, not the render: a caller may write several paths
-        // before the next render, and each has to build on the one before.
-        const stored = (): TrialRecord | undefined =>
-          storeCtx.store.getState().trials.find((t) => t.id === trialId);
-        const before = stored();
-        if (!before) return;
-        if (
-          process.env.NODE_ENV !== 'production' &&
-          !hasConfigPath(before.config as Record<string, unknown>, path) &&
-          schemaNodeAtPath(configSchema.group, path) === undefined
-        ) {
-          console.warn(
-            `[labkit] setConfig: unknown path "${path}" for instrument "${record.instrumentName}"`,
-          );
-        }
-        updateTrialConfig(trialId, path, value);
-        const after = stored();
-        if (!instrument.onConfigChange || !after) return;
-        const resolved = (r: TrialRecord): unknown =>
-          resolveAutoConfig(configSchema, r.config, new Set(r.auto ?? []));
-        const nextState = instrument.onConfigChange(resolved(after), resolved(before), after.state);
-        updateTrialState(trialId, nextState as never);
-      },
+      setConfig,
       collapsedSections,
       setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
       undockedPanels: undockedIds,
@@ -210,10 +195,8 @@ export function TrialChrome({
     lab,
     title,
     isLastTrial,
-    storeCtx,
     updateTrialView,
-    updateTrialConfig,
-    updateTrialState,
+    setConfig,
     undoBindings,
     loupe,
     lightbox,

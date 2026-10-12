@@ -1256,18 +1256,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   record, which stays for good. The call to make is whether the lab draws a failed tile with a way
   to discard it.
 
-- **(P2) labkit trial: the settings panel and the instrument write config through two `setConfig`s
-  that disagree.** The chrome's (`packages/labkit/src/trial/TrialChrome.tsx`, used by the settings
-  panel and by chrome contributions) calls the instrument's `onConfigChange` but takes no undo
-  snapshot; the instrument's own `ctx.setConfig` (`renderCtx` in
-  `packages/labkit/src/trial/Trial.tsx`) snapshots on `config.change` and `config.change:<path>` but
-  never calls `onConfigChange`. So an instrument declaring `undo: { snapshotOn: ['config.change'] }`
-  gets no undo entry for anything changed in the settings panel, and one declaring `onConfigChange`
-  gets no derived state for its own writes. Wanted: one `setConfig` owned by the trial runtime that
-  snapshots, writes, and runs `onConfigChange` against the stored record, handed to both contexts.
-  The open calls: whether a panel edit should snapshot per write or once per gesture (a slider drag
-  writes on every move), and whether an instrument's own write should run `onConfigChange`.
-
 - **(P3) labkit lab: every trial re-renders whenever any trial's record changes.** `LabContext`'s
   value carries `trials` (`packages/labkit/src/lab/Lab.tsx`), and both `Trial` and `TrialChrome`
   read that context, so a pan frame, a job item, a clock write, or a mark save in one trial

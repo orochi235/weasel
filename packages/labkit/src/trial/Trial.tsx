@@ -1,5 +1,4 @@
 import {
-  createHistory,
   createPointerStore,
   type History,
   PointerContextProvider,
@@ -54,11 +53,11 @@ import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
-import { stateOp } from '../undo/stateOp';
 import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 import { useKeptMarks } from './useKeptMarks';
+import { useTrialWrites } from './useTrialWrites';
 import { useViewPlacement } from './useViewPlacement';
 
 /** Props for `<Trial>`. */
@@ -137,9 +136,7 @@ function TrialRuntime({
   const [pointer] = useState(createPointerStore);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
-  const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
-  const setTrialHistory = useStore(store, (s) => s.setTrialHistory);
   const updateTrialClock = useStore(store, (s) => s.updateTrialClock);
   const updateTrialAnnotations = useStore(store, (s) => s.updateTrialAnnotations);
   const labToolId = useStore(store, (s) => s.activeToolId);
@@ -199,25 +196,12 @@ function TrialRuntime({
   );
 
   const undoCap = instrument.undo;
-  const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? ['state.change']), [undoCap]);
-  const maxDepth = undoCap?.maxDepth ?? 50;
-
-  const snapshotIfNeeded = useCallback(
-    (event: string): void => {
-      if (!undoCap || !undoEvents.has(event)) return;
-      const current = store.getState().trials.find((w) => w.id === record.id);
-      if (!current) return;
-      let history = current.history;
-      if (!history) {
-        history = createHistory(null, { historyLimit: maxDepth });
-        setTrialHistory(record.id, history);
-      }
-      const read = () => store.getState().trials.find((w) => w.id === record.id)?.state;
-      const write = (state: unknown) => updateTrialState(record.id, state as never);
-      history.recordEntry([stateOp(structuredClone(current.state), read, write)], event);
-    },
-    [undoCap, undoEvents, maxDepth, store, record.id, setTrialHistory, updateTrialState],
-  );
+  const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
+    store,
+    trialId: record.id,
+    instrument,
+    schema,
+  });
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
@@ -375,12 +359,7 @@ function TrialRuntime({
       snapshotIfNeeded('state.change');
       updateTrialState(record.id, next);
     },
-    setConfig: (path, value) => {
-      const evt = `config.change:${path}`;
-      snapshotIfNeeded('config.change');
-      snapshotIfNeeded(evt);
-      updateTrialConfig(record.id, path, value);
-    },
+    setConfig,
     trial: {
       id: record.id,
       view: record.view,
@@ -643,6 +622,7 @@ function TrialRuntime({
               instrument={instrument}
               isLastTrial={isLast}
               undoBindings={undoBindings}
+              setConfig={setConfig}
               trialChrome={extraChrome}
               chrome={chrome}
               suppress={suppress}
