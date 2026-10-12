@@ -3,7 +3,7 @@ import { type PointerEvent, useState } from 'react';
 import { DragGhost } from './DragGhost';
 
 const meta: Meta<typeof DragGhost> = {
-  title: 'weasel-ui/DragGhost',
+  title: 'ui/DragGhost',
   component: DragGhost,
 };
 export default meta;
