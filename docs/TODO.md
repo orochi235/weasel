@@ -1333,16 +1333,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   and nothing turns a `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the
   example first needs a way for an instrument to declare its config as a pref schema.
 
-- **(P3) Three params files hold several owners each.**
-  `packages/labkit/src/controls/ControlPanel.tsx` (about 810 lines: panel, auto state, reset, row
-  dispatch, paired rows, debounced text row),
-  `packages/ui/src/components/Properties/PropertyField.tsx` (about 740: the row component and every
-  kind's control), `packages/ui/src/components/SelectionPanel/renderLeaf.tsx` (about 690: cells,
-  flag bar, built-in dispatch, object leaf), and `Properties.module.css` (about 1,575). Split:
-  `ControlRow`, `LeafRow`, and `PairedRow` into their own file, which `ControlMatrix` already
-  imports from the panel; one file per control kind under `Properties/`, each with its CSS;
-  `ObjectLeaf` out of `renderLeaf`.
-
 - **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed object or union attribute read-only.**
   `aggregateAttributes` drops an object, list, map, or union attribute from the form when the
   selected nodes disagree on it. `PrefsForm` now draws a mixed field and writes it at its own path,
