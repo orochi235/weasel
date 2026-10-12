@@ -2,7 +2,8 @@ import { checkPrefCondition, type PrefCondition, type PrefEnum, type PrefGroup, 
 import { Checkbox } from '../Checkbox';
 import { CloseButton } from '../CloseButton';
 import { Code } from '../Code';
-import { NumberField } from '../NumberField';
+import { prefFieldProps } from '../Prefs/prefField';
+import { PropertyControl } from '../Properties';
 import { Select, type SelectOption } from '../Select';
 import {
   COMPARISON_LABEL, comparisonOf, comparisonsFor, isTest, printCondition, printOperators, testOf, withComparison,
@@ -30,10 +31,12 @@ function ValueControl({ n, test, found, comparison, onChange }: {
   const { path } = test;
   if (comparison === 'on' || comparison === 'off' || comparison === 'set') return null;
   if (found.leaf.kind === 'number' && comparison !== 'in') {
-    return (
-      <NumberField className={s.value} aria-label={`Condition ${n} value`} hideSteppers value={test[comparison] as number}
-        onChange={(value) => { if (!Number.isNaN(value)) onChange({ path, [comparison]: value }); }} />
-    );
+    // The form's own number control: the stored number shown and typed in the leaf's unit.
+    const field = prefFieldProps(found.leaf, {
+      value: test[comparison],
+      setValue: (value) => { if (typeof value === 'number' && !Number.isNaN(value)) onChange({ path, [comparison]: value }); },
+    });
+    if (field !== null) return <PropertyControl {...field} control="input" name={`Condition ${n} value`} className={s.value} />;
   }
   const { options } = found.leaf as PrefEnum;
   if (comparison === 'in') {

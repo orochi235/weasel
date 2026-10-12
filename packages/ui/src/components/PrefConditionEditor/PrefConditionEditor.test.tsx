@@ -16,14 +16,14 @@ const SCHEMA: PrefGroup = { name: 'Root', children: {
 } };
 
 /** The editor over a condition it holds, with what it last wrote in `seen.value` and how often in `seen.writes`. */
-function Live({ start, seen }: { start?: PrefCondition; seen: { value?: PrefCondition; writes: number } }) {
+function Live({ start, seen, schema = SCHEMA }: { start?: PrefCondition; seen: { value?: PrefCondition; writes: number }; schema?: PrefGroup }) {
   const [value, setValue] = useState<PrefCondition | undefined>(start);
   seen.value = value;
-  return <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={value} onChange={(next) => { seen.writes++; setValue(next); }} />;
+  return <PrefConditionEditor aria-label="Shown if" schema={schema} value={value} onChange={(next) => { seen.writes++; setValue(next); }} />;
 }
-const open = (start?: PrefCondition) => {
+const open = (start?: PrefCondition, schema?: PrefGroup) => {
   const seen: { value?: PrefCondition; writes: number } = { writes: 0 };
-  render(<Live start={start} seen={seen} />);
+  render(<Live start={start} seen={seen} schema={schema} />);
   return seen;
 };
 
@@ -95,10 +95,27 @@ describe('PrefConditionEditor', () => {
     expect(offered(row(1), /comparison/)).toEqual(['is above', 'is at least', 'is below', 'is at most', 'is', 'is not']);
     pick(row(1), /comparison/, 'is at most');
     expect(seen.value).toEqual({ path: 'view.step', atMost: 4 });
-    const box = within(row(1)).getByRole('textbox', { name: 'Condition 1 value' });
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
     fireEvent.change(box, { target: { value: '12' } });
     fireEvent.blur(box);
     expect(seen.value).toEqual({ path: 'view.step', atMost: 12 });
+  });
+
+  it('shows a number with a display unit in that unit, reads one typed in it, and writes the stored number', () => {
+    const turn = {
+      kind: 'number', name: 'Turn', description: '', default: 0,
+      unit: { toDisplay: (r: number) => (r * 180) / Math.PI, fromDisplay: (d: number) => (d * Math.PI) / 180, suffix: '°', accepts: { turn: 360 } },
+    } as PrefLeaf;
+    const seen = open({ path: 'turn', above: Math.PI }, { name: 'Root', children: { turn } });
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
+    expect(box).toHaveValue('180');
+    expect(row(1)).toHaveTextContent('°');
+    fireEvent.change(box, { target: { value: '90°' } });
+    fireEvent.blur(box);
+    expect((seen.value as { above: number }).above).toBeCloseTo(Math.PI / 2, 10);
+    fireEvent.change(box, { target: { value: '0.5turn' } });
+    fireEvent.blur(box);
+    expect((seen.value as { above: number }).above).toBeCloseTo(Math.PI, 10);
   });
 
   it('starts a row pointed at another pref over at that pref\'s kind', () => {

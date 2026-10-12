@@ -1178,10 +1178,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `packages/prefs/src/scope.ts` applies them in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's
   `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Ruled: a test
   may read from the list or map entry its field sits in (`{ from: 'item', path: 'mode' }`), where
-  every path is from the schema root today; an alias row is shown and enabled only while its own
-  conditions and its target's both hold, where only its own are read today; and a number with a display
-  unit is compared as stored, with `PrefConditionEditor`'s number field typed in the leaf's unit,
-  which it is not today.
+  every path is from the schema root today; and an alias row is shown and enabled only while its own
+  conditions and its target's both hold, where only its own are read today.
 
 - **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
   compares stored values, where every other reader decodes. A rail entry for a group drawn under
