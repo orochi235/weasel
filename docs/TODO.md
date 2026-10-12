@@ -506,7 +506,7 @@ intercepting the press that drags the body.
 
 ### Units
 
-- **(P3) Per-subobject scale: a container cannot declare its unit scope.** `@weasel-js/quantity` has the conversion (`UnitScope`, `resolveScoped`, `scopesOf`), but a scope is still something the consumer keeps beside the scene and hands to `scopesOf` through `scopeOf`. What is left is a `ContainerNode` field holding the scope, which belongs in `packages/core/src/core/scene/types.ts`, and the readers that would take it from there: the grid strategies and the property fields resolve against one `unitSystem` option today.
+- **(P3) Per-subobject scale: nothing in the kit reads a container's unit scope yet.** A container declares one (`ContainerNode.units`, set at `scene.add` or by `scene.setUnits`, kept through undo, snapshots, copy, and paste), and `sceneUnitScopes(scene, id, root)` answers the chain `resolveScoped` and `formatScoped` take. What is left is the readers. `gridSnapStrategy`, `createGridLayer`, `createCellHighlightLayer`, and `useGridCellHover` in `packages/guides` resolve their spacing against one `unitSystem` option, and a snap strategy is handed a gesture context with an adapter but no scene, so the adapter needs a scope read before a grid inside a millimeter sub-assembly can snap in millimeters. A property field's unit is built from one unit system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it, so whether a scoped container's children are also stored in its units is undecided.
 
 ---
 

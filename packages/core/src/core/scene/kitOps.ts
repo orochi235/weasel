@@ -4,6 +4,7 @@
  * build serializable payloads and route through the same log and replay
  * machinery a consumer's ops do.
  */
+import type { UnitScope } from '@weasel-js/quantity';
 import type { ParallaxOpts } from 'core/viewport/parallax';
 import { dwarn } from 'debug/flag';
 import type { LayoutStrategy } from '../../layout/types';
@@ -58,6 +59,11 @@ function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | und
   else record.parallax = to;
 }
 
+function setUnits(node: { units?: UnitScope }, to: UnitScope | undefined): void {
+  if (to === undefined) delete node.units;
+  else node.units = to;
+}
+
 /** Register every kit op kind. Answers with the table a live `kit:setLayout`
  *  payload's strategies are kept in, which `scene.setLayout` fills. */
 export function registerKitOps<TData, TLayer extends string, TPose>(
@@ -80,6 +86,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
     pickable?: boolean;
+    units?: UnitScope;
   } & Record<string, unknown>>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {
@@ -92,6 +99,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       attach(p.id, p.parent, p.index);
       if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
       if (p.pickable !== undefined) node.pickable = p.pickable;
+      if (p.units !== undefined) (node as ContainerNode<TData, TLayer, TPose>).units = p.units;
       dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
       trackChildDerived(p.id, p.dependsOn);
       // Two ways a function field comes back. Redo of a live add reads
@@ -199,6 +207,11 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     revert: (p) => { retarget(p.id, p.from); },
   });
 
+  registerKitOp<{ id: NodeId; from?: UnitScope; to?: UnitScope }>('kit:setUnits', {
+    apply: (p) => { setUnits(requireNode(p.id), p.to); },
+    revert: (p) => { setUnits(requireNode(p.id), p.from); },
+  });
+
   /** The strategies each live `kit:setLayout` payload swaps between. A payload
    *  replayed from a persisted history has none, and resolves its keys. */
   const layoutRefs = new WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>();
@@ -247,10 +260,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   });
 
   registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerLocked', {
-    apply: (p) => {
-      state.layers[requireLayerIndex(p.layer)].locked = p.to;
-      if (p.to) env.narrowSelection();
-    },
+    apply: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.to; if (p.to) env.narrowSelection(); },
     revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; },
   });
 
@@ -260,14 +270,8 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   });
 
   registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
-    apply: (p) => {
-      state.layers.splice(p.index, 0, { ...p.record });
-      rebuildLayerIndex();
-    },
-    revert: (p) => {
-      state.layers.splice(p.index, 1);
-      rebuildLayerIndex();
-    },
+    apply: (p) => { state.layers.splice(p.index, 0, { ...p.record }); rebuildLayerIndex(); },
+    revert: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
   });
 
   registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {

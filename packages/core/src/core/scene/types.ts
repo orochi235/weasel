@@ -1,13 +1,15 @@
 import type { Path } from '@weasel-js/geom';
 import type { History, SerializedHistory } from '@weasel-js/history';
 import type { ParallaxOpts } from '../viewport/parallax';
-import type { ContainerBounds, LayoutStrategy } from '../../layout/types';
+import type { UnitScope } from '@weasel-js/quantity';
+import type { LayoutStrategy } from '../../layout/types';
+import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
 import type { PoseLinear } from '@weasel-js/geom';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 
-export type { PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
+export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
 
 /**
  * Axis-aligned rectangle pose with optional rotation. The canonical pose
@@ -214,24 +216,10 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  undo entry as the change. A drag reads it too: it is the layout `move`
    *  reflows and drops against. */
   layout?: LayoutStrategy<TPose>;
-}
-
-/** A pose a container's layout wrote — reported by {@link Scene.onReflow} —
- *  in the node's stored frame. */
-export interface LayoutMove<TPose> {
-  id: NodeId;
-  from: TPose;
-  to: TPose;
-}
-
-/** How a scene reads and resizes a laid-out container's bounds. */
-export interface LayoutFrame<TPose> {
-  /** The container's bounds, from its world pose. Default: the pose's own
-   *  `x`/`y`/`width`/`height`; a pose without them is not laid out. */
-  bounds?(pose: TPose): ContainerBounds | null;
-  /** `pose` resized from bounds `from` to `to`, for a layout that grows its
-   *  container. Default: `to`'s fields written over the pose. */
-  remap?(pose: TPose, from: ContainerBounds, to: ContainerBounds): TPose;
+  /** The unit system this container's contents are written in, and what one
+   *  of its base units is worth in the enclosing scope's. It covers the
+   *  children, not the container; `sceneUnitScopes` reads the chain. */
+  units?: UnitScope;
 }
 
 /** A node in the scene tree: either a leaf or a container. Re-exported
@@ -296,6 +284,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   derivePose?: DerivePoseFn<TPose, TData, TLayer>;
   /** Mirrors `ContainerNode.layout`; ignored for leaves. */
   layout?: LayoutStrategy<TPose>;
+  /** Mirrors `ContainerNode.units`; ignored for leaves. */
+  units?: UnitScope;
 }
 
 /** A custom scene mutation registered with `Scene.registerOp`: how to apply
@@ -657,6 +647,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** The layout container `id` declares, or `null` for a leaf or a
    *  container that declares none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
+  /** Declare the unit scope of container `id`, or clear it with `null`. */
+  setUnits(id: NodeId, units: UnitScope | null): void;
   /** Called with the poses each live edit's layout pass wrote, after the
    *  edit lands — never for an undo or redo, which restore poses rather than
    *  arrange them. What a reflow animation glides from. */

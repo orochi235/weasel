@@ -19,7 +19,7 @@ import { definesFrame } from 'core/scene/effectivePose';
 import {
   NODE_FN_FIELDS, createNodeFnFields, fnFieldsOfNode, fnKeysOf, type FnBearingNode,
 } from 'core/scene/nodeFnFields';
-import { pickability } from 'core/scene/pickability';
+import { statedFields } from 'core/scene/statedFields';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 
 /** What the seam needs from the adapter it serves. */
@@ -83,7 +83,7 @@ export function snapshotSceneSelection<TData, TLayer extends string, TPose>(
       pose: copyField(poseFor(n, isRoot)),
       data: copyField(n.data),
       ...(n.kind === 'container' ? { children: [...n.children] } : {}),
-      ...pickability(n),
+      ...statedFields(n),
       ...(n.dependsOn !== undefined ? { dependsOn: copyField(n.dependsOn) } : {}),
       ...fnFieldsOfNode(n),
       ...fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey'),
@@ -234,7 +234,7 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
       ? copyField(item.pose)
       : env.translate(copyField(item.pose), dx, dy, item),
     data: copyField(item.data),
-    ...pickability(item),
+    ...statedFields(item),
     ...(item.kind === 'container'
       ? { children: item.children.filter((c) => idMap.has(c)).map((c) => idMap.get(c)!) }
       : {}),

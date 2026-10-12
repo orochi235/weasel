@@ -20,6 +20,7 @@ import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
 import { createAppliedLog } from './appliedLog';
 import { createStaleReplay, SceneMembershipError } from './staleReplay';
+import { statedFields } from './statedFields';
 import { createLayerStack } from './layerStack';
 import { registerKitOps, type RemoveSnapshot, type SetLayoutPayload } from './kitOps';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
@@ -502,7 +503,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-        ...(spec.pickable !== undefined ? { pickable: spec.pickable } : {}),
+        ...statedFields(spec),
         ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
       };
       executeAndLog('kit:add', payload, `add ${spec.kind}`);
@@ -821,6 +822,13 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
     layoutOf: layoutOfInternal,
 
+    setUnits(id, units) {
+      const node = requireNode(id);
+      if (node.kind !== 'container') throw new Error(`Scene: "${id}" is not a container`);
+      refuseLocked(id, 'set the units of');
+      executeAndLog('kit:setUnits', { id, from: node.units, to: units ?? undefined }, 'setUnits');
+    },
+
     onReflow: arrivalWindow.onReflow,
 
     overrides,
@@ -851,10 +859,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     canUndo: () => history.canUndo(),
     canRedo: () => history.canRedo(),
 
-    /** Read-only snapshot of every history entry currently reachable from
-     *  the present state. Order: oldest applied first, then redoable
-     *  entries in the order they'd be re-applied (top of redo stack last).
-     *  Each entry's `id` is stable for the entry's lifetime. */
     historyEntries() {
       const { undo, redo } = history.entries();
       const out: { id: string; label: string }[] = [];
@@ -864,13 +868,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       return out;
     },
 
-    /** Index of the "current state". `0` = nothing applied (initial);
-     *  equals the number of applied (undoable) entries —
-     *  `historyEntries().length` when fully redone. */
     historyIndex: () => history.undoDepth(),
 
-    /** Walk to a target history index by calling undo/redo repeatedly.
-     *  Caps at the valid range; returns true if the index changed. */
     jumpToHistoryIndex(targetIndex: number) {
       const total = history.undoDepth() + history.redoDepth();
       const target = Math.max(0, Math.min(total, targetIndex));
@@ -1035,7 +1034,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-        ...(spec.pickable !== undefined ? { pickable: spec.pickable } : {}),
+        ...statedFields(spec),
       });
       // No `kit:add` reaches history here, so nothing replays one. A restore
       // after `remove` comes from `kit:remove`'s revert, which clones the

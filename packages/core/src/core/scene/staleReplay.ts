@@ -59,6 +59,7 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
       case 'kit:setLayer':
       case 'kit:setDependsOn':
       case 'kit:setLayout':
+      case 'kit:setUnits':
         return !nodes.has((payload as { id: NodeId }).id);
       default:
         return false;
