@@ -13,8 +13,8 @@ import { nudgeRightAction } from './nudge';
 import { duplicateAction } from './duplicate';
 import { cloneAction } from './clone';
 import { moveAction } from '../move/action';
-import { rotateAction } from './rotate';
-import { resizeAction } from './resize';
+import { rotateAction } from '../rotate/action';
+import { resizeAction } from '../resize/action';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number; via?: string }
 interface PosedNode { data: { own: boolean } }

@@ -169,13 +169,6 @@ Priority tags:
   them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
   from `PointerState`, or carry the client point through `InvocationCtx`.
 
-- **(P3) The move action decides which ids a moving frame carries in its own walk.**
-  `captureStartPoses` and `captureFrames` (`actions/move/capture.ts`) collect the dragged roots and
-  their descendants, then mark the ones stored in the frame of another moving node as `carried`.
-  `translateTargets` (`actions/selectionSubtree.ts`) makes the same decision for nudge and clone.
-  Move still needs the full descendant list for its previews, so the fold is `carried` derived from
-  `translateTargets`, not the walk replaced by it.
-
 - **(P3) `useDragHandle`: a drag canceled while the button is still down, then released over its
   source row, delivers a click to the row.** The click guard is removed on cancel so it cannot eat a
   later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
@@ -319,7 +312,7 @@ have shipped. What remains:
   - The selection outline and handles (`features/selection/overlay.ts`,
     `affordances/hitAffordanceRegions.ts`, `wiredBoundsOfPose` in
     `canvas/SceneCanvas/useSceneSelectTool.ts`) sit on the unstretched box, and the resize and
-    rotate actions (`interactions/actions/defaults/resize.ts`, `rotate/geometry.ts`,
+    rotate actions (`interactions/actions/resize/frame.ts`, `rotate/geometry.ts`,
     `rotate/handle.ts`) take their drags in that box's frame. A resize changes the box and keeps
     the transform, so the result is drawn stretched; these have to change together.
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
@@ -688,27 +681,16 @@ Core five + Crop shipped. Remaining:
   the call for a copy made inside the same scene, where the originals are still there to follow, is
   whether it does the same, keeps the list, or re-points the ids it can.
 
-- **(P2) Container-pose cascade: a batch that poses a container and its descendants does not undo.**
-  Through `sceneToAdapter(scene, { cascadeContainerPose: true })` (what `<SceneCanvas>` uses without
-  a composing strategy), `adapter.applyOps([move(A), move(B), move(C)], 'Move')` with B inside A and
-  C inside B applies correctly, but `scene.undo()` runs the inverses in reverse and each container's
-  inverse cascades again: with A, B, and C at x = 0, 100, and 200 moved by 5, undo leaves them at 0,
-  95, and 190 (measured). The kit's own move action builds this shape of batch (roots plus
-  `cascadeIds`) but commits through `moveGestureAdapter`, which does not cascade, so only a consumer
-  routing `applyOps` to the canvas adapter hits it. Belongs with "Container-pose cascade as a
-  scene-primitive semantic": a cascade inside `setPose` cannot know what else the batch poses.
-
-- **(P3) Scene adapters: three implementations of the same scene-backed mutators.**
-  `canvas/sceneAdapter.ts`, `interactions/actions/defaultCommitAdapter.ts`, and
-  `interactions/actions/move/gestureAdapter.ts` each restate `insertNode`, `setParent`,
-  `getChildren`, and `setChildOrder` over a `Scene`, and have drifted: `getPose` is `effectivePose`
-  in one and `documentPose` in two, `getNodes` filters hidden layers in one, `setChildOrder` opens a
-  `scene.batch` in two, and only one cascades container poses. `rotateAction` hands behaviors the
-  gesture adapter and commits their ops through the default one, while `moveAction` uses the gesture
-  adapter for both, so a behavior's delete op captures its removal closure under rotate and not
-  under move. The copies exist to avoid an
-  `interactions → canvas → interactions` import cycle; moving the mutators into `core/scene`, below
-  both, removes the reason.
+- **(P2) Container-pose cascade: a restored history still undoes a mixed batch wrong.**
+  `sceneToAdapter(scene, { cascadeContainerPose: true }).applyOps(ops, label)` records the poses
+  each op changes, and the op's inverse restores them (`canvas/cascadeRecord.ts`), so a batch that
+  poses a container and its descendants undoes and redoes in a live session. Two paths never pass
+  through that record and still work the cascade out a second time on the way back: a history
+  restored with `restoreHistory`, whose rebuilt ops replay through the `setHistoryAdapter` adapter
+  (measured: A, B, and C at x = 0, 100, and 200 moved by 5, then restored and undone, land at 0,
+  95, and 190), and ops handed straight to `scene.applyBatch` with the cascading adapter. Neither
+  has a fix at the adapter, which sees pose writes and no op boundaries; both go with the cascade
+  itself under "Container-pose cascade as a scene-primitive semantic".
 
 ### Derived geometry follow-ups
 
@@ -965,19 +947,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) `resize.ts` (698) and `rotate.ts` (353) are built like `move.ts` was.** Each is a scratch
-  interface every helper takes whole and a `commitX` closure inside `start()`. They take the split
-  `actions/move/` now has: a readonly session captured at press (`session.ts`), a frame replaced
-  each move (`frame.ts`), and commit paths that return ops (`commit/`). `resize.ts` also carries its point-snap helpers, and `insert.ts`
-  (621) holds two actions.
-
-- **(P3) Reparent-on-drop may misplace a node grabbed mid-glide.** Read, not reproduced. The
-  layout release and exit commits measure a dragged node from where it was shown at the grab
-  (`grabbedPoseAdapter`), and the translate commit adds the grab offset (`caught`); the
-  reparent-on-drop commit composes the node's document pose and uses neither. A node caught while
-  a reflow transition is still gliding it, then dropped with `reparentOnDrop` on, would land off by
-  that offset. Write the test first; if it passes there is nothing here.
-
 - **(P3) A consumer's behavior cannot do frame math.** `GestureContext` carries no pose
   composition and no per-layer plane map, so `ctx.current` is a stored pose shifted by a plane
   delta and a behavior outside core cannot compose it to world. Move's own behaviors close over the
@@ -1173,12 +1142,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
   `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the leaves its
-  aliases show as a function (`leafAt`), so an alias into another schema, as a layout over a dialog
-  has them, is hidden and disabled by its own conditions alone; `applyPrefConditions` takes that
-  schema as `aliasOver` once the form is given it. An alias of an `object` leaf draws a field
-  whose `showIf` hides it in the leaf's own row: `PrefsForm` resolves the alias against the
-  schema before its conditions are applied. `PrefSchemaEditor` edits an entry's own `enableIf` and
+  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the schema its
+  aliases point into as `over`; `SelectionPanel`, `Bar`, and labkit's `ControlPanel` take none
+  and find an alias's leaf in their own schema, so a layout whose root is a `PrefSection` has no
+  surface that draws its aliases into a dialog. A condition on a node of the form's own schema
+  reads `values` with that schema's leaves and defaults, so one that names a setting of `over`
+  compares the stored value and finds no default. A vertical bar inside a
+  `PrefsForm` names the popover of an alias left unnamed with the empty string, where `Bar`
+  names it for the leaf it shows. `PrefSchemaEditor` edits an entry's own `enableIf` and
   nothing inside an object entry, whose fields it draws no rows for, so a field's
   `{ from: 'item' }` condition is written in code. A list of plain text entries is one
   `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
@@ -1212,22 +1183,22 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
   effect, a render behind, and its docstring says so. Whether it should go is not decided.
 
-- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists every
-  nested group, a section of its page unless it is `as: 'page'`. (1) A foldable rail unfolds an
-  entry only while the open page is it or under it, so a section with sections of its own stays
-  shut while the reader scrolls through them, and its entry carries the current mark for them.
-  Whether the section in view should unfold the entries above it is open; it would move the rail
-  under a reader who is scrolling. (2) A top-level group that is not a page (`as: 'section'`
-  beside the root's loose leaves) is drawn on the root's own page and gets no entry, where the
-  same group one level down gets one. (3) A section's rail entry and a nested page's look the
-  same until one is chosen.
+- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists a page
+  at any depth, and a section only when it sits directly on a page. (1) A foldable rail unfolds an
+  entry only while the open page is it or under it, so a section holding pages of its own keeps
+  their entries shut while the reader scrolls through it. Whether the section in view should
+  unfold is open; it would move the rail under a reader who is scrolling. (2) A top-level group
+  that is not a page (`as: 'section'` beside the root's loose leaves) sits directly on the root's
+  own page and gets no entry, where a section directly on any other page gets one. (3) A
+  section's rail entry and a nested page's look the same until one is chosen.
 
 - **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
   is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the
   scrollport's edge (measured: the heading's top at 10px with 10px of padding), where the
   comment on the rule says the offset is measured from the edge. Whether rows scrolling under it
-  show in that strip has not been looked at. `RailLayout`'s `stuckAbove` adds the padding for the
-  same reason.
+  show in that strip has not been looked at. The `scroll-margin-top` on what a section holds
+  adds the padding for the same reason, and estimates the heading's line as `1lh` of the element
+  scrolled to, which leaves a few pixels of gap under the heading.
 
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
@@ -1678,7 +1649,11 @@ only story runner in the repo.
   ("an expanded trial keeps its marks over it and takes new ones") hit the 15 s test timeout on
   teitou in two of four full runs on 2026-10-11, at `68e9d70bb` and `de222e61f`, and passed in
   the two between; alone on this machine at `de222e61f` it passed 3 of 3. `compoundRows` failed
-  twice the same evening on an assertion, and its wait was hardened in `de222e61f`. The suite runs the `browser` project beside eight
+  twice the same evening on an assertion, and its wait was hardened in `de222e61f`. Outside the
+  `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
+  pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
+  had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
+  either side. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
   others on one node. Not measured: whether the timeouts follow the node's load, and whether
   running `browser` on its own, or with fewer workers, ends them.
 

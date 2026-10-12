@@ -4,25 +4,14 @@
  * Default actions route data/layer/pose/parent mutations through the
  * consumer's `applyOps` commit hook when one is present; when it isn't, they
  * fall back to applying the committed ops directly against the scene through
- * this adapter. It carries the scene-backed op-apply methods (`setPose` /
- * `setParent` / `setData` / `setLayer` / `setLayout` / `removeNode` /
- * `insertNode` / `setChildOrder`) plus the read-side queries (`getNode` / `getNodes` /
- * `getPose` / `getParent` / `getChildren` / `getSelection`) and
- * `setSelection`. Known exclusions from the op factory roster — surfaces the
- * scene doesn't own: `setPath` and `setText`.
- *
- * Lives in `interactions/actions/` (not `canvas/sceneAdapter.ts`) so default
- * actions never import from `canvas/` — that back-edge would create an
- * `interactions → canvas → interactions` cycle. Mirrors `moveGestureAdapter`,
- * widened to all op-apply methods.
+ * this adapter: the scene's mutators (`core/scene/sceneMutators.ts`), the
+ * document's poses and nodes, and the selection. Known exclusions from the op
+ * factory roster — surfaces the scene doesn't own: `setPath` and `setText`.
  */
-import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
-import { pickability } from 'core/scene/pickability';
-import { documentPose } from 'core/scene/effectivePose';
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import { documentReads, sceneMutators } from 'core/scene/sceneMutators';
+import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { LayoutStrategy } from '../../layout/types';
 
 /** Build the adapter the default actions commit through when the consumer
  *  supplies no `applyOps` hook of its own — it applies ops straight to the
@@ -37,60 +26,12 @@ export function defaultCommitAdapter<TPose>(
   selection?: SelectionApi['adapterMethods'],
 ) {
   return {
-    getNode: (id: string) => scene.get(asNodeId(id)),
-    getNodes: () => {
-      return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];
-    },
-    getPose: (id: string) => documentPose(scene, scene.get(asNodeId(id))!),
+    ...sceneMutators(scene),
+    ...documentReads(scene),
     getSelection: (): string[] => [...(selection ? selection.getSelection() : scene.getSelection())],
     setSelection: (ids: string[]) => {
       if (selection) selection.setSelection(ids.map(asNodeId));
       else scene.setSelection(ids.map(asNodeId));
     },
-    getParent: (id: string) => (scene.get(asNodeId(id))?.parent ?? null) as string | null,
-    getRemovalClosure: (ids: readonly string[]): string[] =>
-      [...scene.removalClosure(ids.map(asNodeId))],
-    getChildren: (parentId: string | null): string[] =>
-      (parentId === null
-        ? [...scene.roots]
-        : [...scene.childrenOf(asNodeId(parentId))]) as string[],
-    // Re-stamp each slot whose occupant changed. `scene.reorder` mutates the
-    // live sibling list in place, so re-read it each iteration and skip slots
-    // already holding the desired id (an earlier reorder may have shifted a
-    // later id into place). One enclosing batch is provided by the caller
-    // (`scene.applyBatch` / consumer `applyOps`), so no batch here.
-    setChildOrder: (parentId: string | null, orderedIds: string[]): void => {
-      for (let i = 0; i < orderedIds.length; i++) {
-        const current = parentId === null
-          ? (scene.roots as readonly NodeId[])
-          : (scene.childrenOf(asNodeId(parentId)) as readonly NodeId[]);
-        if ((current[i] as string) === orderedIds[i]) continue;
-        scene.reorder(asNodeId(orderedIds[i]), i);
-      }
-    },
-    setPose: (id: string, pose: TPose) => scene.setPose(asNodeId(id), pose),
-    setParent: (id: string, parentId: string | null) =>
-      scene.move(asNodeId(id), parentId == null ? null : asNodeId(parentId)),
-    setData: (id: string, data: unknown) => scene.update(asNodeId(id), { data } as never),
-    setLayer: (id: string, layer: string) => scene.setLayer(asNodeId(id), layer as never),
-    setLayout: (id: string, layout: LayoutStrategy<TPose> | string | null) =>
-      scene.setLayout(asNodeId(id), layout),
-    removeNode: (id: string) => scene.remove(asNodeId(id)),
-    insertNode: (node: Node<unknown, string, TPose>, index?: number) =>
-      scene.add({
-        kind: node.kind,
-        layer: node.layer,
-        pose: node.pose,
-        data: node.data,
-        id: node.id,
-        ...(node.parent != null ? { parent: node.parent } : {}),
-        // Sibling-index passthrough: undo of a delete (or a boolean op's
-        // source removal) re-inserts at the recorded z-order slot instead
-        // of appending at the end.
-        ...(index !== undefined ? { index } : {}),
-        ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
-        ...pickability(node),
-        ...fnFieldsOfNode(node),
-      }),
   };
 }

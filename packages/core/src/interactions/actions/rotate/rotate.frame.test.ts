@@ -3,7 +3,7 @@
  * `alignDistribute.frame.test.ts` for why the fixture is needed at all.
  */
 import { describe, it, expect } from 'vitest';
-import { rotateAction } from './rotate';
+import { rotateAction } from './action';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,

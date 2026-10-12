@@ -10,7 +10,7 @@ import type { PrefsFormProps } from './PrefsForm';
 import { PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
 import type { WalkCtx } from './PrefsRow';
-import { looseEntryName, prefGroupNests, prefGroupOpensPage, prefRailItems, prefRailParent } from './schema';
+import { looseEntryName, prefGroupNests, prefGroupOpensPage, prefRailAbove, prefRailItems, prefRailParent } from './schema';
 import { pathWithin, type SelectionRoot } from './selection';
 import s from './Prefs.module.css';
 
@@ -46,7 +46,7 @@ export function RailLayout(props: PrefsFormProps & {
   // A page with nothing of its own opens the first entry under it.
   while (root !== null && open !== '' && !hasOwn(paneGroup(root, open, schema.name))) {
     const under = open;
-    const first = items.find((i) => prefRailParent(i.path) === under);
+    const first = items.find((i) => prefRailAbove(items, i.path) === under);
     if (first === undefined) break;
     open = first.path;
   }
@@ -56,7 +56,7 @@ export function RailLayout(props: PrefsFormProps & {
     () => items.filter((i) => i.page === open && i.path !== open).map((i) => i.path),
     [items, open],
   );
-  const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds, covered: stuckAbove });
+  const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds });
 
   const show = (path: string): void => {
     if (props.section === undefined) setUncontrolled(path);
@@ -149,18 +149,6 @@ export function RailLayout(props: PrefsFormProps & {
       )}
     </div>
   );
-}
-
-/** How far below the pane's top the heading stuck there ends while a section inside another is at it: the heading
- *  of the section it lies in, which sticks inside the pane's padding. */
-function stuckAbove(section: HTMLElement): number {
-  for (let at = section.parentElement; at !== null; at = at.parentElement) {
-    const title = at.querySelector(':scope > [data-pref-sticky]');
-    if (title === null) continue;
-    const pane = at.closest('[data-pref-scroll]');
-    return title.getBoundingClientRect().height + (pane === null ? 0 : parseFloat(getComputedStyle(pane).paddingTop) || 0);
-  }
-  return 0;
 }
 
 /**

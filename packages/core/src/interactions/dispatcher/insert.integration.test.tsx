@@ -18,7 +18,7 @@ import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import '../actions/depSchema'; // augments DepSchema
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
-import { insertAction } from '../actions/defaults/insert';
+import { insertAction } from '../actions/insert/action';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import { createGestureSource } from 'canvas/SceneCanvas/dispatcherGestureBounds';
 import { unionAABB } from 'core/geometry/unionBounds';

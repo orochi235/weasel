@@ -2,7 +2,7 @@ import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
 import { dropSlot, isDropPath } from './drop';
-import { prefRailParent, type PrefRailItem } from './schema';
+import { prefRailAbove, prefRailParent, type PrefRailItem } from './schema';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsRail}. */
@@ -65,10 +65,10 @@ export function PrefsRail(props: PrefsRailProps) {
     !foldable || showCounts === true || (folds.get(path) ?? holds(path));
   const fold = (path: string, open: boolean): void => setFolds(new Map(folds).set(path, open));
 
-  const parentOf = (item: PrefRailItem): string | null => (item.depth === 0 ? null : prefRailParent(item.path));
+  const parentOf = (item: PrefRailItem): string | null => (item.depth === 0 ? null : prefRailAbove(items, item.path));
   const nests = new Set(items.map(parentOf));
   const shown = items.filter((item) => {
-    for (let at = parentOf(item); at !== null; at = prefRailParent(at)) if (!unfolded(at)) return false;
+    for (let at = parentOf(item); at !== null; at = prefRailAbove(items, at)) if (!unfolded(at)) return false;
     return true;
   });
 

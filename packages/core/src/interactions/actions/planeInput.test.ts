@@ -13,10 +13,10 @@ import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/typ
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import { moveAction } from './move/action';
-import { resizeAction } from './defaults/resize';
-import { rotateAction } from './defaults/rotate';
+import { resizeAction } from './resize/action';
+import { rotateAction } from './rotate/action';
 import { cloneAction } from './defaults/clone';
-import { insertAction } from './defaults/insert';
+import { insertAction } from './insert/action';
 import { nudgeRightAction } from './defaults/nudge';
 import { editAnchorsAction } from './defaults/editAnchors';
 import { selectAnchorAction, marqueeAnchorsAction } from './defaults/anchorEditing';

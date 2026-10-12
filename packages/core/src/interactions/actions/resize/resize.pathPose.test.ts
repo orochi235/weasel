@@ -10,7 +10,7 @@ import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { GestureContext, PointSnapBehavior, PointSnapContext } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { resizeAction } from './resize';
+import { resizeAction } from './action';
 
 const ID = asNodeId('tri');
 

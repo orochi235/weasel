@@ -28,3 +28,13 @@ export function gesturePlaneReader(deps: Pick<ActionDeps, 'view'>): () => PlaneM
   const api = deps.view;
   return () => api?.plane?.() ?? null;
 }
+
+/** The two reads a gesture refreshes its context from on every move. */
+export interface GestureReaders {
+  view: () => View | null;
+  plane: () => PlaneMap | null;
+}
+
+export function gestureReaders(deps: Pick<ActionDeps, 'view'>): GestureReaders {
+  return { view: gestureViewReader(deps), plane: gesturePlaneReader(deps) };
+}

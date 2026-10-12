@@ -69,8 +69,9 @@ describe('runStory faults outside the story', () => {
   });
 
   it('unmounts the story a timed-out run left behind when the next run starts', async () => {
-    // Never settles: the test runner would have timed it out and moved on.
-    void runStory(mod, 'Hanging', FILE, 'Auto');
+    // The test runner would have timed this out and moved on. It can still
+    // reject later, once the next run unmounts its host.
+    runStory(mod, 'Hanging', FILE, 'Auto').catch(() => {});
     await vi.waitFor(() => expect(document.querySelector('.fg-story[data-fg-host]')).not.toBeNull());
     expect(document.body.children).toHaveLength(1);
     await expect(runStory(mod, 'Plain', FILE, 'Auto')).resolves.toBeUndefined();

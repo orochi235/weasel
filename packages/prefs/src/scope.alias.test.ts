@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf } from './schema';
-import { applyPrefConditions, prefJudge, prefScopeAt } from './scope';
+import { applyPrefConditions, prefJudge, prefReader, prefScopeAt } from './scope';
 
 const flag = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'boolean', name, description: '', default: false, ...extra }) as PrefLeaf;
@@ -96,5 +96,52 @@ describe('an alias row', () => {
     expect(Object.keys(applyPrefConditions(node, judge(false)).shown!.members)).toEqual(['data.on']);
     expect(prefScopeAt(node, 'data.also', judge(false)).shown).toBe(false);
     expect(prefScopeAt(node, 'data.fill', judge(false)).shown).toBe(false);
+  });
+});
+
+describe('an alias of a leaf in another schema', () => {
+  const dialog: PrefGroup = {
+    name: 'Dialog',
+    children: {
+      on: flag('On', { default: true }),
+      open: flag('Open', { default: true }),
+      view: { name: 'View', showIf: { path: 'on' }, children: { grid: flag('Grid', { enableIf: { path: 'open' } }) } },
+    },
+  };
+  const layout: PrefGroup = { name: 'Layout', children: { rows: { name: 'Rows', children: { grid: alias('view.grid') } } } };
+  // The layout holds no value, so its own judge finds nothing at a path; the dialog's reads the dialog's values.
+  const own = prefJudge(layout, () => undefined);
+  const theirs = (values: unknown) => prefJudge(dialog, prefReader(dialog, values));
+
+  it('is judged on the target\'s side by the judge over that schema', () => {
+    const options = (values: unknown) => ({ aliasOver: dialog, aliasHolds: theirs(values) });
+    expect(applyPrefConditions(layout, own, options({})).shown).toBe(layout);
+    expect(prefScopeAt(layout, 'rows.grid', own, options({}))).toEqual({ shown: true, enabled: true });
+
+    expect(applyPrefConditions(layout, own, options({ on: false })).shown?.children).toEqual({});
+    expect(prefScopeAt(layout, 'rows.grid', own, options({ on: false }))).toEqual({ shown: false, enabled: true });
+
+    expect([...applyPrefConditions(layout, own, options({ open: false })).disabled]).toEqual(['rows.grid']);
+    expect(prefScopeAt(layout, 'rows.grid', own, options({ open: false }))).toEqual({ shown: true, enabled: false });
+  });
+
+  it('is judged by the one judge where no other is given', () => {
+    expect(applyPrefConditions(layout, own, { aliasOver: dialog }).shown?.children).toEqual({});
+  });
+});
+
+describe('prefReader over a section schema', () => {
+  const section: PrefSection = {
+    name: 'Node',
+    members: {
+      'pose.x': { kind: 'number', name: 'X', description: '', default: 4 } as PrefLeaf,
+      more: { name: 'More', members: { 'data.stroke': { kind: 'object', name: 'Stroke', description: '', default: { width: 2 }, children: {} } as PrefLeaf } },
+    },
+  };
+  it('reads a held value, else the default of the leaf keyed by the path, or the part of one the rest names', () => {
+    expect(prefReader(section, { pose: { x: 9 } })('pose.x')).toBe(9);
+    expect(prefReader(section, {})('pose.x')).toBe(4);
+    expect(prefReader(section, {})('data.stroke.width')).toBe(2);
+    expect(prefReader(section, {})('pose.y')).toBeUndefined();
   });
 });
