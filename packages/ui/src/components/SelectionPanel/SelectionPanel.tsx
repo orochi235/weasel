@@ -46,7 +46,9 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    * the alias's path, reads that path of every selected node and writes
    * there, and is hidden and disabled by that leaf's conditions as well as
    * its own. A `PrefGroup`'s keys are steps of the node path (`data`, then
-   * `fill`); a `PrefSection`'s leaf keys are whole node paths.
+   * `fill`); a `PrefSection`'s leaf keys are whole node paths. A condition
+   * of a kind's own schema may read a setting of that one too: a path no
+   * leaf of the kind holds is read there.
    */
   over?: PrefGroup | PrefSection;
   /** Kind → header label. Default: capitalized kind name. */

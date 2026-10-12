@@ -51,7 +51,7 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   /** The row takes no input: its `enableIf`, or that of a group above it, does not hold. */
   disabled?: boolean;
   /** The schema an alias points into, where that is not `resolved`'s: the row is drawn as the leaf of it at the
-   *  alias's path, and reads and writes `config` there. */
+   *  alias's path, and reads and writes `config` there. A condition inside the row's leaf may read its settings. */
   over?: PrefGroup | PrefSection;
 }
 
@@ -102,8 +102,12 @@ function CompoundControl({
   value,
   onChange,
   renderers,
+  over,
   given,
-}: Pick<ControlRowProps<Record<string, unknown>>, 'path' | 'leaf' | 'resolved' | 'config'> & {
+}: Pick<
+  ControlRowProps<Record<string, unknown>>,
+  'path' | 'leaf' | 'resolved' | 'config' | 'over'
+> & {
   /** What the leaf answers to when it is one of another schema, which `resolved` holds no conditions for. */
   given: PrefAliasTargets | undefined;
   label: string;
@@ -112,7 +116,7 @@ function CompoundControl({
   renderers: Record<string, ControlRenderer> | undefined;
 }) {
   const choices = useFieldChoices();
-  const inside = given ? { leaf, ...given } : conditionedLeaf(resolved, path, leaf, config);
+  const inside = given ? { leaf, ...given } : conditionedLeaf(resolved, path, leaf, config, over);
   // Plain text entries keep the list's own fields, and the placeholder only they have.
   if (leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined)) {
     const list = leaf as PrefList;
@@ -139,6 +143,23 @@ function CompoundControl({
       disabledAt={inside.disabledAt}
       entryAt={inside.entryAt}
     />
+  );
+}
+
+/** What draws the row at `path` in place of the built-in. Most specific wins, and within a tier the lab's entry
+ *  beats the instrument's: controls[path] -> node .render/.dialog -> controls[kind]. */
+function customRow(
+  resolved: ResolvedConfig,
+  renderers: Record<string, ControlRenderer> | undefined,
+  path: string,
+  leaf: PrefLeaf,
+): ControlRenderer | undefined {
+  const dialog = resolved.dialogs[path];
+  return (
+    renderers?.[path] ??
+    resolved.renderers[path] ??
+    (dialog ? inDialog(dialog.body, dialog) : undefined) ??
+    renderers?.[leaf.kind]
   );
 }
 
@@ -186,6 +207,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   auto,
   setRowAuto,
   disabled = false,
+  over,
   inside,
 }: ControlRowProps<TC> & { inside?: PrefAliasTargets }) {
   const write = (value: unknown): void => setConfig(path, value);
@@ -214,14 +236,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value);
   const autoProps = { auto: isAutoRow, onAutoChange, autoValue };
 
-  // Most specific wins, and within a tier the lab's entry beats the
-  // instrument's: controls[path] -> node .render/.dialog -> controls[kind] -> built-in.
-  const dialog = resolved.dialogs[path];
-  const custom =
-    renderers?.[path] ??
-    resolved.renderers[path] ??
-    (dialog ? inDialog(dialog.body, dialog) : undefined) ??
-    renderers?.[leaf.kind];
+  const custom = customRow(resolved, renderers, path, leaf);
   // A custom row places itself like any other; one that needs the full width
   // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
   if (custom)
@@ -280,6 +295,7 @@ function LeafRow<TC extends Record<string, unknown>>({
             value={value}
             onChange={write}
             renderers={renderers}
+            over={over}
             given={inside}
           />
         )}

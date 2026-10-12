@@ -15,6 +15,7 @@ import {
   prefJudge,
   prefLeafAt,
   prefReader,
+  prefSchemaHolding,
   prefScopeAt,
   prefScopeUnder,
 } from '@weasel-js/prefs';
@@ -37,6 +38,23 @@ export function aliasTargetsOf(
 }
 
 /**
+ * Reads a value a condition of a panel's own schema names: what `config`
+ * holds, and for a path only `over` holds, that leaf's default where
+ * `config` holds nothing.
+ */
+function conditionReader(
+  resolved: ResolvedConfig,
+  config: Record<string, unknown>,
+  over: PrefGroup | PrefSection | undefined,
+): (at: string) => unknown {
+  const beyond = over && prefReader(over, config);
+  return (at) =>
+    beyond && prefSchemaHolding(resolved.group, at, over) === over
+      ? beyond(at)
+      : valueAtPath(config, at);
+}
+
+/**
  * Whether the node at a dotted path is shown and enabled, with every group
  * above it counted. The conditions the schema carries as data are core's to
  * answer (`prefScopeAt`); the functions beside the tree are asked here, for
@@ -52,7 +70,7 @@ function scopeAt(
   const data = prefScopeAt(
     resolved.group,
     path,
-    prefJudge(resolved.group, (at) => valueAtPath(config, at)),
+    prefJudge(resolved.group, conditionReader(resolved, config, over), undefined, over),
     { aliasOver: over ?? resolved.group, aliasHolds: targets.holds },
   );
   let { shown, enabled } = data;
@@ -110,20 +128,22 @@ export function isLeafEnabled(
  * disables the field at a path under it. `entryAt` answers the conditions
  * that read an entry of a list or a map (`from: 'item'`), for the entry it is
  * given. The functions beside the tree place rows only, so the data
- * conditions are all there is to ask inside a leaf.
+ * conditions are all there is to ask inside a leaf. `over` is the schema the
+ * panel is drawn over, which a condition may read a setting of.
  */
 export function conditionedLeaf(
   resolved: ResolvedConfig,
   path: string,
   leaf: PrefLeaf,
   config: Record<string, unknown>,
+  over?: PrefGroup | PrefSection,
 ): {
   leaf: PrefLeaf;
   disabledAt: (at: string) => boolean;
   entryAt: (item: PrefLeaf, at: string, value: unknown) => PrefEntryApplied;
 } {
-  const read = (at: string): unknown => valueAtPath(config, at);
-  const judge = prefJudge(resolved.group, read);
+  const read = conditionReader(resolved, config, over);
+  const judge = prefJudge(resolved.group, read, undefined, over);
   const { shown, disabled } = applyPrefConditions(resolved.group, judge, { keepEmpty: true });
   const drawn = shown === null ? undefined : prefLeafAt(shown, path);
   // An alias draws its target under its own name, which the tree does not hold.
@@ -133,7 +153,7 @@ export function conditionedLeaf(
     leaf: own,
     disabledAt: (at) => disabled.has(at),
     entryAt: (item, at, value) =>
-      applyPrefEntryConditions(item, at, prefJudge(resolved.group, read, { item, value })),
+      applyPrefEntryConditions(item, at, prefJudge(resolved.group, read, { item, value }, over)),
   };
 }
 

@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { applyPrefConditions, prefAliasTargets, prefJudge, prefReader, visiblePrefSubtree, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, prefAliasTargets, prefJudge, prefReader, visiblePrefSubtree, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { entryApplier } from './entry';
@@ -103,7 +103,9 @@ export interface PrefsFormProps extends MarkHiddenProps {
   /** The schema this one's `alias` leaves point into. Default: this schema itself. A form drawn from a schema of
    *  aliases into another passes that other: each alias row is drawn as the leaf of it at the alias's path, reads
    *  and writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own.
-   *  Those conditions read `values`, and that schema's defaults where `values` holds nothing. */
+   *  Those conditions read `values`, and that schema's defaults where `values` holds nothing. A condition of this
+   *  schema's own may read a setting of that one too: a path no leaf here holds is read there, with that leaf's
+   *  default and as its control shows it. */
   over?: PrefGroup | PrefSection;
   /** Small text after an inherited leaf's label, e.g. `() => 'from Defaults'`.
    *  Default: none. */
@@ -169,14 +171,16 @@ export function PrefsForm(props: PrefsFormProps) {
   // Apart from the conditions, which a new `values` object asks again: what they hand back is this tree itself
   // while they drop nothing, and a drop in flight restarts whenever the tree it is drawn in is a new one.
   const visible = useMemo(() => visiblePrefSubtree(schema, showHidden, keepEmpty), [schema, showHidden, keepEmpty]);
+  // The form's own conditions, each asked for one entry of a list or a map where it is given one.
+  const judge = useMemo(() => {
+    const read = prefReader(schema, values, props.over);
+    return (entry?: PrefEntry) => prefJudge(schema, read, entry, props.over);
+  }, [schema, values, props.over]);
   const applied = useMemo(
-    () => (visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden, aliasOver: over, aliasHolds: targets.holds })),
-    [visible, schema, values, keepEmpty, markHidden, over, targets],
+    () => (visible === null ? null : applyPrefConditions(visible, judge(), { keepEmpty, keepHidden: markHidden, aliasOver: over, aliasHolds: targets.holds })),
+    [visible, judge, keepEmpty, markHidden, over, targets],
   );
-  const entryAt = useMemo(
-    () => entryApplier((entry) => prefJudge(schema, prefReader(schema, values), entry), markHidden),
-    [schema, values, markHidden],
-  );
+  const entryAt = useMemo(() => entryApplier(judge, markHidden), [judge, markHidden]);
   const conditioned = applied?.shown ?? null;
   const root = useMemo(
     () => (conditioned === null ? null : filterPrefRoot(conditioned, query, over)),

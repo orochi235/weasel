@@ -96,3 +96,44 @@ describe('SelectionPanel over another schema', () => {
     expect(screen.getByRole('spinbutton', { name: /Cap/ })).toBeEnabled();
   });
 });
+
+describe('a condition of a SelectionPanel\'s own node that reads a pref of `over`', () => {
+  const settings: PrefSection = {
+    name: 'Everything',
+    members: {
+      'data.slant': flag('Italic', { default: 'normal', encoding: { read: (held: unknown) => held === 'italic', write: (on: boolean) => (on ? 'italic' : 'normal') } }),
+      'data.snap': flag('Snap', { default: true, absentIsDefault: true }),
+    },
+  };
+  const gated: PrefSection = {
+    name: 'Layout',
+    members: {
+      'data.tight': flag('Tight', { enableIf: { path: 'data.slant' } }),
+      'data.fine': flag('Fine', { showIf: { path: 'data.snap' } }),
+    },
+  };
+  const draw = (data: Record<string, unknown>, over?: PrefSection) => {
+    const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
+    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', ...data } });
+    render(<SelectionPanel scene={scene} selection={selectionOf(['a'])} properties={[{ name: 'thing', schema: gated }]} routing={routing} over={over} />);
+  };
+
+  it('compares the value as that pref\'s control shows it', () => {
+    draw({ slant: 'normal' });
+    expect(screen.getByRole('checkbox', { name: 'Tight' })).toBeEnabled();
+    cleanup();
+    draw({ slant: 'normal' }, settings);
+    expect(screen.getByRole('checkbox', { name: 'Tight' })).toBeDisabled();
+    cleanup();
+    draw({ slant: 'italic' }, settings);
+    expect(screen.getByRole('checkbox', { name: 'Tight' })).toBeEnabled();
+  });
+
+  it('reads a node holding nothing there as that pref says absence reads', () => {
+    draw({});
+    expect(screen.queryByRole('checkbox', { name: 'Fine' })).toBeNull();
+    cleanup();
+    draw({}, settings);
+    expect(screen.getByRole('checkbox', { name: 'Fine' })).toBeInTheDocument();
+  });
+});

@@ -9,16 +9,17 @@ export interface ConditionMark extends PrefConditionProblem {
 /**
  * What is wrong with each condition `root` holds, by the tree path of the node holding it, `null` for the root, in
  * tree order; a node whose conditions are sound has no entry. A condition anywhere inside a list's or a map's entry,
- * or a union's variants, counts as that leaf's, which is the row the tree draws.
+ * or a union's variants, counts as that leaf's, which is the row the tree draws. `over` is the schema `root` is
+ * drawn over, as a layout is over its dialog's: a condition may read its settings.
  */
-export function conditionProblems(root: SchemaRoot): Map<string | null, ConditionMark[]> {
+export function conditionProblems(root: SchemaRoot, over?: SchemaRoot): Map<string | null, ConditionMark[]> {
   const out = new Map<string | null, ConditionMark[]>();
   type Holder = PrefList | PrefMap | undefined;
   const own = (node: SchemaNode, path: string | null, within: Holder, isItem = false): void => {
     for (const field of ['showIf', 'enableIf'] as const) {
       if (node[field] === undefined) continue;
       const site: PrefConditionSite = { ...(within ? { within } : {}), ...(isItem && field === 'showIf' ? { itemShowIf: true } : {}) };
-      const found = checkPrefCondition(node[field], root, site).map((problem) => ({ ...problem, field }));
+      const found = checkPrefCondition(node[field], root, site, over).map((problem) => ({ ...problem, field }));
       if (found.length > 0) out.set(path, [...(out.get(path) ?? []), ...found]);
     }
   };

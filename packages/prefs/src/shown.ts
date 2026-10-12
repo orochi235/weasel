@@ -4,7 +4,7 @@
 
 import type { PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { prefLeafHolding, prefLeafHoldingIn, UNSEEN } from './holding';
+import { prefLeafHolding, prefLeafHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
 import type { PrefBoolean, PrefEnum, PrefLeaf } from './schema';
 
 type Siblings = Record<string, unknown> | undefined;
@@ -22,11 +22,15 @@ export function prefShownValue(leaf: PrefLeaf, stored: unknown, siblings?: Sibli
  * the leaf of `schema` at that path, a field of an `object` or a `union` leaf
  * included. A field's siblings are what `read` finds at its leaf's path. A
  * path read from the entry is held to `item`, the leaf describing that entry.
+ * A path no leaf of `schema` holds is held to `over`, the schema it is drawn
+ * over.
  */
-export function prefShownReader(schema: PrefGroup | PrefSection, read: PrefConditionReader, item?: PrefLeaf): PrefConditionReader {
+export function prefShownReader(
+  schema: PrefGroup | PrefSection, read: PrefConditionReader, item?: PrefLeaf, over?: PrefGroup | PrefSection,
+): PrefConditionReader {
   return (path, from) => {
     const stored = read(path, from);
-    const held = from === 'item' ? item && prefLeafHoldingIn(item, path) : prefLeafHolding(schema, path);
+    const held = from === 'item' ? item && prefLeafHoldingIn(item, path) : prefLeafHolding(prefSchemaHolding(schema, path, over), path);
     if (held === undefined || held === UNSEEN) return stored;
     const object = held.within === undefined ? undefined : read(held.within, from);
     return prefShownValue(held.leaf, stored, typeof object === 'object' && object !== null ? (object as Siblings) : undefined);

@@ -63,3 +63,34 @@ describe('<ControlPanel> over another schema', () => {
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeEnabled();
   });
 });
+
+describe("a condition of a <ControlPanel>'s own node that reads a pref of `over`", () => {
+  const gated = f.schema({ tight: f.boolean(false).label('Tight').showIf({ path: 'on' }) });
+
+  it('is refused by a schema resolved alone, which holds no such pref', () => {
+    expect(() => resolveConfigSchema(gated, [])).toThrow(/no leaf holds a value at "on"/);
+  });
+
+  it("reads that pref's default where the config holds nothing, and the config's value where it holds one", () => {
+    const resolved = resolveConfigSchema(gated, [], dialog);
+    const shown = render(
+      <ControlPanel
+        schema={resolved}
+        over={dialog}
+        config={{ tight: false }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('checkbox', { name: 'Tight' })).toBeInTheDocument();
+    shown.unmount();
+    render(
+      <ControlPanel
+        schema={resolved}
+        over={dialog}
+        config={{ tight: false, on: false }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('checkbox', { name: 'Tight' })).toBeNull();
+  });
+});

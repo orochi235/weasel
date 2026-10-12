@@ -42,7 +42,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
    * alias row is drawn as the leaf of it at the alias's path, reads and writes
    * `config` at that path, and is hidden and disabled by that leaf's
    * conditions as well as its own. Those conditions read `config`, and that
-   * schema's defaults where `config` holds nothing.
+   * schema's defaults where `config` holds nothing. A condition of this
+   * schema's own may read a setting of that one the same way: hand
+   * `resolveConfigSchema` that schema too, or it refuses the condition.
    */
   over?: PrefGroup | PrefSection;
   /** How rows pack into the two-column grid. Defaults to `'pairs'`. */

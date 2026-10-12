@@ -60,3 +60,23 @@ describe('Bar over another schema', () => {
     expect(screen.getByRole('button', { name: 'Show grid' })).toBeInTheDocument();
   });
 });
+
+describe('a condition of a Bar\'s own node that reads a pref of `over`', () => {
+  const stored: PrefGroup = {
+    name: 'Dialog',
+    children: { slant: flag('Italic', { default: 'normal', encoding: { read: (held: unknown) => held === 'italic', write: (on: boolean) => (on ? 'italic' : 'normal') } }) },
+  };
+  const gated: PrefGroup = { name: 'Tools', as: 'bar', children: { tight: flag('Tight', { enableIf: { path: 'slant' } }) } };
+
+  it('compares the value as that pref\'s control shows it', () => {
+    const { rerender } = render(<Bar schema={gated} over={stored} values={{ slant: 'normal' }} />);
+    expect(screen.getByRole('button', { name: 'Tight' })).toBeDisabled();
+    rerender(<Bar schema={gated} over={stored} values={{ slant: 'italic' }} />);
+    expect(screen.getByRole('button', { name: 'Tight' })).toBeEnabled();
+  });
+
+  it('compares the stored value with no `over` to say how it is shown', () => {
+    render(<Bar schema={gated} values={{ slant: 'normal' }} />);
+    expect(screen.getByRole('button', { name: 'Tight' })).toBeEnabled();
+  });
+});

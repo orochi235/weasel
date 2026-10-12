@@ -29,7 +29,7 @@ export function useRowMarks({ schema, over, changes, actions, rowMark }: {
     [actions, schema],
   );
   const lost = useMemo(() => (over ? new Set(deadPointers(schema, over)) : NO_PATHS), [schema, over]);
-  const unsound = useMemo(() => conditionProblems(schema), [schema]);
+  const unsound = useMemo(() => conditionProblems(schema, over), [schema, over]);
   const clashing = useMemo(() => keyClashes(schema), [schema]);
   return useMemo(() => {
     if (!rowMark && dead.size === 0 && lost.size === 0 && unsound.size === 0 && clashing.size === 0) return undefined;

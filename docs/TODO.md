@@ -1124,9 +1124,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   its one node from the layout's own leaves and writes only under `pose` and `data`, so a row
   aliased into a dialog's schema draws unset and an edit to it goes nowhere. labkit's
   `ControlMatrix` takes no `over`: a cell's popover finds an alias's leaf in the matrix's own
-  schema. A condition on a node of the form's own schema
-  reads `values` with that schema's leaves and defaults, so one that names a setting of `over`
-  compares the stored value and finds no default. A vertical bar inside a
+  schema. A condition that reads a setting of `over` takes that
+  leaf's default only where the surface takes its own leaves': a `Bar` reads `values` alone and
+  a `SelectionPanel` only an `absentIsDefault` leaf's, and whether `over`'s default should
+  stand in there is not decided. A lab resolves its instrument's config schema with no `over`
+  (`useConfigSchema`), so that schema cannot hold such a condition. A vertical bar inside a
   `PrefsForm` names the popover of an alias left unnamed with the empty string, where `Bar`
   names it for the leaf it shows. `PrefSchemaEditor` edits an entry's own `enableIf` and
   nothing inside an object entry, whose fields it draws no rows for, so a field's

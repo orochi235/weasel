@@ -242,7 +242,7 @@
     "longestFunction": 207
   },
   "packages/labkit/src/controls/ControlRow.tsx": {
-    "longestFunction": 128
+    "longestFunction": 123
   },
   "packages/labkit/src/controls/MatrixCell.tsx": {
     "longestFunction": 129

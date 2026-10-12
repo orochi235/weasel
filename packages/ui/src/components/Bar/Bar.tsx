@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { applyPrefConditions, isPrefLeaf, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, isPrefLeaf, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
@@ -31,7 +31,9 @@ export interface BarProps {
   renderers?: Record<string, PropertyRenderer>;
   /** The schema this one's `alias` leaves point into. Default: this schema itself. A bar drawn from a schema of
    *  aliases into another passes that other: each alias is drawn as the leaf of it at the alias's path, reads and
-   *  writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own. */
+   *  writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own. A
+   *  condition of this schema's own may read a setting of that one too: a path no leaf here holds is compared as
+   *  the leaf of that schema there shows it. */
   over?: PrefGroup | PrefSection;
   /** Which way the bar runs. A vertical bar has no room beside a field, so
    *  every leaf but an action opens from a button. Default `'horizontal'`. */
@@ -54,8 +56,9 @@ export function Bar(props: BarProps) {
   const read = (path: string): unknown => valueAt(values, path);
   const over = props.over ?? schema;
   const targets = prefAliasTargets(over, (entry) => prefJudge(over, read, entry));
-  const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, read), { aliasOver: over, aliasHolds: targets.holds });
-  const entryAt = entryApplier((entry) => prefJudge(schema, read, entry));
+  const judge = (entry?: PrefEntry) => prefJudge(schema, read, entry, props.over);
+  const { shown, disabled } = applyPrefConditions(schema, judge(), { aliasOver: over, aliasHolds: targets.holds });
+  const entryAt = entryApplier(judge);
   const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets };
   return (
     <BarLayout
