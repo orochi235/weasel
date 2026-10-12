@@ -92,6 +92,7 @@
       "@weasel-js/audio/testing/*": ["./packages/audio/src/testing/*"],
       "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],
       "@weasel-js/parallax": ["./packages/parallax/src/index.ts"],
+      "@weasel-js/minimap": ["./packages/minimap/src/index.ts"],
       "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
       // The two passthrough entries don't sit where their specifier says, so
       // they need explicit mappings ahead of the wildcard.
@@ -114,7 +115,7 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, the rest of tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
+  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/minimap/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
   // Browser tests are typechecked by packages/tsconfig.json, which says why.
   "exclude": ["node_modules", "dist", "**/*.browser.test.ts", "**/*.browser.test.tsx"]
 }

@@ -4,7 +4,7 @@
  * minimap's own view answers the minimap's camera.
  */
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { ViewApi } from 'interactions/actions/depSchema';
+import type { ViewApi } from '@weasel-js/core';
 
 /** Action id for `minimapCenterAction`. */
 export const MINIMAP_CENTER = 'minimap.center';

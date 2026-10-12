@@ -101,9 +101,8 @@ Priority tags:
   no kernel path needs; the registry, the `ingest` action, the `ingestion` dep
   and the weasel-JSON handler stay, since Cmd+V of the canvas's own content runs
   through them. Moving them makes a file drop do nothing on a bare
-  `<SceneCanvas>` until the consumer installs the handlers. Deferred 2026-09-28
-  because the package would be thin and no name is settled (`ingest` was turned
-  down).
+  `<SceneCanvas>` until the consumer installs the handlers. No name is settled:
+  `ingest` was turned down, and `images` was floated 2026-10-11.
 
 - **(P3) The action pipeline's coordinates are 2D, so another kernel can't
   reuse it.** World points arrive as `{x, y}` or flat scalars in
@@ -613,34 +612,29 @@ Core five + Crop shipped. Remaining:
 - **(P2) Pull the standalone parts of core into their own packages.** Ruled 2026-10-11: whatever
   makes sense as a package gets extracted, whatever its size. Read from the source, not from a
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
-  for relative imports undercounts who uses what. The leaf math is down in geom, text, and
-  registry, `features/groups`, `overlays`, `focus`, and `cursor` are dissolved, and
-  `@weasel-js/simulation`, `@weasel-js/stroke`, and `@weasel-js/text-dom` are out. Left, in
-  dependency order:
-  1. *The renderer, under core.* Everything it draws with is gathered under `renderer/` now:
-     `paintKinds`, `fillInPoseFrame`, `patterns`, `images`, `meshPaint`, `textCommand.ts`, and
-     `markerCommands.ts`. What still ties it to core: `paintKinds.ts` bumps the scene's node
-     memo (`core/scene/nodeMemo`) and types an `Editor` slot with React; some of its test files
-     build a scene or call `canvas/renderSceneToPixels`, `canvas/NodeShape`, or
-     `core/layers/render`, and would stay behind in core; `import-shims/renderer.ts` is a star
-     export; `glRecorder` needs a testing subpath.
-  2. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
+  for relative imports undercounts who uses what. Left:
+  1. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
      `useAnimator`, so it cannot sit over core. It reaches the scene through `stagger.ts`'s
      `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
      `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
      and stay.
-  3. *Over core, like `@weasel-js/kernel3d`.* `features/parallax` with `tiling` (the barrel has
-     to export `core/viewport/parallax` directly first); `poseRun` (needs a public way to publish
-     preview poses: `interactions/actions/previewOverrides.ts` is in no barrel); `minimap` with
-     `canvas/MinimapCanvas.tsx` (needs a public home for `accentColorOf`); the image and SVG
-     drop handlers (see the entry under Tools & gestures). Their exports leave `@weasel-js/core`.
+  2. *`poseRun`, over core.* It publishes preview poses through
+     `interactions/actions/previewOverrides.ts`, which is in no barrel and whose callers set up a
+     three-field bag themselves. Proposed 2026-10-11 and not ruled on: the scene's override table
+     hands out a holder (`scene.overrides.hold()` with `set(poses)`, `others()`, and `drop()`),
+     move, rotate, resize, and `usePoseRun` switch to it, and `previewOverrides.ts` is deleted.
+  3. *The image and SVG drop handlers, over core* (see the entry under Tools & gestures). Not
+     ruled on: the package's name (`images` was floated 2026-10-11), and whether a bare
+     `<SceneCanvas>` may ignore a file drop until a consumer installs the handlers.
 
-  A package made by a later step has to be seeded on npm by hand before a release, since the
-  release job cannot create one: `npm run check:first-publish` names any that are missing.
+  A new package has to be seeded on npm by hand before a release, since the release job cannot
+  create one: `npm run check:first-publish` names any that are missing. `@weasel-js/renderer`,
+  `@weasel-js/parallax`, and `@weasel-js/minimap` were added 2026-10-11 and are not seeded.
 
   Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
-  (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 1,
-  `selection/overlay.ts`, and the scene-bound text and path layers.
+  (`SceneCanvas` runs it), `modes`, `longPress`, `selection/overlay.ts`, the parallax math
+  (`core/viewport/parallax`, which a scene layer's own `parallax` uses), and the scene-bound text
+  and path layers.
 
 - **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
   it (`identity`, `multiply`, `invert`) are the six-number affine; `mat3` and `GlMat3`, which

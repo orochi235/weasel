@@ -8,17 +8,15 @@
  */
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { useEffect } from 'react';
-import { SceneCanvas } from '../../canvas/SceneCanvas';
-import { createScene } from 'core/scene/scene';
-import { useOptionalViewRegistry, type ViewRegistry } from '../../canvas/viewRegistry';
-import type { View } from 'core/viewport/view';
-import type { CanvasExtensionApi } from '../../canvas/canvasExtension';
-import type { ViewApi } from 'interactions/actions/depSchema';
+import { SceneCanvas } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import type { CanvasExtensionApi } from '@weasel-js/core';
+import type { ViewApi } from '@weasel-js/core';
 import { createPointerStore } from '@weasel-js/routing/react';
 import { createMinimapContribution, createLinkedCursorContribution } from './createMinimapContribution';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
-import { computeIndicatorCommand } from '../../canvas/minimapMath';
+import { computeIndicatorCommand } from './minimapMath';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -53,13 +51,6 @@ function pointer(el: Element, type: string, x: number, y: number) {
   }));
 }
 
-let views: ViewRegistry | null = null;
-function Probe() {
-  const v = useOptionalViewRegistry();
-  useEffect(() => { views = v; });
-  return null;
-}
-
 function mount() {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
@@ -67,9 +58,7 @@ function mount() {
   const onViewChange = vi.fn();
   const minimap = createMinimapContribution({ rect: RECT });
   const r = render(
-    <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ambient={[minimap]}>
-      <Probe />
-    </SceneCanvas>,
+    <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ambient={[minimap]} />,
   );
   return { scene, onViewChange, canvas: r.container.querySelector('canvas')! };
 }
@@ -78,12 +67,14 @@ const last = (fn: ReturnType<typeof vi.fn>): View => fn.mock.calls.at(-1)![0] as
 
 describe('input in the minimap', () => {
   it('frames the scene through its fit camera', () => {
-    mount();
-    const mini = views!.list().find((v) => v.id === 'minimap')!;
-    const cam = mini.target.deps!().view!.get();
-    expect(cam.x).toBeCloseTo(FIT.x);
-    expect(cam.y).toBeCloseTo(FIT.y);
-    expect(cam.scale.x).toBeCloseTo(FIT.scale.x);
+    const h = mount();
+    // Minimap (10, 8) is the scene's own origin; centered in 400×300 is (-200, -150).
+    act(() => {
+      pointer(h.canvas, 'pointerdown', 10, 8);
+      pointer(h.canvas, 'pointerup', 10, 8);
+    });
+    expect(last(h.onViewChange).x).toBeCloseTo(-200);
+    expect(last(h.onViewChange).y).toBeCloseTo(-150);
   });
 
   it('centers the main camera on the pressed world point', () => {
@@ -106,9 +97,13 @@ describe('input in the minimap', () => {
     });
     // Minimap x 60 is world 625; centered, 425.
     expect(last(h.onViewChange).x).toBeCloseTo(425);
-    const mini = views!.list().find((v) => v.id === 'minimap')!;
-    expect(mini.target.deps!().view!.get().x).toBeCloseTo(FIT.x);
     expect(h.scene.getSelection()).toEqual([]);
+    // The same press lands on the same world point: the drag did not move the minimap's camera.
+    act(() => {
+      pointer(h.canvas, 'pointerdown', 50, 40);
+      pointer(h.canvas, 'pointerup', 50, 40);
+    });
+    expect(last(h.onViewChange)).toMatchObject({ x: 300, y: 250 });
   });
 
   it('leaves a drag on the main canvas to the active tool', () => {

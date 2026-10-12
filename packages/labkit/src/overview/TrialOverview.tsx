@@ -10,12 +10,7 @@
 import {
   ActionsProvider,
   ActiveToolContextProvider,
-  crosshairRects,
   DepRegistryProvider,
-  MINIMAP_CENTER,
-  MINIMAP_PAN,
-  minimapCenterAction,
-  minimapPanAction,
   type Tool,
   useActionsRegistry,
   useDepSource,
@@ -25,6 +20,13 @@ import {
   type View,
   type ViewApi,
 } from '@weasel-js/core';
+import {
+  crosshairRects,
+  MINIMAP_CENTER,
+  MINIMAP_PAN,
+  minimapCenterAction,
+  minimapPanAction,
+} from '@weasel-js/minimap';
 import {
   type CSSProperties,
   type ReactNode,

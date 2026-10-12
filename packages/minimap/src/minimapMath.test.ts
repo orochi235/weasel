@@ -1,14 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { createScene } from 'core/scene/scene';
-import type { Scene } from 'core/scene/types';
-import type { View } from 'core/viewport/view';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { createScene } from '@weasel-js/core';
+import type { Scene } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core';
 import {
   computeFitView,
   computeIndicatorCommand,
   FALLBACK_FIT_VIEW,
 } from './minimapMath';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
+
+/** A pose that is neither a rect nor a Path, so only its descriptor can read it. */
+interface CirclePose { cx: number; cy: number; r: number }
+const circle = (cx: number, cy: number, r: number): CirclePose => ({ cx, cy, r });
+const CIRCLE_POSE_DESCRIPTOR: PoseDescriptor<CirclePose> = {
+  getBounds: (p) => ({ x: p.cx - p.r, y: p.cy - p.r, width: 2 * p.r, height: 2 * p.r }),
+  remapBounds: (p) => p,
+  translate: (p, dx, dy) => ({ cx: p.cx + dx, cy: p.cy + dy, r: p.r }),
+  fromBounds: (b) => ({ cx: b.x + b.width / 2, cy: b.y + b.height / 2, r: Math.min(b.width, b.height) / 2 }),
+  supportsRotation: () => false,
+};
 
 interface Data { label: string }
 interface Pose { x: number; y: number; width: number; height: number }

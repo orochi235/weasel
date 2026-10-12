@@ -37,7 +37,7 @@
     "lines": 424,
     "longestFunction": 286
   },
-  "packages/core/src/canvas/MinimapCanvas.tsx": {
+  "packages/minimap/src/MinimapCanvas.tsx": {
     "longestFunction": 155
   },
   "packages/core/src/canvas/NodeShape.ts": {

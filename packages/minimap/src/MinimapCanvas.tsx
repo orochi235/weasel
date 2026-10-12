@@ -32,27 +32,27 @@ import {
 } from '@weasel-js/routing/react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
-import { PointerProviderIfRoot } from './SceneCanvas/PointerProviderIfRoot';
+import { PointerProviderIfRoot } from '@weasel-js/core';
 import { usePointerContext, usePointerPosition } from '@weasel-js/routing/react';
 import {
   MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
-} from 'features/minimap/actions';
-import { createLinkedCursorLayer } from 'features/minimap/layers';
-import type { ViewApi } from 'interactions/actions/depSchema';
-import { SceneViewCanvas } from './SceneViewCanvas';
+} from './actions';
+import { createLinkedCursorLayer } from './layers';
+import type { ViewApi } from '@weasel-js/core';
+import { SceneViewCanvas } from '@weasel-js/core';
 import {
   computeFitView,
   computeIndicatorCommand,
 } from './minimapMath';
 import type { IndicatorStyle, MinimapFit } from './minimapMath';
-import type { SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
-import type { DrawCommand } from '@weasel-js/renderer';
-import { normalizeView, type View } from '../core/viewport/view';
-import type { Scene } from '../core/scene/types';
-import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
-import type { Animator } from '../animation/types';
-import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { accentColorOf } from './accentColor';
+import type { SceneViewDrawOne, SceneViewLayers } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/core';
+import { normalizeView, type View } from '@weasel-js/core';
+import type { Scene } from '@weasel-js/core';
+import type { PoseDescriptor } from '@weasel-js/core';
+import type { Animator } from '@weasel-js/core';
+import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core';
+import { accentColorOf } from '@weasel-js/core';
 
 /** Props for `<MinimapCanvas>`. */
 export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {

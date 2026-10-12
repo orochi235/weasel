@@ -1,0 +1,51 @@
+{
+  "name": "@weasel-js/minimap",
+  "version": "1.9.4",
+  "description": "A minimap for a weasel canvas: a read-only overview with a viewport indicator you drag to pan, fit math, and a linked crosshair between surfaces.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/minimap"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@weasel-js/react": "1.9.4",
+    "@weasel-js/routing": "1.9.4"
+  },
+  "peerDependencies": {
+    "@weasel-js/core": "1.9.4",
+    "react": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -117,7 +117,7 @@ roles cannot say), `beforePaint` / `afterPaint` (run on the surface's frame
 loop) and `requires` (the kit versions it was written against). `<SceneCanvas ambient>` installs every role an entry
 declares and removes them with it; `mergeContributions` concatenates features
 and throws on a duplicate entry id, dep name or view id. The minimap
-(`features/minimap`) and the HUD (`useHudContribution(hud)`) are built this
+(`@weasel-js/minimap`) and the HUD (`useHudContribution(hud)`) are built this
 way. `docs/extending.md` has the full map. See
 `packages/core/src/canvas/surfaceContribution.ts`.
 

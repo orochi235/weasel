@@ -36,6 +36,7 @@
       "@weasel-js/cursor",
       "@weasel-js/kernel3d",
       "@weasel-js/parallax",
+      "@weasel-js/minimap",
       "@weasel-js/forge",
       "@weasel-js/routing"
     ]

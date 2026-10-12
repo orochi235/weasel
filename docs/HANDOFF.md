@@ -5,7 +5,7 @@ explicit OK.
 
 Where it lives now: `docs/extending.md` (the extension-unit map and the minimap
 worked example), `docs/taxonomy.md` §1 "Contribution",
-`packages/core/src/features/minimap/README.md`,
+`packages/minimap/README.md`,
 `packages/labkit/src/canvas/AGENTS.md`, `packages/labkit/src/overview/AGENTS.md`.
 The design spec is deleted; its decisions are in those and in the commits.
 

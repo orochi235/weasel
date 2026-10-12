@@ -12,23 +12,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, cleanup, createEvent, fireEvent, render } from '@testing-library/react';
 import { createRef } from 'react';
-import { createScene } from 'core/scene/scene';
-import type { Node, Scene } from 'core/scene/types';
-import type { View } from 'core/viewport/view';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { createScene } from '@weasel-js/core';
+import type { SceneNode as Node, Scene } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core';
 import type {
   DrawCommand,
   GroupDrawCommand,
   PathDrawCommand,
-} from '@weasel-js/renderer';
+} from '@weasel-js/core';
 import { MinimapCanvas } from './MinimapCanvas';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { computeFitView } from './minimapMath';
-import { defaultDrawOne } from './defaultDrawOne';
-import { ColorOverrideRegistry } from '../animation/colorRegistry';
-import type { Animator } from '../animation/types';
+import { defaultDrawOne } from '@weasel-js/core';
+import { ColorOverrideRegistry } from '@weasel-js/core';
+import type { Animator } from '@weasel-js/core';
 import { pathFromD } from '@weasel-js/geom';
-import { strokeOf } from '../util/paint';
+import { strokeOf } from '@weasel-js/core';
 import { PointerContextProvider, usePointerContext, type PointerContextValue } from '@weasel-js/routing/react';
 
 const RAINBOW = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
@@ -43,7 +43,7 @@ const resizeMock = vi.fn<(dims: { width: number; height: number; dpr: number }) 
 
 vi.mock('@weasel-js/renderer', async (importOriginal) => {
   return {
-    ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
+    ...(await importOriginal<typeof import('@weasel-js/core')>()),
     WeaselRenderer: class {
       constructor(_opts: unknown) {}
       render(commands: DrawCommand[]): void { renderMock(commands); }

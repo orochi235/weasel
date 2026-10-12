@@ -3,23 +3,23 @@
  * view through a fit camera, the pan that moves the main camera from inside
  * it, the visible-rect indicator, and a linked crosshair.
  */
-import type { Dims, RenderLayer } from 'core/layers/render';
-import type { View } from 'core/viewport/view';
-import type { Scene } from 'core/scene/types';
-import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
+import type { Dims, RenderLayer } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import type { Scene } from '@weasel-js/core';
+import type { PoseDescriptor } from '@weasel-js/core';
+import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core';
 import type { PointerWorldPos } from '@weasel-js/routing/react';
-import type { CanvasExtensionApi } from '../../canvas/canvasExtension';
-import type { ViewRect } from '../../canvas/CanvasView';
-import type { ContributionDepReader, SurfaceContribution } from '../../canvas/surfaceContribution';
+import type { CanvasExtensionApi } from '@weasel-js/core';
+import type { ViewRect } from '@weasel-js/core';
+import type { ContributionDepReader, SurfaceContribution } from '@weasel-js/core';
 import {
   computeFitView, FALLBACK_FIT_VIEW, type IndicatorStyle, type MinimapFit,
-} from '../../canvas/minimapMath';
+} from './minimapMath';
 import {
   MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
 } from './actions';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
-import { accentColorOf, FALLBACK_ACCENT } from '../../canvas/accentColor';
+import { accentColorOf, FALLBACK_ACCENT } from '@weasel-js/core';
 
 
 /**

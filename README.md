@@ -204,6 +204,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `guides` | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
 | `hud` | WebGL-rendered widgets composited into a canvas |
 | `parallax` | parallax planes and tiled surfaces: layers that draw other layers through a derived view |
+| `minimap` | a minimap with linked cursors: an overview you press and drag to move the main camera, on the canvas's own surface or one of its own |
 | `kernel3d` | poses, an orbit camera, ray picking and screen-projected chrome over core's scene graph; hosts a renderer |
 | `cursor` | tool cursors as authored glyphs, baked to CSS or painted when too large |
 | `loupe` | a magnifier model: where it's aimed, how far it magnifies, what's under it |

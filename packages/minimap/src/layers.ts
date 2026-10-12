@@ -2,12 +2,12 @@
  * The minimap's chrome: the main camera's visible rect, drawn in the minimap,
  * and the linked crosshair, drawn in every view the pointer is not over.
  */
-import type { RenderLayer } from 'core/layers/render';
-import type { View } from 'core/viewport/view';
-import type { DrawCommand } from '@weasel-js/renderer';
-import type { ViewApi } from 'interactions/actions/depSchema';
+import type { RenderLayer } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/core';
+import type { ViewApi } from '@weasel-js/core';
 import type { PointerWorldPos } from '@weasel-js/routing/react';
-import { computeIndicatorCommand, type IndicatorStyle } from '../../canvas/minimapMath';
+import { computeIndicatorCommand, type IndicatorStyle } from './minimapMath';
 
 /** What a layer's `data` carries for this feature: the view it draws for. */
 function viewIdOf(data: unknown): string | null {
