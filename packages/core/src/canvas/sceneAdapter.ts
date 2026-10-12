@@ -45,7 +45,8 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { composeWorldPose, frameAtOrAbove, type PoseComposition } from 'core/scene/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
-import { containerCascade, descendantsOf } from './poseCascade';
+import { cascadeRecord } from './cascadeRecord';
+import { cascadingSetPose, containerCascade } from './poseCascade';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -146,7 +147,8 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
     | ((containerId: string) => LayoutStrategy<TPose> | null);
   /** When true, `setPose` on a container translates every descendant by the
    *  same delta, through the pose descriptor. Scene v1 stores absolute poses,
-   *  so without it children stay behind. */
+   *  so without it children stay behind. A batch that poses descendants too
+   *  undoes exactly only when it goes through this adapter's `applyOps`. */
   cascadeContainerPose?: boolean;
   /** How a child's stored pose folds into its parent's frame. Omit for the
    *  absolute-pose model, where a parent contributes no transform. Supplying a
@@ -198,6 +200,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     );
   }
 
+  const record = options.cascadeContainerPose ? cascadeRecord<TPose>(scene) : null;
+  const cascade = record && { record, setPose: cascadingSetPose(scene, d, record) };
+
   const clipboardEnv: SceneClipboardEnv<TData, TLayer, TPose> = {
     scene,
     composes,
@@ -236,35 +241,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // Only present when it would do something: the render walk skips the fold
     // entirely when this is absent, which is the absolute-pose path.
     ...(composes ? { composePose: composition!.compose } : {}),
-    setPose(id, pose) {
-      // Container cascade (opt-in): under scene v1's absolute-pose semantics,
-      // moving a container needs to translate every descendant by the same
-      // delta so children visually stay attached. The whole cascade lands as
-      // one scene.batch so undo collapses to a single step.
-      if (options.cascadeContainerPose) {
-        const node = scene.get(asNodeId(id));
-        if (node && node.kind === 'container') {
-          const g = poseDescriptorForNode(d, node);
-          const before = g.getBounds(node.pose);
-          const after = g.getBounds(pose);
-          const dx = after.x - before.x;
-          const dy = after.y - before.y;
-          if (dx !== 0 || dy !== 0) {
-            const descIds = descendantsOf(scene, asNodeId(id));
-            scene.batch('move container', () => {
-              scene.setPose(asNodeId(id), pose);
-              for (const cid of descIds) {
-                const cn = scene.get(cid);
-                if (!cn) continue;
-                scene.setPose(cid, translate(cn.pose, dx, dy, cn));
-              }
-            });
-            return;
-          }
-        }
-      }
-      scene.setPose(asNodeId(id), pose);
-    },
+    ...(cascade ? { setPose: (id: string, pose: TPose) => cascade.setPose(asNodeId(id), pose) } : {}),
     poseTarget(id, descriptor) {
       if (!options.cascadeContainerPose || scene.get(asNodeId(id))?.kind !== 'container') {
         return scenePoseTarget(scene, id, descriptor ?? d);
@@ -291,7 +268,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // via applyOpsTo (AreaSelectAdapter contract — no checkpoint).
     applyOps(ops: Op[], label?: string) {
       if (label !== undefined) {
-        scene.applyBatch(ops, label, this);
+        scene.applyBatch(cascade ? cascade.record.recorded(ops) : ops, label, this);
       } else {
         applyOpsTo(this, ops);
       }

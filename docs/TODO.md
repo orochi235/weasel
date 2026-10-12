@@ -681,15 +681,16 @@ Core five + Crop shipped. Remaining:
   the call for a copy made inside the same scene, where the originals are still there to follow, is
   whether it does the same, keeps the list, or re-points the ids it can.
 
-- **(P2) Container-pose cascade: a batch that poses a container and its descendants does not undo.**
-  Through `sceneToAdapter(scene, { cascadeContainerPose: true })` (what `<SceneCanvas>` uses without
-  a composing strategy), `adapter.applyOps([move(A), move(B), move(C)], 'Move')` with B inside A and
-  C inside B applies correctly, but `scene.undo()` runs the inverses in reverse and each container's
-  inverse cascades again: with A, B, and C at x = 0, 100, and 200 moved by 5, undo leaves them at 0,
-  95, and 190 (measured). The kit's own move action builds this shape of batch (roots plus
-  `cascadeIds`) but commits through `moveGestureAdapter`, which does not cascade, so only a consumer
-  routing `applyOps` to the canvas adapter hits it. Belongs with "Container-pose cascade as a
-  scene-primitive semantic": a cascade inside `setPose` cannot know what else the batch poses.
+- **(P2) Container-pose cascade: a restored history still undoes a mixed batch wrong.**
+  `sceneToAdapter(scene, { cascadeContainerPose: true }).applyOps(ops, label)` records the poses
+  each op changes, and the op's inverse restores them (`canvas/cascadeRecord.ts`), so a batch that
+  poses a container and its descendants undoes and redoes in a live session. Two paths never pass
+  through that record and still work the cascade out a second time on the way back: a history
+  restored with `restoreHistory`, whose rebuilt ops replay through the `setHistoryAdapter` adapter
+  (measured: A, B, and C at x = 0, 100, and 200 moved by 5, then restored and undone, land at 0,
+  95, and 190), and ops handed straight to `scene.applyBatch` with the cascading adapter. Neither
+  has a fix at the adapter, which sees pose writes and no op boundaries; both go with the cascade
+  itself under "Container-pose cascade as a scene-primitive semantic".
 
 ### Derived geometry follow-ups
 
