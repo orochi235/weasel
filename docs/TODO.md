@@ -462,14 +462,25 @@ Core five + Crop shipped. Remaining:
   measured `baselineDrop` is only rounding, but the overlay still cannot
   follow a fractional canvas baseline: moving its `top` by 0.4px moved its
   ink by exactly 1px in Chromium at DPR 1, and the matrix rows show the same
-  jump in WebKit, Firefox and at DPR 2. On top of that sits a steady ink bias,
-  overlay above canvas, of about -0.35px at DPR 1 and -0.17px at DPR 2
-  (derived from Chromium's rows), of unknown origin. Together they are the whole of
-  `dy` in `scripts/measure-overlay-alignment.config.ts` (mean |dy| about
-  0.2px, max 0.75), and why `overlayAlignment.browser.test.tsx` allows
-  `DY_TOLERANCE = 0.85`. Candidates: carry the fraction on a transform, snap
-  the canvas's text baseline to device pixels as browsers do, or find the
-  bias first. Recorded 2026-09-29.
+  jump in WebKit, Firefox and at DPR 2. The matrix rows also suggested a steady
+  ink bias, overlay above canvas, of about -0.35px at DPR 1 and -0.17px at
+  DPR 2 (derived from Chromium's rows). Together they are the whole of `dy` in
+  `scripts/measure-overlay-alignment.config.ts` (mean |dy| about 0.2px, max
+  0.75), and why `overlayAlignment.browser.test.tsx` allows
+  `DY_TOLERANCE = 0.85`. Recorded 2026-09-29.
+
+  Measured 2026-10-12 in headless Chromium at DPR 1 on macOS, by temporary
+  edits to that test. Nothing on the overlay's side can carry the fraction:
+  with `top` floored and the remainder on `transform: translateY()`, every
+  case's `dy` was the same to two decimals as before, with and without
+  `will-change: transform`, while adding 5px to that translate moved each by
+  5.00. And the bias did not show: stepping the pose's `y` through a pixel in
+  eighths gave a rounding sawtooth (Inter 40px from +0.43 to -0.42) whose mean
+  was -0.01 for Inter 40px, -0.02 for Inter 16px, -0.07 for Arial 40px, and
+  -0.14 for Georgia 23px, so the -0.35 looks like the matrix sampling two
+  phases of that sawtooth. Not checked in WebKit, Firefox, or at DPR 2. What is
+  left is a ruling: snap the canvas's text baseline to device pixels as
+  browsers do, which moves all canvas text, or keep the half pixel.
 
 - **(P3) WebKit at DPR 1 fails one overlay-alignment case, because it paints
   text on whole pixels.** `"Hgd" Inter 72px small caps` reports `dRight -0.79`
