@@ -17,7 +17,7 @@ import { dispatchApplyBatch } from 'core/applyOps';
 import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { resolveOperand, type BooleanOpOptions, type BooleanOperand } from './operands';
-import { booleanPieces } from './pieces';
+import { booleanPieces, type ResultPiece } from './pieces';
 import { placementOps } from './placement';
 
 /** Boolean op identifiers: the five Pathfinder primaries, and Crop, Trim, and Merge. */
@@ -124,23 +124,30 @@ const LABEL: Record<BooleanOp, string> = {
   merge: 'Merge',
 };
 
-/**
- * Run one Boolean operation over the selected paths and commit the result as a
- * single undoable batch.
- *
- * Operands are ordered back-to-front, which is what makes `subtract` mean
- * "everything in front removed from the backmost shape". Returns without
- * mutating anything when the selection holds no paths, or too few for the
- * requested operation. `opts.strokes` says what a stroked operand gives.
- */
-export function applyBooleanOp(
+/** One path a Boolean operation would make. */
+export interface BooleanPreviewPiece {
+  path: Path;
+  /** The source the piece stands in for; see `BooleansAdapter.createPathNode`. */
+  sourceId: NodeId;
+  /** Set when that source's stroke went into `path`: the paint the piece wears. */
+  paint?: PathPaint;
+}
+
+/** What {@link previewBooleanOp} answers: the pieces, or why there are none. */
+export type BooleanOpPreview =
+  | { kind: 'pieces'; pieces: BooleanPreviewPiece[] }
+  | Exclude<BooleanOpResult, { kind: 'applied' }>;
+
+type Entry = { id: NodeId; operand: BooleanOperand };
+
+/** The operands back to front and the pieces `op` makes of them, or the
+ *  result that says why it makes none. Reads the adapter and changes nothing. */
+function planBooleanOp(
   adapter: BooleansAdapter,
+  sel: readonly NodeId[],
   op: BooleanOp,
-  opts: BooleanOpOptions = {},
-): BooleanOpResult {
-  const sel = [...adapter.getSelection()] as NodeId[];
-  const zOrder = (id: NodeId): BooleanZOrder | undefined =>
-    adapter.getZOrder ? adapter.getZOrder(id) : locateChild(adapter, id) ?? undefined;
+  opts: BooleanOpOptions,
+): { entries: Entry[]; pieces: ResultPiece[] } | Exclude<BooleanOpResult, { kind: 'applied' }> {
   // Resolve path nodes only, sorted ascending by `compareZ` so paths[0] is
   // the bottommost (back) member. `subtract` relies on this: it computes
   // `back − union(rest)`, which is Illustrator's "Minus Front." Keep this
@@ -153,7 +160,7 @@ export function applyBooleanOp(
     throw err;
   }
   const entries = resolved
-    .filter((e): e is { id: NodeId; operand: BooleanOperand } => e.operand != null)
+    .filter((e): e is Entry => e.operand != null)
     .sort((a, b) => adapter.compareZ(a.id, b.id));
 
   if (entries.length === 0) return { kind: 'noop', reason: 'no-paths' };
@@ -170,6 +177,49 @@ export function applyBooleanOp(
   };
   const pieces = booleanPieces(op, entries.map((e) => e.operand.path), fillKey);
   if (pieces.length === 0) return { kind: 'noop', reason: 'empty-result' };
+  return { entries, pieces };
+}
+
+/**
+ * What {@link applyBooleanOp} would make of the selection, without minting a
+ * node or committing anything: for drawing an operation before it is applied.
+ */
+export function previewBooleanOp(
+  adapter: BooleansAdapter,
+  op: BooleanOp,
+  opts: BooleanOpOptions = {},
+): BooleanOpPreview {
+  const plan = planBooleanOp(adapter, [...adapter.getSelection()] as NodeId[], op, opts);
+  if ('kind' in plan) return plan;
+  return {
+    kind: 'pieces',
+    pieces: plan.pieces.map((piece) => {
+      const { id, operand } = plan.entries[piece.source]!;
+      return operand.paint ? { path: piece.path, sourceId: id, paint: operand.paint } : { path: piece.path, sourceId: id };
+    }),
+  };
+}
+
+/**
+ * Run one Boolean operation over the selected paths and commit the result as a
+ * single undoable batch.
+ *
+ * Operands are ordered back-to-front, which is what makes `subtract` mean
+ * "everything in front removed from the backmost shape". Returns without
+ * mutating anything when the selection holds no paths, or too few for the
+ * requested operation. `opts.strokes` says what a stroked operand gives.
+ */
+export function applyBooleanOp(
+  adapter: BooleansAdapter,
+  op: BooleanOp,
+  opts: BooleanOpOptions = {},
+): BooleanOpResult {
+  const sel = [...adapter.getSelection()] as NodeId[];
+  const plan = planBooleanOp(adapter, sel, op, opts);
+  if ('kind' in plan) return plan;
+  const { entries, pieces } = plan;
+  const zOrder = (id: NodeId): BooleanZOrder | undefined =>
+    adapter.getZOrder ? adapter.getZOrder(id) : locateChild(adapter, id) ?? undefined;
 
   // Every source's slot, read before the scene is mutated.
   const slots = entries.map((e) => zOrder(e.id));
