@@ -509,7 +509,9 @@
 
 .list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* A track list, for a container that knows it is too narrow for two columns:
+     `minmax(0, 1fr)` stacks every row, and a full-width row still spans. */
+  grid-template-columns: var(--wzl-prop-columns, 1fr 1fr);
   column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-row-gap, 4px);
   align-items: stretch;
@@ -1346,7 +1348,7 @@
 
 .groupBody {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: var(--wzl-prop-columns, 1fr 1fr);
   column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-row-gap, 4px);
   /* Stretch so paired rows match in height — slider rows then bottom-align
@@ -1377,7 +1379,7 @@
    label flanked by a horizontal rule — no card chrome, just the divider. */
 .subpanel {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: var(--wzl-prop-columns, 1fr 1fr);
   column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-subpanel-row-gap, 3px);
   align-items: stretch;

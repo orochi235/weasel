@@ -1564,11 +1564,6 @@ only story runner in the repo.
   and `moveBefore` moves an iframe without reloading it), or has `Trial` keep
   the body at one tree position whether or not there is a stage.
 
-- **(P3) At a 140px trial sidebar the forge Globals group's label and value columns overlap** ("MODE"
-  over "Lab"). Seen in forge on 2026-09-28; 140px is the narrowest a drag makes the sidebar of a
-  trial's `Split` (`packages/labkit/src/primitives/Split.tsx`), and a tile under 300px now lays the
-  sidebar out narrower still, which no browser run has looked at yet.
-
 - **(P3) windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders
   only `visible` ones, so the pane is an empty gap with a live separator
