@@ -6,7 +6,6 @@ import {
   dragPanContribution,
   useScene,
   useSelection,
-  useSimulation,
   ellipsePath,
   linePath,
 } from '@weasel-js/core';
@@ -16,10 +15,11 @@ import type {
   InvocationCtx,
   OngoingHandle,
   RenderLayer,
-  Simulation,
   View,
 } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { Simulation } from '@weasel-js/simulation';
+import { useSimulation } from '@weasel-js/simulation/react';
+import type { DrawCommand } from '@weasel-js/renderer';
 import {
   GRAPH_SIZES, graphForces, makeGraph, type GraphLink, type GraphNode, type GraphSize,
 } from './forceGraph/graph';

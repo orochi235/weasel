@@ -1,5 +1,5 @@
 import { forceCenter, forceCollide, forceLink, forceManyBody } from 'd3-force';
-import type { SimulationForce, SimulationNode } from '@weasel-js/core';
+import type { SimulationForce, SimulationNode } from '@weasel-js/simulation';
 
 export interface GraphNode extends SimulationNode {
   id: string;
