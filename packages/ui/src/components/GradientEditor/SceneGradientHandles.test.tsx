@@ -12,6 +12,7 @@ import {
   type GradientPaint,
   type RectPose,
   type Stroke,
+  type Fill,
 } from '@weasel-js/core';
 import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { SceneGradientHandles } from './SceneGradientHandles';
@@ -46,7 +47,7 @@ beforeAll(() => {
   };
 });
 
-interface Data { fill?: Paint | null; stroke?: Stroke | null }
+interface Data { fill?: Fill | null; stroke?: Stroke | null }
 type Layer = 'main';
 
 function sceneWith(pose: RectPose, data: Data): ReturnType<typeof createScene<Data, Layer>> {
@@ -127,14 +128,14 @@ function expectAt(label: string, x: number, y: number): void {
 
 describe('SceneGradientHandles', () => {
   it('draws nothing when the targeted slot holds no gradient', () => {
-    const scene = sceneWith(BOX, { fill: { kind: 'solid', color: '#ff0000' } });
+    const scene = sceneWith(BOX, { fill: { paint: { kind: 'solid', color: '#ff0000' } } });
     render(<Overlay scene={scene} slot="fill" seen={[]} />);
     expect(screen.queryByLabelText('Gradient start')).toBeNull();
   });
 
   it('reads the slot it is given, not whichever paint the node has', () => {
     const scene = sceneWith(BOX, {
-      fill: { kind: 'solid', color: '#ff0000' },
+      fill: { paint: { kind: 'solid', color: '#ff0000' } },
       stroke: { paint: BOUNDS_RAMP, width: 2 },
     });
     const { rerender } = render(<Overlay scene={scene} slot="fill" seen={[]} />);
@@ -144,7 +145,7 @@ describe('SceneGradientHandles', () => {
   });
 
   it('resolves the stored bounds-frame gradient onto the node box', () => {
-    const scene = sceneWith(BOX, { fill: BOUNDS_RAMP });
+    const scene = sceneWith(BOX, { fill: { paint: BOUNDS_RAMP } });
     render(<Overlay scene={scene} slot="fill" seen={[]} />);
     expect(screen.getByLabelText('Gradient start')).toHaveAttribute('cx', '0');
     expect(screen.getByLabelText('Gradient end')).toHaveAttribute('cx', '200');
@@ -154,7 +155,7 @@ describe('SceneGradientHandles', () => {
   // the renderer rotates the node.
   it('places the handles on a rotated node where the paint actually is', () => {
     const scene = sceneWith({ x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2 },
-      { fill: BOUNDS_RAMP });
+      { fill: { paint: BOUNDS_RAMP } });
     render(<Overlay scene={scene} slot="fill" seen={[]} />);
     // Unrotated the ramp would run (0,0)→(100,0); the quarter turn swings it
     // down the box's right edge.
@@ -164,7 +165,7 @@ describe('SceneGradientHandles', () => {
 
   it('commits a dragged handle back through setFill in the bounds frame', () => {
     const seen: Record<string, unknown>[] = [];
-    const scene = sceneWith(BOX, { fill: BOUNDS_RAMP });
+    const scene = sceneWith(BOX, { fill: { paint: BOUNDS_RAMP } });
     render(<Overlay scene={scene} slot="fill" seen={seen} />);
     drag('Gradient end', { x: 100, y: 50 });
 
@@ -176,7 +177,7 @@ describe('SceneGradientHandles', () => {
 
   it('cancels the action when a handle drag is canceled, and leaves nothing open to commit later', () => {
     const ends: string[] = [];
-    const scene = sceneWith(BOX, { fill: BOUNDS_RAMP });
+    const scene = sceneWith(BOX, { fill: { paint: BOUNDS_RAMP } });
     const { unmount } = render(<Overlay scene={scene} slot="fill" seen={[]} ends={ends} />);
     const handle = screen.getByLabelText('Gradient end');
     fireEvent.pointerDown(handle, { clientX: 200, clientY: 0, pointerId: 1 });
@@ -200,7 +201,7 @@ describe('SceneGradientHandles', () => {
   });
 
   it('puts mesh handles on the node box for a mesh fill', () => {
-    const scene = sceneWith(BOX, { fill: seedMeshPatch('#3366ccff') as unknown as Paint });
+    const scene = sceneWith(BOX, { fill: { paint: seedMeshPatch('#3366ccff') as unknown as Paint } });
     render(<Overlay scene={scene} slot="fill" seen={[]} />);
     expectAt('Patch 1 corner 3', 200, 100);
     expect(screen.queryByLabelText('Gradient start')).toBeNull();
@@ -208,7 +209,7 @@ describe('SceneGradientHandles', () => {
 
   it('commits a dragged mesh corner through setFill in the bounds frame', () => {
     const seen: Record<string, unknown>[] = [];
-    const scene = sceneWith(BOX, { fill: seedMeshPatch('#3366ccff') as unknown as Paint });
+    const scene = sceneWith(BOX, { fill: { paint: seedMeshPatch('#3366ccff') as unknown as Paint } });
     render(<Overlay scene={scene} slot="fill" seen={seen} />);
     drag('Patch 1 corner 3', { x: 100, y: 50 });
 

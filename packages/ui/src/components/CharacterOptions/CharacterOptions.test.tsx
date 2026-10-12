@@ -172,7 +172,7 @@ describe('CharacterOptions — numeric fields', () => {
 describe('CharacterOptions — fill', () => {
   it('shows a solid fill color', () => {
     render(
-      <CharacterOptions style={{ fill: { color: '#ff0000ff' } }} onPatch={vi.fn()} />,
+      <CharacterOptions style={{ fill: { paint: { color: '#ff0000ff' } } }} onPatch={vi.fn()} />,
     );
     expect(screen.getByLabelText('Color')).toHaveValue('#ff0000');
   });
@@ -180,12 +180,12 @@ describe('CharacterOptions — fill', () => {
   it('patches a solid fill', () => {
     const onPatch = vi.fn();
     render(
-      <CharacterOptions style={{ fill: { color: '#ff0000ff' } }} onPatch={onPatch} />,
+      <CharacterOptions style={{ fill: { paint: { color: '#ff0000ff' } } }} onPatch={onPatch} />,
     );
     const input = screen.getByLabelText('Color');
     fireEvent.input(input, { target: { value: '#00ff00' } });
     fireEvent.blur(input);
-    expect(onPatch).toHaveBeenCalledWith({ fill: { color: '#00ff00ff' } });
+    expect(onPatch).toHaveBeenCalledWith({ fill: { paint: { color: '#00ff00ff' } } });
   });
 
   it('treats a non-solid fill as indeterminate rather than inventing a swatch', () => {
@@ -196,10 +196,12 @@ describe('CharacterOptions — fill', () => {
       <CharacterOptions
         style={{
           fill: {
-            kind: 'linear-gradient',
-            from: { x: 0, y: 0 },
-            to: { x: 1, y: 0 },
-            stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+            paint: {
+              kind: 'linear-gradient',
+              from: { x: 0, y: 0 },
+              to: { x: 1, y: 0 },
+              stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+            },
           },
         }}
         onPatch={vi.fn()}

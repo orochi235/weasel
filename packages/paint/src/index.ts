@@ -1,6 +1,6 @@
 /** @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer. */
 export type { TextureHandle } from './texture';
-export type { CommandPaint, CommandPaintUnits, CommandStroke, PosedPaint, SolidPaint } from './commandPaint';
+export type { CommandFill, CommandPaint, CommandPaintUnits, CommandStroke, PosedPaint, SolidPaint } from './commandPaint';
 export { isSolidPaint } from './commandPaint';
 export type {
   Paint,
@@ -12,6 +12,7 @@ export type {
   KitMarkerKey,
   MarkerKey,
   MarkerRef,
+  Fill,
   Stroke,
   StrokeDashStyle,
   Region,

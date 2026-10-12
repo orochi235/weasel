@@ -59,7 +59,7 @@ describe('buildSceneLayer — alphaFor', () => {
     const layer = buildSceneLayer(
       {
         drawOne: () => [
-          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'red' } },
+          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } },
         ],
         alphaFor,
       },
@@ -110,7 +110,7 @@ describe('buildSceneLayer — alphaFor', () => {
     const layer = buildSceneLayer(
       {
         drawOne: () => [
-          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'blue' } },
+          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'blue' } } },
         ],
         alphaFor: () => 1,
       },

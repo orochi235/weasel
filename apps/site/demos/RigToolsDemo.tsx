@@ -14,14 +14,14 @@ import {
   useScene,
   useWeightTool,
 } from '@weasel-js/core';
-import type { Paint, NodeId, Path, RectPose, Stroke } from '@weasel-js/core';
+import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 320;
 const BOX: RectPose = { x: 80, y: 180, width: 440, height: 100 };
 const BONE = 180, HALF = 18, MID = 50;
 
-type Data = { skeleton?: Skeleton; skin?: Skin; path?: Path; fill?: Paint | null; stroke?: Stroke };
+type Data = { skeleton?: Skeleton; skin?: Skin; path?: Path; fill?: Fill | null; stroke?: Stroke };
 interface NodeSpec {
   id: NodeId; kind: 'leaf' | 'container'; layer: 'main'; parent?: NodeId; pose: RectPose; data: Data;
   clipFromPose?: () => null;
@@ -47,7 +47,7 @@ const INITIAL: NodeSpec[] = [
     id: SLEEVE, kind: 'leaf', layer: 'main', parent: RIG,
     pose: { x: X0, y: Y0 - HALF, width: 360, height: 2 * HALF },
     data: {
-      path: SLEEVE_PATH, fill: solid('#d4a574'),
+      path: SLEEVE_PATH, fill: { paint: solid('#d4a574') },
       stroke: { paint: { color: '#2b2118' }, width: 3, join: 'round' },
       skin: autoSkin(SLEEVE_PATH, placeSkeleton(ARM, BOX)),
     },

@@ -37,12 +37,12 @@ const CURVE = {
 };
 
 const CASES: Array<[string, Record<string, unknown>]> = [
-  ['a stroked rect shape', { shape: 'rect', fill: solid('#f00'), stroke: SPIKY }],
+  ['a stroked rect shape', { shape: 'rect', fill: { paint: solid('#f00') }, stroke: SPIKY }],
   ['a stroked star', { shape: 'star', stroke: SPIKY }],
   ['an ellipse', { shape: 'ellipse' }],
   ['a curved path with an arrowhead', { path: CURVE, stroke: { ...strokeOf('#000', 4), markerEnd: 'arrow' } }],
   ['an image placeholder', { image: { src: 'data:image/png;base64,' } }],
-  ['a rect-fallback node', { fill: solid('#0f0') }],
+  ['a rect-fallback node', { fill: { paint: solid('#0f0') } }],
 ];
 
 const tightened = (c: DrawCommand): DrawCommand =>

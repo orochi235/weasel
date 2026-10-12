@@ -115,7 +115,7 @@ export function createViewportLayer<TData, TSource = TData>(
         children.push({
           kind: 'path',
           path: { kind: 'rect', x: 0, y: 0, width: b.w, height: b.h },
-          fill: { kind: 'solid', color: background },
+          fill: { paint: { kind: 'solid', color: background } },
         });
       }
       const innerDims = { width: b.w, height: b.h };

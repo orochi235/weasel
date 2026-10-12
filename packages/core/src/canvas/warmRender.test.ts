@@ -24,7 +24,7 @@ afterEach(() => {
 function run(fontFamily: string, fontWeight = 400, fontStyle: 'normal' | 'italic' = 'normal', fill?: CommandPaint): ResolvedRun {
   return {
     text: 'Hi', fontFamily, fontSize: 12, fontWeight, fontStyle,
-    fill: fill ?? { kind: 'solid', color: '#000' },
+    fill: { paint: fill ?? { kind: 'solid', color: '#000' } },
   } as ResolvedRun;
 }
 
@@ -37,7 +37,7 @@ const COMMANDS: DrawCommand[] = [
     kind: 'group',
     children: [{
       kind: 'group',
-      children: [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }, fill: mesh }],
+      children: [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }, fill: { paint: mesh } }],
     }],
   },
 ];

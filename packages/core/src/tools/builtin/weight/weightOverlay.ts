@@ -50,7 +50,7 @@ export function createWeightOverlay(source: {
           out.push({
             kind: 'path',
             path: ellipsePath({ x: x - POINT_RADIUS_PX, y: y - POINT_RADIUS_PX, width: 2 * POINT_RADIUS_PX, height: 2 * POINT_RADIUS_PX }),
-            fill: { kind: 'solid', color: active === null ? IDLE : mix(share) },
+            fill: { paint: { kind: 'solid', color: active === null ? IDLE : mix(share) } },
             stroke: { paint: { color: RIM }, width: 1 },
           });
         }

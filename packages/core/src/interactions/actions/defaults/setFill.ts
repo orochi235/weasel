@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { Paint } from '@weasel-js/paint';
+import type { Fill, Paint } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import { paintWithColor, DEFAULT_FILL_COLOR } from '../../../util/paint';
 
@@ -11,6 +11,14 @@ interface SetFillState {
   /** `null` is an explicit no-fill, distinct from `undefined`, which means
    *  this gesture carries no paint and the color applies. */
   paint?: Paint | null;
+}
+
+/** Repaint a node's fill, keeping whatever else the fill carries. */
+function repaint(prev: Fill | null | undefined, state: SetFillState): Fill | null {
+  // `??` would read an explicit no-fill as "no paint given" and repaint the
+  // node with the state's color, so absence has to be tested for.
+  if (state.paint === null) return null;
+  return { ...prev, paint: state.paint ?? paintWithColor(prev?.paint, state.color) };
 }
 
 /**
@@ -25,7 +33,7 @@ interface SetFillState {
  */
 export const setFillAction: Action & { requires: string[] } = createPaintAction<
   SetFillState,
-  Paint,
+  Fill,
   'fill'
 >({
   id: 'setFill',
@@ -44,9 +52,5 @@ export const setFillAction: Action & { requires: string[] } = createPaintAction<
     // picker drag after a gradient would do nothing.
     return { color, paint };
   },
-  // `??` would read an explicit no-fill as "no paint given" and repaint the
-  // node with the state's color, so absence has to be tested for.
-  merge: (prev, state) => (state.paint !== undefined
-    ? state.paint
-    : paintWithColor(prev ?? undefined, state.color)),
+  merge: repaint,
 });

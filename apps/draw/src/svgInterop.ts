@@ -13,7 +13,7 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import type { Paint, TextStyle } from '@weasel-js/core';
+import type { Fill, TextStyle } from '@weasel-js/core';
 import {
   svgImageFromKit,
   svgLeafFromKit,
@@ -205,7 +205,7 @@ export function objToSvgNode(o: Obj): SvgNode {
   const node: SvgPathNode = {
     kind: 'path',
     path: o.path,
-    fill: svgPaintFromKit(o.fill, o),
+    fill: svgPaintFromKit(o.fill?.paint ?? null, o),
   };
   const stroke = svgStrokeFromKit(o.stroke, o);
   if (stroke) node.stroke = stroke;
@@ -344,7 +344,7 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
 }
 
 /** SVG's initial `fill`, for a path that names none. */
-const DEFAULT_IMPORT_FILL: Paint = { color: '#000000' };
+const DEFAULT_IMPORT_FILL: Fill = { paint: { color: '#000000' } };
 
 /** Trigger a browser download of `svg` as a file named `filename`. */
 export function downloadSvg(svg: string, filename: string): void {

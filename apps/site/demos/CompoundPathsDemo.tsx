@@ -188,7 +188,7 @@ export function CompoundPathsDemo() {
             drawOne: (node, p): DrawCommand[] => [{
               kind: 'path',
               path: p,
-              fill: { color: node.data.fill },
+              fill: { paint: { color: node.data.fill } },
               stroke: { paint: { color: node.data.stroke ?? '#1a130d' }, width: 1.5 },
             }],
             // drawOne: 'signature' is a custom screen-space RenderLayer
@@ -206,7 +206,7 @@ export function CompoundPathsDemo() {
                 return [textCommandFromRuns(
                   W - 10 - text.length * charW,
                   H - 8 - 14,
-                  [{ text, fill: { kind: 'solid', color: '#ff3344' } }],
+                  [{ text, fill: { paint: { kind: 'solid', color: '#ff3344' } } }],
                   { fontFamily: 'sans-serif', fontSize: 14 },
                 )];
               },

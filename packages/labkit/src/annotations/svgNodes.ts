@@ -36,7 +36,7 @@ function toSvgNode(cmd: DrawCommand, m: PaintableMark): SvgNode {
     return {
       kind: 'path',
       path: cmd.path,
-      fill: toSvgPaint(cmd.fill),
+      fill: toSvgPaint(cmd.fill?.paint),
       ...(cmd.stroke ? { stroke: toSvgStroke(cmd.stroke) } : {}),
     };
   }

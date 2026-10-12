@@ -30,7 +30,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
-import type { Paint, Stroke } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 
 interface OpsApplier {
@@ -63,7 +63,7 @@ export type InsertNodeFactory = (
  * It paints only the shapes the kit builds: an `InsertNodeFactory` owns its
  * node's whole `data`. See `SceneCanvas`'s `insertPaint` prop.
  */
-export type InsertPaint = (kind: string, seq: number) => { fill?: Paint | null; stroke?: Stroke | null };
+export type InsertPaint = (kind: string, seq: number) => { fill?: Fill | null; stroke?: Stroke | null };
 
 /** The default {@link InsertPaint}: the next color of the kit palette, as a
  *  fill on a closed shape, a fill and a stroke on a line or a pen path, and a
@@ -71,8 +71,8 @@ export type InsertPaint = (kind: string, seq: number) => { fill?: Paint | null; 
 export const paletteInsertPaint: InsertPaint = (kind, seq) => {
   const color = cycleFill(seq);
   if (kind === 'pencil') return { stroke: strokeOf(color, 2) };
-  if (kind === 'line' || kind === 'path') return { fill: solid(color), stroke: strokeOf(color, 2) };
-  return { fill: solid(color) };
+  if (kind === 'line' || kind === 'path') return { fill: { paint: solid(color) }, stroke: strokeOf(color, 2) };
+  return { fill: { paint: solid(color) } };
 };
 
 export function useInsertDepSource(
@@ -101,7 +101,7 @@ export function useInsertDepSource(
         const kind = extras.kind;
         const seq = ++insertSeqRef.current;
         const id = sc.mintId();
-        const painted = (as: string = kind): { fill?: Paint | null; stroke?: Stroke | null } => {
+        const painted = (as: string = kind): { fill?: Fill | null; stroke?: Stroke | null } => {
           const { fill, stroke } = paintRef.current(as, seq);
           return { ...(fill !== undefined ? { fill } : {}), ...(stroke !== undefined ? { stroke } : {}) };
         };

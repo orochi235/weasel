@@ -389,13 +389,22 @@ Core five + Crop shipped. Remaining:
   onto the family is a visual call that wants a browser — it shrinks every
   gradient handle.
 
+- **(P2) `SelectionPanel` cannot clear a fill.** Since `fill` became a record (2026-10-12), the
+  default node properties describe `data.fill` as an object leaf with a `paint` child, and
+  `leafField.ts` gives a paint nested in an object `allowNone: false`. Its comment says no kit paint
+  field is optional, which is no longer so: `Fill.paint` and `Stroke.paint` are both optional, and
+  either record with no paint paints nothing. "None" on a nested paint should remove the `paint`
+  field from its parent, which gives a stroke the same control. Draw is unaffected: it clears a
+  fill through `setFill`.
+
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
-  fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
-  `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
-  WeaselDraw. What it deliberately did not do:
+  fill-mode expansion shipped 2026-08-12 — patterns tile, each built-in tile is a
+  serializable paint kind of its own (`{ kind: 'hatch', color }`), they round-trip
+  through SVG `<pattern>`, and have a picker in WeaselDraw. What it deliberately
+  did not do:
 
   - **Image-upload patterns.** The picker covers the four built-in tiles only.
-    A user-supplied bitmap needs a payload variant that persists the image
+    A user-supplied bitmap needs a paint kind that persists the image
     itself (data URI, or a document-scoped asset table), which is a storage
     question rather than a paint one.
 

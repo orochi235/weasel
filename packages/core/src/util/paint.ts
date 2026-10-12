@@ -14,6 +14,7 @@ import {
   resolvePaletteColor,
   type ColorLiteral,
   type CommandStroke,
+  type Fill,
   type Paint,
   type Palette,
   type SolidPaint,
@@ -58,7 +59,7 @@ export const GHOST_STROKE: string = cycleFill(0);
 
 /**
  * A solid paint from a color string — the authoring shorthand for the one
- * shape a node's `data.fill` (and a `Stroke.paint`) may take.
+ * shape a `Fill.paint` or a `Stroke.paint` may take.
  *
  * An alpha channel in `color` moves to `opacity`, because that is where every
  * paint kind carries its alpha; leaving it in the hex too would multiply the
@@ -82,8 +83,8 @@ export function strokeWith(paint: Paint, width = 1): Stroke {
   return { paint, width };
 }
 
-/** The kit's default node paint — what a shape with no declared fill paints. */
-export const DEFAULT_SHAPE_FILL: Paint = { color: '#888' };
+/** The kit's default node fill — what a shape with no declared fill paints. */
+export const DEFAULT_SHAPE_FILL: Fill & { paint: Paint } = { paint: { color: '#888' } };
 
 /**
  * The 0..1 alpha a paint paints at.

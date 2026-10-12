@@ -51,7 +51,7 @@ describe('cachedMarkerCommands', () => {
     const [a] = cachedMarkerCommands(LINE, STROKE, STROKE, 2, undefined);
     const blue: CommandStroke = { ...STROKE, paint: { color: '#00f' } };
     const [b] = cachedMarkerCommands(LINE, blue, blue, 2, undefined);
-    expect(b.fill).toEqual({ color: '#00f' });
+    expect(b.fill).toEqual({ paint: { color: '#00f' } });
     expect(b.path).toBe(a.path);
   });
 

@@ -45,12 +45,12 @@ describe('createCellHighlightLayer', () => {
     const layer = createCellHighlightLayer({
       spacing: 10,
       getCell: () => ({ col: 0, row: 0 }),
-      fill: { kind: 'solid', color: '#123456' },
+      fill: { paint: { kind: 'solid', color: '#123456' } },
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     expect(tree[0]).toMatchObject({
       kind: 'path',
-      fill: { kind: 'solid', color: '#123456' },
+      fill: { paint: { kind: 'solid', color: '#123456' } },
     });
   });
 

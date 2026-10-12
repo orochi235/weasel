@@ -887,7 +887,8 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.background = 'transparent';
   // Unfilled text still edits in black: the overlay has to be legible, and
   // there is no CSS spelling of "no fill" that leaves the glyphs visible.
-  el.style.color = isSolidPaint(style.fill) ? style.fill.color : '#000';
+  const paint = style.fill?.paint;
+  el.style.color = isSolidPaint(paint) ? paint.color : '#000';
   el.style.caretColor = style.caretColor;
   // The canvas's face, not the browser's reading of the family name.
   const fontFamily = cssFontFamily(style.fontFamily, {

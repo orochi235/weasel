@@ -42,7 +42,7 @@ export function LayerListDemo() {
             drawOne: (n, p): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: (n.data as Rect).color },
+              fill: { paint: { color: (n.data as Rect).color } },
             }],
           },
         }}

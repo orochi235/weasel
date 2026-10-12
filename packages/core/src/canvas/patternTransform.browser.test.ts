@@ -25,7 +25,7 @@ function render(transform: PatternTransform | undefined): RasterImage {
   const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill,
+    fill: { paint: fill },
   } as DrawCommand];
   const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: W, height: H }, data: null });

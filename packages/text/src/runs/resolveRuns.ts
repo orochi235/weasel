@@ -31,7 +31,7 @@
  * size. See `smallCaps.ts`.
  */
 
-import type { Paint, Stroke } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { faceMetricsOf, resolveFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
 import type { StyledRun } from '../runs';
@@ -61,7 +61,7 @@ export interface ResolvedRun {
   /** `null` is an explicit no-fill: the glyphs are painted by `stroke` alone,
    *  which only the outline tier can do. Nothing is emitted for a run with
    *  neither. */
-  fill: Paint | null;
+  fill: Fill | null;
   /** Outline over this run's glyphs, or absent for none. Painted only on the
    *  outline tier — a distance field has no geometry to stroke. */
   stroke?: Stroke;

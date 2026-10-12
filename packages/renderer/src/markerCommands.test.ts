@@ -22,7 +22,7 @@ describe('markerDrawCommands', () => {
   it('emits one filled command for a filled head', () => {
     const cmds = markerDrawCommands(LINE, { ...BASE, markerEnd: 'arrow' }, 2, undefined);
     expect(cmds).toHaveLength(1);
-    expect(cmds[0].fill).toEqual(PAINT);
+    expect(cmds[0].fill).toEqual({ paint: PAINT });
     expect(cmds[0].stroke).toBeUndefined();
   });
 
@@ -61,7 +61,7 @@ describe('markerDrawCommands', () => {
     try {
       const cmds = markerDrawCommands(LINE, { ...BASE, markerEnd: 'app:both' }, 2, undefined);
       expect(cmds).toHaveLength(1);
-      expect(cmds[0].fill).toEqual({ kind: 'solid', color: '#fff' });
+      expect(cmds[0].fill).toEqual({ paint: { kind: 'solid', color: '#fff' } });
       // The outline declares no paint of its own, so it falls back to the line's.
       expect(cmds[0].stroke?.paint).toEqual(PAINT);
       expect(cmds[0].stroke?.width).toBeCloseTo(1, 6);
@@ -90,7 +90,7 @@ describe('markerDrawCommands', () => {
     try {
       const [cmd] = markerDrawCommands(LINE, { ...BASE, markerEnd: 'app:shaded' }, 2, undefined);
       // The head spans x 96..100 at the end of a width-2 line.
-      expect(cmd.fill).toMatchObject({ units: 'local', from: { x: 96 }, to: { x: 100 } });
+      expect(cmd.fill).toMatchObject({ paint: { units: 'local', from: { x: 96 }, to: { x: 100 } } });
     } finally {
       dispose();
     }

@@ -1,12 +1,12 @@
 import type {
   Path
 } from '@weasel-js/geom';
-import type { Paint, Stroke } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { pathInPoseFrame } from '@weasel-js/geom';
-import { commandPaint, commandStroke } from '@weasel-js/renderer';
+import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
@@ -30,7 +30,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     : withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as {
       path: Path;
-      fill?: Paint | null;
+      fill?: Fill | null;
       stroke?: Stroke | null;
       vertexColors?: number[];
     };
@@ -39,7 +39,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     // The pose is baked into `projected` rather than emitted as a transform,
     // so a box-relative gradient has to be baked onto the same box here or
     // it would arrive in the renderer referring to a frame that never exists.
-    const fill = declared && commandPaint(declared, pose);
+    const fill = declared && commandFill(declared, pose);
     const stroke = strokeSpec && commandStroke(strokeSpec, pose);
     const cmd: DrawCommand = {
       kind: 'path',
@@ -57,7 +57,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   ink: (node, _pose, ctx) => {
     const d = node.data as {
-      fill?: Paint | null;
+      fill?: Fill | null;
       stroke?: Stroke | null;
     };
     const { fill, stroke } = pathPaintOf(d);

@@ -129,12 +129,12 @@ describe('setFlagOverRange — un-setting a flag the node sets', () => {
   it('preserves other run styling across the rewrite', () => {
     const styled: StyledRun[] = [
       { text: 'one ', fontSize: 20 },
-      { text: 'two three', fill: { kind: 'solid', color: '#f00' } },
+      { text: 'two three', fill: { paint: { kind: 'solid', color: '#f00' } } },
     ];
     const r = setFlagOverRange(styled, { underline: true }, ...TWO, 'underline', false);
     expect(r.runs[0]).toMatchObject({ text: 'one ', fontSize: 20, underline: true });
     expect(r.runs.find((x) => x.text === 'two')).toMatchObject({
-      fill: { kind: 'solid', color: '#f00' },
+      fill: { paint: { kind: 'solid', color: '#f00' } },
     });
     expect(r.runs.find((x) => x.text === 'two')?.underline).toBeUndefined();
   });

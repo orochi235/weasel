@@ -16,9 +16,9 @@ npm install @weasel-js/paint
 ## Usage
 
 ```ts
-import type { Paint, Stroke } from '@weasel-js/paint';
+import type { Fill, Stroke } from '@weasel-js/paint';
 
-const fill: Paint = { color: '#c0ffee' };
+const fill: Fill = { paint: { color: '#c0ffee' } };
 const stroke: Stroke = { paint: { color: '#000' }, width: 2, join: 'round' };
 ```
 

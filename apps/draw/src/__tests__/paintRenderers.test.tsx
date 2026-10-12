@@ -92,7 +92,7 @@ describe("WeaselDraw's paint renderers across selections", () => {
     const seen: unknown[] = [];
     const at = (value: unknown, key: string) => (
       <ActionsProvider>
-        <Recording seen={seen}>{WD_RENDERERS['data.fill'](ctxWith(value, key))}</Recording>
+        <Recording seen={seen}>{WD_RENDERERS['data.fill.paint'](ctxWith(value, key))}</Recording>
       </ActionsProvider>
     );
     const { rerender } = render(at(GRADIENT, 'a'));

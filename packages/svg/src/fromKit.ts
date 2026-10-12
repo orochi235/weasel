@@ -17,7 +17,9 @@ import {
   type StyledRun,
   type TextStyle,
   type TextVerticalAlign,
+  type Fill,
 } from '@weasel-js/core';
+import { mapFillPaint } from './fillPaint';
 import type {
   SvgGroupNode, SvgImageNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
@@ -38,7 +40,7 @@ export interface SvgKitPose {
  *  `svgNodesToKitDrafts` writes. */
 export interface SvgKitLeafData {
   path?: Path;
-  fill?: Paint | null;
+  fill?: Fill | null;
   stroke?: Stroke | null;
   text?: string;
   style?: TextStyle;
@@ -106,7 +108,7 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
   if (!run.fill && !run.stroke) return run;
   return {
     ...run,
-    ...(run.fill ? { fill: fillInPoseFrame(run.fill, box) } : {}),
+    ...(run.fill ? { fill: mapFillPaint(run.fill, (p) => fillInPoseFrame(p, box)) } : {}),
     ...(run.stroke ? { stroke: strokeInPoseFrame(run.stroke, box) } : {}),
   };
 }
@@ -131,7 +133,7 @@ export function svgLeafFromKit(
     if (data.style) node.style = data.style;
     if (data.runs) node.runs = data.runs.map((r) => runInPoseFrame(r, pose));
     if (data.verticalAlign) node.verticalAlign = data.verticalAlign;
-    if (data.fill !== undefined) node.fill = data.fill && fillInPoseFrame(data.fill, pose);
+    if (data.fill !== undefined) node.fill = data.fill && mapFillPaint(data.fill, (p) => fillInPoseFrame(p, pose));
     if (data.stroke) node.stroke = strokeInPoseFrame(data.stroke, pose);
     if (pose.rotation) node.rotation = pose.rotation;
     if (pose.transform) node.transform = pose.transform;
@@ -143,7 +145,7 @@ export function svgLeafFromKit(
   const node: SvgPathNode = {
     kind: 'path',
     path: pathInPoseFrame(data.path, pose),
-    fill: svgPaintFromKit(fill, pose),
+    fill: svgPaintFromKit(fill?.paint ?? null, pose),
   };
   if (stroke) node.stroke = stroke;
   if (pose.rotation) node.rotation = pose.rotation;

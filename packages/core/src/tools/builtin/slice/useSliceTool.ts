@@ -195,7 +195,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
             width: VERTEX_RADIUS_PX * 2,
             height: VERTEX_RADIUS_PX * 2,
           }),
-          fill: stroke.paint,
+          fill: { paint: stroke.paint },
         });
       }
       return out;

@@ -12,9 +12,9 @@ import {
 import { useAnimator } from '@weasel-js/animator';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { Paint, ParallaxOpts, Path, View, RenderLayer } from '@weasel-js/core';
+import type { ParallaxOpts, Path, View, RenderLayer, Fill } from '@weasel-js/core';
 
-type NodeData = { path: Path; fill: Paint } | { fill: null };
+type NodeData = { path: Path; fill: Fill } | { fill: null };
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
@@ -32,7 +32,7 @@ function paintRects(id: string, shapes: Shape[]): RenderLayer<unknown> {
       shapes.map((s) => ({
         kind: 'path',
         path: { kind: 'rect', x: s.x, y: s.y, width: s.w, height: s.h },
-        fill: { kind: 'solid', color: s.color },
+        fill: { paint: { kind: 'solid', color: s.color } },
       })),
   };
 }
@@ -53,7 +53,7 @@ function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
         return puffs.map((b) => ({
           kind: 'path' as const,
           path: ellipsePath(b),
-          fill: { kind: 'solid' as const, color: s.color },
+          fill: { paint: { kind: 'solid' as const, color: s.color } },
         }));
       }),
   };
@@ -77,7 +77,7 @@ const GROUND: Shape[] = [
 // layers under planes.
 type LayerId = 'hills' | 'trees';
 const leaf = (id: string, layer: LayerId, pose: Pose, path: Path, color: string, parent?: string) =>
-  ({ id: asNodeId(id), kind: 'leaf' as const, layer, pose, parent: parent ? asNodeId(parent) : null, data: { path, fill: solid(color) } });
+  ({ id: asNodeId(id), kind: 'leaf' as const, layer, pose, parent: parent ? asNodeId(parent) : null, data: { path, fill: { paint: solid(color) } } });
 
 // A half-sine bump across the top of the box, flat along the bottom.
 const hill = (id: string, x: number, y: number, w: number, h: number, color: string) => {

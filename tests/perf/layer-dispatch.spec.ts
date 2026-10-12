@@ -196,7 +196,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
         draw: () => [{
           kind: 'path',
           path: { kind: 'rect', x: 40 + (tick++ % 200), y: 40, width: 24, height: 24 },
-          fill: { kind: 'solid', color: '#e02040' },
+          fill: { paint: { kind: 'solid', color: '#e02040' } },
         }],
       };
       const constDeps = [1] as const;

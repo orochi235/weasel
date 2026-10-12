@@ -31,7 +31,7 @@ import {
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { alignedStrokeRect, type CommandPaint, type CommandStroke } from '@weasel-js/paint';
+import { alignedStrokeRect, type CommandStroke, type CommandFill } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import {
   rotationHandle,
@@ -271,7 +271,7 @@ const DEFAULT_OUTLINE: Required<Pick<CommandStroke, 'paint' | 'width'>> & { pad:
   width: 2,
   pad: 1,
 };
-const DEFAULT_HANDLE_FILL: CommandPaint = { kind: 'solid', color: '#d4c4a8' };
+const DEFAULT_HANDLE_FILL: CommandFill = { paint: { kind: 'solid', color: '#d4c4a8' } };
 const DEFAULT_HANDLE_OUTLINE: CommandStroke = {
   paint: { kind: 'solid', color: '#1a130d' },
   width: 1,
@@ -313,13 +313,13 @@ function resolveOutlineStroke(opts?: CommandStroke & { pad?: number }): {
 /** Handle visuals, as a consumer supplies them. */
 export interface SelectionHandleStyle {
   size?: number;
-  fill?: CommandPaint;
+  fill?: CommandFill;
   outline?: CommandStroke;
 }
 
 interface ResolvedHandles {
   size: number;
-  fill: CommandPaint;
+  fill: CommandFill;
   outline: CommandStroke;
 }
 
@@ -515,7 +515,7 @@ function rotationHandleCommands(
   const N_SEGS = 18;
   const arcWidth = resolveStrokeWidth(handles.outline.width ?? 1, 1) * 1.5;
   const stroke: CommandStroke = {
-    paint: handles.fill,
+    paint: handles.fill.paint,
     width: arcWidth,
     cap: 'round',
     join: 'round',
@@ -589,7 +589,6 @@ function rotationHandleCommands(
   const tangentBY = -Math.sin(angleB);
   const headA = arrowHead(endAX, endAY, tangentAX, tangentAY);
   const headB = arrowHead(endBX, endBY, tangentBX, tangentBY);
-  const headFill: CommandPaint = handles.fill;
   // Build transform: translate(scx, scy) [* rotate(rotation)].
   let transform = mat3.translated(mat3.identity(), scx, scy);
   if (rotation !== 0) {
@@ -604,8 +603,8 @@ function rotationHandleCommands(
       transform,
       children: [
         { kind: 'path', path: arcPath, stroke },
-        { kind: 'path', path: headA, fill: headFill },
-        { kind: 'path', path: headB, fill: headFill },
+        { kind: 'path', path: headA, fill: handles.fill },
+        { kind: 'path', path: headB, fill: handles.fill },
       ],
     },
   ];

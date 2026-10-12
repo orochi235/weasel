@@ -100,7 +100,7 @@ describe('useWeightTool', () => {
   it('shows a stroke as it is painted and writes nothing until it ends, or at all on a cancel', () => {
     const t = setup();
     t.state.setActive('a');
-    const fills = () => t.painted(0).map((c) => (c as { fill: { color: string } }).fill.color);
+    const fills = () => t.painted(0).map((c) => (c as { fill: { paint: { color: string } } }).fill.paint.color);
     const cold = fills()[0];
     let during: string[] = [];
     t.stroke([[110, 120]], { reason: 'cancel', peek: () => { during = fills(); } });

@@ -26,7 +26,7 @@ interface RowData {
 interface LabelData {
   text: string;
   style: { fontSize: number };
-  fill: typeof INK;
+  fill: { paint: typeof INK };
 }
 type NodeData = RowData | LabelData;
 
@@ -43,7 +43,7 @@ const label = (id: string, y: number, text: string) => ({
   layer: 'default' as const,
   id: asNodeId(id),
   pose: { x: 40 + ROW_W + 20, y, width: 200, height: ROW_H },
-  data: { text, style: { fontSize: 13 }, fill: INK } satisfies LabelData,
+  data: { text, style: { fontSize: 13 }, fill: { paint: INK } } satisfies LabelData,
 });
 
 const NODES = KEYS.flatMap((key, i) => {

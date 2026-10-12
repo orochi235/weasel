@@ -28,6 +28,7 @@ export type {
   ColorSpace,
   CommandPaint,
   CommandPaintUnits,
+  CommandFill,
   CommandStroke,
   Paint,
   PosedPaint,
@@ -44,6 +45,7 @@ export type {
   TilePatternSpec,
   PatternTransform,
   PatternTransformParts,
+  Fill,
   Stroke,
   StrokeAlign,
   StrokeDashStyle,
@@ -70,7 +72,7 @@ export {
 export { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 export type { FillPoseBox } from '@weasel-js/renderer';
 // A node's paint resolved into what a draw command takes.
-export { commandPaint, commandStroke } from '@weasel-js/renderer';
+export { commandFill, commandPaint, commandStroke } from '@weasel-js/renderer';
 
 // ─── Utility: hex8 color helpers ────────────────────────────────────────────
 export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '../util/color';

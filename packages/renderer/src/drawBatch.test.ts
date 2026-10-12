@@ -45,7 +45,7 @@ describe('renderer — consecutive solid-fill batching', () => {
   const rect = (x: number, color = '#ff0000', extra: object = {}): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-    fill: { color },
+    fill: { paint: { color } },
     ...extra,
   } as DrawCommand);
 
@@ -57,18 +57,18 @@ describe('renderer — consecutive solid-fill batching', () => {
   const vcolorRect = (x: number): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-    fill: { kind: 'solid', color: '#ffffff' },
+    fill: { paint: { kind: 'solid', color: '#ffffff' } },
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
   } as DrawCommand);
 
   const linearRect = (x: number): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-    fill: {
+    fill: { paint: {
       kind: 'linear-gradient',
       from: { x: 0, y: 0 }, to: { x: 10, y: 10 },
       stops: STOPS,
-    },
+    } },
   } as DrawCommand);
 
   /** Halves every channel and lifts red by a quarter. The bias is what these
@@ -169,7 +169,7 @@ describe('renderer — consecutive solid-fill batching', () => {
     r.render([{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      fill: { color: '#ff0000', opacity: 0.25 },
+      fill: { paint: { color: '#ff0000', opacity: 0.25 } },
     } as DrawCommand]);
     const verts = recorder.calls.find(
       (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
@@ -206,7 +206,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       return {
         kind: 'path',
         path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
-        fill: { color: '#00ff00' },
+        fill: { paint: { color: '#00ff00' } },
       } as DrawCommand;
     };
 
@@ -252,9 +252,9 @@ describe('renderer — consecutive solid-fill batching', () => {
     const acrossRect = (x: number): DrawCommand => ({
       kind: 'path',
       path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-      fill: {
+      fill: { paint: {
         kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
-      },
+      } },
     } as DrawCommand);
 
     /** `n` gradients no two of which bake to the same row. */
@@ -262,11 +262,11 @@ describe('renderer — consecutive solid-fill batching', () => {
       Array.from({ length: n }, (_, i) => ({
         kind: 'path',
         path: { kind: 'rect', x: i * 2, y: 0, width: 1, height: 1 },
-        fill: {
+        fill: { paint: {
           kind: 'linear-gradient',
           from: { x: 0, y: 0 }, to: { x: 10, y: 0 },
           stops: [{ offset: 0, color: `rgb(${i}, 0, 0)` }, { offset: 1, color: '#fff' }],
-        },
+        } },
       } as DrawCommand));
 
     it('joins a run of solids rather than breaking it', () => {
@@ -357,7 +357,7 @@ describe('renderer — consecutive solid-fill batching', () => {
           commands: new Uint8Array([0, 1, 1, 4]),
           coords: new Float32Array([20, 0, 30, 0, 20, 10]),
         },
-        fill: { color: '#ff0000' },
+        fill: { paint: { color: '#ff0000' } },
         stroke: { width: 2, align: 'inner', paint: { color: '#000' } },
       } as unknown as DrawCommand,
       rect(40),
@@ -771,7 +771,7 @@ describe('renderer — consecutive solid-fill batching', () => {
         commands: new Uint8Array([0, 1, 1, 4]),
         coords: new Float32Array([x, 0, x + 10, 0, x, 10]),
       },
-      fill: { color: '#00ff00' },
+      fill: { paint: { color: '#00ff00' } },
     } as unknown as DrawCommand);
 
     it('uploads once per slot while the ring is still filling', () => {
@@ -846,7 +846,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       const vcolorStroke = {
         kind: 'path',
         path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
-        fill: { color: '#ff0000' },
+        fill: { paint: { color: '#ff0000' } },
         stroke: {
           width: 2,
           paint: { color: '#0000ff' },
@@ -907,14 +907,14 @@ describe('renderer — text in the batch', () => {
   const rect = (x: number, color = '#ff0000'): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-    fill: { color },
+    fill: { paint: { color } },
   } as DrawCommand);
 
   const label = (text: string, extra: object = {}): DrawCommand => ({
     kind: 'text', x: 0, y: 0,
     runs: [{
       text, fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-      fontStyle: 'normal', fill: { kind: 'solid', color: '#0000ff' },
+      fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#0000ff' } },
       letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
       ...extra,

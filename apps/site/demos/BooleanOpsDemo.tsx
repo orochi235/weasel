@@ -92,7 +92,7 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
             drawOne: (node): DrawCommand[] => [{
               kind: 'path',
               path: node.data.path,
-              fill: { color: node.data.color },
+              fill: { paint: { color: node.data.color } },
             }],
           },
         }}
@@ -211,7 +211,7 @@ function InteractivePanel() {
             drawOne: (node): DrawCommand[] => [{
               kind: 'path',
               path: node.data.path,
-              fill: { color: node.data.color },
+              fill: { paint: { color: node.data.color } },
             }],
           },
         }}

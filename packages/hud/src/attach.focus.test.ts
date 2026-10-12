@@ -250,11 +250,11 @@ describe('focus ring', () => {
 
   it('paints above every widget frame', () => {
     const a = box('a', 0, [], {
-      draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, fill: { kind: 'solid', color: '#123456' } }],
+      draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, fill: { paint: { kind: 'solid', color: '#123456' } } }],
     });
     hud.add(a.w);
     hud.add(box('b', 10, [], {
-      draw: () => [{ kind: 'path', path: { kind: 'rect', x: 10, y: 0, width: 20, height: 20 }, fill: { kind: 'solid', color: '#654321' } }],
+      draw: () => [{ kind: 'path', path: { kind: 'rect', x: 10, y: 0, width: 20, height: 20 }, fill: { paint: { kind: 'solid', color: '#654321' } } }],
     }).w);
     hud.focus(a.w, { visible: true });
     const cmds = draw();

@@ -16,10 +16,11 @@ import type { UseSceneOptions } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
 import { asNodeId } from 'core/scene/types';
+import type { Fill } from '@weasel-js/paint';
 import type { Action } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 
-interface Item { shape?: string; fill?: string; color?: string }
+interface Item { shape?: string; fill?: Fill; color?: string }
 type Pose = { x: number; y: number; width: number; height: number };
 
 function harness(
@@ -60,7 +61,7 @@ const ELLIPSE = [{
   kind: 'leaf' as const,
   layer: 'default' as const,
   pose: { x: 0, y: 0, width: 100, height: 100 },
-  data: { shape: 'ellipse', fill: '#000' },
+  data: { shape: 'ellipse', fill: { paint: { color: '#000' } } },
 }];
 
 describe('useSelectTool leafPicking', () => {

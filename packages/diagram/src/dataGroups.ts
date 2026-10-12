@@ -101,7 +101,7 @@ export function groupSpecs(
       pose: { x, y, width, height },
       data: {
         diagram: { outline: 'rect', group: { inset: g.inset } },
-        fill: { color: style.fill },
+        fill: { paint: { color: style.fill } },
         stroke: {
           paint: { color: style.stroke },
           width: style.strokeWidth ?? 1,
@@ -119,7 +119,7 @@ export function groupSpecs(
       layer: 'main',
       pickable: false,
       pose: { x: x + g.pad, y: y + g.pad, width: g.title.width, height: g.title.height },
-      data: { diagram: { anchor }, text: g.group.label, style: text, fill: { color: style.text } },
+      data: { diagram: { anchor }, text: g.group.label, style: text, fill: { paint: { color: style.text } } },
       dependsOn: [g.group.id as never],
       derivePose: ANCHOR_DERIVE_POSE as never,
     });

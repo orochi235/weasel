@@ -44,7 +44,7 @@ beforeEach(async () => {
 
 const RUN = (text: string): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-  fill: { kind: 'solid', color: '#000' }, letterSpacing: 0,
+  fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
 

@@ -245,7 +245,7 @@ void main() {
       const rect = (i: number, size = 36) => ({
         kind: 'path',
         path: { kind: 'rect', x: px(i), y: py(i), width: size, height: size },
-        fill: solidFill(i),
+        fill: { paint: solidFill(i) },
       });
 
       const gradientRect = (i: number) => {
@@ -258,9 +258,11 @@ void main() {
           // whose ramp falls outside the shape it fills is a solid fill wearing
           // a gradient's cost profile.
           fill: {
-            kind: 'linear-gradient' as const,
-            from: { x, y }, to: { x: x + 36, y: y + 36 },
-            stops: [{ offset: 0, color: '#204080' }, { offset: 1, color: '#f0b040' }],
+            paint: {
+              kind: 'linear-gradient' as const,
+              from: { x, y }, to: { x: x + 36, y: y + 36 },
+              stops: [{ offset: 0, color: '#204080' }, { offset: 1, color: '#f0b040' }],
+            },
           },
         };
       };
@@ -268,7 +270,7 @@ void main() {
       const strokedPath = (i: number) => ({
         kind: 'path',
         path: { kind: 'rect', x: px(i), y: py(i), width: 36, height: 36 },
-        fill: solidFill(i),
+        fill: { paint: solidFill(i) },
         stroke: { width: 2, paint: { color: '#222222' } },
       });
 
@@ -283,11 +285,11 @@ void main() {
         runs: [{
           text: LABELS[i % LABELS.length],
           fontFamily: 'sans-serif', fontSize: 16, fontWeight: 400, fontStyle: 'normal',
-          fill: { kind: 'solid', color: i % 2 ? '#222222' : '#0b5' },
+          fill: { paint: { kind: 'solid', color: i % 2 ? '#222222' : '#0b5' } },
           letterSpacing: 0, underline: false, strikethrough: false, baselineShift: 0,
         }],
         align: 'left',
-        style: { fontFamily: 'sans-serif', fontSize: 16, fill: { color: '#222222' } },
+        style: { fontFamily: 'sans-serif', fontSize: 16, fill: { paint: { color: '#222222' } } },
       });
 
       const imageQuad = (i: number) => ({

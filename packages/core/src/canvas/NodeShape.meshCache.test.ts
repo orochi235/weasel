@@ -87,7 +87,7 @@ function registerUnmemoizedShapePainter(): void {
           d.shape === 'ellipse' ? ellipsePath(p)
           : d.shape === 'polygon' ? regularPolygonPath({ x: cx, y: cy }, r, d.sides ?? 6)
           : starPath({ x: cx, y: cy }, r, d.points ?? 5);
-        return [{ kind: 'path', path, fill: { color: d.fill ?? '#888' } }];
+        return [{ kind: 'path', path, fill: { paint: { color: d.fill ?? '#888' } } }];
       },
     },
     { priority: 'high' },

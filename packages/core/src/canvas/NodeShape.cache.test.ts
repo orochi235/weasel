@@ -140,20 +140,20 @@ describe('paint caching', () => {
 
   it('kit:shape rebuilds when the data reference changes', () => {
     // Both the geometry (`points`) and the paint (`fill`) live in data.
-    const node = makeNode({ shape: 'star', points: 5, fill: solid('#f00') }, POSE);
+    const node = makeNode({ shape: 'star', points: 5, fill: { paint: solid('#f00') } }, POSE);
     const five = paintOf(node, node.pose);
-    expect(five.fill).toEqual({ color: '#f00' });
-    (node as { data: unknown }).data = { shape: 'star', points: 9, fill: solid('#0f0') };
+    expect(five.fill).toEqual({ paint: { color: '#f00' } });
+    (node as { data: unknown }).data = { shape: 'star', points: 9, fill: { paint: solid('#0f0') } };
     const nine = paintOf(node, node.pose);
     expect((nine.path as { commands: Uint8Array }).commands.length)
       .toBeGreaterThan((five.path as { commands: Uint8Array }).commands.length);
-    expect(nine.fill).toEqual({ color: '#0f0' });
+    expect(nine.fill).toEqual({ paint: { color: '#0f0' } });
   });
 
   it('kit:path hands back the identical command for an unchanged node', () => {
     const path = { kind: 'polygon' as const, commands: new Uint8Array([PATH_M, PATH_L, PATH_Z]),
       coords: new Float32Array([0, 0, 10, 10]), fillRule: 'nonzero' as const };
-    const node = makeNode({ path, fill: solid('#00f') }, POSE);
+    const node = makeNode({ path, fill: { paint: solid('#00f') } }, POSE);
     const first = paintOf(node, node.pose);
     const second = paintOf(node, node.pose);
     expect(second).toBe(first);

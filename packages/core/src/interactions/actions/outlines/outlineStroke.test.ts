@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { boundsOfPath, pathFromD, pointInPath, type Path, type Rect } from '@weasel-js/geom';
-import type { Paint, Stroke } from '@weasel-js/paint';
+import type { Paint, Stroke, Fill } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { pathPaintOf } from 'canvas/nodeShapes/nodePaint';
@@ -12,7 +12,7 @@ import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter'
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { applyOutlineStroke } from './outlineStroke';
 
-interface Data { path?: Path; fill?: Paint | null; stroke?: Stroke }
+interface Data { path?: Path; fill?: Fill | null; stroke?: Stroke }
 type Pose = { x: number; y: number; width: number; height: number };
 
 const RED: Paint = { color: '#f00' };
@@ -64,9 +64,9 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
 describe('applyOutlineStroke', () => {
   it('replaces a stroked line with a path filled in the stroke\'s paint, in its slot', () => {
     const h = setup();
-    h.add('below', { path: BOX, fill: BLUE });
+    h.add('below', { path: BOX, fill: { paint: BLUE } });
     h.add('line', { path: LINE, stroke: { paint: RED, width: 10 } });
-    h.add('above', { path: BOX, fill: BLUE });
+    h.add('above', { path: BOX, fill: { paint: BLUE } });
     h.select('line');
 
     const result = applyOutlineStroke(h.adapter);
@@ -74,7 +74,7 @@ describe('applyOutlineStroke', () => {
     expect(result).toEqual({ kind: 'applied', resultIds: ['p-0'] });
     expect(h.scene.get(asNodeId('line'))).toBeUndefined();
     const out = h.dataOf('p-0');
-    expect(out.fill).toEqual(RED);
+    expect(out.fill).toEqual({ paint: RED });
     expect(out.stroke).toBeUndefined();
     expect(boundsOfPath(out.path!)).toMatchObject({ x: 0, y: 45, width: 100, height: 10 });
     expect(h.scene.roots).toEqual(['below', 'p-0', 'above']);
@@ -83,16 +83,16 @@ describe('applyOutlineStroke', () => {
 
   it('keeps a filled node\'s fill as its own path under the outline, grouped', () => {
     const h = setup();
-    h.add('box', { path: BOX, fill: BLUE, stroke: { paint: RED, width: 10 } });
+    h.add('box', { path: BOX, fill: { paint: BLUE }, stroke: { paint: RED, width: 10 } });
     h.select('box');
 
     const result = applyOutlineStroke(h.adapter);
 
     expect(result).toEqual({ kind: 'applied', resultIds: ['g-0'] });
     const [fillId, strokeId] = h.scene.childrenOf(asNodeId('g-0'));
-    expect(h.dataOf(fillId!)).toEqual({ path: BOX, fill: BLUE, stroke: undefined });
+    expect(h.dataOf(fillId!)).toEqual({ path: BOX, fill: { paint: BLUE }, stroke: undefined });
     const ring = h.dataOf(strokeId!);
-    expect(ring.fill).toEqual(RED);
+    expect(ring.fill).toEqual({ paint: RED });
     expect(boundsOfPath(ring.path!)).toMatchObject({ x: -5, y: -5, width: 110, height: 110 });
     // A ring: ink on the edge, none in the middle.
     expect(pointInPath(ring.path!, 0, 50)).toBe(true);
@@ -101,18 +101,18 @@ describe('applyOutlineStroke', () => {
 
   it('lays the two paths flat in the slot when the adapter mints no container', () => {
     const h = setup({ containers: false });
-    h.add('box', { path: BOX, fill: BLUE, stroke: { paint: RED, width: 10 } });
-    h.add('above', { path: BOX, fill: BLUE });
+    h.add('box', { path: BOX, fill: { paint: BLUE }, stroke: { paint: RED, width: 10 } });
+    h.add('above', { path: BOX, fill: { paint: BLUE } });
     h.select('box');
 
     expect(applyOutlineStroke(h.adapter)).toEqual({ kind: 'applied', resultIds: ['p-0', 'p-1'] });
     expect(h.scene.roots).toEqual(['p-0', 'p-1', 'above']);
-    expect(h.dataOf('p-1').fill).toEqual(RED);
+    expect(h.dataOf('p-1').fill).toEqual({ paint: RED });
   });
 
   it('leaves unstroked nodes alone and selected', () => {
     const h = setup();
-    h.add('plain', { path: BOX, fill: BLUE });
+    h.add('plain', { path: BOX, fill: { paint: BLUE } });
     h.add('line', { path: LINE, stroke: { paint: RED, width: 4 } });
     h.select('plain', 'line');
 
@@ -124,7 +124,7 @@ describe('applyOutlineStroke', () => {
 
   it('is a no-op when nothing selected is stroked', () => {
     const h = setup();
-    h.add('plain', { path: BOX, fill: BLUE });
+    h.add('plain', { path: BOX, fill: { paint: BLUE } });
     h.add('hairless', { path: LINE, stroke: { paint: RED, width: 0 } });
     h.select('plain', 'hairless');
 

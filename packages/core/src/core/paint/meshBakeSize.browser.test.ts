@@ -34,7 +34,7 @@ function hardBreak(): Paint {
 const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-  fill: hardBreak(),
+  fill: { paint: hardBreak() },
 } as DrawCommand];
 
 function render(scale: number): RasterImage {

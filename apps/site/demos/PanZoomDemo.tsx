@@ -68,7 +68,7 @@ export function PanZoomDemo() {
               return [{
                 kind: 'path',
                 path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: n.data.color },
+                fill: { paint: { color: n.data.color } },
                 ...(n.data.pin === 'none'
                   ? {}
                   : { stroke: { paint: { color: '#d4c4a8' }, width: lineWidth } }),

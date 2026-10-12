@@ -33,7 +33,7 @@ function meshFill(): Paint {
 const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-  fill: meshFill(),
+  fill: { paint: meshFill() },
 } as DrawCommand];
 
 function render(): RasterImage {

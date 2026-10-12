@@ -16,6 +16,7 @@ import type {
   SerializedScene,
   UnitSystem,
   View,
+  Fill,
 } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -25,7 +26,7 @@ type Kind = 'tree' | 'shrub' | 'flower';
 
 interface NodeData {
   kind: Kind;
-  fill: Paint;
+  fill: Fill;
 }
 type Pose = RectPose;
 type LayerId = 'default';
@@ -61,19 +62,19 @@ export const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
     kind: 'leaf',
     layer: 'default',
     pose: { x: 180, y: 140, width: KIND_SIZE.tree, height: KIND_SIZE.tree },
-    data: { kind: 'tree', fill: KIND_FILLS.tree },
+    data: { kind: 'tree', fill: { paint: KIND_FILLS.tree } },
   },
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 280, y: 200, width: KIND_SIZE.shrub, height: KIND_SIZE.shrub },
-    data: { kind: 'shrub', fill: KIND_FILLS.shrub },
+    data: { kind: 'shrub', fill: { paint: KIND_FILLS.shrub } },
   },
   {
     kind: 'leaf',
     layer: 'default',
     pose: { x: 360, y: 160, width: KIND_SIZE.flower, height: KIND_SIZE.flower },
-    data: { kind: 'flower', fill: KIND_FILLS.flower },
+    data: { kind: 'flower', fill: { paint: KIND_FILLS.flower } },
   },
 ];
 
@@ -181,7 +182,7 @@ function GardenBody({ config, state, setState }: BodyProps) {
       kind: 'leaf',
       layer: 'default',
       pose: { x: wx - s / 2, y: wy - s / 2, width: s, height: s },
-      data: { kind, fill: KIND_FILLS[kind] },
+      data: { kind, fill: { paint: KIND_FILLS[kind] } },
     });
   };
 

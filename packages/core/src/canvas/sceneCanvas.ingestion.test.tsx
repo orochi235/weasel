@@ -236,9 +236,9 @@ describe('SceneCanvasApi.ingest', () => {
     const group = children.find((n) => n.kind === 'container')!;
     expect(leaf).toBeDefined();
     expect(group).toBeDefined();
-    const leafData = leaf.data as { path?: { kind: string }; fill?: { color?: string } };
+    const leafData = leaf.data as { path?: { kind: string }; fill?: { paint?: { color?: string } } };
     expect(leafData.path?.kind).toBeDefined();
-    expect(leafData.fill).toEqual({ color: '#ff0000' });
+    expect(leafData.fill).toEqual({ paint: { color: '#ff0000' } });
     // Undoable: one batch → a single undo removes the whole import.
     act(() => scene.undo());
     expect(scene.roots).toHaveLength(0);

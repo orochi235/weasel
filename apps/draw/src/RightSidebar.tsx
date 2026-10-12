@@ -68,10 +68,10 @@ export function LayerSwatch({ color }: { color: string | undefined }): ReactElem
 }
 
 export function layerSwatch(data: WeaselDrawData): string | undefined {
-  if (data.fill != null) return paintChipColor(data.fill);
+  if (data.fill?.paint) return paintChipColor(data.fill.paint);
   if (data.text === undefined) return undefined;
-  const { fill } = resolveTextStyle(data.style, { fill: data.fill });
-  return isSolidPaint(fill) ? fill.color : undefined;
+  const paint = resolveTextStyle(data.style, { fill: data.fill }).fill?.paint;
+  return isSolidPaint(paint) ? paint.color : undefined;
 }
 
 /** One representative color for a `Paint`, for a chip too small to draw

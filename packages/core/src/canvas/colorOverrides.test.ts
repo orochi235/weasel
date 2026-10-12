@@ -98,7 +98,7 @@ describe('animated vertex colors on default-painted nodes', () => {
       kind: 'leaf',
       layer: 'main',
       pose: POSE,
-      data: { path: pathFromD('M0 0 L100 0 L50 40 Z'), fill: solid('#fff'), vertexColors: RAINBOW },
+      data: { path: pathFromD('M0 0 L100 0 L50 40 Z'), fill: { paint: solid('#fff') }, vertexColors: RAINBOW },
     });
     const registry = new ColorOverrideRegistry();
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, registry);

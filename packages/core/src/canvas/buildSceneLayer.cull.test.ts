@@ -41,7 +41,7 @@ function layerFor(cull: boolean | undefined, withBounds = false) {
         kind: 'path',
         id: node.id,
         path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-        fill: { color: '#000000' },
+        fill: { paint: { color: '#000000' } },
         ...(node.data.stroke ? { stroke: { width: node.data.stroke, paint: { color: '#000000' } } } : {}),
       } as PathDrawCommand]);
   const layer = buildSceneLayer<TestNode, Pose>(

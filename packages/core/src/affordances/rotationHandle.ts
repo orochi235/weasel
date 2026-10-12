@@ -1,6 +1,6 @@
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
+import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import { angleOf, transformOf } from './hitAffordanceRegions';
 import type { CursorSpec } from '@weasel-js/cursor';
@@ -20,7 +20,7 @@ export interface RotationAffordanceOptions {
    *  `{ fill, stroke, insetPx }`) to override. */
   paint?:
     | CommandStroke
-    | { fill?: CommandPaint; stroke?: CommandStroke; insetPx?: number }
+    | { fill?: CommandFill; stroke?: CommandStroke; insetPx?: number }
     | null
     | false;
   /** Cursor while hovering the ring. Defaults to the `rotate` glyph turned
@@ -45,13 +45,13 @@ export interface RotationScratch extends CommonAffordanceScratch {
   fixedPoint: { x: number; y: number };
 }
 
-type AnnulusPaintForm = { fill?: CommandPaint; stroke?: CommandStroke; insetPx?: number };
+type AnnulusPaintForm = { fill?: CommandFill; stroke?: CommandStroke; insetPx?: number };
 
 const isAnnulusForm = (paint: CommandStroke | AnnulusPaintForm): paint is AnnulusPaintForm =>
   'fill' in paint || 'stroke' in paint || 'insetPx' in paint;
 
 const DEFAULT_PAINT: AnnulusPaintForm = {
-  fill: { kind: 'solid', color: 'rgba(26, 19, 13, 0.12)' },
+  fill: { paint: { kind: 'solid', color: 'rgba(26, 19, 13, 0.12)' } },
   insetPx: 10,
 };
 
@@ -84,7 +84,7 @@ export function createRotationAffordance(
   // carries these three keys; `Stroke` carries none of them, and cannot be
   // told apart by its own `paint` since that is optional.
   const annulusPaint:
-    | { kind: 'annulus'; fill?: CommandPaint; stroke?: CommandStroke; insetPx?: number }
+    | { kind: 'annulus'; fill?: CommandFill; stroke?: CommandStroke; insetPx?: number }
     | null = (() => {
       if (!paint) return null;
       if (!isAnnulusForm(paint)) {

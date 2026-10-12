@@ -21,7 +21,7 @@ const leaf = (id: string, path: Path, color: string) => {
     layer: 'default' as const,
     parent: null,
     pose: { x, y, width, height },
-    data: { path, fill: solid(color) },
+    data: { path, fill: { paint: solid(color) } },
   };
 };
 

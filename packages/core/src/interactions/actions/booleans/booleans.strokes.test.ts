@@ -32,10 +32,10 @@ function harness(sources: Source[]) {
   return { adapter, made };
 }
 
-const box: Source = { id: 'box', path: BOX, paint: { fill: BLUE } };
+const box: Source = { id: 'box', path: BOX, paint: { fill: { paint: BLUE } } };
 const line: Source = { id: 'line', path: LINE, paint: { fill: null, stroke: { paint: RED, width: 10 } } };
-const framed: Source = { id: 'framed', path: BOX, paint: { fill: BLUE, stroke: { paint: RED, width: 10 } } };
-const far: Source = { id: 'far', path: { kind: 'rect', x: 300, y: 0, width: 10, height: 10 }, paint: { fill: BLUE } };
+const framed: Source = { id: 'framed', path: BOX, paint: { fill: { paint: BLUE }, stroke: { paint: RED, width: 10 } } };
+const far: Source = { id: 'far', path: { kind: 'rect', x: 300, y: 0, width: 10, height: 10 }, paint: { fill: { paint: BLUE } } };
 
 describe('applyBooleanOp on stroked operands', () => {
   it('ignores strokes unless asked: an unfilled line cuts nothing out of a box', () => {
@@ -58,7 +58,7 @@ describe('applyBooleanOp on stroked operands', () => {
     it(`${strokes}: a result whose topmost source was a line is filled in the line's paint, unstroked`, () => {
       const h = harness([box, line]);
       applyBooleanOp(h.adapter, 'union', { strokes });
-      expect(h.made[0]!.paint).toEqual({ fill: RED });
+      expect(h.made[0]!.paint).toEqual({ fill: { paint: RED } });
       expect(boundsOfPath(h.made[0]!.path)).toMatchObject({ x: -20, width: 140 });
     });
   }
@@ -75,7 +75,7 @@ describe('applyBooleanOp on stroked operands', () => {
     applyBooleanOp(h.adapter, 'union', { strokes: 'include' });
     expect(pointInPath(h.made[0]!.path, -3, 50)).toBe(true);
     expect(pointInPath(h.made[0]!.path, 50, 50)).toBe(true);
-    expect(h.made[0]!.paint).toEqual({ fill: BLUE });
+    expect(h.made[0]!.paint).toEqual({ fill: { paint: BLUE } });
   });
 
   it('include: a stroke folded in below the topmost source leaves the result\'s paint to the adapter', () => {

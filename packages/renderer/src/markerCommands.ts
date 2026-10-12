@@ -41,7 +41,7 @@ export function headCommands(heads: readonly MarkerHead[], stroke: CommandStroke
     out.push({
       kind: 'path',
       path,
-      ...(fill ? { fill } : {}),
+      ...(fill ? { fill: { paint: fill } } : {}),
       ...(outline && outline.paint
         ? { stroke: { paint: outline.paint, width: outline.width, cap: 'round', join: 'round' } }
         : {}),

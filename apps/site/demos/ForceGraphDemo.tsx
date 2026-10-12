@@ -295,7 +295,7 @@ export function ForceGraphDemo() {
               drawOne: (n, p): DrawCommand[] => [{
                 kind: 'path',
                 path: ellipsePath(p),
-                fill: { kind: 'solid', color: GROUP_COLORS[n.data.group] },
+                fill: { paint: { kind: 'solid', color: GROUP_COLORS[n.data.group] } },
                 stroke: { paint: { color: '#fff' }, width: { px: 1.5 } },
               }],
             },

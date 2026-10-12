@@ -410,7 +410,7 @@ function EditorWithSharedScene({
     draw: () => [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: paper.width, height: paper.height },
-      fill: { kind: 'solid', color: backgroundColor },
+      fill: { paint: { kind: 'solid', color: backgroundColor } },
     }],
   }), [paper.width, paper.height, backgroundColor]);
 

@@ -15,7 +15,7 @@
  * only — `domToRuns` reads straight through them.
  */
 
-import { isSolidPaint, type Paint } from '@weasel-js/paint';
+import { isSolidPaint, type Fill, type Paint } from '@weasel-js/paint';
 import {
   DEFAULT_TEXT_STYLE, isHardLineBreak, numericWeight, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
@@ -219,8 +219,8 @@ function toRun(text: string, style: StyleState): StyledRun {
   if (style.fontWeight != null) run.fontWeight = style.fontWeight;
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
-  if (style.fillJson !== undefined) run.fill = JSON.parse(style.fillJson) as Paint | null;
-  else if (style.color != null) run.fill = { kind: 'solid', color: style.color };
+  if (style.fillJson !== undefined) run.fill = JSON.parse(style.fillJson) as Fill | null;
+  else if (style.color != null) run.fill = { paint: { kind: 'solid', color: style.color } };
   // `letterSpacing: 0` is a meaningful override (it cancels node-level
   // tracking for this run), so test for presence, not truthiness.
   if (style.letterSpacing != null) run.letterSpacing = style.letterSpacing;
@@ -405,7 +405,7 @@ export function runsToDom(
       });
       span.setAttribute('data-font-family', run.fontFamily);
     }
-    const color = solidColor(run.fill);
+    const color = solidColor(run.fill?.paint);
     if (color != null) span.style.color = color;
     else if (run.fill !== undefined) span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
     // Black, as an unfilled node edits in: no CSS color leaves it legible.

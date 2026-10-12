@@ -138,7 +138,7 @@ describe('renderer — non-solid even-odd fill', () => {
 
   const renderFill = (fillRule: 'nonzero' | 'evenodd', fill: Paint): void => {
     recorder.reset();
-    r.render([{ kind: 'path', path: square(fillRule), fill } as DrawCommand]);
+    r.render([{ kind: 'path', path: square(fillRule), fill: { paint: fill } } as DrawCommand]);
   };
 
   it('bakes the gradient ramp for an even-odd fill', () => {

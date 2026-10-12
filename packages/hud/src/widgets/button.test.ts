@@ -141,16 +141,16 @@ describe('button widget', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-raised': '#abcdef' } };
     const cmds = b.draw(customCtx);
-    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
-    expect(body.fill.color).toBe('#abcdef');
+    const body = cmds.find(c => c.kind === 'path') as { fill: { paint: { color: string } } };
+    expect(body.fill.paint.color).toBe('#abcdef');
   });
 
   it('respects opts.fill when supplied (theme overridden)', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', fill: '#ff0000' });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-raised': '#abcdef' } };
     const cmds = b.draw(customCtx);
-    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
-    expect(body.fill.color).toBe('#ff0000');
+    const body = cmds.find(c => c.kind === 'path') as { fill: { paint: { color: string } } };
+    expect(body.fill.paint.color).toBe('#ff0000');
   });
 
   it('uses ctx.tokens.--wzl-surface-hover when hovering and opts.hoverFill is omitted', () => {
@@ -158,8 +158,8 @@ describe('button widget', () => {
     b.onPointer({ type: 'hovermove', x: 5, y: 5, native: null });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-hover': '#cafe00' } };
     const cmds = b.draw(customCtx);
-    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
-    expect(body.fill.color).toBe('#cafe00');
+    const body = cmds.find(c => c.kind === 'path') as { fill: { paint: { color: string } } };
+    expect(body.fill.paint.color).toBe('#cafe00');
   });
 
   it('uses ctx.tokens.--wzl-surface-pressed when pressed and opts.pressedFill is omitted', () => {
@@ -167,8 +167,8 @@ describe('button widget', () => {
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-pressed': '#beadc0' } };
     const cmds = b.draw(customCtx);
-    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
-    expect(body.fill.color).toBe('#beadc0');
+    const body = cmds.find(c => c.kind === 'path') as { fill: { paint: { color: string } } };
+    expect(body.fill.paint.color).toBe('#beadc0');
   });
 
   it('uses ctx.tokens.--wzl-fg when opts.textColor is omitted', () => {
@@ -176,7 +176,7 @@ describe('button widget', () => {
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-fg': '#decade' } };
     const cmds = b.draw(customCtx);
     const text = cmds.find(c => c.kind === 'text') as TextDrawCommand;
-    expect(text.runs[0].fill).toEqual({ kind: 'solid', color: '#decade' });
+    expect(text.runs[0].fill).toEqual({ paint: { kind: 'solid', color: '#decade' } });
   });
 });
 

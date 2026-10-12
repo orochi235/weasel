@@ -131,14 +131,14 @@ describe('svgStrokeFromKit', () => {
 describe('svgLeafFromKit', () => {
   it('draws an absent path fill the way kit:path does', () => {
     const bare = svgLeafFromKit({ path: rect }, BOX) as SvgPathNode;
-    expect(bare.fill).toEqual(svgPaintFromKit(DEFAULT_SHAPE_FILL, BOX));
+    expect(bare.fill).toEqual(svgPaintFromKit(DEFAULT_SHAPE_FILL.paint, BOX));
     const stroked = svgLeafFromKit({ path: rect, stroke: { paint: solid('#000'), width: 1 } }, BOX) as SvgPathNode;
     expect(stroked.fill).toEqual({ kind: 'none' });
   });
 
   it('bakes the pose into the path and carries rotation', () => {
     const node = svgLeafFromKit(
-      { path: rect, fill: solid('#ff0000') },
+      { path: rect, fill: { paint: solid('#ff0000') } },
       { x: 0, y: 0, width: 20, height: 10, rotation: 0.5 },
     ) as SvgPathNode;
     expect(node.path).toEqual({ kind: 'rect', x: 0, y: 0, width: 20, height: 10 });
@@ -148,13 +148,13 @@ describe('svgLeafFromKit', () => {
   it('writes a text leaf with its paint in the pose frame', () => {
     const node = svgLeafFromKit({
       text: 'hi', style: { fontSize: 20 }, verticalAlign: 'center',
-      fill: linear, runs: [{ text: 'hi', fill: linear }],
+      fill: { paint: linear }, runs: [{ text: 'hi', fill: { paint: linear } }],
     }, BOX) as SvgTextNode;
     expect(node).toMatchObject({
       kind: 'text', text: 'hi', style: { fontSize: 20 }, verticalAlign: 'center', ...BOX,
     });
-    expect(node.fill).toMatchObject({ from: { x: 10, y: 20 }, units: 'local' });
-    expect(node.runs?.[0].fill).toMatchObject({ from: { x: 10, y: 20 }, units: 'local' });
+    expect(node.fill).toMatchObject({ paint: { from: { x: 10, y: 20 }, units: 'local' } });
+    expect(node.runs?.[0].fill).toMatchObject({ paint: { from: { x: 10, y: 20 }, units: 'local' } });
   });
 
   it('writes an image leaf, and null for data no built-in painter draws', () => {

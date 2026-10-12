@@ -37,7 +37,7 @@ function bindHost(hud: Hud): () => void {
 
 const source: RenderLayer<unknown>[] = [{
   id: 'src', label: 'src', space: 'world',
-  draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { kind: 'solid', color: '#0f0' } }],
+  draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { kind: 'solid', color: '#0f0' } } }],
 }];
 
 describe('createLoupe', () => {
@@ -321,7 +321,7 @@ describe('createLoupe', () => {
     expect(cmds).toEqual([{
       kind: 'path',
       path: { kind: 'rect', x: rect.x, y: rect.y, width: rect.w, height: rect.h },
-      fill: { kind: 'solid', color: '#123456' },
+      fill: { paint: { kind: 'solid', color: '#123456' } },
     }]);
   });
 

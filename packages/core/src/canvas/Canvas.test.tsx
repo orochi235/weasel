@@ -887,7 +887,7 @@ describe('buildSceneLayer hierarchical path', () => {
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'plant' }, parent: bed });
     const adapter = sceneToAdapter(scene);
     const layer = buildSceneLayer(
-      { drawOne: (_node, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'red' } }] },
+      { drawOne: (_node, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } }] },
       adapter as never,
       null,
       () => null,
@@ -946,7 +946,7 @@ describe('buildSceneLayer hierarchical path', () => {
       toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
     });
     const layer = buildSceneLayer(
-      { drawOne: (_obj, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'red' } }] },
+      { drawOne: (_obj, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } }] },
       adapter as never,
       null,
       () => null,
@@ -962,7 +962,7 @@ describe('buildSceneLayer hierarchical path', () => {
 
 describe('buildSceneLayer postProcess', () => {
   const RED_RECT: DrawCommand[] = [
-    { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'red' } },
+    { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } },
   ];
 
   function makeHierarchicalAdapter(layers: string[] = ['bg']) {

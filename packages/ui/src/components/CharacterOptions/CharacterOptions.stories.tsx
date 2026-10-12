@@ -10,7 +10,7 @@ export const Editing: Story = {
   render: () => (
     <div style={{ width: 1180 }}>
       <CharacterOptions
-        style={{ bold: true, fontWeight: 700, underline: true, fontFamily: 'Inter', fontSize: 24, fill: { color: '#1e293b' } }}
+        style={{ bold: true, fontWeight: 700, underline: true, fontFamily: 'Inter', fontSize: 24, fill: { paint: { color: '#1e293b' } } }}
         onPatch={() => {}}
       />
     </div>

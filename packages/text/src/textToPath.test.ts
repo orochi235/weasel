@@ -281,11 +281,11 @@ describe('textToPathsByPaint', () => {
   it('splits a node into one path per paint, whose union is the whole outline', () => {
     const src: TextOutlineSource = {
       ...text(''),
-      runs: [{ text: 'He' }, { text: 'll', fill: BLUE }, { text: 'o', underline: true }],
-      fill: RED,
+      runs: [{ text: 'He' }, { text: 'll', fill: { paint: BLUE } }, { text: 'o', underline: true }],
+      fill: { paint: RED },
     };
     const groups = textToPathsByPaint(src, POSE);
-    expect(groups.map((g) => g.fill)).toEqual([RED, BLUE]);
+    expect(groups.map((g) => g.fill)).toEqual([{ paint: RED }, { paint: BLUE }]);
     expect(groups.every((g) => g.stroke === undefined)).toBe(true);
 
     const whole = textToPath(src, POSE);
@@ -311,19 +311,19 @@ describe('textToPathsByPaint', () => {
     const src: TextOutlineSource = {
       ...text(''),
       runs: [{ text: 'A' }, { text: 'B', stroke: OUTLINE }, { text: 'C' }],
-      fill: RED,
+      fill: { paint: RED },
     };
     const groups = textToPathsByPaint(src, POSE);
     expect(groups).toHaveLength(2);
-    expect(groups[0]).toMatchObject({ fill: RED });
+    expect(groups[0]).toMatchObject({ fill: { paint: RED } });
     expect(groups[0]!.stroke).toBeUndefined();
-    expect(groups[1]).toMatchObject({ fill: RED, stroke: OUTLINE });
+    expect(groups[1]).toMatchObject({ fill: { paint: RED }, stroke: OUTLINE });
   });
 
   it('gives plain text one group in the default text fill, and outlines unfilled text too', () => {
     const plain = textToPathsByPaint(text('Hi'), POSE);
     expect(plain).toHaveLength(1);
-    expect(plain[0]!.fill).toEqual({ kind: 'solid', color: '#000' });
+    expect(plain[0]!.fill).toEqual({ paint: { kind: 'solid', color: '#000' } });
 
     const unfilled = textToPathsByPaint({ ...text('Hi'), fill: null }, POSE);
     expect(unfilled).toHaveLength(1);
@@ -332,7 +332,7 @@ describe('textToPathsByPaint', () => {
   });
 
   it('leaves out a paint whose runs have no ink', () => {
-    const src: TextOutlineSource = { ...text(''), runs: [{ text: 'Hi' }, { text: '  ', fill: BLUE }] };
+    const src: TextOutlineSource = { ...text(''), runs: [{ text: 'Hi' }, { text: '  ', fill: { paint: BLUE } }] };
     expect(textToPathsByPaint(src, POSE)).toHaveLength(1);
     expect(textToPathsByPaint(text('   '), POSE)).toEqual([]);
   });

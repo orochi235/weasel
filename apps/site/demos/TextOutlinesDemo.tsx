@@ -4,7 +4,7 @@ import {
   registerCanvasFont, registerFontOutlines, unregisterFontOutlines, outlineStatus,
 } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
-import type { Paint, SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle } from '@weasel-js/core';
+import type { SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle, Fill } from '@weasel-js/core';
 
 const W = 600, H = 300;
 
@@ -35,7 +35,7 @@ function loadDemoFace(): Promise<void> {
   return facePromise;
 }
 
-interface NodeData { text: string; style: TextStyle; fill: Paint }
+interface NodeData { text: string; style: TextStyle; fill: Fill }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
@@ -66,7 +66,7 @@ const NODES = [
   kind: 'leaf' as const,
   layer: 'default' as const,
   pose: { x: 20, y: n.y, width: 560, height: n.h },
-  data: { text: n.text, style: style(n.size), fill: TEXT_FILL },
+  data: { text: n.text, style: style(n.size), fill: { paint: TEXT_FILL } },
 }));
 
 const makeDrawOne = (

@@ -46,7 +46,7 @@ const NONE: Record<DebugFeature, boolean> = {
 const drawBox = (_node: unknown, p: Box): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-  fill: { color: p.color },
+  fill: { paint: { color: p.color } },
 }];
 
 const btn: React.CSSProperties = {

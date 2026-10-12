@@ -9,7 +9,7 @@ const runs: StyledRun[] = [
 ];
 
 describe('an unfilled range', () => {
-  const red = { kind: 'solid' as const, color: '#f00' };
+  const red = { paint: { kind: 'solid' as const, color: '#f00' } };
   const mixedRuns: StyledRun[] = [{ text: 'ab', fill: null }, { text: 'cd', fill: red }, { text: 'ef' }];
 
   it('reads as null, apart from a color and from inheriting', () => {
@@ -109,15 +109,15 @@ describe('styleAtRange', () => {
 
   it('compares fill structurally, not by reference', () => {
     const same: StyledRun[] = [
-      { text: 'ab', fill: { color: '#f00' } },
-      { text: 'cd', fill: { color: '#f00' } },
+      { text: 'ab', fill: { paint: { color: '#f00' } } },
+      { text: 'cd', fill: { paint: { color: '#f00' } } },
     ];
     expect(same[0].fill).not.toBe(same[1].fill);
-    expect(styleAtRange(same, 0, 4).fill).toEqual({ color: '#f00' });
+    expect(styleAtRange(same, 0, 4).fill).toEqual({ paint: { color: '#f00' } });
 
     const differing: StyledRun[] = [
-      { text: 'ab', fill: { color: '#f00' } },
-      { text: 'cd', fill: { color: '#0f0' } },
+      { text: 'ab', fill: { paint: { color: '#f00' } } },
+      { text: 'cd', fill: { paint: { color: '#0f0' } } },
     ];
     expect(styleAtRange(differing, 0, 4).fill).toBe(MIXED);
   });
@@ -246,21 +246,21 @@ describe('applyStyleToRange', () => {
   it('coalesces neighbors whose fill is equal but not identical', () => {
     const out = applyStyleToRange(
       [
-        { text: 'ab', fill: { color: '#f00' } },
-        { text: 'cd', fill: { color: '#f00' }, bold: true },
+        { text: 'ab', fill: { paint: { color: '#f00' } } },
+        { text: 'cd', fill: { paint: { color: '#f00' } }, bold: true },
       ],
       2,
       4,
       { bold: false },
     );
-    expect(out).toEqual([{ text: 'abcd', fill: { color: '#f00' } }]);
+    expect(out).toEqual([{ text: 'abcd', fill: { paint: { color: '#f00' } } }]);
   });
 
   it('does not coalesce neighbors whose fill differs', () => {
     const out = applyStyleToRange(
       [
-        { text: 'ab', fill: { color: '#f00' } },
-        { text: 'cd', fill: { color: '#0f0' } },
+        { text: 'ab', fill: { paint: { color: '#f00' } } },
+        { text: 'cd', fill: { paint: { color: '#0f0' } } },
       ],
       0,
       4,
@@ -271,13 +271,15 @@ describe('applyStyleToRange', () => {
 
   it('coalesces gradient fills structurally', () => {
     const grad = (): StyledRun['fill'] => ({
-      kind: 'linear-gradient',
-      from: { x: 0, y: 0 },
-      to: { x: 1, y: 1 },
-      stops: [
-        { offset: 0, color: '#000' },
-        { offset: 1, color: '#fff' },
-      ],
+      paint: {
+        kind: 'linear-gradient',
+        from: { x: 0, y: 0 },
+        to: { x: 1, y: 1 },
+        stops: [
+          { offset: 0, color: '#000' },
+          { offset: 1, color: '#fff' },
+        ],
+      },
     });
     const out = applyStyleToRange(
       [{ text: 'ab', fill: grad() }, { text: 'cd', fill: grad(), bold: true }],
@@ -319,7 +321,7 @@ describe('runsCarryStyling', () => {
   it('is true when any run sets a non-flag key', () => {
     expect(runsCarryStyling([{ text: 'a', fontSize: 24 }])).toBe(true);
     expect(runsCarryStyling([{ text: 'a', fontFamily: 'serif' }])).toBe(true);
-    expect(runsCarryStyling([{ text: 'a', fill: { kind: 'solid', color: '#f00' } }])).toBe(true);
+    expect(runsCarryStyling([{ text: 'a', fill: { paint: { kind: 'solid', color: '#f00' } } }])).toBe(true);
   });
 
   it('counts letterSpacing: 0, which cancels node-level tracking', () => {

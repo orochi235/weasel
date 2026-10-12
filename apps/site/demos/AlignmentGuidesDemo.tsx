@@ -8,12 +8,12 @@ import {
 } from '@weasel-js/core';
 import { alignInsertBehavior, alignMoveBehavior, createGuidesLayer, deriveAlignmentGuides } from '@weasel-js/guides';
 import type { Guide, SpacingGap } from '@weasel-js/guides';
-import type { Paint, NodeId, Path, ToolsApi } from '@weasel-js/core';
+import type { NodeId, Path, ToolsApi, Fill } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
 
 // The same `{ path, fill }` shape the rect tool's insert dep mints, so the
 // kit's path painter draws both without a custom drawOne.
-interface NodeData { path: Path; fill: Paint }
+interface NodeData { path: Path; fill: Fill }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
@@ -22,7 +22,7 @@ const PAGE = { x: 0, y: 0, width: W, height: H };
 
 const rect = (id: string, pose: Pose, color: string) => ({
   id: id as NodeId, kind: 'leaf' as const, layer: 'default' as const, pose,
-  data: { path: rectPath(0, 0, pose.width, pose.height), fill: solid(color) },
+  data: { path: rectPath(0, 0, pose.width, pose.height), fill: { paint: solid(color) } },
 });
 
 export function AlignmentGuidesDemo() {

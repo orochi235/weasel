@@ -166,7 +166,7 @@ describe('diagramScene', () => {
     );
     const label = specs.find((s) => s.data?.text === 'w')!;
     expect(label.data?.diagram).toEqual({ label: { at: 0.25 } });
-    expect(label.data?.fill).toEqual({ color: '#222' });
+    expect(label.data?.fill).toEqual({ paint: { color: '#222' } });
   });
 
   it('takes a layout by name, or a function given barycenter under partial layoutOptions', () => {

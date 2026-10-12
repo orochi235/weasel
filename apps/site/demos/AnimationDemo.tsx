@@ -266,7 +266,7 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
               return [{
                 kind: 'path',
                 path: { kind: 'rect', x: cx - w / 2, y: cy - h / 2, width: w, height: h },
-                fill: { color: (n.data as Card).color, opacity: e.alpha },
+                fill: { paint: { color: (n.data as Card).color, opacity: e.alpha } },
               }];
             },
           },
@@ -389,7 +389,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
             drawOne: (n, p): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: n.data.color },
+              fill: { paint: { color: n.data.color } },
             }],
           },
           selectionOverlay: { handles: false },

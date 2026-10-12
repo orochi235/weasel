@@ -26,7 +26,7 @@ function render(x: number, fontSize: number): RasterImage {
     data: {
       text: 'H',
       style: { fontFamily: FAMILY, fontSize, lineHeight: 1.2 },
-      fill: { kind: 'solid', color: '#ffffff' },
+      fill: { paint: { kind: 'solid', color: '#ffffff' } },
     },
   });
   return renderSceneToPixels({

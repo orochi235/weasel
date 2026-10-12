@@ -13,7 +13,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
-import type { Paint } from '@weasel-js/paint';
+import type { Fill, Paint } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import { resolveFillPattern } from '@weasel-js/renderer';
@@ -41,13 +41,13 @@ const SOURCE = { x: 0, y: 0, width: 112, height: 52 };
 const SDF_SCALE = (OUTLINE_MIN_SCREEN_PX / FONT_SIZE) * 0.92;
 const OUTLINE_SCALE = (OUTLINE_MIN_SCREEN_PX / FONT_SIZE) * 1.08;
 
-interface TextData { text: string; style: object; fill: Paint }
+interface TextData { text: string; style: object; fill: Fill }
 
 function renderNode(fill: Paint, scale: number): RasterImage {
   const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
     kind: 'leaf', layer: 'main', pose: POSE,
-    data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill },
+    data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: { paint: fill } },
   });
   return renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: scale, y: scale } });
 }
@@ -151,7 +151,7 @@ describe('a gradient on decorated text', () => {
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       kind: 'leaf', layer: 'main', pose: POSE,
-      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: GRADIENT },
+      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: { paint: GRADIENT } },
     });
     const img = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: 1, y: 1 } });
     // The underline is the lowest row lit at both ends of the text — no glyph
@@ -198,7 +198,7 @@ describe('a pattern on text', () => {
 describe('texture-painted atlas text in a batched frame', () => {
   const run = (text: string, fill: Paint) => ({
     text, fontFamily: FAMILY, fontSize: FONT_SIZE, fontWeight: 400, fontStyle: 'normal',
-    fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
+    fill: { paint: fill }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
   const WORLD_STRIPES = resolveFillPattern({
     kind: 'hatch', color: '#ffffff', size: 16, lineWidth: 6,
@@ -208,17 +208,17 @@ describe('texture-painted atlas text in a batched frame', () => {
   it('draws in painter order between staged solids, and leaves solid text beside it solid', () => {
     const commands: DrawCommand[] = [
       // Under the text: staged before it, so its run has to drain first.
-      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#ff0000' } },
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { paint: { color: '#ff0000' } } },
       {
         kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
         runs: [run('HH', WORLD_STRIPES), run('HH', { kind: 'solid', color: '#ffff00' })],
       } as DrawCommand,
       // Over the right half of the text: staged after it, so it must land on top.
-      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { color: '#00ff00' } },
+      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { paint: { color: '#00ff00' } } },
     ];
     const img = renderCommands(commands);
     const mask = renderCommands([
-      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#000000' } },
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { paint: { color: '#000000' } } },
       {
         kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
         runs: [run('HH', { color: '#ffffff' }), run('HH', { color: '#ffffff' })],
@@ -359,7 +359,7 @@ describe('a registered paint kind on text', () => {
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       kind: 'leaf', layer: 'main', pose: POSE,
-      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: SPLIT },
+      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: { paint: SPLIT } },
     });
     const img = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: 1, y: 1 } });
     const inked = (x: number, y: number) => pixelAt(img, x, y + 0.5, 1)[3] >= 128;
@@ -375,7 +375,7 @@ describe('a registered paint kind on text', () => {
   it('draws in painter order between staged solids and under a clip, leaving solid text beside it solid', () => {
     const run = (text: string, fill: Paint) => ({
       text, fontFamily: FAMILY, fontSize: FONT_SIZE, fontWeight: 400, fontStyle: 'normal',
-      fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
+      fill: { paint: fill }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
     });
     const text = (a: Paint, b: Paint) => ({
       kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
@@ -385,16 +385,16 @@ describe('a registered paint kind on text', () => {
     // the stencil the glyphs are tested against with it.
     const CLIP_BOTTOM = 30;
     const img = renderCommands([
-      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#00ffff' } },
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { paint: { color: '#00ffff' } } },
       {
         kind: 'group',
         clip: { kind: 'rect', x: 0, y: 0, width: 112, height: CLIP_BOTTOM },
         children: [text(SPLIT, { kind: 'solid', color: '#ffff00' })],
       } as DrawCommand,
-      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { color: '#00ff00' } },
+      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { paint: { color: '#00ff00' } } },
     ]);
     const mask = renderCommands([
-      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#000000' } },
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { paint: { color: '#000000' } } },
       text({ color: '#ffffff' }, { color: '#ffffff' }),
     ]);
     const px = (x: number, y: number) => pixelAt(img, x + 0.5, y + 0.5, 1).join();
@@ -437,7 +437,7 @@ void main() { outColor = texture(u_source, v_uv).bgra; }
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       kind: 'leaf', layer: 'main', pose: POSE,
-      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: SPLIT },
+      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: { paint: SPLIT } },
     });
     const plain = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: SDF_SCALE, y: SDF_SCALE } });
     const img = renderSceneToPixels({

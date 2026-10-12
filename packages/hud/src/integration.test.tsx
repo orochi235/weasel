@@ -163,13 +163,13 @@ describe('weasel-hud integration', () => {
 
     const themed = { ...defaultResolved, '--wzl-surface-raised': '#abcdef' };
     const withTheme = btn.draw({ dims: { width: 200, height: 200 }, defaultFont: 'x', toneAt: () => '#000000', tokens: themed });
-    const themedBody = withTheme.find((c) => c.kind === 'path') as { fill: { color: string } };
-    expect(themedBody.fill.color).toBe('#abcdef');
+    const themedBody = withTheme.find((c) => c.kind === 'path') as { fill: { paint: { color: string } } };
+    expect(themedBody.fill.paint.color).toBe('#abcdef');
 
     const withoutTheme = btn.draw({ dims: { width: 200, height: 200 }, defaultFont: 'x', toneAt: () => '#000000', tokens: defaultResolved });
-    const plainBody = withoutTheme.find((c) => c.kind === 'path') as { fill: { color: string } };
-    expect(plainBody.fill.color).not.toBe('#abcdef');
-    expect(plainBody.fill.color).toBe(defaultResolved['--wzl-surface-raised']);
+    const plainBody = withoutTheme.find((c) => c.kind === 'path') as { fill: { paint: { color: string } } };
+    expect(plainBody.fill.paint.color).not.toBe('#abcdef');
+    expect(plainBody.fill.paint.color).toBe(defaultResolved['--wzl-surface-raised']);
   });
 });
 

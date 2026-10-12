@@ -68,7 +68,7 @@ export const Shape: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: solid('#7fb069'),
+      fill: { paint: solid('#7fb069') },
       stroke: { ...strokeOf('#1c1c1c', 6), cap: 'round', join: 'bevel' },
     },
   },
@@ -80,7 +80,7 @@ export const ImportedDash: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: solid('#7fb069'),
+      fill: { paint: solid('#7fb069') },
       stroke: { ...strokeOf('#1c1c1c', 6), dash: [9, 2, 2, 2] },
     },
   },
@@ -92,7 +92,7 @@ export const Text: Story = {
   args: {
     data: {
       text: 'The quick brown fox',
-      fill: solid('#1c1c1c'),
+      fill: { paint: solid('#1c1c1c') },
       style: { fontSize: 18, fontFamily: 'sans-serif', fontWeight: 500, align: 'center', lineHeight: 1.4 },
     },
   },
@@ -110,7 +110,7 @@ export const GradientFillPaint: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: gradientForBounds('linear-gradient', UNIT_BOX, RAMP, 'bounds'),
+      fill: { paint: gradientForBounds('linear-gradient', UNIT_BOX, RAMP, 'bounds') },
       stroke: strokeOf('#1c1c1c', 4),
     },
   },
@@ -122,7 +122,7 @@ export const GradientStrokePaint: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: solid('#7fb069'),
+      fill: { paint: solid('#7fb069') },
       stroke: {
         ...strokeOf('#1c1c1c', 6),
         paint: gradientForBounds('radial-gradient', UNIT_BOX, RAMP, 'bounds'),
@@ -136,7 +136,7 @@ export const PatternFillPaint: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: { kind: 'crosshatch', color: '#7fb069ff', size: 8, units: 'bounds' },
+      fill: { paint: { kind: 'crosshatch', color: '#7fb069ff', size: 8, units: 'bounds' } },
       stroke: strokeOf('#1c1c1c', 4),
     },
   },

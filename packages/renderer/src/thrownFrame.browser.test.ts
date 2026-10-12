@@ -10,8 +10,8 @@ import type { DrawCommand } from './DrawCommand';
 const SIZE = 8;
 
 const FULL = { kind: 'rect', x: 0, y: 0, width: SIZE, height: SIZE } as const;
-const HALF_RED: DrawCommand = { kind: 'path', path: FULL, fill: { color: '#ff0000', opacity: 0.5 } };
-const THROWS: DrawCommand = { kind: 'path', path: FULL, fill: { color: 'no-such-color' } };
+const HALF_RED: DrawCommand = { kind: 'path', path: FULL, fill: { paint: { color: '#ff0000', opacity: 0.5 } } };
+const THROWS: DrawCommand = { kind: 'path', path: FULL, fill: { paint: { color: 'no-such-color' } } };
 
 const COPY_FRAG = `#version 300 es
 precision highp float;

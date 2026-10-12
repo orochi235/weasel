@@ -32,7 +32,7 @@ describe('a pattern tile evicted while a draw command still holds its handle', (
     const commands: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      fill: { kind: 'texture', texture: handle },
+      fill: { paint: { kind: 'texture', texture: handle } },
     }];
     rec.reset();
     r.render(commands);

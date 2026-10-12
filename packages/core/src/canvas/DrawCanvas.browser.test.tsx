@@ -40,7 +40,7 @@ const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 const red: DrawCommand = {
   kind: 'path',
   path: { kind: 'rect', x: 0, y: 0, width: 5, height: 10 },
-  fill: { kind: 'solid', color: '#ff0000' },
+  fill: { paint: { kind: 'solid', color: '#ff0000' } },
 };
 
 describe('<DrawCanvas> in a real browser', () => {

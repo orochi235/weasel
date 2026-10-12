@@ -26,7 +26,7 @@ import { useLatest } from '@weasel-js/react';
 import { asNodeId } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';
 import type { Scene } from '../../core/scene/types';
-import type { Paint, Stroke } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
@@ -42,7 +42,7 @@ export interface DefaultTextData {
   text?: string;
   style?: TextStyle;
   runs?: readonly StyledRun[];
-  fill?: Paint | null;
+  fill?: Fill | null;
   stroke?: Stroke | null;
   verticalAlign?: TextVerticalAlign;
 }

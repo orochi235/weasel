@@ -149,11 +149,11 @@ export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintS
       // pre-pass is load-bearing: `<defs>` is emitted before the body, so a
       // paint first seen while writing an element would be referenced by an
       // id that no definition backs.
-      registerTextPaint(n.fill, registry);
+      registerTextPaint(n.fill?.paint, registry);
       registerTextPaint(n.stroke?.paint, registry);
       registerMarkers(n.stroke, registry);
       for (const run of n.runs ?? []) {
-        registerTextPaint(run.fill, registry);
+        registerTextPaint(run.fill?.paint, registry);
         registerTextPaint(run.stroke?.paint, registry);
       }
     }
@@ -540,11 +540,14 @@ function textXml(
   // below emits as `wd:line-height="..."`. There is no compat write of
   // `data-weasel-line-height` — per the SVG-native plan's Migration section,
   // no installed base exists to compat against.
-  if (node.fill === null) {
-    attrs.push('fill="none"');
-  } else if (node.fill) {
-    attrs.push(`fill="${isSolidPaint(node.fill) ? escapeAttr(node.fill.color) : registry.ref(node.fill)}"`);
-    attrs.push(...opacityAttr('fill-opacity', node.fill.opacity));
+  if (node.fill !== undefined) {
+    const paint = node.fill?.paint;
+    if (!paint) {
+      attrs.push('fill="none"');
+    } else {
+      attrs.push(`fill="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`);
+      attrs.push(...opacityAttr('fill-opacity', paint.opacity));
+    }
   }
   for (const a of coreStrokeAttrs(node.stroke, registry, warn)) attrs.push(a);
   if (node.opacity != null && node.opacity !== 1) {
@@ -618,13 +621,11 @@ function runXml(
   }
   const runDecoration = textDecorationValue(run.underline, run.strikethrough, run.overline);
   if (runDecoration) attrs.push(`text-decoration="${runDecoration}"`);
-  if (run.fill === null) attrs.push('fill="none"');
-  else if (run.fill) {
-    if (isSolidPaint(run.fill)) {
-      attrs.push(`fill="${escapeAttr(run.fill.color)}"`);
-    } else {
-      attrs.push(`fill="${registry.ref(run.fill)}"`);
-    }
+  if (run.fill !== undefined) {
+    const paint = run.fill?.paint;
+    if (!paint) attrs.push('fill="none"');
+    else if (isSolidPaint(paint)) attrs.push(`fill="${escapeAttr(paint.color)}"`);
+    else attrs.push(`fill="${registry.ref(paint)}"`);
   }
   for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
   // `none` included: on a run it overrides a transform the node would pass down.

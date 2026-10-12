@@ -89,7 +89,7 @@ describe('drawBooleansAdapter with strokes counted', () => {
 
     const [id] = result.kind === 'applied' ? result.resultIds : [];
     const made = scene.get(asNodeId(id!))!;
-    expect(made.data.fill).toEqual({ color: '#f00' });
+    expect(made.data.fill).toEqual({ paint: { color: '#f00' } });
     expect(made.data.stroke).toBeUndefined();
     expect(made.pose).toMatchObject({ x: -5, width: 30 });
   });

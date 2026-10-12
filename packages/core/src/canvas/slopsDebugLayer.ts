@@ -56,7 +56,7 @@ export function createSlopsDebugLayer(
               coords: new Float32Array([q[0].x, q[0].y, q[1].x, q[1].y, q[2].x, q[2].y, q[3].x, q[3].y]),
               fillRule: 'nonzero',
             },
-            fill: { kind: 'solid', color: SLOP_FILL },
+            fill: { paint: { kind: 'solid', color: SLOP_FILL } },
             stroke: { paint: { kind: 'solid', color: SLOP_STROKE }, width: 1 },
           });
         }

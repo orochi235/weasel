@@ -200,7 +200,7 @@ export function TimelineDemo() {
               drawOne: (n, p): DrawCommand[] => [{
                 kind: 'path',
                 path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: String(n.id) === 'tint' ? tint.current : FILLS[String(n.id)] },
+                fill: { paint: { color: String(n.id) === 'tint' ? tint.current : FILLS[String(n.id)] } },
               }],
             },
             selectionOverlay: null,

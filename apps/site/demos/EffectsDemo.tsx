@@ -36,7 +36,7 @@ export function EffectsDemo() {
     draw: (): DrawCommand[] => TILES.map((t) => ({
       kind: 'path',
       path: { kind: 'rect', x: t.x, y: t.y, width: t.w, height: t.h },
-      fill: { color: t.color },
+      fill: { paint: { color: t.color } },
     })),
   }), [effects]);
 
@@ -53,7 +53,7 @@ export function EffectsDemo() {
       const rule = (x: number, y: number, w: number, h: number): DrawCommand => ({
         kind: 'path',
         path: { kind: 'rect', x, y, width: w, height: h },
-        fill: { color: '#ffffff' },
+        fill: { paint: { color: '#ffffff' } },
       });
       const inset = 20;
       const arm = 26;

@@ -938,7 +938,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       draw: (_data, _view, dims) => {
         const rect = { x: 0, y: 0, width: dims.width, height: dims.height };
         const fill = commandPaint(backgroundFill, rect);
-        return fill ? [{ kind: 'path', path: { kind: 'rect', ...rect }, fill }] : [];
+        return fill ? [{ kind: 'path', path: { kind: 'rect', ...rect }, fill: { paint: fill } }] : [];
       },
     };
   }, [backgroundFill]);

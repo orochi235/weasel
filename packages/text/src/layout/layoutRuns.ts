@@ -55,7 +55,7 @@
  * pen deltas, never an absolute coordinate, so the translation is exact.
  */
 
-import { isSolidPaint, type Paint, type Stroke } from '@weasel-js/paint';
+import { isSolidPaint, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
 import {
   resolveFontVariant, resolveGlyphFallback, glyphOutline, fontPending, faceMetricsOf,
   type ResolveResult, type BmFontChar, type BmFont, type FontStyle, type FaceMetrics,
@@ -127,7 +127,7 @@ export interface LaidOutGroup {
   /** `null` for an unfilled run: the group's glyphs are painted by `stroke`
    *  alone. Only ever null on an `'outline'` group carrying a stroke, since
    *  nothing else can put ink down without a fill. */
-  fill: Paint | null;
+  fill: Fill | null;
   /** Outline painted over the glyphs, or absent for none. Only ever set on
    *  an `'outline'` group — the SDF tiers have no geometry to stroke, which
    *  is why a stroke pulls its run onto the outline tier at any size. A run
@@ -150,7 +150,7 @@ export interface LaidOutGroup {
 export interface LaidOutDecoration {
   kind: DecorationKind;
   x0: number; y0: number; x1: number; y1: number;
-  fill: Paint;
+  fill: Fill;
 }
 
 /**
@@ -458,7 +458,7 @@ function getOrCreateGroup(
     resolvedWeight,
     resolvedStyle,
     resolved.synthetic,
-    run.fill,
+    (run.fill?.paint ?? null),
     source === 'outline' && strokePaints(run.stroke) ? run.stroke : undefined,
     source,
     page,
@@ -972,7 +972,7 @@ export function layoutRuns(
     underline: boolean;
     strikethrough: boolean;
     overline: boolean;
-    fill: Paint;
+    fill: Fill;
     fontSize: number;
     face: FaceMetrics | undefined;
     baselineY: number;
@@ -1161,7 +1161,7 @@ export function layoutRuns(
           && span.fontSize === e.run.fontSize
           && span.face === face
           && span.baselineY === baselineY
-          && sameFill(span.fill, e.run.fill)
+          && sameFill(span.fill.paint ?? null, decoFill.paint ?? null)
         ) {
           // Absorbs the kerning gap we just stepped over, so a run join
           // between two identically-decorated runs shows no seam.

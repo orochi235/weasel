@@ -45,13 +45,13 @@ describe('svgNeeds', () => {
         }],
       },
       box(linear),
-      text([{ text: 'a', fill: late('test-run') }], { fill: late('test-text') }),
+      text([{ text: 'a', fill: { paint: late('test-run') } }], { fill: { paint: late('test-text') } }),
     ];
     expect(svgNeeds(nodes).paintKinds).toEqual(['test-stroke', 'linear-gradient', 'test-text', 'test-run']);
   });
 
   it('skips a paint the writer puts inline as a color', () => {
-    const nodes = [text([{ text: 'a', fill: asPaint({ kind: 'solid', color: '#f00' }) }])];
+    const nodes = [text([{ text: 'a', fill: { paint: asPaint({ kind: 'solid', color: '#f00' }) } }])];
     expect(svgNeeds(nodes).paintKinds).toEqual([]);
   });
 

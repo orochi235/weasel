@@ -85,7 +85,7 @@ function makeScene(): Scene<D, L, P> {
 const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { kind: 'solid', color: node.data.color },
+  fill: { paint: { kind: 'solid', color: node.data.color } },
 }];
 
 const identityPoseBounds = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<P>;

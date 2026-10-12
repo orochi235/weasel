@@ -23,10 +23,10 @@ import type {
   Affordance,
   AffordanceRegion,
   ChromeState,
-  CommandPaint,
   CommandStroke,
   CursorSpec,
   PoseDescriptor,
+  CommandFill,
 } from '@weasel-js/core';
 import { portsOf } from './ports';
 import type { DiagramNodeLike, DiagramNodeReader } from './trait';
@@ -79,7 +79,7 @@ export interface PortAffordanceOptions<TPose> {
   /** Screen-pixel side of the painted square. Default 7. Omit `paint` entirely
    *  by passing 0 — a port the consumer draws itself is still hittable. */
   sizePx?: number;
-  fill?: CommandPaint;
+  fill?: CommandFill;
   stroke?: CommandStroke;
   cursor?: CursorSpec;
   /** Default `'exclusive'` on pointer gestures: a drag from a port is a

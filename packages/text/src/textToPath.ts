@@ -10,7 +10,7 @@
  * `textToPathsByPaint` is the same walk, split by the paint each glyph wears.
  */
 
-import { isSolidPaint, type Paint, type Stroke } from '@weasel-js/paint';
+import { isSolidPaint, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
 
 import {
   loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle,
@@ -36,7 +36,7 @@ export interface TextOutlineSource {
   style?: TextStyle;
   verticalAlign?: TextVerticalAlign;
   /** The node's `data.fill`: `null` is no fill, absent the default black. */
-  fill?: Paint | null;
+  fill?: Fill | null;
   /** The node's `data.stroke`: absent or `null` is no stroke. */
   stroke?: Stroke | null;
 }
@@ -45,7 +45,7 @@ export interface TextOutlineSource {
 export interface TextPaintPath {
   /** The resolved fill these glyphs wear: the run's own, else the node's.
    *  `null` for unfilled text, painted by its stroke alone. */
-  fill: Paint | null;
+  fill: Fill | null;
   /** The resolved stroke — the run's own, else the node's — or absent. */
   stroke?: Stroke;
   /** World-space outlines, as {@link textToPath} builds them. */
@@ -206,7 +206,7 @@ function walkOutlines(
   data: TextOutlineSource,
   pose: PathInWorldPose,
   opts: TextToPathOptions,
-): { paints: { fill: Paint | null; stroke?: Stroke }[]; paths: PolygonPath[] } {
+): { paints: { fill: Fill | null; stroke?: Stroke }[]; paths: PolygonPath[] } {
   const textPose: TextPose = {
     x: pose.x, y: pose.y, width: pose.width, height: pose.height,
     text: data.text,
@@ -219,10 +219,10 @@ function walkOutlines(
   const { runs: resolved, opts: layoutOpts } = textPoseLayoutInput(textPose, opts.scale ?? 1);
   for (const run of resolved) assertOutlinable(run);
 
-  const paints: { fill: Paint | null; stroke?: Stroke }[] = [];
+  const paints: { fill: Fill | null; stroke?: Stroke }[] = [];
   const indexOf = new Map<string, number>();
   const runs = resolved.map((run): ResolvedRun => {
-    const key = paintKey(run.fill, run.stroke);
+    const key = paintKey((run.fill?.paint ?? null), run.stroke);
     let i = indexOf.get(key);
     if (i === undefined) {
       i = paints.length;
@@ -230,7 +230,7 @@ function walkOutlines(
       paints.push(run.stroke !== undefined ? { fill: run.fill, stroke: run.stroke } : { fill: run.fill });
     }
     const { stroke: _stroke, ...rest } = run;
-    return { ...rest, fill: { kind: 'solid', color: `#${i.toString(16).padStart(6, '0')}` } };
+    return { ...rest, fill: { paint: { kind: 'solid', color: `#${i.toString(16).padStart(6, '0')}` } } };
   });
   const groupOf = (fill: Paint | null): number =>
     isSolidPaint(fill) ? parseInt(fill.color.slice(1), 16) : 0;
@@ -249,7 +249,7 @@ function walkOutlines(
   const dy = pose.y + verticalAlignOffset(data.verticalAlign, pose.height, laid.bounds.height);
   const parts: PolygonPath[][] = paints.map(() => []);
   for (const g of laid.groups) {
-    const out = parts[groupOf(g.fill)]!;
+    const out = parts[groupOf((g.fill?.paint ?? null))]!;
     const shear = g.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
     for (const glyph of g.glyphs) {
       const s = glyph.scale;
@@ -259,7 +259,7 @@ function walkOutlines(
     }
   }
   for (const r of laid.decorations) {
-    parts[groupOf(r.fill)]!.push(ruleContour(r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy));
+    parts[groupOf(r.fill.paint ?? null)]!.push(ruleContour(r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy));
   }
 
   const frame = poseFrameOf(pose);

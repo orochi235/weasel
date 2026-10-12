@@ -84,7 +84,7 @@ function makeScene(): Scene<D, L, P> {
 const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { kind: 'solid', color: node.data.color },
+  fill: { paint: { kind: 'solid', color: node.data.color } },
 }];
 
 const identityView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -226,18 +226,18 @@ function makeNestedScene(): {
 const nestedDrawOne = (n: Node<NestedD, NestedL, P>, pose: P, _v: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { kind: 'solid', color: n.data.color },
+  fill: { paint: { kind: 'solid', color: n.data.color } },
 }];
 
-/** Every `fill.color` reachable from `cmds`, in emission order. */
+/** Every `fill.paint.color` reachable from `cmds`, in emission order. */
 function paintedColors(cmds: readonly DrawCommand[]): string[] {
   const out: string[] = [];
   const walk = (list: readonly DrawCommand[]): void => {
     for (const c of list) {
       if (c.kind === 'group') walk((c as GroupDrawCommand).children ?? []);
       else {
-        const fill = (c as { fill?: { color?: string } }).fill;
-        if (fill?.color) out.push(fill.color);
+        const paint = (c as { fill?: { paint?: { color?: string } } }).fill?.paint;
+        if (paint?.color) out.push(paint.color);
       }
     }
   };
@@ -447,7 +447,7 @@ describe('renderSceneToCanvas', () => {
     const extra: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { kind: 'solid', color: '#000' },
+      fill: { paint: { kind: 'solid', color: '#000' } },
     }];
 
     renderSceneToCanvas({

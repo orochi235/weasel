@@ -249,16 +249,16 @@ describe('paint-kind registry', () => {
     // inside it, so the registry is ambient state that memo cannot see change.
     const node = {
       id: 'a', kind: 'leaf', layer: 'default',
-      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: WASH },
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: WASH } },
     } as never;
     const pose = { x: 10, y: 20, width: 200, height: 40 };
-    const before = findNodeShape(node)!.paint!(node, pose as never) as Array<{ fill: unknown }>;
-    expect((before[0].fill as unknown as WashFill).units).toBe('bounds');
+    const before = findNodeShape(node)!.paint!(node, pose as never) as Array<{ fill: { paint: unknown } }>;
+    expect((before[0].fill.paint as unknown as WashFill).units).toBe('bounds');
 
     dispose = registerPaintKind(washEntry());
 
-    const after = findNodeShape(node)!.paint!(node, pose as never) as Array<{ fill: unknown }>;
-    expect((after[0].fill as unknown as WashFill).units).toBe('local');
+    const after = findNodeShape(node)!.paint!(node, pose as never) as Array<{ fill: { paint: unknown } }>;
+    expect((after[0].fill.paint as unknown as WashFill).units).toBe('local');
   });
 
   it('paints a registered kind through its own program', () => {
@@ -267,7 +267,7 @@ describe('paint-kind registry', () => {
     const recorder = makeGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 400, height: 300, dpr: 1 });
     recorder.reset();
-    expect(() => r.render([{ kind: 'path', path: triangle(), fill: WASH } as DrawCommand])).not.toThrow();
+    expect(() => r.render([{ kind: 'path', path: triangle(), fill: { paint: WASH } } as DrawCommand])).not.toThrow();
     expect(recorder.calls.some((c) => c.name === 'drawElements')).toBe(true);
   });
 
@@ -277,7 +277,7 @@ describe('paint-kind registry', () => {
     dispose = registerPaintKind({ ...washEntry(), bind: undefined });
     const recorder = makeGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 400, height: 300, dpr: 1 });
-    expect(() => r.render([{ kind: 'path', path: triangle(), fill: WASH } as DrawCommand])).not.toThrow();
+    expect(() => r.render([{ kind: 'path', path: triangle(), fill: { paint: WASH } } as DrawCommand])).not.toThrow();
   });
 });
 
@@ -315,7 +315,7 @@ describe('paint kinds loaded on demand', () => {
     const r = new WeaselRenderer({ gl: recorder.gl, width: 400, height: 300, dpr: 1 });
     const frame = () => {
       recorder.reset();
-      r.render([{ kind: 'path', path: triangle(), fill: WASH } as DrawCommand]);
+      r.render([{ kind: 'path', path: triangle(), fill: { paint: WASH } } as DrawCommand]);
       return recorder.calls.some((c) => c.name === 'drawElements');
     };
 

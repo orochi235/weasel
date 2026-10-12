@@ -4,6 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
+import type { Fill } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
 import type { Node, RectPose } from 'core/scene/types';
@@ -13,7 +14,7 @@ import { sceneDerivedPathOf, withDerivedPaths } from './derivedPath';
 import { findShapeSilhouette, shapeCoversPoint, type NodePaintCtx } from './NodeShape';
 import { pickWalk, scenePickSource } from './pickWalk';
 
-type Data = { path?: Path; fill?: string };
+type Data = { path?: Path; fill?: Fill };
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const REST: RectPose = { x: 0, y: 0, width: 100, height: 20 };
@@ -27,7 +28,7 @@ function makeScene() {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
     kind: 'leaf', layer: 'main', pose: REST,
-    data: { path: { kind: 'rect', x: 0, y: 0, width: 100, height: 20 }, fill: '#f00' },
+    data: { path: { kind: 'rect', x: 0, y: 0, width: 100, height: 20 }, fill: { paint: { color: '#f00' } } },
   });
   const plain = scene.add({
     kind: 'leaf', layer: 'main', pose: { x: 200, y: 0, width: 10, height: 10 },

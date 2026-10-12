@@ -42,7 +42,7 @@ const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 const rect = (color: string): DrawCommand => ({
   kind: 'path',
   path: { kind: 'rect', x: 1, y: 2, width: 3, height: 4 },
-  fill: { kind: 'solid', color },
+  fill: { paint: { kind: 'solid', color } },
 });
 
 const lastFrame = () => renderMock.mock.calls.at(-1)![0];
@@ -67,7 +67,7 @@ describe('<DrawCanvas>', () => {
     expect(bg).toEqual({
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 40, height: 20 },
-      fill: { kind: 'solid', color: '#fff' },
+      fill: { paint: { kind: 'solid', color: '#fff' } },
     });
     expect(Array.from((group as GroupDrawCommand).transform!)).toEqual([2, 0, 0, 0, 2, 0, -10, 0, 1]);
   });
@@ -81,7 +81,7 @@ describe('<DrawCanvas>', () => {
     };
     render(<DrawCanvas width={40} height={20} background={background} draw={[]} />);
     const [bg] = lastFrame();
-    expect((bg as { fill: unknown }).fill).toMatchObject({ units: 'local', to: { x: 40, y: 20 } });
+    expect((bg as { fill: unknown }).fill).toMatchObject({ paint: { units: 'local', to: { x: 40, y: 20 } } });
   });
 
   it('repaints on the next frame when its commands change', async () => {

@@ -139,6 +139,16 @@ export function resolveScreenLength(value: ScreenLength, scale: number): number 
   return value.px / scale;
 }
 
+/**
+ * Fill style: the paint laid inside an outline. `Stroke`'s sibling, and the
+ * same shape: a record holding a `paint`, with room for what belongs to the
+ * fill rather than to the paint.
+ */
+export interface Fill {
+  /** Omitted, the fill paints nothing, as a stroke with no paint does. */
+  paint?: Paint;
+}
+
 /** Stroke style: a Paint plus structural line parameters. */
 export interface Stroke {
   /**

@@ -10,7 +10,7 @@ import {
   useRig,
   useScene,
 } from '@weasel-js/core';
-import type { Paint, NodeId, Path, RectPose, Stroke } from '@weasel-js/core';
+import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 300;
@@ -27,7 +27,7 @@ const armAt = (x: number): Skeleton => ({
 const RIGID = armAt(40);
 const SKINNED = armAt(340);
 
-type Data = { shape: 'rect'; fill: Paint; stroke: Stroke } | { path: Path; fill: Paint; stroke: Stroke };
+type Data = { shape: 'rect'; fill: Fill; stroke: Stroke } | { path: Path; fill: Fill; stroke: Stroke };
 interface NodeSpec { id: NodeId; kind: 'leaf'; layer: 'main'; pose: RectPose; data: Data }
 
 const INK: Stroke = { paint: { color: '#2b2118' }, width: 3, join: 'round' };
@@ -42,7 +42,7 @@ const SLEEVE_PATH = polygonFromPoints([
 const piece = (id: NodeId, x: number, color: string): NodeSpec => ({
   id, kind: 'leaf', layer: 'main',
   pose: { x, y: Y - HALF, width: BONE, height: 2 * HALF },
-  data: { shape: 'rect', fill: solid(color), stroke: INK },
+  data: { shape: 'rect', fill: { paint: solid(color) }, stroke: INK },
 });
 const INITIAL: NodeSpec[] = [
   piece(UPPER, 40, '#7fb069'),
@@ -50,7 +50,7 @@ const INITIAL: NodeSpec[] = [
   {
     id: SLEEVE, kind: 'leaf', layer: 'main',
     pose: { x: 340, y: Y - HALF, width: 2 * BONE, height: 2 * HALF },
-    data: { path: SLEEVE_PATH, fill: solid('#d4a574'), stroke: INK },
+    data: { path: SLEEVE_PATH, fill: { paint: solid('#d4a574') }, stroke: INK },
   },
 ];
 const RIGID_BINDINGS = { shoulder: UPPER, elbow: LOWER };

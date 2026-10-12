@@ -73,7 +73,7 @@ function makeScene(): Scene<D, L, P> {
 const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { kind: 'solid', color: node.data.color },
+  fill: { paint: { kind: 'solid', color: node.data.color } },
 }];
 
 const identityView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -177,7 +177,7 @@ describe('<SceneViewCanvas>', () => {
     const extraA: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { kind: 'solid', color: '#aaa' },
+      fill: { paint: { kind: 'solid', color: '#aaa' } },
     }];
     const extraB: DrawCommand[] = [{
       kind: 'path',

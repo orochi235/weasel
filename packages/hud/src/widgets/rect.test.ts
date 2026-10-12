@@ -11,7 +11,7 @@ describe('rect widget', () => {
     expect(cmds).toHaveLength(1);
     const cmd = cmds[0];
     expect(cmd.kind).toBe('path');
-    expect((cmd as { fill?: { color: string } }).fill?.color).toBe('#abcdef');
+    expect((cmd as { fill?: { paint?: { color: string } } }).fill?.paint?.color).toBe('#abcdef');
   });
 
   it('hitTest is true inside the rect, false outside', () => {

@@ -1,4 +1,4 @@
-import type { Stroke, Paint, TexturePaint } from '@weasel-js/paint';
+import type { CommandPaint, Stroke, Paint, TexturePaint } from '@weasel-js/paint';
 import { getPaintDrawKind } from '../paintKinds';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
@@ -19,14 +19,14 @@ import { batchPaint } from './gradient';
 import { paintBindContext, bindPattern, bindGradient } from './paintBind';
 
 export function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
-  if (cmd.fill) drawPathFill(ctx, cmd);
-  // A stroke with no `paint` paints nothing, the way a node's `fill: null`
-  // does. Commands arriving from a consumer painter or overlay can carry one.
+  // A fill or a stroke with no `paint` paints nothing, the way a node's
+  // `fill: null` does. Commands arriving from a consumer painter or overlay
+  // can carry one.
+  if (cmd.fill?.paint) drawPathFill(ctx, cmd, cmd.fill.paint);
   if (cmd.stroke?.paint) drawPathStroke(ctx, cmd as StrokedPathCommand);
 }
 
-function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
-  const fill = cmd.fill!;
+function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint): void {
   // Batchable: see `batchPaint`. A rect skips tessellation entirely; anything
   // else stages its mesh. Both also keep animated demos that mint a fresh Path
   // every frame from allocating a GL buffer per frame.

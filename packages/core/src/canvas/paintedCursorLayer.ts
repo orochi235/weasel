@@ -48,7 +48,7 @@ function commandFor(op: CursorPaintOp): PathDrawCommand {
   return {
     kind: 'path',
     path: pathFor(op.d),
-    ...(op.fill !== undefined ? { fill: { color: op.fill } } : {}),
+    ...(op.fill !== undefined ? { fill: { paint: { color: op.fill } } } : {}),
     ...(op.stroke !== undefined
       ? {
           stroke: {

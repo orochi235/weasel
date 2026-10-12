@@ -6,7 +6,7 @@ import type { DrawCommand } from './DrawCommand';
 const rect = (x: number): DrawCommand => ({
   kind: 'path',
   path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-  fill: { kind: 'solid', color: '#f00' },
+  fill: { paint: { kind: 'solid', color: '#f00' } },
 });
 
 /** A stroke with per-anchor colors never joins the solid batch, so it draws

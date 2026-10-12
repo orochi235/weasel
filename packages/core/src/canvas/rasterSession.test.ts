@@ -50,7 +50,7 @@ const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [
       width: 2,
     },
   },
-  { kind: 'path', path: { kind: 'rect', x: p.x, y: p.y, width: 4, height: 4 }, fill: { kind: 'solid', color: '#00ff00' } },
+  { kind: 'path', path: { kind: 'rect', x: p.x, y: p.y, width: 4, height: 4 }, fill: { paint: { kind: 'solid', color: '#00ff00' } } },
 ] as DrawCommand[];
 
 const SCENE_A = fakeScene([leaf('a', { x: 0, y: 0, width: 20, height: 10 })]);

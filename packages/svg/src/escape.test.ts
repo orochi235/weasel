@@ -52,7 +52,7 @@ describe('serializeSvg and characters XML cannot hold', () => {
         fill: { kind: 'solid', color: odd },
         stroke: { paint: { kind: 'solid', color: odd }, width: 1 },
       },
-      text('x', { fill: { kind: 'solid', color: odd }, runs: [{ text: 'x', fill: { kind: 'solid', color: odd } }] }),
+      text('x', { fill: { paint: { kind: 'solid', color: odd } }, runs: [{ text: 'x', fill: { paint: { kind: 'solid', color: odd } } }] }),
     ]);
     expect(svg.match(/="a&quot;b&lt;c&amp;d"/g)).toHaveLength(4);
     expect(svg).not.toContain(odd);

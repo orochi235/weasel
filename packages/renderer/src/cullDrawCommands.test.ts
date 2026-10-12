@@ -10,7 +10,7 @@ const paint = { color: '#000000' };
 const rect = (x: number, y: number, width = 10, height = 10): PathDrawCommand => ({
   kind: 'path',
   path: { kind: 'rect', x, y, width, height },
-  fill: paint,
+  fill: { paint: paint },
 });
 
 const I = mat3.identity();
@@ -136,7 +136,7 @@ describe('cullDrawCommands', () => {
         coords: new Float32Array([-50, 50, -50, -50, 900, -50, 900, 50]),
         fillRule: 'nonzero',
       },
-      fill: paint,
+      fill: { paint: paint },
     };
     expect(cullDrawCommands([curve], I, SCREEN)).toEqual([curve]);
   });

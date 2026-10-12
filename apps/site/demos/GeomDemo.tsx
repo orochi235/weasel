@@ -99,8 +99,8 @@ function drawMeasure(m: Measure, probe: { x: number; y: number }): DrawCommand[]
     { kind: 'path', path: polylineFromPoints(pts(m.before)), stroke: thin(AT_T, [4, 3]) },
     { kind: 'path', path: polylineFromPoints(pts(m.beforeLine)), stroke: { paint: AT_T, width: { px: 2.5 } } },
     { kind: 'path', path: polylineFromPoints([probe, m.near]), stroke: thin(PROBE, [3, 3]) },
-    { kind: 'path', path: circlePath(m.near.x, m.near.y, 4), fill: PROBE },
-    { kind: 'path', path: circlePath(m.before[6], m.before[7], 5), fill: AT_T },
+    { kind: 'path', path: circlePath(m.near.x, m.near.y, 4), fill: { paint: PROBE } },
+    { kind: 'path', path: circlePath(m.before[6], m.before[7], 5), fill: { paint: AT_T } },
   ];
 }
 
@@ -157,9 +157,9 @@ export function GeomDemo() {
             drawOne: (n): DrawCommand[] => {
               const d = n.data;
               const circle = circlePath(d.x + R, d.y + R, R - 1);
-              if (d.role === 'anchor') return [{ kind: 'path', path: circle, fill: INK }];
-              if (d.role === 'probe') return [{ kind: 'path', path: circle, fill: PROBE }];
-              return [{ kind: 'path', path: circle, fill: { color: '#ffffff' }, stroke: { paint: INK, width: { px: 1.5 } } }];
+              if (d.role === 'anchor') return [{ kind: 'path', path: circle, fill: { paint: INK } }];
+              if (d.role === 'probe') return [{ kind: 'path', path: circle, fill: { paint: PROBE } }];
+              return [{ kind: 'path', path: circle, fill: { paint: { color: '#ffffff' } }, stroke: { paint: INK, width: { px: 1.5 } } }];
             },
           },
           curve: { layer: curveLayer, before: 'scene' },

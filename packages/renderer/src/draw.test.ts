@@ -176,14 +176,14 @@ describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
 
   it('binds the path-fill program before drawing a path', () => {
     const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
-    r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
+    r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
     const names = recorder.calls.map((c) => c.name);
     expect(names).toContain('useProgram');
   });
 
   it('issues a drawElements call with the mesh index count', () => {
     const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
-    r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
+    r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
     const draw = recorder.calls.find((c) => c.name === 'drawElements');
     expect(draw).toBeDefined();
     expect(draw!.args[1]).toBe(6);                                 // 2 triangles × 3
@@ -218,7 +218,7 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
       coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
       fillRule: 'evenodd',
     };
-    r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
+    r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
 
     const enableCalls = recorder.calls.filter((c) => c.name === 'enable');
     const enabledStencil = enableCalls.some((c) => c.args[0] === recorder.gl.STENCIL_TEST);
@@ -235,7 +235,7 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
       coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
       fillRule: 'evenodd',
     };
-    r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
+    r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
     const clearCalls = recorder.calls.filter((c) => c.name === 'clear');
     expect(clearCalls.length).toBeGreaterThanOrEqual(1);
   });
@@ -260,7 +260,7 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
 
   it('draws fill THEN stroke when both are set', () => {
     const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
-    r.render([{ kind: 'path', path, fill: { color: '#f00' }, stroke: { paint: { color: '#000' }, width: 2 } }]);
+    r.render([{ kind: 'path', path, fill: { paint: { color: '#f00' } }, stroke: { paint: { color: '#000' }, width: 2 } }]);
     const draws = recorder.calls.filter((c) => c.name === 'drawElements');
     // Both are solid geometry, so they share one draw — and inside it the fill
     // is staged first, which is what puts the stroke on top.
@@ -289,7 +289,7 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
     expect(recorder.calls.filter((c) => c.name === 'drawElements').length).toBe(0);
 
     recorder.reset();
-    r.render([{ kind: 'path', path, fill: { color: '#f00' }, stroke: { width: 2 } }]);
+    r.render([{ kind: 'path', path, fill: { paint: { color: '#f00' } }, stroke: { width: 2 } }]);
     expect(recorder.calls.filter((c) => c.name === 'drawElements').length).toBe(1);
   });
 
@@ -348,7 +348,7 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
       coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
       fillRule: 'evenodd',
     };
-    r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
+    r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
 
     // The function must only set stencilMask to 0x01 (bit 0) or 0xFF (the
     // frame-start full-restore from WeaselRenderer.render). Never a clip-bit mask.
@@ -437,7 +437,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: NO_RED,
       children: [
-        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { kind: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }], align: 'left', style: { fontFamily: 'inter', fontSize: 32 } },
+        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#fff' } }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }], align: 'left', style: { fontFamily: 'inter', fontSize: 32 } },
       ],
     };
     r.render([cmd]);
@@ -474,7 +474,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   it('uploads identity u_colorMatrix on text draws with no enclosing group transform', () => {
     const cmd: DrawCommand = {
       kind: 'text', x: 0, y: 0,
-      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { kind: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }],
+      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#fff' } }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }],
       align: 'left',
       style: { fontFamily: 'inter', fontSize: 32 },
     };
@@ -543,7 +543,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     const breaker = {
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 8, height: 8 },
-      fill: { kind: 'solid' as const, color: '#ffffff' },
+      fill: { paint: { kind: 'solid' as const, color: '#ffffff' } },
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
     } as unknown as DrawCommand;
     const img = {
@@ -686,7 +686,7 @@ describe('pushClip / popClip', () => {
     const stagedRect: DrawCommand = {
       kind: 'path',
       path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
-      fill: { color: '#ff0000' },
+      fill: { paint: { color: '#ff0000' } },
     } as DrawCommand;
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
 
@@ -735,7 +735,7 @@ describe('tryStageFill', () => {
   const stagedRect: DrawCommand = {
     kind: 'path',
     path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-    fill: { color: '#ff0000' },
+    fill: { paint: { color: '#ff0000' } },
   } as DrawCommand;
 
   const triangle = (vertexCount = 3, extra: Partial<Mesh> = {}): Mesh => ({
@@ -796,7 +796,7 @@ describe('drawGroup clip integration', () => {
       children: [{
         kind: 'path' as const,
         path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
-        fill: { color: '#fff' },
+        fill: { paint: { color: '#fff' } },
       }],
     };
     drawGroup(ctx, cmd);
@@ -862,7 +862,7 @@ describe('drawGroup clip integration', () => {
       children: [{
         kind: 'path' as const,
         path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
-        fill: { color: '#fff' },
+        fill: { paint: { color: '#fff' } },
       }],
     };
     drawGroup(ctx, cmd);
@@ -883,7 +883,7 @@ describe('drawGroup clip integration', () => {
       children: [{
         kind: 'path',
         path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-        fill: { color: '#fff' },
+        fill: { paint: { color: '#fff' } },
       }],
     };
     for (let i = 0; i < 8; i++) {
@@ -919,7 +919,7 @@ describe('stencil-shaded passes honor ancestor clip', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     ctx.clipDepth = 2;
     // ancestorMask(2) = 0x06, so shaded ref = 0x07, mask = 0x07
-    dispatch(ctx, { kind: 'path', path: POLYGON_EVENODD, fill: { color: '#f00' } });
+    dispatch(ctx, { kind: 'path', path: POLYGON_EVENODD, fill: { paint: { color: '#f00' } } });
 
     // The shaded pass stencilFunc is the last EQUAL call (write pass uses ALWAYS).
     const equalCalls = calls.filter(
@@ -933,7 +933,7 @@ describe('stencil-shaded passes honor ancestor clip', () => {
   it('drawPathFillStencil shaded pass collapses to EQUAL 0x01 0x01 when clipDepth=0', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     ctx.clipDepth = 0;
-    dispatch(ctx, { kind: 'path', path: POLYGON_EVENODD, fill: { color: '#f00' } });
+    dispatch(ctx, { kind: 'path', path: POLYGON_EVENODD, fill: { paint: { color: '#f00' } } });
 
     const equalCalls = calls.filter(
       (c) => c.name === 'stencilFunc' && c.args[0] === gl.EQUAL
@@ -992,7 +992,7 @@ describe('C1/I4: popClip enables STENCIL_TEST after evenodd child disables it', 
         kind: 'path' as const,
         // evenodd polygon child — drawPathFillStencil ends with disable(STENCIL_TEST)
         path: POLYGON_EVENODD,
-        fill: { color: '#f00' },
+        fill: { paint: { color: '#f00' } },
       }],
     };
     drawGroup(ctx, cmd);
@@ -1097,7 +1097,7 @@ describe('drawText synthetic-bold', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
-        fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
+        fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#000' } },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1114,7 +1114,7 @@ describe('drawText synthetic-bold', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
-        fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
+        fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#000' } },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1143,7 +1143,7 @@ describe('flattenTolerance option', () => {
    *  rather than as staged vertices — which is where the pool choice is
    *  observable. A gradient would not: every kind of one batches. */
   const UNBATCHABLE = {
-    fill: { kind: 'solid' as const, color: '#ffffff' },
+    fill: { paint: { kind: 'solid' as const, color: '#ffffff' } },
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
   };
 
@@ -1159,7 +1159,7 @@ describe('flattenTolerance option', () => {
       const caps = { ...meshBatching };
       meshBatching.maxVertices = Infinity;
       try {
-        r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { kind: 'solid', color: '#000' } }]);
+        r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { paint: { kind: 'solid', color: '#000' } } }]);
       } finally {
         Object.assign(meshBatching, caps);
       }
@@ -1243,7 +1243,7 @@ describe('drawText synthetic-italic', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-        fontStyle: 'italic', fill: { kind: 'solid', color: '#000' },
+        fontStyle: 'italic', fill: { paint: { kind: 'solid', color: '#000' } },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1260,7 +1260,7 @@ describe('drawText synthetic-italic', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-        fontStyle: 'italic', fill: { kind: 'solid', color: '#000' },
+        fontStyle: 'italic', fill: { paint: { kind: 'solid', color: '#000' } },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1300,7 +1300,7 @@ describe('drawText verticalAlign', () => {
 
     const runs: ResolvedRun[] = [{
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-      fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
+      fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#000' } },
       letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }];
@@ -1332,7 +1332,7 @@ describe('drawText verticalAlign', () => {
 
     const runs: ResolvedRun[] = [{
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-      fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
+      fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#000' } },
       letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }];
@@ -1370,7 +1370,7 @@ describe('drawText — canvas-dynamic routing', () => {
       x: 10, y: 10,
       runs: [{
         text: 'A', fontFamily: 'Dyn', fontWeight: 400, fontStyle: 'normal',
-        fontSize: 24, fill: { kind: 'solid', color: '#000' },
+        fontSize: 24, fill: { paint: { kind: 'solid', color: '#000' } },
       }],
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand;
@@ -1424,7 +1424,7 @@ describe('drawText — substituted family reaches the GPU', () => {
     kind: 'text', x: 0, y: 0,
     runs: [{
       text: 'A', fontFamily: 'ghost', fontSize: 16, fontWeight: 400,
-      fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
+      fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#000' } },
       letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }],
@@ -1460,7 +1460,7 @@ describe('drawText — substituted family reaches the GPU', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-        fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
+        fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#000' } },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1511,7 +1511,7 @@ describe('drawText — letterSpacing reaches the GPU', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'AB', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
-        fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
+        fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#000' } },
         letterSpacing,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1592,7 +1592,7 @@ describe('drawText — decoration reaches the GPU', () => {
 
   const decoratedRun = (extra: Record<string, unknown>) => ({
     text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
-    fontStyle: 'normal' as const, fill: { kind: 'solid' as const, color: '#000' },
+    fontStyle: 'normal' as const, fill: { paint: { kind: 'solid' as const, color: '#000' } },
     letterSpacing: 0, underline: false, strikethrough: false, overline: false,
     baselineShift: 0, ...extra,
   });
@@ -1660,7 +1660,7 @@ describe('drawText — decoration reaches the GPU', () => {
       kind: 'text', x: 0, y: 0,
       runs: [
         decoratedRun({ underline: true }),
-        decoratedRun({ text: 'B', underline: true, fill: { kind: 'solid', color: '#ff0000' } }),
+        decoratedRun({ text: 'B', underline: true, fill: { paint: { kind: 'solid', color: '#ff0000' } } }),
       ],
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand);
@@ -1838,7 +1838,7 @@ describe('drawText — outline tier', () => {
     x: 0, y: 0,
     runs: [{
       text, fontFamily: 'inter', fontWeight: 400, fontStyle: 'normal',
-      fontSize: SIZE, fill: { kind: 'solid', color: '#000' },
+      fontSize: SIZE, fill: { paint: { kind: 'solid', color: '#000' } },
       letterSpacing: 0, underline: false, strikethrough: false,
       overline: false, baselineShift: 0, ...extra,
     }],
@@ -2096,11 +2096,11 @@ describe('gradient units — which space a gradient measures its geometry in', (
       from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
     };
 
-    const shifted = (fill: unknown, view?: Float32Array): void => {
+    const shifted = (paint: unknown, view?: Float32Array): void => {
       r.render([{
         kind: 'group',
         transform: mat3.translated(mat3.identity(), 100, 40),
-        children: [{ kind: 'path', path: PATH, fill }],
+        children: [{ kind: 'path', path: PATH, fill: { paint } }],
       }] as DrawCommand[], view);
     };
 
@@ -2124,7 +2124,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
       r.render([{
         kind: 'group',
         transform: mat3.scaled(mat3.translated(mat3.identity(), 100, 40), 2, 2),
-        children: [{ kind: 'path', path: PATH, fill: { ...LINEAR, units: 'world' } }],
+        children: [{ kind: 'path', path: PATH, fill: { paint: { ...LINEAR, units: 'world' } } }],
       }] as DrawCommand[], mat3.translated(mat3.identity(), 25, 75));
       // World x 75..95: the shape's own 0..10 doubled and moved to 100..120,
       // less the view's 25.
@@ -2178,8 +2178,8 @@ describe('gradient units — which space a gradient measures its geometry in', (
       return Array.from(upload!.args[2] as Float32Array);
     }
 
-    const evenOdd = (fill: unknown, view?: GlMat3): void => {
-      r.render([{ kind: 'path', path: EVEN_ODD, fill }] as DrawCommand[], view);
+    const evenOdd = (paint: unknown, view?: GlMat3): void => {
+      r.render([{ kind: 'path', path: EVEN_ODD, fill: { paint } }] as DrawCommand[], view);
     };
 
     const RADIAL = {
@@ -2195,7 +2195,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
       r.render([{
         kind: 'group',
         transform: mat3.translated(mat3.identity(), 100, 40),
-        children: [{ kind: 'path', path: EVEN_ODD, fill: { ...RADIAL, units: 'local' } }],
+        children: [{ kind: 'path', path: EVEN_ODD, fill: { paint: { ...RADIAL, units: 'local' } } }],
       }] as DrawCommand[]);
       // A fragment at screen (100, 40) is the group's local origin.
       expect(mat3.apply(new Float32Array(worldInv()), 100, 40)).toEqual([0, 0]);
@@ -2208,7 +2208,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
       r.render([{
         kind: 'group',
         transform: mat3.scaled(mat3.identity(), 0, 1),
-        children: [{ kind: 'path', path: EVEN_ODD, fill: { ...RADIAL, units: 'local' } }],
+        children: [{ kind: 'path', path: EVEN_ODD, fill: { paint: { ...RADIAL, units: 'local' } } }],
       }] as DrawCommand[]);
       expect(worldInvUploads()).toBe(0);
     });
@@ -2238,7 +2238,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
       r.render([{
         kind: 'group',
         colorMatrix: cm,
-        children: [{ kind: 'path', path: EVEN_ODD, fill: RADIAL }],
+        children: [{ kind: 'path', path: EVEN_ODD, fill: { paint: RADIAL } }],
       }] as DrawCommand[]);
       const loc = r._gradFill().uniform('u_colorMatrix');
       expect(loc, 'gradient program should expose u_colorMatrix').toBeDefined();
@@ -2258,7 +2258,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
 
     const drawsUnder = (transform: GlMat3): number => {
       r.render([{
-        kind: 'group', transform, children: [{ kind: 'path', path: PATH, fill: LOCAL_LINEAR }],
+        kind: 'group', transform, children: [{ kind: 'path', path: PATH, fill: { paint: LOCAL_LINEAR } }],
       }] as DrawCommand[]);
       return recorder.calls.filter((c) => c.name === 'drawElements').length;
     };
@@ -2301,7 +2301,7 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
   const rect = (x: number): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 } as RectPath,
-    fill: { color: '#ff0000' },
+    fill: { paint: { color: '#ff0000' } },
   });
 
   const countOf = (name: string): number =>
@@ -2350,7 +2350,7 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
       return {
         kind: 'path',
         path: { kind: 'polygon', commands, coords } as PolygonPath,
-        fill: { color: '#ff0000' },
+        fill: { paint: { color: '#ff0000' } },
       };
     };
     const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
@@ -2382,7 +2382,7 @@ describe('per-vertex color buffer lifetime', () => {
       coords: new Float32Array([0, 0, 50, 0, 50, 50]),
       fillRule: 'nonzero',
     },
-    fill: { kind: 'solid', color: '#ffffff' },
+    fill: { paint: { kind: 'solid', color: '#ffffff' } },
     vertexColors: vColors,
   } as unknown as DrawCommand;
   const strokeCmd = {

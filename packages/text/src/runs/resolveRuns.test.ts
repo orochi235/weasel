@@ -33,19 +33,19 @@ describe('resolveRuns', () => {
   });
 
   it('per-run fontSize / fontFamily / fill override node defaults', () => {
-    const style = resolveTextStyle({ fontSize: 16, fontFamily: 'inter' }, { fill: { kind: 'solid', color: '#000' } });
+    const style = resolveTextStyle({ fontSize: 16, fontFamily: 'inter' }, { fill: { paint: { kind: 'solid', color: '#000' } } });
     const runs: StyledRun[] = [
       {
         text: 'big',
         fontSize: 32,
         fontFamily: 'mono',
-        fill: { kind: 'solid', color: '#f00' },
+        fill: { paint: { kind: 'solid', color: '#f00' } },
       },
     ];
     const r = resolveRuns(runs, style)[0];
     expect(r.fontSize).toBe(32);
     expect(r.fontFamily).toBe('mono');
-    expect(r.fill).toEqual({ kind: 'solid', color: '#f00' });
+    expect(r.fill).toEqual({ paint: { kind: 'solid', color: '#f00' } });
   });
 
   it('inherits an unfilled node style as `fill: null`, not as the default black', () => {
@@ -54,10 +54,10 @@ describe('resolveRuns', () => {
   });
 
   it('leaves a run unfilled when it says `fill: null`, over a filled node', () => {
-    const style = resolveTextStyle({}, { fill: { kind: 'solid', color: '#f00' } });
+    const style = resolveTextStyle({}, { fill: { paint: { kind: 'solid', color: '#f00' } } });
     const [a, b] = resolveRuns([{ text: 'a', fill: null }, { text: 'b' }], style);
     expect(a.fill).toBeNull();
-    expect(b.fill).toEqual({ kind: 'solid', color: '#f00' });
+    expect(b.fill).toEqual({ paint: { kind: 'solid', color: '#f00' } });
   });
 
   it('bold flag wins over numeric fontWeight inheritance when both could apply (run.bold === true sets 700)', () => {

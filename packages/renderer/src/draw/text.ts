@@ -121,8 +121,8 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
  * so they need nothing from the text pipeline.
  */
 function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number): void {
-  const fill = group.fill;
-  if (fill !== null) {
+  const fill = group.fill?.paint;
+  if (fill !== undefined) {
     const mesh = outlineGroupMesh(group, dx, dy);
     if (mesh) drawOutlineMesh(ctx, fill, mesh);
   }
@@ -165,11 +165,13 @@ function drawTextDecorations(
   ctx: DrawContext, decorations: readonly LaidOutDecoration[], dx: number, dy: number,
 ): void {
   for (const d of decorations) {
-    if (glyphPaintKindOf(d.fill) !== null) {
-      drawOutlineMesh(ctx, d.fill, ruleMesh(d.x0 + dx, d.y0 + dy, d.x1 + dx, d.y1 + dy));
+    const paint = d.fill.paint;
+    if (paint === undefined) continue;
+    if (glyphPaintKindOf(paint) !== null) {
+      drawOutlineMesh(ctx, paint, ruleMesh(d.x0 + dx, d.y0 + dy, d.x1 + dx, d.y1 + dy));
       continue;
     }
-    const [r, g, b, a] = isSolidPaint(d.fill) ? resolveColor(d.fill.color) : [0, 0, 0, 1];
+    const [r, g, b, a] = isSolidPaint(paint) ? resolveColor(paint.color) : [0, 0, 0, 1];
     let cut: ClipRect | null | undefined;
     for (;;) {
       const staged = stageSolid(ctx, 4);
@@ -231,13 +233,14 @@ function drawTextGroup(
   if (!fieldScale) return;
   const bold = group.synthetic.bold ? SYNTH_BOLD_AMOUNT : 0;
   const tanItalic = group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
-  const paintKind = glyphPaintKindOf(group.fill);
+  const fill = group.fill?.paint ?? null;
+  const paintKind = glyphPaintKindOf(fill);
   if (paintKind !== null) {
     drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic, fieldScale);
     return;
   }
-  const color = isSolidPaint(group.fill)
-    ? resolveColor(group.fill.color)
+  const color = isSolidPaint(fill)
+    ? resolveColor(fill.color)
     : [0, 0, 0, 1];
 
   const batch = ctx.drawBatch;
@@ -303,7 +306,7 @@ function drawPaintedGlyphs(
   const prog = ctx.glyphPaintProgram?.(kind);
   if (!prog) return;
   flushForOwnDraw(ctx);
-  const fill = group.fill!;
+  const fill = group.fill!.paint!;
   const m = ctx.state.transform;
   let bound: ShaderProgram | null;
   if (kind === 'pattern') {

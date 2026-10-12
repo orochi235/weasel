@@ -200,9 +200,9 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         const style = { fontFamily: 'sans-serif', fontSize: 14 };
         const paint = { kind: 'solid' as const, color: COLORS.hud };
         return [
-          textCommandFromRuns(12, 22, [{ text: `♥ ${Math.max(g.lives, 0)}`, fill: paint }], style),
-          textCommandFromRuns(72, 22, [{ text: `◆ ${g.score} / ${g.coins.length}`, fill: paint }], style),
-          textCommandFromRuns(190, 22, [{ text: `${g.elapsed.toFixed(1)}s`, fill: paint }], style),
+          textCommandFromRuns(12, 22, [{ text: `♥ ${Math.max(g.lives, 0)}`, fill: { paint: paint } }], style),
+          textCommandFromRuns(72, 22, [{ text: `◆ ${g.score} / ${g.coins.length}`, fill: { paint: paint } }], style),
+          textCommandFromRuns(190, 22, [{ text: `${g.elapsed.toFixed(1)}s`, fill: { paint: paint } }], style),
         ];
       },
     };

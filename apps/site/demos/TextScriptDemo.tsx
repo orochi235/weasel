@@ -18,7 +18,7 @@ const row = (y: number, fontSize: number, runs: StyledRun[]): Row => ({ y, fontS
 const liveRuns = (shift?: number, scale?: number): StyledRun[] => [
   { text: 'live ' },
   {
-    text: 'shifted', script: 'super', fill: ACCENT,
+    text: 'shifted', script: 'super', fill: { paint: ACCENT },
     ...(shift !== undefined ? { baselineShift: shift } : {}),
     ...(scale !== undefined ? { fontScale: scale } : {}),
   },
@@ -41,7 +41,7 @@ const ROWS = [
     { text: '1' }, { text: 'st', script: 'super' },
     { text: ', 2' }, { text: 'nd', script: 'super' },
     { text: ', 3' }, { text: 'rd', script: 'super' },
-    { text: '   footnote' }, { text: '7', script: 'super', fill: ACCENT },
+    { text: '   footnote' }, { text: '7', script: 'super', fill: { paint: ACCENT } },
   ]),
 
   // All three decorations at once, so their offsets read against each other
@@ -76,7 +76,7 @@ const ROWS = [
 const LIVE_Y = 252, LIVE_SIZE = 34;
 
 const drawRow = ({ y, fontSize, runs }: Row) => textCommandFromRuns(
-  24, y, runs, { fontSize } as TextStyle, undefined, undefined, undefined, { fill: INK },
+  24, y, runs, { fontSize } as TextStyle, undefined, undefined, undefined, { fill: { paint: INK } },
 );
 
 /**

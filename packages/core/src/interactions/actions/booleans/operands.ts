@@ -48,7 +48,7 @@ function inkOf(source: PaintedPath, strokes: BooleanStrokes, scale: number | und
   if (strokes === 'ignore' || (strokes === 'unfilled' && fill !== null)) return { path };
   const ribbon = strokeToPath(path, stroke, { scale });
   if (ribbon.commands.length === 0) return { path };
-  return { path: fill !== null ? pathUnion(path, ribbon) : ribbon, paint: { fill: fill ?? strokePaint } };
+  return { path: fill !== null ? pathUnion(path, ribbon) : ribbon, paint: { fill: fill ?? { paint: strokePaint } } };
 }
 
 /**

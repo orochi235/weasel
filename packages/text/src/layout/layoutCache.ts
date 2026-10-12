@@ -148,7 +148,7 @@ function runsKey(runs: readonly ResolvedRun[]): string {
       + `|${r.fontSize}|${r.fontWeight}|${r.fontStyle}|${r.letterSpacing}`
       + `|${r.underline ? 1 : 0}${r.strikethrough ? 1 : 0}${r.overline ? 1 : 0}`
       + `|${r.baselineShift}|${r.strutSize ?? ''}`
-      + `|${paintKey(r.fill)}|${strokeKey(r.stroke)}`
+      + `|${paintKey((r.fill?.paint ?? null))}|${strokeKey(r.stroke)}`
       // Ends follow from starts and the length, so the two pin the cells.
       + `|${r.srcMap ? `${r.srcMap.length}:${r.srcMap.starts.join(',')}` : ''}`
       + `|${r.sizeMap ? r.sizeMap.join(',') : ''}|`;

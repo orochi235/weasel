@@ -21,7 +21,7 @@ function pathNode(id: string, d: string, color: string) {
     id: asNodeId(id),
     layer: 'default' as const,
     pose: { x, y, width, height },
-    data: { path, fill: solid(color) },
+    data: { path, fill: { paint: solid(color) } },
   };
 }
 

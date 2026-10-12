@@ -1,5 +1,5 @@
 import type { Path, GlMat3 } from '@weasel-js/geom';
-import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
+import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import type { TextAlign, TextDirection, TextStyle } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
@@ -22,7 +22,7 @@ export interface PathDrawCommand {
   path: Path;
   /** Solid, pattern, or gradient (linear/radial/conic), resolved for the
    *  renderer: `commandPaint` makes one from a node's `Paint`. */
-  fill?: CommandPaint;
+  fill?: CommandFill;
   /** Stroke spec. Its `paint` takes what `fill` does. */
   stroke?: CommandStroke;
   /**
@@ -35,7 +35,7 @@ export interface PathDrawCommand {
    * **`fill` must also be set when using `vertexColors`.** The renderer
    * only enters the per-vertex shader path when the command has a fill
    * (the fill provides the opacity uniform; the vertex colors override
-   * the fill's color). Pass any solid `fill` (e.g. `{ color: '#fff' }`)
+   * the fill's color). Pass any solid `fill` (e.g. `{ paint: { color: '#fff' } }`)
    * as the placeholder; the per-vertex colors win in the shader.
    */
   vertexColors?: number[];

@@ -98,7 +98,7 @@ function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
       d += `M ${px} ${py} A ${r} ${r} 0 1 0 ${px + 2 * r} ${py} A ${r} ${r} 0 1 0 ${px} ${py} Z `;
     }
   }
-  return { kind: 'path', path: pathFromD(d), fill: { kind: 'solid', color } };
+  return { kind: 'path', path: pathFromD(d), fill: { paint: { kind: 'solid', color } } };
 }
 
 export function createWindow(opts: WindowOptions): WindowWidget {
@@ -214,7 +214,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         { x: x + m.edge, y: y + h - m.edge, width: w - m.edge * 2, height: m.edge },
       ];
       for (const r of rects) {
-        out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { kind: 'solid', color: band } });
+        out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { paint: { kind: 'solid', color: band } } });
       }
 
       // Border ring: a stroked rect, no fill, so the interior stays a hole
@@ -237,7 +237,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
       out.push(textCommandFromRuns(
         x + m.edge + 2, y,
-        [{ text: casedTitle(title, look['title-case']), fill: { kind: 'solid', color: look['title-color'] } }],
+        [{ text: casedTitle(title, look['title-case']), fill: { paint: { kind: 'solid', color: look['title-color'] } } }],
         {
           fontFamily: ctx.defaultFont,
           fontSize: 12,

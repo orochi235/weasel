@@ -59,7 +59,7 @@ describe('renderer — consecutive image batching', () => {
   const rect = (x: number) => ({
     kind: 'path' as const,
     path: { kind: 'rect' as const, x, y: 0, width: 16, height: 16 },
-    fill: { color: '#f00' },
+    fill: { paint: { color: '#f00' } },
   });
 
   /** A fill the run cannot express, for tests that need a break they choose.
@@ -68,7 +68,7 @@ describe('renderer — consecutive image batching', () => {
   const breakerRect = (x: number) => ({
     kind: 'path' as const,
     path: { kind: 'rect' as const, x, y: 0, width: 16, height: 16 },
-    fill: { kind: 'solid' as const, color: '#ffffff' },
+    fill: { paint: { kind: 'solid' as const, color: '#ffffff' } },
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
   }) as unknown as DrawCommand;
 

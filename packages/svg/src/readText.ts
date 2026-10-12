@@ -2,7 +2,7 @@
 
 import type { Matrix, SvgNode, SvgTextNode } from './types';
 import {
-  type StyledRun, type TextStyle, type TextPaint, type Paint, layoutRuns, resolveRuns,
+  type StyledRun, type TextStyle, type TextPaint, layoutRuns, resolveRuns,
   resolveScreenLength, resolveTextStyle,
 } from '@weasel-js/core';
 import { multiply, parseTransform, isIdentity } from './transform';
@@ -11,6 +11,7 @@ import { placeNode } from './placeBox';
 import { readLength } from './lengths';
 import { fontSizeOf } from './fontSize';
 import { joinLines, LineTracker, warnUnreadPositions } from './tspanLines';
+import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import type { GradientTable } from './gradients';
@@ -115,12 +116,12 @@ function placeTextNode(node: SvgTextNode, m: Matrix, onWarn: (m: string) => void
     if (node.runs) node.runs = scaleRuns(node.runs, scale);
     if (node.stroke) node.stroke = scaleStroke(node.stroke, scale);
   }
-  if (node.fill) node.fill = fillThroughMatrix(node.fill, inBox);
+  if (node.fill) node.fill = mapFillPaint(node.fill, (p) => fillThroughMatrix(p, inBox));
   if (node.stroke?.paint) {
     node.stroke = { ...node.stroke, paint: fillThroughMatrix(node.stroke.paint, inBox) };
   }
   if (node.runs) {
-    node.runs = node.runs.map((r) => (r.fill ? { ...r, fill: fillThroughMatrix(r.fill, inBox) } : r));
+    node.runs = node.runs.map((r) => (r.fill ? { ...r, fill: mapFillPaint(r.fill, (p) => fillThroughMatrix(p, inBox)) } : r));
   }
 }
 
@@ -290,11 +291,11 @@ function readTspanRun(
     if (parsed?.kind === 'none') {
       run.fill = null;
     } else if (parsed?.kind === 'solid') {
-      run.fill = { kind: 'solid', color: parsed.color };
+      run.fill = { paint: { kind: 'solid', color: parsed.color } };
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
-      if (paint) run.fill = paint;
-      else if (parsed.fallback) run.fill = { kind: 'solid', color: parsed.fallback.color };
+      if (paint) run.fill = { paint };
+      else if (parsed.fallback) run.fill = { paint: { kind: 'solid', color: parsed.fallback.color } };
     }
   }
   // Own attributes only — see `ownStrokeStyle`.
@@ -364,12 +365,12 @@ function readTextPaint(
   if (fillRaw) {
     const parsed = readProperty('fill', fillRaw);
     if (parsed?.kind === 'solid') {
-      out.fill = { kind: 'solid', color: parsed.color } as Paint;
+      out.fill = { paint: { kind: 'solid', color: parsed.color } };
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
-      if (paint) out.fill = paint;
+      if (paint) out.fill = { paint };
       else if (parsed.fallback) {
-        out.fill = { kind: 'solid', color: parsed.fallback.color } as Paint;
+        out.fill = { paint: { kind: 'solid', color: parsed.fallback.color } };
       }
     } else if (parsed?.kind === 'none') {
       out.fill = null;

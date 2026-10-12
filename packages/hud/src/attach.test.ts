@@ -194,8 +194,8 @@ describe('attachHud', () => {
       hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
       const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
-      const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
-      expect(buttonBody.fill.color).toBe('#123456');
+      const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { paint: { color: string } } };
+      expect(buttonBody.fill.paint.color).toBe('#123456');
     } finally {
       canvas.remove();
     }
@@ -208,8 +208,8 @@ describe('attachHud', () => {
     hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
     const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
     const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
-    const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
-    expect(buttonBody.fill.color).toBe(resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface-raised']);
+    const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { paint: { color: string } } };
+    expect(buttonBody.fill.paint.color).toBe(resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface-raised']);
   });
 
   it('draws content beneath frames, clipped to contentRect', () => {
@@ -223,7 +223,7 @@ describe('attachHud', () => {
       content: () => [{
         kind: 'path',
         path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 },
-        fill: { kind: 'solid', color: '#f00' },
+        fill: { paint: { kind: 'solid', color: '#f00' } },
       }],
     });
 
@@ -246,7 +246,7 @@ describe('attachHud', () => {
     const painter = () => [{
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
-      fill: { kind: 'solid' as const, color: '#f00' },
+      fill: { paint: { kind: 'solid' as const, color: '#f00' } },
     }];
     hud.window({ id: 'a', x: 10, y: 10, w: 100, h: 80, title: 'A', content: painter });
     hud.window({ id: 'b', x: 200, y: 10, w: 100, h: 80, title: 'B', content: painter });

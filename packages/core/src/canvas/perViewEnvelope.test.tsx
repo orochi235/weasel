@@ -33,7 +33,7 @@ function drawOne(_node: Node<Data, 'main', Pose>, pose: Pose): DrawCommand[] {
   return [{
     kind: 'path',
     path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-    fill: { color: '#000' },
+    fill: { paint: { color: '#000' } },
   }];
 }
 

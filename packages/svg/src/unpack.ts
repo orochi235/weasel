@@ -25,6 +25,7 @@
  */
 import { parseSvg } from './parse';
 import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgStroke } from './types';
+import { mapFillPaint } from './fillPaint';
 import type { SvgKitLeafData } from './fromKit';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import {
@@ -92,9 +93,9 @@ function readFileText(file: File): Promise<string> {
   });
 }
 
-/** Lower an `SvgPaint` onto the `kit:path` painter's `data.fill` — a
- *  `Paint`, or `null` for SVG's `fill="none"` (the painter skips the
- *  fill rather than falling back to its default). A solid paint keeps its
+/** Lower an `SvgPaint` onto the paint of the `kit:path` painter's
+ *  `data.fill` — a `Paint`, or `null` for SVG's `fill="none"` (the painter
+ *  skips the fill rather than falling back to its default). A solid paint keeps its
  *  `fill-opacity`.
  *
  *  A gradient rides through as the `Paint` it already is, normalized to
@@ -128,7 +129,7 @@ function fadeRun(run: StyledRun, k: number): StyledRun {
   if (k === 1 || (!run.fill && !run.stroke)) return run;
   return {
     ...run,
-    ...(run.fill ? { fill: fadeFill(run.fill, k) } : {}),
+    ...(run.fill ? { fill: mapFillPaint(run.fill, (p) => fadeFill(p, k)) } : {}),
     ...(run.stroke ? { stroke: fadeStroke(run.stroke, k) } : {}),
   };
 }
@@ -172,7 +173,7 @@ function fillInBoxFrame(fill: Paint, box: SvgDraftBounds): Paint {
 /** The same rebase for a run's own overrides, which `<tspan fill="url(#g)">`
  *  puts on the run rather than on the node. */
 function runInBoxFrame(run: StyledRun, box: SvgDraftBounds): StyledRun {
-  const fill = run.fill ? fillInBoxFrame(run.fill, box) : run.fill;
+  const fill = run.fill ? mapFillPaint(run.fill, (p) => fillInBoxFrame(p, box)) : run.fill;
   const stroke = run.stroke ? strokeInBoxFrame(run.stroke, box) : run.stroke;
   if (fill === run.fill && stroke === run.stroke) return run;
   return { ...run, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
@@ -263,7 +264,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         // `!== undefined`, not a truthiness test: `null` is the document
         // saying `fill="none"`, and absent takes the painter's default.
         ...(fill !== undefined
-          ? { fill: fill === null ? null : fadeFill(fillInBoxFrame(fill, box), k) }
+          ? { fill: fill && mapFillPaint(fill, (p) => fadeFill(fillInBoxFrame(p, box), k)) }
           : {}),
         ...(n.stroke !== undefined ? { stroke: fadeStroke(strokeInBoxFrame(n.stroke, box), k) } : {}),
       });
@@ -295,7 +296,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const strokeFromSvg = strokeDataFromSvg(n.stroke, b);
     return pushLeaf(n, parentId, pose, {
       path: n.path,
-      ...(fill !== undefined ? { fill: fill && fadeFill(fill, k) } : {}),
+      ...(fill !== undefined ? { fill: fill && { paint: fadeFill(fill, k) } } : {}),
       ...(strokeFromSvg !== undefined ? { stroke: fadeStroke(strokeFromSvg, k) } : {}),
     });
   };

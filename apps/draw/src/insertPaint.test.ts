@@ -13,7 +13,7 @@ describe('activeInsertPaint', () => {
   it('gives a closed shape the active fill, and the active stroke 2 wide', () => {
     const paint = activeInsertPaint(() => ({ fill: RED, stroke: BLUE }));
     for (const kind of ['rect', 'ellipse', 'polygon', 'star', 'path']) {
-      expect(paint(kind, 1), kind).toEqual({ fill: red, stroke: { paint: blue, width: 2 } });
+      expect(paint(kind, 1), kind).toEqual({ fill: { paint: red }, stroke: { paint: blue, width: 2 } });
     }
   });
 
@@ -28,13 +28,13 @@ describe('activeInsertPaint', () => {
       fill: null,
       stroke: { paint: blue, width: 2 },
     });
-    expect(activeInsertPaint(() => ({ fill: RED, stroke: NONE }))('rect', 1)).toEqual({ fill: red, stroke: null });
+    expect(activeInsertPaint(() => ({ fill: RED, stroke: NONE }))('rect', 1)).toEqual({ fill: { paint: red }, stroke: null });
   });
 
   it('reads the paints at each insert, not when it was made', () => {
     let fill = RED;
     const paint = activeInsertPaint(() => ({ fill, stroke: NONE }));
     fill = BLUE;
-    expect(paint('rect', 2).fill).toEqual(blue);
+    expect(paint('rect', 2).fill).toEqual({ paint: blue });
   });
 });

@@ -1,4 +1,4 @@
-import type { BooleanOp, Paint, ImageNodeData, Path, Stroke, StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/core';
+import type { BooleanOp, ImageNodeData, Path, Stroke, StyledRun, TextStyle, TextVerticalAlign, Fill } from '@weasel-js/core';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'
@@ -26,7 +26,7 @@ export interface PathObj extends BaseObj {
   path: Path;
   /** The object's paint — solid, gradient or pattern. A non-solid one is
    *  emitted by the SVG serializer as a `<defs>` entry. `null` is unfilled. */
-  fill: Paint | null;
+  fill: Fill | null;
   /** The whole stroke — paint, width, dash, cap, join. `null` is unstroked. */
   stroke: Stroke | null;
   params?: PathParams;
@@ -45,7 +45,7 @@ export interface TextObj extends BaseObj {
   /** Glyph paint. Not part of `style` — a text node paints from the same
    *  `data.fill` / `data.stroke` every other node kind paints from. `null`
    *  is unfilled (SVG `fill="none"`); absent takes the painter's black. */
-  fill?: Paint | null;
+  fill?: Fill | null;
   stroke?: Stroke;
   /** Where the lines sit in the box's height. Absent is the top. */
   verticalAlign?: TextVerticalAlign;

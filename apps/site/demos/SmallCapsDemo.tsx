@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
-import type { Paint } from '@weasel-js/core';
+import type { Fill } from '@weasel-js/core';
 import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
 import { DEFAULT_TEXT_STYLE, smallCapsScaleFor } from '@weasel-js/text';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
@@ -8,7 +8,7 @@ import type { StyledRun, TextStyle } from '@weasel-js/text';
 const W = 520;
 const H = 230;
 
-interface NodeData { text: string; runs?: StyledRun[]; style: TextStyle; fill: Paint }
+interface NodeData { text: string; runs?: StyledRun[]; style: TextStyle; fill: Fill }
 
 const INK = solid('#1c1c1c');
 
@@ -17,7 +17,7 @@ const leaf = (id: string, y: number, fontSize: number, data: Omit<NodeData, 'fil
   layer: 'default' as const,
   id: asNodeId(id),
   pose: { x: 20, y, width: W - 40, height: fontSize * 1.4 },
-  data: { fill: INK, ...data, style: { fontSize, ...data.style } },
+  data: { fill: { paint: INK }, ...data, style: { fontSize, ...data.style } },
 });
 
 const NODES = [

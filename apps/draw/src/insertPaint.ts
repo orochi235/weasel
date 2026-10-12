@@ -13,10 +13,11 @@ const STROKE_ONLY = new Set(['line', 'pencil']);
 export function activeInsertPaint(active: () => { fill: ActivePaint; stroke: ActivePaint }): InsertPaint {
   return (kind) => {
     const { fill, stroke } = active();
-    const paint = toPaint(stroke);
+    const fillPaint = toPaint(fill);
+    const strokePaint = toPaint(stroke);
     return {
-      fill: STROKE_ONLY.has(kind) ? null : toPaint(fill),
-      stroke: paint === null ? null : strokeWith(paint, NEW_STROKE_WIDTH),
+      fill: STROKE_ONLY.has(kind) || fillPaint === null ? null : { paint: fillPaint },
+      stroke: strokePaint === null ? null : strokeWith(strokePaint, NEW_STROKE_WIDTH),
     };
   };
 }

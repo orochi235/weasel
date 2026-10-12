@@ -22,15 +22,17 @@ export function isPaintObject(raw: unknown): raw is Paint {
  * entry instead of one per tick. The control itself is the kit's `PaintInput`
  * — the app supplies only which action the writes land on.
  */
-export function wdPaintRenderer(actionId: string): PropertyRenderer {
-  return (ctx) => <WdPaintLeaf ctx={ctx} actionId={actionId} />;
+export function wdPaintRenderer(actionId: string, ownerPath?: string): PropertyRenderer {
+  return (ctx) => <WdPaintLeaf ctx={ctx} actionId={actionId} ownerPath={ownerPath} />;
 }
 
-export function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: string }) {
+/** `ownerPath` names the object the paint is a field of, where a `null` there
+ *  is how the node says "no paint": a node's `data.fill`. */
+export function WdPaintLeaf({ ctx, actionId, ownerPath }: { ctx: PropertyRenderContext; actionId: string; ownerPath?: string }) {
   const edit = useOngoingAction(actionId);
 
   const fallback = ctx.pref.default;
-  const raw = ctx.value;
+  const raw = ownerPath !== undefined && ctx.valueAt(ownerPath).value === null ? null : ctx.value;
   // `null` is an explicit "no paint" and must not fall through to the schema
   // default, or the None segment unlights itself on the next render.
   const value: Paint | null | undefined = raw === null ? null
@@ -52,7 +54,7 @@ export function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; act
 }
 
 export const WD_RENDERERS: Record<string, PropertyRenderer> = {
-  'data.fill': wdPaintRenderer('setFill'),
+  'data.fill.paint': wdPaintRenderer('setFill', 'data.fill'),
   // The stroke's paint row inside its object leaf; the other fields render
   // from the schema. Keyed at the child path so the object rows survive.
   'data.stroke.paint': wdPaintRenderer('setStroke'),

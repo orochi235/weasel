@@ -46,7 +46,7 @@ function paint(commands: DrawCommand[]): (x: number, y: number) => number[] {
 
 describe('an even-odd path with a hole, in a real context', () => {
   it('fills around the hole', () => {
-    const at = paint([{ ...ring(), fill: { color: '#ff0000' } }]);
+    const at = paint([{ ...ring(), fill: { paint: { color: '#ff0000' } } }]);
     expect(at(2, 8)).toEqual(RED);
     expect(at(8, 8)).toEqual(CLEAR);
   });
@@ -58,7 +58,7 @@ describe('an even-odd path with a hole, in a real context', () => {
       children: [{
         kind: 'path',
         path: { kind: 'rect', x: 0, y: 0, width: SIZE, height: SIZE },
-        fill: { color: '#ff0000' },
+        fill: { paint: { color: '#ff0000' } },
       }],
     }]);
     expect(at(2, 8)).toEqual(RED);
@@ -67,9 +67,9 @@ describe('an even-odd path with a hole, in a real context', () => {
 
   it('leaves no clip behind for what is drawn after the group', () => {
     const at = paint([
-      { kind: 'group', clip: ring().path, children: [{ ...ring(), fill: { color: '#ff0000' } }] },
-      { ...ring(), fill: { color: '#ff0000' } },
-      { kind: 'path', path: pathFromD('M6 6 L10 6 L8 10 Z'), fill: { color: '#ff0000' } },
+      { kind: 'group', clip: ring().path, children: [{ ...ring(), fill: { paint: { color: '#ff0000' } } }] },
+      { ...ring(), fill: { paint: { color: '#ff0000' } } },
+      { kind: 'path', path: pathFromD('M6 6 L10 6 L8 10 Z'), fill: { paint: { color: '#ff0000' } } },
     ]);
     expect(at(8, 7)).toEqual(RED);
     expect(at(5, 11)).toEqual(CLEAR);
@@ -90,7 +90,7 @@ describe('an even-odd path with a hole, in a real context', () => {
 
   it('fills around the hole with vertex colors', () => {
     const colors = Array.from({ length: 8 }, () => [1, 0, 0, 1]).flat();
-    const at = paint([{ ...ring(), fill: { color: '#ffffff' }, vertexColors: colors }]);
+    const at = paint([{ ...ring(), fill: { paint: { color: '#ffffff' } }, vertexColors: colors }]);
     expect(at(2, 8)).toEqual(RED);
     expect(at(8, 8)).toEqual(CLEAR);
   });

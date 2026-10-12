@@ -93,7 +93,7 @@ export function LayoutDemo() {
               const cmds: DrawCommand[] = [{
                 kind: 'path',
                 path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: node.data.color },
+                fill: { paint: { color: node.data.color } },
               }];
               if (node.data.isContainer) {
                 cmds.push({

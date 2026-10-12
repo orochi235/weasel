@@ -58,7 +58,7 @@ export function createRect(opts: RectOptions): RectWidget {
       const cmd: PathDrawCommand = {
         kind: 'path',
         path,
-        fill: { kind: 'solid', color: fill },
+        fill: { paint: { kind: 'solid', color: fill } },
       };
       return [cmd];
     },

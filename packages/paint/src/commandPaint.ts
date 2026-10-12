@@ -5,7 +5,7 @@
  * rasterizer, so both are resolved before one is built.
  */
 
-import type { Paint, PaintUnits, Stroke } from './paint';
+import type { Fill, Paint, PaintUnits, Stroke } from './paint';
 import type { TileKind } from './patternPaint';
 
 /** The spaces a draw command's paint can name. `'bounds'` is not one: it means
@@ -31,6 +31,11 @@ export type SolidPaint = Extract<Paint, { kind?: 'solid' }>;
  *  the presence of one does not answer this. */
 export function isSolidPaint(paint: Paint | null | undefined): paint is SolidPaint {
   return paint != null && (paint.kind === undefined || paint.kind === 'solid');
+}
+
+/** A `Fill` whose paint is a {@link CommandPaint}. */
+export interface CommandFill extends Omit<Fill, 'paint'> {
+  paint?: CommandPaint;
 }
 
 /** A `Stroke` whose paint is a {@link CommandPaint}. */

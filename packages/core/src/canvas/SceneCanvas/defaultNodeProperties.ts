@@ -143,12 +143,22 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
         // reader is looking at.
         name: '',
         members: {
-          // A `paint` leaf, not a `color` one: `data.fill` is the tagged
-          // `Paint` union, so a color control pointed at it would read
-          // `undefined` off a gradient and write a bare string over it.
-          // `block` for the same reason every stroke field is: the kind bar
-          // and the per-kind editor want the width a 64px label column takes.
-          'data.fill': { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
+          // An object leaf, as the stroke is: `data.fill` is a whole `Fill`.
+          // Its field is a `paint` leaf, not a `color` one, because a color
+          // control would read `undefined` off a gradient and write a bare
+          // string over it. `block` for the same reason every stroke field
+          // is: the kind bar and the per-kind editor want the width a 64px
+          // label column takes.
+          'data.fill': {
+            kind: 'object',
+            name: 'Fill',
+            description: 'Fill paint.',
+            default: { paint: { kind: 'solid', color: '#000000ff' } },
+            block: true,
+            children: {
+              paint: { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
+            },
+          },
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.

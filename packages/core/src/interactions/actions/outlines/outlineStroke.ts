@@ -35,7 +35,7 @@ export function applyOutlineStroke(
     if (!path || paint?.stroke?.paint == null) continue;
     const outline = strokeToPath(path, paint.stroke, opts);
     if (outline.commands.length === 0) continue;
-    const stroke: PaintedPath = { path: outline, fill: paint.stroke.paint };
+    const stroke: PaintedPath = { path: outline, fill: { paint: paint.stroke.paint } };
     converted.push({ id, paths: paint.fill !== null ? [{ path, fill: paint.fill }, stroke] : [stroke] });
   }
   if (converted.length === 0) return { kind: 'noop', reason: 'no-stroke' };

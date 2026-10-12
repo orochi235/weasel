@@ -40,7 +40,7 @@ describe('outlineStrokeAction', () => {
   });
 
   it('is enabled only while the selection holds a stroked path', () => {
-    const { adapter } = makeAdapter({ line: STROKED, plain: { fill: { color: '#888' } } });
+    const { adapter } = makeAdapter({ line: STROKED, plain: { fill: { paint: { color: '#888' } } } });
     const on = (ids: string[]) =>
       outlineStrokeAction.enabled?.(stubDeps({ selection: selectionOf(ids), createOutlinesAdapter: adapter }));
     expect(on(['plain', 'line'])).toBe(true);

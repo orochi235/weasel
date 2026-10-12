@@ -151,7 +151,7 @@ export function createPathEditingOverlayLayer(
             out.push({
               kind: 'path',
               path: circlePath(hx, hy, style.handleDotRadiusPx),
-              fill: { kind: 'solid', color: style.handleDotFill },
+              fill: { paint: { kind: 'solid', color: style.handleDotFill } },
             });
           }
           if (a.outHandle) {
@@ -164,7 +164,7 @@ export function createPathEditingOverlayLayer(
             out.push({
               kind: 'path',
               path: circlePath(hx, hy, style.handleDotRadiusPx),
-              fill: { kind: 'solid', color: style.handleDotFill },
+              fill: { paint: { kind: 'solid', color: style.handleDotFill } },
             });
           }
 
@@ -172,10 +172,10 @@ export function createPathEditingOverlayLayer(
           out.push({
             kind: 'path',
             path: squarePath(ax, ay, style.anchorSizePx),
-            fill: {
+            fill: { paint: {
               kind: 'solid',
               color: isSelected ? style.anchorFillSelected : style.anchorFill,
-            },
+            } },
             stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
           });
         }
@@ -189,7 +189,7 @@ export function createPathEditingOverlayLayer(
         out.push({
           kind: 'path',
           path: rectMarkerPath(mx, my, mx2 - mx, my2 - my),
-          fill: { kind: 'solid', color: style.marqueeFill },
+          fill: { paint: { kind: 'solid', color: style.marqueeFill } },
           stroke: { paint: { kind: 'solid', color: style.marqueeStroke }, width: 1 },
         });
       }

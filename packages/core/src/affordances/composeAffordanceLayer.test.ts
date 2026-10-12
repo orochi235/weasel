@@ -42,7 +42,7 @@ describe('composeAffordanceLayer', () => {
       id: 'a',
       regions: () => [pointRegion({
         id: 'r-a',
-        paint: { kind: 'square', sizePx: 4, fill: { color: 'red' } },
+        paint: { kind: 'square', sizePx: 4, fill: { paint: { color: 'red' } } },
       })],
     };
     const b: Affordance = {
@@ -50,14 +50,14 @@ describe('composeAffordanceLayer', () => {
       regions: () => [pointRegion({
         id: 'r-b',
         shape: { kind: 'point', x: 10, y: 10, hitRadiusPx: 4 },
-        paint: { kind: 'square', sizePx: 4, fill: { color: 'blue' } },
+        paint: { kind: 'square', sizePx: 4, fill: { paint: { color: 'blue' } } },
       })],
     };
     const layer = composeAffordanceLayer('x', 'X', [a, b]);
     const out = layer.draw(makeState(), VIEW, DIMS);
     expect(out).toHaveLength(2);
-    expect((out[0] as { fill: { color: string } }).fill.color).toBe('red');
-    expect((out[1] as { fill: { color: string } }).fill.color).toBe('blue');
+    expect((out[0] as { fill: { paint: { color: string } } }).fill.paint.color).toBe('red');
+    expect((out[1] as { fill: { paint: { color: string } } }).fill.paint.color).toBe('blue');
   });
 
   it('hitTest walks affordances top-down; first hit wins', () => {
@@ -167,19 +167,19 @@ describe('composeAffordanceLayer', () => {
       id: 'a',
       regions: () => [pointRegion({
         id: 'r-a',
-        paint: { kind: 'square', sizePx: 4, fill: { color: 'red' } },
+        paint: { kind: 'square', sizePx: 4, fill: { paint: { color: 'red' } } },
       })],
       decorate: () => [{
         kind: 'path',
         path: { kind: 'rect', x: 50, y: 50, width: 10, height: 10 },
-        fill: { color: 'green' },
+        fill: { paint: { color: 'green' } },
       }],
     };
     const layer = composeAffordanceLayer('x', 'X', [aff]);
     const out = layer.draw(makeState(), VIEW, DIMS);
     expect(out).toHaveLength(2);
-    expect((out[0] as { fill: { color: string } }).fill.color).toBe('red');
-    expect((out[1] as { fill: { color: string } }).fill.color).toBe('green');
+    expect((out[0] as { fill: { paint: { color: string } } }).fill.paint.color).toBe('red');
+    expect((out[1] as { fill: { paint: { color: string } } }).fill.paint.color).toBe('green');
   });
 
   it('applies target bounds rotation to paint position', () => {
@@ -280,7 +280,7 @@ describe('composeAffordanceLayer', () => {
       regions: () => [pointRegion({
         id: 'r-a',
         shape: { kind: 'point', x: 0, y: 0, hitRadiusPx: 4 },
-        paint: { kind: 'square', sizePx: 4, fill: { color: 'red' } },
+        paint: { kind: 'square', sizePx: 4, fill: { paint: { color: 'red' } } },
       })],
     };
     const b: Affordance = {
@@ -288,7 +288,7 @@ describe('composeAffordanceLayer', () => {
       regions: () => [pointRegion({
         id: 'r-b',
         shape: { kind: 'point', x: 10, y: 10, hitRadiusPx: 4 },
-        paint: { kind: 'square', sizePx: 4, fill: { color: 'blue' } },
+        paint: { kind: 'square', sizePx: 4, fill: { paint: { color: 'blue' } } },
       })],
     };
 
@@ -300,7 +300,7 @@ describe('composeAffordanceLayer', () => {
       };
       const out = layer.draw(data as unknown as ChromeState, VIEW, DIMS);
       expect(out).toHaveLength(1);
-      expect((out[0] as { fill: { color: string } }).fill.color).toBe('blue');
+      expect((out[0] as { fill: { paint: { color: string } } }).fill.paint.color).toBe('blue');
     });
 
     it('hitTest skips affordances whose id reports !isVisible', () => {

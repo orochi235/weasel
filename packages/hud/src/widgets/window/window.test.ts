@@ -52,8 +52,8 @@ describe('window widget', () => {
   describe('stance and tone', () => {
     type Cmd = ReturnType<ReturnType<typeof createWindow>['draw']>[number];
     const bandColor = (cmds: Cmd[]) => {
-      const c = cmds.find((c) => c.kind === 'path' && c.fill !== undefined) as { fill: { color: string } };
-      return c.fill.color;
+      const c = cmds.find((c) => c.kind === 'path' && c.fill !== undefined) as { fill: { paint: { color: string } } };
+      return c.fill.paint.color;
     };
     const ring = (cmds: Cmd[]) =>
       cmds.find((c) => c.kind === 'path' && c.stroke !== undefined && c.path.kind === 'rect') as

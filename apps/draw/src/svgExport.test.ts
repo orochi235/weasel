@@ -12,7 +12,7 @@ import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInter
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import { asPaint, registerPaintKindLoader, solid, strokeOf } from '@weasel-js/core';
-import type { Paint, Stroke, StyledRun } from '@weasel-js/core';
+import type { Stroke, StyledRun, Fill } from '@weasel-js/core';
 import {
   sceneToSvgString,
   selectionToSvgString,
@@ -28,7 +28,7 @@ function fakeScene(nodes: Record<string, {
   kind: 'leaf' | 'container';
   pose: { x: number; y: number; width: number; height: number; rotation?: number };
   data?: {
-    path?: unknown; fill?: Paint | null; text?: string; style?: unknown;
+    path?: unknown; fill?: Fill | null; text?: string; style?: unknown;
     runs?: StyledRun[]; stroke?: Stroke | null; image?: unknown;
   };
   children?: string[];
@@ -68,7 +68,7 @@ describe('text export', () => {
         data: {
           text: 'Hi',
           style: { fontSize: 32, fontFamily: 'Inter' },
-          fill: { kind: 'solid', color: '#123456' },
+          fill: { paint: { kind: 'solid', color: '#123456' } },
         },
       },
     }, ['t']);
@@ -78,7 +78,7 @@ describe('text export', () => {
     if (n.kind !== 'text') throw new Error('expected text');
     expect(n.style?.fontSize).toBe(32);
     expect(n.style?.fontFamily).toBe('Inter');
-    expect(n.fill).toEqual({ kind: 'solid', color: '#123456' });
+    expect(n.fill).toEqual({ paint: { kind: 'solid', color: '#123456' } });
   });
 
   it('exports the leaf stroke as a text stroke', async () => {
@@ -111,7 +111,7 @@ describe('text export', () => {
     const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
     const leaf = drafts.find(
       (d) => 'obj' in d && (d as { obj?: { tool?: string } }).obj?.tool === 'text',
-    ) as { obj: { fill?: Paint | null } };
+    ) as { obj: { fill?: Fill | null } };
     expect(leaf.obj.fill).toBeNull();
   });
 
@@ -141,7 +141,7 @@ describe('text export', () => {
   it('carries run styling through export and back into import drafts', async () => {
     const runs: StyledRun[] = [
       { text: 'Plain ' },
-      { text: 'bold', bold: true, fill: { kind: 'solid', color: '#c0392b' } },
+      { text: 'bold', bold: true, fill: { paint: { kind: 'solid', color: '#c0392b' } } },
       { text: ' and ', italic: true, fontSize: 20, underline: true, strikethrough: true },
       { text: '2', fontScale: 0.5, baselineShift: 0.4 },
     ];
@@ -211,7 +211,7 @@ describe('Save then Open: the page background', () => {
       r: {
         kind: 'leaf',
         pose: { x: 10, y: 20, width: 30, height: 40 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: solid('#ff0000') },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: { paint: solid('#ff0000') } },
       },
     }, ['r']);
     const svg = await sceneToSvgString(scene, {
@@ -243,12 +243,12 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
       b: {
         kind: 'leaf',
         pose: { x: 100, y: 100, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 100, y: 100, width: 10, height: 10 }, fill: solid('#00ff00') },
+        data: { path: { kind: 'rect', x: 100, y: 100, width: 10, height: 10 }, fill: { paint: solid('#00ff00') } },
       },
     }, ['a', 'b']);
 
@@ -266,12 +266,12 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
       b: {
         kind: 'leaf',
         pose: { x: 500, y: 500, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: solid('#00ff00') },
+        data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: { paint: solid('#00ff00') } },
       },
     }, ['a', 'b']);
 
@@ -286,12 +286,12 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
       b: {
         kind: 'leaf',
         pose: { x: 20, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: solid('#00ff00') },
+        data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: { paint: solid('#00ff00') } },
       },
     }, ['a', 'b']);
 
@@ -307,7 +307,7 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 40, height: 10 }, fill: solid('#ff0000') },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 40, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
     }, ['a']);
 
@@ -328,17 +328,17 @@ describe('selectionToSvgString', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
       b: {
         kind: 'leaf',
         pose: { x: 20, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: solid('#00ff00') },
+        data: { path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, fill: { paint: solid('#00ff00') } },
       },
       c: {
         kind: 'leaf',
         pose: { x: 500, y: 500, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: solid('#0000ff') },
+        data: { path: { kind: 'rect', x: 500, y: 500, width: 10, height: 10 }, fill: { paint: solid('#0000ff') } },
       },
     }, ['g1', 'c']);
 
@@ -361,13 +361,13 @@ describe('selectionToClipboardSvgString', () => {
     a: {
       kind: 'leaf',
       pose: { x: 0, y: 0, width: 10, height: 10 },
-      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
     },
   }, ['a']);
   // A payload with a field the SVG mapping drops (label) — surviving the
   // text/plain round-trip is the point of the metadata embed.
   const payload = () => buildWeaselClipboardText([
-    { id: 'a', parent: null, pose: { x: 0, y: 0, width: 10, height: 10 }, data: { fill: solid('#ff0000'), label: 'my label' } },
+    { id: 'a', parent: null, pose: { x: 0, y: 0, width: 10, height: 10 }, data: { fill: { paint: solid('#ff0000') }, label: 'my label' } },
   ]);
 
   it('embeds the weasel payload extractably, byte-equal to the JSON flavor text', async () => {
@@ -438,13 +438,13 @@ describe('gradient fills', () => {
         pose: { x: 100, y: 50, width: 200, height: 100 },
         data: {
           path: { kind: 'rect', x: 100, y: 50, width: 200, height: 100 },
-          fill: {
+          fill: { paint: {
             kind: 'linear-gradient',
             from: { x: 0, y: 0.5 },
             to: { x: 1, y: 0.5 },
             stops: STOPS,
             units: 'bounds',
-          },
+          } },
         },
       },
     }, ['a']);
@@ -471,24 +471,24 @@ describe('gradient fills', () => {
         pose: { x: 100, y: 50, width: 200, height: 100 },
         data: {
           text: 'Hi',
-          fill: {
+          fill: { paint: {
             kind: 'linear-gradient', from: { x: 0, y: 0.5 }, to: { x: 1, y: 0.5 }, stops: STOPS, units: 'bounds',
-          },
+          } },
           runs: [{
             text: 'Hi',
-            fill: {
+            fill: { paint: {
               kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 1 }, stops: STOPS, units: 'bounds',
-            },
+            } },
           }],
         },
       },
     }, ['t']);
     const n = parseSvg(await selectionToSvgString(scene, ['t'])).nodes[0];
     if (n.kind !== 'text') throw new Error('expected text');
-    const fill = n.fill as { from: { x: number; y: number }; to: { x: number; y: number } };
+    const fill = n.fill?.paint as { from: { x: number; y: number }; to: { x: number; y: number } };
     expect(fill.from).toEqual({ x: 100, y: 100 });
     expect(fill.to).toEqual({ x: 300, y: 100 });
-    const run = n.runs![0].fill as { from: { x: number; y: number }; to: { x: number; y: number } };
+    const run = n.runs![0].fill?.paint as { from: { x: number; y: number }; to: { x: number; y: number } };
     expect(run.from).toEqual({ x: 100, y: 50 });
     expect(run.to).toEqual({ x: 100, y: 150 });
   });
@@ -510,7 +510,7 @@ describe('gradient fills', () => {
     const leaf = drafts.find((d) => d.kind === 'leaf');
     if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
     if (!('path' in leaf.obj)) throw new Error('expected a path draft');
-    const fill = leaf.obj.fill as {
+    const fill = leaf.obj.fill?.paint as {
       kind: string; units: string; from: { x: number; y: number }; to: { x: number; y: number };
     };
     expect(fill.kind).toBe('linear-gradient');
@@ -530,7 +530,7 @@ describe('what the SVG cannot carry', () => {
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: {
           path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-          fill: solid('#ff0000'),
+          fill: { paint: solid('#ff0000') },
           stroke: { paint: solid('#000000'), width: 2, align: 'inner' },
         },
       },
@@ -568,7 +568,7 @@ describe('derived poses', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
         dependsOn: ['src'],
         derivePose: () => ({ x: 50, y: 60, width: 10, height: 10 }),
       },
@@ -593,7 +593,7 @@ describe('pose composition', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: solid('#ff0000') } },
       },
     }, ['g'], composition);
   }
@@ -651,7 +651,7 @@ describe('a paint kind that loads on demand', () => {
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: asPaint({ kind: id }) },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: asPaint({ kind: id }) } },
       },
     }, ['a']);
   }

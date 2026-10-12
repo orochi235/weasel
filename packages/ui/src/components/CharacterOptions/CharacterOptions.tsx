@@ -15,7 +15,7 @@
  * a checkered color chip, `aria-pressed="mixed"` on a flag.
  */
 import {
-  MIXED, numericWeight, resolveScreenLength, SCRIPT_METRICS, scriptMetricsFor, useTextTool,
+  isSolidPaint, MIXED, numericWeight, resolveScreenLength, SCRIPT_METRICS, scriptMetricsFor, useTextTool,
 } from '@weasel-js/core';
 import type { ScreenLength } from '@weasel-js/core';
 import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
@@ -72,9 +72,9 @@ export function CharacterOptions({ style, onPatch, children, className }: Charac
 }
 
 /** One control's edit as a run patch. Only `fill` needs shaping: the schema
- *  draws a color, and a run's fill is a `Paint` object. */
+ *  draws a color, and a run's fill is a record holding a `Paint`. */
 function characterPatch(path: string, value: unknown): RunStylePatch {
-  if (path === 'fill') return { fill: { color: value as string } satisfies StyledRun['fill'] };
+  if (path === 'fill') return { fill: { paint: { color: value as string } } satisfies StyledRun['fill'] };
   return { [path]: value } as RunStylePatch;
 }
 
@@ -140,11 +140,8 @@ function pick(style: RangeStyle): Record<string, unknown> {
 }
 
 function solidFill(fill: RangeStyle['fill']): string | undefined {
-  return fill !== undefined &&
-    fill !== MIXED &&
-    ((fill as { kind?: string }).kind === undefined || (fill as { kind?: string }).kind === 'solid')
-    ? (fill as { color?: string }).color
-    : undefined;
+  if (fill === undefined || fill === null || fill === MIXED) return undefined;
+  return isSolidPaint(fill.paint) ? fill.paint.color : undefined;
 }
 
 function worldSize(v: ScreenLength | typeof MIXED | undefined): number | undefined {

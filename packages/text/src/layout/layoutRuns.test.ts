@@ -71,7 +71,7 @@ async function registerTallFont(): Promise<void> {
 
 const RUN_PLAIN = (text: string): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-  fill: { kind: 'solid', color: '#000' }, letterSpacing: 0,
+  fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
 const RUN_BOLD = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), fontWeight: 700 });
@@ -91,8 +91,10 @@ describe('layoutRuns — single line', () => {
   it('keeps a gradient-filled run in one group, and two gradients apart', async () => {
     await registerFixture('inter', [{}]);
     const gradient = (): ResolvedRun['fill'] => ({
-      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
-      stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
+      paint: {
+        kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+        stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
+      },
     });
     const shared = gradient();
     const opts: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
@@ -125,7 +127,7 @@ describe('layoutRuns — single line', () => {
 
   it('per-run fill forces a separate group even for the same atlas variant', async () => {
     await registerFixture('inter', [{}]);
-    const RED: ResolvedRun = { ...RUN_PLAIN('A'), fill: { kind: 'solid', color: '#f00' } };
+    const RED: ResolvedRun = { ...RUN_PLAIN('A'), fill: { paint: { kind: 'solid', color: '#f00' } } };
     const out = layoutRuns(
       [RUN_PLAIN('A'), RED, RUN_PLAIN('A')],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
@@ -328,7 +330,7 @@ describe('layoutRuns — canvas-dynamic faces', () => {
     fontWeight: 400,
     fontStyle: 'normal',
     fontSize: 24, // scale = 24/48 = 0.5
-    fill: { kind: 'solid', color: '#000' },
+    fill: { paint: { kind: 'solid', color: '#000' } },
     letterSpacing: 0,
     underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
@@ -641,12 +643,12 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('breaks the rule where the fill changes, so each piece takes its run colour', async () => {
     await registerFixture('inter', [{}]);
-    const RED: ResolvedRun = { ...UNDERLINED('B'), fill: { kind: 'solid', color: '#f00' } };
+    const RED: ResolvedRun = { ...UNDERLINED('B'), fill: { paint: { kind: 'solid', color: '#f00' } } };
     const out = layoutRuns([UNDERLINED('A'), RED], OPTS);
     expect(out.decorations).toHaveLength(2);
     expect(out.decorations.map((d) => d.fill)).toEqual([
-      { kind: 'solid', color: '#000' },
-      { kind: 'solid', color: '#f00' },
+      { paint: { kind: 'solid', color: '#000' } },
+      { paint: { kind: 'solid', color: '#f00' } },
     ]);
     // Each piece covers its own glyphs' advance boxes, so the join carries
     // the kerning: the pen backs up by 1 before B, and a new span opens at
@@ -769,7 +771,7 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
 
   const run = (text: string): ResolvedRun => ({
     text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-    fill: { kind: 'solid', color: '#000' }, letterSpacing: 0,
+    fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
     underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
 
@@ -1728,7 +1730,7 @@ describe('layoutRuns — a family with no metrics at all', () => {
 
   const run = (text: string, fontFamily = 'never-registered'): ResolvedRun => ({
     text, fontFamily, fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-    fill: { kind: 'solid', color: '#000' }, letterSpacing: 0,
+    fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
     underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
 
@@ -1874,7 +1876,7 @@ describe('layoutRuns — a run built without a baselineShift', () => {
     await registerFixture('inter', [{ weight: 400 }]);
     const run = {
       text: 'AB', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-      fill: { kind: 'solid', color: '#000' }, letterSpacing: 0,
+      fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
       underline: false, strikethrough: false, overline: false,
     } as unknown as ResolvedRun;
 

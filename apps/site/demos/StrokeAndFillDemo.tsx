@@ -23,6 +23,7 @@ import {
   type Stroke,
   type ToolsApi,
   type View,
+  type Fill,
 } from '@weasel-js/core';
 import {
   ColorField,
@@ -40,7 +41,7 @@ const W = 600, H = 420;
  *  anchor of `path`; `stroke.vertexWidths` is one width per anchor. */
 interface PaintedData {
   path: Path;
-  fill?: Paint | null;
+  fill?: Fill | null;
   stroke?: Stroke | null;
   vertexColors?: number[];
 }
@@ -125,13 +126,13 @@ function StrokeAndFill() {
     systemLayers: [{ id: 'default' }],
     initial: [
       leaf(SWATCH, pathFromD('M40 40 H280 V210 H40 Z'), {
-        fill: GRADIENT,
+        fill: { paint: GRADIENT },
         stroke: strokeOf('#1d2733ff', 6),
       }),
       leaf(PETAL, heptagon(430, 125, 85), {
         // A placeholder fill: the renderer only enters the per-vertex shader
         // path for a command that has one, and the vertex colors win in it.
-        fill: solid('#ffffffff'),
+        fill: { paint: solid('#ffffffff') },
         vertexColors: RAINBOW.flat(),
       }),
       leaf(RIBBON, polyline(TAPER_POINTS), {
@@ -275,7 +276,7 @@ function PaintPanel({
             <div className="ckd-field" onFocusCapture={() => onFocusSlot('fill')}>
               <span>Fill</span>
               <PaintField
-                value={data.fill ?? null}
+                value={data.fill?.paint ?? null}
                 aria-label="Fill"
                 onChange={(next) => paint('fill', next)}
               />

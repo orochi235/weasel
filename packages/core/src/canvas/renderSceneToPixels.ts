@@ -174,7 +174,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
     commands.push({
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width, height },
-      fill: { kind: 'solid', color: args.background },
+      fill: { paint: { kind: 'solid', color: args.background } },
     });
   }
   commands.push(...buildSceneViewCommands(

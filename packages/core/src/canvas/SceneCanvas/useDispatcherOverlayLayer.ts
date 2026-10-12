@@ -121,7 +121,7 @@ export function useDispatcherOverlayLayer(args: {
             const cmd: PathDrawCommand = {
               kind: 'path',
               path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
-              fill: { color: cfg.fill },
+              fill: { paint: { color: cfg.fill } },
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
             };
             out.push(cmd);
@@ -204,7 +204,7 @@ export function useDispatcherOverlayLayer(args: {
               path: pathCmd,
               fill: ov.shape === 'line' || ov.shape === 'pencil' || ov.shape === 'image'
                 ? undefined
-                : { color: cfg.fill },
+                : { paint: { color: cfg.fill } },
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
             };
             out.push(cmd);
@@ -223,7 +223,7 @@ export function useDispatcherOverlayLayer(args: {
                   width: 8,
                   height: 8,
                 }),
-                fill: { color: cfg.stroke },
+                fill: { paint: { color: cfg.stroke } },
               });
             }
             continue;
@@ -243,7 +243,7 @@ export function useDispatcherOverlayLayer(args: {
             const cmd: PathDrawCommand = {
               kind: 'path',
               path: polygonFromPoints(screenPts),
-              fill: { color: cfg.fill },
+              fill: { paint: { color: cfg.fill } },
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
             };
             out.push(cmd);

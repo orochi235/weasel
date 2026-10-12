@@ -307,7 +307,7 @@ describe('round-trip', () => {
     expect(t.style?.fontWeight).toBe(700);
     expect(t.style?.fontStyle).toBe('italic');
     expect(t.style?.align).toBe('center');
-    expect(t.fill).toEqual({ kind: 'solid', color: '#b03030' });
+    expect(t.fill).toEqual({ paint: { kind: 'solid', color: '#b03030' } });
     expect(t.style?.letterSpacing).toBe(1.5);
     expect(t.style?.underline).toBe(true);
     expect(t.style?.strikethrough).toBe(true);

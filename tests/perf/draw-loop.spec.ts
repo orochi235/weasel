@@ -123,7 +123,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
             path: variant === 'meshes'
               ? octagon(x + 18, y + 18, 18)
               : { kind: 'rect', x, y, width: 36, height: 36 },
-            fill: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i),
+            fill: { paint: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i) },
           };
           if (variant === 'stroked') cmd.stroke = { width: 2, paint: { color: '#222222' } };
           if (variant === 'rotated') {
@@ -167,7 +167,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         renderer.render([{
           kind: 'path',
           path: { kind: 'rect', x: 100, y: 100, width: 100, height: 100 },
-          fill: gradFill,
+          fill: { paint: gradFill },
         }], identity);
         gl.finish();
         const a = new Uint8Array(4);

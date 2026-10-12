@@ -51,7 +51,7 @@ export function createBoneOverlay(source: {
         out.push({
           kind: 'path',
           path: dot(p.x, p.y, JOINT_RADIUS_PX),
-          fill: { kind: 'solid', color: name === active ? BONE : JOINT_FILL },
+          fill: { paint: { kind: 'solid', color: name === active ? BONE : JOINT_FILL } },
           stroke: { paint: { color: BONE }, width: 1.5 },
         });
       }

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, springPose, tweenPose, useScene, useSceneAdapter } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator';
-import type { Paint } from '@weasel-js/core';
+import type { Fill } from '@weasel-js/core';
 
-interface Block { id: string; x: number; y: number; width: number; height: number; fill: Paint }
+interface Block { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
 const W = 400, H = 300, SIZE = 40, INSET = 30;
 const ID = asNodeId('block');
@@ -13,7 +13,7 @@ const CORNERS = [
   { name: 'bottom left', x: INSET, y: H - INSET - SIZE },
   { name: 'bottom right', x: W - INSET - SIZE, y: H - INSET - SIZE },
 ];
-const START: Block = { id: ID, x: INSET, y: INSET, width: SIZE, height: SIZE, fill: { color: '#7ab8d4' } };
+const START: Block = { id: ID, x: INSET, y: INSET, width: SIZE, height: SIZE, fill: { paint: { color: '#7ab8d4' } } };
 
 export function PoseBlendDemo() {
   const scene = useScene({ items: [START] });

@@ -233,7 +233,7 @@ describe('dispose', () => {
     r.render([{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      fill: { color: '#f00' },
+      fill: { paint: { color: '#f00' } },
     }] as never);
     r.dispose();
     const names = rec.calls.map((c) => c.name);

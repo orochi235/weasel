@@ -56,7 +56,7 @@ export function ColorMatrixDemo() {
     const drawPalette = (offsetX: number): DrawCommand[] => BASE_PALETTE.map((p) => ({
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: offsetX + p.x - p.r, y: p.y - p.r, width: p.r * 2, height: p.r * 2 },
-      fill: { color: p.color },
+      fill: { paint: { color: p.color } },
     }));
     return {
       id: 'color-matrix-stack',

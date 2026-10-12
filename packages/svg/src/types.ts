@@ -16,6 +16,7 @@ import type { SvgMediaEnvironment } from './media';
 import type {
   Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
+  Fill,
 } from '@weasel-js/core';
 
 /**
@@ -189,7 +190,7 @@ export interface SvgTextNode {
    *  `data-weasel-vertical-align` and other readers draw the text top-aligned. */
   verticalAlign?: TextVerticalAlign;
   /**
-   * Node-wide glyph paint, the `Paint` / `Stroke` a kit text node holds
+   * Node-wide glyph paint, the `Fill` / `Stroke` a kit text node holds
    * in `data.fill` / `data.stroke`. Not `SvgPaint`, which is the path
    * nodes' shape — a text paint reaches the renderer through the runs, and
    * `StyledRun.fill` / `.stroke` override these per range.
@@ -197,7 +198,7 @@ export interface SvgTextNode {
    * `null` is SVG's `fill="none"`: outline-only text, painted by its stroke
    * alone. Absent takes the default black.
    */
-  fill?: Paint | null;
+  fill?: Fill | null;
   stroke?: Stroke;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;

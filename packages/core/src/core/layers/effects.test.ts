@@ -30,7 +30,7 @@ void main() { outColor = texture(u_source, v_uv); }
 const RECT: DrawCommand = {
   kind: 'path',
   path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-  fill: { color: '#f00' },
+  fill: { paint: { color: '#f00' } },
 };
 
 function setup(effectIds: string[]) {
@@ -158,7 +158,7 @@ describe('a group shared by several layers', () => {
   const CMD: DrawCommand = {
     kind: 'path',
     path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-    fill: { color: '#f00' },
+    fill: { paint: { color: '#f00' } },
   };
   const IDS = ['a', 'b', 'c'];
 

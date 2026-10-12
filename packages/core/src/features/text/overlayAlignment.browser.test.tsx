@@ -115,7 +115,7 @@ function renderCanvas(c: Case, dpr: number): RasterImage {
   scene.add({
     kind: 'leaf', layer: 'main',
     pose: { x: c.x, y: c.y, width: 200, height: boxHeight(c) },
-    data: { text: c.text ?? TEXT, style: styleOf(c), fill: WHITE },
+    data: { text: c.text ?? TEXT, style: styleOf(c), fill: { paint: WHITE } },
   });
   return renderSceneToPixels({
     scene,
@@ -150,7 +150,7 @@ function Editor({ c }: { c: Case }) {
     container: host,
     getText: () => c.text ?? TEXT,
     getStyle: () => ({ ...styleOf(c), caretColor: 'transparent' }),
-    getPaint: () => ({ fill: WHITE }),
+    getPaint: () => ({ fill: { paint: WHITE } }),
     getScreenPose: () => poseOf(c),
     setText: () => {},
   });

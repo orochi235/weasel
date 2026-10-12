@@ -50,7 +50,7 @@ beforeEach(async () => {
 const canvasLines = (text: string, maxWidth: number, letterSpacing: number): string[] =>
   layoutRuns([{
     text, fontFamily: 'inter', fontSize: SIZE, fontWeight: 400, fontStyle: 'normal',
-    fill: { kind: 'solid', color: '#000' }, letterSpacing,
+    fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing,
     underline: false, strikethrough: false, overline: false, baselineShift: 0,
   } satisfies ResolvedRun], { align: 'left', maxWidth, lineHeight: 1.2 }).lines
     .map((l) => String.fromCodePoint(...l.cells.map((c) => c.cp)).replace(/ +$/, ''));

@@ -44,7 +44,7 @@ function probeLayer(draw: () => void, extra: Partial<RenderLayer<unknown>> = {})
     space: 'screen',
     draw: () => {
       draw();
-      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { kind: 'solid', color: '#fff' } }];
+      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } }];
     },
     ...extra,
   };

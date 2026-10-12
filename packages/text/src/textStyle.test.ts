@@ -29,13 +29,13 @@ describe('resolveTextStyle', () => {
   });
 
   it('caretColor defaults to the node fill\'s color', () => {
-    const r = resolveTextStyle({}, { fill: { kind: 'solid', color: '#ff0000' } });
+    const r = resolveTextStyle({}, { fill: { paint: { kind: 'solid', color: '#ff0000' } } });
     expect(r.caretColor).toBe('#ff0000');
   });
 
   it('caretColor falls back to #000 for non-solid fills', () => {
     // A pattern-paint shape (no `color` field) triggers the fallback.
-    const patternPaint = { kind: 'texture', texture: 'whatever' } as unknown as TextPaint['fill'];
+    const patternPaint = { paint: { kind: 'texture', texture: 'whatever' } } as unknown as TextPaint['fill'];
     const r = resolveTextStyle({}, { fill: patternPaint });
     expect(r.caretColor).toBe('#000');
   });
@@ -43,13 +43,13 @@ describe('resolveTextStyle', () => {
   it('explicit caretColor overrides the fill-derived default', () => {
     const r = resolveTextStyle(
       { caretColor: '#00ff00' },
-      { fill: { kind: 'solid', color: '#ff0000' } },
+      { fill: { paint: { kind: 'solid', color: '#ff0000' } } },
     );
     expect(r.caretColor).toBe('#00ff00');
   });
 
   it('selectionBackground defaults to a 25% color-mix of caretColor', () => {
-    const r = resolveTextStyle({}, { fill: { kind: 'solid', color: '#abcdef' } });
+    const r = resolveTextStyle({}, { fill: { paint: { kind: 'solid', color: '#abcdef' } } });
     expect(r.selectionBackground).toBe('color-mix(in srgb, #abcdef 25%, transparent)');
   });
 

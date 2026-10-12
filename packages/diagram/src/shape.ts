@@ -12,14 +12,14 @@
  * editing, selection and styling work on them without a special case.
  */
 import {
-  commandPaint,
+  commandFill,
   commandStroke,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
-  type Paint,
   type NodeShapeEntry,
   type PoseDescriptor,
   type Stroke,
+  type Fill,
 } from '@weasel-js/core';
 import { outlinePath } from './outline';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
@@ -34,7 +34,7 @@ export interface DiagramShapeOptions<TPose> {
   /** Reads the box the outline is built in. Default `RECT_POSE_DESCRIPTOR`. */
   geometry?: PoseDescriptor<TPose>;
   /** Painted when the node's data declares neither. */
-  defaultFill?: Paint | null;
+  defaultFill?: Fill | null;
   defaultStroke?: Stroke | null;
 }
 
@@ -52,11 +52,11 @@ export function diagramShape<TPose>(
     paint: (node, pose) => {
       const outline = outlineOf(node);
       if (outline === undefined) return [];
-      const d = node.data as { fill?: Paint | null; stroke?: Stroke | null };
+      const d = node.data as { fill?: Fill | null; stroke?: Stroke | null };
       const box = geometry.getBounds(pose);
       const declaredFill = d.fill === undefined ? opts.defaultFill : d.fill;
       const declaredStroke = d.stroke === undefined ? opts.defaultStroke : d.stroke;
-      const fill = declaredFill && commandPaint(declaredFill, box);
+      const fill = declaredFill && commandFill(declaredFill, box);
       const stroke = declaredStroke && commandStroke(declaredStroke, box);
       return [{
         kind: 'path',

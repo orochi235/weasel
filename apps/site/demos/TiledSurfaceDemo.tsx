@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
-  PathBuilder, SceneCanvas, WeaselProvider, commandPaint, sceneFromJSON, useSelection,
+  PathBuilder, SceneCanvas, WeaselProvider, commandFill, sceneFromJSON, useSelection,
 } from '@weasel-js/core';
-import type { Paint, Path, SceneCanvasApi, SerializedScene, View } from '@weasel-js/core';
+import type { Path, SceneCanvasApi, SerializedScene, View, Fill } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { createLoupe } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 
-interface NodeData { fill: Paint; ring?: boolean }
+interface NodeData { fill: Fill; ring?: boolean }
 interface Pose { x: number; y: number; width: number; height: number }
 
 const SURFACE_W = 820;
@@ -71,12 +71,12 @@ const paneScene = (fill: string): SerializedScene<NodeData, string, Pose> => ({
   systemLayers: [{ id: 'default' }],
   nodes: [
     { id: 'box', kind: 'leaf', layer: 'default',
-      pose: { x: 40, y: 40, width: 100, height: 80 }, data: { fill: { color: fill } } },
+      pose: { x: 40, y: 40, width: 100, height: 80 }, data: { fill: { paint: { color: fill } } } },
     { id: 'mark', kind: 'leaf', layer: 'default',
-      pose: { x: 180, y: 150, width: 60, height: 60 }, data: { fill: { color: '#c0392b' } } },
+      pose: { x: 180, y: 150, width: 60, height: 60 }, data: { fill: { paint: { color: '#c0392b' } } } },
     { id: 'ring', kind: 'leaf', layer: 'default',
       pose: { x: 40, y: 180, width: 100, height: 100 },
-      data: { fill: { color: '#6b4c9a' }, ring: true } },
+      data: { fill: { paint: { color: '#6b4c9a' } }, ring: true } },
   ],
 } as unknown as SerializedScene<NodeData, string, Pose>);
 
@@ -125,7 +125,7 @@ function Pane({
                 // even-odd compound path that no pose shape can express.
                 drawOne: (node): DrawCommand[] => {
                   const pose = node.pose as Pose;
-                  const fill = commandPaint(node.data.fill, pose);
+                  const fill = commandFill(node.data.fill, pose);
                   return [{
                     kind: 'path',
                     path: node.data.ring

@@ -188,7 +188,7 @@ describe('Pathfinder actions and strokes', () => {
       getWorldPath: (id) => paths[id],
       getPaint: (id) => (id === 'line'
         ? { fill: null, stroke: { paint: { color: '#000' }, width: 10 } }
-        : { fill: { color: '#888' }, stroke: { paint: { color: '#000' }, width: 10 } }),
+        : { fill: { paint: { color: '#888' } }, stroke: { paint: { color: '#000' }, width: 10 } }),
       compareZ: (a, b) => (a === 'box' ? -1 : 1) - (b === 'box' ? -1 : 1),
       createPathNode: (path) => { made.push(path); return { id: 'new' }; },
       applyOps: () => {},

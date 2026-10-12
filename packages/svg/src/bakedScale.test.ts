@@ -139,6 +139,6 @@ describe('a userSpaceOnUse gradient under a baked transform', () => {
     const { leaf } = firstLeaf<SvgTextNode>(
       `${defs}<g transform="translate(100,100)"><text x="0" y="10" font-size="10" fill="url(#lin)">Hi</text></g>`,
     );
-    expect(leaf.fill).toMatchObject({ from: { x: 100, y: 100 }, to: { x: 150, y: 100 } });
+    expect(leaf.fill).toMatchObject({ paint: { from: { x: 100, y: 100 }, to: { x: 150, y: 100 } } });
   });
 });

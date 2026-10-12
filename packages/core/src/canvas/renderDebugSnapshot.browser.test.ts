@@ -25,7 +25,7 @@ function fixture() {
   const drawOne = (_n: unknown, p: RectPose): DrawCommand[] => [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill: { kind: 'solid', color: '#ff0000' },
+    fill: { paint: { kind: 'solid', color: '#ff0000' } },
   }];
   return { scene, debug: sink.snapshot(), drawOne };
 }

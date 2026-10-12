@@ -12,7 +12,7 @@ export function leafOfObj(o: Obj): { pose: WeaselDrawPose; data: WeaselDrawData 
       pose,
       data: {
         text: o.text,
-        fill: o.fill === undefined ? solid('#000000') : o.fill,
+        fill: o.fill === undefined ? { paint: solid('#000000') } : o.fill,
         ...(o.stroke ? { stroke: o.stroke } : {}),
         ...(o.style ? { style: o.style } : {}),
         ...(o.runs ? { runs: o.runs } : {}),

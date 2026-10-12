@@ -4,7 +4,7 @@ import {
   PATH_Z,
   type PolygonPath
 } from '@weasel-js/geom';
-import type { Paint, Stroke } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import type { StyledRun, TextPose, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { textLineBoxes } from '@weasel-js/text';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
@@ -22,7 +22,7 @@ export interface TextNodeData {
   text: string;
   style?: TextStyle;
   runs?: readonly StyledRun[];
-  fill?: Paint | null;
+  fill?: Fill | null;
   stroke?: Stroke | null;
   verticalAlign?: TextVerticalAlign;
 }

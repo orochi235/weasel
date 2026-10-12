@@ -18,7 +18,7 @@ const POSE: Pose = { x: 0, y: 0, width: 10, height: 10 };
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function labelDraw(node: { data: Data }, _pose: Pose): DrawCommand[] {
-  return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: node.data.label } }];
+  return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: node.data.label } } }];
 }
 
 describe('buildSceneTree', () => {

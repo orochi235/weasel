@@ -26,7 +26,7 @@ afterEach(() => {
 const frame: DrawCommand[] = [{
   kind: 'path',
   path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-  fill: { kind: 'probe-kind' } as unknown as Paint,
+  fill: { paint: { kind: 'probe-kind' } as unknown as Paint },
 } as DrawCommand];
 
 function fakeCanvas(gl: WebGL2RenderingContext) {

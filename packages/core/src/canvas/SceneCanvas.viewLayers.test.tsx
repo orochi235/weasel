@@ -63,7 +63,7 @@ const LAYERS = {
     drawOne: (n: Node<D, L, P>, p: P): DrawCommand[] => [{
       kind: 'path',
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-      fill: { color: n.data.color },
+      fill: { paint: { color: n.data.color } },
     }],
   },
 };
@@ -76,7 +76,7 @@ function colorsIn(cmds: readonly unknown[] | undefined): string[] {
     for (const c of list as DrawCommand[]) {
       if (c.kind === 'group') walk((c as GroupDrawCommand).children ?? []);
       else {
-        const color = (c as { fill?: { color?: string } }).fill?.color;
+        const color = (c as { fill?: { paint?: { color?: string } } }).fill?.paint?.color;
         if (color) out.push(color);
       }
     }

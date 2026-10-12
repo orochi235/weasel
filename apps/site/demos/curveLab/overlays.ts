@@ -49,7 +49,7 @@ export function createAnchorsLayer(
         out.push({
           kind: 'path',
           path: { kind: 'rect', x: sx - 4, y: sy - 4, width: 8, height: 8 },
-          fill: { color: '#ffffff' },
+          fill: { paint: { color: '#ffffff' } },
           stroke: { paint: { color: '#3478f6' }, width: 1 },
         } as DrawCommand);
         if (rep.kind === 'bezierCubic') {
@@ -63,7 +63,7 @@ export function createAnchorsLayer(
             out.push({
               kind: 'path',
               path: circlePath(hx, hy, 4),
-              fill: { color: 'rgba(125, 167, 232, 0.5)' },
+              fill: { paint: { color: 'rgba(125, 167, 232, 0.5)' } },
             } as DrawCommand);
           }
           if (a.inHandle) {
@@ -76,7 +76,7 @@ export function createAnchorsLayer(
             out.push({
               kind: 'path',
               path: circlePath(hx, hy, 4),
-              fill: { color: 'rgba(125, 167, 232, 0.5)' },
+              fill: { paint: { color: 'rgba(125, 167, 232, 0.5)' } },
             } as DrawCommand);
           }
         }
@@ -165,7 +165,7 @@ export function createInflectionsLayer(
           out.push({
             kind: 'path',
             path: { kind: 'rect', x: sx - 3, y: sy - 3, width: 6, height: 6 },
-            fill: { color: '#ffaa00' },
+            fill: { paint: { color: '#ffaa00' } },
           } as DrawCommand);
         }
       }

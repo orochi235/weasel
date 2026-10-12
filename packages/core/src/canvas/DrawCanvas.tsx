@@ -80,7 +80,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
     const content = typeof draw === 'function' ? draw({ width, height }) : draw;
     const commands: DrawCommand[] = [];
     const fill = background && commandPaint(background, { x: 0, y: 0, width, height });
-    if (fill) commands.push({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width, height }, fill });
+    if (fill) commands.push({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width, height }, fill: { paint: fill } });
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
     return lease.paint(el, commands, view, { width, height, dpr });
   };

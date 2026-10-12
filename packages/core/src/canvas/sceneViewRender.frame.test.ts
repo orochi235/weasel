@@ -37,7 +37,7 @@ function drawnCorners(cmds: readonly DrawCommand[], wanted: string): [number, nu
       if (cmd.kind === 'group') {
         const own = cmd.transform as unknown as number[] | undefined;
         walk(cmd.children, own ? (m ? (mat3.multiply(m as never, own as never) as unknown as number[]) : own) : m);
-      } else if (cmd.kind === 'path' && cmd.path.kind === 'rect' && (cmd.fill as { color?: string } | undefined)?.color === wanted) {
+      } else if (cmd.kind === 'path' && cmd.path.kind === 'rect' && (cmd.fill?.paint as { color?: string } | undefined)?.color === wanted) {
         const { x, y, width, height } = cmd.path;
         for (const [px, py] of [[x, y], [x + width, y], [x + width, y + height], [x, y + height]]) {
           out.push(m ? (mat3.apply(m as never, px, py) as [number, number]) : [px, py]);
@@ -54,7 +54,7 @@ const drawPoseBox = (node: { id: string }, pose: RectPose): DrawCommand[] => [
   {
     kind: 'path',
     path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-    fill: { color: node.id },
+    fill: { paint: { color: node.id } },
   },
 ];
 

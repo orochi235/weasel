@@ -23,7 +23,7 @@ void main() { outColor = texture(u_source, v_uv); }
 const RED: DrawCommand = {
   kind: 'path',
   path: { kind: 'rect', x: 0, y: 0, width: SIZE, height: SIZE },
-  fill: { color: '#ff0000' },
+  fill: { paint: { color: '#ff0000' } },
 };
 
 let renderer: WeaselRenderer | undefined;

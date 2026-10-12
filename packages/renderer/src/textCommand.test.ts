@@ -136,16 +136,16 @@ describe('screen-pixel sizes', () => {
     };
     const cmd = textCommandFromPose({
       x: 10, y: 20, width: 100, height: 40, text: 'x',
-      fill: grad, stroke: { paint: grad, width: 1 },
+      fill: { paint: grad }, stroke: { paint: grad, width: 1 },
     });
     const want = { from: { x: 10, y: 20 }, to: { x: 110, y: 20 }, units: 'local' };
-    expect(cmd.runs[0].fill).toMatchObject(want);
+    expect(cmd.runs[0].fill).toMatchObject({ paint: want });
     expect(cmd.runs[0].stroke?.paint).toMatchObject(want);
   });
 
   it('hands solid runs through untouched', () => {
-    const fill = { kind: 'solid' as const, color: '#123' };
-    const cmd = textCommandFromPose({ x: 0, y: 0, width: 10, height: 10, text: 'x', fill });
-    expect(cmd.runs[0].fill).toBe(fill);
+    const paint = { kind: 'solid' as const, color: '#123' };
+    const cmd = textCommandFromPose({ x: 0, y: 0, width: 10, height: 10, text: 'x', fill: { paint } });
+    expect(cmd.runs[0].fill?.paint).toBe(paint);
   });
 });

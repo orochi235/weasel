@@ -69,11 +69,22 @@ function paintFromLegacy(color: string): { color: string; opacity?: number } | n
   return NO_PAINT.has(color.toLowerCase()) ? null : solid(color) as { color: string; opacity?: number };
 }
 
+/** Whether `value` is a paint sitting where a `Fill` belongs, as a `fill`
+ *  slot held one until 2026-10-12. A `Fill` has a `paint` and none of a
+ *  paint's own keys, and so does an `SvgPaint` gradient. */
+function isBarePaint(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  if ('paint' in value) return false;
+  return 'color' in value || 'kind' in value || 'stops' in value;
+}
+
 /**
  * Rewrite the pre-2026-08-26 string paint forms — `fill: '#abc'`,
- * `stroke: '#abc'` with a sibling `strokeWidth` — into the `Paint` and
+ * `stroke: '#abc'` with a sibling `strokeWidth` — into the `Fill` and
  * `Stroke` objects every reader now expects, a paint's tag from `fill` to
- * `kind`, and a pattern's tile up into the paint. Walks in place and returns the same node, like `reviveTypedArrays`.
+ * `kind`, a pattern's tile up into the paint, and a paint held directly under
+ * `fill` into a `Fill`. Walks in place and returns the same node, like
+ * `reviveTypedArrays`.
  *
  * Applied to node data and to the node data copied inside a history
  * snapshot's op payloads, so an undo after a reload cannot write a string
@@ -92,7 +103,8 @@ export function migrateLegacyPaint<T>(node: T): T {
       obj.kind = obj.fill;
       delete obj.fill;
     } else {
-      obj.fill = paintFromLegacy(obj.fill);
+      const paint = paintFromLegacy(obj.fill);
+      obj.fill = paint === null ? null : { paint };
     }
   }
   if (typeof obj.stroke === 'string') {
@@ -104,6 +116,8 @@ export function migrateLegacyPaint<T>(node: T): T {
   liftLegacyPattern(obj);
 
   for (const k of Object.keys(obj)) migrateLegacyPaint(obj[k]);
+  // After the walk, so a paint still wearing its old tag has become one first.
+  if (isBarePaint(obj.fill)) obj.fill = { paint: obj.fill };
   return node;
 }
 

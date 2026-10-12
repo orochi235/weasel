@@ -30,7 +30,7 @@ const POSE: RectPose = { x: 0, y: 0, width: 100, height: 100 };
 
 describe('findShapeInk', () => {
   it('reports a filled path with no stroke', () => {
-    expect(findShapeInk(pathNode({ fill: solid('#f00') }), POSE))
+    expect(findShapeInk(pathNode({ fill: { paint: solid('#f00') } }), POSE))
       .toEqual({ filled: true, outset: 0, inset: 0 });
   });
 
@@ -47,9 +47,9 @@ describe('findShapeInk', () => {
   });
 
   it('treats stroke: null and zero width as unstroked', () => {
-    expect(findShapeInk(pathNode({ fill: solid('#f00'), stroke: null }), POSE))
+    expect(findShapeInk(pathNode({ fill: { paint: solid('#f00') }, stroke: null }), POSE))
       .toMatchObject({ outset: 0, inset: 0 });
-    expect(findShapeInk(pathNode({ fill: solid('#f00'), stroke: strokeOf('#000', 0) }), POSE))
+    expect(findShapeInk(pathNode({ fill: { paint: solid('#f00') }, stroke: strokeOf('#000', 0) }), POSE))
       .toMatchObject({ outset: 0, inset: 0 });
   });
 
@@ -71,15 +71,15 @@ describe('findShapeInk', () => {
 
 describe('shapeCoversPoint — filled shapes', () => {
   it('covers its interior', () => {
-    expect(shapeCoversPoint(pathNode({ fill: solid('#f00') }), POSE, 50, 50)).toBe(true);
+    expect(shapeCoversPoint(pathNode({ fill: { paint: solid('#f00') } }), POSE, 50, 50)).toBe(true);
   });
 
   it('does not cover well outside itself', () => {
-    expect(shapeCoversPoint(pathNode({ fill: solid('#f00') }), POSE, 200, 200)).toBe(false);
+    expect(shapeCoversPoint(pathNode({ fill: { paint: solid('#f00') } }), POSE, 200, 200)).toBe(false);
   });
 
   it('is grabbable just outside its edge once a tolerance is given', () => {
-    const node = pathNode({ fill: solid('#f00') });
+    const node = pathNode({ fill: { paint: solid('#f00') } });
     expect(shapeCoversPoint(node, POSE, 103, 50)).toBe(false);
     expect(shapeCoversPoint(node, POSE, 103, 50, { tolerance: 4 })).toBe(true);
     expect(shapeCoversPoint(node, POSE, 110, 50, { tolerance: 4 })).toBe(false);
@@ -161,7 +161,7 @@ describe('shapeCoversPoint — painters with no opinion', () => {
     // The rect fallback declares a silhouette but no `ink`, so it keeps the
     // pre-`ink` behavior: the whole interior is grabbable.
     const opaque = {
-      id: asNodeId('x'), kind: 'leaf', layer: 'main', pose: POSE, data: { fill: solid('#f00') },
+      id: asNodeId('x'), kind: 'leaf', layer: 'main', pose: POSE, data: { fill: { paint: solid('#f00') } },
     } as unknown as Node<unknown, string, RectPose>;
     expect(findShapeInk(opaque, POSE)).toBeNull();
     expect(shapeCoversPoint(opaque, POSE, 50, 50)).toBe(true);
@@ -287,12 +287,12 @@ describe('a stroke with no paint', () => {
   const paintless = { width: 2 } as unknown as ReturnType<typeof strokeOf>;
 
   it('paints the node without throwing', () => {
-    const node = pathNode({ fill: solid('#f00'), stroke: paintless });
+    const node = pathNode({ fill: { paint: solid('#f00') }, stroke: paintless });
     expect(() => findNodeShape(node)!.paint(node, POSE)).not.toThrow();
   });
 
   it('emits no stroke — a stroke with no paint has nothing to draw', () => {
-    const node = pathNode({ fill: solid('#f00'), stroke: paintless });
+    const node = pathNode({ fill: { paint: solid('#f00') }, stroke: paintless });
     const [cmd] = findNodeShape(node)!.paint(node, POSE);
     expect(cmd).not.toHaveProperty('stroke');
   });
@@ -300,7 +300,7 @@ describe('a stroke with no paint', () => {
   it('reaches no further than an unstroked node for picking', () => {
     // `ink` and `paint` have to agree, or a node is grabbable across a width
     // it does not draw.
-    expect(findShapeInk(pathNode({ fill: solid('#f00'), stroke: paintless }), POSE))
+    expect(findShapeInk(pathNode({ fill: { paint: solid('#f00') }, stroke: paintless }), POSE))
       .toEqual({ filled: true, outset: 0, inset: 0 });
   });
 });

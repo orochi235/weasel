@@ -32,7 +32,7 @@ const near = (actual: { x: number; y: number; width: number; height: number }, e
 
 describe('the render wrap', () => {
   const cmds: DrawCommand[] = [{
-    kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 40, height: 12 }, fill: { color: '#abc' },
+    kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 40, height: 12 }, fill: { paint: { color: '#abc' } },
   }];
 
   it('wraps a node whose pose has a transform in that transform about the box center', () => {

@@ -89,7 +89,7 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     // The path above is baked into page coordinates, and the serializer
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
     // to be resolved against the same pose, exactly as the painter does.
-    fill: data.fill == null ? null : fillInPoseFrame(data.fill, pose),
+    fill: data.fill?.paint == null ? null : { ...data.fill, paint: fillInPoseFrame(data.fill.paint, pose) },
     // A gradient stroke paint gets the same pose-frame resolution the fill
     // above gets, and for the same reason.
     // A stroke with no paint draws nothing, and exports as no stroke.

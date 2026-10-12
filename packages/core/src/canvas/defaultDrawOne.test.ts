@@ -23,22 +23,22 @@ const POSE = { x: 10, y: 20, width: 80, height: 40 };
 
 describe('defaultDrawOne', () => {
   it('rect fallback: paints data.fill over the pose AABB', () => {
-    const cmds = defaultDrawOne(node({ fill: solid('#abc') }), POSE);
+    const cmds = defaultDrawOne(node({ fill: { paint: solid('#abc') } }), POSE);
     expect(cmds).toHaveLength(1);
     const cmd = cmds[0] as PathDrawCommand;
     expect(cmd.kind).toBe('path');
     expect(cmd.path).toEqual({ kind: 'rect', x: 10, y: 20, width: 80, height: 40 });
-    expect(cmd.fill).toEqual({ color: '#abc' });
+    expect(cmd.fill).toEqual({ paint: { color: '#abc' } });
   });
 
   it('rect fallback: uses neutral gray when data.fill is missing', () => {
     const cmds = defaultDrawOne(node({}), POSE);
     const cmd = cmds[0] as PathDrawCommand;
-    expect(cmd.fill).toEqual({ color: '#888' });
+    expect(cmd.fill).toEqual({ paint: { color: '#888' } });
   });
 
   it('adds a top-left label overlay when data.label is present', () => {
-    const cmds = defaultDrawOne(node({ fill: solid('#abc'), label: 'Hi' }), POSE);
+    const cmds = defaultDrawOne(node({ fill: { paint: solid('#abc') }, label: 'Hi' }), POSE);
     expect(cmds).toHaveLength(2);
     const label = cmds[1] as TextDrawCommand;
     expect(label.kind).toBe('text');
@@ -53,13 +53,13 @@ describe('defaultDrawOne', () => {
     // at the right place + size without touching data.path.
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
     const cmds = defaultDrawOne(
-      node({ path, fill: solid('#f00'), stroke: strokeOf('#000', 2) }),
+      node({ path, fill: { paint: solid('#f00') }, stroke: strokeOf('#000', 2) }),
       POSE,
     );
     expect(cmds).toHaveLength(1);
     const cmd = cmds[0] as PathDrawCommand;
     expect(cmd.path).toEqual({ kind: 'rect', x: 10, y: 20, width: 80, height: 40 });
-    expect(cmd.fill).toEqual({ color: '#f00' });
+    expect(cmd.fill).toEqual({ paint: { color: '#f00' } });
     expect(cmd.stroke).toEqual({ paint: { color: '#000' }, width: 2 });
   });
 
@@ -68,19 +68,19 @@ describe('defaultDrawOne', () => {
     // the path reference unchanged. Guards the fast path against accidental
     // regressions on the common "freshly-created node" case.
     const path = { kind: 'rect' as const, x: 10, y: 20, width: 80, height: 40 };
-    const cmds = defaultDrawOne(node({ path, fill: solid('#f00') }), POSE);
+    const cmds = defaultDrawOne(node({ path, fill: { paint: solid('#f00') } }), POSE);
     const cmd = cmds[0] as PathDrawCommand;
     expect(cmd.path).toBe(path);
   });
 
   it('path branch: omits stroke when data.stroke is null or missing', () => {
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
-    const cmds = defaultDrawOne(node({ path, fill: solid('#f00') }), POSE);
+    const cmds = defaultDrawOne(node({ path, fill: { paint: solid('#f00') } }), POSE);
     const cmd = cmds[0] as PathDrawCommand;
     expect(cmd.stroke).toBeUndefined();
 
     const cmds2 = defaultDrawOne(
-      node({ path, fill: solid('#f00'), stroke: null }),
+      node({ path, fill: { paint: solid('#f00') }, stroke: null }),
       POSE,
     );
     const cmd2 = cmds2[0] as PathDrawCommand;
@@ -90,7 +90,7 @@ describe('defaultDrawOne', () => {
   it('path branch: includes the label overlay when data.label is present', () => {
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
     const cmds = defaultDrawOne(
-      node({ path, fill: solid('#f00'), label: 'X' }),
+      node({ path, fill: { paint: solid('#f00') }, label: 'X' }),
       POSE,
     );
     expect(cmds).toHaveLength(2);
@@ -158,7 +158,7 @@ describe('defaultDrawOne', () => {
     const cached: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { color: '#abc' },
+      fill: { paint: { color: '#abc' } },
     }];
     const dispose = registerNodeShape(
       { id: 'test:cached-paint', matches: () => true, paint: () => cached },

@@ -11,6 +11,7 @@ import {
   type Scene,
   type Stroke,
   type View,
+  type Fill,
 } from '@weasel-js/core';
 import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { MeshHandles } from '../MeshEditor/MeshHandles';
@@ -23,7 +24,7 @@ export type PaintSlot = 'fill' | 'stroke';
 /** What `SceneGradientHandles` reads off a node. Every field is optional, so
  *  any richer app data shape satisfies it. */
 export interface PaintedNodeData {
-  fill?: Paint | null;
+  fill?: Fill | null;
   stroke?: Stroke | null;
 }
 
@@ -111,5 +112,5 @@ function paintOf<TData extends PaintedNodeData, TLayer extends string, TPose ext
   if (nodeId == null) return undefined;
   const data = (scene.nodes as ReadonlyMap<string, { data: TData }>).get(nodeId)?.data;
   if (!data) return undefined;
-  return slot === 'fill' ? data.fill : data.stroke?.paint;
+  return slot === 'fill' ? data.fill?.paint : data.stroke?.paint;
 }

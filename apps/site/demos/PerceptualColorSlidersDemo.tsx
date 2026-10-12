@@ -155,7 +155,7 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
       const cmd: DrawCommand = {
         kind: 'path',
         path,
-        fill: { color: '#fff' },
+        fill: { paint: { color: '#fff' } },
         vertexColors: colors,
       };
       return [cmd];
