@@ -17,6 +17,7 @@ import { Icon } from '../../icons';
 import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
+import { SettingsTree } from './SettingsTree';
 import { UnplacedTree } from './UnplacedTree';
 import { toTreeNodes } from './structureRows';
 import { stillUnplaced } from './unplaced';
@@ -64,7 +65,8 @@ export interface StructurePaneProps {
   /** The schema takes no edit: no tool adds or removes, and nothing is dropped here. Its rows can still be dragged out. */
   readOnly?: boolean;
   /** The dialog a layout's pointers name settings in. Given, the schema is a layout: what sits directly under its
-   *  root is a row of it and not unplaced, a pointer's row is named as its setting, and nothing adds a pref or a page. */
+   *  root is a row of it and not unplaced, a pointer's row is named as its setting, and nothing adds a pref or a page.
+   *  Its settings are listed under the tree, to be dragged into it as pointers. */
   over?: SchemaRoot;
   /** What a host draws on a node's row before its kind, by the node's path in this tree. */
   rowMark?: (path: string) => ReactNode;
@@ -129,6 +131,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   );
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
   const unplacedSize = useEditorSize('unplacedHeight');
+  const settingsSize = useEditorSize('settingsHeight');
   const actionsSize = useEditorSize('actionsHeight');
   const treeArea = useRef<HTMLDivElement | null>(null);
   const unplacedArea = useRef<HTMLDivElement | null>(null);
@@ -302,6 +305,16 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
             <PaneHeader title="Unplaced" />
             <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
               selected={selected} onPick={onPick} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+          </div>
+        </>
+      )}
+      {over !== undefined && !readOnly && (
+        <>
+          <ResizeHandle orientation="horizontal" invert {...settingsSize} min={60} max={600}
+            ariaLabel="Resize settings" />
+          <div className={s.storedArea} style={{ '--stored-h': `${settingsSize.value}px` } as CSSProperties}>
+            <PaneHeader title="Settings" />
+            <SettingsTree over={over} layout={schema} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
           </div>
         </>
       )}

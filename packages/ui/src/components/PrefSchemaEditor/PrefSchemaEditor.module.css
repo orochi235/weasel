@@ -84,6 +84,8 @@
 }
 .paneTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
 .treeKey { font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
+/* A setting the layout shown already points at. */
+.pointed { color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }
 .addActions { display: flex; justify-content: flex-end; gap: var(--wzl-space-2); }
 .notice:not(:empty) {

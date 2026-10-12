@@ -14,6 +14,9 @@ function leafCount(nodes: readonly SchemaNode[]): number {
   return nodes.reduce((n, node) => n + (isPrefLeaf(node) ? 1 : leafCount(Object.values(childrenOf(node) ?? {}))), 0);
 }
 
+/** A row's label for a node: its name before its key, and an unnamed node's key alone. */
+export const nodeLabel = (name: string, key: string): ReactNode => (name ? <>{name} <span className={s.treeKey}>({key})</span></> : key);
+
 const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
 
 /** The structure tree's rows for what `node` holds: each child's name before its key, a group's glyph and count, a leaf's kind, and the host's mark. `over` is the dialog a layout's pointers name settings in. */
@@ -23,7 +26,7 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
     const kids = childrenOf(child);
     // A layout's pointer reads as the setting it points at, and one that points at none as its key.
     const name = (over && isPrefLeaf(child) && child.kind === 'alias' ? drawnLeaf(over, child as PrefAlias)?.name : undefined) ?? child.name;
-    const label = name ? <>{name} <span className={s.treeKey}>({key})</span></> : key;
+    const label = nodeLabel(name, key);
     return {
       id: p,
       label: changed.has(p) ? <span className={s.changed}>{label}</span> : label,
