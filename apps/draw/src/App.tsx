@@ -58,6 +58,7 @@ import {
   ResizeHandle,
   SceneGradientHandles,
   Sidebar,
+  ToastRegion,
   ToolPalette
 } from '@weasel-js/ui';
 import {
@@ -76,6 +77,7 @@ import { PreferencesModal } from './PreferencesModal';
 import { type AppCommands, appCommandsContribution } from './appCommands';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { loadDoc, PAPER_PRESETS, saveDoc } from './docPersistence';
+import { showFirstRunNotice } from './firstRunNotice';
 import { disableMachineFontOutlines, enableMachineFontOutlines } from './fonts';
 import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
@@ -258,6 +260,7 @@ function EditorWithSharedScene({
   const [gridVisible, setGridVisible] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
+  useEffect(() => showFirstRunNotice(), []);
 
   // Right-sidebar width. The pref is the durable value; `dragWidth` shadows it
   // for the duration of a drag so a pointer-rate stream of samples doesn't
@@ -659,6 +662,8 @@ function EditorWithSharedScene({
             <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
           )}
+          {/* In the workspace, not the viewport: a fixed region sits outside the theme and over the status bar. */}
+          {hostRef.current && <ToastRegion portalContainer={hostRef.current} />}
           <SceneGradientHandles
             scene={scene}
             containerRef={hostRef}
