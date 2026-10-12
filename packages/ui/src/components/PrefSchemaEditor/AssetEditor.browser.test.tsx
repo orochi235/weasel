@@ -1,12 +1,12 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { useState } from 'react';
 import type { PrefAlias, PrefGroup } from '@weasel-js/prefs';
 import { AssetEditor } from './AssetEditor';
 import { DEMO_WORKSPACE } from './AssetEditor.demo';
-import { drag, pointIn } from './pointerDrag.fixture';
+import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture';
 import type { Workspace } from './workspace';
 import { workspaceCodec } from './workspaceCodec';
 
@@ -135,30 +135,62 @@ test('a panel\'s preview draws its pointers as the dialog\'s settings, its own r
 test('a pointer dragged in a panel\'s tree moves in the panel, and still points where it did', () => {
   render(<Live />);
   fireEvent.click(option('Canvas'));
-  drag(treeRow('snap'), pointIn(treeRow('grid').parentElement!.querySelectorAll('[role="treeitem"]')[0]!.firstElementChild!, 0.5, 0.1));
-  const section = rootOf('canvas').children.grid as PrefGroup;
+  drag(treeRow('snap'), pointIn(treeRow('grid'), 0.5, 0.1));
+  const section = rootOf('canvas').children.lines as PrefGroup;
   expect(Object.keys(section.children)).toEqual(['snap', 'grid']);
   expect((section.children.snap as PrefAlias).of).toBe('view.snap');
   expect(rootOf('settings')).toBe(DEMO_WORKSPACE.assets[0]!.root);
 });
 
-test('a read-only panel takes no drop, in its tree or in its preview', () => {
+/** Carry `from` over `to` and hold it there; what this returns lets go. */
+function hold(from: HTMLElement, to: Point): () => void {
+  const press = grip(from);
+  act(() => pointer('pointerdown', from, press));
+  for (let i = 1; i <= 8; i++) act(() => pointer('pointermove', document, { x: press.x + ((to.x - press.x) * i) / 8, y: press.y + ((to.y - press.y) * i) / 8 }));
+  act(() => pointer('pointermove', document, to));
+  return () => act(() => pointer('pointerup', document, to));
+}
+/** The rows the preview draws, in order, with `held` where the form draws the dragged one: where it would land, or where it sits. */
+const drawn = () => [...preview().querySelectorAll('[data-pref-path], [data-drop-placeholder]')].map((el) => el.getAttribute('data-pref-path') ?? 'held');
+const dragTool = (name: string) => within(screen.getByRole('group', { name: 'Drag to add' })).getByRole('button', { name });
+
+test('a read-only panel marks no place to drop, in its tree or in its preview, and takes nothing let go there', () => {
   render(<Live />);
   fireEvent.click(option('Export'));
-  drag(treeRow('scale'), pointIn(treeRow('format'), 0.5, 0.1));
-  drag(treeRow('scale'), pointIn(within(preview()).getByText('Format'), 0.5, 0.1));
-  drag(within(preview()).getByText('Scale'), pointIn(within(preview()).getByText('Format'), 0.5, 0.1));
-  drag(within(screen.getByRole('group', { name: 'Drag to add' })).getByRole('button', { name: 'Separator' }), pointIn(treeRow('format'), 0.5, 0.9));
+  const rows = drawn();
+  let release = hold(treeRow('scale'), pointIn(treeRow('format'), 0.5, 0.1));
+  expect(structure().querySelector('[data-drop]')).toBeNull();
+  release();
+  release = hold(treeRow('scale'), pointIn(within(preview()).getByText('Format'), 0.5, 0.1));
+  // Held over the row above it, the dragged row is drawn where it sits and not where it was carried.
+  expect(drawn()).toEqual(rows.map((path) => (path === 'scale' ? 'held' : path)));
+  release();
+  release = hold(within(preview()).getByText('Scale'), pointIn(within(preview()).getByText('Format'), 0.5, 0.1));
+  expect(drawn()).toEqual(rows.map((path) => (path === 'scale' ? 'held' : path)));
+  expect(structure().querySelector('[data-drop]')).toBeNull();
+  release();
+  expect(dragTool('Separator')).toBeDisabled();
   expect(latest).toBe(DEMO_WORKSPACE);
   // Where its pointer points is shown, and takes no press.
-  fireEvent.click(within(structure()).getByText('format'));
+  fireEvent.click(within(structure()).getByText('(format)'));
   const attributes = screen.getByRole('region', { name: 'Attributes' });
   const of = within(attributes).getByRole('button', { name: /Format \(export\.format\)/ });
   expect(of.matches(':disabled')).toBe(true);
   const at = pointIn(of, 0.5);
   expect(attributes.querySelector('fieldset')!.contains(document.elementFromPoint(at.x, at.y))).toBe(false);
-  // The same drag in a panel that takes edits lands.
+});
+
+test('the same drags over a panel that takes edits mark where they would land, and land', () => {
+  render(<Live />);
   fireEvent.click(option('Canvas'));
-  drag(treeRow('snap'), pointIn(treeRow('zoomStep'), 0.5, 0.1));
-  expect(Object.keys(rootOf('canvas').children)).toEqual(['snap', 'zoomStep', 'grid']);
+  let release = hold(treeRow('snap'), pointIn(treeRow('zoomStep'), 0.5, 0.1));
+  expect(structure().querySelector('[data-drop]')).not.toBeNull();
+  release();
+  expect(Object.keys(rootOf('canvas').children)).toEqual(['snap', 'zoomStep', 'lines']);
+  const rows = drawn();
+  release = hold(treeRow('zoomStep'), pointIn(within(preview()).getByText('Snap'), 0.5, 0.1));
+  expect(rows.indexOf('zoomStep')).toBe(1);
+  expect(drawn().indexOf('held')).toBe(0);
+  release();
+  expect(Object.keys(rootOf('canvas').children)).toEqual(['zoomStep', 'snap', 'lines']);
 });

@@ -32,7 +32,7 @@ export const DEMO_WORKSPACE: Workspace = {
     { id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS },
     {
       id: 'canvas', label: 'Canvas', kind: 'layout', over: 'settings',
-      root: { name: 'Canvas', children: { zoomStep: pointer('view.zoomStep'), grid: { name: 'Grid', as: 'section', children: { grid: pointer('view.grid'), snap: pointer('view.snap') } } } },
+      root: { name: 'Canvas', children: { zoomStep: pointer('view.zoomStep'), lines: { name: 'Grid', as: 'section', children: { grid: pointer('view.grid'), snap: pointer('view.snap') } } } },
     },
     {
       id: 'export', label: 'Export', kind: 'layout', over: 'settings', readOnly: true,
