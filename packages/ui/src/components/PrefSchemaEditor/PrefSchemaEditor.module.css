@@ -62,6 +62,8 @@
 /* The dialog at a width the reader drags, to see the form at the sizes an app might give it. */
 .previewStage { flex: 1; min-height: 0; display: flex; }
 .previewDialog { flex: 0 1 var(--preview-w); min-width: 0; min-height: 0; }
+/* A host's own drawing of the asset, at whatever size it takes. */
+.previewHosted { flex: 1; min-height: 0; overflow: auto; padding: var(--wzl-space-3); }
 .previewPanel { flex: 1; min-height: 0; overflow: auto; max-inline-size: 420px; }
 /* A bar is as wide or as tall as what it holds, so the stage leaves it at its own size in the corner. */
 .previewBar { flex: 1; min-height: 0; overflow: auto; }

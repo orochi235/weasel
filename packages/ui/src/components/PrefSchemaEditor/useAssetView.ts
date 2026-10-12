@@ -26,11 +26,11 @@ export interface AssetView {
 }
 
 /**
- * The view of `workspace`, starting on its first asset. `opened` is the draft the editor mounts on, when it found
+ * The view of `workspace`, starting on the asset `startOn` names, or on its first. `opened` is the draft the editor mounts on, when it found
  * one, and `draftKey` the name each asset's folded rows are kept beside; with none they are kept while the editor is up.
  */
-export function useAssetView(workspace: Workspace, opened: Workspace | undefined, draftKey: string | undefined): AssetView {
-  const [assetId, setAssetId] = useState(workspace.assets[0]!.id);
+export function useAssetView(workspace: Workspace, opened: Workspace | undefined, draftKey: string | undefined, startOn?: string): AssetView {
+  const [assetId, setAssetId] = useState((startOn !== undefined && assetOf(workspace, startOn)?.id) || workspace.assets[0]!.id);
   const asset = assetOf(workspace, assetId) ?? workspace.assets[0]!;
   const schema = asset.root;
   // Every row starts open but the ones the reader folded last time.

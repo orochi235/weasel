@@ -23,6 +23,23 @@ export interface LayoutAsset extends AssetBase {
 /** One thing the editor edits: a dialog, or a layout over one. */
 export type Asset = SchemaAsset | LayoutAsset;
 
+/** What the asset list files an asset under. */
+export type AssetHeading = 'Dialogs' | 'Panels' | 'Toolbars';
+
+/** Where the list files `asset`: a dialog, a layout whose root is drawn as a bar, or any other layout. */
+export function headingOf(asset: Asset): AssetHeading {
+  if (asset.kind === 'schema') return 'Dialogs';
+  return 'as' in asset.root && asset.root.as === 'bar' ? 'Toolbars' : 'Panels';
+}
+
+/** An asset some other editor holds, listed beside this one's to be picked. The host shows it, in whatever holds it. */
+export interface ListedAsset {
+  id: string;
+  label: string;
+  under: AssetHeading;
+  readOnly?: boolean;
+}
+
 /** Everything one editor holds: its dialogs, and the layouts that point into them. The set is the host's, and fixed. */
 export interface Workspace {
   readonly assets: readonly Asset[];
