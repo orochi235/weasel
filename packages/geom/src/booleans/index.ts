@@ -5,7 +5,7 @@
  */
 export {
   pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide, pathCrop,
-  pathDividePieces, pathCropPieces, type BooleanPiece,
+  pathDividePieces, pathCropPieces, pathTrim, pathMerge, type BooleanPiece,
 } from './ops';
 export { trianglesToPath } from './trianglesToPath';
 export { pathToMultiPolygon, multiPolygonToPath } from './adapter';

@@ -120,6 +120,48 @@ export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
   return out;
 }
 
+/**
+ * Remove from each path what the paths after it cover (Illustrator "Trim"):
+ * given back to front, every piece is the part of its input left showing.
+ * One piece per input in input order, less the inputs wholly hidden.
+ */
+export function pathTrim(...paths: Path[]): BooleanPiece[] {
+  const mps = paths.map((p) => pathToMultiPolygon(p));
+  const out: BooleanPiece[] = [];
+  // Front to back, so the cover over each input is built once.
+  let cover: (typeof mps)[number] | null = null;
+  for (let i = mps.length - 1; i >= 0; i--) {
+    const shown = cover ? polygonClipping.difference(mps[i], cover) : mps[i];
+    if (shown.length > 0) out.unshift({ path: multiPolygonToPath(shown), sources: [i] });
+    cover = cover ? polygonClipping.union(cover, mps[i]) : mps[i];
+  }
+  return out;
+}
+
+/**
+ * {@link pathTrim}, then unite the pieces of the inputs `keyOf` gives the same
+ * key (Illustrator "Merge", keyed by paint). Keys compare with `===`. A piece
+ * names every input left showing in it, and the pieces are ordered by their
+ * topmost one. Pieces that share a key and do not touch come back as one path
+ * of several contours.
+ */
+export function pathMerge(paths: readonly Path[], keyOf: (index: number) => unknown): BooleanPiece[] {
+  const groups = new Map<unknown, BooleanPiece[]>();
+  for (const piece of pathTrim(...paths)) {
+    const key = keyOf(piece.sources[0]!);
+    const group = groups.get(key);
+    if (group) group.push(piece);
+    else groups.set(key, [piece]);
+  }
+  const top = (p: BooleanPiece): number => p.sources[p.sources.length - 1]!;
+  return [...groups.values()]
+    .map((g): BooleanPiece => (g.length === 1 ? g[0]! : {
+      path: pathUnion(...g.map((p) => p.path)),
+      sources: g.map((p) => p.sources[0]!),
+    }))
+    .sort((a, b) => top(a) - top(b));
+}
+
 function popcount(n: number): number {
   let c = 0;
   while (n) { n &= n - 1; c++; }
