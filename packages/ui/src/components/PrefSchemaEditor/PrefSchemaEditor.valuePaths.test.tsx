@@ -51,6 +51,30 @@ describe('PrefSchemaEditor over a node property schema: one value path, one pref
     expect(latest).toBe(NODE);
   });
 
+  it('refuses a section key that names a pref, and a pref key that names a section', () => {
+    render(<Live />);
+    fireEvent.click(row('layout'));
+    const key = attributes().getByRole('textbox', { name: 'Key' });
+    fireEvent.change(key, { target: { value: 'opacity' } });
+    fireEvent.blur(key);
+    expect(screen.getByRole('region', { name: 'Attributes' })).toHaveTextContent('"opacity" is taken here.');
+    fireEvent.click(row('opacity'));
+    const leafKey = attributes().getByRole('textbox', { name: 'Key' });
+    fireEvent.change(leafKey, { target: { value: 'layout' } });
+    fireEvent.blur(leafKey);
+    expect(screen.getByRole('region', { name: 'Attributes' })).toHaveTextContent('"layout" is taken here.');
+    expect(latest).toBe(NODE);
+  });
+
+  it('marks the section and the pref of a schema that came naming both alike', () => {
+    const shared: PrefSection = { ...NODE, members: { ...NODE.members, opacity: { name: 'Opacity', members: { 'pose.y': num('Y') } } } };
+    render(<Live start={shared} />);
+    const rows = treeRows('opacity');
+    expect(rows).toHaveLength(2);
+    for (const r of rows) expect(r.firstElementChild).toHaveTextContent('key taken');
+    expect(within(structure()).getByText('(look)').closest('[data-tree-id]')!.firstElementChild).not.toHaveTextContent('key taken');
+  });
+
   it('marks both rows of a schema that came holding one value path twice, and no other row', () => {
     const twice: PrefSection = { ...NODE, members: { ...NODE.members, look: { name: 'Look', members: { 'pose.x': num('X again') } } } };
     render(<Live start={twice} />);

@@ -65,9 +65,8 @@ export function objectFieldRows(
   marks: PanelMarks,
   leafHidden: boolean,
 ): ReactNode[] {
-  // A row several fields share stands for no one of them.
-  const attrs = (entry: ObjectRow) =>
-    cells.filter((cell) => cell.pair !== undefined && cell.pair.key === entry.pair).length > 1 ? {} : selectionAttrs(entry.key, marks, true);
+  // A row several fields share is drawn for its first.
+  const attrs = (entry: ObjectRow) => selectionAttrs(entry.key, marks, true);
   // The leaf's own mark covers its fields; a row hidden on its own carries one.
   const marked = (entry: ObjectRow): boolean => entry.hidden && !leafHidden;
   return pairedRows(renderCells(cells, renderers)).map((entry) =>
