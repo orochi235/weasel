@@ -402,7 +402,7 @@
     "longestFunction": 296
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {
-    "longestFunction": 168
+    "longestFunction": 167
   },
   "packages/ui/src/components/ItemList/ItemList.tsx": {
     "longestFunction": 229

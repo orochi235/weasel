@@ -1429,15 +1429,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   mid-edit; whether a pointer drag cut short by an unmount should commit or cancel is the call. To
   cancel, the overlay has to learn a drag is live before the parent's cleanup runs.
 
-- **(P2) DataGrid: rows can be reordered by pointer only, and the handler sits on the `<td>`.** With
-  `onReorder`, the handle in `packages/ui/src/components/DataGrid/DataGrid.tsx` is a `<td>` holding
-  an `aria-hidden` glyph with `onPointerDown` on the cell: not focusable, and no key moves a row.
-  `useReorderDragList` already returns `nudge`, which `LayerList` and `ItemList` bind to
-  Alt+ArrowUp/Down. The fix is a `<button>` filling the cell that takes the pointer handler and an
-  Alt+Arrow `onKeyDown` calling `drag.nudge`; it needs a name for each row (rows carry no label, so
-  a column or a `rowLabel` prop has to supply one) and a button style that fits the 14px handle
-  column, checked in a browser.
-
 - **(P3) Callout: re-anchoring dispatches a fake `resize` on `window`.** A callout tracking a scene
   node through a pan dispatches `new Event('resize')` on every `anchorRect` change
   (`packages/ui/src/components/Callout/Callout.tsx`), so every resize listener on the page runs once
