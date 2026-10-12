@@ -48,6 +48,17 @@ describe('AssetEditor on a layout', () => {
     expect(within(attributes()).getByRole('textbox', { name: 'Key' })).toBeInTheDocument();
   });
 
+  it('asks the host for a pointer\'s mark by the setting it names, and for no other row of a layout', () => {
+    const asked: string[] = [];
+    const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: { name: 'Code', children: { shown: pointer('view.grid'), rows: { name: 'Rows', as: 'section', children: { snap: pointer('view.snap') } } } } }] };
+    render(<Live start={start} rowMark={(path) => { asked.push(path); return <span>mark of {path}</span>; }} />);
+    asked.length = 0;
+    fireEvent.click(asset('Code'));
+    expect(within(row('shown')).getByText('mark of view.grid')).toBeInTheDocument();
+    expect(within(row('snap')).getByText('mark of view.snap')).toBeInTheDocument();
+    expect(new Set(asked)).toEqual(new Set(['view.grid', 'view.snap']));
+  });
+
   it('marks a pointer that names no setting in its dialog', () => {
     render(<Live start={WITH_LOCKED} />);
     fireEvent.click(asset('Layout'));
