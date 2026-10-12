@@ -27,11 +27,12 @@ Priority tags:
   not chosen yet. That leaves choosing it, then renaming the one path, its imports, and the section
   of the taxonomy.
 
-- **(P3) apps/draw enters most modes by double-click only.** Path-edit's `Enter` is bound
-  (`apps/draw/src/modality/shortcuts.ts`); the other modes with an `entry` shortcut, free-transform
-  and crop, are not, since nothing says what target each would take from the selection. Draw also
-  still enters every mode from `SceneCanvas`'s `onDoubleClick` observer rather than from
-  `entry.trigger`, which nothing reads.
+- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit, isolation, and text-edit
+  from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
+  (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
+  definitions declare. Binding it means a double-click entry beside the kit's own `enterPathEdit`
+  binding, so it is the same work as "draw: two owners for which mode the editor is in".
+
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
   (a) drag-over feedback. A canvas now accepts a drag only when a `drop` binding would take what
@@ -541,13 +542,6 @@ intercepting the press that drags the body.
   those still ride on the scene's pushed invalidation on `kit:setData` and
   `kit:setLayer`. Widening the pull to those means deciding what a derivation
   is allowed to read, not just how a pose is compared.
-
-- **(P3) `ForceGraphDemo` is a second force-graph pipeline.** It runs d3-force through
-  `useSimulation` and paints with its own render layer, beside `@weasel-js/diagram`'s `force` layout
-  and `DiagramView`. `force.ts` reserves that route for graphs too big for a scene node per edge,
-  but the demo has 24 nodes. Ruled 2026-10-11: it stays as its own example, of the simulation loop,
-  and is not rebuilt on `DiagramView`. That leaves a graph large enough to show why the route
-  exists, and a registry blurb that names the bypass.
 
 ### `useScene` follow-ups
 
@@ -1432,33 +1426,24 @@ only story runner in the repo.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
 - **(P2) draw: Open adds the file to the current document instead of replacing it, and keeps the old
-  filename.** Open an SVG into a non-empty document and both sets of shapes are on the page; the
-  undo entry is labeled "Import SVG" while the button says "Open". The filename stays the previous
-  document's (`parsedToDoc` returns `title`, `pickSvgFile` drops `file.name`, and `onOpenSvg` in
-  `apps/draw/src/App.tsx` reads neither), so the next Save downloads under the wrong name. Paper
-  size and background are already taken from the file, which only makes sense for a replace.
-  Options: Open replaces (clear the scene in the same batch, take the filename from the picked file,
-  reset the background to white when the file names none) and a separate Import appends; or the
-  button is renamed Import and stops adopting the file's paper size and background.
+  filename.** The replace is built and tested and not yet called: `openSvgText` in
+  `apps/draw/src/openSvg.ts` clears the scene and adds the file's nodes in one "Open" undo entry,
+  and returns the picked file's name, its paper size, and its background (white when it names
+  none); `pickSvgFileNamed` in `svgInterop.ts` returns the name beside the text. What is left is the
+  call: `onOpenSvg` in `apps/draw/src/Toolbar.tsx` still holds the appending loop under "Import SVG",
+  and `Toolbar` has no `setFilename` prop to give the name to. With that wired, `pickSvgFile` has no
+  caller and goes. A separate Import that appends is not built.
 
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
   selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the
   result in `animateOnSetPose` and `animateLifecycle` through two `as never` casts, hands that to
   `useSelectTool` / `useTools`, and then calls `adapter.setPose` / `adapter.insertNode` from button
-  handlers, so those writes skip the op pipeline and undo. It also re-renders React once per
-  animator tick (`bumpTick`) to repaint per-card scale and alpha. `<SceneCanvas>` should take the
+  handlers, so those writes skip the op pipeline and undo. `<SceneCanvas>` should take the
   wrappers itself (an `animate={{ setPose, lifecycle }}` option, or a `SurfaceContribution` that
-  wraps the adapter the canvas already builds), so the demo keeps `features={['pick', 'move']}`, its
-  buttons call `scene.setPose` / `scene.add`, and per-node effects repaint through `redrawOn` /
-  `requestRedraw`.
-
-- **(P2) draw: the input recorder is reachable from nothing.** `recorder.ts`, `recordingIO.ts`, and
-  `replay.ts` are complete and tested, and no control starts a recording or plays one. Wiring them
-  needs a `Recorder` on the canvas's pointer and keyboard surface, which wants a
-  `SurfaceContribution` with `attach` rather than a capture-phase listener in the app. The command
-  bar's Record button, profile select, and Play button went with the no-op handlers behind them;
-  `git log -S'Record input' -- apps/draw/src/CommandBar.tsx` has them.
+  wraps the adapter the canvas already builds), so the demo keeps `features={['pick', 'move']}` and
+  its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
+  canvas's adapter, so the seat has to say where a scene-level write gets animated.
 
 - **(P3) draw: no toast host and no first-run notice.** Save failures and SVG import warnings go
   to `console.warn` (`onWarn` in `apps/draw/src/App.tsx`) where a toast should carry them. The
@@ -1477,33 +1462,20 @@ only story runner in the repo.
   `setEditingId`, or the kit's edit state drives the mode registry and the machine keeps only
   journals.
 
-- **(P3) `apps/site/demos/RotatedResizeMathDemo.tsx` is 713 lines holding two jobs.** The four-panel
-  ledger chrome and the resize math variants are separable. draw's `App.tsx` had the same shape and
-  is split by job now; what is left in it is `EditorWithSharedScene`, one 500-line component.
+- **(P3) draw: `EditorWithSharedScene` in `apps/draw/src/App.tsx` is one 500-line component.** The
+  file is split by job; this component is what is left to split.
 
-- **(P3) draw: dead surface left in the tree.** `modality/backgroundClickPolicy.ts` has no caller
-  outside its test, and a TODO in `App.tsx` says it waits on a hook into the dispatcher for
-  background clicks outside normal mode. `PreferencesModal`'s `registryEnumSources` prop is never
-  passed, so the one `registry-enum` pref (`LAST_TOOL` in `prefs.ts`, source `tools`) renders as
-  free text through `RegistrySelect`'s fallback; a `tools` resolver needs the tool list, which the
-  canvas holds and `App.tsx` does not.
+- **(P3) draw: four preferences change nothing.** `view.gridVisible`, `view.snapToGrid`, and
+  `view.gridDensity` are in the Preferences dialog, and the grid reads none of them: `App.tsx` holds
+  `gridVisible` and `snapToGrid` in `useState(false)` and draws at a constant `GRID_SPACING` of 20,
+  where the prefs default to shown and 72. `drawing.pathFillRule` has no reader either. Wiring them
+  changes what a first run looks like (grid on, at 72), so the defaults are a call to make first;
+  not done in the 2026-10-12 pass because the grid state sits in the `appCommands` block another
+  branch was rewriting.
 
-- **(P3) draw: paper sizes and "no paint" are each defined more than once.** Paper sizes:
-  `PaperSizeKey` (`CommandBar.tsx`), `WeaselDrawPaperSize` (`svgInterop.ts`), `PAPER_PRESETS`
-  (`docPersistence.ts`), and two label lists that disagree: the New menu says "US Letter"
-  (`PAPER_ITEMS`), the document properties say "Letter" (`PAPER_SIZE_OPTIONS`). One table of `{ key,
-  label, width, height }` should feed all four; which label wins is a wording call. No paint: `{
-  kind: 'none' }` in the color context's `ActivePaint`, `null` in node data, with `toFillStyle` in
-  `ActiveSwatches.tsx` translating; `ActivePaint` could be `FillStyle | null` and the translation
-  would go.
-
-- **(P3) CustomShaderDemo: every frame re-renders React to move one uniform.**
-  `apps/site/demos/CustomShaderDemo.tsx` calls `setTime` from its `useVisibleRaf` loop, rebuilding
-  three uniform objects and re-rendering three `<SceneCanvas>` trees for a number only the shader
-  reads (a test pins this at one commit per frame, down from more). The demo should keep `time` in a
-  ref and ask for a repaint, which needs `<SceneCanvas>` to expose `requestRedraw` (or accept a
-  `redrawOn` source) to a custom layer's owner without the demo reaching for the canvas ref in three
-  places; a `useFrameUniforms(ref)` helper on the shader layer would absorb it.
+- **(P3) draw: "no paint" is defined more than once.** `{ kind: 'none' }` in the color context's
+  `ActivePaint`, `null` in node data, with `toFillStyle` in `ActiveSwatches.tsx` translating;
+  `ActivePaint` could be `FillStyle | null` and the translation would go.
 
 ---
 

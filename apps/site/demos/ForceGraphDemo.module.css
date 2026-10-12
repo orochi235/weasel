@@ -1,4 +1,34 @@
-.zoom {
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.hint {
+  color: #888;
+}
+
+/* Last in the row and pushed to its end, so the zoom changing width moves nothing. */
+.readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: #555;
+  margin-inline-start: auto;
+  text-align: end;
+}
+
+.canvas {
+  display: inline-block;
 }

@@ -17,7 +17,6 @@ import {
   type LayerListItem,
   PropertyField,
   PropertyList,
-  type PropertyOption,
   SelectionPanel,
   SidebarPanel,
   SwatchStrip,
@@ -29,7 +28,7 @@ import {
   Suspense
 } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
-import type { PaperSizeKey } from './CommandBar';
+import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 import { DEFAULT_FILENAME } from './docPersistence';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { WD_RENDERERS } from './paintRenderers';
@@ -83,12 +82,6 @@ export function paintChipColor(fill: FillStyle): string | undefined {
   if (fill.fill === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;
   return undefined;
 }
-
-export const PAPER_SIZE_OPTIONS: ReadonlyArray<PropertyOption<PaperSizeKey>> = [
-  { value: 'letter', label: 'Letter' },
-  { value: 'a4', label: 'A4' },
-  { value: 'legal', label: 'Legal' },
-];
 
 /** The `#rrggbb` a native color input accepts; non-hex colors fall back to black. */
 export function opaqueHex(color: string): string {
@@ -184,7 +177,7 @@ export function RightSidebar({
                 kind="enum"
                 label="Paper"
                 value={paperSize}
-                options={PAPER_SIZE_OPTIONS}
+                options={PAPER_OPTIONS}
                 onChange={setPaperSize}
               />
               <PropertyField

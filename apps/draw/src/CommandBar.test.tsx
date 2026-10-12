@@ -35,11 +35,4 @@ describe('CommandBar', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Bundle Inspector' }));
     expect(open).toHaveBeenCalledWith(expect.stringMatching(/#\/dev\/registry$/), '_blank', 'noopener');
   });
-
-  it('offers no control for recording or replay, which nothing drives yet', () => {
-    render(<CommandBar {...props()} />);
-    for (const name of [/Record input/, /Recording profile/, /Play recording/]) {
-      expect(screen.queryByRole('button', { name })).toBeNull();
-    }
-  });
 });

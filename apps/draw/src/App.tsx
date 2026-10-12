@@ -78,6 +78,7 @@ import { PreferencesModal } from './PreferencesModal';
 import { type AppCommands, appCommandsContribution } from './appCommands';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { loadDoc, PAPER_PRESETS, saveDoc } from './docPersistence';
+import { showFirstRunNotice } from './firstRunNotice';
 import { disableMachineFontOutlines, enableMachineFontOutlines } from './fonts';
 import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
@@ -86,11 +87,14 @@ import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { clipboardJsonReviver, serializeReplacer } from './persistence';
 import { PREFS, usePref } from './prefs';
+import { useRecording } from './recording/useRecording';
 import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 import { writeSession } from './sessionStore';
 import { colorContribution, useColorContext } from './tools/colorContext';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { TextEditDepPublisher } from './TextEditDepPublisher';
+import { toolEnumSources } from './registry/toolEnumSource';
+import { useLastTool } from './useLastTool';
 
 // Bounds for the sidebar drag come from the pref that stores the result, so
 // the handle and the Preferences number field can't drift apart. app.css
@@ -250,6 +254,8 @@ function EditorWithSharedScene({
   modality: ReturnType<typeof useModality>;
 }): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  useLastTool(tools);
+  const prefSources = useMemo(() => toolEnumSources(tools), [tools]);
   const actionsReg = useActionsRegistry();
   const colors = useColorContext();
   // On-canvas gradient handles edit one node's one paint; which paint is the
@@ -262,6 +268,7 @@ function EditorWithSharedScene({
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => showFirstRunNotice(), []);
 
   // Right-sidebar width. The pref is the durable value; `dragWidth` shadows it
   // for the duration of a drag so a pointer-rate stream of samples doesn't
@@ -342,25 +349,18 @@ function EditorWithSharedScene({
       return (scene.get(id)?.data as { path?: unknown } | undefined)?.path != null ? id : null;
     },
     startPathEdit: (): void => { actionsReg?.trigger('enterPathEdit'); },
+    selection: (): readonly string[] => selection.get(),
   });
   const modalityKeys = useMemo(() => modalityShortcuts(modality.machine, {
     pathToEdit: () => pathEditEntry.current.pathToEdit(),
     startPathEdit: () => pathEditEntry.current.startPathEdit(),
+    selection: () => pathEditEntry.current.selection(),
   }), [modality.machine, pathEditEntry]);
 
   // ── Modality SceneCanvas callbacks ────────────────────────────────────────
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
-
-  // TODO(modality): wire non-normal-mode background-click composition
-  // (text-edit commit, isolation scoped-clear) through `handleBackgroundClick`
-  // from `./modality` once we have a non-leaky hook into the dispatcher.
-  // SceneCanvas's `onBackgroundClick` prop is intentionally omitted because
-  // it would race with the gesture-dispatcher channel (marquee, lasso). For
-  // normal mode the select tool's `clearSelection` action already handles
-  // background clicks; soft modes exit via Esc and strict modes via the
-  // breadcrumb's commit/cancel buttons in the interim.
 
   const paper = PAPER_PRESETS[paperSize];
 
@@ -445,9 +445,10 @@ function EditorWithSharedScene({
   };
   const appCommandsRef = useLatest(appCommands);
   const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
+  const recordingKeys = useRecording({ scene, view: () => view, setView });
   const ambient = useMemo(
-    () => [hudTool, modalityKeys, colorKeys, appKeys],
-    [hudTool, modalityKeys, colorKeys, appKeys],
+    () => [hudTool, modalityKeys, colorKeys, appKeys, recordingKeys],
+    [hudTool, modalityKeys, colorKeys, appKeys, recordingKeys],
   );
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
@@ -575,7 +576,7 @@ function EditorWithSharedScene({
         setBackgroundColor={setBackgroundColor}
         onClearJournalCache={() => modality.machine.clearJournalCache()}
       />
-      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {/* Permanently reserved, never mounted on demand: the canvas is sized
           to the workspace, so appearing mid-edit would resize it under the

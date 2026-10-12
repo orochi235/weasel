@@ -1,7 +1,8 @@
 /** Input recorder for WeaselDraw.
  *
- *  Captures pointer / wheel / keyboard events on `document` in the capture
- *  phase so we see them before any app handler can stopPropagation. Each
+ *  Captures pointer and wheel events on the surface it is given (or on
+ *  `document`), and keyboard events on `document`, in the capture phase so
+ *  we see them before any app handler can stopPropagation. Each
  *  event is reduced to a serializable `RecordedEvent` carrying just the
  *  fields the replay path needs to synthesize an equivalent native event.
  *
@@ -14,33 +15,20 @@
  *  before firing the first event.
  */
 
-import type { SerializedHistory } from '@weasel-js/history';
-import type { Obj } from './svgObj';
-
-/** Per-document metadata bundled into a recording's baseline snapshot. */
-export interface Document {
-  size: { width: number; height: number };
-}
-
 export interface View {
   x: number;
   y: number;
   scale: { x: number; y: number };
 }
 
-/** Self-contained baseline scene captured at `start()` time so replay can
- *  restore the scene before firing the first recorded event. (Formerly lived
- *  in the now-removed IndexedDB `sceneStore`; the recorder is its sole
- *  consumer.) */
+/** Self-contained baseline captured at `start()` time so replay can restore
+ *  the scene and the camera before firing the first recorded event. */
 export interface SceneSnapshot {
-  version: 1;
-  items: Obj[];
-  doc: Document;
+  version: 2;
+  /** The scene as `scene.toJSON()` gives it, already through the JSON
+   *  replacer that persistence uses, so it survives `JSON.stringify`. */
+  scene: unknown;
   view: View;
-  /** Optional — older snapshots predate selection persistence. */
-  selection?: string[];
-  /** Optional — older snapshots predate history persistence. */
-  history?: SerializedHistory;
 }
 
 /** Controls how aggressively the recorder samples pointermove. Other event
@@ -162,7 +150,12 @@ const POINTER_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel
 const KEY_TYPES = ['keydown', 'keyup'] as const;
 
 export function createRecorder(opts: {
-  canvas: () => HTMLCanvasElement | null;
+  canvas: () => Element | null;
+  /** Where pointer and wheel input is heard. Defaults to `document`; given the
+   *  canvas, a press on the app's own chrome is not part of the recording. */
+  surface?: () => EventTarget | null;
+  /** A key the host handles itself, such as the one that stops the recording. */
+  skipKey?: (e: KeyboardEvent) => boolean;
   /** Monotonic millisecond clock; defaults to `performance.now`. Injecting one
    *  lets tests drive the pointermove throttle without racing wall time. */
   clock?: () => number;
@@ -186,6 +179,7 @@ export function createRecorder(opts: {
   // Per-listener function references so removal pairs precisely with addition.
   // Each handler is bound once at `start()` and torn down at `stop()`.
   let listeners: Array<{
+    on: EventTarget;
     type: RecordedEvent['type'];
     fn: (e: Event) => void;
   }> = [];
@@ -276,6 +270,7 @@ export function createRecorder(opts: {
   const handleKey = (type: 'keydown' | 'keyup') => (e: Event): void => {
     if (!active) return;
     const ke = e as KeyboardEvent;
+    if (opts.skipKey?.(ke)) return;
     events.push({
       type,
       t: now(),
@@ -307,12 +302,13 @@ export function createRecorder(opts: {
 
       // Build & attach listeners. Capture phase + non-passive so we see
       // events before app handlers, including ones that might preventDefault.
+      const surface = opts.surface?.() ?? document;
       listeners = [];
-      for (const t of POINTER_TYPES) listeners.push({ type: t, fn: handlePointer(t) });
-      listeners.push({ type: 'wheel', fn: handleWheel });
-      for (const t of KEY_TYPES) listeners.push({ type: t, fn: handleKey(t) });
-      for (const { type, fn } of listeners) {
-        document.addEventListener(type, fn, { capture: true, passive: false });
+      for (const t of POINTER_TYPES) listeners.push({ on: surface, type: t, fn: handlePointer(t) });
+      listeners.push({ on: surface, type: 'wheel', fn: handleWheel });
+      for (const t of KEY_TYPES) listeners.push({ on: document, type: t, fn: handleKey(t) });
+      for (const { on, type, fn } of listeners) {
+        on.addEventListener(type, fn, { capture: true, passive: false });
       }
     },
     stop() {
@@ -326,8 +322,8 @@ export function createRecorder(opts: {
           events: [],
         };
       }
-      for (const { type, fn } of listeners) {
-        document.removeEventListener(type, fn, { capture: true } as EventListenerOptions);
+      for (const { on, type, fn } of listeners) {
+        on.removeEventListener(type, fn, { capture: true } as EventListenerOptions);
       }
       listeners = [];
       active = false;
