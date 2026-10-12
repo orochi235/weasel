@@ -45,21 +45,29 @@ function sharedRows(rows: readonly PanelRow[], out = new Map<string, string>()):
   return out;
 }
 
+/** Whether a panel draws `section` under a heading of its own. */
+export const sectionHeaded = (section: PanelSection): boolean =>
+  section.name !== '' && section.as !== 'tab' && section.as !== 'fragment' && section.as !== 'bar';
+
+/** Whether `selected` can name `section` by its key: it draws a heading, a tab, or a panel to carry the mark. */
+export const sectionNamed = (section: PanelSection): boolean =>
+  section.key !== '' && (section.as === 'tab' || section.as === 'panel' || sectionHeaded(section));
+
 /**
  * What a panel of `sections` marks for `selected`, as the paths its elements carry: a row for a leaf, the one row
- * a pair's leaves share for any of them, and a top-level section for its own key. A path it draws nothing for is
- * left out, a section nested in another among them.
+ * a pair's leaves share for any of them, and a section {@link sectionNamed} holds for its own key. A path it
+ * draws nothing for is left out, a section nested in another among them.
  */
 export function panelMarkedPaths(sections: readonly PanelSection[], selected: readonly string[]): string[] {
   const rows = sections.flatMap((section) => section.rows);
   const drawn = rows.flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const));
   // A bar draws a cell a leaf, and no row for a pair to share.
   const shared = sharedRows(sections.filter((section) => section.as !== 'bar').flatMap((section) => section.rows));
-  const keys = new Set(sections.map((section) => section.key));
+  const keys = new Set(sections.filter(sectionNamed).map((section) => section.key));
   const out = selected.flatMap((path) => {
     const at = panelShownPath(drawn, path);
     if (at !== null) return [shared.get(at) ?? at];
-    return path !== '' && keys.has(path) ? [path] : [];
+    return keys.has(path) ? [path] : [];
   });
   return [...new Set(out)];
 }

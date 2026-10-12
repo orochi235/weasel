@@ -34,6 +34,8 @@ const SCHEMA: PrefSection = {
     look: { name: 'Look', as: 'panel', members: { 'data.tint': text('Tint'), 'data.stroke': STROKE } },
     one: { name: 'One', as: 'tab', members: { 'data.a': text('Alpha') } },
     two: { name: 'Two', as: 'tab', members: { 'data.b': text('Beta') } },
+    loose: { name: 'Loose', as: 'fragment', members: { 'data.l': text('Lambda') } },
+    tools: { name: 'Tools', as: 'bar', members: { 'data.c': text('Gamma') } },
   },
 };
 
@@ -122,6 +124,13 @@ describe('a section', () => {
     const { marked } = panel(['inner']);
     expect(marked()).toEqual([]);
     expect(screen.getByText('Deep')).toBeInTheDocument();
+  });
+
+  it('marks nothing for a top-level section that draws no heading, tab, or panel: a fragment, or a bar', () => {
+    const { marked, container } = panel(['loose', 'tools']);
+    expect(marked()).toEqual([]);
+    expect(container.querySelector('[data-pref-path="loose"], [data-pref-path="tools"]')).toBeNull();
+    expect(container.querySelector('[data-pref-path="place"]')).not.toBeNull();
   });
 
   it('reports its key for a press on its heading or its panel title', () => {

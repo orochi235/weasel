@@ -10,7 +10,7 @@ import { pathWithin, RAIL_ATTR, selectionAttrs } from '../Prefs/selection';
 import type { RenderedCell } from './cells';
 import { panelLeafKey, type PanelRow, type PanelSection } from './model';
 import { rowCells, type PanelCellScope } from './panelCells';
-import { PanelTabs, type PanelMarks } from './selection';
+import { PanelTabs, sectionHeaded, sectionNamed, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
 /** A section with what it draws, before it is placed among its neighbors. */
@@ -93,7 +93,7 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
     .map((row) => ({ row, controls: rowCells(row, scope) }))
     .filter(({ controls }) => controls.length > 0);
   if (rows.length === 0) return [];
-  const headed = section.name !== '' && section.as !== 'tab' && section.as !== 'fragment';
+  const headed = sectionHeaded(section);
   // A section hidden whole carries one mark, on its heading; with no heading each of its rows does.
   const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden));
   const rowMarks: PanelMarks = whole ? { ...marks, hidden: undefined } : marks;
@@ -111,7 +111,7 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
   return [{ section, content, hidden: whole }];
 }
 
-/** The sections in order, each one its key names carrying it: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
+/** The sections in order, each one `selected` can name carrying its key: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
 function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode[] {
   const { lead } = marks;
   const out: ReactNode[] = [];
@@ -120,7 +120,8 @@ function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode
     if (section.as !== 'tab') {
       const cls = section.as === 'panel' ? `${s.section} ${s.sectionPanel}` : s.section;
       out.push(
-        <section key={section.key} className={cls} {...selectionAttrs(section.key, selectedOnly(marks))} {...hiddenAttrs(sections[i]!.hidden === true)}>
+        <section key={section.key} className={cls} {...(sectionNamed(section) ? selectionAttrs(section.key, selectedOnly(marks)) : {})}
+          {...hiddenAttrs(sections[i]!.hidden === true)}>
           {content}
         </section>,
       );

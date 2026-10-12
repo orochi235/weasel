@@ -45,7 +45,8 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
   /**
    * What to mark: a leaf by its key in the schema (`data.fill`), a field of
    * an object leaf under its leaf's (`data.stroke.width`), and a top-level
-   * section by its own key. Leaves a `pair` draws in one row share its mark.
+   * section drawn under a heading, as a tab, or as a panel by its own key.
+   * Leaves a `pair` draws in one row share its mark.
    * Each time the last one changes the panel brings it into view, opening
    * the tab that holds it. A path the panel draws no row for marks the row
    * it lies inside, or nothing.
