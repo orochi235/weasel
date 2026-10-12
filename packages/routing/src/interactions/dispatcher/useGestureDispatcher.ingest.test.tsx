@@ -8,12 +8,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
-import type { Action } from '@weasel-js/routing';
-import { DepRegistryProvider } from '@weasel-js/routing/react';
-import { ActiveToolContextProvider } from '@weasel-js/routing/react';
-import { useGestureDispatcher } from '@weasel-js/routing/react';
-import type { IngestItem } from '@weasel-js/routing';
+import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
+import type { Action } from '../actions/action';
+import { DepRegistryProvider } from '../actions/depRegistry';
+import { ActiveToolContextProvider } from '../actions/activeToolContext';
+import { useGestureDispatcher } from './useGestureDispatcher';
+import type { IngestItem } from '@weasel-js/gestures';
 
 function Probe({ actionDef }: { actionDef: Action }) {
   const registry = useActionsRegistry();

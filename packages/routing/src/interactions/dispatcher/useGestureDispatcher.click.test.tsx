@@ -68,11 +68,6 @@ function mount(): { log: string[]; click: (x?: number) => void; remount: () => v
   return { log, click, remount: () => { rerender(tree(false)); } };
 }
 
-/** Both clocks: a double click has been timed by each. */
-const fakeClocks = (): void => {
-  vi.useFakeTimers({ toFake: ['Date', 'performance', 'setTimeout', 'clearTimeout'] });
-};
-
 describe('a press released in place', () => {
   it('clicks, and tells the click observer after the binding ran', () => {
     const { log, click } = mount();
@@ -95,28 +90,14 @@ describe('a press released in place', () => {
     expect(log.filter((l) => l === 'double')).toHaveLength(1);
   });
 
+  // The window itself is the recognizer's, and tested there; this is that the
+  // hook times it on a clock at all.
   it('does not double-click when the second click comes too late', () => {
-    fakeClocks();
+    vi.useFakeTimers({ toFake: ['performance'] });
     const { log, click } = mount();
     click();
     vi.advanceTimersByTime(600);
     click();
-    expect(log).not.toContain('double');
-  });
-
-  it('double-clicks just inside the window', () => {
-    fakeClocks();
-    const { log, click } = mount();
-    click();
-    vi.advanceTimersByTime(599);
-    click();
-    expect(log).toContain('double');
-  });
-
-  it('does not double-click when the second click lands too far away', () => {
-    const { log, click } = mount();
-    click(5);
-    click(13);
     expect(log).not.toContain('double');
   });
 
