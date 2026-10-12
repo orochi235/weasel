@@ -7,6 +7,7 @@
  * the `resizePolicy` dep, where the rest of its options already live.
  */
 import type { Op } from 'core/ops/types';
+import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Scene } from 'core/scene/types';
 import type { BehaviorEnd } from 'interactions/gestures/types';
 import { dropPreviewOverrides, type PreviewOverrideState } from './previewOverrides';
@@ -78,7 +79,10 @@ export function readGestureLifecycle(
 }
 
 /** Commit a gesture's ops: untracked when transient, else through the
- *  consumer `applyOps` hook when one is wired, else into the scene's history. */
+ *  consumer `applyOps` hook when one is wired, else into the scene's history.
+ *  Returns whether the commit landed: false when a container refused what
+ *  the ops brought it, which the scene reverts. A consumer's `applyOps` may
+ *  keep the document elsewhere, so it is taken at its word. */
 export function commitGestureOps(
   target: {
     scene: Scene<unknown, string, unknown>;
@@ -87,16 +91,23 @@ export function commitGestureOps(
   },
   lifecycle: GestureLifecycle,
   ops: Op[],
-): void {
+): boolean {
   if (lifecycle.transient) {
-    target.scene.untracked(() => {
-      for (const op of ops) op.apply(target.adapter);
-    });
-    return;
+    try {
+      target.scene.untracked(() => {
+        for (const op of ops) op.apply(target.adapter);
+      });
+    } catch (err) {
+      // `untracked` lets a refused arrival out; `applyBatch` swallows it.
+      if (!(err instanceof SceneArrivalRefused)) throw err;
+      return false;
+    }
+    return true;
   }
   const label = lifecycle.labelFor(ops);
-  if (target.applyOps) target.applyOps(ops, label);
-  else target.scene.applyBatch(ops, label, target.adapter);
+  if (!target.applyOps) return target.scene.applyBatch(ops, label, target.adapter);
+  target.applyOps(ops, label);
+  return true;
 }
 
 /** The trailing argument of {@link reduceBehaviorEnd}: what `TEnd` adds to

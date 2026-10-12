@@ -1,7 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createScene } from 'core/scene/scene';
+import { asNodeId } from 'core/scene/types';
+import { createReparentOp } from 'core/ops/reparent';
+import type { Op } from 'core/ops/types';
+import { moveGestureAdapter } from './move/gestureAdapter';
 import {
   closeGesture,
+  commitGestureOps,
   readGestureLifecycle,
   reduceBehaviorEnd,
   runBehaviorCancel,
@@ -21,6 +26,53 @@ describe('reduceBehaviorEnd', () => {
     ];
     reduceBehaviorEnd(behaviors, null, { tag: 'mine' });
     expect(seen).toEqual([{ tag: 'mine', answered: false }, { tag: 'mine', answered: true }]);
+  });
+});
+
+describe('commitGestureOps — whether the commit landed', () => {
+  type Pose = { x: number; y: number; width: number; height: number };
+  const POSE: Pose = { x: 0, y: 0, width: 10, height: 10 };
+
+  /** A loose leaf beside a container whose arrivals `arrive` decides. */
+  function target(arrive: 'takes' | 'refuses', applyOps?: (ops: Op[], label: string) => void) {
+    const scene = createScene<unknown, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+    scene.add({ kind: 'container', id: asNodeId('box'), layer: 'main', pose: POSE, data: null });
+    scene.add({ kind: 'leaf', id: asNodeId('loose'), layer: 'main', pose: POSE, data: null });
+    scene.setArrivalHandler(() => (arrive === 'refuses' ? null : new Map()));
+    return { scene, at: { scene: scene as never, applyOps, adapter: moveGestureAdapter(scene) } };
+  }
+  const into = (): Op[] => [createReparentOp({ id: 'loose', fromParentId: null, toParentId: 'box' })];
+  const recorded = () => readGestureLifecycle({}, 'Test');
+  const transient = () => readGestureLifecycle({ transient: true }, 'Test');
+
+  it('is true for a batch that lands, recorded or transient, and for an empty one', () => {
+    expect(commitGestureOps(target('takes').at, recorded(), into())).toBe(true);
+    expect(commitGestureOps(target('takes').at, transient(), into())).toBe(true);
+    expect(commitGestureOps(target('takes').at, recorded(), [])).toBe(true);
+  });
+
+  it('is false for a refused arrival the scene reverted and swallowed', () => {
+    const { scene, at } = target('refuses');
+    expect(commitGestureOps(at, recorded(), into())).toBe(false);
+    expect(scene.get(asNodeId('loose'))!.parent).toBeNull();
+  });
+
+  it('is false, and does not throw, for a refused arrival on the transient route', () => {
+    const { scene, at } = target('refuses');
+    expect(commitGestureOps(at, transient(), into())).toBe(false);
+    expect(scene.get(asNodeId('loose'))!.parent).toBeNull();
+  });
+
+  it('lets any other error out of the transient route', () => {
+    const { at } = target('takes');
+    const boom = [{ ...into()[0], apply: refuse }] as Op[];
+    expect(() => commitGestureOps(at, transient(), boom)).toThrow('refused');
+  });
+
+  it('takes a consumer applyOps at its word', () => {
+    const applyOps = vi.fn();
+    expect(commitGestureOps(target('refuses', applyOps).at, recorded(), into())).toBe(true);
+    expect(applyOps).toHaveBeenCalledTimes(1);
   });
 });
 

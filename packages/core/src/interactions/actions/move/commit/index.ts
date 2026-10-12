@@ -1,15 +1,14 @@
-import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Op } from 'core/ops/types';
 import { commitGestureOps, reduceBehaviorEnd } from '../../gestureLifecycle';
 import { translatePoseViaDescriptor } from '../../resize/geometry';
 import { planeDelta } from '../delta';
 import { landedDescendantOps } from '../landedDescendants';
 import type { LayoutPass } from '../layout/types';
-import type { MoveSession, ReparentOnDrop } from '../session';
+import type { MoveSession } from '../session';
 import { rootTranslateOps, translateOps } from '../translate';
 import { layoutDropOps } from './layoutDrop';
 import { layoutReleaseOps } from './layoutRelease';
-import { reparentOps, resolveDropTarget, type DropTarget } from './reparent';
+import { reparentOps, resolveDropTarget } from './reparent';
 
 export interface CommitInput {
   session: MoveSession;
@@ -24,7 +23,7 @@ function behaviorCommit(
   session: MoveSession,
   delta: { dx: number; dy: number },
   at: { x: number; y: number } | null,
-  commitOps: (ops: Op[]) => void,
+  commitOps: (ops: Op[]) => boolean,
 ): boolean | undefined {
   const { dx, dy } = delta;
   // Behavior pipeline owns the commit if any behavior returns non-undefined.
@@ -39,53 +38,18 @@ function behaviorCommit(
       pointer: at,
     });
     if (r === null) return false;           // abort (e.g. snap-back)
-    if (r !== undefined) {
-      commitOps(r);
-      return true;
-    }
+    if (r !== undefined) return commitOps(r);
   }
   return undefined;
 }
 
-function reparentCommit(
-  session: MoveSession,
-  dropTarget: DropTarget,
-  mode: ReparentOnDrop,
-  delta: { dx: number; dy: number },
-  commitOps: (ops: Op[]) => void,
-): boolean {
-  const { dx, dy } = delta;
-  const ops = reparentOps(session, dropTarget, mode, { dx, dy });
-  const before = rootPlacements(session);
-  try {
-    commitOps(ops);
-  } catch (err) {
-    // The transient path lets a refused arrival out; the recorded one reverts it inside the scene.
-    if (!(err instanceof SceneArrivalRefused)) throw err;
-  }
-  // A consumer's `applyOps` may keep the document elsewhere, so it is taken at its word.
-  if (session.applyOps !== undefined && !session.lifecycle.transient) return true;
-  // Either way a refusal leaves every root where it was.
-  return rootPlacements(session) !== before;
-}
-
-/** Where each dragged root sits: its parent, its layer, and its stored position. */
-function rootPlacements(session: MoveSession): string {
-  return session.ids.map((id) => {
-    const node = session.scene.get(id);
-    if (!node) return '';
-    const b = session.descriptorOf(id).getBounds(node.pose);
-    return `${node.parent}:${node.layer}:${b.x},${b.y}`;
-  }).join('|');
-}
-
-/** Commit the drag. Returns whether anything reached the document. */
+/** Commit the drag. Returns whether anything reached the document: false
+ *  when there was nothing to write, or a container refused what it was sent. */
 export function commitMove(input: CommitInput): boolean {
   const { session, pass, dropCenter, at } = input;
   // Apply the final delta as a single batch → one undo entry.
   const { dx, dy } = input.delta;
-  let committed = false;
-  const commitOps = (ops: Op[]): void => {
+  const commitOps = (ops: Op[]): boolean => {
     const followers = landedDescendantOps(
       {
         scene: session.scene,
@@ -97,8 +61,7 @@ export function commitMove(input: CommitInput): boolean {
       },
       ops,
     );
-    commitGestureOps(session, session.lifecycle, [...ops, ...followers]);
-    committed = true;
+    return commitGestureOps(session, session.lifecycle, [...ops, ...followers]);
   };
 
   const owned = behaviorCommit(session, { dx, dy }, at, commitOps);
@@ -115,14 +78,10 @@ export function commitMove(input: CommitInput): boolean {
   // exercised by the geometry contract gate.
   if (session.layout && pass) {
     const ops = layoutDropOps(session, pass);
-    if (ops.length > 0) commitOps(ops);
-    return committed;
+    return ops.length > 0 && commitOps(ops);
   }
   const release = session.layout ? layoutReleaseOps(session, { dx, dy }, dropCenter) : undefined;
-  if (release !== undefined) {
-    if (release.length > 0) commitOps(release);
-    return committed;
-  }
+  if (release !== undefined) return release.length > 0 && commitOps(release);
 
   // Reparent-on-drop, when opted in via `opts.params.reparentOnDrop`.
   // Resolves the drop target via the `nodeAtPoint` dep (sourced by
@@ -135,9 +94,8 @@ export function commitMove(input: CommitInput): boolean {
   const dropTarget = mode !== 'off'
     ? resolveDropTarget(session, at)
     : null;
-  if (dropTarget) {
-    committed = reparentCommit(session, dropTarget, mode, { dx, dy }, commitOps);
-  } else {
+  if (dropTarget) return commitOps(reparentOps(session, dropTarget, mode, { dx, dy }));
+  {
     // No reparent — translate-only commit, emitted as transform ops so
     // it routes through the consumer `applyOps` hook (consumer history)
     // when present, else the scene's own history. Under scene v1's
@@ -149,7 +107,6 @@ export function commitMove(input: CommitInput): boolean {
     // Translate the data-held geometry by the same (dx,dy). Opt-in via
     // the geometryProjection seam; a no-op when the dep is absent.
     const ops = translateOps(session, [...session.ids, ...session.cascadeIds], { dx, dy });
-    if (ops.length > 0) commitOps(ops);
+    return ops.length > 0 && commitOps(ops);
   }
-  return committed;
 }

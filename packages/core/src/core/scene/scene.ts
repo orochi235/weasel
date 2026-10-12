@@ -845,7 +845,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     applyBatch(ops, label, adapter) {
       refuseUntracked('applyBatch');
-      runArrivalEdit(ops, (all) => applyBatchNow(all, label, adapter));
+      return runArrivalEdit(ops, (all) => applyBatchNow(all, label, adapter));
     },
 
     setArrivalHandler: arrivalWindow.setHandler,

@@ -85,6 +85,18 @@ describe('Scene — arrival handler', () => {
     expect(scene.historyIndex()).toBe(depth);
   });
 
+  it('applyBatch answers whether the batch landed', () => {
+    const refused = setup(() => null);
+    expect(refused.scene.applyBatch(
+      [createReparentOp({ id: 'loose', fromParentId: null, toParentId: 'box' })], 'Move', refused.adapter,
+    )).toBe(false);
+    const placed = setup(placeAll);
+    expect(placed.scene.applyBatch(
+      [createReparentOp({ id: 'loose', fromParentId: null, toParentId: 'box' })], 'Move', placed.adapter,
+    )).toBe(true);
+    expect(placed.scene.applyBatch([], 'Nothing', placed.adapter)).toBe(true);
+  });
+
   it('a refused scene.batch reverts and throws SceneArrivalRefused', () => {
     const { scene } = setup(() => null);
     expect(() => scene.batch('Add', () => {
