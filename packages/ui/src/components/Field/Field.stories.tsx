@@ -10,8 +10,9 @@ export default meta;
 type Story = StoryObj<typeof Field>;
 
 export const Stacked: Story = {
-  render: () => (
-    <Field orientation="stacked">
+  args: { orientation: 'stacked' },
+  render: (args) => (
+    <Field {...args}>
       <label className={fieldClasses.label}>Width</label>
       <input className={fieldClasses.label} defaultValue="120" style={{ width: 120 }} />
       <span className={fieldClasses.hint}>In document units.</span>
@@ -20,8 +21,9 @@ export const Stacked: Story = {
 };
 
 export const Row: Story = {
-  render: () => (
-    <Field orientation="row">
+  args: { orientation: 'row' },
+  render: (args) => (
+    <Field {...args}>
       <label className={fieldClasses.label}>Snap to grid</label>
       <input type="checkbox" defaultChecked />
     </Field>
@@ -29,8 +31,8 @@ export const Row: Story = {
 };
 
 export const WithError: Story = {
-  render: () => (
-    <Field>
+  render: (args) => (
+    <Field {...args}>
       <label className={fieldClasses.label}>Name</label>
       <input defaultValue="" />
       <span className={fieldClasses.error}>Name is required.</span>
