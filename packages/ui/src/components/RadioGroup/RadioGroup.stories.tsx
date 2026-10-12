@@ -45,16 +45,13 @@ export const Disabled: Story = {
 
 export const Controlled: Story = {
   render: (args) => {
-    function Wrap() {
-      const [v, setV] = useState('grid');
-      return (
-        <RadioGroup {...args} label={`Snap (= ${v})`} value={v} onChange={setV}>
-          <Radio value="off">Off</Radio>
-          <Radio value="grid">Grid</Radio>
-          <Radio value="pixel">Pixel</Radio>
-        </RadioGroup>
-      );
-    }
-    return <Wrap />;
+    const [v, setV] = useState('grid');
+    return (
+      <RadioGroup {...args} label={`Snap (= ${v})`} value={v} onChange={setV}>
+        <Radio value="off">Off</Radio>
+        <Radio value="grid">Grid</Radio>
+        <Radio value="pixel">Pixel</Radio>
+      </RadioGroup>
+    );
   },
 };
