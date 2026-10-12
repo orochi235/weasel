@@ -1748,14 +1748,9 @@ only story runner in the repo.
   ledger chrome and the resize math variants are separable. draw's `App.tsx` had the same shape and
   is split by job now; what is left in it is `EditorWithSharedScene`, one 500-line component.
 
-- **(P3) draw: paper sizes and "no paint" are each defined more than once.** Paper sizes:
-  `PaperSizeKey` (`CommandBar.tsx`), `WeaselDrawPaperSize` (`svgInterop.ts`), `PAPER_PRESETS`
-  (`docPersistence.ts`), and two label lists that disagree: the New menu says "US Letter"
-  (`PAPER_ITEMS`), the document properties say "Letter" (`PAPER_SIZE_OPTIONS`). One table of `{ key,
-  label, width, height }` should feed all four; which label wins is a wording call. No paint: `{
-  kind: 'none' }` in the color context's `ActivePaint`, `null` in node data, with `toFillStyle` in
-  `ActiveSwatches.tsx` translating; `ActivePaint` could be `FillStyle | null` and the translation
-  would go.
+- **(P3) draw: "no paint" is defined more than once.** `{ kind: 'none' }` in the color context's
+  `ActivePaint`, `null` in node data, with `toFillStyle` in `ActiveSwatches.tsx` translating;
+  `ActivePaint` could be `FillStyle | null` and the translation would go.
 
 - **(P3) CustomShaderDemo: every frame re-renders React to move one uniform.**
   `apps/site/demos/CustomShaderDemo.tsx` calls `setTime` from its `useVisibleRaf` loop, rebuilding

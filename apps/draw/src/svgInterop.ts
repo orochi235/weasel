@@ -32,6 +32,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
+import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 
 /**
@@ -46,9 +47,8 @@ import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from '
 export const SWILL_NS = 'https://weaseldraw.app/svg-ext';
 export const SWILL_NAMESPACES = { wd: SWILL_NS } as const;
 
-/** Paper-size enum keys we round-trip via `wd:paperSize`. Must match the
- *  keys of WeaselDraw's `PAPER_PRESETS`. */
-export type WeaselDrawPaperSize = 'letter' | 'a4' | 'legal';
+/** The paper-size key round-tripped via `wd:paperSize`. */
+export type WeaselDrawPaperSize = PaperSizeKey;
 
 /** WeaselDraw's notion of the on-disk document, distilled to the bits
  *  svgInterop needs to write the root `<svg>` correctly. */
@@ -110,7 +110,7 @@ export function docToSerializeOptions(doc: WeaselDrawDoc): SerializeOptions {
 /**
  * Interpret a {@link ParseResult} as a partial WeaselDraw doc patch.
  * The paper-size enum is only set when the source declares a value we
- * recognize (`letter` | `a4` | `legal`); other values are dropped so the
+ * recognize (a key of `PAPER_SIZES`); other values are dropped so the
  * caller keeps whatever default it had.
  */
 export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
@@ -120,7 +120,7 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
     out.size = { width: parsed.viewBox.width, height: parsed.viewBox.height };
   }
   const ps = parsed.documentMeta?.wd?.attrs?.paperSize;
-  if (ps === 'letter' || ps === 'a4' || ps === 'legal') out.paperSize = ps;
+  if (isPaperSize(ps)) out.paperSize = ps;
   const bg = parsed.nodes.find(isBackgroundNode);
   if (bg?.fill.kind === 'solid') out.backgroundColor = bg.fill.color;
   return out;

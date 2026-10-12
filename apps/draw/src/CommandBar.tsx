@@ -7,9 +7,9 @@
  *  Preferences are actions too (`appCommands`), so a button's shortcut is the
  *  binding that fires it. The buttons built here are the file ones. */
 import { ActionBar as KitActionBar, ButtonBar, MenuButton } from '@weasel-js/ui';
+import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 
-/** Paper-size keys; `PAPER_PRESETS` in `docPersistence.ts` holds the dimensions. */
-export type PaperSizeKey = 'letter' | 'a4' | 'legal';
+export type { PaperSizeKey };
 
 export interface CommandBarProps {
   // File I/O — SVG round-trip via @weasel-js/svg.
@@ -19,12 +19,6 @@ export interface CommandBarProps {
    *  is one undoable entry; the view refits only when the paper size changes. */
   onNew(size: PaperSizeKey): void;
 }
-
-const PAPER_ITEMS: ReadonlyArray<{ value: PaperSizeKey; label: string }> = [
-  { value: 'letter', label: 'US Letter' },
-  { value: 'a4', label: 'A4' },
-  { value: 'legal', label: 'Legal' },
-];
 
 const KIT_GROUPS = [
   'history', 'clipboard', 'edit', 'reorder', 'structure', 'align', 'distribute', 'flip',
@@ -45,7 +39,7 @@ export function CommandBar(p: CommandBarProps) {
   return (
     <div className="wd-commandbar" role="toolbar" aria-label="Actions">
       <div className="wd-commandbar-group">
-        <MenuButton label="New" tooltip="New document" items={PAPER_ITEMS} onAction={p.onNew} />
+        <MenuButton label="New" tooltip="New document" items={PAPER_OPTIONS} onAction={p.onNew} />
         <ButtonBar
           ariaLabel="File"
           size="sm"
