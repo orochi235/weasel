@@ -468,16 +468,6 @@ intercepting the press that drags the body.
   `{ pose?, alpha? }`. Decide whether overrides grow a `data` field or the two
   channels stay split by what they carry rather than by who writes them.
 
-- **(P3) A derived node is unpickable through a bare adapter.** The
-  scene-backed half of this landed: `NodeShapeEntry.silhouette` takes a `NodeSilhouetteCtx`
-  carrying `derivedPath`, `kit:derived` reports it plus its `ink`, and
-  `PickSource.derivedPathOf` / `buildSceneTree`'s optional argument resolve it
-  where a scene is in scope. What is left is the other side of that split:
-  `adapterPickSource` and `Canvas`'s bare-adapter render path cannot derive —
-  it needs the dependencies' poses — so a derived node there still answers from
-  its own placeholder pose. Closing it means giving the adapter surface a
-  dependency read, which is a bigger decision than picking.
-
 ### `useScene` follow-ups
 
 - **(P3) Scene layout: what the first cut left.** A container declares its layout

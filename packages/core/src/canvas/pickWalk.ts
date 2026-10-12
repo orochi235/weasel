@@ -23,6 +23,7 @@
 
 import type { Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
+import { adapterDerivedPathOf, type DerivingAdapter } from './adapterDerivedPath';
 import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
@@ -70,10 +71,7 @@ export interface PickSource<TPose> {
   /** Whether the node is locked — painted, but not something a pointer can
    *  take. Omit for a source with no lock concept. */
   isLocked?(node: PickCandidate<TPose>): boolean;
-  /** The path a node computes from its dependencies' poses, or null when it
-   *  derives nothing. Only a scene-backed source can answer — deriving needs
-   *  the dependencies' poses — so a bare adapter omits it, and every derived
-   *  node there keeps answering from its own (placeholder) pose. */
+  /** The path a node computes from its dependencies, or null for none. */
   derivedPathOf?(node: PickCandidate<TPose>): Path | null;
   /** How the asking view's world maps into a parallax layer's, or null for a
    *  layer that moves with the camera. Omit for a source with no planes. */
@@ -425,6 +423,7 @@ export function adapterPickSource<TPose>(
   const worldPose = (id: string): TPose =>
     (typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id));
 
+  const derived = typeof adapter.getNode === 'function' ? adapterDerivedPathOf(adapter as DerivingAdapter<TPose>) : null;
   const nodeOf = (id: string): PickCandidate<TPose> => {
     const raw = hier.getNode(id) as Partial<PickCandidate<TPose>>;
     return { ...raw, id, pose: worldPose(id) } as PickCandidate<TPose>;
@@ -456,6 +455,7 @@ export function adapterPickSource<TPose>(
     ...(gates.layerIsPainted ? { layerIsPainted: gates.layerIsPainted } : {}),
     ...(gates.planeOf ? { planeOf: gates.planeOf } : {}),
     poseOf: (node) => worldPose(node.id),
+    ...(derived ? { derivedPathOf: (node: PickCandidate<TPose>) => derived(node.id) } : {}),
     parentsOf(node) {
       const chain: PickCandidate<TPose>[] = [];
       let cur = parents.get(node.id);

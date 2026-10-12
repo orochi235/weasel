@@ -9,6 +9,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import type { DebugSink } from '../debug/types';
 import { cullDrawCommands, viewToMat3, type DrawCommand } from '@weasel-js/renderer';
+import { adapterDerivedPathOf } from './adapterDerivedPath';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import type { NodePaintCtx } from './NodeShape';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
@@ -38,14 +39,14 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
   objects?: TNode[];
   /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
   toPose?: (obj: TNode) => TPose;
-  /** Draw a single object as a `DrawCommand` tree. `ctx` carries what only a
-   *  scene-aware caller can supply (a node's derived path); `<SceneCanvas>`
-   *  fills it in, bare `<Canvas>` never does. */
+  /** Draw a single object as a `DrawCommand` tree. `ctx` carries a derived
+   *  node's path: `<SceneCanvas>` resolves it from the scene, and a bare
+   *  `<Canvas>` from its adapter. */
   drawOne: (obj: TNode, pose: TPose, view: View, ctx?: NodePaintCtx) => DrawCommand[];
   /** The path a container derives from its dependencies' poses, for the clip
-   *  it imposes on its subtree. The other half of what only a scene-aware
-   *  caller can supply — `drawOne`'s `ctx` carries the derived path a node
-   *  *paints*, this one the clip it *imposes*. */
+   *  it imposes on its subtree — `drawOne`'s `ctx` carries the derived path a
+   *  node *paints*, this one the clip it *imposes*. A scene-aware caller
+   *  supplies it; left out, both are resolved off the adapter. */
   derivedPathOf?: (obj: TNode, pose: TPose) => Path | null;
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
@@ -102,6 +103,33 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
 }
 
 /**
+ * `cfg`'s `drawOne` and clip lookup, resolving derived paths off the adapter
+ * when nothing scene-aware filled `derivedPathOf` in.
+ */
+function withAdapterDerivedPaths<TNode extends { id: string }, TPose>(
+  cfg: SceneSlotConfig<TNode, TPose>,
+  adapter: CanvasAdapter<TNode, TPose> | undefined,
+  toPose: (obj: TNode) => TPose,
+): Pick<SceneSlotConfig<TNode, TPose>, 'drawOne' | 'derivedPathOf'> {
+  const drawOne = cfg.drawOne;
+  if (cfg.derivedPathOf !== undefined || !drawOne || typeof adapter?.getNode !== 'function') return cfg;
+  const pathOf = adapterDerivedPathOf<TPose>(cfg.toPose === undefined ? adapter : {
+    getNode: (id) => adapter.getNode(id),
+    getPose: (id) => {
+      const obj = adapter.getNode(id);
+      return obj ? toPose(obj) : adapter.getPose(id);
+    },
+    ...(adapter.getChildren ? { getChildren: (id: string | null) => adapter.getChildren!(id) } : {}),
+  });
+  return {
+    derivedPathOf: (obj) => pathOf(obj.id),
+    drawOne: (obj, pose, view, ctx) => ((obj as { dependsOn?: unknown }).dependsOn === undefined
+      ? drawOne(obj, pose, view, ctx)
+      : drawOne(obj, pose, view, { ...ctx, derivedPath: pathOf(obj.id) })),
+  };
+}
+
+/**
  * Build the scene layer. Tool ghosts (in-flight drag/resize/rotate poses) are
  * published via the active tool's `previewPose`/`previewIds` and rendered on
  * top of this layer (see SceneCanvas's preview-ghost layer); we draw committed
@@ -124,7 +152,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
   const toPose =
     cfg.toPose ??
     ((obj: TNode) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
-  const drawOne = cfg.drawOne;
+  const { drawOne, derivedPathOf } = withAdapterDerivedPaths(cfg, adapter, toPose);
   const postProcess = cfg.postProcess;
   const finish = cfg.cull
     ? (cmds: DrawCommand[], view: View, dims: Dims): DrawCommand[] =>
@@ -177,7 +205,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
           view,
           slot?.forLayer,
-          cfg.derivedPathOf as Parameters<typeof buildSceneTree>[4],
+          derivedPathOf as Parameters<typeof buildSceneTree>[4],
           culledIn(view, dims) as Parameters<typeof buildSceneTree>[5],
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
