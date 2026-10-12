@@ -1152,10 +1152,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) `Tree`'s row ghost takes the host page's font.** The ghost portals out of the tree, so
-  inside `PrefSchemaEditor`, whose `.editor` sets its own face, a dragged row draws in whatever the
-  page uses; in the browser tests, with no themed ancestor, that is the default serif.
-
 - **(P3) Disabled and panel-box rough edges seen in headless Chromium, 2026-10-11.** A disabled
   `Bar` action button draws at 0.4 where every other disabled cell draws at 0.5. A disabled text
   area in a `Bar` keeps a full-strength, working "Notes" button that opens to a disabled text

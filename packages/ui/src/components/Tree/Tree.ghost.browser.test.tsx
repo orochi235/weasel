@@ -60,3 +60,11 @@ test('the ghost keeps the space between the parts of a row\'s label', () => {
   expect(parts.getBoundingClientRect().left - range.getBoundingClientRect().right).toBeGreaterThan(1);
   act(() => { document.dispatchEvent(event('pointerup', at.x, at.y)); });
 });
+
+test('the ghost draws in the face of the tree it was dragged from, not of the page it portals to', () => {
+  render(<div style={{ width: 320, fontFamily: 'monospace' }}><Tree aria-label="T" nodes={NODES} onMove={() => {}} /></div>);
+  const at = hold(rowOf('Zed'), rowOf('Group'), 0.3, 0.5);
+  expect(getComputedStyle(document.body).fontFamily).not.toBe('monospace');
+  expect(getComputedStyle(ghost().firstElementChild!).fontFamily).toBe('monospace');
+  act(() => { document.dispatchEvent(event('pointerup', at.x, at.y)); });
+});
