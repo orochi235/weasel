@@ -30,8 +30,10 @@ on its own terms — not as the minimum some demo happened to need.
 
 A package either exports functionality that does not need the rest of weasel
 (`geom`, `paint`, `stroke`, `renderer`), or is an obviously well-defined
-functional area (`minimap`, `diagram`). Code that needs core and is neither
-stays in core: `usePoseRun` was kept there on 2026-10-11 for this reason.
+functional area (`minimap`, `parallax`, `diagram`). Code that needs core and is
+neither stays in core: `usePoseRun` was kept there on 2026-10-11 for this
+reason. The aim is a smaller core, but not at the cost of a cluttered package
+list.
 
 ## Todo list
 
