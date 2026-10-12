@@ -1573,6 +1573,14 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P2) A story gets controls only for the args it spells out.** `argsToSchema`
+  (`packages/forge/src/csf/argsToSchema.ts`) reads `args` and `argTypes` and
+  nothing else, so a story that names a `component` and declares neither shows
+  Settings with the Globals section alone. Storybook fills that gap by reading
+  the component's prop types at build time; forge has no such step. The vite
+  plugin would derive an `argTypes` table per `component` from its TypeScript
+  props, and the story's own `args` and `argTypes` would refine it.
+
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
   no Marks section and the tool rail holds only Info. The removed wiring — the
