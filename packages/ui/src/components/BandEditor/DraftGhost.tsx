@@ -7,7 +7,7 @@ export type DraftGhostAt = { at: number } | { from: number; to: number };
 
 /** The mark left where a drag began while the dragged seam, edge, or band follows the pointer. */
 export function DraftGhost({ ghost, toUnit }: { ghost: DraftGhostAt; toUnit(value: number): number }): ReactElement {
-  const vars = 'at' in ghost
+  const vars: Record<string, string> = 'at' in ghost
     ? { '--be-at': pct(toUnit(ghost.at)) }
     : { '--be-from': pct(toUnit(ghost.from)), '--be-to': pct(toUnit(ghost.to)) };
   return (
@@ -15,7 +15,7 @@ export function DraftGhost({ ghost, toUnit }: { ghost: DraftGhostAt; toUnit(valu
       className={'at' in ghost ? s.seamGhost : s.bandGhost}
       data-band-ghost=""
       aria-hidden="true"
-      style={vars as Record<string, string> as CSSProperties}
+      style={vars as CSSProperties}
     />
   );
 }
