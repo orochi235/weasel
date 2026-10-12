@@ -479,9 +479,6 @@
     "lines": 496,
     "longestFunction": 127
   },
-  "packages/ui/src/components/SelectionPanel/SelectionPanel.tsx": {
-    "longestFunction": 175
-  },
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
     "longestFunction": 156
   },
