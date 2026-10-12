@@ -124,15 +124,8 @@
   "packages/core/src/features/selection/overlay.ts": {
     "lines": 796
   },
-  "packages/text-dom/src/domRuns.ts": {
-    "lines": 498
-  },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
     "longestFunction": 167
-  },
-  "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 1332,
-    "longestFunction": 482
   },
   "packages/core/src/interactions/actions/defaults/anchorEditing.ts": {
     "lines": 401
@@ -390,6 +383,13 @@
   "packages/svg/src/unpack.ts": {
     "lines": 410
   },
+  "packages/text-dom/src/domRuns.ts": {
+    "lines": 498
+  },
+  "packages/text-dom/src/useTextEdit.ts": {
+    "lines": 1332,
+    "longestFunction": 482
+  },
   "packages/text/src/layout/layoutRuns.ts": {
     "lines": 1284,
     "longestFunction": 665
@@ -455,13 +455,13 @@
     "longestFunction": 221
   },
   "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
-    "longestFunction": 269
-  },
-  "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
     "longestFunction": 195
   },
+  "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
+    "longestFunction": 192
+  },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
-    "longestFunction": 216
+    "longestFunction": 211
   },
   "packages/ui/src/components/Prefs/RailLayout.tsx": {
     "longestFunction": 134
