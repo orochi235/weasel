@@ -14,7 +14,9 @@
  * once and both tiers reach it.
  */
 
-const subscribers = new Set<() => void>();
+import { createEmitter } from '@weasel-js/registry';
+
+let ready = createEmitter();
 
 /** Advanced by every `notifyGlyphReady`, so state can be checked rather than
  *  listened for. See {@link glyphGeneration}. */
@@ -48,19 +50,16 @@ export function glyphGeneration(): number {
  * either way. Returns an unsubscribe.
  */
 export function subscribeGlyphReady(cb: () => void): () => void {
-  subscribers.add(cb);
-  return () => {
-    subscribers.delete(cb);
-  };
+  return ready.subscribe(cb);
 }
 
 /** @internal Fired by a glyph source once newly-available glyphs can paint. */
 export function notifyGlyphReady(): void {
   generation++;
-  for (const cb of subscribers) cb();
+  ready.emit();
 }
 
 /** @internal Test seam — the subscriber set is module state. */
 export function _clearGlyphReadySubscribers(): void {
-  subscribers.clear();
+  ready = createEmitter();
 }

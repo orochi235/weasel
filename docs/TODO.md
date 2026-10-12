@@ -2141,12 +2141,16 @@ one dead `const` and four stale disable directives.
 - **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
   is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run), and the reflectable registry, modes' scoping layer
-  and decorations, and core's pose overrides, pose feed, reflow, parallax plane, and key state use
-  it. Still hand-rolled, each a `Set` and a loop: the scene (four loops in `core/scene/scene.ts`),
-  `PointerContext`, `useSliceTool`, history and its journal, `select/store.ts`, prefs' store,
-  storage's records, routing's `longPressState`, loupe's `canvasSource`, ui's `recentColors`,
-  labkit's `panelHost`, `clockRegistry`, and `cameraRegistry`, and seven in forge. history, select,
-  prefs, storage, routing, and loupe do not depend on registry yet.
+  and decorations, core's pose overrides, pose feed, reflow, parallax plane, and key state, prefs'
+  store, font's glyph-ready signal, and renderer's image cache use it. Still hand-rolled, each a
+  `Set` and a loop:
+  - in packages that already depend on registry: the scene (four loops in `core/scene/scene.ts`),
+    and core's `useSliceTool`, `viewRegistry.tsx`, `canvasRenderer.ts`, `rigEditState.ts`,
+    `useBoneTool.ts`, and `useWeightTool.ts`; animator's `engine/core.ts` and `engine/offsets.ts`.
+  - in packages that do not, where each move adds the dependency: routing's `PointerContext` and
+    `longPressState`, history and its journal, `select/store.ts`, storage's records, loupe's
+    `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
+    `cameraRegistry`, and seven in forge.
 
 - **(P3) Three drag-ghost implementations.** core's `pointerDrag` `defaultGhost` clones the source,
   ui's `DragGhost` portals to the themed host, and labkit's `dragdrop/DragGhost` is a third. They
