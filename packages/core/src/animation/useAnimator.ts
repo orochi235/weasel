@@ -2,6 +2,7 @@ import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'rea
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { createLoop, createTweenLoop } from './loop';
 import { createCodec } from './engine/codec';
+import { createCompletions } from './engine/completions';
 import type { ActiveAnimation, AnimationContext, AnimationSeed } from './engine/context';
 import type { TargetState } from './target';
 import { decayAsPhysics } from './engine/decay';
@@ -17,7 +18,7 @@ import { createTimeline } from './timeline/createTimeline';
 import { stateOf } from './target';
 import { ColorOverrideRegistry } from './colorRegistry';
 import { AnimatorEventHub } from './observe';
-import { supervisors, type WatchCompletion } from './supervisor';
+import { supervisors } from './supervisor';
 import type {
   AnimationHandle,
   AnimationInfo,
@@ -117,32 +118,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     /** Supervisor frame callbacks due this frame, run once its ticks are done. */
     const afterTicks: (() => void)[] = [];
 
-    // Per-id one-shot completion listeners. Used by stagger to detect when
-    // each child has left the registry (natural completion OR cancel) so the
-    // supervising composite can retire itself when the last child finishes.
-    const completionListeners = new Map<number, (() => void)[]>();
-    const fireCompletion = (id: number): void => {
-      const ls = completionListeners.get(id);
-      if (!ls) return;
-      completionListeners.delete(id);
-      for (const cb of ls) cb();
-    };
-    const watchCompletion: WatchCompletion = (id, cb) => {
-      if (!animations.current.has(id)) {
-        cb();
-        return () => {};
-      }
-      const ls = completionListeners.get(id) ?? [];
-      ls.push(cb);
-      completionListeners.set(id, ls);
-      return () => {
-        const cur = completionListeners.get(id);
-        if (!cur) return;
-        const idx = cur.indexOf(cb);
-        if (idx >= 0) cur.splice(idx, 1);
-        if (cur.length === 0) completionListeners.delete(id);
-      };
-    };
+    const { fire: fireCompletion, watch: watchCompletion } = createCompletions((id) => animations.current.has(id));
 
     const hub = new AnimatorEventHub();
     const codec = createCodec();
