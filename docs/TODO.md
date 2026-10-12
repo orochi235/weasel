@@ -1582,9 +1582,14 @@ only story runner in the repo.
   `/@fs/…/SidebarRegion.less` asked for directly had the new ones, and a `touch` changed nothing;
   after an edit to `packages/forge/src/shell/cssVars/CssVarsPanel.tsx` the page ran the old
   component across reloads. No `hmr update` line reached the log, so the watcher looks dead rather
-  than one import edge untracked. A restart served the new code every time. Not checked: whether
-  the server wake owns does the same, or whether how the file was written matters (these edits
-  replaced the file whole).
+  than one import edge untracked. A restart served the new code every time. Checked 2026-10-12
+  against a real vite server on a temp root, and neither reproduces it: a file replaced whole (written
+  beside and renamed over) is served new each time, for a module and for a stylesheet another one
+  imports (`packages/forge/src/vite/replacedFile.test.ts`), and it still is with 13,000 more
+  directories under the root, about what 26 worktrees in `.claude/worktrees` add to the main
+  checkout's watch. Read, not run: nothing in wake's `WAKE_EXTRA` path or forge's plugin touches the
+  watcher. Not checked: the real server on the repo root, where it has to be watched failing, and
+  whether the server wake owns does the same.
 
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any

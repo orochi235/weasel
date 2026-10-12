@@ -40,6 +40,7 @@ const vm = { environments: { __vitest_vm__: { optimizeDeps: { noDiscovery: true,
 const FORGE_NODE = [
   'packages/forge/src/csf/shims/alias.test.ts',
   'packages/forge/src/vite/plugin.test.ts',
+  'packages/forge/src/vite/replacedFile.test.ts',
 ];
 
 export default defineConfig({
