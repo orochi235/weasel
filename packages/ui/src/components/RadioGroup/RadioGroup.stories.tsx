@@ -11,8 +11,9 @@ export default meta;
 type Story = StoryObj<typeof RadioGroup>;
 
 export const Vertical: Story = {
-  render: () => (
-    <RadioGroup label="Snap mode" defaultValue="grid">
+  args: { label: 'Snap mode', defaultValue: 'grid' },
+  render: (args) => (
+    <RadioGroup {...args}>
       <Radio value="off">Off</Radio>
       <Radio value="grid">Grid</Radio>
       <Radio value="pixel">Pixel</Radio>
@@ -21,8 +22,9 @@ export const Vertical: Story = {
 };
 
 export const Horizontal: Story = {
-  render: () => (
-    <RadioGroup label="Snap mode" orientation="horizontal" defaultValue="grid">
+  args: { label: 'Snap mode', orientation: 'horizontal', defaultValue: 'grid' },
+  render: (args) => (
+    <RadioGroup {...args}>
       <Radio value="off">Off</Radio>
       <Radio value="grid">Grid</Radio>
       <Radio value="pixel">Pixel</Radio>
@@ -31,8 +33,9 @@ export const Horizontal: Story = {
 };
 
 export const Disabled: Story = {
-  render: () => (
-    <RadioGroup label="Snap mode" isDisabled defaultValue="grid">
+  args: { label: 'Snap mode', isDisabled: true, defaultValue: 'grid' },
+  render: (args) => (
+    <RadioGroup {...args}>
       <Radio value="off">Off</Radio>
       <Radio value="grid">Grid</Radio>
       <Radio value="pixel">Pixel</Radio>
@@ -41,11 +44,11 @@ export const Disabled: Story = {
 };
 
 export const Controlled: Story = {
-  render: () => {
+  render: (args) => {
     function Wrap() {
       const [v, setV] = useState('grid');
       return (
-        <RadioGroup label={`Snap (= ${v})`} value={v} onChange={setV}>
+        <RadioGroup {...args} label={`Snap (= ${v})`} value={v} onChange={setV}>
           <Radio value="off">Off</Radio>
           <Radio value="grid">Grid</Radio>
           <Radio value="pixel">Pixel</Radio>

@@ -14,12 +14,13 @@ export default meta;
 type Story = StoryObj<typeof Tooltip>;
 
 export const Basic: Story = {
-  render: () => (
+  args: { children: 'Duplicates the selected layer' },
+  render: (args) => (
     <TooltipTrigger>
       <Focusable>
         <button type="button">Hover or focus me</button>
       </Focusable>
-      <Tooltip>Duplicates the selected layer</Tooltip>
+      <Tooltip {...args} />
     </TooltipTrigger>
   ),
 };

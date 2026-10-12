@@ -18,12 +18,13 @@ const COLORS = [
 ];
 
 export const OptionsArray: Story = {
-  render: () => <Select label="Color" options={COLORS} placeholder="Pick one" />,
+  args: { label: 'Color', options: COLORS, placeholder: 'Pick one' },
 };
 
 export const ExplicitChildren: Story = {
-  render: () => (
-    <Select label="Color" defaultSelectedKey="g">
+  args: { label: 'Color', defaultSelectedKey: 'g' },
+  render: (args) => (
+    <Select {...args}>
       <SelectItem id="r">Red</SelectItem>
       <SelectItem id="g">Green</SelectItem>
       <SelectItem id="b" isDisabled>Blue (unavailable)</SelectItem>
@@ -119,7 +120,7 @@ export const Sections: Story = {
 };
 
 export const Disabled: Story = {
-  render: () => <Select label="Color" options={COLORS} defaultSelectedKey="r" isDisabled />,
+  args: { label: 'Color', options: COLORS, defaultSelectedKey: 'r', isDisabled: true },
 };
 
 export const Controlled: Story = {
