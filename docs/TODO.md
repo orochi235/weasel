@@ -893,13 +893,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) The side-scroller's music bed as engine voices.** Its footsteps and
   landings are `playNoise` voices now; the bed is still hand-written PCM
   (`platformer/sfx.ts`, `bed`). Its struck metal is expressible as `{ partials }`
-  and its chugs and bass as harmonic partials with a `decay`, but the bed is an
-  arrangement as much as a timbre: every hit lands late by its own amount, the
-  whole loop drifts sharp and back, and the four bars are peak-normalized
-  together. `createPatternPlayer` has no per-event timing offset or pitch drift,
-  so a port needs those first, and a check that its busiest moments fit the
-  music bus's voice limit — a lid, a lead note and a drum each ring for five or
-  six sixteenths, and each metal hit is seven sources.
+  and its chugs and bass as harmonic partials with a `decay`. The arrangement
+  is expressible too: a hit that lands late is a fractional `step`, the loop's
+  drift sharp and back is the player's `detune` as a function of the step, and
+  `patternVoicePeaks` says whether its busiest moment fits the music bus's
+  voice limit. What is left is the port itself, and one thing with no engine
+  equivalent: the four bars are peak-normalized together, which as voices
+  becomes a bus gain chosen by ear, or a compressor insert.
 
 - **(P3) Trope-aware generative scoring.** Builds on `playNote` and `createPatternPlayer`.
   Screen scoring for factual content — news packages, documentaries — runs on a

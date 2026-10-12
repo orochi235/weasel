@@ -2,7 +2,11 @@ import type { AudioEngine } from './createAudioEngine';
 import type { SoundHandle } from './soundCache';
 import type { NoiseOptions, NoteOptions, PlayOptions, VoiceHandle } from './types';
 
-/** A synth note on a step. `length` is its gate in steps, default 1. */
+/** A synth note on a step. `length` is its gate in steps, default 1.
+ *
+ *  Any event's `step` may be fractional: it is booked with the step it sits in
+ *  and sounds that fraction of a step later, so `2.5` is halfway from step 2 to
+ *  step 3. That is swing, a flam, or a hit that drags. */
 export interface PatternNote extends Omit<NoteOptions, 'when' | 'duration'> {
   step: number;
   length?: number;
@@ -36,10 +40,17 @@ export interface PatternPlayerOptions {
   length?: number;
   /** Default true. */
   loop?: boolean;
+  /** Cents added to every event's own `detune`: a number, or a function of
+   *  the event's `step`, for a pattern that drifts in pitch as it plays. A
+   *  function is asked as each event is booked. Default 0. */
+  detune?: PatternDetune;
   /** Called as each step is booked — up to a lookahead ahead of it sounding —
    *  with its index in the pattern and its engine time in ms. */
   onStep?: (step: number, when: number) => void;
 }
+
+/** See `PatternPlayerOptions.detune`. */
+export type PatternDetune = number | ((step: number) => number);
 
 /** A running sequence of steps. See `createPatternPlayer`. */
 export interface PatternPlayer {
@@ -52,10 +63,20 @@ export interface PatternPlayer {
   /** Takes effect from the next step not yet booked. */
   setTempo(bpm: number): void;
   /** Takes effect from the next step not yet booked. */
+  setDetune(detune: PatternDetune): void;
+  /** Takes effect from the next step not yet booked. */
   setEvents(events: readonly PatternEvent[], length?: number): void;
 }
 
 let nextPlayer = 1;
+
+/** Steps in one pass of `events` when no length is given: through the last
+ *  event, rounded up to a whole beat. */
+export function patternLength(events: readonly PatternEvent[], stepsPerBeat = 4): number {
+  let last = -1;
+  for (const e of events) last = Math.max(last, Math.floor(e.step));
+  return Math.max(1, Math.ceil((last + 1) / stepsPerBeat)) * stepsPerBeat;
+}
 
 const checkTempo = (bpm: number): void => {
   if (!(bpm > 0) || !Number.isFinite(bpm)) {
@@ -81,18 +102,18 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   const key = `\u0000pattern:${nextPlayer++}`;
 
   let bpm = opts.tempo;
+  let drift = opts.detune ?? 0;
   let length = 1;
   let byStep = new Map<number, PatternEvent[]>();
   const setEvents = (events: readonly PatternEvent[], len?: number): void => {
     byStep = new Map();
-    let last = -1;
     for (const e of events) {
-      const list = byStep.get(e.step);
+      const step = Math.floor(e.step);
+      const list = byStep.get(step);
       if (list) list.push(e);
-      else byStep.set(e.step, [e]);
-      last = Math.max(last, e.step);
+      else byStep.set(step, [e]);
     }
-    length = len ?? Math.max(1, Math.ceil((last + 1) / stepsPerBeat)) * stepsPerBeat;
+    length = len ?? patternLength(events, stepsPerBeat);
   };
   setEvents(opts.events ?? [], opts.length);
 
@@ -123,15 +144,17 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     const step = count % length;
     for (const v of voices) if (!v.isPlaying()) voices.delete(v);
     for (const e of byStep.get(step) ?? []) {
+      const at = when + (e.step - step) * stepMs();
+      const detune = (e.detune ?? 0) + (typeof drift === 'function' ? drift(e.step) : drift);
       if ('sound' in e) {
         const { step: _s, sound, ...play } = e;
-        voices.add(engine.play(sound, { ...play, when }));
+        voices.add(engine.play(sound, { ...play, detune, when: at }));
       } else if ('noise' in e) {
         const { step: _s, length: steps = 1, ...noise } = e;
-        voices.add(engine.playNoise({ ...noise, when, duration: steps * stepMs() }));
+        voices.add(engine.playNoise({ ...noise, detune, when: at, duration: steps * stepMs() }));
       } else {
         const { step: _s, length: steps = 1, ...note } = e;
-        voices.add(engine.playNote({ ...note, when, duration: steps * stepMs() }));
+        voices.add(engine.playNote({ ...note, detune, when: at, duration: steps * stepMs() }));
       }
     }
     opts.onStep?.(step, when);
@@ -167,6 +190,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       nextAt = Math.max(lastAt + stepMs(), engine.now());
       book();
     },
+    setDetune(next) { drift = next; },
     setEvents,
   };
 }

@@ -25,10 +25,11 @@ export {
   type Envelope, type EnvelopePoint, type ResolvedEnvelope,
 } from './envelope';
 export {
-  createPatternPlayer,
+  createPatternPlayer, patternLength,
   type PatternPlayer, type PatternPlayerOptions, type PatternEvent, type PatternNote,
-  type PatternHit, type PatternNoise,
+  type PatternHit, type PatternNoise, type PatternDetune,
 } from './patternPlayer';
+export { patternVoicePeaks, type PatternLoadOptions } from './patternLoad';
 export { noiseSamples, partialPresets } from './synthVoice';
 export type {
   AudioEngineOptions, PlayOptions, StreamOptions, VoiceHandle, VoiceDropReason,

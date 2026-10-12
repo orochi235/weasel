@@ -90,6 +90,13 @@ player.start();
 player.setTempo(140);
 ```
 
+A `step` can be fractional: `{ step: 2.25 }` sounds a quarter of a step after
+step 2, which is how a pattern swings or a hit drags. The player's `detune` is
+cents added to every event, as a number or a function of the event's step, for
+a loop that drifts in pitch. `patternVoicePeaks(events, opts)` returns the most
+voices the pattern holds at once on each bus, to check against `voiceLimit`
+before it plays.
+
 ## Insert effects
 
 Each bus has an ordered insert chain, `engine.bus(name).inserts`, between where

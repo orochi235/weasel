@@ -147,6 +147,57 @@ describe('createPatternPlayer', () => {
     expect(starts()).toEqual([0, 1125]);
   });
 
+  it('plays an event on a fractional step that far into the step', async () => {
+    const { engine, run, starts } = await harness();
+    createPatternPlayer(engine, {
+      tempo: 120, length: 4, loop: false,
+      events: [{ step: 0, pitch: 220 }, { step: 1.2, pitch: 220 }, { step: 2.5, pitch: 220 }],
+    }).start(0);
+    await run(600);
+    expect(starts()).toEqual([0, 150, 313]);
+  });
+
+  it('counts a fractional last step toward the default length by the step it sits in', async () => {
+    const { engine, run } = await harness();
+    const steps: number[] = [];
+    createPatternPlayer(engine, {
+      tempo: 120, events: [{ step: 3.9, pitch: 220 }], onStep: (s) => steps.push(s),
+    }).start(0);
+    await run(500);
+    expect(steps).toEqual([0, 1, 2, 3, 0]);
+  });
+
+  it('adds its detune to each event, a function of the event step', async () => {
+    const { ctx, engine, run } = await harness();
+    const kick = await engine.load('/kick.wav');
+    createPatternPlayer(engine, {
+      tempo: 120, length: 4, loop: false,
+      detune: (step) => step * 10,
+      events: [
+        { step: 0, pitch: 220, detune: 5 },
+        { step: 1.5, pitch: 220 },
+        { step: 2, sound: kick, detune: -3 },
+        { step: 3, noise: 'white' },
+      ],
+    }).start(0);
+    await run(600);
+    expect(ctx._oscillators.map((o) => o.detune.value)).toEqual([5, 15]);
+    expect(ctx._sources.map((s) => s.detune.value)).toEqual([17, 30]);
+  });
+
+  it('takes a constant detune, and a new one from the next step', async () => {
+    const { ctx, engine, run } = await harness();
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 2, detune: 7,
+      events: [{ step: 0, pitch: 220 }, { step: 1, pitch: 220 }],
+    });
+    player.start(0);
+    await run(0);
+    player.setDetune(-7);
+    await run(125);
+    expect(ctx._oscillators.map((o) => o.detune.value)).toEqual([7, -7]);
+  });
+
   it('rejects a tempo that is not positive', async () => {
     const { engine } = await harness();
     expect(() => createPatternPlayer(engine, { tempo: 0 })).toThrow(RangeError);
