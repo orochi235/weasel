@@ -75,10 +75,13 @@ export type {
   TimelineTrack,
   Track,
 } from './timeline';
-export { bindRig, jointAxes, mirrorPose, skeletonAxes, resolveSkeleton, rigidRigApply, solveIk, useRig, IDENTITY_JOINT } from './rig';
+export {
+  autoSkin, bindRig, jointAxes, mirrorPose, motionsFromRest, skeletonAxes, resolveSkeleton, rigidRigApply, skinPath,
+  solveIk, useRig, IDENTITY_JOINT,
+} from './rig';
 export type {
-  BindRigOptions, IkLimit, IkPoint, IkResult, Joint, JointTransform, Pose, Rig, RigApply, RigApplyContext, RigScene,
-  Skeleton, SolveIkOptions,
+  AutoSkinOptions, BindRigOptions, IkLimit, IkPoint, IkResult, Joint, JointTransform, Pose, Rig, RigApply,
+  RigApplyContext, RigScene, Skeleton, Skin, SolveIkOptions,
 } from './rig';
 
 // `createLoop` / `createTweenLoop` / `createStagger` / `createTimeline` are
