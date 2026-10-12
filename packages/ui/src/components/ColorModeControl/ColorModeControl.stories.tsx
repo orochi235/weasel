@@ -11,11 +11,11 @@ type Story = StoryObj<typeof ColorModeControl>;
 
 /** Wired to `useColorModePreference`; the readout shows what `auto` resolves to. */
 export const WithPreferenceHook: Story = {
-  render: function Render() {
+  render: function Render(args) {
     const { preference, setPreference, mode } = useColorModePreference();
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <ColorModeControl value={preference} onChange={setPreference} />
+        <ColorModeControl {...args} value={preference} onChange={setPreference} />
         <span>
           {preference} → {mode}
         </span>
