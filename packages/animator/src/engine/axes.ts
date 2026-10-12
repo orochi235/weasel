@@ -5,6 +5,8 @@ export interface Axes<T> {
   count: number;
   /** Equal for two values exactly when their axes line up one for one. */
   shape: string;
+  /** A name for each axis where the value has them: a plain object's fields. */
+  names?: readonly string[];
   to(v: T): number[];
   /** The value whose `count` axes start at `at` in `a`. */
   from(a: ArrayLike<number>, at?: number): T;
@@ -86,6 +88,7 @@ export function axesOf<T>(sample: T): Axes<T> | null {
   return {
     count: keys.length,
     shape: `object:${JSON.stringify(keys)}`,
+    names: keys,
     to: (v) => keys.map((k) => (v as Record<string, number>)[k]!),
     from: (a, at = 0) => {
       const out: Record<string, number> = {};

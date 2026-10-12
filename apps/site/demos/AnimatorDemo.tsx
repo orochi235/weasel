@@ -10,8 +10,6 @@ const TOP = 40, BOTTOM = H - 40 - SIZE, MIDDLE = (TOP + BOTTOM) / 2;
 const FILL = solid('#7ab8d4');
 
 interface Mark { x: number; y: number }
-/** `y`'s place among a mark's axes, which follow its fields' order. */
-const Y_AXIS = 1;
 
 const slid = (m: Mark): Mark => ({ ...m, x: m.x === 0 ? SLIDE : 0 });
 const dropped = (m: Mark): Mark => ({ ...m, y: m.y === TOP ? BOTTOM : TOP });
@@ -46,9 +44,9 @@ export function AnimatorDemo() {
   const spring = () => targets.forEach((target) => animator.spring({
     target, to: dropped(target.committed()), preset: 'wobbly',
   }));
-  const stagger = () => animator.stagger(targets, 80).each(
-    (target) => animator.spring({ target, to: dropped(target.committed()), preset: 'wobbly' }),
-  );
+  const stagger = () => animator.stagger(targets, 80).spring({
+    to: (target) => dropped(target.committed()), preset: 'wobbly',
+  });
 
   const [held, setHeld] = useState(false);
   const holds = useRef<HoldHandle[]>([]);
@@ -58,7 +56,7 @@ export function AnimatorDemo() {
     setHeld(on);
     if (holds.current.length === 0) {
       holds.current = targets.map((target) => animator.hold({
-        target, value: { x: 0, y: MIDDLE }, axes: [Y_AXIS], weight: () => weight.current,
+        target, value: { x: 0, y: MIDDLE }, axes: ['y'], weight: () => weight.current,
       }));
     }
     animator.tween({

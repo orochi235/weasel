@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { easeInOutSine, PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
-import { jointAxes } from '../rig/skeletonAxes';
-import { IDENTITY_JOINT, type Skeleton } from '../rig/types';
+import { skeletonAxes } from '../rig/skeletonAxes';
+import { IDENTITY_JOINT, type Pose, type Skeleton } from '../rig/types';
 import { createTarget, type Target } from '../target';
 import { bindClip, toClip, type Clip, type ClipBinder, type ClipSampledTrack } from './clip';
 import { sampleTrack } from './sampleTrack';
@@ -147,40 +147,37 @@ describe('a clip naming a target\'s axes', () => {
     tracks: [{ kind: 'sampled', target: 'rig:hero', axes: ['armL', 'foreL'], keys: [{ t: 0, value: {} }] }],
   };
   const over = (s: Skeleton): ClipBinder => binder({
-    target: () => numberTarget() as never,
-    axes: (target, names) => (target === 'rig:hero' ? jointAxes(s, names) : undefined),
+    target: () => createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(s) }) as never,
   });
 
-  it('asks the binder for the axes the names stand for, and keeps the names', () => {
-    const track = bindClip(ARM, over(skeleton('hip', 'armL', 'foreL'))).tracks[0] as SampledTrack<unknown>;
-    expect(track.axes).toEqual([5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
-    expect(track.axisNames).toEqual(['armL', 'foreL']);
+  it('keeps the names on the track, for its target to resolve', () => {
+    const track = bindClip(ARM, over(skeleton('hip', 'armL', 'foreL'))).tracks[0] as SampledTrack<Pose>;
+    expect(track.axes).toEqual(['armL', 'foreL']);
+    expect(track.target!.axisIndexes(track.axes!)).toEqual([5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
   });
 
   it('follows the joints when the skeleton\'s order changes', () => {
-    const track = bindClip(ARM, over(skeleton('foreL', 'hip', 'armL'))).tracks[0] as SampledTrack<unknown>;
-    expect(track.axes).toEqual([10, 11, 12, 13, 14, 0, 1, 2, 3, 4]);
+    const track = bindClip(ARM, over(skeleton('foreL', 'hip', 'armL'))).tracks[0] as SampledTrack<Pose>;
+    expect(track.target!.axisIndexes(track.axes!)).toEqual([10, 11, 12, 13, 14, 0, 1, 2, 3, 4]);
   });
 
-  it('writes the names back, not the numbers they stood for', () => {
+  it('writes the names back', () => {
     expect(toClip(bindClip(ARM, over(skeleton('hip', 'armL', 'foreL'))))).toEqual(ARM);
   });
 
-  it('takes numbers as positions, with no binder asked', () => {
+  it('takes numbers as positions', () => {
     const clip: Clip = { version: 1, tracks: [{ kind: 'sampled', target: 'pose:box.x', axes: [0], keys: [{ t: 0, value: 1 }] }] };
-    const axes = vi.fn();
-    const track = bindClip(clip, binder({ axes })).tracks[0] as SampledTrack<unknown>;
+    const track = bindClip(clip, binder()).tracks[0] as SampledTrack<unknown>;
     expect(track.axes).toEqual([0]);
-    expect(track.axisNames).toBeUndefined();
-    expect(axes).not.toHaveBeenCalled();
     expect(toClip({ tracks: [track] })).toEqual(clip);
   });
 
-  it('throws on names nothing resolves, saying which track target', () => {
-    expect(() => bindClip(ARM, binder({ target: () => numberTarget() as never }))).toThrow(/no axes named "armL", "foreL" on the target "rig:hero"/);
-    expect(() => bindClip(ARM, over(skeleton('hip')))).toThrow(/no joint "armL"/);
+  it('throws as it binds on axes the target does not have, saying which track target', () => {
+    expect(() => bindClip(ARM, binder({ target: () => numberTarget() as never })))
+      .toThrow(/bindClip: track "" on the target "rig:hero" names "armL" on a target whose axes have no names/);
+    expect(() => bindClip(ARM, over(skeleton('hip')))).toThrow(/on the target "rig:hero" names "armL", and the target's axes are "hip.x"/);
     const untargeted: Clip = { version: 1, tracks: [{ kind: 'sampled', label: 'loose', axes: ['armL'], keys: [{ t: 0, value: 1 }] }] };
-    expect(() => bindClip(untargeted, over(skeleton('armL')))).toThrow(/names axes and no target/);
+    expect(() => bindClip(untargeted, over(skeleton('armL')))).toThrow(/track "loose" names axes and no target/);
   });
 });
 
