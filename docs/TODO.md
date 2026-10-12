@@ -989,12 +989,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   small module the rest compose from, and each component's rules beside the component, as
   `PropertyHelp.module.css` already is.
 
-- **(P3) An isolated forge story may still log react-aria's "`<Focusable>` child must be
-  focusable".** The warning fires when a `Focusable` mounts under `visibility: hidden`, which is
-  how forge held a story until its first paint; a story in the workshop page is now held by
-  opacity instead. `.fg-frame-view[data-pending]` still hides an isolated story's iframe by
-  visibility, and whether that reaches the check inside the frame was not looked at.
-
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
   but dragging a palette item onto a canvas is `useDragDrop`
@@ -1106,10 +1100,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) `Tree`'s row ghost takes the host page's font.** The ghost portals out of the tree, so
-  inside `PrefSchemaEditor`, whose `.editor` sets its own face, a dragged row draws in whatever the
-  page uses; in the browser tests, with no themed ancestor, that is the default serif.
-
 - **(P3) Disabled and panel-box rough edges seen in headless Chromium, 2026-10-11.** A disabled
   `Bar` action button draws at 0.4 where every other disabled cell draws at 0.5. A disabled text
   area in a `Bar` keeps a full-strength, working "Notes" button that opens to a disabled text
@@ -1123,10 +1113,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   drag, and a tree row onto the Unplaced list as far as the hold. Not covered: that drop, a
   palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
   500 ms `RAIL_OPEN_MS` timer).
-
-- **(P3) `Tree` keeps `onExternalTarget` beside `dropRef`.** `TreeDropHandle.targetAt(point)`
-  answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
-  effect, a render behind, and its docstring says so. Whether it should go is not decided.
 
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
@@ -1346,47 +1332,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
   changes what existing rail forms look like, which is why it is a decision.
 
-- **(P3) hud loupe: pixel mode keeps a stale picture when the scene changes under a parked aim.**
-  `createLoupe` (`packages/hud/src/loupe/createLoupe.ts`) re-reads the framebuffer only when the
-  aim, mode, factor, or window size changes (`scheduleRefresh` from `surface.changed` and
-  `onResize`). Park a pixel-mode loupe, then undo or nudge a node under it: vector mode follows,
-  pixel mode and `loupe.color` do not. `LoupeModel.resample()` exists for this and nothing in the
-  hud calls it. Refreshing on every landed frame would loop, since the new bitmap's own redraw lands
-  a frame, so it needs a scene-changed signal that the loupe's redraw does not raise (the painted
-  version from `CanvasExtensionApi.getPaintedVersion`, compared before and after the loupe's own
-  request, is one candidate), or a public `refresh()` on the handle that the consumer calls.
-
-- **(P3) SceneGradientHandles: unmounting mid-drag commits the half-finished drag.** Deselect the
-  node (or anything else that unmounts the overlay) while a handle is held: the parent's
-  `useOngoingAction` cleanup runs first and commits the value under the pointer, then `DragPoint`'s
-  own unmount cancel opens a second `setFill` at the starting value and cancels it, which changes
-  nothing (seen in jsdom: ends `commit`, `cancel`, in
-  `packages/ui/src/components/GradientEditor/SceneGradientHandles.tsx`). `useOngoingAction`
-  documents the commit on unmount as "what the user was looking at", which fits a slider left
-  mid-edit; whether a pointer drag cut short by an unmount should commit or cancel is the call. To
-  cancel, the overlay has to learn a drag is live before the parent's cleanup runs.
-
-- **(P3) Callout: re-anchoring dispatches a fake `resize` on `window`.** A callout tracking a scene
-  node through a pan dispatches `new Event('resize')` on every `anchorRect` change
-  (`packages/ui/src/components/Callout/Callout.tsx`), so every resize listener on the page runs once
-  per pan frame while the callout is open (a callout held shut with `isOpen={false}` no longer
-  dispatches). The comment says it is deliberate for want of a public `updatePosition` on React
-  Aria's Popover. Left: changing the anchor span's size by a sub-pixel instead, which trips React
-  Aria's own `ResizeObserver` without touching `window`; whether that repositions needs a browser.
-
-- **(P3) ItemList: removing the focused row leaves focus on `<body>`.** A consumer's remove control
-  in a row's `trailing` cell unmounts the row with focus inside it, and
-  `packages/ui/src/components/ItemList/ItemList.tsx` computes a fallback tab stop for the vanished
-  `focusId` but never focuses it, so the next arrow key goes nowhere. `LayerList` now handles this
-  because it owns its remove button; `ItemList` does not own the control, so it has to infer "the
-  row that held focus is gone". That needs focus-within tracking that survives the removal, and
-  browsers differ on whether removing the focused element fires `blur`, so settle it in a
-  `*.browser.test.tsx`.
-
-- **(P3) BandEditor: splitting a band has no keyboard path.** A band is split only by clicking the
-  ruler (`onTrackPointerDown` in `packages/ui/src/components/BandEditor/BandEditor.tsx`); every
-  other edit has a key. It needs a key and a rule for where the split lands (the selected band's
-  midpoint on the scale is the obvious one).
 
 - **(P3) ui/routing: "is this key press aimed at a text field" is answered twice.** `isTextEntry`
   (`packages/ui/src/components/BandEditor/track.ts`) says yes for input, textarea, select, and
@@ -1410,19 +1355,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   through `onInput`; a key press also calls `onChange`, but so does a drag's end). Options: `Slider`
   passes the source of a change to `onInput`/`onChange`; or `Scale` owns the arrow keys for its
   thumbs and `commit` never nudges.
-
-- **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
-  handler removes the focused row: the tab stop recomputes to the first selected or first row, but
-  DOM focus falls to `<body>` and the next arrow key goes nowhere (`stopId` in
-  `packages/ui/src/components/Tree/Tree.tsx`; only `pendingFocus`, set by keyboard moves, ever calls
-  `.focus()` after a render). When `focusId` leaves the tree while focus was inside it, focus should
-  move to a row; which one (the next sibling, the previous row, the parent) is the decision.
-
-- **(P3) Timeline: an omitted `transport` draws play controls that do nothing.** With no `transport`
-  prop the bar draws Play, Loop, and Rate wired to no-ops
-  (`packages/ui/src/components/Timeline/Timeline.tsx`); `false` hides the whole row. The row also
-  holds the time readout and the Graph switch, which both work without a transport, so the open
-  call is what an omitted `transport` draws: the readout and the switch alone, or nothing.
 
 ### WeaselDraw app follow-ups (defer)
 

@@ -43,6 +43,21 @@ const spokenSeconds = (ms: number): string => `${(ms / 1000).toFixed(2)} seconds
 const multiplierText = (r: number): string => qty(r, RATE).text;
 const multiplierSpoken = (r: number): string => qty(r, RATE).spoken;
 
+/** The playhead over the duration, in seconds, in a cell that holds its width. */
+export function PlayheadReadout({ playhead, duration }: { playhead: number; duration: number }): ReactElement {
+  const shown = Math.min(Math.max(playhead, 0), duration);
+  return (
+    <span className={s.time}>
+      <span data-testid="timeline-time">
+        {seconds(shown)} / {seconds(duration)}
+      </span>
+      <span className={s.sizer} aria-hidden="true">
+        <span>{seconds(duration)} / {seconds(duration)}</span>
+      </span>
+    </span>
+  );
+}
+
 /** Play/pause, a reverse switch, a loop switch, a rate slider, a scrub bar,
  *  and the playhead over the duration in seconds. Holds no state: every
  *  control reports through a callback, and the reverse switch and scrub bar
@@ -126,14 +141,7 @@ export function Transport(props: TransportProps): ReactElement {
         />
       ) : null}
 
-      <span className={s.time}>
-        <span data-testid="timeline-time">
-          {seconds(shown)} / {seconds(duration)}
-        </span>
-        <span className={s.sizer} aria-hidden="true">
-          <span>{seconds(duration)} / {seconds(duration)}</span>
-        </span>
-      </span>
+      <PlayheadReadout playhead={playhead} duration={duration} />
     </div>
   );
 }
