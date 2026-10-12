@@ -58,23 +58,26 @@ export interface PrefRailItem {
   /** Dotted path of the group. Empty for the entry holding loose root leaves. */
   path: string;
   name: string;
-  /** 0 opens a pane. Deeper, an entry nests under the entry its path extends: it scrolls within the open pane at
-   *  1, the deepest a rail goes unless asked for more, and opens a pane of its own under `subPages`. */
+  /** How far the entry nests: 0 at the top, and one more than the entry its path extends. */
   depth: number;
-  /** Path of the depth-0 ancestor — its own path when `depth` is 0. */
-  section: string;
+  /** Path of the page the group is drawn on. Its own path: choosing the entry opens that page. Another's: the
+   *  group is a section of that page, and choosing the entry scrolls the page to it. */
+  page: string;
   /** Leaves surviving the active filter, counted over the whole subtree. */
   matches: number;
-  /** Under `subPages`: its page would draw nothing, so choosing it opens the first entry nested in it. */
+  /** Its page would draw nothing, so choosing it opens the first entry nested in it. */
   passes?: boolean;
 }
 
-/**
- * Whether a group inside a page gets a rail entry. A tab or a panel is found on its page instead. Under `subPages`
- * an entry is a page of its own, so only a group that is a page gets one, and a section is drawn on its parent's.
- */
-export function prefGroupNests(group: PrefGroup, subPages = false): boolean {
-  return subPages ? prefGroupIsPage(group) : group.as === undefined || group.as === 'section';
+/** Whether a group inside a page gets a rail entry. A tab or a panel is found on its page instead. */
+export function prefGroupNests(group: PrefGroup): boolean {
+  return group.as === undefined || group.as === 'section' || group.as === 'page';
+}
+
+/** Whether a group inside a page opens a page of its own. A top-level group does unless it says otherwise
+ *  (`prefGroupIsPage`); a nested one is a section unless it says so. */
+export function prefGroupOpensPage(group: PrefGroup): boolean {
+  return group.as === 'page';
 }
 
 /** Path of the rail entry the one at `path` nests under, or null for a depth-0 entry's. */
@@ -97,36 +100,38 @@ function countPrefLeaves(node: PrefLeaf | PrefGroup): number {
 }
 
 /**
- * The rail's model for a schema: depth-0 groups, each followed by the groups nested in it. That is one level of
- * them, the rest rendering inside a pane with no entry, so a schema that nests ten deep still navigates two
- * levels. `deep` lists every level, each entry followed by its own, for a rail whose every entry opens a pane.
+ * The rail's model for a schema: each top-level page, followed by the groups nested in it at every depth, each
+ * followed by its own. A nested group is a section of the page that holds it unless it is `as: 'page'`, which
+ * opens a page of its own. Nothing inside a tab or a panel is listed.
  *
  * Loose leaves directly under the root lead the list under an entry named for
  * the root itself, since they belong to no group that could name them.
  */
-export function prefRailItems(root: PrefGroup, deep = false): PrefRailItem[] {
+export function prefRailItems(root: PrefGroup): PrefRailItem[] {
   const items: PrefRailItem[] = [];
   // The root's own page holds its leaves and every top-level group that is not a page itself.
   const loose = Object.values(root.children).filter((c) => isPrefLeaf(c) || !prefGroupIsPage(c));
   if (loose.length > 0) {
     const matches = loose.reduce((n, c) => n + countPrefLeaves(c), 0);
-    items.push({ path: '', name: looseEntryName(root.name), depth: 0, section: '', matches });
+    items.push({ path: '', name: looseEntryName(root.name), depth: 0, page: '', matches });
   }
   const passing = (group: PrefGroup): { passes?: true } => {
     const kids = Object.values(group.children);
-    return deep && kids.length > 0 && kids.every((c) => !isPrefLeaf(c) && prefGroupNests(c, true)) ? { passes: true } : {};
+    return kids.length > 0 && kids.every((c) => !isPrefLeaf(c) && prefGroupOpensPage(c)) ? { passes: true } : {};
   };
-  const nest = (group: PrefGroup, path: string, depth: number, section: string): void => {
+  const nest = (group: PrefGroup, path: string, depth: number, page: string): void => {
     for (const [key, sub] of Object.entries(group.children)) {
-      if (isPrefLeaf(sub) || !prefGroupNests(sub, deep)) continue;
+      if (isPrefLeaf(sub) || !prefGroupNests(sub)) continue;
       const subPath = `${path}.${key}`;
-      items.push({ path: subPath, name: sub.name, depth, section, matches: countPrefLeaves(sub), ...passing(sub) });
-      if (deep) nest(sub, subPath, depth + 1, section);
+      const opens = prefGroupOpensPage(sub);
+      const on = opens ? subPath : page;
+      items.push({ path: subPath, name: sub.name, depth, page: on, matches: countPrefLeaves(sub), ...(opens ? passing(sub) : {}) });
+      nest(sub, subPath, depth + 1, on);
     }
   };
   for (const [key, child] of Object.entries(root.children)) {
     if (isPrefLeaf(child) || !prefGroupIsPage(child)) continue;
-    items.push({ path: key, name: child.name, depth: 0, section: key, matches: countPrefLeaves(child), ...passing(child) });
+    items.push({ path: key, name: child.name, depth: 0, page: key, matches: countPrefLeaves(child), ...passing(child) });
     nest(child, key, 1, key);
   }
   return items;

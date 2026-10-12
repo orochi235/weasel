@@ -8,14 +8,13 @@ import s from './Prefs.module.css';
 /** Props for {@link PrefsRail}. */
 export interface PrefsRailProps {
   items: readonly PrefRailItem[];
-  /** Path of the open group: depth 0, or any depth under `subPages`. */
+  /** Path of the open page. */
   section: string;
-  /** Path of the depth-1 group in view, from the pane's scroll spy. */
+  /** Path of the section of the open page in view, from the pane's scroll spy. */
   current: string | null;
-  /** A depth-0 entry was chosen: open its pane. */
+  /** A page's entry was chosen: open it. */
   onOpen: (path: string) => void;
-  /** A nested entry was chosen: scroll the open pane to it, or, under
-   *  `subPages`, open it. */
+  /** A section's entry was chosen: scroll its page to it, opening that page first if another is open. */
   onScrollTo: (path: string) => void;
   /** Accessible name for the rail's landmark. */
   ariaLabel: string;
@@ -25,7 +24,7 @@ export interface PrefsRailProps {
   showCounts?: boolean;
   /**
    * Each entry with nested ones folds them away behind a fold mark, shut
-   * until the open group is it or one under it. Right and Left on the entry unfold
+   * until the open page is it or one under it. Right and Left on the entry unfold
    * and fold it. Everything is unfolded while filtering, so every match shows.
    */
   foldable?: boolean;
@@ -35,15 +34,20 @@ export interface PrefsRailProps {
 }
 
 /**
- * The rail beside a `PrefsForm` pane: depth-0 groups, each followed by the
- * groups nested in it, which scroll within its pane or, under `subPages`,
- * open panes of their own and nest further.
+ * The rail beside a `PrefsForm` pane: each page's entry, followed by those of
+ * the groups nested in it. A nested entry scrolls its page to a section, or
+ * opens a page of its own, as its item's `page` says.
  *
- * A list of buttons rather than a tablist, because only half of these entries
- * switch anything — the nested ones scroll the pane the selected entry already
- * opened, and a tab that does not own a panel has no honest role. The open
- * group is `aria-current="page"`; the nested group in view is
- * `aria-current="location"`.
+ * A list of buttons rather than a tablist, because only some of these entries
+ * switch anything — a section's scrolls the pane a page's entry already
+ * opened, and a tab that does not own a panel has no honest role.
+ *
+ * Two marks say where the reader is. The open page's entry is
+ * `aria-current="page"` and the entry of the section in view is
+ * `aria-current="location"`. Whichever of them is the reader's place carries
+ * `data-rail-mark="current"`, the strong mark: the section in view, or the
+ * page while none of its sections is. Under a current section its page carries
+ * `data-rail-mark="open"`, the weak one.
  */
 export function PrefsRail(props: PrefsRailProps) {
   const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts, dropInto } = props;
@@ -69,9 +73,12 @@ export function PrefsRail(props: PrefsRailProps) {
   });
 
   const activate = (item: PrefRailItem): void => {
-    if (item.depth === 0) onOpen(item.path);
+    if (item.page === item.path) onOpen(item.path);
     else onScrollTo(item.path);
   };
+  // The reader's place: the section in view, the nearest entry above one that is folded away, or the open page.
+  let place = current !== null && items.some((i) => i.path === current && i.page === section) ? current : section;
+  while (place !== section && !shown.some((i) => i.path === place)) place = prefRailParent(place) ?? section;
   const roving = useRovingTabIndex<HTMLDivElement>({
     itemSelector: `.${s.railItem}`,
     orientation: foldable ? 'vertical' : 'both',
@@ -92,15 +99,14 @@ export function PrefsRail(props: PrefsRailProps) {
     shown.filter((item) => parentOf(item) === parent).map((item) => {
       const key = item.path === '' ? '\u0000root' : item.path;
       const open = item.path === section;
-      const inView = item.depth > 0 && item.path === current;
+      const here = item.path === place;
       const nested = nests.has(item.path);
       const entry = (
         <button
           type="button"
-          className={[s.railItem, item.depth > 0 && s.railSub, open && s.railOpen, inView && s.railInView, item.passes && s.railPasses]
-            .filter(Boolean)
-            .join(' ')}
-          aria-current={open ? 'page' : inView ? 'location' : undefined}
+          className={[s.railItem, item.depth > 0 && s.railSub, item.passes && s.railPasses].filter(Boolean).join(' ')}
+          aria-current={open ? 'page' : here ? 'location' : undefined}
+          data-rail-mark={here ? 'current' : open ? 'open' : undefined}
           data-rail-fold={foldable && nested ? item.path : undefined}
           data-pref-rail={isDropPath(item.path) ? undefined : item.path}
           data-drop-placeholder={isDropPath(item.path) ? dropSlot(item.path) ?? '' : undefined}

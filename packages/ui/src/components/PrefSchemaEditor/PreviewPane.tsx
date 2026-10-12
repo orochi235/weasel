@@ -108,7 +108,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
       </PaneHeader>
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-w': `${size.value}px` } as CSSProperties}>
-      <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" subPages rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
+      <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
         schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden} leafAt={leafAt}
         // An empty group is drawn too: it is somewhere to drop into.
         showEmpty markHidden drop={drop}

@@ -1215,17 +1215,25 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   target in a passive effect, a render behind the pointer, so a release in the same task as the
   last move read the previous row's target or none. `PrefSchemaEditor`'s `onPaletteDrop` gets
   around it with `flushSync`; any other caller dropping onto a `Tree` from outside has the same
-  race. To decide: whether `Tree` offers a synchronous "target at this point".
+  race. Ruled 2026-10-11: `Tree` resolves the target from the pointer's position at the drop, and
+  the editor's `flushSync` comes out.
 
-- **(P3) `subPages` overlaps a group's `as`.** `PrefsForm`'s form-wide `subPages` prop decides
-  what `as: 'page'` on a nested group should. Ruled 2026-10-11: `subPages` goes; a nested group
-  with `as` unset is a section, and one that wants a page of its own says `as: 'page'`; `foldable`
-  stays a prop on the form, since folding is how the rail is drawn and not what a group is; and a
-  rail holding both kinds marks the open page as open and, under it, the section in view as
-  current. That leaves `RailLayout` deciding per entry from `as`, where it runs in one mode for
-  the whole form today, the second mark, and `PrefSchemaEditor`'s live preview, the one caller of
-  `subPages` outside tests. `as: 'page'` still means nothing where there is no rail
-  (`ControlPanel`, the columns and list layouts, any `PrefSection`) and draws as the default.
+- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists every
+  nested group, a section of its page unless it is `as: 'page'`. (1) A foldable rail unfolds an
+  entry only while the open page is it or under it, so a section with sections of its own stays
+  shut while the reader scrolls through them, and its entry carries the current mark for them.
+  Whether the section in view should unfold the entries above it is open; it would move the rail
+  under a reader who is scrolling. (2) A top-level group that is not a page (`as: 'section'`
+  beside the root's loose leaves) is drawn on the root's own page and gets no entry, where the
+  same group one level down gets one. (3) A section's rail entry and a nested page's look the
+  same until one is chosen.
+
+- **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
+  is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the
+  scrollport's edge (measured: the heading's top at 10px with 10px of padding), where the
+  comment on the rule says the offset is measured from the edge. Whether rows scrolling under it
+  show in that strip has not been looked at. `RailLayout`'s `stuckAbove` adds the padding for the
+  same reason.
 
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
@@ -1245,13 +1253,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
   react-aria tab also carries.
 
-- **(P1.5) A number's `unit` in a labkit schema can only be code.** It is an object of
-  `toDisplay`/`fromDisplay` functions, so it cannot be written to JSON, set in `PrefSchemaEditor`,
-  or kept in a draft (a draft holds code as a pointer into the source schema, which a new leaf has
-  none of). In astv's settings every unit is an identity conversion carrying a suffix. Proposed,
-  not agreed: a unit may be `{ suffix, accepts }` with the conversion implied, the function form
-  staying for what data cannot say. `.showIf` had the same problem and takes a condition as data
-  now.
+- **(P1.5) A number's `unit` can only be code.** It is an object of `toDisplay`/`fromDisplay`
+  functions, so it cannot be written to JSON, set in `PrefSchemaEditor`, or kept in a draft (a
+  draft holds code as a pointer into the source schema, which a new leaf has none of). Ruled
+  2026-10-11: a unit may also be data with a linear conversion, `{ suffix, scale, offset, accepts }`,
+  where identity is `scale: 1`; that covers every unit astv writes, degrees over radians, and
+  every unit a `UnitSystem` builds, and is the shape an `accepts` entry already has. The function
+  form stays for what is not linear.
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
@@ -1566,6 +1574,12 @@ only story runner in the repo.
   and leaves them off a story whose `render` declares no parameter, since nothing
   would read them. By a grep of `render: () =>`, that is about 300 of the 508
   stories. Each needs rewriting to draw from `args` before it gains controls.
+
+- **(P3) A control read from a string-union prop lists its options in the compiler's order.**
+  `controlFor` (`packages/forge/src/vite/propTypes.ts`) takes a union's members as the checker
+  returns them, which is not the order the type was written in: `Button`'s `variant` reads link,
+  ghost, primary, secondary. Reading the order from the declaration's type node would fix it where
+  the union is written out, and leave an aliased or computed union as it is.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
