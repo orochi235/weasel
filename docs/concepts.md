@@ -305,7 +305,8 @@ committed pose. The values are computed by blits
 (`@msb235/blits`), behind `packages/core/src/animation/engine/`; no blits type is
 public. blits clocks the voices and sums them; how a target's holds share it is
 folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
-cover some axes and turn an angle. A target is moved by one animator at a time.
+cover some axes and turn an angle. blits stays a repository of its own, not a
+`@weasel-js` package (ruled 2026-10-11). A target is moved by one animator at a time.
 
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that
