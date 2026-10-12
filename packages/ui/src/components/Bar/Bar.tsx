@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { applyPrefConditions, isPrefLeaf, prefJudge, prefValueAtPath, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
 import { PropertyRow } from '../Properties/PropertyRow';
@@ -46,8 +47,10 @@ export interface BarProps {
 export function Bar(props: BarProps) {
   const { schema, values, onChange, mixed, renderers, orientation, label, framed, className } = props;
   const fields = prefFieldChoices(schema);
-  const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, (path) => valueAt(values, path)));
-  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled };
+  const read = (path: string): unknown => valueAt(values, path);
+  const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, read));
+  const entryAt = entryApplier((entry) => prefJudge(schema, read, entry));
+  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt };
   return (
     <BarLayout
       nodes={shown === null ? [] : groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />)}
@@ -69,6 +72,8 @@ interface Draw {
   fields: readonly PrefFieldChoice[];
   /** Paths of the leaves and fields a failed `enableIf` disables. */
   disabled: ReadonlySet<string>;
+  /** Answers the conditions that read an entry of a list or a map, for that entry. */
+  entryAt: EntryAt;
 }
 
 /** The value a condition reads at `path`: the entry there, else the part of an entry above it that the rest of the path names. */
@@ -111,6 +116,7 @@ function leafCell({ path, leaf }: BarLeafNode, surface: LeafSurface, draw: Draw)
     fields,
     disabled: draw.disabled.has(path),
     disabledAt: (at) => draw.disabled.has(at),
+    entryAt: draw.entryAt,
   };
   return {
     key: path,

@@ -55,3 +55,12 @@ export function prefLeafHolding(schema: PrefGroup | PrefSection, path: string): 
   }
   return isPrefLeaf(node) ? { leaf: node } : undefined;
 }
+
+/**
+ * The leaf describing the value at `path` inside one entry of a list or a
+ * map whose `item` this is; the empty path is the entry itself. `within` is
+ * a path inside the entry too, empty for the entry.
+ */
+export function prefLeafHoldingIn(item: PrefLeaf, path: string): PrefHeld | typeof UNSEEN | undefined {
+  return path === '' ? { leaf: item } : insideLeaf(item, path, '');
+}

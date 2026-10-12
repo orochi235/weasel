@@ -87,9 +87,6 @@
   "packages/core/src/core/layers/render.ts": {
     "lines": 541
   },
-  "packages/core/src/renderer/paintKinds.ts": {
-    "lines": 456
-  },
   "packages/core/src/core/scene/arrivalWindow.ts": {
     "longestFunction": 123
   },
@@ -155,6 +152,9 @@
   },
   "packages/core/src/renderer/drawBatch.ts": {
     "lines": 663
+  },
+  "packages/core/src/renderer/paintKinds.ts": {
+    "lines": 456
   },
   "packages/core/src/renderer/shaders/extractUniformNames.ts": {
     "longestFunction": 144
@@ -285,7 +285,7 @@
     "longestFunction": 127
   },
   "packages/labkit/src/controls/ControlRow.tsx": {
-    "longestFunction": 157
+    "longestFunction": 141
   },
   "packages/labkit/src/controls/MatrixCell.tsx": {
     "longestFunction": 129
@@ -458,7 +458,7 @@
     "longestFunction": 195
   },
   "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
-    "longestFunction": 192
+    "longestFunction": 190
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
     "longestFunction": 211
@@ -480,7 +480,7 @@
     "longestFunction": 127
   },
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
-    "longestFunction": 156
+    "longestFunction": 143
   },
   "packages/ui/src/components/Slider/SliderBody.tsx": {
     "longestFunction": 269

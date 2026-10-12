@@ -44,6 +44,8 @@ export const CONDITION_KIND = 'condition';
 const condition = (name: string, description: string): PrefLeaf => ({ kind: CONDITION_KIND, name, description, default: undefined });
 const SHOW_IF = condition('Shown if', 'Drawn only while this holds of the other prefs\' values. None: always drawn.');
 const ENABLE_IF = condition('Enabled if', 'Takes input only while this holds of the other prefs\' values, and is drawn either way. None: always enabled.');
+/** An entry is drawn with its list, so it has no `showIf` to offer. */
+const ENTRY_ENABLE_IF = condition('Enabled if', 'One entry takes input only while this holds, of its own fields or of the other prefs\' values. None: always enabled.');
 const control = (values: readonly string[]) => choice('Control', 'Which control draws it. Unset: the kind\'s default.', values);
 
 const LEAF_BASE: KindAttrs = {
@@ -162,13 +164,14 @@ function defaultAttr(leaf: PrefLeaf, description = 'The value before anything is
 /** The leaf a list or a map describes each of its entries by. */
 export const entryOf = (leaf: PrefLeaf): PrefLeaf | undefined => (leaf.kind === 'list' || leaf.kind === 'map' ? (leaf as PrefList).item : undefined);
 
-/** What a list or a map says about one entry: its name, what a new one starts as, and a plain kind's own attributes. */
+/** What a list or a map says about one entry: its name, what a new one starts as, a plain kind's own attributes, and what enables it. */
 function entryAttrs(item: PrefLeaf, custom: CustomKinds): KindAttrs {
   const def = defaultAttr(item, 'What a new entry starts as.');
   return {
     name: text('Name', 'What one entry is called.'),
     ...(def ? { default: def } : {}),
     ...(item.type === undefined ? kindAttrs(item.kind, custom) : {}),
+    enableIf: ENTRY_ENABLE_IF,
   };
 }
 

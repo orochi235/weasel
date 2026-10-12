@@ -4,7 +4,7 @@
 import { formOf, ORDERINGS, partsOf, type PrefConditionValue, type PrefTest } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
-import { prefLeafHolding, UNSEEN } from './holding';
+import { prefLeafHolding, prefLeafHoldingIn, UNSEEN } from './holding';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import { isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject } from './schema';
@@ -12,10 +12,11 @@ import type { PrefUnion } from './union';
 
 /** One thing wrong with a condition: it is not one, it reads a path no leaf
  *  holds a value at, it compares a leaf against a value it never holds, it
- *  never holds whatever the leaf does, as an `in` of no values, or it is the
- *  `showIf` of a list's or a map's item, which is drawn with each entry. */
+ *  never holds whatever the leaf does, as an `in` of no values, it is the
+ *  `showIf` of a list's or a map's item, which is drawn with each entry, or
+ *  it reads from the entry on a node that no list or map draws. */
 export interface PrefConditionProblem {
-  code: 'malformed' | 'no-leaf' | 'no-value' | 'value' | 'never' | 'item-show';
+  code: 'malformed' | 'no-leaf' | 'no-value' | 'value' | 'never' | 'item-show' | 'no-item';
   /** The path read, where the problem is with one. */
   path?: string;
   problem: string;
@@ -67,28 +68,34 @@ function neverHolds(leaf: PrefLeaf, value: PrefConditionValue): string | undefin
   }
 }
 
-function testProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
-  const found = leafProblems(test, schema);
+function testProblems(test: PrefTest, schema: PrefGroup | PrefSection, site: PrefConditionSite): PrefConditionProblem[] {
+  const { path } = test;
+  if (test.from === 'item' && site.within === undefined) {
+    return [{ code: 'no-item', path, problem: `"${path}" is read from an entry, and this is inside no list or map` }];
+  }
+  const found = leafProblems(test, schema, site);
   if (test.in?.length !== 0) return found;
-  return [...found, { code: 'never', path: test.path, problem: `"${test.path}" is one of nothing, which never holds` }];
+  return [...found, { code: 'never', path, problem: `"${path}" is one of nothing, which never holds` }];
 }
 
-function leafProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
+function leafProblems(test: PrefTest, schema: PrefGroup | PrefSection, site: PrefConditionSite): PrefConditionProblem[] {
   const { path } = test;
-  const held = prefLeafHolding(schema, path);
-  if (held === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"` }];
+  const inEntry = test.from === 'item';
+  const held = inEntry ? prefLeafHoldingIn(site.within!.item, path) : prefLeafHolding(schema, path);
+  if (held === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"${inEntry ? ' in the entry' : ''}` }];
   if (held === UNSEEN) return [];
   const { leaf } = held;
-  if (!prefHoldsValue(leaf)) return [{ code: 'no-value', path, problem: `"${path}" is a${leaf.kind === 'separator' || leaf.kind === 'label' ? '' : 'n'} ${leaf.kind}, which holds no value` }];
+  const named = inEntry ? (path === '' ? 'the entry' : `the entry's "${path}"`) : `"${path}"`;
+  if (!prefHoldsValue(leaf)) return [{ code: 'no-value', path, problem: `${named} is a${leaf.kind === 'separator' || leaf.kind === 'label' ? '' : 'n'} ${leaf.kind}, which holds no value` }];
   const out: PrefConditionProblem[] = [];
   const compared = [test.is, test.isNot, ...(test.in ?? [])].filter((value) => value !== undefined);
   for (const value of compared) {
     const why = neverHolds(leaf, value);
-    if (why !== undefined) out.push({ code: 'value', path, problem: `"${path}" never holds ${show(value)}: ${why}` });
+    if (why !== undefined) out.push({ code: 'value', path, problem: `${named} never holds ${show(value)}: ${why}` });
   }
   const ordering = ORDERINGS.find((op) => test[op] !== undefined);
   if (ordering !== undefined && isBuiltinPref(leaf) && leaf.kind !== 'number') {
-    out.push({ code: 'value', path, problem: `"${path}" is a${leaf.kind === 'object' || leaf.kind === 'enum' ? 'n' : ''} ${leaf.kind}, and "${ordering}" compares numbers` });
+    out.push({ code: 'value', path, problem: `${named} is a${leaf.kind === 'object' || leaf.kind === 'enum' ? 'n' : ''} ${leaf.kind}, and "${ordering}" compares numbers` });
   }
   return out;
 }
@@ -103,7 +110,8 @@ function leafProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefCond
  * describe. Takes `unknown`, since a schema read from JSON or built without
  * types may hold anything where a condition goes. `site` says where the
  * condition's node sits; without it the node is taken to be outside every
- * list and map.
+ * list and map. A path read from the entry is held to the `item` of
+ * `site.within`, and is a problem where there is none.
  */
 export function checkPrefCondition(condition: unknown, schema: PrefGroup | PrefSection, site: PrefConditionSite = {}): PrefConditionProblem[] {
   if (site.itemShowIf && site.within) {
@@ -116,7 +124,7 @@ export function checkPrefCondition(condition: unknown, schema: PrefGroup | PrefS
     const shown = typeof condition === 'function' ? 'a function' : JSON.stringify(condition);
     return [{ code: 'malformed', problem: `not a condition: ${shown}` }];
   }
-  if (form === 'test') return testProblems(condition as PrefTest, schema);
+  if (form === 'test') return testProblems(condition as PrefTest, schema, site);
   return partsOf(condition, form).flatMap((part) => checkPrefCondition(part, schema, site));
 }
 

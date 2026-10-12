@@ -67,3 +67,36 @@ describe('conditions inside a leaf a control panel opens in a dialog', () => {
       expect(hold).toBeEnabled();
   });
 });
+
+describe('a condition that reads the entry, in a list a control panel opens in a dialog', () => {
+  const stop = () =>
+    f.object({
+      held: f.boolean(false),
+      hold: f.number(0).showIf({ from: 'item', path: 'held' }),
+      gain: f.number(0).enableIf({ from: 'item', path: 'held' }),
+    });
+  const entries = f.schema({
+    held: f.boolean(false),
+    stops: f.list(
+      [
+        { held: true, hold: 0, gain: 0 },
+        { held: false, hold: 0, gain: 0 },
+      ],
+      stop(),
+    ),
+  });
+
+  it('hides and disables a field in each entry by that entry', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(entries)}
+        config={entries.defaults() as Record<string, unknown>}
+        setConfig={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Stops' }));
+    expect(screen.getAllByRole('spinbutton', { name: 'Hold' })).toHaveLength(1);
+    const gains = screen.getAllByRole('spinbutton', { name: 'Gain' });
+    expect(gains.map((g) => (g as HTMLInputElement).disabled)).toEqual([false, true]);
+  });
+});

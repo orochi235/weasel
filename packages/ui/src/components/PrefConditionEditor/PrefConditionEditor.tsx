@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { checkPrefCondition, isPrefCondition, type PrefCondition, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { checkPrefCondition, isPrefCondition, type PrefCondition, type PrefConditionSite, type PrefGroup, type PrefList, type PrefMap, type PrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { Code } from '../Code';
 import { Select, type SelectOption } from '../Select';
 import { ToggleBar } from '../ToggleBar';
 import { ConditionRow } from './ConditionRow';
-import { conditionLeaves, conditionParts, joinCondition, testOf, type ConditionMode } from './conditionRows';
+import { conditionLeaves, conditionParts, joinCondition, leafKey, testOf, type ConditionMode } from './conditionRows';
 import s from './PrefConditionEditor.module.css';
 
 const NO_PATHS: readonly string[] = [];
@@ -29,6 +29,12 @@ export interface PrefConditionEditorProps {
    * already reads such a pref keeps it.
    */
   exclude?: readonly string[];
+  /**
+   * The list or map whose entry the condition's node is drawn in: the one it is the `item` of, or sits inside the
+   * item of. The pickers then offer that entry's own fields first, each named as the entry's, and a row on one
+   * writes a test that reads from the entry (`from: 'item'`). Unset, the node is in no entry.
+   */
+  entryOf?: PrefList | PrefMap;
   /** What the condition decides, which names the group of controls: `Shown if`. */
   'aria-label'?: string;
   className?: string;
@@ -45,15 +51,21 @@ export interface PrefConditionEditorProps {
  * offer are each a row of text, which can be removed and is otherwise handed back as the object it was. Whatever
  * `checkPrefCondition` finds wrong with a row is said on that row. With no rows left the condition is `undefined`.
  */
-export function PrefConditionEditor({ value, onChange, schema, exclude = NO_PATHS, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
-  const leaves = useMemo(() => conditionLeaves(schema), [schema]);
+export function PrefConditionEditor({ value, onChange, schema, exclude = NO_PATHS, entryOf, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
+  const leaves = useMemo(() => conditionLeaves(schema, entryOf), [schema, entryOf]);
+  const site = useMemo<PrefConditionSite>(() => (entryOf ? { within: entryOf } : {}), [entryOf]);
   const prefOptions = useMemo<SelectOption[]>(() => leaves
-    .filter(({ path }) => !exclude.some((out) => path === out || path.startsWith(`${out}.`)))
-    .map(({ path, leaf }) => ({
-      value: path,
-      label: <>{leaf.name || path} <span className={s.path}>{path}</span></>,
-      textValue: `${leaf.name} ${path}`,
-    })), [leaves, exclude]);
+    .filter(({ path, from }) => from === 'item' || !exclude.some((out) => path === out || path.startsWith(`${out}.`)))
+    .map((found) => {
+      const { path, leaf, from } = found;
+      // A field of the entry is named as the entry's, so it reads apart from a root pref at the same path.
+      const where = from === 'item' ? `this ${entryOf?.item.name || 'entry'}: ${path}` : path;
+      return {
+        value: leafKey(found),
+        label: <>{leaf.name || path} <span className={s.path}>{where}</span></>,
+        textValue: `${leaf.name} ${where}`,
+      };
+    }), [leaves, exclude, entryOf]);
   const classes = [s.editor, className].filter(Boolean).join(' ');
 
   if (value !== undefined && !isPrefCondition(value)) {
@@ -62,7 +74,7 @@ export function PrefConditionEditor({ value, onChange, schema, exclude = NO_PATH
         <div className={s.row} data-invalid>
           <Code size="xs" status="muted" className={s.text}>{JSON.stringify(value) ?? String(value)}</Code>
           <Button size="sm" onClick={() => onChange(undefined)}>Remove</Button>
-          {checkPrefCondition(value, schema).map((p, i) => <p key={i} className={s.problem}>{p.problem}</p>)}
+          {checkPrefCondition(value, schema, site).map((p, i) => <p key={i} className={s.problem}>{p.problem}</p>)}
         </div>
       </div>
     );
@@ -77,15 +89,15 @@ export function PrefConditionEditor({ value, onChange, schema, exclude = NO_PATH
           onChange={(next) => { if (next !== null && next !== mode) write(parts, next); }} />
       )}
       {parts.map((part, i) => (
-        <ConditionRow key={i} n={i + 1} part={part} schema={schema} leaves={leaves} prefOptions={prefOptions}
+        <ConditionRow key={i} n={i + 1} part={part} schema={schema} site={site} leaves={leaves} prefOptions={prefOptions}
           onChange={(next) => write(parts.map((p, j) => (j === i ? next : p)))}
           onRemove={() => write(parts.filter((_, j) => j !== i))} />
       ))}
       <Select aria-label="Add a condition" placeholder="Add a condition on…" selectedKey={null} options={prefOptions}
         isDisabled={prefOptions.length === 0}
-        onSelectionChange={(path) => {
-          const found = leaves.find((l) => l.path === path);
-          if (found) write([...parts, testOf(found.path, found.leaf)]);
+        onSelectionChange={(key) => {
+          const found = leaves.find((l) => leafKey(l) === key);
+          if (found) write([...parts, testOf(found)]);
         }} />
     </div>
   );

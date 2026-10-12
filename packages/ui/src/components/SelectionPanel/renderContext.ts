@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { PrefLeaf } from '@weasel-js/prefs';
+import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 
 /** What a {@link PropertyRenderer} is given for the property it is rendering. */
@@ -77,6 +78,8 @@ export interface PropertyRenderContext {
   hidden?: boolean;
   /** Whether the field at a path under this leaf's is one a `showIf` hides, in a panel given `markHidden`. */
   hiddenAt?: (path: string) => boolean;
+  /** An entry of a list or a map under this leaf, as the conditions that read the entry leave it. */
+  entryAt?: EntryAt;
 }
 
 /**

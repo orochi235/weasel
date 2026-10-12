@@ -89,6 +89,53 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
   );
 }
 
+/** What a compound leaf's dialog holds: the leaf's control, with the conditions inside it applied. */
+function CompoundControl({
+  path,
+  leaf,
+  resolved,
+  config,
+  label,
+  value,
+  onChange,
+  renderers,
+}: Pick<ControlRowProps<Record<string, unknown>>, 'path' | 'leaf' | 'resolved' | 'config'> & {
+  label: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  renderers: Record<string, ControlRenderer> | undefined;
+}) {
+  const choices = useFieldChoices();
+  const inside = conditionedLeaf(resolved, path, leaf, config);
+  // Plain text entries keep the list's own fields, and the placeholder only they have.
+  if (leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined)) {
+    const list = leaf as PrefList;
+    return (
+      <ListEditor
+        aria-label={list.item.name || label}
+        value={prefListTexts(value)}
+        onChange={onChange}
+        minItems={list.minItems}
+        maxItems={list.maxItems}
+        placeholder={extra<string>(leaf, 'placeholder')}
+        disabled={inside.disabledAt(`${path}.${PREF_ENTRY}`)}
+      />
+    );
+  }
+  return (
+    <PrefControl
+      pref={inside.leaf}
+      path={path}
+      value={value}
+      onChange={onChange}
+      renderers={renderers}
+      fields={choices}
+      disabledAt={inside.disabledAt}
+      entryAt={inside.entryAt}
+    />
+  );
+}
+
 function LeafRow<TC extends Record<string, unknown>>({
   path,
   leaf,
@@ -190,11 +237,6 @@ function LeafRow<TC extends Record<string, unknown>>({
 
   // Too much for a row, so the row opens it in a dialog.
   if (prefIsCompound(leaf)) {
-    const item = leaf.kind === 'list' ? (leaf as PrefList).item : undefined;
-    // Plain text entries keep the list's own fields, and the placeholder only they have.
-    const texts =
-      leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined);
-    const inside = conditionedLeaf(resolved, path, leaf, config);
     return (
       <DialogRow
         label={label}
@@ -205,29 +247,18 @@ function LeafRow<TC extends Record<string, unknown>>({
         disabled={disabled}
         {...autoProps}
       >
-        {() =>
-          texts ? (
-            <ListEditor
-              aria-label={item?.name || label}
-              value={prefListTexts(value)}
-              onChange={write}
-              minItems={(leaf as PrefList).minItems}
-              maxItems={(leaf as PrefList).maxItems}
-              placeholder={extra<string>(leaf, 'placeholder')}
-              disabled={inside.disabledAt(`${path}.${PREF_ENTRY}`)}
-            />
-          ) : (
-            <PrefControl
-              pref={inside.leaf}
-              path={path}
-              value={value}
-              onChange={write}
-              renderers={renderers}
-              fields={choices}
-              disabledAt={inside.disabledAt}
-            />
-          )
-        }
+        {() => (
+          <CompoundControl
+            path={path}
+            leaf={leaf}
+            resolved={resolved}
+            config={config}
+            label={label}
+            value={value}
+            onChange={write}
+            renderers={renderers}
+          />
+        )}
       </DialogRow>
     );
   }

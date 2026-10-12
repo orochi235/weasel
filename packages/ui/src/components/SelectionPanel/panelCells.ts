@@ -3,6 +3,7 @@
  * and the control it draws in a row or in a bar.
  */
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
+import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
 import { MIXED, absentValue, aggregateValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf, type PanelRow } from './model';
@@ -20,6 +21,7 @@ export interface PanelCellScope {
   absentAt: (path: string) => unknown;
   disabled: ReadonlySet<string>;
   hidden: ReadonlySet<string>;
+  entryAt?: EntryAt;
 }
 
 function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRenderContext {
@@ -50,6 +52,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
     disabledAt: (at) => disabled.has(at),
     hidden: hidden.has(panelLeafKey(panelLeaf)),
     hiddenAt: (at) => hidden.has(at),
+    ...(scope.entryAt ? { entryAt: scope.entryAt } : {}),
   };
 }
 

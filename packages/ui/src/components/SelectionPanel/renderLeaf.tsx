@@ -31,6 +31,27 @@ export interface RenderBuiltinOptions {
   surface?: LeafSurface;
 }
 
+/** What the entry at `key` of the map `ctx` draws is told: one value of its own, under the conditions over that entry. */
+function mapEntryContext(
+  ctx: PropertyRenderContext, map: PrefMap, key: string, held: unknown, set: (next: unknown) => void,
+): PropertyRenderContext {
+  const { item, ...conditions } = entryConditions(ctx, `${ctx.path}.${key}`, map.item, held);
+  return {
+    ...ctx,
+    ...conditions,
+    path: `${ctx.path}.${key}`,
+    pref: item,
+    value: held,
+    mixed: false,
+    unset: held === undefined,
+    siblings: undefined,
+    each: [held],
+    eachSiblings: undefined,
+    setValue: set,
+    update: (fn) => set(fn(held)),
+  };
+}
+
 export function renderBuiltin(
   ctx: PropertyRenderContext,
   ariaLabel: string,
@@ -77,20 +98,7 @@ export function renderBuiltin(
         onChange={setValue}
         disabled={ctx.disabled}
         renderValue={(held, set, name, key) => {
-          const item: PropertyRenderContext = {
-            ...ctx,
-            ...entryConditions(ctx, `${ctx.path}.${key}`),
-            path: `${ctx.path}.${key}`,
-            pref: map.item,
-            value: held,
-            mixed: false,
-            unset: held === undefined,
-            siblings: undefined,
-            each: [held],
-            eachSiblings: undefined,
-            setValue: set,
-            update: (fn) => set(fn(held)),
-          };
+          const item = mapEntryContext(ctx, map, key, held, set);
           const custom = renderers?.[map.item.kind];
           return custom ? custom(item) : renderBuiltin(item, name, renderers, within);
         }}

@@ -15,7 +15,7 @@ import { PrefActionButton } from './PrefActionButton';
 import { PrefMixed } from './PrefMixed';
 import { prefDrawsNoControl, PrefWords } from './PrefWords';
 import { rowWidthOf } from './compound';
-import { entryConditions } from './entry';
+import { entryConditions, type EntryAt } from './entry';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
@@ -59,6 +59,8 @@ export interface PrefRenderContext {
   hidden?: boolean;
   /** Whether the field at a path under this leaf's is one a `showIf` hides, in a form given `markHidden`. */
   hiddenAt?: (path: string) => boolean;
+  /** An entry of a list or a map under this leaf, as the conditions that read the entry leave it. */
+  entryAt?: EntryAt;
 }
 
 /**
@@ -97,6 +99,8 @@ export interface WalkCtx {
   disabled?: ReadonlySet<string>;
   /** Paths of the leaves, fields, and groups a failed `showIf` hides, in a form that draws them marked. */
   hidden?: ReadonlySet<string>;
+  /** Answers the conditions that read an entry of a list or a map, for that entry. */
+  entryAt?: EntryAt;
 }
 
 /**
@@ -155,6 +159,7 @@ export function prefRenderContext(
     disabled: ctx.disabled?.has(own) ?? false,
     disabledAt: (at) => ctx.disabled?.has(at) ?? false,
     ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: (at: string) => ctx.hidden!.has(at) } : {}),
+    ...(ctx.entryAt ? { entryAt: ctx.entryAt } : {}),
   };
   return { renderCtx, toggles };
 }
@@ -274,12 +279,13 @@ function renderBuiltin(
         value={value}
         onChange={setValue}
         disabled={ctx.disabled}
-        renderValue={(held, set, name, key) =>
-          renderPrefControl(
-            { ...ctx, ...entryConditions(ctx, `${ctx.path}.${key}`), path: `${ctx.path}.${key}`, pref: { ...map.item, name }, value: held, setValue: set },
+        renderValue={(held, set, name, key) => {
+          const { item, ...conditions } = entryConditions(ctx, `${ctx.path}.${key}`, map.item, held);
+          return renderPrefControl(
+            { ...ctx, ...conditions, path: `${ctx.path}.${key}`, pref: { ...item, name }, value: held, setValue: set },
             renderers,
-          )
-        }
+          );
+        }}
       />
     );
   }

@@ -67,6 +67,7 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
     disabledAt: ctx.disabledAt,
     hidden: ctx.hidden === true || ctx.hiddenAt?.(childPath) === true,
     hiddenAt: ctx.hiddenAt,
+    entryAt: ctx.entryAt,
   };
 }
 

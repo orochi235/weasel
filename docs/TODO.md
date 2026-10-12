@@ -1173,13 +1173,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
   theme that turns the glass on.
 
-- **(P3) Conditions on a pref: what the 2026-10-11 rulings leave to build.** A leaf, group, or
-  section holds a `PrefCondition` (`packages/prefs/src/condition.ts`) as `showIf` or `enableIf`;
-  `packages/prefs/src/scope.ts` applies them in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's
-  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Ruled: a test
-  may read from the list or map entry its field sits in (`{ from: 'item', path: 'mode' }`), where
-  every path is from the schema root today.
-
 - **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
   compares stored values, where every other reader decodes. A rail entry for a group drawn under
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
@@ -1190,7 +1183,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   has them, is hidden and disabled by its own conditions alone; `applyPrefConditions` takes that
   schema as `aliasOver` once the form is given it. An alias of an `object` leaf draws a field
   whose `showIf` hides it in the leaf's own row: `PrefsForm` resolves the alias against the
-  schema before its conditions are applied.
+  schema before its conditions are applied. `PrefSchemaEditor` edits an entry's own `enableIf` and
+  nothing inside an object entry, whose fields it draws no rows for, so a field's
+  `{ from: 'item' }` condition is written in code. A list of plain text entries is one
+  `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
+  entry does nothing there.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs

@@ -119,6 +119,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     absentAt,
     disabled: scope.disabled,
     hidden: scope.hidden,
+    entryAt: scope.entryAt,
   };
 
   return (

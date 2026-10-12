@@ -1,4 +1,5 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
+import type { EntryAt } from './entry';
 import { renderPrefControl, type PrefRenderer } from './PrefsRow';
 import type { PrefFieldChoice } from './schema';
 
@@ -20,6 +21,9 @@ export interface PrefControlProps {
   /** Whether a condition disables the field at a path under the leaf's. An entry of a list or a map is asked
    *  about with `*` for its step (`'phases.*.hold'`), as `applyPrefConditions` names it. */
   disabledAt?: (path: string) => boolean;
+  /** An entry of a list or a map as the conditions that read the entry (`from: 'item'`) leave it, for an owner
+   *  that answers them: `applyPrefEntryConditions`. Without it such a condition counts as holding. */
+  entryAt?: EntryAt;
 }
 
 /**
@@ -27,7 +31,7 @@ export interface PrefControlProps {
  * surface that lays out its own rows and has a leaf whose value is made of
  * others' (an `object`, a `list`, a `map`, a `union`) to put in one.
  */
-export function PrefControl({ pref, path = '', value, onChange, renderers, fields, disabled, disabledAt }: PrefControlProps) {
+export function PrefControl({ pref, path = '', value, onChange, renderers, fields, disabled, disabledAt, entryAt }: PrefControlProps) {
   return renderPrefControl(
     {
       path,
@@ -39,6 +43,7 @@ export function PrefControl({ pref, path = '', value, onChange, renderers, field
       ...(fields ? { fields } : {}),
       disabled,
       disabledAt,
+      ...(entryAt ? { entryAt } : {}),
     },
     renderers,
   );

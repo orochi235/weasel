@@ -60,7 +60,13 @@ describe('<ControlPanel> alias', () => {
       [],
     );
     const draw = (config: Record<string, unknown>) =>
-      render(<ControlPanel schema={gated} config={{ shown: true, open: true, byCode: true, ...config }} setConfig={vi.fn()} />);
+      render(
+        <ControlPanel
+          schema={gated}
+          config={{ shown: true, open: true, byCode: true, ...config }}
+          setConfig={vi.fn()}
+        />,
+      );
     const all = draw({});
     expect(screen.getByRole('checkbox', { name: 'Grid while playing' })).toBeEnabled();
     all.unmount();

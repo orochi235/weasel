@@ -58,3 +58,29 @@ describe("SelectionPanel conditions on a list's and a map's item", () => {
     expect(screen.getByRole('spinbutton', { name: 'Weight left' })).toBeEnabled();
   });
 });
+
+describe('SelectionPanel conditions that read the entry', () => {
+  const held = { from: 'item', path: 'held' } as const;
+  const stop = {
+    kind: 'object', name: 'Stop', description: '', default: {},
+    children: { held: flag('Held'), hold: num('Hold', { showIf: held }), gain: num('Gain', { enableIf: held }) },
+  } as PrefLeaf;
+  const entries: PrefSection['members'] = {
+    'data.held': flag('Held on the node'),
+    'data.stops': { kind: 'list', name: 'Stops', description: '', default: [], item: stop } as PrefLeaf,
+    'data.named': { kind: 'map', name: 'Named', description: '', default: {}, item: stop } as PrefLeaf,
+  };
+  const draw = (data: Record<string, unknown>[]) => {
+    const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+    data.forEach((d, i) => scene.add({ id: asNodeId(`n${i}`), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', ...d } }));
+    const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: entries } }];
+    render(<SelectionPanel scene={scene} selection={{ current: data.map((_, i) => `n${i}`) } as unknown as SelectionApi} properties={properties} routing={routing} />);
+  };
+
+  it('hides and disables a field in each entry by that entry, not by the node\'s field of the same name', () => {
+    draw([{ held: false, stops: [{ held: true }, { held: false }], named: { a: { held: false }, b: { held: true } } }]);
+    expect(screen.getAllByRole('spinbutton', { name: 'Hold' })).toHaveLength(2);
+    const gains = screen.getAllByRole('spinbutton', { name: 'Gain' });
+    expect(gains.map((g) => (g as HTMLInputElement).disabled)).toEqual([false, true, true, false]);
+  });
+});

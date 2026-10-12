@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { applyPrefConditions, prefJudge, prefLeafAt, prefReader, visiblePrefSubtree, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
+import { entryApplier } from './entry';
 import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';
 import { HiddenBadge, marksHidden, type MarkHiddenProps } from './hidden';
@@ -172,6 +173,10 @@ export function PrefsForm(props: PrefsFormProps) {
     () => (visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden, aliasOver: schema })),
     [visible, schema, values, keepEmpty, markHidden],
   );
+  const entryAt = useMemo(
+    () => entryApplier((entry) => prefJudge(schema, prefReader(schema, values), entry), markHidden),
+    [schema, values, markHidden],
+  );
   const conditioned = applied?.shown ?? null;
   const root = useMemo(
     () => (conditioned === null ? null : filterPrefRoot(conditioned, query, leafAt)),
@@ -188,7 +193,7 @@ export function PrefsForm(props: PrefsFormProps) {
   );
   const lead = shown.at(-1) ?? null;
   const selection = useSelectedRow(selected, lead, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined, entryAt };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

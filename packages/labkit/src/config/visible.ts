@@ -1,8 +1,10 @@
 import {
   applyPrefConditions,
+  applyPrefEntryConditions,
   PREF_SCOPE,
   type PrefAlias,
   type PrefConditionJudge,
+  type PrefEntryApplied,
   type PrefLeaf,
   type PrefScope,
   prefAliasTarget,
@@ -82,22 +84,34 @@ export function isLeafEnabled(
  * A leaf whose value is made of others', as its dialog draws it: `leaf`
  * without the fields a `showIf` hides, in an object, a union's variants, and a
  * list's or a map's item, and `disabledAt`, which says whether an `enableIf`
- * disables the field at a path under it. The functions beside the tree place
- * rows only, so the data conditions are all there is to ask inside a leaf.
+ * disables the field at a path under it. `entryAt` answers the conditions
+ * that read an entry of a list or a map (`from: 'item'`), for the entry it is
+ * given. The functions beside the tree place rows only, so the data
+ * conditions are all there is to ask inside a leaf.
  */
 export function conditionedLeaf(
   resolved: ResolvedConfig,
   path: string,
   leaf: PrefLeaf,
   config: Record<string, unknown>,
-): { leaf: PrefLeaf; disabledAt: (at: string) => boolean } {
-  const judge = prefJudge(resolved.group, (at) => valueAtPath(config, at));
+): {
+  leaf: PrefLeaf;
+  disabledAt: (at: string) => boolean;
+  entryAt: (item: PrefLeaf, at: string, value: unknown) => PrefEntryApplied;
+} {
+  const read = (at: string): unknown => valueAtPath(config, at);
+  const judge = prefJudge(resolved.group, read);
   const { shown, disabled } = applyPrefConditions(resolved.group, judge, { keepEmpty: true });
   const drawn = shown === null ? undefined : prefLeafAt(shown, path);
   // An alias draws its target under its own name, which the tree does not hold.
   const own =
     drawn?.kind === leaf.kind ? { ...drawn, name: leaf.name, description: leaf.description } : leaf;
-  return { leaf: own, disabledAt: (at) => disabled.has(at) };
+  return {
+    leaf: own,
+    disabledAt: (at) => disabled.has(at),
+    entryAt: (item, at, value) =>
+      applyPrefEntryConditions(item, at, prefJudge(resolved.group, read, { item, value })),
+  };
 }
 
 /**

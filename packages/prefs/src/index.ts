@@ -22,9 +22,11 @@ export {
   mapPrefConditionPaths,
   prefConditionHolds,
   prefConditionPaths,
+  prefConditionReadsItem,
   prefIsEnabled,
   prefIsShown,
   type PrefCondition,
+  type PrefConditionReader,
   type PrefConditionValue,
   type PrefTest,
 } from './condition';
@@ -37,6 +39,7 @@ export {
 } from './conditionCheck';
 export {
   applyPrefConditions,
+  applyPrefEntryConditions,
   PREF_ENTRY,
   PREF_SCOPE,
   prefJudge,
@@ -46,9 +49,11 @@ export {
   type PrefConditionField,
   type PrefConditionJudge,
   type PrefConditionsApplied,
-  type PrefScopeAtOptions,
   type PrefConditionsOptions,
+  type PrefEntry,
+  type PrefEntryApplied,
   type PrefScope,
+  type PrefScopeAtOptions,
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
 export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
