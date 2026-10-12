@@ -3,6 +3,7 @@ import {
   asNodeId,
   easeInOutSine,
   effectivePose,
+  jointAxes,
   mat3,
   RECT_POSE_DESCRIPTOR,
   resolveSkeleton,
@@ -135,6 +136,8 @@ const TARGET = asNodeId('slider:target');
 const TARGET_SIZE = 14;
 const ARM = ['upperArm', 'forearm'];
 const HAND = { x: BONES.find((b) => b.name === 'forearm')!.length, y: 0 };
+const ARM_AXES = jointAxes(BY_SLIDER.skeleton, ARM);
+const BODY_AXES = jointAxes(BY_SLIDER.skeleton, BONES.map((b) => b.name).filter((n) => !ARM.includes(n)));
 
 const INITIAL: NodeSpec[] = [
   {
@@ -144,7 +147,7 @@ const INITIAL: NodeSpec[] = [
   },
   ...BY_SLIDER.nodes,
   ...BY_TRACK.nodes,
-  caption('caption:slider', 60, 'holds on rig.target, by weight', '#7fb069'),
+  caption('caption:slider', 60, 'holds on rig.target, by weight and joint', '#7fb069'),
   caption('caption:track', 330, 'SampledTrack<Pose> on rig.target', '#d4a574'),
 ];
 
@@ -176,16 +179,18 @@ export function RigDemo() {
   const sliderRig = useRig({ scene, skeleton: BY_SLIDER.skeleton, bindings: BY_SLIDER.bindings, apply: APPLY });
   const trackRig = useRig({ scene, skeleton: BY_TRACK.skeleton, bindings: BY_TRACK.bindings, apply: APPLY });
 
-  // Three holds on one rig share it by weight: the two body poses, and the arm's reach for the
-  // target wherever the move action has it — its drag preview lives in the overrides, its drop
-  // in the document. Posing the rig commits overrides too, so only a moved target is solved.
+  // Holds on one rig share it by weight, joint by joint. Poses A and B hold the body between
+  // them. On the arm they give way to its reach for the target, wherever the move action has
+  // it — its drag preview lives in the overrides, its drop in the document. Posing the rig
+  // commits overrides too, so only a moved target is solved.
   useEffect(() => {
     const target = sliderRig.target;
-    const held: (HoldHandle | undefined)[] = [
-      animator.hold({ target, value: POSE_A, weight: (1 - blend) * (1 - reach) }),
-      animator.hold({ target, value: POSE_B, weight: blend * (1 - reach) }),
-    ];
-    // The solver starts from the body as one pose: the same mix, sampled instead of held.
+    const held = ([[POSE_A, 1 - blend], [POSE_B, blend]] as const).flatMap(([value, weight]) => [
+      animator.hold({ target, value, weight, axes: BODY_AXES }),
+      animator.hold({ target, value, weight: weight * (1 - reach), axes: ARM_AXES }),
+    ]);
+    let reaching: HoldHandle | undefined;
+    // The solver starts from the two poses as one: the same mix, sampled instead of held.
     const body = sampleTrack<Pose>(
       { kind: 'sampled', keys: [{ t: 0, value: POSE_A }, { t: 1, value: POSE_B }], target }, blend,
     )!;
@@ -196,9 +201,9 @@ export function RigDemo() {
       const key = `${at.x},${at.y}`;
       if (key === last) return;
       last = key;
-      held[2]?.release({ commit: false });
+      reaching?.release({ commit: false });
       const solved = solveIk(BY_SLIDER.skeleton, body, { joints: ARM, tip: HAND, target: at }).pose;
-      held[2] = animator.hold({ target, value: solved, weight: reach });
+      reaching = animator.hold({ target, value: solved, weight: reach, axes: ARM_AXES });
     };
     aim();
     const offScene = scene.subscribe(aim);
@@ -206,7 +211,7 @@ export function RigDemo() {
     return () => {
       offScene();
       offOverrides();
-      for (const h of held) h?.release({ commit: false });
+      for (const h of [...held, reaching]) h?.release({ commit: false });
     };
   }, [animator, scene, sliderRig, blend, reach]);
 
@@ -276,13 +281,14 @@ export function RigDemo() {
         <code> useRig</code>: each bone, joint marker and label is a node that rides its
         joint through the scene&apos;s pose overrides, so a frame costs no undo entry. A rig
         is an animation target, <code>rig.target</code>, and everything here moves one. The
-        green figure is two <code>animator.hold</code>s on it, poses A and B at weights
+        green figure is <code>animator.hold</code>s on it, poses A and B at weights
         <code> 1 - t</code> and <code>t</code>. The orange one is a
         <code> SampledTrack&lt;Pose&gt;</code> naming it as its <code>target</code>, with no
         <code> interpolate</code>: set the slider to the track&apos;s reported <code>u</code>
         while it plays and the two bodies coincide. Drag the red target: <code>solveIk</code>
-        {' '}answers with one more pose, held beside the other two at the reach weight, which
-        takes its share from theirs.
+        {' '}answers with one more pose, held on the arm&apos;s joints alone through
+        <code> axes: jointAxes(skeleton, arm)</code> at the reach weight, where it takes its
+        share from A and B. The body stays theirs.
       </div>
     </div>
   );

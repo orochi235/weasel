@@ -329,15 +329,17 @@
   font-weight: var(--wzl-font-weight-light);
 }
 
-.railOpen,
-.railOpen:hover {
+/* Where the reader is: the section in view, or the open page while none of its sections is. */
+.railItem[data-rail-mark='current'] {
   background: var(--wzl-accent);
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
 }
 
-.railInView {
+/* The open page, while a section under it carries the mark above. */
+.railItem[data-rail-mark='open'] {
+  background: var(--wzl-surface-raised);
   box-shadow: inset 2px 0 0 var(--wzl-accent);
 }
 

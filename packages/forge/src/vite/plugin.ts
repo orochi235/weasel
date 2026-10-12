@@ -11,6 +11,7 @@ import { indexStory } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
 import { frameEntry, shellEntry } from './entries.ts';
 import { propControls } from './propControls.ts';
+import type { PropControlsOptions } from './propTypes.ts';
 import { shellTitle } from './shellTitle.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
@@ -30,9 +31,10 @@ export interface ForgeOptions {
   storybookShims?: boolean;
   /**
    * Give a CSF story a control for each prop of its meta's `component`, read from the component's TypeScript types;
-   * the story's own `args` and `argTypes` refine them. Needs `typescript` installed. Default true.
+   * the story's own `args` and `argTypes` refine them. Needs `typescript` installed. Default true; an object narrows
+   * which props are read.
    */
-  propControls?: boolean;
+  propControls?: boolean | PropControlsOptions;
 }
 
 const PREFIX = 'virtual:forge/';
@@ -245,7 +247,7 @@ export function forge(options: ForgeOptions): Plugin[] {
 
   return [
     ...(options.storybookShims === false ? [] : [storybookShims()]),
-    ...(options.propControls === false ? [] : [propControls(() => [...files().keys()])]),
+    ...(options.propControls === false ? [] : [propControls(() => [...files().keys()], options.propControls === true ? undefined : options.propControls)]),
     {
       name: 'weaselforge',
       config(config, { command }) {

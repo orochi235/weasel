@@ -111,12 +111,8 @@ export function paneChildren(
   return out;
 }
 
-/**
- * A nested group inside a pane. Depth 0 sections are the ones the rail links
- * to and carry `data-spy-section`; deeper ones indent and are reached only by
- * scrolling, which is what keeps the rail two levels deep whatever the schema
- * does.
- */
+/** A nested group inside a pane, named by `data-spy-section` for the rail entry that scrolls to it. A section
+ *  inside another indents. */
 function PaneSection({ ctx, group, path, depth, box }: {
   ctx: WalkCtx;
   group: PrefGroup;
@@ -128,7 +124,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
   return (
     <section
       className={depth === 0 ? s.paneSection : s.paneSubsection}
-      data-spy-section={depth === 0 ? path : undefined}
+      data-spy-section={path}
       {...selectionAttrs(path, ctx)}
       aria-label={group.name}
     >

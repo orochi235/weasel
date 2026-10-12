@@ -6,11 +6,11 @@ import { Fragment, type ReactNode } from 'react';
 import { BarLayout } from '../Bar/BarLayout';
 import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
-import { pathWithin, selectionAttrs } from '../Prefs/selection';
+import { pathWithin, RAIL_ATTR, selectionAttrs } from '../Prefs/selection';
 import type { RenderedCell } from './cells';
 import { panelLeafKey, type PanelRow, type PanelSection } from './model';
 import { rowCells, type PanelCellScope } from './panelCells';
-import { PanelTabs, type PanelMarks } from './selection';
+import { PanelTabs, sectionHeaded, sectionNamed, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
 /** A section with what it draws, before it is placed among its neighbors. */
@@ -61,12 +61,16 @@ function blockRow(row: PanelRow, control: RenderedCell, headless: boolean, marks
   );
 }
 
+/** `marks` for an element whose hidden mark is worked out where it is drawn. */
+const selectedOnly = (marks: PanelMarks): PanelMarks => ({ selected: marks.selected });
+
 function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: PanelMarks, marked: boolean): ReactNode {
   const [first] = row.leaves;
+  // A row several leaves share is drawn for its first, and is hidden only when they all are.
+  const shared = row.leaves.length > 1;
   return (
-    // A row several leaves share stands for no one of them.
     <div key={panelLeafKey(first)} className={s.row} {...(controls.every((cell) => cell.disabled) ? { 'data-disabled': '' } : {})}
-      {...(row.leaves.length === 1 ? selectionAttrs(panelLeafKey(first), marks, true) : hiddenAttrs(marked))}>
+      {...selectionAttrs(panelLeafKey(first), shared ? selectedOnly(marks) : marks, true)} {...(shared ? hiddenAttrs(marked) : {})}>
       <span className={s.rowLabel} title={first.leaf.description}>
         {row.label}
         {marked && <HiddenBadge />}
@@ -89,7 +93,7 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
     .map((row) => ({ row, controls: rowCells(row, scope) }))
     .filter(({ controls }) => controls.length > 0);
   if (rows.length === 0) return [];
-  const headed = section.name !== '' && section.as !== 'tab' && section.as !== 'fragment';
+  const headed = sectionHeaded(section);
   // A section hidden whole carries one mark, on its heading; with no heading each of its rows does.
   const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden));
   const rowMarks: PanelMarks = whole ? { ...marks, hidden: undefined } : marks;
@@ -107,21 +111,29 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
   return [{ section, content, hidden: whole }];
 }
 
-/** The sections in order: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
-function placed(sections: readonly DrawnSection[], lead: string | null | undefined): ReactNode[] {
+/** The sections in order, each one `selected` can name carrying its key: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
+function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode[] {
+  const { lead } = marks;
   const out: ReactNode[] = [];
   for (let i = 0; i < sections.length; i++) {
     const { section, content } = sections[i]!;
     if (section.as !== 'tab') {
       const cls = section.as === 'panel' ? `${s.section} ${s.sectionPanel}` : s.section;
-      out.push(<section key={section.key} className={cls} {...hiddenAttrs(sections[i]!.hidden === true)}>{content}</section>);
+      out.push(
+        <section key={section.key} className={cls} {...(sectionNamed(section) ? selectionAttrs(section.key, selectedOnly(marks)) : {})}
+          {...hiddenAttrs(sections[i]!.hidden === true)}>
+          {content}
+        </section>,
+      );
       continue;
     }
     const run = [];
     for (; i < sections.length && sections[i]!.section.as === 'tab'; i++) {
       const at = sections[i]!.section;
-      const holds = at.rows.some((row) => row.leaves.some((item) => pathWithin(panelLeafKey(item), lead)));
-      run.push({ id: at.key, name: at.name, content: sections[i]!.content, holds });
+      const holds = at.key === lead || at.rows.some((row) => row.leaves.some((item) => pathWithin(panelLeafKey(item), lead)));
+      // An open tab says so with `data-selected` of its own, so a tab is pressed as a rail entry is and the mark is its panel's.
+      const [attrs, panelAttrs] = [{ [RAIL_ATTR]: at.key }, selectionAttrs(at.key, selectedOnly(marks))];
+      run.push({ id: at.key, name: at.name, content: sections[i]!.content, holds, attrs, panelAttrs });
     }
     i--;
     out.push(<PanelTabs key={section.key} className={s.section} tabs={run} lead={lead} />);
@@ -134,5 +146,5 @@ export function panelSections(sections: readonly PanelSection[], scope: PanelCel
   const drawn = sections.flatMap((section) =>
     section.as === 'bar' ? barSection(section, scope, marks) : rowsSection(section, scope, marks),
   );
-  return placed(drawn, marks.lead);
+  return placed(drawn, marks);
 }

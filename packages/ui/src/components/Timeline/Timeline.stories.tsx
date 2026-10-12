@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useAnimator, type Track, type TimelineHandle } from '@weasel-js/core';
-import { Timeline } from './Timeline';
+import { Timeline, type TimelineProps } from './Timeline';
 import { AnimatedTimeline } from './AnimatedTimeline';
 
 const meta: Meta<typeof Timeline> = {
@@ -10,18 +10,19 @@ const meta: Meta<typeof Timeline> = {
 };
 export default meta;
 
-function Harness({ initial, mode }: { initial: Track[]; mode?: 'dope' | 'graph' }): ReactElement {
+type Story = StoryObj<typeof Timeline>;
+
+function Harness({ args, initial }: { args: TimelineProps; initial: Track[] }): ReactElement {
   const [tracks, setTracks] = useState(initial);
-  const [playhead, setPlayhead] = useState(0);
+  const [playhead, setPlayhead] = useState(args.playhead);
   return (
     // Fixed height is load-bearing: <Timeline> is a flex column with a
     // scrolling `.lanes`, so a container with no height renders as a strip.
     <div style={{ height: 240, width: 640 }}>
       <Timeline
+        {...args}
         tracks={tracks}
-        duration={2000}
         playhead={playhead}
-        mode={mode}
         onChange={setTracks}
         onScrub={setPlayhead}
         renderKeyEditor={({ key }) => <span>value: {String(key.value)}</span>}
@@ -44,8 +45,14 @@ const withNested = (): Track[] => ([
   },
 ] as Track[]);
 
-export const Dope: StoryObj = { render: () => <Harness initial={flat()} /> };
-export const Graph: StoryObj = { render: () => <Harness initial={flat()} mode="graph" /> };
+export const Dope: Story = {
+  args: { duration: 2000, playhead: 0 },
+  render: (args) => <Harness args={args} initial={flat()} />,
+};
+export const Graph: Story = {
+  args: { duration: 2000, playhead: 0, mode: 'graph' },
+  render: (args) => <Harness args={args} initial={flat()} />,
+};
 const bezier = (): Track[] => {
   const tracks = flat();
   const x = tracks[0] as { keys: { t: number; value: number; easing?: unknown }[] };
@@ -53,8 +60,14 @@ const bezier = (): Track[] => {
   return tracks;
 };
 
-export const GraphBezier: StoryObj = { render: () => <Harness initial={bezier()} mode="graph" /> };
-export const Nested: StoryObj = { render: () => <Harness initial={withNested()} /> };
+export const GraphBezier: Story = {
+  args: { duration: 2000, playhead: 0, mode: 'graph' },
+  render: (args) => <Harness args={args} initial={bezier()} />,
+};
+export const Nested: Story = {
+  args: { duration: 2000, playhead: 0 },
+  render: (args) => <Harness args={args} initial={withNested()} />,
+};
 
 /** The transport bound to a running timeline: play/pause, loop, rate and a
  *  live playhead. The other stories render `<Transport>` with inert defaults. */
@@ -79,4 +92,4 @@ function LiveHarness(): ReactElement {
   );
 }
 
-export const Live: StoryObj = { render: () => <LiveHarness /> };
+export const Live: Story = { render: () => <LiveHarness /> };

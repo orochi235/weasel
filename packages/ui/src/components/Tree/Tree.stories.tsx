@@ -1,9 +1,13 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { startThresholdDrag } from '@weasel-js/core';
 import { Badge } from '../Badge';
 import { Input } from '../Input';
-import { applyCopy, applyMove } from './Tree.fixtures';
-import { Tree, filterTree, treeBranchIds, type TreeNode } from './Tree';
+import { applyCopy, applyMove, insertAt } from './Tree.fixtures';
+import type { TreeDropHandle } from './useOutsideDrop';
+import css from './Tree.stories.module.css';
+import { Tree, type TreeNode } from './Tree';
+import { filterTree, treeBranchIds } from './treeFilter';
 
 const meta: Meta<typeof Tree> = {
   title: 'ui/Tree',
@@ -168,6 +172,41 @@ export const Copyable: Story = {
           onMove={(ids, target) => setNodes((n) => applyMove(n, ids, target))}
           onCopy={(ids, target) => setNodes((n) => applyCopy(n, ids, target, `copy${++made.current}`))}
         />
+      </div>
+    );
+  },
+};
+
+const NEW_FILES = ['Dialog.tsx', 'Menu.tsx', 'Tabs.tsx'];
+
+/** Something dragged in from outside the tree. While it is carried, `externalDrag` holds the pointer and the tree
+ *  marks where a drop would land. At the release the drop asks `dropRef` where that point lands: the mark follows
+ *  the pointer a render behind it, and the answer is read from the rows as they lie. */
+export const DropFromOutside: Story = {
+  render: function Render() {
+    const [nodes, setNodes] = useState<readonly TreeNode[]>(FILES);
+    const [at, setAt] = useState<{ x: number; y: number } | null>(null);
+    const drop = useRef<TreeDropHandle>(null);
+    const made = useRef(0);
+    const press = (label: string) => (e: ReactPointerEvent<HTMLElement>) => {
+      const pointOf = (ev: PointerEvent) => ({ x: ev.clientX, y: ev.clientY });
+      startThresholdDrag(e, {
+        onActivate: (ev) => setAt(pointOf(ev)),
+        onMove: (ev) => setAt(pointOf(ev)),
+        onCommit: (ev) => {
+          const target = drop.current?.targetAt(pointOf(ev));
+          if (target) setNodes((n) => insertAt(n, [{ id: `new${++made.current}`, label }], target));
+          setAt(null);
+        },
+        onCancel: () => setAt(null),
+      });
+    };
+    return (
+      <div className={css.outside}>
+        <ul className={css.shelf} aria-label="New files">
+          {NEW_FILES.map((label) => <li key={label} onPointerDown={press(label)}>{label}</li>)}
+        </ul>
+        <Tree aria-label="Files" nodes={nodes} defaultExpandedIds={['src', 'components']} externalDrag={at} dropRef={drop} />
       </div>
     );
   },

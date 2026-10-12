@@ -22,7 +22,7 @@ const SCHEMA: PrefGroup = {
 };
 
 describe('a group\'s `as`', () => {
-  it('gives the rail a page per page group, files the rest on the root\'s own page, and links sections only', () => {
+  it('gives the rail a page per page group, files the rest on the root\'s own page, and lists no tab or panel', () => {
     expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth])).toEqual([
       ['', 0],
       ['canvas', 0],

@@ -19,6 +19,8 @@ import {
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
 import type { Path } from '@weasel-js/geom';
+import type { Target } from '../../animation/target';
+import { createWrittenPoseTarget } from '../../animation/writtenPoseTarget';
 import {
   polygonRegion,
   poseOutline,
@@ -27,6 +29,13 @@ import {
   regionTakes,
   type SelectRegion,
 } from 'core/geometry/regionHit';
+
+/** An array adapter's pose targets by node id. See {@link ArrayAdapterConfig.poseTargets}. */
+export type ArrayPoseTargets<TPose> = Map<string, {
+  target: Target<TPose>;
+  /** The node's pose in the items of the adapter that last asked for the target. */
+  read(): TPose | undefined;
+}>;
 
 /** Configuration for `arrayAdapter`. */
 export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {
@@ -74,6 +83,11 @@ export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {
    *  when available, otherwise a monotonic `paste-<n>` counter. Override
    *  when consumers want stable id schemes (e.g. `clip-${n++}`). */
   nextId?: () => string;
+
+  /** Where the adapter keeps each node's pose target. Default: a map of its own. Give one map
+   *  to every adapter built over the same items, so a node keeps one target and everything
+   *  animating it adds; `useArrayAdapter` does. */
+  poseTargets?: ArrayPoseTargets<TPose>;
 }
 
 /**
@@ -106,6 +120,78 @@ function defaultFromPose<TNode extends { id: string }, TPose>(
   pose: TPose,
 ): TNode {
   return { ...obj, ...(pose as object) } as TNode;
+}
+
+/** Node `id`'s target in `targets`, made on first asking, reading the node through `read` from
+ *  now on. Undefined for a node `read` does not find, or a pose with no axes. */
+function poseTargetIn<TPose>(
+  targets: ArrayPoseTargets<TPose>,
+  id: string,
+  read: () => TPose | undefined,
+  write: (pose: TPose) => void,
+  descriptor: PoseDescriptor<TPose>,
+): Target<TPose> | undefined {
+  const held = targets.get(id);
+  if (held) {
+    held.read = read;
+    return held.target;
+  }
+  const entry = { read, target: null as Target<TPose> | null };
+  entry.target = createWrittenPoseTarget<TPose>({
+    read: () => entry.read(),
+    write,
+    descriptor,
+    onRest: () => { if (entry.read() === undefined) targets.delete(id); },
+  });
+  if (!entry.target) return undefined;
+  targets.set(id, entry as { read: typeof read; target: Target<TPose> });
+  return entry.target;
+}
+
+/** Copies of a clipboard's nodes under fresh ids, moved by `offset`, or centered on
+ *  `dropPoint` where one is given. */
+function pasteNodes<TNode extends { id: string }, TPose>(
+  clip: ClipboardSnapshot,
+  offset: { dx: number; dy: number },
+  dropPoint: { worldX: number; worldY: number } | undefined,
+  d: PoseDescriptor<TPose>,
+  toPose: (obj: TNode) => TPose,
+  fromPose: (obj: TNode, pose: TPose) => TNode,
+  nextId: () => string,
+): TNode[] {
+  const src = clip.items as TNode[];
+  if (src.length === 0) return [];
+
+  let dx = offset.dx;
+  let dy = offset.dy;
+  if (dropPoint) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of src) {
+      const b = poseDescriptorForNode(d, n).getBounds(toPose(n));
+      if (b.x < minX) minX = b.x;
+      if (b.y < minY) minY = b.y;
+      if (b.x + b.width > maxX) maxX = b.x + b.width;
+      if (b.y + b.height > maxY) maxY = b.y + b.height;
+    }
+    // Defensive: if the descriptor returned nothing usable, fall back to offset.
+    if (Number.isFinite(minX) && Number.isFinite(minY)) {
+      dx = dropPoint.worldX - (minX + maxX) / 2;
+      dy = dropPoint.worldY - (minY + maxY) / 2;
+    }
+  }
+
+  // Deep-clone via JSON round-trip so the snapshot isn't mutated by
+  // downstream pose edits.
+  const out: TNode[] = [];
+  for (const n of src) {
+    const cloned = JSON.parse(JSON.stringify(n)) as TNode;
+    (cloned as { id: string }).id = nextId();
+    const translated = translatePoseViaDescriptor(
+      toPose(cloned), dx, dy, poseDescriptorForNode(d, cloned),
+    );
+    out.push(fromPose(cloned, translated));
+  }
+  return out;
 }
 
 let monotonicPasteCounter = 0;
@@ -146,6 +232,8 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
   const d = (config.poseDescriptor ?? RECT_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const getSelection = selectionRef ? () => selectionRef.current : () => [];
+  const poseTargets: ArrayPoseTargets<TPose> = config.poseTargets ?? new Map();
+  const find = (id: string): TNode | undefined => ref.current.find((o) => o.id === id);
 
   const takenBy = (region: SelectRegion, mode: LassoHitMode): string[] => {
     const out: string[] = [];
@@ -188,6 +276,13 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
     setPose: (id, pose) => {
       setItems((items) => items.map((o) => (o.id === id ? fromPose(o, pose) : o)));
     },
+    poseTarget: (id, descriptor) => poseTargetIn(
+      poseTargets,
+      id,
+      () => { const o = find(id); return o && toPose(o); },
+      (pose) => setItems((items) => items.map((o) => (o.id === id ? fromPose(o, pose) : o))),
+      descriptor ?? d,
+    ),
     getParent,
     setParent,
 
@@ -217,50 +312,7 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
     },
 
     commitInsert: createDefault ? (b) => createDefault(b) : () => null,
-    commitPaste: (
-      clip: ClipboardSnapshot,
-      offset: { dx: number; dy: number },
-      ctx?: { dropPoint?: { worldX: number; worldY: number } },
-    ): TNode[] => {
-      const src = clip.items as TNode[];
-      if (src.length === 0) return [];
-
-      // Default translation = `offset`. When `dropPoint` is supplied, center
-      // the cluster's union AABB at the drop point — matches the
-      // `ClipboardDemo` reference wiring.
-      let dx = offset.dx;
-      let dy = offset.dy;
-      if (ctx?.dropPoint) {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        for (const n of src) {
-          const b = poseDescriptorForNode(d, n).getBounds(toPose(n));
-          if (b.x < minX) minX = b.x;
-          if (b.y < minY) minY = b.y;
-          if (b.x + b.width > maxX) maxX = b.x + b.width;
-          if (b.y + b.height > maxY) maxY = b.y + b.height;
-        }
-        // Defensive: if the descriptor returned nothing usable, fall back to offset.
-        if (Number.isFinite(minX) && Number.isFinite(minY)) {
-          const cx = (minX + maxX) / 2;
-          const cy = (minY + maxY) / 2;
-          dx = ctx.dropPoint.worldX - cx;
-          dy = ctx.dropPoint.worldY - cy;
-        }
-      }
-
-      // Deep-clone via JSON round-trip so the snapshot isn't mutated by
-      // downstream pose edits.
-      const out: TNode[] = [];
-      for (const n of src) {
-        const cloned = JSON.parse(JSON.stringify(n)) as TNode;
-        (cloned as { id: string }).id = nextId();
-        const translated = translatePoseViaDescriptor(
-          toPose(cloned), dx, dy, poseDescriptorForNode(d, cloned),
-        );
-        out.push(fromPose(cloned, translated));
-      }
-      return out;
-    },
+    commitPaste: (clip, offset, ctx) => pasteNodes(clip, offset, ctx?.dropPoint, d, toPose, fromPose, nextId),
     snapshotSelection: (ids) => ({
       items: ids
         .map((id) => ref.current.find((o) => o.id === id))

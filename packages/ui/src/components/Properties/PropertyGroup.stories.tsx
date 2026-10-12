@@ -15,11 +15,12 @@ const meta: Meta<typeof PropertyGroup> = {
 export default meta;
 
 export const Basic: StoryObj<typeof PropertyGroup> = {
-  render: () => (
+  args: { title: 'Aqua' },
+  render: (args) => (
     <PropertyPanel title="Fill">
       <PropertyList>
         <PropertyField kind="number" control="slider" label="Amount" value={0.6} min={0} max={1} step={0.02} onChange={() => {}} />
-        <PropertyGroup title="Aqua">
+        <PropertyGroup {...args}>
           <PropertyField
             kind="number"
             control="slider"

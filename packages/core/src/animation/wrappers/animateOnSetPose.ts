@@ -1,4 +1,4 @@
-import { tweenPose, springPose } from '../poseHelpers';
+import { poseKey, tweenPose, springPose } from '../poseHelpers';
 import { instantPoseWrite } from './instantPose';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
@@ -44,7 +44,8 @@ export interface AnimateOnSetPoseOptions<TPose> {
  * animating those would fight whatever is already driving the node.
  *
  * Over a scene-backed adapter the document takes each pose as it is written
- * and only the node on screen glides. Writing a node again while it glides
+ * and only the node on screen glides; an `arrayAdapter` holds the pose on
+ * screen, and takes the written one as the glide ends. Writing a node again while it glides
  * bends the glide toward the new pose, or under `spring` carries its velocity
  * into the new one. Over an adapter with no `poseTarget`, a second write ends
  * the glide: the new pose is written at once and stands.
@@ -83,8 +84,8 @@ export function animateOnSetPose<TNode extends { id: string }, TPose>(
         return;
       }
       // Without a pose target a second glide would fight the first, so the write ends it.
-      if (!adapter.poseTarget?.(id, opts.geometry) && animator.isActive('pose:' + id)) {
-        animator.cancelKey('pose:' + id);
+      if (!adapter.poseTarget?.(id, opts.geometry) && animator.isActive(poseKey(id))) {
+        animator.cancelKey(poseKey(id));
         adapter.setPose(id, pose);
         return;
       }

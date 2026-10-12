@@ -36,16 +36,8 @@ const SCHEMA: PrefGroup = {
 };
 
 describe('prefRailItems', () => {
-  it('lists top-level groups with their nested children, and nothing deeper', () => {
-    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth])).toEqual([
-      ['canvas', 0],
-      ['canvas.snapping', 1],
-      ['io', 0],
-    ]);
-  });
-
-  it('lists every level when asked, each entry followed by its own', () => {
-    expect(prefRailItems(SCHEMA, true).map((i) => [i.path, i.depth, i.section])).toEqual([
+  it('lists every level, each entry followed by its own, a nested group as a section of the page that holds it', () => {
+    expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth, i.page])).toEqual([
       ['canvas', 0, 'canvas'],
       ['canvas.snapping', 1, 'canvas'],
       ['canvas.snapping.wrap', 2, 'canvas'],
@@ -56,7 +48,7 @@ describe('prefRailItems', () => {
   it('names each entry after its group and counts the leaves beneath it', () => {
     const items = prefRailItems(SCHEMA);
     expect(items[0]).toMatchObject({ name: 'Canvas', matches: 3 });
-    expect(items[1]).toMatchObject({ name: 'Snapping', matches: 2, section: 'canvas' });
+    expect(items[1]).toMatchObject({ name: 'Snapping', matches: 2, page: 'canvas' });
   });
 
   it('has no entry for loose root leaves when there are none', () => {
@@ -97,11 +89,14 @@ describe('PrefsForm rail layout', () => {
     expect(screen.queryByRole('textbox', { name: 'Author' })).not.toBeInTheDocument();
   });
 
-  it('renders a group deeper than the rail inside the pane', () => {
+  it('draws a section nested in a section on the same page, with an entry of its own', async () => {
+    const user = userEvent.setup();
     renderRail();
-    // `Wrapping` is depth 2: a section in the open pane, never a rail entry.
     expect(screen.getByRole('region', { name: 'Wrapping' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Wrapping/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Wrapping/ }));
+    expect(screen.getByRole('button', { name: /Wrapping/ })).toHaveAttribute('aria-current', 'location');
+    expect(screen.getByRole('button', { name: /Canvas/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
   });
 
   it('switches panes when a top-level entry is chosen', async () => {
@@ -165,137 +160,12 @@ describe('PrefsForm rail layout', () => {
   });
 });
 
-describe('PrefsForm rail layout with subPages', () => {
-  const renderRail = (props: Partial<Parameters<typeof PrefsForm>[0]> = {}) =>
-    render(<PrefsForm schema={SCHEMA} onChange={() => {}} layout="rail" subPages {...props} />);
-
-  it('gives a top-level entry only its own leaves, not its subgroups', () => {
-    renderRail();
-    expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: 'Enabled' })).not.toBeInTheDocument();
-  });
-
-  it('opens a subentry as its own page, marked as the page', async () => {
-    const user = userEvent.setup();
-    const onSectionChange = vi.fn();
-    renderRail({ onSectionChange });
-    await user.click(screen.getByRole('button', { name: /Snapping/ }));
-    expect(onSectionChange).toHaveBeenCalledWith('canvas.snapping');
-    expect(screen.getByRole('button', { name: /Snapping/ })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('checkbox', { name: 'Enabled' })).toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: 'Show grid' })).not.toBeInTheDocument();
-  });
-
-  it('gives a group nested deeper an entry and a page of its own', async () => {
-    const user = userEvent.setup();
-    const onSectionChange = vi.fn();
-    renderRail({ onSectionChange, defaultSection: 'canvas.snapping' });
-    expect(screen.queryByRole('checkbox', { name: 'Wrap at edge' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Wrapping/ }));
-    expect(onSectionChange).toHaveBeenCalledWith('canvas.snapping.wrap');
-    expect(screen.getByRole('button', { name: /Wrapping/ })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('checkbox', { name: 'Wrap at edge' })).toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: 'Enabled' })).not.toBeInTheDocument();
-  });
-
-  it('keeps a panel on its group\'s page, with no entry of its own', () => {
-    const boxed: PrefGroup = {
-      name: 'Preferences',
-      children: {
-        view: {
-          name: 'View',
-          children: {
-            zoom: { kind: 'number', name: 'Zoom', description: 'Scale.', default: 1 },
-            grid: {
-              name: 'Grid',
-              as: 'panel',
-              children: { size: { kind: 'number', name: 'Size', description: 'Cell size.', default: 8 } },
-            },
-          },
-        },
-      },
-    };
-    render(<PrefsForm schema={boxed} onChange={() => {}} layout="rail" subPages />);
-    expect(screen.queryByRole('button', { name: /Grid/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeInTheDocument();
-  });
-
-  it('opens the first subentry when a top-level entry has no leaves of its own', () => {
-    const bare: PrefGroup = {
-      name: 'Preferences',
-      children: {
-        view: {
-          name: 'View',
-          children: {
-            cards: {
-              name: 'Cards',
-              children: { cap: { kind: 'number', name: 'Cap', description: 'Tallest card.', default: 3 } },
-            },
-          },
-        },
-      },
-    };
-    render(<PrefsForm schema={bare} onChange={() => {}} layout="rail" subPages section="view" />);
-    expect(screen.getByRole('button', { name: /Cards/ })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
-  });
-
-  it('keeps opening the first entry down until one has something of its own', () => {
-    const hollow: PrefGroup = {
-      name: 'Preferences',
-      children: {
-        view: {
-          name: 'View',
-          children: {
-            cards: {
-              name: 'Cards',
-              children: {
-                size: {
-                  name: 'Size',
-                  children: { cap: { kind: 'number', name: 'Cap', description: 'Tallest card.', default: 3 } },
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-    render(<PrefsForm schema={hollow} onChange={() => {}} layout="rail" subPages />);
-    expect(screen.getByRole('button', { name: /Size/ })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
-  });
-
-  it('draws a nested section on its parent\'s page, and marks an entry that only leads to the ones under it', () => {
-    const cap: PrefGroup = { name: 'Size', children: { cap: { kind: 'number', name: 'Cap', description: '', default: 3 } } };
-    const paged: PrefGroup = { name: 'Prefs', children: { cards: { name: 'Cards', children: { size: cap } } } };
-    expect(prefRailItems(paged, true).map((i) => [i.path, i.passes ?? false])).toEqual([['cards', true], ['cards.size', false]]);
-    const sectioned: PrefGroup = { name: 'Prefs', children: { cards: { name: 'Cards', children: { size: { ...cap, as: 'section' } } } } };
-    expect(prefRailItems(sectioned, true).map((i) => [i.path, i.passes ?? false])).toEqual([['cards', false]]);
-    render(<PrefsForm schema={sectioned} onChange={() => {}} layout="rail" subPages />);
-    expect(screen.getByRole('button', { name: 'Cards' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
-  });
-
-  it('stays on the page above when the open entry\'s group becomes a section of it', () => {
-    const cap: PrefGroup = { name: 'Size', children: { cap: { kind: 'number', name: 'Cap', description: '', default: 3 } } };
-    const of = (size: PrefGroup): PrefGroup => ({
-      name: 'Prefs',
-      children: { io: { name: 'IO', children: { on: { kind: 'boolean', name: 'On', description: '', default: true } } }, cards: { name: 'Cards', children: { size } } },
-    });
-    const { rerender } = render(<PrefsForm schema={of(cap)} onChange={() => {}} layout="rail" subPages defaultSection="cards.size" />);
-    expect(screen.getByRole('button', { name: 'Size' })).toHaveAttribute('aria-current', 'page');
-    rerender(<PrefsForm schema={of({ ...cap, as: 'section' })} onChange={() => {}} layout="rail" subPages defaultSection="cards.size" />);
-    expect(screen.getByRole('button', { name: 'Cards' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
-  });
-});
-
 describe('PrefsForm rail layout, foldable', () => {
   const renderRail = (props: Partial<Parameters<typeof PrefsForm>[0]> = {}) =>
     render(
       <PrefsForm schema={SCHEMA} onChange={() => {}} layout="rail" foldable defaultSection="io" {...props} />,
     );
-  const snapping = () => screen.queryByRole('button', { name: /^Snapping/ });
+  const snapping = () => document.querySelector('[data-pref-rail="canvas.snapping"]');
   const canvasEntry = () => document.querySelector<HTMLButtonElement>('[data-rail-fold="canvas"]')!;
 
   it('starts every group shut but the open one', () => {
@@ -315,7 +185,12 @@ describe('PrefsForm rail layout, foldable', () => {
 
   it('folds a nested entry\'s own entries until a page under it is open', async () => {
     const user = userEvent.setup();
-    renderRail({ subPages: true });
+    const canvas = SCHEMA.children.canvas as PrefGroup;
+    const snapping = canvas.children.snapping as PrefGroup;
+    const paged: PrefGroup = { ...SCHEMA, children: { ...SCHEMA.children, canvas: { ...canvas, children: { ...canvas.children,
+      snapping: { ...snapping, as: 'page', children: { ...snapping.children, wrap: { ...(snapping.children.wrap as PrefGroup), as: 'page' } } },
+    } } } };
+    renderRail({ schema: paged });
     const entry = (path: string) => document.querySelector<HTMLButtonElement>(`[data-pref-rail="${path}"]`);
     await user.click(canvasEntry());
     expect(entry('canvas.snapping')).toBeInTheDocument();

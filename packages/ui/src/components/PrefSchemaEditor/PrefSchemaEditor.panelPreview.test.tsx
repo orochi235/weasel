@@ -14,6 +14,9 @@ const START: PrefSection = {
     look: { name: 'Look', members: {
       'data.tint': text('Tint'),
       'data.shade': text('Shade'),
+      'pose.x': { ...text('X'), pair: { with: 'pose.y', label: 'Position' } } as PrefLeaf,
+      'pose.y': text('Y'),
+      inner: { name: 'Inner', members: { 'data.deep': text('Deep') } },
       'data.stroke': { kind: 'object', name: 'Stroke', description: '', default: {}, children: { width: text('Width') } } as PrefLeaf,
     } },
   },
@@ -50,5 +53,27 @@ describe('PrefSchemaEditor with a properties-panel preview', () => {
     expect(item(/\(data\.tint\)/)).toHaveAttribute('aria-selected', 'true');
     expect(item(/\(data\.shade\)/)).toHaveAttribute('aria-selected', 'true');
     expect(marked()).toEqual(['data.tint', 'data.shade']);
+  });
+
+  it('marks the one row of a pair for either of its leaves, and selects its first leaf for a press on it', () => {
+    render(<Live />);
+    fireEvent.click(row('pose.y'));
+    expect(marked()).toEqual(['pose.x']);
+    fireEvent.click(row('data.tint'));
+    fireEvent.pointerDown(within(preview()).getByText('Position'));
+    expect(item(/\(pose\.x\)/)).toHaveAttribute('aria-selected', 'true');
+    expect(item(/\(pose\.y\)/)).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('marks a top-level section the tree selects, selects it for a press on its heading, and marks nothing for a nested one', () => {
+    render(<Live />);
+    fireEvent.click(row('inner'));
+    expect(marked()).toEqual([]);
+    fireEvent.pointerDown(within(preview()).getByRole('heading', { name: 'Look' }));
+    expect(item(/\(look\)/)).toHaveAttribute('aria-selected', 'true');
+    expect(marked()).toEqual(['look']);
+    fireEvent.click(row('data.tint'));
+    fireEvent.click(row('look'));
+    expect(marked()).toEqual(['look']);
   });
 });

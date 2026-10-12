@@ -76,7 +76,7 @@ export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[
   const aliasing = isPrefSection(root);
   const out: string[] = [];
   const next = editChildren(root, dest, (kids) => {
-    const taken: ChildMap = { ...kids };
+    const taken: ChildMap = { ...keysTakenAt(root, dest, false) };
     const leafKeys: ChildMap = { ...keysTakenAt(root, dest, true) };
     const leafKey = (key: string, node: SchemaNode): string => {
       const free = uniqueKey(leafKeys, key);

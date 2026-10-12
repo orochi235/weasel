@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { numericWeight, type FillStyle } from '@weasel-js/core';
 import { endless as withInfinity } from '@weasel-js/quantity';
-import { isBuiltinPref, prefDisplayBounds, type PrefLeaf } from '@weasel-js/prefs';
+import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefLeaf } from '@weasel-js/prefs';
 import { endlessAllows } from '../../endless';
 import { stepDisplay } from '../Properties/NumberControls';
 import { Icon } from '../../icons/Icon';
@@ -101,7 +101,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
       };
     }
     case 'number': {
-      const unit = leaf.unit;
+      const unit = leaf.unit && resolvePrefUnit(leaf.unit);
       // ±Infinity is a value only where an end of the leaf stands for it.
       const endless = leaf.endless;
       const stored =

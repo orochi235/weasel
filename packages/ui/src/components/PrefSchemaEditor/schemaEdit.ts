@@ -143,7 +143,7 @@ export function shiftNodes<R extends SchemaRoot>(
   const out: string[] = [];
   const lifted = next;
   next = editChildren(next, dest, (kids) => {
-    const taken: ChildMap = { ...kids };
+    const taken: ChildMap = { ...keysTakenAt(lifted, dest, false) };
     const leafKeys: ChildMap = { ...keysTakenAt(lifted, dest, true) };
     const entries: Array<[string, SchemaNode]> = moving.map((m) => {
       const key = uniqueKey(isPrefLeaf(m.node) ? leafKeys : taken, m.key);

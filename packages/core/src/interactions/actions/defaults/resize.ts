@@ -471,8 +471,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
         const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx as unknown as GestureContext<Bounds>);
         if (r === null) return false;
         if (r !== undefined) {
-          commitGestureOps(target, lifecycle, r);
-          return true;
+          return commitGestureOps(target, lifecycle, r);
         }
 
         if (scratch.previews.size === 0) return false;
@@ -533,8 +532,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
           }));
         }
         if (ops.length === 0) return false;
-        commitGestureOps(target, lifecycle, ops);
-        return true;
+        return commitGestureOps(target, lifecycle, ops);
       };
 
       return {

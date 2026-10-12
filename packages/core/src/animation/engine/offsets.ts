@@ -11,15 +11,18 @@ export function axesFor<T>(axes: TargetAxes<T>, value: T, what: string): number[
   return a;
 }
 
+/** The angle `x` as the turn of at most half a circle that reaches it. */
+export function shortWay(x: number): number {
+  x %= TAU;
+  if (x > Math.PI) return x - TAU;
+  if (x <= -Math.PI) return x + TAU;
+  return x;
+}
+
 /** `a - b` per axis, the short way round on an angle axis. */
 export function travel<T>(axes: TargetAxes<T>, a: readonly number[], b: readonly number[]): number[] {
   const d = a.map((x, i) => x - b[i]!);
-  for (const i of axes.angles ?? []) {
-    let x = d[i]! % TAU;
-    if (x > Math.PI) x -= TAU;
-    if (x <= -Math.PI) x += TAU;
-    d[i] = x;
-  }
+  for (const i of axes.angles ?? []) d[i] = shortWay(d[i]!);
   return d;
 }
 
@@ -36,6 +39,23 @@ export function bump(s: TargetState, delta: readonly number[], sign: 1 | -1): vo
 export function absorb<T>(s: TargetState<T>, delta: readonly number[]): void {
   if (s.discard) return;
   s.set(s.axes.from(plus(s.axes.to(s.get()), delta)));
+}
+
+/** Leaves `delta`, what a stopping animation had left to travel, where the target keeps showing
+ *  it: in the committed value, or beside it while a hold stands in front of that. */
+export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
+  if (s.discard) return;
+  if (s.held === 0) absorb(s, delta);
+  else s.beside = s.beside ? plus(s.beside, delta) : delta.slice();
+}
+
+/** The committed value's axes as an animation about to commit a destination finds them: with
+ *  what `keep` left beside it, which that destination replaces. */
+export function takeUp<T>(s: TargetState<T>): number[] {
+  const committed = s.axes.to(s.get());
+  const beside = s.beside;
+  s.beside = null;
+  return beside ? plus(committed, beside) : committed;
 }
 
 /** The targets one animator is moving. */
@@ -84,6 +104,7 @@ export function createTargetBook(owner: TargetOwner): TargetBook {
       if (s.live > 0) return;
       s.owner = null;
       s.slot = null;
+      s.beside = null;
       s.adjust.fill(0);
       live.delete(s);
       if (s.show) rested.add(s);

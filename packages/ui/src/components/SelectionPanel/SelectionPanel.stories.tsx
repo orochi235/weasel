@@ -142,12 +142,13 @@ export const PatternFillPaint: Story = {
   },
 };
 
-/** Rows marked as selected: the fill, and the stroke's width. A press on a row selects it, and Cmd or Ctrl
- *  on a press adds it or takes it out. */
+/** What `selected` marks: the Position row, which `pose.y` shares with `pose.x`, and the Appearance section,
+ *  named by its own key. A press on a row or on a section's heading selects it, and Cmd or Ctrl on a press adds
+ *  it or takes it out. */
 export const SelectedRows: Story = {
   args: Shape.args,
   render: function SelectedRowsStory(args) {
-    const [selected, setSelected] = useState<readonly string[]>(['data.fill', 'data.stroke.width']);
+    const [selected, setSelected] = useState<readonly string[]>(['pose.y', 'appearance']);
     return (
       <Panel
         {...args}

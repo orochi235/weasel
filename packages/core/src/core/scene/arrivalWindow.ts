@@ -53,8 +53,25 @@ export interface ArrivalWindow<TPose> {
    *  over, however it ended. */
   abandon(): void;
   /** Run an op-driven edit that may carry arrivals: a refusal reverts it and
-   *  is swallowed, the way a drop onto a full container is — nothing lands. */
-  runEdit(ops: Op[], run: (ops: Op[]) => void): void;
+   *  is swallowed, the way a drop onto a full container is — nothing lands.
+   *  Returns whether the edit landed. */
+  runEdit(ops: Op[], run: (ops: Op[]) => void): boolean;
+}
+
+/** Of the ids noted per container, those the landed edit bears out: still
+ *  under it when `joined`, gone from it otherwise. A container that is itself
+ *  gone is left out. */
+function heldMoves(
+  nodes: ReadonlyMap<NodeId, { parent: NodeId | null }>,
+  noted: ReadonlyMap<NodeId, NodeId[]>,
+  joined: boolean,
+): Map<NodeId, NodeId[]> {
+  const out = new Map<NodeId, NodeId[]>();
+  for (const [parent, ids] of noted) {
+    const held = ids.filter((id) => (nodes.get(id)?.parent === parent) === joined);
+    if (held.length > 0 && nodes.has(parent)) out.set(parent, held);
+  }
+  return out;
 }
 
 export function createArrivalWindow<TData, TLayer extends string, TPose>(
@@ -95,18 +112,10 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
     const handler = activeHandler();
     if (pending === null || handler === null) return [];
     // Only what is still there once the edit's other mutations have landed.
-    const landed = new Map<NodeId, NodeId[]>();
-    for (const [parent, ids] of pending) {
-      const still = ids.filter((id) => nodes.get(id)?.parent === parent);
-      if (still.length > 0 && nodes.has(parent)) landed.set(parent, still);
-    }
+    const landed = heldMoves(nodes, pending, true);
     // Only what is gone from the container once the edit has landed: a child
     // that left and came back did not depart.
-    const left = new Map<NodeId, NodeId[]>();
-    for (const [parent, ids] of departures) {
-      const gone = ids.filter((id) => nodes.get(id)?.parent !== parent);
-      if (gone.length > 0 && nodes.has(parent)) left.set(parent, gone);
-    }
+    const left = heldMoves(nodes, departures, false);
     departures = new Map();
     const touched = new Set([...changed].filter((id) => nodes.get(id)?.kind === 'container'));
     if (landed.size === 0 && touched.size === 0) return [];
@@ -169,13 +178,18 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
     abandon,
     runEdit(ops, run) {
       const { ops: all, owned } = withArrivalOps(ops);
+      // An edit inside another's window leaves a refusal to the one that owns
+      // it, which reverts the whole edit and answers for it.
+      if (!owned) return run(all), true;
       try {
         run(all);
-        if (owned) emitReflow();
+        emitReflow();
+        return true;
       } catch (err) {
         if (!(err instanceof SceneArrivalRefused)) throw err;
+        return false;
       } finally {
-        if (owned) abandon();
+        abandon();
       }
     },
   };

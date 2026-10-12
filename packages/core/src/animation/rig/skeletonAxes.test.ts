@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { skeletonAxes } from './skeletonAxes';
+import { jointAxes, skeletonAxes } from './skeletonAxes';
 import { IDENTITY_JOINT, type Skeleton } from './types';
 
 const skeleton: Skeleton = {
@@ -28,5 +28,16 @@ describe('skeletonAxes', () => {
       hip: { x: 6, y: 7, rotation: 8, scaleX: 9, scaleY: 10 },
       knee: { x: 1, y: 2, rotation: 3, scaleX: 4, scaleY: 5 },
     });
+  });
+});
+
+describe('jointAxes', () => {
+  it("answers the named joints' axes, in the order they are named", () => {
+    expect(jointAxes(skeleton, ['knee'])).toEqual([5, 6, 7, 8, 9]);
+    expect(jointAxes(skeleton, ['knee', 'hip'])).toEqual([5, 6, 7, 8, 9, 0, 1, 2, 3, 4]);
+  });
+
+  it('refuses a joint the skeleton does not have', () => {
+    expect(() => jointAxes(skeleton, ['elbow'])).toThrow(/elbow/);
   });
 });

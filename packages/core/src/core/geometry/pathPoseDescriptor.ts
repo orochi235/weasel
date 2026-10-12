@@ -44,6 +44,22 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
     }
     throw new Error('pathPoseDescriptor.lerp: incompatible path shapes');
   },
+  // A polygon's axes are its coordinates, so a move needs both ends to have as many points.
+  axes: (like) => {
+    if (like.kind === 'rect') {
+      return {
+        count: 4,
+        to: (p) => (p.kind === 'rect' ? [p.x, p.y, p.width, p.height] : []),
+        from: (a) => ({ kind: 'rect', x: a[0]!, y: a[1]!, width: a[2]!, height: a[3]! }),
+      };
+    }
+    const { commands, fillRule } = like;
+    return {
+      count: like.coords.length,
+      to: (p) => (p.kind === 'polygon' ? Array.from(p.coords) : []),
+      from: (a) => ({ kind: 'polygon', commands, coords: Float32Array.from(a as ArrayLike<number>), fillRule }),
+    };
+  },
   // Path poses carry no x/y/width/height/rotation fields — the kit's
   // `wrapWithPoseRotation` helper has nothing to bind a rotation to, and
   // `remapBounds` would drop a synthetic rotation field on every commit.

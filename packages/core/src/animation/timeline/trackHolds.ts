@@ -11,7 +11,12 @@ export interface TrackHold {
 }
 
 /** How a timeline holds a target: the animator's seam, so a timeline knows nothing of voices. */
-export type OpenTrackHold = (target: Target<unknown>, value: () => unknown, weight: () => number) => TrackHold;
+export type OpenTrackHold = (
+  target: Target<unknown>,
+  value: () => unknown,
+  weight: () => number,
+  axes?: readonly number[],
+) => TrackHold;
 
 /** A timeline's sampled tracks: sampled at the playhead, and held on the targets they name. */
 export interface TrackSampler {
@@ -48,7 +53,7 @@ export function createTrackSampler(open?: OpenTrackHold): TrackSampler {
   const openOn = (st: SampledTrack<unknown>, h: Held): TrackHold => {
     if (!open) throw new Error('timeline: a track with a `target` needs a timeline made by an animator');
     const w = st.weight ?? 1;
-    return open(st.target!, () => h.value, typeof w === 'function' ? w : () => w);
+    return open(st.target!, () => h.value, typeof w === 'function' ? w : () => w, st.axes);
   };
 
   const place = (st: SampledTrack<unknown>, value: unknown, t: number): void => {

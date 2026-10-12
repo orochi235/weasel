@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { Tree, filterTree, treeBranchIds, type TreeNode } from './Tree';
+import { Tree, type TreeNode } from './Tree';
+import { filterTree, treeBranchIds } from './treeFilter';
 
 afterEach(() => { cleanup(); });
 

@@ -284,27 +284,31 @@ export const UnitsChoicesAlpha: Story = {
 /** An auto row hides its control and reads out the word; its label toggles
  *  the state. */
 export const Auto: Story = {
-  render: () => {
-    function AutoRows() {
-      const [auto, setAuto] = useState(true);
-      const [gap, setGap] = useState(12);
-      return (
-        <div className={s.column}>
-          <PropertyField
-            kind="number"
-            control="slider"
-            label="Gap"
-            value={gap}
-            min={0}
-            max={48}
-            onChange={setGap}
-            auto={auto}
-            onAutoChange={setAuto}
-            readout={auto ? 'auto' : undefined}
-          />
-        </div>
-      );
-    }
-    return <AutoRows />;
+  args: { label: 'Gap' },
+  render: ({ label, description, layout, span, density, align, disabled }) => {
+    const [auto, setAuto] = useState(true);
+    const [gap, setGap] = useState(12);
+    return (
+      <div className={s.column}>
+        <PropertyField
+          kind="number"
+          control="slider"
+          label={label}
+          description={description}
+          layout={layout}
+          span={span}
+          density={density}
+          align={align}
+          disabled={disabled}
+          value={gap}
+          min={0}
+          max={48}
+          onChange={setGap}
+          auto={auto}
+          onAutoChange={setAuto}
+          readout={auto ? 'auto' : undefined}
+        />
+      </div>
+    );
   },
 };

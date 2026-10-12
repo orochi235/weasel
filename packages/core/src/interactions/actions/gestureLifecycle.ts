@@ -7,6 +7,7 @@
  * the `resizePolicy` dep, where the rest of its options already live.
  */
 import type { Op } from 'core/ops/types';
+import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Scene } from 'core/scene/types';
 import type { BehaviorEnd } from 'interactions/gestures/types';
 import { dropPreviewOverrides, type PreviewOverrideState } from './previewOverrides';
@@ -78,7 +79,10 @@ export function readGestureLifecycle(
 }
 
 /** Commit a gesture's ops: untracked when transient, else through the
- *  consumer `applyOps` hook when one is wired, else into the scene's history. */
+ *  consumer `applyOps` hook when one is wired, else into the scene's history.
+ *  Returns whether the commit landed: false when a container refused what
+ *  the ops brought it, which the scene reverts. A consumer's `applyOps` may
+ *  keep the document elsewhere, so it is taken at its word. */
 export function commitGestureOps(
   target: {
     scene: Scene<unknown, string, unknown>;
@@ -87,16 +91,23 @@ export function commitGestureOps(
   },
   lifecycle: GestureLifecycle,
   ops: Op[],
-): void {
+): boolean {
   if (lifecycle.transient) {
-    target.scene.untracked(() => {
-      for (const op of ops) op.apply(target.adapter);
-    });
-    return;
+    try {
+      target.scene.untracked(() => {
+        for (const op of ops) op.apply(target.adapter);
+      });
+    } catch (err) {
+      // `untracked` lets a refused arrival out; `applyBatch` swallows it.
+      if (!(err instanceof SceneArrivalRefused)) throw err;
+      return false;
+    }
+    return true;
   }
   const label = lifecycle.labelFor(ops);
-  if (target.applyOps) target.applyOps(ops, label);
-  else target.scene.applyBatch(ops, label, target.adapter);
+  if (!target.applyOps) return target.scene.applyBatch(ops, label, target.adapter);
+  target.applyOps(ops, label);
+  return true;
 }
 
 /** The trailing argument of {@link reduceBehaviorEnd}: what `TEnd` adds to
@@ -110,17 +121,24 @@ type OwnEndFields<TEnd extends BehaviorEnd> = keyof Omit<TEnd, keyof BehaviorEnd
  *  empty array included), and `undefined` means every behavior deferred to the
  *  action's own commit. An action whose behaviors take more than a plain
  *  `BehaviorEnd` passes the rest as `own`; each `onEnd` gets it beside
- *  `answered`. */
+ *  `answered`. One that throws does not stop the rest, which are told the
+ *  commit is decided; its error is rethrown after, so nothing commits. */
 export function reduceBehaviorEnd<TCtx, TEnd extends BehaviorEnd = BehaviorEnd>(
   behaviors: readonly { onEnd?(ctx: TCtx, end: TEnd): Op[] | null | void }[],
   ctx: TCtx,
   ...[own]: OwnEndFields<TEnd>
 ): Op[] | null | undefined {
   let answer: Op[] | null | undefined;
-  for (const b of behaviors) {
-    const r = b.onEnd?.(ctx, { ...own, answered: answer !== undefined } as TEnd);
-    if (answer === undefined && r !== undefined) answer = r;
-  }
+  let threw = false;
+  runEvery(behaviors, (b) => {
+    try {
+      const r = b.onEnd?.(ctx, { ...own, answered: threw || answer !== undefined } as TEnd);
+      if (answer === undefined && r !== undefined) answer = r;
+    } catch (err) {
+      threw = true;
+      throw err;
+    }
+  });
   return answer;
 }
 
@@ -168,16 +186,14 @@ export interface ClosingGesture<TCtx> {
 
 /**
  * The close a transform action runs from its `finally`, commit or cancel:
- * drop the preview overrides, run `settle` (whatever of the action's own has
- * to follow the commit), tell the behaviors, then fire `onGestureEnd`. The
- * last three each run even when one before throws; the first error is
+ * drop the preview overrides, tell the behaviors, then fire `onGestureEnd`,
+ * which fires even when a behavior's `onSettled` throws; the first error is
  * rethrown.
  */
-export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean, settle?: () => void): void {
+export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean): void {
   dropPreviewOverrides(gesture.publish);
   gesture.publish.previews.clear();
   runEvery([
-    () => settle?.(),
     () => runBehaviorSettled(gesture.behaviors, gesture.ctx, committed),
     () => gesture.lifecycle.end(committed),
   ], (step) => step());

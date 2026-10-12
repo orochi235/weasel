@@ -49,12 +49,13 @@ export function keyProblem(kids: ChildMap, key: string, dotted = false): string 
   return null;
 }
 
-/** `visit` for every leaf under `host`, through the sections it nests and no further. */
-function eachScopedLeaf(host: SchemaNode, path: string | null, visit: (key: string, leaf: SchemaNode, path: string) => void): void {
+/** `visit` for every leaf and section under `host`, through the sections it nests and no further. */
+function eachScoped(host: SchemaNode, path: string | null, visit: (key: string, node: SchemaNode, path: string) => void): void {
   for (const [key, kid] of Object.entries(childrenOf(host) ?? {})) {
     const at = joinPath(path, key);
-    if (isPrefLeaf(kid)) visit(key, kid, at);
-    else if (isPrefSection(kid)) eachScopedLeaf(kid, at, visit);
+    if (!isPrefLeaf(kid) && !isPrefSection(kid)) continue;
+    visit(key, kid, at);
+    if (isPrefSection(kid)) eachScoped(kid, at, visit);
   }
 }
 
@@ -62,28 +63,43 @@ function eachScopedLeaf(host: SchemaNode, path: string | null, visit: (key: stri
  * The keys a node joining the children of `parent` may not take, as the nodes that hold them: its siblings', and
  * for a leaf where sections nest, every leaf's in whichever section. A section's key is no part of a value path,
  * so two leaves keyed alike under one section root, or inside one `object` leaf, would hold one value.
+ *
+ * Under a section root a leaf may not take a section's key either, nor a section a leaf's: a properties panel is
+ * told what to mark in one list, a leaf by its key and a section by its own.
  */
 export function keysTakenAt(root: SchemaRoot, parent: string | null, leaf: boolean): ChildMap {
   const host = nodeAt(root, parent) ?? root;
   const kids = childrenOf(host) ?? {};
-  if (!leaf || branchUnder(host) !== 'section') return kids;
+  if (branchUnder(host) !== 'section') return kids;
   let top = parent;
   while (top !== null && isPrefSection(nodeAt(root, top)!)) top = parentPath(top);
+  // Climbing out of every section without meeting an `object` leaf leaves the root, which is then a section.
+  const panelNames = top === null;
+  if (!leaf && !panelNames) return kids;
   const out: ChildMap = { ...kids };
-  eachScopedLeaf(nodeAt(root, top) ?? root, top, (key, held) => { out[key] = held; });
+  eachScoped(nodeAt(root, top) ?? root, top, (key, held) => {
+    if (isPrefLeaf(held) || (leaf && panelNames)) out[key] = held;
+  });
   return out;
 }
 
 /**
- * The leaves that share a value path with another, by tree path, each with what {@link keyProblem} says of its
- * key. No edit here makes one, but a schema made elsewhere can hold them.
+ * The nodes {@link keysTakenAt} would refuse each other's key, by tree path, each with what {@link keyProblem}
+ * says of its key: leaves that share a value path, and under a section root a leaf and a section named alike. No
+ * edit here makes one, but a schema made elsewhere can hold them.
  */
 export function keyClashes(root: SchemaRoot): Map<string, string> {
   const out = new Map<string, string>();
   const scope = (host: SchemaNode, path: string | null): void => {
-    const held = new Map<string, string[]>();
-    eachScopedLeaf(host, path, (key, _leaf, at) => held.set(key, [...(held.get(key) ?? []), at]));
-    for (const [key, paths] of held) if (paths.length > 1) for (const at of paths) out.set(at, taken(key));
+    const [leaves, sections] = [new Map<string, string[]>(), new Map<string, string[]>()];
+    eachScoped(host, path, (key, node, at) => {
+      const held = isPrefLeaf(node) ? leaves : sections;
+      held.set(key, [...(held.get(key) ?? []), at]);
+    });
+    for (const [key, paths] of leaves) {
+      const named = path === null && isPrefSection(host) ? sections.get(key) ?? [] : [];
+      if (paths.length + named.length > 1) for (const at of [...paths, ...named]) out.set(at, taken(key));
+    }
   };
   const walk = (node: SchemaNode, path: string | null): void => {
     if (path === null || !isPrefSection(node)) scope(node, path);
