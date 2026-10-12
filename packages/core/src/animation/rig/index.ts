@@ -8,6 +8,8 @@ export type { IkLimit, IkPoint, IkResult, SolveIkOptions } from './solveIk';
 export { useRig } from './useRig';
 export { motionsFromRest, skinPath } from './skin';
 export type { Skin } from './skin';
+export { dataRestPath } from './skinBinding';
+export type { RestPath } from './skinBinding';
 export { autoSkin } from './autoSkin';
 export type { AutoSkinOptions } from './autoSkin';
 export { IDENTITY_JOINT } from './types';

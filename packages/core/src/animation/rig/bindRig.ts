@@ -1,17 +1,16 @@
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
-import type { NodeId, PoseOverride, PoseOverrides } from '../../core/scene/types';
+import type { NodeId, PoseOverride } from '../../core/scene/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { createTarget, type Target } from '../target';
 import { skeletonAxes } from './skeletonAxes';
 import { resolveSkeleton } from './resolveSkeleton';
+import { bindSkins, dataRestPath, type RestPath, type SkinScene } from './skinBinding';
+import type { Skin } from './skin';
 import type { Pose, Skeleton } from './types';
 
 /** The part of a scene a rig writes to. */
-export interface RigScene<TPose> {
-  get(id: NodeId): { pose: TPose } | undefined;
-  readonly overrides: PoseOverrides<TPose>;
-  setPose(id: NodeId, pose: TPose): void;
+export interface RigScene<TPose> extends SkinScene<TPose> {
   batch<T>(label: string, fn: () => T): T;
 }
 
@@ -40,7 +39,14 @@ export interface BindRigOptions<TPose> {
   skeleton: Skeleton;
   /** Joint name → the node or nodes that ride it. Each node keeps the offset
    *  from its joint that it has at the bind pose. */
-  bindings: Readonly<Record<string, NodeId | readonly NodeId[]>>;
+  bindings?: Readonly<Record<string, NodeId | readonly NodeId[]>>;
+  /** Node id → the weights its path bends by. Where a bound node moves whole with one joint,
+   *  a skinned node's points each follow their own joints, and the rig shows the bent path
+   *  through the node's pose override, posed at the path's bounds. */
+  skins?: Readonly<Record<NodeId, Skin>>;
+  /** Where a skinned node's path is drawn when the rig is bound. Default
+   *  {@link dataRestPath}: the node's `data.path`, through its pose. */
+  restPath?: RestPath<TPose>;
   /** Default: {@link rigidRigApply} over `descriptor`. */
   apply?: RigApply<TPose>;
   /** The descriptor the default `apply` reads and writes poses through.
@@ -74,8 +80,9 @@ export interface Rig {
   /** The joint world transforms as the rig was last posed, root applied. */
   world(): ReadonlyMap<string, GlMat3>;
   /** Write the current frame into the bound nodes' document poses as one
-   *  undo entry, and drop the overrides. Later frames stay relative to the
-   *  bind-time rest, so baking does not compound. */
+   *  undo entry, and drop the overrides. A skinned node's bent path goes into
+   *  its `data.path`. Later frames stay relative to the bind-time rest, so
+   *  baking does not compound. */
   bake(label?: string): void;
   /** Drop the overrides; the nodes show their document poses again until the
    *  rig is next posed. */
@@ -114,7 +121,6 @@ interface Bound<TPose> {
   joint: string;
   rest: TPose;
   restWorld: GlMat3;
-  restInverse: GlMat3;
   entry: PoseOverride<TPose>;
 }
 
@@ -126,19 +132,35 @@ interface Bound<TPose> {
  */
 export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
   const { scene, skeleton } = options;
-  const apply = options.apply ?? rigidRigApply(options.descriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>));
+  const descriptor = options.descriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const apply = options.apply ?? rigidRigApply(descriptor);
   const restWorlds = resolveSkeleton(skeleton, {});
-
-  const bound: Bound<TPose>[] = [];
-  for (const [joint, ids] of Object.entries(options.bindings)) {
+  const restInverses = new Map<string, GlMat3>();
+  const restInverseOf = (joint: string): GlMat3 => {
+    let inverse = restInverses.get(joint);
+    if (inverse) return inverse;
     const restWorld = restWorlds.get(joint);
     if (!restWorld) throw new Error(`bindRig: the skeleton has no joint "${joint}".`);
-    const restInverse = mat3.invert(restWorld);
-    if (!restInverse) throw new Error(`bindRig: joint "${joint}" is singular at the bind pose.`);
+    inverse = mat3.invert(restWorld) ?? undefined;
+    if (!inverse) throw new Error(`bindRig: joint "${joint}" is singular at the bind pose.`);
+    restInverses.set(joint, inverse);
+    return inverse;
+  };
+
+  const skins = bindSkins(scene, options.skins ?? {}, options.restPath ?? dataRestPath, descriptor);
+  skins.joints.forEach(restInverseOf);
+
+  const bound: Bound<TPose>[] = [];
+  for (const [joint, ids] of Object.entries(options.bindings ?? {})) {
+    restInverseOf(joint);
+    const restWorld = restWorlds.get(joint)!;
     for (const node of typeof ids === 'string' ? [ids] : (ids as readonly NodeId[])) {
+      if (options.skins && node in options.skins) {
+        throw new Error(`bindRig: node "${node}" is both bound to joint "${joint}" and skinned.`);
+      }
       const n = scene.get(node);
       if (!n) throw new Error(`bindRig: joint "${joint}" is bound to node "${node}", which the scene lacks.`);
-      bound.push({ node, joint, rest: n.pose, restWorld, restInverse, entry: { pose: n.pose } });
+      bound.push({ node, joint, rest: n.pose, restWorld, entry: { pose: n.pose } });
     }
   }
 
@@ -149,6 +171,7 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
     if (!installed) return;
     installed = false;
     for (const b of bound) scene.overrides.clear(b.node);
+    skins.release();
   };
 
   let root: GlMat3 | undefined;
@@ -157,16 +180,21 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
     if (root) for (const [name, m] of local) local.set(name, mat3.multiply(root, m));
     world = local;
     const fromRest = new Map<string, GlMat3>();
+    const motionOf = (joint: string): GlMat3 => {
+      let delta = fromRest.get(joint);
+      if (!delta) {
+        delta = mat3.multiply(local.get(joint)!, restInverseOf(joint));
+        fromRest.set(joint, delta);
+      }
+      return delta;
+    };
     for (const b of bound) {
       const w = local.get(b.joint)!;
-      let delta = fromRest.get(b.joint);
-      if (!delta) {
-        delta = mat3.multiply(w, b.restInverse);
-        fromRest.set(b.joint, delta);
-      }
-      b.entry.pose = apply(w, { joint: b.joint, node: b.node, rest: b.rest, restWorld: b.restWorld, fromRest: delta });
+      b.entry.pose = apply(w, { joint: b.joint, node: b.node, rest: b.rest, restWorld: b.restWorld, fromRest: motionOf(b.joint) });
       if (!installed) scene.overrides.set(b.node, b.entry);
     }
+    skins.joints.forEach(motionOf);
+    skins.show(fromRest);
     installed = true;
     scene.overrides.commit();
   };
@@ -196,6 +224,7 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
       if (!installed) return;
       scene.batch(label, () => {
         for (const b of bound) if (b.entry.pose !== undefined) scene.setPose(b.node, b.entry.pose);
+        skins.write();
       });
       release();
     },

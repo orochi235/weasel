@@ -68,7 +68,7 @@ Each is reversible.
 - [x] **An override path.** `PoseOverride.path`, read by paint, picking, and the silhouette;
   bounds follow the override's `pose`. Not yet seen by a node that derives from the skinned
   one (`DerivedDep.path` answers the derived path only), nor by a view with its own `toPose`.
-- [ ] **The rig skins.** `bindRig` takes `skins` (node id to `Skin`) beside `bindings`, and
+- [x] **The rig skins.** `bindRig` takes `skins` (node id to `Skin`) beside `bindings`, and
   `bake` writes the bent path into the document.
 - [ ] **Binding from a node.** A rig read from `data.skeleton` and the `data.skin` of paths under
   it, rebound when either changes.
