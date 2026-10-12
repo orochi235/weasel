@@ -4,6 +4,7 @@ export type {
   CommandFill, CommandPaint, CommandPaintUnits, CommandStroke, InCommandUnits, PosedPaint, SolidPaint,
 } from './commandPaint';
 export { isSolidPaint } from './commandPaint';
+export { paintKey, strokeKey, fillHasInk, strokeHasInk } from './paintKey';
 export type {
   Paint,
   PaintUnits,

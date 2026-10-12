@@ -20,9 +20,9 @@ const EM_DASH = '—';
 
 const solid = (color: string): Paint => ({ kind: 'solid', color });
 const GRADIENT: Paint = {
-  kind: 'linear-gradient', x0: 0, y0: 0, x1: 1, y1: 0,
+  kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
   stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
-} as Paint;
+};
 
 const run = (text: string, over: Partial<ResolvedRun> = {}): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',

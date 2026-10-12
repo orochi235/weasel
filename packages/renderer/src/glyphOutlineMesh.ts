@@ -4,6 +4,7 @@
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { LaidOutGroup, LaidOutOutlineGlyph } from '@weasel-js/text';
+import { strokeHasInk } from '@weasel-js/paint';
 import { strokeSpaceOf } from '@weasel-js/stroke';
 import type { GlMat3 } from '@weasel-js/geom';
 import { quantizeStrokeScale } from './cache/strokeMeshCache';
@@ -42,10 +43,9 @@ export function outlineGroupStrokeMesh(
   transform: GlMat3,
 ): Mesh | null {
   const stroke = group.stroke;
-  if (!stroke) return null;
+  if (!strokeHasInk(stroke)) return null;
   const width = stroke.width ?? 1;
   if (typeof width === 'object') {
-    if (!(width.px > 0)) return null;
     const shear = shearOf(group);
     const [a, b, c, d] = [transform[0], transform[1], transform[3], transform[4]];
     return mergeGlyphMeshes(group, dx, dy, (glyph) => {
@@ -60,7 +60,6 @@ export function outlineGroupStrokeMesh(
       );
     });
   }
-  if (!(width > 0)) return null;
   return mergeGlyphMeshes(group, dx, dy, (glyph) =>
     glyph.scale > 0
       ? outlineStrokeMesh(

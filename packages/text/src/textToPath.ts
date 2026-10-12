@@ -5,7 +5,7 @@
  * tier forced on for every glyph whatever its size.
  */
 
-import { isSolidPaint, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
+import { isSolidPaint, paintKey, strokeKey, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
 
 import {
   loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle,
@@ -183,12 +183,6 @@ function ruleContour(x0: number, y0: number, x1: number, y1: number): PolygonPat
   };
 }
 
-/** Paint identity for grouping. Paint is plain data, so structural equality
- *  is exact — a gradient set on two runs separately is still one paint. */
-function paintKey(fill: Paint | null, stroke: Stroke | undefined): string {
-  return JSON.stringify([fill, stroke ?? null]);
-}
-
 /**
  * The one glyph walk behind both entry points. Each resolved run is repainted
  * with an opaque solid whose color is its paint group's index, so the layout's
@@ -214,7 +208,7 @@ function walkOutlines(
   const paints: { fill: Fill | null; stroke?: Stroke }[] = [];
   const indexOf = new Map<string, number>();
   const runs = resolved.map((run): ResolvedRun => {
-    const key = paintKey((run.fill?.paint ?? null), run.stroke);
+    const key = `${paintKey(run.fill?.paint)}|${strokeKey(run.stroke)}`;
     let i = indexOf.get(key);
     if (i === undefined) {
       i = paints.length;

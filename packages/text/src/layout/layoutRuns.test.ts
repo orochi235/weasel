@@ -88,20 +88,20 @@ describe('layoutRuns — single line', () => {
     expect(out.groups[0].quads).toHaveLength(2);
   });
 
-  it('keeps a gradient-filled run in one group, and two gradients apart', async () => {
+  it('keeps equal gradients in one group, and two different gradients apart', async () => {
     await registerFixture('inter', [{}]);
-    const gradient = (): ResolvedRun['fill'] => ({
+    const gradient = (end = '#00f'): ResolvedRun['fill'] => ({
       paint: {
         kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
-        stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
+        stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: end }],
       },
     });
-    const shared = gradient();
     const opts: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
-    const one = layoutRuns([{ ...RUN_PLAIN('AB'), fill: shared }, { ...RUN_PLAIN('A'), fill: shared }], opts);
+    // Paint identity is structural: built separately, equal gradients are one paint.
+    const one = layoutRuns([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient() }], opts);
     expect(one.groups).toHaveLength(1);
     expect(one.groups[0].quads).toHaveLength(3);
-    const two = layoutRuns([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient() }], opts);
+    const two = layoutRuns([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient('#0f0') }], opts);
     expect(two.groups.map((g) => g.quads.length)).toEqual([2, 1]);
   });
 

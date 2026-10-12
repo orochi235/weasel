@@ -33,7 +33,7 @@
  * re-laying out.
  */
 
-import { isSolidPaint, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
+import { paintKey, strokeHasInk, strokeKey, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
 import {
   resolveFontVariant, resolveGlyphFallback, glyphOutline, fontPending, faceMetricsOf,
   type ResolveResult, type BmFontChar, type BmFont, type FontStyle, type FaceMetrics,
@@ -43,7 +43,6 @@ import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { analyzeParagraphs, restoreRemoved } from './bidiLines';
 import { directionOfLevel, registeredBidi } from './bidiRegistry';
-import { refId } from './refId';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
@@ -322,50 +321,6 @@ interface LayoutContext {
   groups: Map<string, LaidOutGroup>;
 }
 
-function fillKey(p: Paint | null): string {
-  if (p === null) return 'none';
-  if (isSolidPaint(p)) return `s:${p.color}:${p.opacity ?? 1}`;
-  return `nx:${refId(p)}`;
-}
-
-/**
- * Whether two runs' fills paint the same, for merging their decoration rules.
- * Solid paints compare by value; anything else compares by reference, because
- * a false positive would paint one run's rule with another's paint.
- */
-function sameFill(a: Paint | null, b: Paint | null): boolean {
-  if (a === b) return true;
-  if (isSolidPaint(a) && isSolidPaint(b)) {
-    return a.color === b.color && (a.opacity ?? 1) === (b.opacity ?? 1);
-  }
-  return false;
-}
-
-/** Whether a stroke puts ink down — an omitted, unpainted, or zero-width one
- *  does not, and must not pull a run onto the outline tier for nothing. */
-function strokePaints(s: Stroke | undefined): s is Stroke & { paint: Paint } {
-  if (s?.paint === undefined) return false;
-  const w = s.width ?? 1;
-  return (typeof w === 'number' ? w : w.px) > 0;
-}
-
-/**
- * Draw state for a stroke, for grouping. Two runs stroked the same way share
- * a draw call; anything else has to split, since the group *is* the draw call
- * and one call paints one ribbon.
- */
-function strokeKey(s: Stroke | undefined): string {
-  if (!strokePaints(s)) return '-';
-  const width = s.width ?? 1;
-  return [
-    // A screen-pixel width keys apart from the equal world-unit number: the two
-    // resolve to different ribbons, so they must not share a draw call.
-    fillKey(s.paint), typeof width === 'number' ? width : `px${width.px}`,
-    s.join ?? 'miter', s.cap ?? 'butt',
-    s.miterLimit ?? '', s.align ?? 'center', (s.dash ?? []).join(','),
-  ].join(':');
-}
-
 function groupKey(
   family: string,
   weight: number,
@@ -376,7 +331,7 @@ function groupKey(
   source: 'atlas' | 'canvas' | 'outline',
   page: number,
 ): string {
-  return `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}|${fillKey(fill)}|${strokeKey(stroke)}|${source}|${page}`;
+  return `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}|${paintKey(fill)}|${strokeKey(stroke)}|${source}|${page}`;
 }
 
 /**
@@ -405,7 +360,7 @@ function getOrCreateGroup(
     resolvedStyle,
     resolved.synthetic,
     (run.fill?.paint ?? null),
-    source === 'outline' && strokePaints(run.stroke) ? run.stroke : undefined,
+    source === 'outline' && strokeHasInk(run.stroke) ? run.stroke : undefined,
     source,
     page,
   );
@@ -421,7 +376,7 @@ function getOrCreateGroup(
       fill: run.fill,
       // Only the outline tier can paint it, and carrying it on an SDF group
       // would be a promise the renderer cannot keep.
-      ...(source === 'outline' && strokePaints(run.stroke) ? { stroke: run.stroke } : {}),
+      ...(source === 'outline' && strokeHasInk(run.stroke) ? { stroke: run.stroke } : {}),
       quads: [],
       glyphs: [],
     };
@@ -864,7 +819,7 @@ export function layoutRuns(
     // A stroked run ignores the size gate: the SDF tiers have no geometry to
     // stroke, so leaving it below the threshold drops the outline asked for.
     // Gated on the run's size, so a small-caps word is not split across tiers.
-    if (e.run.fontSize < min && !strokePaints(e.run.stroke)) return null;
+    if (e.run.fontSize < min && !strokeHasInk(e.run.stroke)) return null;
     // Synthetic bold is an SDF threshold shift, and a path has no threshold.
     // Painting the regular weight instead would make text get *lighter* as
     // you zoom past the threshold. Synthetic italic is a shear, exact on
@@ -1063,7 +1018,7 @@ export function layoutRuns(
           && span.fontSize === e.run.fontSize
           && span.face === face
           && span.baselineY === baselineY
-          && sameFill(span.fill.paint ?? null, decoFill.paint ?? null)
+          && paintKey(span.fill.paint) === paintKey(decoFill.paint)
         ) {
           // Absorbs the kerning gap we just stepped over, so a run join
           // between two identically-decorated runs shows no seam.
@@ -1096,7 +1051,7 @@ export function layoutRuns(
       // geometry can carry one — an atlas quad would paint the fill that was
       // refused, so it is not emitted at all.
       if (e.run.fill === null
-          && !(outlineD !== null && strokePaints(e.run.stroke))) {
+          && !(outlineD !== null && strokeHasInk(e.run.stroke))) {
         penX += step;
         continue;
       }
