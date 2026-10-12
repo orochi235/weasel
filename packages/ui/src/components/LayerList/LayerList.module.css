@@ -66,6 +66,16 @@
   min-width: 0;
 }
 
+/* A run of rows among cards is a grid to assistive tech and no box: its rows stay the level's own items. */
+.run {
+  display: contents;
+}
+
+/* `PropertyList` spans its own children across its two columns; a run's rows are one step further in. */
+.run > .entry {
+  grid-column: 1 / -1;
+}
+
 .row {
   user-select: none;
 }

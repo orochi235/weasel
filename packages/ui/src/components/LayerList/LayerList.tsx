@@ -10,17 +10,14 @@ import {
 } from 'react';
 import { useLatest } from '@weasel-js/core';
 import { dlog } from '../../dlog';
-import { LockIcon } from '../../icons';
 import { intentOf, select, type SelectPolicy } from '@weasel-js/select';
 import { LIST_KEYS, type PressModifiers, selectModifiers, useReorderDragList } from '../../useReorderDragList';
-import { CloseButton } from '../CloseButton';
-import { Disclosure } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
-import { DragGrip } from '../DragGrip';
 import rows from '../ItemList/ItemList.module.css';
 import { PropertyGroup, PropertyList } from '../Properties';
 import type { StanceProps } from '../stance';
 import s from './LayerList.module.css';
+import { Controls, Handle, Row } from './LayerRow';
 
 /** One layer. With a body (see `renderBody`) it draws as a card that folds its
  *  body away; without one, as a one-line row. Either can hold child layers. */
@@ -127,7 +124,7 @@ function anyNested(items: LayerListItem[]): boolean {
 }
 
 /** What every level of the tree reads from the list. */
-interface Shared {
+export interface Shared {
   props: LayerListProps;
   collapsed: ReadonlySet<string>;
   toggle: (id: string) => void;
@@ -367,7 +364,7 @@ export function LayerList(props: LayerListProps) {
           {empty ?? (palette.length > 0 ? 'No layers — add one above.' : 'No layers.')}
         </div>
       ) : (
-        <Level items={items} parentId={null} shared={shared} path="" level={1} />
+        <Level items={items} parentId={null} shared={shared} path="" level={1} grid={false} name={props.label ?? title ?? 'Layers'} />
       )}
     </div>
   );
@@ -389,11 +386,31 @@ interface LevelProps {
   parentId: string | null;
   shared: Shared;
   path: string;
+  /** A row's depth in the treegrid that holds it. */
   level: number;
+  /** A treegrid above already holds this level's rows; otherwise the level opens its own. */
+  grid: boolean;
+  /** What a treegrid opened here is called: the card above, else the list. */
+  name: string;
+}
+
+/** `entries` in order, with each run of consecutive rows (not cards) handed to `wrap`. */
+function wrapRuns(entries: ReactNode[], isCard: boolean[], wrap: (run: ReactNode[], at: number) => ReactNode): ReactNode[] {
+  const out: ReactNode[] = [];
+  let run: ReactNode[] = [];
+  entries.forEach((entry, i) => {
+    if (!isCard[i]) run.push(entry);
+    if (run.length > 0 && (isCard[i] || i === entries.length - 1)) {
+      out.push(wrap(run, i));
+      run = [];
+    }
+    if (isCard[i]) out.push(entry);
+  });
+  return out;
 }
 
 /** One sibling group. Each has its own drag, so a drag stays under one parent. */
-function Level({ items, parentId, shared, path, level }: LevelProps) {
+function Level({ items, parentId, shared, path, level, grid, name }: LevelProps) {
   const { props } = shared;
   const selected = props.selectedIds ?? [];
   const drag = useReorderDragList({
@@ -414,6 +431,7 @@ function Level({ items, parentId, shared, path, level }: LevelProps) {
       const item = items.find((it) => it.id === id);
       if (item) shared.press(item, mods);
     },
+    groupSelector: '[data-run]',
   });
   shared.nudgers.set(parentId, (id, delta) =>
     drag.nudge(id, items.findIndex((it) => it.id === id), delta),
@@ -447,6 +465,8 @@ function Level({ items, parentId, shared, path, level }: LevelProps) {
       if (targetIndex === items.length && i === items.length - 1) cls.push(s.dropAfter);
     }
     const controls = <Controls item={item} shared={shared} />;
+    // A card outside any grid starts one for the rows under it.
+    const below = grid || !hasBody(body) ? { level: level + 1, grid: true, name } : { level: 1, grid: false, name: item.label };
     const head =
       hasBody(body) ? (
         <PropertyGroup
@@ -468,89 +488,52 @@ function Level({ items, parentId, shared, path, level }: LevelProps) {
           {ghosted ? null : body}
         </PropertyGroup>
       ) : (
-        <div
-          className={[rows.row, s.row, isSelected ? rows.selected : ''].filter(Boolean).join(' ')}
-          data-selected={isSelected ? 'true' : undefined}
-          data-locked={item.locked ? 'true' : undefined}
+        <Row
+          item={item}
+          shared={shared}
+          parentId={parentId}
+          level={level}
+          ghosted={ghosted}
+          selected={isSelected}
+          open={open}
+          childId={childId}
           onPointerDown={onPointerDown}
-          {...(ghosted
-            ? {}
-            : {
-                role: 'row',
-                'aria-level': level,
-                ...(kids.length > 0 ? { 'aria-expanded': open } : {}),
-                ...(props.onSelect ? { 'aria-selected': isSelected } : {}),
-                tabIndex: shared.keys.tabStop === item.id ? 0 : -1,
-                ref: shared.keys.register(item.id),
-                onKeyDown: shared.keys.onKeyDown(item, parentId),
-                onFocus: () => shared.keys.onFocus(item.id),
-              })}
-        >
-          <div className={s.cell} {...(ghosted ? {} : { role: 'gridcell' })}>
-            {shared.nested &&
-              (kids.length > 0 ? (
-                <span className={s.stop} onPointerDown={stop}>
-                  <Disclosure
-                    open={open}
-                    onToggle={() => shared.toggle(item.id)}
-                    label={`${item.label} sublayers`}
-                    controls={childId}
-                  />
-                </span>
-              ) : (
-                <span className={s.twistyGap} />
-              ))}
-            <Grip item={item} reorder={props.onReorder !== undefined} />
-            {props.onVisibilityChange &&
-              (item.locked ? (
-                <span className={s.check} />
-              ) : (
-                <input
-                  className={s.check}
-                  type="checkbox"
-                  checked={item.visible !== false}
-                  onPointerDown={stop}
-                  onChange={(e) => props.onVisibilityChange?.(item.id, e.target.checked)}
-                  aria-label={`Show ${item.label}`}
-                />
-              ))}
-            {item.leading}
-            <span className={rows.label}>{item.title ?? item.label}</span>
-            {ghosted ? null : <Remove item={item} shared={shared} />}
-          </div>
-        </div>
+        />
       );
     return (
       <div key={item.id} role="none" className={cls.join(' ')} data-selected={isSelected ? 'true' : undefined}>
         {head}
         {!ghosted && kids.length > 0 && open && (
-          <div id={childId} role="rowgroup" className={s.children}>
-            <Level items={kids} parentId={item.id} shared={shared} path={`${path}-${i}`} level={level + 1} />
+          <div id={childId} role={below.grid ? 'rowgroup' : undefined} className={s.children}>
+            <Level items={kids} parentId={item.id} shared={shared} path={`${path}-${i}`} {...below} />
           </div>
         )}
       </div>
     );
   };
 
+  const gridProps = {
+    role: 'treegrid',
+    'aria-label': name,
+    ...(props.onSelect ? { 'aria-multiselectable': true } : {}),
+  };
+  const entries = items.map((it, i) => entry(it, i, false));
+
   return (
     <>
       {cards ? (
         <PropertyList ref={bind} className={`${s.level} ${s.cards}`}>
-          {items.map((it, i) => entry(it, i, false))}
+          {grid
+            ? entries
+            : wrapRuns(entries, bodies.map(hasBody), (run, at) => (
+                <div key={`run-${at}`} data-run="" className={s.run} {...gridProps}>
+                  {run}
+                </div>
+              ))}
         </PropertyList>
       ) : (
-        <div
-          ref={bind}
-          className={s.level}
-          {...(parentId === null
-            ? {
-                role: 'treegrid',
-                'aria-label': props.label ?? props.title ?? 'Layers',
-                ...(props.onSelect ? { 'aria-multiselectable': true } : {}),
-              }
-            : { role: 'none' })}
-        >
-          {items.map((it, i) => entry(it, i, false))}
+        <div ref={bind} className={s.level} {...(grid ? { role: 'none' } : gridProps)}>
+          {entries}
         </div>
       )}
       {ghost && el ? (
@@ -559,92 +542,5 @@ function Level({ items, parentId, shared, path, level }: LevelProps) {
         </DragGhost>
       ) : null}
     </>
-  );
-}
-
-// Keeps a press on a control inside a row from also starting the row's press.
-const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
-
-/** A row's grip: decoration, since the whole row takes the drag. */
-function Grip({ item, reorder }: { item: LayerListItem; reorder: boolean }) {
-  if (item.locked) {
-    return (
-      <span className={s.lock} role="img" aria-label="Locked">
-        <LockIcon size={12} />
-      </span>
-    );
-  }
-  if (!reorder && item.badge === undefined) return null;
-  return (
-    <span className={s.grip} aria-hidden="true">
-      {item.badge ?? <DragGrip size={13} />}
-    </span>
-  );
-}
-
-/** A card's handle: the drag target, since the rest of its head folds it, and
- *  Alt+Up/Down on it moves the card. */
-function Handle({
-  item,
-  reorder,
-  onPointerDown,
-  onNudge,
-}: {
-  item: LayerListItem;
-  reorder: boolean;
-  onPointerDown: ((e: React.PointerEvent) => void) | undefined;
-  onNudge: (delta: -1 | 1) => void;
-}) {
-  if (item.locked || !reorder) return <Grip item={item} reorder={reorder} />;
-  return (
-    <button
-      type="button"
-      className={s.handle}
-      aria-label={`Drag to reorder ${item.label}`}
-      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-      onPointerDown={onPointerDown}
-      onKeyDown={(e) => {
-        if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
-        e.preventDefault();
-        onNudge(e.key === 'ArrowUp' ? -1 : 1);
-      }}
-    >
-      {item.badge ?? <DragGrip />}
-    </button>
-  );
-}
-
-function Controls({ item, shared }: { item: LayerListItem; shared: Shared }) {
-  const { onVisibilityChange } = shared.props;
-  return (
-    <>
-      {onVisibilityChange && !item.locked && (
-        <input
-          className={s.check}
-          type="checkbox"
-          checked={item.visible !== false}
-          onClick={stop}
-          onChange={(e) => onVisibilityChange(item.id, e.target.checked)}
-          aria-label={`Show ${item.label}`}
-        />
-      )}
-      <Remove item={item} shared={shared} />
-    </>
-  );
-}
-
-function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
-  const { onRemove } = shared.props;
-  if (!onRemove || item.locked) return null;
-  return (
-    <span className={s.stop} onPointerDown={stop}>
-      <CloseButton
-        ariaLabel={`Remove ${item.label}`}
-        onClick={() => {
-          shared.keys.onRemoving(item.id);
-          onRemove(item.id);
-        }}
-      />
-    </span>
   );
 }

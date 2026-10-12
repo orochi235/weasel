@@ -34,6 +34,10 @@ export interface UseReorderDragListOptions {
    *  that interleaves other elements (a table's detail rows). Default: every
    *  child is a row. */
   rowSelector?: string;
+  /** Selector matching the container's children that only wrap rows (a run of
+   *  rows in a group of its own), so each one's children are rows of this
+   *  list. */
+  groupSelector?: string;
 }
 
 /** Modifier keys held when a press began. */
@@ -115,6 +119,17 @@ function unlockedSegment(items: readonly ReorderItem[], sourceIndex: number): [n
   return [lo, hi];
 }
 
+function rowElements(
+  container: HTMLElement,
+  { rowSelector, groupSelector }: Pick<UseReorderDragListOptions, 'rowSelector' | 'groupSelector'>,
+): HTMLElement[] {
+  const children = Array.from(container.children);
+  const rows = groupSelector
+    ? children.flatMap((el) => (el.matches(groupSelector) ? Array.from(el.children) : [el]))
+    : children;
+  return (rowSelector ? rows.filter((el) => el.matches(rowSelector)) : rows) as HTMLElement[];
+}
+
 /** What a drag of the row at `index` carries: the selection within its segment if the row is selected, else the row. */
 function draggedIdsFor(
   items: readonly ReorderItem[],
@@ -180,8 +195,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
     const c = containerRef.current;
     if (!c) return lo;
-    const sel = optsRef.current.rowSelector;
-    const rows = (sel ? Array.from(c.children).filter((el) => el.matches(sel)) : Array.from(c.children)) as HTMLElement[];
+    const rows = rowElements(c, optsRef.current);
     const flat: DropRow[] = rows.map((row, i) => {
       const r = row.getBoundingClientRect();
       return { id: String(i), parentId: null, level: 1, index: i, branch: false, expanded: false, childCount: 0, top: r.top, height: r.height };
@@ -212,7 +226,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     // Where in the grabbed row the pointer went down, so the ghost keeps that point under it. The handler may sit on
     // a handle inside the row rather than the row itself, so the row is the container's child holding it.
     const pressed = e.currentTarget as Element;
-    const rowEl = Array.from(container.children).find((child) => child.contains(pressed)) ?? pressed;
+    const rowEl = rowElements(container, optsRef.current).find((child) => child.contains(pressed)) ?? pressed;
     const row = rowEl.getBoundingClientRect();
     const grab = { x: e.clientX - row.left, y: e.clientY - row.top };
     const ghostAt = (ev: { clientX: number; clientY: number }): ReorderGhost => ({

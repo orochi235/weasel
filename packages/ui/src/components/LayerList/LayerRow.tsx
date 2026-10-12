@@ -1,0 +1,168 @@
+import { LockIcon } from '../../icons';
+import { CloseButton } from '../CloseButton';
+import { Disclosure } from '../Disclosure';
+import { DragGrip } from '../DragGrip';
+import rows from '../ItemList/ItemList.module.css';
+import type { LayerListItem, Shared } from './LayerList';
+import s from './LayerList.module.css';
+
+interface RowProps {
+  item: LayerListItem;
+  shared: Shared;
+  parentId: string | null;
+  /** The row's depth in the treegrid that holds it. */
+  level: number;
+  /** Drawn in a drag's ghost: no role, no keys, no remove. */
+  ghosted: boolean;
+  selected: boolean;
+  open: boolean;
+  /** The id of the element holding the row's children. */
+  childId: string;
+  onPointerDown: ((e: React.PointerEvent) => void) | undefined;
+}
+
+/** A layer with no body: one line, and one row of its treegrid. */
+export function Row({ item, shared, parentId, level, ghosted, selected, open, childId, onPointerDown }: RowProps) {
+  const { props } = shared;
+  const branch = (item.children?.length ?? 0) > 0;
+  return (
+    <div
+      className={[rows.row, s.row, selected ? rows.selected : ''].filter(Boolean).join(' ')}
+      data-selected={selected ? 'true' : undefined}
+      data-locked={item.locked ? 'true' : undefined}
+      onPointerDown={onPointerDown}
+      {...(ghosted
+        ? {}
+        : {
+            role: 'row',
+            'aria-level': level,
+            ...(branch ? { 'aria-expanded': open } : {}),
+            ...(props.onSelect ? { 'aria-selected': selected } : {}),
+            tabIndex: shared.keys.tabStop === item.id ? 0 : -1,
+            ref: shared.keys.register(item.id),
+            onKeyDown: shared.keys.onKeyDown(item, parentId),
+            onFocus: () => shared.keys.onFocus(item.id),
+          })}
+    >
+      <div className={s.cell} {...(ghosted ? {} : { role: 'gridcell' })}>
+        {shared.nested &&
+          (branch ? (
+            <span className={s.stop} onPointerDown={stop}>
+              <Disclosure
+                open={open}
+                onToggle={() => shared.toggle(item.id)}
+                label={`${item.label} sublayers`}
+                controls={childId}
+              />
+            </span>
+          ) : (
+            <span className={s.twistyGap} />
+          ))}
+        <Grip item={item} reorder={props.onReorder !== undefined} />
+        {props.onVisibilityChange &&
+          (item.locked ? (
+            <span className={s.check} />
+          ) : (
+            <input
+              className={s.check}
+              type="checkbox"
+              checked={item.visible !== false}
+              onPointerDown={stop}
+              onChange={(e) => props.onVisibilityChange?.(item.id, e.target.checked)}
+              aria-label={`Show ${item.label}`}
+            />
+          ))}
+        {item.leading}
+        <span className={rows.label}>{item.title ?? item.label}</span>
+        {ghosted ? null : <Remove item={item} shared={shared} />}
+      </div>
+    </div>
+  );
+}
+
+// Keeps a press on a control inside a row from also starting the row's press.
+const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
+
+/** A row's grip: decoration, since the whole row takes the drag. */
+function Grip({ item, reorder }: { item: LayerListItem; reorder: boolean }) {
+  if (item.locked) {
+    return (
+      <span className={s.lock} role="img" aria-label="Locked">
+        <LockIcon size={12} />
+      </span>
+    );
+  }
+  if (!reorder && item.badge === undefined) return null;
+  return (
+    <span className={s.grip} aria-hidden="true">
+      {item.badge ?? <DragGrip size={13} />}
+    </span>
+  );
+}
+
+/** A card's handle: the drag target, since the rest of its head folds it, and
+ *  Alt+Up/Down on it moves the card. */
+export function Handle({
+  item,
+  reorder,
+  onPointerDown,
+  onNudge,
+}: {
+  item: LayerListItem;
+  reorder: boolean;
+  onPointerDown: ((e: React.PointerEvent) => void) | undefined;
+  onNudge: (delta: -1 | 1) => void;
+}) {
+  if (item.locked || !reorder) return <Grip item={item} reorder={reorder} />;
+  return (
+    <button
+      type="button"
+      className={s.handle}
+      aria-label={`Drag to reorder ${item.label}`}
+      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+      onPointerDown={onPointerDown}
+      onKeyDown={(e) => {
+        if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+        e.preventDefault();
+        onNudge(e.key === 'ArrowUp' ? -1 : 1);
+      }}
+    >
+      {item.badge ?? <DragGrip />}
+    </button>
+  );
+}
+
+export function Controls({ item, shared }: { item: LayerListItem; shared: Shared }) {
+  const { onVisibilityChange } = shared.props;
+  return (
+    <>
+      {onVisibilityChange && !item.locked && (
+        <input
+          className={s.check}
+          type="checkbox"
+          checked={item.visible !== false}
+          onClick={stop}
+          onChange={(e) => onVisibilityChange(item.id, e.target.checked)}
+          aria-label={`Show ${item.label}`}
+        />
+      )}
+      <Remove item={item} shared={shared} />
+    </>
+  );
+}
+
+function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
+  const { onRemove } = shared.props;
+  if (!onRemove || item.locked) return null;
+  return (
+    <span className={s.stop} onPointerDown={stop}>
+      <CloseButton
+        ariaLabel={`Remove ${item.label}`}
+        onClick={() => {
+          shared.keys.onRemoving(item.id);
+          onRemove(item.id);
+        }}
+      />
+    </span>
+  );
+}

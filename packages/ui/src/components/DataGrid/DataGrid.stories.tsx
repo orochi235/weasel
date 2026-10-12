@@ -81,3 +81,23 @@ export const ClickToExpand: Story = {
     );
   },
 };
+
+/** `onReorder` adds a leading handle: drag it, or focus it and press Alt+ArrowUp/Down. `rowLabel` names each handle. */
+export const Reorderable: Story = {
+  render: function Reorderable() {
+    const [rows, setRows] = useState(ROUTES);
+    return (
+      <DataGrid<Route>
+        rows={rows}
+        columns={COLUMNS.map((c) => ({ ...c, sortable: false }))}
+        rowLabel={(r) => r.action}
+        onReorder={(ids, target) => {
+          const moved = rows.filter((r) => ids.includes(r.id));
+          const before = rows.slice(0, target).filter((r) => !ids.includes(r.id));
+          const after = rows.slice(target).filter((r) => !ids.includes(r.id));
+          setRows([...before, ...moved, ...after]);
+        }}
+      />
+    );
+  },
+};
