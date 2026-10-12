@@ -34,7 +34,7 @@ function ctx(
 }
 
 const tt = (dx: number, dy: number): GroupTransform => ({ kind: 'translate', dx, dy });
-const END: MoveEnd = { answered: false, translateOps: () => [] };
+const END: MoveEnd = { answered: false, translateOps: () => [], pointer: null };
 
 describe('alignMoveBehavior', () => {
   it('shapes the transform and publishes the active line on a hit', () => {

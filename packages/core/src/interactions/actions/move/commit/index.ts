@@ -23,6 +23,7 @@ export interface CommitInput {
 function behaviorCommit(
   session: MoveSession,
   delta: { dx: number; dy: number },
+  at: { x: number; y: number } | null,
   commitOps: (ops: Op[]) => void,
 ): boolean | undefined {
   const { dx, dy } = delta;
@@ -35,6 +36,7 @@ function behaviorCommit(
     }
     const r = reduceBehaviorEnd(session.behaviors, gctx, {
       translateOps: (ids) => rootTranslateOps(session, ids, delta),
+      pointer: at,
     });
     if (r === null) return false;           // abort (e.g. snap-back)
     if (r !== undefined) {
@@ -99,7 +101,7 @@ export function commitMove(input: CommitInput): boolean {
     committed = true;
   };
 
-  const owned = behaviorCommit(session, { dx, dy }, commitOps);
+  const owned = behaviorCommit(session, { dx, dy }, at, commitOps);
   if (owned !== undefined) return owned;
 
   // No-op if no movement (sub-threshold drag or zero delta).
