@@ -73,7 +73,7 @@ function Editor({ c, caret }: { c: Case; caret: number }) {
     ...(c.runs ? { getRuns: () => [{ text: c.text }], setRuns: () => {} } : {}),
     getStyle: () => ({ ...styleOf(c), caretColor: 'transparent' }),
     getScreenPose: (): TextEditScreenPose => ({
-      ...BOX, fontSize: c.fontSize, zoom: 1, ...(c.centered ? { verticalAlign: 'middle' as const } : {}),
+      ...BOX, fontSize: c.fontSize, zoom: 1, ...(c.centered ? { verticalAlign: 'center' as const } : {}),
     }),
     setText: (_id, text) => { committed.push(text); },
   });
@@ -177,7 +177,7 @@ describe('edit overlay line breaks', () => {
       ['one\n', 4, '{Shift>}{Enter}{/Shift}', 'one\n\n'],
       // The caret past a trailing break sits at the end of the line before it.
       ['one\n', 4, '{Backspace}', 'on\n'],
-      ['one\n', 4, 'd{Backspace}', 'one\n'],
+      ['one\n', 4, 'd', 'oned\n'],
       ['one', 3, '{Shift>}{Enter}{/Shift}', 'one\n'],
       ['one', 3, '{Shift>}{Enter}{/Shift}{Shift>}{Enter}{/Shift}', 'one\n\n'],
       ['one\ntwo', 7, '{Backspace}{Backspace}{Backspace}', 'one\n'],

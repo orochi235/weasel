@@ -507,15 +507,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is synthesized today (capitals scaled by x-height over cap height), and a face with an `smcp` feature should get its own small-cap glyphs instead.
 
-- **(P3) Text edit: typed text is inserted by hand in `beforeinput`.** Every `insertText` is
-  `preventDefault`-ed and inserted at the window selection
-  (`packages/core/src/features/text/useTextEdit.ts`, `onBeforeInput`). No `input` event follows, so
-  the `onInput` re-place that keeps a center- or bottom-aligned overlay from jumping a frame late
-  runs only for paste and delete. Two further effects are inferred and not observed in a browser:
-  input carrying its own target range (macOS double-space period, text replacement) would land at
-  the caret, and typing would not be on the native undo stack. The alternative is to intercept only
-  while a pending style is armed and normalize in `onInput` otherwise.
-
 - **(P3) Text edit: a paste lands in the overlay as whatever markup the browser inserts.**
   `useTextEdit` has no `paste` handler. `domToRuns` and the caret-offset walkers
   (`packages/core/src/features/text/domOffsets.ts`) now agree on `<br>`, `<div>`, and `<p>`, so a
