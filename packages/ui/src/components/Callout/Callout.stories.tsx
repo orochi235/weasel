@@ -59,27 +59,24 @@ export const Modal: Story = {
     children: 'This clears the whole document. The app is blocked until you choose (or press Esc).',
   },
   render: (args) => {
-    function Subject() {
-      const ref = useRef<HTMLButtonElement>(null);
-      const [open, setOpen] = useState(false);
-      return (
-        <>
-          <button ref={ref} type="button" onClick={() => setOpen(true)}>Delete everything</button>
-          <Callout
-            {...args}
-            triggerRef={ref}
-            isOpen={open}
-            onOpenChange={setOpen}
-            footer={
-              <>
-                <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button variant="primary" size="sm" onClick={() => setOpen(false)}>Delete</Button>
-              </>
-            }
-          />
-        </>
-      );
-    }
-    return <Subject />;
+    const ref = useRef<HTMLButtonElement>(null);
+    const [open, setOpen] = useState(false);
+    return (
+      <>
+        <button ref={ref} type="button" onClick={() => setOpen(true)}>Delete everything</button>
+        <Callout
+          {...args}
+          triggerRef={ref}
+          isOpen={open}
+          onOpenChange={setOpen}
+          footer={
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={() => setOpen(false)}>Delete</Button>
+            </>
+          }
+        />
+      </>
+    );
   },
 };
