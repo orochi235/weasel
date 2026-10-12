@@ -60,7 +60,8 @@ export interface PatternPlayer {
   stop(): void;
   playing(): boolean;
   tempo(): number;
-  /** Takes effect from the next step not yet booked. */
+  /** Takes effect from the next step not yet booked. Called from `onStep`,
+   *  that is the step after the one reported, which keeps its own length. */
   setTempo(bpm: number): void;
   /** Takes effect from the next step not yet booked. */
   setDetune(detune: PatternDetune): void;
@@ -158,6 +159,9 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
         voices.add(engine.playNote({ ...note, detune, when: at, duration: steps * stepMs() }));
       }
     }
+    // Read before `onStep`: a tempo set there starts with the next step, and
+    // this one keeps the length its events were gated by.
+    const ms = stepMs();
     inStep = true;
     try {
       opts.onStep?.(step, when);
@@ -167,7 +171,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     if (!running) return;
     count += 1;
     lastAt = when;
-    nextAt = when + stepMs();
+    nextAt = when + ms;
     book();
   };
 
@@ -192,8 +196,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     setTempo(next) {
       checkTempo(next);
       bpm = next;
-      // From inside `onStep` the step after this one is not booked yet, and
-      // is about to be, at the new tempo.
+      // From inside `onStep` the step after this one is about to be booked.
       if (!running || lastAt === null || inStep) return;
       engine.stopKey(key);
       nextAt = Math.max(lastAt + stepMs(), engine.now());
