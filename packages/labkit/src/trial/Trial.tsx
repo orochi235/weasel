@@ -5,6 +5,7 @@ import {
   WeaselProvider,
 } from '@weasel-js/core';
 import {
+  memo,
   type ReactNode,
   useCallback,
   useContext,
@@ -40,7 +41,7 @@ import type {
   RenderContext,
 } from '../instrument/types';
 import { useJob } from '../job/useJob';
-import { useLabContext } from '../lab/LabContext';
+import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
 import { useIsPresented } from '../lab/presentation';
 import { LayerList, type LayerListItem, moveLayers } from '../passthrough/weasel-ui';
@@ -69,8 +70,8 @@ export interface TrialProps {
 
 /** Renders one trial from the lab store: looks up its record and
  *  instrument, and mounts the instrument inside the trial chrome. */
-export function Trial({ id, chrome, suppress }: TrialProps) {
-  const lab = useLabContext();
+export const Trial = memo(function Trial({ id, chrome, suppress }: TrialProps) {
+  const lab = useLabCommands();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
   const instruments = useStore(storeCtx.store, (s) => s.instruments) ?? lab.instruments;
@@ -93,12 +94,11 @@ export function Trial({ id, chrome, suppress }: TrialProps) {
       instrument={instrument}
       instruments={instruments}
       store={storeCtx.store}
-      isLast={lab.trials.length <= 1}
       chrome={chrome}
       suppress={suppress}
     />
   );
-}
+});
 
 interface TrialRuntimeProps {
   /** The marks an instrument's own `AnnotationStorage` loaded. */
@@ -108,7 +108,6 @@ interface TrialRuntimeProps {
   /** The lab's instruments as the store holds them now. */
   instruments: InstrumentList;
   store: LabStore;
-  isLast: boolean;
   chrome?: readonly TrialContribution[];
   suppress?: readonly string[];
 }
@@ -119,13 +118,13 @@ function TrialRuntime({
   instrument,
   instruments,
   store,
-  isLast,
   chrome,
   suppress,
 }: TrialRuntimeProps) {
   const wheelSlot = useRef<CameraWheelSlot['current']>(null);
   const cameras = useContext(CameraRegistryContext);
   const trialId = record.id;
+  const isLast = useStore(store, (s) => s.trials.length <= 1);
   const publishCamera = useMemo(
     () => (cameras ? (camera: CameraView) => cameras.register(trialId, camera) : null),
     [cameras, trialId],

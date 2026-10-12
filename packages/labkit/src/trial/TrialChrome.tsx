@@ -16,7 +16,7 @@ import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
-import { useLabContext } from '../lab/LabContext';
+import { useLabCommands } from '../lab/LabContext';
 import { usePresentedTrial } from '../lab/presentation';
 import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
@@ -99,7 +99,7 @@ export function TrialChrome({
   setActiveTool = NO_OP,
   children,
 }: TrialChromeProps) {
-  const lab = useLabContext();
+  const lab = useLabCommands();
   const { presented, ref: presentedRef } = usePresentedTrial(trialId);
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] TrialChrome requires <LabStoreProvider>');
@@ -250,15 +250,15 @@ export function TrialChrome({
       ctx.saveSnapshot();
     }
   };
-  // With focus on the page body the chords go to the focused trial, or to the first where none is.
-  useTrialKeys(trialId, (lab.focusedTrialId ?? lab.trials[0]?.id) === trialId, handleKeyDown);
+  // With focus on the page body the chords go to the lab's focused trial, the first where none was picked.
+  useTrialKeys(trialId, lab.focusedTrialId === trialId, handleKeyDown);
 
   return (
     <section
       ref={presentedRef}
       className="lk-trial"
       data-trial-id={trialId}
-      data-focused={lab.trials.length > 1 && lab.focusedTrialId === trialId ? 'true' : undefined}
+      data-focused={!isLastTrial && lab.focusedTrialId === trialId ? 'true' : undefined}
       data-lk-presented={presented ? '' : undefined}
       aria-label={`Trial ${title}`}
       tabIndex={-1}

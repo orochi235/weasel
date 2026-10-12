@@ -1,4 +1,4 @@
-import { createContext, type ReactElement, type ReactNode, useContext } from 'react';
+import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import type { LabStore } from './store';
 import type { LabStoreState } from './types';
@@ -17,7 +17,8 @@ export function LabStoreProvider({
   store: LabStore;
   children: ReactNode;
 }): ReactElement {
-  return <LabStoreContext.Provider value={{ store }}>{children}</LabStoreContext.Provider>;
+  const value = useMemo(() => ({ store }), [store]);
+  return <LabStoreContext.Provider value={value}>{children}</LabStoreContext.Provider>;
 }
 
 /** Subscribe to the whole lab store. Throws outside a `<LabStoreProvider>`. */

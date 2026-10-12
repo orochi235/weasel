@@ -1254,13 +1254,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   record, which stays for good. The call to make is whether the lab draws a failed tile with a way
   to discard it.
 
-- **(P3) labkit lab: every trial re-renders whenever any trial's record changes.** `LabContext`'s
-  value carries `trials` (`packages/labkit/src/lab/Lab.tsx`), and both `Trial` and `TrialChrome`
-  read that context, so a pan frame, a job item, a clock write, or a mark save in one trial
-  re-renders all of them. `CanvasStack` no longer repaints on it, but the React work remains, and
-  `as2DView` (`packages/labkit/src/state/view.ts`) still allocates a view per render for every other
-  reader. `LabContextValue.trials` is public, so splitting it out (a separate context, or a selector
-  hook over the store, with the commands in a value that does not change) is an API decision.
+- **(P3) labkit lab: the lab itself re-renders whenever any trial's record changes.** `Lab`
+  (`packages/labkit/src/lab/Lab.tsx`) subscribes to the store's `trials` for the workspace's ids,
+  the focused trial, and `LabContext`'s value, so a pan frame, a job item, a clock write, or a mark
+  save in one trial renders `Lab`, `Workspace`, and every reader of `useLabContext` (`LabHeader`,
+  `LabChrome`). The trials themselves no longer render on it: `Trial` is memoized and reads
+  `useLabCommands`. What is left wants `Lab` to select the trial ids alone, and `LabProviders` to
+  be the one subscriber that builds the full context value.
 
 - **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
   the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,
