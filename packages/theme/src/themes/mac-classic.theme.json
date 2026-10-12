@@ -1,0 +1,358 @@
+{
+  "name": "mac-classic",
+  "extends": "weasel",
+  "description": "What every classic Mac OS look shares, whatever its era: the system faces and their sizes, square windows and fields, centered window titles, and flat control faces. An era's theme extends it with colors and edges.",
+  "axes": {
+    "mode": {
+      "default": "light",
+      "values": {
+        "light": {
+          "scheme": "light"
+        },
+        "dark": {
+          "scheme": "dark"
+        }
+      }
+    }
+  },
+  "pins": {
+    "radius-sm": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "radius-md": {
+      "value": "4px",
+      "type": "dimension"
+    },
+    "radius-lg": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "field-pad-x": {
+      "value": "5px",
+      "type": "dimension"
+    },
+    "button-radius": {
+      "value": "4px",
+      "type": "dimension"
+    },
+    "titlebar-align": {
+      "value": "center",
+      "type": "string"
+    },
+    "titlebar-label-pad": {
+      "value": "6px",
+      "type": "dimension"
+    },
+    "font-ui": {
+      "value": [
+        "Charcoal",
+        "Chicago",
+        "Lucida Grande",
+        "Geneva",
+        "sans-serif"
+      ],
+      "type": "fontFamily"
+    },
+    "font-display": {
+      "value": [
+        "Charcoal",
+        "Chicago",
+        "Lucida Grande",
+        "Geneva",
+        "sans-serif"
+      ],
+      "type": "fontFamily"
+    },
+    "font-body": {
+      "value": [
+        "Geneva",
+        "Lucida Grande",
+        "Verdana",
+        "sans-serif"
+      ],
+      "type": "fontFamily"
+    },
+    "font-mono": {
+      "value": [
+        "Monaco",
+        "Courier",
+        "monospace"
+      ],
+      "type": "fontFamily"
+    },
+    "font-size-2xs": {
+      "by": "density",
+      "compact": {
+        "value": "9px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "9px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "10px",
+        "type": "dimension"
+      }
+    },
+    "font-size-xs": {
+      "by": "density",
+      "compact": {
+        "value": "10px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "10px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "12px",
+        "type": "dimension"
+      }
+    },
+    "font-size-sm": {
+      "by": "density",
+      "compact": {
+        "value": "11px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "12px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "13px",
+        "type": "dimension"
+      }
+    },
+    "font-size-md": {
+      "by": "density",
+      "compact": {
+        "value": "12px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "13px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "15px",
+        "type": "dimension"
+      }
+    },
+    "font-size-lg": {
+      "by": "density",
+      "compact": {
+        "value": "14px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "16px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "18px",
+        "type": "dimension"
+      }
+    },
+    "font-size-xl": {
+      "by": "density",
+      "compact": {
+        "value": "18px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "20px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "24px",
+        "type": "dimension"
+      }
+    },
+    "control-h-xs": {
+      "by": "density",
+      "compact": {
+        "value": "16px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "18px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "20px",
+        "type": "dimension"
+      }
+    },
+    "control-h-sm": {
+      "by": "density",
+      "compact": {
+        "value": "18px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "20px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "24px",
+        "type": "dimension"
+      }
+    },
+    "control-h": {
+      "by": "density",
+      "compact": {
+        "value": "20px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "24px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "28px",
+        "type": "dimension"
+      }
+    },
+    "tb-height": {
+      "by": "density",
+      "compact": {
+        "value": "24px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "28px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "34px",
+        "type": "dimension"
+      }
+    },
+    "icon-button-size": {
+      "by": "density",
+      "compact": {
+        "value": "20px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "22px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "26px",
+        "type": "dimension"
+      }
+    },
+    "glass-blur": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "button-gloss": {
+      "value": "0",
+      "type": "number"
+    },
+    "button-text-shadow": {
+      "value": "none",
+      "type": "shadow"
+    },
+    "button-surface": {
+      "value": "{surface}",
+      "type": "color"
+    },
+    "button-primary-surface": {
+      "value": "{surface}",
+      "type": "color"
+    },
+    "button-primary-fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "field-border": {
+      "value": "0 solid transparent",
+      "type": "border"
+    },
+    "titlebar-border": {
+      "value": "0 solid transparent",
+      "type": "border"
+    },
+    "titlebar-inset": {
+      "value": "3px",
+      "type": "dimension"
+    },
+    "titlebar-weight": {
+      "value": "{font-weight-bold}",
+      "type": "fontWeight"
+    },
+    "params-label-case": {
+      "value": "none",
+      "type": "string"
+    },
+    "params-label-tracking": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "tracking-wide": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "tracking-wider": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "font-numeric": {
+      "value": "var(--wzl-font-ui)",
+      "type": "fontFamily"
+    },
+    "font-weight-light": {
+      "value": 400,
+      "type": "fontWeight"
+    },
+    "font-weight-normal": {
+      "value": 400,
+      "type": "fontWeight"
+    },
+    "font-weight-medium": {
+      "value": 400,
+      "type": "fontWeight"
+    },
+    "font-weight-bold": {
+      "value": 700,
+      "type": "fontWeight"
+    },
+    "panel-surface": {
+      "value": "{surface}",
+      "type": "color"
+    },
+    "panel-border-width": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "panel-pad": {
+      "value": "10px 12px",
+      "type": "dimension"
+    },
+    "panel-title-weight": {
+      "value": "{font-weight-bold}",
+      "type": "fontWeight"
+    },
+    "panel-title-size": {
+      "value": "{font-size-md}",
+      "type": "dimension"
+    },
+    "panel-title-tracking": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "stance-scope-radius": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "stance-scope-nested-radius": {
+      "value": "0px",
+      "type": "dimension"
+    }
+  }
+}

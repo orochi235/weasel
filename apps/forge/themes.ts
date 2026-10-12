@@ -2,6 +2,7 @@ import type { GlobalDeclaration, StoryContext } from '@weasel-js/forge';
 // The theme module alone: labkit's barrel is most of what a frame would otherwise load.
 import { interstellarTheme } from '@weasel-js/labkit/theme/interstellar';
 import { applyTheme, defineTheme, type Theme, weaselTheme } from '@weasel-js/theme';
+import { platinumTheme } from '@weasel-js/theme/themes/platinum';
 import { win9xTheme } from '@weasel-js/theme/themes/win9x';
 
 /** The themes a trial can take, by name; the first is the default. */
@@ -9,6 +10,7 @@ export const THEMES: Readonly<Record<string, Theme>> = {
   weasel: weaselTheme,
   interstellar: interstellarTheme,
   win9x: win9xTheme,
+  platinum: platinumTheme,
 };
 
 const DEFAULT_THEME = Object.keys(THEMES)[0]!;

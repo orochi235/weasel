@@ -25,6 +25,8 @@ export const repoThemeStoreOptions = (repoRoot: string): ThemeStoreOptions => ({
   extraFiles: [
     resolve(repoRoot, 'packages/labkit/src/theme/interstellar.theme.json'),
     resolve(repoRoot, 'packages/theme/src/themes/win9x.theme.json'),
+    resolve(repoRoot, 'packages/theme/src/themes/mac-classic.theme.json'),
+    resolve(repoRoot, 'packages/theme/src/themes/platinum.theme.json'),
   ],
   generatedDir: resolve(repoRoot, 'packages/theme/src/generated'),
 });

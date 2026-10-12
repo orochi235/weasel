@@ -1236,19 +1236,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) The Windows 9x theme bevels four things and has never been looked at.** `win9xTheme`
-  (`@weasel-js/theme/themes/win9x`) and the `titlebar` frame motif exist, and browser tests pin
-  their computed colors, shadows, and sizes, but only `Button`, the field frame, `PropertyPanel`,
-  and a `titlebar` frame read the `--wzl-bevel-*` hooks. Checkbox, radio, switch, tabs, sliders,
+- **(P3) The desktop themes bevel four things and have never been looked at.** `win9xTheme` and
+  `platinumTheme` (`@weasel-js/theme/themes/*`) and the `titlebar` frame motif exist, and browser
+  tests pin their computed colors, shadows, and sizes, but only `Button`, the field frame,
+  `PropertyPanel`, and a `titlebar` frame read the `--wzl-bevel-*` hooks. Checkbox, radio, switch, tabs, sliders,
   `ToggleBar` and the segmented control, menus and popovers, `Dialog`, toolbars, and the tooltip
-  take the theme's colors and square corners and draw no bevel, so a screen of them reads as flat
+  take each theme's colors and corners and draw no bevel, so a screen of them reads as flat
   gray. Each wants the matching hook read as a `var()` fallback, as `field.module.css` does. The
-  system's pixel faces are named in the font stacks and not bundled; a bundled lookalike needs a
-  face whose license allows it. And nobody has seen it: the first screenshot will find what
-  computed values cannot.
-
-- **(P3) A classic Mac OS theme.** Which era it follows, System 7's one-bit look or Mac OS 8–9's
-  Platinum, is the first decision.
+  systems' own faces are named in the font stacks and not bundled; a bundled lookalike needs a
+  face whose license allows it. And nobody has seen either theme: the first screenshot will find
+  what computed values cannot.
 
 - **(P1.5) `@weasel-js/ui` names colors as raw CSS strings, not `ColorSource`.** `@weasel-js/paint`'s
   `ColorSource` (a literal, a `ColorRef` like `{ ref: 'accent' }`, or a function, resolved by

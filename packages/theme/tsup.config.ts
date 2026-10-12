@@ -12,6 +12,7 @@ export default defineConfig(
       react: 'src/react.tsx',
       engine: 'src/engine.ts',
       'themes/win9x': 'src/themes/win9x.ts',
+      'themes/platinum': 'src/themes/platinum.ts',
     },
     external: ['react'],
   }),

@@ -91,6 +91,13 @@ applyTheme(document.documentElement, win9xTheme);   // opens in light mode
 - `win9xTheme`: Windows 95 and 98. Gray faces in two-pixel bevels, square
   corners, a navy-to-blue title strip, and the system sans at 11, 12, or 14px
   by density.
+- `platinumTheme`, from `@weasel-js/theme/themes/platinum`: Mac OS 8 and 9's
+  Platinum. Light gray faces with a black outline and a soft two-tone edge,
+  rounded buttons, white fields, and pinstriped window titles centered on the
+  strip. The same entry exports `classicMacTheme`, which it extends: the faces,
+  sizes, and geometry every classic Mac OS look shares, with no color of its
+  own. A System 7 theme is `defineTheme({ name, extends: classicMacTheme, pins })`
+  with that era's colors and edges.
 
 They open in light mode, the only one the originals had; the dark mode is the
 theme's own. The system faces are named first in the font stacks and are not
