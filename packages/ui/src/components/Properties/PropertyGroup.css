@@ -1,0 +1,48 @@
+/* ── PropertyGroup ──────────────────────────────────────────────────
+   A MotifFrame around a grid of rows; the frame's motif draws the box and
+   the title, and these rules lay out what it holds. */
+.group {
+  grid-column: 1 / -1;
+}
+
+/* Group help text: spans the grid, sits above the rows it describes. */
+.note {
+  grid-column: 1 / -1;
+  margin: 0 0 var(--wzl-prop-group-title-gap, 4px);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  line-height: 1.35;
+}
+
+/* `hidden` on its own loses to the body's `display: grid` below. */
+.groupBody[hidden] {
+  display: none;
+}
+
+.groupBody {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--wzl-prop-column-gap, 16px);
+  row-gap: var(--wzl-prop-row-gap, 4px);
+  /* Stretch so paired rows match in height — slider rows then bottom-align
+     their tracks (via `margin-top: auto`) and stay lined up even when one
+     sibling's label wraps to two lines. */
+  align-items: stretch;
+}
+
+.group:not(.groupPairs) .groupBody > :not(.rowColor) {
+  grid-column: 1 / -1;
+}
+
+.groupPairs .groupBody > * {
+  grid-column: auto;
+}
+
+.groupPairs .groupBody > h3,
+.groupPairs .groupBody > .span {
+  grid-column: 1 / -1;
+}
+
+.groupOneUp .groupBody > * {
+  grid-column: 1 / -1;
+}

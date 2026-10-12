@@ -1022,13 +1022,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
-- **(P3) Split `Properties.module.css`.** It is 73 KB and styles the panel, list, rows, group,
-  subpanel, cards, and every field in one file, with three generated stance blocks inside it. Its
-  header says the rules that cross components (`.listPairs > .subpanel`,
-  `.groupBody > :not(.rowColor)`) are why it is one module. Wants those few shared names in one
-  small module the rest compose from, and each component's rules beside the component, as
-  `PropertyHelp.module.css` already is.
-
 - **(P3) An isolated forge story may still log react-aria's "`<Focusable>` child must be
   focusable".** The warning fires when a `Focusable` mounts under `visibility: hidden`, which is
   how forge held a story until its first paint; a story in the workshop page is now held by

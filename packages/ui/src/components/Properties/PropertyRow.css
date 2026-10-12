@@ -1,0 +1,251 @@
+/* ── Row ────────────────────────────────────────────────────────
+   Default shape: label on top (with optional right-aligned readout),
+   control below. */
+
+.row {
+  display: flex;
+  flex-direction: column;
+  /* Every row stands on the same floor, whatever it holds. A switch is 16px, a
+     range track 12 and a field 20, so a column of mixed rows sets its own line
+     spacing row by row and reads as ragged — which is what a reader sees first,
+     long before any one control's height. Taller content still grows the row;
+     this only stops a short one from collapsing under the field it sits beside. */
+  min-height: var(--wzl-prop-row-h, var(--wzl-field-h, var(--wzl-control-h)));
+  /* No gap by default — controls sit flush under their label, matching
+     speech-balloons `.field { gap: 0 }`. Slider rows pull tighter still
+     via a negative margin on the label below. */
+  gap: 0;
+  min-width: 0;
+}
+
+/* Slider rows: pull the track up under the label so the row reads as one
+   tight block rather than a label + a separate horizontal strip. Like every
+   row, it sits at the top of its grid cell, level with the row beside it. */
+.row:not(.rowInline):has(> input[type='range']) > .rowLabel {
+  /* Baseline-align (not center) so the readout input doesn't inflate the
+     label-group height past the text baseline. */
+  align-items: baseline;
+  gap: var(--wzl-space-2);
+  margin-bottom: -4px;
+}
+
+.rowLabel {
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
+  color: var(--wzl-fg-muted);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+  display: flex;
+  align-items: center;
+  justify-content: var(--wzl-params-label-align, start);
+  gap: var(--wzl-space-3);
+}
+
+/* A label track, only where a row runs label-beside-control: a stacked row's
+   label already spans the row, and a width there would narrow it instead. */
+.row[data-changed] > .rowLabel {
+  color: var(--wzl-accent-fg);
+}
+
+/* As `Checkbox` dims the text beside a disabled box: the control dims itself. */
+.row[data-disabled] > .rowLabel {
+  opacity: 0.5;
+}
+
+.row[data-disabled] {
+  cursor: not-allowed;
+}
+
+/* A slider's readout sits in the label, which has dimmed it once already. */
+.row[data-disabled] > .rowLabel .readoutInput:disabled {
+  opacity: 1;
+}
+
+.rowInline > .rowLabel,
+.rowColor:not(.rowBlock) > .rowLabel,
+.rowCheckbox:not(.rowBlock) > .rowLabel {
+  inline-size: var(--wzl-params-label-width, auto);
+}
+
+.readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
+  font-style: normal;
+  font-weight: var(--wzl-font-weight-medium);
+  color: var(--wzl-accent-fg);
+  margin-left: auto;
+}
+
+/*
+ * An inline row's readout, which the row draws after the control rather than
+ * beside the label: its width changes with the value, and anything after it on
+ * the row would be shoved sideways on every update.
+ */
+.readoutAfter {
+  flex: 0 0 auto;
+  margin-left: 0;
+}
+
+/* Bare readout text — the word a row shows while it is auto — carrying
+   `.readoutInput`'s box, inside `.readoutGroup` just as the input is. The label
+   is a baseline-aligned flex line, so anything taller above the baseline drags
+   the whole line, label included, down with it: an input's border and padding
+   did that for 3.5px on every pin toggle. Both states have to be the same box
+   *and* the same nesting, because the group's own strut is 5px of the height. */
+.readoutText {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: inline-block;
+  /* The input's content box, not its line-height: a text input's inner editor
+     will not shrink to a line-height below the font's own content area, so it
+     renders 16px of content where a span renders 11px. Stating the height on
+     both and filling it here is what makes the two boxes agree. */
+  height: var(--wzl-field-h, var(--wzl-control-h-sm));
+  line-height: calc(var(--wzl-field-h, var(--wzl-control-h-sm)) - 4px);
+  border: 1px solid transparent;
+  padding: 1px 0;
+}
+
+/* The pinned/auto affordance. Invisible at rest so a panel of thirty rows is
+   not thirty dots; revealed by the row, and permanent once the row is auto. */
+/* The row's label is also its pin, so it says so when pointed at — the same
+   dotted underline a compact `<Select>` puts under its value. */
+.autoToggle {
+  cursor: pointer;
+  border-radius: var(--wzl-radius-sm);
+}
+
+/* The same dotted line a compact `<Select>` draws under its value. Stated
+   longhand: the shorthand's `auto` thickness takes the font's, which at label
+   size closes the gaps and reads as a solid rule. The line takes the label's
+   own color — a label is already muted, and a subtler line under it is a 1px
+   dotted rule nobody can see. */
+.autoToggle:hover {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-decoration-color: currentColor;
+  text-underline-offset: 0.25em;
+}
+
+.autoToggle:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
+}
+
+.autoToggle[aria-disabled='true'] {
+  cursor: default;
+  text-decoration: none;
+}
+
+/* Single always-rendered <input> styled to read as a text label until focused. */
+.readoutInput {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: inherit;
+  font-style: inherit;
+  font-weight: var(--wzl-font-weight-medium);
+  /* Force leading-tight — the label parent inherits 1.2, which would make the
+     input box ~3px taller than the speech-balloons reference. */
+  line-height: var(--wzl-leading-tight);
+  color: var(--wzl-accent-fg);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--wzl-radius-sm);
+  padding: 1px 0;
+  margin: 0;
+  /* Stated rather than left to the control's intrinsic size, which `.readoutText`
+     cannot reproduce — see the note there. */
+  height: var(--wzl-field-h, var(--wzl-control-h-sm));
+  /* One width for every readout, so a column of sliders ends on one line; a range whose widest
+     value (the fit, in digit-wide `ch`) will not fit it widens its own box. The box is
+     border-box, so its border comes back on top, with half a `ch` for a glyph wider than a digit. */
+  width: max(
+    var(--wzl-property-readout-w, calc(4.5ch + 2px)),
+    calc(var(--wzl-property-readout-fit, 0px) + 2px + 0.5ch)
+  );
+  text-align: right;
+  cursor: text;
+  outline: none;
+  transition: background 80ms ease, border-color 80ms ease;
+  -moz-appearance: textfield;
+}
+
+.readoutInput:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.readoutInput:focus {
+  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
+  border-color: var(--wzl-focus-ring);
+}
+
+.readoutInput::-webkit-inner-spin-button,
+.readoutInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Inline-block (not flex) so the browser's native vertical-align for
+   <sub>/<sup> still works inside — flex collapses baseline semantics
+   and sinks superscripts onto the baseline. */
+.readoutGroup {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Word-style units (e.g. "px") read as a small dim suffix next to the digits. */
+.readoutUnit {
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-2xs);
+  line-height: var(--wzl-leading-tight);
+  pointer-events: none;
+}
+
+/* An inline row's readout sits between the control and the next cell, so a unit
+   beside it would take width from the track. It hangs below the digits instead,
+   out of flow, so a row with a unit is the same size as one without. */
+.readoutAfter .readoutGroup {
+  position: relative;
+}
+
+.readoutAfter .readoutUnit {
+  position: absolute;
+  top: 100%;
+  right: 1px;
+  margin-top: -4px;
+  line-height: 1;
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+}
+
+/* A number and its unit, on one line, the field taking what the unit leaves. */
+.fieldUnitGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.fieldUnitGroup > .numberField {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Symbol units (e.g. `<sup>°</sup>`) lean on the browser's native super
+   positioning in a readout. Just dim them to match — do NOT set
+   line-height: 0, that would re-collapse the glyph onto the baseline. A flex
+   item ignores `vertical-align`, so beside a field the glyph rides the top of
+   the line instead. */
+.readoutGroup sup,
+.fieldUnitGroup sup {
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-2xs);
+  pointer-events: none;
+}
+
+.fieldUnitGroup > sup {
+  align-self: flex-start;
+}
