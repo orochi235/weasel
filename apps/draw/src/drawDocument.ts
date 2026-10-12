@@ -46,4 +46,15 @@ export interface WeaselDrawData {
   label?: string;
 }
 
+const CONTENT_KEYS: ReadonlySet<string> = new Set<keyof WeaselDrawData>([
+  'path', 'text', 'style', 'runs', 'verticalAlign', 'fill', 'stroke', 'image',
+]);
+
+/** What a node made from `data`'s node keeps of it: everything but the content
+ *  and the paint, which the new node has its own of. */
+export function carriedData(data: WeaselDrawData | undefined): WeaselDrawData {
+  if (!data) return {};
+  return Object.fromEntries(Object.entries(data).filter(([key]) => !CONTENT_KEYS.has(key)));
+}
+
 export type WeaselDrawLayer = 'default';

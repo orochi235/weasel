@@ -15,6 +15,7 @@ export type TokenName =
   | '--wzl-accent-strong'
   | '--wzl-backdrop'
   | '--wzl-border'
+  | '--wzl-border-on-sunken'
   | '--wzl-border-strong'
   | '--wzl-border-w'
   | '--wzl-checker-a'
@@ -64,6 +65,7 @@ export type TokenName =
   | '--wzl-font-weight-normal'
   | '--wzl-glass-blur'
   | '--wzl-glass-tint'
+  | '--wzl-gloss'
   | '--wzl-gray-100'
   | '--wzl-gray-200'
   | '--wzl-gray-300'
@@ -74,6 +76,8 @@ export type TokenName =
   | '--wzl-gray-700'
   | '--wzl-gray-800'
   | '--wzl-gray-900'
+  | '--wzl-handle-dot-size'
+  | '--wzl-handle-dot-size-sm'
   | '--wzl-handle-size'
   | '--wzl-handle-size-lg'
   | '--wzl-handle-size-sm'
@@ -106,6 +110,7 @@ export type TokenName =
   | '--wzl-radius-md'
   | '--wzl-radius-pill'
   | '--wzl-radius-sm'
+  | '--wzl-scrim'
   | '--wzl-secondary'
   | '--wzl-secondary-base'
   | '--wzl-secondary-fg'
@@ -180,8 +185,12 @@ export type TokenName =
   | '--wzl-warning-base'
   | '--wzl-workspace-line'
   | '--wzl-workspace-surface'
+  | '--wzl-z-drag'
+  | '--wzl-z-hud'
   | '--wzl-z-modal'
   | '--wzl-z-overlay'
+  | '--wzl-z-popover'
+  | '--wzl-z-toast'
   | '--wzl-z-toolbar';
 
 /** A built-in theme with its aliases already collapsed: every selection
@@ -256,6 +265,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#955cf9",
         '--wzl-code-string': "#48e628",
         '--wzl-code-number': "#e69628",
@@ -315,6 +325,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
+        '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
@@ -344,19 +355,26 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
         '--wzl-workspace-surface': "#0e0f12",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "13px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -434,6 +452,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#955cf9",
         '--wzl-code-string': "#48e628",
         '--wzl-code-number': "#e69628",
@@ -493,6 +512,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
+        '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
@@ -522,19 +542,26 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
         '--wzl-workspace-surface': "#0e0f12",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "15px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -612,6 +639,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#955cf9",
         '--wzl-code-string': "#48e628",
         '--wzl-code-number': "#e69628",
@@ -671,6 +699,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
+        '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
@@ -700,19 +729,26 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
         '--wzl-workspace-surface': "#0e0f12",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "18px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -790,6 +826,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#6d28d9",
         '--wzl-code-string': "#15803d",
         '--wzl-code-number': "#b45309",
@@ -849,6 +886,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
+        '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
@@ -878,19 +916,26 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
         '--wzl-workspace-surface': "#c9cbcf",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "13px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -968,6 +1013,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#6d28d9",
         '--wzl-code-string': "#15803d",
         '--wzl-code-number': "#b45309",
@@ -1027,6 +1073,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
+        '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
@@ -1056,19 +1103,26 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
         '--wzl-workspace-surface': "#c9cbcf",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "15px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -1146,6 +1200,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#6d28d9",
         '--wzl-code-string': "#15803d",
         '--wzl-code-number': "#b45309",
@@ -1205,6 +1260,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
+        '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
@@ -1234,19 +1290,26 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
         '--wzl-workspace-surface': "#c9cbcf",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "18px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -1629,6 +1692,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
           "type": "color"
         }
       },
+      "scrim": {
+        "value": "rgba(0, 0, 0, 0.4)",
+        "type": "color",
+        "description": "What a modal dims the page behind it with."
+      },
       "code-keyword": {
         "by": "mode",
         "dark": {
@@ -1974,6 +2042,12 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "alpha": 0.4,
         "description": "Axes and emphasized dividers."
       },
+      "border-on-sunken": {
+        "value": "{fg}",
+        "type": "color",
+        "alpha": 0.12,
+        "description": "The edge of a box filled with surface-sunken. Stepped from the text color, because light mode's border is the sunken fill's own gray."
+      },
       "curve-color": {
         "value": "{accent-strong}",
         "type": "color",
@@ -2248,6 +2322,16 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "type": "dimension",
         "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
       },
+      "handle-dot-size": {
+        "value": "8px",
+        "type": "dimension",
+        "description": "Diameter of a round handle — a plain anchor on a curve. Its own rank beside handle-size, because a circle and a diamond of one edge do not read as one size."
+      },
+      "handle-dot-size-sm": {
+        "value": "7px",
+        "type": "dimension",
+        "description": "A round handle that belongs to another point — a bezier control handle at the end of its stem."
+      },
       "checker-a": {
         "value": "{border}",
         "type": "color",
@@ -2278,6 +2362,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "type": "dimension",
         "description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default."
       },
+      "gloss": {
+        "value": 0,
+        "type": "number",
+        "description": "How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow."
+      },
       "glass-blur": {
         "value": "3px",
         "type": "dimension",
@@ -2304,15 +2393,38 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       },
       "z-toolbar": {
         "value": 10,
-        "type": "number"
+        "type": "number",
+        "description": "Chrome pinned over a workspace."
       },
       "z-overlay": {
         "value": 20,
-        "type": "number"
+        "type": "number",
+        "description": "A panel or readout floating over the chrome."
+      },
+      "z-hud": {
+        "value": 900,
+        "type": "number",
+        "description": "Debug readouts, over the app and under anything modal."
       },
       "z-modal": {
-        "value": 30,
-        "type": "number"
+        "value": 1000,
+        "type": "number",
+        "description": "A dialog or lightbox and its scrim."
+      },
+      "z-toast": {
+        "value": 1100,
+        "type": "number",
+        "description": "Toasts, which stay readable over a dialog."
+      },
+      "z-popover": {
+        "value": 1200,
+        "type": "number",
+        "description": "Tooltips and callouts, which a dialog or a toast can open."
+      },
+      "z-drag": {
+        "value": 10000,
+        "type": "number",
+        "description": "A drag ghost, over everything it can be dragged across."
       },
       "leading-tight": {
         "value": 1,
@@ -2968,6 +3080,11 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
           "value": "rgba(0, 0, 0, 0.18)"
         }
       },
+      "scrim": {
+        "type": "color",
+        "value": "rgba(0, 0, 0, 0.4)",
+        "description": "What a modal dims the page behind it with."
+      },
       "code-keyword": {
         "by": "mode",
         "dark": {
@@ -3234,6 +3351,12 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "alpha": 0.4,
         "description": "Axes and emphasized dividers."
       },
+      "border-on-sunken": {
+        "type": "color",
+        "value": "{fg}",
+        "alpha": 0.12,
+        "description": "The edge of a box filled with surface-sunken. Stepped from the text color, because light mode's border is the sunken fill's own gray."
+      },
       "curve-color": {
         "type": "color",
         "value": "{accent-strong}",
@@ -3467,6 +3590,16 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "value": "10px",
         "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
       },
+      "handle-dot-size": {
+        "type": "dimension",
+        "value": "8px",
+        "description": "Diameter of a round handle — a plain anchor on a curve. Its own rank beside handle-size, because a circle and a diamond of one edge do not read as one size."
+      },
+      "handle-dot-size-sm": {
+        "type": "dimension",
+        "value": "7px",
+        "description": "A round handle that belongs to another point — a bezier control handle at the end of its stem."
+      },
       "checker-a": {
         "type": "color",
         "value": "{border}",
@@ -3497,6 +3630,11 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "value": "8px",
         "description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default."
       },
+      "gloss": {
+        "type": "number",
+        "value": 0,
+        "description": "How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow."
+      },
       "glass-blur": {
         "type": "dimension",
         "value": "3px",
@@ -3523,15 +3661,38 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       },
       "z-toolbar": {
         "type": "number",
-        "value": 10
+        "value": 10,
+        "description": "Chrome pinned over a workspace."
       },
       "z-overlay": {
         "type": "number",
-        "value": 20
+        "value": 20,
+        "description": "A panel or readout floating over the chrome."
+      },
+      "z-hud": {
+        "type": "number",
+        "value": 900,
+        "description": "Debug readouts, over the app and under anything modal."
       },
       "z-modal": {
         "type": "number",
-        "value": 30
+        "value": 1000,
+        "description": "A dialog or lightbox and its scrim."
+      },
+      "z-toast": {
+        "type": "number",
+        "value": 1100,
+        "description": "Toasts, which stay readable over a dialog."
+      },
+      "z-popover": {
+        "type": "number",
+        "value": 1200,
+        "description": "Tooltips and callouts, which a dialog or a toast can open."
+      },
+      "z-drag": {
+        "type": "number",
+        "value": 10000,
+        "description": "A drag ghost, over everything it can be dragged across."
       },
       "leading-tight": {
         "type": "number",

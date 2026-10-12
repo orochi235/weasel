@@ -1,8 +1,8 @@
 /**
  * `useBooleans` — selection-driven Boolean ops on path layers.
  *
- * Returns six imperative callables (`union` / `intersect` / `subtract` /
- * `exclude` / `divide` / `crop`). Each reads the current selection,
+ * Returns one imperative callable per operation (`union`, `intersect`,
+ * `subtract`, `exclude`, `divide`, `crop`, `trim`, `merge`). Each reads the current selection,
  * performs the op in world space, and dispatches a single batch through
  * the adapter's `applyOps` (one undo step).
  *
@@ -18,7 +18,7 @@ import { useLatest } from '@weasel-js/react';
 import { applyBooleanOp, type BooleansAdapter, type BooleanOp } from './booleans';
 import type { BooleanOpOptions } from './operands';
 
-/** The six Boolean path operations, each acting on the current selection and
+/** The Boolean path operations, each acting on the current selection and
  *  committing as one undo step. */
 export interface UseBooleansReturn {
   union(): void;
@@ -27,6 +27,8 @@ export interface UseBooleansReturn {
   exclude(): void;
   divide(): void;
   crop(): void;
+  trim(): void;
+  merge(): void;
 }
 
 /** Options for `useBooleans`. */
@@ -62,5 +64,7 @@ export function useBooleans(
     exclude: useCallback(() => run('exclude'), [run]),
     divide: useCallback(() => run('divide'), [run]),
     crop: useCallback(() => run('crop'), [run]),
+    trim: useCallback(() => run('trim'), [run]),
+    merge: useCallback(() => run('merge'), [run]),
   };
 }

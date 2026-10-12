@@ -1,3 +1,4 @@
+import { isTarget, type Target } from './target';
 import type { Supervisor, SupervisorFactory, WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
@@ -6,8 +7,13 @@ import type {
   StaggerDelay,
   StaggerFactory,
   StaggerOptions,
+  SpringOptions,
   StaggerPerItem,
+  StaggerSpringOptions,
+  StaggerTargetSpringOptions,
+  StaggerTargetTweenOptions,
   StaggerTweenOptions,
+  TweenOptions,
 } from './types';
 
 /** An item still waiting: `fire` starts it once the stagger's own virtual
@@ -225,6 +231,28 @@ function resolvePerItem<T, TItem>(
     : v;
 }
 
+/** What `.tween` and `.spring` read of their options, whichever form those take. */
+interface PerItemOptions<TItem> extends StaggerOptions {
+  target?: StaggerPerItem<Target<unknown>, TItem>;
+  from?: StaggerPerItem<unknown, TItem>;
+  to: StaggerPerItem<unknown, TItem>;
+  onTick?: (value: unknown, item: TItem, index: number) => void;
+  onDone?: (item: TItem, index: number) => void;
+}
+
+/** One item's share of a builder method's options: its target, or null where its animation
+ *  hands values to `onTick`, and the options every form of the animation takes. */
+function perItem<TItem>(opts: PerItemOptions<TItem>, item: TItem, i: number) {
+  const target = opts.target !== undefined ? resolvePerItem(opts.target, item, i) : isTarget(item) ? item : null;
+  return {
+    target,
+    from: opts.from === undefined ? undefined : resolvePerItem(opts.from, item, i),
+    to: resolvePerItem(opts.to, item, i),
+    onTick: opts.onTick && ((v: unknown) => opts.onTick!(v, item, i)),
+    onDone: opts.onDone && (() => opts.onDone!(item, i)),
+  };
+}
+
 function makeBuilder<TItem>(
   animator: Animator,
   createSupervisor: SupervisorFactory,
@@ -232,21 +260,38 @@ function makeBuilder<TItem>(
   items: readonly TItem[],
   delay: StaggerDelay,
 ): StaggerBuilder<TItem> {
+  /** Runs `start` per item, once every item has a target to move or an `onTick` to tell. */
+  const run = <O extends PerItemOptions<TItem>>(
+    method: string,
+    opts: O,
+    start: (own: ReturnType<typeof perItem<TItem>>, item: TItem, i: number) => AnimationHandle,
+  ): AnimationHandle => {
+    if (opts.target === undefined && !opts.onTick && !items.every(isTarget)) {
+      throw new Error(`animator.stagger: \`.${method}\` needs a \`target\`, items that are targets, or an \`onTick\``);
+    }
+    return runStagger(createSupervisor, watchCompletion, items, delay, (item, i) => start(perItem(opts, item, i), item, i), opts);
+  };
   return {
     each: (factory, opts) =>
       runStagger(createSupervisor, watchCompletion, items, delay, factory, opts),
-    tween: <T,>(opts: StaggerTweenOptions<T, TItem>) =>
-      runStagger(createSupervisor, watchCompletion, items, delay, (item, i) =>
-        animator.tween<T>({
-          from: resolvePerItem(opts.from, item, i),
-          to: resolvePerItem(opts.to, item, i),
-          ms: resolvePerItem(opts.ms, item, i),
-          easing: opts.easing,
-          interpolate: opts.interpolate,
-          onTick: (v) => opts.onTick(v, item, i),
-          onDone: opts.onDone ? () => opts.onDone!(item, i) : undefined,
-        }),
-        opts,
-      ),
+    tween: ((opts: StaggerTweenOptions<unknown, TItem> | StaggerTargetTweenOptions<unknown, TItem>) =>
+      run('tween', opts, ({ target, ...own }, item, i) => {
+        const shared = {
+          ...own, ms: resolvePerItem(opts.ms, item, i),
+          easing: opts.easing, interpolate: opts.interpolate, interpolator: opts.interpolator,
+        };
+        return target ? animator.tween({ ...shared, target }) : animator.tween(shared as TweenOptions<unknown>);
+      })) as StaggerBuilder<TItem>['tween'],
+    spring: ((opts: StaggerSpringOptions<unknown, TItem> | StaggerTargetSpringOptions<unknown, TItem>) =>
+      run('spring', opts, ({ target, ...own }, item, i) => {
+        const shared = {
+          ...own, velocity: opts.velocity === undefined ? undefined : resolvePerItem(opts.velocity, item, i),
+          preset: opts.preset, stiffness: opts.stiffness, damping: opts.damping, mass: opts.mass,
+          restThreshold: opts.restThreshold,
+        };
+        if (target) return animator.spring({ ...shared, target });
+        const { interpolate, add, subtract, scale, magnitude } = opts as StaggerSpringOptions<unknown, TItem>;
+        return animator.spring({ ...shared, interpolate, add, subtract, scale, magnitude } as SpringOptions<unknown>);
+      })) as StaggerBuilder<TItem>['spring'],
   };
 }

@@ -1,7 +1,8 @@
 /**
  * DynamicGlyphAtlas — runtime single-channel SDF glyphs for canvas-sourced
  * (installed machine) fonts. TinySDF technique: canvas fillText at 48 px →
- * Euclidean distance transform → shelf-packed R8 pages (1024², max 4).
+ * Euclidean distance transform → shelf-packed R8 pages (1024², max 4). When
+ * the pages fill they are emptied whole and the text on screen bakes again.
  *
  * Baked MSDF atlases always win: this tier only serves families registered
  * via `registerCanvasFont` that have no baked entry (see resolveFontVariant).
@@ -15,20 +16,23 @@
 
 import type { FontStyle } from '../fontStyle';
 import type { BmFont, BmFontChar } from '../FontAtlas';
-import type { GlyphTextureSink } from '../textureSink';
 // `fallback.ts` imports nothing, so this edge cannot close a cycle; keep it
 // that way. (registerFont.ts imports both this module and fallback.ts.)
 import { getFontFallbackPolicy } from '../fallback';
 import { notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
 import { ShelfPacker } from './shelfPack';
+import {
+  PAGE_SIZE, MAX_PAGES, blitToPage, clearPages, _resetPagesForTests,
+} from './dynamicPages';
 import { alphaToSdf } from './distanceTransform';
+import { familyKey, watchFontLoads } from './fontLoads';
 import {
   createCanvasRasterizer, BAKE_SIZE,
   type GlyphRasterizer, type RasterizedGlyph,
 } from './glyphRasterizer';
 
-export const PAGE_SIZE = 1024;
-export const MAX_PAGES = 4;
+export { PAGE_SIZE, MAX_PAGES };
+export { syncDynamicPageTexture, dynamicPageTextureId, _getPagesForTests } from './dynamicPages';
 export const SDF_RADIUS = 8;
 export const SDF_CUTOFF = 0.5;
 /** How many glyphs the dynamic atlas will rasterize synchronously before
@@ -37,6 +41,7 @@ export const SDF_CUTOFF = 0.5;
  *  notify through `onGlyphReady`. */
 export const DEFAULT_BAKE_BUDGET = 16;
 
+/** A face whose glyphs are rasterized on demand into a shared atlas page, rather than shipped as a prebuilt one. */
 export interface DynamicFace {
   family: string;
   weight: number;
@@ -46,13 +51,6 @@ export interface DynamicFace {
   /** Char record for `cp`, measured on first request (advance always valid
    *  immediately; atlas rect fills in when the bake lands). */
   requestGlyph(cp: number): BmFontChar;
-}
-
-interface DynamicPage {
-  data: Uint8Array;
-  /** Bumps on every glyph blit; each blit appends a patch with seq = version. */
-  version: number;
-  patches: { seq: number; x: number; y: number; w: number; h: number }[];
 }
 
 interface PendingBake { char: BmFontChar; raster: RasterizedGlyph; }
@@ -74,12 +72,19 @@ const canvasFamilies = new Set<string>();
 // every register / unregister / reset path is in this file.
 const autoEnrolledFamilies = new Set<string>();
 let faces = new Map<string, DynamicFace>();
-let pages: DynamicPage[] = [];
 let packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
 let pending: PendingBake[] = [];
 let flushScheduled = false;
 let budget = DEFAULT_BAKE_BUDGET;
 let rasterizer: GlyphRasterizer | null = null;
+/** Glyphs measured since the frame began. */
+let asked = 0;
+/** False from an emptying of the pages until a frame asks for no new glyph
+ *  with none waiting to bake: until what was on screen has baked again. */
+let settled = true;
+let reclaimScheduled = false;
+let stopWatchingLoads: (() => void) | null = null;
+const warned = new Set<string>();
 
 function getRasterizer(): GlyphRasterizer {
   if (!rasterizer) rasterizer = createCanvasRasterizer();
@@ -166,8 +171,8 @@ export function isExplicitCanvasFont(family: string): boolean {
   return canvasFamilies.has(family) && !autoEnrolledFamilies.has(family);
 }
 
-/** Remove a canvas family. Its faces are dropped; already-baked glyph
- *  pixels stay in their pages (no eviction in v1). */
+/** Remove a canvas family. Its faces are dropped; the room its glyphs took
+ *  comes back when the pages next fill and are emptied. */
 export function unregisterCanvasFont(family: string): void {
   if (!canvasFamilies.has(family)) return;
   canvasFamilies.delete(family);
@@ -190,22 +195,13 @@ export function getDynamicFace(
   if (existing) return existing;
 
   const r = getRasterizer();
-  const metrics = r.faceMetrics(family, weight, style);
-  const base = Math.round(metrics.ascent);
   const font: BmFont = {
     info: { face: family, size: BAKE_SIZE },
-    common: {
-      lineHeight: Math.round(metrics.ascent + metrics.descent),
-      base,
-      scaleW: PAGE_SIZE,
-      scaleH: PAGE_SIZE,
-    },
+    common: { lineHeight: 0, base: 0, scaleW: PAGE_SIZE, scaleH: PAGE_SIZE },
     chars: [],
     kernings: [], // no kerning in v1 (measured-pair kerning is future work)
     charMap: new Map(),
     kerningMap: new Map(),
-    // Unrounded, unlike `common`: layout places the baseline from these.
-    faceMetrics: { ascent: metrics.ascent / BAKE_SIZE, descent: metrics.descent / BAKE_SIZE },
   };
 
   const face: DynamicFace = {
@@ -217,12 +213,13 @@ export function getDynamicFace(
       const char: BmFontChar = {
         id: cp, x: 0, y: 0, width: 0, height: 0,
         xoffset: raster.left,
-        yoffset: base - raster.top,
+        yoffset: font.common.base - raster.top,
         xadvance: raster.advance,
         page: -1,
       };
       font.charMap.set(cp, char);
       font.chars.push(char);
+      asked++;
       if (raster.width === 0 || raster.height === 0) {
         char.page = 0; // blank glyph (space): nothing to bake
         return char;
@@ -237,31 +234,103 @@ export function getDynamicFace(
       return char;
     },
   };
+  measureFace(face);
   faces.set(key, face);
+  stopWatchingLoads ??= watchFontLoads(refreshFamilies);
   return face;
+}
+
+/** Read `face`'s metrics off the canvas, and forget the glyphs measured before. */
+function measureFace(face: DynamicFace): void {
+  const { font } = face;
+  const metrics = getRasterizer().faceMetrics(face.family, face.weight, face.style);
+  font.common.lineHeight = Math.round(metrics.ascent + metrics.descent);
+  font.common.base = Math.round(metrics.ascent);
+  // Unrounded, unlike `common`: layout places the baseline from these.
+  font.faceMetrics = { ascent: metrics.ascent / BAKE_SIZE, descent: metrics.descent / BAKE_SIZE };
+  font.charMap.clear();
+  font.chars.length = 0;
+}
+
+/**
+ * Measure `family`'s canvas faces again, or every family's when none is named.
+ *
+ * The tier keeps each face's metrics and each glyph's shape and advance from
+ * the first time it is asked. A web font that finishes loading after that is
+ * picked up from `document.fonts` without this call; a face the document
+ * never announces, one loaded before it was added, needs it.
+ */
+export function refreshCanvasFont(family?: string): void {
+  refreshFamilies(family === undefined ? null : [family]);
+}
+
+function refreshFamilies(families: readonly string[] | null): void {
+  const keys = families && new Set(families.map(familyKey));
+  const dropped = new Set<BmFontChar>();
+  let measured = 0;
+  for (const face of faces.values()) {
+    if (keys && !face.family.split(',').some((name) => keys.has(familyKey(name)))) continue;
+    for (const char of face.font.chars) dropped.add(char);
+    measureFace(face);
+    measured++;
+  }
+  if (measured === 0) return;
+  // Their rects stay taken until the pages next fill and are emptied.
+  pending = pending.filter((job) => !dropped.has(job.char));
+  notifyGlyphReady();
 }
 
 function bake(char: BmFontChar, raster: RasterizedGlyph): void {
   const spot = packer.alloc(raster.width, raster.height);
-  if (!spot) return; // pages full — packer warned once; glyph stays invisible
+  if (!spot) {
+    noRoom(raster);
+    return;
+  }
   const sdf = alphaToSdf(raster.alpha, raster.width, raster.height, SDF_RADIUS, SDF_CUTOFF);
-  while (pages.length <= spot.page) {
-    pages.push({ data: new Uint8Array(PAGE_SIZE * PAGE_SIZE), version: 0, patches: [] });
-  }
-  const page = pages[spot.page];
-  for (let row = 0; row < raster.height; row++) {
-    page.data.set(
-      sdf.subarray(row * raster.width, (row + 1) * raster.width),
-      (spot.y + row) * PAGE_SIZE + spot.x,
-    );
-  }
-  page.version++;
-  page.patches.push({ seq: page.version, x: spot.x, y: spot.y, w: raster.width, h: raster.height });
+  blitToPage(spot.page, spot.x, spot.y, raster.width, raster.height, sdf);
   char.x = spot.x;
   char.y = spot.y;
   char.width = raster.width;
   char.height = raster.height;
   char.page = spot.page;
+}
+
+/** A glyph found no room, and stays invisible for the frame that asked. */
+function noRoom(raster: RasterizedGlyph): void {
+  if (!packer.fits(raster.width, raster.height)) {
+    warnOnce('weasel DynamicGlyphAtlas: a glyph is larger than a page and will not render.');
+  } else if (!settled) {
+    warnOnce(
+      `weasel DynamicGlyphAtlas: more glyphs are in use at once than its pages hold ` +
+      `(${MAX_PAGES} × ${PAGE_SIZE}²); the rest will not render.`);
+  } else if (!reclaimScheduled) {
+    reclaimScheduled = true;
+    setTimeout(reclaim, 0);
+  }
+}
+
+function warnOnce(message: string): void {
+  if (warned.has(message)) return;
+  warned.add(message);
+  console.warn(message);
+}
+
+/**
+ * Empty every page and forget every glyph, so the text on screen bakes again
+ * into the room that leaves. Run off a timer, never from `bake`: a frame part
+ * drawn has already placed quads on the rects this gives away.
+ */
+function reclaim(): void {
+  reclaimScheduled = false;
+  settled = false;
+  packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
+  pending = [];
+  clearPages();
+  for (const face of faces.values()) {
+    face.font.charMap.clear();
+    face.font.chars.length = 0;
+  }
+  notifyGlyphReady();
 }
 
 function scheduleFlush(): void {
@@ -288,51 +357,8 @@ function flushPending(): void {
  *  `renderSceneToPixels` path passes Infinity so print never defers. */
 export function resetBakeBudget(n: number = DEFAULT_BAKE_BUDGET): void {
   budget = n;
-}
-
-/* ------------------------------------------------------------------ */
-/* GPU sync                                                            */
-/* ------------------------------------------------------------------ */
-
-/** Texture-cache key for a dynamic page (parallel to `textureCacheKey`). */
-export function dynamicPageTextureId(page: number): string {
-  return `weasel-dyn-sdf-page-${page}`;
-}
-
-// Per-GL-cache upload progress: last page version each cache has seen.
-// WeakMap-keyed so disposed renderers don't pin anything.
-const uploadedVersions = new WeakMap<GlyphTextureSink, Map<number, number>>();
-
-/** Bring `cache`'s copy of page `pageIndex` up to date: full R8 upload the
- *  first time, `texSubImage2D` patches after. Returns false if the page
- *  doesn't exist yet. */
-export function syncDynamicPageTexture(cache: GlyphTextureSink, pageIndex: number): boolean {
-  const page = pages[pageIndex];
-  if (!page) return false;
-  const id = dynamicPageTextureId(pageIndex);
-  let seen = uploadedVersions.get(cache);
-  if (!seen) {
-    seen = new Map();
-    uploadedVersions.set(cache, seen);
-  }
-  if (!cache.has(id)) {
-    cache.uploadR8(id, PAGE_SIZE, PAGE_SIZE, page.data);
-    seen.set(pageIndex, page.version);
-    return true;
-  }
-  const last = seen.get(pageIndex) ?? 0;
-  if (last >= page.version) return true;
-  for (const patch of page.patches) {
-    if (patch.seq <= last) continue;
-    const tight = new Uint8Array(patch.w * patch.h);
-    for (let row = 0; row < patch.h; row++) {
-      const src = (patch.y + row) * PAGE_SIZE + patch.x;
-      tight.set(page.data.subarray(src, src + patch.w), row * patch.w);
-    }
-    cache.subImageR8(id, patch.x, patch.y, patch.w, patch.h, tight);
-  }
-  seen.set(pageIndex, page.version);
-  return true;
+  if (asked === 0 && pending.length === 0) settled = true;
+  asked = 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -345,20 +371,21 @@ export function __setGlyphRasterizerForTests(r: GlyphRasterizer | null): void {
   rasterizer = r;
 }
 
-/** @internal test seam — inspect CPU-side pages. */
-export function _getPagesForTests(): readonly DynamicPage[] {
-  return pages;
-}
-
 /** @internal test seam — clear all dynamic-font state. */
 export function _resetDynamicFontsForTests(): void {
   canvasFamilies.clear();
   autoEnrolledFamilies.clear();
   faces = new Map();
-  pages = [];
+  _resetPagesForTests();
   packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
   pending = [];
   flushScheduled = false;
+  asked = 0;
+  settled = true;
+  reclaimScheduled = false;
+  warned.clear();
+  stopWatchingLoads?.();
+  stopWatchingLoads = null;
   budget = DEFAULT_BAKE_BUDGET;
   _clearGlyphReadySubscribers();
   rasterizer = null;

@@ -134,6 +134,7 @@ export type {
   ModifierState,
   PointerState,
   GestureContext,
+  GestureFrames,
   SnapStrategy,
   ActionBehavior,
   BehaviorMoveResult,

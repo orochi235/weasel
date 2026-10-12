@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
-import { PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
+import { type DistributiveOmit, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { BarPopover } from './BarPopover';
 import s from './Bar.module.css';
 
@@ -17,7 +17,6 @@ export interface BarFieldCellProps {
 export type BarFieldProps<T extends string = string> = DistributiveOmit<PropertyControlProps<T>, 'id'> &
   BarFieldCellProps;
 
-type DistributiveOmit<U, K extends PropertyKey> = U extends unknown ? Omit<U, K> : never;
 
 /**
  * One field as a bar holds it: its control at bar size, behind its name where
@@ -41,7 +40,7 @@ export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
     case 'string':
       if (p.control === 'textarea') {
         return (
-          <BarPopover label={p.name ?? ''} icon={icon}>
+          <BarPopover label={p.name ?? ''} icon={icon} isDisabled={p.disabled}>
             <PropertyControl {...p} />
           </BarPopover>
         );

@@ -14,7 +14,8 @@ export interface SceneClipTargetsOptions<TPose> {
 /**
  * A `ClipBinder.target` over a scene. `pose:<node id>` is that node's pose target, the one
  * `scenePoseTarget` answers, and `rig:<name>` is the target of the rig given under that
- * name. Any other name is `undefined`, for a caller to resolve itself first or after.
+ * name. Any other name is `undefined`, for a caller to resolve itself first or after. A track
+ * over part of a rig names joints as its `axes`, which the rig's target resolves.
  */
 export function sceneClipTargets<TPose>(
   scene: PoseTargetScene<TPose>,

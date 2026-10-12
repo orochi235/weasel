@@ -25,7 +25,8 @@ import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import type { InputEvent } from './matcher';
 import { LONG_PRESS_MS } from './longPressState';
-import type { BodyTarget } from '@weasel-js/gestures';
+import { underPointer, type UnderPointer } from './underPointer';
+import { longPressEvents, type PressFacts } from './pressFacts';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { resolveCursorTier } from '@weasel-js/cursor';
 import { withViewDeps, type DispatchCore } from './dispatchCore';
@@ -78,24 +79,9 @@ interface HeldPointer {
    *  `DRAG_THRESHOLD_PX`. Null once forwarded, or once multitouch claimed
    *  the pointer — see the multi-pointer policy in `onPointerDown`. */
   buffered: { ev: InputEvent; clientX: number; clientY: number } | null;
-  /** Press-time state replayed onto a synthesized click, long-press or
-   *  contextmenu, whose matchers resolve targets against it. */
-  down: {
-    target: unknown;
-    clientX: number;
-    clientY: number;
-    /** World-space press point, forwarded onto the synthesized click as
-     *  `pressX`/`pressY` — see `ClickEvent`. */
-    worldX: number;
-    worldY: number;
-    affordance?: unknown;
-    bodyTarget?: BodyTarget;
-    bodyKind?: string;
-    altKey: boolean;
-    ctrlKey: boolean;
-    metaKey: boolean;
-    shiftKey: boolean;
-  };
+  down: PressFacts;
+  /** Set on a pointer that armed a long-press, for as long as it is held. */
+  holdType?: 'touch' | 'pen';
 }
 
 /**
@@ -340,7 +326,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const pinch = webkitPinchInput(core);
     const { onGestureStart, onGestureChange, onGestureEnd } = pinch;
     const onWheel = wheelInput(core, pinch.live);
-    const onContextMenu = contextMenuInput(core);
+    const onContextMenu = contextMenuInput(core, () => takeNativeHold());
     const { onDragOver, onDragLeave, onDrop, onPaste } = ingestInput(core);
 
     // Every pointer currently held on the canvas, one `openPointerSession`
@@ -407,31 +393,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const HAPTIC_MS = 15;
 
-    /** Fire a synthesized long-press, falling back to contextmenu when the
-     *  long-press matched nothing. The fallback is what makes existing
-     *  `contextMenu` bindings reachable by touch with no consumer change. */
-    const longPressEvents = (down: HeldPointer['down']): { longpress: InputEvent; contextmenu: InputEvent } => {
-      const shared = {
-        target: down.target,
-        altKey: down.altKey,
-        ctrlKey: down.ctrlKey,
-        metaKey: down.metaKey,
-        shiftKey: down.shiftKey,
-        ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
-        ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
-        ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
-      };
-
-      const at = { x: down.worldX, y: down.worldY, clientX: down.clientX, clientY: down.clientY };
-      return {
-        longpress: { kind: 'longpress', ...at, ...shared } as InputEvent,
-        contextmenu: { kind: 'contextmenu', ...at, ...shared } as InputEvent,
-      };
-    };
-
     /** Whether holding `down` to the end would fire anything: the same two
      *  dispatches `fireLongPress` makes, predicted without invoking. */
-    const longPressWouldFire = (down: HeldPointer['down']): boolean => {
+    const longPressWouldFire = (down: PressFacts): boolean => {
       const evs = longPressEvents(down);
       const d = dispatcherNow();
       return d.resolveOnly(evs.longpress, ctxNow()) !== null
@@ -453,6 +417,20 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         navigator.vibrate(HAPTIC_MS);
       }
+    };
+
+    /** Whether a touch or pen that armed a long-press is still held. One that
+     *  is still pending fires here, ahead of its timer. */
+    const takeNativeHold = (): boolean => {
+      let holding = false;
+      for (const [id, rec] of held) {
+        if (!rec.holdType) continue;
+        holding = true;
+        if (!longPressTimers.has(id)) continue;
+        cancelLongPress(id);
+        fireLongPress(id, rec.holdType);
+      }
+      return holding;
     };
 
     // Double-click synthesis thresholds. 600ms matches the upper end of OS
@@ -584,6 +562,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         );
         const store = longPressRef.current?.state;
         const rec = held.get(e.pointerId);
+        if (rec) rec.holdType = e.pointerType;
         if (store && rec) {
           store.set({
             pointerId: e.pointerId,
@@ -733,6 +712,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         clientX: e.clientX, clientY: e.clientY,
         altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
       };
+      // A held pointer's moves are its drag's; an unpressed one's are a hover.
+      if (held.size === 0) {
+        const where = underPointer(target(), lastHover, w);
+        hoverFacts = { at: lastHover, where };
+        dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY, ...where });
+      }
       refreshHoverCursor();
     };
 
@@ -817,6 +802,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       pushPaintedPointer();
     }
 
+    /** What the last move found under the pointer, so its hover and its cursor hit-test once. */
+    let hoverFacts: { at: object; where: UnderPointer } | null = null;
+
     function resolveHoverCursor(): void {
       if (!canvas || !lastHover) return;
       // Mid-gesture the prediction is meaningless — what matters is what the
@@ -832,23 +820,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // pinned pointer is never unpinned by a hover refresh.
       routeAt(null, h.clientX, h.clientY);
       const w = toWorld(h.clientX, h.clientY);
-      const affordance = target().affordanceAt?.(w) ?? undefined;
-      if (affordance?.cursor) {
-        applyHoverCursor(affordance.cursor);
+      const where = hoverFacts?.at === h ? hoverFacts.where : underPointer(target(), h, w);
+      if (where.affordance?.cursor) {
+        applyHoverCursor(where.affordance.cursor);
         return;
       }
-      const hoverBody = target().classifyTarget?.(w);
-      const bodyTarget = hoverBody?.body;
-      const bodyKind = hoverBody?.kind;
-      const where = {
-        altKey: h.altKey,
-        ctrlKey: h.ctrlKey,
-        metaKey: h.metaKey,
-        shiftKey: h.shiftKey,
-        ...(affordance !== undefined ? { affordance } : {}),
-        ...(bodyTarget !== undefined ? { bodyTarget } : {}),
-        ...(bodyKind !== undefined ? { bodyKind } : {}),
-      };
       const ctx = ctxNow();
       const press: InputEvent = {
         kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where,

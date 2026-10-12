@@ -1,4 +1,7 @@
-import { EASINGS, type BezierEasing, type EasingName, type EasingSpec } from '@weasel-js/geom';
+import {
+  EASINGS, reviveTypedArrays, tagTypedArrays, type BezierEasing, type EasingName, type EasingSpec,
+} from '@weasel-js/geom';
+import { axisIndexes } from '../axisNames';
 import type { Target } from '../target';
 import type { Interpolate } from '../types';
 import type { EventTrack, NestedTimeline, SampledTrack, TimelineEvent, TimelineTrack, Track } from './types';
@@ -10,6 +13,8 @@ export type ClipValue = number | string | boolean | null | ClipValue[] | { [key:
 /** A keyframe as data. Its easing is a built-in's name or bezier control points. */
 export interface ClipKey {
   t: number;
+  /** A typed array in the live key's value, as a `Path` has, is held as a `TaggedTypedArray`
+   *  from `@weasel-js/geom`: `{ __ta: 'f32', data: [...] }`. `bindClip` makes it the array again. */
   value: ClipValue;
   easing?: EasingName | BezierEasing;
 }
@@ -24,8 +29,12 @@ export interface ClipSampledTrack {
   /** Resolved from `ClipBinder.interpolate`. Without one the track is sampled in its
    *  target's axes, or field by field. */
   interpolate?: string;
-  weight?: number;
-  axes?: number[];
+  /** The track's share of its target: a number, or a name for `ClipBinder.weight` to resolve
+   *  into a function read each frame, as a crossfade's is. */
+  weight?: number | string;
+  /** The part of the target the track holds: the target's names for its axes, a rig's joints
+   *  among them, or positions in its axes where it has no names. */
+  axes?: number[] | string[];
 }
 
 /** An `EventTrack` as data: each event is a name and what to carry with it. */
@@ -66,6 +75,8 @@ export interface ClipBinder {
   /** Interpolations by name. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interpolate?: Readonly<Record<string, Interpolate<any>>>;
+  /** The function a track's named weight stands for. */
+  weight?(name: string): (() => number) | undefined;
   /** What an event does: its `fire`, its `book`, or both. */
   event?(name: string, data: ClipValue | undefined): Pick<TimelineEvent, 'fire' | 'book'> | undefined;
 }
@@ -99,14 +110,33 @@ function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
   return defined<SampledTrack<ClipValue>>({
     kind: 'sampled',
     label: track.label,
-    keys: track.keys.map((k) => ({ ...k })),
+    keys: track.keys.map((k) => ({ ...k, value: reviveTypedArrays(k.value) as ClipValue })),
     target,
     targetName: track.target,
     interpolate,
     interpolateName: track.interpolate,
-    weight: track.weight,
-    axes: track.axes && [...track.axes],
+    ...bindWeight(track, binder),
+    axes: bindAxes(track, target),
   });
+}
+
+function bindWeight(track: ClipSampledTrack, binder: ClipBinder): Pick<SampledTrack<ClipValue>, 'weight' | 'weightName'> {
+  const { weight } = track;
+  if (typeof weight !== 'string') return { weight };
+  const read = binder.weight?.(weight);
+  if (!read) throw new Error(`bindClip: the binder has no weight named "${weight}".`);
+  return { weight: read, weightName: weight };
+}
+
+/** A clip track's axes for the live track, refused here where its target has no such axes
+ *  rather than when the playhead first reaches the track. */
+function bindAxes(track: ClipSampledTrack, target: Target<unknown> | undefined): SampledTrack<ClipValue>['axes'] {
+  const { axes } = track;
+  if (!axes) return undefined;
+  const where = `bindClip: track "${track.label ?? ''}"`;
+  if (!target) throw new Error(`${where} names axes and no target.`);
+  axisIndexes(target.axes, axes, `${where} on the target "${track.target}"`);
+  return [...axes] as SampledTrack<ClipValue>['axes'];
 }
 
 function bindTimeline(timeline: ClipTimeline, binder: ClipBinder): NestedTimeline {
@@ -150,18 +180,21 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
   if (track.target && track.targetName === undefined) throw new Error(`toClip: ${where} has a target and no targetName.`);
   if (track.interpolator) throw new Error(`toClip: ${where} has an interpolator, which a clip cannot hold.`);
   if (track.interpolate && track.interpolateName === undefined) throw new Error(`toClip: ${where} has an interpolate and no interpolateName.`);
-  if (typeof track.weight === 'function') throw new Error(`toClip: ${where} has a function for its weight.`);
+  if (typeof track.weight === 'function' && track.weightName === undefined) {
+    throw new Error(`toClip: ${where} has a function for its weight and no weightName.`);
+  }
   return defined<ClipSampledTrack>({
     kind: 'sampled',
     label: track.label,
     target: track.targetName,
     keys: track.keys.map((k) => {
-      if (!isClipValue(k.value)) throw new Error(`toClip: ${where} holds a value JSON cannot round-trip, at t = ${k.t}.`);
-      return defined<ClipKey>({ t: k.t, value: k.value, easing: easingOf(k.easing, where) });
+      const value = tagTypedArrays(k.value);
+      if (!isClipValue(value)) throw new Error(`toClip: ${where} holds a value JSON cannot round-trip, at t = ${k.t}.`);
+      return defined<ClipKey>({ t: k.t, value, easing: easingOf(k.easing, where) });
     }),
     interpolate: track.interpolateName,
-    weight: track.weight,
-    axes: track.axes && [...track.axes],
+    weight: typeof track.weight === 'function' ? track.weightName : track.weight,
+    axes: track.axes && ([...track.axes] as ClipSampledTrack['axes']),
   });
 }
 
@@ -190,8 +223,9 @@ function timelineToClip(timeline: NestedTimeline): ClipTimeline {
  * A live timeline as a clip: `{ tracks, duration }` as `animator.timeline` takes them, or
  * `{ tracks: handle.tracks() }` off a running one. Each track is written by the names it
  * carries (`targetName`, `interpolateName`, an event's `name`), which `bindClip` sets and a
- * track written by hand can set too. Throws, naming the track, on anything a clip cannot
- * hold: a function with no name, an `onTick`, or a value JSON would not read back.
+ * track written by hand can set too. A typed array in a key's value is written tagged.
+ * Throws, naming the track, on anything a clip cannot hold: a function with no name, an
+ * `onTick`, or a value JSON would not read back.
  */
 export function toClip(timeline: NestedTimeline): Clip {
   return { version: 1, ...timelineToClip(timeline) };

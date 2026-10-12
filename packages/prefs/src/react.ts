@@ -3,3 +3,4 @@
  * optional peer of this package; the main entry never loads it.
  */
 export { usePref, usePrefsValues } from './hooks';
+export { usePrefsStore } from './usePrefsStore';

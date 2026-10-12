@@ -1,3 +1,5 @@
+import type { ColorSource } from '@weasel-js/paint';
+import { useColorCss } from '@weasel-js/theme/react';
 import {
   forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,
   type CSSProperties,
@@ -23,13 +25,13 @@ export interface GridSettings {
    *  the edges). Applied to both x and y. Default 3. */
   divisions?: number;
   /** Stroke color override. When omitted, uses `var(--plot-grid)`. */
-  color?: string;
+  color?: ColorSource;
 }
 
 /** Axis-line configuration for a {@link Plot2D}. */
 export interface AxesSettings {
   /** Stroke color override. When omitted, uses `var(--plot-axis)`. */
-  color?: string;
+  color?: ColorSource;
 }
 
 /**
@@ -166,6 +168,7 @@ function resolveTicks(
  * whatever children are passed, positioned in plot space.
  */
 export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(props, ref) {
+  const css = useColorCss();
   const {
     width, height,
     xRange = [0, 1],
@@ -327,7 +330,6 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
     >
       {grid && (() => {
         const divisions = grid.divisions ?? 3;
-        const stroke = grid.color;
         // Evenly-spaced internal divisions, excluding the edges (which
         // belong to the axes). For divisions=3, fractions are 1/4, 2/4, 3/4.
         const fractions: number[] = [];
@@ -339,7 +341,7 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
                 key={`gx-${f}`}
                 data-plot-element="grid"
                 className={s.grid}
-                stroke={stroke}
+                stroke={css(grid.color)}
                 x1={f * width} x2={f * width}
                 y1={0} y2={height}
               />
@@ -349,7 +351,7 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
                 key={`gy-${f}`}
                 data-plot-element="grid"
                 className={s.grid}
-                stroke={stroke}
+                stroke={css(grid.color)}
                 x1={0} x2={width}
                 y1={f * height} y2={f * height}
               />
@@ -360,7 +362,7 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
       {renderTickLines('x', xTickList, xTicks)}
       {renderTickLines('y', yTickList, yTicks)}
       {axes !== false && axes !== null && (() => {
-        const stroke = axes?.color;
+        const stroke = css(axes?.color);
         return (
           <g>
             <line

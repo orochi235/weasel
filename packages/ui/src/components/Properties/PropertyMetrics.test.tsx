@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
+import { readModuleCss } from '../../testing/readModuleCss';
 import { Subpanel } from './Subpanel';
 import s from './Properties.module.css';
 import { PropertyGroup } from './PropertyGroup';
@@ -17,9 +18,8 @@ import { type PropertyMetricProps } from './metrics';
 // component asked for the key. Read from disk instead, so the other tests here
 // stand on a rule that exists. `?raw` does not get past the proxy; vitest runs
 // from the repo root, so the path is relative to it.
-const sheet = readFileSync(
+const sheet = readModuleCss(
   resolve(process.cwd(), 'packages/ui/src/components/Properties/Properties.module.css'),
-  'utf8',
 );
 
 // A group draws as a MotifFrame, so the metrics that size its box are read there.

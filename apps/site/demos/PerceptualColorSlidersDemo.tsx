@@ -57,7 +57,7 @@ function colorAtIndex(idx: number, p: RampParams): string {
 function BoundsModeToggle({ mode, onChange }: { mode: BoundsMode; onChange: (m: BoundsMode) => void }) {
   const options: BoundsMode[] = ['unconstrained', 'default', 'conservative'];
   return (
-    <div role="radiogroup" aria-label="OKLCH bounds mode" style={{ display: 'flex', marginBottom: 10, border: '1px solid var(--ckd-border-2)', borderRadius: 4, overflow: 'hidden', width: 'fit-content' }}>
+    <div role="radiogroup" aria-label="OKLCH bounds mode" style={{ display: 'flex', marginBottom: 10, border: '1px solid var(--wzl-border)', borderRadius: 4, overflow: 'hidden', width: 'fit-content' }}>
       {options.map((opt, i) => {
         const active = mode === opt;
         return (
@@ -75,9 +75,9 @@ function BoundsModeToggle({ mode, onChange }: { mode: BoundsMode; onChange: (m: 
               fontSize: 11,
               fontFamily: 'ui-monospace, monospace',
               cursor: 'pointer',
-              background: active ? 'var(--ckd-accent-dim)' : 'transparent',
-              color: active ? 'var(--ckd-text)' : 'var(--ckd-muted)',
-              borderLeft: i === 0 ? 'none' : '1px solid var(--ckd-border-2)',
+              background: active ? 'var(--wzl-accent)' : 'transparent',
+              color: active ? 'var(--wzl-fg-on-accent)' : 'var(--wzl-fg-muted)',
+              borderLeft: i === 0 ? 'none' : '1px solid var(--wzl-border)',
               userSelect: 'none',
             }}
           >
@@ -188,7 +188,7 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
         style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
       >
         {/* Plot frame */}
-        <rect x={DIAGRAM_PAD.l} y={DIAGRAM_PAD.t} width={PLOT_W} height={PLOT_H} fill="none" stroke="var(--ckd-border-2)" />
+        <rect x={DIAGRAM_PAD.l} y={DIAGRAM_PAD.t} width={PLOT_W} height={PLOT_H} fill="none" stroke="var(--wzl-border)" />
         {/* Y gridlines */}
         {[0.05, 0.10, 0.15, 0.20].map(c => (
           <line key={c} x1={DIAGRAM_PAD.l} y1={yAt(c)} x2={DIAGRAM_PAD.l + PLOT_W} y2={yAt(c)} stroke="rgba(255,255,255,0.07)" />
@@ -217,14 +217,14 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
         {/* Control points */}
         {points.map((p, i) => (
           <g key={i}>
-            <circle cx={xAt(p.L)} cy={yAt(p.C)} r={5} fill={p.color} stroke="var(--ckd-text)" strokeWidth={1.5} />
-            <text x={xAt(p.L)} y={yAt(p.C) - 9} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--ckd-muted)" textAnchor="middle">{p.label}</text>
+            <circle cx={xAt(p.L)} cy={yAt(p.C)} r={5} fill={p.color} stroke="var(--wzl-fg)" strokeWidth={1.5} />
+            <text x={xAt(p.L)} y={yAt(p.C) - 9} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-muted)" textAnchor="middle">{p.label}</text>
           </g>
         ))}
         {/* Axis labels */}
-        <text x={DIAGRAM_PAD.l} y={DIAGRAM_H - 8} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--ckd-faint)">L: 0</text>
-        <text x={DIAGRAM_PAD.l + PLOT_W} y={DIAGRAM_H - 8} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--ckd-faint)" textAnchor="end">1</text>
-        <text x={8} y={DIAGRAM_PAD.t + PLOT_H / 2} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--ckd-faint)" transform={`rotate(-90 8 ${DIAGRAM_PAD.t + PLOT_H / 2})`} textAnchor="middle">C</text>
+        <text x={DIAGRAM_PAD.l} y={DIAGRAM_H - 8} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)">L: 0</text>
+        <text x={DIAGRAM_PAD.l + PLOT_W} y={DIAGRAM_H - 8} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)" textAnchor="end">1</text>
+        <text x={8} y={DIAGRAM_PAD.t + PLOT_H / 2} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)" transform={`rotate(-90 8 ${DIAGRAM_PAD.t + PLOT_H / 2})`} textAnchor="middle">C</text>
       </svg>
     </div>
   );
@@ -349,10 +349,10 @@ export function PerceptualColorSlidersDemo() {
       </div>
 
       <div style={{ position: 'sticky', top: 16 }}>
-        <h3 style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--ckd-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>C as function of L</h3>
+        <h3 style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--wzl-fg-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>C as function of L</h3>
         <BoundsModeToggle mode={boundsMode} onChange={changeBoundsMode} />
         <ChromaCurveDiagram params={params} bounds={chromaBounds} />
-        <div style={{ fontSize: 10, color: 'var(--ckd-faint)', marginTop: 8, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 10, color: 'var(--wzl-fg-subtle)', marginTop: 8, lineHeight: 1.4 }}>
           Triangle interior rendered via <code>PathDrawCommand.vertexColors</code> — each corner carries its OKLCH color, the kit's <code>pathFillVColor</code> shader interpolates across. Dashed range tracks show each thumb's allowed slide range; the toggle above adjusts the L and chroma slider bounds together.
         </div>
       </div>

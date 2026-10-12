@@ -139,6 +139,8 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
       return userDoes(required, `clicks${target}`);
     case 'pointerDown':
       return userDoes(required, `presses${target}`);
+    case 'hover':
+      return userDoes(required, `moves the pointer${target}`);
     case 'dblTap':
       return userDoes(required, `double-taps${target}`);
     case 'drag':

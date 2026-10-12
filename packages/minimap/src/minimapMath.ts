@@ -9,7 +9,7 @@
  * Neither helper touches GL, the DOM, or the renderer; they're pure
  * functions, unit-testable with `expect`.
  */
-import { documentPose } from '@weasel-js/core';
+import { documentPose, effectivePose } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
@@ -28,12 +28,18 @@ export const FALLBACK_FIT_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 /**
  * Fit policy for `<MinimapCanvas>` / `computeFitView`.
  *
- * - `"scene"` — union of leaf-node pose AABBs (via the pose descriptor).
+ * - `"scene"` — union of leaf-node pose AABBs (via the pose descriptor), read
+ *   from the document: a pose override moves what is painted and not the frame.
+ * - `"live"` — the same union over the poses being shown, overrides included,
+ *   so the frame follows a drag, a settle, or a simulation writing overrides.
+ *   Refit on every override publish, which is a sweep of every leaf and
+ *   rescales the whole minimap while one moves past the edge.
  * - `{ kind: "world", rect }` — caller-supplied world rect.
  * - `(scene, dims) => View` — caller derives the view directly.
  */
 export type MinimapFit<TData, TLayer extends string, TPose> =
   | 'scene'
+  | 'live'
   | { kind: 'world'; rect: Bounds }
   | ((scene: Scene<TData, TLayer, TPose>, dims: ViewportDims) => View);
 
@@ -87,6 +93,7 @@ function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
 function sceneLeafBounds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   descriptor: PoseDescriptor<TPose>,
+  poseOf: typeof documentPose,
 ): Bounds | null {
   let minX = Infinity;
   let minY = Infinity;
@@ -95,7 +102,7 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
   let any = false;
   for (const node of scene.nodes.values()) {
     if (node.kind !== 'leaf') continue;
-    const b = poseDescriptorForNode(descriptor, node).getBounds(documentPose(scene, node));
+    const b = poseDescriptorForNode(descriptor, node).getBounds(poseOf(scene, node));
     if (!Number.isFinite(b.x + b.y + b.width + b.height)) continue;
     if (b.x < minX) minX = b.x;
     if (b.y < minY) minY = b.y;
@@ -122,7 +129,8 @@ export interface ComputeFitViewOptions {
  * fit ratio wins, so the whole rect is visible.
  *
  * - `fit === "scene"`: union AABB of leaf-node poses via `descriptor`.
- *   Empty scene → {@link FALLBACK_FIT_VIEW}.
+ *   Empty scene → {@link FALLBACK_FIT_VIEW}. `"live"` is the same over the
+ *   poses being shown.
  * - `fit` is `{ kind: "world", rect }`: fit `rect`.
  * - `fit` is a function: called with `(scene, dims)`; its return is
  *   passed through unchanged.
@@ -142,8 +150,8 @@ export function computeFitView<TData, TLayer extends string, TPose>(
   if (typeof fit === 'function') {
     return fit(scene, dims);
   }
-  if (fit === 'scene') {
-    const rect = sceneLeafBounds(scene, descriptor);
+  if (fit === 'scene' || fit === 'live') {
+    const rect = sceneLeafBounds(scene, descriptor, fit === 'live' ? effectivePose : documentPose);
     if (rect === null) return FALLBACK_FIT_VIEW;
     return fitRectInto(rect, dims, padding);
   }

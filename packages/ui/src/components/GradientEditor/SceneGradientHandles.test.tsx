@@ -188,6 +188,20 @@ describe('SceneGradientHandles', () => {
     expect(ends).toEqual(['cancel']);
   });
 
+  it('cancels a drag still held when the overlay unmounts, once, and writes nothing after', () => {
+    const ends: string[] = [];
+    const seen: Record<string, unknown>[] = [];
+    const scene = sceneWith(BOX, { fill: { paint: BOUNDS_RAMP } });
+    const { unmount } = render(<Overlay scene={scene} slot="fill" seen={seen} ends={ends} />);
+    const handle = screen.getByLabelText('Gradient end');
+    fireEvent.pointerDown(handle, { clientX: 200, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 100, clientY: 50, pointerId: 1 });
+    const written = seen.length;
+    unmount();
+    expect(ends).toEqual(['cancel']);
+    expect(seen).toHaveLength(written);
+  });
+
   it('commits through setStroke when the slot is the stroke', () => {
     const seen: Record<string, unknown>[] = [];
     const scene = sceneWith(BOX, { stroke: { paint: BOUNDS_RAMP, width: 2 } });

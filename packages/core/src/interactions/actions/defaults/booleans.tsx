@@ -11,6 +11,8 @@ import {
   ExcludeIcon,
   DivideIcon,
   CropIcon,
+  TrimIcon,
+  MergeIcon,
 } from './icons/booleanIcons';
 
 const ID_FOR: Record<BooleanOp, string> = {
@@ -20,6 +22,8 @@ const ID_FOR: Record<BooleanOp, string> = {
   exclude: 'pathfinder.exclude',
   divide: 'pathfinder.divide',
   crop: 'pathfinder.crop',
+  trim: 'pathfinder.trim',
+  merge: 'pathfinder.merge',
 };
 
 const LABEL_FOR: Record<BooleanOp, string> = {
@@ -29,6 +33,8 @@ const LABEL_FOR: Record<BooleanOp, string> = {
   exclude: 'Exclude',
   divide: 'Divide',
   crop: 'Crop',
+  trim: 'Trim',
+  merge: 'Merge',
 };
 
 const ICON_FOR: Record<BooleanOp, ReactNode> = {
@@ -38,6 +44,8 @@ const ICON_FOR: Record<BooleanOp, ReactNode> = {
   exclude: <ExcludeIcon />,
   divide: <DivideIcon />,
   crop: <CropIcon />,
+  trim: <TrimIcon />,
+  merge: <MergeIcon />,
 };
 
 /** What a stroked operand gives the built-in Pathfinder actions. */
@@ -63,10 +71,7 @@ function makePathfinderAction(op: BooleanOp): Action {
         const adapter = deps.booleansAdapter;
         if (!adapter) return;
         const scale = deps.view?.get().scale;
-        const result = applyBooleanOp(adapter, op, {
-          strokes: PATHFINDER_STROKES,
-          ...(scale ? { scale: Math.sqrt(Math.abs(scale.x * scale.y)) } : {}),
-        });
+        const result = applyBooleanOp(adapter, op, { strokes: PATHFINDER_STROKES, ...(scale ? { scale } : {}) });
         if (result.kind === 'failed') console.warn(`[pathfinder] ${result.error.message}`);
       },
     } satisfies ImmediateInvoker,
@@ -90,4 +95,8 @@ export const pathfinderExcludeAction   = makePathfinderAction('exclude');
 export const pathfinderDivideAction    = makePathfinderAction('divide');
 /** @experimental Static descriptor for pathfinder-crop. */
 export const pathfinderCropAction      = makePathfinderAction('crop');
+/** @experimental Static descriptor for pathfinder-trim. */
+export const pathfinderTrimAction      = makePathfinderAction('trim');
+/** @experimental Static descriptor for pathfinder-merge. */
+export const pathfinderMergeAction     = makePathfinderAction('merge');
 

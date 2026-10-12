@@ -42,6 +42,7 @@ function PaneLoupe({ api, onColor }: {
       region: a.getSurfaceRect,
       source: [],
       requestRedraw: () => a.requestRedraw(),
+      contentVersion: () => a.getPaintedVersion(),
       mode: 'pixel',
       titlebar: false,
       bounds: LOUPE_BOUNDS,

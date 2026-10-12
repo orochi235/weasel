@@ -45,6 +45,25 @@ describe('sceneClipTargets', () => {
     expect(target('gain')).toBeUndefined();
   });
 
+  it('holds only the joints a rig track names, wherever the skeleton has them', () => {
+    const { animator, frame, scene, hand, rig } = setup();
+    const clip: Clip = {
+      version: 1,
+      tracks: [{
+        kind: 'sampled', target: 'rig:arm', axes: ['lower'],
+        keys: [{ t: 0, value: {} }, { t: 1000, value: { upper: { rotation: 1 }, lower: { rotation: Math.PI / 2 } } }],
+      }],
+    };
+    const live = bindClip(clip, { target: sceneClipTargets(scene, { rigs: { arm: rig } }) });
+    act(() => { animator().timeline({ ...live, autoplay: false }).seek(500); });
+    frame(16);
+    // The upper joint is not the track's to move, so the elbow stays at (150, 100).
+    const at = effectivePose(scene, scene.get(hand)!);
+    expect(at.x + at.width / 2).toBeCloseTo(150 + 50 * Math.SQRT1_2, 3);
+    expect(at.y + at.height / 2).toBeCloseTo(100 + 50 * Math.SQRT1_2, 3);
+    expect(toClip(live)).toEqual(clip);
+  });
+
   it('plays a clip read from JSON on a node and on a rig', () => {
     const { animator, frame, scene, box, hand, rig } = setup();
     const clip: Clip = JSON.parse(JSON.stringify({

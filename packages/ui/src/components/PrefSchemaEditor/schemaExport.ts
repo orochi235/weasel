@@ -95,8 +95,9 @@ function printNode(node: SchemaNode, depth: number, types: PrefTypes): string {
 }
 
 /**
- * Code-bearing attributes print as {@link KEEP}; the tree around them prints in full. A leaf made from one of
- * `types` prints as that type's name, spread under what the leaf sets for itself, for the reader to import.
+ * Code-bearing attributes print as the undeclared name `KEEP_FROM_SOURCE`; the tree around them prints in full. A
+ * leaf made from one of `types` prints as that type's name, spread under what the leaf sets for itself, for the
+ * reader to import.
  */
 export function printSchema(root: SchemaRoot, types: PrefTypes = NO_TYPES): string {
   return printNode(root, 0, types);

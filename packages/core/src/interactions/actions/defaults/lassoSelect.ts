@@ -40,6 +40,7 @@
 import { gestureViewReader } from '../../gestures/shared/screenTolerance';
 import { resolveParams, setScratch, type Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import type { LassoSelectDep, ViewApi } from '../depSchema';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
@@ -161,7 +162,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           current: new Map([['gesture', { ...pose }]]),
           snap: null,
           modifiers: { ...ctx.modifiers },
-          pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+          pointer: pointerStateOf(ctx.world, ctx),
           view: readView(),
           adapter: behaviorAdapter(dep, view) as unknown as GestureContext<LassoSelectPose>['adapter'],
           scratch: {},
@@ -200,7 +201,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           const g = scratch.gesture;
           if (g) {
             g.modifiers = { ...moveCtx.modifiers };
-            g.pointer = { worldX: x, worldY: y, clientX: 0, clientY: 0 };
+            g.pointer = pointerStateOf(moveCtx.world, moveCtx);
             g.view = readView();
             g.current.set('gesture', { worldX: x, worldY: y, shiftHeld: scratch.shiftHeld });
             const proposed = { vertices: scratch.vertices, shiftHeld: scratch.shiftHeld };

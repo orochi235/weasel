@@ -194,7 +194,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     setTimer: timers.setTimer,
     clearTimer: timers.clearTimer,
     lookahead: opts.lookahead,
-    interval: opts.tickInterval,
+    interval: opts.tickInterval, onLate: opts.onLate,
   });
   scheduler.start();
   const graph = createBusGraph(ctx, busNames, { ...timers, fadeMs: opts.insertFadeMs });

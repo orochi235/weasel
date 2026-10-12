@@ -19,7 +19,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
 import {
@@ -40,10 +39,8 @@ import {
 import { createLinkedCursorLayer } from './layers';
 import type { ViewApi } from '@weasel-js/core';
 import { SceneViewCanvas } from '@weasel-js/core';
-import {
-  computeFitView,
-  computeIndicatorCommand,
-} from './minimapMath';
+import { computeIndicatorCommand } from './minimapMath';
+import { useFitView } from './useFitView';
 import type { IndicatorStyle, MinimapFit } from './minimapMath';
 import type { SceneViewDrawOne, SceneViewLayers } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core';
@@ -79,10 +76,10 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
   /** Fit policy. Defaults to `"scene"` (AABB union of leaf poses). See
    *  `MinimapFit` for the full shape.
    *
-   *  Framing is derived from **document** poses, not `scene.overrides` — a
-   *  node moved by an override paints where the override puts it, outside the
+   *  `"scene"` frames **document** poses, not `scene.overrides` — a node
+   *  moved by an override paints where the override puts it, outside the
    *  frame if it goes there, rather than making the whole minimap rescale on
-   *  every frame of a drag or a settle. */
+   *  every frame of a drag or a settle. `"live"` frames the overrides too. */
   fit?: MinimapFit<TData, TLayer, TPose>;
   /** How to read poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
@@ -147,24 +144,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   } = props;
   const mainView = normalizeView(mainViewProp);
 
-  // Subscribe to scene version so the fit view recomputes when the scene
-  // mutates. `<SceneViewCanvas>` also subscribes, but it owns its own
-  // rendering; we need the version *here* to invalidate the memoized fit.
-  const sceneVersion = useSyncExternalStore(
-    scene.subscribe,
-    scene.getVersion,
-    scene.getVersion,
-  );
-
   const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
-
-  const fitView = useMemo<View>(() => {
-    // A `fit` function's result is the caller's; pointer math divides by its scale.
-    return normalizeView(computeFitView(scene, { width, height }, fit, descriptor));
-    // `sceneVersion` participates so the memo re-evaluates after scene mutations.
-    // `descriptor` is stable when the prop is omitted.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, sceneVersion, width, height, fit, descriptor]);
+  const fitView = useFitView(scene, width, height, fit, descriptor);
 
   const indicatorCmd = useMemo<DrawCommand>(() => {
     return computeIndicatorCommand(mainView, mainViewDims, indicatorStyle, fitView);

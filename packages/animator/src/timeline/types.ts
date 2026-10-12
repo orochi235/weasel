@@ -1,3 +1,4 @@
+import type { AxisRef } from '../axisNames';
 import type { Target } from '../target';
 import type { AnimationHandle, EasingSpec, Interpolate, InterpolatorFactory } from '../types';
 
@@ -45,8 +46,11 @@ export interface SampledTrack<T> {
   interpolateName?: string;
   /** The track's share among the target's holds, as `HoldOptions.weight`. Default 1. */
   weight?: number | (() => number);
-  /** The axes of the target the track holds, as `HoldOptions.axes`. Default: every axis. */
-  axes?: readonly number[];
+  /** What a function `weight` goes by in a clip, as `targetName` is for `target`. */
+  weightName?: string;
+  /** The axes of the target the track holds, by name or by index, as `HoldOptions.axes`.
+   *  Default: every axis. A clip carries them as they are written here. */
+  axes?: readonly AxisRef<T>[];
 }
 
 /** A clock that events are booked against, reading in ms. An `AudioEngine`

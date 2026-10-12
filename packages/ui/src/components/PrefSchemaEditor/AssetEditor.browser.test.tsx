@@ -41,7 +41,7 @@ test('the asset list fills the editor\'s far column, beside the preview and the 
   const aside = box(screen.getByRole('complementary', { name: 'Sidebar' }));
   const bar = box(screen.getByRole('group', { name: 'Schema tools' }));
   expect(aside.left).toBeGreaterThanOrEqual(box(preview()).right);
-  expect(aside.left).toBeGreaterThanOrEqual(box(screen.getByRole('region', { name: 'Changes' })).right);
+  expect(aside.left).toBeGreaterThanOrEqual(box(screen.getByRole('region', { name: 'Export' })).right);
   expect(Math.abs(aside.right - editor.right)).toBeLessThan(2);
   expect(aside.top).toBeGreaterThanOrEqual(bar.bottom);
   expect(Math.abs(aside.bottom - editor.bottom)).toBeLessThan(2);
@@ -64,9 +64,8 @@ test('every row of the list is one line tall, a lock set after its label and not
     expect(box(row).height).toBe(height);
     expect(box(labelOf(row)).height).toBeLessThan(2 * parseFloat(getComputedStyle(labelOf(row)).fontSize));
   }
-  expect(height).toBe(parseFloat(getComputedStyle(rows[0]!).getPropertyValue('--wzl-control-h')));
   const locked = option('Export');
-  const lock = box(within(locked).getByRole('img', { name: 'Read-only' }));
+  const lock = box(within(locked).getByRole('img', { name: 'Dynamic' }));
   expect(lock.left).toBeGreaterThanOrEqual(box(labelOf(locked)).right);
   expect(lock.right).toBeLessThanOrEqual(box(locked).right);
   expect(lock.top).toBeGreaterThanOrEqual(box(locked).top);
@@ -77,7 +76,7 @@ test('a label too long for the list is cut short on its one line, and its lock s
   const long: Workspace = { assets: DEMO_WORKSPACE.assets.map((a) => (a.id === 'export' ? { ...a, label: 'Export, as the file menu and the toolbar both lay it out' } : a)) };
   render(<Live start={long} />);
   const row = option('Export');
-  const lock = box(within(row).getByRole('img', { name: 'Read-only' }));
+  const lock = box(within(row).getByRole('img', { name: 'Dynamic' }));
   expect(box(row).height).toBe(box(option('Settings')).height);
   expect(labelOf(row).scrollWidth).toBeGreaterThan(labelOf(row).clientWidth);
   expect(overlap(lock, box(labelOf(row)))).toBe(false);

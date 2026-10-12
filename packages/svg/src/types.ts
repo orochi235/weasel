@@ -131,6 +131,10 @@ export interface SvgPathNode {
    *  center of the underlying `path` geometry. Emitted as SVG
    *  `transform="rotate(angleDegrees cx cy)"`. */
   rotation?: number;
+  /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
+   *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
+   *  back as `display="none"`. */
+  hidden?: boolean;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -152,6 +156,10 @@ export interface SvgGroupNode {
    *  unions them and a `Path` holds one outline. */
   clip?: Path;
   opacity?: number;
+  /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
+   *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
+   *  back as `display="none"`. */
+  hidden?: boolean;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -211,6 +219,10 @@ export interface SvgTextNode {
    *  With one, the element is written with its whole frame as a
    *  `transform="matrix(...)"`. */
   transform?: PoseLinear;
+  /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
+   *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
+   *  back as `display="none"`. */
+  hidden?: boolean;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -256,6 +268,10 @@ export interface SvgImageNode {
    *  With one, the element is written with its whole frame as a
    *  `transform="matrix(...)"`. */
   transform?: PoseLinear;
+  /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
+   *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
+   *  back as `display="none"`. */
+  hidden?: boolean;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -281,6 +297,12 @@ export interface ParseOptions {
    * those defaults.
    */
   media?: Partial<SvgMediaEnvironment>;
+  /**
+   * Keep `display="none"` and `visibility="hidden"` content, each node marked
+   * `hidden`, so a file's hidden layers survive the import. By default it is
+   * left out, as a renderer leaves it out.
+   */
+  keepHidden?: boolean;
 }
 
 /** Output of {@link parseSvg}. */

@@ -82,16 +82,18 @@ export {
   diagramGroupOf,
   groupDerivePose,
 } from './group';
-export type { DiagramAnchor, GroupPoseOptions } from './group';
+export type { DiagramAnchor, DiagramDerivePose, GroupPoseOptions } from './group';
 export { diagramScene, edgeIdOf } from './fromData';
 export type {
   DataEdge,
   DataGroup,
   DataNode,
   DiagramData,
+  DiagramRouter,
   DiagramSceneData,
   DiagramSceneOptions,
   DiagramSpec,
+  DiagramTextStyle,
   EdgeStyle,
   NodeStyle,
 } from './fromData';
@@ -136,7 +138,7 @@ export {
   createLayoutAction,
 } from './layoutAction';
 export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';
-export { forestOf, tree } from './tree';
+export { forestOf, tree, type Forest } from './tree';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
   PORT_AFFORDANCE_KIND,

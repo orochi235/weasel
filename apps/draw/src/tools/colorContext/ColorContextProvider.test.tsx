@@ -61,7 +61,7 @@ describe('ColorContextProvider — state cluster', () => {
       wrapper: makeWrapper(),
     });
     act(() => result.current.toggleFocusedNone());
-    expect(result.current.fill).toEqual({ kind: 'none' });
+    expect(result.current.fill).toBeNull();
     act(() => result.current.toggleFocusedNone());
     expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
   });

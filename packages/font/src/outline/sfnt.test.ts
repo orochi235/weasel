@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { isDataForkFont, isFontCollection, sfntFromCollection } from './sfnt';
+import { createOpenTypeParser } from './opentypeParser';
 
 // packages/font/src/outline -> repo root
 const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
@@ -146,13 +147,22 @@ describe.skipIf(!existsSync(INTER_TTF))('sfnt collection unpacking', () => {
 
   it('selects the member whose PostScript name matches', () => {
     const collection = synthesizeCollection(interBytes());
-    // Both synthesized members are the same face, so the real assertion is
-    // that a name that IS present matches, and one that is not falls back
-    // rather than throwing — a browser reporting a name the `name` table
-    // spells differently should still get some weight of the right family.
     expect(sfntFromCollection(collection, 'Inter-Regular').matched).toBe(true);
     expect(sfntFromCollection(collection, 'NoSuchFace-Bold').matched).toBe(false);
     expect(sfntFromCollection(collection, 'NoSuchFace-Bold').bytes.byteLength)
       .toBeGreaterThan(0);
+  });
+
+  it('names every member, so a caller can say what it was offered', () => {
+    const collection = synthesizeCollection(interBytes());
+    expect(sfntFromCollection(collection, 'NoSuchFace-Bold').names).toEqual(['Inter-Regular', 'Inter-Regular']);
+  });
+
+  it('the parser rejects a member it was asked for by a name the collection does not hold', async () => {
+    const collection = synthesizeCollection(interBytes());
+    await expect(createOpenTypeParser('NoSuchFace-Bold')(collection))
+      .rejects.toThrow(/"NoSuchFace-Bold".*Inter-Regular/);
+    await expect(createOpenTypeParser('Inter-Regular')(collection)).resolves.toBeTruthy();
+    await expect(createOpenTypeParser()(collection)).resolves.toBeTruthy();
   });
 });

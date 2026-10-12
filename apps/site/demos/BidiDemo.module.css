@@ -1,14 +1,14 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wzl-space-5);
   width: 760px;
 }
 
 .controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   flex-wrap: wrap;
 }
 
@@ -16,11 +16,11 @@
   --wzl-field-h: 26px;
   --wzl-font-size: 14px;
   flex: 1;
-  margin-inline-end: 6px;
+  margin-inline-end: var(--wzl-space-3);
 }
 
 .heading {
-  margin: 8px 0 0;
+  margin: var(--wzl-space-4) 0 0;
   font-size: 1em;
   font-weight: 500;
 }
@@ -36,17 +36,17 @@
   flex-direction: column;
   align-items: center;
   min-width: 30px;
-  padding: 3px 2px;
-  border: 1px solid var(--ckd-border-2);
+  padding: 3px var(--wzl-space-1);
+  border: 1px solid var(--wzl-border);
   border-radius: 3px;
 }
 
 .even {
-  background: var(--ckd-surface);
+  background: var(--wzl-surface-raised);
 }
 
 .odd {
-  background: color-mix(in srgb, var(--ckd-accent) 22%, var(--ckd-surface));
+  background: color-mix(in srgb, var(--wzl-accent-strong) 22%, var(--wzl-surface-raised));
 }
 
 .removed {
@@ -55,8 +55,8 @@
 }
 
 .mirrored {
-  border-color: var(--ckd-accent);
-  box-shadow: 0 0 0 1px var(--ckd-accent);
+  border-color: var(--wzl-accent-strong);
+  box-shadow: 0 0 0 1px var(--wzl-accent-strong);
 }
 
 .glyph {
@@ -68,13 +68,13 @@
 .meta {
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 10px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .compare {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 4px 12px;
+  gap: var(--wzl-space-2) var(--wzl-space-6);
   margin: 0;
   font-size: 18px;
 }
@@ -82,7 +82,7 @@
 .compare dt {
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   align-self: center;
 }
 

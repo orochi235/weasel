@@ -1,7 +1,10 @@
-/* The mark on whatever `selectionAttrs` names as selected, in every surface that draws one.
+/* The mark on whatever `selectionAttrs` names as selected, in every surface that draws one; `MARKED` in
+   `selection.ts` is the same selector. A fragment has no box to mark, so a selected one marks its rows.
    The secondary accent: the primary one is a control's own (a checked box, a focused field), and a mark in it
    around a row of them reads as one more. */
-[data-pref-path][data-selected] {
+[data-pref-path][data-selected]:not([role='tab'], [data-pref-fragment]),
+[data-pref-fragment][data-selected] > [data-pref-path],
+[data-pref-path][data-pref-picked] {
   background: color-mix(in oklab, var(--wzl-secondary) 12%, transparent);
   outline: 1px solid var(--wzl-secondary);
   outline-offset: 3px;

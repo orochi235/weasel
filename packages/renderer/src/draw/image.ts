@@ -12,8 +12,31 @@ import { stageImage } from './batch';
  * The upload has to happen now rather than at flush: a run is keyed on bitmap
  * identity, and `flushBatch` binds a texture it assumes already exists.
  */
+/** Texels per device pixel at which a mipmap starts to beat one bilinear tap. */
+const MINIFIED = 2;
+
+/**
+ * How many device pixels a group unit covers on each axis, squared and scaled
+ * by {@link MINIFIED}: a quad is minified on x when
+ * `sourceWidth² ≥ limit[0] * drawnWidth²`.
+ */
+function minifiedLimits(ctx: DrawContext): [number, number] {
+  const m = ctx.state.transform;
+  const dpr = ctx.deviceWidth && ctx.widthCss ? ctx.deviceWidth / ctx.widthCss : 1;
+  const k = (MINIFIED * dpr) ** 2;
+  return [k * (m[0] * m[0] + m[1] * m[1]), k * (m[3] * m[3] + m[4] * m[4])];
+}
+
+const isMinified = (limit: [number, number], sw: number, sh: number, dw: number, dh: number): boolean =>
+  sw * sw >= limit[0] * dw * dw || sh * sh >= limit[1] * dh * dh;
+
 export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   ctx.imageCache.upload(cmd.image, cmd.image);
+  if (ctx.imageCache.lacksMipmaps(cmd.image)) {
+    const sw = cmd.source?.w ?? cmd.image.width;
+    const sh = cmd.source?.h ?? cmd.image.height;
+    if (isMinified(minifiedLimits(ctx), sw, sh, cmd.w, cmd.h)) ctx.imageCache.buildMipmaps(cmd.image);
+  }
   const { staged, slot } = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
 
   // Sampling window: the whole bitmap unless `source` narrows it, with the
@@ -53,6 +76,14 @@ export function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
   if (count === 0) return;
 
   ctx.imageCache.upload(cmd.image, cmd.image);
+  if (ctx.imageCache.lacksMipmaps(cmd.image)) {
+    const limit = minifiedLimits(ctx);
+    for (let i = 0; i < count * SPRITE_STRIDE; i += SPRITE_STRIDE) {
+      if (!isMinified(limit, data[i + 6], data[i + 7], data[i + 2], data[i + 3])) continue;
+      ctx.imageCache.buildMipmaps(cmd.image);
+      break;
+    }
+  }
   const sampling = cmd.sampling ?? 'linear';
   let { staged, slot } = stageImage(ctx, cmd.image, sampling);
 

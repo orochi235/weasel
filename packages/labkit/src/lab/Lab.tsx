@@ -30,7 +30,6 @@ import { useLabClocks } from '../clock/useLabClocks';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import { Split } from '../primitives/Split';
-import { LabStoreContext } from '../state/context';
 import { PersistenceContext } from '../state/Persistence';
 import type { LabDensity, LabMode, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
@@ -48,9 +47,10 @@ import {
   swapTrial as swapTrialOp,
 } from '../trial/trialOps';
 import { useLabFitWarning } from './fitCheck';
-import { LabContext, type LabContextValue } from './LabContext';
+import type { LabCommands } from './LabContext';
 import { LabHeader, LabThemeSwitcher } from './LabHeader';
 import { LabPalette } from './LabPalette';
+import { LabProviders } from './LabProviders';
 import { LabShell } from './LabShell';
 import { LabSurface } from './LabSurface';
 import type { LabPage } from './LabSwitcher';
@@ -424,7 +424,7 @@ function LabRuntime({
     }
   }, [mode, store]);
 
-  const contextValue = useMemo<LabContextValue>(() => {
+  const commands = useMemo<LabCommands>(() => {
     const replaceTrials = (next: TrialRecord[]): void => {
       const currentById = new Map(store.getState().trials.map((w) => [w.id, w]));
       const merged = next.map((w) => currentById.get(w.id) ?? w);
@@ -439,7 +439,6 @@ function LabRuntime({
 
     return {
       instruments,
-      trials,
       addTrial: (instrumentName, options) => {
         replaceAndFocusAdded(
           addTrialOp(store.getState().trials, instruments, instrumentName, options),
@@ -512,7 +511,6 @@ function LabRuntime({
   }, [
     clocks,
     instruments,
-    trials,
     focusedTrialId,
     savedSnapshots,
     modeValue,
@@ -541,7 +539,7 @@ function LabRuntime({
       ids={trials.map((w) => w.id)}
       resizable
       reorderable
-      onReorder={(ids) => contextValue.reorderTrials(ids)}
+      onReorder={(ids) => commands.reorderTrials(ids)}
       layout={layout as TrialLayout}
       onLayoutChange={(next) => store.getState().setLayout(next)}
       expandOnDoubleClick={
@@ -560,73 +558,71 @@ function LabRuntime({
   );
 
   return (
-    <LabStoreContext.Provider value={{ store }}>
+    <LabProviders store={store} commands={commands} trials={trials}>
       <PersistenceContext.Provider value={opened.records}>
         <AnnotationPreloadContext.Provider value={opened.marks}>
-          <LabContext.Provider value={contextValue}>
-            <PresentationContext.Provider value={presentation}>
-              <CameraRegistryContext.Provider value={cameras}>
-                <CameraGesturesContext.Provider value={gestures ?? null}>
-                  <ClockRegistryContext.Provider value={clocks}>
-                    <ThemeProvider
-                      theme={theme}
-                      selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
-                      className={labClassName(presentation)}
-                      style={backdropStyle}
+          <PresentationContext.Provider value={presentation}>
+            <CameraRegistryContext.Provider value={cameras}>
+              <CameraGesturesContext.Provider value={gestures ?? null}>
+                <ClockRegistryContext.Provider value={clocks}>
+                  <ThemeProvider
+                    theme={theme}
+                    selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
+                    className={labClassName(presentation)}
+                    style={backdropStyle}
+                  >
+                    <LabShell
+                      title={title ?? 'Labkit'}
+                      bar={header}
+                      mode={modeValue}
+                      {...(documentTitle !== undefined ? { documentTitle } : {})}
+                      {...(pages ? { pages } : {})}
+                      {...(path !== undefined ? { path } : {})}
+                      footer={
+                        hasFooterChrome ? (
+                          <>
+                            {footer}
+                            <LabFooterRegion contributions={labChromeAll} />
+                          </>
+                        ) : (
+                          footer
+                        )
+                      }
+                      header={
+                        header && (
+                          <>
+                            <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
+                            {zoom && !presenting ? <LabZoom /> : null}
+                            {children}
+                            <LabHeaderRegion contributions={labChromeAll} />
+                            <LabThemeSwitcher />
+                          </>
+                        )
+                      }
                     >
-                      <LabShell
-                        title={title ?? 'Labkit'}
-                        bar={header}
-                        mode={modeValue}
-                        {...(documentTitle !== undefined ? { documentTitle } : {})}
-                        {...(pages ? { pages } : {})}
-                        {...(path !== undefined ? { path } : {})}
-                        footer={
-                          hasFooterChrome ? (
-                            <>
-                              {footer}
-                              <LabFooterRegion contributions={labChromeAll} />
-                            </>
+                      <PanelHostContext.Provider value={panelHostsRef.current}>
+                        <LabSurface bodyRef={setLabBody}>
+                          {hasPaneChrome ? (
+                            <LabPanes contributions={labChromeAll}>
+                              <LabPalette contributions={labChromeAll} />
+                              {workspace}
+                            </LabPanes>
                           ) : (
-                            footer
-                          )
-                        }
-                        header={
-                          header && (
                             <>
-                              <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
-                              {zoom && !presenting ? <LabZoom /> : null}
-                              {children}
-                              <LabHeaderRegion contributions={labChromeAll} />
-                              <LabThemeSwitcher />
+                              <LabPalette contributions={labChromeAll} />
+                              {workspace}
                             </>
-                          )
-                        }
-                      >
-                        <PanelHostContext.Provider value={panelHostsRef.current}>
-                          <LabSurface bodyRef={setLabBody}>
-                            {hasPaneChrome ? (
-                              <LabPanes contributions={labChromeAll}>
-                                <LabPalette contributions={labChromeAll} />
-                                {workspace}
-                              </LabPanes>
-                            ) : (
-                              <>
-                                <LabPalette contributions={labChromeAll} />
-                                {workspace}
-                              </>
-                            )}
-                          </LabSurface>
-                        </PanelHostContext.Provider>
-                      </LabShell>
-                    </ThemeProvider>
-                  </ClockRegistryContext.Provider>
-                </CameraGesturesContext.Provider>
-              </CameraRegistryContext.Provider>
-            </PresentationContext.Provider>
-          </LabContext.Provider>
+                          )}
+                        </LabSurface>
+                      </PanelHostContext.Provider>
+                    </LabShell>
+                  </ThemeProvider>
+                </ClockRegistryContext.Provider>
+              </CameraGesturesContext.Provider>
+            </CameraRegistryContext.Provider>
+          </PresentationContext.Provider>
         </AnnotationPreloadContext.Provider>
       </PersistenceContext.Provider>
-    </LabStoreContext.Provider>
+    </LabProviders>
   );
 }

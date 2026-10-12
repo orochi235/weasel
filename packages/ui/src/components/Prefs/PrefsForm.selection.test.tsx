@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PrefsForm } from './PrefsForm';
-import { shownPath } from './selection';
+import { MARKED, shownPath } from './selection';
 
 afterEach(cleanup);
 
@@ -25,7 +25,7 @@ const SCHEMA: PrefGroup = {
 };
 
 const marked = (container: HTMLElement) =>
-  [...container.querySelectorAll('[data-selected]')].map((el) => el.getAttribute('data-pref-path'));
+  [...container.querySelectorAll(MARKED)].map((el) => el.getAttribute('data-pref-path'));
 
 describe('shownPath', () => {
   it('is the path of a leaf or a group, the leaf a field lies inside, and null for one the schema lacks', () => {
@@ -75,6 +75,31 @@ describe('a selected path', () => {
     } finally {
       Element.prototype.scrollIntoView = original;
     }
+  });
+});
+
+describe('a run of tabs', () => {
+  const TABS: PrefGroup = {
+    name: 'Preferences',
+    children: {
+      light: { name: 'Light', as: 'tab', children: { ink: { kind: 'string', name: 'Ink', description: '', default: '' } } },
+      dark: { name: 'Dark', as: 'tab', children: { glow: { kind: 'string', name: 'Glow', description: '', default: '' } } },
+    },
+  };
+
+  it('marks nothing while nothing is selected, the open tab included', () => {
+    const { container } = render(<PrefsForm layout="rail" schema={TABS} onChange={() => {}} />);
+    expect(screen.getByRole('tab', { name: 'Light' })).toHaveAttribute('data-pref-path', 'light');
+    expect(marked(container)).toEqual([]);
+  });
+
+  it('marks a selected tab on its panel while it is open, and on the tab once the reader leaves it', () => {
+    const { container } = render(<PrefsForm layout="rail" schema={TABS} onChange={() => {}} selected={['dark']} />);
+    expect(marked(container).length).toBe(1);
+    expect(container.querySelector(MARKED)).toHaveAttribute('role', 'tabpanel');
+    fireEvent.click(screen.getByRole('tab', { name: 'Light' }));
+    expect(marked(container)).toEqual(['dark']);
+    expect(container.querySelector(MARKED)).toHaveAttribute('role', 'tab');
   });
 });
 

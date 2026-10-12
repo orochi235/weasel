@@ -72,9 +72,13 @@ export function CharacterOptions({ style, onPatch, children, className }: Charac
 }
 
 /** One control's edit as a run patch. Only `fill` needs shaping: the schema
- *  draws a color, and a run's fill is a record holding a `Paint`. */
+ *  draws a color and a chip for none, and a run's fill is a record holding
+ *  a `Paint`, or `null`. Turning the chip off fills with the color the field shows beside it. */
 function characterPatch(path: string, value: unknown): RunStylePatch {
   if (path === 'fill') return { fill: { paint: { color: value as string } } satisfies StyledRun['fill'] };
+  if (path === 'noFill') {
+    return { fill: value === true ? null : { paint: { color: useTextTool.options.children.fill.default } } };
+  }
   return { [path]: value } as RunStylePatch;
 }
 
@@ -100,6 +104,8 @@ function characterValues(style: RangeStyle): Record<string, unknown> {
     baselineShift: style.baselineShift ?? preset?.shift,
     fontScale: style.fontScale ?? preset?.size,
     fill: solidFill(style.fill),
+    // An unfilled node's range has no `fill` at all; one of its own is `null`.
+    noFill: style.fill == null,
   };
 }
 
@@ -125,7 +131,7 @@ function characterMixed(style: RangeStyle): Set<string> {
   // solid color. The tag is checked as well as the key: a tile paint carries
   // a `color` too.
   const fill = style.fill;
-  if (fill !== undefined && fill !== MIXED && solidFill(fill) === undefined) out.add('fill');
+  if (fill != null && fill !== MIXED && solidFill(fill) === undefined) out.add('fill');
   return out;
 }
 

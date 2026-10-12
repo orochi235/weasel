@@ -22,6 +22,12 @@ describe('axesOf', () => {
     expect(a.from([5, 6])).toEqual({ x: 5, y: 6 });
   });
 
+  it("names an object's axes by its fields, and gives a number or an array none", () => {
+    expect(axesOf({ y: 2, x: 1 })!.names).toEqual(['x', 'y']);
+    expect(axesOf(3)!.names).toBeUndefined();
+    expect(axesOf([1, 2])!.names).toBeUndefined();
+  });
+
   it('reads its axes from a given offset into a longer array', () => {
     expect(axesOf(0)!.from([9, 4, 9], 1)).toBe(4);
     expect(axesOf([0, 0])!.from([9, 9, 5, 6, 9], 2)).toEqual([5, 6]);

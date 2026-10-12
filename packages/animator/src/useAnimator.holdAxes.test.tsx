@@ -86,6 +86,37 @@ describe("a hold over some of a target's axes", () => {
     expect(() => animator.hold({ target: p.target, value: { x: 0, y: 0 }, axes: [2] })).toThrow(/axes/);
   });
 
+  it('holds the axes it names by the fields of the value', () => {
+    const { animator } = setup();
+    const p = point();
+    act(() => { animator.hold({ target: p.target, value: { x: 70, y: 70 }, axes: ['y'] }); });
+    expect(p.target.read()).toEqual({ x: 10, y: 70 });
+  });
+
+  it('refuses a name the target has no axis for', () => {
+    const { animator } = setup();
+    const p = point();
+    // @ts-expect-error a point has no field `z`
+    expect(() => animator.hold({ target: p.target, value: { x: 0, y: 0 }, axes: ['z'] })).toThrow(/`axes` names "z"/);
+    expect(p.target.active).toBe(false);
+  });
+
+  it('holds a timeline track on the axes the track names by field', () => {
+    const { animator, frame } = setup();
+    const p = point();
+    const track: SampledTrack<Point> = {
+      kind: 'sampled',
+      keys: [{ t: 0, value: { x: 0, y: 0 } }, { t: 100, value: { x: 100, y: 100 } }],
+      target: p.target,
+      axes: ['y'],
+    };
+    act(() => { animator.timeline({ tracks: [track], duration: 200 }); });
+    frame(0);
+    frame(40);
+    expect(p.target.read().x).toBe(10);
+    expect(p.target.read().y).toBeCloseTo(40, 9);
+  });
+
   it('holds a timeline track on the axes the track names', () => {
     const { animator, frame } = setup();
     const p = point();

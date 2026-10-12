@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { SceneCanvas, useScene, blur, vignette } from '@weasel-js/core';
-import type { Effect, RenderLayer } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import type { RenderLayer } from '@weasel-js/core';
+import { blur, vignette, type DrawCommand, type Effect } from '@weasel-js/renderer';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 720;

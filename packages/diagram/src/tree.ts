@@ -31,7 +31,8 @@ import {
   type Slot,
 } from './layout';
 
-interface Forest {
+/** A graph read as trees: its roots, each node's children in order, and each node's depth. */
+export interface Forest {
   roots: GraphNode[];
   children: Map<string, GraphNode[]>;
   depth: Map<string, number>;

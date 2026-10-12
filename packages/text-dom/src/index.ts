@@ -16,4 +16,4 @@ export type {
   UseTextEditOptions,
   UseTextEditReturn,
 } from './textEditTypes';
-export { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
+export { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset, type OverlayRunBase } from './domRuns';

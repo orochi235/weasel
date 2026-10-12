@@ -377,3 +377,26 @@ it('frames circles through the descriptor', () => {
   const view = computeFitView(scene, { width: 100, height: 100 }, 'scene', CIRCLE_POSE_DESCRIPTOR);
   expect(Number.isFinite(view.x) && Number.isFinite(view.scale.x)).toBe(true);
 });
+
+describe('computeFitView — fit="live"', () => {
+  function overridden(): S {
+    const scene = makeScene();
+    const a = scene.add({
+      kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'a' },
+    });
+    scene.overrides.set(a, { pose: { x: 900, y: 0, width: 100, height: 100 } });
+    return scene;
+  }
+  const dims = { width: 100, height: 100 };
+
+  it('frames a node where its override shows it', () => {
+    const view = computeFitView(overridden(), dims, 'live', identityPoseBounds);
+    // Centered on the overridden rect's middle, world (950, 50).
+    expect(view.x + dims.width / (2 * view.scale.x)).toBeCloseTo(950, 6);
+  });
+
+  it('is what "scene" leaves out', () => {
+    const view = computeFitView(overridden(), dims, 'scene', identityPoseBounds);
+    expect(view.x + dims.width / (2 * view.scale.x)).toBeCloseTo(50, 6);
+  });
+});

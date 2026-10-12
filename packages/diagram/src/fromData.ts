@@ -62,7 +62,7 @@ export interface DataEdge {
   /** Where along the edge the label sits. Default `DiagramSceneOptions.labelPlacement`. */
   labelPlacement?: DiagramLabel;
   /** Default `DiagramSceneOptions.router`. */
-  router?: Router;
+  router?: DiagramRouter;
   /** World points the route passes through. Layout does not move them. */
   waypoints?: readonly Vec2[];
 }
@@ -114,8 +114,10 @@ export interface EdgeStyle {
   label?: string;
 }
 
-type Router = 'straight' | 'bezier' | 'orthogonal';
-type TextStyle = { fontFamily: string; fontSize: number; fontWeight?: number };
+/** How an edge is drawn between its ends. */
+export type DiagramRouter = 'straight' | 'bezier' | 'orthogonal';
+/** The face a diagram node's text is set in. */
+export type DiagramTextStyle = { fontFamily: string; fontSize: number; fontWeight?: number };
 
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
@@ -123,7 +125,7 @@ export interface DiagramSceneData {
   fill?: { paint: { color: string } };
   stroke?: Stroke;
   text?: string;
-  style?: TextStyle;
+  style?: DiagramTextStyle;
 }
 
 /** A scene node spec, as `diagramScene` returns them. */
@@ -137,7 +139,7 @@ export interface DiagramSceneOptions {
   /** Merged over `{ order: 'barycenter' }`. */
   layoutOptions?: LayoutOptions;
   /** Default `'bezier'`. */
-  router?: Router;
+  router?: DiagramRouter;
   /** The text style rows fall back on. Default 12px sans-serif. */
   font?: { fontFamily: string; fontSize: number };
   /** Measures one run of text. Default an estimate from character count, so
@@ -203,7 +205,7 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = 
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
   const font = opts.font ?? FONT;
-  const styleOf = (s: RowTextStyle | undefined): TextStyle => ({
+  const styleOf = (s: RowTextStyle | undefined): DiagramTextStyle => ({
     fontFamily: s?.fontFamily ?? font.fontFamily,
     fontSize: s?.fontSize ?? font.fontSize,
     ...(s?.bold === true ? { fontWeight: 700 } : {}),

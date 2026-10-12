@@ -1,9 +1,9 @@
 import type { InvocationCtx } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import type { NodeId } from 'core/scene/types';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BehaviorResult, GroupTransform } from '../../gestures/types';
-import { translatePoseViaDescriptor } from '../resize/geometry';
-import { localDelta, planeDelta } from './delta';
+import { draggedStoredPose } from './delta';
 import type { MoveFrame, MoveSession } from './session';
 
 function foldBehaviors(
@@ -20,7 +20,7 @@ function foldBehaviors(
   const opaque = new Set<NodeId>();
   const gctx = session.gestureCtx;
   gctx.modifiers = { ...moveCtx.modifiers };
-  gctx.pointer = { worldX: moveCtx.drag!.current.x, worldY: moveCtx.drag!.current.y, clientX: 0, clientY: 0 };
+  gctx.pointer = pointerStateOf(moveCtx.drag!.current, moveCtx);
   gctx.view = readers.view();
   gctx.plane = readers.plane();
   // `current` is pre-populated from the raw cursor delta BEFORE
@@ -30,8 +30,7 @@ function foldBehaviors(
   // GroupTransform arg, NOT from `ctx.current` (which reflects
   // the unmodified delta at this frame's start).
   for (const [id, ori] of session.startPoses) {
-    const own = planeDelta(session, id, dx, dy);
-    gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, session.descriptorOf(id)));
+    gctx.current.set(id as string, draggedStoredPose(session, id, ori, dx, dy));
   }
   let transform: GroupTransform = { kind: 'translate', dx, dy };
   const primary = session.ids[0] as NodeId | undefined;
@@ -68,12 +67,8 @@ export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx
   // The preview-ghost layer reads these via `previewIds`/`previewPose`.
   const previews = new Map<NodeId, unknown>();
   for (const [id, ori] of session.startPoses) {
-    if (session.carried.has(id)) {
-      previews.set(id, ori);
-      continue;
-    }
-    const l = localDelta(session, id, dx, dy);
-    previews.set(id, posed.get(id) ?? translatePoseViaDescriptor(ori, l.dx, l.dy, session.descriptorOf(id)));
+    const dragged = draggedStoredPose(session, id, ori, dx, dy);
+    previews.set(id, session.carried.has(id) ? dragged : posed.get(id) ?? dragged);
   }
   for (const [id, pose] of posed) if (!session.startPoses.has(id)) previews.set(id, pose);
   return { delta, previews, opaque };

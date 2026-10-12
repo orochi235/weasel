@@ -12,6 +12,7 @@ export {
   kindBreakdown,
   nodeValueAt,
   setAtPath,
+  type AnyNode,
   type Mixed,
   type PanelLeaf,
   type PanelRow,

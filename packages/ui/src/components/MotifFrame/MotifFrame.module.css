@@ -18,7 +18,7 @@
 }
 
 /* The motifs that paint the frame's fill, which is sunken by default, as a field's frame is. */
-.frame:where([data-motif='rule'], [data-motif='stereo'], [data-motif='tab']) {
+.frame:where([data-motif='rule'], [data-motif='stereo'], [data-motif='tab'], [data-motif='titlebar']) {
   --wzl-input-surface: var(--wzl-surface);
 }
 

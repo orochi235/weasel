@@ -1,5 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
+import { cssColorLiteral } from '@weasel-js/paint';
 import { afterEach, describe, expect, test } from 'vitest';
 import { CurveEditor, type FillSettings } from './CurveEditor';
 
@@ -14,7 +15,7 @@ function fillOf(fill: FillSettings): string {
 
 describe('CurveEditor fill', () => {
   test('paints the fill in the color it was given', () => {
-    expect(fillOf({ side: 'below', color: 'rgb(255, 99, 71)' })).toBe('rgb(255, 99, 71)');
+    expect(fillOf({ side: 'below', color: cssColorLiteral('rgb(255, 99, 71)') })).toBe('rgb(255, 99, 71)');
   });
 
   test('falls back to the theme fill when no color is given', () => {

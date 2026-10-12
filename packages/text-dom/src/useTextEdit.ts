@@ -20,15 +20,15 @@ import { cssFontFamily, cssFontFamilyLoading, isCanvasFont } from '@weasel-js/fo
 import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
-import {
-  runsToDom, domToRuns, appendOverlayText, charOffsetToDomPosition, domPositionToCharOffset, normalizeSmallCaps,
-  SMALL_CAPS_SCALE_PROPERTY, type OverlayRunBase,
-} from './domRuns';
+import { domToRuns, SMALL_CAPS_SCALE_PROPERTY, type OverlayRunBase } from './domRuns';
 import {
   applyStyleToRange, effectiveRangeStyle, nodeHasFlag, patchRangeStyle, rangeWeight, runsCarryStyling, setFlagOverRange,
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { applyOverlayDirection, overlayAlignEdge } from './overlayDirection';
+import { seedOverlay, type CaretHolder } from './overlaySeed';
+import { readSelectionOffsets, selectOffsets, writeRunsPreservingSelection } from './overlaySelection';
+import { typingHandlers } from './overlayTyping';
 import { TEXT_EDIT_FONT_HOLD } from './textEditTypes';
 import type {
   StartEditOptions, StyleToggle, TextEditClipRect, TextEditScreenPose, TextEditSelection, UseTextEditOptions,
@@ -112,34 +112,6 @@ function styleAtCaret(runs: readonly StyledRun[], at: number): RangeStyle {
 }
 
 /**
- * Splice `run` into `runs` at character offset `at`, splitting whichever run
- * spans it. The result is normalized (empty runs dropped, identical
- * neighbours merged) by the same algebra every other write goes through.
- */
-function spliceRunAt(runs: readonly StyledRun[], at: number, run: StyledRun): StyledRun[] {
-  const out: StyledRun[] = [];
-  let pos = 0;
-  let placed = false;
-  for (const r of runs) {
-    const end = pos + r.text.length;
-    if (!placed && at <= end) {
-      const k = at - pos;
-      if (k > 0) out.push({ ...r, text: r.text.slice(0, k) });
-      out.push(run);
-      if (k < r.text.length) out.push({ ...r, text: r.text.slice(k) });
-      placed = true;
-    } else {
-      out.push({ ...r });
-    }
-    pos = end;
-  }
-  if (!placed) out.push(run);
-  // An empty patch over an empty range: this is the array-wide normalization
-  // pass, not a styling.
-  return applyStyleToRange(out, 0, 0, {});
-}
-
-/**
  * Return focus to the overlay after a styling arrived from editor chrome.
  *
  * A control that took focus in order to be clicked still holds it when the
@@ -163,49 +135,7 @@ function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelection): vo
     || (active instanceof Element && active.closest('[role="dialog"]') !== null)
   ) return;
   overlay.focus();
-  const a = charOffsetToDomPosition(overlay, range.start);
-  const b = charOffsetToDomPosition(overlay, range.end);
-  const sel = window.getSelection();
-  if (!a || !b || !sel) return;
-  const r = document.createRange();
-  r.setStart(a.node, a.offset);
-  r.setEnd(b.node, b.offset);
-  sel.removeAllRanges();
-  sel.addRange(r);
-}
-
-/**
- * Put the caret *between* two run spans when `offset` falls on the boundary
- * of one, rather than at the same offset inside the left span's text node.
- *
- * The two positions are the same character offset and browsers report them
- * identically, but they type differently: a caret inside a span has the next
- * character absorbed by that run, and one between spans starts a fresh one.
- * That distinction is the whole point after a pending style has just been
- * committed to its own run — otherwise the character after a superscript is
- * superscript too. Leaves the selection alone when the offset falls mid-run,
- * where there is no boundary to prefer.
- */
-function placeCaretBetweenRuns(
-  overlay: HTMLElement,
-  runs: readonly StyledRun[],
-  offset: number,
-): void {
-  let acc = 0;
-  let index = -1;
-  for (let i = 0; i < runs.length; i++) {
-    acc += runs[i].text.length;
-    if (acc === offset) { index = i; break; }
-    if (acc > offset) return;
-  }
-  const span = index >= 0 ? overlay.children[index] : null;
-  const sel = window.getSelection();
-  if (!span || !sel) return;
-  const range = document.createRange();
-  range.setStartAfter(span);
-  range.collapse(true);
-  sel.removeAllRanges();
-  sel.addRange(range);
+  selectOffsets(overlay, range.start, range.end);
 }
 
 /** No pending style. One frozen object so re-publishing an already-empty
@@ -227,92 +157,6 @@ function mergePending(prev: RunStylePatch, patch: RunStylePatch): RunStylePatch 
     else next[key] = value;
   }
   return next as RunStylePatch;
-}
-
-/**
- * Character offsets of the current DOM selection within `overlay`, or `null`
- * when there is no selection or it lies outside the overlay. The one
- * DOM→offset conversion in the hook; everything that needs offsets goes
- * through here.
- */
-function readSelectionOffsets(overlay: HTMLElement): TextEditSelection | null {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return null;
-  const range = sel.getRangeAt(0);
-  if (!overlay.contains(range.startContainer) || !overlay.contains(range.endContainer)) {
-    return null;
-  }
-  // `Range` boundary points are already in document order, so this is the
-  // normalization for a backwards drag — anchor/focus are not consulted.
-  const start = domPositionToCharOffset(overlay, range.startContainer, range.startOffset);
-  const end = domPositionToCharOffset(overlay, range.endContainer, range.endOffset);
-  return start <= end ? { start, end } : { start: end, end: start };
-}
-
-/**
- * Replace the overlay's contents with `runs` and put the caret back on
- * `[start, end)`. Rewriting the DOM destroys the selection, and losing it
- * after every styling change would mean re-selecting the word to apply a
- * second style — so this is the only way styling writes back.
- *
- * The caret is **not** restored while focus sits in a text-entry control.
- * Browsers route editing commands by selection rather than by focus, so a
- * document selection put back inside the contenteditable while a bar's
- * number field has focus means the very Enter that committed that field also
- * runs its `insertParagraph` default over the restored range — replacing the
- * text that was just styled with a line break. (Observed in Chrome.)
- *
- * Focus on a *button* is the opposite case and must still restore: toggling
- * bold, then italic, then underline is one flow over one selection, and
- * clicking a toolbar button does take focus. Buttons turn keystrokes into
- * clicks, not into editing commands, so the range is safe there.
- *
- * The hook remembers the range as character offsets either way, so a skipped
- * restore costs the highlight, never the target.
- */
-function writeRunsPreservingSelection(
-  overlay: HTMLElement,
-  runs: readonly StyledRun[],
-  start: number,
-  end: number,
-  base: OverlayRunBase,
-): void {
-  const active = document.activeElement;
-  const inTextEntry =
-    active !== overlay &&
-    !overlay.contains(active) &&
-    (active instanceof HTMLInputElement ||
-      active instanceof HTMLTextAreaElement ||
-      (active instanceof HTMLElement && active.isContentEditable));
-  runsToDom(runs, overlay, base);
-  if (inTextEntry) return;
-  const a = charOffsetToDomPosition(overlay, start);
-  const b = charOffsetToDomPosition(overlay, end);
-  const sel = window.getSelection();
-  if (!a || !b || !sel) return;
-  const range = document.createRange();
-  range.setStart(a.node, a.offset);
-  range.setEnd(b.node, b.offset);
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
-
-/**
- * Drop the one trailing newline a contenteditable keeps so the caret has
- * somewhere to sit on the last line. `domToRuns` maps the `<br>` to a
- * literal `'\n'`, which the edit never typed. Exactly one, so a newline
- * the user actually typed survives — the holder is never doubled.
- *
- * An empty run left behind is dropped: it carries no text and would otherwise
- * defeat `runsCarryStyling`'s "did this edit produce styling" question by
- * existing.
- */
-function trimCaretHolder(runs: StyledRun[]): StyledRun[] {
-  const last = runs[runs.length - 1];
-  if (last === undefined || !last.text.endsWith('\n')) return runs;
-  const trimmed = { ...last, text: last.text.slice(0, -1) };
-  const head = runs.slice(0, -1);
-  return trimmed.text === '' ? head : [...head, trimmed];
 }
 
 function sameSelection(a: TextEditSelection | null, b: TextEditSelection | null): boolean {
@@ -352,6 +196,7 @@ export function useTextEdit(
   const initialCaretRef = useRef<number | 'all'>('all');
   /** What the overlay read back as when the edit opened, before any input. */
   const openedRef = useRef<string | null>(null);
+  const holderRef = useRef<CaretHolder | null>(null);
   const [selection, setSelection] = useState<TextEditSelection | null>(null);
   const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
   const [pendingStyle, setPendingStyle] = useState<RunStylePatch>(NO_PENDING);
@@ -465,7 +310,7 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    const runs = trimCaretHolder(read);
+    const runs = holderRef.current?.trim(read) ?? read;
     const hadRuns = priorRuns != null && priorRuns.length > 0;
     const runsInPlay = hadRuns || runsCarryStyling(runs);
     // Read from the DOM, not `innerText`: a browser applies `text-transform`
@@ -595,16 +440,7 @@ export function useTextEdit(
     overlay.spellcheck = false;
     baseRef.current = style;
     const initialRuns = optsRef.current.getRuns?.(editingId);
-    if (initialRuns && initialRuns.length > 0) {
-      runsToDom(initialRuns, overlay, style);
-    } else if (style.fontVariantCaps === 'small-caps') {
-      // Small caps needs its lowercase in pieces, which only a run span holds.
-      runsToDom([{ text: getText(editingId) }], overlay, style);
-    } else {
-      // Not `innerText`, which turns each newline into a `<br>` the caret
-      // walkers cannot count and U+2028 into a space.
-      appendOverlayText(overlay, getText(editingId));
-    }
+    holderRef.current = seedOverlay(overlay, getText(editingId), initialRuns, style);
     openedRef.current = JSON.stringify(domToRuns(overlay));
     applyOverlayStyle(overlay, style);
     const hold = holdForFaces(style, initialRuns ?? []);
@@ -678,70 +514,19 @@ export function useTextEdit(
       commit();
     };
 
-    const onBeforeInput = (ie: InputEvent) => {
-      if (ie.inputType !== 'insertText' || !ie.data) return;
-      const pending = pendingRef.current;
-      if (Object.keys(pending).length > 0) {
-        // Rebuild from the runs rather than splicing a span into the DOM.
-        // `insertNode` at a caret sitting inside a run span nests the new
-        // span *within* it, and `domToRuns` reads styling down the ancestor
-        // chain — so a pending style that has to escape the surrounding run
-        // (the `false` armed after a node-flag rewrite) would inherit exactly
-        // the flag it exists to shed. Going through the algebra also gets
-        // every run field for free, with no CSS written here.
-        const at = readSelectionOffsets(overlay) ?? selectionRef.current;
-        if (!at || at.start !== at.end) return;
-        ie.preventDefault();
-        const next = spliceRunAt(domToRuns(overlay), at.start, {
-          ...pending, text: ie.data,
-        } as StyledRun);
-        const after = at.start + ie.data.length;
-        writeRunsPreservingSelection(overlay, next, after, after, baseRef.current);
-        placeCaretBetweenRuns(overlay, next, after);
+    const { onBeforeInput, onInput } = typingHandlers(overlay, {
+      pending: () => pendingRef.current,
+      base: () => baseRef.current,
+      lastRange: () => selectionRef.current,
+      onWritten: (caret) => {
         dropPending();
-        publishRange(overlay, { start: after, end: after });
-        return;
-      }
-      ie.preventDefault();
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return;
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      {
-        // No pending style — insert the character as a plain text node at the
-        // caret position so the surrounding run's span absorbs it.
-        const textNode = document.createTextNode(ie.data);
-        range.insertNode(textNode);
-        const after = document.createRange();
-        after.setStartAfter(textNode);
-        after.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(after);
-      }
-      resplitSmallCaps();
-    };
-
-    /** Put small-caps letters back in the pieces their case belongs in after
-     *  an edit, keeping the caret. Never mid-composition: rewriting the DOM
-     *  under an IME ends the composition. */
-    const resplitSmallCaps = (e?: Event) => {
-      if (e instanceof InputEvent && e.isComposing) return;
-      const at = readSelectionOffsets(overlay);
-      if (!normalizeSmallCaps(overlay) || !at) return;
-      const a = charOffsetToDomPosition(overlay, at.start);
-      const b = charOffsetToDomPosition(overlay, at.end);
-      const sel = window.getSelection();
-      if (!a || !b || !sel) return;
-      const r = document.createRange();
-      r.setStart(a.node, a.offset);
-      r.setEnd(b.node, b.offset);
-      sel.removeAllRanges();
-      sel.addRange(r);
-    };
-    const onInput = (e: Event) => {
-      resplitSmallCaps(e);
-      place();
-    };
+        publishRange(overlay, { start: caret, end: caret });
+      },
+      onEdited: () => {
+        holderRef.current?.edited(overlay);
+        place();
+      },
+    });
 
     // Blur can't be the only way out. Once focus has moved into editing
     // chrome the overlay is no longer focused, so nothing blurs when the user

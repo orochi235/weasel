@@ -5,4 +5,5 @@ import type { OptionsBarVariant } from './OptionsBar';
 export const OPTIONS_BAR_VARIANT_ICONS: Readonly<Record<OptionsBarVariant, IconName>> = {
   default: 'variantSegmented',
   minimal: 'variantSegmentedMinimal',
+  flat: 'variantSegmentedFlat',
 };

@@ -45,6 +45,7 @@ import {
 import {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
+  pathfinderTrimAction, pathfinderMergeAction,
 } from './defaults/booleans';
 import { createOutlinesAction } from './defaults/createOutlines';
 import { outlineStrokeAction } from './defaults/outlineStroke';
@@ -146,6 +147,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   pathfinderExcludeAction,
   pathfinderDivideAction,
   pathfinderCropAction,
+  pathfinderTrimAction,
+  pathfinderMergeAction,
   createOutlinesAction,
   outlineStrokeAction,
   moveAction,

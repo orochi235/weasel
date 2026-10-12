@@ -2,8 +2,10 @@ import {
   glide, patch as fnPatch, spring as springPatch, tween as tweenPatch,
   type Handle, type Motion, type Patch,
 } from '@msb235/blits';
+import { createHoldVoices, type HoldStart, type HoldVoice } from './holdVoices';
 import { createLanes, type LaneColumns, type LanePlace, type Out, type Reader, type Slot } from './lanes';
 
+export type { HoldStart } from './holdVoices';
 export type { Reader } from './lanes';
 
 export interface TweenStart {
@@ -27,13 +29,6 @@ export interface PathStart {
   /** As {@link TweenStart.on}. */
   on?: unknown;
 }
-export interface HoldStart {
-  id: number; axes: number;
-  /** The subject it reaches. */
-  on: unknown;
-  /** The voice's axes now. Asked every frame, and again after a `touch`. */
-  at(): number[];
-}
 /** A voice's own value and velocity, apart from any other voice on its subject. */
 export interface Own { value: number[]; velocity: number[] }
 export interface SpringReader extends Reader {
@@ -48,6 +43,8 @@ export interface Codec {
   path(s: PathStart): Reader;
   /** A voice with no clock: it reads `at` for as long as it is cued. */
   hold(s: HoldStart): Reader;
+  /** Says whether hold `id` is {@link HoldStart.still} from here on. */
+  still(id: number, still: boolean): void;
   /** Says what a voice on subject `on` reads from outside has changed since the last `frame`. */
   touch(on: unknown): void;
   /** Reads each touched subject again without moving the clock. `reread` is told the subject
@@ -80,7 +77,8 @@ interface Moves {
 interface Voice {
   kind: 'tween' | 'spring' | 'path' | 'hold';
   slot: Slot;
-  /** `handle` and `patch` are absent while a tween is `queued`, and a path has no `patch`. */
+  /** `handle` and `patch` are absent while a tween is `queued` and for a hold, and a path has
+   *  no `patch`. */
   handle: Handle<unknown>;
   patch: Moves;
   /** Where it started: what `own` answers until a frame has read it. */
@@ -93,6 +91,8 @@ interface Voice {
   queuedRate?: number;
   /** A path's axes as its patch last answered. */
   last?: number[];
+  /** A hold's voice. */
+  held?: HoldVoice;
 }
 
 /** `placeOf` answers where a shared subject's voices run, for one kept in a lane of its own. */
@@ -102,7 +102,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
   // Tweens are cued together at the next frame, not one by one as they start: a burst of starts then
   // keeps the caller's objects together rather than each a voice apart, which the frame loop reads.
   const queue: Voice[] = [];
-  const holds = new Set<Voice>();
+  const holds = createHoldVoices();
   let time = 0;
 
   // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
@@ -143,9 +143,9 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
   function stop(id: number): void {
     const v = voices.get(id);
     if (!v) return;
-    if (v.queued) v.queued = undefined;
+    if (v.held) holds.remove(v.held);
+    else if (v.queued) v.queued = undefined;
     else v.handle.fade({ over: 0 });
-    holds.delete(v);
     lanes.leave(v.slot);
     voices.delete(id);
   }
@@ -164,8 +164,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
         if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
       }
       queue.length = 0;
-      // blits keeps a patch's answer while its clock stands still, and a hold's can change anyway.
-      for (const v of holds) v.slot.lane.mix.touch(v.slot.key);
+      holds.frame();
       time += dtMs;
       lanes.frame(time);
     },
@@ -212,22 +211,20 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
     hold(s) {
       const zeros = new Array<number>(s.axes).fill(0);
       const slot = lanes.join(s.axes, s.on, zeros);
-      const v = { kind: 'hold', slot, from: zeros } as Voice;
-      const patch = fnPatch<unknown, Out>(
-        1,
-        () => {
-          v.last = s.at();
-          return { v: v.last };
-        },
-        { writes: ['v'] },
-      );
-      v.handle = slot.lane.mix.cue({ patch, subjects: [slot.key], loop: true });
-      voices.set(s.id, v);
-      holds.add(v);
+      voices.set(s.id, { kind: 'hold', slot, from: zeros, held: holds.add(slot, s) } as Voice);
       return slot;
     },
-    touch: (on) => lanes.touch(on),
+    still(id, still) {
+      const v = get(id);
+      if (!v.held) throw new Error(`codec: subject ${id} is a ${v.kind}, not a hold`);
+      holds.still(v.held, still);
+    },
+    touch(on) {
+      holds.touch(on);
+      lanes.touch(on);
+    },
     refresh(reread) {
+      holds.settle();
       lanes.refresh((slot) => {
         const queued = new Array<number>(slot.lane.axes).fill(0);
         for (const v of queue) {
@@ -272,7 +269,9 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       const v = voices.get(id);
       if (!v) return undefined;
       if (v.kind === 'spring') return current(v);
-      if (v.kind === 'path' || v.kind === 'hold') return { value: v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
+      if (v.kind === 'path' || v.kind === 'hold') {
+        return { value: v.held?.last ?? v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
+      }
       return (!v.queued && v.patch.read(v.slot.key))
         || { value: v.from, velocity: new Array<number>(v.from.length).fill(0) };
     },

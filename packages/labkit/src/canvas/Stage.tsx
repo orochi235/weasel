@@ -99,13 +99,15 @@ export function Stage({
       if (rect.width > 0 && rect.height > 0) {
         onResizeRef.current?.({ width: rect.width, height: rect.height });
       }
+      // A viewport that resized cuts its tiles differently without moving one.
+      surface?.invalidateRects();
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [onResizeRef]);
+  }, [onResizeRef, surface]);
 
   // A transform moves every tile inside the content without resizing anything,
   // and a ResizeObserver reports only resizes.

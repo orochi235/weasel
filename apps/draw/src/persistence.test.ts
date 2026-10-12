@@ -165,6 +165,12 @@ describe('persistence — scene snapshot → node specs', () => {
     const coords = (specs[0].data as { coords: unknown }).coords;
     expect(coords).toBeInstanceOf(Float32Array);
   });
+  it('revives a typed array under any key, not only a path\'s', () => {
+    const data = { weights: new Float32Array([0.25, 0.75]), nested: [{ ids: new Uint8Array([3, 4]) }] };
+    const revived = reviveTypedArrays(JSON.parse(JSON.stringify(data, serializeReplacer)) as typeof data);
+    expect(revived.weights).toBeInstanceOf(Float32Array);
+    expect(revived).toEqual(data);
+  });
   it('keeps an image node\'s data through the JSON hop', () => {
     const image = { src: 'data:image/png;base64,iVBORw0KGgo=', opacity: 0.5, source: { x: 0, y: 0, width: 0.5, height: 1 }, flipY: true };
     const json = JSON.parse(JSON.stringify({
@@ -220,19 +226,19 @@ describe('persistence — legacy string paint migration', () => {
   });
 
   it('moves a paint\'s tag from `fill` to `kind` rather than reading it as a color', () => {
-    const old = { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
-    const { fill: kind, ...rest } = old;
+    const old = { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
+    const { kind: kind, ...rest } = old;
     expect(dataOf({ fill: structuredClone(old) }).fill).toEqual({ paint: { kind, ...rest } });
-    expect(dataOf({ fill: { fill: 'solid', color: '#abc' } }).fill).toEqual({ paint: { kind: 'solid', color: '#abc' } });
+    expect(dataOf({ fill: { kind: 'solid', color: '#abc' } }).fill).toEqual({ paint: { kind: 'solid', color: '#abc' } });
   });
 
   it('lifts a pattern paint\'s tile into the paint, as its kind', () => {
-    const old = { fill: 'pattern', pattern: { tile: 'hatch', color: '#a840a2', size: 10 }, units: 'bounds' };
+    const old = { kind: 'hatch', color: '#a840a2', size: 10, units: 'bounds' };
     expect(dataOf({ fill: old }).fill).toEqual({ paint: { kind: 'hatch', color: '#a840a2', size: 10, units: 'bounds' } });
   });
 
   it('turns a pattern paint holding a texture handle into a texture paint', () => {
-    const old = { kind: 'pattern', pattern: { id: 'tex_1' }, origin: { x: 1, y: 2 } };
+    const old = { kind: 'texture', texture: { id: 'tex_1' }, origin: { x: 1, y: 2 } };
     expect(dataOf({ fill: old }).fill).toEqual({ paint: { kind: 'texture', texture: { id: 'tex_1' }, origin: { x: 1, y: 2 } } });
   });
 

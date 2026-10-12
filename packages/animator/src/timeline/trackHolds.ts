@@ -15,7 +15,7 @@ export type OpenTrackHold = (
   target: Target<unknown>,
   value: () => unknown,
   weight: () => number,
-  axes?: readonly number[],
+  axes?: readonly (number | string)[],
 ) => TrackHold;
 
 /** A timeline's sampled tracks: sampled at the playhead, and held on the targets they name. */

@@ -5,11 +5,10 @@ import {
   matchSpec,
   matchTarget,
   matchPhase,
-  mimeMatchesGlob,
-  matchIngestTypes,
   parseTargetSpec,
   type PhaseContext,
 } from './match';
+import { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ingestTypes';
 import type { InputEvent } from './inputEvent';
 import type { GestureSpec, TargetSpec } from './spec';
 import { hitPredicate, bodyPredicate } from './spec';
@@ -736,6 +735,11 @@ describe('mimeMatchesGlob / matchIngestTypes — edge cases', () => {
     expect(matchIngestTypes([{ mime: 'image/png' }], [])).toBe(true);
     expect(matchIngestTypes([{ mime: 'text/plain' }], [])).toBe(true);
     expect(matchIngestTypes([], [])).toBe(true);
+  });
+
+  it('matchIngestTypes: an item of unknown type passes every typed spec', () => {
+    expect(matchIngestTypes([{ mime: UNKNOWN_MIME }], ['image/*'])).toBe(true);
+    expect(matchIngestTypes([{ mime: 'text/plain' }, { mime: UNKNOWN_MIME }], ['image/png'])).toBe(true);
   });
 
   it('matchIngestTypes: undefined types matches anything', () => {

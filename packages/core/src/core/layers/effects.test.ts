@@ -206,6 +206,42 @@ describe('a group shared by several layers', () => {
     expect(compositesOnSecondFrame(IDS.map(own))).toBe(3);
   });
 
+  it('fades a group with alpha and no effects as one surface', () => {
+    const { recorder, renderer } = setup([]);
+    const cmds = drawLayers(
+      IDS.map(plain), null, {}, undefined, undefined,
+      { width: 100, height: 50 }, undefined, undefined,
+      [{ id: 'world', layers: IDS, alpha: 0.5 }],
+    );
+    renderer.render(cmds);
+    // The members draw at full strength into a buffer of their own, and the
+    // one composite carries the fade.
+    expect(recorder.calls.filter((c) => c.name === 'createFramebuffer')).toHaveLength(1);
+    const fades = recorder.calls.filter((c) => c.name === 'uniform1f' && c.args[1] === 0.5);
+    expect(fades).toHaveLength(1);
+  });
+
+  it('leaves a fully opaque group unbuffered', () => {
+    const { recorder, renderer } = setup([]);
+    const cmds = drawLayers(
+      IDS.map(plain), null, {}, undefined, undefined,
+      { width: 100, height: 50 }, undefined, undefined,
+      [{ id: 'world', layers: IDS, alpha: 1 }],
+    );
+    renderer.render(cmds);
+    expect(recorder.calls.map((c) => c.name)).not.toContain('createFramebuffer');
+  });
+
+  it('hands a group composite operator to its bracket', () => {
+    const cmds = drawLayers(
+      IDS.map(plain), null, {}, undefined, undefined,
+      { width: 100, height: 50 }, undefined, undefined,
+      [{ id: 'world', layers: IDS, composite: 'destination-out' }],
+    );
+    expect(cmds).toHaveLength(1);
+    expect(cmds[0]).toMatchObject({ kind: 'group', composite: 'destination-out' });
+  });
+
   it('leaves a layer outside the group out of the shared buffer', () => {
     // The HUD is drawn after the composite, so it is not among the group's
     // pixels — the one thing a CSS filter on the canvas cannot arrange.

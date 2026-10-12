@@ -26,7 +26,7 @@ function firePointer(type: string, init: Partial<PointerEvent> = {}) {
 
 /** Press on a fresh row and drag it past the threshold. */
 function startDrag() {
-  const { result } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['a'] })));
+  const { result, unmount } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['a'] })));
   const row = document.createElement('div');
   document.body.appendChild(row);
   const onClick = vi.fn();
@@ -35,7 +35,7 @@ function startDrag() {
     pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0, currentTarget: row, target: row,
   } as unknown as React.PointerEvent<HTMLElement>);
   firePointer('pointermove', { clientX: 50, clientY: 0 });
-  return { row, onClick };
+  return { row, onClick, unmount };
 }
 
 describe('useDragHandle click guard', () => {
@@ -60,6 +60,36 @@ describe('useDragHandle click guard', () => {
   it('lets the next click through after the drag is canceled', () => {
     const { row, onClick } = startDrag();
     firePointer('pointercancel');
+    row.click();
+    expect(onClick).toHaveBeenCalledTimes(1);
+    row.remove();
+  });
+
+  // Unmounting the hook aborts the session with the button still down. The row
+  // here outlives it, as an element owned by a parent does.
+  it('swallows the click of a release that follows an aborted drag', () => {
+    const { row, onClick, unmount } = startDrag();
+    unmount();
+    firePointer('pointerup', { clientX: 50, clientY: 0 });
+    row.click();
+    expect(onClick).not.toHaveBeenCalled();
+    row.remove();
+  });
+
+  it('lets the next click through when an aborted drag is released elsewhere', () => {
+    const { row, onClick, unmount } = startDrag();
+    unmount();
+    firePointer('pointerup', { clientX: 50, clientY: 300 });
+    vi.runAllTimers();
+    row.click();
+    expect(onClick).toHaveBeenCalledTimes(1);
+    row.remove();
+  });
+
+  it('lets a click through when an aborted drag is followed by a new press', () => {
+    const { row, onClick, unmount } = startDrag();
+    unmount();
+    firePointer('pointerdown');
     row.click();
     expect(onClick).toHaveBeenCalledTimes(1);
     row.remove();

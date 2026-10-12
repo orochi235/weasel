@@ -1,0 +1,54 @@
+/* A desktop window: a solid strip across the top carries the title, and the
+   frame's edge is a line or, where the theme has one, a raised bevel. */
+.titlebar {
+  --_strip: var(--wzl-titlebar-surface, var(--_edge));
+  --_strip-ink: var(--wzl-titlebar-fg, var(--_edge-ink));
+  background: var(--_s-fill);
+  border: var(--wzl-titlebar-border, 1px solid var(--_edge));
+  border-radius: var(--wzl-radius-sm);
+  box-shadow: var(--wzl-bevel-raised, none);
+  padding: var(--wzl-titlebar-inset, 0);
+}
+
+/* A tone says which of its peers a frame is, so it outranks the theme's strip. */
+.titlebar[data-tone] {
+  --_strip: var(--_edge);
+  --_strip-ink: var(--_edge-ink);
+}
+
+.strip {
+  /* What sits on the strip is drawn in its ink: the fold mark, a ghost button. */
+  --wzl-fg: var(--_strip-ink);
+  --wzl-disclosure-fill: var(--_strip-ink);
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-1) var(--wzl-space-3);
+  background: var(--_strip);
+  color: var(--_strip-ink);
+  font-family: var(--_s-title-font);
+  font-weight: var(--wzl-titlebar-weight, var(--wzl-font-weight-bold));
+  font-size: var(--_s-title-size);
+  line-height: var(--wzl-leading-snug);
+  white-space: nowrap;
+}
+
+.mid {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: var(--wzl-titlebar-align, start);
+}
+
+/* The patch keeps a striped strip from running through the letters. */
+.label {
+  background: var(--wzl-titlebar-label-surface, transparent);
+  padding-inline: var(--wzl-titlebar-label-pad, 0);
+  letter-spacing: var(--_s-title-tracking);
+  text-transform: var(--_s-title-case);
+}
+
+.body {
+  padding: var(--_s-pad);
+}

@@ -10,6 +10,8 @@ import {
 import type { Hud } from '../hud';
 import type { WindowWidget } from '../widgets/window/window';
 import type { HudContentCtx, WidgetBounds } from '../widget';
+import { createContentWatch } from './contentWatch';
+import { followPointer } from './pointerAim';
 import { readbackRegion } from './readback';
 
 export type { LoupeMode };
@@ -30,6 +32,13 @@ export interface LoupeBaseOptions {
    *  when the lens is a view, and to the whole canvas otherwise. */
   region?: () => { x: number; y: number; width: number; height: number };
   requestRedraw: () => void;
+  /**
+   * The version of what the canvas paints, read on every landed frame: when it moves, a lens whose aim has not
+   * reads the framebuffer and the color under it again. Pass `CanvasExtensionApi.getPaintedVersion`. Defaults to
+   * `views.getPaintedVersion` when the lens is a view. Without one the lens follows an edit under a parked aim
+   * only in vector mode, or when told through `refresh()`; a camera move it follows either way.
+   */
+  contentVersion?: () => number;
   mode?: LoupeMode;
   factor?: number;
   bounds?: WidgetBounds;
@@ -72,7 +81,7 @@ export type LoupeOptions = LoupeBaseOptions & (
        * the lens can take input. It magnifies the canvas's own camera; aimed
        * over another view, it shows the canvas's world, not that view's.
        */
-      views: Pick<SceneCanvasApi, 'addView' | 'getSurfaceRect'>;
+      views: Pick<SceneCanvasApi, 'addView' | 'getSurfaceRect'> & Partial<Pick<SceneCanvasApi, 'getPaintedVersion'>>;
       /** Narrows what vector mode paints. Defaults to the canvas's stack. */
       source?: RenderLayer<unknown>[];
       /**
@@ -84,6 +93,12 @@ export type LoupeOptions = LoupeBaseOptions & (
       interactive?: boolean;
     }
 );
+
+const backdropOf = (ctx: HudContentCtx, color: string): DrawCommand => ({
+  kind: 'path',
+  path: { kind: 'rect', x: ctx.rect.x, y: ctx.rect.y, width: ctx.rect.w, height: ctx.rect.h },
+  fill: { paint: { kind: 'solid', color } },
+});
 
 /** Where an interactive lens routes while its window is hidden: nowhere. */
 const NO_RECT = { x: 0, y: 0, w: 0, h: 0 };
@@ -111,6 +126,9 @@ export interface LoupeHandle {
    *  point, including before any frame has landed. Leaves the aim, and
    *  `color`, alone. */
   pick(p?: { x: number; y: number }): string | null;
+  /** Ask for a paint, and on the frame that lands read the picture and the color under the aim again: what is
+   *  under the aim changed in a way no `contentVersion` reports. */
+  refresh(): void;
   dispose(): void;
 }
 
@@ -125,9 +143,6 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const interactive = host !== undefined && opts.interactive === true;
   const input = opts.input ?? element;
   let lens: CanvasViewHandle | null = null;
-  // Set while a gesture that began over the window is held: the lens camera
-  // follows the aim, so re-aiming mid-drag would move the world under it.
-  let holding = false;
   let pixels: ImageBitmap | null = null;
   const dropPixels = () => {
     if (!pixels) return;
@@ -144,17 +159,17 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   const b = opts.bounds ?? { x: 24, y: 24, w: 220, h: 200 };
 
-  const content = (ctx: HudContentCtx): DrawCommand[] =>
-    model.mode === 'vector' ? drawVector(ctx) : drawPixels(ctx);
+  const watch = createContentWatch(opts.contentVersion ?? host?.getPaintedVersion);
+  let refreshAsked = false;
+
+  const content = (ctx: HudContentCtx): DrawCommand[] => {
+    watch.drew(ctx.view);
+    return model.mode === 'vector' ? drawVector(ctx) : drawPixels(ctx);
+  };
 
   const backdropColor = (ctx: HudContentCtx): string =>
     opts.background ?? ctx.tokens['--wzl-surface'];
-
-  const backdrop = (ctx: HudContentCtx): DrawCommand => ({
-    kind: 'path',
-    path: { kind: 'rect', x: ctx.rect.x, y: ctx.rect.y, width: ctx.rect.w, height: ctx.rect.h },
-    fill: { paint: { kind: 'solid', color: backdropColor(ctx) } },
-  });
+  const backdrop = (ctx: HudContentCtx): DrawCommand => backdropOf(ctx, backdropColor(ctx));
 
   const innerView = (outer: View, rect: WidgetBounds): View => {
     const world = screenToWorld(model.aim.x, model.aim.y, viewToTransform(outer));
@@ -283,6 +298,11 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   // readable by the time the model samples on it.
   const unsubscribeFrame = hud.subscribeFrame(() => {
     landed = true;
+    if (watch.changed() || refreshAsked) {
+      refreshAsked = false;
+      scheduleRefresh();
+      model.resample();
+    }
     // A refresh wanted while a bitmap is in flight is remembered rather than
     // dropped: the flag survives until a frame finds it settled, so the aim
     // the user ends a fast drag on is the one that gets read.
@@ -312,35 +332,19 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     });
   }
 
-  const local = (evt: PointerEvent): { x: number; y: number } => {
-    const r = input.getBoundingClientRect();
-    return { x: evt.clientX - r.left, y: evt.clientY - r.top };
-  };
-
-  const onPointerMove = (evt: PointerEvent) => {
-    if (holding) return;
-    model.aimAt(local(evt));
-  };
-  const onPointerDown = (evt: PointerEvent) => {
-    if (interactive && surface.covers(local(evt))) holding = true;
-  };
-  const onPointerEnd = () => { holding = false; };
-  const pointerEnds = ['pointerup', 'pointercancel', 'lostpointercapture'] as const;
+  const unfollow = followPointer(input, {
+    aimAt: (p) => model.aimAt(p),
+    holds: (p) => interactive && surface.covers(p),
+  });
 
   const teardown = () => {
     disposed = true;
     unsubscribeFrame();
-    input.removeEventListener('pointermove', onPointerMove);
-    input.removeEventListener('pointerdown', onPointerDown);
-    for (const type of pointerEnds) input.removeEventListener(type, onPointerEnd);
+    unfollow();
     lens?.remove();
     lens = null;
     dropPixels();
   };
-
-  input.addEventListener('pointermove', onPointerMove);
-  input.addEventListener('pointerdown', onPointerDown);
-  for (const type of pointerEnds) input.addEventListener(type, onPointerEnd);
 
   return {
     window: win,
@@ -352,6 +356,11 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     setFactor: model.setFactor,
     aimAt: model.aimAt,
     pick: model.pick,
+    refresh() {
+      if (disposed) return;
+      refreshAsked = true;
+      requestRedraw();
+    },
     dispose() {
       model.dispose();
       win.dispose();

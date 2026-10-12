@@ -42,7 +42,11 @@ decoded into an `<img>` once and each raster is a canvas `drawImage` of it.
 
 ## Lifetime
 
-The cache is process-global and never evicts on its own: an entry is keyed by
-`src` across every scene on the page, so nothing here knows when the last use
-is gone. `releaseImage(src)` drops an entry and its GL textures, and a later
-read loads it again. A failed load stays `'error'` until `retryImage(src)`.
+The cache is process-global and keyed by `src` across every scene on the page,
+so nothing here knows when the last use is gone. It holds 256MB of decoded
+RGBA by default (`setImageCacheBudget`): when a bitmap lands and takes it past
+that, the least recently read images are dropped, sparing any a live renderer
+drew in its latest frame and any read since the previous bitmap landed. A
+scene showing more than the budget therefore stays over it rather than
+reloading on every paint. `releaseImage(src)` drops one entry and its GL
+textures at once. Either way a later read loads it again. A failed load stays `'error'` until `retryImage(src)`.

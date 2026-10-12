@@ -10,23 +10,32 @@ import s from './AssetList.module.css';
 /** The headings the assets are listed under, in order. */
 const HEADINGS: readonly AssetHeading[] = ['Dialogs', 'Panels', 'Toolbars'];
 
+/** `rows` with the ones `order` names first, as it names them, and the rest after as they stood. */
+function inOrder<T extends { id: string }>(rows: readonly T[], order: readonly string[]): T[] {
+  const at = (row: T) => { const i = order.indexOf(row.id); return i < 0 ? order.length : i; };
+  return [...rows].sort((a, b) => at(a) - at(b));
+}
+
 /**
  * The editor's assets, to pick the one it shows: dialogs, then the panels and the toolbars that point into them.
- * What another editor holds is listed after this one's under the same headings, and a pick of one is the host's.
+ * What another editor holds is listed after this one's under the same headings, or where `order` puts it, and a
+ * pick of one is the host's.
  */
-export function AssetList({ assets, elsewhere = NONE, selected, changed, onSelect, onElsewhere }: {
+export function AssetList({ assets, elsewhere = NONE, order, selected, changed, onSelect, onElsewhere }: {
   assets: readonly Asset[];
   elsewhere?: readonly ListedAsset[];
+  order?: readonly string[];
   selected: string;
   /** The ids of the assets that differ from the baseline. */
   changed: ReadonlySet<string>;
   onSelect(id: string): void;
   onElsewhere?(id: string): void;
 }): ReactElement {
-  const rows: Array<ListedAsset & { held: boolean }> = [
+  const listed: Array<ListedAsset & { held: boolean }> = [
     ...assets.map((asset) => ({ id: asset.id, label: asset.label, under: headingOf(asset), readOnly: asset.readOnly, held: true })),
     ...elsewhere.filter((other) => !assets.some((asset) => asset.id === other.id)).map((other) => ({ ...other, held: false })),
   ];
+  const rows = order ? inOrder(listed, order) : listed;
   return (
     <>
       <PaneHeader title="Assets" />
@@ -45,9 +54,9 @@ export function AssetList({ assets, elsewhere = NONE, selected, changed, onSelec
               <Header className={s.heading}>{title}</Header>
               {held.map((row) => (
                 <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={changed.has(row.id) || undefined}
-                  className={({ isSelected }) => (isSelected ? `${s.row} ${s.selected}` : s.row)}>
+                  data-rail-mark={row.id === selected ? 'current' : undefined} className={s.row}>
                   <span className={changed.has(row.id) ? `${s.label} ${s.changed}` : s.label}>{row.label}</span>
-                  {row.readOnly && <Icon name="lock" size={16} label="Read-only" className={s.lock} />}
+                  {row.readOnly && <Icon name="bolt" size={16} label="Dynamic" className={s.dynamic} />}
                 </ListBoxItem>
               ))}
             </ListBoxSection>

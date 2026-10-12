@@ -1,0 +1,22 @@
+// Host page for Lab.density.browser.test. Every box is a whole number of
+// pixels with no border or text, so none moves when the page's density does.
+.lk-density-frame {
+  position: relative;
+  height: 300px;
+  width: 400px;
+
+  > .lk-lab__body {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+.lk-density-tile {
+  height: 40px;
+  width: 40px;
+}
+
+.lk-density-stack {
+  height: 100px;
+  width: 200px;
+}

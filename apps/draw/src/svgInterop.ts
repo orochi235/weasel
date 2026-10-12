@@ -32,6 +32,8 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
+import { downloadBlob, pickFile } from './fileIO';
+import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 
 /**
@@ -46,9 +48,8 @@ import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from '
 export const SWILL_NS = 'https://weaseldraw.app/svg-ext';
 export const SWILL_NAMESPACES = { wd: SWILL_NS } as const;
 
-/** Paper-size enum keys we round-trip via `wd:paperSize`. Must match the
- *  keys of WeaselDraw's `PAPER_PRESETS`. */
-export type WeaselDrawPaperSize = 'letter' | 'a4' | 'legal';
+/** The paper-size key round-tripped via `wd:paperSize`. */
+export type WeaselDrawPaperSize = PaperSizeKey;
 
 /** WeaselDraw's notion of the on-disk document, distilled to the bits
  *  svgInterop needs to write the root `<svg>` correctly. */
@@ -110,7 +111,7 @@ export function docToSerializeOptions(doc: WeaselDrawDoc): SerializeOptions {
 /**
  * Interpret a {@link ParseResult} as a partial WeaselDraw doc patch.
  * The paper-size enum is only set when the source declares a value we
- * recognize (`letter` | `a4` | `legal`); other values are dropped so the
+ * recognize (a key of `PAPER_SIZES`); other values are dropped so the
  * caller keeps whatever default it had.
  */
 export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
@@ -120,7 +121,7 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
     out.size = { width: parsed.viewBox.width, height: parsed.viewBox.height };
   }
   const ps = parsed.documentMeta?.wd?.attrs?.paperSize;
-  if (ps === 'letter' || ps === 'a4' || ps === 'legal') out.paperSize = ps;
+  if (isPaperSize(ps)) out.paperSize = ps;
   const bg = parsed.nodes.find(isBackgroundNode);
   if (bg?.fill.kind === 'solid') out.backgroundColor = bg.fill.color;
   return out;
@@ -228,14 +229,16 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  *                 `{pose, data}` shape exactly as it does for root leaves.
  *   - `container` — an SVG `<g>`. Carries the union-AABB of its leaf
  *                 descendants as `pose` so resize handles land sensibly,
- *                 mirroring the kit `group` action's container pose.
+ *                 mirroring the kit `group` action's container pose. A
+ *                 clipped `<g>` carries its clip in `data`, for the caller
+ *                 to add the container with, and the clip's box as `pose`.
  *
  * `id` is the draft's stable identity (from `wd:group-id` for containers,
  * or the leaf `Obj.id`); the caller maps it to the minted `NodeId`.
  */
 export type SceneDraft =
   | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj }
-  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds };
+  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData };
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
@@ -301,7 +304,7 @@ export function svgNodesToSceneDrafts(
     { leaf: kitLeafToObj },
   );
   return drafts.map((d): SceneDraft => (d.kind === 'container'
-    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose }
+    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose, data: d.data }
     : { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data }));
 }
 
@@ -348,57 +351,16 @@ const DEFAULT_IMPORT_FILL: Fill = { paint: { color: '#000000' } };
 
 /** Trigger a browser download of `svg` as a file named `filename`. */
 export function downloadSvg(svg: string, filename: string): void {
-  const blob = new Blob([svg], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // Defer revoke so the click has time to start the download.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), filename);
 }
 
-/**
- * Pop a hidden file input; resolve with the chosen file's text (or null
- * if the user cancelled). Single-shot — the input is created and removed
- * per invocation so there's no accumulated DOM cruft.
- */
-export function pickSvgFile(): Promise<string | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.svg,image/svg+xml';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-    let resolved = false;
-    const cleanup = (): void => {
-      if (input.parentNode) input.parentNode.removeChild(input);
-    };
-    input.addEventListener('change', () => {
-      const file = input.files?.[0];
-      if (!file) {
-        if (!resolved) { resolved = true; resolve(null); }
-        cleanup();
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (!resolved) { resolved = true; resolve(String(reader.result ?? '')); }
-        cleanup();
-      };
-      reader.onerror = () => {
-        if (!resolved) { resolved = true; resolve(null); }
-        cleanup();
-      };
-      reader.readAsText(file);
-    });
-    // Fallback: if the picker is dismissed without firing change, give up.
-    input.addEventListener('cancel', () => {
-      if (!resolved) { resolved = true; resolve(null); }
-      cleanup();
-    });
-    input.click();
-  });
+/** Pick an SVG file; resolve with its name and text, or null if the user cancelled. */
+export async function pickSvgFileNamed(): Promise<{ name: string; text: string } | null> {
+  const file = await pickFile('.svg,image/svg+xml');
+  if (!file) return null;
+  try {
+    return { name: file.name, text: await file.text() };
+  } catch {
+    return null;
+  }
 }

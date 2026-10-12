@@ -10,6 +10,7 @@ export { SceneCanvas, DEFAULT_HANDLE_SIZE } from '../canvas/SceneCanvas';
 export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
 export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
+export type { PathEditHost } from '../canvas/SceneCanvas/pathEditHost';
 export { hostAnchorRect, hostAnchorCss } from '../canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from '../canvas/hostAnchor';
 export { useHostAnchor } from '../canvas/useHostAnchor';
@@ -43,6 +44,7 @@ export {
   subscribeImageReady,
   isVectorImageSrc,
   releaseImage,
+  setImageCacheBudget,
   retryImage,
 } from '@weasel-js/renderer';
 export type { ImageNodeData, ImageRasterSize, ImageStatus } from '@weasel-js/renderer';
@@ -95,9 +97,11 @@ export type {
 // `runIngest`, `getContentHandlers`, `kitImageHandler`, and the refcounted
 // kit-handler registration are deliberately NOT exported — consumers reach
 // the pipeline via `<SceneCanvas ingestion={…}>` and `SceneCanvasApi.ingest`.
+// `kitTextHandler` is exported because no canvas registers it by default.
 export {
   registerContentHandler,
   openFilePicker,
+  kitTextHandler,
 } from '../features/ingestion';
 export type {
   ContentHandlerEntry,

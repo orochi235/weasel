@@ -1,4 +1,4 @@
-import { IMPLICIT_TAGS, type CapabilityTag } from './capabilities';
+import { capabilitiesAllowed, IMPLICIT_TAGS, type CapabilityTag } from './capabilities';
 
 /** How a mode tints the workspace — the area around the page — so the user
  *  can see at a glance which mode is active. */
@@ -51,10 +51,10 @@ export function modeLabel(mode: ModeDefinition): string {
 
 /** True iff a tool carrying `toolTags` is eligible for `mode`. */
 export function eligibleForMode(mode: ModeDefinition, toolTags: readonly CapabilityTag[]): boolean {
-  if (toolTags.length === 0) return false;
-  const allowed = new Set<CapabilityTag>([...mode.allows, ...IMPLICIT_TAGS]);
-  for (const t of toolTags) {
-    if (allowed.has(t)) return true;
-  }
-  return false;
+  return capabilitiesAllowed(allowedCapabilitiesOf(mode), toolTags);
+}
+
+/** Every tag `mode` permits: its `allows` plus `IMPLICIT_TAGS`. */
+export function allowedCapabilitiesOf(mode: ModeDefinition): Set<string> {
+  return new Set<string>([...mode.allows, ...IMPLICIT_TAGS]);
 }

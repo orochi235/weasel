@@ -27,6 +27,7 @@
     "@weasel-js/geom": "1.9.4",
     "@weasel-js/gestures": "1.9.4",
     "@weasel-js/modes": "1.9.4",
+    "@weasel-js/paint": "1.9.4",
     "@weasel-js/prefs": "1.9.4",
     "@weasel-js/quantity": "1.9.4",
     "@weasel-js/react": "1.9.4",

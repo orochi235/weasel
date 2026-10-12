@@ -7,6 +7,8 @@
  * consumers don't depend on its disappearance.
  */
 
+export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
+
 /**
  * A key plus a modifier policy, as {@link matchesKeyBinding} tests it against a
  * `KeyboardEvent`. Every modifier left unset is forbidden, so `{ key: 'a' }`
@@ -40,34 +42,6 @@ export interface KeyBinding {
   preventDefault?: boolean;
 }
 
-/** Returns true when the target is an input, textarea, or contenteditable element. */
-export function isEditableTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof Element)) return false;
-  const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
-  if ((target as HTMLElement).isContentEditable) return true;
-  const ce = target.getAttribute('contenteditable');
-  return ce === 'true' || ce === '';
-}
-
-const ACTIVATED_BY_KEY = [
-  'button', 'a[href]', 'summary', 'select',
-  'input[type="button"]', 'input[type="submit"]', 'input[type="reset"]',
-  'input[type="checkbox"]', 'input[type="radio"]',
-  '[role="button"]', '[role="link"]', '[role="checkbox"]', '[role="switch"]',
-  '[role="menuitem"]', '[role="tab"]', '[role="option"]',
-].join(', ');
-
-/**
- * True when `e` is Space or Enter on a focused control those keys activate — a
- * button, a link, a checkbox. The key is that control's, so a page-level
- * listener that claims it cancels the control's own activation.
- */
-export function activatesFocusedControl(e: KeyboardEvent): boolean {
-  if (e.key !== ' ' && e.key !== 'Enter') return false;
-  return e.target instanceof Element && e.target.matches(ACTIVATED_BY_KEY);
-}
-
 function keyMatches(eventKey: string, spec: string | readonly string[]): boolean {
   const want = typeof spec === 'string' ? [spec] : spec;
   const ek = eventKey.toLowerCase();
@@ -99,11 +73,11 @@ export function matchesKeyBinding(e: KeyboardEvent, b: KeyBinding): boolean {
   return true;
 }
 
-type ModifierKeys = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>;
-
 /** Which history step `e` asks for: Mod+Z undoes, Shift+Mod+Z and Mod+Y redo. `null` for anything else. Takes a
  *  React keyboard event as readily as a DOM one. */
-export function historyKey(e: ModifierKeys): 'undo' | 'redo' | null {
+export function historyKey(
+  e: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>,
+): 'undo' | 'redo' | null {
   const ev = e as KeyboardEvent;
   if (matchesKeyBinding(ev, { key: 'z', mod: true })) return 'undo';
   if (matchesKeyBinding(ev, { key: 'z', mod: true, shift: true }) || matchesKeyBinding(ev, { key: 'y', mod: true }))

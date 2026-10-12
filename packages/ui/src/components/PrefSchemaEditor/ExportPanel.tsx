@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '../Button';
 import { CodeBlock } from '../CodeBlock';
-import { PaneHeader } from './PaneHeader';
+import { Tab, TabList, TabPanel, Tabs } from '../Tabs';
 import type { SchemaRoot } from './schemaEdit';
 import type { PrefTypes } from './types';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
@@ -32,26 +32,35 @@ function Submit({ changes, literal, onSubmit }: { changes: readonly SchemaChange
 }
 
 /**
- * The schema as a TypeScript literal beside the list of changes since the baseline. `changesText` is the list where
+ * The schema as a TypeScript literal, and the list of changes since the baseline, a tab each. `changesText` is the list where
  * `changes` are not this schema's alone: an editor of several assets lists every one's, and submits them all.
  */
 export function ExportPanel({ schema, types, changes, changesText, onSubmit }: { schema: SchemaRoot; types?: PrefTypes; changes: readonly SchemaChange[]; changesText?: string; onSubmit?: SubmitChanges }) {
   const literal = useMemo(() => printSchema(schema, types), [schema, types]);
   const list = useMemo(() => (changesText ?? formatChanges(changes)) || 'No changes.', [changes, changesText]);
+  const [tab, setTab] = useState<'literal' | 'changes'>('literal');
   return (
-    <div className={s.export}>
-      <section className={s.exportPane} aria-label="Literal">
-        <PaneHeader title="Literal"><Copy text={literal} /></PaneHeader>
-        <CodeBlock code={literal} language="tsx" className={s.code} data-testid="schema-literal" />
-      </section>
-      <section className={s.exportPane} aria-label="Changes">
-        <PaneHeader title="Changes">
-          {/* First: its label changes width, and the header's tools sit against the far edge. */}
+    <section className={s.export} aria-label="Export">
+    <Tabs className={s.exportBody} selectedKey={tab} onSelectionChange={(key) => setTab(key as typeof tab)}>
+      <div className={s.exportHead}>
+        <TabList aria-label="Export" className={s.exportTabs}>
+          <Tab id="literal" className={s.exportTab}>Literal</Tab>
+          <Tab id="changes" className={s.exportTab}>Changes</Tab>
+        </TabList>
+        <div className={s.paneTools}>
+          {/* First: its label changes width, and the head's tools sit against the far edge. */}
           {onSubmit && <Submit changes={changes} literal={literal} onSubmit={onSubmit} />}
-          <Copy text={list} />
-        </PaneHeader>
+          <Copy text={tab === 'literal' ? literal : list} />
+        </div>
+      </div>
+      {/* Both stay mounted, so a tab comes back scrolled to where it was left. */}
+      <TabPanel id="literal" shouldForceMount className={s.exportPane}>
+        <CodeBlock code={literal} language="tsx" className={s.code} data-testid="schema-literal" />
+      </TabPanel>
+      <TabPanel id="changes" shouldForceMount className={s.exportPane}>
         <pre className={`${s.code} ${s.changeList}`}>{list}</pre>
-      </section>
-    </div>
+      </TabPanel>
+    </Tabs>
+    </section>
   );
 }

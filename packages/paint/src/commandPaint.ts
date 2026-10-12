@@ -12,7 +12,8 @@ import type { TileKind } from './patternPaint';
  *  a node's box, and a command has no node. */
 export type CommandPaintUnits = Exclude<PaintUnits, 'bounds'>;
 
-type InCommandUnits<F> = F extends { units?: PaintUnits }
+/** `F` with `'bounds'` units ruled out, where `F` is a paint that has units. */
+export type InCommandUnits<F> = F extends { units?: PaintUnits }
   ? Omit<F, 'units'> & { units?: CommandPaintUnits }
   : F;
 

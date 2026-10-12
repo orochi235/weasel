@@ -22,10 +22,11 @@ export function isNonUniform(m: Matrix): boolean {
     || Math.abs(Math.hypot(a, b) - Math.hypot(c, d)) > 1e-4 * n;
 }
 
-/** A `units: 'world'` gradient with its geometry mapped through `m`. A
- *  `'bounds'` one follows the box by itself and passes through. */
+/** A gradient placed in coordinates (`units: 'world'`, or `'local'` to its
+ *  node) with its geometry mapped through `m`. A `'bounds'` one follows the
+ *  box by itself and passes through. */
 export function fillThroughMatrix(fill: Paint, m: Matrix): Paint {
-  if (!('units' in fill) || fill.units !== 'world') return fill;
+  if (!('units' in fill) || (fill.units !== 'world' && fill.units !== 'local')) return fill;
   const at = (p: { x: number; y: number }): { x: number; y: number } => applyMatrix(m, p.x, p.y);
   if (fill.kind === 'linear-gradient') return { ...fill, from: at(fill.from), to: at(fill.to) };
   if (fill.kind === 'radial-gradient') {

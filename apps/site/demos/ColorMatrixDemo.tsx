@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 const W = 720;
 const H = 360;

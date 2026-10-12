@@ -83,7 +83,7 @@ describe('createLoupe', () => {
     const loupe = createLoupe({ hud, canvas: makeElement(), source: spied, requestRedraw: () => {}, factor: 4 });
     loupe.aimAt({ x: 400, y: 300 });   // outside the default window bounds
     const rect = loupe.window.contentRect;
-    const cmds = loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', toneAt: () => '#000000', tokens });
+    const cmds = loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', color: () => '#000000', tokens });
     expect(cmds.length).toBeGreaterThan(0);
     expect(cmds[0].kind).toBe('group');
     // The source is drawn through an inner view magnified by `factor` and
@@ -317,7 +317,7 @@ describe('createLoupe', () => {
       mode: 'pixel', background: '#123456',
     });
     const rect = loupe.window.contentRect;
-    const cmds = loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', toneAt: () => '#000000', tokens });
+    const cmds = loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', color: () => '#000000', tokens });
     expect(cmds).toEqual([{
       kind: 'path',
       path: { kind: 'rect', x: rect.x, y: rect.y, width: rect.w, height: rect.h },

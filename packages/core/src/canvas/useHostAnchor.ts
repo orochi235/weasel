@@ -4,6 +4,7 @@ import {
   hostAnchorCss, hostAnchorRect,
   type HostAnchorAlign, type HostAnchorOffset,
 } from './hostAnchor';
+import { watchElementMove } from './watchElementMove';
 
 /** Options for {@link useHostAnchor}. */
 export interface UseHostAnchorOptions {
@@ -18,7 +19,8 @@ export type HostAnchorStyle = { top?: number; right?: number; bottom?: number; l
 
 /**
  * Hold a fixed-position panel against a host element's corner, kept inside the
- * viewport, following it through scrolls, resizes and reflows.
+ * viewport, following it through scrolls, resizes, and reflows, a host moved by
+ * its neighbors included.
  *
  * `resolveHost` runs on every recompute, so a host that mounts late or is found
  * by selector works the same as one held in a ref. Put the returned `ref` on the
@@ -78,12 +80,14 @@ export function useHostAnchor(
     if (panel) observer?.observe(panel);
     const hostEl = resolve.current();
     if (hostEl) observer?.observe(hostEl);
+    const unwatchMove = hostEl ? watchElementMove(hostEl, schedule) : undefined;
 
     return () => {
       window.removeEventListener('scroll', schedule, true);
       window.removeEventListener('resize', schedule);
       raf.cancel();
       observer?.disconnect();
+      unwatchMove?.();
     };
   }, [recompute, raf, panel, resolve]);
 

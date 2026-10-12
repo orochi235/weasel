@@ -1,14 +1,9 @@
 import { useMemo, useRef, createElement } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { SelectIcon } from '../../../icons';
-import { pathContainsPoint } from '@weasel-js/geom';
-import { shapeCoversPoint } from 'canvas/NodeShape';
-import { pickWalk, adapterPickSource, ownClipOf, scenePlaneOf, type PickQuery } from 'canvas/pickWalk';
-import { toPlane } from 'core/viewport/parallax';
-import { meanScale } from '@weasel-js/geom';
+import { pickWalk, adapterPickSource, scenePlaneOf } from 'canvas/pickWalk';
 import type { View } from 'core/viewport/view';
 import type { LayerEnumerableAdapter } from 'core/adapters/types';
-import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
@@ -17,9 +12,9 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
-import { onEmptyCanvas } from './selectionContributions';
-import { hitPredicate } from '@weasel-js/gestures';
-import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { adapterPointQuery } from './adapterPointQuery';
+import { onBody, onEmptyCanvas } from './selectionContributions';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
@@ -135,8 +130,6 @@ interface PressClassification {
 }
 
 
-/** A press that landed on the scene rather than on chrome over it. */
-const offChrome = hitPredicate((hit) => hit == null);
 
 /** Active-slot Tool:
  *  - `select.pick` classifies the press (pointerDown) — it runs the tool's own
@@ -162,55 +155,13 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // consumer that zooms should pass `pickTolerance` from its own scale.
   const tolerance = options.pickTolerance ?? 0;
   const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
-    /** A point query at (px, py) with `t` world units of slop. AABB first
-     *  (cheap), then the painter's ink when asked for and available. A painter
-     *  with no `silhouette` — or one that returns null, as `kit:text` does for
-     *  an empty node — keeps the AABB answer.
-     *
-     *  The AABB pre-filter is grown by the slop for the same reason
-     *  `<SceneCanvas>`'s is: a shape's outline, and the slop around it, reach
-     *  outside the shape's own bounds, and an un-grown pre-filter would
-     *  discard those hits before the refinement could claim them. */
-    const pointQuery = (px: number, py: number, t: number): PickQuery<TPose> => {
-      const covers = (node: unknown, pose: TPose, b: Bounds): boolean => {
-        const slop = preciseLeaves ? t : 0;
-        if (!(px >= b.x - slop && px <= b.x + b.width + slop
-              && py >= b.y - slop && py <= b.y + b.height + slop)) {
-          return false;
-        }
-        if (!preciseLeaves) return true;
-        return shapeCoversPoint(
-          node as Node<unknown, string, TPose>, pose, px, py, { tolerance: t },
-        );
-      };
-      return {
-        hits: (node, pose) => {
-          const b = poseDescriptorForNode(d, node).getBounds(pose);
-          if (node.kind !== 'container') return covers(node, pose, b);
-          // A container's own clip *is* its hit shape — it is picked where it
-          // paints, and it paints only inside its clip. Ancestor clips are the
-          // walk's business; this one is not.
-          const inAabb = px >= b.x && px <= b.x + b.width
-            && py >= b.y && py <= b.y + b.height;
-          if (!inAabb) return false;
-          const own = ownClipOf(node, pose);
-          return own === null || pathContainsPoint(own, px, py);
-        },
-        clipAdmits: (clip) => pathContainsPoint(clip, px, py),
-        inPlane: (m) => {
-          const p = toPlane(m, { x: px, y: py });
-          return pointQuery(p.x, p.y, t * meanScale(m.scale));
-        },
-      };
-    };
-
     const camera = options.getView?.() ?? null;
     const planeOf = camera ? scenePlaneOf(adapter.getLayers?.(), camera) : null;
     return pickWalk<TPose>(adapterPickSource(adapter as never, {
       ...(options.alphaOf ? { alphaOf: options.alphaOf } : {}),
       ...(options.layerIsPainted ? { layerIsPainted: options.layerIsPainted } : {}),
       ...(planeOf ? { planeOf } : {}),
-    }), pointQuery(worldX, worldY, tolerance));
+    }), adapterPointQuery(d, preciseLeaves)(worldX, worldY, tolerance));
   });
 
   const pickEveryRef = useLatest(pickEveryFn);
@@ -386,17 +337,17 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           {
             spec: {
               kind: 'pointerDown' as const,
-              target: { kindOf: offChrome },
+              target: { kindOf: onBody },
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.pick',
           },
-          // Release half of the deferred multi-click. Same `'optional'`
-          // modifiers, same reason.
+          // Release half of the deferred multi-click, modifiers as above. On a node
+          // only: a drag leaves a deferral unspent, and a click on empty must clear.
           {
             spec: {
               kind: 'click' as const,
-              target: { kindOf: offChrome },
+              target: { kindOf: onBody },
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.collapseDeferred',

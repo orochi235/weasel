@@ -3,6 +3,7 @@ import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { markerReach } from '@weasel-js/stroke';
+import { isOwnComposite } from './effects/compositeOp';
 
 /** A screen-space rectangle, CSS pixels. */
 export interface CullRect {
@@ -30,7 +31,8 @@ const DEFAULT_MITER_LIMIT = 4;
  * caps included), images and sprites by their quads, and every bound is taken
  * through the accumulated transform as the AABB of its corners, so rotation
  * only enlarges it. Text and shader commands are always kept, and so is a
- * group with `effects` — an effect may move pixels. Clips are ignored, which
+ * group with `effects` — an effect may move pixels — or its own `composite`,
+ * which changes the destination even where the group drew nothing. Clips are ignored, which
  * can only keep more. A group whose children all go is dropped.
  *
  * Returns `cmds` itself when nothing was dropped.
@@ -64,6 +66,7 @@ function cullOne(cmd: DrawCommand, m: GlMat3, box: Box): DrawCommand | null {
   switch (cmd.kind) {
     case 'group': {
       if (cmd.effects && cmd.effects.length > 0) return cmd;
+      if (isOwnComposite(cmd.composite)) return cmd;
       const inner = cmd.transform ? mat3.multiply(m, cmd.transform) : m;
       const children = cullList(cmd.children, inner, box);
       if (children === cmd.children) return cmd;
@@ -113,7 +116,7 @@ function strokeReach(stroke: Stroke, m: GlMat3): number {
 }
 
 /**
- * {@link strokeReach} at a known world-to-screen scale — what a painter
+ * How far a stroke reaches past its geometry at a known world-to-screen scale — what a painter
  * bounding its own output before it paints can know. `least` is the scale
  * along the axis the transform shrinks most, where it differs from `scale`.
  *

@@ -490,6 +490,42 @@ describe('<MinimapCanvas> — pose overrides', () => {
     expect(paintedXs()).toContain(750);
   });
 
+  it('reframes on an override under fit="live"', async () => {
+    const scene = makeScene();
+    const first = scene.roots[0];
+    const onChange = vi.fn();
+    const { container } = render(
+      <MinimapCanvas
+        scene={scene}
+        mainView={mainView}
+        mainViewDims={{ width: 200, height: 200 }}
+        onMainViewChange={onChange}
+        width={100}
+        height={100}
+        drawOne={drawOne}
+        fit="live"
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+    canvas.releasePointerCapture = vi.fn();
+    canvas.hasPointerCapture = vi.fn().mockReturnValue(true);
+
+    await act(async () => {
+      scene.overrides.set(first, { pose: { x: 5000, y: 0, width: 100, height: 100 } });
+      scene.overrides.commit();
+      await frame();
+    });
+
+    // A press at the minimap's center lands on the center of what it frames.
+    const live = computeFitView(scene, { width: 100, height: 100 }, 'live', identityPoseBounds);
+    const documentFit = computeFitView(scene, { width: 100, height: 100 }, 'scene', identityPoseBounds);
+    expect(live).not.toEqual(documentFit);
+    fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 50, y: 50 }));
+    const got = onChange.mock.calls[0][0] as View;
+    expect(got.x).toBeCloseTo(live.x + 50 / live.scale.x - 100, 6);
+  });
+
   it('leaves the fit view on document poses, so framing does not thrash', async () => {
     const scene = makeScene();
     const first = scene.roots[0];

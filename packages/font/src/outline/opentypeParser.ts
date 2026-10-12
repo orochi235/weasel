@@ -99,13 +99,19 @@ function faceFor(font: import('opentype.js').Font, gpos: PairKerning | null): Ou
 
 /**
  * Parse font file bytes into a face. Accepts single fonts and collections
- * (`.ttc`); `postScriptName` picks the member of a collection, and is
- * ignored for a single font.
+ * (`.ttc`, `.dfont`); `postScriptName` picks the member of a collection, and
+ * is ignored for a single font. A collection with no member of that name
+ * rejects: its first member is usually Regular, and bold text drawn from it
+ * is lighter above the outline threshold than below it.
  */
 export function createOpenTypeParser(postScriptName?: string): OutlineParser {
   return async (bytes: ArrayBuffer): Promise<OutlineFace> => {
     const parse = parserOf(await loadOpenType());
-    const { bytes: single } = sfntFromCollection(bytes, postScriptName);
+    const { bytes: single, matched, names } = sfntFromCollection(bytes, postScriptName);
+    if (!matched) {
+      throw new Error(
+        `no member of the font file is named "${postScriptName}" (it holds ${names.join(', ')})`);
+    }
     return faceFor(parse(single), gposPairKerning(single));
   };
 }

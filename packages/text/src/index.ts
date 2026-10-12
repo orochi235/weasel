@@ -61,7 +61,7 @@ export type {
 } from './layout/layoutRuns';
 
 export { measureText, measuredWidth } from './measure/measureText';
-export type { MeasuredText } from './measure/measureText';
+export type { MeasuredText, MeasuredSpan } from './measure/measureText';
 export { measureTextBounds } from './measure/measureTextBounds';
 export type { MeasureTextBoundsOpts } from './measure/measureTextBounds';
 export { textLineBoxes } from './measure/lineBoxes';

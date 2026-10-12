@@ -95,4 +95,9 @@ describe('BarField', () => {
     expect(screen.getByRole('button', { name: 'Fill' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('disables the button a disabled text area opens from', () => {
+    render(<BarField kind="string" control="textarea" name="Notes" value="" disabled onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Notes' })).toBeDisabled();
+  });
 });

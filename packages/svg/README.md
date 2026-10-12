@@ -151,8 +151,13 @@ query against the same environment.
 `@supports` asks whether this parser honors a declaration, not whether a browser
 parses it: `(fill: red)` holds, `(display: grid)` and `(clip-path: url(#c))` do
 not, because nothing reads them from a stylesheet. `@import` is not fetched, and
-each one is reported in `warnings`. Rules inside `@layer`, `@container` and
-other at-rules are skipped.
+each one is reported in `warnings`. Rules inside other at-rules are skipped.
+
+`@container` size queries are answered against the root `<svg>`, the one box a
+parse knows the size of: the same viewport `@media` sees. They apply to its
+descendants when the root declares `container-type: size` or `inline-size`
+(or the `container` shorthand), by name when the query gives one. A style
+query never holds.
 
 ## Raster images
 

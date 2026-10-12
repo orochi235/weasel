@@ -1,10 +1,11 @@
-/* Shared by ButtonBar and OptionsBar, which look identical and differ only
-   in what a segment does. Lives here rather than in either component so
-   neither owns the other's styling.
+/* Shared by ToggleBar, ButtonBar and OptionsBar, which look alike and differ
+   in what a segment does. Lives here rather than in any of them so none owns
+   the others' styling.
 
-   Aqua-glass segmented control. The track is a pill-shaped well; the
-   selected segment becomes a tinted glass cylinder that reads as the same
-   "lozenge" family as the standalone Button. Visual params come from the
+   The track is a pill-shaped well. The selected segment is a flat accent
+   fill or, as the theme's --wzl-gloss runs 0 to 1, a tinted glass cylinder
+   of the same "lozenge" family as the standalone Button, faded in the way
+   Button.module.css fades its own. Glass params come from the
    `--btn-*` custom properties (see Button.module.css) so the Button Lab
    can tune both surfaces with one set of sliders. */
 .root {
@@ -89,9 +90,10 @@
   color: var(--wzl-fg);
 }
 
-/* Selected segment — full Aqua glass cylinder. Mirrors Button.variant_primary. */
+/* Selected segment. Mirrors Button.variant_primary. */
 .segmentSelected {
-  background: linear-gradient(
+  --_flat-fill: color-mix(in srgb, var(--wzl-accent) calc((1 - var(--wzl-gloss)) * 100%), transparent);
+  background: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(
     180deg,
     color-mix(in srgb, var(--wzl-accent) var(--btn-top-alpha, 45%), transparent) 0%,
     color-mix(in srgb, var(--wzl-accent) var(--btn-upper-alpha, 70%), transparent) calc(var(--btn-equator, 52%) - var(--btn-equator-spread, 12%)),
@@ -99,21 +101,21 @@
     var(--wzl-accent) calc(var(--btn-equator, 52%) + var(--btn-equator-spread, 12%) * 1.6),
     color-mix(in srgb, var(--wzl-accent) var(--btn-base-tint, 70%), black) 100%
   );
-  backdrop-filter: blur(var(--btn-blur, 6px)) saturate(var(--btn-saturate, 1.3));
-  -webkit-backdrop-filter: blur(var(--btn-blur, 6px)) saturate(var(--btn-saturate, 1.3));
+  backdrop-filter: blur(calc(var(--btn-blur, 6px) * var(--wzl-gloss))) saturate(calc(1 + (var(--btn-saturate, 1.3) - 1) * var(--wzl-gloss)));
+  -webkit-backdrop-filter: blur(calc(var(--btn-blur, 6px) * var(--wzl-gloss))) saturate(calc(1 + (var(--btn-saturate, 1.3) - 1) * var(--wzl-gloss)));
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
   text-shadow:
-    0 1px 0 rgba(0, 0, 0, var(--btn-text-shadow, 0.35)),
-    var(--btn-text-inset-x, 0px) var(--btn-text-inset-y, 1px) 0 rgba(0, 0, 0, var(--btn-text-inset, 0.55)),
-    0 0 6px rgba(0, 0, 0, calc(var(--btn-text-shadow, 0.35) * 0.5));
+    0 1px 0 rgba(0, 0, 0, calc(var(--btn-text-shadow, 0.35) * var(--wzl-gloss))),
+    var(--btn-text-inset-x, 0px) var(--btn-text-inset-y, 1px) 0 rgba(0, 0, 0, calc(var(--btn-text-inset, 0.55) * var(--wzl-gloss))),
+    0 0 6px rgba(0, 0, 0, calc(var(--btn-text-shadow, 0.35) * 0.5 * var(--wzl-gloss)));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, var(--btn-inset-hi, 0.42)),
-    inset 0 -1px 2px rgba(0, 0, 0, var(--btn-inset-lo, 0.3)),
-    0 0 0 1px rgba(0, 0, 0, var(--btn-rim, 0.22)),
-    0 1px 2px rgba(0, 0, 0, var(--btn-drop-near, 0.3)),
-    0 2px 4px rgba(0, 0, 0, calc(var(--btn-drop-far, 0.18) * 0.8));
+    inset 0 1px 0 rgba(255, 255, 255, calc(var(--btn-inset-hi, 0.42) * var(--wzl-gloss))),
+    inset 0 -1px 2px rgba(0, 0, 0, calc(var(--btn-inset-lo, 0.3) * var(--wzl-gloss))),
+    0 0 0 1px rgba(0, 0, 0, calc(var(--btn-rim, 0.22) * var(--wzl-gloss))),
+    0 1px 2px rgba(0, 0, 0, calc(var(--btn-drop-near, 0.3) * var(--wzl-gloss))),
+    0 2px 4px rgba(0, 0, 0, calc(var(--btn-drop-far, 0.18) * 0.8 * var(--wzl-gloss)));
 }
 
 /* Specular gloss on the selected segment. Top corners inherit the
@@ -135,11 +137,32 @@
   );
   pointer-events: none;
   z-index: 1;
+  opacity: var(--wzl-gloss);
 }
 
 .segmentSelected > * {
   position: relative;
   z-index: 2;
+}
+
+/* Mixed segment (`aria-pressed="mixed"`) — the sources disagree. Reads as a
+   deliberate third state rather than a dimmed "on": a flat accent wash with
+   none of the selected segment's gloss/cylinder treatment, so it can't be
+   mistaken for the glass lozenge at a glance. */
+.segmentMixed {
+  background: color-mix(in srgb, var(--wzl-accent) 22%, transparent);
+  color: var(--wzl-fg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wzl-accent) 45%, transparent);
+}
+
+.segmentMixed:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--wzl-accent) 32%, transparent);
+}
+
+.variant_minimal .segmentMixed {
+  background: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
+  box-shadow: none;
+  color: var(--wzl-fg);
 }
 
 /* Small variant — ~60% of the default height, with proportionally reduced
@@ -204,5 +227,85 @@
 }
 
 .variant_minimal .segmentSelected::before {
+  content: none;
+}
+
+/* ToggleBar's minimal: the same bare segments in one bordered box, with a
+   rule between neighbors, so a choice among them reads as one group. */
+.minimalBoxed {
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  gap: 0;
+}
+
+.minimalBoxed .segment {
+  padding: 0 var(--wzl-space-3);
+  border-radius: 0;
+}
+
+.minimalBoxed .segment ~ .segment {
+  border-left: 1px solid var(--wzl-border);
+}
+
+.minimalBoxed .segment:first-of-type,
+.minimalBoxed .segment:last-of-type,
+.minimalBoxed .segment:only-of-type {
+  border-radius: 0;
+}
+
+/* Flat variant — no track, no glass, no pill: each segment is its own
+   outlined cell. For property panels, where a bar sits in a row beside
+   inputs and the glass cylinder makes it the loudest thing on the surface. */
+.variant_flat {
+  padding: 0;
+  background: none;
+  border-radius: var(--wzl-radius-sm);
+  box-shadow: none;
+  overflow: visible;
+}
+
+.variant_flat .segment {
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: 0;
+  /* Sunken, so an unselected cell sits below the panel and the selected one
+     reads as raised without needing the glass treatment back. */
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg-muted);
+}
+
+/* Adjacent cells share one rule rather than stacking two. */
+.variant_flat .segment ~ .segment {
+  margin-inline-start: -1px;
+}
+
+.variant_flat .segment:first-of-type {
+  border-start-start-radius: var(--wzl-radius-sm);
+  border-end-start-radius: var(--wzl-radius-sm);
+}
+
+.variant_flat .segment:last-of-type {
+  border-start-end-radius: var(--wzl-radius-sm);
+  border-end-end-radius: var(--wzl-radius-sm);
+}
+
+.variant_flat .segment:hover:not(:disabled):not(.segmentSelected) {
+  background: var(--wzl-surface-hover);
+  color: var(--wzl-fg);
+}
+
+.variant_flat .segmentSelected {
+  /* Above its neighbors, or the next cell's left border covers its right one. */
+  z-index: 1;
+  background: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+.variant_flat .segmentSelected::before {
   content: none;
 }

@@ -5,8 +5,8 @@ import type {
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns, pathFromD, parseColor, pastDragThreshold } from '@weasel-js/core';
 import { clampRectWithin } from '@weasel-js/geom';
-import { dashForStrokeStyle, mixOklab } from '@weasel-js/paint';
-import { resolveCurrentColor, resolveStanceSlots, type Stance } from '@weasel-js/theme';
+import { dashForStrokeStyle, mixOklab, type ColorSource } from '@weasel-js/paint';
+import { resolveCurrentColor, resolveStanceSlots, TONE_REF, type Stance } from '@weasel-js/theme';
 import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
@@ -30,8 +30,8 @@ export interface WindowOptions {
    *  as they do a DOM panel's. */
   stance?: Stance;
   /** Which of its peers the window is: an index into the theme's tone list,
-   *  or a color. Mixed into the fill at the stance's `tone-mix`. */
-  tone?: number | string;
+   *  or a color source. Mixed into the fill at the stance's `tone-mix`. */
+  tone?: number | ColorSource;
   /** Paints the interior. Drawn beneath every widget frame, clipped to
    *  `contentRect`. Receives the scene data and view the hud layer was
    *  handed — the one place hud sees either. */
@@ -70,7 +70,7 @@ export interface WindowWidget extends Widget {
   setHidden(hidden: boolean): void;
   setTitle(title: string): void;
   setStance(stance: Stance | undefined): void;
-  setTone(tone: number | string | undefined): void;
+  setTone(tone: number | ColorSource | undefined): void;
   dispose(): void;
 }
 
@@ -201,7 +201,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         'title-case': 'none',
       }, { stance });
       look['title-color'] = resolveCurrentColor(look['title-color'], ctx.tokens['--wzl-fg']);
-      const named = typeof tone === 'number' ? ctx.toneAt(tone) : tone;
+      const named = tone === undefined ? undefined : ctx.color(typeof tone === 'number' ? { ref: TONE_REF, index: tone } : tone);
       const band = named === undefined && stance === undefined
         ? look.surface
         : mixTone(named ?? look.tone, look['tone-mix'], look.surface);

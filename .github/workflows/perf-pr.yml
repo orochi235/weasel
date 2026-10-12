@@ -1,7 +1,7 @@
 name: Performance (pull request)
 
-# Runs every benchmark under tests/perf/ on the pull request's base and on its
-# head, back to back on one machine, and posts the `npm run perf:compare` table
+# Runs every benchmark under tests/perf/ on the commit the pull request forked
+# from and on its head, back to back on one machine, and posts the `npm run perf:compare` table
 # as a comment. It reports and never gates: every step that measures or posts
 # may fail without failing the job, and the job may fail without failing the
 # checks (tests/perf/README.md, "Nothing here gates CI").
@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 100
     env:
       NPM_CONFIG_LOGLEVEL: error
-      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      BASE_TIP: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
     steps:
@@ -48,10 +48,15 @@ jobs:
           node-version: '24'
           cache: npm
 
+      # The base is the merge base, not the target branch's tip: against the
+      # tip, every commit the branch has not merged yet reads as this pull
+      # request undoing it.
       # The runner keeps its temp directory between jobs, so a canceled run
       # leaves a worktree and result files behind.
       - name: Check out the base beside the head
         run: |
+          BASE_SHA="$(git merge-base "$BASE_TIP" "$HEAD_SHA")"
+          echo "BASE_SHA=$BASE_SHA" >> "$GITHUB_ENV"
           BASE_DIR="$RUNNER_TEMP/perf-base"
           BASE_OUT="$RUNNER_TEMP/perf-results/base"
           HEAD_OUT="$RUNNER_TEMP/perf-results/head"
@@ -65,7 +70,11 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm ci --ignore-scripts
         working-directory: ${{ env.BASE_DIR }}
+      # Once per revision: a pull request that moves Playwright pins a
+      # different Chromium build than its base.
       - run: npx playwright install chromium
+      - run: npx playwright install chromium
+        working-directory: ${{ env.BASE_DIR }}
 
       # Each revision runs its own copy of the harness, so a benchmark the pull
       # request adds or retires shows as one-sided rather than failing.

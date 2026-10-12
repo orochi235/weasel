@@ -19,10 +19,15 @@ export interface ThemeStoreOptions {
   readonly writeFile?: (path: string, text: string) => void;
 }
 
-/** This repo's definitions: the emitting themes, and labkit's interstellar. */
+/** This repo's definitions: the emitting themes, labkit's interstellar, and the desktop themes. */
 export const repoThemeStoreOptions = (repoRoot: string): ThemeStoreOptions => ({
   themesDir: resolve(repoRoot, 'packages/theme/themes'),
-  extraFiles: [resolve(repoRoot, 'packages/labkit/src/theme/interstellar.theme.json')],
+  extraFiles: [
+    resolve(repoRoot, 'packages/labkit/src/theme/interstellar.theme.json'),
+    resolve(repoRoot, 'packages/theme/src/themes/win9x.theme.json'),
+    resolve(repoRoot, 'packages/theme/src/themes/mac-classic.theme.json'),
+    resolve(repoRoot, 'packages/theme/src/themes/platinum.theme.json'),
+  ],
   generatedDir: resolve(repoRoot, 'packages/theme/src/generated'),
 });
 

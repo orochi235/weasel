@@ -2,6 +2,7 @@ import { type ReactElement, type ReactNode } from 'react';
 import { gradientGeometry, type GradientPaint } from '@weasel-js/core';
 import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
 import s from './handleOverlay.module.css';
+import { handleHalf } from '../../handles';
 
 /**
  * Props for {@link GradientHandles}. `onInput` fires throughout a drag and
@@ -158,4 +159,4 @@ function renderForKind(
 /** A radius of zero divides by zero in the shader's `t`; keep it off the floor. */
 const MIN_RADIUS = 1;
 
-const HANDLE_RADIUS = 7;
+const HANDLE_RADIUS = handleHalf('--wzl-handle-size-lg');

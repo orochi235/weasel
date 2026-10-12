@@ -19,9 +19,9 @@ import {
   type LayerListItem,
   PropertyField,
   PropertyList,
-  type PropertyOption,
   SelectionPanel,
   SidebarPanel,
+  solidColorOf,
   SwatchStrip,
   useSceneLayerList
 } from '@weasel-js/ui';
@@ -31,7 +31,7 @@ import {
   Suspense
 } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
-import type { PaperSizeKey } from './CommandBar';
+import { PAPER_OPTIONS, type PaperSizeKey } from './paperSizes';
 import { DEFAULT_FILENAME } from './docPersistence';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { WD_RENDERERS } from './paintRenderers';
@@ -84,12 +84,6 @@ export function paintChipColor(fill: Paint): string | undefined {
   if (isTilePaint(fill)) return fill.color;
   return undefined;
 }
-
-export const PAPER_SIZE_OPTIONS: ReadonlyArray<PropertyOption<PaperSizeKey>> = [
-  { value: 'letter', label: 'Letter' },
-  { value: 'a4', label: 'A4' },
-  { value: 'legal', label: 'Legal' },
-];
 
 /** The `#rrggbb` a native color input accepts; non-hex colors fall back to black. */
 export function opaqueHex(color: string): string {
@@ -185,7 +179,7 @@ export function RightSidebar({
                 kind="enum"
                 label="Paper"
                 value={paperSize}
-                options={PAPER_SIZE_OPTIONS}
+                options={PAPER_OPTIONS}
                 onChange={setPaperSize}
               />
               <PropertyField
@@ -256,7 +250,7 @@ export function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
   // A click paints the focused slot, a shift- or right-click the other one;
   // each lands on the active paint and on the selection.
   const apply = (slot: 'fill' | 'stroke', v: string | null): void => {
-    const paint: ActivePaint = v === null ? { kind: 'none' } : { kind: 'solid', color: v };
+    const paint: ActivePaint = v === null ? null : { kind: 'solid', color: v };
     if (slot === 'fill') colors.setFill(paint);
     else colors.setStroke(paint);
     edits[slot].commit(v === null ? { paint: null } : { color: v });
@@ -271,7 +265,7 @@ export function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
     >
       <SwatchStrip
         aria-label="Palette"
-        value={focusedPaint.kind === 'solid' ? focusedPaint.color : focusedPaint.kind === 'none' ? null : undefined}
+        value={focusedPaint === null ? null : solidColorOf(focusedPaint)}
         columns={10}
         onChange={(v) => apply(colors.focused, v)}
         onAltChange={(v) => apply(other, v)}

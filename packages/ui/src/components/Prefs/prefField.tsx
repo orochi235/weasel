@@ -1,11 +1,9 @@
-import type { ReactNode } from 'react';
 import { numericWeight, type Paint } from '@weasel-js/core';
 import { endless as withInfinity } from '@weasel-js/quantity';
 import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefLeaf } from '@weasel-js/prefs';
 import { endlessAllows } from '../../endless';
 import { stepDisplay } from '../Properties/NumberControls';
-import { Icon } from '../../icons/Icon';
-import { ICON_PATHS, type IconName } from '../../icons/paths';
+import { namedGlyph } from '../../icons/namedGlyph';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import { prefUnitAccepts, type PrefFieldChoice } from './schema';
@@ -95,7 +93,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         value: coded ? coded.value : typeof value === 'boolean' ? value : undefined,
         mixed: coded ? coded.mixed : mixed,
         unset,
-        glyph: glyphOf(leaf.icon),
+        glyph: namedGlyph(leaf.icon),
         short: leaf.short,
         onChange: coded ? coded.write : setValue,
       };
@@ -163,7 +161,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         options: leaf.options.map((o) => ({
           value: o.value,
           label: o.label,
-          glyph: glyphOf(o.icon),
+          glyph: namedGlyph(o.icon),
           short: o.short,
           disabled: o.disabled,
         })),
@@ -260,9 +258,4 @@ function throughEncoding<T>(
     mixed,
     write: (option) => state.setValue(encoding.write(option, state.siblings)),
   };
-}
-
-/** A leaf's `icon` as a glyph, where the kit's icon set has it. */
-function glyphOf(icon: string | undefined): ReactNode {
-  return icon && icon in ICON_PATHS ? <Icon name={icon as IconName} size={14} /> : undefined;
 }

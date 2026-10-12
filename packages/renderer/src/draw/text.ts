@@ -29,6 +29,7 @@ import { applyClipTest } from './stencil';
 import { enterUncut, leaveUncut, flushForOwnDraw } from './clip';
 import { BATCH_MODEL, flushBatch } from './flushBatch';
 import { stageSolid, stageGlyphs, tryStageFill } from './batch';
+import { foldColor } from './foldColor';
 import { batchPaint } from './gradient';
 import { bindPattern, bindGradient } from './paintBind';
 import { drawPathFillByKind } from './pathPaint';
@@ -177,7 +178,7 @@ function drawTextDecorations(
       const staged = stageSolid(ctx, 4);
       if (ctx.drawBatch.pushRect(
         d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform,
-        r, g, b, a * (staged.foldsAlpha ? ctx.state.alpha : 1),
+        ...foldColor(ctx, staged, r, g, b, a),
       )) break;
       cut = enterUncut(ctx);
     }
@@ -246,29 +247,29 @@ function drawTextGroup(
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
   let { staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold);
-  let alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
+  let rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
 
   for (const q of group.quads) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
       ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
-      alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
+      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
     }
     let cut: ClipRect | null | undefined;
     while (!batch.pushGlyph(
       q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
       q.u0, q.v0, q.u1, q.v1,
-      color[0], color[1], color[2], alpha,
+      rgba[0], rgba[1], rgba[2], rgba[3],
       slot, mode,
     )) {
       cut = enterUncut(ctx);
       ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
-      alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
+      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
     }
     if (cut !== undefined) {
       leaveUncut(ctx, cut);
       ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
-      alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
+      rgba = foldColor(ctx, staged, color[0], color[1], color[2], color[3]);
     }
   }
 }

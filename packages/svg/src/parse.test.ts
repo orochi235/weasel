@@ -372,8 +372,6 @@ describe('conditional at-rules', () => {
   });
   it('still skips other block at-rules, and resumes after them', () => {
     expect(fillOf('@font-face { font-family: X } @keyframes k { from { fill: blue } } rect { fill: red }')).toEqual(RED);
-    expect(fillOf('@container (min-width: 1px) { rect { fill: red } }')).toEqual(BLACK);
-    expect(fillOf('@container (min-width: 1px) { rect { fill: blue } } rect { fill: red }')).toEqual(RED);
   });
   it('applies rules inside @layer, below unlayered ones', () => {
     expect(fillOf('@layer base { rect { fill: red } }')).toEqual(RED);

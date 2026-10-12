@@ -26,10 +26,7 @@ export function Toolbar({ children, 'aria-label': ariaLabel }: ToolbarProps) {
   );
 }
 
-interface TitleProps {
-  children: ReactNode;
-}
-function Title({ children }: TitleProps) {
+function Title({ children }: { children: ReactNode }) {
   return <span className="lk-toolbar-title">{children}</span>;
 }
 

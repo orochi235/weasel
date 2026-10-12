@@ -5,6 +5,7 @@ import s from './handleOverlay.module.css';
 /** The pieces every paint-geometry overlay draws with — `GradientHandles`
  *  and `MeshHandles` — kept here so the two drag, step and look alike. */
 
+/** A point in the overlay's own pixels. */
 export interface OverlayPoint {
   x: number;
   y: number;

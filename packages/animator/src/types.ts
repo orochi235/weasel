@@ -1,6 +1,7 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from './timeline/types';
 import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
+import type { StaggerBuilder, StaggerDelay, StaggerFactory, StaggerOptions } from './staggerTypes';
 import type {
   HoldHandle, HoldOptions, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions, TargetTweenOptions,
 } from './targetTypes';
@@ -9,6 +10,7 @@ export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName
 export type {
   HoldHandle, HoldOptions, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions, TargetTweenOptions,
 };
+export type * from './staggerTypes';
 
 /** Blends two `T` values at eased progress `t`. Called once per frame; see
  *  {@link InterpolatorFactory} when the blend has setup worth hoisting. */
@@ -249,7 +251,8 @@ export interface Animator {
    *   - Factory form: pass `factory` directly, returns a composite
    *     `AnimationHandle`.
    *   - Builder form: omit `factory`, get a `StaggerBuilder` for fluent
-   *     `.each` / `.tween` / `.springPose` calls.
+   *     `.each` / `.tween` / `.spring` calls, the last two of which move the
+   *     items themselves where they are targets.
    *
    * The composite handle's `cancel` cancels the items still waiting AND the
    * in-flight children. The delays run on the animator's clock, not the
@@ -397,54 +400,9 @@ export interface LoopOptions {
   label?: string;
 }
 
-/** A stagger run's own options: the factory form's fourth argument, and part
- *  of every fluent builder method's options. */
-export interface StaggerOptions {
-  /** Cancel-key for the supervising registration. `animator.cancelKey(key)`
-   *  cancels the whole stagger; `animator.isActive(key)` returns true while
-   *  any timer or child is alive. */
-  cancelKey?: string;
-  /** Names this stagger in {@link AnimatorEvent}s and `animator.live()`. */
-  label?: string;
-}
-
 /** Produces one iteration of a loop. Must arrange for `next` to be called when
  *  the animation it returns finishes, or the loop stalls after one pass. */
 export type LoopFactory = (iteration: number, next: () => void) => AnimationHandle;
-
-/** Per-index delay schedule. Number ⇒ `index * delay` ms. Function ⇒ caller
- *  decides the absolute delay for each index (e.g. `i => i * i * 30`). */
-export type StaggerDelay = number | ((index: number) => number);
-
-/** Produces the animation for one staggered item. */
-export type StaggerFactory<TItem> = (item: TItem, index: number) => AnimationHandle;
-
-/** A `T` value or a function that derives one from the per-item context. Used
- *  by the fluent builder methods (`.tween`, `.springPose`) so each item can
- *  vary an option (e.g. `to: (_item, i) => (i + 1) * 10`). */
-export type StaggerPerItem<T, TItem> = T | ((item: TItem, index: number) => T);
-
-/** Options for the stagger builder's `.tween`: a tween per item, where
- *  `from`, `to` and `ms` may each vary by item. `cancelKey` and `label` belong
- *  to the stagger as a whole, as in {@link StaggerOptions}. */
-export interface StaggerTweenOptions<T, TItem> extends StaggerOptions {
-  from: StaggerPerItem<T, TItem>;
-  to: StaggerPerItem<T, TItem>;
-  ms: StaggerPerItem<number, TItem>;
-  easing?: EasingSpec;
-  interpolate?: Interpolate<T>;
-  onTick: (value: T, item: TItem, index: number) => void;
-  onDone?: (item: TItem, index: number) => void;
-}
-
-/** Fluent form of `Animator.stagger`: pick what to run per item after the
- *  items and the delay schedule are already fixed. */
-export interface StaggerBuilder<TItem> {
-  /** Run an arbitrary per-item factory. */
-  each(factory: StaggerFactory<TItem>, opts?: StaggerOptions): AnimationHandle;
-  /** Sugar: per-item `animator.tween` with per-item-varying options. */
-  tween<T>(opts: StaggerTweenOptions<T, TItem>): AnimationHandle;
-}
 
 /** Options for `Animator.tweenLoop` — a tween's options plus how each
  *  iteration relates to the last. */

@@ -18,6 +18,13 @@ describe('skeletonAxes', () => {
       .toEqual([6, 7, 8, 9, 10, 1, 2, 3, 4, 5]);
   });
 
+  it('names each axis by its joint and field', () => {
+    expect(skeletonAxes(skeleton).names).toEqual([
+      'hip.x', 'hip.y', 'hip.rotation', 'hip.scaleX', 'hip.scaleY',
+      'knee.x', 'knee.y', 'knee.rotation', 'knee.scaleX', 'knee.scaleY',
+    ]);
+  });
+
   it('fills an absent joint or field with its identity', () => {
     expect(skeletonAxes(skeleton).to({ knee: { rotation: 0.5 } })).toEqual([0, 0, 0, 1, 1, 0, 0, 0.5, 1, 1]);
     expect(skeletonAxes(skeleton).to({})).toEqual([0, 0, 0, 1, 1, 0, 0, 0, 1, 1]);

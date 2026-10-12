@@ -4,7 +4,7 @@ import { ACCENT_BASE, type StanceSurface, TONE_BASE } from './stanceCss';
 export const STANCE_SURFACES: readonly StanceSurface[] = [
   {
     id: 'panel',
-    file: 'packages/ui/src/components/Properties/Properties.module.css',
+    file: 'packages/ui/src/components/Properties/PropertyPanel.stance.css',
     selector: '.panel',
     nests: true,
     fills: true,
@@ -68,7 +68,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
   {
     // A heading and a rule, no box: a stance reaches only the title and the rule.
     id: 'subpanel',
-    file: 'packages/ui/src/components/Properties/Properties.module.css',
+    file: 'packages/ui/src/components/Properties/Subpanel.stance.css',
     selector: '.subpanel',
     base: {
       'border-color': 'var(--wzl-line-subtle)',

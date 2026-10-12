@@ -212,8 +212,9 @@
 }
 
 .action[disabled],
-.action[aria-disabled='true'] {
-  opacity: 0.4;
+.action[aria-disabled='true'],
+.popTrigger[data-disabled] {
+  opacity: 0.5;
 }
 
 .action > svg {

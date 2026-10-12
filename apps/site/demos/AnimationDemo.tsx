@@ -61,23 +61,21 @@ function nearestGridCell(p: Vec2): Vec2 {
   };
 }
 
-function AnimationDemoInner({ animator }: { animator: Animator }) {
+export function AnimationCards({ animator }: { animator: Animator }) {
   const scene = useScene<Card>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const nextId = useRef(1);
 
   // Per-card visual effects (multiplicative scale + alpha). Read by drawOne,
-  // mutated by breathing-loop / stagger-fade onTick. A ref so onTick writes
-  // don't churn React state, paired with a tick counter to nudge re-renders
-  // when SceneCanvas isn't already redrawing from pose changes.
+  // mutated by breathing-loop / stagger-fade onTick. A ref, so a tick renders
+  // nothing: the canvas repaints on the animator's own frames (`redrawOn`).
   const effects = useRef<Map<string, { scale: number; alpha: number }>>(new Map());
   const getEffect = (id: string) => {
     let e = effects.current.get(id);
     if (!e) { e = { scale: 1, alpha: 1 }; effects.current.set(id, e); }
     return e;
   };
-  const [, bumpTick] = useState(0);
-  const tick = () => bumpTick(t => (t + 1) & 0xffff);
+  const redrawOn = useMemo(() => [{ subscribe: (repaint: () => void) => animator.onTick(repaint) }], [animator]);
 
   // --- Time-scale + pause ---
   const [timeScale, setTimeScaleState] = useState(1);
@@ -182,14 +180,12 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
         e.scale = v;
         // alpha pulse alongside scale — subtle glow effect.
         e.alpha = 0.85 + (v - 1.0) * 2.5;
-        tick();
       },
     });
     return () => {
       handle.cancel();
       const e = effectsMap.get(id);
       if (e) { e.scale = 1; e.alpha = 1; }
-      tick();
     };
   }, [breathingFocus, animator]);
 
@@ -217,7 +213,6 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
       onTick: (v, id) => {
         const e = getEffect(id);
         e.alpha = v;
-        tick();
       },
     });
   };
@@ -253,6 +248,7 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
         selection={selection}
         tools={tools}
         selectTool={selectToolOpts}
+        redrawOn={redrawOn}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => {
@@ -445,7 +441,7 @@ export function AnimationDemo() {
   const animator = useAnimator();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <WeaselProvider isolate><AnimationDemoInner animator={animator} /></WeaselProvider>
+      <WeaselProvider isolate><AnimationCards animator={animator} /></WeaselProvider>
       <AnimatorWatch animator={animator} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span style={{ opacity: 0.7 }}>

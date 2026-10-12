@@ -148,7 +148,7 @@ standard set; `<SceneCanvas>` registers them under the `view` preset, from its
 | `useRotate` | `rotate` action; `rotationHandle`, `hitRotationHandle`, `pointInRotatedRect`, `DEFAULT_ROTATION_HANDLE_DISTANCE` survive |
 | `useInsert` | `insert` action, configured by binding params and the `insert` dep |
 | `useAreaSelect` | `areaSelect` action (marquee is its built-in behavior, not opt-in) |
-| `useClone` | `clone` action; `cloneByAltDrag()` behavior survives |
+| `useClone` | `clone` action, alt-gated by its binding; `CloneBehavior`s go on the binding |
 | `useEditAnchors` | `editAnchors` action, plus the `nudgeAnchors.*` / `deleteAnchors` / `marqueeAnchors` / `selectAnchor` / `cutPathAtAnchor` set; `hitAnchor`, `enumerateAnchors`, `withCoord` survive |
 | `useEscape`, `useSelectAll`, `useDelete`, `useDuplicate`, `useNudge`, `useReorder`, `useGroup`, `useUngroup`, `useUndoRedo` | same-named actions in the table above |
 | `useNest` / `useUnnest` | never shipped as hooks |

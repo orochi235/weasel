@@ -11,8 +11,12 @@ import { workspaceCodec } from './workspaceCodec';
 
 afterEach(cleanup);
 
-const changes = () => screen.getByRole('region', { name: 'Changes' });
-const listed = () => changes().querySelector('pre')!.textContent.split('\n');
+/** The export, turned to its Changes tab. */
+const changes = () => {
+  fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
+  return screen.getByRole('region', { name: 'Export' });
+};
+const listed = () => within(changes()).getByRole('tabpanel', { name: 'Changes' }).querySelector('pre')!.textContent.split('\n');
 const submit = () => within(changes()).getByRole('button', { name: /Submit|Sending|Sent|Failed/ });
 
 describe('AssetEditor changes', () => {

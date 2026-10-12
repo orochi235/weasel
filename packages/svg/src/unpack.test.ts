@@ -8,7 +8,7 @@ import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
   kind: 'path',
   path: { kind: 'rect', x, y, width: w, height: h },
-  fill: { kind: 'solid', color: '#ff0000' },
+  fill: { paint: { kind: 'solid', color: '#ff0000' } },
   ...extra,
 } as SvgNode);
 

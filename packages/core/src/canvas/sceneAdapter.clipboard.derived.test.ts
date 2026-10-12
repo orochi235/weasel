@@ -145,6 +145,16 @@ describe('pasting a layout container', () => {
   });
 });
 
+describe('pasting a container that declares a unit scope', () => {
+  it('carries the scope to the copy, across the wire too', () => {
+    const scene: S = createScene<D, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const units = { system: { base: 'mm', units: { mm: 1 } }, scale: 0.5 };
+    const box = scene.add({ kind: 'container', layer: 'main', pose: rect(0), data: { label: 'box' }, units });
+    const pasted = paste(scene, overTheWire(copy(scene, [box]))).byLabel.get('box') as N & { units?: unknown };
+    expect(pasted.units).toEqual(units);
+  });
+});
+
 describe('materializePaste', () => {
   it('reports what the paste left out, even when it made nothing', () => {
     const { scene, a, b, edge } = makeScene();

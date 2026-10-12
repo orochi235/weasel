@@ -1,6 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import { useContext, useEffect, useReducer, useSyncExternalStore } from 'react';
-import { LabContext } from '../lab/LabContext';
+import { useLabCommandsOptional } from '../lab/LabContext';
 import { ClockRegistryContext, TrialClockContext } from './clockRegistry';
 import type { ClockedMix, TrialClock, TrialClockHandle } from './trialClock';
 
@@ -33,7 +33,7 @@ export function useTrialMix<M extends ClockedMix = ClockedMix>(trialId?: string)
 export function useTrialClockHandle(trialId?: string): TrialClockHandle | null {
   const registry = useContext(ClockRegistryContext);
   const own = useContext(TrialClockContext);
-  const lab = useContext(LabContext);
+  const lab = useLabCommandsOptional();
   useSyncExternalStore(registry?.subscribe ?? NO_SUBSCRIBE, () => (registry ? resolve() : own));
   function resolve() {
     if (trialId !== undefined) return registry?.get(trialId) ?? null;

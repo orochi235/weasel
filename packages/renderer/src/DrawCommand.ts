@@ -5,6 +5,7 @@ import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 import type { Effect } from './effects/types';
+import type { BlendFactors, CompositeOp } from './effects/compositeOp';
 
 /** DrawCommand variants implemented through step 6. */
 export type DrawCommand =
@@ -74,6 +75,24 @@ export interface GroupDrawCommand {
    * group asks for one.
    */
   effects?: readonly Effect[];
+  /**
+   * Draw the children into a buffer of their own and composite it once, the
+   * render-target boundary `effects` makes, with no pass run over it. `alpha`
+   * and `colorMatrix` then apply to the finished surface, so overlapping
+   * children do not show through each other as they do when each is faded on
+   * its own. Costs a device-resolution buffer and a full-screen composite.
+   */
+  isolate?: boolean;
+  /**
+   * How the group's finished surface joins what is already drawn. Default
+   * `source-over`. Any other operator isolates the group, and its composite
+   * covers the whole target inside the enclosing clip, so an operator that
+   * scales the destination by the source's alpha (`source-in`,
+   * `destination-in`, `destination-atop`, `copy`) also clears everything the
+   * group left empty. Operators reading the destination's alpha need a target
+   * that has one: a context created with `alpha: false` reads as opaque.
+   */
+  composite?: CompositeOp | BlendFactors;
   children: DrawCommand[];
 }
 
@@ -186,7 +205,9 @@ export interface SpritesDrawCommand {
  * The kit automatically sets `u_bounds`, `u_view`, and `u_proj` — do not
  * declare those in `uniforms`.
  *
- * @experimental API may change before v2.
+ * `program` is the handle the module-level `registerProgram()` returned. Each
+ * renderer compiles it the first time it draws one, so a layer emits this
+ * command with nothing set up on the canvas or the renderer beforehand.
  */
 export interface ShaderDrawCommand {
   kind: 'shader';

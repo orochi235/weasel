@@ -162,10 +162,15 @@ export interface CanvasExtensionApi {
    *  anchor; omitted → handlers use their point-less policy (the kit image
    *  handler centers on the viewport).
    *
+   *  Returns whether the canvas had an `ingest` action to hand the items to.
+   *  `false` means nothing will be inserted: there were no items, or the
+   *  canvas lacks the `ingest` preset. Handlers run after it returns, so
+   *  `true` does not say one of them accepted the content.
+   *
    *  Optional because ingestion needs the SceneCanvas action stack — the
    *  handle is always populated on `<SceneCanvas>` refs, absent on the
    *  bare-primitive handle. */
-  ingest?(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+  ingest?(input: File[] | IngestItem[], point?: { x: number; y: number }): boolean;
   /** Add a view to the canvas from outside React. See
    *  {@link SceneCanvasApi.addView}; absent on the bare-primitive handle,
    *  which hosts no views. */
@@ -180,7 +185,7 @@ export interface CanvasExtensionApi {
  * @public
  */
 export interface SceneCanvasApi extends CanvasExtensionApi {
-  ingest(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+  ingest(input: File[] | IngestItem[], point?: { x: number; y: number }): boolean;
   /**
    * Glide the camera to `to` rather than jumping there — a fit-to-selection, a
    * recenter, a scripted tour. A thunk receives the pending target when an

@@ -3,7 +3,7 @@
   inset-block-start: 12px;
   inset-inline-start: 12px;
   display: flex;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   align-items: center;
 }
 
