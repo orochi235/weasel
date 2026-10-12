@@ -371,14 +371,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
-  `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
-  still derives framing from document poses, so a node overridden outside the
-  document bounds paints outside the fitted frame. Deliberate — recomputing the
-  fit per frame would rescale the whole minimap through a drag or a settle, and
-  costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
-  framing that tracks a simulation.
-
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in

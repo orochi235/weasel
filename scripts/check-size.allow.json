@@ -290,7 +290,7 @@
     "longestFunction": 246
   },
   "packages/minimap/src/MinimapCanvas.tsx": {
-    "longestFunction": 155
+    "longestFunction": 139
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439
