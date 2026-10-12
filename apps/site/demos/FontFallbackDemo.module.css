@@ -1,14 +1,14 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wzl-space-5);
   width: 520px;
 }
 
 .controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .label {
@@ -22,7 +22,7 @@
 
 .readout th,
 .readout td {
-  padding: 3px 8px;
+  padding: 3px var(--wzl-space-4);
   border-bottom: 1px solid var(--ckd-border-2);
   text-align: left;
 }

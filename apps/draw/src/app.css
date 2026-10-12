@@ -15,8 +15,8 @@
 .wd-commandbar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-2) var(--wzl-space-4);
   /* Match the left tool palette, which renders via weasel-ui's Sidebar
      (`background: var(--wzl-surface)`). The theme package's tokens.css
      loads after app.css and resolves the token to a light

@@ -8,7 +8,7 @@
 .section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .heading {
@@ -19,7 +19,7 @@
 
 .route {
   font: 14px ui-monospace, SFMono-Regular, monospace;
-  padding: 6px 8px;
+  padding: var(--wzl-space-3) var(--wzl-space-4);
   color: var(--ckd-text);
   background: var(--ckd-surface);
   border: 1px solid var(--ckd-accent);
@@ -34,7 +34,7 @@
 .presets {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .presets :global(.ckd-btn) {
@@ -57,7 +57,7 @@
   text-align: start;
   font-weight: 500;
   color: var(--ckd-muted);
-  padding: 3px 12px 3px 0;
+  padding: 3px var(--wzl-space-6) 3px 0;
   white-space: nowrap;
 }
 
@@ -67,7 +67,7 @@
 }
 
 .table td {
-  padding: 3px 12px 3px 0;
+  padding: 3px var(--wzl-space-6) 3px 0;
 }
 
 .code {
@@ -155,7 +155,7 @@
 
 .log li {
   display: flex;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .num {

@@ -1,20 +1,20 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   width: 560px;
 }
 
 .body {
   display: grid;
   grid-template-columns: 220px 1fr;
-  gap: 16px;
+  gap: var(--wzl-space-8);
 }
 
 .label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .demo .anchor {
@@ -40,7 +40,7 @@
 .state {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 4px 12px;
+  gap: var(--wzl-space-2) var(--wzl-space-6);
   margin: 0;
   font-size: 12px;
   align-content: start;

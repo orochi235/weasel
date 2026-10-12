@@ -1,12 +1,12 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .header {
   display: flex;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: center;
 }
 

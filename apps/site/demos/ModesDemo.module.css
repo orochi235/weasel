@@ -1,7 +1,7 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wzl-space-5);
   width: 620px;
 }
 
@@ -9,13 +9,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   flex-wrap: wrap;
 }
 
 .modes {
   display: flex;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .active {
@@ -32,7 +32,7 @@
 .readout {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 4px 12px;
+  gap: var(--wzl-space-2) var(--wzl-space-6);
   margin: 0;
   font-size: 12px;
 }
@@ -48,11 +48,11 @@
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--wzl-space-2);
 }
 
 .tag {
-  padding: 1px 6px;
+  padding: 1px var(--wzl-space-3);
   border: 1px solid var(--ckd-border-2);
   border-radius: 3px;
   font-family: ui-monospace, SFMono-Regular, monospace;

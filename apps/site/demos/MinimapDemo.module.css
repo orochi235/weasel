@@ -1,12 +1,12 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .header {
   display: flex;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: center;
 }
 
@@ -20,17 +20,17 @@
 
 .row {
   display: flex;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: flex-start;
 }
 
 .minimapPanel {
-  padding: 8px;
+  padding: var(--wzl-space-4);
   border: 1px solid var(--ckd-border);
   background: rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .minimapTitle {

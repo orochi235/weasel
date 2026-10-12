@@ -1,7 +1,7 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   width: 620px;
 }
 
@@ -14,7 +14,7 @@
 
 .control {
   display: flex;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   align-items: center;
 }
 

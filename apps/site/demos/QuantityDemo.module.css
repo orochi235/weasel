@@ -1,14 +1,14 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   width: 760px;
 }
 
 .presets {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   flex-wrap: wrap;
 }
 
@@ -18,7 +18,7 @@
   --wzl-font-size: 13px;
   --wzl-border: var(--ckd-accent);
   --wzl-input-surface: color-mix(in srgb, var(--ckd-accent) 12%, transparent);
-  margin-inline-end: 6px;
+  margin-inline-end: var(--wzl-space-3);
   font-weight: 600;
 }
 
@@ -31,11 +31,11 @@
   text-align: start;
   font-weight: 500;
   color: var(--ckd-muted);
-  padding: 4px 8px;
+  padding: var(--wzl-space-2) var(--wzl-space-4);
 }
 
 .table td {
-  padding: 3px 8px;
+  padding: 3px var(--wzl-space-4);
   vertical-align: middle;
 }
 
@@ -74,12 +74,12 @@
 }
 
 .math {
-  margin-inline-start: 12px;
+  margin-inline-start: var(--wzl-space-6);
   font-size: 1.1em;
 }
 
 .heading {
-  margin: 12px 0 0;
+  margin: var(--wzl-space-6) 0 0;
   font-size: 1em;
   font-weight: 500;
 }

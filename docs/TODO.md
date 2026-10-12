@@ -2125,11 +2125,10 @@ one dead `const` and four stale disable directives.
   labkit's and core's `position: fixed` ghosts are offset inside a transformed ancestor (read from
   the CSS and the clone code, not rendered). labkit's should render ui's.
 
-- **(P3) `check:spacing` reads only `packages/ui/src`.** Walked over every package and app
-  stylesheet on 2026-10-11 it reports 300 spacing literals that have a rung: 220 in `apps/site`, 51
-  in `apps/theme-editor`, 18 in labkit's `.less`, 5 in core, 3 each in forge and `apps/draw`.
-  Widening the walk means moving those to tokens first, and each move wants a look at the page.
-  `check:controls` already walks all of them.
+- **(P3) `check:spacing` leaves out `apps/site/CommandPalette/`.** Every other package and app
+  stylesheet is on the space ladder and under the check. `CommandPalette.module.css` still holds 8
+  spacing literals that have a rung, left because another branch was editing that directory;
+  move them and drop the exemption in `scripts/check-spacing.ts`.
 
 - **(P3) `SceneCanvasInner` is one 1,370-line function.** `canvas/SceneCanvas.tsx` is down to
   1,550 lines: its props type, coordinate trace, and the mounters and registrars are files in

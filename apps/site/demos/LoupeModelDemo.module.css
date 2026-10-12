@@ -1,7 +1,7 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
 }
 
 .stage {
@@ -38,24 +38,24 @@
   text-align: start;
   font-weight: 500;
   color: var(--ckd-muted);
-  padding: 2px 12px 2px 0;
+  padding: var(--wzl-space-1) var(--wzl-space-6) var(--wzl-space-1) 0;
 }
 
 .readout td {
-  padding: 2px 0;
+  padding: var(--wzl-space-1) 0;
 }
 
 .swatch {
   display: inline-block;
   width: 12px;
   height: 12px;
-  margin-inline-end: 6px;
+  margin-inline-end: var(--wzl-space-3);
   vertical-align: -1px;
   outline: 1px solid var(--ckd-border);
 }
 
 .note {
-  margin-inline-start: 12px;
+  margin-inline-start: var(--wzl-space-6);
   color: var(--ckd-accent);
   font-family: system-ui, sans-serif;
 }

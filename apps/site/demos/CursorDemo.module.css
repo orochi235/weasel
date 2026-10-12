@@ -1,22 +1,22 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wzl-space-5);
   width: 620px;
 }
 
 .gallery {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .tile {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 4px 6px;
+  gap: var(--wzl-space-1);
+  padding: var(--wzl-space-4) var(--wzl-space-2) var(--wzl-space-3);
   border: 1px solid var(--ckd-border);
   border-radius: 6px;
   background: var(--ckd-surface);
@@ -59,7 +59,7 @@
 
 .control {
   display: flex;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   align-items: center;
 }
 
@@ -76,7 +76,7 @@
 .tierCss,
 .tierPainted {
   font-size: 12px;
-  padding: 2px 8px;
+  padding: var(--wzl-space-1) var(--wzl-space-4);
   border-radius: 10px;
   border: 1px solid var(--ckd-border);
 }

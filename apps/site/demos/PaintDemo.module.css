@@ -1,20 +1,20 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--wzl-space-8);
   width: 620px;
 }
 
 .row {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 16px;
+  gap: var(--wzl-space-8);
   align-items: start;
 }
 
 .label {
   font-weight: 500;
-  margin-bottom: 4px;
+  margin-bottom: var(--wzl-space-2);
 }
 
 .json {

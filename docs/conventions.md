@@ -182,8 +182,9 @@ stops shrinking.
 Spacing is the `space-1` … `space-8` ladder, 2px rungs. `space-xs/sm/md/lg` are
 aliases for rungs 2/4/6/8. It does not vary by density — the rungs are finer
 than any density factor could resolve without rounding two of them onto the same
-pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal in
-`packages/ui/src` that has a rung.
+pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal that
+has a rung, in any package or app stylesheet. Core and forge's story frame, which
+draw without a theme, write the rung with its px as the fallback.
 
 Control heights are four ranks, `control-h-xs` / `-sm` / `control-h` /
 `tb-height` — 18/20/24/28 at `comfortable`. A control box sizes itself from one

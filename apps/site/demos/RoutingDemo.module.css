@@ -1,14 +1,14 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wzl-space-5);
   width: 620px;
 }
 
 .controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   flex-wrap: wrap;
 }
 
@@ -18,8 +18,8 @@
 }
 
 .tag {
-  margin-inline-start: 6px;
-  padding: 2px 8px;
+  margin-inline-start: var(--wzl-space-3);
+  padding: var(--wzl-space-1) var(--wzl-space-4);
   border: 1px solid var(--ckd-border-2);
   border-radius: 3px;
   font-size: 12px;
@@ -80,7 +80,7 @@
 }
 
 .input {
-  margin: 0 0 6px;
+  margin: 0 0 var(--wzl-space-3);
 }
 
 .handled {
@@ -101,11 +101,11 @@
   text-align: start;
   font-weight: 500;
   color: var(--ckd-muted);
-  padding: 3px 10px 3px 0;
+  padding: 3px var(--wzl-space-5) 3px 0;
 }
 
 .table td {
-  padding: 3px 10px 3px 0;
+  padding: 3px var(--wzl-space-5) 3px 0;
   white-space: nowrap;
 }
 

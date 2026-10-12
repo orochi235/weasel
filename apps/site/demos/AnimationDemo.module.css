@@ -1,14 +1,14 @@
 .watch {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
   color: var(--ckd-muted);
 }
 
 .watch h4 {
-  margin: 0 0 4px;
+  margin: 0 0 var(--wzl-space-2);
   font-size: 12px;
   font-weight: 600;
 }
@@ -18,7 +18,7 @@
 }
 
 .watch td {
-  padding: 0 8px 0 0;
+  padding: 0 var(--wzl-space-4) 0 0;
 }
 
 .num {
