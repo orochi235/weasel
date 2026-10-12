@@ -183,19 +183,6 @@ Priority tags:
   device, since jsdom sends no native event. If real, drop the native event while a touch pointer
   whose long-press fired is still held.
 
-- **(P2) Modes: "is this tool allowed in this mode" is answered three ways with two different
-  rules.** `eligibleForMode` in `packages/modes/src/modeDefinition.ts` allows a tool when any of its
-  capability tags is allowed and refuses a tool with no tags; `isToolEligible` in
-  `packages/core/src/canvas/SceneCanvas.tsx` is a hand copy of it; the dispatcher
-  (`assembleScopedBindings` in `packages/routing/src/interactions/dispatcher/dispatcher.ts`, with
-  `liveScope` in `packages/routing/src/contributions/eligibility.ts`) requires every tag to be
-  allowed and lets a tool with no tags through. So a tool tagged `['navigation', 'creates-shapes']`
-  in a mode without `creates-shapes` shows enabled in `ToolPalette`, activates, and then has all its
-  bindings dropped: active and dead. A tool with no `capabilities` is the reverse: grayed out and
-  unactivatable, but live if already active or ambient. Every built-in tool carries one tag, so only
-  a consumer tool hits it. Decide any-versus-every and the empty case once, as one predicate over
-  `(allowedCapabilities, tags)` in `@weasel-js/modes`, and have all three call it.
-
 - **(P3) A key typed with AltGr cannot match a binding.** A layout that types `[` with AltGr
   reports `ctrlKey` and `altKey`, which the strict modifier match in
   `packages/gestures/src/ui/match.ts` rejects. Dropping both flags while

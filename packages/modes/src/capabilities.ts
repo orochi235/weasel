@@ -21,8 +21,18 @@ export const ALL_TAGS = [
 export type CapabilityTag = (typeof ALL_TAGS)[number] | (string & {});
 
 /** Tags that are implicitly allowed in every mode — never listed per-mode.
- *  A tool tagged with any of these is always eligible. */
+ *  A tool carrying only these is eligible everywhere. */
 export const IMPLICIT_TAGS: readonly CapabilityTag[] = ['navigation'];
+
+/**
+ * Whether a tool or contribution carrying `tags` may be used while `allowed`
+ * is the set of tags the active mode permits. Every tag has to be allowed: a
+ * tag names something the entry does, and one refused thing refuses the entry.
+ * An entry with no tags asks for nothing and is allowed everywhere.
+ */
+export function capabilitiesAllowed(allowed: ReadonlySet<string>, tags: readonly CapabilityTag[] | undefined): boolean {
+  return tags === undefined || tags.every((tag) => allowed.has(tag));
+}
 
 /** Whether a string is one of the shipped `ALL_TAGS`. An app-defined tag is
  *  still a valid `CapabilityTag` and will answer `false` here. */
