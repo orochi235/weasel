@@ -1116,12 +1116,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
   theme that turns the glass on.
 
-- **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
-  compares stored values, where every other reader decodes. A rail entry for a group drawn under
+- **(P3) Loose ends of the condition work.** A rail entry for a group drawn under
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
-  `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet. `PrefSchemaEditor` edits an entry's own
+  `Properties.module.css` is one 1,597-line sheet. `PrefSchemaEditor` edits an entry's own
   `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
   `{ from: 'item' }` condition is written in code. A list of plain text entries is one
   `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
