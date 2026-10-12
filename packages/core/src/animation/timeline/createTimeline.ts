@@ -246,6 +246,8 @@ export function createTimeline(
       prevOpen = true;
       booker?.seek();
       rearm();
+      // Sampled now, not at the next frame: whoever seeks and then reads a target sees the seek.
+      if (live && t >= 0 && t < duration) sampler.apply(opts.tracks, t);
       playbackChanged();
     },
     time: () => playhead,
