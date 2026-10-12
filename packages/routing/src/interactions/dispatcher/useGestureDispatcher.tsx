@@ -8,7 +8,7 @@ import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
 import { useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry } from '../actions/depRegistry';
-import { isTool } from '../../tools/types';
+import { useToolLifecycle } from '../../tools/useToolLifecycle';
 import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { createDispatchCore } from './dispatchCore';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
@@ -87,50 +87,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // two clicks would otherwise drop the double click.
   const clicksRef = useRef<ClickMemory>({ last: null });
 
-  // A tool is live while it holds the active slot or sits in the hotkey
-  // stack. A switch of the active tool also cancels in-flight handles, so the
-  // new tool does not inherit a live gesture — between the outgoing tools'
-  // cleanup and the incoming tools' setup.
-  const liveToolsRef = useRef<ReadonlySet<string>>(new Set());
-  const prevActiveRef = useRef(activeTool.active);
-  const entriesByIdRef = useLatest(entriesById);
-  const lifecycleScratchRef = useRef(new Map<string, unknown>());
-  const fireLifecycle = useCallback((id: string, hook: 'onActivate' | 'onDeactivate'): void => {
-    const scratches = lifecycleScratchRef.current;
-    const tool = entriesByIdRef.current.get(id);
-    if (!tool || !isTool(tool)) {
-      scratches.delete(id);
-      return;
-    }
-    if (hook === 'onActivate' || !scratches.has(id)) scratches.set(id, tool.initScratch?.());
-    const scratch = scratches.get(id);
-    if (hook === 'onDeactivate') scratches.delete(id);
-    const fn = tool[hook];
-    if (!fn) return;
-    try {
-      fn({ scratch });
-    } catch (err) {
-      console.error(`weasel: tool "${id}".${hook} threw`, err);
-    }
-  }, [entriesByIdRef]);
-  useEffect(() => {
-    const prev = liveToolsRef.current;
-    const next = new Set<string>(
-      activeTool.active === null ? activeTool.hotkeyStack : [activeTool.active, ...activeTool.hotkeyStack],
-    );
-    liveToolsRef.current = next;
-    for (const id of prev) if (!next.has(id)) fireLifecycle(id, 'onDeactivate');
-    if (prevActiveRef.current !== activeTool.active) {
-      for (const d of allDispatchers()) d.cancelAll('cancel');
-    }
-    prevActiveRef.current = activeTool.active;
-    for (const id of next) if (!prev.has(id)) fireLifecycle(id, 'onActivate');
+  useToolLifecycle({
+    entriesById,
+    active: activeTool.active,
+    hotkeyStack: activeTool.hotkeyStack,
+    // The incoming tool must not inherit a live gesture.
+    onSwitch: () => { for (const d of allDispatchers()) d.cancelAll('cancel'); },
   });
-  useEffect(() => () => {
-    const live = liveToolsRef.current;
-    liveToolsRef.current = new Set();
-    for (const id of live) fireLifecycle(id, 'onDeactivate');
-  }, [fireLifecycle]);
 
   useEffect(() => {
     if (enabled && claimKeys) registryRef.current.activate();
