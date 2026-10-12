@@ -124,22 +124,38 @@ export function reduceBehaviorEnd<TCtx, TEnd extends BehaviorEnd = BehaviorEnd>(
   return answer;
 }
 
-/** Runs every behavior's `onCancel`, for a gesture closing without a commit. */
+/** Runs `step` for every item, a throwing one included, then rethrows the
+ *  first error. For steps that each release something of their own. */
+function runEvery<T>(items: readonly T[], step: (item: T) => void): void {
+  const errors: unknown[] = [];
+  for (const item of items) {
+    try {
+      step(item);
+    } catch (err) {
+      errors.push(err);
+    }
+  }
+  if (errors.length > 0) throw errors[0];
+}
+
+/** Runs every behavior's `onCancel`, for a gesture closing without a commit.
+ *  One that throws does not stop the rest; its error is rethrown after. */
 export function runBehaviorCancel<TCtx>(
   behaviors: readonly { onCancel?(ctx: TCtx): void }[],
   ctx: TCtx,
 ): void {
-  for (const b of behaviors) b.onCancel?.(ctx);
+  runEvery(behaviors, (b) => b.onCancel?.(ctx));
 }
 
 /** Runs every behavior's `onSettled`, once the gesture's commit has landed or
- *  its cancel has run. */
+ *  its cancel has run. One that throws does not stop the rest; its error is
+ *  rethrown after. */
 export function runBehaviorSettled<TCtx>(
   behaviors: readonly { onSettled?(ctx: TCtx, committed: boolean): void }[],
   ctx: TCtx,
   committed: boolean,
 ): void {
-  for (const b of behaviors) b.onSettled?.(ctx, committed);
+  runEvery(behaviors, (b) => b.onSettled?.(ctx, committed));
 }
 
 /** What {@link closeGesture} closes. */
@@ -153,15 +169,16 @@ export interface ClosingGesture<TCtx> {
 /**
  * The close a transform action runs from its `finally`, commit or cancel:
  * drop the preview overrides, run `settle` (whatever of the action's own has
- * to follow the commit), tell the behaviors, then fire `onGestureEnd`.
+ * to follow the commit), tell the behaviors, then fire `onGestureEnd`. The
+ * last three each run even when one before throws; the first error is
+ * rethrown.
  */
 export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean, settle?: () => void): void {
   dropPreviewOverrides(gesture.publish);
   gesture.publish.previews.clear();
-  settle?.();
-  try {
-    runBehaviorSettled(gesture.behaviors, gesture.ctx, committed);
-  } finally {
-    gesture.lifecycle.end(committed);
-  }
+  runEvery([
+    () => settle?.(),
+    () => runBehaviorSettled(gesture.behaviors, gesture.ctx, committed),
+    () => gesture.lifecycle.end(committed),
+  ], (step) => step());
 }
