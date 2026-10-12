@@ -45,6 +45,14 @@ export interface Table {
   watchCompletion: WatchCompletion;
 }
 
+/** `scale` as a time scale, refused below 0: the clock under the animator only goes forward. */
+export function timeScaleOf(scale: number): number {
+  if (!(scale >= 0)) {
+    throw new Error(`animator: a time scale is 0 or above, and ${scale} was given; nothing plays backward`);
+  }
+  return scale;
+}
+
 export function createTable(host: TableHost): Table {
   const { codec, hub } = host;
   const animations = new Map<number, ActiveAnimation>();
@@ -117,7 +125,7 @@ export function createTable(host: TableHost): Table {
       cancel: () => retire(anim.id),
       pause: () => { const a = live(); if (a) { a.paused = true; rateOf(a); } },
       resume: () => { const a = live(); if (a) { a.paused = false; rateOf(a); } },
-      setTimeScale: (s) => { const a = live(); if (a) { a.timeScale = s; rateOf(a); } },
+      setTimeScale: (s) => { const a = live(); if (a) { a.timeScale = timeScaleOf(s); rateOf(a); } },
       timeScale: () => live()?.timeScale ?? 1,
       isPaused: () => live()?.paused ?? false,
     };

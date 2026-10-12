@@ -1,12 +1,15 @@
 import { stateOf } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { absorb, axesFor, bump, comeOut, commitOffset, goBehind, minus, norm, plus, takeUp, times, travel, wholeWhere } from './offsets';
+import { absorb, axesFor, comeOut, commitOffset, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
+import { createSpringVoices } from './springVoices';
+
+const any = (a: readonly number[]): boolean => a.some((x) => x !== 0);
 
 /**
- * A spring or a coast on a target. A spring commits its destination as it starts and its voice
- * is what is left to travel. A coast has no destination: its voice is how far it has gone, which
+ * A spring or a coast on a target. A spring commits its destination as it starts and its voices
+ * are what is left to travel. A coast has no destination: its voice is how far it has gone, which
  * it commits when it stops.
  */
 export function startOffsetPhysics<T>(
@@ -14,7 +17,6 @@ export function startOffsetPhysics<T>(
   o: TargetPhysicsOptions<T>,
   kind: AnimationKind,
 ): PhysicsHandle<T> {
-  const { codec } = ctx;
   const s = stateOf(o.target);
   const ax = s.axes;
   const { stiffness, damping, mass } = resolveSpringConstants(o);
@@ -40,31 +42,26 @@ export function startOffsetPhysics<T>(
   const before = ax.to(s.get());
   const committed = dest ? takeUp(s) : before;
   const start = travel(ax, given ?? committed, dest ?? committed);
-  let share = dest ? wholeWhere(travel(ax, before, dest), zeros()) : zeros();
+  /** The move the destination makes in the committed value; the rest of `start` rides on top. */
+  const move = dest ? travel(ax, before, dest) : zeros();
 
   ctx.targets.attach(s as never);
   if (o.to != null) s.set(o.to);
   ctx.seedClock();
-  s.slot = codec.spring({
-    id, on: s, axes: ax.count,
-    from: start, to: dest && zeros(), velocity: velocity ?? zeros(),
-    stiffness, damping, mass,
-  });
-  bump(s as never, start, 1);
-  const behind = goBehind(s, () => times(codec.own(id)!.value, share));
+  const voices = createSpringVoices(ctx.codec, s as never, { id, nextId: ctx.nextId, stiffness, damping, mass });
+  if (any(move)) voices.move(move);
+  const top = minus(start, move);
+  if (!any(move) || any(top) || (velocity && any(velocity))) voices.rest(top, velocity ?? zeros(), dest == null);
+  const behind = goBehind(s, voices.moved);
 
   let left = false;
   const leave = (commit: boolean): void => {
     if (left) return;
     left = true;
-    const own = codec.own(id);
-    const moved = own ? behind.left() : [];
+    const moved = voices.moved();
     const shown = comeOut(s, behind, moved);
-    if (own) {
-      if (commit) commitOffset(s, own.value, moved, shown);
-      bump(s as never, own.value, -1);
-    }
-    codec.stop(id);
+    if (commit) commitOffset(s, voices.own().value, moved, shown);
+    voices.stop();
     ctx.targets.detach(s as never);
   };
   const finish = (): void => {
@@ -76,9 +73,11 @@ export function startOffsetPhysics<T>(
 
   let ticked = false;
   seed.onCancel = () => leave(true);
+  seed.onRate = (paused, timeScale) => voices.rate(paused ? 0 : timeScale);
+  seed.velocity = () => voices.own().velocity;
   seed.tick = () => {
     if (ctx.tripwire()) { leave(true); return true; }
-    const own = codec.own(id)!;
+    const own = voices.own();
     // A coast too slow to move ends at once rather than emit a tick and wait a frame.
     if (!ticked && dest == null && norm(own.velocity) < restThreshold) {
       finish();
@@ -99,33 +98,30 @@ export function startOffsetPhysics<T>(
     ...base,
     setTarget(next) {
       if (left) return;
-      const own = codec.own(id)!;
+      const own = voices.own();
       if (next == null) {
         if (dest == null) return;
         // The committed value stops where the spring had brought it; the coast carries the rest.
-        const moved = behind.left();
+        const moved = voices.moved();
         absorb(s, behind.kept ? times(moved, behind.kept) : moved);
         dest = null;
-        share = zeros();
-        codec.recue(id, minus(own.value, moved), own.velocity, null);
-        bump(s as never, moved, -1);
+        voices.rest(minus(own.value, moved), own.velocity, true);
+        voices.settleMove();
         return;
       }
       const to = axesFor(ax, next, 'setTarget');
       if (!(stiffness > 0)) throw new Error(`${kind}: setTarget needs a positive stiffness`);
-      // The committed value moves under the voice, which shifts by as much the other way.
-      const move = travel(ax, ax.to(s.get()), to);
-      const shifted = plus(own.value, move);
-      share = wholeWhere(move, share);
+      // The committed value moves under the voices, which shift by as much the other way.
+      const shift = travel(ax, ax.to(s.get()), to);
       s.set(next);
+      if (dest == null) voices.rest(own.value, own.velocity, false);
       dest = to;
-      codec.recue(id, shifted, own.velocity, zeros());
-      bump(s as never, minus(shifted, own.value), 1);
+      voices.move(shift);
       ctx.targets.showNow(s as never);
     },
     setVelocity(v) {
       if (left) return;
-      codec.push(id, axesFor(ax, v, 'setVelocity'));
+      voices.push(axesFor(ax, v, 'setVelocity'));
     },
   };
 }

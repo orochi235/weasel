@@ -128,6 +128,93 @@ describe('a hold on a target', () => {
     expect(Math.abs(b.shown.at(-1)! - was)).toBeLessThan(5);
   });
 
+  const settle = (step: (ms: number) => void): void => { for (let i = 0; i < 400; i++) step(16); };
+
+  it('does not move the value on screen as a coast under it is given a destination', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70, weight: 0.5 }); });
+    step(0);
+    let coast!: ReturnType<typeof animator.physics<number>>;
+    act(() => { coast = animator.physics({ target: b.target, to: null, velocity: 500, damping: 5 }); });
+    step(0);
+    step(100);
+    const was = b.target.read();
+    expect(was).toBeGreaterThan(45);
+    act(() => { coast.setTarget(50); });
+    expect(b.committed).toBe(50);
+    expect(b.target.read()).toBeCloseTo(was, 6);
+    step(16);
+    expect(Math.abs(b.shown.at(-1)! - was)).toBeLessThan(8);
+    settle(step);
+    expect(b.shown.at(-1)).toBeCloseTo(60, 1);
+  });
+
+  it('does not move the value on screen as a spring pushed where it stands is given a destination', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70 }); });
+    step(0);
+    let spring!: ReturnType<typeof animator.physics<number>>;
+    act(() => { spring = animator.physics({ target: b.target, to: 10, velocity: 500 }); });
+    step(0);
+    step(100);
+    const was = b.target.read();
+    expect(was).toBeGreaterThan(75);
+    act(() => { spring.setTarget(50); });
+    expect(b.target.read()).toBeCloseTo(was, 6);
+    settle(step);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 1);
+    expect(b.committed).toBe(50);
+  });
+
+  it('carries the `from` of a spring on top of it, and covers the move to its destination', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70 }); });
+    step(0);
+    act(() => { animator.spring({ target: b.target, from: 30, to: 50 }); });
+    // 20 away from the committed 10 shows on top; the move from 10 to 50 is behind the hold.
+    expect(b.target.read()).toBeCloseTo(90, 6);
+    settle(step);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 1);
+  });
+
+  it('carries a push on a spring toward a destination on top of it', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70 }); });
+    step(0);
+    let spring!: ReturnType<typeof animator.physics<number>>;
+    act(() => { spring = animator.physics({ target: b.target, to: 50 }); });
+    step(0);
+    step(50);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 6);
+    act(() => { spring.setVelocity(500); });
+    step(50);
+    expect(b.shown.at(-1)).toBeGreaterThan(75);
+    settle(step);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 1);
+  });
+
+  it('pauses and scales both parts of a spring', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70, weight: 0.5 }); });
+    step(0);
+    let spring!: ReturnType<typeof animator.spring>;
+    act(() => { spring = animator.spring({ target: b.target, from: 30, to: 50 }); });
+    step(0);
+    step(50);
+    const was = b.target.read();
+    act(() => { spring.pause(); });
+    step(200);
+    expect(b.shown.at(-1)).toBeCloseTo(was, 6);
+    act(() => { spring.resume(); });
+    settle(step);
+    expect(b.shown.at(-1)).toBeCloseTo(60, 1);
+  });
+
   it('carries a coast, which has no destination, on top of it', () => {
     const { animator, step } = setup();
     const b = box(10);
