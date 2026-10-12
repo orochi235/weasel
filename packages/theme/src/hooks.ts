@@ -319,6 +319,12 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Color of the bracket a Tree draws down a branch.',
   },
   {
+    name: 'tree-leaf-indent',
+    type: 'dimension',
+    value: '0',
+    description: 'How far in from its branches\' glyphs a Tree with guides sets a row that folds nothing.',
+  },
+  {
     name: 'dialog-max-width',
     type: 'dimension',
     value: '900px',
