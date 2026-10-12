@@ -16,7 +16,8 @@ export interface AssetView {
   selection: EditorSelection;
   /** Show the asset `id`, with nothing selected. */
   show(id: string): void;
-  /** `paths` of the asset shown, as an undo step records the selection. */
+  /** The selection as an undo step records it: `paths` of the asset shown, and what was selected in each other
+   *  asset when it was last shown, so a step can restore the selection of whichever asset it changes. */
   recorded(paths: readonly string[]): string[];
   /** Take the selection a step of the history restores, for {@link AssetView.stepped} to apply. */
   restore(recorded: readonly string[]): void;
@@ -47,7 +48,9 @@ export function useAssetView(workspace: Workspace, opened: Workspace | undefined
   useEffect(() => { openAt.current.set(schema, expanded); }, [schema, expanded]);
   const selection = useEditorSelection(schema, setExpanded);
   const restored = useRef<readonly string[] | null>(null);
+  const selectedIn = useRef(new Map<string, readonly string[]>());
   const showing = (to: Asset, paths: readonly string[]) => {
+    selectedIn.current.set(asset.id, selection.paths);
     setAssetId(to.id);
     setExpanded(startOpen(to.id, to.root));
     selection.set(paths);
@@ -61,13 +64,14 @@ export function useAssetView(workspace: Workspace, opened: Workspace | undefined
       const to = assetOf(workspace, id);
       if (to && to.id !== asset.id) showing(to, NONE);
     },
-    recorded: (paths) => paths.map((path) => scopedPath(asset.id, path)),
+    recorded: (paths) => [...new Map(selectedIn.current).set(asset.id, paths)]
+      .flatMap(([id, held]) => held.map((path) => scopedPath(id, path))),
     restore(recorded) { restored.current = recorded; },
     stepped(before, after) {
       const kept = restored.current;
       restored.current = null;
       const to = assetOf(after, changedAsset(before, after) ?? asset.id) ?? asset;
-      // A step keeps the rows selected in whichever asset was shown when it was made or left, which need not be this one.
+      // A step keeps every asset's selection from when it was made or left; the one it lands on takes its own.
       const paths = kept ? pathsIn(to.id, kept) : NONE;
       if (to.id !== asset.id) {
         showing(to, paths);
@@ -75,8 +79,7 @@ export function useAssetView(workspace: Workspace, opened: Workspace | undefined
       }
       const was = assetOf(before, to.id)?.root ?? to.root;
       setExpanded((open) => openAfterStep(open, was, openAt.current.get(to.root)));
-      // Nothing kept is the root selected, in any asset.
-      if (kept && (paths.length > 0 || kept.length === 0)) selection.set(paths);
+      if (kept) selection.set(paths);
     },
   };
 }
