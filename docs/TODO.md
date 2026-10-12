@@ -663,17 +663,6 @@ Core five + Crop shipped. Remaining:
   the call for a copy made inside the same scene, where the originals are still there to follow, is
   whether it does the same, keeps the list, or re-points the ids it can.
 
-- **(P2) Container-pose cascade: a restored history still undoes a mixed batch wrong.**
-  `sceneToAdapter(scene, { cascadeContainerPose: true }).applyOps(ops, label)` records the poses
-  each op changes, and the op's inverse restores them (`canvas/cascadeRecord.ts`), so a batch that
-  poses a container and its descendants undoes and redoes in a live session. Two paths never pass
-  through that record and still work the cascade out a second time on the way back: a history
-  restored with `restoreHistory`, whose rebuilt ops replay through the `setHistoryAdapter` adapter
-  (measured: A, B, and C at x = 0, 100, and 200 moved by 5, then restored and undone, land at 0,
-  95, and 190), and ops handed straight to `scene.applyBatch` with the cascading adapter. Neither
-  has a fix at the adapter, which sees pose writes and no op boundaries; both go with the cascade
-  itself under "Container-pose cascade as a scene-primitive semantic".
-
 ### Derived geometry follow-ups
 
 Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` /
@@ -856,7 +845,8 @@ decomposition meant to absorb the first; it has not landed:
 ### labkit presentation mode
 
 `<Lab present>`, `?present` and `usePresentation()` show one trial without any
-chrome, for portfolio embeds, with a refit view, play controls and `gestures`;
+chrome, for portfolio embeds, with a refit view, play controls, `gestures`, a
+`still` for poster capture, and `postMessage` play and pause for a host page;
 README "Presenting a lab" and `packages/labkit/docs/AGENTS.md` cover it. What
 is left:
 
@@ -868,8 +858,10 @@ is left:
   that release before it can merge. agnew still plays from its own transport, because its
   three.js view advances the pen itself and holds a finished curve before redrawing it;
   moving it onto a lab clock is an agnew library change, and the owner's call.
-- **(P3) A still for poster capture, and `postMessage` play/pause** so a host
-  page's play control can reach a live lab.
+- **(P3) A still of a clock that is not seekable is taken where the clock
+  opens.** `<Lab still={1200}>` warns and leaves it there, because such an
+  instrument's state is built by running. Holding it at a time means running
+  it forward off screen, at a step the instrument would have to name.
 
 ### labkit's deprecated snapshot undo
 
@@ -1633,11 +1625,15 @@ only story runner in the repo.
   ("an expanded trial keeps its marks over it and takes new ones") hit the 15 s test timeout on
   teitou in two of four full runs on 2026-10-11, at `68e9d70bb` and `de222e61f`, and passed in
   the two between; alone on this machine at `de222e61f` it passed 3 of 3. `compoundRows` failed
-  twice the same evening on an assertion, and its wait was hardened in `de222e61f`. Outside the
+  twice the same evening on an assertion, and its wait was hardened in `de222e61f`; it then hit the
+  15 s test timeout once on msb-uai at `076c8ab87`, the only failure of that run. Outside the
   `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
   pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
-  either side. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
+  either side. A second test in that file ("titles a native story by its meta when forge's meta
+  reaches it through a helper module, and re-decides when the helper changes") failed the same way
+  on teitou at `8f86cc034`, the only failure of that run: the index had not followed the rewritten
+  helper inside its poll. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
   others on one node. Since 2026-10-11 the `browser` project polls for 5 s, not the default 1 s, which
   three of these failures had outlasted (`PrefsRail.marks` twice, `compoundRows`); a 15 s test
   timeout or a stalled Playwright action is untouched by that. Not measured: whether the timeouts follow the node's load, and whether

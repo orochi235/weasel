@@ -18,5 +18,10 @@ export {
   type PresentedTransportOptions,
   usePresentation,
 } from './presentation';
+export type {
+  PresentationCommand,
+  PresentationMessageOptions,
+  PresentationState,
+} from './presentationMessages';
 export type { PanelDescriptor, TrialLayout, WorkspaceProps } from './Workspace';
 export { Workspace } from './Workspace';

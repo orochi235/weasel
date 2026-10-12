@@ -5,7 +5,8 @@
  * `onto test` ships whatever is on disk, so a run started from a checkout other
  * sessions are editing tests their half-finished files and blames the commit.
  * This checks the commit out into a throwaway worktree, runs `onto test` on
- * that, and removes it.
+ * that, and removes it. The job is named for the branch: the one named, or the
+ * one checked out when HEAD is tested.
  *
  *   npm run test:fleet                 # HEAD
  *   npm run test:fleet -- <commit>     # any commit
@@ -39,13 +40,27 @@ const named = first && !first.startsWith('-');
 const commit = git('rev-parse', '--verify', `${named ? first : 'HEAD'}^{commit}`);
 const ontoArgs = named ? rest : process.argv.slice(2);
 
+/** The local branch `ref` names, or '' for a commit, a tag, or a detached HEAD. */
+const branchOf = (ref) => {
+  try {
+    const name = git('rev-parse', '--abbrev-ref', ref);
+    git('show-ref', '--verify', '--quiet', `refs/heads/${name}`);
+    return name;
+  } catch {
+    return '';
+  }
+};
+const branch = branchOf(named ? first : 'HEAD');
+// The throwaway tree is detached, so onto cannot read the branch from it.
+if (branch && !ontoArgs.includes('--branch')) ontoArgs.unshift('--branch', branch);
+
 const main = git('worktree', 'list', '--porcelain').split('\n')[0].replace(/^worktree /, '');
 const tree = mkdtempSync(join(main, '.worktrees', 'fleet-'));
 git('worktree', 'add', '--detach', '--force', tree, commit);
 
 let status = 1;
 try {
-  console.log(`fleet-test: ${git('log', '-1', '--format=%h %s', commit)}`);
+  console.log(`fleet-test: ${git('log', '-1', '--format=%h %s', commit)}${branch ? ` (${branch})` : ''}`);
   const base = git('merge-base', commit, 'origin/main');
   // A node runs one job per tree, so a run started while another session's is on the chosen node is
   // refused. Wait for it rather than fail: the refusal comes before anything has run.

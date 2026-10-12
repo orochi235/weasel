@@ -1,7 +1,6 @@
 import { poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { NodeId } from 'core/scene/types';
 import type { PoseCascade } from '../animation/poseTarget';
-import type { CascadeRecord } from './cascadeRecord';
 
 /** The part of a scene a container's cascade reads. */
 interface CascadeScene<TPose> {
@@ -12,6 +11,7 @@ interface CascadeScene<TPose> {
 /** The part of a scene a cascading `setPose` writes. */
 interface CascadeTarget<TPose> extends CascadeScene<TPose> {
   setPose(id: NodeId, pose: TPose): void;
+  carry(id: NodeId, pose: TPose): void;
   batch<T>(label: string, fn: () => T): T;
 }
 
@@ -58,34 +58,27 @@ export function containerCascade<TPose>(
 
 /**
  * `setPose` for a scene of absolute poses: posing a container moves every
- * descendant by as much, in one undo step. Each write is reported to `record`
- * first.
+ * descendant by as much, in one undo step.
  */
 export function cascadingSetPose<TPose>(
   scene: CascadeTarget<TPose>,
   d: PoseDescriptor<TPose>,
-  record: CascadeRecord<TPose>,
 ): (id: NodeId, pose: TPose) => void {
-  const write = (id: NodeId, before: TPose, pose: TPose): void => {
-    record.note(id, before);
-    scene.setPose(id, pose);
-  };
   return (id, pose) => {
     const node = scene.get(id);
-    if (!node) return scene.setPose(id, pose);
-    if (node.kind !== 'container' || !record.cascades()) return write(id, node.pose, pose);
+    if (!node || node.kind !== 'container') return scene.setPose(id, pose);
     const g = poseDescriptorForNode(d, node);
     const from = g.getBounds(node.pose);
     const to = g.getBounds(pose);
     const dx = to.x - from.x;
     const dy = to.y - from.y;
-    if (dx === 0 && dy === 0) return write(id, node.pose, pose);
+    if (dx === 0 && dy === 0) return scene.setPose(id, pose);
     scene.batch('move container', () => {
-      write(id, node.pose, pose);
+      scene.setPose(id, pose);
       for (const child of descendantsOf(scene, id)) {
         const n = scene.get(child);
         if (!n) continue;
-        write(child, n.pose, translatePoseViaDescriptor(n.pose, dx, dy, poseDescriptorForNode(d, n)));
+        scene.carry(child, translatePoseViaDescriptor(n.pose, dx, dy, poseDescriptorForNode(d, n)));
       }
     });
   };

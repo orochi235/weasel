@@ -45,7 +45,6 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { composeWorldPose, frameAtOrAbove, type PoseComposition } from 'core/scene/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
-import { cascadeRecord } from './cascadeRecord';
 import { cascadingSetPose, containerCascade } from './poseCascade';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 
@@ -200,8 +199,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     );
   }
 
-  const record = options.cascadeContainerPose ? cascadeRecord<TPose>(scene) : null;
-  const cascade = record && { record, setPose: cascadingSetPose(scene, d, record) };
+  const cascade = options.cascadeContainerPose ? { setPose: cascadingSetPose(scene, d) } : null;
 
   const clipboardEnv: SceneClipboardEnv<TData, TLayer, TPose> = {
     scene,
@@ -268,7 +266,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // via applyOpsTo (AreaSelectAdapter contract — no checkpoint).
     applyOps(ops: Op[], label?: string) {
       if (label !== undefined) {
-        scene.applyBatch(cascade ? cascade.record.recorded(ops) : ops, label, this);
+        scene.applyBatch(ops, label, this);
       } else {
         applyOpsTo(this, ops);
       }

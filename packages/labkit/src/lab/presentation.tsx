@@ -1,5 +1,8 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import type { ClockRegistry } from '../clock/clockRegistry';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
+import { type PresentationMessageOptions, usePresentationMessages } from './presentationMessages';
+import { type Still, stillOf, useStill } from './still';
 
 /** A lab's presentation mode: one trial, without the lab's chrome or its own. */
 export interface Presentation {
@@ -14,6 +17,31 @@ interface PresentationContextValue extends Presentation {
   trialId: string | null;
   /** A presented trial's play controls, when it shows them. */
   transport: PresentedTransportOptions | null;
+  /** Whether a lab held still has been painted; `null` for any other lab. */
+  still: 'pending' | 'ready' | null;
+}
+
+/** How a lab starts: presenting or not, and held still or not. */
+export interface PresentationStart {
+  presenting: boolean;
+  still: Still | null;
+}
+
+/** How `<Lab present still>` and the page's URL say a lab starts. A still is
+ *  a presentation, asked for or not. */
+export function presentationStart(
+  present: boolean | undefined,
+  still: boolean | number | undefined,
+): PresentationStart {
+  const held = stillOf(still);
+  return { presenting: present === true || held !== null || hasPresentParam(), still: held };
+}
+
+/** The class of a lab's root, which says how it is presenting. */
+export function labClassName({ active, still }: PresentationContextValue): string {
+  if (!active) return 'lk-lab';
+  if (still === null) return 'lk-lab lk-lab--present';
+  return `lk-lab lk-lab--present lk-lab--still${still === 'ready' ? ' lk-lab--still-ready' : ''}`;
 }
 
 /** How a presented trial shows its play controls. */
@@ -27,22 +55,38 @@ export interface PresentedTransportOptions {
 
 export const PresentationContext = createContext<PresentationContextValue | null>(null);
 
-/** A lab's presentation mode, for its context: started at mount when
- *  `startsPresenting`, presenting the focused trial while active. */
+const NO_OPTIONS: PresentationMessageOptions = {};
+
+/** A lab's presentation mode, for its context: started at mount when `start`
+ *  says so, presenting the focused trial while active. A still shows no play
+ *  controls and answers no messages. */
 export function useLabPresentation(
-  startsPresenting: boolean,
+  start: PresentationStart,
   focusedTrialId: string | null,
   labBody: HTMLElement | null,
-  transport: boolean | PresentedTransportOptions,
+  clocks: ClockRegistry,
+  options: {
+    transport: boolean | PresentedTransportOptions;
+    messages: boolean | PresentationMessageOptions;
+  },
 ): PresentationContextValue {
+  const transport = start.still ? false : options.transport;
   const minWidth =
     transport === false ? null : transport === true ? 480 : (transport.minWidth ?? 480);
   const formatRate = typeof transport === 'object' ? transport.formatRate : undefined;
   // `mount` when the lab started presenting, `enter` when asked to since.
   const [presentedBy, setPresentedBy] = useState<'mount' | 'enter' | null>(
-    startsPresenting ? 'mount' : null,
+    start.presenting ? 'mount' : null,
   );
   const presenting = presentedBy !== null;
+  const still = useStill(start.still, clocks, labBody);
+  usePresentationMessages(
+    presenting && !start.still && options.messages !== false,
+    labBody?.ownerDocument.defaultView ?? null,
+    clocks,
+    focusedTrialId,
+    typeof options.messages === 'object' ? options.messages : NO_OPTIONS,
+  );
 
   // Only a lab asked to present has a workspace to go back to.
   useEffect(() => {
@@ -63,8 +107,9 @@ export function useLabPresentation(
       exit: () => setPresentedBy(null),
       trialId: presenting ? focusedTrialId : null,
       transport: minWidth === null ? null : { minWidth, ...(formatRate ? { formatRate } : {}) },
+      still,
     }),
-    [presenting, focusedTrialId, minWidth, formatRate],
+    [presenting, focusedTrialId, minWidth, formatRate, still],
   );
 }
 
@@ -106,6 +151,6 @@ export function usePresentedTrial(trialId: string): {
 }
 
 /** Whether the page's URL asks for presentation with `?present`. */
-export function hasPresentParam(): boolean {
+function hasPresentParam(): boolean {
   return typeof location !== 'undefined' && new URLSearchParams(location.search).has('present');
 }

@@ -99,6 +99,48 @@ controls hide in a box narrower than 480px — `<Lab transport={{ minWidth: 760
 }}>` moves that line. `<Lab transport={false}>` leaves them off;
 `<TrialTransport>` is the same controls for any lab chrome.
 
+A host page with a play control of its own reaches the lab by `postMessage`,
+in a frame or in the page itself. A presented lab answers these, and posts its
+state to the window around it as it starts, on every change, and when asked —
+never per frame:
+
+```ts
+const lab = iframe.contentWindow; // `window` for a <Lab present> in this page
+lab.postMessage({ type: 'labkit:play' }, origin); // an ended run starts over
+lab.postMessage({ type: 'labkit:pause' }, origin);
+lab.postMessage({ type: 'labkit:seek', time: 1200 }, origin); // ms into the pass
+lab.postMessage({ type: 'labkit:query' }, origin); // ask for the state
+
+window.addEventListener('message', ({ data }) => {
+  if (data?.type !== 'labkit:state') return;
+  // { clock, playing, ended, time, duration, rate, seekable }
+  button.textContent = data.playing ? 'Pause' : 'Play';
+});
+```
+
+`<Lab transport={false}>` leaves the lab's own controls off for a page that
+draws its own. `<Lab messages={{ name: 'hero' }}>` names a lab on a page with
+several: a message carrying `lab: 'hero'` reaches only it, and its state says
+`lab: 'hero'`. `messages={{ origins: [...] }}` says which origins it takes
+messages from, and `messages={false}` turns the channel off. The types are
+`PresentationCommand` and `PresentationState`.
+
+`<Lab still>`, or `?still` in the URL, presents the lab held still for a
+poster: every clock paused where it opens — `still={1200}` or `?still=1200`
+holds them 1200 ms in — with no play controls and nothing read from or written
+to storage, so it shows the `seed` in anyone's browser. The lab's root gains
+`lk-lab--still-ready` once that frame has been drawn, which is what a capture
+waits for:
+
+```ts
+await page.goto('https://example.com/lab.html?still=1200');
+await page.locator('.lk-lab--still-ready').waitFor();
+await page.locator('.lk-lab').screenshot({ path: 'poster.png', omitBackground: true });
+```
+
+A clock that is not seekable stays where it opens, and whatever an instrument
+animates off the clock or loads on its own is the instrument's to settle.
+
 `gestures` on `<Lab>` decides what the trials' cameras take — `{ pan, wheel:
 'plain' | 'mod' | false, pinch, tap }`, over each instrument's own
 `canvas.gestures` / `stage.gestures` — and whatever they leave reaches the page:

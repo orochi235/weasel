@@ -9,6 +9,7 @@ import {
 } from './booleans';
 import type { BooleansAdapter } from '../booleans/booleans';
 import { asNodeId } from 'core/scene/types';
+import { pathFromD, pointInPath, type Path } from '@weasel-js/geom';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 
@@ -174,3 +175,28 @@ describe('pathfinder descriptors (all 6)', () => {
   });
 });
 
+
+describe('Pathfinder actions and strokes', () => {
+  it('reads an unfilled stroked line as its stroke, so Minus Front cuts a slot', () => {
+    const paths: Record<string, Path> = {
+      box: { kind: 'rect', x: 0, y: 0, width: 100, height: 100 },
+      line: pathFromD('M-20 50 L120 50'),
+    };
+    const made: Path[] = [];
+    const adapter: BooleansAdapter = {
+      getSelection: () => [asNodeId('box'), asNodeId('line')],
+      getWorldPath: (id) => paths[id],
+      getPaint: (id) => (id === 'line'
+        ? { fill: null, stroke: { paint: { color: '#000' }, width: 10 } }
+        : { fill: { color: '#888' }, stroke: { paint: { color: '#000' }, width: 10 } }),
+      compareZ: (a, b) => (a === 'box' ? -1 : 1) - (b === 'box' ? -1 : 1),
+      createPathNode: (path) => { made.push(path); return { id: 'new' }; },
+      applyOps: () => {},
+    };
+    runDescriptor(pathfinderSubtractAction, adapter);
+    expect(pointInPath(made[0]!, 50, 50)).toBe(false);
+    expect(pointInPath(made[0]!, 50, 40)).toBe(true);
+    // The filled box's own stroke is not part of its shape.
+    expect(pointInPath(made[0]!, -3, 20)).toBe(false);
+  });
+});
