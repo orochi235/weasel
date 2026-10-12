@@ -20,6 +20,7 @@ import { useNearViewport } from '../useNearViewport';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
 import { LibraryBadge } from './LibraryBadge';
+import num from '@weasel-js/theme/numeric.module.css';
 
 /** What every cell on an index page shares with the frame that hosts it. */
 export interface IndexEnv {
@@ -197,7 +198,7 @@ function HistoryDate({ label, iso }: { label: string; iso: string }) {
   return (
     <div className="fg-index-history__item">
       <dt className="fg-index-history__label">{label}</dt>
-      <dd className="fg-index-history__value">
+      <dd className={`fg-index-history__value ${num.numeric}`}>
         <time dateTime={iso}>{DAY.format(new Date(iso))}</time>
       </dd>
     </div>
@@ -214,7 +215,7 @@ export function IndexHistory() {
     <dl className="fg-index-history" aria-label="History">
       <div className="fg-index-history__item">
         <dt className="fg-index-history__label">Since</dt>
-        <dd className="fg-index-history__value">{history.introduced ?? 'Unreleased'}</dd>
+        <dd className={`fg-index-history__value ${num.numeric}`}>{history.introduced ?? 'Unreleased'}</dd>
       </div>
       <HistoryDate label="Created" iso={history.created} />
       <HistoryDate label="Modified" iso={history.modified} />
