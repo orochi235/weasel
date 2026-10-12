@@ -22,9 +22,9 @@ import type { PatternTransform } from './patternTransform';
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
  *
- * `fill` is optional and defaults to `'solid'` — `{ color: '#abc' }` is
- * equivalent to `{ fill: 'solid', color: '#abc' }`. Pattern paints must set
- * `fill: 'pattern'` explicitly.
+ * `kind` is optional and defaults to `'solid'` — `{ color: '#abc' }` is
+ * equivalent to `{ kind: 'solid', color: '#abc' }`. Pattern paints must set
+ * `kind: 'pattern'` explicitly.
  *
  * The `'pattern'` variant's payload is either a `TilePatternSpec` — plain
  * data naming one of the built-in tiles, which survives serialization — or a
@@ -49,11 +49,11 @@ import type { PatternTransform } from './patternTransform';
  * (SVG's `patternTransform`, less its translation). See `PatternTransform`.
  */
 export type Paint =
-  | { fill?: 'solid'; color: string; opacity?: number }
-  | { fill: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: PaintUnits; origin?: { x: number; y: number }; transform?: PatternTransform; opacity?: number }
-  | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
-  | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
-  | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number };
+  | { kind?: 'solid'; color: string; opacity?: number }
+  | { kind: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: PaintUnits; origin?: { x: number; y: number }; transform?: PatternTransform; opacity?: number }
+  | { kind: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
+  | { kind: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
+  | { kind: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number };
 
 /**
  * Which coordinate space a gradient's geometry (`from`/`to`, `center`,
@@ -114,11 +114,11 @@ export interface GradStop {
  *  edits, and what the gradient-specific helpers accept. */
 export type GradientFill = Extract<
   Paint,
-  { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }
+  { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }
 >;
 
-/** `GradientFill['fill']` — the three gradient discriminants on their own. */
-export type GradientKind = GradientFill['fill'];
+/** `GradientFill['kind']` — the three gradient discriminants on their own. */
+export type GradientKind = GradientFill['kind'];
 
 /**
  * Where a stroke sits relative to the geometric edge it strokes.

@@ -41,7 +41,7 @@ function kindLabel(paint: Paint | null | undefined, mixed: boolean, label: strin
   if (mixed) return 'Mixed';
   if (paint === null) return 'None';
   if (paint === undefined) return '—';
-  return label ?? (paint.fill ?? 'solid');
+  return label ?? (paint.kind ?? 'solid');
 }
 
 /**
@@ -62,7 +62,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
   const ariaLabel = props['aria-label'];
   const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
   const preview = mixed ? undefined : paintPreviewCss(value);
-  const label = usePaintKind(value?.fill)?.label;
+  const label = usePaintKind(value?.kind)?.label;
 
   return (
     <DialogTrigger>

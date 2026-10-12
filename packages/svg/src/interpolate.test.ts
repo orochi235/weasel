@@ -14,7 +14,7 @@ function square(paint: unknown): SvgNode[] {
 }
 
 const LINEAR_OKLCH = {
-  fill: 'linear-gradient' as const,
+  kind: 'linear-gradient' as const,
   from: { x: 0, y: 0 },
   to: { x: 1, y: 0 },
   stops: STOPS,
@@ -54,13 +54,13 @@ describe('gradient interpolation space in SVG', () => {
       expect(linear.interpolate).toBe(space);
 
       const radial = paintOf(serializeSvg(square({
-        fill: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5,
+        kind: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5,
         stops: STOPS, units: 'bounds', interpolate: space,
       })));
       expect(radial.interpolate).toBe(space);
 
       const conic = paintOf(serializeSvg(square({
-        fill: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0,
+        kind: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0,
         stops: STOPS, units: 'bounds', interpolate: space,
       })));
       expect(conic.interpolate).toBe(space);
@@ -69,7 +69,7 @@ describe('gradient interpolation space in SVG', () => {
 
   it('leaves the field off a gradient that never named a space', () => {
     const paint = paintOf(serializeSvg(square({
-      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: STOPS, units: 'bounds',
     })));
     expect(paint.interpolate).toBeUndefined();

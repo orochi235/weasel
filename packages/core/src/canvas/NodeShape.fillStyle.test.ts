@@ -9,7 +9,7 @@ const POSE = { x: 0, y: 0, width: 100, height: 50 };
 const RECT_PATH = { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 };
 
 const GRADIENT: Paint = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 100, y: 0 },
   stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
@@ -36,7 +36,7 @@ describe('kit:path accepts a Paint in data.fill', () => {
   });
 
   it('passes a pattern through', () => {
-    const pattern: Paint = { fill: 'pattern', pattern: { id: 'checker' } as never };
+    const pattern: Paint = { kind: 'pattern', pattern: { id: 'checker' } as never };
     expect(paintOf({ path: RECT_PATH, fill: pattern }).fill).toEqual(pattern);
   });
 

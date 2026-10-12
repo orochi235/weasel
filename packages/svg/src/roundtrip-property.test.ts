@@ -33,14 +33,14 @@ function makeTree(seed: number): SvgNode[] {
 
   const gradient = (): Paint => (r() < 0.5
     ? {
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: coord(), y: coord() },
       to: { x: coord(), y: coord() },
       stops: [{ offset: 0, color: pick(COLORS) }, { offset: 1, color: pick(COLORS) }],
       units: pick(['bounds', 'world'] as const),
     }
     : {
-      fill: 'radial-gradient',
+      kind: 'radial-gradient',
       center: { x: coord(), y: coord() },
       radius: Math.abs(coord()) + 1,
       stops: [{ offset: 0.25, color: pick(COLORS) }, { offset: 1, color: pick(COLORS) }],
@@ -120,7 +120,7 @@ function makeTree(seed: number): SvgNode[] {
         fontFamily: pick(['Inter', 'Helvetica Neue', 'Times New Roman']),
         ...(r() < 0.5 ? { align: pick(['left', 'center', 'right'] as const) } : {}),
         ...(r() < 0.5 ? { underline: true } : {}),
-        ...(r() < 0.4 ? { fill: { fill: 'solid', color: pick(COLORS) } as Paint } : {}),
+        ...(r() < 0.4 ? { fill: { kind: 'solid', color: pick(COLORS) } as Paint } : {}),
       };
     }
     if (r() < 0.3) node.rotation = Math.round(r() * 6000) / 1000;

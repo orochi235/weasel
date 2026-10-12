@@ -206,7 +206,7 @@ export function CompoundPathsDemo() {
                 return [textCommandFromRuns(
                   W - 10 - text.length * charW,
                   H - 8 - 14,
-                  [{ text, fill: { fill: 'solid', color: '#ff3344' } }],
+                  [{ text, fill: { kind: 'solid', color: '#ff3344' } }],
                   { fontFamily: 'sans-serif', fontSize: 14 },
                 )];
               },

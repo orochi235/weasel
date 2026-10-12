@@ -34,7 +34,7 @@ function tensor(): MeshPatch {
 }
 
 function mesh(...patches: MeshPatch[]): MeshGradientFill {
-  return { fill: 'mesh-gradient', patches, units: 'local' };
+  return { kind: 'mesh-gradient', patches, units: 'local' };
 }
 
 function handleAt(handles: readonly MeshHandle[], kind: MeshHandle['kind'], x: number, y: number): MeshHandle {

@@ -12,7 +12,7 @@ Repeating texture tiles for `Paint`.
 3. That's registered via `registerTexture()`.
 
 The returned `TextureHandle` is what `Paint.pattern` accepts — so a
-patterned fill is `{ fill: 'pattern', pattern: handle }`. See
+patterned fill is `{ kind: 'pattern', pattern: handle }`. See
 `@weasel-js/paint`.
 
 The tile is rasterized **once**, at build time, not per frame. Consequences

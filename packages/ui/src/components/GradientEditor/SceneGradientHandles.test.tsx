@@ -23,7 +23,7 @@ const STOPS = [
 
 /** A left-to-right ramp across the node's box, in the frame the node stores. */
 const BOUNDS_RAMP: GradientFill = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 0 },
   stops: STOPS,
@@ -127,14 +127,14 @@ function expectAt(label: string, x: number, y: number): void {
 
 describe('SceneGradientHandles', () => {
   it('draws nothing when the targeted slot holds no gradient', () => {
-    const scene = sceneWith(BOX, { fill: { fill: 'solid', color: '#ff0000' } });
+    const scene = sceneWith(BOX, { fill: { kind: 'solid', color: '#ff0000' } });
     render(<Overlay scene={scene} slot="fill" seen={[]} />);
     expect(screen.queryByLabelText('Gradient start')).toBeNull();
   });
 
   it('reads the slot it is given, not whichever paint the node has', () => {
     const scene = sceneWith(BOX, {
-      fill: { fill: 'solid', color: '#ff0000' },
+      fill: { kind: 'solid', color: '#ff0000' },
       stroke: { paint: BOUNDS_RAMP, width: 2 },
     });
     const { rerender } = render(<Overlay scene={scene} slot="fill" seen={[]} />);
@@ -170,7 +170,7 @@ describe('SceneGradientHandles', () => {
 
     expect(seen.at(-1)).toMatchObject({
       action: 'setFill',
-      paint: { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0.5, y: 0.5 }, units: 'bounds' },
+      paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0.5, y: 0.5 }, units: 'bounds' },
     });
   });
 
@@ -214,7 +214,7 @@ describe('SceneGradientHandles', () => {
 
     const last = seen.at(-1) as { action: string; paint: MeshGradientFill };
     expect(last.action).toBe('setFill');
-    expect(last.paint.fill).toBe('mesh-gradient');
+    expect(last.paint.kind).toBe('mesh-gradient');
     expect(last.paint.units).toBe('bounds');
     expect(last.paint.patches[0].points[6]).toEqual({ x: 0.5, y: 0.5 });
   });

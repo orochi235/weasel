@@ -1,7 +1,7 @@
 /**
  * Built-in pattern factories — generic line/dot/scatter textures. Each
  * returns a `TextureHandle` you can wrap in a `Paint` of
- * `{ fill: 'pattern', pattern }` and pass to anything that accepts a `Paint`
+ * `{ kind: 'pattern', pattern }` and pass to anything that accepts a `Paint`
  * (`Paint`-aware layers, path fills, etc.).
  * Imported from a subpath so consumers that ship their own catalog can
  * avoid the bundle cost.

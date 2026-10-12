@@ -146,12 +146,12 @@ export function createPathEditingOverlayLayer(
             out.push({
               kind: 'path',
               path: linePath({ x: ax, y: ay }, { x: hx, y: hy }),
-              stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
+              stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
             });
             out.push({
               kind: 'path',
               path: circlePath(hx, hy, style.handleDotRadiusPx),
-              fill: { fill: 'solid', color: style.handleDotFill },
+              fill: { kind: 'solid', color: style.handleDotFill },
             });
           }
           if (a.outHandle) {
@@ -159,12 +159,12 @@ export function createPathEditingOverlayLayer(
             out.push({
               kind: 'path',
               path: linePath({ x: ax, y: ay }, { x: hx, y: hy }),
-              stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
+              stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
             });
             out.push({
               kind: 'path',
               path: circlePath(hx, hy, style.handleDotRadiusPx),
-              fill: { fill: 'solid', color: style.handleDotFill },
+              fill: { kind: 'solid', color: style.handleDotFill },
             });
           }
 
@@ -173,10 +173,10 @@ export function createPathEditingOverlayLayer(
             kind: 'path',
             path: squarePath(ax, ay, style.anchorSizePx),
             fill: {
-              fill: 'solid',
+              kind: 'solid',
               color: isSelected ? style.anchorFillSelected : style.anchorFill,
             },
-            stroke: { paint: { fill: 'solid', color: style.anchorStroke }, width: 1 },
+            stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
           });
         }
       }
@@ -189,8 +189,8 @@ export function createPathEditingOverlayLayer(
         out.push({
           kind: 'path',
           path: rectMarkerPath(mx, my, mx2 - mx, my2 - my),
-          fill: { fill: 'solid', color: style.marqueeFill },
-          stroke: { paint: { fill: 'solid', color: style.marqueeStroke }, width: 1 },
+          fill: { kind: 'solid', color: style.marqueeFill },
+          stroke: { paint: { kind: 'solid', color: style.marqueeStroke }, width: 1 },
         });
       }
 

@@ -344,7 +344,7 @@ describe('computeIndicatorCommand', () => {
       { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { width: 100, height: 100 },
     );
-    expect(cmd.stroke?.paint).toEqual({ fill: 'solid', color: '#ffffff' });
+    expect(cmd.stroke?.paint).toEqual({ kind: 'solid', color: '#ffffff' });
     expect(cmd.stroke?.width).toBe(1);
     expect(cmd.stroke?.dash).toEqual([2, 3]);
   });
@@ -355,7 +355,7 @@ describe('computeIndicatorCommand', () => {
       { width: 100, height: 100 },
       { stroke: '#ff00aa', width: 2.5, dash: [4, 1, 2, 1] },
     );
-    expect(cmd.stroke?.paint).toEqual({ fill: 'solid', color: '#ff00aa' });
+    expect(cmd.stroke?.paint).toEqual({ kind: 'solid', color: '#ff00aa' });
     expect(cmd.stroke?.width).toBe(2.5);
     expect(cmd.stroke?.dash).toEqual([4, 1, 2, 1]);
   });

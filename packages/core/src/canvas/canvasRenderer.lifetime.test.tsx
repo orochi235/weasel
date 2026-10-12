@@ -75,7 +75,7 @@ describe('detached canvas renderer lifetime', () => {
     expectFreedOnUnmount(
       <DrawCanvas
         width={40} height={20}
-        draw={[{ kind: 'path', path: { kind: 'rect', x: 1, y: 2, width: 3, height: 4 }, fill: { fill: 'solid', color: '#f00' } }]}
+        draw={[{ kind: 'path', path: { kind: 'rect', x: 1, y: 2, width: 3, height: 4 }, fill: { kind: 'solid', color: '#f00' } }]}
       />,
     );
   });

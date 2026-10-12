@@ -83,7 +83,7 @@ describe('planPixelRender', () => {
     expect(p.commands[0]).toMatchObject({
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 80, height: 40 },
-      fill: { fill: 'solid', color: '#ffffff' },
+      fill: { kind: 'solid', color: '#ffffff' },
     });
     expect(p.commands[1].kind).toBe('group');
   });

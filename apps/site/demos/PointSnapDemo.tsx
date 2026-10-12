@@ -19,7 +19,7 @@ const SNAP_GRID = 20;
 const GRID_LAYER = createGridLayer({
   spacing: SNAP_GRID,
   bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-  style: { line: { paint: { fill: 'solid', color: '#3a3020' }, width: 1 } },
+  style: { line: { paint: { kind: 'solid', color: '#3a3020' }, width: 1 } },
 });
 
 const INITIAL: Rect[] = [

@@ -8,11 +8,11 @@ afterEach(() => { vi.restoreAllMocks(); });
 const RECT = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } as const;
 
 const linear = asPaint({
-  fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 },
+  kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 },
   stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
 });
-const mesh = { fill: 'mesh-gradient', patches: [] } as unknown as Paint;
-const late = (id: string) => ({ fill: id }) as unknown as Paint;
+const mesh = { kind: 'mesh-gradient', patches: [] } as unknown as Paint;
+const late = (id: string) => ({ kind: id }) as unknown as Paint;
 
 function box(paint: Paint): SvgNode {
   return { kind: 'path', path: RECT, fill: { kind: 'gradient', paint } };
@@ -51,7 +51,7 @@ describe('svgNeeds', () => {
   });
 
   it('skips a paint the writer puts inline as a color', () => {
-    const nodes = [text([{ text: 'a', fill: asPaint({ fill: 'solid', color: '#f00' }) }])];
+    const nodes = [text([{ text: 'a', fill: asPaint({ kind: 'solid', color: '#f00' }) }])];
     expect(svgNeeds(nodes).paintKinds).toEqual([]);
   });
 

@@ -27,7 +27,7 @@ export interface CellHighlightLayerOpts {
   fill?: CommandFill;
 }
 
-const DEFAULT_FILL: CommandFill = { fill: 'solid', color: 'rgba(127,176,105,0.15)' };
+const DEFAULT_FILL: CommandFill = { kind: 'solid', color: 'rgba(127,176,105,0.15)' };
 
 /** Build a `RenderLayer` that fills a single grid cell — typically a snap-target preview. */
 export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLayer<unknown> {

@@ -32,7 +32,7 @@ function paintRects(id: string, shapes: Shape[]): RenderLayer<unknown> {
       shapes.map((s) => ({
         kind: 'path',
         path: { kind: 'rect', x: s.x, y: s.y, width: s.w, height: s.h },
-        fill: { fill: 'solid', color: s.color },
+        fill: { kind: 'solid', color: s.color },
       })),
   };
 }
@@ -53,7 +53,7 @@ function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
         return puffs.map((b) => ({
           kind: 'path' as const,
           path: ellipsePath(b),
-          fill: { fill: 'solid' as const, color: s.color },
+          fill: { kind: 'solid' as const, color: s.color },
         }));
       }),
   };

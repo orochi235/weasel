@@ -11,7 +11,7 @@ import { seedMeshPatch } from '@weasel-js/core/mesh';
 import { PaintInput } from './PaintInput';
 
 const LINEAR: GradientFill = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 0 },
   stops: [
@@ -21,7 +21,7 @@ const LINEAR: GradientFill = {
   units: 'bounds',
 };
 
-const SOLID: Paint = { fill: 'solid', color: '#336699ff' };
+const SOLID: Paint = { kind: 'solid', color: '#336699ff' };
 
 /** A controlled host, so a kind switch feeds its own next render the way a
  *  panel does — the switch memory is only reachable across renders. */
@@ -94,7 +94,7 @@ describe('PaintInput', () => {
 
     clickKind('Linear');
     const next = onChange.mock.calls.at(-1)?.[0] as GradientFill;
-    expect(next.fill).toBe('linear-gradient');
+    expect(next.kind).toBe('linear-gradient');
     expect(next.stops[0].color).toBe('#336699ff');
   });
 
@@ -113,7 +113,7 @@ describe('PaintInput', () => {
 
     clickKind('Pattern');
     const next = onCommit.mock.calls.at(-1)?.[0] as Paint;
-    expect(next.fill).toBe('pattern');
+    expect(next.kind).toBe('pattern');
     expect(next).toMatchObject({ pattern: { color: '#336699ff' } });
   });
 
@@ -123,7 +123,7 @@ describe('PaintInput', () => {
 
     clickKind('Radial');
     const next = onCommit.mock.calls.at(-1)?.[0] as GradientFill;
-    expect(next.fill).toBe('radial-gradient');
+    expect(next.kind).toBe('radial-gradient');
     expect(next.stops).toEqual(LINEAR.stops);
   });
 
@@ -132,8 +132,8 @@ describe('PaintInput', () => {
     render(<Host initial={LINEAR} onCommit={onCommit} />);
 
     clickKind('Mesh');
-    const next = onCommit.mock.calls.at(-1)?.[0] as unknown as { fill: string; patches: { colors: string[] }[] };
-    expect(next.fill).toBe('mesh-gradient');
+    const next = onCommit.mock.calls.at(-1)?.[0] as unknown as { kind: string; patches: { colors: string[] }[] };
+    expect(next.kind).toBe('mesh-gradient');
     expect(next.patches[0].colors).toEqual(['#ff0000ff', '#0000ffff', '#0000ffff', '#ff0000ff']);
   });
 
@@ -141,7 +141,7 @@ describe('PaintInput', () => {
     // Radial carries no angle, so conic -> radial -> conic is the round trip
     // a conversion cannot survive. The memory is what restores the angle.
     const CONIC: GradientFill = {
-      fill: 'conic-gradient',
+      kind: 'conic-gradient',
       center: { x: 0.5, y: 0.5 },
       angle: 1.2,
       stops: LINEAR.stops,
@@ -153,9 +153,9 @@ describe('PaintInput', () => {
     clickKind('Radial');
     clickKind('Conic');
     const back = onCommit.mock.calls.at(-1)?.[0] as GradientFill;
-    expect(back.fill).toBe('conic-gradient');
+    expect(back.kind).toBe('conic-gradient');
     // Converting radial -> conic would have flattened this to 0.
-    expect((back as Extract<GradientFill, { fill: 'conic-gradient' }>).angle).toBe(1.2);
+    expect((back as Extract<GradientFill, { kind: 'conic-gradient' }>).angle).toBe(1.2);
   });
 
   it('offers None, and switching to it commits no paint at all', () => {
@@ -204,25 +204,25 @@ describe('PaintInput — a registered kind', () => {
     disposers.push(registerPaintKind({
       id: 'noise',
       label: 'Noise',
-      seed: (color) => asPaint({ fill: 'noise', color }),
+      seed: (color) => asPaint({ kind: 'noise', color }),
       colorOf: (paint) => (paint as unknown as { color?: string }).color,
       Editor: () => <div data-testid="noise-editor" />,
     }));
 
-    render(<PaintInput value={asPaint({ fill: 'noise', color: '#112233ff' })} onChange={() => {}} />);
+    render(<PaintInput value={asPaint({ kind: 'noise', color: '#112233ff' })} onChange={() => {}} />);
     expect(screen.getByRole('radio', { name: 'Noise' })).toBeInTheDocument();
     expect(screen.getByTestId('noise-editor')).toBeInTheDocument();
   });
 
   it('picks up a kind registered after it mounted', () => {
-    render(<PaintInput value={asPaint({ fill: 'noise', color: '#112233ff' })} onChange={() => {}} />);
+    render(<PaintInput value={asPaint({ kind: 'noise', color: '#112233ff' })} onChange={() => {}} />);
     expect(screen.queryByRole('radio', { name: 'Noise' })).toBeNull();
 
     act(() => {
       disposers.push(registerPaintKind({
         id: 'noise',
         label: 'Noise',
-        seed: (color) => asPaint({ fill: 'noise', color }),
+        seed: (color) => asPaint({ kind: 'noise', color }),
         colorOf: (paint) => (paint as unknown as { color?: string }).color,
         Editor: () => <div data-testid="noise-editor" />,
       }));
@@ -249,14 +249,14 @@ describe('PaintInput — a registered kind', () => {
     disposers.push(registerPaintKind({
       id: 'noise',
       label: 'Noise',
-      seed: (color) => asPaint({ fill: 'noise', color }),
+      seed: (color) => asPaint({ kind: 'noise', color }),
       colorOf: (paint) => (paint as unknown as { color?: string }).color,
     }));
     const onChange = vi.fn();
     const onInput = vi.fn();
     const { container } = render(
       <PaintInput
-        value={asPaint({ fill: 'noise', color: '#112233ff' })}
+        value={asPaint({ kind: 'noise', color: '#112233ff' })}
         onInput={onInput}
         onChange={onChange}
       />,
@@ -301,7 +301,7 @@ describe('PaintInput — solid opacity', () => {
 
 describe('PaintInput — opacity of a paint with no single color', () => {
   const PATTERN: Paint = {
-    fill: 'pattern',
+    kind: 'pattern',
     pattern: { tile: 'hatch', color: '#336699', size: 8 },
     units: 'bounds',
   };

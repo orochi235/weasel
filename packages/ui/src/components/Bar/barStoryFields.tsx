@@ -19,7 +19,7 @@ export function useStoryFields(): { id: string; field: PropertyControlProps }[] 
   const [grid, setGrid] = useState(true);
   const [align, setAlign] = useState<string>('left');
   const [color, setColor] = useState('#7ec8e3');
-  const [paint, setPaint] = useState<Paint | null>({ fill: 'solid', color: '#e37e9c' });
+  const [paint, setPaint] = useState<Paint | null>({ kind: 'solid', color: '#e37e9c' });
   const [family, setFamily] = useState('sans-serif');
   const [weight, setWeight] = useState(400);
   return [

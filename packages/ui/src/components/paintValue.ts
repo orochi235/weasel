@@ -9,19 +9,19 @@
  *  carrying a color, which is the solid member with its optional tag left off.
  *  A pref's stored value is `unknown`, so this is what stands between a paint
  *  control and a string someone saved there. */
-export function isPaint(value: unknown): value is { fill?: string; color?: string } {
+export function isPaint(value: unknown): value is { kind?: string; color?: string } {
   if (typeof value !== 'object' || value === null) return false;
-  const paint = value as { fill?: unknown; color?: unknown };
-  return typeof paint.fill === 'string' || typeof paint.color === 'string';
+  const paint = value as { kind?: unknown; color?: unknown };
+  return typeof paint.kind === 'string' || typeof paint.color === 'string';
 }
 
 /** The color of a solid paint, or `undefined` for anything else — including a
- *  value that isn't a paint at all. `fill` is optional on the solid member of
+ *  value that isn't a paint at all. `kind` is optional on the solid member of
  *  the union, so the tag alone can't decide it. */
 export function solidColorOf(value: unknown): string | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
-  const paint = value as { fill?: string; color?: unknown };
-  if (paint.fill !== undefined && paint.fill !== 'solid') return undefined;
+  const paint = value as { kind?: string; color?: unknown };
+  if (paint.kind !== undefined && paint.kind !== 'solid') return undefined;
   return typeof paint.color === 'string' ? paint.color : undefined;
 }
 

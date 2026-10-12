@@ -10,7 +10,7 @@ import { WD_RENDERERS } from '../paintRenderers';
 const STROKE_PAINT_LEAF = {
   kind: 'paint',
   name: 'Color',
-  default: { fill: 'solid', color: '#000000ff' },
+  default: { kind: 'solid', color: '#000000ff' },
   alpha: true,
 } as unknown as PropertyRenderContext['pref'];
 
@@ -28,7 +28,7 @@ function ctxWith(value: unknown, selectionKey = ''): PropertyRenderContext {
 }
 
 const GRADIENT = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 0 },
   units: 'bounds',
@@ -48,7 +48,7 @@ describe("WeaselDraw's data.stroke.paint renderer", () => {
   // an object and threw the panel away.
   it.each([
     ['no stroke', undefined, '#000000'],
-    ['a solid stroke', { fill: 'solid', color: '#123456ff' }, '#123456'],
+    ['a solid stroke', { kind: 'solid', color: '#123456ff' }, '#123456'],
   ])('shows a color for %s', (_label, value, expected) => {
     expect(colorInputValue(value)).toBe(expected);
   });
@@ -96,11 +96,11 @@ describe("WeaselDraw's paint renderers across selections", () => {
       </ActionsProvider>
     );
     const { rerender } = render(at(GRADIENT, 'a'));
-    rerender(at({ fill: 'solid', color: '#123456ff' }, 'b'));
+    rerender(at({ kind: 'solid', color: '#123456ff' }, 'b'));
     fireEvent.click(screen.getByRole('radio', { name: 'Linear' }));
 
     const paint = seen.at(-1) as typeof GRADIENT;
-    expect(paint.fill).toBe('linear-gradient');
+    expect(paint.kind).toBe('linear-gradient');
     expect(paint.stops[0].color).toBe('#123456ff');
   });
 });

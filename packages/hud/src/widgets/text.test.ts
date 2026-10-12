@@ -50,7 +50,7 @@ describe('text widget', () => {
     };
     const cmds = t.draw(customCtx);
     const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
-    expect(fill).toEqual({ fill: 'solid', color: '#facade' });
+    expect(fill).toEqual({ kind: 'solid', color: '#facade' });
   });
 
   it('respects explicit opts.color over theme', () => {
@@ -61,6 +61,6 @@ describe('text widget', () => {
     };
     const cmds = t.draw(customCtx);
     const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
-    expect(fill).toEqual({ fill: 'solid', color: '#ff0000' });
+    expect(fill).toEqual({ kind: 'solid', color: '#ff0000' });
   });
 });

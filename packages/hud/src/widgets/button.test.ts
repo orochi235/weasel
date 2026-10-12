@@ -176,7 +176,7 @@ describe('button widget', () => {
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-fg': '#decade' } };
     const cmds = b.draw(customCtx);
     const text = cmds.find(c => c.kind === 'text') as TextDrawCommand;
-    expect(text.runs[0].fill).toEqual({ fill: 'solid', color: '#decade' });
+    expect(text.runs[0].fill).toEqual({ kind: 'solid', color: '#decade' });
   });
 });
 

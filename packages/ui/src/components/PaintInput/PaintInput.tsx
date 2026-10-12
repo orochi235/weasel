@@ -48,15 +48,15 @@ function solidFromField(color: string): Paint {
 }
 
 function isPattern(paint: Paint | undefined): paint is PatternFill {
-  return paint?.fill === 'pattern';
+  return paint?.kind === 'pattern';
 }
 
-/** A paint's own discriminant. The solid member leaves `fill` off, and an
+/** A paint's own discriminant. The solid member leaves `kind` off, and an
  *  explicit `null` is the absence of paint rather than an unknown one. */
 function kindOf(paint: Paint | null | undefined): PaintKind | null {
   if (paint === null) return NONE;
   if (paint === undefined) return null;
-  return paint.fill ?? 'solid';
+  return paint.kind ?? 'solid';
 }
 
 /** Props for {@link PaintInput}. `onInput` fires throughout a gesture and
@@ -120,7 +120,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   const active = mixed ? null : kindOf(value);
   if (value != null && active !== null) remembered.set(active, value);
 
-  const valueKind = usePaintKind(value?.fill);
+  const valueKind = usePaintKind(value?.kind);
   const entries = usePaintKinds().filter(
     (entry) => kinds === undefined || kinds.includes(entry.id),
   );

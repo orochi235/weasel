@@ -9,7 +9,7 @@ const runs: StyledRun[] = [
 ];
 
 describe('an unfilled range', () => {
-  const red = { fill: 'solid' as const, color: '#f00' };
+  const red = { kind: 'solid' as const, color: '#f00' };
   const mixedRuns: StyledRun[] = [{ text: 'ab', fill: null }, { text: 'cd', fill: red }, { text: 'ef' }];
 
   it('reads as null, apart from a color and from inheriting', () => {
@@ -271,7 +271,7 @@ describe('applyStyleToRange', () => {
 
   it('coalesces gradient fills structurally', () => {
     const grad = (): StyledRun['fill'] => ({
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 1, y: 1 },
       stops: [
@@ -319,7 +319,7 @@ describe('runsCarryStyling', () => {
   it('is true when any run sets a non-flag key', () => {
     expect(runsCarryStyling([{ text: 'a', fontSize: 24 }])).toBe(true);
     expect(runsCarryStyling([{ text: 'a', fontFamily: 'serif' }])).toBe(true);
-    expect(runsCarryStyling([{ text: 'a', fill: { fill: 'solid', color: '#f00' } }])).toBe(true);
+    expect(runsCarryStyling([{ text: 'a', fill: { kind: 'solid', color: '#f00' } }])).toBe(true);
   });
 
   it('counts letterSpacing: 0, which cancels node-level tracking', () => {

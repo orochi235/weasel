@@ -1,7 +1,7 @@
 /**
  * Tile-pattern primitive — a small helper for building repeating texture
  * tiles from a draw callback. The result plugs into a `Paint` of
- * `{ fill: 'pattern', pattern }` (see `@weasel-js/paint`).
+ * `{ kind: 'pattern', pattern }` (see `@weasel-js/paint`).
  *
  * GL-backed: the tile is rendered to an `OffscreenCanvas` (with a 2D fallback
  * to a regular `<canvas>` for environments without `OffscreenCanvas`),
@@ -27,7 +27,7 @@ export interface TilePatternOpts {
 /**
  * Render a single tile to an offscreen canvas and register it as a GL
  * texture, returning a `TextureHandle` you can wrap in a `Paint` of
- * `{ fill: 'pattern', pattern }`. Returns `null` only when an
+ * `{ kind: 'pattern', pattern }`. Returns `null` only when an
  * `OffscreenCanvas`/2D context can't be acquired (very rare; same fallback
  * semantics as the prior `CanvasPattern`-based implementation).
  */

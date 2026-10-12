@@ -39,7 +39,7 @@ function triangle(): PolygonPath {
  * prove nothing.
  */
 interface WashFill {
-  fill: 'test-wash';
+  kind: 'test-wash';
   origin: { x: number; y: number };
   color: string;
   units?: 'bounds' | 'local';
@@ -57,7 +57,7 @@ void main() { outColor = vec4(u_washColor.rgb * u_washColor.a, u_washColor.a); }
 `;
 
 const WASH: Paint = asPaint<WashFill>({
-  fill: 'test-wash',
+  kind: 'test-wash',
   origin: { x: 0.25, y: 0.5 },
   color: '#ff00ff',
   units: 'bounds',
@@ -67,7 +67,7 @@ function washEntry(): PaintKindEntry {
   return {
     id: 'test-wash',
     label: 'Wash',
-    seed: (color) => asPaint<WashFill>({ fill: 'test-wash', origin: { x: 0.5, y: 0.5 }, color, units: 'bounds' }),
+    seed: (color) => asPaint<WashFill>({ kind: 'test-wash', origin: { x: 0.5, y: 0.5 }, color, units: 'bounds' }),
     colorOf: (paint) => (paint as unknown as WashFill).color,
     bind: (ctx) => {
       const prog = ctx.program(WASH_PROGRAM);
@@ -212,7 +212,7 @@ describe('paint-kind registry', () => {
   });
 
   it('leaves an unregistered kind untouched rather than guessing a frame', () => {
-    const alien = asPaint({ fill: 'not-registered', color: '#123456' });
+    const alien = asPaint({ kind: 'not-registered', color: '#123456' });
     const box = { x: 10, y: 20, width: 200, height: 40 };
     expect(fillInPoseFrame(alien, box)).toBe(alien);
     expect(fillToBoundsFrame(alien, box)).toBe(alien);

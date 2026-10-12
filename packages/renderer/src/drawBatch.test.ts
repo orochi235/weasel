@@ -57,7 +57,7 @@ describe('renderer — consecutive solid-fill batching', () => {
   const vcolorRect = (x: number): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
-    fill: { fill: 'solid', color: '#ffffff' },
+    fill: { kind: 'solid', color: '#ffffff' },
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
   } as DrawCommand);
 
@@ -65,7 +65,7 @@ describe('renderer — consecutive solid-fill batching', () => {
     kind: 'path',
     path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
     fill: {
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 }, to: { x: 10, y: 10 },
       stops: STOPS,
     },
@@ -253,7 +253,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       kind: 'path',
       path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
       fill: {
-        fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
+        kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
       },
     } as DrawCommand);
 
@@ -263,7 +263,7 @@ describe('renderer — consecutive solid-fill batching', () => {
         kind: 'path',
         path: { kind: 'rect', x: i * 2, y: 0, width: 1, height: 1 },
         fill: {
-          fill: 'linear-gradient',
+          kind: 'linear-gradient',
           from: { x: 0, y: 0 }, to: { x: 10, y: 0 },
           stops: [{ offset: 0, color: `rgb(${i}, 0, 0)` }, { offset: 1, color: '#fff' }],
         },
@@ -914,7 +914,7 @@ describe('renderer — text in the batch', () => {
     kind: 'text', x: 0, y: 0,
     runs: [{
       text, fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-      fontStyle: 'normal', fill: { fill: 'solid', color: '#0000ff' },
+      fontStyle: 'normal', fill: { kind: 'solid', color: '#0000ff' },
       letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
       ...extra,

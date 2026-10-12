@@ -108,7 +108,7 @@ function styleOf(c: Case): TextStyle {
 
 const boxHeight = (c: Case): number => c.fontSize * 1.2 * (c.justifyLines ?? 1);
 
-const WHITE = { fill: 'solid' as const, color: '#ffffff' };
+const WHITE = { kind: 'solid' as const, color: '#ffffff' };
 
 function renderCanvas(c: Case, dpr: number): RasterImage {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });

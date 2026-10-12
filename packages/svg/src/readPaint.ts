@@ -132,8 +132,8 @@ export function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
     paint = stroke.paint.paint;
   } else if (stroke.paint.kind === 'solid') {
     paint = stroke.paint.opacity != null
-      ? { fill: 'solid', color: stroke.paint.color, opacity: stroke.paint.opacity }
-      : { fill: 'solid', color: stroke.paint.color };
+      ? { kind: 'solid', color: stroke.paint.color, opacity: stroke.paint.opacity }
+      : { kind: 'solid', color: stroke.paint.color };
   } else {
     return undefined;
   }

@@ -45,12 +45,12 @@ function detailLayer(): RenderLayer<unknown> {
         out.push({
           kind: 'path',
           path: { kind: 'rect', x: px(i * 20), y: py(0), width: v.scale.x, height: 800 * v.scale.y },
-          fill: { fill: 'solid', color: '#3a3f4a' },
+          fill: { kind: 'solid', color: '#3a3f4a' },
         });
         out.push({
           kind: 'path',
           path: { kind: 'rect', x: px(0), y: py(i * 20), width: 800 * v.scale.x, height: v.scale.y },
-          fill: { fill: 'solid', color: '#3a3f4a' },
+          fill: { kind: 'solid', color: '#3a3f4a' },
         });
       }
       // Alternating single-world-px rules: unreadable at 1:1 and the sharpest
@@ -63,7 +63,7 @@ function detailLayer(): RenderLayer<unknown> {
             x: px(RULING.x + i * 2), y: py(RULING.y),
             width: v.scale.x, height: RULING.size * v.scale.y,
           },
-          fill: { fill: 'solid', color: '#20242c' },
+          fill: { kind: 'solid', color: '#20242c' },
         });
       }
       ['#e0533d', '#4ea6ff', '#7fd67f', '#e8c33d'].forEach((color, i) => {
@@ -74,7 +74,7 @@ function detailLayer(): RenderLayer<unknown> {
             x: px(120 + i * 90), y: py(160),
             width: 60 * v.scale.x, height: 60 * v.scale.y,
           },
-          fill: { fill: 'solid', color },
+          fill: { kind: 'solid', color },
         });
       });
       return out;
@@ -164,14 +164,14 @@ export function LoupeDemo() {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        backgroundFill={{ fill: 'solid', color: PAPER }}
+        backgroundFill={{ kind: 'solid', color: PAPER }}
         ambient={[hudTool]}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { fill: 'solid', color: n.data.color },
+              fill: { kind: 'solid', color: n.data.color },
             }],
           },
           // Not registerLayer: extras draw after the hud's own registered

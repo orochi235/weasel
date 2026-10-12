@@ -99,24 +99,24 @@ describe('resolveFillPattern', () => {
   afterEach(uninstallFakeOffscreenCanvas);
 
   it('swaps a spec payload for a handle', () => {
-    const out = resolveFillPattern({ fill: 'pattern', pattern: HATCH });
+    const out = resolveFillPattern({ kind: 'pattern', pattern: HATCH });
     expect(out).not.toBeNull();
-    const payload = (out as Extract<Paint, { fill: 'pattern' }>).pattern;
+    const payload = (out as Extract<Paint, { kind: 'pattern' }>).pattern;
     expect(isPatternSpec(payload)).toBe(false);
     expect(payload).toHaveProperty('id');
   });
 
   it('preserves the paint\'s other fields', () => {
     const out = resolveFillPattern({
-      fill: 'pattern', pattern: HATCH, units: 'local', origin: { x: 3, y: 4 }, opacity: 0.5,
-    }) as Extract<Paint, { fill: 'pattern' }>;
+      kind: 'pattern', pattern: HATCH, units: 'local', origin: { x: 3, y: 4 }, opacity: 0.5,
+    }) as Extract<Paint, { kind: 'pattern' }>;
     expect(out.units).toBe('local');
     expect(out.origin).toEqual({ x: 3, y: 4 });
     expect(out.opacity).toBe(0.5);
   });
 
   it('leaves a handle payload and non-pattern fills alone', () => {
-    const handlePaint: Paint = { fill: 'pattern', pattern: { id: 'tex_9' } };
+    const handlePaint: Paint = { kind: 'pattern', pattern: { id: 'tex_9' } };
     expect(resolveFillPattern(handlePaint)).toBe(handlePaint);
 
     const solid: Paint = { color: '#123456' };

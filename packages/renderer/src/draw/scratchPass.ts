@@ -42,7 +42,7 @@ interface ScratchPaint {
  */
 export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: ScreenRect): ScratchPaint | null {
   const scratch = ctx.paintScratch;
-  const bind = getPaintDrawKind(fill.fill)?.bind;
+  const bind = getPaintDrawKind(fill.kind)?.bind;
   if (!scratch || !bind) return null;
   const ratio = ctx.deviceWidth && ctx.widthCss > 0 ? ctx.deviceWidth / ctx.widthCss : 1;
   const deviceW = ctx.deviceWidth ?? Math.round(ctx.widthCss);

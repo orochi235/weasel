@@ -68,7 +68,7 @@ describe('text export', () => {
         data: {
           text: 'Hi',
           style: { fontSize: 32, fontFamily: 'Inter' },
-          fill: { fill: 'solid', color: '#123456' },
+          fill: { kind: 'solid', color: '#123456' },
         },
       },
     }, ['t']);
@@ -78,7 +78,7 @@ describe('text export', () => {
     if (n.kind !== 'text') throw new Error('expected text');
     expect(n.style?.fontSize).toBe(32);
     expect(n.style?.fontFamily).toBe('Inter');
-    expect(n.fill).toEqual({ fill: 'solid', color: '#123456' });
+    expect(n.fill).toEqual({ kind: 'solid', color: '#123456' });
   });
 
   it('exports the leaf stroke as a text stroke', async () => {
@@ -93,7 +93,7 @@ describe('text export', () => {
     const parsed = parseSvg(await selectionToSvgString(scene, ['t']));
     const n = parsed.nodes[0];
     if (n.kind !== 'text') throw new Error('expected text');
-    expect(n.stroke).toEqual({ paint: { fill: 'solid', color: '#c0392b' }, width: 3 });
+    expect(n.stroke).toEqual({ paint: { kind: 'solid', color: '#c0392b' }, width: 3 });
   });
 
   it('keeps unfilled text unfilled through scene → SVG → parse → import drafts', async () => {
@@ -133,7 +133,7 @@ describe('text export', () => {
 
     expect(leaf.obj.style?.fontSize).toBe(32);
     expect(leaf.obj.stroke).toEqual({
-      paint: { fill: 'solid', color: '#c0392b' },
+      paint: { kind: 'solid', color: '#c0392b' },
       width: 3,
     });
   });
@@ -141,7 +141,7 @@ describe('text export', () => {
   it('carries run styling through export and back into import drafts', async () => {
     const runs: StyledRun[] = [
       { text: 'Plain ' },
-      { text: 'bold', bold: true, fill: { fill: 'solid', color: '#c0392b' } },
+      { text: 'bold', bold: true, fill: { kind: 'solid', color: '#c0392b' } },
       { text: ' and ', italic: true, fontSize: 20, underline: true, strikethrough: true },
       { text: '2', fontScale: 0.5, baselineShift: 0.4 },
     ];
@@ -439,7 +439,7 @@ describe('gradient fills', () => {
         data: {
           path: { kind: 'rect', x: 100, y: 50, width: 200, height: 100 },
           fill: {
-            fill: 'linear-gradient',
+            kind: 'linear-gradient',
             from: { x: 0, y: 0.5 },
             to: { x: 1, y: 0.5 },
             stops: STOPS,
@@ -456,8 +456,8 @@ describe('gradient fills', () => {
     const n = parsed.nodes[0];
     if (n.kind !== 'path') throw new Error('expected path');
     if (n.fill.kind !== 'gradient') throw new Error('expected a gradient fill');
-    const paint = n.fill.paint as { fill: string; from: { x: number; y: number }; to: { x: number; y: number } };
-    expect(paint.fill).toBe('linear-gradient');
+    const paint = n.fill.paint as { kind: string; from: { x: number; y: number }; to: { x: number; y: number } };
+    expect(paint.kind).toBe('linear-gradient');
     // Spans the node's own box in page coordinates — a `0..1` emission
     // would have been a 1px smear at the origin.
     expect(paint.from).toEqual({ x: 100, y: 100 });
@@ -472,12 +472,12 @@ describe('gradient fills', () => {
         data: {
           text: 'Hi',
           fill: {
-            fill: 'linear-gradient', from: { x: 0, y: 0.5 }, to: { x: 1, y: 0.5 }, stops: STOPS, units: 'bounds',
+            kind: 'linear-gradient', from: { x: 0, y: 0.5 }, to: { x: 1, y: 0.5 }, stops: STOPS, units: 'bounds',
           },
           runs: [{
             text: 'Hi',
             fill: {
-              fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 1 }, stops: STOPS, units: 'bounds',
+              kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 1 }, stops: STOPS, units: 'bounds',
             },
           }],
         },
@@ -511,9 +511,9 @@ describe('gradient fills', () => {
     if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
     if (!('path' in leaf.obj)) throw new Error('expected a path draft');
     const fill = leaf.obj.fill as {
-      fill: string; units: string; from: { x: number; y: number }; to: { x: number; y: number };
+      kind: string; units: string; from: { x: number; y: number }; to: { x: number; y: number };
     };
-    expect(fill.fill).toBe('linear-gradient');
+    expect(fill.kind).toBe('linear-gradient');
     expect(fill.units).toBe('bounds');
     expect(fill.from.x).toBeCloseTo(0);
     expect(fill.from.y).toBeCloseTo(0.5);
@@ -644,14 +644,14 @@ describe('a paint kind that loads on demand', () => {
    *  its own id. */
   function lazyScene(id: string, load: () => Promise<never> | undefined = () => undefined) {
     disposers.push(registerPaintKindLoader(id, async () => load() ?? {
-      id, label: id, seed: () => asPaint({ fill: id }), colorOf: () => '#123456',
+      id, label: id, seed: () => asPaint({ kind: id }), colorOf: () => '#123456',
       toSvg: (defId: string) => `<linearGradient id="${defId}" data-kind="${id}"/>`,
     }));
     return fakeScene({
       a: {
         kind: 'leaf',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: asPaint({ fill: id }) },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: asPaint({ kind: id }) },
       },
     }, ['a']);
   }

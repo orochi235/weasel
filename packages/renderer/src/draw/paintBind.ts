@@ -51,7 +51,7 @@ function unownedPaintResources(gl: WebGL2RenderingContext): PaintResources {
 export function bindPattern(
   ctx: DrawContext,
   prog: ShaderProgram,
-  fill: Extract<Paint, { fill: 'pattern' }>,
+  fill: Extract<Paint, { kind: 'pattern' }>,
   model: GlMat3,
 ): ShaderProgram | null {
   const tex = fill.pattern as TextureHandle;
@@ -97,7 +97,7 @@ function textureSize(source: HTMLImageElement | ImageBitmap): [number, number] {
 export function bindGradient(
   ctx: DrawContext,
   prog: ShaderProgram,
-  fill: Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
+  fill: Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
   model: GlMat3,
 ): ShaderProgram | null {
   const inverse = gradientSpaceInverse(ctx, fill.units);
@@ -117,7 +117,7 @@ export function bindGradient(
   setAlphaUniform(ctx, prog, ctx.state.alpha);
   gl.uniform1f(prog.uniform('u_opacity')!, fill.opacity ?? 1);
 
-  if (fill.fill === 'linear-gradient') {
+  if (fill.kind === 'linear-gradient') {
     gl.uniform1i(prog.uniform('u_gradKind')!, 0);
     const dx = fill.to.x - fill.from.x;
     const dy = fill.to.y - fill.from.y;
@@ -127,7 +127,7 @@ export function bindGradient(
     gl.uniform1f(prog.uniform('u_gradLen')!, len);
     gl.uniform1f(prog.uniform('u_gradRadius')!, 0);
     gl.uniform1f(prog.uniform('u_gradAngle')!, 0);
-  } else if (fill.fill === 'radial-gradient') {
+  } else if (fill.kind === 'radial-gradient') {
     gl.uniform1i(prog.uniform('u_gradKind')!, 1);
     gl.uniform2f(prog.uniform('u_gradP0')!, fill.center.x, fill.center.y);
     gl.uniform2f(prog.uniform('u_gradDir')!, 0, 0);

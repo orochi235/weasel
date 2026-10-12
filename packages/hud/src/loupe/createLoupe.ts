@@ -153,7 +153,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const backdrop = (ctx: HudContentCtx): DrawCommand => ({
     kind: 'path',
     path: { kind: 'rect', x: ctx.rect.x, y: ctx.rect.y, width: ctx.rect.w, height: ctx.rect.h },
-    fill: { fill: 'solid', color: backdropColor(ctx) },
+    fill: { kind: 'solid', color: backdropColor(ctx) },
   });
 
   const innerView = (outer: View, rect: WidgetBounds): View => {

@@ -52,7 +52,7 @@ describe('PaintInput holding a mesh', () => {
     fireEvent.blur(swatch);
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0][0]).toMatchObject({ fill: 'mesh-gradient' });
+    expect(onChange.mock.calls[0][0]).toMatchObject({ kind: 'mesh-gradient' });
   });
 
   it('lights the mesh segment in the kind bar', () => {

@@ -43,7 +43,7 @@ function paintedHandles(): { x: number; y: number; angle: number }[] {
   const layer = createSelectionOverlayLayer({
     getSelection: () => [asNodeId('a')],
     handles: { size: SIZE },
-    outline: { paint: { fill: 'solid', color: '#000' }, width: 1, pad: 0 },
+    outline: { paint: { kind: 'solid', color: '#000' }, width: 1, pad: 0 },
   });
   const tree = layer.draw(envelope, VIEW, DIMS);
   return tree.filter((c): c is GroupDrawCommand => c.kind === 'group').map((g) => {

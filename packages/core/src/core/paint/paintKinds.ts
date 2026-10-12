@@ -26,7 +26,7 @@ const BUILTINS: readonly PaintKindEntry[] = [
     label: 'Solid',
     icon: 'paintSolid',
     seed: (color) => ({ color }),
-    colorOf: (paint) => ((paint.fill ?? 'solid') === 'solid'
+    colorOf: (paint) => ((paint.kind ?? 'solid') === 'solid'
       ? (paint as { color: string }).color
       : undefined),
   },
@@ -38,11 +38,11 @@ const BUILTINS: readonly PaintKindEntry[] = [
     label: 'Pattern',
     icon: 'paintPattern',
     seed: (color) => ({
-      fill: 'pattern',
+      kind: 'pattern',
       pattern: { tile: 'hatch', color },
       units: 'bounds',
     }),
-    colorOf: (paint) => (paint.fill === 'pattern'
+    colorOf: (paint) => (paint.kind === 'pattern'
       ? (paint.pattern as Partial<TilePatternSpec>).color
       : undefined),
   },
@@ -194,7 +194,7 @@ export function switchGradientKind(paint: Paint, kind: PaintKind): Paint | undef
   const to = getPaintKind(kind);
   if (!from?.stopsOf || !to?.fromStops) return undefined;
   if (from.id === to.id) return paint;
-  if (isGradientFill(paint) && isGradientFill({ fill: kind } as Paint)) {
+  if (isGradientFill(paint) && isGradientFill({ kind } as Paint)) {
     return withGradientKind(paint, kind as GradientKind);
   }
   const { interpolate, opacity } = paint as { interpolate?: ColorSpace; opacity?: number };
@@ -207,7 +207,7 @@ export function switchGradientKind(paint: Paint, kind: PaintKind): Paint | undef
 
 /** The registry entry for a paint, or `undefined` when its kind is unknown. */
 export function paintKindOf(fill: Paint): PaintKindEntry | undefined {
-  return getPaintKind(fill.fill ?? 'solid');
+  return getPaintKind(fill.kind ?? 'solid');
 }
 
 /** @internal Test helper — do not call from product code. */

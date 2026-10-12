@@ -490,7 +490,7 @@ describe('<CanvasView> chrome', () => {
     const overlay = createSelectionOverlayLayer<Bounds>({
       getPose: (id) => POSES[id] ?? null,
       handles: false,
-      outline: { paint: { fill: 'solid', color: '#fff' }, width: 1, pad: 0 },
+      outline: { paint: { kind: 'solid', color: '#fff' }, width: 1, pad: 0 },
     });
     let registry!: ViewRegistry;
     function Panel() {

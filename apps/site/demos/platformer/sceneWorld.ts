@@ -88,7 +88,7 @@ export function tileNodes(level: Level): WorldNodeSpec[] {
           {
             text: '?',
             style: { fontFamily: 'sans-serif', fontSize: QUESTION_FONT, align: 'center' },
-            fill: { fill: 'solid', color: COLORS.questionMark },
+            fill: { kind: 'solid', color: COLORS.questionMark },
             verticalAlign: 'center',
           },
         ));

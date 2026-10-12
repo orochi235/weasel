@@ -188,7 +188,7 @@ export function computeIndicatorCommand(
     kind: 'path',
     path: { kind: 'rect', x, y, width, height },
     stroke: {
-      paint: { fill: 'solid', color: style.stroke ?? DEFAULT_INDICATOR_STROKE },
+      paint: { kind: 'solid', color: style.stroke ?? DEFAULT_INDICATOR_STROKE },
       width: (style.width ?? DEFAULT_INDICATOR_WIDTH) * px,
       dash: (style.dash ?? DEFAULT_INDICATOR_DASH).map((d) => d * px),
     },

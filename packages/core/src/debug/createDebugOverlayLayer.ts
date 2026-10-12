@@ -143,7 +143,7 @@ function rectPath(x: number, y: number, w: number, h: number): { kind: 'rect'; x
  *  when empty rather than passed through, so a solid line stays solid. */
 function strokeOf(s: DebugStroke, color: string) {
   return {
-    paint: { fill: 'solid' as const, color },
+    paint: { kind: 'solid' as const, color },
     width: s.width,
     ...(s.dash && s.dash.length > 0 ? { dash: [...s.dash] } : {}),
   };
@@ -157,7 +157,7 @@ function emitHitboxes(
   theme: DebugTheme,
   strokes: DebugStrokes,
 ): void {
-  const fill = { fill: 'solid' as const, color: theme.hitboxFill };
+  const fill = { kind: 'solid' as const, color: theme.hitboxFill };
   const stroke = strokeOf(strokes.hitbox, theme.hitboxStroke);
   for (const h of s.hitboxes) {
     if (h.shape.kind === 'rect' && h.shape.rotation) {
@@ -240,7 +240,7 @@ function emitOrigins(
   t: ReturnType<typeof viewToTransform>,
   theme: DebugTheme,
 ): void {
-  const fill = { fill: 'solid' as const, color: theme.origin };
+  const fill = { kind: 'solid' as const, color: theme.origin };
   for (const o of s.origins) {
     const [cx, cy] = worldToScreen(o.point.x, o.point.y, t);
     out.push({ kind: 'path', path: approxCircleScreen(cx, cy, 3), fill });
@@ -261,7 +261,7 @@ function emitSnap(
       kind: 'path',
       path: approxCircleScreen(cx, cy, 4),
       ...(c.accepted
-        ? { fill: { fill: 'solid' as const, color } }
+        ? { fill: { kind: 'solid' as const, color } }
         : { stroke: strokeOf(strokes.snap, color) }),
     };
     out.push(cmd);
@@ -282,7 +282,7 @@ function emitIds(
     out.push(textCommandFromRuns(
       sx + 2,
       sy + 11,
-      [{ text: b.id, fill: { fill: 'solid', color: theme.idText } }],
+      [{ text: b.id, fill: { kind: 'solid', color: theme.idText } }],
       { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 10 },
     ));
   }
@@ -313,13 +313,13 @@ function emitLayersPanel(
   out.push({
     kind: 'path',
     path: rectPath(x, y, boxW, boxH),
-    fill: { fill: 'solid', color: theme.layerTextBg },
+    fill: { kind: 'solid', color: theme.layerTextBg },
   });
   for (let i = 0; i < lines.length; i++) {
     out.push(textCommandFromRuns(
       x + padX,
       y + padY + i * lineH,
-      [{ text: lines[i], fill: { fill: 'solid', color: theme.layerText } }],
+      [{ text: lines[i], fill: { kind: 'solid', color: theme.layerText } }],
       { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11 },
     ));
   }
@@ -347,13 +347,13 @@ function emitTextPanel(
   out.push({
     kind: 'path',
     path: rectPath(x, y, maxLen * MONO_CHAR_W + padX * 2, lines.length * LINE_H + padY * 2),
-    fill: { fill: 'solid', color: bg },
+    fill: { kind: 'solid', color: bg },
   });
   for (let i = 0; i < lines.length; i++) {
     out.push(textCommandFromRuns(
       x + padX,
       y + padY + i * LINE_H,
-      [{ text: lines[i], fill: { fill: 'solid', color } }],
+      [{ text: lines[i], fill: { kind: 'solid', color } }],
       MONO,
     ));
   }
@@ -413,7 +413,7 @@ function emitViewport(
   if (rec.anchor) {
     const [ax0, ay0] = worldToScreen(rec.anchor.x, rec.anchor.y, viewToTransform(from));
     const [ax1, ay1] = worldToScreen(rec.anchor.x, rec.anchor.y, t);
-    out.push({ kind: 'path', path: approxCircleScreen(ax0, ay0, 2.5), fill: { fill: 'solid', color: theme.viewport } });
+    out.push({ kind: 'path', path: approxCircleScreen(ax0, ay0, 2.5), fill: { kind: 'solid', color: theme.viewport } });
     if (Math.hypot(ax1 - ax0, ay1 - ay0) > 0.5) {
       out.push({ kind: 'path', path: segment(ax0, ay0, ax1, ay1), stroke });
     }

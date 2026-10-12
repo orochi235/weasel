@@ -223,7 +223,7 @@ describe('attachHud', () => {
       content: () => [{
         kind: 'path',
         path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 },
-        fill: { fill: 'solid', color: '#f00' },
+        fill: { kind: 'solid', color: '#f00' },
       }],
     });
 
@@ -246,7 +246,7 @@ describe('attachHud', () => {
     const painter = () => [{
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
-      fill: { fill: 'solid' as const, color: '#f00' },
+      fill: { kind: 'solid' as const, color: '#f00' },
     }];
     hud.window({ id: 'a', x: 10, y: 10, w: 100, h: 80, title: 'A', content: painter });
     hud.window({ id: 'b', x: 200, y: 10, w: 100, h: 80, title: 'B', content: painter });

@@ -58,7 +58,7 @@ describe('computeScrubbedPaints', () => {
     // The whole reason opacity lives on the paint: a gradient has no hex to
     // splice an alpha into, and used to pass through untouched.
     const gradient: Paint = {
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
       opacity: 1,

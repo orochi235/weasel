@@ -107,9 +107,9 @@ describe('a translucent image, in a real context', () => {
 
   it('shares a draw with a solid and a translucent gradient, each keeping its own pixels', async () => {
     const at = paint([
-      filled(0, { fill: 'solid', color: '#0000ff' }),
+      filled(0, { kind: 'solid', color: '#0000ff' }),
       filled(16, {
-        fill: 'linear-gradient', units: 'local', from: { x: 16, y: 0 }, to: { x: 32, y: 0 },
+        kind: 'linear-gradient', units: 'local', from: { x: 16, y: 0 }, to: { x: 32, y: 0 },
         stops: [{ offset: 0, color: 'rgba(0, 255, 0, 0.5)' }, { offset: 1, color: 'rgba(0, 255, 0, 0.5)' }],
       }),
       image(await BITMAPS.ImageData(ORANGE), 32),
@@ -124,7 +124,7 @@ describe('a translucent image, in a real context', () => {
     const at = paint([
       image(await BITMAPS.ImageData(ORANGE)),
       filled(16, {
-        fill: 'linear-gradient', units: 'local', from: { x: 16, y: 0 }, to: { x: 32, y: 0 },
+        kind: 'linear-gradient', units: 'local', from: { x: 16, y: 0 }, to: { x: 32, y: 0 },
         stops: [{ offset: 0, color: 'rgba(0, 255, 0, 0.5)' }, { offset: 1, color: 'rgba(0, 255, 0, 0.5)' }],
       }),
     ]);
@@ -144,7 +144,7 @@ describe('a translucent image, in a real context', () => {
 describe('a translucent pattern tile, in a real context', () => {
   const pattern = (handle: TextureHandle) => {
     registered.push(handle);
-    return filled(0, { fill: 'pattern', pattern: handle, units: 'local' });
+    return filled(0, { kind: 'pattern', pattern: handle, units: 'local' });
   };
 
   it('paints the same from a bitmap as from an <img>', async () => {

@@ -36,7 +36,7 @@ const rectLayer: RenderLayer<unknown> = {
   id: 'probe',
   label: 'Probe',
   space: 'screen',
-  draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }, fill: { fill: 'solid', color: '#f00' } }],
+  draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }, fill: { kind: 'solid', color: '#f00' } }],
 };
 
 const KINDS = ['Program', 'Buffer', 'Texture'] as const;

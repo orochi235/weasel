@@ -116,5 +116,5 @@ function runsInPoseFrame(runs: ResolvedRun[], box: FillPoseBox): ResolvedRun[] {
 }
 
 function isSolid(paint: Paint | null | undefined): boolean {
-  return paint == null || (paint.fill ?? 'solid') === 'solid';
+  return paint == null || (paint.kind ?? 'solid') === 'solid';
 }

@@ -11,7 +11,7 @@ import { seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
 import { GradientEditor } from './GradientEditor';
 
 const LINEAR: GradientFill = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 100, y: 0 },
   stops: [
@@ -37,7 +37,7 @@ describe('GradientEditor', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0][0]).toMatchObject({
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 100, y: 0 },
       units: 'local',
@@ -65,7 +65,7 @@ describe('GradientEditor', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0][0]).toMatchObject({
-      fill: 'radial-gradient',
+      kind: 'radial-gradient',
       center: { x: 50, y: 0 },
       radius: 50,
       units: 'local',
@@ -109,7 +109,7 @@ describe('GradientEditor', () => {
 
       expect(onChange).toHaveBeenCalledTimes(1);
       expect(onChange.mock.calls[0][0]).toMatchObject({
-        fill: 'linear-gradient',
+        kind: 'linear-gradient',
         from: { x: 0, y: 0 },
         to: { x: 100, y: 0 },
         units: 'local',
@@ -145,10 +145,10 @@ describe('GradientEditor', () => {
       const dispose = registerPaintKind({
         id: 'diamond-gradient',
         label: 'Diamond',
-        seed: (color) => asPaint({ fill: 'diamond-gradient', stops: [{ offset: 0, color }] }),
+        seed: (color) => asPaint({ kind: 'diamond-gradient', stops: [{ offset: 0, color }] }),
         colorOf: () => undefined,
         stopsOf: (paint) => (paint as unknown as { stops: GradStop[] }).stops,
-        fromStops: (stops) => asPaint({ fill: 'diamond-gradient', stops }),
+        fromStops: (stops) => asPaint({ kind: 'diamond-gradient', stops }),
       });
       try {
         render(<GradientEditor value={LINEAR} onChange={() => {}} />);
@@ -166,10 +166,10 @@ describe('GradientEditor', () => {
         dispose = registerPaintKind({
           id: 'diamond-gradient',
           label: 'Diamond',
-          seed: (color) => asPaint({ fill: 'diamond-gradient', stops: [{ offset: 0, color }] }),
+          seed: (color) => asPaint({ kind: 'diamond-gradient', stops: [{ offset: 0, color }] }),
           colorOf: () => undefined,
           stopsOf: (paint) => (paint as unknown as { stops: GradStop[] }).stops,
-          fromStops: (stops) => asPaint({ fill: 'diamond-gradient', stops }),
+          fromStops: (stops) => asPaint({ kind: 'diamond-gradient', stops }),
         });
       });
       try {
@@ -184,7 +184,7 @@ describe('GradientEditor', () => {
       render(<GradientEditor value={LINEAR} onChange={onChange} />);
       fireEvent.click(screen.getByRole('radio', { name: 'Mesh' }));
       const next = onChange.mock.calls[0][0] as MeshGradientFill;
-      expect(next.fill).toBe('mesh-gradient');
+      expect(next.kind).toBe('mesh-gradient');
       expect(next.patches[0].colors).toEqual(['#ff0000ff', '#0000ffff', '#0000ffff', '#ff0000ff']);
     });
 
@@ -197,7 +197,7 @@ describe('GradientEditor', () => {
       expect(screen.getByRole('radio', { name: 'Mesh' })).toBeChecked();
 
       fireEvent.click(screen.getByRole('radio', { name: 'Linear' }));
-      expect(onChange.mock.calls[0][0]).toMatchObject({ fill: 'linear-gradient', stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1 }] });
+      expect(onChange.mock.calls[0][0]).toMatchObject({ kind: 'linear-gradient', stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1 }] });
     });
   });
 
@@ -218,7 +218,7 @@ describe('GradientEditor', () => {
     });
 
     it('still shows the kind and space a value already has, so it can be switched off them', () => {
-      const conic: GradientFill = { fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: LINEAR.stops, interpolate: 'oklch' };
+      const conic: GradientFill = { kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: LINEAR.stops, interpolate: 'oklch' };
       render(<GradientEditor value={conic} svg onChange={() => {}} />);
       expect(radios('Gradient kind')).toEqual(['Linear', 'Radial', 'Conic']);
       expect(radios('Blend space')).toEqual(['sRGB', 'OKLCh']);

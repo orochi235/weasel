@@ -148,7 +148,7 @@ export interface ResolvedTextStyle {
   stroke?: Stroke;
 }
 
-const DEFAULT_FILL: Paint = { fill: 'solid', color: '#000' };
+const DEFAULT_FILL: Paint = { kind: 'solid', color: '#000' };
 
 function paintColor(p: Paint | null): string {
   return p !== null && 'color' in p ? p.color : '#000';

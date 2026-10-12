@@ -52,7 +52,7 @@ export interface SvgKitLeafData {
  *  is written already placed there. */
 export function svgPaintFromKit(fill: Paint | null, box: SvgKitPose): SvgPaint {
   if (fill === null) return { kind: 'none' };
-  if (fill.fill === undefined || fill.fill === 'solid') {
+  if (fill.kind === undefined || fill.kind === 'solid') {
     return { kind: 'solid', color: fill.color, ...(fill.opacity != null ? { opacity: fill.opacity } : {}) };
   }
   return { kind: 'gradient', paint: fillInPoseFrame(fill, box) };

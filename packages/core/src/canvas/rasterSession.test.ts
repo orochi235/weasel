@@ -44,13 +44,13 @@ const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [
     },
     stroke: {
       paint: {
-        fill: 'radial-gradient', center: { x: p.x, y: p.y }, radius: p.width,
+        kind: 'radial-gradient', center: { x: p.x, y: p.y }, radius: p.width,
         stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
       },
       width: 2,
     },
   },
-  { kind: 'path', path: { kind: 'rect', x: p.x, y: p.y, width: 4, height: 4 }, fill: { fill: 'solid', color: '#00ff00' } },
+  { kind: 'path', path: { kind: 'rect', x: p.x, y: p.y, width: 4, height: 4 }, fill: { kind: 'solid', color: '#00ff00' } },
 ] as DrawCommand[];
 
 const SCENE_A = fakeScene([leaf('a', { x: 0, y: 0, width: 20, height: 10 })]);

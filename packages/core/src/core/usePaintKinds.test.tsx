@@ -7,7 +7,7 @@ import { useGradientKinds, usePaintKind, usePaintKinds } from './usePaintKinds';
 const noise = (): PaintKindEntry => ({
   id: 'test-noise',
   label: 'Noise',
-  seed: (color) => asPaint({ fill: 'test-noise', color }),
+  seed: (color) => asPaint({ kind: 'test-noise', color }),
   colorOf: () => undefined,
 });
 

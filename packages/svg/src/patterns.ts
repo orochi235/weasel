@@ -21,7 +21,7 @@ import type { Paint, TilePatternSpec } from '@weasel-js/core';
 import { collectElementsByTag } from './elements';
 import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } from './transform';
 
-type PatternFill = Extract<Paint, { fill: 'pattern' }>;
+type PatternFill = Extract<Paint, { kind: 'pattern' }>;
 
 /** Collected pattern definitions, keyed by element id. */
 export type PatternTable = Map<string, Paint>;
@@ -144,7 +144,7 @@ function readPattern(el: Element, onWarn?: (m: string) => void): Paint | null {
   const y = parseFloat(el.getAttribute('y') ?? '0');
   const m = parseTransform(el.getAttribute('patternTransform'), onWarn);
   const origin = applyMatrix(m, x, y);
-  const paint: PatternFill = { fill: 'pattern', pattern: spec };
+  const paint: PatternFill = { kind: 'pattern', pattern: spec };
   if (origin.x !== 0 || origin.y !== 0) paint.origin = origin;
   if (!isIdentity([m[0], m[1], m[2], m[3], 0, 0])) paint.transform = [m[0], m[1], m[2], m[3]];
   return paint;

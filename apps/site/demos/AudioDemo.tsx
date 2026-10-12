@@ -242,7 +242,7 @@ export function AudioDemo() {
         },
         textCommandFromRuns(
           LISTENER.x + 14, LISTENER.y + 4,
-          [{ text: 'listener', fill: { fill: 'solid', color: '#a89878' } }],
+          [{ text: 'listener', fill: { kind: 'solid', color: '#a89878' } }],
           { fontFamily: 'sans-serif', fontSize: 11 },
         ),
       ];

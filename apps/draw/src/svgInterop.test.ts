@@ -421,7 +421,7 @@ describe('text style round-trip via the bridge', () => {
         fontStyle: 'italic' as const,
         align: 'center' as const,
         lineHeight: 1.4,
-        fill: { fill: 'solid' as const, color: '#b03030' },
+        fill: { kind: 'solid' as const, color: '#b03030' },
       },
     };
     const node = objToSvgNode(text as never);
@@ -628,7 +628,7 @@ describe('paint fidelity through the kit bridge', () => {
       + '<rect x="50" y="50" width="100" height="40" fill="url(#g)"/></svg>';
     const [obj] = leavesOf(parseSvg(svg).nodes, ids());
     expect((obj as { fill: unknown }).fill).toMatchObject({
-      fill: 'linear-gradient', units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      kind: 'linear-gradient', units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
     });
   });
 });

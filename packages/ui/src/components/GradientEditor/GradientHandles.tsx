@@ -75,7 +75,7 @@ function renderForKind(
     else onChange(next);
   };
 
-  if (value.fill === 'linear-gradient') {
+  if (value.kind === 'linear-gradient') {
     const from = toScreen(value.from);
     const to = toScreen(value.to);
     return (
@@ -97,7 +97,7 @@ function renderForKind(
     );
   }
 
-  if (value.fill === 'radial-gradient') {
+  if (value.kind === 'radial-gradient') {
     const center = toScreen(value.center);
     // The radius handle rides the +x axis of gradient space, so it stays on
     // the drawn circle under a rotated or anisotropic transform.

@@ -148,7 +148,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
           // `undefined` off a gradient and write a bare string over it.
           // `block` for the same reason every stroke field is: the kind bar
           // and the per-kind editor want the width a 64px label column takes.
-          'data.fill': { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true, block: true },
+          'data.fill': { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.
@@ -156,7 +156,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
             kind: 'object',
             name: 'Stroke',
             description: 'Stroke paint and line geometry.',
-            default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
+            default: { paint: { kind: 'solid', color: '#000000ff' }, width: 1 },
             block: true,
             children: {
               // Every row is `block`: under a heading already reading STROKE,
@@ -166,7 +166,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
               // Unpaired: the paint field is a whole paint editor — a kind bar
               // over a per-kind body — and cannot share a row with a slider.
               width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', absentIsDefault: true, default: 1, min: 0, max: 20, step: 0.5, control: 'slider', icon: 'strokeWidth', block: true },
-              paint: { kind: 'paint', name: 'Paint', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true, block: true },
+              paint: { kind: 'paint', name: 'Paint', description: 'Stroke paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
               // Three options each: a segmented control shows every one at
               // once where a select shows the current one and hides the rest
               // behind a click.

@@ -17,14 +17,14 @@ function slowPaintScene(id: string, ms: number) {
   disposers.push(registerPaintKindLoader(id, async () => {
     await new Promise((r) => setTimeout(r, ms));
     return {
-      id, label: id, seed: () => asPaint({ fill: id }), colorOf: () => '#123456',
+      id, label: id, seed: () => asPaint({ kind: id }), colorOf: () => '#123456',
       toSvg: (defId: string) => `<linearGradient id="${defId}" data-kind="${id}"/>`,
     };
   }));
   const rect = {
     id: 'a', kind: 'leaf', layer: 'default', parent: null,
     pose: { x: 0, y: 0, width: 10, height: 10 },
-    data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: asPaint({ fill: id }) },
+    data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: asPaint({ kind: id }) },
   };
   return {
     roots: ['a'], get: (n: string) => (n === 'a' ? rect : undefined), childrenOf: () => [],

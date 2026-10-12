@@ -6,8 +6,8 @@ const RED: ActivePaint = { kind: 'solid', color: '#ff0000ff' };
 const BLUE: ActivePaint = { kind: 'solid', color: '#0000ffff' };
 const NONE: ActivePaint = { kind: 'none' };
 
-const red = { fill: 'solid', color: '#ff0000ff' };
-const blue = { fill: 'solid', color: '#0000ffff' };
+const red = { kind: 'solid', color: '#ff0000ff' };
+const blue = { kind: 'solid', color: '#0000ffff' };
 
 describe('activeInsertPaint', () => {
   it('gives a closed shape the active fill, and the active stroke 2 wide', () => {

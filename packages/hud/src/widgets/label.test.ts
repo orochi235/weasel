@@ -33,7 +33,7 @@ describe('label widget', () => {
       tokens: customTokens,
     });
     const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
-    expect(fill).toEqual({ fill: 'solid', color: '#abcdef' });
+    expect(fill).toEqual({ kind: 'solid', color: '#abcdef' });
   });
 
   it('respects explicit color when supplied (theme overridden)', () => {
@@ -45,6 +45,6 @@ describe('label widget', () => {
       tokens: customTokens,
     });
     const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
-    expect(fill).toEqual({ fill: 'solid', color: '#ff0000' });
+    expect(fill).toEqual({ kind: 'solid', color: '#ff0000' });
   });
 });

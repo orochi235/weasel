@@ -93,7 +93,7 @@ function rgbDistance(p: number[], q: number[]): number {
 /** Red on the left of the box, blue on the right, in the box's own units —
  *  what the paint panel writes. */
 const GRADIENT: Paint = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
   stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1, color: '#0000ffff' }],
   units: 'bounds',
@@ -101,7 +101,7 @@ const GRADIENT: Paint = {
 
 /** Wide white stripes on a transparent ground, in the box's units. */
 const PATTERN: Paint = {
-  fill: 'pattern',
+  kind: 'pattern',
   pattern: { tile: 'hatch', color: '#ffffff', size: 16, lineWidth: 6 },
   units: 'bounds',
 };
@@ -109,7 +109,7 @@ const PATTERN: Paint = {
 async function loadOutlines(): Promise<void> {
   // Outlines load on first use, so a render is what starts the fetch.
   for (let i = 0; i < 100 && outlineStatus(FAMILY) !== 'ready'; i++) {
-    renderNode({ fill: 'solid', color: '#ffffff' }, OUTLINE_SCALE);
+    renderNode({ kind: 'solid', color: '#ffffff' }, OUTLINE_SCALE);
     await new Promise((r) => setTimeout(r, 20));
   }
   expect(outlineStatus(FAMILY)).toBe('ready');
@@ -173,7 +173,7 @@ describe('a gradient on decorated text', () => {
 describe('a pattern on text', () => {
   it('shows the stripes on atlas-tier text rather than a flat color', () => {
     const img = renderNode(PATTERN, SDF_SCALE);
-    const mask = renderNode({ fill: 'solid', color: '#ffffff' }, SDF_SCALE);
+    const mask = renderNode({ kind: 'solid', color: '#ffffff' }, SDF_SCALE);
     const ink = sharedInk(mask, SDF_SCALE, mask, SDF_SCALE);
     expect(ink.length).toBeGreaterThan(100);
     const alphas = ink.map(([x, y]) => pixelAt(img, x, y, SDF_SCALE)[3]);
@@ -183,8 +183,8 @@ describe('a pattern on text', () => {
   });
 
   it('puts the stripes in the same place on either side of the threshold', () => {
-    const maskSdf = renderNode({ fill: 'solid', color: '#ffffff' }, SDF_SCALE);
-    const maskOutline = renderNode({ fill: 'solid', color: '#ffffff' }, OUTLINE_SCALE);
+    const maskSdf = renderNode({ kind: 'solid', color: '#ffffff' }, SDF_SCALE);
+    const maskOutline = renderNode({ kind: 'solid', color: '#ffffff' }, OUTLINE_SCALE);
     const sdf = renderNode(PATTERN, SDF_SCALE);
     const outline = renderNode(PATTERN, OUTLINE_SCALE);
     const ink = sharedInk(maskSdf, SDF_SCALE, maskOutline, OUTLINE_SCALE);
@@ -202,7 +202,7 @@ describe('texture-painted atlas text in a batched frame', () => {
     fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
   const WORLD_STRIPES = resolveFillPattern({
-    fill: 'pattern',
+    kind: 'pattern',
     pattern: { tile: 'hatch', color: '#ffffff', size: 16, lineWidth: 6 },
     units: 'world',
   })!;
@@ -213,7 +213,7 @@ describe('texture-painted atlas text in a batched frame', () => {
       { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#ff0000' } },
       {
         kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
-        runs: [run('HH', WORLD_STRIPES), run('HH', { fill: 'solid', color: '#ffff00' })],
+        runs: [run('HH', WORLD_STRIPES), run('HH', { kind: 'solid', color: '#ffff00' })],
       } as DrawCommand,
       // Over the right half of the text: staged after it, so it must land on top.
       { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { color: '#00ff00' } },
@@ -263,7 +263,7 @@ const MESH = asPaint(meshFromStops([
 /** A kind the kit knows nothing about: red left of world x = 56 and blue
  *  right of it, from a program only it registers. */
 const SPLIT_X = 56;
-const SPLIT = asPaint({ fill: 'test-split' });
+const SPLIT = asPaint({ kind: 'test-split' });
 const SPLIT_KIND: PaintKindEntry = {
   id: 'test-split',
   label: 'Split',
@@ -315,7 +315,7 @@ describe('a registered paint kind on text', () => {
   /** Solid ink in the left and right fifths of the text, at `scale`. */
   function sides(fill: Paint, scale: number, floor?: number): { left: number[][]; right: number[][] } {
     const img = renderNode(fill, scale);
-    const mask = renderNode({ fill: 'solid', color: '#ffffff' }, scale);
+    const mask = renderNode({ kind: 'solid', color: '#ffffff' }, scale);
     const ink = sharedInk(mask, scale, mask, scale, floor);
     const at = ([x, y]: [number, number]) => pixelAt(img, x, y, scale);
     return {
@@ -391,7 +391,7 @@ describe('a registered paint kind on text', () => {
       {
         kind: 'group',
         clip: { kind: 'rect', x: 0, y: 0, width: 112, height: CLIP_BOTTOM },
-        children: [text(SPLIT, { fill: 'solid', color: '#ffff00' })],
+        children: [text(SPLIT, { kind: 'solid', color: '#ffff00' })],
       } as DrawCommand,
       { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { color: '#00ff00' } },
     ]);

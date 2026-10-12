@@ -98,7 +98,7 @@ describe('outlined text — stroke lengths', () => {
     return ribbon(recorder);
   };
 
-  const red = { fill: 'solid' as const, color: '#ff0000' };
+  const red = { kind: 'solid' as const, color: '#ff0000' };
 
   // The square is 512px wide and 128px tall on screen; a 1px miter-joined
   // ribbon adds half a pixel outside each edge. Through the mean scale of 2 it

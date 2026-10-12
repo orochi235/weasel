@@ -88,9 +88,9 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
       const renderer = new WeaselRenderer({ gl, canvas, width: W, height: H, dpr: 1 });
       const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
-      const solidFill = (i: number) => ({ fill: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
+      const solidFill = (i: number) => ({ kind: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
       const gradFill = {
-        fill: 'linear-gradient' as const,
+        kind: 'linear-gradient' as const,
         from: { x: 100, y: 100 }, to: { x: 200, y: 200 },
         stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
       };

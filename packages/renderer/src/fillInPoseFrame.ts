@@ -34,7 +34,7 @@ export interface FillPoseBox {
  */
 export function fillInPoseFrame(fill: Paint, box: FillPoseBox): PosedFill {
   if (!isBuiltinKind(fill)) {
-    return (getPaintDrawKind(fill.fill)?.inPoseFrame?.(fill, box) ?? fill) as PosedFill;
+    return (getPaintDrawKind(fill.kind)?.inPoseFrame?.(fill, box) ?? fill) as PosedFill;
   }
   if (isBoundsPattern(fill)) {
     const o = fill.origin ?? { x: 0, y: 0 };
@@ -47,10 +47,10 @@ export function fillInPoseFrame(fill: Paint, box: FillPoseBox): PosedFill {
     y: box.y + p.y * box.height,
   });
 
-  if (fill.fill === 'linear-gradient') {
+  if (fill.kind === 'linear-gradient') {
     return { ...fill, from: toBox(fill.from), to: toBox(fill.to), units: 'local' as const };
   }
-  if (fill.fill === 'radial-gradient') {
+  if (fill.kind === 'radial-gradient') {
     const scale = Math.hypot(box.width, box.height) / Math.SQRT2;
     return { ...fill, center: toBox(fill.center), radius: fill.radius * scale, units: 'local' as const };
   }
@@ -71,15 +71,15 @@ export function fillInPoseFrame(fill: Paint, box: FillPoseBox): PosedFill {
  */
 export function fillToBoundsFrame(fill: Paint, box: FillPoseBox): Paint {
   if (!isBuiltinKind(fill)) {
-    return getPaintDrawKind(fill.fill)?.toBoundsFrame?.(fill, box) ?? fill;
+    return getPaintDrawKind(fill.kind)?.toBoundsFrame?.(fill, box) ?? fill;
   }
-  if (fill.fill === 'pattern') {
+  if (fill.kind === 'pattern') {
     const o = fill.origin ?? { x: 0, y: 0 };
     return { ...fill, origin: { x: o.x - box.x, y: o.y - box.y }, units: 'bounds' as const };
   }
-  const isGradient = fill.fill === 'linear-gradient'
-    || fill.fill === 'radial-gradient'
-    || fill.fill === 'conic-gradient';
+  const isGradient = fill.kind === 'linear-gradient'
+    || fill.kind === 'radial-gradient'
+    || fill.kind === 'conic-gradient';
   if (!isGradient) return fill;
   if (box.width === 0 || box.height === 0) return fill;
 
@@ -88,10 +88,10 @@ export function fillToBoundsFrame(fill: Paint, box: FillPoseBox): Paint {
     y: (p.y - box.y) / box.height,
   });
 
-  if (fill.fill === 'linear-gradient') {
+  if (fill.kind === 'linear-gradient') {
     return { ...fill, from: fromBox(fill.from), to: fromBox(fill.to), units: 'bounds' as const };
   }
-  if (fill.fill === 'radial-gradient') {
+  if (fill.kind === 'radial-gradient') {
     const scale = Math.hypot(box.width, box.height) / Math.SQRT2;
     return { ...fill, center: fromBox(fill.center), radius: fill.radius / scale, units: 'bounds' as const };
   }
@@ -103,14 +103,14 @@ export function fillToBoundsFrame(fill: Paint, box: FillPoseBox): Paint {
  *  stretch them, which is the whole reason patterns get their own branch. */
 function isBoundsPattern(
   fill: Paint,
-): fill is Extract<Paint, { fill: 'pattern' }> {
-  return fill.fill === 'pattern' && fill.units === 'bounds';
+): fill is Extract<Paint, { kind: 'pattern' }> {
+  return fill.kind === 'pattern' && fill.units === 'bounds';
 }
 
 /** True when this fill is a gradient declaring box-relative geometry. */
 function isBoundsGradient(fill: Paint | undefined): fill is GradientFill {
   if (fill === undefined) return false;
-  const kind = fill.fill;
+  const kind = fill.kind;
   if (kind !== 'linear-gradient' && kind !== 'radial-gradient' && kind !== 'conic-gradient') {
     return false;
   }
@@ -120,7 +120,7 @@ function isBoundsGradient(fill: Paint | undefined): fill is GradientFill {
 /** The five kinds whose frame conversion is written above. Anything else is a
  *  registered kind and converts through its own entry. */
 function isBuiltinKind(fill: Paint): boolean {
-  const kind = fill.fill ?? 'solid';
+  const kind = fill.kind ?? 'solid';
   return kind === 'solid' || kind === 'pattern'
     || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient';
 }

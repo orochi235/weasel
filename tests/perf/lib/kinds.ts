@@ -50,7 +50,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
   const py = (i: number) => 20 + ((i * 53) % (H - 160));
 
   const solidPaint = (i: number) => ({
-    fill: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633',
+    kind: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633',
   });
 
   const rectPath = (i: number, size = 36) => ({
@@ -68,7 +68,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
       // Anchored to the rect: a gradient whose ramp falls outside the shape it
       // fills is a solid fill wearing a gradient's cost profile.
       fill: {
-        fill: 'linear-gradient' as const,
+        kind: 'linear-gradient' as const,
         from: { x, y }, to: { x: x + 36, y: y + 36 },
         stops: [{ offset: 0, color: '#204080' }, { offset: 1, color: '#f0b040' }],
       },
@@ -78,7 +78,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
   const patternFill = (i: number) => ({
     kind: 'path',
     path: rectPath(i),
-    fill: { fill: 'pattern' as const, pattern, origin: { x: i % 8, y: i % 8 } },
+    fill: { kind: 'pattern' as const, pattern, origin: { x: i % 8, y: i % 8 } },
   });
 
   const image = (i: number) => ({
@@ -98,7 +98,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     runs: [{
       text: LABELS[i % LABELS.length],
       fontFamily: 'sans-serif', fontSize: 16, fontWeight: 400, fontStyle: 'normal',
-      fill: { fill: 'solid', color: i % 2 ? '#222222' : '#0b5' },
+      fill: { kind: 'solid', color: i % 2 ? '#222222' : '#0b5' },
       letterSpacing: 0, underline: false, strikethrough: false, baselineShift: 0,
     }],
     align: 'left',
@@ -124,7 +124,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     return {
       kind: 'path',
       path: rectPath(i),
-      fill: { fill: 'solid' as const, color: '#ffffff' },
+      fill: { kind: 'solid' as const, color: '#ffffff' },
       vertexColors: colors,
     };
   };

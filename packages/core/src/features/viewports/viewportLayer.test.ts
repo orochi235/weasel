@@ -124,7 +124,7 @@ describe('viewport draw', () => {
     draw: () => [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { fill: 'solid', color: '#000' },
+      fill: { kind: 'solid', color: '#000' },
     }],
   };
 

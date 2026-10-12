@@ -60,7 +60,7 @@ group('mesh cache — hit vs miss (64 cubics)', (bench) => {
 });
 
 group('tessellateStroke — curve count', (bench) => {
-  const stroke = { paint: { fill: 'solid' as const, color: '#000' }, width: 4 };
+  const stroke = { paint: { kind: 'solid' as const, color: '#000' }, width: 4 };
   for (const n of CURVE_COUNTS) {
     const path = paths.get(n)!;
     bench(`${n} cubics`, () => {

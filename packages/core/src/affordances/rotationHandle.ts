@@ -51,7 +51,7 @@ const isAnnulusForm = (paint: CommandStroke | AnnulusPaintForm): paint is Annulu
   'fill' in paint || 'stroke' in paint || 'insetPx' in paint;
 
 const DEFAULT_PAINT: AnnulusPaintForm = {
-  fill: { fill: 'solid', color: 'rgba(26, 19, 13, 0.12)' },
+  fill: { kind: 'solid', color: 'rgba(26, 19, 13, 0.12)' },
   insetPx: 10,
 };
 

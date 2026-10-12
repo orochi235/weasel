@@ -437,7 +437,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: NO_RED,
       children: [
-        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }], align: 'left', style: { fontFamily: 'inter', fontSize: 32 } },
+        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { kind: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }], align: 'left', style: { fontFamily: 'inter', fontSize: 32 } },
       ],
     };
     r.render([cmd]);
@@ -474,7 +474,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   it('uploads identity u_colorMatrix on text draws with no enclosing group transform', () => {
     const cmd: DrawCommand = {
       kind: 'text', x: 0, y: 0,
-      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }],
+      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { kind: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0 }],
       align: 'left',
       style: { fontFamily: 'inter', fontSize: 32 },
     };
@@ -543,7 +543,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     const breaker = {
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 8, height: 8 },
-      fill: { fill: 'solid' as const, color: '#ffffff' },
+      fill: { kind: 'solid' as const, color: '#ffffff' },
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
     } as unknown as DrawCommand;
     const img = {
@@ -1097,7 +1097,7 @@ describe('drawText synthetic-bold', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
-        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1114,7 +1114,7 @@ describe('drawText synthetic-bold', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
-        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1143,7 +1143,7 @@ describe('flattenTolerance option', () => {
    *  rather than as staged vertices — which is where the pool choice is
    *  observable. A gradient would not: every kind of one batches. */
   const UNBATCHABLE = {
-    fill: { fill: 'solid' as const, color: '#ffffff' },
+    fill: { kind: 'solid' as const, color: '#ffffff' },
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
   };
 
@@ -1159,7 +1159,7 @@ describe('flattenTolerance option', () => {
       const caps = { ...meshBatching };
       meshBatching.maxVertices = Infinity;
       try {
-        r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { fill: 'solid', color: '#000' } }]);
+        r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { kind: 'solid', color: '#000' } }]);
       } finally {
         Object.assign(meshBatching, caps);
       }
@@ -1243,7 +1243,7 @@ describe('drawText synthetic-italic', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-        fontStyle: 'italic', fill: { fill: 'solid', color: '#000' },
+        fontStyle: 'italic', fill: { kind: 'solid', color: '#000' },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1260,7 +1260,7 @@ describe('drawText synthetic-italic', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-        fontStyle: 'italic', fill: { fill: 'solid', color: '#000' },
+        fontStyle: 'italic', fill: { kind: 'solid', color: '#000' },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1300,7 +1300,7 @@ describe('drawText verticalAlign', () => {
 
     const runs: ResolvedRun[] = [{
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-      fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
       letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }];
@@ -1332,7 +1332,7 @@ describe('drawText verticalAlign', () => {
 
     const runs: ResolvedRun[] = [{
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-      fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
       letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }];
@@ -1370,7 +1370,7 @@ describe('drawText — canvas-dynamic routing', () => {
       x: 10, y: 10,
       runs: [{
         text: 'A', fontFamily: 'Dyn', fontWeight: 400, fontStyle: 'normal',
-        fontSize: 24, fill: { fill: 'solid', color: '#000' },
+        fontSize: 24, fill: { kind: 'solid', color: '#000' },
       }],
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand;
@@ -1424,7 +1424,7 @@ describe('drawText — substituted family reaches the GPU', () => {
     kind: 'text', x: 0, y: 0,
     runs: [{
       text: 'A', fontFamily: 'ghost', fontSize: 16, fontWeight: 400,
-      fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
       letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }],
@@ -1460,7 +1460,7 @@ describe('drawText — substituted family reaches the GPU', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
-        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
         letterSpacing: 0,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1511,7 +1511,7 @@ describe('drawText — letterSpacing reaches the GPU', () => {
       kind: 'text', x: 0, y: 0,
       runs: [{
         text: 'AB', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
-        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        fontStyle: 'normal', fill: { kind: 'solid', color: '#000' },
         letterSpacing,
         underline: false, strikethrough: false, overline: false, baselineShift: 0,
       }],
@@ -1592,7 +1592,7 @@ describe('drawText — decoration reaches the GPU', () => {
 
   const decoratedRun = (extra: Record<string, unknown>) => ({
     text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
-    fontStyle: 'normal' as const, fill: { fill: 'solid' as const, color: '#000' },
+    fontStyle: 'normal' as const, fill: { kind: 'solid' as const, color: '#000' },
     letterSpacing: 0, underline: false, strikethrough: false, overline: false,
     baselineShift: 0, ...extra,
   });
@@ -1660,7 +1660,7 @@ describe('drawText — decoration reaches the GPU', () => {
       kind: 'text', x: 0, y: 0,
       runs: [
         decoratedRun({ underline: true }),
-        decoratedRun({ text: 'B', underline: true, fill: { fill: 'solid', color: '#ff0000' } }),
+        decoratedRun({ text: 'B', underline: true, fill: { kind: 'solid', color: '#ff0000' } }),
       ],
       maxWidth: Infinity, align: 'left', style: {},
     } as DrawCommand);
@@ -1838,7 +1838,7 @@ describe('drawText — outline tier', () => {
     x: 0, y: 0,
     runs: [{
       text, fontFamily: 'inter', fontWeight: 400, fontStyle: 'normal',
-      fontSize: SIZE, fill: { fill: 'solid', color: '#000' },
+      fontSize: SIZE, fill: { kind: 'solid', color: '#000' },
       letterSpacing: 0, underline: false, strikethrough: false,
       overline: false, baselineShift: 0, ...extra,
     }],
@@ -1959,7 +1959,7 @@ describe('drawText — outline tier', () => {
    * and miters, at any width, in any paint.
    */
   describe('stroke', () => {
-    const STROKE = { paint: { fill: 'solid' as const, color: '#f00' }, width: 4 };
+    const STROKE = { paint: { kind: 'solid' as const, color: '#f00' }, width: 4 };
 
     it('batches the stroke over the group, as the fill is', () => {
       const stroked = createRecorderCtx();
@@ -2092,7 +2092,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
     }
 
     const LINEAR = {
-      fill: 'linear-gradient' as const,
+      kind: 'linear-gradient' as const,
       from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
     };
 
@@ -2133,7 +2133,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
 
     it('a radial gradient carries the point its own radius scales to 1', () => {
       shifted({
-        fill: 'radial-gradient', center: { x: 100, y: 40 }, radius: 10, stops: STOPS,
+        kind: 'radial-gradient', center: { x: 100, y: 40 }, radius: 10, stops: STOPS,
         units: 'local',
       });
       // Local (0,0)..(10,10) against a center at (100,40) in that same space:
@@ -2144,7 +2144,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
 
     it('a conic gradient turns its coordinate by the angle rather than the shader', () => {
       shifted({
-        fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: Math.PI / 2, stops: STOPS,
+        kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: Math.PI / 2, stops: STOPS,
         units: 'local',
       });
       // A quarter turn takes (x, y) to (y, -x), so the corner at local (10, 0)
@@ -2156,7 +2156,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
     });
 
     it('a radial gradient puts its atlas row where a plain vertex keeps its alpha', () => {
-      shifted({ fill: 'radial-gradient', center: { x: 5, y: 5 }, radius: 5, stops: STOPS });
+      shifted({ kind: 'radial-gradient', center: { x: 5, y: 5 }, radius: 5, stops: STOPS });
       // One ramp in a 16-row atlas: the center of row 0, and the same on every
       // corner — the row does not vary across a shape.
       expect(new Set(stagedUV().post)).toEqual(new Set([0.5 / 16]));
@@ -2183,7 +2183,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
     };
 
     const RADIAL = {
-      fill: 'radial-gradient' as const, center: { x: 0, y: 0 }, radius: 5, stops: STOPS,
+      kind: 'radial-gradient' as const, center: { x: 0, y: 0 }, radius: 5, stops: STOPS,
     };
 
     it('defaults to screen space, leaving the mapping identity', () => {
@@ -2225,7 +2225,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
     });
 
     it("units: 'world' degrades to screen space when the caller passed no view", () => {
-      evenOdd({ fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: STOPS, units: 'world' });
+      evenOdd({ kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: STOPS, units: 'world' });
       expect(worldInv()).toEqual(Array.from(mat3.identity()));
     });
 
@@ -2252,7 +2252,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
 
   describe('a paint whose space has no inverse', () => {
     const LOCAL_LINEAR = {
-      fill: 'linear-gradient' as const,
+      kind: 'linear-gradient' as const,
       from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS, units: 'local' as const,
     };
 
@@ -2382,7 +2382,7 @@ describe('per-vertex color buffer lifetime', () => {
       coords: new Float32Array([0, 0, 50, 0, 50, 50]),
       fillRule: 'nonzero',
     },
-    fill: { fill: 'solid', color: '#ffffff' },
+    fill: { kind: 'solid', color: '#ffffff' },
     vertexColors: vColors,
   } as unknown as DrawCommand;
   const strokeCmd = {

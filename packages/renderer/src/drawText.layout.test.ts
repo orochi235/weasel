@@ -74,7 +74,7 @@ function bottomAlignedText(): DrawCommand {
     verticalAlign: 'bottom',
     runs: [{
       text: 'Ay', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
-      fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' },
+      fontStyle: 'normal', fill: { kind: 'solid', color: '#fff' },
       letterSpacing: 0, underline: true, strikethrough: false,
       overline: false, baselineShift: 0,
     }],

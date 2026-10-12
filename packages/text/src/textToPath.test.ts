@@ -271,9 +271,9 @@ describe('textToPath failures', () => {
 });
 
 describe('textToPathsByPaint', () => {
-  const RED = { fill: 'solid', color: '#c00' } as const;
-  const BLUE = { fill: 'solid', color: '#00c' } as const;
-  const OUTLINE = { width: 2, paint: { fill: 'solid', color: '#0c0' } } as const;
+  const RED = { kind: 'solid', color: '#c00' } as const;
+  const BLUE = { kind: 'solid', color: '#00c' } as const;
+  const OUTLINE = { width: 2, paint: { kind: 'solid', color: '#0c0' } } as const;
 
   /** Whether `p` covers `(x, y)` in any of `paths` — their union, sampled. */
   const inAny = (paths: readonly Path[], x: number, y: number) => paths.some((p) => pointInPath(p, x, y));
@@ -323,7 +323,7 @@ describe('textToPathsByPaint', () => {
   it('gives plain text one group in the default text fill, and outlines unfilled text too', () => {
     const plain = textToPathsByPaint(text('Hi'), POSE);
     expect(plain).toHaveLength(1);
-    expect(plain[0]!.fill).toEqual({ fill: 'solid', color: '#000' });
+    expect(plain[0]!.fill).toEqual({ kind: 'solid', color: '#000' });
 
     const unfilled = textToPathsByPaint({ ...text('Hi'), fill: null }, POSE);
     expect(unfilled).toHaveLength(1);

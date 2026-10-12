@@ -32,7 +32,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
     const rect: DrawCommand = {
       kind: 'path',
       path: { kind: 'rect', x: WORLD_X, y: 1, width: 1, height: 1 },
-      fill: { fill: 'solid', color: '#f00' },
+      fill: { kind: 'solid', color: '#f00' },
     };
     const lefts = PANS.map((k) => {
       const { rec, r } = frame([rect], k * STEP_PX);
@@ -61,7 +61,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
     const path: DrawCommand = {
       kind: 'path',
       path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords, fillRule: 'nonzero' },
-      fill: { fill: 'solid', color: '#fff' },
+      fill: { kind: 'solid', color: '#fff' },
       // Per-vertex colors keep a fill out of the batch.
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
     } as unknown as DrawCommand;
@@ -125,7 +125,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       children: [{
         kind: 'path',
         path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords, fillRule: 'nonzero' },
-        fill: { fill: 'solid', color: '#fff' },
+        fill: { kind: 'solid', color: '#fff' },
         vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
       } as unknown as DrawCommand],
     }]);
@@ -157,7 +157,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       children: [{
         kind: 'path',
         path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 3]), coords: new Float32Array([0, 0, 4, 0, 0, 4]), fillRule: 'nonzero' },
-        fill: { fill: 'solid', color: '#fff' },
+        fill: { kind: 'solid', color: '#fff' },
         vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
       } as unknown as DrawCommand],
     }]);

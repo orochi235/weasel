@@ -192,7 +192,7 @@ describe('kit:text painter — rich runs', () => {
     it('falls back to the default black with no data.fill', () => {
       const [cmd] = paintText({ text: 'hi' });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs[0].fill).toEqual({ fill: 'solid', color: '#000' });
+      expect(text.runs[0].fill).toEqual({ kind: 'solid', color: '#000' });
     });
 
     it('a run fill overrides the node fill', () => {
@@ -452,7 +452,7 @@ describe('data.stroke is a whole Stroke', () => {
     // Left unbaked, the paint would reach the renderer in `'bounds'` fractions
     // describing a frame that no longer exists — the pose is already in the path.
     const paint = {
-      fill: 'linear-gradient' as const,
+      kind: 'linear-gradient' as const,
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
       units: 'bounds' as const,
@@ -474,7 +474,7 @@ describe('kit:rect-fallback resolves its fill for the renderer', () => {
   it('bakes a bounds-relative gradient onto the pose box, as kit:shape does', () => {
     const pose = { x: 10, y: 0, width: 100, height: 100 };
     const fill = {
-      fill: 'linear-gradient' as const,
+      kind: 'linear-gradient' as const,
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
       units: 'bounds' as const,

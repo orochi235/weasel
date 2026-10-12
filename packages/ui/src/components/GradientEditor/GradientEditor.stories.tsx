@@ -30,7 +30,7 @@ function Live({ initial, ...args }: LiveArgs & { initial: Paint }) {
 }
 
 const linear = (stops: GradientFill['stops']): GradientFill =>
-  ({ fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops }) as GradientFill;
+  ({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops }) as GradientFill;
 
 /** Stops at 0 and 1 sit flush with the ends of the track, and every stop sits
  *  over its own offset in the painted ramp — the 30% stop over the ramp's 30%
@@ -64,7 +64,7 @@ export const Svg: Story = {
     <Live
       {...args}
       initial={{
-        fill: 'conic-gradient',
+        kind: 'conic-gradient',
         center: { x: 0.5, y: 0.5 },
         angle: 0,
         units: 'bounds',

@@ -73,7 +73,7 @@ describe('MeshHandles', () => {
     expect(onInput).toHaveBeenCalled();
     expect(onChange).toHaveBeenCalledTimes(1);
     const next = onChange.mock.calls[0][0] as unknown as MeshGradientFill;
-    expect(next.fill).toBe('mesh-gradient');
+    expect(next.kind).toBe('mesh-gradient');
     expect(next.patches[0].points[6]).toEqual({ x: 120, y: 120 });
   });
 

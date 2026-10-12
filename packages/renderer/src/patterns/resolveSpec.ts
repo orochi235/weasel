@@ -117,7 +117,7 @@ export function isPatternSpec(
 export function resolveFillPattern(fill: PosedFill): CommandFill | null;
 export function resolveFillPattern(fill: Paint): Paint | null;
 export function resolveFillPattern(fill: Paint): Paint | null {
-  if (fill.fill !== 'pattern') return fill;
+  if (fill.kind !== 'pattern') return fill;
   if (!isPatternSpec(fill.pattern)) return fill;
   const handle = resolvePatternSpec(fill.pattern);
   return handle ? { ...fill, pattern: handle } : null;

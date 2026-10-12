@@ -146,10 +146,10 @@ test('mesh batch: where batching a mesh stops paying', async ({ page, browser, b
             out.push({
               kind: 'path',
               path: { kind: 'rect', x: x - R - 6, y: y - R - 6, width: 8, height: 8 },
-              fill: { fill: 'solid', color: '#222222' },
+              fill: { kind: 'solid', color: '#222222' },
             });
           }
-          out.push({ kind: 'path', path: ngon(x, y, n), fill: { fill: 'solid', color: COLORS[i % COLORS.length] } });
+          out.push({ kind: 'path', path: ngon(x, y, n), fill: { kind: 'solid', color: COLORS[i % COLORS.length] } });
         }
         return out;
       }

@@ -72,7 +72,7 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
     return [...primary, textCommandFromRuns(
       p.x + 6,
       p.y + 14,
-      [{ text: data.label, fill: { fill: 'solid', color: 'rgba(0,0,0,0.7)' } }],
+      [{ text: data.label, fill: { kind: 'solid', color: 'rgba(0,0,0,0.7)' } }],
       { fontFamily: 'sans-serif', fontSize: 11 },
     )];
   }

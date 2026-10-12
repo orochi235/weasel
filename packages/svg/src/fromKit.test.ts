@@ -14,7 +14,7 @@ import type { SvgGroupNode, SvgPathNode, SvgTextNode } from './types';
 const BOX = { x: 10, y: 20, width: 100, height: 50 };
 const rect: Path = { kind: 'rect', x: 10, y: 20, width: 100, height: 50 };
 const linear: Paint = {
-  fill: 'linear-gradient', units: 'bounds',
+  kind: 'linear-gradient', units: 'bounds',
   from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
   stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
 };

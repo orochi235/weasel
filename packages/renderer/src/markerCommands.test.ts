@@ -11,7 +11,7 @@ const LINE: PolygonPath = {
   coords: new Float32Array([0, 0, 100, 0]),
   fillRule: 'nonzero',
 };
-const PAINT = { fill: 'solid', color: '#f00' } as const;
+const PAINT = { kind: 'solid', color: '#f00' } as const;
 const BASE: CommandStroke = { paint: PAINT, width: 2 };
 
 describe('markerDrawCommands', () => {
@@ -49,7 +49,7 @@ describe('markerDrawCommands', () => {
     const dispose = registerMarker({
       id: 'app:both',
       inset: 2,
-      fill: { fill: 'solid', color: '#fff' },
+      fill: { kind: 'solid', color: '#fff' },
       outline: { width: 0.5 },
       path: ({ size }) => ({
         kind: 'polygon',
@@ -61,7 +61,7 @@ describe('markerDrawCommands', () => {
     try {
       const cmds = markerDrawCommands(LINE, { ...BASE, markerEnd: 'app:both' }, 2, undefined);
       expect(cmds).toHaveLength(1);
-      expect(cmds[0].fill).toEqual({ fill: 'solid', color: '#fff' });
+      expect(cmds[0].fill).toEqual({ kind: 'solid', color: '#fff' });
       // The outline declares no paint of its own, so it falls back to the line's.
       expect(cmds[0].stroke?.paint).toEqual(PAINT);
       expect(cmds[0].stroke?.width).toBeCloseTo(1, 6);
@@ -75,7 +75,7 @@ describe('markerDrawCommands', () => {
       id: 'app:shaded',
       inset: 2,
       fill: {
-        fill: 'linear-gradient',
+        kind: 'linear-gradient',
         from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
         stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
         units: 'bounds',

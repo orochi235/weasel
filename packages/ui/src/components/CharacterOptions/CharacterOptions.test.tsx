@@ -196,7 +196,7 @@ describe('CharacterOptions — fill', () => {
       <CharacterOptions
         style={{
           fill: {
-            fill: 'linear-gradient',
+            kind: 'linear-gradient',
             from: { x: 0, y: 0 },
             to: { x: 1, y: 0 },
             stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],

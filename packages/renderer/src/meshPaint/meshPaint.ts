@@ -43,7 +43,7 @@ export type { MeshPatch, MeshPoint } from './surface';
  * a line.
  */
 export interface MeshGradientFill {
-  fill: 'mesh-gradient';
+  kind: 'mesh-gradient';
   patches: MeshPatch[];
   units?: PaintUnits;
   interpolate?: ColorSpace;
@@ -57,7 +57,7 @@ export const MESH_GRADIENT_KIND = 'mesh-gradient';
 export function isMeshGradientFill(fill: Paint | null | undefined): fill is Paint & MeshGradientFill {
   // `Paint`'s discriminant stays closed over the built-in kinds — see
   // `asPaint` — so a registered kind reads it widened.
-  return fill != null && (fill.fill as string | undefined) === MESH_GRADIENT_KIND;
+  return fill != null && (fill.kind as string | undefined) === MESH_GRADIENT_KIND;
 }
 
 function asMesh(fill: Paint): MeshGradientFill {
@@ -110,7 +110,7 @@ export function seedMeshPatch(color: string): MeshGradientFill {
     );
   }
   return {
-    fill: MESH_GRADIENT_KIND,
+    kind: MESH_GRADIENT_KIND,
     patches: [{
       points,
       colors: [
@@ -152,7 +152,7 @@ export function meshFromStops(stops: readonly GradStop[]): MeshGradientFill {
     const b = sorted[i + 1];
     if (b.offset > a.offset) patches.push(bandPatch(a.offset, b.offset, a.color, b.color));
   }
-  return { fill: MESH_GRADIENT_KIND, patches, units: 'bounds' };
+  return { kind: MESH_GRADIENT_KIND, patches, units: 'bounds' };
 }
 
 /**

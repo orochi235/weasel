@@ -16,7 +16,7 @@ type InCommandUnits<F> = F extends { units?: PaintUnits }
   ? Omit<F, 'units'> & { units?: CommandPaintUnits }
   : F;
 
-type WithPatternHandle<F> = F extends { fill: 'pattern' }
+type WithPatternHandle<F> = F extends { kind: 'pattern' }
   ? Omit<F, 'pattern'> & { pattern: TextureHandle }
   : F;
 

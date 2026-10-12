@@ -101,7 +101,7 @@ export function createPenPreviewLayer(
         out.push({
           kind: 'path',
           path,
-          stroke: { paint: { fill: 'solid', color: style.finishedSubpathStroke }, width: 1 },
+          stroke: { paint: { kind: 'solid', color: style.finishedSubpathStroke }, width: 1 },
         });
       }
 
@@ -115,7 +115,7 @@ export function createPenPreviewLayer(
           out.push({
             kind: 'path',
             path,
-            stroke: { paint: { fill: 'solid', color: style.rubberBandStroke }, width: 1 },
+            stroke: { paint: { kind: 'solid', color: style.rubberBandStroke }, width: 1 },
           });
         }
       }
@@ -146,7 +146,7 @@ export function createPenPreviewLayer(
         out.push({
           kind: 'path',
           path,
-          stroke: { paint: { fill: 'solid', color: style.rubberBandStroke }, width: 1 },
+          stroke: { paint: { kind: 'solid', color: style.rubberBandStroke }, width: 1 },
         });
       }
 
@@ -158,8 +158,8 @@ export function createPenPreviewLayer(
           out.push({
             kind: 'path',
             path: approximateCircle(ax, ay, ANCHOR_RADIUS_PX),
-            fill: { fill: 'solid', color: style.anchorFill },
-            stroke: { paint: { fill: 'solid', color: style.anchorStroke }, width: 1 },
+            fill: { kind: 'solid', color: style.anchorFill },
+            stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
           });
           // Handle line + dot (only the latest anchor, per spec).
           if (i === cur.anchors.length - 1 && a.outHandle) {
@@ -173,12 +173,12 @@ export function createPenPreviewLayer(
             out.push({
               kind: 'path',
               path: linePath,
-              stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
+              stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
             });
             out.push({
               kind: 'path',
               path: approximateCircle(hx, hy, HANDLE_DOT_RADIUS_PX),
-              fill: { fill: 'solid', color: style.handleStroke },
+              fill: { kind: 'solid', color: style.handleStroke },
             });
             const inSide = a.inHandle;
             if (inSide) {
@@ -192,12 +192,12 @@ export function createPenPreviewLayer(
               out.push({
                 kind: 'path',
                 path: inLine,
-                stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
+                stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
               });
               out.push({
                 kind: 'path',
                 path: approximateCircle(mx, my, HANDLE_DOT_RADIUS_PX),
-                fill: { fill: 'solid', color: style.handleStroke },
+                fill: { kind: 'solid', color: style.handleStroke },
               });
             }
           }
@@ -210,7 +210,7 @@ export function createPenPreviewLayer(
           out.push({
             kind: 'path',
             path: approximateCircle(fx, fy, CLOSE_HINT_RADIUS_PX),
-            stroke: { paint: { fill: 'solid', color: style.closeHintFill }, width: 1.5 },
+            stroke: { paint: { kind: 'solid', color: style.closeHintFill }, width: 1.5 },
           });
         }
       }

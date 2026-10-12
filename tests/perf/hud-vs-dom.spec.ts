@@ -285,7 +285,7 @@ async function install(
     background.push({
       kind: 'path',
       path: { kind: 'rect', x: (i * 67) % (w - 40), y: (i * 41) % (h - 40), width: 36, height: 36 },
-      fill: { fill: 'solid', color: i % 2 ? '#1d3557' : '#2a4d3a' },
+      fill: { kind: 'solid', color: i % 2 ? '#1d3557' : '#2a4d3a' },
     });
   }
 

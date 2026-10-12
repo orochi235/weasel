@@ -84,7 +84,7 @@ type StopThumb = Thumb & { color: string };
  */
 export function GradientEditor(props: GradientEditorProps): ReactElement {
   const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, className } = props;
-  const kind: PaintKind = value.fill ?? 'solid';
+  const kind: PaintKind = value.kind ?? 'solid';
   const space: ColorSpace = (value as { interpolate?: ColorSpace }).interpolate ?? 'rgb';
 
   const entry = usePaintKind(kind);

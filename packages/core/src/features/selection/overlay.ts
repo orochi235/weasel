@@ -267,13 +267,13 @@ export interface SelectionOverlayLayerOpts<TPose>
 }
 
 const DEFAULT_OUTLINE: Required<Pick<CommandStroke, 'paint' | 'width'>> & { pad: number } = {
-  paint: { fill: 'solid', color: '#f0e0a8' },
+  paint: { kind: 'solid', color: '#f0e0a8' },
   width: 2,
   pad: 1,
 };
-const DEFAULT_HANDLE_FILL: CommandFill = { fill: 'solid', color: '#d4c4a8' };
+const DEFAULT_HANDLE_FILL: CommandFill = { kind: 'solid', color: '#d4c4a8' };
 const DEFAULT_HANDLE_OUTLINE: CommandStroke = {
-  paint: { fill: 'solid', color: '#1a130d' },
+  paint: { kind: 'solid', color: '#1a130d' },
   width: 1,
 };
 const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;

@@ -410,7 +410,7 @@ function EditorWithSharedScene({
     draw: () => [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: paper.width, height: paper.height },
-      fill: { fill: 'solid', color: backgroundColor },
+      fill: { kind: 'solid', color: backgroundColor },
     }],
   }), [paper.width, paper.height, backgroundColor]);
 
@@ -555,8 +555,8 @@ function EditorWithSharedScene({
     bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
     accentEvery: 5,
     style: {
-      line:   { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.06) }, width: 1 },
-      accent: { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.14) }, width: 1 },
+      line:   { paint: { kind: 'solid', color: contrastLineColor(backgroundColor, 0.06) }, width: 1 },
+      accent: { paint: { kind: 'solid', color: contrastLineColor(backgroundColor, 0.14) }, width: 1 },
     },
   }), [paper.width, paper.height, backgroundColor]);
 

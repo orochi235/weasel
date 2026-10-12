@@ -14,7 +14,7 @@ describe('stroke markers are public API', () => {
   });
 
   it('re-exports the marker types from paint', () => {
-    const stroke: kit.Stroke = { paint: { fill: 'solid', color: '#000' }, markerEnd: 'arrow' };
+    const stroke: kit.Stroke = { paint: { kind: 'solid', color: '#000' }, markerEnd: 'arrow' };
     expect(stroke.markerEnd).toBe('arrow');
   });
 });

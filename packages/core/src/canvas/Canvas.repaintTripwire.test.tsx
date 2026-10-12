@@ -38,7 +38,7 @@ function probeLayer(draw: () => void): RenderLayer<unknown> {
     space: 'screen',
     draw: () => {
       draw();
-      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } }];
+      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { kind: 'solid', color: '#fff' } }];
     },
   };
 }

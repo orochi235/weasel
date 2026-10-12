@@ -32,7 +32,7 @@ function drag(label: string, to: { x: number; y: number }): void {
 
 describe('GradientHandles', () => {
   const linear: GradientFill = {
-    fill: 'linear-gradient',
+    kind: 'linear-gradient',
     from: { x: 0, y: 0 },
     to: { x: 50, y: 0 },
     stops: STOPS,
@@ -52,7 +52,7 @@ describe('GradientHandles', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0][0]).toMatchObject({
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 100, y: 50 },
       units: 'local',
@@ -136,7 +136,7 @@ describe('GradientHandles', () => {
   });
 
   const radial: GradientFill = {
-    fill: 'radial-gradient', center: { x: 50, y: 50 }, radius: 25, stops: STOPS,
+    kind: 'radial-gradient', center: { x: 50, y: 50 }, radius: 25, stops: STOPS,
   };
 
   it('derives a radial radius from the distance dragged, in gradient space', () => {
@@ -144,7 +144,7 @@ describe('GradientHandles', () => {
     render(<GradientHandles value={radial} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
     // Screen (230, 120) is local (110, 50) — 60 from the center at (50, 50).
     drag('Gradient radius', { x: 230, y: 120 });
-    expect(onChange.mock.calls[0][0]).toMatchObject({ fill: 'radial-gradient', radius: 60 });
+    expect(onChange.mock.calls[0][0]).toMatchObject({ kind: 'radial-gradient', radius: 60 });
   });
 
   it('never commits a zero radius, which would divide by zero in the shader', () => {
@@ -156,7 +156,7 @@ describe('GradientHandles', () => {
   });
 
   const conic: GradientFill = {
-    fill: 'conic-gradient', center: { x: 50, y: 50 }, angle: 0, stops: STOPS,
+    kind: 'conic-gradient', center: { x: 50, y: 50 }, angle: 0, stops: STOPS,
   };
 
   it('derives a conic angle from the arm direction', () => {

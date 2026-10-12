@@ -13,7 +13,7 @@ import type { Effect } from './effects/types';
  * be any `Paint` variant — solid, pattern, or gradient.
  */
 export interface SolidPaint {
-  fill?: 'solid';
+  kind?: 'solid';
   /** Any CSS color string accepted by `parseColor`: hex, `rgb()`/`rgba()`, `hsl()`/`hsla()`, named, or `transparent`. */
   color: string;
   opacity?: number;

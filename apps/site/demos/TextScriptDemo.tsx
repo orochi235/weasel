@@ -142,7 +142,7 @@ export function TextScriptDemo() {
         width={W}
         height={H}
         className="ckd-canvas"
-        background={{ fill: 'solid', color: '#ffffff' }}
+        background={{ kind: 'solid', color: '#ffffff' }}
         draw={commands}
       />
     </div>

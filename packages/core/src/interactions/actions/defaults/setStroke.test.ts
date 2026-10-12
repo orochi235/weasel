@@ -162,7 +162,7 @@ describe('setStrokeAction', () => {
 
 describe('setStrokeAction — non-solid paints', () => {
   const GRADIENT = {
-    fill: 'linear-gradient' as const,
+    kind: 'linear-gradient' as const,
     from: { x: 0, y: 0 },
     to: { x: 10, y: 0 },
     stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],

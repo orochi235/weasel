@@ -144,7 +144,7 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
           children: [{
             kind: 'path',
             path: { kind: 'rect', x: px(i), y: py(i), width: 36, height: 36 },
-            fill: { fill: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' },
+            fill: { kind: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' },
           }],
         });
       }

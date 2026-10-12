@@ -68,7 +68,7 @@ describe('renderer — consecutive image batching', () => {
   const breakerRect = (x: number) => ({
     kind: 'path' as const,
     path: { kind: 'rect' as const, x, y: 0, width: 16, height: 16 },
-    fill: { fill: 'solid' as const, color: '#ffffff' },
+    fill: { kind: 'solid' as const, color: '#ffffff' },
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
   }) as unknown as DrawCommand;
 

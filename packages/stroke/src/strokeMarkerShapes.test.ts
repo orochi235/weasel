@@ -7,7 +7,7 @@ const byId = (id: string) => {
   if (!e) throw new Error(`no built-in marker ${id}`);
   return e;
 };
-const ctx = { size: 1, stroke: { paint: { fill: 'solid', color: '#000' } } } as const;
+const ctx = { size: 1, stroke: { paint: { kind: 'solid', color: '#000' } } } as const;
 
 describe('built-in marker geometry', () => {
   it('ships the whole documented vocabulary', () => {

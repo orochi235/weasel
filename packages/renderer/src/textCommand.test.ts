@@ -131,7 +131,7 @@ describe('screen-pixel sizes', () => {
 
   it('maps a bounds paint on a pose onto the pose box, stroke included', () => {
     const grad = {
-      fill: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }], units: 'bounds' as const,
     };
     const cmd = textCommandFromPose({
@@ -144,7 +144,7 @@ describe('screen-pixel sizes', () => {
   });
 
   it('hands solid runs through untouched', () => {
-    const fill = { fill: 'solid' as const, color: '#123' };
+    const fill = { kind: 'solid' as const, color: '#123' };
     const cmd = textCommandFromPose({ x: 0, y: 0, width: 10, height: 10, text: 'x', fill });
     expect(cmd.runs[0].fill).toBe(fill);
   });

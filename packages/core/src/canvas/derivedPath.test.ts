@@ -293,7 +293,7 @@ describe('kit:derived painter', () => {
       pose: { x: 0, y: 0, width: 0, height: 0 },
       data: {
         fill: {
-          fill: 'linear-gradient',
+          kind: 'linear-gradient',
           from: { x: 0, y: 0 },
           to: { x: 1, y: 0 },
           stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
@@ -305,7 +305,7 @@ describe('kit:derived painter', () => {
     };
     const path = linePath({ x: 20, y: 0 }, { x: 120, y: 0 });
     const cmds = defaultDrawOne(node, node.pose, VIEW, { derivedPath: path });
-    const fill = (cmds[0] as { fill: Extract<Paint, { fill: 'linear-gradient' }> }).fill;
+    const fill = (cmds[0] as { fill: Extract<Paint, { kind: 'linear-gradient' }> }).fill;
     expect(fill.from).toEqual({ x: 20, y: 0 });
     expect(fill.to).toEqual({ x: 120, y: 0 });
   });

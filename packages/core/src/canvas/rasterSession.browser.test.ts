@@ -14,7 +14,7 @@ interface Box { color: string }
 const drawOne = (node: { data: Box }, p: RectPose): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-  fill: { fill: 'solid', color: node.data.color },
+  fill: { kind: 'solid', color: node.data.color },
 } as DrawCommand];
 
 function sceneOf(boxes: Array<RectPose & Box>) {

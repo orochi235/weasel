@@ -120,15 +120,15 @@ describe('aggregateValue', () => {
   });
 
   it('reads equal objects and arrays held separately as one value', () => {
-    const a = leaf('a', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2] });
-    const b = leaf('b', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2] });
-    expect(aggregateValue([a, b], 'data.fill')).toEqual({ fill: 'solid', color: '#f00' });
+    const a = leaf('a', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2] });
+    const b = leaf('b', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2] });
+    expect(aggregateValue([a, b], 'data.fill')).toEqual({ kind: 'solid', color: '#f00' });
     expect(aggregateValue([a, b], 'data.dash')).toEqual([4, 2]);
   });
 
   it('still reports objects and arrays that differ anywhere as MIXED', () => {
-    const a = leaf('a', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2], stops: [{ at: 0 }] });
-    const b = leaf('b', { kind: 'rect', fill: { fill: 'solid', color: '#0f0' }, dash: [4, 2, 1], stops: [{ at: 1 }] });
+    const a = leaf('a', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2], stops: [{ at: 0 }] });
+    const b = leaf('b', { kind: 'rect', fill: { kind: 'solid', color: '#0f0' }, dash: [4, 2, 1], stops: [{ at: 1 }] });
     expect(aggregateValue([a, b], 'data.fill')).toBe(MIXED);
     expect(aggregateValue([a, b], 'data.dash')).toBe(MIXED);
     expect(aggregateValue([a, b], 'data.stops')).toBe(MIXED);

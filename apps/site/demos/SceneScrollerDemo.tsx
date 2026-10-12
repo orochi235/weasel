@@ -198,7 +198,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       draw: (): DrawCommand[] => {
         const g = game.current;
         const style = { fontFamily: 'sans-serif', fontSize: 14 };
-        const paint = { fill: 'solid' as const, color: COLORS.hud };
+        const paint = { kind: 'solid' as const, color: COLORS.hud };
         return [
           textCommandFromRuns(12, 22, [{ text: `♥ ${Math.max(g.lives, 0)}`, fill: paint }], style),
           textCommandFromRuns(72, 22, [{ text: `◆ ${g.score} / ${g.coins.length}`, fill: paint }], style),
@@ -218,7 +218,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         const box = (x: number, y: number, w: number, h: number, color: string): DrawCommand => ({
           kind: 'path',
           path: rectPath(x - w / 2, y - h / 2, w, h),
-          stroke: { width: 1 / CAM_SCALE, paint: { fill: 'solid', color } },
+          stroke: { width: 1 / CAM_SCALE, paint: { kind: 'solid', color } },
         });
         return [
           box(g.player.body.x, g.player.body.y, BODY_W, BODY_H, COLORS.debugPlayer),

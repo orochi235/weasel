@@ -10,39 +10,39 @@ describe('Paint gradient types (compile-time + runtime shape)', () => {
 
   it('linear-gradient Paint discriminates on fill', () => {
     const p: Paint = {
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 100, y: 0 },
       stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
     };
-    expect(p.fill).toBe('linear-gradient');
+    expect(p.kind).toBe('linear-gradient');
   });
 
   it('radial-gradient Paint discriminates on fill', () => {
     const p: Paint = {
-      fill: 'radial-gradient',
+      kind: 'radial-gradient',
       center: { x: 50, y: 50 },
       radius: 50,
       stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
     };
-    expect(p.fill).toBe('radial-gradient');
+    expect(p.kind).toBe('radial-gradient');
   });
 
   it('conic-gradient Paint discriminates on fill', () => {
     const p: Paint = {
-      fill: 'conic-gradient',
+      kind: 'conic-gradient',
       center: { x: 50, y: 50 },
       angle: 0,
       stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
     };
-    expect(p.fill).toBe('conic-gradient');
+    expect(p.kind).toBe('conic-gradient');
   });
 
   it('pattern Paint discriminates on fill', () => {
     const p: Paint = {
-      fill: 'pattern',
+      kind: 'pattern',
       pattern: { id: 'test-tex' },
     };
-    expect(p.fill).toBe('pattern');
+    expect(p.kind).toBe('pattern');
   });
 });

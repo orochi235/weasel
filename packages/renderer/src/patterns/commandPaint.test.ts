@@ -9,12 +9,12 @@ import { commandFill, commandStroke } from './commandPaint';
 const BOX = { x: 10, y: 20, width: 100, height: 50 };
 const RECT = { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } as const;
 const BOUNDS_GRADIENT: Paint = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 }, to: { x: 1, y: 1 },
   stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
   units: 'bounds',
 };
-const HATCH: Paint = { fill: 'pattern', pattern: { tile: 'hatch', color: '#000' }, units: 'bounds' };
+const HATCH: Paint = { kind: 'pattern', pattern: { tile: 'hatch', color: '#000' }, units: 'bounds' };
 
 describe('commandFill', () => {
   beforeEach(() => {
@@ -32,7 +32,7 @@ describe('commandFill', () => {
 
   it('swaps a tile spec for its texture and anchors it to the box', () => {
     const fill = commandFill(HATCH, BOX);
-    expect(fill).toMatchObject({ fill: 'pattern', units: 'local', origin: { x: 10, y: 20 } });
+    expect(fill).toMatchObject({ kind: 'pattern', units: 'local', origin: { x: 10, y: 20 } });
     expect((fill as { pattern: { id: string } }).pattern.id).toEqual(expect.any(String));
   });
 
@@ -63,7 +63,7 @@ describe('PathDrawCommand paint', () => {
   it('rejects what only a node painter can resolve', () => {
     const cmds: PathDrawCommand[] = [
       // @ts-expect-error a tile spec is not a registered texture
-      { kind: 'path', path: RECT, fill: { fill: 'pattern', pattern: { tile: 'hatch', color: '#000' } } },
+      { kind: 'path', path: RECT, fill: { kind: 'pattern', pattern: { tile: 'hatch', color: '#000' } } },
       // @ts-expect-error a command has no node box for 'bounds' to mean
       { kind: 'path', path: RECT, fill: BOUNDS_GRADIENT },
       // @ts-expect-error the same holds for a stroke's paint

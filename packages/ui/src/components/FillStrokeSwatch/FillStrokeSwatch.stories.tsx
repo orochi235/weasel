@@ -12,7 +12,7 @@ export default meta;
 
 type Story = StoryObj<typeof FillStrokeSwatch>;
 
-const solid = (color: string): Paint => ({ fill: 'solid', color });
+const solid = (color: string): Paint => ({ kind: 'solid', color });
 const DEFAULTS = { fill: solid('#ffffffff'), stroke: solid('#000000ff') };
 
 function Live({ initial }: { initial: { fill: Paint | null; stroke: Paint | null } }) {
@@ -52,7 +52,7 @@ export const Gradient: Story = {
     <Live
       initial={{
         fill: {
-          fill: 'linear-gradient',
+          kind: 'linear-gradient',
           from: { x: 0, y: 0 },
           to: { x: 1, y: 1 },
           stops: [

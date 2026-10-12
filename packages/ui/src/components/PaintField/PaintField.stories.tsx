@@ -12,7 +12,7 @@ export default meta;
 type Story = StoryObj<typeof PaintField>;
 
 const LINEAR: Paint = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 1 },
   stops: [
@@ -24,7 +24,7 @@ const LINEAR: Paint = {
 };
 
 const CONIC: Paint = {
-  fill: 'conic-gradient',
+  kind: 'conic-gradient',
   center: { x: 0.5, y: 0.5 },
   angle: 0,
   stops: [
@@ -52,7 +52,7 @@ function Row({ label, initial }: { label: string; initial: Paint | null }) {
 export const InAPropertyRow: Story = {
   render: () => (
     <div style={{ display: 'grid', gap: 8, padding: 16 }}>
-      <Row label="Solid" initial={{ fill: 'solid', color: '#7a5af5ff' }} />
+      <Row label="Solid" initial={{ kind: 'solid', color: '#7a5af5ff' }} />
       <Row label="Linear (OKLCh)" initial={LINEAR} />
       <Row label="Conic" initial={CONIC} />
       <Row label="No paint" initial={null} />

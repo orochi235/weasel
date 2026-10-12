@@ -19,14 +19,14 @@ const drawOne = (node: { data: Kind }, p: RectPose): DrawCommand[] => node.data 
   ? [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill: { fill: 'solid', color: '#ff0000' },
+    fill: { kind: 'solid', color: '#ff0000' },
   }]
   : [{
     kind: 'text', x: p.x, y: p.y, align: 'left',
     style: { fontFamily: 'lazy-inter', fontSize: 32 },
     runs: [{
       text: 'Hi', fontFamily: 'lazy-inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-      fill: { fill: 'solid', color: '#ffffff' }, letterSpacing: 0,
+      fill: { kind: 'solid', color: '#ffffff' }, letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }],
   } as DrawCommand];

@@ -28,7 +28,7 @@ export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: DEFAULT_STROK
 /** An active paint as a node's fill or a stroke's paint; `null` is none. */
 export function toPaint(p: ActivePaint): Paint | null {
   if (p.kind === 'none') return null;
-  return { fill: 'solid', color: p.kind === 'solid' ? p.color : '#00000000' };
+  return { kind: 'solid', color: p.kind === 'solid' ? p.color : '#00000000' };
 }
 
 export function ActiveSwatches(): ReactElement {

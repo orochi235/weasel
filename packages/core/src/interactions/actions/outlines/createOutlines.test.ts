@@ -59,9 +59,9 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
   return { scene, adapter, add, select };
 }
 
-const RED = { fill: 'solid', color: '#c00' } as const;
-const BLUE = { fill: 'solid', color: '#00c' } as const;
-const STROKE = { width: 3, paint: { fill: 'solid', color: '#000' } } as const;
+const RED = { kind: 'solid', color: '#c00' } as const;
+const BLUE = { kind: 'solid', color: '#00c' } as const;
+const STROKE = { width: 3, paint: { kind: 'solid', color: '#000' } } as const;
 const TEXT: Data = { text: 'Hi', style: { fontFamily: 'co-inter', fontSize: 100 }, fill: RED, stroke: STROKE };
 /** 'Hi' with a blue 'i': two paints, three runs. */
 const TWO_PAINT: Data = {

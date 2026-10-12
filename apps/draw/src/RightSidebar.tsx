@@ -79,8 +79,8 @@ export function layerSwatch(data: WeaselDrawData): string | undefined {
  *  report. */
 export function paintChipColor(fill: Paint): string | undefined {
   if (isGradientFill(fill)) return sampleGradientStops(fill.stops, 0.5);
-  if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
-  if (fill.fill === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;
+  if (fill.kind === undefined || fill.kind === 'solid') return fill.color;
+  if (fill.kind === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;
   return undefined;
 }
 

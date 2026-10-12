@@ -3,8 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import type { Paint } from '@weasel-js/core';
 import { FillStrokeSwatch, type FillStrokeSwatchProps } from './FillStrokeSwatch';
 
-const RED: Paint = { fill: 'solid', color: '#ff0000ff' };
-const BLUE: Paint = { fill: 'solid', color: '#0000ffff' };
+const RED: Paint = { kind: 'solid', color: '#ff0000ff' };
+const BLUE: Paint = { kind: 'solid', color: '#0000ffff' };
 
 function mount(over: Partial<FillStrokeSwatchProps> = {}) {
   const props: FillStrokeSwatchProps = {
@@ -124,7 +124,7 @@ describe('FillStrokeSwatch', () => {
 
   it('opens the picker on a non-solid paint at the slot fallback', () => {
     const grad: Paint = {
-      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1, color: '#0000ffff' }], units: 'bounds',
     };
     mount({ fill: grad, stroke: null });

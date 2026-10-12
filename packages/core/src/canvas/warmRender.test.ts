@@ -24,11 +24,11 @@ afterEach(() => {
 function run(fontFamily: string, fontWeight = 400, fontStyle: 'normal' | 'italic' = 'normal', fill?: CommandFill): ResolvedRun {
   return {
     text: 'Hi', fontFamily, fontSize: 12, fontWeight, fontStyle,
-    fill: fill ?? { fill: 'solid', color: '#000' },
+    fill: fill ?? { kind: 'solid', color: '#000' },
   } as ResolvedRun;
 }
 
-const mesh = { fill: 'mesh-gradient', patches: [] } as unknown as CommandFill;
+const mesh = { kind: 'mesh-gradient', patches: [] } as unknown as CommandFill;
 
 /** Text in two families, and a mesh fill two groups down. */
 const COMMANDS: DrawCommand[] = [
@@ -88,7 +88,7 @@ describe('renderNeeds', () => {
   it('reads the paint of a stroke and of a text run', () => {
     const needs = renderNeeds([
       { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, stroke: { paint: mesh } },
-      { kind: 'text', x: 0, y: 0, style: {} as never, runs: [run('serif', 400, 'normal', { fill: 'late' } as never)] },
+      { kind: 'text', x: 0, y: 0, style: {} as never, runs: [run('serif', 400, 'normal', { kind: 'late' } as never)] },
     ]);
     expect(needs.paintKinds).toEqual(['mesh-gradient', 'late']);
   });

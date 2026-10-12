@@ -49,15 +49,15 @@ export interface GridLayerOpts {
 // gray; consumer apps may use cream / dark / themed surfaces). Override
 // per-canvas via `style.{line,accent,sub}.paint` if a hard color is needed.
 const DEFAULT_LINE: CommandStroke = {
-  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.08)' },
+  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.08)' },
   width: 1,
 };
 const DEFAULT_ACCENT: CommandStroke = {
-  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.16)' },
+  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.16)' },
   width: 1,
 };
 const DEFAULT_SUB: CommandStroke = {
-  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.04)' },
+  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.04)' },
   width: 1,
 };
 

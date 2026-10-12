@@ -27,11 +27,11 @@ export function isNonUniform(m: Matrix): boolean {
 export function fillThroughMatrix(fill: Paint, m: Matrix): Paint {
   if (!('units' in fill) || fill.units !== 'world') return fill;
   const at = (p: { x: number; y: number }): { x: number; y: number } => applyMatrix(m, p.x, p.y);
-  if (fill.fill === 'linear-gradient') return { ...fill, from: at(fill.from), to: at(fill.to) };
-  if (fill.fill === 'radial-gradient') {
+  if (fill.kind === 'linear-gradient') return { ...fill, from: at(fill.from), to: at(fill.to) };
+  if (fill.kind === 'radial-gradient') {
     return { ...fill, center: at(fill.center), radius: fill.radius * uniformScaleOf(m) };
   }
-  if (fill.fill === 'conic-gradient') return { ...fill, center: at(fill.center) };
+  if (fill.kind === 'conic-gradient') return { ...fill, center: at(fill.center) };
   return fill;
 }
 

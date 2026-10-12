@@ -420,7 +420,7 @@ void main() { outColor = u_color; }`;
         patternCmds.push({
           kind: 'path',
           path: { kind: 'rect', x: px(i), y: py(i), width: SIZE, height: SIZE },
-          fill: { fill: 'pattern', pattern: patternHandle, origin: { x: i % 8, y: i % 8 } },
+          fill: { kind: 'pattern', pattern: patternHandle, origin: { x: i % 8, y: i % 8 } },
         });
       }
       // The same quads as `atlas`, packed — so the gap between the two is the

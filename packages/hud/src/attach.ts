@@ -243,7 +243,7 @@ function focusRing(w: Widget, color: string): DrawCommand {
   return {
     kind: 'path',
     path: { kind: 'rect', x: x - out, y: y - out, width: bw + out * 2, height: h + out * 2 },
-    stroke: { paint: { fill: 'solid', color }, width: RING_WIDTH },
+    stroke: { paint: { kind: 'solid', color }, width: RING_WIDTH },
   };
 }
 

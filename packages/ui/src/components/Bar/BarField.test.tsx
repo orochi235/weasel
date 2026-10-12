@@ -88,7 +88,7 @@ describe('BarField', () => {
         kind="paint"
         control="inline"
         name="Fill"
-        value={{ fill: 'solid', color: '#ff0000' }}
+        value={{ kind: 'solid', color: '#ff0000' }}
         onChange={() => {}}
       />,
     );

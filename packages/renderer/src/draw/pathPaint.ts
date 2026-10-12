@@ -30,7 +30,7 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
   // Batchable: see `batchPaint`. A rect skips tessellation entirely; anything
   // else stages its mesh. Both also keep animated demos that mint a fresh Path
   // every frame from allocating a GL buffer per frame.
-  const isSolid = fill.fill === undefined || fill.fill === 'solid';
+  const isSolid = fill.kind === undefined || fill.kind === 'solid';
   const hasVColors = !!(cmd.vertexColors && cmd.vertexColors.length > 0);
   const solid = fill as { color: string; opacity?: number };
   const paint = batchPaint(ctx, fill, hasVColors);
@@ -142,11 +142,11 @@ function drawPathFillVColor(
  * disables the stencil test outright.
  */
 function bindPathFillByKind(ctx: DrawContext, fill: Paint): ShaderProgram | null {
-  const kind = fill.fill ?? 'solid';
+  const kind = fill.kind ?? 'solid';
   if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
-  if (kind === 'pattern') return bindPathFillPattern(ctx, fill as Extract<Paint, { fill: 'pattern' }>);
+  if (kind === 'pattern') return bindPathFillPattern(ctx, fill as Extract<Paint, { kind: 'pattern' }>);
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
-    return bindPathFillGradient(ctx, fill as Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
+    return bindPathFillGradient(ctx, fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
   }
   const bind = getPaintDrawKind(kind)?.bind;
   return bind ? bind(paintBindContext(ctx), fill) : null;
@@ -176,14 +176,14 @@ function bindPathFillSolid(
 
 function bindPathFillPattern(
   ctx: DrawContext,
-  fill: Extract<Paint, { fill: 'pattern' }>,
+  fill: Extract<Paint, { kind: 'pattern' }>,
 ): ShaderProgram | null {
   return bindPattern(ctx, ctx.patternFill, fill, ctx.state.transform);
 }
 
 function bindPathFillGradient(
   ctx: DrawContext,
-  fill: Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
+  fill: Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
 ): ShaderProgram | null {
   return bindGradient(ctx, ctx.gradFill, fill, ctx.state.transform);
 }
@@ -229,7 +229,7 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spaces: StrokeSpaces): void {
   const stroke = cmd.stroke;
   const paint = stroke.paint;
-  const isSolid = paint.fill === undefined || paint.fill === 'solid';
+  const isSolid = paint.kind === undefined || paint.kind === 'solid';
   const solid = paint as { color: string; opacity?: number };
   const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance, spaces);
   if (mesh.indices.length === 0) return;
@@ -301,7 +301,7 @@ function drawPathStrokeStenciled(
 ): void {
   const stroke = cmd.stroke;
   const paint = stroke.paint;
-  const isSolid = paint.fill === undefined || paint.fill === 'solid';
+  const isSolid = paint.kind === undefined || paint.kind === 'solid';
   const solid = paint as { color: string; opacity?: number };
   const widerStroke: Stroke = {
     ...stroke,

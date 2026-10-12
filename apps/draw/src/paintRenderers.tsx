@@ -14,7 +14,7 @@ import {
  *  fallback color. */
 export function isPaintObject(raw: unknown): raw is Paint {
   if (raw === null || typeof raw !== 'object') return false;
-  return 'fill' in raw || 'stops' in raw || 'color' in raw;
+  return 'kind' in raw || 'stops' in raw || 'color' in raw;
 }
 
 /**

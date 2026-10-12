@@ -23,7 +23,7 @@ function pick(label: string, value: string): void {
 }
 
 const LINEAR: GradientFill = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 100, y: 0 },
   stops: [

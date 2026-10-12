@@ -28,28 +28,28 @@ const TILES: TilePatternSpec[] = [
 
 describe('pattern serialization', () => {
   it.each(TILES)('round-trips the $tile tile', (spec) => {
-    const svg = serializeSvg(patternedRect({ fill: 'pattern', pattern: spec }));
+    const svg = serializeSvg(patternedRect({ kind: 'pattern', pattern: spec }));
     expect(svg).toContain('<pattern ');
     expect(svg).toContain('patternUnits="userSpaceOnUse"');
 
     const back = firstFill(parseSvg(svg).nodes);
     expect(back).toBeDefined();
-    expect(back!.fill).toBe('pattern');
+    expect(back!.kind).toBe('pattern');
     expect((back as { pattern: TilePatternSpec }).pattern).toEqual(spec);
   });
 
   it('emits the tile as real geometry, not just the spec attribute', () => {
-    const svg = serializeSvg(patternedRect({ fill: 'pattern', pattern: TILES[0] }));
+    const svg = serializeSvg(patternedRect({ kind: 'pattern', pattern: TILES[0] }));
     // A viewer with no weasel knowledge still renders hatching.
     expect(svg).toContain('<line ');
     expect(svg).toContain('stroke="#0fb5a8"');
   });
 
   it('emits dots as a circle and chunks over a background rect', () => {
-    const dots = serializeSvg(patternedRect({ fill: 'pattern', pattern: TILES[2] }));
+    const dots = serializeSvg(patternedRect({ kind: 'pattern', pattern: TILES[2] }));
     expect(dots).toContain('<circle ');
 
-    const chunks = serializeSvg(patternedRect({ fill: 'pattern', pattern: TILES[3] }));
+    const chunks = serializeSvg(patternedRect({ kind: 'pattern', pattern: TILES[3] }));
     expect(chunks).toContain('<rect ');
     expect(chunks).toContain('fill="#1d2733"');
     expect(chunks).toContain('<ellipse ');
@@ -57,27 +57,27 @@ describe('pattern serialization', () => {
 
   it('carries the tile origin through x/y', () => {
     const paint: Paint = {
-      fill: 'pattern', pattern: TILES[0], origin: { x: 12, y: -4 },
+      kind: 'pattern', pattern: TILES[0], origin: { x: 12, y: -4 },
     };
     const svg = serializeSvg(patternedRect(paint));
     expect(svg).toContain('x="12"');
     expect(svg).toContain('y="-4"');
 
-    const back = firstFill(parseSvg(svg).nodes) as Extract<Paint, { fill: 'pattern' }>;
+    const back = firstFill(parseSvg(svg).nodes) as Extract<Paint, { kind: 'pattern' }>;
     expect(back.origin).toEqual({ x: 12, y: -4 });
   });
 
   it('writes a transform as patternTransform, folding the origin into it', () => {
     const transform = composePatternTransform({ rotation: Math.PI / 6, scaleX: 2, skewX: 0.25 });
     const paint: Paint = {
-      fill: 'pattern', pattern: TILES[0], origin: { x: 12, y: -4 }, transform,
+      kind: 'pattern', pattern: TILES[0], origin: { x: 12, y: -4 }, transform,
     };
     const svg = serializeSvg(patternedRect(paint));
     const [a, b, c, d] = transform.map((n) => trimNumber(n));
     expect(svg).toContain(`patternTransform="matrix(${a} ${b} ${c} ${d} 12 -4)"`);
     expect(svg).not.toMatch(/<pattern [^>]*\sx="/);
 
-    const back = firstFill(parseSvg(svg).nodes) as Extract<Paint, { fill: 'pattern' }>;
+    const back = firstFill(parseSvg(svg).nodes) as Extract<Paint, { kind: 'pattern' }>;
     expect(back.origin!.x).toBeCloseTo(12, 5);
     expect(back.origin!.y).toBeCloseTo(-4, 5);
     back.transform!.forEach((v, i) => expect(v).toBeCloseTo(transform[i], 5));
@@ -85,7 +85,7 @@ describe('pattern serialization', () => {
 
   it('omits patternTransform for an identity transform', () => {
     const svg = serializeSvg(patternedRect({
-      fill: 'pattern', pattern: TILES[0], transform: [1, 0, 0, 1],
+      kind: 'pattern', pattern: TILES[0], transform: [1, 0, 0, 1],
     }));
     expect(svg).not.toContain('patternTransform');
   });
@@ -96,7 +96,7 @@ describe('pattern serialization', () => {
       + '<pattern id="p" patternUnits="userSpaceOnUse" width="5" height="5" x="2" y="0" '
       + `patternTransform="translate(10 20) rotate(90) skewX(45)" data-weasel-tile="${spec}"/>`
       + '</defs><rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
-    const back = firstFill(parseSvg(doc).nodes) as Extract<Paint, { fill: 'pattern' }>;
+    const back = firstFill(parseSvg(doc).nodes) as Extract<Paint, { kind: 'pattern' }>;
     // M = T(10, 20) · R(90°) · K(45°); the tile starts at M · (2, 0) = (10, 22).
     expect(back.origin!.x).toBeCloseTo(10, 5);
     expect(back.origin!.y).toBeCloseTo(22, 5);
@@ -106,7 +106,7 @@ describe('pattern serialization', () => {
   it('warns and drops a pattern carrying a TextureHandle', () => {
     const warnings: string[] = [];
     const svg = serializeSvg(
-      patternedRect({ fill: 'pattern', pattern: { id: 'tex_1' } }),
+      patternedRect({ kind: 'pattern', pattern: { id: 'tex_1' } }),
       { onWarn: (m) => warnings.push(m) },
     );
     expect(svg).not.toContain('<pattern ');
@@ -123,7 +123,7 @@ describe('pattern serialization', () => {
   });
 
   it('does not warn about <pattern> as an unsupported defs child', () => {
-    const svg = serializeSvg(patternedRect({ fill: 'pattern', pattern: TILES[0] }));
+    const svg = serializeSvg(patternedRect({ kind: 'pattern', pattern: TILES[0] }));
     const { warnings } = parseSvg(svg);
     expect(warnings.join(' ')).not.toContain('unsupported <defs> child');
   });

@@ -57,7 +57,7 @@ export function createText(opts: TextOptions): TextWidget {
       if (!placed || placed.text !== text || placed.color !== color || placed.fontFamily !== fontFamily) {
         placed = {
           text, color, fontFamily,
-          cmd: textCommandFromRuns(0, 0, [{ text, fill: { fill: 'solid', color } }], {
+          cmd: textCommandFromRuns(0, 0, [{ text, fill: { kind: 'solid', color } }], {
             fontFamily, fontSize: opts.fontSize,
           }),
         };

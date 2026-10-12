@@ -35,7 +35,7 @@ const drawOne = (_node: unknown, pose: unknown): DrawCommand[] => {
   return [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill: { fill: 'solid', color: '#888' },
+    fill: { kind: 'solid', color: '#888' },
   }];
 };
 

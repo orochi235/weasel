@@ -33,7 +33,7 @@ const COLORS = {
   debugEnemy: '#ff7b72',
 } as const;
 
-const solid = (color: string) => ({ fill: 'solid' as const, color });
+const solid = (color: string) => ({ kind: 'solid' as const, color });
 
 const rect = (x: number, y: number, w: number, h: number, color: string): DrawCommand => ({
   kind: 'path',

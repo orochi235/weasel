@@ -22,9 +22,9 @@ export interface ResolvedGradientStop {
  *  consumer that reaches for gradient geometry starts here. */
 export function isGradientFill(fill: Paint | null | undefined): fill is GradientFill {
   if (fill == null) return false;
-  return fill.fill === 'linear-gradient'
-    || fill.fill === 'radial-gradient'
-    || fill.fill === 'conic-gradient';
+  return fill.kind === 'linear-gradient'
+    || fill.kind === 'radial-gradient'
+    || fill.kind === 'conic-gradient';
 }
 
 /**
@@ -110,7 +110,7 @@ export function sampleGradientStops(
  * undoable should keep the original paint rather than converting back.
  */
 export function withGradientKind(fill: GradientFill, kind: GradientKind): GradientFill {
-  if (fill.fill === kind) return fill;
+  if (fill.kind === kind) return fill;
   const common = {
     stops: fill.stops, units: fill.units,
     interpolate: fill.interpolate, opacity: fill.opacity,
@@ -121,16 +121,16 @@ export function withGradientKind(fill: GradientFill, kind: GradientKind): Gradie
     const dx = Math.cos(angle) * radius;
     const dy = Math.sin(angle) * radius;
     return {
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: center.x - dx, y: center.y - dy },
       to: { x: center.x + dx, y: center.y + dy },
       ...common,
     };
   }
   if (kind === 'radial-gradient') {
-    return { fill: 'radial-gradient', center, radius, ...common };
+    return { kind: 'radial-gradient', center, radius, ...common };
   }
-  return { fill: 'conic-gradient', center, angle, ...common };
+  return { kind: 'conic-gradient', center, angle, ...common };
 }
 
 /**
@@ -146,7 +146,7 @@ export function gradientGeometry(fill: GradientFill): {
   radius: number;
   angle: number;
 } {
-  if (fill.fill === 'linear-gradient') {
+  if (fill.kind === 'linear-gradient') {
     const dx = fill.to.x - fill.from.x;
     const dy = fill.to.y - fill.from.y;
     return {
@@ -155,7 +155,7 @@ export function gradientGeometry(fill: GradientFill): {
       angle: Math.atan2(dy, dx),
     };
   }
-  if (fill.fill === 'radial-gradient') {
+  if (fill.kind === 'radial-gradient') {
     return { center: fill.center, radius: fill.radius, angle: 0 };
   }
   return { center: fill.center, radius: conicArmRadius(fill.units), angle: fill.angle };
@@ -188,7 +188,7 @@ export function gradientForBounds(
   const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
   if (kind === 'linear-gradient') {
     return {
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: bounds.x, y: center.y },
       to: { x: bounds.x + bounds.width, y: center.y },
       stops,
@@ -197,12 +197,12 @@ export function gradientForBounds(
   }
   if (kind === 'radial-gradient') {
     return {
-      fill: 'radial-gradient',
+      kind: 'radial-gradient',
       center,
       radius: Math.max(bounds.width, bounds.height) / 2,
       stops,
       units,
     };
   }
-  return { fill: 'conic-gradient', center, angle: 0, stops, units };
+  return { kind: 'conic-gradient', center, angle: 0, stops, units };
 }

@@ -63,9 +63,9 @@ export interface PaintKindEntry extends PaintDrawKind {
  * `Paint` stays a closed union: opening its discriminant would widen every
  * built-in member and break the narrowing the kit's own branches depend on.
  * A registered kind declares its own interface instead and passes it through
- * here — the kit reads only `fill` and hands the whole object back to that
+ * here — the kit reads only `kind` and hands the whole object back to that
  * kind's slots.
  */
-export function asPaint<T extends { fill: string }>(paint: T): Paint {
+export function asPaint<T extends { kind: string }>(paint: T): Paint {
   return paint as unknown as Paint;
 }

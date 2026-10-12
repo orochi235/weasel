@@ -97,7 +97,7 @@ export function EasingsDemo() {
         cmds.push(textCommandFromRuns(
           TRACK_LEFT - 8 - name.length * charW,
           y,
-          [{ text: name, fill: { fill: 'solid', color: '#a89878' } }],
+          [{ text: name, fill: { kind: 'solid', color: '#a89878' } }],
           { fontFamily: 'sans-serif', fontSize: 11 },
         ));
         // Track line as 2-point polygon path stroke.

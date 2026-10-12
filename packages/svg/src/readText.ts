@@ -290,11 +290,11 @@ function readTspanRun(
     if (parsed?.kind === 'none') {
       run.fill = null;
     } else if (parsed?.kind === 'solid') {
-      run.fill = { fill: 'solid', color: parsed.color };
+      run.fill = { kind: 'solid', color: parsed.color };
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
       if (paint) run.fill = paint;
-      else if (parsed.fallback) run.fill = { fill: 'solid', color: parsed.fallback.color };
+      else if (parsed.fallback) run.fill = { kind: 'solid', color: parsed.fallback.color };
     }
   }
   // Own attributes only — see `ownStrokeStyle`.
@@ -364,12 +364,12 @@ function readTextPaint(
   if (fillRaw) {
     const parsed = readProperty('fill', fillRaw);
     if (parsed?.kind === 'solid') {
-      out.fill = { fill: 'solid', color: parsed.color } as Paint;
+      out.fill = { kind: 'solid', color: parsed.color } as Paint;
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
       if (paint) out.fill = paint;
       else if (parsed.fallback) {
-        out.fill = { fill: 'solid', color: parsed.fallback.color } as Paint;
+        out.fill = { kind: 'solid', color: parsed.fallback.color } as Paint;
       }
     } else if (parsed?.kind === 'none') {
       out.fill = null;

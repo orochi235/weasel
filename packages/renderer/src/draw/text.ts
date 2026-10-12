@@ -273,7 +273,7 @@ function drawTextGroup(
 /** Which glyph-paint program `fill` needs, or `null` for a paint the batch
  *  draws as one color. */
 function glyphPaintKindOf(fill: Paint | null): GlyphPaintKind | null {
-  const kind = fill?.fill ?? 'solid';
+  const kind = fill?.kind ?? 'solid';
   if (kind === 'pattern') return 'pattern';
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
     return 'gradient';
@@ -307,9 +307,9 @@ function drawPaintedGlyphs(
   const m = ctx.state.transform;
   let bound: ShaderProgram | null;
   if (kind === 'pattern') {
-    bound = bindPattern(ctx, prog, fill as Extract<Paint, { fill: 'pattern' }>, BATCH_MODEL);
+    bound = bindPattern(ctx, prog, fill as Extract<Paint, { kind: 'pattern' }>, BATCH_MODEL);
   } else if (kind === 'gradient') {
-    bound = bindGradient(ctx, prog, fill as Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, BATCH_MODEL);
+    bound = bindGradient(ctx, prog, fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, BATCH_MODEL);
   } else {
     const painted = renderPaintToScratch(ctx, fill, glyphScreenBounds(group, dx, dy, tanItalic, m));
     bound = painted && bindScratchPaint(ctx, prog, painted);

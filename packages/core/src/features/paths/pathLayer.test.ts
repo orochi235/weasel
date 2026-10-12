@@ -11,7 +11,7 @@ import { ColorOverrideRegistry } from '@weasel-js/animator';
 describe('createPathLayer', () => {
   it('emits one path command per visible node', () => {
     const path: Path = rectPath(0, 0, 10, 10);
-    const fill: CommandFill = { fill: 'solid', color: '#fff' };
+    const fill: CommandFill = { kind: 'solid', color: '#fff' };
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
       getPath: () => path,
@@ -28,7 +28,7 @@ describe('createPathLayer', () => {
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
       getPath: () => path,
-      getFill: () => ({ fill: 'solid', color: '#f00' }),
+      getFill: () => ({ kind: 'solid', color: '#f00' }),
       isHidden: (n) => n.id === 'b',
     });
     const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
@@ -48,7 +48,7 @@ describe('createPathLayer', () => {
 
   it('passes stroke through when getStroke returns a stroke', () => {
     const path: Path = rectPath(0, 0, 10, 10);
-    const stroke: CommandStroke = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+    const stroke: CommandStroke = { paint: { kind: 'solid', color: '#000' }, width: 2 };
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }],
       getPath: () => path,

@@ -55,10 +55,12 @@ export function reviveTypedArrays<T>(node: T): T {
   return node;
 }
 
-/** The `Paint` discriminant values. A paint in the current shape carries
- *  one of these under `fill`, so "a string under `fill`" is not on its own a
- *  legacy color — it is the tag. */
-const FILL_KINDS = new Set(['solid', 'pattern', 'linear-gradient', 'radial-gradient', 'conic-gradient']);
+/** The `Paint` discriminant values as they were written before 2026-10-12,
+ *  when the tag sat under `fill` rather than `kind`. A string under `fill`
+ *  naming one of these is that old tag, not a legacy color. */
+const LEGACY_KIND_TAGS = new Set([
+  'solid', 'pattern', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'mesh-gradient',
+]);
 
 /** A string paint that means "no paint at all" rather than a color. */
 const NO_PAINT = new Set(['none', 'transparent']);
@@ -70,8 +72,8 @@ function paintFromLegacy(color: string): { color: string; opacity?: number } | n
 /**
  * Rewrite the pre-2026-08-26 string paint forms — `fill: '#abc'`,
  * `stroke: '#abc'` with a sibling `strokeWidth` — into the `Paint` and
- * `Stroke` objects every reader now expects. Walks in place and returns the
- * same node, like `reviveTypedArrays`.
+ * `Stroke` objects every reader now expects, and a paint's tag from `fill` to
+ * `kind`. Walks in place and returns the same node, like `reviveTypedArrays`.
  *
  * Applied to node data and to the node data copied inside a history
  * snapshot's op payloads, so an undo after a reload cannot write a string
@@ -85,8 +87,13 @@ export function migrateLegacyPaint<T>(node: T): T {
   }
   const obj = node as Record<string, unknown>;
 
-  if (typeof obj.fill === 'string' && !FILL_KINDS.has(obj.fill)) {
-    obj.fill = paintFromLegacy(obj.fill);
+  if (typeof obj.fill === 'string') {
+    if (LEGACY_KIND_TAGS.has(obj.fill)) {
+      obj.kind = obj.fill;
+      delete obj.fill;
+    } else {
+      obj.fill = paintFromLegacy(obj.fill);
+    }
   }
   if (typeof obj.stroke === 'string') {
     const paint = paintFromLegacy(obj.stroke);

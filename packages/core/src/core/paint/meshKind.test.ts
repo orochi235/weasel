@@ -217,7 +217,7 @@ describe('binding a mesh paint', () => {
 
   it('declines a mesh with no drawable patch rather than painting a blank', () => {
     const { ctx } = bindContext();
-    const empty = { fill: MESH_GRADIENT_KIND, patches: [] } as unknown as Paint;
+    const empty = { kind: MESH_GRADIENT_KIND, patches: [] } as unknown as Paint;
     expect(entry().bind!(ctx, empty)).toBeNull();
   });
 
@@ -235,7 +235,7 @@ describe('the mesh as a gradient kind', () => {
     { offset: 1, color: '#0000ffff' },
   ];
   const LINEAR: Paint = {
-    fill: 'linear-gradient',
+    kind: 'linear-gradient',
     from: { x: 0, y: 0.5 },
     to: { x: 1, y: 0.5 },
     stops: STOPS,
@@ -254,7 +254,7 @@ describe('the mesh as a gradient kind', () => {
 
   it('builds from a stop list as one patch per gap, so the ramp survives the switch', () => {
     const mesh = switchGradientKind(LINEAR, MESH_GRADIENT_KIND) as unknown as MeshGradientFill;
-    expect(mesh.fill).toBe(MESH_GRADIENT_KIND);
+    expect(mesh.kind).toBe(MESH_GRADIENT_KIND);
     expect(mesh.units).toBe('bounds');
     expect(mesh.interpolate).toBe('oklch');
     expect(mesh.opacity).toBe(0.5);
@@ -274,8 +274,8 @@ describe('the mesh as a gradient kind', () => {
 
   it('reads a seeded mesh as its top edge, left to right', () => {
     const seed = seedMeshPatch('#ff0000ff');
-    const back = switchGradientKind(seed as unknown as Paint, 'radial-gradient') as { fill: string; stops: unknown };
-    expect(back.fill).toBe('radial-gradient');
+    const back = switchGradientKind(seed as unknown as Paint, 'radial-gradient') as { kind: string; stops: unknown };
+    expect(back.kind).toBe('radial-gradient');
     expect(back.stops).toEqual([
       { offset: 0, color: seed.patches[0].colors[0] },
       { offset: 1, color: seed.patches[0].colors[1] },
@@ -284,10 +284,10 @@ describe('the mesh as a gradient kind', () => {
 
   it('keeps geometry across a switch between two stop gradients', () => {
     const radial = switchGradientKind(LINEAR, 'radial-gradient');
-    expect(radial).toMatchObject({ fill: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5 });
+    expect(radial).toMatchObject({ kind: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5 });
   });
 
   it('declines a paint that is not a gradient', () => {
-    expect(switchGradientKind({ fill: 'solid', color: '#fff' }, MESH_GRADIENT_KIND)).toBeUndefined();
+    expect(switchGradientKind({ kind: 'solid', color: '#fff' }, MESH_GRADIENT_KIND)).toBeUndefined();
   });
 });

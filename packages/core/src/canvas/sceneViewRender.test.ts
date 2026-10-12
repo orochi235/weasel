@@ -84,7 +84,7 @@ function makeScene(): Scene<D, L, P> {
 const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { fill: 'solid', color: node.data.color },
+  fill: { kind: 'solid', color: node.data.color },
 }];
 
 const identityView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -152,7 +152,7 @@ describe('buildSceneViewCommands', () => {
     const extra: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 },
-      stroke: { paint: { fill: 'solid', color: '#fff' }, width: 1 },
+      stroke: { paint: { kind: 'solid', color: '#fff' }, width: 1 },
     }];
 
     const commands = buildSceneViewCommands(scene, identityView, drawOne, extra);
@@ -226,7 +226,7 @@ function makeNestedScene(): {
 const nestedDrawOne = (n: Node<NestedD, NestedL, P>, pose: P, _v: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { fill: 'solid', color: n.data.color },
+  fill: { kind: 'solid', color: n.data.color },
 }];
 
 /** Every `fill.color` reachable from `cmds`, in emission order. */
@@ -447,7 +447,7 @@ describe('renderSceneToCanvas', () => {
     const extra: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { fill: 'solid', color: '#000' },
+      fill: { kind: 'solid', color: '#000' },
     }];
 
     renderSceneToCanvas({

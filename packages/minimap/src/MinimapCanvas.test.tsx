@@ -85,7 +85,7 @@ function makeScene(): Scene<D, L, P> {
 const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { fill: 'solid', color: node.data.color },
+  fill: { kind: 'solid', color: node.data.color },
 }];
 
 const identityPoseBounds = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<P>;
@@ -429,7 +429,7 @@ describe('<MinimapCanvas>', () => {
     const lastCall = renderMock.mock.calls[renderMock.mock.calls.length - 1][0];
     const root = lastCall[0] as GroupDrawCommand;
     const indicator = root.children[root.children.length - 1] as PathDrawCommand;
-    expect(indicator.stroke?.paint).toEqual({ fill: 'solid', color: '#ff00aa' });
+    expect(indicator.stroke?.paint).toEqual({ kind: 'solid', color: '#ff00aa' });
     // The command sits inside the fit view's transform, so its world-unit
     // numbers times the fit scale are what reaches the screen.
     const scale = root.transform![0];

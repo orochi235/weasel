@@ -32,7 +32,7 @@ export function batchPaint(
   ctx: DrawContext, fill: Paint, hasVColors: boolean,
 ): BatchPaint | undefined | null {
   if (hasVColors) return undefined;
-  const kind = fill.fill ?? 'solid';
+  const kind = fill.kind ?? 'solid';
   if (kind === 'solid') {
     const solid = fill as { color: string; opacity?: number };
     return { kind: 'solid', color: solid.color, opacity: solid.opacity };
@@ -40,11 +40,11 @@ export function batchPaint(
   if (kind !== 'linear-gradient' && kind !== 'radial-gradient' && kind !== 'conic-gradient') {
     return undefined;
   }
-  const grad = fill as Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>;
+  const grad = fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>;
   const g = gradientMap(ctx, grad.units);
   if (!g) return null;
-  if (grad.fill === 'linear-gradient') return ramp(grad, PAINT_MODE_PLAIN, linearRampUV(g, grad));
-  if (grad.fill === 'radial-gradient') return ramp(grad, PAINT_MODE_RADIAL, radialRampUV(g, grad));
+  if (grad.kind === 'linear-gradient') return ramp(grad, PAINT_MODE_PLAIN, linearRampUV(g, grad));
+  if (grad.kind === 'radial-gradient') return ramp(grad, PAINT_MODE_RADIAL, radialRampUV(g, grad));
   return ramp(grad, PAINT_MODE_CONIC, conicRampUV(g, grad));
 }
 
@@ -78,7 +78,7 @@ function gradientMap(ctx: DrawContext, units: PaintUnits | undefined): GlMat3 | 
  * left for the atlas row `stageRamps` fills in.
  */
 function linearRampUV(
-  g: GlMat3, fill: Extract<Paint, { fill: 'linear-gradient' }>,
+  g: GlMat3, fill: Extract<Paint, { kind: 'linear-gradient' }>,
 ): GradientUV {
   const dx = fill.to.x - fill.from.x;
   const dy = fill.to.y - fill.from.y;
@@ -96,7 +96,7 @@ function linearRampUV(
 /** The gradient-space point scaled so its distance from the center *is* the
  *  ramp position, which is what makes the shader's half a `length`. */
 function radialRampUV(
-  g: GlMat3, fill: Extract<Paint, { fill: 'radial-gradient' }>,
+  g: GlMat3, fill: Extract<Paint, { kind: 'radial-gradient' }>,
 ): GradientUV {
   // The floor is `gradFill`'s own `max(u_gradRadius, 0.0001)`.
   const k = 1 / Math.max(fill.radius, 1e-4);
@@ -115,7 +115,7 @@ function radialRampUV(
  * `fract` that follows takes care of the wrap either way.
  */
 function conicRampUV(
-  g: GlMat3, fill: Extract<Paint, { fill: 'conic-gradient' }>,
+  g: GlMat3, fill: Extract<Paint, { kind: 'conic-gradient' }>,
 ): GradientUV {
   const cos = Math.cos(fill.angle);
   const sin = Math.sin(fill.angle);

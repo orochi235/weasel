@@ -9,7 +9,7 @@ const LINE: PolygonPath = {
   coords: new Float32Array([0, 0, 100, 0]),
   fillRule: 'nonzero',
 };
-const BASE: Stroke = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+const BASE: Stroke = { paint: { kind: 'solid', color: '#000' }, width: 2 };
 
 function spanX(mesh: { vertices: Float32Array }): [number, number] {
   let lo = Infinity, hi = -Infinity;

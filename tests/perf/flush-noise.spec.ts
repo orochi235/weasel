@@ -135,7 +135,7 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     const leaf = (i: number) => ({
       kind: 'path',
       path: { kind: 'rect', x: px(i), y: py(i), width: 36, height: 36 },
-      fill: { fill: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' },
+      fill: { kind: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' },
     });
     const cm = (i: number) => {
       const b = i % 2 === 0 ? 0.002 : 0.004;

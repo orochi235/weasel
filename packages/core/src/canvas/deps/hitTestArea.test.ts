@@ -397,7 +397,7 @@ describe('intersect reads an open subpath by whether it fills', () => {
   });
 
   it('a lasso between the arms misses a node painted with no fill', () => {
-    const stroke = { paint: { fill: 'solid', color: '#000000' }, width: 2 };
+    const stroke = { paint: { kind: 'solid', color: '#000000' }, width: 2 };
     const scene = sceneOf({ x: 0, y: 0, width: 100, height: 100 }, { path: vee, fill: null, stroke });
     expect(hitTestLassoPolygon(scene, between, 'intersect')).toEqual([]);
     const arm = [{ x: 10, y: 20 }, { x: 40, y: 20 }, { x: 25, y: 40 }];

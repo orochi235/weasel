@@ -24,7 +24,7 @@ export function renderNeeds(commands: readonly DrawCommand[]): RenderNeeds {
   const fonts = new Map<string, FontRequest>();
   const kinds = new Set<string>();
   const paint = (p: Paint | null | undefined) => {
-    if (p) kinds.add(p.fill ?? 'solid');
+    if (p) kinds.add(p.kind ?? 'solid');
   };
   const walk = (list: readonly DrawCommand[]) => {
     for (const c of list) {

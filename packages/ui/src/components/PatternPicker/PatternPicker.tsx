@@ -13,7 +13,7 @@ import f from '../field.module.css';
 import s from './PatternPicker.module.css';
 
 /** The `pattern` member of the paint union. */
-export type PatternFill = Extract<Paint, { fill: 'pattern' }>;
+export type PatternFill = Extract<Paint, { kind: 'pattern' }>;
 
 const TILES: readonly TilePatternSpec['tile'][] = ['hatch', 'crosshatch', 'dots', 'chunks'];
 
@@ -70,7 +70,7 @@ export function seedPattern(
   // `chunks` is a scatter over a ground rather than a line texture; without a
   // background it reads as loose specks on whatever sits beneath.
   if (tile === 'chunks') spec.bg = '#00000000';
-  return { fill: 'pattern', pattern: spec, units: 'bounds' };
+  return { kind: 'pattern', pattern: spec, units: 'bounds' };
 }
 
 /** Props for {@link PatternPicker}. */

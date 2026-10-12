@@ -27,14 +27,14 @@ describe('workspaceTintLayer', () => {
     const [cmd, ...rest] = draw(workspaceTintLayer({ registry }));
     expect(rest).toEqual([]);
     expect(cmd!.path).toMatchObject({ x: 0, y: 0, width: 200, height: 100 });
-    expect(cmd!.fill).toMatchObject({ fill: 'solid', color: '#ff0000', opacity: 0.5 });
+    expect(cmd!.fill).toMatchObject({ kind: 'solid', color: '#ff0000', opacity: 0.5 });
   });
 
   it('fades by the declared gradient direction, defaulting intensity to 0.12', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'rise' });
     const layer = workspaceTintLayer({ registry });
     const [rise] = draw(layer);
-    expect(rise!.fill).toMatchObject({ fill: 'linear-gradient', from: { x: 0, y: 100 }, to: { x: 0, y: 0 }, opacity: 0.12 });
+    expect(rise!.fill).toMatchObject({ kind: 'linear-gradient', from: { x: 0, y: 100 }, to: { x: 0, y: 0 }, opacity: 0.12 });
 
     registry.setMode('fall');
     const [fall] = draw(layer);

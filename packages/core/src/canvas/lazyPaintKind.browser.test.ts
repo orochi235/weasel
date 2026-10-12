@@ -24,7 +24,7 @@ function meshFill(): Paint {
     return [a, { x: a.x + (b.x - a.x) / 3, y: a.y + (b.y - a.y) / 3 }, { x: a.x + (2 * (b.x - a.x)) / 3, y: a.y + (2 * (b.y - a.y)) / 3 }];
   });
   return {
-    fill: 'mesh-gradient',
+    kind: 'mesh-gradient',
     patches: [{ points, colors: ['#00ff00ff', '#0000ffff', '#0000ffff', '#00ff00ff'] }],
     units: 'world',
   } as unknown as Paint;

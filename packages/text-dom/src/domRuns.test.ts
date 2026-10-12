@@ -45,7 +45,7 @@ describe('runsToDom', () => {
       text: 'x',
       fontSize: 24,
       fontFamily: 'mono',
-      fill: { fill: 'solid', color: '#ff0000' },
+      fill: { kind: 'solid', color: '#ff0000' },
     }], parent);
     const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
     expect(span.style.fontSize).toBe('24px');
@@ -55,7 +55,7 @@ describe('runsToDom', () => {
 
   it('carries a gradient or pattern fill through the overlay and back', () => {
     const gradient = {
-      fill: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
     };
     runsToDom([{ text: 'a', fill: gradient }, { text: 'b' }], parent);
@@ -65,11 +65,11 @@ describe('runsToDom', () => {
     const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
     span.removeAttribute('data-fill');
     span.style.color = 'rgb(0, 128, 0)';
-    expect(domToRuns(parent)[0].fill).toEqual({ fill: 'solid', color: 'rgb(0, 128, 0)' });
+    expect(domToRuns(parent)[0].fill).toEqual({ kind: 'solid', color: 'rgb(0, 128, 0)' });
   });
 
   it('carries an unfilled run through the overlay and back', () => {
-    const runs = [{ text: 'a', fill: null }, { text: 'b' }, { text: 'c', fill: { fill: 'solid' as const, color: '#ff0000' } }];
+    const runs = [{ text: 'a', fill: null }, { text: 'b' }, { text: 'c', fill: { kind: 'solid' as const, color: '#ff0000' } }];
     runsToDom(runs, parent);
     const [a, b] = [...parent.querySelectorAll('span[data-run]')] as HTMLSpanElement[];
     expect(a.getAttribute('data-fill')).toBe('null');
@@ -438,7 +438,7 @@ describe('domRuns round-trip — decoration and tracking', () => {
         letterSpacing: 3,
         fontSize: 24,
         fontFamily: 'mono',
-        fill: { fill: 'solid', color: 'rgb(255, 0, 0)' },
+        fill: { kind: 'solid', color: 'rgb(255, 0, 0)' },
       },
       { text: 'c' },
     ];

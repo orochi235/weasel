@@ -230,7 +230,7 @@ function walkOutlines(
       paints.push(run.stroke !== undefined ? { fill: run.fill, stroke: run.stroke } : { fill: run.fill });
     }
     const { stroke: _stroke, ...rest } = run;
-    return { ...rest, fill: { fill: 'solid', color: `#${i.toString(16).padStart(6, '0')}` } };
+    return { ...rest, fill: { kind: 'solid', color: `#${i.toString(16).padStart(6, '0')}` } };
   });
   const groupOf = (fill: Paint | null): number =>
     fill !== null && 'color' in fill ? parseInt(fill.color.slice(1), 16) : 0;

@@ -322,7 +322,7 @@ function FieldsAndPickers() {
   const [width, setWidth] = useState(6);
   const [color, setColor] = useState('#b08adbff');
   const [gradient, setGradient] = useState<Paint>({
-    fill: 'linear-gradient',
+    kind: 'linear-gradient',
     from: { x: 0.1, y: 0.1 },
     to: { x: 0.9, y: 0.9 },
     stops: [
@@ -330,7 +330,7 @@ function FieldsAndPickers() {
       { offset: 1, color: '#f4c43c' },
     ],
   });
-  const [paint, setPaint] = useState<Paint | null>({ fill: 'solid', color: '#b08adb' });
+  const [paint, setPaint] = useState<Paint | null>({ kind: 'solid', color: '#b08adb' });
   return (
     <Section title="Fields & pickers">
       <Cell label="Input">

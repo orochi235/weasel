@@ -130,7 +130,7 @@ describe('marker inset in the cache key', () => {
     coords: new Float32Array([0, 0, 100, 0]),
     fillRule: 'nonzero',
   };
-  const base: Stroke = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+  const base: Stroke = { paint: { kind: 'solid', color: '#000' }, width: 2 };
   const maxX = (m: { vertices: Float32Array }) => {
     let hi = -Infinity;
     for (let i = 0; i < m.vertices.length; i += 2) hi = Math.max(hi, m.vertices[i]);

@@ -220,7 +220,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
             out.push({
               kind: 'path',
               path: { kind: 'rect', x, y, width: cellPx, height: cellPx },
-              fill: { fill: 'solid', color: GROUNDS[i % GROUNDS.length] },
+              fill: { kind: 'solid', color: GROUNDS[i % GROUNDS.length] },
             });
           }
           if (withImage) {

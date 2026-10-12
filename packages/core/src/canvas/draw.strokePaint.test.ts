@@ -27,7 +27,7 @@ function horizontalLine(): PolygonPath {
 const STOPS = [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }];
 
 const GRADIENT: Paint = {
-  fill: 'linear-gradient',
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 200, y: 0 },
   stops: STOPS,
@@ -209,7 +209,7 @@ describe('renderer — a gradient stroke that came from SVG import', () => {
   }
 
   it('carries the paint server onto the stroke as a gradient', () => {
-    expect(importedRect().stroke.paint).toMatchObject({ fill: 'linear-gradient' });
+    expect(importedRect().stroke.paint).toMatchObject({ kind: 'linear-gradient' });
   });
 
   it('renders it, baking the imported stops into a ramp', () => {

@@ -98,7 +98,7 @@ function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
       d += `M ${px} ${py} A ${r} ${r} 0 1 0 ${px + 2 * r} ${py} A ${r} ${r} 0 1 0 ${px} ${py} Z `;
     }
   }
-  return { kind: 'path', path: pathFromD(d), fill: { fill: 'solid', color } };
+  return { kind: 'path', path: pathFromD(d), fill: { kind: 'solid', color } };
 }
 
 export function createWindow(opts: WindowOptions): WindowWidget {
@@ -214,7 +214,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         { x: x + m.edge, y: y + h - m.edge, width: w - m.edge * 2, height: m.edge },
       ];
       for (const r of rects) {
-        out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { fill: 'solid', color: band } });
+        out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { kind: 'solid', color: band } });
       }
 
       // Border ring: a stroked rect, no fill, so the interior stays a hole
@@ -227,7 +227,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         const ring: PathDrawCommand = {
           kind: 'path',
           path: { kind: 'rect', x, y, width: w, height: h },
-          stroke: { paint: { fill: 'solid', color: look['border-color'] }, width: ringW, ...(dash ? { dash } : {}) },
+          stroke: { paint: { kind: 'solid', color: look['border-color'] }, width: ringW, ...(dash ? { dash } : {}) },
         };
         out.push(ring);
       }
@@ -237,7 +237,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
       out.push(textCommandFromRuns(
         x + m.edge + 2, y,
-        [{ text: casedTitle(title, look['title-case']), fill: { fill: 'solid', color: look['title-color'] } }],
+        [{ text: casedTitle(title, look['title-case']), fill: { kind: 'solid', color: look['title-color'] } }],
         {
           fontFamily: ctx.defaultFont,
           fontSize: 12,
@@ -256,7 +256,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       out.push({
         kind: 'path',
         path: pathFromD(`M ${x0} ${y0} L ${x1} ${y1} M ${x1} ${y0} L ${x0} ${y1}`),
-        stroke: { paint: { fill: 'solid', color: look['title-color'] }, width: 1.5, cap: 'round' },
+        stroke: { paint: { kind: 'solid', color: look['title-color'] }, width: 1.5, cap: 'round' },
       });
 
       return out;

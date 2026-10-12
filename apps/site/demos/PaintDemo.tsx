@@ -24,21 +24,21 @@ const SWATCHES: { id: string; label: string; path: Path; paint: SwatchPaint }[] 
   } },
   { id: 'linear', label: "linear gradient through 'oklch'", path: BOX, paint: {
     fill: {
-      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#e0303a' }, { offset: 1, color: '#3050e0' }],
       units: 'bounds', interpolate: 'oklch',
     },
   } },
   { id: 'radial', label: 'radial gradient', path: BOX, paint: {
     fill: {
-      fill: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.6,
+      kind: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.6,
       stops: [{ offset: 0, color: SAND }, { offset: 1, color: PLUM }],
       units: 'bounds',
     },
   } },
   { id: 'conic', label: 'conic gradient', path: BOX, paint: {
     fill: {
-      fill: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0,
+      kind: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0,
       stops: [
         { offset: 0, color: TEAL }, { offset: 0.5, color: PLUM }, { offset: 1, color: TEAL },
       ],
@@ -46,7 +46,7 @@ const SWATCHES: { id: string; label: string; path: Path; paint: SwatchPaint }[] 
     },
   } },
   { id: 'pattern', label: 'built-in tile, named as data', path: BOX, paint: {
-    fill: { fill: 'pattern', pattern: { tile: 'hatch', color: PLUM, size: 10, lineWidth: 2 }, units: 'bounds' },
+    fill: { kind: 'pattern', pattern: { tile: 'hatch', color: PLUM, size: 10, lineWidth: 2 }, units: 'bounds' },
   } },
   { id: 'dashed', label: "dashForStrokeStyle('dashed', 6)", path: ZIGZAG, paint: {
     stroke: {

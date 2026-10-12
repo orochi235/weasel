@@ -220,7 +220,7 @@ function toRun(text: string, style: StyleState): StyledRun {
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
   if (style.fillJson !== undefined) run.fill = JSON.parse(style.fillJson) as Paint | null;
-  else if (style.color != null) run.fill = { fill: 'solid', color: style.color };
+  else if (style.color != null) run.fill = { kind: 'solid', color: style.color };
   // `letterSpacing: 0` is a meaningful override (it cancels node-level
   // tracking for this run), so test for presence, not truthiness.
   if (style.letterSpacing != null) run.letterSpacing = style.letterSpacing;

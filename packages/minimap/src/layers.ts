@@ -93,7 +93,7 @@ export function createLinkedCursorLayer(opts: {
       const rect = (r: CrosshairRect, c: string): DrawCommand => ({
         kind: 'path',
         path: { kind: 'rect', x: r.x, y: r.y, width: r.w, height: r.h },
-        fill: { fill: 'solid', color: c },
+        fill: { kind: 'solid', color: c },
       });
       const accent = color();
       return [

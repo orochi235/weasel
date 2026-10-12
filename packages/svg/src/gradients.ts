@@ -45,7 +45,7 @@ export function nativeSvgKind(kind: string): boolean {
 }
 
 function hasNativeSvgForm(paint: Paint): boolean {
-  return nativeSvgKind(paint.fill ?? 'solid');
+  return nativeSvgKind(paint.kind ?? 'solid');
 }
 
 /**
@@ -280,7 +280,7 @@ function readLinearGradient(
   const at = (name: string, axis: LengthAxis, fraction: number): number =>
     coord(el, elements, name, axis, fraction, units, onWarn);
   return {
-    fill: 'linear-gradient',
+    kind: 'linear-gradient',
     from: { x: at('x1', 'x', 0), y: at('y1', 'y', 0) },
     to: { x: at('x2', 'x', 1), y: at('y2', 'y', 0) },
     stops: inheritedStops(el, elements, onWarn),
@@ -298,7 +298,7 @@ function readRadialGradient(
   const at = (name: string, axis: LengthAxis, fraction: number): number =>
     coord(el, elements, name, axis, fraction, units, onWarn);
   return {
-    fill: 'radial-gradient',
+    kind: 'radial-gradient',
     center: { x: at('cx', 'x', 0.5), y: at('cy', 'y', 0.5) },
     radius: at('r', 'other', 0.5),
     stops: inheritedStops(el, elements, onWarn),
@@ -312,7 +312,7 @@ function readConicGradient(
 ): Paint | null {
   warnGradientTransform(el, elements, onWarn);
   return {
-    fill: 'conic-gradient',
+    kind: 'conic-gradient',
     center: {
       x: num(inheritedAttr(el, elements, 'cx'), 0.5),
       y: num(inheritedAttr(el, elements, 'cy'), 0.5),
@@ -357,7 +357,7 @@ function readMeshGradient(el: Element, onWarn?: (m: string) => void): Paint | nu
   if (patches.length === 0) return null;
   const space = el.getAttribute('interpolate') ?? el.getAttributeNS(WEASEL_NS, 'interpolate');
   return {
-    fill: 'mesh-gradient',
+    kind: 'mesh-gradient',
     patches,
     units: el.getAttribute('gradientUnits') === 'objectBoundingBox' ? 'bounds' : 'world',
     ...(space === 'oklab' || space === 'oklch' ? { interpolate: space } : {}),
@@ -392,7 +392,7 @@ export class PaintServerRegistry {
   register(paint: Paint): string {
     const existing = this.byPaint.get(paint);
     if (existing) return existing;
-    const id = paint.fill === 'pattern' ? `pat${this.counter++}` : `grad${this.counter++}`;
+    const id = paint.kind === 'pattern' ? `pat${this.counter++}` : `grad${this.counter++}`;
     this.byPaint.set(paint, id);
     this.order.push(paint);
     return id;
@@ -413,7 +413,7 @@ export class PaintServerRegistry {
 
   /** The paint kind of each registered paint, once, in first-use order. */
   paintKinds(): string[] {
-    return [...new Set(this.order.map((paint) => paint.fill ?? 'solid'))];
+    return [...new Set(this.order.map((paint) => paint.kind ?? 'solid'))];
   }
 
   /** Whether any registered paint serializes outside SVG's own vocabulary, so
@@ -496,7 +496,7 @@ function defaultMarkerXml(
 ): string {
   const name = key ?? id;
   const unit = size === undefined ? 1 : resolveMarkerSize({ key: name, size }, 1);
-  const path = entry.path({ size: unit, stroke: { paint: { fill: 'solid', color: '#000' } } });
+  const path = entry.path({ size: unit, stroke: { paint: { kind: 'solid', color: '#000' } } });
   const d = serializePathD(path);
   const fill = markerPaintAttrs('fill', entry.fill, id, onWarn);
   const outline = entry.outline
@@ -534,7 +534,7 @@ function markerPaintAttrs(
 ): string {
   if (paint === 'none') return `${attr}="none"`;
   if (paint === undefined || paint === 'line') return `${attr}="context-stroke"`;
-  if ('color' in paint && (paint.fill === undefined || paint.fill === 'solid')) {
+  if ('color' in paint && (paint.kind === undefined || paint.kind === 'solid')) {
     return paint.opacity != null && paint.opacity !== 1
       ? `${attr}="${paint.color}" ${attr}-opacity="${trimNumber(paint.opacity)}"`
       : `${attr}="${paint.color}"`;
@@ -548,15 +548,15 @@ function markerPaintAttrs(
  *  carries `fill="url(#id)"`, so a silent omission is a dangling reference and
  *  the shape vanishes in a viewer. */
 function paintServerXml(id: string, paint: Paint, onWarn?: (m: string) => void): string {
-  if (paint.fill === 'pattern') return patternXml(id, paint, onWarn);
+  if (paint.kind === 'pattern') return patternXml(id, paint, onWarn);
   const builtin = gradientXml(id, paint);
   if (builtin) return builtin;
-  const kind = getPaintKind(paint.fill);
+  const kind = getPaintKind(paint.kind);
   const custom = kind?.toSvg?.(id, paint);
   if (custom) return custom;
   onWarn?.(kind
-    ? `${paint.fill} fill has no vector form — omitted from <defs>`
-    : `${paint.fill} fill is not registered — omitted from <defs>; a kind loaded on demand needs \`await warmSvg(nodes)\` before a synchronous export`);
+    ? `${paint.kind} fill has no vector form — omitted from <defs>`
+    : `${paint.kind} fill is not registered — omitted from <defs>; a kind loaded on demand needs \`await warmSvg(nodes)\` before a synchronous export`);
   return '';
 }
 
@@ -568,7 +568,7 @@ function gradientUnitsAttr(units: PaintUnits | undefined): string {
 }
 
 function gradientXml(id: string, paint: Paint): string {
-  if (paint.fill === 'linear-gradient') {
+  if (paint.kind === 'linear-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     return (
       `<linearGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
@@ -577,7 +577,7 @@ function gradientXml(id: string, paint: Paint): string {
       `${interpolateAttr(paint.interpolate)}>${stops}</linearGradient>`
     );
   }
-  if (paint.fill === 'conic-gradient') {
+  if (paint.kind === 'conic-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     const P = WEASEL_NS_PREFIX;
     return (
@@ -587,7 +587,7 @@ function gradientXml(id: string, paint: Paint): string {
       `${interpolateAttr(paint.interpolate)}>${stops}</${P}:conicGradient>`
     );
   }
-  if (paint.fill === 'radial-gradient') {
+  if (paint.kind === 'radial-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     return (
       `<radialGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
@@ -605,7 +605,7 @@ function gradientXml(id: string, paint: Paint): string {
  * honest, where an invented black is not.
  */
 function paintFallback(paint: Paint): string {
-  const color = getPaintKind(paint.fill)?.colorOf(paint);
+  const color = getPaintKind(paint.kind)?.colorOf(paint);
   if (!color) return 'none';
   // Whoever reads the fallback is by definition an older renderer, so the
   // packed alpha comes off rather than riding out as an 8-digit hex.

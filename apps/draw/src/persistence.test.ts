@@ -219,13 +219,16 @@ describe('persistence — legacy string paint migration', () => {
     expect(dataOf({ fill: 'none', stroke: 'none' })).toMatchObject({ fill: null, stroke: null });
   });
 
-  // The trap: `Paint` discriminates on a `fill` key whose value is the
-  // string `'solid'` / `'linear-gradient'` / …, so "a string under `fill`"
-  // alone would mangle every current paint into `{ color: 'solid' }`.
-  it('leaves a current object paint alone, discriminant and all', () => {
-    const fill = { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
+  it('moves a paint\'s tag from `fill` to `kind` rather than reading it as a color', () => {
+    const old = { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
+    const { fill: kind, ...rest } = old;
+    expect(dataOf({ fill: structuredClone(old) }).fill).toEqual({ kind, ...rest });
+    expect(dataOf({ fill: { fill: 'solid', color: '#abc' } }).fill).toEqual({ kind: 'solid', color: '#abc' });
+  });
+
+  it('leaves a current object paint alone', () => {
+    const fill = { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
     expect(dataOf({ fill: structuredClone(fill) }).fill).toEqual(fill);
-    expect(dataOf({ fill: { fill: 'solid', color: '#abc' } }).fill).toEqual({ fill: 'solid', color: '#abc' });
   });
 
   it('migrates a text node\'s style fill, which carried the same string', () => {

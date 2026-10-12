@@ -105,7 +105,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       const rect = (x: number, y: number, size: number, color: string) => ({
         kind: 'path',
         path: { kind: 'rect', x, y, width: size, height: size },
-        fill: { fill: 'solid', color },
+        fill: { kind: 'solid', color },
       });
       const quad = (image: ImageBitmap, x: number, y: number, size: number) => ({
         kind: 'image', image, x, y, w: size, h: size,
@@ -136,7 +136,7 @@ test('batched runs paint their own colors', async ({ page }) => {
         kind: 'path',
         path: { kind: 'rect', x, y, width: size, height: size },
         fill: {
-          fill: 'linear-gradient',
+          kind: 'linear-gradient',
           from: { x: x0, y: 0 }, to: { x: x1, y: 0 },
           stops: ramp,
         },
@@ -153,7 +153,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       ) => ({
         kind: 'path',
         path: { kind: 'rect', x, y, width: size, height: size },
-        fill: { fill: 'radial-gradient', center: { x: cx, y: cy }, radius, stops: ramp },
+        fill: { kind: 'radial-gradient', center: { x: cx, y: cy }, radius, stops: ramp },
       });
       const conicRect = (
         x: number, y: number, size: number,
@@ -162,14 +162,14 @@ test('batched runs paint their own colors', async ({ page }) => {
       ) => ({
         kind: 'path',
         path: { kind: 'rect', x, y, width: size, height: size },
-        fill: { fill: 'conic-gradient', center: { x: cx, y: cy }, angle, stops: ramp },
+        fill: { kind: 'conic-gradient', center: { x: cx, y: cy }, angle, stops: ramp },
       });
 
       const label = (text: string, x: number, y: number, size: number, color: string) => ({
         kind: 'text', x, y,
         runs: [{
           text, fontFamily: 'probe', fontSize: size, fontWeight: 400,
-          fontStyle: 'normal', fill: { fill: 'solid', color },
+          fontStyle: 'normal', fill: { kind: 'solid', color },
           letterSpacing: 0,
           underline: false, strikethrough: false, overline: false, baselineShift: 0,
         }],
@@ -437,7 +437,7 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
     const bitmap = await createImageBitmap(px);
 
     const rect = (x: number, y: number, wd: number, ht: number, color: string) => ({
-      kind: 'path', path: { kind: 'rect', x, y, width: wd, height: ht }, fill: { fill: 'solid', color },
+      kind: 'path', path: { kind: 'rect', x, y, width: wd, height: ht }, fill: { kind: 'solid', color },
     });
     const tri = (x: number, y: number, s: number, color: string) => ({
       kind: 'path',
@@ -445,12 +445,12 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
         kind: 'polygon', commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z]),
         coords: new Float32Array([x, y, x + s, y + s * 0.4, x + s * 0.2, y + s]), fillRule: 'nonzero',
       },
-      fill: { fill: 'solid', color },
+      fill: { kind: 'solid', color },
     });
     const grad = (x: number, y: number, s: number) => ({
       kind: 'path', path: { kind: 'rect', x, y, width: s, height: s },
       fill: {
-        fill: 'linear-gradient', from: { x, y: 0 }, to: { x: x + s, y: 0 },
+        kind: 'linear-gradient', from: { x, y: 0 }, to: { x: x + s, y: 0 },
         stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#00ffff' }],
       },
     });
@@ -458,14 +458,14 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
       kind: 'text', x, y,
       runs: [{
         text, fontFamily: 'probe', fontSize: 28, fontWeight: 400, fontStyle: 'normal',
-        fill: { fill: 'solid', color: '#ffee00' }, letterSpacing: 0,
+        fill: { kind: 'solid', color: '#ffee00' }, letterSpacing: 0,
         underline: true, strikethrough: false, overline: false, baselineShift: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
     const vcolor = (x: number, y: number) => ({
       kind: 'path', path: { kind: 'rect', x, y, width: 30, height: 30 },
-      fill: { fill: 'solid', color: '#ffffff' },
+      fill: { kind: 'solid', color: '#ffffff' },
       vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
     });
 

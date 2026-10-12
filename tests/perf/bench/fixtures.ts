@@ -277,7 +277,7 @@ export function plainRun(text: string, fontSize = 16): ResolvedRun {
     fontSize,
     fontWeight: 400,
     fontStyle: 'normal',
-    fill: { fill: 'solid', color: '#000' },
+    fill: { kind: 'solid', color: '#000' },
     letterSpacing: 0,
     underline: false,
     strikethrough: false,

@@ -69,10 +69,10 @@ function pct(v: number): string {
  */
 export function paintPreviewCss(paint: Paint | null | undefined): string | undefined {
   if (paint == null) return undefined;
-  const kind = paint.fill ?? 'solid';
+  const kind = paint.kind ?? 'solid';
   if (kind === 'solid') return (paint as { color: string }).color;
 
-  if (paint.fill === 'linear-gradient') {
+  if (paint.kind === 'linear-gradient') {
     const dx = paint.to.x - paint.from.x;
     const dy = paint.to.y - paint.from.y;
     // CSS measures from "to top", clockwise; the paint measures in a
@@ -80,14 +80,14 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
     const angle = dx === 0 && dy === 0 ? 90 : Math.atan2(dx, -dy) * DEG;
     return `linear-gradient(${angle.toFixed(1)}deg, ${sampledStops(paint)})`;
   }
-  if (paint.fill === 'radial-gradient') {
+  if (paint.kind === 'radial-gradient') {
     const at = `at ${pct(paint.center.x)} ${pct(paint.center.y)}`;
     return `radial-gradient(circle ${at}, ${sampledStops(paint)})`;
   }
-  if ((paint.fill as string) === 'mesh-gradient') {
+  if ((paint.kind as string) === 'mesh-gradient') {
     return meshPreview(paint as unknown as { patches?: { colors: string[] }[] });
   }
-  if (paint.fill === 'conic-gradient') {
+  if (paint.kind === 'conic-gradient') {
     // CSS starts a conic gradient at "to top"; the paint starts at +x.
     const from = (paint.angle * DEG + 90).toFixed(1);
     return `conic-gradient(from ${from}deg at ${pct(paint.center.x)} ${pct(paint.center.y)}, ${sampledStops(paint)})`;
