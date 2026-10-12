@@ -208,8 +208,8 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   });
 
   registerKitOp<{ id: NodeId; from?: UnitScope; to?: UnitScope }>('kit:setUnits', {
-    apply: (p) => { setUnits(requireNode(p.id), p.to); },
-    revert: (p) => { setUnits(requireNode(p.id), p.from); },
+    apply: (p) => { setUnits(requireNode(p.id) as { units?: UnitScope }, p.to); },
+    revert: (p) => { setUnits(requireNode(p.id) as { units?: UnitScope }, p.from); },
   });
 
   /** The strategies each live `kit:setLayout` payload swaps between. A payload

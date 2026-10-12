@@ -303,6 +303,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         // Only a replay logs here: a first apply is recorded by the entry it
         // creates, and reverting it would leave that entry describing nothing.
         if (suppressRecording) logApplied(kind, payload, dir === 'rev');
+        return undefined;
       },
       invert: () => makeOp(kind, payload, dir === 'fwd' ? 'rev' : 'fwd'),
     };
