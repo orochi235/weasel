@@ -28,9 +28,8 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-// Tests fire ctrlKey: true to simulate Cmd/Ctrl on non-Mac. IS_MAC is derived
-// at module load time in useGestureDispatcher; tests run in jsdom which reports
-// a Linux user-agent, so mod → ctrlKey is the expected path.
+// Tests fire ctrlKey: true to simulate Cmd/Ctrl on non-Mac: jsdom reports a
+// Linux user agent, so mod → ctrlKey is the expected path.
 
 /** Simple mutable view API backed by a plain object. */
 function makeViewApi(initial: View): ViewApi & { current: View } {

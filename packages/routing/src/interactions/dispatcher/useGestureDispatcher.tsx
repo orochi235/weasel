@@ -3,7 +3,7 @@
  * WebKit gesture events, pointer events, and multi-touch synthesized from
  * them) and routes each event to the dispatcher for the view it landed in.
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
 import { useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
@@ -25,8 +25,6 @@ import { wheelInput } from './channels/wheel';
 export type {
   DispatcherChannels, DispatcherViewTarget, UseGestureDispatcherOptions, ViewIdResolver,
 } from './gestureDispatcherOptions';
-
-const IS_MAC = isApplePlatform();
 
 /**
  * Attach the input pipeline to a canvas: DOM pointer, wheel, keyboard, and
@@ -50,6 +48,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const onDoubleClickRef = useLatest(onDoubleClick);
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
+  const [isMac] = useState(isApplePlatform);
 
   const dispatcherRef = useRef<Dispatcher | null>(null);
   if (!dispatcherRef.current) {
@@ -65,7 +64,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
     entriesById,
-    isMac: IS_MAC,
+    isMac,
   });
 
   // The flat options are view zero.

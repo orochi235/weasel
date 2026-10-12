@@ -9,14 +9,6 @@
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-
-vi.hoisted(() => {
-  Object.defineProperty(globalThis.navigator, 'userAgent', {
-    value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
-    configurable: true,
-  });
-});
-
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
@@ -31,6 +23,10 @@ import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 
 beforeAll(() => {
+  Object.defineProperty(globalThis.navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+    configurable: true,
+  });
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
     setPointerCapture: (...args: unknown[]) => void;
