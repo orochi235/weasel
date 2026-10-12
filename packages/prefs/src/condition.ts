@@ -11,10 +11,17 @@ export type PrefConditionValue = string | number | boolean | null;
  * One leaf's value, tested. `path` is the full path the value is read and
  * written at (`'windows.paging'`), a field of an `object` or `union` leaf
  * included (`'stroke.width'`, `'fill.type'`). The value compared is the one
- * the leaf's control shows, where an `encoding` stores another. With no
- * operator it holds
- * while the value is truthy; with several, while all of them do, so
+ * the leaf's control shows, where an `encoding` stores another. With
+ * several operators it holds while all of them do, so
  * `{ path: 'count', atLeast: 1, below: 10 }` is a range.
+ *
+ * With no operator it holds while the value is set, which by kind is:
+ * a `boolean` that is on; a `number` other than 0; a `string`, a `color`, a
+ * `field`, or an `enum`'s option that is not the empty string; a `paint`
+ * that is not `null`; a `list` with an entry; a `map` with a key; an
+ * `object` or a `union` holding a field. Nothing held is never set, and the
+ * value of an app-defined kind is set by whichever of those its shape is,
+ * else while it is truthy.
  */
 export interface PrefTest {
   path: string;
@@ -72,9 +79,15 @@ export function isPrefCondition(value: unknown): value is PrefCondition {
 
 const same = (held: unknown, value: PrefConditionValue): boolean => (value === null ? held == null : held === value);
 
+function isSet(held: unknown): boolean {
+  if (Array.isArray(held)) return held.length > 0;
+  if (isPlainObject(held)) return Object.keys(held).length > 0;
+  return Boolean(held);
+}
+
 function testHolds(test: PrefTest, held: unknown): boolean {
   const ops = Object.keys(test).filter((key) => key !== 'path' && test[key as keyof PrefTest] !== undefined);
-  if (ops.length === 0) return Boolean(held);
+  if (ops.length === 0) return isSet(held);
   if (test.is !== undefined && !same(held, test.is)) return false;
   if (test.isNot !== undefined && same(held, test.isNot)) return false;
   if (test.in !== undefined && !test.in.some((value) => same(held, value))) return false;

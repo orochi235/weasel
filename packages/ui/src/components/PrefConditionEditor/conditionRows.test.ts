@@ -50,6 +50,21 @@ describe('the leaves a condition may read', () => {
   });
 });
 
+describe('a list and a map', () => {
+  const stops = { kind: 'list', name: 'Stops', description: '', default: [], item: count } as PrefLeaf;
+  const weights = { kind: 'map', name: 'Weights', description: '', default: {}, item: count } as PrefLeaf;
+
+  it('are offered, each with is set as its one comparison', () => {
+    const root: PrefGroup = { name: 'Root', children: { stops, weights } };
+    expect(conditionLeaves(root).map((l) => l.path)).toEqual(['stops', 'weights']);
+    for (const leaf of [stops, weights]) {
+      expect(comparisonsFor(leaf)).toEqual(['set']);
+      expect(testOf('at', leaf)).toEqual({ path: 'at' });
+      expect(comparisonOf({ path: 'at' }, leaf)).toBe('set');
+    }
+  });
+});
+
 describe('the comparisons a leaf\'s kind offers', () => {
   it('offers on and off for a boolean, the three choices for an enum, the orderings for a number, and set for the rest', () => {
     expect(comparisonsFor(flag)).toEqual(['on', 'off']);

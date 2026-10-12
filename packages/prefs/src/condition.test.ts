@@ -19,10 +19,22 @@ const reader = (values: unknown) => (path: string) => prefValueAtPath(values, pa
 const holds = (condition: PrefCondition, values: unknown) => prefConditionHolds(condition, reader(values));
 
 describe('prefConditionHolds', () => {
-  it('reads a bare path as truthy', () => {
-    expect(holds({ path: 'a.on' }, { a: { on: true } })).toBe(true);
-    for (const off of [false, 0, '', null, undefined]) expect(holds({ path: 'a.on' }, { a: { on: off } })).toBe(false);
+  it('reads a bare path as set, by what each kind holds', () => {
+    const set = (held: unknown) => holds({ path: 'a.on' }, { a: { on: held } });
+    // boolean
+    expect([set(true), set(false)]).toEqual([true, false]);
+    // number
+    expect([set(1), set(-0.5), set(0), set(Number.NaN)]).toEqual([true, true, false, false]);
+    // string, color, field, and an enum's option
+    expect([set('row'), set('#fff'), set('')]).toEqual([true, true, false]);
+    // paint, and anything else an app's kind holds
+    expect([set({ type: 'solid', color: '#000' }), set(null), set(undefined)]).toEqual([true, false, false]);
+    // list
+    expect([set([0]), set(['']), set([])]).toEqual([true, true, false]);
+    // map, object, and union
+    expect([set({ left: 0 }), set({ type: 'flat' }), set({})]).toEqual([true, true, false]);
     expect(holds({ path: 'a.on' }, {})).toBe(false);
+    expect(holds({ not: { path: 'stops' } }, { stops: [] })).toBe(true);
   });
 
   it('compares with is and isNot', () => {

@@ -38,8 +38,8 @@ export interface PrefConditionEditorProps {
  * An editor for one `PrefCondition` over a schema, as the `showIf` or `enableIf` of a pref, a group, or a section
  * holds it. Each test is a row: the pref it reads, picked from the schema's leaves; a comparison, from the ones
  * that leaf's kind offers; and a value, in the control that kind takes. A boolean is on or off; an enum is, is
- * not, or is one of its own options; a number is compared with a number; any other kind is set, which is to say
- * truthy. Two rows or more combine under all of or any of.
+ * not, or is one of its own options; a number is compared with a number; any other kind is set, which for a list or
+ * a map is to say it has an entry. Two rows or more combine under all of or any of.
  *
  * A `not`, a combinator inside the top one, and a test with several operators or one its leaf's kind does not
  * offer are each a row of text, which can be removed and is otherwise handed back as the object it was. Whatever

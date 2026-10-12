@@ -1179,8 +1179,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Ruled: a test
   may read from the list or map entry its field sits in (`{ from: 'item', path: 'mode' }`), where
   every path is from the schema root today; an alias row is shown and enabled only while its own
-  conditions and its target's both hold, where only its own are read today; a bare test means
-  "is set", and an empty list or map is not set, where it holds today; and a number with a display
+  conditions and its target's both hold, where only its own are read today; and a number with a display
   unit is compared as stored, with `PrefConditionEditor`'s number field typed in the leaf's unit,
   which it is not today. Kept as built: with several nodes selected in a `SelectionPanel`, a row
   is shown if its condition holds for any and enabled only if it holds for all.
