@@ -32,12 +32,6 @@ Priority tags:
   and crop, are not, since nothing says what target each would take from the selection. Draw also
   still enters every mode from `SceneCanvas`'s `onDoubleClick` observer rather than from
   `entry.trigger`, which nothing reads.
-- **(P3) A press on empty canvas can't be an ambient binding beside the select tool.**
-  `select.pick` binds `pointerDown` on empty space at active scope, and active
-  outranks ambient, so an ambient contribution's `pointerDown` never fires while
-  select is active. With no base tool it works: `CustomShaderDemo` spawns its
-  ripple from an ambient binding on a bare canvas.
-
 - **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
   content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
   ahead of `kit:image`, behind consumer handlers) matching `image/svg+xml`

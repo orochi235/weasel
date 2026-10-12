@@ -127,7 +127,7 @@
     "longestFunction": 124
   },
   "packages/core/src/tools/builtin/select/useSelectTool.ts": {
-    "lines": 426,
+    "lines": 423,
     "longestFunction": 276
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
