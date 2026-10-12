@@ -90,9 +90,6 @@
   "packages/core/src/renderer/paintKinds.ts": {
     "lines": 456
   },
-  "packages/core/src/core/scene/arrivalWindow.ts": {
-    "longestFunction": 123
-  },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 245
   },
@@ -134,15 +131,15 @@
     "longestFunction": 134
   },
   "packages/core/src/interactions/actions/defaults/insert.ts": {
-    "lines": 581,
+    "lines": 579,
     "longestFunction": 132
   },
   "packages/core/src/interactions/actions/defaults/resize.ts": {
-    "lines": 695,
-    "longestFunction": 353
+    "lines": 693,
+    "longestFunction": 351
   },
   "packages/core/src/interactions/actions/defaults/rotate.ts": {
-    "longestFunction": 210
+    "longestFunction": 208
   },
   "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
     "longestFunction": 129

@@ -17,43 +17,41 @@ function foldBehaviors(
 
   const posed = new Map<NodeId, unknown>();
   const opaque = new Set<NodeId>();
-  if (session.behaviors.length > 0) {
-    const gctx = session.gestureCtx;
-    gctx.modifiers = { ...moveCtx.modifiers };
-    gctx.pointer = { worldX: moveCtx.drag!.current.x, worldY: moveCtx.drag!.current.y, clientX: 0, clientY: 0 };
-    gctx.view = readers.view();
-    gctx.plane = readers.plane();
-    // `current` is pre-populated from the raw cursor delta BEFORE
-    // any behavior shapes `transform`. Unlike `onEnd`, it is NOT
-    // refreshed after each behavior runs — so onMove behaviors
-    // should derive position from `origin` + the `proposed`
-    // GroupTransform arg, NOT from `ctx.current` (which reflects
-    // the unmodified delta at this frame's start).
-    for (const [id, ori] of session.startPoses) {
-      const own = planeDelta(session, id, dx, dy);
-      gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, session.descriptorOf(id)));
-    }
-    let transform: GroupTransform = { kind: 'translate', dx, dy };
-    const primary = session.ids[0] as NodeId | undefined;
-    for (const b of session.behaviors) {
-      const r: BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
-      if (!r) continue;
-      if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
-      if (r.opaque) for (const id of r.opaque) opaque.add(id as NodeId);
-      if (r.transform && r.transform.kind === 'translate') {
-        transform = r.transform;
-      } else if (r.pose !== undefined && primary !== undefined) {
-        const o = session.startPoses.get(primary);
-        if (o !== undefined) {
-          const from = session.projection.getBounds(o);
-          const to = session.projection.getBounds(r.pose);
-          transform = { kind: 'translate', dx: to.x - from.x, dy: to.y - from.y };
-        }
-      }
-      if (r.snap !== undefined) gctx.snap = r.snap;
-    }
-    if (transform.kind === 'translate') { dx = transform.dx; dy = transform.dy; }
+  const gctx = session.gestureCtx;
+  gctx.modifiers = { ...moveCtx.modifiers };
+  gctx.pointer = { worldX: moveCtx.drag!.current.x, worldY: moveCtx.drag!.current.y, clientX: 0, clientY: 0 };
+  gctx.view = readers.view();
+  gctx.plane = readers.plane();
+  // `current` is pre-populated from the raw cursor delta BEFORE
+  // any behavior shapes `transform`. Unlike `onEnd`, it is NOT
+  // refreshed after each behavior runs — so onMove behaviors
+  // should derive position from `origin` + the `proposed`
+  // GroupTransform arg, NOT from `ctx.current` (which reflects
+  // the unmodified delta at this frame's start).
+  for (const [id, ori] of session.startPoses) {
+    const own = planeDelta(session, id, dx, dy);
+    gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, session.descriptorOf(id)));
   }
+  let transform: GroupTransform = { kind: 'translate', dx, dy };
+  const primary = session.ids[0] as NodeId | undefined;
+  for (const b of session.behaviors) {
+    const r: BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
+    if (!r) continue;
+    if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
+    if (r.opaque) for (const id of r.opaque) opaque.add(id as NodeId);
+    if (r.transform && r.transform.kind === 'translate') {
+      transform = r.transform;
+    } else if (r.pose !== undefined && primary !== undefined) {
+      const o = session.startPoses.get(primary);
+      if (o !== undefined) {
+        const from = session.projection.getBounds(o);
+        const to = session.projection.getBounds(r.pose);
+        transform = { kind: 'translate', dx: to.x - from.x, dy: to.y - from.y };
+      }
+    }
+    if (r.snap !== undefined) gctx.snap = r.snap;
+  }
+  if (transform.kind === 'translate') { dx = transform.dx; dy = transform.dy; }
   return { dx, dy, posed, opaque };
 }
 

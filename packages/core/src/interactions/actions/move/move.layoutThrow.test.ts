@@ -1,7 +1,7 @@
 /**
- * A layout strategy that throws mid-drag must not leave the frame before it
- * deciding the commit: the drop that frame resolved is no longer where the
- * pointer is.
+ * A layout strategy that throws mid-drag drops that frame, the way a throwing
+ * binding behavior does, and must not leave the drop the frame before it
+ * resolved deciding the commit: that drop is no longer where the pointer is.
  */
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
@@ -14,7 +14,7 @@ import type { LayoutStrategy } from '../../../layout/types';
 interface P { x: number; y: number; width: number; height: number }
 
 describe('moveAction — a layout pass that throws', () => {
-  it("commits the frame that threw as a plain move, not the earlier frame's drop", () => {
+  it("commits the last frame that held as a plain move, not as that frame's drop", () => {
     const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
     const box = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 } });
     const leaf = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 40, height: 40 } });
@@ -54,6 +54,6 @@ describe('moveAction — a layout pass that throws', () => {
     handle.onEnd!({ ...base, world: second.current, drag: second } as unknown as InvocationCtx, 'commit');
 
     expect(scene.get(leaf)!.parent).toBe(null);
-    expect(scene.get(leaf)!.pose).toEqual({ x: 190, y: 180, width: 40, height: 40 });
+    expect(scene.get(leaf)!.pose).toEqual({ x: 180, y: 180, width: 40, height: 40 });
   });
 });

@@ -62,9 +62,10 @@ export interface SnapStrategy<TPose> {
  * non-undefined return wins (Op[] = commit those, null = abort, undefined =
  * defer); later answers are ignored. So a behavior holding state outside the
  * gesture (published guides, a timer) releases it in onEnd even when an
- * earlier behavior decides. `end.answered` says one did: a behavior that acts
- * on the scene itself from onEnd (starts an animation, applies ops) only
- * cleans up then. A canceled gesture (Esc, pointercancel) runs every
+ * earlier behavior decides, or throws: every onEnd still runs, the first
+ * error is rethrown after, and nothing commits. `end.answered` says one did
+ * either: a behavior that acts on the scene itself from onEnd (starts an
+ * animation, applies ops) only cleans up then. A canceled gesture (Esc, pointercancel) runs every
  * behavior's `onCancel` instead, which releases the same state. `TEnd` is
  * what `onEnd` is told; an action with more to offer than `BehaviorEnd`
  * extends it (`MoveEnd`).
@@ -84,7 +85,8 @@ export interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends Beha
    * the commit's ops have applied (or the cancel has run) and after the
    * gesture's preview overrides are dropped. `committed` is false when the
    * gesture was canceled, aborted by a behavior (`onEnd` returned `null`),
-   * or released with nothing to commit, and true otherwise: the action or
+   * released with nothing to commit, or refused by a container its ops
+   * dropped something into, and true otherwise: the action or
    * a behavior made the commit, a behavior claiming it with no ops
    * included. For move, resize, and rotate it is the value `onGestureEnd`
    * receives.
@@ -163,6 +165,9 @@ export interface MoveEnd extends BehaviorEnd {
    *  the nodes: it returns these beside its own ops. An id that is not a
    *  dragged root is ignored. */
   translateOps(ids: Iterable<string>): Op[];
+  /** Where the pointer was let go, in world coordinates; without one on the
+   *  release, the last move's. `ctx.pointer` always holds the last move's. */
+  pointer: { x: number; y: number };
 }
 
 /** A behavior plugged into `useMove` — shapes the proposed transform during a drag.
