@@ -1,4 +1,4 @@
-import type { HistorySelection, Journal, SerializedHistory } from '@weasel-js/history';
+import type { HistorySelection, Journal } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { createHistory } from 'core/ops/createHistory';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
@@ -352,7 +352,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     }
   }
 
-  const sceneHistory = createSceneHistory({
+  const { history: sceneHistory, methods: historyMethods } = createSceneHistory({
     engine: history,
     applying: (step) => atomically(() => withRecordingSuppressed(step), () => true),
     tolerant: stale.tolerant,
@@ -360,10 +360,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     notify,
     refuseUntracked,
     runArrivalEdit,
-    undo: () => { scene.undo(); },
-    redo: () => { scene.redo(); },
-    goto: (n) => { scene.jumpToHistoryIndex(n); },
-    restore: (snapshot) => { scene.restoreHistory(snapshot); },
   });
 
   function applyBatchNow(ops: Op[], label: string, adapter: unknown): void {
@@ -795,51 +791,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
     history: sceneHistory,
 
-    undo() {
-      if (!history.canUndo()) return false;
-      replay(() => history.undo());
-      notify();
-      return true;
-    },
-
-    redo() {
-      if (!history.canRedo()) return false;
-      replay(() => history.redo());
-      notify();
-      return true;
-    },
-
-    canUndo: () => history.canUndo(),
-    canRedo: () => history.canRedo(),
-
-    historyEntries() {
-      const { undo, redo } = history.entries();
-      const out: { id: string; label: string }[] = [];
-      for (const e of undo) out.push({ id: String(e.id), label: e.label });
-      // entries().redo is already chronological: the next redo comes first.
-      for (const e of redo) out.push({ id: String(e.id), label: e.label });
-      return out;
-    },
-
-    historyIndex: () => history.undoDepth(),
-
-    jumpToHistoryIndex(targetIndex: number) {
-      const total = history.undoDepth() + history.redoDepth();
-      const target = Math.max(0, Math.min(total, targetIndex));
-      if (target === history.undoDepth()) return false;
-      replay(() => history.goto(target));
-      notify();
-      return true;
-    },
-
-    serializeHistory: () => history.serialize(),
-
-    restoreHistory(snapshot: SerializedHistory) {
-      // restore() only rebuilds the stacks — no op applies, no node-state
-      // mutation. The caller guarantees state already matches the head.
-      history.restore(snapshot);
-      notify();
-    },
+    ...historyMethods,
 
     setHistoryAdapter(fn) {
       historyAdapterAccessor = fn;
