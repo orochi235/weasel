@@ -76,6 +76,31 @@ beside it. The resolved record carries that CSS as is, because a canvas has no
 `currentColor`; flatten it with `resolveCurrentColor(value, resolved['--wzl-fg'])`,
 passing the color of the text it is drawn beside.
 
+## Desktop themes
+
+Each is a pins-only theme over the built-in one, on its own entry so an app
+that never asks for it never loads it:
+
+```ts
+import { applyTheme } from '@weasel-js/theme';
+import { win9xTheme } from '@weasel-js/theme/themes/win9x';
+
+applyTheme(document.documentElement, win9xTheme);   // opens in light mode
+```
+
+- `win9xTheme`: Windows 95 and 98. Gray faces in two-pixel bevels, square
+  corners, a navy-to-blue title strip, and the system sans at 11, 12, or 14px
+  by density.
+
+They open in light mode, the only one the originals had; the dark mode is the
+theme's own. The system faces are named first in the font stacks and are not
+bundled, so a machine without them draws the next face in the stack. The
+bevels and flat button faces are override hooks the theme pins (see below),
+which Button, the field frame, PropertyPanel, and the `titlebar` frame motif
+read; other controls take the theme's colors, corners, and type, and no bevel.
+To title every group as a window, wrap the app in
+`<DefaultMotif motif={motifs.titlebar()}>` from `@weasel-js/ui`.
+
 ## The engine
 
 `@weasel-js/theme/engine` is for authoring layered theme definitions: seeds,

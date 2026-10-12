@@ -23,6 +23,10 @@
       "import": "./dist/engine.js",
       "types": "./dist/engine.d.ts"
     },
+    "./themes/win9x": {
+      "import": "./dist/themes/win9x.js",
+      "types": "./dist/themes/win9x.d.ts"
+    },
     "./tokens.css": "./dist/tokens.css",
     "./fonts.css": "./dist/fonts.css",
     "./faces.css": "./dist/faces.css",

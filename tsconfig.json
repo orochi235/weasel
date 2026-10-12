@@ -71,6 +71,8 @@
       "@weasel-js/theme": ["./packages/theme/src/index.ts"],
       "@weasel-js/theme/react": ["./packages/theme/src/react.tsx"],
       "@weasel-js/theme/engine": ["./packages/theme/src/engine.ts"],
+      "@weasel-js/theme/themes/*": ["./packages/theme/src/themes/*"],
+      "@weasel-js/theme/testing/*": ["./packages/theme/src/testing/*"],
       "@weasel-js/theme/tokens.css": ["./packages/theme/src/generated/tokens.css"],
       "@weasel-js/gestures": ["./packages/gestures/src/index.ts"],
       "@weasel-js/history": ["./packages/history/src/index.ts"],
