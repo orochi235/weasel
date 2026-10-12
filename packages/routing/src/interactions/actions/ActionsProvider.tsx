@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Action } from './action';
+import { evaluateEnabled } from './actionEnabled';
 import { useLatest } from '@weasel-js/react';
 import {
   useOptionalDepRegistry,
@@ -165,8 +166,10 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const leaf = this.start();
       const a = leaf.resolve(id);
       if (!a?.invoker || a.invoker.timing !== 'immediate') return false;
+      const deps = depsFor(a, leaf.deps());
+      if (!evaluateEnabled(a, deps as never).enabled) return false;
       try {
-        a.invoker.run(depsFor(a, leaf.deps()) as never, params);
+        a.invoker.run(deps as never, params);
       } catch (err) {
         console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
       }

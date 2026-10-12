@@ -196,14 +196,6 @@ Priority tags:
   a consumer tool hits it. Decide any-versus-every and the empty case once, as one predicate over
   `(allowedCapabilities, tags)` in `@weasel-js/modes`, and have all three call it.
 
-- **(P3) `ActionsRegistry.trigger` does not ask `enabled`.** `trigger('delete')` runs while
-  `delete.enabled()` reports a disabled reason, which the dispatcher honors for the same action on
-  a key (`packages/routing/src/interactions/actions/ActionsProvider.tsx`). Whether a palette or
-  toolbar is expected to gate before calling is the design call: either `trigger` gates on
-  `evaluateEnabled`, or its contract says the caller gates. `trigger` has no event, so it cannot
-  pass `enabled` the `at` point the dispatcher does, and an action that only applies at a point
-  would refuse every `trigger`.
-
 - **(P3) A key typed with AltGr cannot match a binding.** A layout that types `[` with AltGr
   reports `ctrlKey` and `altKey`, which the strict modifier match in
   `packages/gestures/src/ui/match.ts` rejects. Dropping both flags while

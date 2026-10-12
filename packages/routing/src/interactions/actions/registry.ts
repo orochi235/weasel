@@ -51,9 +51,9 @@ export interface ActionsRegistry {
   /** Fire an immediate-invoker action by id. The optional `params` arg is
    *  forwarded to `ImmediateInvoker.run` as its second argument — use it for
    *  parametric actions (e.g. `trigger('tool.activate', { toolId: 'rect' })`).
-   *  Returns whether it ran one: `false` for an unknown id, and for an
-   *  ongoing-invoker action, which `trigger` cannot reach (see `begin`). It
-   *  does not ask `enabled`. */
+   *  Returns whether it ran one: `false` for an unknown id, for an action
+   *  whose `enabled` refuses, and for an ongoing-invoker action, which
+   *  `trigger` cannot reach (see `begin`). `enabled` is asked with no point. */
   trigger(id: string, params?: Record<string, unknown>): boolean;
   /**
    * Subscribe to registry mutations. The callback fires after any

@@ -3,7 +3,7 @@ import { renderHook, act, render } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
-import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import type { GestureSpec } from '../gestures/spec';
 
@@ -122,6 +122,57 @@ describe('ActionsRegistry — full coverage', () => {
     act(() => { ret = reg.trigger('drag'); });
     expect(start).not.toHaveBeenCalled();
     expect(ret).toBe(false);
+  });
+
+  it('trigger(id) for a disabled action runs nothing and returns false', () => {
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    const run = vi.fn();
+    let on = false;
+    act(() => {
+      reg.register({
+        id: 'foo',
+        label: 'Foo',
+        invoker: { timing: 'immediate' as const, run },
+        enabled: () => on || ActionDisabledReason.NotApplicable,
+      });
+    });
+    expect(reg.trigger('foo')).toBe(false);
+    expect(run).not.toHaveBeenCalled();
+    on = true;
+    expect(reg.trigger('foo')).toBe(true);
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('trigger(id) hands enabled the deps it hands run', () => {
+    const seen: unknown[] = [];
+    const marker = { marker: 1 };
+    function Probe({ onReg }: { onReg: (r: ActionsRegistry) => void }) {
+      (useDepSource as (n: string, s: () => unknown) => void)('selection', () => marker);
+      const reg = useActionsRegistry();
+      if (reg) onReg(reg);
+      return null;
+    }
+    let reg: ActionsRegistry | undefined;
+    render(
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <Probe onReg={(r) => { reg = r; }} />
+        </ActionsProvider>
+      </DepRegistryProvider>,
+    );
+    act(() => {
+      reg!.register({
+        id: 'foo',
+        label: 'Foo',
+        invoker: { timing: 'immediate' as const, run: (deps: unknown) => { seen.push(deps); } },
+        enabled: (deps) => { seen.push(deps); return true; },
+      });
+    });
+    expect(reg!.trigger('foo')).toBe(true);
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toBe(seen[1]);
+    expect((seen[0] as { selection: unknown }).selection).toBe(marker);
   });
 
   it('trigger(id) for absent id returns false (no throw)', () => {
