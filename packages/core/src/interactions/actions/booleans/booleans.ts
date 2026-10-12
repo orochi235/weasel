@@ -20,8 +20,8 @@ import { resolveOperand, type BooleanOpOptions, type BooleanOperand } from './op
 import { booleanPieces } from './pieces';
 import { placementOps } from './placement';
 
-/** Boolean op identifiers — five Pathfinder primaries plus Crop. */
-export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop';
+/** Boolean op identifiers: the five Pathfinder primaries, and Crop, Trim, and Merge. */
+export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop' | 'trim' | 'merge';
 
 /**
  * z-position descriptor for a path node. `parentId` is the direct parent
@@ -57,7 +57,7 @@ export interface BooleansAdapter {
    * op that synthesized it — adapters that store provenance (e.g. for a
    * layer-panel icon) record it; others ignore the arg. `sourceId` is the
    * source the result stands in for: the topmost, except that each piece of
-   * a Divide or a Crop names the topmost source it was cut from. Give the
+   * a Divide, Crop, Trim, or Merge names the topmost source it was cut from. Give the
    * node that source's parent, or the kit's reorder cannot find it there.
    * `paint` is passed when that source's stroke went into the geometry, and
    * the node must wear it as given: wearing the source's stroke again would
@@ -113,6 +113,8 @@ const LABEL: Record<BooleanOp, string> = {
   exclude: 'Exclude',
   divide: 'Divide',
   crop: 'Crop',
+  trim: 'Trim',
+  merge: 'Merge',
 };
 
 /**
@@ -153,7 +155,13 @@ export function applyBooleanOp(
   }
   if (entries.length < 2) return { kind: 'noop', reason: 'no-paths' };
 
-  const pieces = booleanPieces(op, entries.map((e) => e.operand.path));
+  // Merge unites the operands that wear one fill; one whose paint is unknown is united with nothing.
+  const fillKey = (i: number): unknown => {
+    const { id, operand } = entries[i]!;
+    const paint = operand.paint ?? adapter.getPaint?.(id);
+    return paint ? JSON.stringify(paint.fill ?? null) : i;
+  };
+  const pieces = booleanPieces(op, entries.map((e) => e.operand.path), fillKey);
   if (pieces.length === 0) return { kind: 'noop', reason: 'empty-result' };
 
   // Every source's slot, read before the scene is mutated.

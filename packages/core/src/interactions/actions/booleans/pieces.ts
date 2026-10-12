@@ -5,6 +5,8 @@ import {
   pathExclude,
   pathDividePieces,
   pathCropPieces,
+  pathTrim,
+  pathMerge,
   type BooleanPiece,
 } from '@weasel-js/geom/booleans';
 import type { Path, PolygonPath } from '@weasel-js/geom';
@@ -22,8 +24,9 @@ function bySource(pieces: BooleanPiece[]): ResultPiece[] {
   return pieces.map((p) => ({ path: p.path, source: p.sources[p.sources.length - 1]! }));
 }
 
-/** Run `op` over `paths`, back to front, dropping empty results. */
-export function booleanPieces(op: BooleanOp, paths: Path[]): ResultPiece[] {
+/** Run `op` over `paths`, back to front, dropping empty results. `mergeKey`
+ *  answers alike for the paths a Merge unites. */
+export function booleanPieces(op: BooleanOp, paths: Path[], mergeKey: (index: number) => unknown): ResultPiece[] {
   const top = paths.length - 1;
   const whole = (path: PolygonPath): ResultPiece[] => [{ path, source: top }];
   let pieces: ResultPiece[];
@@ -41,6 +44,8 @@ export function booleanPieces(op: BooleanOp, paths: Path[]): ResultPiece[] {
     // Illustrator "Crop": every source below the topmost, clipped to it; the
     // topmost is consumed as the mask.
     case 'crop':      pieces = bySource(pathCropPieces(...paths)); break;
+    case 'trim':      pieces = bySource(pathTrim(...paths)); break;
+    case 'merge':     pieces = bySource(pathMerge(paths, mergeKey)); break;
   }
   return pieces.filter((p) => p.path.commands.length > 0);
 }
