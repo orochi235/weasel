@@ -1243,7 +1243,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   nothing (seen in a browser, in a section `as: 'bar'`); doing it needs the panel's `renderers`
   where the marks are worked out, since a renderer decides whether flags fuse. A top-level
   section drawn `as: 'bar'` or `as: 'fragment'`, or with no name, draws no heading, tab, or panel,
-  and its key marks and reports nothing: whether it should is not ruled. Cmd or Ctrl on a press of
+  and its key marks and reports nothing, which is ruled to stay so (2026-10-11). Cmd or Ctrl on a press of
   a tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
   so the press arrives as the focus it causes, which carries no modifier.
 
