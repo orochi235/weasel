@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { Profiler, useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, ActionsProvider, useAction } from '@weasel-js/core';
-import { CommandPalette, useCommandPaletteShortcut } from '../CommandPalette/CommandPalette';
+import { CommandPalette } from './CommandPalette';
 
 afterEach(cleanup);
 // jsdom has no layout, so no scrollIntoView; the palette calls it on every highlight.
@@ -35,11 +35,10 @@ function Actions() {
 
 function Harness() {
   const [open, setOpen] = useState(false);
-  useCommandPaletteShortcut(open, setOpen);
   return (
     <ActionsProvider>
       <Actions />
-      <input aria-label="elsewhere" />
+      <button type="button" onClick={() => setOpen(true)}>open</button>
       <CommandPalette open={open} onClose={() => setOpen(false)} />
     </ActionsProvider>
   );
@@ -53,19 +52,11 @@ const selected = () => options().find((o) => o.getAttribute('aria-selected') ===
 // user does: after the actions have registered.
 const openPalette = () => {
   render(<Harness />);
-  fireEvent.keyDown(document.body, { key: '/' });
+  fireEvent.click(screen.getByText('open'));
 };
 const flush = () => act(async () => { await Promise.resolve(); });
 
 describe('CommandPalette', () => {
-  it('opens on / and not while typing in a field', () => {
-    render(<Harness />);
-    fireEvent.keyDown(screen.getByLabelText('elsewhere'), { key: '/' });
-    expect(palette()).toBeNull();
-    fireEvent.keyDown(document.body, { key: '/' });
-    expect(palette()).not.toBeNull();
-  });
-
   it('tells assistive tech which action Enter will run, as the highlight moves', () => {
     openPalette();
     const input = screen.getByRole('combobox', { name: 'Search actions' });
@@ -110,6 +101,36 @@ describe('CommandPalette', () => {
     expect(row.textContent).toContain('Selection required');
   });
 
+  it('opens on the first enabled row, so Enter runs something', async () => {
+    const run = vi.fn();
+    function DisabledFirst() {
+      useAction({
+        id: 'delete',
+        label: 'Delete',
+        enabled: () => ActionDisabledReason.SelectionRequired,
+        invoker: { timing: 'immediate' as const, run: () => {} },
+      });
+      useAction({ id: 'group', label: 'Group', invoker: { timing: 'immediate' as const, run } });
+      return null;
+    }
+    function Host() {
+      const [open, setOpen] = useState(false);
+      return (
+        <ActionsProvider>
+          <DisabledFirst />
+          <button type="button" onClick={() => setOpen(true)}>open</button>
+          <CommandPalette open={open} onClose={() => setOpen(false)} />
+        </ActionsProvider>
+      );
+    }
+    render(<Host />);
+    fireEvent.click(screen.getByText('open'));
+    expect(selected()!.textContent).toBe('Group');
+    fireEvent.keyDown(search(), { key: 'Enter' });
+    await flush();
+    expect(run).toHaveBeenCalledOnce();
+  });
+
   it('moves the highlight with the arrows, skipping disabled rows', () => {
     openPalette();
     const labels = options().map((o) => o.textContent ?? '');
@@ -137,7 +158,7 @@ describe('CommandPalette', () => {
     openPalette();
     fireEvent.change(search(), { target: { value: 'gro' } });
     fireEvent.keyDown(search(), { key: 'Escape' });
-    fireEvent.keyDown(document.body, { key: '/' });
+    fireEvent.click(screen.getByText('open'));
     expect((search() as HTMLInputElement).value).toBe('');
     expect(selected()!.textContent).toBe(options()[0].textContent);
   });
@@ -155,11 +176,11 @@ describe('CommandPalette', () => {
         <Harness />
       </Profiler>,
     );
-    fireEvent.keyDown(document.body, { key: '/' });
+    fireEvent.click(screen.getByText('open'));
     fireEvent.change(search(), { target: { value: 'gro' } });
     fireEvent.keyDown(search(), { key: 'Escape' });
     seen.length = 0;
-    fireEvent.keyDown(document.body, { key: '/' });
+    fireEvent.click(screen.getByText('open'));
     expect(seen.length).toBeGreaterThan(0);
     expect(seen.every((v) => v === '')).toBe(true);
   });

@@ -40,6 +40,7 @@ function Actions({ selected, compound, children }: { selected: number; compound:
     canReleaseCompound: compound,
     releaseCompound: noop,
     openPrefs: noop,
+    openPalette: noop,
   };
   useDepSource('appCommands', () => commands);
   useAction(toggleGridAction);

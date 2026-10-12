@@ -1726,11 +1726,10 @@ only story runner in the repo.
   bar's Record button, profile select, and Play button went with the no-op handlers behind them;
   `git log -S'Record input' -- apps/draw/src/CommandBar.tsx` has them.
 
-- **(P3) draw: no command palette, no toast host, and no first-run notice.** The actions registry
-  lists every action by stable id, so a palette is a port of `apps/site/CommandPalette`; save
-  failures and SVG import warnings currently go to `console.warn` (`onWarn` in
-  `apps/draw/src/App.tsx`) where a toast should carry them. (Moved from the deleted
-  `apps/draw/TODO.md`.)
+- **(P3) draw: no toast host and no first-run notice.** Save failures and SVG import warnings go
+  to `console.warn` (`onWarn` in `apps/draw/src/App.tsx`) where a toast should carry them. The
+  command palette opens on Cmd+K and has no button in the command bar: `app.commands` has no
+  icon, so it sits in no bar group. (Moved from the deleted `apps/draw/TODO.md`.)
 
 - **(P3) draw: two owners for "which mode is the editor in".** The kit holds `textEdit.editingId`
   and `editAnchors.editingId`; the app holds a second mode machine

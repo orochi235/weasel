@@ -28,7 +28,8 @@ function formatRelativeOrIso(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 import { InlineMarkdown } from './InlineMarkdown';
-import { CommandPalette, useCommandPaletteShortcut } from './CommandPalette/CommandPalette';
+import { CommandPalette } from '@weasel-js/ui';
+import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';
 import { VERSION } from '@weasel-js/core';
 import { buildTitle } from '../shared/buildInfo';
