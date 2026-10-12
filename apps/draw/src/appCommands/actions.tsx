@@ -1,6 +1,6 @@
 /**
  * WeaselDraw's own commands (the grid and snap toggles, Release compound
- * path, Preferences) as actions the gesture dispatcher routes and the command
+ * path, Preferences, the command palette) as actions the gesture dispatcher routes and the command
  * bar draws from the registry. Each reads the live `appCommands` dep.
  */
 
@@ -21,6 +21,7 @@ export interface AppCommands {
   canReleaseCompound: boolean;
   releaseCompound(): void;
   openPrefs(): void;
+  openPalette(): void;
 }
 
 const read = (deps?: ActionDeps): AppCommands | undefined => deps?.appCommands;
@@ -76,9 +77,18 @@ export const preferencesAction: AppAction = {
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.openPrefs() },
 };
 
+export const commandsAction: AppAction = {
+  id: 'app.commands',
+  label: 'Commands',
+  defaultBinding: { kind: 'key', key: 'k', mods: { mod: true } },
+  requires: ['appCommands'],
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.openPalette() },
+};
+
 export const appActions: Action[] = [
   toggleGridAction,
   toggleSnapAction,
   releaseCompoundAction,
   preferencesAction,
+  commandsAction,
 ];

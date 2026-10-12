@@ -95,6 +95,7 @@ export * from './components/Plot2D';
 export * from './components/CurveEditor';
 export * from './components/PointPlotter';
 export * from './components/ColorField';
+export * from './components/CommandPalette';
 export * from './components/TokenPanel';
 export * from './components/GradientEditor';
 export * from './components/BandEditor';

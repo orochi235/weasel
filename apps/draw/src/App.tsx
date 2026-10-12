@@ -52,6 +52,7 @@ import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
   CharacterOptions,
+  CommandPalette,
   createRecentColorsStore,
   isCharacterChrome,
   RecentColorsProvider,
@@ -260,6 +261,7 @@ function EditorWithSharedScene({
   const [gridVisible, setGridVisible] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Right-sidebar width. The pref is the durable value; `dragWidth` shadows it
   // for the duration of a drag so a pointer-rate stream of samples doesn't
@@ -439,6 +441,7 @@ function EditorWithSharedScene({
     canReleaseCompound: hasCompoundPath(scene, selection.current),
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
     openPrefs: () => setPrefsOpen(true),
+    openPalette: () => setPaletteOpen(true),
   };
   const appCommandsRef = useLatest(appCommands);
   const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
@@ -573,6 +576,7 @@ function EditorWithSharedScene({
         onClearJournalCache={() => modality.machine.clearJournalCache()}
       />
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {/* Permanently reserved, never mounted on demand: the canvas is sized
           to the workspace, so appearing mid-edit would resize it under the
           caret. Empty until a text edit is in progress. */}
