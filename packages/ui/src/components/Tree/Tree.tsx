@@ -118,12 +118,10 @@ export interface TreeProps {
   renderGhost?(ids: readonly string[], where: TreeGhostWhere): TreeGhost | null;
   /**
    * A drag begun outside the tree, at this client point. The tree marks where
-   * it would land — asking `canDrop` with no ids — and reports the target
-   * through `onExternalTarget`, `null` while the point is off its rows. Both
-   * follow the pointer a render behind it: ask `dropRef` where a release lands.
+   * it would land, asking `canDrop` with no ids. The mark follows the pointer
+   * a render behind it: ask `dropRef` where a point lands.
    */
   externalDrag?: { x: number; y: number } | null;
-  onExternalTarget?(target: TreeDropTarget | null): void;
   /** Filled with the tree's answer to where a drop from outside lands at a point, for the moment of the drop. */
   dropRef?: Ref<TreeDropHandle>;
 }
@@ -172,7 +170,7 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', guides = false,
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, onExternalTarget, dropRef,
+    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -257,7 +255,7 @@ export const Tree = forwardRef(function Tree(
   useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
   const drag = useTreeDrag({
     enabled: !!onMove,
-    onDragOutside, onDropOutside, externalDrag, onExternalTarget, dropRef,
+    onDragOutside, onDropOutside, externalDrag, dropRef,
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
     rowEl: (id) => items.current.get(id)?.firstElementChild as HTMLElement | undefined,

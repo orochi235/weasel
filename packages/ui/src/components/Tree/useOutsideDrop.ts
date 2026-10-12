@@ -17,7 +17,7 @@ export interface UseOutsideDropOptions {
   /** The client point of a drag begun outside the tree, while there is one. */
   at: { x: number; y: number } | null | undefined;
   /** The tree's latest callbacks, read when asked and never captured. */
-  latest: { readonly current: { container(): HTMLElement | null; onExternalTarget?(target: TreeDropTarget | null): void } };
+  latest: { readonly current: { container(): HTMLElement | null } };
   /** Where a drop of nothing the tree holds would land at a client point its rows cover. */
   resolve(ids: readonly string[], x: number, y: number): ResolvedDrop | null;
   handle?: Ref<TreeDropHandle>;
@@ -38,8 +38,7 @@ export function useOutsideDrop({ at, latest, resolve, handle }: UseOutsideDropOp
     const hit = x !== undefined && y !== undefined ? hitAt(x, y) : null;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the mark comes from measured row rects, which only an effect may read
     setMarked(hit);
-    latest.current.onExternalTarget?.(hit?.target ?? null);
-  }, [x, y, latest, hitAt]);
+  }, [x, y, hitAt]);
 
   useImperativeHandle(handle, () => ({ targetAt: (p) => hitAt(p.x, p.y)?.target ?? null }), [hitAt]);
   return marked;

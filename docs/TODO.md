@@ -1170,10 +1170,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
   500 ms `RAIL_OPEN_MS` timer).
 
-- **(P3) `Tree` keeps `onExternalTarget` beside `dropRef`.** `TreeDropHandle.targetAt(point)`
-  answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
-  effect, a render behind, and its docstring says so. Whether it should go is not decided.
-
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
   foldable rail unfolds an entry only while the open page is it or under it, so a section holding
