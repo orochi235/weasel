@@ -1396,7 +1396,7 @@ only story runner in the repo.
   `scripts/check-spacing.ts` skips `apps/site/CommandPalette/`, which now contains only
   `useCommandPaletteShortcut.ts`. Drop the exemption and the comment above it.
 
-- **(P3) `SceneCanvasInner` is one 1,340-line function.** It is most of the 1,541-line
+- **(P3) `SceneCanvasInner` is one 1,204-line function.** It is most of the 1,395-line
   `canvas/SceneCanvas.tsx`, and wants breaking into hooks by concern rather than moving.
 
 - **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
