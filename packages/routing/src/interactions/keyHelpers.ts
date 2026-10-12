@@ -7,6 +7,8 @@
  * consumers don't depend on its disappearance.
  */
 
+export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
+
 /**
  * A key plus a modifier policy, as {@link matchesKeyBinding} tests it against a
  * `KeyboardEvent`. Every modifier left unset is forbidden, so `{ key: 'a' }`
@@ -38,34 +40,6 @@ export interface KeyBinding {
   enabled?: boolean;
   /** Call `preventDefault` before the handler. Default `true`. */
   preventDefault?: boolean;
-}
-
-/** Returns true when the target is an input, textarea, or contenteditable element. */
-export function isEditableTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof Element)) return false;
-  const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
-  if ((target as HTMLElement).isContentEditable) return true;
-  const ce = target.getAttribute('contenteditable');
-  return ce === 'true' || ce === '';
-}
-
-const ACTIVATED_BY_KEY = [
-  'button', 'a[href]', 'summary', 'select',
-  'input[type="button"]', 'input[type="submit"]', 'input[type="reset"]',
-  'input[type="checkbox"]', 'input[type="radio"]',
-  '[role="button"]', '[role="link"]', '[role="checkbox"]', '[role="switch"]',
-  '[role="menuitem"]', '[role="tab"]', '[role="option"]',
-].join(', ');
-
-/**
- * True when `e` is Space or Enter on a focused control those keys activate — a
- * button, a link, a checkbox. The key is that control's, so a page-level
- * listener that claims it cancels the control's own activation.
- */
-export function activatesFocusedControl(e: KeyboardEvent): boolean {
-  if (e.key !== ' ' && e.key !== 'Enter') return false;
-  return e.target instanceof Element && e.target.matches(ACTIVATED_BY_KEY);
 }
 
 function keyMatches(eventKey: string, spec: string | readonly string[]): boolean {

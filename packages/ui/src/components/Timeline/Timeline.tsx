@@ -1,12 +1,12 @@
 import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import type { EasingSpec } from '@weasel-js/core';
+import { isEditableTarget } from '@weasel-js/gestures';
 import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
 import s from './Timeline.module.css';
 import { EasingPicker } from './EasingPicker';
 import { Lane } from './Lane';
 import { Ruler } from './Ruler';
 import { Transport, type TransportProps } from './Transport';
-import { isTextEntry } from '../BandEditor/track';
 import { buildLanes, trackAtPath } from './lanes';
 import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
@@ -114,7 +114,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   const selectedTrack = selection ? trackAtPath(tracks, selection.trackPath) : undefined;
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    if (e.defaultPrevented || isTextEntry(e.target)) return;
+    if (e.defaultPrevented || isEditableTarget(e.target)) return;
     if (e.key === 'Escape' && segmentSelection) {
       e.preventDefault();
       setSegmentSelection(null);

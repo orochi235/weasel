@@ -1,5 +1,5 @@
 /** The keyboard channel: window keydown and keyup as `key` and `key-held` input. */
-import { activatesFocusedControl, isEditableTarget } from '../../keyHelpers';
+import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
 import type { Dispatcher } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
@@ -20,7 +20,7 @@ export function keyboardInput(core: DispatchCore): {
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.defaultPrevented || isEditableTarget(e.target) || activatesFocusedControl(e)) return;
+    if (e.defaultPrevented || isEditableTarget(e.target) || focusedControlOwnsKey(e)) return;
     // Every dispatcher hears keys on window; only the one holding them acts.
     if (!core.holdsKeys()) return;
 

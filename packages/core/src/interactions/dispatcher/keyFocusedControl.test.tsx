@@ -99,4 +99,22 @@ describe('a key aimed at a focused control', () => {
     pressOn(aButton(), 'q');
     expect(run).toHaveBeenCalledTimes(1);
   });
+
+  const onSelect = (key: string) => {
+    const run = vi.fn();
+    render(<Canvas keyName={key} run={run} />);
+    const select = document.createElement('select');
+    document.body.appendChild(select);
+    pressOn(select, key);
+    select.remove();
+    return run;
+  };
+
+  it('leaves a letter on a select to its type-ahead', () => {
+    expect(onSelect('v')).not.toHaveBeenCalled();
+  });
+
+  it('still takes Delete from a select, which does not act on it', () => {
+    expect(onSelect('Delete')).toHaveBeenCalledTimes(1);
+  });
 });

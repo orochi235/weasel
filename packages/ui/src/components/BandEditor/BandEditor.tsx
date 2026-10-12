@@ -12,12 +12,13 @@ import {
   type ReactNode,
 } from 'react';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 import { decimal, qty, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
 import { retagBands, untag } from './retag';
-import { isTextEntry, pct } from './track';
+import { pct } from './track';
 import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
 import { Ruler } from './Ruler';
 import { SeamHandle } from './SeamHandle';
@@ -285,7 +286,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     // `x` is a bare letter and Cmd/Ctrl+X is cut: neither may be swallowed
     // when the keystroke belongs to something a consumer put in a band.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (isTextEntry(e.target)) return;
+    if (isEditableTarget(e.target) || focusedControlOwnsKey(e.nativeEvent)) return;
     if (selectedIndex === null || selectedIndex === undefined) return;
     if (e.key === 'l') {
       if (!props.onRangeChange) return;

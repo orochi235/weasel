@@ -1452,18 +1452,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   other edit has a key. It needs a key and a rule for where the split lands (the selected band's
   midpoint on the scale is the obvious one).
 
-- **(P3) ui/routing: "is this key press aimed at a text field" is answered twice.** `isTextEntry`
-  (`packages/ui/src/components/BandEditor/track.ts`) says yes for input, textarea, select, and
-  `isContentEditable`; `isEditableTarget` (`packages/routing/src/interactions/keyHelpers.ts`,
-  re-exported by core) says yes for input, textarea, and contenteditable but not select, and also
-  reads the `contenteditable` attribute. `BandEditor` and `Timeline` use the first, the gesture
-  dispatcher and `keyState` the second. Make one definition (deciding whether a `<select>` counts)
-  and have ui import it; `isTextEntry` also sits in a `BandEditor` module that `Timeline` now
-  reaches into. What turns on `<select>`: counting it stops a tool hotkey from firing under its
-  type-ahead, and also stops Delete and Cmd+Z in the dispatcher for as long as focus rests on a
-  select after a choice is made, which is every bound key, modifier chords included
-  (`useGestureDispatcher.tsx`).
-
 - **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On
   a `px` scale with a step at 16, drag its thumb to 20 and back in one drag: near the start the
   readout shows 17 (or 15 from below), and exactly at the start it stops updating. `Slider` keeps
