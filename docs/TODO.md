@@ -314,8 +314,6 @@ have shipped. What remains:
   - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
-  - `svgLeafFromKit` (`packages/svg/src/fromKit.ts`) writes it for text and image leaves and not
-    for a path leaf.
   - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
   - A world-unit pick tolerance is measured in the node's own frame (`poseContainsRotated`), so
     the transform stretches it with the node.
