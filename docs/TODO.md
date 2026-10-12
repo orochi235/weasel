@@ -168,11 +168,12 @@ Priority tags:
   them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
   from `PointerState`, or carry the client point through `InvocationCtx`.
 
-- **(P3) `move.ts` is 1,400 lines doing four jobs.** The layout drop pass, reparent-on-drop, the
-  reflow-glide bookkeeping, and the translate gesture share one file, with `commitMove` a 250-line
-  closure branching across all of them. Its inline "selected roots plus descendants, less ids a
-  moving frame carries" walk is the same decision `translateTargets` now makes for nudge and clone,
-  and should become that call when the file is split.
+- **(P3) The move action decides which ids a moving frame carries in its own walk.**
+  `captureStartPoses` and `captureFrames` (`actions/move/capture.ts`) collect the dragged roots and
+  their descendants, then mark the ones stored in the frame of another moving node as `carried`.
+  `translateTargets` (`actions/selectionSubtree.ts`) makes the same decision for nudge and clone.
+  Move still needs the full descendant list for its previews, so the fold is `carried` derived from
+  `translateTargets`, not the walk replaced by it.
 
 - **(P3) `useDragHandle`: a drag canceled while the button is still down, then released over its
   source row, delivers a click to the row.** The click guard is removed on cancel so it cannot eat a
@@ -787,7 +788,7 @@ intercepting the press that drags the body.
 
 ### Container layout strategies
 
-- **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
+- **(P3) Reparent-on-layout-drop lives in the move action's `layoutDrop` behavior (`actions/move/commit/layoutDrop.ts`), not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
 - **(P3) Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its
   overflow past the container's last visible line and reports the region through
   `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
