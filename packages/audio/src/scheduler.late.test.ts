@@ -63,8 +63,9 @@ describe('createAudioEngine onLate', () => {
     });
     await engine.unlock();
     engine.playNote({ pitch: 220, when: 500, duration: 50 });
+    const tick = (): void => pass?.();
     ctx._advance(650);
-    pass?.();
+    tick();
     expect(ctx._oscillators).toHaveLength(1);
     expect(onLate.mock.calls).toEqual([[150, 500]]);
   });
