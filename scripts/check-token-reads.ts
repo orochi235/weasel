@@ -88,7 +88,8 @@ export function findUndeclaredReads(
  *  literal one records a stale guess at the value (an old accent, a retired surface)
  *  that reads as though it mattered. Stance slots and hooks are exempt: a theme may
  *  leave those undeclared. Stylesheets only — an icon's SVG markup in TS can render
- *  as an image, outside any document that declares tokens. */
+ *  as an image, outside any document that declares tokens. Core is exempt too: it
+ *  draws on a page that may load no theme, where the fallback is all there is. */
 export function findThemeTokenFallbacks(
   files: readonly SourceFile[],
   themeTokens: ReadonlySet<string>,
@@ -96,7 +97,7 @@ export function findThemeTokenFallbacks(
 ): Offender[] {
   const out: Offender[] = [];
   for (const { path, source } of files) {
-    if (!/\.(css|less)$/.test(path)) continue;
+    if (!/\.(css|less)$/.test(path) || path.startsWith('packages/core/')) continue;
     stripComments(source)
       .split('\n')
       .forEach((line, i) => {

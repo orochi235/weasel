@@ -756,17 +756,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Left as is for now by decision; draw loads `fonts.css` since the
   numeric-helper branch.
 
-- **(P3) Are `ToggleBar`, `ButtonBar` and `OptionsBar` one component?** They
-  differ only in what a segment does, yet `ToggleBar` keeps its own copy of the
-  segmented-control styles (`ToggleBar.module.css`) while the other two share
-  `components/segmentedControl.module.css`. The two files agree again on
-  every rule they share (`segmentedControl.browser.test.tsx` measures the
-  shared one), but a fix made in one still has to be made in the other.
-  What `ToggleBar` adds is a `.segmentMixed` state, a `.variant_minimal` that
-  genuinely diverges (bordered box, square corners, inner dividers, `gap: 0`)
-  and a `.variant_flat`. Folding the files makes the shared module a base that
-  `ToggleBar` overrides through descendant selectors, which `composes` handles
-  badly, so decide the component question first.
+- **(P3) `ToggleBar`'s `minimal` is not `ButtonBar`'s.** The three bars are three components on
+  one skin, `components/segmentedControl.module.css`. The one place it still forks is `minimal`:
+  `ButtonBar` and `OptionsBar` draw bare rounded segments with a gap, and `ToggleBar` adds
+  `.minimalBoxed` over that, a bordered box with square corners and a rule between neighbors.
+  Which look wins, or whether both are variants every bar takes, is a visual call.
 
 - **(P3) Nothing in `@weasel-js/ui` shows a quantity's composites or styles its parts.**
   `presentRange` and `presentVector` exist, but no component calls them: `BandEditor` does not
@@ -794,15 +788,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   swatch tabs against `ToggleBar`'s flat variant and its hex and number inputs against `Input`
   and `NumberField`.
 
-- **(P3) The site's chrome colors come from its own `--ckd-*` palette, not theme tokens.**
-  `canvas-kit-demo.css` declares `--ckd-*`, and it and the demos' stylesheets read them directly, so
-  the site ignores light mode and any theme a reader picks. Its `:root` block already feeds most of
-  them into `--wzl-*` (`--ckd-text` → `--wzl-fg`, `--ckd-muted` → `--wzl-fg-muted`, …), but
-  `--ckd-bg` and `--ckd-surface-2` have no counterpart there, and `--ckd-accent` /
-  `--ckd-accent-dim` split what `--wzl-accent` means. Ruled 2026-10-11: the site follows the
-  reader's mode and theme through the theme tokens, and gives up its fixed dark look. That leaves
-  picking tokens for those four, moving the stylesheets off `--ckd-*`, and dropping the
-  `color-scheme: dark` that pins `canvas-kit-demo.css`.
+- **(P3) Nothing on the site sets the mode.** Its stylesheets read theme tokens now, so the chrome
+  follows `data-wzl-mode` and whatever theme is applied, but no reader can pick one: the demo
+  shell draws the default theme in dark. `useColorModePreference` and a `ColorModeControl` in the
+  sidebar would do it. Look at the pages in light mode first: demo scenes still draw in colors
+  chosen for a dark page (`#d4c4a8` labels in `ViewportDemo` and `AudioDemo`), a few rules darken
+  with `rgba(0, 0, 0, 0.2)` in either mode, and the front page pins its own theme to dark.
 
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
   Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not
@@ -824,12 +815,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Wants a leave signal (and a decision on whether crossing between targets is one), then the loupe's
   aim and the demo's cursor-following panels moved onto bindings. Only jsdom has run a hover binding.
 
-- **(P3) Split `Properties.module.css`.** It is 73 KB and styles the panel, list, rows, group,
-  subpanel, cards, and every field in one file, with three generated stance blocks inside it. Its
-  header says the rules that cross components (`.listPairs > .subpanel`,
-  `.groupBody > :not(.rowColor)`) are why it is one module. Wants those few shared names in one
-  small module the rest compose from, and each component's rules beside the component, as
-  `PropertyHelp.module.css` already is.
 
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
@@ -883,33 +868,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an ordered thumb list — and they were kept separate deliberately: bridging them means teaching `Slider` about the region *between* thumbs (payload, hit-testing, selection), which is the wider change the reconciliation actually requires. The other trigger is `Slider` needing a non-linear axis. A third option arrived with `windease` 1.0 (2026-08-20): its `LayoutStrategy` is public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag into strategy state — so a band control is a strategy you write rather than a control you build, and it brings widened gutter grab targets, `affects` for lock suppression, and — as of 1.2.0 — keyboard-operable gutters with it (`role="separator"` with the value triple, arrows plus Home/End, each keypress synthesized into the same drag event the pointer sends so the strategy clamps once). It ships no band strategy of its own: the two built-ins are `gridStrategy` and `stripStrategy`, and strip is `LayoutStrategy<void>` whose gutters are single-child `resize-x` affordances writing pixel `placement.size`. Mapping domain values onto seams is still the consumer's. Note `Slider` is the former `RangePicker`; its spec carries a banner saying so.
 
-- **(P3) The color literals with no token equivalent.** Arc 4 tokenized what had a token and
-  left the rest rather than inventing a mapping — `check-design-tokens` covers size, weight,
-  radius and the stray danger reds, but not color generally, for that reason. What remains is
-  `Badge`'s status palette (`#7ab8d4`, `#d4a574`), the `GradientHandles` and `Keycaps` literals,
-  and roughly 70 `rgba()` values that are depth geometry (box-shadow insets, gloss gradient
-  stops, the dialog scrim) for which the theme ships no shadow, gloss or scrim token. Each needs
-  a semantic name before it can become one.
+- **(P3) Shading drawn in black or white at an alpha.** Overlays cast `--wzl-shadow` and a dialog
+  dims with `--wzl-scrim`; no hex color is left in a `packages/ui` stylesheet. What is still a
+  literal is shading that belongs to one control's artwork: `Badge`'s bevel fills and text
+  shadow, the default colors of its `Metal` and `Sunbeams` effects, the `Slider` thumb's
+  shadows, the segmented track's well, and the glass ramp's gloss, rim, and drop shadows in
+  `Button` and the selected segment, which `--btn-*` tunes and `--wzl-gloss` fades. Whether any
+  of it wants a theme token, and under what name, is not decided.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
-
-- **(P3) Two CurveEditor handles are still literals.** The `--wzl-handle-size`
-  family covers the 45°-rotated squares; the round ranks did not fold into it,
-  because a radius is not a diamond edge. The plain anchor circle (`r={4}` in
-  `createFunctionLayer`) and the bezier control handle (`HANDLE_RADIUS = 3.5` in
-  `createKeyframeLayer`) are the two left. Either add `--wzl-handle-dot-size`
-  for the round ranks or restate the family in terms of diameter — it is a
-  visual call that wants a browser.
-
-
-- **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a color of its own.** Asked for:
-  move the default treatment off "the aqua" and save it for a theme that wants it. There is no
-  ToggleBar color to move — every surface in the ramp is `var(--wzl-accent)`, which seventeen
-  components read, and `Button.variant_primary` is the same drawing. The panel's bars already sit
-  outside it via the `flat` variant. Ruled 2026-10-11: the default theme draws selected and primary
-  controls flat everywhere, `Button`'s primary included, and the glass becomes something a theme
-  opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
-  theme that turns the glass on.
 
 - **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
   compares stored values, where every other reader decodes. A rail entry for a group drawn under
@@ -942,13 +909,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) Disabled and panel-box rough edges seen in headless Chromium, 2026-10-11.** A disabled
-  `Bar` action button draws at 0.4 where every other disabled cell draws at 0.5. A disabled text
-  area in a `Bar` keeps a full-strength, working "Notes" button that opens to a disabled text
-  area. labkit's "Pin" button on a disabled `ControlPanel` row still works. In light mode a panel
-  box's own 1px `--wzl-border` is invisible on its sunken fill in `PrefsForm` and `SelectionPanel`,
-  because light mode sets `--wzl-border` and `--wzl-surface-sunken` to the same gray; `MotifFrame`
-  got around the same collision by mixing its edge from its own surface (`25b22ee40`).
 
 - **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
   drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
@@ -1784,16 +1744,6 @@ one dead `const` and four stale disable directives.
   long two full runs take on the one self-hosted machine (the job allows 100 minutes), and whether
   the base, measured first, reads differently from the head for that reason alone.
 
-- **(P3) Overlays sit on two unrelated z-index scales.** The theme defines `--wzl-z-toolbar`,
-  `--wzl-z-overlay`, and `--wzl-z-modal` as 10, 20, and 30. `Dialog` (1000), `Toast` (1100),
-  `Tooltip` and `Callout` (1200), core's debug HUDs (900), labkit's `DragGhost` (9999), and
-  `pointerDrag`'s cloned ghost (10000, set in script) are literals; ui's `DragGhost`, labkit's
-  `Lightbox`, `ViewportRegion`, `LabSwitcher`, and `LabShell`, and draw's HUDs read the tokens. So
-  the token named "modal" is below every real modal, a consumer retuning `--wzl-z-modal` moves the
-  lightbox and none of the dialogs, and ui's `DragGhost` (20) dragged out of a list inside a
-  `Dialog` (1000) can draw behind it. Extend the ladder to the layers that exist (hud, modal, toast,
-  popover, drag) and have every site read a token.
-
 - **(P3) labkit inlines siblings that own module state.** `packages/labkit/tsup.config.ts` bundles
   every `@weasel-js/*` sibling except core and theme, and its own comment gives the reason those two
   are external: a module-global registry inlined twice is two registries. The same holds for
@@ -1832,11 +1782,10 @@ one dead `const` and four stale disable directives.
   labkit's and core's `position: fixed` ghosts are offset inside a transformed ancestor (read from
   the CSS and the clone code, not rendered). labkit's should render ui's.
 
-- **(P3) `check:spacing` reads only `packages/ui/src`.** Walked over every package and app
-  stylesheet on 2026-10-11 it reports 300 spacing literals that have a rung: 220 in `apps/site`, 51
-  in `apps/theme-editor`, 18 in labkit's `.less`, 5 in core, 3 each in forge and `apps/draw`.
-  Widening the walk means moving those to tokens first, and each move wants a look at the page.
-  `check:controls` already walks all of them.
+- **(P3) `check:spacing` leaves out `apps/site/CommandPalette/`.** Every other package and app
+  stylesheet is on the space ladder and under the check. `CommandPalette.module.css` still holds 8
+  spacing literals that have a rung, left because another branch was editing that directory;
+  move them and drop the exemption in `scripts/check-spacing.ts`.
 
 - **(P3) `SceneCanvasInner` is one 1,370-line function.** `canvas/SceneCanvas.tsx` is down to
   1,550 lines: its props type, coordinate trace, and the mounters and registrars are files in

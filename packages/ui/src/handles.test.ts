@@ -11,6 +11,8 @@ describe('handle size tokens', () => {
     expect(handleSize('--wzl-handle-size')).toBe(9);
     expect(handleSize('--wzl-handle-size-sm')).toBe(7);
     expect(handleSize('--wzl-handle-size-lg')).toBe(10);
+    expect(handleSize('--wzl-handle-dot-size')).toBe(8);
+    expect(handleSize('--wzl-handle-dot-size-sm')).toBe(7);
   });
 
   it('halves for the SVG rects that centre themselves on a point', () => {
@@ -33,6 +35,18 @@ describe('handle size tokens', () => {
   it('names every rank the theme publishes, so a new one cannot be missed', () => {
     expect([...HANDLE_SIZE_TOKENS]).toEqual([
       '--wzl-handle-size', '--wzl-handle-size-sm', '--wzl-handle-size-lg',
+      '--wzl-handle-dot-size', '--wzl-handle-dot-size-sm',
     ]);
+  });
+
+  // The module-scope read resolves to the same number a literal would, so the
+  // rendered radius cannot tell the two apart; the source text can.
+  it('is what the curve editor sizes its round handles from', () => {
+    const anchors = readFileSync(resolve(here, 'components/CurveEditor/createFunctionLayer.tsx'), 'utf8');
+    expect(anchors).toContain("handleHalf('--wzl-handle-dot-size')");
+    expect(anchors).not.toMatch(/\br=\{[\d.]+\}/);
+    const keys = readFileSync(resolve(here, 'components/CurveEditor/createKeyframeLayer.tsx'), 'utf8');
+    expect(keys).toContain("handleHalf('--wzl-handle-dot-size-sm')");
+    expect(keys).not.toMatch(/RADIUS = [\d.]+/);
   });
 });

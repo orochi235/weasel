@@ -1,0 +1,41 @@
+/* An auto row: the value is not pinned, and the row says only that. The
+   control is hidden rather than removed, so the row keeps the height and the
+   width it has while pinned and nothing below it moves on the toggle —
+   `visibility` and not `opacity`, because a hidden control must also be out of
+   reach of the pointer and the tab ring. The label and the readout are what
+   stays: everything else in the row is the control. */
+.rowAuto > :not(.rowLabel):not(.readout) {
+  visibility: hidden;
+}
+
+.rowAuto > .rowLabel {
+  color: var(--wzl-fg-subtle);
+}
+
+/* An auto row that keeps drawing its control: the value is the one it inherits,
+   drawn in the secondary accent so it reads as not chosen here. */
+.rowAutoInherited {
+  composes: inherited from '@weasel-js/theme/inherited.module.css';
+}
+
+/* Where an inherited value comes from, after the label. */
+.rowHint {
+  font-size: var(--wzl-font-size-2xs);
+  color: var(--wzl-fg-subtle);
+  white-space: nowrap;
+}
+
+/* A stacked row's readout sits inside the label and an inline row's sits after
+   the control, so the label's case reached one and not the other: the same word
+   read `AUTO` in one row and `auto` in the next. An auto row's readout is a
+   word, not a number, so it takes the label recipe and both rows read alike. */
+/* `.autoWord` is the same word outside a row: the help tooltip's last line. */
+.rowAuto .readout,
+.autoWord {
+  font-style: normal;
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-secondary-fg);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+}

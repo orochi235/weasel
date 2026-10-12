@@ -353,6 +353,11 @@
         "type": "color"
       }
     },
+    "scrim": {
+      "value": "rgba(0, 0, 0, 0.4)",
+      "type": "color",
+      "description": "What a modal dims the page behind it with."
+    },
     "code-keyword": {
       "by": "mode",
       "dark": {
@@ -698,6 +703,12 @@
       "alpha": 0.4,
       "description": "Axes and emphasized dividers."
     },
+    "border-on-sunken": {
+      "value": "{fg}",
+      "type": "color",
+      "alpha": 0.12,
+      "description": "The edge of a box filled with surface-sunken. Stepped from the text color, because light mode's border is the sunken fill's own gray."
+    },
     "curve-color": {
       "value": "{accent-strong}",
       "type": "color",
@@ -972,6 +983,16 @@
       "type": "dimension",
       "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
     },
+    "handle-dot-size": {
+      "value": "8px",
+      "type": "dimension",
+      "description": "Diameter of a round handle — a plain anchor on a curve. Its own rank beside handle-size, because a circle and a diamond of one edge do not read as one size."
+    },
+    "handle-dot-size-sm": {
+      "value": "7px",
+      "type": "dimension",
+      "description": "A round handle that belongs to another point — a bezier control handle at the end of its stem."
+    },
     "checker-a": {
       "value": "{border}",
       "type": "color",
@@ -1002,6 +1023,11 @@
       "type": "dimension",
       "description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default."
     },
+    "gloss": {
+      "value": 0,
+      "type": "number",
+      "description": "How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow."
+    },
     "glass-blur": {
       "value": "3px",
       "type": "dimension",
@@ -1028,15 +1054,38 @@
     },
     "z-toolbar": {
       "value": 10,
-      "type": "number"
+      "type": "number",
+      "description": "Chrome pinned over a workspace."
     },
     "z-overlay": {
       "value": 20,
-      "type": "number"
+      "type": "number",
+      "description": "A panel or readout floating over the chrome."
+    },
+    "z-hud": {
+      "value": 900,
+      "type": "number",
+      "description": "Debug readouts, over the app and under anything modal."
     },
     "z-modal": {
-      "value": 30,
-      "type": "number"
+      "value": 1000,
+      "type": "number",
+      "description": "A dialog or lightbox and its scrim."
+    },
+    "z-toast": {
+      "value": 1100,
+      "type": "number",
+      "description": "Toasts, which stay readable over a dialog."
+    },
+    "z-popover": {
+      "value": 1200,
+      "type": "number",
+      "description": "Tooltips and callouts, which a dialog or a toast can open."
+    },
+    "z-drag": {
+      "value": 10000,
+      "type": "number",
+      "description": "A drag ghost, over everything it can be dragged across."
     },
     "leading-tight": {
       "value": 1,

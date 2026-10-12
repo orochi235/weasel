@@ -5,4 +5,5 @@ import type { ButtonBarVariant } from './ButtonBar';
 export const BUTTON_BAR_VARIANT_ICONS: Readonly<Record<ButtonBarVariant, IconName>> = {
   default: 'variantSegmented',
   minimal: 'variantSegmentedMinimal',
+  flat: 'variantSegmentedFlat',
 };

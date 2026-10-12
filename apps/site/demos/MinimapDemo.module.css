@@ -1,12 +1,12 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .header {
   display: flex;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: center;
 }
 
@@ -15,27 +15,27 @@
 }
 
 .hint {
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .row {
   display: flex;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: flex-start;
 }
 
 .minimapPanel {
-  padding: 8px;
-  border: 1px solid var(--ckd-border);
+  padding: var(--wzl-space-4);
+  border: 1px solid var(--wzl-border-strong);
   background: rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .minimapTitle {
   font-size: 11px;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

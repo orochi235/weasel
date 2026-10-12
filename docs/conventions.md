@@ -182,8 +182,10 @@ stops shrinking.
 Spacing is the `space-1` … `space-8` ladder, 2px rungs. `space-xs/sm/md/lg` are
 aliases for rungs 2/4/6/8. It does not vary by density — the rungs are finer
 than any density factor could resolve without rounding two of them onto the same
-pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal in
-`packages/ui/src` that has a rung.
+pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal that
+has a rung, in any package or app stylesheet. Core, which draws on a page that
+may load no theme, writes the rung with its px as the fallback; it is the one
+package `check:token-reads` lets do that.
 
 Control heights are four ranks, `control-h-xs` / `-sm` / `control-h` /
 `tb-height` — 18/20/24/28 at `comfortable`. A control box sizes itself from one
@@ -196,6 +198,37 @@ What deliberately does *not* follow density: icons and drawn glyphs (a chevron,
 a checkmark, a switch track), slider tracks and thumbs, and handles — those have
 their own tokens or are artwork. Scaling them with the type ramp makes them
 blurry rather than bigger.
+
+### Gloss
+
+`--wzl-gloss` is how much Aqua glass a boxed `Button` and a selected segment of
+`ToggleBar`, `ButtonBar`, or `OptionsBar` wear, from 0 to 1. The default theme
+sets 0: a flat accent fill, and for a secondary button the raised surface inside
+a 1px `--wzl-border-strong` line. At 1 they draw the ramp, the specular gloss,
+the rim, and the drop shadow. A theme turns the glass on by setting the token,
+and so does any ancestor that declares it. Each rule lays its flat fill over the
+ramp and fades the fill out as the gloss and shadows fade in, so a control that
+draws the ramp reads the token for every part of it.
+
+### Layers
+
+Anything that draws over the page takes its `z-index` from the `--wzl-z-*`
+ladder, so a consumer who retunes a rung moves every layer on it:
+
+| Rung | Value | Holds |
+|---|---|---|
+| `--wzl-z-toolbar` | 10 | chrome pinned over a workspace |
+| `--wzl-z-overlay` | 20 | a panel or readout floating over the chrome |
+| `--wzl-z-hud` | 900 | core's debug HUDs |
+| `--wzl-z-modal` | 1000 | `Dialog`, labkit's lightbox |
+| `--wzl-z-toast` | 1100 | toasts |
+| `--wzl-z-popover` | 1200 | `Tooltip`, `Callout` |
+| `--wzl-z-drag` | 10000 | drag ghosts |
+
+Core reads its rungs with a fallback (`var(--wzl-z-hud, 900)`), since it draws
+on a page that may load no theme. A small literal that orders siblings inside one stacking
+context is fine. `npm run check:layers` fails on a `z-index` literal, in a
+stylesheet or in script, at or above the lowest rung.
 
 ### Panel labels
 

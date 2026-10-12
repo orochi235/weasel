@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ladder, offenders } from './check-spacing';
+import { isStylesheet, ladder, offenders } from './check-spacing';
 
 const RUNGS = ladder(`
 :root {
@@ -54,5 +54,19 @@ describe('offenders', () => {
 
   it('passes a value already on the ladder', () => {
     expect(offenders(file('.a { gap: var(--wzl-space-4); }'), RUNGS)).toEqual([]);
+  });
+});
+
+describe('isStylesheet', () => {
+  it('takes every package and app stylesheet', () => {
+    expect(isStylesheet('packages/ui/src/components/Button/Button.module.css')).toBe(true);
+    expect(isStylesheet('packages/labkit/src/trial/Trial.less')).toBe(true);
+    expect(isStylesheet('apps/site/canvas-kit-demo.css')).toBe(true);
+  });
+
+  it('leaves out stories, the token showcase, and source files', () => {
+    expect(isStylesheet('packages/ui/src/components/Button/Button.stories.module.css')).toBe(false);
+    expect(isStylesheet('packages/ui/src/Foundations/Spacing.module.css')).toBe(false);
+    expect(isStylesheet('packages/ui/src/components/Button/Button.tsx')).toBe(false);
   });
 });

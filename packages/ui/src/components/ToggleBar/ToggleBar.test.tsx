@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, fireEvent, screen } from '@testing-library/react';
+import { ButtonBar } from '../ButtonBar/ButtonBar';
 import { ToggleBar } from './ToggleBar';
 
 const items = [
@@ -293,5 +294,21 @@ describe('ToggleBar tooltips', () => {
     const segs = container.querySelectorAll<HTMLButtonElement>('[role="radio"]');
     expect(segs[0].tabIndex).toBe(-1);
     expect(segs[1].tabIndex).toBe(0);
+  });
+});
+
+// The module proxy hashes a class per stylesheet, so equal names mean one sheet.
+describe('ToggleBar skin', () => {
+  it('draws its segments from the stylesheet ButtonBar and OptionsBar share', () => {
+    render(
+      <>
+        <ToggleBar ariaLabel="View" items={[{ value: 'a', label: 'A' }]} value={null} onChange={() => {}} />
+        <ButtonBar ariaLabel="Do" items={[{ value: 'b', label: 'B', onAction: () => {} }]} />
+      </>,
+    );
+    const toggle = screen.getByRole('radio', { name: 'A' });
+    const button = screen.getByRole('button', { name: 'B' });
+    expect(toggle.className).toBe(button.className);
+    expect(toggle.parentElement!.className).toBe(button.parentElement!.className);
   });
 });

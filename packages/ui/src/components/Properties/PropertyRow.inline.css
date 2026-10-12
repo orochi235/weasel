@@ -1,0 +1,271 @@
+/* ── Inline layout: label sits to the left of the control. ────── */
+.rowInline {
+  flex-direction: row;
+  align-items: var(--wzl-prop-row-align, center);
+  /* Label on the left edge, field on the right: fields of different widths
+     still line up as one rail down the column. */
+  justify-content: space-between;
+  gap: var(--wzl-space-3);
+}
+
+.rowInline .rowLabel {
+  /* The label never gives: shrinking it breaks a name like `silhouette_width`
+     mid-word, since it carries no break opportunity of its own. The field is
+     what yields as the column narrows. */
+  flex: 0 0 auto;
+}
+
+/* A row past one line — a textarea or list editor beside the label, or a label
+   that wrapped — reads from the top: centering puts the label's first line
+   halfway down the control, level with nothing. First baseline sets the label's
+   first line on the control's first line of text, and a control with no text
+   (a switch, a box) sits on that line the way it does in running text. Outranks
+   `align` and the select row's text alignment, which place a one-line row.
+   `data-multiline` is measured by the row. */
+.row.rowInline:has(textarea, [role='group'] > ul),
+.row.rowInline[data-multiline],
+.row.rowCheckbox:not(.rowBlock)[data-multiline] {
+  align-items: first baseline;
+}
+
+.row.rowColor:not(.rowBlock)[data-multiline] > .rowLabel,
+.row.rowColor:not(.rowBlock)[data-multiline] > input[type='color'],
+.row.rowColor:not(.rowBlock)[data-multiline] > .colorField > :first-child {
+  align-self: first baseline;
+}
+
+/* A textarea's baseline is its last line in some engines, so beside one the
+   label goes to the top and steps down to the textarea's first line instead. */
+.rowInline:has(textarea) > .rowLabel {
+  align-self: flex-start;
+  padding-block-start: calc(var(--wzl-space-2) + 1px);
+}
+
+.rowInline > input,
+.rowInline > select,
+.rowInline > .toggleBar {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Fields size to their content, not to the row they happen to sit in: a number
+   is a handful of digits and a short string is a word. Stated as a width and
+   not as a `min(100%, …)`, because an auto-width sidebar sizes to what its
+   fields ask for and a percentage asks for an input's 20-character default.
+   Only a field set in the row itself: a surface that wraps its control in a
+   slot of its own sizes it there. */
+.row > .numberField,
+.row > .fieldUnitGroup > .numberField {
+  flex: 0 1 auto;
+  width: var(--wzl-prop-number-width, 9ch);
+  max-width: 100%;
+}
+
+.row > .textField {
+  width: var(--wzl-prop-text-width, 16ch);
+  max-width: 100%;
+}
+
+/* The property rows' fields set their text at the weight the readouts use.
+   The attribute outranks the field's own `font: inherit`. */
+.numberField input[type='text'],
+.textField input[type='text'] {
+  font-weight: var(--wzl-font-weight-medium);
+}
+
+/* A select is as tall as the fields around it. */
+.select {
+  --wzl-select-h: var(--wzl-field-h, var(--wzl-control-h));
+}
+
+/* Anywhere in a property row, however deep a surface wraps it, a select drops
+   its box and reads as its value: a bold word, underlined. A dense row of
+   settings reads its choices as words, and 10px of caret is a tenth of a short
+   value's width. The words are set at the label's size, so label and value
+   share a baseline. Set on the row because these hooks inherit. */
+.row {
+  --wzl-select-font-size: var(--wzl-font-size-sm);
+  --wzl-select-weight: var(--wzl-font-weight-bold);
+  --wzl-select-bg: transparent;
+  --wzl-select-border: 1px solid transparent;
+  --wzl-select-pad: 0;
+  --wzl-select-chevron: none;
+  --wzl-select-underline: underline;
+  --wzl-select-focus-border: transparent;
+  --wzl-select-focus-shadow: none;
+  --wzl-select-focus-outline: 1px solid var(--wzl-focus-ring);
+}
+
+/* The rules from here to the select are for a native input a caller hands a
+   row directly; every field kind draws a kit field that brings its own frame,
+   and sits deeper than a child. */
+.row > input[type='number']:not(.readoutInput) {
+  width: var(--wzl-prop-number-width, 9ch);
+  max-width: 100%;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.row > input[type='text']:not(.readoutInput) {
+  width: var(--wzl-prop-text-width, 16ch);
+  max-width: 100%;
+}
+
+/* An inline row stays on one line: the field gives up width to the label as the
+   column narrows, down to a floor that still shows a value. */
+.rowInline > input:not(.readoutInput),
+.rowInline > .numberField,
+.rowInline > .fieldUnitGroup,
+.rowInline > .textField {
+  flex: 0 1 auto;
+  min-width: 4ch;
+}
+
+/* Inline, a select fills the space beside its label and sets its value against
+   the chevron, like a native one handed to the row. */
+.rowInline > .select {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 4ch;
+  --wzl-select-align: right;
+}
+
+/* Two runs of text on one line read as one line or they read as broken, and
+   centering two boxes is not aligning the text in them: a 13px label centered
+   against a 15px value left the two baselines 1px apart, which is exactly the
+   distance the eye reads as a mistake. Only the rows whose control is text — a
+   checkbox or a swatch has no baseline of its own and would hang off the line
+   instead. */
+.rowInline:has(> .select) {
+  align-items: var(--wzl-prop-row-align-text, baseline);
+}
+
+/* A select sized to its longest option starts wherever that width leaves it, so
+   a column of them scatters its values. Filling the row and setting the value
+   against the chevron gives them one rail. */
+.rowInline > select {
+  flex: 1 1 auto;
+  min-width: 4ch;
+  text-align: right;
+  text-align-last: right;
+}
+
+.rowInline input[type='range'] {
+  width: auto;
+}
+
+.row > input[type='text']:not(.readoutInput),
+.row > input[type='number'] {
+  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  /* Height is stated rather than padded to, because the display face's line box
+     is half again its font size — padding a field to size makes it 27px tall
+     around 13px of text and no amount of trimming the padding fixes that. */
+  height: var(--wzl-field-h, var(--wzl-control-h));
+  padding: 0 var(--wzl-field-pad-x);
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
+}
+
+/* Numbers right-align so a column of them shares a decimal position; text does
+   not, so this cannot live in the rule the two share. */
+.row > input[type='number'] {
+  text-align: right;
+}
+
+/* Chrome reserves the spin-button gutter at the right edge whether or not the
+   arrows are painted, so a right-aligned value stops ~20px short of its own
+   border and the row reads as if something is missing from that space. The
+   panel drives numbers by typing and dragging, never by the steppers.
+   `.readoutInput` has always dropped them; this is the same removal for the
+   typed field beside it. */
+.row > input[type='number']::-webkit-inner-spin-button,
+.row > input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.row > input[type='text']:not(.readoutInput):focus,
+.row > input[type='number']:focus {
+  outline: none;
+  border-color: var(--wzl-focus-ring);
+  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
+}
+
+/* A dialog row's trigger reads as a field holding the value's summary, so a
+   column of them lines up with the text fields around it. */
+.dialogTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  width: 100%;
+  min-width: 4ch;
+  height: var(--wzl-field-h, var(--wzl-control-h));
+  padding: 0 var(--wzl-field-pad-x);
+  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
+  text-align: start;
+  cursor: pointer;
+}
+
+.rowInline > .dialogTrigger {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.dialogTrigger:hover {
+  border-color: var(--wzl-border-strong);
+}
+
+.dialogTrigger:focus-visible {
+  outline: none;
+  border-color: var(--wzl-focus-ring);
+  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
+}
+
+.dialogSummary {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialogGlyph {
+  flex: 0 0 auto;
+  color: var(--wzl-fg-subtle);
+}
+
+/* A native select handed to a row renders borderless — chevron only,
+   transparent background, no chrome. Keep the native arrow via appearance: auto
+   so users still see something clickable. */
+.row > select {
+  background: transparent;
+  color: var(--wzl-fg);
+  border: 0;
+  border-radius: 0;
+  height: var(--wzl-field-h, var(--wzl-control-h));
+  padding: 0;
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size);
+  line-height: var(--wzl-leading-tight);
+  cursor: pointer;
+}
+
+/* An outline rather than the boxed family's inset ring: a property-row select
+   is borderless, so there is no border to recolour. */
+.row > select:focus {
+  outline: 1px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
+}

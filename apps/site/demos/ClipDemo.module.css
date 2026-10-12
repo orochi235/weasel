@@ -1,12 +1,12 @@
 .top {
   display: flex;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: flex-start;
 }
 
 .code {
   margin: 0;
-  padding: 8px;
+  padding: var(--wzl-space-4);
   width: 320px;
   height: 260px;
   box-sizing: border-box;
