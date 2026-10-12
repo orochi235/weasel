@@ -1406,25 +1406,22 @@ only story runner in the repo.
   do nothing. Where a story holds a value in state, as `Timeline`'s playhead and
   `Jog`'s index are, the control only sets where it starts.
 
-- **(P3) A control read from a string-union prop lists its options in the compiler's order.**
-  `controlFor` (`packages/forge/src/vite/propTypes.ts`) takes a union's members as the checker
-  returns them, which is not the order the type was written in: `Button`'s `variant` reads link,
-  ghost, primary, secondary. Reading the order from the declaration's type node would fix it where
-  the union is written out, and leave an aliased or computed union as it is.
-
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
   no Marks section and no tool rail. The removed wiring — the
   story as the one annotation target, sized and captured through the trial's
   frame registry — is in `git log --grep 'take marks out of forge'`.
 
-- **(P3) The CSS Vars panel saves scale edits only.** A single token edited by
-  hand — a color, a step changed after its scale — stays a per-trial override,
-  because a token's value comes from a semantic rule, a ramp or a pin and the
-  panel has no mapping back to which. Scale edits save through
-  `applyScaleEdits` (`packages/forge/src/shell/cssVars/saveScales.ts`). A save
-  also refuses a param that differs by `mode` while the trial's mode is Auto,
-  since the panel does not know which scheme the frame resolved.
+- **(P3) The CSS Vars panel does not save a token the theme derives.** A token
+  edited by hand saves when the definition writes its value out: a pin, a
+  component or a literal semantic, in the branch the trial's globals read
+  (`applyTokenEdits`, `packages/forge/src/shell/cssVars/saveTokens.ts`). One
+  that follows another token, a ramp, a contrast rule or an alpha stays a
+  per-trial override, and so does a scale step changed after its scale, because
+  a value written over it would drop the derivation for every mode and density
+  the branch covers. A save also refuses a param that differs by `mode` while
+  the trial's mode is Auto, since the panel does not know which scheme the
+  frame resolved.
 
 - **(P3, isolated stories only) A forge story whose `viewport` the index cannot
   read reloads its frame once when first opened.** The index reads a native
@@ -1437,11 +1434,6 @@ only story runner in the repo.
   general fix keeps the frame through that remount (it is already placed by hand,
   and `moveBefore` moves an iframe without reloading it), or has `Trial` keep
   the body at one tree position whether or not there is a stage.
-
-- **(P3) At a 140px trial sidebar the forge Globals group's label and value columns overlap** ("MODE"
-  over "Lab"). Seen in forge on 2026-09-28; 140px is the narrowest a drag makes the sidebar of a
-  trial's `Split` (`packages/labkit/src/primitives/Split.tsx`), and a tile under 300px now lays the
-  sidebar out narrower still, which no browser run has looked at yet.
 
 - **(P3) windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders
@@ -1458,9 +1450,14 @@ only story runner in the repo.
   `/@fs/…/SidebarRegion.less` asked for directly had the new ones, and a `touch` changed nothing;
   after an edit to `packages/forge/src/shell/cssVars/CssVarsPanel.tsx` the page ran the old
   component across reloads. No `hmr update` line reached the log, so the watcher looks dead rather
-  than one import edge untracked. A restart served the new code every time. Not checked: whether
-  the server wake owns does the same, or whether how the file was written matters (these edits
-  replaced the file whole).
+  than one import edge untracked. A restart served the new code every time. Checked 2026-10-12
+  against a real vite server on a temp root, and neither reproduces it: a file replaced whole (written
+  beside and renamed over) is served new each time, for a module and for a stylesheet another one
+  imports (`packages/forge/src/vite/replacedFile.test.ts`), and it still is with 13,000 more
+  directories under the root, about what 26 worktrees in `.claude/worktrees` add to the main
+  checkout's watch. Read, not run: nothing in wake's `WAKE_EXTRA` path or forge's plugin touches the
+  watcher. Not checked: the real server on the repo root, where it has to be watched failing, and
+  whether the server wake owns does the same.
 
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any

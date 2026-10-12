@@ -17,7 +17,7 @@ import {
   useTrialId,
 } from '@weasel-js/labkit';
 import { THEME_SOURCES, TOKEN_MANIFEST } from '@weasel-js/theme';
-import { scale as generateScale, httpThemeApi, type ThemeApi } from '@weasel-js/theme/engine';
+import { scale as generateScale, type ThemeApi } from '@weasel-js/theme/engine';
 import { historyKey } from '@weasel-js/core';
 import { Button, Icon, SearchIcon } from '@weasel-js/ui';
 import { useCallback, useContext, useMemo, useState } from 'react';
@@ -26,8 +26,8 @@ import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { useTrialFrame } from '../trialFrames';
 import { useCssOverrides } from './overrides';
-import { applyScaleEdits, type ScaleEdit, selectionFor } from './saveScales';
 import { SectionJump } from './SectionJump';
+import { THEME_NAME, TOKEN_PREFIX, type UnsavedScale, useThemeSave } from './useThemeSave';
 import { useVarsHistory, type VarsState } from './varsHistory';
 
 type Tab = 'theme' | 'story';
@@ -38,8 +38,6 @@ const TABS: readonly ToggleBarItem<Tab>[] = [
 ];
 
 const MANIFEST = new Map(TOKEN_MANIFEST.map((token) => [token.name, token]));
-
-const THEME_NAME = 'weasel';
 
 interface ScaleSource {
   readonly name: string;
@@ -56,7 +54,7 @@ const literal = (v: unknown): v is number => typeof v === 'number';
 const SCALE_SOURCES: readonly ScaleSource[] = Object.entries(THEME_SOURCES[THEME_NAME]?.scales ?? {}).flatMap(([name, def]) => {
   if (!Array.isArray(def.steps)) return [];
   const steps = def.steps as readonly string[];
-  const tokens = steps.map((step) => `--wzl-${name}-${step}`);
+  const tokens = steps.map((step) => `${TOKEN_PREFIX}${name}-${step}`);
   const group = MANIFEST.get(tokens[0] ?? '')?.group;
   if (!group) return [];
   const factors = Array.isArray(def.factors) && def.factors.every(literal) ? (def.factors as number[]) : null;
@@ -88,8 +86,6 @@ function scaleValues(source: ScaleSource, next: TokenScale): [string, string][] 
     return value !== undefined && name !== undefined ? [[name, value]] : [];
   });
 }
-
-type Notice = { readonly trialId: string | null; readonly tone: 'saved' | 'error'; readonly text: string };
 
 /** A scale as its steps stand: the definition's rule, with the base read back from the values the frame reports. */
 function standingScale(source: ScaleSource, amounts: readonly number[]): TokenScale {
@@ -123,7 +119,7 @@ const NO_GLOBALS: Globals = {};
 
 /**
  * Shows and overrides the CSS variables of the trial it is rendered inside: the theme's tokens, or what its frame
- * reports. Scale edits can be saved into the theme's definition file.
+ * reports. A scale edit, and a token the theme writes out, can be saved into the theme's definition file.
  */
 export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelProps = {}) {
   const trialId = useTrialId();
@@ -201,68 +197,19 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   };
 
   // A scale is saved only while every one of its steps still holds what its edit generated: a step edited by hand
-  // after the scale is an override the definition has no place for.
+  // after the scale is an override the scale has no place for.
   const unsaved = useMemo(
     () =>
-      SCALE_SOURCES.flatMap((source) => {
+      SCALE_SOURCES.flatMap((source): UnsavedScale[] => {
         const edit = edited[source.group];
         if (!edit || !source.tokens.some((name) => overrides[name] !== undefined)) return [];
-        const values = scaleValues(source, edit);
-        return values.every(([name, value]) => overrides[name] === value) ? [{ source, edit }] : [];
+        const { name, group, tokens } = source;
+        const clean = scaleValues(source, edit).every(([token, value]) => overrides[token] === value);
+        return clean ? [{ name, group, tokens, edit: { base: edit.base, rule: edit.rule } }] : [];
       }),
     [edited, overrides],
   );
-  const [saving, setSaving] = useState(false);
-  const [held, setHeld] = useState<Notice | null>(null);
-  const notice = held?.trialId === trialId ? held : null;
-  const setNotice = (next: Omit<Notice, 'trialId'> | null) => setHeld(next && { ...next, trialId });
-  const save = async () => {
-    setSaving(true);
-    setNotice(null);
-    try {
-      const api = themeApi ?? httpThemeApi();
-      const stored = await api.get(THEME_NAME);
-      const file = `themes/${THEME_NAME}.json`;
-      if (JSON.stringify(stored.definition) !== JSON.stringify(THEME_SOURCES[THEME_NAME])) {
-        setNotice({ tone: 'error', text: `${file} has changed since this page loaded. Reload to edit against it.` });
-        return;
-      }
-      const edits: Record<string, ScaleEdit> = Object.fromEntries(
-        unsaved.map(({ source, edit }) => [source.name, { base: edit.base, rule: edit.rule }]),
-      );
-      const next = applyScaleEdits(stored.definition, edits, selectionFor(stored.definition.axes ?? {}, globals));
-      if (!next.ok) {
-        setNotice({ tone: 'error', text: next.message });
-        return;
-      }
-      const result = await api.put(THEME_NAME, next.definition, stored.hash);
-      if (result.status === 'conflict') {
-        setNotice({ tone: 'error', text: `${file} changed on disk while saving. Nothing was written; reload to edit against it.` });
-        return;
-      }
-      if (result.status === 'invalid') {
-        setNotice({ tone: 'error', text: result.message });
-        return;
-      }
-      // What was saved is the theme's own now, so no step from before the save has a value to go back to.
-      const saved = new Set(unsaved.flatMap(({ source }) => source.tokens));
-      const groups = new Set(unsaved.map(({ source }) => source.group));
-      const now = history.current();
-      history.reset({
-        overrides: Object.fromEntries(Object.entries(now.overrides).filter(([name]) => !saved.has(name))),
-        scales: Object.fromEntries(Object.entries(now.scales).filter(([group]) => !groups.has(group))),
-      });
-      setNotice(
-        result.regenerated || result.problems.length === 0
-          ? { tone: 'saved', text: `Saved to ${file}.` }
-          : { tone: 'error', text: `Saved to ${file}, but the tokens were not regenerated: ${result.problems.join('; ')}` },
-      );
-    } catch (e) {
-      setNotice({ tone: 'error', text: `Saving needs forge's dev server, which did not answer: ${(e as Error).message}` });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { pending, saving, notice, save } = useThemeSave({ trialId, globals, themeApi, scales: unsaved, overrides, history });
   const onCollapsedChange = useCallback(
     (category: TokenCategory, collapsed: boolean) => setFolds((prev) => ({ ...prev, [category]: collapsed })),
     [setFolds],
@@ -309,11 +256,11 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
             </Button>
           </div>
         </div>
-        {tab === 'theme' && (unsaved.length > 0 || notice) ? (
+        {tab === 'theme' && (pending || notice) ? (
           <div className="fg-css-vars__save">
-            {unsaved.length > 0 ? (
+            {pending ? (
               <Button variant="primary" size="sm" loading={saving} disabled={saving} onClick={() => void save()}>
-                Save scales to theme
+                Save to theme
               </Button>
             ) : null}
             {notice ? (
@@ -335,7 +282,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
         <div className="fg-css-vars__list">
           <TokenPanel
             tokens={shown}
-            namePrefix="--wzl-"
+            namePrefix={TOKEN_PREFIX}
             onChange={write}
             scales={scales}
             onScaleChange={onScaleChange}
