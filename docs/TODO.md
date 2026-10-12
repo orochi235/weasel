@@ -42,11 +42,11 @@ Priority tags:
   time. Fine while `rect` / `text` / `image` are unconditionally decorative;
   revisit when a stateful-claims widget appears.
 
-- **(P3) apps/draw enters most modes by double-click only.** Path-edit's `Enter` is bound
-  (`apps/draw/src/modality/shortcuts.ts`); the other modes with an `entry` shortcut, free-transform
-  and crop, are not, since nothing says what target each would take from the selection. Draw also
-  still enters every mode from `SceneCanvas`'s `onDoubleClick` observer rather than from
-  `entry.trigger`, which nothing reads.
+- **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit, isolation, and text-edit
+  from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
+  (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
+  definitions declare. Binding it means a double-click entry beside the kit's own `enterPathEdit`
+  binding, so it is the same work as "draw: two owners for which mode the editor is in".
 - **(P3) A press on empty canvas can't be an ambient binding beside the select tool.**
   `select.pick` binds `pointerDown` on empty space at active scope, and active
   outranks ambient, so an ambient contribution's `pointerDown` never fires while

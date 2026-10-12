@@ -341,10 +341,12 @@ function EditorWithSharedScene({
       return (scene.get(id)?.data as { path?: unknown } | undefined)?.path != null ? id : null;
     },
     startPathEdit: (): void => { actionsReg?.trigger('enterPathEdit'); },
+    selection: (): readonly string[] => selection.get(),
   });
   const modalityKeys = useMemo(() => modalityShortcuts(modality.machine, {
     pathToEdit: () => pathEditEntry.current.pathToEdit(),
     startPathEdit: () => pathEditEntry.current.startPathEdit(),
+    selection: () => pathEditEntry.current.selection(),
   }), [modality.machine, pathEditEntry]);
 
   // ── Modality SceneCanvas callbacks ────────────────────────────────────────
