@@ -186,7 +186,7 @@ function Register({ action }: { action: Action }) {
 }
 
 /**
- * A toolbar: a root drawn as a bar, previewed as the bar itself. The Actions list under the tree holds what the
+ * A toolbar: a root drawn as a bar, previewed as the bar itself. The Actions list in the shelf holds what the
  * registry above the editor can fire, and one dragged into the tree lands as a pref that fires it. Flatten fires
  * a key nothing registered answers to, so its row is marked and its button is dead.
  */

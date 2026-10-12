@@ -418,13 +418,13 @@
     "longestFunction": 221
   },
   "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
-    "longestFunction": 194
+    "longestFunction": 193
   },
   "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
     "longestFunction": 190
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
-    "longestFunction": 198
+    "longestFunction": 189
   },
   "packages/ui/src/components/Prefs/RailLayout.tsx": {
     "longestFunction": 131

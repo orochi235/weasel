@@ -41,7 +41,7 @@ test('the asset list fills the editor\'s far column, beside the preview and the 
   const aside = box(screen.getByRole('complementary', { name: 'Sidebar' }));
   const bar = box(screen.getByRole('group', { name: 'Schema tools' }));
   expect(aside.left).toBeGreaterThanOrEqual(box(preview()).right);
-  expect(aside.left).toBeGreaterThanOrEqual(box(screen.getByRole('region', { name: 'Changes' })).right);
+  expect(aside.left).toBeGreaterThanOrEqual(box(screen.getByRole('region', { name: 'Export' })).right);
   expect(Math.abs(aside.right - editor.right)).toBeLessThan(2);
   expect(aside.top).toBeGreaterThanOrEqual(bar.bottom);
   expect(Math.abs(aside.bottom - editor.bottom)).toBeLessThan(2);
