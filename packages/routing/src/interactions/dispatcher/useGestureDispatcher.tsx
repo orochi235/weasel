@@ -26,7 +26,6 @@ import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import type { InputEvent } from './matcher';
 import { LONG_PRESS_MS } from './longPressState';
 import { underPointer, type UnderPointer } from './underPointer';
-import type { BodyTarget } from '@weasel-js/gestures';
 import { longPressEvents, type PressFacts } from './pressFacts';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { resolveCursorTier } from '@weasel-js/cursor';
