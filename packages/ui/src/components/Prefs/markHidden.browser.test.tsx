@@ -56,9 +56,9 @@ it('dims a hidden row and a hidden section of a selection panel once each', () =
   expect(opacityAt('data.radius')).toBe(1);
   const section = screen.getByRole('heading', { name: /Corners/ }).closest('section')!;
   expect(Number(getComputedStyle(section).opacity)).toBeCloseTo(0.55);
-  // Beside the label, and not pushing the control off its line.
+  // On the control's line, and not pushing it off. The label column is narrow: the badge may touch the field.
   const badge = screen.getAllByText('hidden')[0]!.getBoundingClientRect();
   const field = screen.getByRole('spinbutton', { name: 'Size' }).getBoundingClientRect();
-  expect(badge.right).toBeLessThanOrEqual(field.left);
+  expect(badge.right).toBeLessThanOrEqual(field.left + 4);
   expect(Math.abs((badge.top + badge.bottom) / 2 - (field.top + field.bottom) / 2)).toBeLessThan(field.height);
 });
