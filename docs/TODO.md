@@ -716,6 +716,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
+- **(P3) A closed `PrefsStore` takes writes and drops them.** Nothing on `PrefsStore` says it is
+  closed, and `set` on a closed one updates memory and never persists, with no warning. Two
+  mounted `usePrefsStore` callers naming one `storage` and `prefix` with different schemas hit
+  it: the later render takes the prefix and the other is left holding the closed store.
+  `apps/draw/src/dev/PrefSchemaPage.tsx` still opens through a module singleton and could move
+  to the hook.
+
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
   foldable rail unfolds an entry only while the open page is it or under it, so a section holding

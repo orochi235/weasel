@@ -276,9 +276,9 @@ Two on one target combine, by two rules:
   rig clip. Several holds on a target are alternatives, mixed by weight; weights
   short of 1 leave the rest to the committed value. On an
   angle axis the holds meet at their average direction by weight, so two turn the
-  short way toward each other. A hold given `axes` holds only those, so an arm
-  solved by IK sits beside the clips holding the rest of a rig
-  (`jointAxes(skeleton, names)`).
+  short way toward each other. A hold given `axes` holds only those, each by
+  the target's name for it or by index: `axes: ['y']` on a point, and a rig's joints by name, so
+  an arm solved by IK sits beside the clips holding the rest of a rig.
 - **A hold covers the committed value on its way too.** The move a destination
   makes in the committed value is behind the hold, by the hold's weight on each
   axis: `tween({ target, to })` under a full hold shows nothing, and under one at
@@ -357,17 +357,17 @@ function or a target.
 | `target` | `target: 'pose:box'` | `ClipBinder.target(name)` |
 | `interpolate` | `interpolate: 'oklab'` | `ClipBinder.interpolate[name]` |
 | a function `weight` | `weight: 'fade'` | `ClipBinder.weight(name)` |
-| `axes`, on a target with names for them | `axes: ['armL', 'foreL']` | `ClipBinder.axes(target, names)` |
+| `axes`, by name or by index | `axes: ['armL', 'foreL']` | nothing: the track's target answers its own names |
 | an event's `fire` and `book` | `name`, with `data` | `ClipBinder.event(name, data)` |
 | a function easing | its built-in name, or `{ bezier }` | nothing: both are data |
 | a typed array in a key's value, as a `Path` has | `{ __ta: 'f32', data: [...] }` | nothing: `bindClip` reads it back |
 
 `bindClip(clip, binder)` answers what `animator.timeline` takes, and `toClip` reads a
 live timeline back, an edited one included, because a live track keeps its names
-(`targetName`, `interpolateName`, `weightName`, `axisNames`, an event's `name`). `sceneClipTargets(scene, { rigs })`
-is the binder's `target` for a scene: `pose:<node id>` and `rig:<name>`. `sceneClipAxes(rigs)`
-is its `axes`: a track over part of a rig names joints, so it holds the same joints after the
-skeleton's order changes. A target with no names takes `axes` as numbers. A track that
+(`targetName`, `interpolateName`, `weightName`, an event's `name`). `sceneClipTargets(scene, { rigs })`
+is the binder's `target` for a scene: `pose:<node id>` and `rig:<name>`. A track over
+part of a rig names joints as its `axes`, so it holds the same joints after the skeleton's order
+changes. A target whose axes have no names takes `axes` as numbers. A track that
 moves something else gets a target of its own from `createTarget`; a clip holds no
 `onTick`.
 
@@ -809,7 +809,7 @@ A kind can also load on demand. `registerPaintKindLoader(id, load)` declares one
 
 The kit deliberately does not unify these into one shape. The lifecycles differ enough — module-global vs. scene-scoped vs. React-context vs. component-prop — that a single registry abstraction would either over-constrain the complex cases (fonts' variant fallback, ops' `kit:*` reservation) or bloat the simple ones (easings, spring presets).
 
-What they do share is the reflection concern: enumerating entries for a debug overlay, and noticing when two registrants claimed one key. That part is `createReflectable<V>()` (`@weasel-js/registry`, re-exported from core): a keyed store a registry embeds and writes through, which hands out a read-only `Reflection` — `get`, `has`, `entries()`, `subscribe`, `getVersion`. `entries()` returns the same frozen array until the next change, so the whole surface drops straight into `useSyncExternalStore`. Each entry carries the live value, the registrant's `source` when it named one (built-ins register as `'kit'`), and `shadowed` — the registrants it displaced, oldest first, which is the conflict report. Two write verbs match the two override semantics the registries already had: `push` stacks and returns a release that uncovers what it displaced (paint kinds, markers), and `set` replaces in place like `Map.set` (fonts, programs, op factories, modes). Validation, lookup fallbacks and lifecycle stay in the registry.
+What they do share is the reflection concern: enumerating entries for a debug overlay, and noticing when two registrants claimed one key. That part is `createReflectable<V>()` (`@weasel-js/registry`, re-exported from core): a keyed store a registry embeds and writes through, which hands out a read-only `Reflection` — `get`, `has`, `entries()`, `subscribe`, `getVersion`. `entries()` returns the same frozen array until the next change, so the whole surface drops straight into `useSyncExternalStore`. Each entry carries the live value, the registrant's `source` when it named one (built-ins register as `'kit'`), and `shadowed` — the registrants it displaced, oldest first, which is the conflict report. Each registrant is one frozen object for as long as it is registered, the live one reported as the entry's `live`, so the owner can remove any one of them with `release(key, registrant)`. Two write verbs match the two override semantics the registries already had: `push` stacks and returns a release that uncovers what it displaced (paint kinds, markers), and `set` replaces in place like `Map.set` (fonts, programs, op factories, modes). Validation, lookup fallbacks and lifecycle stay in the registry.
 
 Registries that don't embed it, and why:
 

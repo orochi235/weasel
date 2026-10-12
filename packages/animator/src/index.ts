@@ -1,6 +1,7 @@
 export * from './types';
 export { useAnimator } from './useAnimator';
 export { createTarget, type AxisBuffer, type Target, type TargetAxes, type TargetOptions } from './target';
+export type { AxisName, AxisRef } from './axisNames';
 export { createTargetTable, type ShownArray, type TargetTable, type TargetTableOptions } from './targetTable';
 export { axesOf, type Axes } from './engine/axes';
 export { createSlew, slewToward, type Slew, type SlewRates } from './slew';

@@ -1,4 +1,5 @@
 import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
+import type { AxisRef } from './axisNames';
 import type { Target } from './target';
 import type { AnimationHandle, Interpolate, InterpolatorFactory } from './types';
 
@@ -69,11 +70,13 @@ export interface HoldOptions<T> {
    *  leave short of 1 is the committed value's. */
   weight?: number | (() => number);
   /**
-   * Indexes of the target's axes it holds, in the order the target's `TargetAxes.to` answers
-   * them. The rest are left to the target's other holds and its committed value, and a release
-   * commits only these. Default: every axis. For a rig's joints, `jointAxes`.
+   * The axes of the target it holds, each by name or by index: a plain object's fields
+   * (`['y']`), a rig's joints (`['armL', 'foreL']`) or one of a joint's own
+   * (`['armL.rotation']`), as `target.axisIndexes` resolves them when the hold starts. The
+   * rest are left to the target's other holds and its committed value, and a release commits
+   * only these. Default: every axis.
    */
-  axes?: readonly number[];
+  axes?: readonly AxisRef<T>[];
   /** Any new animation passed the same cancelKey cancels this one. */
   cancelKey?: string;
   /** Names this hold in {@link AnimatorEvent}s and `animator.live()`. */

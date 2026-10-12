@@ -1,3 +1,4 @@
+import { axisIndexes } from '../axisNames';
 import { committedInto, type TargetState } from '../target';
 import type { AnimationContext } from './context';
 import { absorb, axesFor, shortWay } from './offsets';
@@ -9,8 +10,8 @@ export interface HoldSource<T> {
   value(): T;
   /** Its share among the target's holds, read as `value` is. */
   weight(): number;
-  /** Indexes of the axes it holds. Default: all of them. */
-  axes?: readonly number[];
+  /** The axes it holds, by index or by the target's names for them. Default: all of them. */
+  axes?: readonly (number | string)[];
   /** True where `value` and `weight` answer the same until `touch` says otherwise. A target
    *  whose holds are all so is read again only when touched, or when its committed value moves. */
   fixed?: boolean;
@@ -136,15 +137,10 @@ function dim(s: TargetState, before: readonly number[], after: readonly number[]
   }
 }
 
-function coverOf(axes: readonly number[] | undefined, count: number): Uint8Array | null {
-  if (!axes) return null;
-  const covers = new Uint8Array(count);
-  for (const a of axes) {
-    if (!Number.isInteger(a) || a < 0 || a >= count) {
-      throw new Error(`animator: \`axes\` names axis ${a} of a target with ${count}`);
-    }
-    covers[a] = 1;
-  }
+function coverOf(wanted: readonly (number | string)[] | undefined, axes: TargetState['axes']): Uint8Array | null {
+  if (!wanted) return null;
+  const covers = new Uint8Array(axes.count);
+  for (const a of axisIndexes(axes, wanted)) covers[a] = 1;
   return covers;
 }
 
@@ -164,7 +160,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
       }
       : () => ax.to(o.value()),
     weight: () => (gone ? 0 : share(o.weight())),
-    covers: coverOf(o.axes, ax.count),
+    covers: coverOf(o.axes, ax),
     fixed: o.fixed === true,
     w: 0,
     v: buffer,

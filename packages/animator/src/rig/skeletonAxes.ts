@@ -1,26 +1,30 @@
+import { axisIndexes } from '../axisNames';
 import type { TargetAxes } from '../target';
 import { IDENTITY_JOINT, type JointTransform, type Pose, type Skeleton } from './types';
 
 const FIELDS = ['x', 'y', 'rotation', 'scaleX', 'scaleY'] as const satisfies readonly (keyof JointTransform)[];
 const ROTATION = FIELDS.indexOf('rotation');
 
+/** A name for each axis of `skeletonAxes(skeleton)`: `<joint>.<field>`. */
+function axisNames(skeleton: Skeleton): string[] {
+  return skeleton.joints.flatMap((joint) => FIELDS.map((field) => `${joint.name}.${field}`));
+}
+
 /**
- * The axes of `skeletonAxes(skeleton)` that belong to `joints`, for a hold or a track over part
- * of a rig: `animator.hold({ target: rig.target, value: pose, axes: jointAxes(skeleton, arm) })`.
+ * The axes of `skeletonAxes(skeleton)` that belong to `joints`, as indexes, for a caller with
+ * a skeleton and no target. A hold or a track on a rig's target takes the joints' names
+ * themselves: `animator.hold({ target: rig.target, value: pose, axes: arm })`.
  */
 export function jointAxes(skeleton: Skeleton, joints: readonly string[]): number[] {
-  const n = FIELDS.length;
-  return joints.flatMap((name) => {
-    const j = skeleton.joints.findIndex((joint) => joint.name === name);
-    if (j < 0) throw new Error(`jointAxes: the skeleton has no joint "${name}"`);
-    return FIELDS.map((_, f) => j * n + f);
-  });
+  const names = axisNames(skeleton);
+  return axisIndexes({ count: names.length, names }, joints, 'jointAxes: `joints`');
 }
 
 /**
  * How a {@link Pose} of `skeleton` maps to the numbers an animation moves: five per joint in
  * skeleton order (`x`, `y`, `rotation`, `scaleX`, `scaleY`), every rotation an angle, so a pose
- * blends the short way round. A joint or field the pose leaves out reads as its identity, and a
+ * blends the short way round. Each axis is named `<joint>.<field>`, so `axes: ['knee']` on a hold
+ * reaches a joint's five and `['knee.rotation']` one of them. A joint or field the pose leaves out reads as its identity, and a
  * pose read back names every joint in full. Pass it as `axes` to `createTarget` for a pose target
  * of your own; a bound rig's is `Rig.target`.
  */
@@ -30,6 +34,7 @@ export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
   return {
     count: names.length * n,
     angles: names.map((_, j) => j * n + ROTATION),
+    names: axisNames(skeleton),
     to(pose) {
       const out = new Array<number>(names.length * n);
       for (let j = 0; j < names.length; j++) {

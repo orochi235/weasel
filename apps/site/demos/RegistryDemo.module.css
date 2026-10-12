@@ -1,0 +1,69 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  width: 640px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  flex-wrap: wrap;
+}
+
+.version {
+  margin-inline-start: auto;
+  font-size: 12px;
+  color: var(--wzl-fg-subtle);
+}
+
+.count {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: inline-block;
+  min-width: 3ch;
+  text-align: end;
+  color: var(--wzl-fg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+  text-align: start;
+  border-block-end: 1px solid var(--wzl-border);
+}
+
+.table thead th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wzl-fg-subtle);
+}
+
+.registrant {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+}
+
+.source {
+  color: var(--wzl-fg-subtle);
+}
+
+.stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-2) var(--wzl-space-8);
+}
+
+.table .empty {
+  color: var(--wzl-fg-subtle);
+  font-style: italic;
+}

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { bindClip, jointAxes, toClip, useAnimator, type Clip, type Skeleton } from '@weasel-js/animator';
+import { bindClip, toClip, useAnimator, type Clip, type Skeleton } from '@weasel-js/animator';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import type { RectPose } from '../core/scene/types';
-import { sceneClipAxes, sceneClipTargets } from './clipTargets';
+import { sceneClipTargets } from './clipTargets';
 import { scenePoseTarget } from './poseTarget';
 import { bindRig } from './rig';
 
@@ -54,12 +54,7 @@ describe('sceneClipTargets', () => {
         keys: [{ t: 0, value: {} }, { t: 1000, value: { upper: { rotation: 1 }, lower: { rotation: Math.PI / 2 } } }],
       }],
     };
-    const axes = sceneClipAxes({ arm: rig });
-    expect(axes('rig:arm', ['lower'])).toEqual(jointAxes(ARM, ['lower']));
-    expect(axes('rig:leg', ['lower'])).toBeUndefined();
-    expect(axes('pose:box', ['x'])).toBeUndefined();
-
-    const live = bindClip(clip, { target: sceneClipTargets(scene, { rigs: { arm: rig } }), axes });
+    const live = bindClip(clip, { target: sceneClipTargets(scene, { rigs: { arm: rig } }) });
     act(() => { animator().timeline({ ...live, autoplay: false }).seek(500); });
     frame(16);
     // The upper joint is not the track's to move, so the elbow stays at (150, 100).

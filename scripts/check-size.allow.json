@@ -9,7 +9,7 @@
     "longestFunction": 187
   },
   "packages/animator/src/types.ts": {
-    "lines": 467
+    "lines": 425
   },
   "packages/audio/src/createAudioEngine.ts": {
     "lines": 765,

@@ -1,6 +1,7 @@
 import {
   EASINGS, reviveTypedArrays, tagTypedArrays, type BezierEasing, type EasingName, type EasingSpec,
 } from '@weasel-js/geom';
+import { axisIndexes } from '../axisNames';
 import type { Target } from '../target';
 import type { Interpolate } from '../types';
 import type { EventTrack, NestedTimeline, SampledTrack, TimelineEvent, TimelineTrack, Track } from './types';
@@ -31,8 +32,8 @@ export interface ClipSampledTrack {
   /** The track's share of its target: a number, or a name for `ClipBinder.weight` to resolve
    *  into a function read each frame, as a crossfade's is. */
   weight?: number | string;
-  /** The part of the target the track holds: names for `ClipBinder.axes` to resolve, a rig's
-   *  joints among them, or positions in the target's axes where it has no names. */
+  /** The part of the target the track holds: the target's names for its axes, a rig's joints
+   *  among them, or positions in its axes where it has no names. */
   axes?: number[] | string[];
 }
 
@@ -74,9 +75,6 @@ export interface ClipBinder {
   /** Interpolations by name. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interpolate?: Readonly<Record<string, Interpolate<any>>>;
-  /** The axes of the target named `target` that `names` stand for, as `jointAxes` answers a
-   *  skeleton's joints, or `undefined` for a target it has no names for. */
-  axes?(target: string, names: readonly string[]): readonly number[] | undefined;
   /** The function a track's named weight stands for. */
   weight?(name: string): (() => number) | undefined;
   /** What an event does: its `fire`, its `book`, or both. */
@@ -118,11 +116,9 @@ function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
     interpolate,
     interpolateName: track.interpolate,
     ...bindWeight(track, binder),
-    ...bindAxes(track, binder),
+    axes: bindAxes(track, target),
   });
 }
-
-const isNames = (axes: readonly (number | string)[]): axes is readonly string[] => typeof axes[0] === 'string';
 
 function bindWeight(track: ClipSampledTrack, binder: ClipBinder): Pick<SampledTrack<ClipValue>, 'weight' | 'weightName'> {
   const { weight } = track;
@@ -132,15 +128,15 @@ function bindWeight(track: ClipSampledTrack, binder: ClipBinder): Pick<SampledTr
   return { weight: read, weightName: weight };
 }
 
-function bindAxes(track: ClipSampledTrack, binder: ClipBinder): Pick<SampledTrack<ClipValue>, 'axes' | 'axisNames'> {
+/** A clip track's axes for the live track, refused here where its target has no such axes
+ *  rather than when the playhead first reaches the track. */
+function bindAxes(track: ClipSampledTrack, target: Target<unknown> | undefined): SampledTrack<ClipValue>['axes'] {
   const { axes } = track;
-  if (!axes) return {};
-  if (!isNames(axes)) return { axes: [...axes] };
-  const quoted = axes.map((name) => `"${name}"`).join(', ');
-  if (track.target === undefined) throw new Error(`bindClip: track "${track.label ?? ''}" names axes and no target: ${quoted}.`);
-  const resolved = binder.axes?.(track.target, axes);
-  if (!resolved) throw new Error(`bindClip: the binder has no axes named ${quoted} on the target "${track.target}".`);
-  return { axes: [...resolved], axisNames: [...axes] };
+  if (!axes) return undefined;
+  const where = `bindClip: track "${track.label ?? ''}"`;
+  if (!target) throw new Error(`${where} names axes and no target.`);
+  axisIndexes(target.axes, axes, `${where} on the target "${track.target}"`);
+  return [...axes] as SampledTrack<ClipValue>['axes'];
 }
 
 function bindTimeline(timeline: ClipTimeline, binder: ClipBinder): NestedTimeline {
@@ -198,7 +194,7 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
     }),
     interpolate: track.interpolateName,
     weight: typeof track.weight === 'function' ? track.weightName : track.weight,
-    axes: track.axisNames ? [...track.axisNames] : track.axes && [...track.axes],
+    axes: track.axes && ([...track.axes] as ClipSampledTrack['axes']),
   });
 }
 

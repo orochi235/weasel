@@ -1,3 +1,4 @@
+import { axisIndexes, type AxisRef } from './axisNames';
 import { axesOf } from './engine/axes';
 import type { LaneColumns, Reader } from './engine/lanes';
 
@@ -9,6 +10,9 @@ export interface TargetAxes<T> {
   /** Indexes of axes that are angles in radians. An animation starting from one takes the short
    *  way round to its destination. */
   angles?: readonly number[];
+  /** A name for each axis, in the order `to` answers them, for `axes` options to go by. A dot
+   *  makes a path: `knee.rotation` is also reached as `knee`, with the joint's other axes. */
+  names?: readonly string[];
   /** Optional. `value` with `delta` added axis by axis: what `from` answers for `to(value)`
    *  plus `delta`, built with no array between. A read of a moving target goes through it. */
   add?(value: T, delta: ArrayLike<number>): T;
@@ -59,6 +63,12 @@ export interface Target<T> {
   readonly axisCount: number;
   /** How its value maps to numbers. */
   readonly axes: TargetAxes<T>;
+  /**
+   * The indexes of the axes `axes` names, in the order named: what a hold's or a track's `axes`
+   * resolves through. A name is one of `axes.names`, or a path over several of them; an index
+   * passes through. Throws on a name or an index the target has no axis for.
+   */
+  axisIndexes(axes: readonly AxisRef<T>[]): number[];
   /** The committed value: what shows once nothing is moving it. */
   committed(): T;
   /** Writes the committed value. Animations moving the target go on adding to the new one. */
@@ -230,6 +240,11 @@ export function readTargetInto<T>(s: TargetState<T>, out: AxisBuffer, at: number
   }
 }
 
+/** Whether `x` is a target `createTarget` made. */
+export function isTarget(x: unknown): x is Target<unknown> {
+  return typeof x === 'object' && x !== null && states.has(x);
+}
+
 /** The state behind a target `createTarget` made. */
 export function stateOf<T>(target: Target<T>): TargetState<T> {
   const s = states.get(target);
@@ -269,6 +284,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     readInto: (out, at = 0) => readTargetInto(s, out, at),
     axisCount: axes.count,
     axes,
+    axisIndexes: (wanted) => axisIndexes(axes, wanted),
     committed: opts.get,
     commit: opts.set,
     get active() { return s.live > 0; },
