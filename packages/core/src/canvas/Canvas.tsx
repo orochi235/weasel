@@ -36,8 +36,7 @@ import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
 import { useCanvasView } from './useCanvasView';
 import { useOptionalViewRegistry } from './viewRegistry';
-import { useFrameLoop } from './useFrameLoop';
-import { useRedrawOn } from './useRedrawOn';
+import { useCanvasSurface } from './useCanvasSurface';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from '@weasel-js/routing';
@@ -52,7 +51,6 @@ import {
 } from 'core/layers/render';
 import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
-import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore, useRedrawOnShaderSource } from './useCanvasRenderer';
 import { shaderKeyOf } from './canvasRenderer';
 import { useSceneLayerList } from './useSceneLayerList';
 import {
@@ -542,9 +540,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // React does not drive the paint; the frame loop does. The thunk defers to
   // `paint` below, which needs inputs this render has not computed yet.
   const paintRef = useRef<() => boolean>(() => false);
-  const { requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume } = useFrameLoop(
+  const { lease, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume } = useCanvasSurface(
     useCallback(() => paintRef.current(), []),
-    { syncPaint, target: canvasRef },
+    { syncPaint, target: canvasRef, dpr: dprProp, redrawOn, shaders },
   );
 
   const contentVersionRef = useLatest(contentVersion);
@@ -655,12 +653,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
        paintedCursor, getDebug]);
 
-  // Created on the first paint, rebuilt when the paint target moves, and
-  // freed on unmount.
-  const lease = useCanvasRenderer();
-  useRedrawOnRestore(lease, requestRedraw);
-  useRedrawOnDensityChange(requestRedraw, dprProp);
-  useRedrawOnShaderSource(shaders, requestRedraw);
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
 
   // Views registered on this surface — declared as `views` descriptors or
@@ -912,8 +904,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     for (const layer of layersWithDebug) if (layer.subscribe) offs.push(layer.subscribe(redraw));
     return () => { for (const off of offs) off(); };
   }, [layersWithDebug, requestRedraw]);
-
-  useRedrawOn(redrawOn, requestRedraw);
 
   const shaderIdKey = shaderKeyOf(shaders);
 
