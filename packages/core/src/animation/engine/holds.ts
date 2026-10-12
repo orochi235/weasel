@@ -73,6 +73,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   };
 
   ctx.targets.attach(state);
+  s.held += 1;
   let group = groups.get(state);
   if (!group) groups.set(state, group = new Set());
   group.add(member);
@@ -87,7 +88,14 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
       if (commit) absorb(s, settle(group, member, ax.count));
       gone = true;
       group.delete(member);
-      if (group.size === 0) s.heldAt = null;
+      s.held -= 1;
+      if (s.held === 0) {
+        s.heldAt = null;
+        // Nothing stands in front of the committed value now, so it takes what waited beside it.
+        const beside = s.beside;
+        s.beside = null;
+        if (beside) absorb(s, beside);
+      }
       ctx.codec.stop(id);
       ctx.targets.detach(state);
       ctx.touch(state, true);

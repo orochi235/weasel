@@ -254,10 +254,66 @@ describe('a hold on a target', () => {
     act(() => { tw.cancel(); });
     v = 70;
     act(() => { h.touch(); });
-    // The canceled tween committed its 8, which the hold stands in front of.
-    expect(b.target.read()).toBeCloseTo(74, 9);
+    // The canceled tween's 8 stays on screen beside the hold, which stands in front of a commit.
+    expect(b.target.read()).toBeCloseTo(82, 9);
     step(0);
-    expect(b.shown.at(-1)).toBeCloseTo(74, 6);
+    expect(b.shown.at(-1)).toBeCloseTo(82, 6);
+  });
+
+  /** A hold of 70 over a committed 10, with a tween canceled halfway through its 20 of travel. */
+  function canceledUnderHold() {
+    const s = setup();
+    const b = box(10);
+    let h!: ReturnType<typeof s.animator.hold>;
+    act(() => { h = s.animator.hold({ target: b.target, value: 70 }); });
+    s.step(0);
+    let tw!: ReturnType<typeof s.animator.tween>;
+    act(() => { tw = s.animator.tween({ target: b.target, from: 30, to: 10, ms: 1000, easing: linear }); });
+    s.step(0);
+    s.step(500);
+    expect(b.target.read()).toBeCloseTo(80, 6);
+    act(() => { tw.cancel(); });
+    return { ...s, b, h };
+  }
+
+  it('keeps an offset canceled under it on screen, and commits it when the hold is released', () => {
+    const { b, h, step } = canceledUnderHold();
+    expect(b.target.read()).toBeCloseTo(80, 6);
+    expect(b.committed).toBe(10);
+    step(16);
+    expect(b.shown.at(-1)).toBeCloseTo(80, 6);
+    act(() => { h.release(); });
+    expect(b.committed).toBeCloseTo(80, 6);
+    expect(b.target.read()).toBeCloseTo(80, 6);
+    expect(b.target.active).toBe(false);
+  });
+
+  it('commits a canceled offset where the hold is released without committing itself', () => {
+    const { b, h } = canceledUnderHold();
+    act(() => { h.release({ commit: false }); });
+    expect(b.committed).toBeCloseTo(20, 6);
+    expect(b.target.read()).toBeCloseTo(20, 6);
+  });
+
+  it('drops a canceled offset when the target is stopped without committing', () => {
+    const { b } = canceledUnderHold();
+    act(() => { b.target.stop({ commit: false }); });
+    expect(b.committed).toBe(10);
+    expect(b.target.read()).toBe(10);
+  });
+
+  it('hands what a canceled offset left under it to the next animation with a destination', () => {
+    const { b, h, animator, step } = canceledUnderHold();
+    act(() => { animator.tween({ target: b.target, to: 50, ms: 1000, easing: linear }); });
+    // It travels from 20, the committed 10 and the 10 left beside it, to 50.
+    expect(b.target.read()).toBeCloseTo(40, 6);
+    step(0);
+    step(1000);
+    step(16);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 6);
+    act(() => { h.release({ commit: false }); });
+    expect(b.committed).toBe(50);
+    expect(b.target.read()).toBe(50);
   });
 
   it('is on the table as a hold, and obeys cancelKey and cancelAll', () => {

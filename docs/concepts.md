@@ -275,7 +275,10 @@ Two on one target combine, by two rules:
   short of 1 leave the rest to the committed value; offsets add on top.
 
 Leaving never moves the value on screen: a canceled animation commits where it
-was, and so does a released hold unless told not to. Under one `cancelKey` a new
+was, and so does a released hold unless told not to. One canceled under a hold,
+which stands in front of the committed value, keeps what it had left on screen
+beside the hold; it is committed when the target's last hold goes, or taken up by
+the next animation given a destination. Under one `cancelKey` a new
 animation still interrupts the old, and a spring starts at the velocity of what
 it interrupts; `interrupt: false` shares the key and adds. When something else
 writes the committed value mid-flight, call `target.stop({ commit: false })` so

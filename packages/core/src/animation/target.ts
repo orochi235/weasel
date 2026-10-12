@@ -72,6 +72,12 @@ export interface TargetState<T = unknown> {
   /** The committed value's axes as its holds last read them; null while it has none. A hold
    *  answers how far its value is from the committed one, so it is stale once that moves. */
   heldAt: number[] | null;
+  /** How many holds stand in for its committed value. */
+  held: number;
+  /** What animations canceled under those holds had left to travel. A hold stands in front of
+   *  the committed value, so it waits here, on screen, until the holds go or an animation with
+   *  a destination takes it up. */
+  beside: number[] | null;
   /** How many animations are moving it. */
   live: number;
   /** The sum of their offsets as the last frame read it. */
@@ -88,8 +94,10 @@ export function readTarget<T>(s: TargetState<T>): T {
   if (s.live === 0) return committed;
   const a = s.axes.to(committed);
   if (s.heldAt && a.some((x, i) => x !== s.heldAt![i])) s.owner?.reread(s as unknown as TargetState);
-  const slot = s.slot;
-  for (let i = 0; i < a.length; i++) a[i] = a[i]! + (slot ? slot.cols[slot.at + i]! : 0) + s.adjust[i]!;
+  const { slot, beside } = s;
+  for (let i = 0; i < a.length; i++) {
+    a[i] = a[i]! + (slot ? slot.cols[slot.at + i]! : 0) + s.adjust[i]! + (beside ? beside[i]! : 0);
+  }
   return s.axes.from(a);
 }
 
@@ -115,6 +123,8 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     owner: null,
     discard: false,
     heldAt: null,
+    held: 0,
+    beside: null,
     live: 0,
     slot: null,
     adjust: new Array<number>(axes.count).fill(0),

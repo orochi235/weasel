@@ -38,6 +38,23 @@ export function absorb<T>(s: TargetState<T>, delta: readonly number[]): void {
   s.set(s.axes.from(plus(s.axes.to(s.get()), delta)));
 }
 
+/** Leaves `delta`, what a stopping animation had left to travel, where the target keeps showing
+ *  it: in the committed value, or beside it while a hold stands in front of that. */
+export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
+  if (s.discard) return;
+  if (s.held === 0) absorb(s, delta);
+  else s.beside = s.beside ? plus(s.beside, delta) : delta.slice();
+}
+
+/** The committed value's axes as an animation about to commit a destination finds them: with
+ *  what `keep` left beside it, which that destination replaces. */
+export function takeUp<T>(s: TargetState<T>): number[] {
+  const committed = s.axes.to(s.get());
+  const beside = s.beside;
+  s.beside = null;
+  return beside ? plus(committed, beside) : committed;
+}
+
 /** The targets one animator is moving. */
 export interface TargetBook {
   /** Counts one more animation on `s`. Throws where another animator is moving it. */
@@ -84,6 +101,7 @@ export function createTargetBook(owner: TargetOwner): TargetBook {
       if (s.live > 0) return;
       s.owner = null;
       s.slot = null;
+      s.beside = null;
       s.adjust.fill(0);
       live.delete(s);
       if (s.show) rested.add(s);
