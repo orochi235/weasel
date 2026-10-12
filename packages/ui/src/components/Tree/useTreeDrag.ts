@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
 import { resolveDrop, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
 import { swallowNextClick, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
 import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
 import { modsOf } from './treeUtils';
+import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
 
 const HOVER_EXPAND_MS = 600;
 /** How far the ghost's corner sits from the pointer, so what is under the pointer stays visible. */
@@ -46,6 +47,7 @@ export interface UseTreeDragOptions {
   onDropOutside?(ids: string[], point: { x: number; y: number }, effect: TreeDragEffect): void;
   externalDrag?: { x: number; y: number } | null;
   onExternalTarget?(target: TreeDropTarget | null): void;
+  dropRef?: Ref<TreeDropHandle>;
   /** A press released without dragging — the row's activation. */
   onPress(id: string, mods: PressModifiers): void;
   expand(id: string): void;
@@ -75,7 +77,6 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     hover.current = null;
   };
   useEffect(() => () => { drag.current?.cancel(); clearHover(); }, []);
-
 
   const resolve = useCallback((ids: readonly string[], x: number, y: number, effect: TreeDragEffect = 'move'): ResolvedDrop | null => {
     const { visible, expanded, rowEl, nodes, canDrop } = o.current;
@@ -123,20 +124,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     setState(IDLE);
   }, [leaveOutside]);
 
-  // A drag begun elsewhere: mark where it would land here, and say so.
-  const [external, setExternal] = useState<ResolvedDrop | null>(null);
-  const at = opts.externalDrag;
-  const atX = at?.x;
-  const atY = at?.y;
-  useEffect(() => {
-    const box = o.current.container()?.getBoundingClientRect();
-    const inside = box && atX !== undefined && atY !== undefined
-      && atX >= box.left && atX <= box.right && atY >= box.top && atY <= box.bottom;
-    const hit = inside ? resolve([], atX, atY) : null;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the mark comes from measured row rects, which only an effect may read
-    setExternal(hit);
-    o.current.onExternalTarget?.(hit?.target ?? null);
-  }, [atX, atY, o, resolve]);
+  const external = useOutsideDrop({ at: opts.externalDrag, latest: o, resolve, handle: opts.dropRef });
 
   const onPointerDown = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
     const { enabled, container } = o.current;

@@ -1,0 +1,4 @@
+.outside { display: flex; gap: var(--wzl-space-6); align-items: flex-start; }
+.outside > [role='tree'] { inline-size: 240px; }
+.shelf { display: flex; flex-direction: column; gap: var(--wzl-space-1); margin: 0; padding: 0; list-style: none; }
+.shelf > li { padding: var(--wzl-space-1) var(--wzl-space-2); border: 1px solid var(--wzl-border); border-radius: var(--wzl-radius-sm); cursor: grab; user-select: none; touch-action: none; }

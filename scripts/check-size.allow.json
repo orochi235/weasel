@@ -461,7 +461,7 @@
     "longestFunction": 192
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
-    "longestFunction": 211
+    "longestFunction": 205
   },
   "packages/ui/src/components/Prefs/RailLayout.tsx": {
     "longestFunction": 134
@@ -498,11 +498,11 @@
     "lines": 425
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "lines": 502,
+    "lines": 465,
     "longestFunction": 297
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
-    "longestFunction": 157
+    "longestFunction": 143
   },
   "packages/ui/src/icons/paths.ts": {
     "lines": 866

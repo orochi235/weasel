@@ -1218,13 +1218,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
   500 ms `RAIL_OPEN_MS` timer).
 
-- **(P3) `Tree` reports an outside drag's target only from an effect.** `useTreeDrag.ts` writes the
-  target in a passive effect, a render behind the pointer, so a release in the same task as the
-  last move read the previous row's target or none. `PrefSchemaEditor`'s `onPaletteDrop` gets
-  around it with `flushSync`; any other caller dropping onto a `Tree` from outside has the same
-  race. Ruled 2026-10-11: `Tree` resolves the target from the pointer's position at the drop, and
-  the editor's `flushSync` comes out.
-
 - **(P3) `subPages` overlaps a group's `as`.** `PrefsForm`'s form-wide `subPages` prop decides
   what `as: 'page'` on a nested group should. Ruled 2026-10-11: `subPages` goes; a nested group
   with `as` unset is a section, and one that wants a page of its own says `as: 'page'`; `foldable`
