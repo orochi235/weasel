@@ -1,5 +1,6 @@
-import { createHistory, type HistorySelection, type Journal, type SerializedHistory } from '@weasel-js/history';
+import type { HistorySelection, Journal, SerializedHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
+import { createHistory } from 'core/ops/createHistory';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { createArrangeOp, type ArrangeArgs } from 'core/ops/arrange';
 import { bindOpToAdapter, bindOpToHistoryAdapter } from './boundOps';
@@ -551,21 +552,9 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         assertSubtreeLayer(id, layer, node.parent, parentNode.layer, 'relayer');
       }
       if (node.layer === layer) return;
-      // DFS preorder: collect id + all descendants.
-      const subtree: NodeId[] = [];
-      const stack: NodeId[] = [id];
-      while (stack.length > 0) {
-        const curId = stack.pop()!;
-        const cur = state.nodes.get(curId);
-        if (!cur) continue;
-        subtree.push(curId);
-        refuseLocked(curId, 'relayer');
-        if (cur.kind === 'container') {
-          for (let i = cur.children.length - 1; i >= 0; i--) {
-            stack.push(cur.children[i]);
-          }
-        }
-      }
+      const subtree: NodeId[] = [id];
+      descendants(id, subtree);
+      for (const sid of subtree) refuseLocked(sid, 'relayer');
       if (subtree.length === 1) {
         // Fast path: single node, no batch needed.
         executeAndLog('kit:setLayer', { id, from: node.layer, to: layer }, 'setLayer');
