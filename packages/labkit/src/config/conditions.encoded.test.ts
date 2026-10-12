@@ -1,7 +1,8 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
+import { f } from './builder';
 import type { ResolvedConfig } from './types';
-import { isLeafEnabled, isLeafVisible } from './visible';
+import { isEntryShown, isLeafEnabled, isLeafVisible } from './visible';
 
 const italic = {
   read: (stored: unknown) => stored === 'italic',
@@ -46,5 +47,11 @@ describe('a condition over a leaf stored through an encoding', () => {
     expect(isLeafVisible(resolved, 'angle', { slant: 'normal' })).toBe(false);
     expect(isLeafEnabled(resolved, 'weight', { slant: 'italic' })).toBe(false);
     expect(isLeafEnabled(resolved, 'weight', { slant: 'normal' })).toBe(true);
+  });
+
+  it('does the same for a node of a schema not yet walked by path', () => {
+    const angle = f.number(12).showIf({ path: 'slant', is: true });
+    expect(isEntryShown(angle, { slant: 'italic' }, resolved.group)).toBe(true);
+    expect(isEntryShown(angle, { slant: 'normal' }, resolved.group)).toBe(false);
   });
 });

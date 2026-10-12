@@ -124,19 +124,18 @@ export function answerSchema(
   const hidden: string[] = [];
   const errors: Record<string, string[]> = {};
   const record = config as Record<string, unknown>;
-  let group: ReturnType<typeof resolveConfigSchema>['group'] | undefined;
+  const { group } = resolveConfigSchema(schema);
 
   const walk = (shape: ConfigShape, at: string): void => {
     for (const [key, entry] of Object.entries(shape)) {
       const path = joinPath(at, key);
-      if (!isEntryShown(entry, record)) hidden.push(path);
+      if (!isEntryShown(entry, record, group)) hidden.push(path);
       if (isConfigBranch(entry)) {
         walk(entry.children, path);
         continue;
       }
       const { validate } = entry.options;
       if (!validate) continue;
-      group ??= resolveConfigSchema(schema).group;
       const leaf = schemaNodeAtPath(group, path);
       if (!leaf || 'children' in leaf) continue;
       const found = validate(leaf, record);

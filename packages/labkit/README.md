@@ -138,8 +138,10 @@ await page.locator('.lk-lab--still-ready').waitFor();
 await page.locator('.lk-lab').screenshot({ path: 'poster.png', omitBackground: true });
 ```
 
-A clock that is not seekable stays where it opens, and whatever an instrument
-animates off the clock or loads on its own is the instrument's to settle.
+A clock that is not seekable is run forward to the time before the still is
+ready, `step` ms a frame, when its declaration names a `step`; without one it
+stays where it opens. Whatever an instrument animates off the clock or loads on
+its own is the instrument's to settle.
 
 `gestures` on `<Lab>` decides what the trials' cameras take — `{ pan, wheel:
 'plain' | 'mod' | false, pinch, tap }`, over each instrument's own

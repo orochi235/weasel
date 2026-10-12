@@ -166,7 +166,9 @@ plays once (`loop: false`) unless declared otherwise; `start` opens it elsewhere
   running: `seek` throws, and so does a negative rate. Reset still returns it
   to 0. Making such an instrument seekable is blits' job, from a history the
   client supplies — not a labkit checkpoint-and-replay. Scrubbing never
-  discards a recorded future.
+  discards a recorded future. The one place labkit runs such a clock itself is
+  a still at a time: with a `step` declared, `useStill` plays it forward that
+  many ms a frame, nothing shown, before the still says it is ready.
 - **`clock.mix`** is how a blits-driven instrument stays seekable: labkit makes
   one mix per trial and keeps its mix time at `elapsed`, `sync`ing it forward
   on a host clock of its own and `seek`ing it back, once a frame, before any

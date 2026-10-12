@@ -672,11 +672,6 @@ is left:
   that release before it can merge. agnew still plays from its own transport, because its
   three.js view advances the pen itself and holds a finished curve before redrawing it;
   moving it onto a lab clock is an agnew library change, and the owner's call.
-- **(P3) A still of a clock that is not seekable is taken where the clock
-  opens.** `<Lab still={1200}>` warns and leaves it there, because such an
-  instrument's state is built by running. Holding it at a time means running
-  it forward off screen, at a step the instrument would have to name.
-
 ### labkit's deprecated snapshot undo
 
 - **(P3) Delete `packages/labkit/src/undo/undoStack.ts` and its exports**
@@ -878,12 +873,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
-- **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
-  compares stored values, where every other reader decodes. A rail entry for a group drawn under
+- **(P3) Loose ends of the condition work.** A rail entry for a group drawn under
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
-  `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet. `PrefSchemaEditor` edits an entry's own
+  `PrefSchemaEditor` edits an entry's own
   `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
   `{ from: 'item' }` condition is written in code. A list of plain text entries is one
   `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
@@ -991,50 +984,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   record, which stays for good. The call to make is whether the lab draws a failed tile with a way
   to discard it.
 
-- **(P2) labkit trial: the settings panel and the instrument write config through two `setConfig`s
-  that disagree.** The chrome's (`packages/labkit/src/trial/TrialChrome.tsx`, used by the settings
-  panel and by chrome contributions) calls the instrument's `onConfigChange` but takes no undo
-  snapshot; the instrument's own `ctx.setConfig` (`renderCtx` in
-  `packages/labkit/src/trial/Trial.tsx`) snapshots on `config.change` and `config.change:<path>` but
-  never calls `onConfigChange`. So an instrument declaring `undo: { snapshotOn: ['config.change'] }`
-  gets no undo entry for anything changed in the settings panel, and one declaring `onConfigChange`
-  gets no derived state for its own writes. Wanted: one `setConfig` owned by the trial runtime that
-  snapshots, writes, and runs `onConfigChange` against the stored record, handed to both contexts.
-  The open calls: whether a panel edit should snapshot per write or once per gesture (a slider drag
-  writes on every move), and whether an instrument's own write should run `onConfigChange`.
-
-- **(P3) labkit lab: every trial re-renders whenever any trial's record changes.** `LabContext`'s
-  value carries `trials` (`packages/labkit/src/lab/Lab.tsx`), and both `Trial` and `TrialChrome`
-  read that context, so a pan frame, a job item, a clock write, or a mark save in one trial
-  re-renders all of them. `CanvasStack` no longer repaints on it, but the React work remains, and
-  `as2DView` (`packages/labkit/src/state/view.ts`) still allocates a view per render for every other
-  reader. `LabContextValue.trials` is public, so splitting it out (a separate context, or a selector
-  hook over the store, with the commands in a value that does not change) is an API decision.
-
-- **(P3) labkit transport: on a looping clock, End and a scrub to the far right land at the start of
-  the next pass.** `transportControl.seek` (`packages/labkit/src/clock/transportControl.ts`) clamps
-  to `[0, duration]` and seeks `passStart + duration`, which a looping clock reads as phase 0 of the
-  next pass, so the playhead shows at the left edge; with a counted loop (`loop: 3`), repeated End
-  presses walk through the passes and end the run. The last pass is right as it is. The call to make
-  is where "the end of a pass that another follows" sits: a fixed step short of `duration` (and how
-  short, given `seek` takes ms and the pass can be any length), or a clock-level notion of "end of
-  pass n" that reports phase 1 without rolling over.
-
-- **(P3) labkit canvases: a device-pixel-ratio change is tested only against a stand-in.**
-  `useTiledSurface` and `CanvasStack` now re-measure through core's `watchDevicePixelRatio`, and
-  their tests fire a stubbed `matchMedia`, which jsdom lacks. Unverified: that the shared buffer and
-  the layer canvases take the new backing size in a real browser when the ratio changes with no
-  resize. Wants a browser test that emulates the change (`Emulation.setDeviceMetricsOverride`).
-
-- **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
-  them.** A trial builds its annotation store once from `record.annotations`
-  (`packages/labkit/src/trial/Trial.tsx`, "One store for the trial's lifetime") and never reads the
-  record again. When another tab's write replaces the record (`bindLabStore` in
-  `packages/labkit/src/state/openLabStore.ts`), this tab's state and config update on screen and its
-  marks do not; its next mark then saves `annotations.toJSON()` over the other tab's. Options:
-  rebuild the store when the record is replaced by a remote write (losing this tab's mark undo
-  history, as the remote path already does for state history), remount the trial on a remote
-  replacement, or merge mark by mark, which needs an answer for a mark both tabs edited.
+- **(P3) labkit lab: the lab itself re-renders whenever any trial's record changes.** `Lab`
+  (`packages/labkit/src/lab/Lab.tsx`) subscribes to the store's `trials` for the workspace's ids,
+  the focused trial, and `LabContext`'s value, so a pan frame, a job item, a clock write, or a mark
+  save in one trial renders `Lab`, `Workspace`, and every reader of `useLabContext` (`LabHeader`,
+  `LabChrome`). The trials themselves no longer render on it: `Trial` is memoized and reads
+  `useLabCommands`. What is left wants `Lab` to select the trial ids alone, and `LabProviders` to
+  be the one subscriber that builds the full context value.
 
 - **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
   the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,
@@ -1224,18 +1180,6 @@ only story runner in the repo.
 ---
 
 ## Demos & visual regression
-
-- **(P3) labkit's clock browser test failed once on the fleet.** `clock.browser.test.tsx`, "a timed
-  layer repaints as the clock plays, and holds once it pauses", line 92: the canvas read back red
-  0 where the paused frame's shade was 3, in a full run on teitou on 2026-10-10 that passed the
-  other 16,953 tests. It failed the same way a second time on 2026-10-11, at `d02d059c2`
-  (`expected +0 to be 4`), and passed alone on this machine at that commit. Whether it is a race
-  between the last paint and the readback or a real missed repaint is not known.
-
-- **(P3) labkit's `usePersistedState` test failed once on the fleet.** "keeps its value across a
-  remount, lab-scoped outside a trial" read `'shape'` where it expected `'color+'`, in a full run
-  of `9c526ca33` on 2026-10-11 that passed 19,793 others; alone on this machine at that commit
-  the file passes 6 of 6. Not rerun on the fleet.
 
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Across six full runs
   on studio and teitou on 2026-10-11, each of these failed once or twice with a 15 s test timeout

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { ClockRegistry } from '../clock/clockRegistry';
-import type { TrialClock } from '../clock/trialClock';
+import type { TrialClock, TrialClockHandle } from '../clock/trialClock';
 
 /** A presented lab held still, for a poster to be taken of it. */
 export interface Still {
@@ -21,14 +21,35 @@ export function stillOf(prop: boolean | number | undefined): Still | null {
   return text !== '' && Number.isFinite(at) ? { at } : {};
 }
 
-function holdStill(clock: TrialClock, still: Still): void {
+/** Whether a still at a time reaches it by running `handle`'s clock there. */
+const runs = (handle: TrialClockHandle): handle is TrialClockHandle & { step: number } =>
+  !handle.clock.seekable && handle.step !== undefined && handle.step > 0;
+
+function holdStill(handle: TrialClockHandle, still: Still): void {
+  const { clock } = handle;
   if (clock.rate !== 0) clock.rate = 0;
-  if (still.at === undefined) return;
+  if (still.at === undefined || runs(handle)) return;
   if (clock.seekable) clock.seek(still.at);
   else if (process.env.NODE_ENV !== 'production')
     console.warn(
-      `[labkit] a still at ${still.at}ms leaves a clock that is not seekable where it opens`,
+      `[labkit] a still at ${still.at}ms leaves a clock that is not seekable where it opens; a \`step\` in its declaration runs it there`,
     );
+}
+
+/** Play `clock` forward to `at`, `step` ms a frame, as frames nothing showed. */
+function runTo(clock: TrialClock, at: number, step: number): void {
+  let now = 0;
+  clock.rebase();
+  clock.rate = 1;
+  clock.sync(now);
+  // The count bounds a sum of steps that rounding leaves a hair short of `at`.
+  for (let left = Math.ceil((at - clock.elapsed) / step) + 1; left > 0; left--) {
+    if (clock.rate === 0 || clock.elapsed >= at) break;
+    now += Math.min(step, at - clock.elapsed);
+    clock.sync(now);
+  }
+  clock.rate = 0;
+  clock.rebase();
 }
 
 /** How many frames a still waits, once its fonts have loaded, before it says
@@ -61,10 +82,11 @@ export function useStill(
     if (!still) return;
     const held = new WeakSet<TrialClock>();
     const hold = (): void => {
-      for (const { clock } of clocks.all()) {
+      for (const handle of clocks.all()) {
+        const { clock } = handle;
         if (held.has(clock)) continue;
         held.add(clock);
-        holdStill(clock, still);
+        holdStill(handle, still);
       }
     };
     hold();
@@ -72,19 +94,38 @@ export function useStill(
   }, [still, clocks]);
 
   const [ready, setReady] = useState(false);
+  const [ran] = useState(() => new WeakSet<TrialClock>());
   useEffect(() => {
     const view = labBody?.ownerDocument.defaultView;
     if (!still || !view) return;
+    const { at } = still;
+    // Not at registration: a clock's frame listeners attach in effects, and
+    // the lab's own clock registers before any trial that plays on it mounts.
+    const run = (): void => {
+      if (at === undefined) return;
+      for (const handle of clocks.all()) {
+        if (!runs(handle) || ran.has(handle.clock)) continue;
+        ran.add(handle.clock);
+        runTo(handle.clock, at, handle.step);
+      }
+    };
     let cancel = (): void => {};
     let live = true;
     void Promise.resolve(view.document.fonts?.ready).then(() => {
-      if (live) cancel = afterFrames(view, SETTLE_FRAMES, () => setReady(true));
+      if (!live) return;
+      run();
+      const unsubscribe = clocks.subscribe(run);
+      const stop = afterFrames(view, SETTLE_FRAMES, () => setReady(true));
+      cancel = () => {
+        unsubscribe();
+        stop();
+      };
     });
     return () => {
       live = false;
       cancel();
     };
-  }, [still, labBody]);
+  }, [still, labBody, clocks, ran]);
 
   if (!still) return null;
   return ready ? 'ready' : 'pending';
