@@ -19,15 +19,12 @@ const INSTRUMENTS = [
 /** The button sizes to "Add trial…" however long a row is; the list is as
  *  wide as its widest row. */
 export const AddTrial: Story = {
-  render: () => {
+  args: { label: 'Add trial…', items: INSTRUMENTS },
+  render: (args) => {
     const [added, setAdded] = useState<string[]>([]);
     return (
       <div>
-        <MenuButton
-          label="Add trial…"
-          items={INSTRUMENTS}
-          onAction={(value) => setAdded((a) => [...a, value])}
-        />
+        <MenuButton {...args} onAction={(value) => setAdded((a) => [...a, value])} />
         <p>Added: {added.join(', ') || 'nothing yet'}</p>
       </div>
     );
@@ -37,13 +34,13 @@ export const AddTrial: Story = {
 /** `current` marks the label as a value the caller holds: it reads in the
  *  text color, and the button is as wide as that value. */
 export const ReadsItsValue: Story = {
-  render: () => {
+  args: { current: true, items: INSTRUMENTS },
+  render: (args) => {
     const [held, setHeld] = useState('sine');
     return (
       <MenuButton
-        current
+        {...args}
         label={INSTRUMENTS.find((i) => i.value === held)!.label}
-        items={INSTRUMENTS}
         onAction={setHeld}
       />
     );
