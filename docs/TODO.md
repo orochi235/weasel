@@ -1281,15 +1281,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   reader. `LabContextValue.trials` is public, so splitting it out (a separate context, or a selector
   hook over the store, with the commands in a value that does not change) is an API decision.
 
-- **(P3) labkit transport: on a looping clock, End and a scrub to the far right land at the start of
-  the next pass.** `transportControl.seek` (`packages/labkit/src/clock/transportControl.ts`) clamps
-  to `[0, duration]` and seeks `passStart + duration`, which a looping clock reads as phase 0 of the
-  next pass, so the playhead shows at the left edge; with a counted loop (`loop: 3`), repeated End
-  presses walk through the passes and end the run. The last pass is right as it is. The call to make
-  is where "the end of a pass that another follows" sits: a fixed step short of `duration` (and how
-  short, given `seek` takes ms and the pass can be any length), or a clock-level notion of "end of
-  pass n" that reports phase 1 without rolling over.
-
 - **(P3) labkit canvases: a device-pixel-ratio change is tested only against a stand-in.**
   `useTiledSurface` and `CanvasStack` now re-measure through core's `watchDevicePixelRatio`, and
   their tests fire a stubbed `matchMedia`, which jsdom lacks. Unverified: that the shared buffer and
