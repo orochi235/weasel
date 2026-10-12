@@ -1174,9 +1174,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   section in view should unfold is open; it would move the rail under a reader who is scrolling.
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
-- **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
-  selection there; a range has no clear meaning across pages, and what it should take is not decided.
-
 - **(P3) What `SelectionPanel`'s `selected` still does not reach.** A `pair` row, a cell a bar fuses
   from a run of flags, and a top-level section under a heading, in a tab, or in a panel mark and
   report now. Left: a top-level section drawn `as: 'bar'` or `as: 'fragment'`, or with no name,

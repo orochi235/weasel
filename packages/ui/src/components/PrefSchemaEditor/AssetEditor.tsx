@@ -254,7 +254,7 @@ export function AssetEditor(
         onSelect={(path, how) => {
           // The root's own entry names no node to add to a selection.
           if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
-          else reveal(path === null ? [] : [path]);
+          else reveal(how.range ?? (path === null ? [] : [path]));
         }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} hosted={preview?.(asset, over)} />
       <ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} />
       {list && (

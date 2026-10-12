@@ -24,6 +24,9 @@ export interface PrefMarks {
 export interface PrefSelectHow {
   /** Cmd or Ctrl was held: the row joins or leaves the selection. */
   toggle: boolean;
+  /** Shift was held, alone: the rows drawn from the first selected to the one picked, in that order, the two
+   *  included. Absent where the first selected is not drawn, as on another page, and the pick is a plain one. */
+  range?: readonly string[];
 }
 
 /** The attributes of the element a form draws for the leaf (`leaf`) or the group at `path`. */
@@ -84,6 +87,21 @@ export function useHeldTab(
   return [ids.find((id) => id === picked) ?? ids[0]!, setPicked];
 }
 
+/** The paths `root` draws from `anchor` to `path`, in that order: the two, and each leaf's row between them. Null
+ *  where it draws either one nowhere. */
+function drawnRange(root: Element | null, anchor: string | undefined, path: string): string[] | null {
+  if (root === null || anchor === undefined) return null;
+  const els = [...root.querySelectorAll(`[${PATH_ATTR}]`)];
+  const from = els.findIndex((el) => el.getAttribute(PATH_ATTR) === anchor);
+  const to = els.findIndex((el) => el.getAttribute(PATH_ATTR) === path);
+  if (from < 0 || to < 0) return null;
+  const between = els.slice(Math.min(from, to), Math.max(from, to) + 1)
+    .filter((el) => el.hasAttribute('data-pref-leaf'))
+    .map((el) => el.getAttribute(PATH_ATTR)!);
+  if (from > to) between.reverse();
+  return [...new Set([anchor, ...between, path])];
+}
+
 export interface SelectionRoot {
   ref: RefObject<HTMLDivElement | null>;
   onPointerDown?: (e: PointerEvent) => void;
@@ -130,9 +148,9 @@ export function useSelectedRow(
     const el = (e.target as Element).closest?.(`[${PATH_ATTR}], [${RAIL_ATTR}]`);
     return el?.getAttribute(PATH_ATTR) ?? el?.getAttribute(RAIL_ATTR) ?? null;
   };
-  const report = (path: string, toggle: boolean): void => {
+  const report = (path: string, toggle: boolean, range?: readonly string[] | null): void => {
     reported.current = path;
-    onSelect(path, { toggle });
+    onSelect(path, range ? { toggle, range } : { toggle });
   };
   return {
     ref,
@@ -152,6 +170,7 @@ export function useSelectedRow(
       if (path === null) return;
       // With Alt as well the press is the start of an alias drag, not a toggle.
       if ((e.metaKey || e.ctrlKey) && !e.altKey) report(path, true);
+      else if (e.shiftKey && !e.altKey) report(path, false, drawnRange(ref.current, selected[0], path));
       else if (!selected.includes(path)) report(path, false);
       else if (selected.length > 1) held.current = path;
     },
