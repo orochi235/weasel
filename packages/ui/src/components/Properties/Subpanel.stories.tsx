@@ -5,7 +5,7 @@ import { PropertyPanel } from './PropertyPanel';
 import { Subpanel } from './Subpanel';
 
 const meta: Meta<typeof Subpanel> = {
-  title: 'weasel-ui/Properties/Subpanel',
+  title: 'ui/Properties/Subpanel',
   component: Subpanel,
 };
 export default meta;
