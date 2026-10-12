@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { Op } from 'core/ops/types';
-import { resizeAction } from './resize';
+import { resizeAction } from './action';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { ResizeAnchor } from '../../gestures/types';
@@ -116,7 +116,7 @@ describe('resizeAction descriptor', () => {
     // The dispatcher's specificity-fallthrough loop treats anything `!== true`
     // as "skip this match" — returning a disabled reason here would silently
     // hand the resize binding to lower-specificity ambient bindings (e.g.
-    // insertAction's bare drag). See resize.ts `enabled` JSDoc.
+    // insertAction's bare drag). See resize/action.ts `enabled` JSDoc.
     expect(resizeAction.enabled!()).toBe(true);
   });
 

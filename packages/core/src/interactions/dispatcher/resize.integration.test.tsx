@@ -35,7 +35,7 @@ import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import '../actions/depSchema'; // augments DepSchema with 'selection' and 'scene'
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
-import { resizeAction } from '../actions/defaults/resize';
+import { resizeAction } from '../actions/resize/action';
 import { SELECTION_TRANSFORM_ID, selectionTransformContribution } from '../../tools/builtin/select/selectionContributions';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';

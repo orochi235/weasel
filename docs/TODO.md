@@ -319,7 +319,7 @@ have shipped. What remains:
   - The selection outline and handles (`features/selection/overlay.ts`,
     `affordances/hitAffordanceRegions.ts`, `wiredBoundsOfPose` in
     `canvas/SceneCanvas/useSceneSelectTool.ts`) sit on the unstretched box, and the resize and
-    rotate actions (`interactions/actions/defaults/resize.ts`, `rotate/geometry.ts`,
+    rotate actions (`interactions/actions/resize/frame.ts`, `rotate/geometry.ts`,
     `rotate/handle.ts`) take their drags in that box's frame. A resize changes the box and keeps
     the transform, so the result is drawn stretched; these have to change together.
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
@@ -969,12 +969,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
-
-- **(P2) `resize.ts` (698) and `rotate.ts` (353) are built like `move.ts` was.** Each is a scratch
-  interface every helper takes whole and a `commitX` closure inside `start()`. They take the split
-  `actions/move/` now has: a readonly session captured at press (`session.ts`), a frame replaced
-  each move (`frame.ts`), and commit paths that return ops (`commit/`). `resize.ts` also carries its point-snap helpers, and `insert.ts`
-  (621) holds two actions.
 
 - **(P3) Reparent-on-drop may misplace a node grabbed mid-glide.** Read, not reproduced. The
   layout release and exit commits measure a dragged node from where it was shown at the grab

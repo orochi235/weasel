@@ -17,7 +17,7 @@
 import { describe, it, expect } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
-import { resizeAction } from './resize';
+import { resizeAction } from './action';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type {
@@ -27,9 +27,9 @@ import type {
   RotatedPose,
 } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { PoseDescriptor } from '../resize/geometry';
-import { ROTATED_POSE_DESCRIPTOR } from '../resize/geometry';
-import { clampMinSize } from '../resize/behaviors/clampMinSize';
+import type { PoseDescriptor } from './geometry';
+import { ROTATED_POSE_DESCRIPTOR } from './geometry';
+import { clampMinSize } from './behaviors/clampMinSize';
 import { circle, CIRCLE_POSE_DESCRIPTOR } from 'core/geometry/circlePose.fixture';
 
 type RectPose = Bounds;

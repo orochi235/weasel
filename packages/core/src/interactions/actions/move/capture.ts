@@ -14,7 +14,7 @@ import type { GestureContext } from '../../gestures/types';
 import { invertPlane, planeOf } from '../planeInput';
 import type { MoveGestureAdapter } from './gestureAdapter';
 import { catchGliding } from './layout/glide';
-import type { MoveReaders } from './session';
+import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 
 /** Start pose of each root and descendant, the descendants in walk order, and
  *  the offsets of any caught mid-glide. */
@@ -118,7 +118,7 @@ export function buildGestureContext(
   ids: readonly NodeId[],
   startPoses: ReadonlyMap<NodeId, unknown>,
   adapter: MoveGestureAdapter<unknown>,
-  readers: MoveReaders,
+  readers: GestureReaders,
 ): GestureContext<unknown> {
   const origin = new Map<string, unknown>();
   for (const [id, pose] of startPoses) origin.set(id as string, pose);

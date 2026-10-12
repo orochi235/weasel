@@ -114,17 +114,6 @@
   "packages/core/src/interactions/actions/defaults/editAnchors.ts": {
     "longestFunction": 134
   },
-  "packages/core/src/interactions/actions/defaults/insert.ts": {
-    "lines": 579,
-    "longestFunction": 132
-  },
-  "packages/core/src/interactions/actions/defaults/resize.ts": {
-    "lines": 692,
-    "longestFunction": 351
-  },
-  "packages/core/src/interactions/actions/defaults/rotate.ts": {
-    "longestFunction": 208
-  },
   "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
     "longestFunction": 129
   },

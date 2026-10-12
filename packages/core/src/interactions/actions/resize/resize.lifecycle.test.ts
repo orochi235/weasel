@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { resizeAction } from './resize';
+import { resizeAction } from './action';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import type { ResizePolicy } from '../depSchema';
