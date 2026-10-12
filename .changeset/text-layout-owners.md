@@ -23,7 +23,7 @@ Paint identity is structural, and has one definition. `paintKey`, `strokeKey`, `
 
 Fixes:
 
-- A run whose fill holds no paint (`fill: {}`) drew black from an atlas or the canvas tier. It now draws nothing, glyphs and decoration rules alike, as `fill: null` does.
+- A run whose fill holds no paint (`fill: {}`) drew black from an atlas or the canvas tier. It now draws nothing, as `fill: null` does.
 - A run set in a canvas-tier family reported `drawsInk: true`, with no warning, for a code point its face could not rasterize. It now reports `false` and warns once, as an atlas run that escalates to the canvas tier does.
 - A zero-advance glyph that escalated to the canvas tier was reported as missing until its bake landed.
 - A family the registry had already warned "will not render at all" about got a second, no-metrics warning from layout.
