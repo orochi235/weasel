@@ -286,6 +286,7 @@ interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
   onEnd?(ctx: GestureContext<TPose>, end: TEnd): Op[] | null | void;
   onCancel?(ctx: GestureContext<TPose>): void;
+  onSettled?(ctx: GestureContext<TPose>, committed: boolean): void;
 }
 ```
 
@@ -305,6 +306,14 @@ Each action pins the proposed/result shape; pick the matching alias
   dragged nodes returns `end.translateOps(ids)` beside its own ops: the
   action's default translate for those dragged roots and the descendants
   that follow them.
+- `onCancel` runs in place of `onEnd` when the gesture is canceled (Esc,
+  pointercancel). Release anything held outside the gesture in both.
+- `onSettled` runs once per gesture, after the commit's ops have applied (or
+  the cancel has run) and the preview overrides are gone — the place to act
+  on the pose the document now holds. `committed` is true only when the
+  gesture wrote to the document; an abort, a release with nothing to write,
+  and a cancel all report false. Move, resize, rotate, insert, and
+  lasso-select call it.
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:
   `ctx.scratch['snapToContainer']`.

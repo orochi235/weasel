@@ -79,6 +79,15 @@ export interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends Beha
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
   onEnd?(ctx: GestureContext<TPose>, end: TEnd): Op[] | null | void;
   onCancel?(ctx: GestureContext<TPose>): void;
+  /**
+   * Called once per gesture, for every behavior whose `onStart` ran, after
+   * the commit's ops have applied (or the cancel has run) and after the
+   * gesture's preview overrides are dropped. `committed` is what the action
+   * reports to `onGestureEnd`: true only when the gesture wrote to the
+   * document. So it runs on commit, abort (`onEnd` returned `null`), a
+   * release with nothing to write, and cancel alike.
+   */
+  onSettled?(ctx: GestureContext<TPose>, committed: boolean): void;
 }
 
 /** What a behavior's `onEnd` is told about the commit, beside the gesture. */

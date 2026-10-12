@@ -31,7 +31,7 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
-import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
+import { syncPreviewOverrides } from '../previewOverrides';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -44,7 +44,7 @@ import {
   type PoseDescriptor,
 } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
+import { closeGesture, commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
@@ -339,9 +339,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
             if (reason === 'commit') committed = commitRotate();
             else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
           } finally {
-            dropPreviewOverrides(scratch);
-            scratch.previews.clear();
-            lifecycle.end(committed);
+            closeGesture({ publish: scratch, behaviors: scratch.behaviors, ctx: scratch.gestureCtx, lifecycle }, committed);
           }
         },
         previewIds: () => scratch.previews.keys(),

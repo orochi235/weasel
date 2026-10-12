@@ -46,7 +46,7 @@ import type { Op } from 'core/ops/types';
 import { applyOpsTo } from 'core/applyOps';
 import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../../gestures/types';
 import { LASSO_VERTICES } from '../lasso-select/behaviors/selectFromLasso';
-import { reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
+import { reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
 import { selectionFromHits } from '../hitSelection';
 
 // ---------------------------------------------------------------------------
@@ -217,34 +217,47 @@ export const lassoSelectAction: Action & { requires: string[] } = {
           };
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-          scratch.open = false;
-          if (reason === 'cancel') {
-            if (scratch.gesture) runBehaviorCancel(scratch.behaviors, scratch.gesture);
-            return;
+          let committed = false;
+          try {
+            committed = endLasso(scratch, reason);
+          } finally {
+            if (scratch.gesture) runBehaviorSettled(scratch.behaviors, scratch.gesture, committed);
           }
-
-          const { dep: d, mode, view, vertices, shiftHeld, gesture: g } = scratch;
-
-          if (g) {
-            const r = reduceBehaviorEnd(scratch.behaviors, g);
-            if (r !== undefined) {
-              if (r !== null) (g.adapter as unknown as LassoSelectAdapter).applyOps!(r);
-              return;
-            }
-          }
-
-          // Need at least 3 vertices for a meaningful polygon; otherwise no-op.
-          if (vertices.length < 3) {
-            if (!shiftHeld) d.setSelection([]);
-            return;
-          }
-
-          const hits = hitTestPolygon(d, vertices, mode, view);
-
-          d.setSelection(selectionFromHits(d.getSelection(), hits, shiftHeld));
         },
       };
     },
   },
   enabled: () => true,
 };
+
+/** Close the lasso. Returns whether it committed: a behavior's ops were
+ *  applied, or the selection was set from a polygon. Clearing the selection
+ *  under a lasso too short to be one does not count. */
+function endLasso(scratch: LassoScratch, reason: 'commit' | 'cancel'): boolean {
+  scratch.open = false;
+  if (reason === 'cancel') {
+    if (scratch.gesture) runBehaviorCancel(scratch.behaviors, scratch.gesture);
+    return false;
+  }
+
+  const { dep: d, mode, view, vertices, shiftHeld, gesture: g } = scratch;
+
+  if (g) {
+    const r = reduceBehaviorEnd(scratch.behaviors, g);
+    if (r !== undefined) {
+      if (r !== null) (g.adapter as unknown as LassoSelectAdapter).applyOps!(r);
+      return r !== null;
+    }
+  }
+
+  // Need at least 3 vertices for a meaningful polygon; otherwise no-op.
+  if (vertices.length < 3) {
+    if (!shiftHeld) d.setSelection([]);
+    return false;
+  }
+
+  const hits = hitTestPolygon(d, vertices, mode, view);
+
+  d.setSelection(selectionFromHits(d.getSelection(), hits, shiftHeld));
+  return true;
+}

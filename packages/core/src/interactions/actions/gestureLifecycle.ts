@@ -9,6 +9,7 @@
 import type { Op } from 'core/ops/types';
 import type { Scene } from 'core/scene/types';
 import type { BehaviorEnd } from 'interactions/gestures/types';
+import { dropPreviewOverrides, type PreviewOverrideState } from './previewOverrides';
 
 /** The lifecycle options, as a binding's params or the resize policy carry
  *  them. */
@@ -129,4 +130,38 @@ export function runBehaviorCancel<TCtx>(
   ctx: TCtx,
 ): void {
   for (const b of behaviors) b.onCancel?.(ctx);
+}
+
+/** Runs every behavior's `onSettled`, once the gesture's commit has landed or
+ *  its cancel has run. */
+export function runBehaviorSettled<TCtx>(
+  behaviors: readonly { onSettled?(ctx: TCtx, committed: boolean): void }[],
+  ctx: TCtx,
+  committed: boolean,
+): void {
+  for (const b of behaviors) b.onSettled?.(ctx, committed);
+}
+
+/** What {@link closeGesture} closes. */
+export interface ClosingGesture<TCtx> {
+  publish: PreviewOverrideState;
+  behaviors: readonly { onSettled?(ctx: TCtx, committed: boolean): void }[];
+  ctx: TCtx;
+  lifecycle: GestureLifecycle;
+}
+
+/**
+ * The close a transform action runs from its `finally`, commit or cancel:
+ * drop the preview overrides, run `settle` (whatever of the action's own has
+ * to follow the commit), tell the behaviors, then fire `onGestureEnd`.
+ */
+export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean, settle?: () => void): void {
+  dropPreviewOverrides(gesture.publish);
+  gesture.publish.previews.clear();
+  settle?.();
+  try {
+    runBehaviorSettled(gesture.behaviors, gesture.ctx, committed);
+  } finally {
+    gesture.lifecycle.end(committed);
+  }
 }
