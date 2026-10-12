@@ -379,13 +379,6 @@ Core five + Crop shipped. Remaining:
   costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
   framing that tracks a simulation.
 
-- **(P3) `GradientHandles` still draws its handles at a literal radius.**
-  `MeshHandles` sizes its corners and controls from `--wzl-handle-size-lg` and
-  `--wzl-handle-size`; `GradientHandles` keeps `HANDLE_RADIUS = 7`, so a ramp's
-  endpoints are 14px across while a mesh corner beside them is 10px. Moving it
-  onto the family is a visual call that wants a browser — it shrinks every
-  gradient handle.
-
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
