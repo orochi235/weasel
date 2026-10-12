@@ -6,6 +6,8 @@ export { resolveSkeleton } from './resolveSkeleton';
 export { solveIk } from './solveIk';
 export type { IkLimit, IkPoint, IkResult, SolveIkOptions } from './solveIk';
 export { useRig } from './useRig';
+export { rigFromNode, useRigNode } from './rigNode';
+export type { RigNodeData, RigNodeParts, RigNodeSource, UseRigNodeOptions } from './rigNode';
 export { motionsFromRest, skinPath } from './skin';
 export type { Skin } from './skin';
 export { dataRestPath } from './skinBinding';

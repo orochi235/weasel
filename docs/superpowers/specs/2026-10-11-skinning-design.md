@@ -70,8 +70,10 @@ Each is reversible.
   one (`DerivedDep.path` answers the derived path only), nor by a view with its own `toPose`.
 - [x] **The rig skins.** `bindRig` takes `skins` (node id to `Skin`) beside `bindings`, and
   `bake` writes the bent path into the document.
-- [ ] **Binding from a node.** A rig read from `data.skeleton` and the `data.skin` of paths under
-  it, rebound when either changes.
+- [x] **Binding from a node.** `rigFromNode` and `useRigNode` read `data.skeleton` from a node,
+  placed by its pose, and under it each node's `data.skin` or `data.joint`. The hook binds
+  again, with a new `rig.target`, when anything it read changes; an animation on the old
+  target is not carried over.
 - [x] **Demo.** `apps/site/demos/SkinDemo.tsx`, seen in headless Chromium: the fill and stroke
   bend as one outline, and a click on the bent forearm selects it with the box at its bounds.
 - [ ] **Bone tool.** Draw, select, and move joints of a node's `data.skeleton`, each drag one

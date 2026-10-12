@@ -76,12 +76,13 @@ export type {
   Track,
 } from './timeline';
 export {
-  autoSkin, bindRig, dataRestPath, jointAxes, mirrorPose, motionsFromRest, skeletonAxes, resolveSkeleton, rigidRigApply, skinPath,
-  solveIk, useRig, IDENTITY_JOINT,
+  autoSkin, bindRig, dataRestPath, jointAxes, mirrorPose, motionsFromRest, skeletonAxes, resolveSkeleton, rigFromNode, rigidRigApply, skinPath,
+  solveIk, useRig, useRigNode, IDENTITY_JOINT,
 } from './rig';
 export type {
   AutoSkinOptions, BindRigOptions, IkLimit, IkPoint, IkResult, Joint, JointTransform, Pose, Rig, RigApply,
-  RestPath, RigApplyContext, RigScene, Skeleton, Skin, SolveIkOptions,
+  RestPath, RigApplyContext, RigNodeData, RigNodeParts, RigNodeSource, RigScene, Skeleton, Skin, SolveIkOptions,
+  UseRigNodeOptions,
 } from './rig';
 
 // `createLoop` / `createTweenLoop` / `createStagger` / `createTimeline` are

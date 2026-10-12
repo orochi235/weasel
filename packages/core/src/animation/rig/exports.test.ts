@@ -15,6 +15,8 @@ describe('rig public surface', () => {
     expect(typeof kit.autoSkin).toBe('function');
     expect(typeof kit.motionsFromRest).toBe('function');
     expect(typeof kit.dataRestPath).toBe('function');
+    expect(typeof kit.rigFromNode).toBe('function');
+    expect(typeof kit.useRigNode).toBe('function');
     expect(kit.IDENTITY_JOINT).toEqual({ x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
   });
 
