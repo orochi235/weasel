@@ -805,11 +805,14 @@ built 2026-10-11. What that left:
     table's arrays.
   - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
     frame is the caller's until the table can be asked for one.
-- **(P2) A frame of the animator costs about 90 ns an animation at 10k and 290 at 100k, read or
-  not** — the same script's `idle` case. With reads off the table's pass, this is what is
-  left of a frame of many values. In a CPU profile of 10k tweens: `tickEach` 15%, the target
-  book's `settle` 12 to 13%, which zeroes an `adjust` array per moving target every frame, and
-  the rest in blits' pull. Not investigated further.
+- **(P2) A frame of the animator costs about 75 ns an animation at 10k, read or not, and a
+  fifth of it is ticking each animation as an object** — `node
+  tests/perf/target-reads/run.mjs table 10000 idle` (orochi, plain Node 26; five runs read 0.73
+  to 0.93 ms a frame). In a CPU profile of 10k tweens `tickEach` is 22%: every animation is an
+  object whose `tick` runs each frame, to advance its own clock and answer whether it is done,
+  though a tween with no `onTick` has nothing to do until it ends. The rest is blits' pull.
+  Ticking only the animations that have something to do each frame needs each one's clock
+  kept some way other than a sum a frame; not designed.
 - **(P2) Stopping and starting an animation costs more as more are running, and most of it is
   in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the parts (orochi,
   plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs with 1,000

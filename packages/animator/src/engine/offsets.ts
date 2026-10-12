@@ -33,7 +33,14 @@ export const norm = (a: readonly number[]): number => Math.hypot(...a);
 /** Counts `delta` into what `s` shows until the next frame reads its voices again. */
 export function bump(s: TargetState, delta: readonly number[], sign: 1 | -1): void {
   for (let i = 0; i < delta.length; i++) s.adjust[i] = s.adjust[i]! + sign * delta[i]!;
+  stale(s);
   s.row?.table.mark(s.row.index);
+}
+
+function stale(s: TargetState): void {
+  if (s.stale || !s.owner) return;
+  s.stale = true;
+  s.owner.adjusted(s);
 }
 
 /** Adds `delta` into the committed value. */
@@ -123,8 +130,10 @@ export interface TargetBook {
   readonly resting: boolean;
 }
 
-export function createTargetBook(owner: TargetOwner): TargetBook {
-  const token = owner;
+export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBook {
+  /** The targets whose `adjust` holds something. A frame walks these and not every moving target. */
+  const adjusted: TargetState[] = [];
+  const token: TargetOwner = { ...owner, adjusted: (s) => { adjusted.push(s); } };
   const live = new Set<TargetState>();
   const rested = new Set<TargetState>();
   const publishes = new Set<() => void>();
@@ -165,15 +174,23 @@ export function createTargetBook(owner: TargetOwner): TargetBook {
       s.behind.clear();
       s.dimmed = false;
       s.adjust.fill(0);
+      s.stale = false;
       live.delete(s);
       if (s.show) rested.add(s);
     },
     settle() {
-      for (const s of live) s.adjust.fill(0);
+      for (const s of adjusted) {
+        // One that came to rest since is cleared already, and may be another animator's now.
+        if (!s.stale || s.owner !== token) continue;
+        s.adjust.fill(0);
+        s.stale = false;
+      }
+      adjusted.length = 0;
       for (const t of tables.keys()) t.settle();
     },
     reread(s, queued) {
       for (let i = 0; i < queued.length; i++) s.adjust[i] = queued[i]!;
+      stale(s);
       s.row?.table.mark(s.row.index);
     },
     show() {

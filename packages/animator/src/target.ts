@@ -81,6 +81,8 @@ export interface TargetOwner {
   reread(s: TargetState): void;
   /** The voices of `table`'s rows as the last frame read them; null where none is moving. */
   columns(table: RowTable): LaneColumns | null;
+  /** Says `s.adjust` holds something, for the next frame's reading to clear. */
+  adjusted(s: TargetState): void;
 }
 
 /** What an animator needs of a table of targets, to show its rows in one pass. */
@@ -139,6 +141,8 @@ export interface TargetState<T = unknown> {
   slot: Reader | null;
   /** What that sum has changed by since: animations started, stopped or redirected. */
   adjust: number[];
+  /** Whether its owner has been told `adjust` holds something. */
+  stale: boolean;
 }
 
 const states = new WeakMap<object, TargetState>();
@@ -244,6 +248,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     live: 0,
     slot: null,
     adjust: new Array<number>(axes.count).fill(0),
+    stale: false,
   };
   const target: Target<T> = {
     read: () => readTarget(s),
