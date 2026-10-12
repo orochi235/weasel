@@ -61,7 +61,8 @@ export interface TargetPhysicsOptions<T> extends Omit<TargetSpringOptions<T>, 't
 export interface HoldOptions<T> {
   /** The value to hold. */
   target: Target<T>;
-  /** What to show in place of the committed value: a value, or a function read each frame. */
+  /** What to show in place of the committed value: a value, or a function read each frame.
+   *  A value is read as the hold starts and again at `touch()`, and costs a frame nothing. */
   value: T | (() => T);
   /** Its share among the target's holds, 0 to 1: a number, or a function read each frame.
    *  Default 1. Holds on one target show their weighted average, and whatever their weights
@@ -85,7 +86,8 @@ export interface HoldOptions<T> {
  *  does; pausing it or scaling its time changes nothing, since it has no clock. */
 export interface HoldHandle extends AnimationHandle {
   /** Says a function-form `value` or `weight` changed outside a frame, so the target shows it
-   *  now rather than at the next frame the animator happens to run. */
+   *  now rather than at the next frame the animator happens to run. A `value` given as an
+   *  object and then written in place shows only once this is called. */
   touch(): void;
   /** Ends the hold. By default it commits the value it was showing, so the target stays where
    *  it is; with `commit: false` the committed value is left alone and the target falls back

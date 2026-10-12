@@ -299,6 +299,10 @@ it interrupts; `interrupt: false` shares the key and adds. When something else
 writes the committed value mid-flight, call `target.stop({ commit: false })` so
 the writer wins.
 
+A pose move can follow an undo instead: `tweenPose` and `springPose` given
+`rewind: true` travel back to where they began when the move is undone mid-flight,
+and forward again if it is redone on the way.
+
 What is built on it:
 
 | Value | Its target | Moved by |
@@ -333,7 +337,8 @@ upload(dots.shown);
 
 A row is a target like any other. Its committed value lives in `table.committed`,
 and the animator fills `table.shown` for every moving row in one pass over flat
-arrays, about 3 ns a row.
+arrays, about 3 ns a row. `shown` is a `Float64Array` unless the table is made with
+`shown: Float32Array`, for a painter that uploads it as it stands.
 
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that

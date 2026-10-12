@@ -606,43 +606,42 @@ skin", "Animation target") describes them. What is left:
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P3) What `createTargetTable` leaves** — the table is built (2026-10-11;
-  `docs/concepts.md`, "Animation target"), vertex colors are on one, and a row with a hold is
-  shown by its pass. Left:
-  - A row is still read by itself, at a single target's cost, while a tween or spring with a
-    destination runs under a hold on it, and while something a stopped animation left waits
-    beside a hold. What a hold hides of such a move is worked out per animation
-    (`hidden` in `packages/animator/src/target.ts`), which the pass has no column for.
-  - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
-    frame is the caller's until the table can be asked for one.
-- **(P3) A hold costs 0.3 to 0.7 µs a frame, where a tween costs under 0.1** — `node
-  tests/perf/target-reads/run.mjs table 10000 held`: 10,000 table rows with one hold each and
-  nothing else take 6.8 to 7.4 ms a frame, and 1,000 take 0.29 to 0.30 (orochi, 2026-10-12,
-  plain Node 26). That is after a hold stopped building arrays every frame, which took a third
-  off. What is left, from the CPU profile at 10,000: a quarter is blits running a voice that
-  answers through a function (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap` read per
-  voice); the rest is the hold's own voice reaching, one after another, the group, each
-  member, the function that gives its value, that value, and the committed value. Two designs
-  would move it and neither is started: a hold whose `value` and `weight` are not functions
-  need not be read again until its target's committed value changes, and holds on a target
-  table's rows could keep their values and weights as rows of the table's own arrays.
-- **(P2) A frame of the animator costs about 75 ns an animation at 10k, read or not, and a
-  fifth of it is ticking each animation as an object** — `node
-  tests/perf/target-reads/run.mjs table 10000 idle` (orochi, plain Node 26; five runs read 0.73
-  to 0.93 ms a frame). In a CPU profile of 10k tweens `tickEach` is 22%: every animation is an
-  object whose `tick` runs each frame, to advance its own clock and answer whether it is done,
-  though a tween with no `onTick` has nothing to do until it ends. The rest is blits' pull.
-  Ticking only the animations that have something to do each frame needs each one's clock
-  kept some way other than a sum a frame; not designed.
-- **(P2) Stopping and starting an animation costs more as more are running, and most of it is
-  in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the parts (orochi,
-  plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs with 1,000
-  running and 21 with 10,000, a start 1 and 2, and the frame after them 1.1 ms and 4.1 against
-  0.08 and 0.93 steady. The cancel is blits' `forget` walking every subject the mix holds, and
-  the slow frame is blits' first read of the new voices; the animator's own lane and codec
-  code is under 4% of the profile. `~/src/blits/NOTES-FROM-WEASEL.md` ("Stopping a subject's
-  voice") has the lines and a fix. What is the animator's is the entry above: its two walks
-  over every animation and every moving target read slower in a frame that follows restarts.
+- **(P3) A target table row is read by itself while an animation is behind a hold on it** —
+  a row is shown by the table's pass over its columns (`fill` in
+  `packages/animator/src/targetTable.ts`) except while a tween or spring with a destination
+  runs under a hold on it, and while something a stopped animation left waits beside a hold:
+  then it is read at a single target's cost. What a hold hides of such a move is worked out
+  per animation and per axis (`hidden` in `packages/animator/src/target.ts`), which the pass
+  has no column for, and blits weighs a voice whole, so the hidden share cannot ride on the
+  animation's own voice.
+- **(P3) A hold whose value is a function costs 0.3 to 0.7 µs a frame, where a tween costs
+  under 0.1** — `node tests/perf/target-reads/run.mjs table 10000 heldfn`. A timeline track, a
+  rig clip, and any `animator.hold` given a function are such holds. A hold of plain values no
+  longer is: its target is read again only when touched or when its committed value moves
+  (`still` in `packages/animator/src/engine/codec.ts`). What a function costs, from the CPU
+  profile at 10,000: a quarter is blits running a voice that answers through a function
+  (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap` read per voice); the rest is the hold's
+  own voice reaching, one after another, the group, each member, the function that gives its
+  value, that value, and the committed value. The design left would move it and is not
+  started: holds on a target table's rows could keep their values and weights as rows of the
+  table's own arrays, which adds public API to the table whose shape is not ruled on.
+- **(P3) A spring or a coast on a target is ticked every frame, to ask whether it has come to
+  rest** — a tween on a target with no `onTick`, and a hold, are ticked only once they have
+  something to do (`due` on an animation's row, `packages/animator/src/engine/schedule.ts`),
+  and a frame of 10,000 such tweens went from 1.25 ms to 0.28 (`node
+  tests/perf/target-reads/run.mjs table 10000 idle`). A spring has no time it is known to
+  rest by, so it still costs a call a frame as an object, as anything with an `onTick` must.
+  A bound on when a spring can first be at rest, from its damping, would give it a `due`;
+  retargeting and pushing it would move the bound. The rest of a frame is blits' pull.
+- **(P2) Stopping and starting an animation costs more as more are running, and what is left
+  of that is in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the
+  parts (orochi, plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs
+  with 1,000 running and 21 with 10,000, a start 1 and 2, and the frame after them 1.1 ms and
+  4.1 against 0.08 and 0.93 steady. The cancel is blits' `forget` walking every subject the
+  mix holds, and the slow frame is blits' first read of the new voices.
+  `~/src/blits/NOTES-FROM-WEASEL.md` ("Stopping a subject's voice") has the lines and a fix.
+  The animator's own searches of its table, for a start's cancel key and for a stopped
+  target's animations, are gone: `... churn 10000 keyed` and `... churn 10000 stop` time those.
 - **(P3) Playing an animation backward** — a time scale below 0 is refused where it is set
   (`timeScaleOf`, `engine/table.ts`). Playing backward needs the animator's clock to keep going
   forward and hand each voice a rate below 0, which blits 0.9.0 ends where the voice started,
@@ -651,10 +650,8 @@ built 2026-10-11. What that left:
 
 ### Earlier deferrals
 
-All from `docs/specs/2026-05-04-animation-primitive-design.md`. The timeline arc's
-decomposition meant to absorb the first; it has not landed:
+From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
-- **(P3) Animation-aware undo** — "rewind the animation" instead of cancel + jump.
 - **(P3) GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts.
 
 ---

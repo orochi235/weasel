@@ -5,6 +5,7 @@ import type {
   AnimationHandle, Animator, EasingSpec, SpringPresetName, StaggerDelay, StaggerOptions,
 } from '@weasel-js/animator';
 import type { Target } from '@weasel-js/animator';
+import { rewindingSpring, rewindingTween } from './rewind';
 
 /** The part of an adapter `tweenPose` and `springPose` use. Any `SceneAdapter` is one, and so is
  *  the adapter `sceneToAdapter` and `useSceneAdapter` build. */
@@ -32,6 +33,13 @@ export interface TweenPoseOptions<TPose> {
   recordOp?: boolean;
   /** Label for the recorded op. Default: `'animate'`. */
   opLabel?: string;
+  /**
+   * When true, a move undone mid-flight travels back to where it began, and one redone
+   * mid-way back turns forward again, where by default the node comes to rest on the written
+   * pose at once. `onDone` is called only when the move arrives at `to`. Needs an adapter with
+   * `poseTarget`. Default false.
+   */
+  rewind?: boolean;
   onDone?: () => void;
 }
 
@@ -46,6 +54,9 @@ export interface SpringPoseOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
   recordOp?: boolean;
   opLabel?: string;
+  /** As `TweenPoseOptions.rewind`: undone mid-flight, it springs back to where it began from
+   *  where it is, at the speed it has. */
+  rewind?: boolean;
   onDone?: () => void;
 }
 
@@ -76,7 +87,7 @@ function recordTransformOp<TPose>(
  *
  * By default one transform op covering the whole move is recorded up front, so one undo
  * returns the node to where it started. Undone mid-flight, the node comes to rest on the
- * undone pose.
+ * undone pose, or with `rewind` travels back to it.
  *
  * An adapter without `poseTarget`, and a pose its descriptor gives no axes for, keep the older
  * behavior: `setPose` is written each frame, and a new move on the node cancels the one running.
@@ -94,6 +105,12 @@ export function tweenPose<TPose>(
     const committed = target.committed();
     if (recordOp) recordTransformOp(adapter, opts.id, committed, opts.to, label);
     const lerp = opts.geometry?.lerp;
+    if (opts.rewind) {
+      return rewindingTween(animator, target, {
+        start: committed, from: opts.from ?? committed, to: opts.to, ms: opts.ms, easing: opts.easing,
+        cancelKey, interpolate: lerp && ((a, b, t) => lerp(a, b, t)), onDone: opts.onDone,
+      });
+    }
     return animator.tween<TPose>({
       target,
       from: opts.from ?? committed,
@@ -144,7 +161,14 @@ export function springPose<TPose>(
     // Read ahead of the op: the spring starts from the pose on screen, wherever that commit
     // and the interrupted moves leave the committed one.
     const shown = target.read();
-    if (recordOp) recordTransformOp(adapter, opts.id, target.committed(), opts.to, label);
+    const committed = target.committed();
+    if (recordOp) recordTransformOp(adapter, opts.id, committed, opts.to, label);
+    if (opts.rewind) {
+      return rewindingSpring(animator, target, {
+        start: committed, from: shown, to: opts.to, cancelKey, onDone: opts.onDone,
+        tuning: { preset: opts.preset, stiffness: opts.stiffness, damping: opts.damping, mass: opts.mass },
+      });
+    }
     return animator.spring<TPose>({
       target,
       from: shown,
@@ -194,6 +218,8 @@ export interface StaggerSpringPoseOptions<TItem, TPose> extends StaggerOptions {
   geometry?: PoseDescriptor<TPose>;
   recordOp?: boolean;
   opLabel?: string;
+  /** As `SpringPoseOptions.rewind`, for each item's spring. */
+  rewind?: boolean;
 }
 
 function itemId(item: unknown): string {
@@ -226,6 +252,7 @@ export function staggerSpringPose<TItem, TPose>(
         geometry: opts.geometry,
         recordOp: opts.recordOp,
         opLabel: opts.opLabel,
+        rewind: opts.rewind,
       }),
     { cancelKey: opts.cancelKey, label: opts.label },
   );
