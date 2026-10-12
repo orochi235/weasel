@@ -16,9 +16,7 @@ import {
   __setGlyphRasterizerForTests,
   _resetFontOutlinesForTests,
 } from '@weasel-js/font/test-seams';
-import {
-  layoutRuns, _resetMissingGlyphWarningsForTests, _resetNoMetricsWarningsForTests,
-} from './layoutRuns';
+import { layoutRuns, _resetNoMetricsWarningsForTests } from './layoutRuns';
 import type { LayoutRunsOpts } from './layoutRuns';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
@@ -373,6 +371,21 @@ describe('layoutRuns — canvas-dynamic faces', () => {
     const bx = (o: ReturnType<typeof layoutRuns>) =>
       o.groups.flatMap((g) => g.quads.map((q) => q.x0))[1];
     expect(bx(tracked) - bx(plain)).toBeCloseTo(10);
+  });
+
+  it('reports no ink, and warns, for a code point a canvas face cannot rasterize', () => {
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: (_f, _w, _s, cp) => (cp === 0xe000
+        ? { width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance: 0 }
+        : { width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255), left: -8, top: 26, advance: 22 }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const laid = layoutRuns([dynRun('A\ue000B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    expect(laid.lines[0].cells.map((c) => c.drawsInk)).toEqual([true, false, true]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('U+E000');
+    warn.mockRestore();
   });
 
   it('atlas groups still report source "atlas" and page 0', async () => {
@@ -788,7 +801,6 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
   beforeEach(() => {
     _resetDynamicFontsForTests();
     _resetFallbackForTests();
-    _resetMissingGlyphWarningsForTests();
     resetBakeBudget();
   });
 
@@ -933,7 +945,6 @@ describe('layoutRuns — outline tier', () => {
   it('draws a character an outline-only face lacks from the dynamic tier, as an atlas run does', async () => {
     _resetDynamicFontsForTests();
     _resetFallbackForTests();
-    _resetMissingGlyphWarningsForTests();
     resetBakeBudget();
     __setGlyphRasterizerForTests({
       faceMetrics: () => ({ ascent: 40, descent: 8 }),

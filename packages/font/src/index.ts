@@ -74,6 +74,10 @@ export type {
   OutlineFaceInfo,
 } from './outline/outlineRegistry';
 export type { OutlineFace, OutlineParser } from './outline/OutlineFace';
+export { metricsOf } from './glyphMetrics';
+export type { GlyphMetrics } from './glyphMetrics';
+export { glyphIn, resolveGlyph } from './resolveGlyph';
+export type { ResolvedGlyph } from './resolveGlyph';
 export type { FontStyle } from './fontStyle';
 export {
   enableLocalFontOutlines,

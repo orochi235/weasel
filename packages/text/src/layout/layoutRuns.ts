@@ -35,8 +35,8 @@
 
 import { paintKey, strokeHasInk, strokeKey, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
 import {
-  resolveFontVariant, resolveGlyphFallback, glyphOutline, fontPending, faceMetricsOf,
-  type ResolveResult, type BmFontChar, type BmFont, type FontStyle, type FaceMetrics,
+  resolveFontVariant, resolveGlyph, metricsOf, glyphOutline, fontPending, faceMetricsOf,
+  type ResolveResult, type BmFontChar, type BmFont, type FontStyle, type FaceMetrics, type GlyphMetrics,
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
@@ -216,45 +216,6 @@ export interface LaidOutRuns {
   bounds: { width: number; height: number };
 }
 
-/**
- * Where a run's advances, kerning and baseline come from.
- *
- * The two tiers that carry metrics express them in different units — a baked
- * atlas in its own bake-size units, a parsed face in ems. `size` is the divisor
- * that takes either into world units (`fontSize / size`), which is why an
- * em-space face reports `size: 1`.
- */
-interface MetricsSource {
-  /** Units per em of whatever `advance`, `base` and `kernOf` are measured in. */
-  size: number;
-  /** Line top to baseline in the glyph frame, in those same units: what an
-   *  atlas glyph's `yoffset` is measured against. */
-  base: number;
-  /** Baseline to the top and bottom of the face's line box, in those same
-   *  units — the ascent and descent a browser sets the face with. `descent`
-   *  is absent for a face that states neither, which hangs its baseline
-   *  `base` below the line top instead of centering the face in the line. */
-  ascent: number;
-  descent?: number;
-  /** Advance for `cp`, or null when this source has no glyph for it. */
-  advanceOf(cp: number): number | null;
-  kernOf(left: number, right: number): number;
-}
-
-function atlasMetrics(font: BmFont): MetricsSource {
-  const size = font.info.size;
-  const { ascent, descent } = font.faceMetrics ?? {};
-  return {
-    size,
-    base: font.common.base,
-    ...(ascent !== undefined && descent !== undefined
-      ? { ascent: ascent * size, descent: descent * size }
-      : { ascent: font.common.base }),
-    advanceOf: (cp) => font.charMap.get(cp)?.xadvance ?? null,
-    kernOf: (l, r) => font.kerningMap.get(l)?.get(r) ?? 0,
-  };
-}
-
 /** Options for {@link layoutRuns}. */
 export interface LayoutRunsOpts {
   /** Wrap width. `Infinity` never wraps. */
@@ -386,49 +347,6 @@ function getOrCreateGroup(
 }
 
 /**
- * A glyph, plus which tier ended up serving it. `resolved`/`font` differ from
- * the run's own when a codepoint escalated to the dynamic tier — the caller
- * has to carry both, because they pick the group (shader, texture, page) and
- * the scale divisor (`font.info.size`).
- */
-interface GlyphHit {
-  glyph: BmFontChar;
-  font: BmFont;
-  resolved: ResolveResult;
-}
-
-/**
- * Find a glyph for `cp`: the atlas, then the dynamic tier, then nothing — with
- * a warning naming the codepoint. A miss never draws a stand-in `?`, which is
- * indistinguishable from one the author wrote, and the BmFont atlas format has
- * no `.notdef` to draw.
- */
-function resolveGlyph(
-  run: ResolvedRun,
-  font: BmFont | null,
-  resolved: ResolveResult,
-  cp: number,
-  warn = true,
-): GlyphHit | null {
-  const direct = font?.charMap.get(cp);
-  if (font && direct) return { glyph: direct, font, resolved };
-
-  const fallback = resolveGlyphFallback(run.fontFamily, run.fontWeight, run.fontStyle);
-  const face = fallback?.dynamicFace;
-  if (fallback && face) {
-    const glyph = face.requestGlyph(cp);
-    // A face that can't measure the codepoint reports a zero advance and no
-    // ink — nothing worth switching groups for, so fall through to the warn.
-    if (glyph.xadvance > 0 || glyph.width > 0) {
-      return { glyph, font: face.font, resolved: fallback };
-    }
-  }
-
-  if (warn) warnMissingGlyphOnce(resolved.resolved.family, cp);
-  return null;
-}
-
-/**
  * Code point blocks whose strong characters read right-to-left.
  *
  * A heuristic on purpose: the real answer is `Bidi_Class`, which lives in
@@ -460,27 +378,6 @@ function warnLogicalRtlOnce(): void {
 /** @internal Test seam — the warning fires once per process otherwise. */
 export function _resetBidiWarningForTests(): void {
   warnedLogicalRtl = false;
-}
-
-const warnedMissingGlyphs = new Set<string>();
-
-function warnMissingGlyphOnce(family: string, cp: number): void {
-  const key = `${family}|${cp}`;
-  if (warnedMissingGlyphs.has(key)) return;
-  warnedMissingGlyphs.add(key);
-  const ch = String.fromCodePoint(cp);
-  console.warn(
-    `weasel layoutRuns: no glyph for U+${cp.toString(16).toUpperCase().padStart(4, '0')} ` +
-    `(${JSON.stringify(ch)}) in "${family}", and the dynamic tier could not ` +
-    `rasterize it — skipping the character. Bake it into the atlas, or call ` +
-    `registerCanvasFont("${family}") to serve missing codepoints from ` +
-    `installed fonts.`,
-  );
-}
-
-/** @internal Test seam — the warn-once keys are module state. */
-export function _resetMissingGlyphWarningsForTests(): void {
-  warnedMissingGlyphs.clear();
 }
 
 const warnedNoMetrics = new Set<string>();
@@ -524,7 +421,7 @@ export function layoutRuns(
     run: ResolvedRun;
     /** The atlas to sample, or null on the outline tier, which has none. */
     font: BmFont | null;
-    metrics: MetricsSource;
+    metrics: GlyphMetrics;
     glyph: BmFontChar | null;
     cp: number;
     advance: number;         // xadvance in world units (already scaled)
@@ -572,28 +469,15 @@ export function layoutRuns(
   /** Each run's own face, which places its rules. Kept per run rather than
    *  read off an entry, whose `resolved` may be a per-glyph fallback. */
   const runFaces = new Map<ResolvedRun, FaceMetrics | undefined>();
-  let prevCp: number | undefined;
-  let prevMetrics: MetricsSource | undefined;
-  let prevFontSize: number | undefined;
+  /** The entry the next one kerns against; none across a break, a tab, or a
+   *  run with no metrics. */
+  let prev: Entry | undefined;
   let srcIndex = 0;
 
   for (const run of runs) {
     const resolved = resolveFontVariant(run.fontFamily, run.fontWeight, run.fontStyle);
     runFaces.set(run, faceMetricsOf(resolved));
-    const outlineFace = resolved.outlineFace;
-    const font = resolved.entry?.font ?? resolved.dynamicFace?.font ?? null;
-    // Em space is unit-scale, so a parsed face divides by 1 and its advances
-    // are already the world-unit fractions of `fontSize` layout wants.
-    const metrics: MetricsSource | undefined = outlineFace
-      ? {
-        size: 1,
-        base: outlineFace.ascender,
-        ascent: outlineFace.faceMetrics?.ascent ?? outlineFace.ascender,
-        ...(outlineFace.faceMetrics?.descent !== undefined ? { descent: outlineFace.faceMetrics.descent } : {}),
-        advanceOf: (cp) => outlineFace.advanceOf(cp),
-        kernOf: (l, r) => outlineFace.kernOf(l, r),
-      }
-      : font ? atlasMetrics(font) : undefined;
+    const metrics = metricsOf(resolved);
     if (!metrics) {
       // A run with no metrics lays out as nothing, which is indistinguishable
       // from empty text downstream — the only signal a consumer ever gets.
@@ -604,28 +488,24 @@ export function layoutRuns(
       // Skipped, but its characters still occupy source offsets — dropping
       // them here would shift every later run's caret indices left.
       srcIndex += run.srcMap?.length ?? run.text.length;
-      prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
+      prev = undefined;
       continue;
     }
     const runBase = srcIndex;
     const map = run.srcMap;
     const sizes = run.sizeMap;
     let at = 0;
-    // World units — deliberately not scaled by fontSize, so the same tracking
-    // opens the same visual gap whatever size the run is set at.
-    const runTracking = run.letterSpacing;
     const clusterEnds = new Set(graphemeEnds(run.text));
 
     for (const ch of [...run.text]) {
       const cp = ch.codePointAt(0)!;
       // Small caps sizes glyphs within the run, so the size is the glyph's.
       const fontSize = sizes ? sizes[at] : run.fontSize;
-      const scale = fontSize / metrics.size;
       const clusterEnd = clusterEnds.has(at + ch.length);
       closesCluster.push(clusterEnd);
-      const tracking = clusterEnd ? runTracking : 0;
-      const isNewline = isHardLineBreak(cp);
-      const isSpace = cp === 32;
+      // World units — deliberately not scaled by fontSize, so the same tracking
+      // opens the same visual gap whatever size the run is set at.
+      const tracking = clusterEnd ? run.letterSpacing : 0;
       // A transformed run draws characters its source does not have; each
       // one takes the source span of the character it was mapped from.
       const srcStart = map ? runBase + map.starts[at] : runBase + at;
@@ -633,108 +513,44 @@ export function layoutRuns(
       at += ch.length;
       srcIndex = map ? runBase + map.length : srcEnd;
 
-      if (isNewline) {
-        entries.push({
-          run, font, metrics,
-          glyph: { id: cp, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
-          // A newline consumes no advance, so it takes no tracking either.
-          cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: true,
-          drawsInk: false,
-          resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
-        });
-        prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
-        continue;
-      }
+      const kerningBefore = prev
+        ? prev.metrics.kernOf(prev.cp, cp) * (prev.fontSize / prev.metrics.size)
+        : 0;
+      // What a slot holds until something fills it: no glyph, no width, and
+      // none of the tracking or kerning a width would carry.
+      const blank: Entry = {
+        run, cp, fontSize, srcIndex: srcStart, srcEnd, flat: 0,
+        resolved, metrics, font: null, glyph: null,
+        advance: 0, tracking: 0, kerningBefore: 0,
+        isSpace: false, isNewline: false, drawsInk: false,
+      };
 
-      const isTab = cp === 9;
-      if (isSpace || isTab) {
-        // Use atlas glyph if present; otherwise synthesize a zero-size entry
-        // with a reasonable advance so spaces still participate in line-fitting.
-        const spaceGlyph = resolved.dynamicFace ? resolved.dynamicFace.requestGlyph(32) : font?.charMap.get(32) ?? null;
-        const spaceAdvance = spaceGlyph ? spaceGlyph.xadvance : metrics.advanceOf(32);
-        const advance = spaceAdvance !== null
-          ? spaceAdvance * scale
-          : fontSize * 0.25;
-        if (isTab) {
-          entries.push({
-            run, font, metrics,
-            glyph: { id: cp, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
-            cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: false,
-            tab: { stop: tabSize * (advance + runTracking), min: advance / 2 },
-            drawsInk: false,
-            resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
-          });
-          prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
-          continue;
+      if (isHardLineBreak(cp)) {
+        entries.push({ ...blank, isNewline: true });
+        prev = undefined;
+      } else if (cp === 9 || cp === 32) {
+        // A face with no space still needs one wide enough to separate words.
+        const space = metrics.advanceOf(32);
+        const advance = space !== null ? space * (fontSize / metrics.size) : fontSize * 0.25;
+        if (cp === 9) {
+          entries.push({ ...blank, tab: { stop: tabSize * (advance + run.letterSpacing), min: advance / 2 } });
+          prev = undefined;
+        } else {
+          prev = { ...blank, advance, tracking, kerningBefore, isSpace: true };
+          entries.push(prev);
         }
-        let kerningBefore = 0;
-        if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
-          kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
-        }
-        entries.push({
-          run, font, metrics,
-          glyph: spaceGlyph ?? { id: 32, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
-          cp, advance, tracking, kerningBefore, isSpace: true, isNewline: false,
-          drawsInk: false,
-          resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
-        });
-        prevCp = cp; prevMetrics = metrics; prevFontSize = fontSize;
-        continue;
+      } else {
+        const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp);
+        // An escalated code point is served by another tier with its own
+        // units, so its scale, and the group it lands in, are its own.
+        prev = hit ? {
+          ...blank,
+          resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph,
+          advance: hit.advance * (fontSize / hit.metrics.size),
+          tracking, kerningBefore, drawsInk: true,
+        } : blank;
+        entries.push(prev);
       }
-
-      // An outline-only face has no atlas to miss in, and its advance is the
-      // only thing needed to place a glyph it has. One it lacks escalates
-      // below, as an atlas miss does.
-      const adv = outlineFace ? metrics.advanceOf(cp) : null;
-      if (adv !== null) {
-        let kerningBefore = 0;
-        if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
-          kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
-        }
-        entries.push({
-          run, font: null, metrics, glyph: null, cp,
-          advance: adv * scale,
-          tracking, kerningBefore, isSpace, isNewline: false, drawsInk: !isSpace,
-          resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
-        });
-        prevCp = cp; prevMetrics = metrics; prevFontSize = fontSize;
-        continue;
-      }
-
-      const hit = resolved.dynamicFace
-        ? { glyph: resolved.dynamicFace.requestGlyph(cp), font: font!, resolved }
-        : resolveGlyph(run, font, resolved, cp);
-      if (!hit) {
-        entries.push({
-          run, font: null, metrics, glyph: null, cp,
-          advance: 0, tracking: 0, kerningBefore: 0, isSpace, isNewline: false,
-          drawsInk: false,
-          resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
-        });
-        prevCp = cp; prevMetrics = metrics; prevFontSize = fontSize;
-        continue;
-      }
-      // An escalated codepoint is served by a different atlas with its own
-      // bake size, so its scale — and the group it lands in — are its own.
-      const glyphFont = hit.font;
-      const glyphMetrics = glyphFont === font ? metrics : atlasMetrics(glyphFont);
-      const glyphScale = fontSize / glyphFont.info.size;
-
-      let kerningBefore = 0;
-      if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
-        kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
-      }
-
-      entries.push({
-        run, font: glyphFont, metrics: glyphMetrics, glyph: hit.glyph, cp,
-        advance: hit.glyph.xadvance * glyphScale,
-        tracking,
-        kerningBefore,
-        isSpace, isNewline: false, drawsInk: !isSpace,
-        resolved: hit.resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
-      });
-
-      prevCp = cp; prevMetrics = glyphMetrics; prevFontSize = fontSize;
     }
   }
 
@@ -948,18 +764,15 @@ export function layoutRuns(
         const e = line.entries[pos];
         const m = bidi.mirror(e.cp);
         if (m === null || m === e.cp) continue;
-        // The outline tier reads `cp` directly; the atlas tier needs the other
-        // glyph looked up. A face without it keeps the unmirrored one.
+        // The outline tier reads `cp` directly; the atlas tiers need the other
+        // glyph looked up, and it may come from another tier. A face without
+        // it keeps the unmirrored one. The advance stays the one the wrap measured.
         if (e.font !== null) {
-          const hit = resolveGlyph(e.run, e.font, e.resolved, m, false);
+          const hit = resolveGlyph(e.resolved, e.run.fontFamily, e.run.fontWeight, e.run.fontStyle, m, false);
           if (!hit) continue;
-          // The mirror may come from another tier, and then it samples that
-          // tier's atlas. The advance stays the one the wrap measured.
-          if (hit.font !== e.font) {
-            e.font = hit.font;
-            e.metrics = atlasMetrics(hit.font);
-            e.resolved = hit.resolved;
-          }
+          e.font = hit.font;
+          e.metrics = hit.metrics;
+          e.resolved = hit.resolved;
           e.glyph = hit.glyph;
         }
         e.cp = m;
