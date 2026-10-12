@@ -266,6 +266,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/TimelineDemo.tsx',
   },
   {
+    id: 'clip',
+    title: 'Clips',
+    category: 'Animation',
+    description: "A clip is a timeline as data: keys, easings by name or bezier points, and names where a live timeline holds functions and targets. `bindClip(clip, binder)` resolves those names into a timeline `animator.timeline` plays, and `toClip` reads a live timeline back into a clip, so an animation can be saved, loaded, and edited in between. `sceneClipTargets(scene, { rigs })` is the binder for a scene: `pose:<node id>` is a node's pose target and `rig:<name>` a rig's. Events are names too, and the binder says what each one does.",
+    hint: 'Edit the JSON and press load · drag a key in the editor and press save to read it back.',
+    load: () => import('./demos/ClipDemo').then((m) => m.ClipDemo),
+    path: 'apps/site/demos/ClipDemo.tsx',
+  },
+  {
     id: 'rig',
     title: 'Rig',
     category: 'Animation',

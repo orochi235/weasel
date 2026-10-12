@@ -38,6 +38,11 @@ export interface SampledTrack<T> {
    * sample is a value the axes built, a key's own included.
    */
   target?: Target<T>;
+  /** What `target` goes by in a clip, for `toClip` to write and a `ClipBinder` to resolve.
+   *  A target has no name of its own. */
+  targetName?: string;
+  /** What `interpolate` goes by in a clip, as `targetName` is for `target`. */
+  interpolateName?: string;
   /** The track's share among the target's holds, as `HoldOptions.weight`. Default 1. */
   weight?: number | (() => number);
   /** The axes of the target the track holds, as `HoldOptions.axes`. Default: every axis. */
@@ -60,6 +65,11 @@ export interface EventBookingHandle {
 export interface TimelineEvent {
   /** Time within the track's timeline, in ms. */
   t: number;
+  /** What the event goes by in a clip: a `ClipBinder` turns it and `data` into `fire` and
+   *  `book`. */
+  name?: string;
+  /** Carried with `name` into a clip. Anything JSON holds. */
+  data?: unknown;
   /** Runs on the frame that crosses the edge, told how far behind the frame it
    *  was crossed, in ms — never negative, and measured against `duration` on
    *  the loop seam, where the outgoing lap's tail fires after the wrap. */

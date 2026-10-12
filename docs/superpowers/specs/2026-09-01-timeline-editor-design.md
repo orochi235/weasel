@@ -1,9 +1,9 @@
 # Timeline editor design
 
 **What this is:** the design for `<Timeline>`, a keyframe editor for the timeline primitive, plus
-the two changes to `core` it depends on. The editor phase of the timeline/rig arc
-(`2026-08-22-animation-timeline-rig-design.md`); inverse kinematics, skinning and serializable
-clips remain open under that arc and are untouched by this one.
+the two changes to `core` it depends on. It was the editor phase of the timeline and rig arc,
+whose own design doc was deleted once inverse kinematics, skinning, and serializable clips had
+all landed (2026-10-11); `docs/concepts.md` describes what that arc built.
 
 **Who it's for:** whoever implements it. Assumes `packages/core/src/animation/timeline/`, the
 `@weasel-js/ui` component conventions, and the `onInput`/`onChange` gesture split; assumes no

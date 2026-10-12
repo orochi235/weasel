@@ -19,6 +19,8 @@ describe('animator public surface', () => {
 
   it('exports sampleTrack from the package entry', () => {
     expect(typeof animator.sampleTrack).toBe('function');
+    expect(typeof animator.bindClip).toBe('function');
+    expect(typeof animator.toClip).toBe('function');
   });
 
   it('does not export createTimeline, which takes an internal seam', () => {

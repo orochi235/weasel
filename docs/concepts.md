@@ -338,6 +338,27 @@ writes the value's `axisCount` axes into a buffer and builds no value. Axes that
 define `add` and `write` let a read skip the array of axes as well; the ones the
 kit supplies all do.
 
+## Clip
+
+A timeline's tracks hold functions and live targets, so a timeline is not data. A
+**clip** is one that is: `{ version: 1, tracks, duration? }`, with keys, easings by
+built-in name or bezier points, and a name wherever the live timeline holds a
+function or a target.
+
+| In a live track | In a clip | Resolved by |
+|---|---|---|
+| `target` | `target: 'pose:box'` | `ClipBinder.target(name)` |
+| `interpolate` | `interpolate: 'oklab'` | `ClipBinder.interpolate[name]` |
+| an event's `fire` and `book` | `name`, with `data` | `ClipBinder.event(name, data)` |
+| a function easing | its built-in name, or `{ bezier }` | nothing: both are data |
+
+`bindClip(clip, binder)` answers what `animator.timeline` takes, and `toClip` reads a
+live timeline back, an edited one included, because a live track keeps its names
+(`targetName`, `interpolateName`, an event's `name`). `sceneClipTargets(scene, { rigs })`
+is the binder's `target` for a scene: `pose:<node id>` and `rig:<name>`. A track that
+moves something else gets a target of its own from `createTarget`; a clip holds no
+`onTick`.
+
 ## Rig and skin
 
 A **rig** is a `Skeleton`, joints in a parent chain, bound to scene nodes by

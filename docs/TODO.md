@@ -770,13 +770,21 @@ intercepting the press that drags the body.
 
 ### Timelines and rigging
 
-The timeline, the rig, and skinning are built; `docs/concepts.md` ("Rig and skin", "Animation
-target") describes them. What is left:
+The timeline, clips, the rig, and skinning are built; `docs/concepts.md` ("Clip", "Rig and
+skin", "Animation target") describes them. What is left:
 
-- **(P3) Serializable clips** — a track is `keys` plus functions (`onTick`, `interpolate`, a
-  function easing) and a live `target`, so a timeline cannot be saved or loaded. Not designed.
-  What is already plain data: keys, named and bezier easings, a `Pose`. What needs a name to
-  resolve at load: a track's target, a custom `interpolate`, and an event's `fire` or `book`.
+- **(P3) Two demos build by hand what a clip now holds** — `apps/site/demos/platformer/clips.ts`
+  keeps its own `Clip` type and `clipTrack`, with function easings, and `TimelineDemo.tsx`
+  moves its nodes from `onTick` closures. Both would be `Clip` data bound with `bindClip` and
+  `sceneClipTargets`.
+- **(P3) A clip cannot hold a path** — a key's value has to be what JSON reads back, and a
+  `Path` keeps its points in typed arrays, so a track tweening a path-shaped pose makes
+  `toClip` throw. `apps/draw/src/persistence.ts` tags typed arrays for its own files; a clip
+  would need the same, in `packages/animator/src/timeline/clip.ts`.
+- **(P3) A clip names a rig track's axes by number** — `ClipSampledTrack.axes` is positions in
+  the target's axes, so a track on some of a rig's joints breaks when the skeleton's joint
+  order changes. Naming joints needs the binder to answer a target's axes for names, as
+  `jointAxes(skeleton, names)` does.
 - **(P3) Editing a skinned path's points leaves its weights misaligned** — inserting or deleting
   a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
   actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or
