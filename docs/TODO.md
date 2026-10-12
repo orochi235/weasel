@@ -579,12 +579,6 @@ Core five + Crop shipped. Remaining:
   before glyph lookup and a color (RGBA) atlas page drawn untinted for clusters with emoji
   presentation. `LaidOutCell.clusterEnd` already marks where each cluster closes.
 
-- **(P3) Text layout: the canvas-2D label paths read a tab as one space.** `layoutRuns` runs a tab
-  to the next stop (`TextStyle.tabSize`, default 8 spaces). `measureText` and `layoutMarkdown`
-  measure with `ctx.measureText` and paint with `fillText`, which draws a tab as a single space, so
-  they agree with their own painter and not with the GL tier. Undecided: whether those paths should
-  split a line at its tabs and paint the pieces at tab stops, or keep the canvas's reading.
-
 ---
 
 ## Scene, adapters & layout
