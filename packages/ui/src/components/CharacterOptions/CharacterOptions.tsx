@@ -1,13 +1,14 @@
 /**
- * Character controls for the tool options bar — the caret-range half of text
- * properties, opposite the sidebar's node-level Character group.
+ * Character controls for a text edit in progress — the caret-range half of
+ * text properties, opposite a panel's node-level ones.
  *
  * The controls are not assembled here: `useTextTool.options` declares them and
  * `<ToolOptionsBar schema>` draws them, the same way the selection panel draws
  * node properties. This file is the adapter between that schema and a range —
  * a `RangeStyle` in, a `RunStylePatch` out — and has no idea whether the caller
  * applies the patch to the runs under a selection or arms it for the next
- * character typed at a collapsed caret. That routing is `useTextEdit`'s.
+ * character typed at a collapsed caret. That routing is `useTextEdit`'s:
+ * `style` takes its `effectiveStyle`, `onPatch` its `applyStyleToSelection`.
  *
  * `MIXED` becomes a path in the bar's `mixed` set, so each control shows its
  * own indeterminate presentation: a `Mixed` placeholder over an empty field,
@@ -18,13 +19,14 @@ import {
 } from '@weasel-js/core';
 import type { ScreenLength } from '@weasel-js/core';
 import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
-import { ToolOptionsBar } from '@weasel-js/ui';
+import { ToolOptionsBar } from '../ToolOptionsBar';
 import type { ReactNode } from 'react';
 
+/** Props for {@link CharacterOptions}. */
 export interface CharacterOptionsProps {
   /** Styling to display. `MIXED` at a key means the sources disagree there.
-   *  Absent leaves the bar empty — the row is permanent chrome. */
-  style?: RangeStyle;
+   *  Absent or `null` leaves the bar empty — the row is permanent chrome. */
+  style?: RangeStyle | null;
   /** Apply a styling change. One call per completed edit. */
   onPatch: (patch: RunStylePatch) => void;
   /** Tenants of the bar that are not character styling, e.g. loupe controls. */
@@ -32,14 +34,32 @@ export interface CharacterOptionsProps {
   className?: string;
 }
 
+const CHROME_CLASS = 'wzl-character-options';
+
+/**
+ * Is `el` part of a `CharacterOptions` bar, or of a kit popover one of its
+ * controls opened? Pass it as `useTextEdit`'s `isEditorChrome`, so using the
+ * bar does not end the edit it styles.
+ */
+export function isCharacterChrome(el: Element): boolean {
+  // A popover renders in a portal under <body>, outside the bar's subtree.
+  return el.closest(`.${CHROME_CLASS}, [data-weasel-overlay]`) !== null;
+}
+
 /** The keys the schema draws, in the order it declares them. */
 type StyleKey = keyof typeof useTextTool.options.children;
 
+/**
+ * The strip of character controls for a text edit in progress. Wire it to
+ * `useTextEdit`: `style` takes `effectiveStyle`, `onPatch` takes
+ * `applyStyleToSelection`, and {@link isCharacterChrome} goes in as
+ * `isEditorChrome`.
+ */
 export function CharacterOptions({ style, onPatch, children, className }: CharacterOptionsProps) {
-  const editing = style !== undefined;
+  const editing = style != null;
   return (
     <ToolOptionsBar
-      className={className}
+      className={className ? `${CHROME_CLASS} ${className}` : CHROME_CLASS}
       label={editing ? 'Text' : undefined}
       schema={editing ? useTextTool.options : undefined}
       values={editing ? characterValues(style) : undefined}
@@ -53,7 +73,7 @@ export function CharacterOptions({ style, onPatch, children, className }: Charac
 
 /** One control's edit as a run patch. Only `fill` needs shaping: the schema
  *  draws a color, and a run's fill is a `FillStyle` object. */
-export function characterPatch(path: string, value: unknown): RunStylePatch {
+function characterPatch(path: string, value: unknown): RunStylePatch {
   if (path === 'fill') return { fill: { color: value as string } satisfies StyledRun['fill'] };
   return { [path]: value } as RunStylePatch;
 }
@@ -70,7 +90,7 @@ export function characterPatch(path: string, value: unknown): RunStylePatch {
  * `resolveRuns` does too, and typing over one half overrides just that half
  * exactly as it does there.
  */
-export function characterValues(style: RangeStyle): Record<string, unknown> {
+function characterValues(style: RangeStyle): Record<string, unknown> {
   const script = style.script;
   const preset = script === 'super' || script === 'sub' ? scriptPresets(style)[script] : undefined;
   return {
@@ -95,7 +115,7 @@ function scriptPresets(style: RangeStyle): typeof SCRIPT_METRICS {
 
 /** The paths whose sources disagree — every `MIXED` key, plus a fill with no
  *  single color to show. */
-export function characterMixed(style: RangeStyle): Set<string> {
+function characterMixed(style: RangeStyle): Set<string> {
   const out = new Set<string>();
   for (const key of Object.keys(useTextTool.options.children) as StyleKey[]) {
     if (style[key as keyof RangeStyle] === MIXED) out.add(key);

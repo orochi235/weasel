@@ -3,7 +3,7 @@ import { act, render, renderHook } from '@testing-library/react';
 import { Suspense, createElement, startTransition, useState } from 'react';
 import { Hang } from '@weasel-js/react/testing/abandonRender';
 import { overlayTop, useTextEdit } from './useTextEdit';
-import type { UseTextEditOptions } from './useTextEdit';
+import type { UseTextEditOptions } from './textEditTypes';
 import { SMALL_CAPS_SCALE, type StyledRun } from '@weasel-js/text';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { MIXED } from '@weasel-js/text';
@@ -815,6 +815,20 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     act(() => dispatchBeforeInput(overlay, 'X'));
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'aXbc' }]);
+  });
+
+  it('reports the style a control shows: node, then range, then what is armed', async () => {
+    const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'a', italic: true }, { text: 'b' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    expect(result.current.effectiveStyle).toBeNull();
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await placeCaretAndSettle(overlay, 1);
+    expect(result.current.effectiveStyle).toMatchObject({ fontSize: 16, italic: true, bold: false });
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    expect(result.current.effectiveStyle).toMatchObject({ fontSize: 16, italic: true, bold: true });
+    act(() => result.current.commit());
+    expect(result.current.effectiveStyle).toBeNull();
   });
 
   it('toggling the same styling twice disarms it', () => {

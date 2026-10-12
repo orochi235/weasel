@@ -34,7 +34,6 @@ import {
   defaultCommitAdapter,
   defaultDrawOne,
   fitViewToBounds,
-  type RangeStyle,
   type RenderLayer,
   SceneCanvas,
   type SceneCanvasApi,
@@ -52,7 +51,9 @@ import {
 import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
+  CharacterOptions,
   createRecentColorsStore,
+  isCharacterChrome,
   RecentColorsProvider,
   ResizeHandle,
   SceneGradientHandles,
@@ -66,7 +67,7 @@ import {
 } from 'react';
 
 import type { SceneCanvasHit } from '@weasel-js/core';
-import { effectiveRangeStyle, patchRangeStyle, useSliceTool } from '@weasel-js/core';
+import { useSliceTool } from '@weasel-js/core';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { type ActivePaint, ActiveSwatches } from './ActiveSwatches';
 import type { PaperSizeKey } from './CommandBar';
@@ -87,7 +88,7 @@ import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 import { writeSession } from './sessionStore';
 import { colorContribution, useColorContext } from './tools/colorContext';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
-import { CharacterOptions, TextEditDepPublisher } from './ui/CharacterOptions';
+import { TextEditDepPublisher } from './TextEditDepPublisher';
 
 // Bounds for the sidebar drag come from the pref that stores the result, so
 // the handle and the Preferences number field can't drift apart. app.css
@@ -101,7 +102,6 @@ import { Toolbar } from './Toolbar';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import './app.css';
 import { DRAW_POSE_COMPOSITION, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
-import { TEXT_CHROME_CLASS } from './paintRenderers';
 import { HISTORY_KEY, loadHistory, loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
@@ -463,14 +463,7 @@ function EditorWithSharedScene({
   // canvas mounts), so the overlay always has a container before an edit can
   // start.
   const textEdit = useSceneTextEdit(scene, hostRef.current, {
-    // Clicking into the character bar must not end the edit it is editing.
-    // The bar's dropdowns render in a portal under <body>, so they are not in
-    // the bar's subtree and `closest` alone misses them — picking a font
-    // ended the session, and the style patch then landed on nothing. Kit
-    // overlays carry `data-weasel-overlay` for exactly this question.
-    isEditorChrome: (el) =>
-      el.closest(`.${TEXT_CHROME_CLASS}`) !== null
-      || el.closest('[data-weasel-overlay]') !== null,
+    isEditorChrome: isCharacterChrome,
     // Escape out of a text edit keeps the text, as in every comparable
     // editor; losing a paragraph to a stray key is the worse failure.
     escape: 'commit',
@@ -522,20 +515,6 @@ function EditorWithSharedScene({
       textEdit.commit();
     }
   }, [modeId, textEdit]);
-
-  // What the options bar displays. The node's own style resolved first, the
-  // range (or the run the caret sits in) over it, and last what is armed for
-  // the next keystroke — which is what the user will see themselves type.
-  const editingNode = textEdit.editingId != null
-    ? scene.get(asNodeId(textEdit.editingId))
-    : undefined;
-  const barStyle: RangeStyle = effectiveRangeStyle(
-    patchRangeStyle(textEdit.rangeStyle ?? {}, textEdit.pendingStyle),
-    textEdit.nodeStyle ?? editingNode?.data.style,
-    { fill: editingNode?.data.fill, stroke: editingNode?.data.stroke },
-  );
-
-  const onCharacterPatch = textEdit.applyStyleToSelection;
 
   // The overlay draws the node being edited, so the scene layer must not draw
   // it too — otherwise every keystroke shows against the pre-edit glyphs.
@@ -590,11 +569,7 @@ function EditorWithSharedScene({
       {/* Permanently reserved, never mounted on demand: the canvas is sized
           to the workspace, so appearing mid-edit would resize it under the
           caret. Empty until a text edit is in progress. */}
-      <CharacterOptions
-        className={TEXT_CHROME_CLASS}
-        style={textEdit.editingId != null ? barStyle : undefined}
-        onPatch={onCharacterPatch}
-      >
+      <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection}>
         {canvasReady && (
           <LoupeControls canvasRef={canvasRef} source={loupeSource} />
         )}

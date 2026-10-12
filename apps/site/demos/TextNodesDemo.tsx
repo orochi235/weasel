@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
 import type { FillStyle } from '@weasel-js/core';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
+import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui';
 
 const W = 480;
 const H = 380;
@@ -100,10 +101,11 @@ export function TextNodesDemo() {
     initial: NODES,
   });
   const [frame, setFrame] = useState<HTMLDivElement | null>(null);
-  const edit = useSceneTextEdit(scene, frame);
+  const edit = useSceneTextEdit(scene, frame, { isEditorChrome: isCharacterChrome });
 
   return (
     <div className="ckd-stack">
+      <CharacterOptions className="ckd-strip" style={edit.effectiveStyle} onPatch={edit.applyStyleToSelection} />
       <div className="ckd-canvas-frame" ref={setFrame} onDoubleClick={edit.onDoubleClick}>
         <SceneCanvas
           width={W}

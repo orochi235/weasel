@@ -356,8 +356,8 @@
     "lines": 498
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 1332,
-    "longestFunction": 482
+    "lines": 1090,
+    "longestFunction": 481
   },
   "packages/text/src/layout/layoutRuns.ts": {
     "lines": 1284,
