@@ -2,7 +2,6 @@ import type {
   FillStyle,
   ImageNodeData,
   Path,
-  PoseComposition,
   Stroke,
   StyledRun,
   TextStyle,
@@ -18,10 +17,6 @@ import type {
 export interface WeaselDrawPose {
   x: number; y: number; width: number; height: number; rotation?: number;
 }
-
-/** How a container's pose composes into its children's. The canvas and the
- *  SVG export both read it; absent, every stored pose is already world. */
-export const DRAW_POSE_COMPOSITION: PoseComposition<WeaselDrawPose> | undefined = undefined;
 
 /** Data stored on every leaf — kit-native shape consumed by PATH_PAINTER
  *  and the text painter. Tools synthesized by `defaultTools={BUILTIN_TOOL_IDS}`

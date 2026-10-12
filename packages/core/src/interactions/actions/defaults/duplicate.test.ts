@@ -1,3 +1,4 @@
+import { IDENTITY_POSE_COMPOSITION, RECT_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
 import { duplicateAction } from './duplicate';
 import type { ImmediateInvoker } from '@weasel-js/routing';
@@ -26,6 +27,7 @@ function makeScene(spec: Array<[string, { parent?: string | null; kind?: 'leaf' 
     get roots() { return [...nodes.values()].filter((n) => n.parent == null).map((n) => n.id); },
     applyBatch: vi.fn(),
     mintId: () => asNodeId(`copy-${++minted}`),
+    composition: IDENTITY_POSE_COMPOSITION as { closure: string },
   };
 }
 
@@ -81,23 +83,23 @@ describe('duplicateAction', () => {
     expect(copies[0].kind).toBe('container');
     expect(copies[1].parent).toBe(copies[0].id);
     expect(copies[2].parent).toBe(copies[0].id);
-    // Absolute poses (no poseComposition dep): every node moves.
+    // Absolute poses: every node moves.
     expect(copies[1].pose).toEqual({ x: 22, y: 22 });
   });
 
-  it('offsets only the roots when the consumer registered a poseComposition', () => {
+  it('offsets only the roots when the scene composes poses', () => {
     // Local poses: a child is relative, so offsetting the root already carries
     // it. Offsetting again would double the nudge.
     const scene = makeScene([
       ['g', { kind: 'container' }],
       ['a', { parent: 'g', x: 10, y: 10 }],
     ]);
+    scene.composition = RECT_POSE_COMPOSITION;
     let committed: Op[] = [];
     (duplicateAction.invoker as ImmediateInvoker).run({
       scene,
       selection: makeSelection(['g']),
       applyOps: (ops: Op[]) => { committed = ops; },
-      poseComposition: { compose: () => ({}), decompose: () => ({}) },
     } as never);
 
     expect(inserted(committed)[1].pose).toEqual({ x: 10, y: 10 });

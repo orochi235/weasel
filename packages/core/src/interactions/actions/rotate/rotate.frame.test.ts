@@ -4,7 +4,6 @@
  */
 import { describe, it, expect } from 'vitest';
 import { rotateAction } from './action';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
@@ -29,7 +28,6 @@ function ctxAt(scene: Scene<unknown, string, unknown>, x: number, y: number): In
     deps: {
       selection: { get: () => IDS },
       scene,
-      poseComposition: RIGID_POSE_COMPOSITION,
     },
   } as unknown as InvocationCtx;
 }

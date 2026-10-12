@@ -42,7 +42,7 @@ export const groupAction: Action & { requires: string[] } = {
   group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor', 'poseComposition'],
+  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -73,7 +73,7 @@ export const groupAction: Action & { requires: string[] } = {
       // authored pose is only the fallback (an emptied group, a lost registry
       // key); under identity the derived union is what the scene shows.
       const d = poseDescriptorOf(deps.poseDescriptor);
-      const frame = scenePoseFrame(scene, deps.poseComposition);
+      const frame = scenePoseFrame(scene);
       const worlds = new Map<NodeId, unknown>();
       for (const node of nodes) worlds.set(node.id, frame.world(node.id));
       // Visual, not stored, bounds: a turned member's ink reaches outside its
@@ -166,7 +166,7 @@ export const ungroupAction: Action & { requires: string[] } = {
   group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'poseComposition'],
+  requires: ['scene', 'selection'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -180,7 +180,7 @@ export const ungroupAction: Action & { requires: string[] } = {
       const containers = ids.filter((id) => scene.get(id as NodeId)?.kind === 'container');
       if (containers.length === 0) return;
 
-      const frame = scenePoseFrame(scene, deps.poseComposition);
+      const frame = scenePoseFrame(scene);
       const absolutePoses = frame.pc.closure === 'identity';
 
       scene.batch('Ungroup', () => {

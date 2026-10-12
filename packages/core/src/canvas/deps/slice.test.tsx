@@ -13,7 +13,7 @@ import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/typ
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import { useSliceTool } from 'tools/builtin/slice';
 import { useSliceDep } from './slice';
-import { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
+import { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { pathInWorld } from '@weasel-js/geom';
@@ -41,7 +41,6 @@ const leaves = (scene: S) =>
 
 function mount(scene: S, opts: {
   override?: SliceDep;
-  poseComposition?: PoseComposition<RectPose>;
   poseDescriptor?: PoseDescriptor<RectPose>;
   select?: string[];
 } = {}) {
@@ -67,7 +66,6 @@ function mount(scene: S, opts: {
         width={400}
         height={400}
         tools={{ slice }}
-        {...(opts.poseComposition ? { poseComposition: opts.poseComposition } : {})}
         {...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {})}
       >
         <Capture />
@@ -125,14 +123,17 @@ describe('the default slice dep', () => {
   });
 
   it('cuts a child in world space and stores its pieces in the parent frame', () => {
-    const scene = createScene<Data, Layer, RectPose>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<Data, Layer, RectPose>({
+      systemLayers: [{ id: 'main' }],
+      composition: RECT_POSE_COMPOSITION,
+    });
     const g = scene.add({ id: asNodeId('g'), kind: 'container', layer: 'main', pose: { x: 200, y: 200, width: 100, height: 100 }, data: {} });
     scene.add({
       id: asNodeId('kid'), kind: 'leaf', layer: 'main', parent: g,
       pose: { x: 0, y: 0, width: 100, height: 100 },
       data: { path: rectPath(0, 0, 100, 100) },
     });
-    const { commit } = mount(scene, { poseComposition: RECT_POSE_COMPOSITION });
+    const { commit } = mount(scene);
     commit([{ x: 190, y: 250 }, { x: 310, y: 250 }]);
     const kids = scene.childrenOf(g).map((id) => scene.get(id)!);
     expect(kids).toHaveLength(2);
@@ -222,7 +223,10 @@ describe('the default slice dep', () => {
     });
 
     it('cuts a child of a rotated container in world space and stores its pieces in the container frame', () => {
-      const scene = createScene<Data, Layer, RectPose>({ systemLayers: [{ id: 'main' }] });
+      const scene = createScene<Data, Layer, RectPose>({
+        systemLayers: [{ id: 'main' }],
+        composition: RIGID_POSE_COMPOSITION,
+      });
       const g = scene.add({
         id: asNodeId('g'), kind: 'container', layer: 'main',
         pose: { x: 200, y: 200, width: 100, height: 100, rotation: quarter }, data: {},
@@ -232,7 +236,7 @@ describe('the default slice dep', () => {
         pose: { x: 0, y: 0, width: 100, height: 100 },
         data: { path: rectPath(0, 0, 100, 100) },
       });
-      const { commit } = mount(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+      const { commit } = mount(scene);
       commit([{ x: 190, y: 250 }, { x: 310, y: 250 }]);
       const kids = scene.childrenOf(g).map((id) => scene.get(id)!);
       expect(kids).toHaveLength(2);

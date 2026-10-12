@@ -215,11 +215,13 @@ rect-flavored math (resize, area-select, snap origin) still works.
 
 `getPose` / `setPose` are **local-coordinate** — relative to the object's
 parent — and `getWorldPose` is the composed reading that rendering, picking and
-chrome consume. The two are the same value unless a `poseComposition` is
-configured: by default a parent groups its children and imposes no transform,
-so every node's stored pose is already world. Pass
-`<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` to make a container's
-pose a frame, so rotating it rotates its contents. See
+chrome consume. The two are the same value unless the scene composes poses: by
+default a parent groups its children and imposes no transform, so every node's
+stored pose is already world. Pass
+`useScene({ composition: RIGID_POSE_COMPOSITION })` to make a container's pose
+a frame, so rotating it rotates its contents and moving it writes one pose. The
+scene holds the strategy as `scene.composition`, and the canvas, the adapter,
+the layout pass, picking, and every built-in action read it from there. See
 `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
 
 ## Pose override

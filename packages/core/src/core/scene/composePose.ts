@@ -25,6 +25,7 @@ export type { RectPose };
 /** Re-exported from `core/scene/composeFrame.ts`, for the same reason. */
 import {
   IDENTITY_POSE_COMPOSITION,
+  composesFrames,
   composeWorldPose,
   frameAtOrAbove,
   rebaseLocalPose,
@@ -32,7 +33,7 @@ import {
   type PoseClosure,
   type PoseComposition,
 } from 'core/scene/composeFrame';
-export { IDENTITY_POSE_COMPOSITION, composeWorldPose, frameAtOrAbove, rebaseLocalPose };
+export { IDENTITY_POSE_COMPOSITION, composesFrames, composeWorldPose, frameAtOrAbove, rebaseLocalPose };
 export type { PoseAdapter, PoseClosure, PoseComposition };
 
 /**

@@ -3,7 +3,7 @@ import { DRAG_THRESHOLD_PX, isAnchorOrControl, resolveParams } from '@weasel-js/
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
+import type { PoseComposition } from 'core/scene/composePose';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { LayoutDep, NodeAtPointDep } from '../depSchema';
@@ -94,14 +94,9 @@ export function beginMove(
   const layout = ctx.deps.layout;
   const applyOps = ctx.deps.applyOps;
   const geometryProjection = ctx.deps.geometryProjection;
-  // Pose-composition strategy: how the consumer's scene folds local poses
-  // up to world (and back). Absent → IDENTITY (absolute-pose: nodes store
-  // world coords, parents are grouping-only). Local-pose consumers supply
-  // { compose: composeRectPose, decompose: decomposeRectPose }.
-  const pc = ctx.deps.poseComposition
-    ?? IDENTITY_POSE_COMPOSITION;
 
   if (!selection || !scene) return null;
+  const pc = scene.composition;
   // Anchors sit on the selected body, and this binding ties editAnchors' on
   // specificity; with no mode registry to filter move out, declining is what lets it through.
   if (isAnchorOrControl(ctx.drag?.affordance)) return null;
@@ -114,7 +109,7 @@ export function beginMove(
 
   const reflow = layout?.reflow ?? null;
   const { startPoses, cascadeIds, caught } = captureStartPoses(scene, ids, reflow, projection);
-  const { carried, frames } = captureFrames(scene, ids, startPoses, pc);
+  const { carried, frames } = captureFrames(scene, ids, startPoses);
 
   // Everything a move does beyond translating is a behavior: the binding's
   // own, then the layout drop, then reparent-on-drop. On release the first to

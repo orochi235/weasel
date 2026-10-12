@@ -7,7 +7,6 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { groupAction, ungroupAction } from './group';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
@@ -34,14 +33,13 @@ function run(
     {
       selection: { get: () => ids, set },
       scene,
-      poseComposition: RIGID_POSE_COMPOSITION,
     } as never,
   );
   return set;
 }
 
 function worldOf(scene: Scene<unknown, string, unknown>, id: NodeId): RectPose {
-  return scenePoseFrame(scene, RIGID_POSE_COMPOSITION).world(id) as RectPose;
+  return scenePoseFrame(scene).world(id) as RectPose;
 }
 
 describe('groupAction under a container frame', () => {

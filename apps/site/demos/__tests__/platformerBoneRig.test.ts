@@ -144,6 +144,7 @@ describe('the bone nodes as the canvas composes them', () => {
   it('resolves each bone to the world pose the flattened rig gave it', () => {
     const scene = createScene<WorldData, WorldLayer, RectPose>({
       systemLayers: [{ id: 'tiles' }, { id: 'entities' }, { id: 'player' }],
+      composition: RIGID_POSE_COMPOSITION,
     });
     for (const spec of boneNodes()) scene.add(spec);
 
@@ -153,9 +154,9 @@ describe('the bone nodes as the canvas composes them', () => {
       scene.setPose(boneId(name), local);
     }
 
-    // The adapter is what `<SceneCanvas poseComposition>` builds, so this is
-    // the composition the canvas applies rather than a re-derivation of it.
-    const adapter = sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+    // The adapter is what `<SceneCanvas>` builds, so this is the composition
+    // the canvas applies rather than a re-derivation of it.
+    const adapter = sceneToAdapter(scene);
     const expected = flattenedWorld(pose, at, -1);
     for (const [name, want] of expected) {
       const got = adapter.getWorldPose(boneId(name)) as RectPose;

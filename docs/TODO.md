@@ -239,14 +239,14 @@ have shipped. What remains:
   triangulates the closed triangle and `pathSignedArea` (`paths/winding.ts`) counts it as closed
   "the way a fill closes it", while `pointInPath` (`pathHitTest.ts`, `flatSubpaths`) files the run
   under `open` and returns false, and `path.ts` documents that open subpaths "don't contribute to
-  fills". So the triangle paints and cannot be clicked. The options are SVG's rule (a fill closes
-  every subpath implicitly), which means `flatSubpaths` treats an open run of three or more points
-  as closed for the fill test and `path.ts` says so; or the kit rule (open never fills), which means
-  `tessellate` skips open contours and `pathSignedArea` returns 0 for them, and SVG import has to
-  close filled open shapes itself. SVG's rule cannot land in `pointInPath` alone: `containsInFrame`
-  (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls it without knowing whether the
-  node has a fill, so every unfilled open stroke would become pickable across the area its ends
-  enclose.
+  fills". So the triangle paints and cannot be clicked. Ruled 2026-10-12: the path says which, in a
+  field beside `fillRule` that all three read (a fill closes every open subpath, as SVG and canvas
+  do, or an open subpath never fills), and an engine flag sets the answer for a path that carries
+  none. Still to settle while building: where that flag lives, since `@weasel-js/geom` has no
+  engine object, and which answer it starts at. Under the closing rule an unfilled open stroke is
+  picked across the area its ends enclose, because `containsInFrame`
+  (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls `pointInPath` without knowing
+  whether the node has a fill; a closed unfilled outline is already picked that way.
 
 - **(P3) WeaselDraw: an imported clipped group is clipped to the clip's box, not its outline.**
   `svgNodesToKitDrafts` now gives a `<g clip-path>` container the clip as its `data`, an unpainted
@@ -551,17 +551,20 @@ intercepting the press that drags the body.
   arrival, departure, reorder and resize, and to a layout swapped in by
   `scene.setLayout` / `createSetLayoutOp`. Still open: a declared layout is measured by
   `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
-  canvas composes poses or uses a custom descriptor states that twice — folds away once
-  composition is a scene property (see the cascade entry below); and whether the `layouts` prop, now a second way to name a container's layout, should
-  be retired in favor of the node declaration.
-- **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is adapter-level
-  configuration, two mutually exclusive ways: `sceneToAdapter({ cascadeContainerPose: true })`
-  translates every descendant by a container's delta through the pose descriptor, and
-  `poseComposition` makes a container's pose a frame its children are relative to. `Scene.setPose`
-  itself still stores absolute poses. Ruled 2026-10-11: the scene owns composition: a child's pose
-  is relative to its container's frame, and moving a container writes one pose. That leaves building
-  it into the scene, deciding where the composition is supplied to the `useScene` constructor, and
-  settling what becomes of `cascadeContainerPose`.
+  canvas uses a custom pose descriptor states how a pose is measured twice; and whether the
+  `layouts` prop, now a second way to name a container's layout, should be retired in favor
+  of the node declaration.
+- **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
+  composition: a child's pose is relative to its container's frame, and moving a container writes
+  one pose. The scene owns it now (`useScene({ composition })`, read everywhere as
+  `scene.composition`), but the default is still the absolute-pose model, where `sceneToAdapter`
+  translates every descendant of a moved container (`cascadingSetPose`,
+  `packages/core/src/canvas/sceneAdapter.ts`) and `Scene.setPose` on a container leaves its
+  children behind. Making a frame the default deletes that walk and the identity branches beside
+  it. It needs an answer for a scene whose `TPose` is not a rect (`RIGID_POSE_COMPOSITION` reads
+  `x`, `y`, `width`, `height`), and it rewrites every stored child pose as local: `apps/draw`'s
+  saved documents and SVG import, `packages/diagram`'s layouts, and the tests that build a
+  container with children, about ninety files.
 
 ### Container layout strategies
 
@@ -570,9 +573,9 @@ intercepting the press that drags the body.
   overflow past the container's last visible line and reports the region through
   `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
   container's bounds. Ruled 2026-10-11: a container's scroll offset is view state, part of the frame
-  the container gives its children, and the document never moves. An absolute-pose scene has no
-  container frame today, so this waits on "Container-pose cascade as a scene-primitive semantic"
-  making composition the scene's own. That leaves the offset itself, folded in by painting, picking,
+  the container gives its children, and the document never moves. A scene that composes poses
+  (`useScene({ composition })`) has that frame; an absolute-pose scene has none, and is the
+  default until "A scene composes poses only when asked to" lands. That leaves the offset itself, folded in by painting, picking,
   selection chrome, move, resize, and snapping with the rest of the frame, and a host that reads
   `contentExtent` and scrolls.
 

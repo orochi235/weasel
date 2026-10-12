@@ -82,7 +82,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   // is target-qualified instead of universal.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'poseComposition', 'geometryProjection', 'nodeAtPoint', 'view'],
+  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {

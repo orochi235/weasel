@@ -61,7 +61,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
   // scope, tying areaSelect's. The resize handles bind it
   // (`selectionResizeBindings`, the `resize` preset).
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'poseComposition', 'view'],
+  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {

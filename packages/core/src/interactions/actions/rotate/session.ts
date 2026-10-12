@@ -136,7 +136,7 @@ export function beginRotate(
   // The pivot the pointer orbits is a world point, so every pose the
   // gesture turns is a world pose. Each turned result is stored back in
   // the node's own parent frame at preview and commit alike.
-  const poseFrame = scenePoseFrame(scene, ctx.deps.poseComposition);
+  const poseFrame = scenePoseFrame(scene);
   const { originPoses, origins, visual } = captureOrigins(ctx, scene, ids, descriptorOf, poseFrame);
   if (originPoses.size === 0) return null;
 

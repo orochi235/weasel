@@ -168,7 +168,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     layouts,
     layoutDropTarget,
     reflowTransition,
-    poseComposition,
     geometryProjection,
     routing,
     selection: selectionProp,
@@ -560,9 +559,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ? layerIsPainted
     : undefined;
 
-  // Under a frame a child's pose is already relative, so cascading a container
-  // move would carry every descendant a second time.
-  const framed = poseComposition !== undefined && poseComposition.closure !== 'identity';
   const adapter = useSceneAdapter(scene, {
     // `adapterMethods` is memoized; `selection` itself is a fresh object each render.
     selection: selection.adapterMethods,
@@ -570,8 +566,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     commitInsert: insertTool?.create,
     insertLayer: insertTool?.layer,
     layouts,
-    poseComposition,
-    cascadeContainerPose: !framed,
   });
 
   const {
@@ -887,9 +881,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       scene,
       alphaFor,
       animator?.colorOverrides,
-      poseComposition,
     );
-  }, [mergedLayers.scene, alphaFor, scene, animator, poseComposition]);
+  }, [mergedLayers.scene, alphaFor, scene, animator]);
 
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`, from whichever view's
@@ -1437,7 +1430,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
                 layoutDropTarget={layoutDropTarget}
                 reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
-                poseComposition={poseComposition as SceneCanvasProps<unknown, string, unknown>['poseComposition']}
                 insertNodeFactories={insertNodeFactories}
                 insertPaint={insertPaint}
                 snapPoint={toolOptions?.snapPoint}

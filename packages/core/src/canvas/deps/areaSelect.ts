@@ -16,13 +16,11 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { hitTestArea as hitTestAreaShared, regionPickOptions } from './hitTestArea';
-import type { PoseComposition } from 'core/scene/composePose';
 
 export function useAreaSelectDepSource(
   scene: Scene<unknown, string, unknown>,
   selection: SelectionApi,
   descriptor?: PoseDescriptor<unknown>,
-  poseComposition?: PoseComposition<unknown>,
   /** The painted alpha the surface's layers apply, which every view shares. */
   alphaOf?: (id: string) => number,
 ): void {
@@ -38,7 +36,7 @@ export function useAreaSelectDepSource(
     const a = alphaOfRef.current;
     return {
       hitTestArea: (bounds, view) =>
-        hitTestAreaShared(sc, bounds, regionPickOptions(view, a, poseComposition), d),
+        hitTestAreaShared(sc, bounds, regionPickOptions(view, a), d),
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids),
     };

@@ -18,10 +18,11 @@ not published.
   a demo showed four ports where six were declared and looked correct. A row
   port on a side now takes that side's compass default with it.
 
-- **`Scene.setPose` does not cascade to children.** Poses are absolute, so
-  moving a container leaves its subtree where it was. `applyLayout` and
-  `layoutPoses` translate the subtree themselves; `sceneToAdapter` has the same
-  walk behind `cascadeContainerPose`, and it is not exported.
+- **`Scene.setPose` does not cascade to children.** A diagram's scene keeps the
+  default absolute poses, so moving a container leaves its subtree where it
+  was. `applyLayout` and `layoutPoses` translate the subtree themselves;
+  `sceneToAdapter` does the same walk for an absolute-pose scene, and it is not
+  exported.
 
 - **Idempotence and anchoring are different properties.** A layout that dumps
   everything at the origin is perfectly idempotent. Deleting the anchor left all

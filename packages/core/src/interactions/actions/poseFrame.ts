@@ -8,8 +8,7 @@
  * world and writes world looks right for one gesture and drifts on the next,
  * because the stored pose is then read in the parent's frame again.
  *
- * Under `IDENTITY_POSE_COMPOSITION` — the default, and what every consumer
- * ships today — local and world are the same value and all of this is an
+ * Under `IDENTITY_POSE_COMPOSITION`, the default, local and world are the same value and all of this is an
  * identity. `core/scene/frameFixture.ts` is the scene where they differ.
  */
 import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
@@ -18,7 +17,6 @@ import {
   composeWorldPose,
   frameAtOrAbove,
   rebaseLocalPose,
-  IDENTITY_POSE_COMPOSITION,
   type PoseAdapter,
   type PoseComposition,
 } from 'core/scene/composePose';
@@ -63,14 +61,10 @@ export function poseFrame<TPose>(
   };
 }
 
-/** The `poseFrame` a scene-backed action works in. `poseComposition` is the
- *  dep as it arrives — absent means IDENTITY, where every method is a no-op. */
-export function scenePoseFrame(
-  scene: Scene<unknown, string, unknown>,
-  poseComposition: unknown,
-): PoseFrame<unknown> {
-  const pc =
-    (poseComposition as PoseComposition<unknown> | undefined) ?? IDENTITY_POSE_COMPOSITION;
+/** The `poseFrame` a scene-backed action works in, over the scene's own
+ *  composition. Under IDENTITY every method is a no-op. */
+export function scenePoseFrame(scene: Scene<unknown, string, unknown>): PoseFrame<unknown> {
+  const pc = scene.composition;
   const source = scene as unknown as PoseSource<unknown>;
   const adapter: PoseAdapter<unknown> = {
     getPose: (id) => {

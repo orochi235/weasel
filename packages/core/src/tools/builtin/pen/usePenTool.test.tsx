@@ -30,6 +30,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { createInsertOp } from 'core/ops/create';
 import type { InsertExtras } from 'interactions/actions/depSchema';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }
 
@@ -852,6 +853,7 @@ describe('usePenTool', () => {
         layers: [{ id: 'default' }],
         renderOrder: () => ['k'],
         renderOrderNodes: () => [node],
+        composition: IDENTITY_POSE_COMPOSITION,
         get: (id: string) => (id === 'k' ? node : undefined),
         overrides: { read: () => undefined },
       } as unknown as Scene<unknown, string, unknown>;

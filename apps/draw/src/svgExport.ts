@@ -18,8 +18,8 @@
  * with a redundant first node.
  */
 import {
-  type PoseComposition,
   type Scene,
+  composesFrames,
   composeWorldPose,
   definesFrame,
   documentPose,
@@ -114,25 +114,21 @@ export interface SceneToSvgOptions {
   backgroundColor: string;
   /** Told what the SVG cannot carry the way the canvas draws it. */
   onWarn?: (message: string) => void;
-  /** The strategy the scene's `<SceneCanvas poseComposition>` uses. Given,
-   *  every leaf is lowered at its world pose; absent, at its stored pose. */
-  poseComposition?: PoseComposition<WeaselDrawPose>;
 }
 
 type DrawScene<TLayer extends string> = Scene<WeaselDrawData, TLayer, WeaselDrawPose>;
 
 /** The pose every export reader lowers a node at: the document pose (derived
  *  where the node derives one, never a gesture's override), composed to world
- *  when a composition makes it local. */
+ *  when the scene's composition makes it local. */
 function poseOfIn<TLayer extends string>(
   scene: DrawScene<TLayer>,
-  poseComposition: PoseComposition<WeaselDrawPose> | undefined,
 ): (id: string) => WeaselDrawPose | undefined {
   const stored = (id: string) => {
     const node = scene.get(id as never);
     return node === undefined ? undefined : documentPose(scene, node);
   };
-  if (!poseComposition) return stored;
+  if (!composesFrames(scene.composition)) return stored;
   const adapter = {
     getPose: (id: string) => stored(id)!,
     getParent: (id: string) => {
@@ -145,7 +141,7 @@ function poseOfIn<TLayer extends string>(
     },
   };
   return (id) =>
-    stored(id) === undefined ? undefined : composeWorldPose(adapter, id, poseComposition.compose);
+    stored(id) === undefined ? undefined : composeWorldPose(adapter, id, scene.composition.compose);
 }
 
 /**
@@ -213,7 +209,7 @@ export function sceneToSvgString<TLayer extends string>(
     nodes.push(backgroundSvgNode(opts.backgroundColor, opts.paperWidth, opts.paperHeight));
   }
 
-  nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene, opts.poseComposition))));
+  nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene))));
 
   return serializeWarm(nodes, {
     ...docToSerializeOptions({
@@ -254,7 +250,7 @@ export function clipboardSnapshotRootIds(
  * page. This is the clipboard `produceFlavors` override's `image/svg+xml`
  * / `text/plain` source (see `apps/draw/src/App.tsx`).
  *
- * Bounds are read from each root's own pose (world, under `poseComposition`):
+ * Bounds are read from each root's own pose (world, under the scene's composition):
  * a container's pose is already the union-AABB of its leaf descendants (the
  * same convention the kit `group` action maintains), so no re-derivation from
  * children is needed.
@@ -262,9 +258,8 @@ export function clipboardSnapshotRootIds(
 export function selectionToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
   ids: readonly string[],
-  poseComposition?: PoseComposition<WeaselDrawPose>,
 ): Promise<string> {
-  const poseOf = poseOfIn(scene, poseComposition);
+  const poseOf = poseOfIn(scene);
   const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOf), ids);
 
   const bounds = unionAABB(
@@ -298,10 +293,9 @@ export async function selectionToClipboardSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
   ids: readonly string[],
   weaselPayloadText: string,
-  poseComposition?: PoseComposition<WeaselDrawPose>,
 ): Promise<string> {
   return embedWeaselMetadataInSvg(
-    await selectionToSvgString(scene, ids, poseComposition),
+    await selectionToSvgString(scene, ids),
     weaselPayloadText,
   );
 }

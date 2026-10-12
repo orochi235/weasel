@@ -13,6 +13,7 @@
  * than nearly right.
  */
 import { createScene } from 'core/scene/scene';
+import { RIGID_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 
 export interface FrameFixtureData {
@@ -50,9 +51,12 @@ export const FRAME_FIXTURE_LOCAL: Record<string, RectPose> = {
   b: { x: 40, y: 60, width: 40, height: 20, rotation: Math.PI / 2 },
 };
 
-export function makeFrameFixture(): Scene<FrameFixtureData, FrameFixtureLayer, RectPose> {
+export function makeFrameFixture(
+  composition: PoseComposition<RectPose> = RIGID_POSE_COMPOSITION,
+): Scene<FrameFixtureData, FrameFixtureLayer, RectPose> {
   const scene = createScene<FrameFixtureData, FrameFixtureLayer, RectPose>({
     systemLayers: [{ id: 'main' }],
+    composition,
   });
   scene.add({
     id: FRAME_FIXTURE_IDS.group,

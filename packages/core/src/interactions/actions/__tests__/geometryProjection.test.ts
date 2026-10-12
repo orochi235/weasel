@@ -8,6 +8,7 @@
  *   - dep absent   → `data` is left untouched and no `setData` op is emitted.
  */
 
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
 import type { Mat3, Path } from '@weasel-js/geom';
 import { transformPath, rectPath, boundsOfPath } from 'features/paths';
@@ -26,6 +27,7 @@ function setup(path: Path) {
       : undefined,
     setPose: (id: string, p: unknown) => poses.set(id, p),
     renderOrder: () => ['n'], childrenOf: () => [], roots: ['n'],
+    composition: IDENTITY_POSE_COMPOSITION,
   };
   const adapter = {
     setPose: (id: string, p: unknown) => poses.set(id, p),

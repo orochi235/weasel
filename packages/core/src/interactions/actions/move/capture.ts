@@ -3,11 +3,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { effectivePose } from 'core/scene/effectivePose';
 import type { NodeId, Scene } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
-import {
-  composeWorldPose,
-  frameAtOrAbove,
-  type PoseComposition,
-} from 'core/scene/composePose';
+import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
 import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
@@ -70,12 +66,12 @@ export function captureFrames(
   scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
   startPoses: ReadonlyMap<NodeId, unknown>,
-  pc: PoseComposition<unknown>,
 ): { carried: Set<NodeId>; frames: Map<NodeId, { world: unknown; frameWorld: unknown }> } {
   const carried = new Set<NodeId>();
   const frames = new Map<NodeId, { world: unknown; frameWorld: unknown }>();
-  if (pc.closure === 'identity') return { carried, frames };
-  const written = new Set(translateTargets(scene, scenePoseFrame(scene, pc), ids));
+  const pc = scene.composition;
+  if (!composesFrames(pc)) return { carried, frames };
+  const written = new Set(translateTargets(scene, scenePoseFrame(scene), ids));
   const poseAdapter = scenePoseAdapter(scene);
   for (const id of startPoses.keys()) {
     if (!written.has(id)) {

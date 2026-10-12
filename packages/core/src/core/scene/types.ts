@@ -224,8 +224,7 @@ export interface LayoutMove<TPose> {
   to: TPose;
 }
 
-/** How a scene reads a laid-out container's bounds and folds poses to the
- *  world frame a {@link LayoutStrategy} works in. */
+/** How a scene reads and resizes a laid-out container's bounds. */
 export interface LayoutFrame<TPose> {
   /** The container's bounds, from its world pose. Default: the pose's own
    *  `x`/`y`/`width`/`height`; a pose without them is not laid out. */
@@ -233,9 +232,6 @@ export interface LayoutFrame<TPose> {
   /** `pose` resized from bounds `from` to `to`, for a layout that grows its
    *  container. Default: `to`'s fields written over the pose. */
   remap?(pose: TPose, from: ContainerBounds, to: ContainerBounds): TPose;
-  /** Omit for the absolute-pose model. A scene whose canvas composes poses
-   *  (`<SceneCanvas poseComposition>`) passes the same strategy here. */
-  composition?: PoseComposition<TPose>;
 }
 
 /** A node in the scene tree: either a leaf or a container. Re-exported
@@ -400,6 +396,8 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
    *  Required only when serializing/deserializing scenes that use function fields. */
   registry?: SceneRegistry<TPose, TData, TLayer>;
+  /** How a child's pose folds into its container's. Default: it does not, and every pose is world. */
+  composition?: PoseComposition<TPose>;
   /** How laid-out containers are measured. See {@link LayoutFrame}. */
   layoutFrame?: LayoutFrame<TPose>;
   /** When supplied, `scene.applyOps(ops, label)` consults this on every call.
@@ -444,6 +442,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** The registry this scene resolves node functions against — the consumer's
    *  entries over the kit's. */
   readonly registry: SceneRegistry<TPose, TData, TLayer>;
+  /** See {@link UseSceneOptions.composition}. */
+  readonly composition: PoseComposition<TPose>;
   get(id: NodeId): Node<TData, TLayer, TPose> | undefined;
   /** A token for the node `id` names right now, for telling one node from a
    *  later one that reuses its id. It holds for as long as the node stays in

@@ -9,6 +9,7 @@ export type { Mixed } from '@weasel-js/registry';
 
 // ─── Group/parent composition: world pose, rebase, ordered groups ───────────
 export {
+  composesFrames,
   composeWorldPose,
   composeRectPose,
   decomposeRectPose,
