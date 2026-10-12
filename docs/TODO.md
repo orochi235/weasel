@@ -183,11 +183,13 @@ Priority tags:
   device, since jsdom sends no native event. If real, drop the native event while a touch pointer
   whose long-press fired is still held.
 
-- **(P3) A key typed with AltGr cannot match a binding.** A layout that types `[` with AltGr
-  reports `ctrlKey` and `altKey`, which the strict modifier match in
-  `packages/gestures/src/ui/match.ts` rejects. Dropping both flags while
-  `getModifierState('AltGraph')` holds is the usual fix, and needs checking in real browsers:
-  Firefox on Windows reports AltGraph for a plain Ctrl+Alt too, which would then stop matching.
+- **(P3) AltGr matching is unchecked in a real browser.** A key typed with AltGr now matches a
+  binding for its character: the keyboard channel
+  (`packages/routing/src/interactions/dispatcher/channels/keyboard.ts`) dispatches the chord as
+  reported, and when nothing takes it and `getModifierState('AltGraph')` holds, dispatches again
+  without Ctrl and Alt. Only jsdom has seen it. Left to check on Windows, with a layout that has
+  AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
+  which Firefox reports AltGraph too, is still read as a chord.
 
 - **(P3) Route-conflict check: `mod` is never compared with the key it resolves to.** In
   `packages/routing/src/tools/routing/reflection/conflicts.ts`, `mods: { mod: true }` and
