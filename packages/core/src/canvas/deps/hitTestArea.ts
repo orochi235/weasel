@@ -11,7 +11,7 @@
  * the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { pathIntersectsRect } from '@weasel-js/geom';
+import { pathIntersectsRect, type Path } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -29,7 +29,7 @@ import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 export { hiddenLayerIds } from 'canvas/pickWalk';
 import type { HitTestView } from 'interactions/actions/depSchema';
-import { findShapeSilhouette } from 'canvas/NodeShape';
+import { findShapeInk, findShapeSilhouette } from 'canvas/NodeShape';
 import {
   polygonRegion,
   poseOutline,
@@ -120,6 +120,14 @@ export function hitTestLassoPolygon(
   return region ? walkArea(scene, region, mode, opts, descriptor, query) : [];
 }
 
+/** What a region is tested against: the node's silhouette, with its open
+ *  subpaths enclosing nothing when the painter lays down no fill. */
+function regionSilhouette(node: unknown, pose: unknown, bounds: AABBBounds): Path {
+  const sil = findShapeSilhouette(node as never, pose) ?? poseOutline(pose, bounds);
+  if (sil.kind !== 'polygon' || findShapeInk(node as never, pose)?.filled !== false) return sil;
+  return { ...sil, openFill: 'none' };
+}
+
 /** The walk every region query shares: skip containers unless asked, gate on
  *  the clip, and let `regionTakes` decide each node. */
 function walkArea(
@@ -142,8 +150,7 @@ function walkArea(
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
       const b = regionBoundsOf(node as object, pose, g);
-      return regionTakes(r, mode, pose, b, () =>
-        findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b));
+      return regionTakes(r, mode, pose, b, () => regionSilhouette(node, pose, b));
     },
     inPlane: (m) => regionQuery(regionInPlane(r, m)),
   });
