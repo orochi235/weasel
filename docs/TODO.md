@@ -1231,16 +1231,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   around it with `flushSync`; any other caller dropping onto a `Tree` from outside has the same
   race. To decide: whether `Tree` offers a synchronous "target at this point".
 
-- **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
-  and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
-  fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the
-  columns and list layouts, any `PrefSection`) and draws as the default there. To decide first:
-  what `foldable` becomes, since it folds a rail entry's nested entries away and no `as` value
-  means that; whether a nested group with `as` unset is always a section, which stops
-  `PrefSchemaEditor`'s live preview (the one caller of `subPages` outside tests) giving nested
-  groups pages of their own; and how the rail marks its current entry once one rail holds both
-  scroll-to entries and page entries, where `RailLayout` runs in one mode for the whole form
-  today.
+- **(P3) `subPages` overlaps a group's `as`.** `PrefsForm`'s form-wide `subPages` prop decides
+  what `as: 'page'` on a nested group should. Ruled 2026-10-11: `subPages` goes; a nested group
+  with `as` unset is a section, and one that wants a page of its own says `as: 'page'`; `foldable`
+  stays a prop on the form, since folding is how the rail is drawn and not what a group is; and a
+  rail holding both kinds marks the open page as open and, under it, the section in view as
+  current. That leaves `RailLayout` deciding per entry from `as`, where it runs in one mode for
+  the whole form today, the second mark, and `PrefSchemaEditor`'s live preview, the one caller of
+  `subPages` outside tests. `as: 'page'` still means nothing where there is no rail
+  (`ControlPanel`, the columns and list layouts, any `PrefSection`) and draws as the default.
 
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
