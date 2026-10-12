@@ -20,7 +20,7 @@ import { underPointer, type UnderPointer } from './underPointer';
 import { longPressEvents, type PressFacts } from './pressFacts';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { resolveCursorTier } from '@weasel-js/cursor';
-import { withViewDeps, type DispatchCore } from './dispatchCore';
+import { createDispatchCore } from './dispatchCore';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 import { contextMenuInput } from './channels/contextMenu';
 import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
@@ -200,82 +200,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     let disposed = false;
 
-    // The view the current event belongs to, as an id rather than a record:
-    // the record is rebuilt every render, so holding one across events would
-    // dispatch through last render's lookups.
-    let routedId: string | null = null;
-
-    /** The dispatch record for the routed view. */
-    const target = (): DispatcherViewTarget => {
-      if (routedId === null) return rootTargetRef.current;
-      return viewsRef.current?.targets().find((t) => t.id === routedId)
-        ?? rootTargetRef.current;
-    };
-
-    /** Route an event with coordinates. `pointerId` is `null` for input with
-     *  nothing to capture — wheel, hover, contextmenu, drop. */
-    const routeAt = (pointerId: number | null, clientX: number, clientY: number): void => {
-      routedId = viewsRef.current?.resolver.at(pointerId, clientX, clientY).id ?? null;
-    };
-    /** Route a pointerdown, pinning the pointer to the view it landed in. */
-    const routeDown = (pointerId: number, clientX: number, clientY: number): void => {
-      routedId = viewsRef.current?.resolver.begin(pointerId, clientX, clientY).id ?? null;
-    };
-    const routeRelease = (pointerId: number): void => {
-      viewsRef.current?.resolver.end(pointerId);
-    };
-
-    // Resolved per event, not bound once: the dispatcher an event runs on is
-    // a property of the view it landed in.
-    const dispatcherNow = (): Dispatcher => target().dispatcher;
-
-    const routedDeps = withViewDeps(() => ctxRef.current.depRegistry, () => target().deps?.());
-    // Eligibility is evaluated against the routed view's rule context, not the
-    // surface's — same reason its deps are.
-    const routedRuleCtx = (): ReturnType<NonNullable<DispatcherViewTarget['getRuleCtx']>> =>
-      target().getRuleCtx?.();
-    const ctxNow = (): DispatcherContext => ({
-      ...ctxRef.current, depRegistry: routedDeps, getRuleCtx: routedRuleCtx,
-      viewId: target().id,
-    });
     const canvas = canvasRef.current;
-
-    // Client-space to world-space. The identity when no `clientToWorld` is wired.
-    const toWorld = (cx: number, cy: number): { x: number; y: number } => {
-      const fn = target().clientToWorld;
-      return fn ? fn(cx, cy) : { x: cx, y: cy };
-    };
-
-    // Dispatch, and redraw the host canvas when any handle was in flight
-    // before or after the event: dispatcher-only overlays (marquee, lasso)
-    // repaint on nothing else, and the pump that closes a gesture still has
-    // to clear the overlay.
-    //
-    // `on` is for an event that belongs to the dispatcher an earlier one ran
-    // on, whichever view is routed now: the release of a held key.
-    const dispatch = (ev: InputEvent, on?: Dispatcher): 'handled' | 'unhandled' => {
-      const d = on ?? dispatcherNow();
-      const before = d.inFlight().size;
-      const result = d.handleInput(ev, ctxNow());
-      const after = d.inFlight().size;
-      if (before > 0 || after > 0) requestRedrawRef.current?.();
-      return result;
-    };
-
-    const core: DispatchCore = {
+    const core = createDispatchCore({
       canvas,
-      target,
-      routeAt,
-      routedView: () => routedId,
-      setRoutedView: (id) => { routedId = id; },
-      dispatcherNow,
-      ctxNow,
-      toWorld,
-      dispatch,
-      holdsKeys: () => (canvas ? registryRef.current.holdsKeys() : registryRef.current.isActive()),
-      activate: () => registryRef.current.activate(),
+      root: () => rootTargetRef.current,
+      views: () => viewsRef.current,
+      context: () => ctxRef.current,
+      actions: () => registryRef.current,
+      requestRedraw: () => { requestRedrawRef.current?.(); },
       disposed: () => disposed,
-    };
+    });
+    const { target, routeAt, routeDown, routeRelease, dispatcherNow, ctxNow, toWorld, dispatch } = core;
     const keys = keyboardInput(core);
     const { onKeyDown, onKeyUp } = keys;
     const pinch = webkitPinchInput(core);
