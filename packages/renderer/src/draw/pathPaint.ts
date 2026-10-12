@@ -1,4 +1,4 @@
-import type { Stroke, Paint } from '@weasel-js/paint';
+import type { Stroke, Paint, TexturePaint } from '@weasel-js/paint';
 import { getPaintDrawKind } from '../paintKinds';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
@@ -144,7 +144,7 @@ function drawPathFillVColor(
 function bindPathFillByKind(ctx: DrawContext, fill: Paint): ShaderProgram | null {
   const kind = fill.kind ?? 'solid';
   if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
-  if (kind === 'pattern') return bindPathFillPattern(ctx, fill as Extract<Paint, { kind: 'pattern' }>);
+  if (kind === 'texture') return bindPathFillPattern(ctx, fill as TexturePaint);
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
     return bindPathFillGradient(ctx, fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
   }
@@ -176,7 +176,7 @@ function bindPathFillSolid(
 
 function bindPathFillPattern(
   ctx: DrawContext,
-  fill: Extract<Paint, { kind: 'pattern' }>,
+  fill: TexturePaint,
 ): ShaderProgram | null {
   return bindPattern(ctx, ctx.patternFill, fill, ctx.state.transform);
 }

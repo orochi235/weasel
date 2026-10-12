@@ -101,8 +101,7 @@ const GRADIENT: Paint = {
 
 /** Wide white stripes on a transparent ground, in the box's units. */
 const PATTERN: Paint = {
-  kind: 'pattern',
-  pattern: { tile: 'hatch', color: '#ffffff', size: 16, lineWidth: 6 },
+  kind: 'hatch', color: '#ffffff', size: 16, lineWidth: 6,
   units: 'bounds',
 };
 
@@ -202,8 +201,7 @@ describe('texture-painted atlas text in a batched frame', () => {
     fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
   const WORLD_STRIPES = resolveFillPattern({
-    kind: 'pattern',
-    pattern: { tile: 'hatch', color: '#ffffff', size: 16, lineWidth: 6 },
+    kind: 'hatch', color: '#ffffff', size: 16, lineWidth: 6,
     units: 'world',
   })!;
 

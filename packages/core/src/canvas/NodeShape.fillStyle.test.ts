@@ -36,7 +36,7 @@ describe('kit:path accepts a Paint in data.fill', () => {
   });
 
   it('passes a pattern through', () => {
-    const pattern: Paint = { kind: 'pattern', pattern: { id: 'checker' } as never };
+    const pattern: Paint = { kind: 'texture', texture: { id: 'checker' } as never };
     expect(paintOf({ path: RECT_PATH, fill: pattern }).fill).toEqual(pattern);
   });
 

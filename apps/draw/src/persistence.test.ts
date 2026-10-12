@@ -226,6 +226,16 @@ describe('persistence — legacy string paint migration', () => {
     expect(dataOf({ fill: { fill: 'solid', color: '#abc' } }).fill).toEqual({ kind: 'solid', color: '#abc' });
   });
 
+  it('lifts a pattern paint\'s tile into the paint, as its kind', () => {
+    const old = { fill: 'pattern', pattern: { tile: 'hatch', color: '#a840a2', size: 10 }, units: 'bounds' };
+    expect(dataOf({ fill: old }).fill).toEqual({ kind: 'hatch', color: '#a840a2', size: 10, units: 'bounds' });
+  });
+
+  it('turns a pattern paint holding a texture handle into a texture paint', () => {
+    const old = { kind: 'pattern', pattern: { id: 'tex_1' }, origin: { x: 1, y: 2 } };
+    expect(dataOf({ fill: old }).fill).toEqual({ kind: 'texture', texture: { id: 'tex_1' }, origin: { x: 1, y: 2 } });
+  });
+
   it('leaves a current object paint alone', () => {
     const fill = { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
     expect(dataOf({ fill: structuredClone(fill) }).fill).toEqual(fill);

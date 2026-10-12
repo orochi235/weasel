@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './test-utils/fakeOffscreenCanvas';
 import {
-  resolvePatternSpec, resolveFillPattern, isPatternSpec, _resetPatternSpecCacheForTests,
+  resolvePatternSpec, resolveFillPattern, _resetPatternSpecCacheForTests,
   PATTERN_TILE_CACHE_LIMIT,
 } from './resolveSpec';
 import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../textures/registerTexture';
-import type { Paint, TilePatternSpec } from '@weasel-js/paint';
+import type { Paint, TexturePaint, TilePaint, TilePatternSpec } from '@weasel-js/paint';
 
-const HATCH: TilePatternSpec = { tile: 'hatch', color: '#0fb5a8' };
+const HATCH: TilePatternSpec = { kind: 'hatch', color: '#0fb5a8' };
 
 describe('resolvePatternSpec', () => {
   beforeEach(() => {
@@ -19,14 +19,14 @@ describe('resolvePatternSpec', () => {
 
   it('returns the same handle for an equal spec', () => {
     const a = resolvePatternSpec(HATCH);
-    const b = resolvePatternSpec({ tile: 'hatch', color: '#0fb5a8' });
+    const b = resolvePatternSpec({ kind: 'hatch', color: '#0fb5a8' });
     expect(a).not.toBeNull();
     expect(b).toBe(a);
   });
 
   it('ignores key order, since a spec from JSON has no guaranteed one', () => {
-    const a = resolvePatternSpec({ tile: 'dots', color: '#fff', size: 8 });
-    const b = resolvePatternSpec({ size: 8, color: '#fff', tile: 'dots' });
+    const a = resolvePatternSpec({ kind: 'dots', color: '#fff', size: 8 });
+    const b = resolvePatternSpec({ size: 8, color: '#fff', kind: 'dots' });
     expect(b).toBe(a);
   });
 
@@ -47,7 +47,7 @@ describe('the pattern tile cache', () => {
   });
   afterEach(uninstallFakeOffscreenCanvas);
 
-  const shade = (i: number): TilePatternSpec => ({ tile: 'hatch', color: `#${i.toString(16).padStart(6, '0')}` });
+  const shade = (i: number): TilePatternSpec => ({ kind: 'hatch', color: `#${i.toString(16).padStart(6, '0')}` });
 
   it('holds no more than its limit, and unregisters what it drops', () => {
     const extra = 5;
@@ -78,7 +78,7 @@ describe('the pattern tile cache', () => {
   });
 
   it('rebuilds a dropped tile under the same id when a held handle is drawn again', () => {
-    const held = resolvePatternSpec({ tile: 'dots', color: '#fff', size: 8, radius: 2 })!;
+    const held = resolvePatternSpec({ kind: 'dots', color: '#fff', size: 8, radius: 2 })!;
     for (let i = 0; i < PATTERN_TILE_CACHE_LIMIT; i++) resolvePatternSpec(shade(i));
     expect(textureRegistry.has(held.id)).toBe(false);
 
@@ -86,7 +86,7 @@ describe('the pattern tile cache', () => {
     expect(entry).not.toBeNull();
     expect((entry!.source as ImageBitmap).width).toBe(8);
     expect(textureRegistry.entries().length).toBe(PATTERN_TILE_CACHE_LIMIT);
-    expect(resolvePatternSpec({ tile: 'dots', color: '#fff', size: 8, radius: 2 })?.id).toBe(held.id);
+    expect(resolvePatternSpec({ kind: 'dots', color: '#fff', size: 8, radius: 2 })?.id).toBe(held.id);
   });
 });
 
@@ -98,25 +98,28 @@ describe('resolveFillPattern', () => {
   });
   afterEach(uninstallFakeOffscreenCanvas);
 
-  it('swaps a spec payload for a handle', () => {
-    const out = resolveFillPattern({ kind: 'pattern', pattern: HATCH });
-    expect(out).not.toBeNull();
-    const payload = (out as Extract<Paint, { kind: 'pattern' }>).pattern;
-    expect(isPatternSpec(payload)).toBe(false);
-    expect(payload).toHaveProperty('id');
+  it('swaps a tile paint for a texture paint', () => {
+    const out = resolveFillPattern({ ...HATCH });
+    expect(out).toEqual({ kind: 'texture', texture: { id: expect.any(String) } });
+  });
+
+  it('keys the texture on the tile alone, so placement does not split it', () => {
+    const plain = resolveFillPattern({ ...HATCH }) as TexturePaint;
+    const there: TilePaint = { ...HATCH, units: 'local', origin: { x: 3, y: 4 } };
+    const placed = resolveFillPattern(there) as TexturePaint;
+    expect(placed.texture).toBe(plain.texture);
   });
 
   it('preserves the paint\'s other fields', () => {
-    const out = resolveFillPattern({
-      kind: 'pattern', pattern: HATCH, units: 'local', origin: { x: 3, y: 4 }, opacity: 0.5,
-    }) as Extract<Paint, { kind: 'pattern' }>;
+    const placed: TilePaint = { ...HATCH, units: 'local', origin: { x: 3, y: 4 }, opacity: 0.5 };
+    const out = resolveFillPattern(placed) as TexturePaint;
     expect(out.units).toBe('local');
     expect(out.origin).toEqual({ x: 3, y: 4 });
     expect(out.opacity).toBe(0.5);
   });
 
-  it('leaves a handle payload and non-pattern fills alone', () => {
-    const handlePaint: Paint = { kind: 'pattern', pattern: { id: 'tex_9' } };
+  it('leaves a texture paint and non-pattern fills alone', () => {
+    const handlePaint: Paint = { kind: 'texture', texture: { id: 'tex_9' } };
     expect(resolveFillPattern(handlePaint)).toBe(handlePaint);
 
     const solid: Paint = { color: '#123456' };

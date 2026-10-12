@@ -85,7 +85,7 @@ export {
 export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
 export { commandFill, commandStroke } from './patterns/commandPaint';
 export { createTilePattern, type TilePatternOpts } from './patterns';
-export { isPatternSpec, resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
+export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns } from './textCommand';
 export {
   getImageBitmap,

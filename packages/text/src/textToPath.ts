@@ -10,7 +10,7 @@
  * `textToPathsByPaint` is the same walk, split by the paint each glyph wears.
  */
 
-import type { Paint, Stroke } from '@weasel-js/paint';
+import { isSolidPaint, type Paint, type Stroke } from '@weasel-js/paint';
 
 import {
   loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle,
@@ -233,7 +233,7 @@ function walkOutlines(
     return { ...rest, fill: { kind: 'solid', color: `#${i.toString(16).padStart(6, '0')}` } };
   });
   const groupOf = (fill: Paint | null): number =>
-    fill !== null && 'color' in fill ? parseInt(fill.color.slice(1), 16) : 0;
+    isSolidPaint(fill) ? parseInt(fill.color.slice(1), 16) : 0;
 
   const laid = layoutRuns(runs, { ...layoutOpts, outlineMinSize: 0 });
   // A code point the run's own face lacks escalates to a fallback face, which

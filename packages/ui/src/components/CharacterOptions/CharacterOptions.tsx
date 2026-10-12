@@ -122,9 +122,8 @@ function characterMixed(style: RangeStyle): Set<string> {
   }
   // A gradient or pattern fill gets the same indeterminate treatment as a
   // genuinely mixed range, rather than a swatch claiming the text is some
-  // solid color. The tag is checked as well as the key: a
-  // `{ kind: 'pattern', pattern, color }` hybrid can't be produced any more,
-  // but one can still arrive in an old document.
+  // solid color. The tag is checked as well as the key: a tile paint carries
+  // a `color` too.
   const fill = style.fill;
   if (fill !== undefined && fill !== MIXED && solidFill(fill) === undefined) out.add('fill');
   return out;
@@ -143,7 +142,7 @@ function pick(style: RangeStyle): Record<string, unknown> {
 function solidFill(fill: RangeStyle['fill']): string | undefined {
   return fill !== undefined &&
     fill !== MIXED &&
-    ((fill as { fill?: string }).fill === undefined || (fill as { fill?: string }).fill === 'solid')
+    ((fill as { kind?: string }).kind === undefined || (fill as { kind?: string }).kind === 'solid')
     ? (fill as { color?: string }).color
     : undefined;
 }

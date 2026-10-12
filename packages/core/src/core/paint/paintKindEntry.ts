@@ -1,12 +1,28 @@
 import type { ComponentType } from 'react';
-import type { Paint, GradStop } from '@weasel-js/paint';
+import type { Paint, GradStop, TileKind } from '@weasel-js/paint';
 import type { PaintDrawKind } from '@weasel-js/renderer';
 
 /**
  * `Paint`'s discriminant, open on the string the way `ChromeId` is: the
- * five kinds the kit ships, plus whatever a consumer registers.
+ * kinds the kit ships, plus whatever a consumer registers.
  */
-export type PaintKind = 'solid' | 'linear-gradient' | 'radial-gradient' | 'conic-gradient' | 'pattern' | (string & {});
+export type PaintKind =
+  | 'solid' | 'linear-gradient' | 'radial-gradient' | 'conic-gradient'
+  | TileKind | 'texture'
+  | (string & {});
+
+/**
+ * A set of kinds an editor offers as one choice. Kinds sharing a family show
+ * as a single segment in a kind bar, named by the family, and the member is
+ * picked inside that segment's body. The built-in tiles and `texture` are the
+ * `patternFamily`.
+ */
+export interface PaintKindFamily {
+  id: string;
+  label: string;
+  /** Glyph for the family's segment, resolved the way an entry's `icon` is. */
+  icon?: string;
+}
 
 /** What a registered kind's editor renders. `PaintInput` in `@weasel-js/ui`
  *  is the control that mounts it. */
@@ -29,6 +45,9 @@ export interface PaintKindEntry extends PaintDrawKind {
    *  layer resolves — the same indirection `PrefBase.icon` uses. A kind
    *  without one is named by its `label`. */
   icon?: string;
+  /** The family this kind is offered under; see {@link PaintKindFamily}. A
+   *  kind without one is its own segment. */
+  family?: PaintKindFamily;
   /** A paint of this kind seeded from a color — what an editor writes when a
    *  consumer switches a solid to this kind. */
   seed(fromColor: string): Paint;

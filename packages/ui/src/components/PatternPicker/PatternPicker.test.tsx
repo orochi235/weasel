@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { composePatternTransform, decomposePatternTransform } from '@weasel-js/core';
-import { PatternPicker, seedPattern, type PatternFill } from './PatternPicker';
+import type { PatternPaint as PatternFill } from '@weasel-js/core';
+import { PatternPicker, seedPattern } from './PatternPicker';
 
 function rotationInput(): HTMLInputElement {
   return screen.getByRole('spinbutton', { name: 'Rotation' }) as HTMLInputElement;
@@ -41,7 +42,7 @@ describe('PatternPicker rotation', () => {
     expect(parts.rotation).toBeCloseTo(Math.PI / 6, 9);
     expect(parts.scaleX).toBeCloseTo(2, 9);
     expect(parts.skewX).toBeCloseTo(0.2, 9);
-    expect(next.pattern).toBe(value.pattern);
+    expect(next).toMatchObject(seedPattern('hatch', '#123456'));
   });
 
   it('shows a rotation off the 15° step as it is', () => {
@@ -91,7 +92,7 @@ describe('PatternPicker rotation', () => {
     render(<PatternPicker value={value} color="#123456" onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'dots' }));
     const next = onChange.mock.calls[0][0] as PatternFill;
-    expect((next.pattern as { tile: string }).tile).toBe('dots');
+    expect(next.kind).toBe('dots');
     expect(next.transform).toEqual(transform);
   });
 });

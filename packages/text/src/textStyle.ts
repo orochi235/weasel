@@ -11,7 +11,7 @@
  */
 
 import type { Paint, ScreenLength, Stroke } from '@weasel-js/paint';
-import { resolveScreenLength } from '@weasel-js/paint';
+import { isSolidPaint, resolveScreenLength } from '@weasel-js/paint';
 import { cssFamilyName } from '@weasel-js/font';
 import type { TextTransform } from './runs/textTransform';
 import type { FontVariantCaps } from './runs/smallCaps';
@@ -151,7 +151,7 @@ export interface ResolvedTextStyle {
 const DEFAULT_FILL: Paint = { kind: 'solid', color: '#000' };
 
 function paintColor(p: Paint | null): string {
-  return p !== null && 'color' in p ? p.color : '#000';
+  return isSolidPaint(p) ? p.color : '#000';
 }
 
 /**

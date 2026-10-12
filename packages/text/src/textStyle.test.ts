@@ -35,7 +35,7 @@ describe('resolveTextStyle', () => {
 
   it('caretColor falls back to #000 for non-solid fills', () => {
     // A pattern-paint shape (no `color` field) triggers the fallback.
-    const patternPaint = { kind: 'pattern', pattern: 'whatever' } as unknown as TextPaint['fill'];
+    const patternPaint = { kind: 'texture', texture: 'whatever' } as unknown as TextPaint['fill'];
     const r = resolveTextStyle({}, { fill: patternPaint });
     expect(r.caretColor).toBe('#000');
   });

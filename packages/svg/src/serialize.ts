@@ -8,7 +8,7 @@
 import { escapeAttr, escapeText } from './xmlEscape';
 import type { FontRequest, Path, Stroke, StrokeAlign } from '@weasel-js/core';
 import {
-  boundsOfPath, poseFrameOf, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
+  boundsOfPath, isSolidPaint, poseFrameOf, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
 } from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
@@ -165,7 +165,7 @@ function registerTextPaint(
   paint: import('@weasel-js/core').Paint | null | undefined,
   registry: PaintServerRegistry,
 ): void {
-  if (paint && !('color' in paint)) registry.register(paint);
+  if (paint && !isSolidPaint(paint)) registry.register(paint);
 }
 
 /** Mint a `<defs>` id for every marker a stroke names, before the body is
@@ -352,7 +352,7 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
   const width = stroke.width ?? 1;
   if (!((typeof width === 'object' ? width.px : width) > 0)) return [];
   warnStrokeAlign(stroke.align, warn);
-  const attrs: string[] = [`stroke="${'color' in paint ? escapeAttr(paint.color) : registry.ref(paint)}"`];
+  const attrs: string[] = [`stroke="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`];
   attrs.push(...opacityAttr('stroke-opacity', paint.opacity));
   attrs.push(...strokeWidthAttrs(width));
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
@@ -543,7 +543,7 @@ function textXml(
   if (node.fill === null) {
     attrs.push('fill="none"');
   } else if (node.fill) {
-    attrs.push(`fill="${'color' in node.fill ? escapeAttr(node.fill.color) : registry.ref(node.fill)}"`);
+    attrs.push(`fill="${isSolidPaint(node.fill) ? escapeAttr(node.fill.color) : registry.ref(node.fill)}"`);
     attrs.push(...opacityAttr('fill-opacity', node.fill.opacity));
   }
   for (const a of coreStrokeAttrs(node.stroke, registry, warn)) attrs.push(a);
@@ -620,7 +620,7 @@ function runXml(
   if (runDecoration) attrs.push(`text-decoration="${runDecoration}"`);
   if (run.fill === null) attrs.push('fill="none"');
   else if (run.fill) {
-    if ('color' in run.fill) {
+    if (isSolidPaint(run.fill)) {
       attrs.push(`fill="${escapeAttr(run.fill.color)}"`);
     } else {
       attrs.push(`fill="${registry.ref(run.fill)}"`);

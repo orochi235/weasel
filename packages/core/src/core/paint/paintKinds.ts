@@ -1,8 +1,8 @@
 /**
  * The paint-kind registry — what makes `Paint` open.
  *
- * A consumer registers a sixth kind and it renders, converts between the
- * bounds and pose frames, and serializes, with no kit edits. The five built-in
+ * A consumer registers a kind of its own and it renders, converts between the
+ * bounds and pose frames, and serializes, with no kit edits. The built-in
  * kinds are registered here at module load so an editor's kind bar can
  * enumerate every kind through one list.
  *
@@ -12,13 +12,17 @@
  */
 
 import type {
-  ColorSpace, Paint, GradientFill, GradientKind, GradStop, TilePatternSpec,
+  ColorSpace, Paint, GradientFill, GradientKind, GradStop, TileKind, TilePaint,
 } from '@weasel-js/paint';
-import { gradientForBounds, isGradientFill, withGradientKind } from '@weasel-js/paint';
+import { gradientForBounds, isGradientFill, isTilePaint, withGradientKind } from '@weasel-js/paint';
 import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
 import { _resetPaintDrawKindsForTests } from '@weasel-js/renderer/test-seams';
-import type { PaintKind, PaintKindEntry } from './paintKindEntry';
+import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
+
+/** The family the built-in tiles and `texture` are offered under. A consumer's
+ *  own pattern kind joins it by naming this as its `family`. */
+export const patternFamily: PaintKindFamily = { id: 'pattern', label: 'Pattern', icon: 'paintPattern' };
 
 const BUILTINS: readonly PaintKindEntry[] = [
   {
@@ -33,20 +37,39 @@ const BUILTINS: readonly PaintKindEntry[] = [
   gradientKind('linear-gradient', 'Linear', 'paintLinear'),
   gradientKind('radial-gradient', 'Radial', 'paintRadial'),
   gradientKind('conic-gradient', 'Conic', 'paintConic'),
+  tileKind('hatch', 'Hatch'),
+  tileKind('crosshatch', 'Crosshatch'),
+  tileKind('dots', 'Dots'),
+  tileKind('chunks', 'Chunks'),
   {
-    id: 'pattern',
-    label: 'Pattern',
-    icon: 'paintPattern',
-    seed: (color) => ({
-      kind: 'pattern',
-      pattern: { tile: 'hatch', color },
-      units: 'bounds',
-    }),
-    colorOf: (paint) => (paint.kind === 'pattern'
-      ? (paint.pattern as Partial<TilePatternSpec>).color
-      : undefined),
+    id: 'texture',
+    label: 'Texture',
+    family: patternFamily,
+    // A texture is built by the consumer and cannot be made from a color.
+    seed: (color) => seedTile('hatch', color),
+    colorOf: () => undefined,
   },
 ];
+
+function tileKind(id: TileKind, label: string): PaintKindEntry {
+  return {
+    id,
+    label,
+    family: patternFamily,
+    seed: (color) => seedTile(id, color),
+    colorOf: (paint) => (isTilePaint(paint) ? paint.color : undefined),
+  };
+}
+
+/** A tile paint seeded from a color. `units: 'bounds'` anchors the tile to the
+ *  node's box, so the texture travels with the shape. */
+export function seedTile(kind: TileKind, color: string): TilePaint {
+  // `chunks` is a scatter over a ground rather than a line texture; without a
+  // background it reads as loose specks on whatever sits beneath.
+  return kind === 'chunks'
+    ? { kind, color, bg: '#00000000', units: 'bounds' }
+    : { kind, color, units: 'bounds' };
+}
 
 function gradientKind(id: GradientKind, label: string, icon: string): PaintKindEntry {
   return {

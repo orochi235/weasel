@@ -1,10 +1,10 @@
 /** @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer. */
 export type { TextureHandle } from './texture';
 export type { CommandFill, CommandPaintUnits, CommandStroke, PosedFill, SolidFill } from './commandPaint';
+export { isSolidPaint } from './commandPaint';
 export type {
   Paint,
   PaintUnits,
-  TilePatternSpec,
   GradStop,
   GradientFill,
   GradientKind,
@@ -17,6 +17,20 @@ export type {
   Region,
   ScreenLength,
 } from './paint';
+export {
+  TILE_KINDS,
+  isPatternPaint,
+  isTileKind,
+  isTilePaint,
+  patternPlacementOf,
+  tileSpecOf,
+  type PatternPaint,
+  type PatternPlacement,
+  type TexturePaint,
+  type TileKind,
+  type TilePaint,
+  type TilePatternSpec,
+} from './patternPaint';
 export {
   composePatternTransform,
   decomposePatternTransform,

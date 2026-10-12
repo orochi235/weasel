@@ -55,7 +55,7 @@
  * pen deltas, never an absolute coordinate, so the translation is exact.
  */
 
-import type { Paint, Stroke } from '@weasel-js/paint';
+import { isSolidPaint, type Paint, type Stroke } from '@weasel-js/paint';
 import {
   resolveFontVariant, resolveGlyphFallback, glyphOutline, fontPending, faceMetricsOf,
   type ResolveResult, type BmFontChar, type BmFont, type FontStyle, type FaceMetrics,
@@ -371,7 +371,7 @@ interface LayoutContext {
 
 function fillKey(p: Paint | null): string {
   if (p === null) return 'none';
-  if ('color' in p) return `s:${p.color}:${p.opacity ?? 1}`;
+  if (isSolidPaint(p)) return `s:${p.color}:${p.opacity ?? 1}`;
   return `nx:${refId(p)}`;
 }
 
@@ -384,7 +384,7 @@ function fillKey(p: Paint | null): string {
  */
 function sameFill(a: Paint | null, b: Paint | null): boolean {
   if (a === b) return true;
-  if (a !== null && b !== null && 'color' in a && 'color' in b) {
+  if (isSolidPaint(a) && isSolidPaint(b)) {
     return a.color === b.color && (a.opacity ?? 1) === (b.opacity ?? 1);
   }
   return false;

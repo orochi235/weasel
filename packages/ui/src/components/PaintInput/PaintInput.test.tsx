@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useState } from 'react';
-import { act, cleanup, render, screen, fireEvent } from '@testing-library/react';
+import { act, cleanup, render, screen, fireEvent, within } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
@@ -113,8 +113,25 @@ describe('PaintInput', () => {
 
     clickKind('Pattern');
     const next = onCommit.mock.calls.at(-1)?.[0] as Paint;
-    expect(next.kind).toBe('pattern');
-    expect(next).toMatchObject({ pattern: { color: '#336699ff' } });
+    expect(next).toMatchObject({ kind: 'hatch', color: '#336699ff' });
+  });
+
+  it('offers every tile kind under one Pattern segment', () => {
+    render(<Host initial={SOLID} />);
+    const bar = screen.getByRole('radiogroup', { name: 'Paint kind' });
+    expect(within(bar).queryByRole('radio', { name: 'Hatch' })).toBeNull();
+    expect(within(bar).getAllByRole('radio', { name: 'Pattern' })).toHaveLength(1);
+  });
+
+  it('keeps the Pattern segment lit as the picker moves between tile kinds', () => {
+    const onCommit = vi.fn();
+    render(<Host initial={{ kind: 'hatch', color: '#336699', units: 'bounds' }} onCommit={onCommit} />);
+    const pattern = (): HTMLElement => screen.getByRole('radio', { name: 'Pattern' });
+    expect(pattern()).toBeChecked();
+
+    fireEvent.click(screen.getByRole('button', { name: 'dots' }));
+    expect(onCommit.mock.calls.at(-1)?.[0]).toMatchObject({ kind: 'dots' });
+    expect(pattern()).toBeChecked();
   });
 
   it('carries gradient geometry across a gradient-to-gradient switch', () => {
@@ -301,8 +318,7 @@ describe('PaintInput — solid opacity', () => {
 
 describe('PaintInput — opacity of a paint with no single color', () => {
   const PATTERN: Paint = {
-    kind: 'pattern',
-    pattern: { tile: 'hatch', color: '#336699', size: 8 },
+    kind: 'hatch', color: '#336699', size: 8,
     units: 'bounds',
   };
   const MESH: Paint = asPaint(seedMeshPatch('#ff0000ff'));

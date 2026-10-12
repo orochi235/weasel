@@ -1,6 +1,6 @@
 /**
- * `TilePatternSpec` → `TextureHandle`. The bridge between the serializable
- * half of a pattern paint and the GL texture that paints it.
+ * `TilePatternSpec` → `TextureHandle`. The bridge between a tile paint and the
+ * GL texture that paints it.
  *
  * Memoized on the spec's field values, so identical specs across nodes share
  * one texture and a re-render never re-rasterizes. The memo keeps the
@@ -9,7 +9,10 @@
  * the spec, and the texture registry asks this module to rebuild it.
  */
 
-import type { CommandFill, Paint, PosedFill, TilePatternSpec } from '@weasel-js/paint';
+import {
+  isTileKind, isTilePaint, patternPlacementOf, tileSpecOf,
+  type CommandFill, type Paint, type PosedFill, type TilePaint, type TilePatternSpec,
+} from '@weasel-js/paint';
 import {
   ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
   type TextureHandle,
@@ -45,13 +48,16 @@ export function _resetPatternSpecCacheForTests(): void {
  * can't be rasterized — no `OffscreenCanvas`, same as `createTilePattern`.
  */
 export function resolvePatternSpec(spec: TilePatternSpec): TextureHandle | null {
-  const id = specId(spec);
+  // A whole tile paint is a valid argument, and its placement is no part of
+  // the tile.
+  const tile = tileSpecOf(spec as TilePaint);
+  const id = specId(tile);
   const hit = cache.get(id);
   if (hit !== undefined) {
     markUsed(id);
     return hit;
   }
-  return build(id, spec);
+  return build(id, tile);
 }
 
 function markUsed(id: string): void {
@@ -62,7 +68,7 @@ function markUsed(id: string): void {
 }
 
 function build(id: string, spec: TilePatternSpec): TextureHandle | null {
-  const bitmap = TILES.has(spec.tile)
+  const bitmap = isTileKind(spec.kind)
     ? rasterizeTile({
       size: tileSize(spec),
       draw: (oc) => drawTileShapes(oc, tileGeometry(spec)),
@@ -74,10 +80,6 @@ function build(id: string, spec: TilePatternSpec): TextureHandle | null {
   while (cache.size > PATTERN_TILE_CACHE_LIMIT) evict(cache.keys().next().value!);
   return handle;
 }
-
-const TILES: ReadonlySet<string> = new Set<TilePatternSpec['tile']>([
-  'hatch', 'crosshatch', 'dots', 'chunks',
-]);
 
 function evict(id: string): void {
   cache.delete(id);
@@ -93,32 +95,24 @@ function revive(id: string): void {
   } catch {
     return;
   }
-  if (typeof spec !== 'object' || spec === null || !('tile' in spec)) return;
+  if (typeof spec !== 'object' || spec === null || !('kind' in spec)) return;
   build(id, spec as TilePatternSpec);
 }
 
 ownTextureIds(ID_PREFIX, { revive, touched: markUsed });
 
-/** Whether a pattern payload is a spec rather than an already-built handle. */
-export function isPatternSpec(
-  payload: TextureHandle | TilePatternSpec,
-): payload is TilePatternSpec {
-  return 'tile' in payload;
-}
-
 /**
- * Swap a pattern paint's spec payload for the texture that paints it,
+ * Swap a tile paint for the `texture` paint that draws it, placement kept,
  * leaving every other fill untouched. The built-in painters run this
  * alongside `fillInPoseFrame`; a consumer emitting its own draw commands
  * runs it at the same place it runs that one.
  *
- * A spec that can't rasterize drops the fill rather than painting garbage.
+ * A tile that can't rasterize drops the fill rather than painting garbage.
  */
 export function resolveFillPattern(fill: PosedFill): CommandFill | null;
 export function resolveFillPattern(fill: Paint): Paint | null;
 export function resolveFillPattern(fill: Paint): Paint | null {
-  if (fill.kind !== 'pattern') return fill;
-  if (!isPatternSpec(fill.pattern)) return fill;
-  const handle = resolvePatternSpec(fill.pattern);
-  return handle ? { ...fill, pattern: handle } : null;
+  if (!isTilePaint(fill)) return fill;
+  const texture = resolvePatternSpec(fill);
+  return texture ? { kind: 'texture', texture, ...patternPlacementOf(fill) } : null;
 }

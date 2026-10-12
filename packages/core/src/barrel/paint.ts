@@ -8,7 +8,6 @@ export type { TilePatternOpts } from '@weasel-js/renderer';
 export {
   resolvePatternSpec,
   resolveFillPattern,
-  isPatternSpec,
 } from '@weasel-js/renderer';
 
 // ─── Paint types: Paint, Stroke, gradients ──────────────────────────────
@@ -37,6 +36,11 @@ export type {
   GradientFill,
   GradientKind,
   PaintUnits,
+  PatternPaint,
+  PatternPlacement,
+  TexturePaint,
+  TileKind,
+  TilePaint,
   TilePatternSpec,
   PatternTransform,
   PatternTransformParts,
@@ -50,6 +54,13 @@ export type {
   ScreenLength,
 } from '@weasel-js/paint';
 export {
+  TILE_KINDS,
+  isPatternPaint,
+  isSolidPaint,
+  isTileKind,
+  isTilePaint,
+  patternPlacementOf,
+  tileSpecOf,
   isGradientFill,
   sampleGradientStops,
   withGradientKind,
@@ -74,6 +85,8 @@ export {
   listGradientKinds,
   listPaintKinds,
   paintKindOf,
+  patternFamily,
+  seedTile,
   switchGradientKind,
   paintKindRegistry,
 } from 'core/paint/paintKinds';
@@ -81,7 +94,7 @@ export { asPaint } from 'core/paint/paintKindEntry';
 export { warmPaintKinds, isPaintKindKnown } from '@weasel-js/renderer';
 export { usePaintKinds, useGradientKinds, usePaintKind } from '../core/usePaintKinds';
 export type { PaintKindLoader } from 'core/paint/paintKinds';
-export type { PaintKind, PaintKindEntry, PaintKindEditorProps } from 'core/paint/paintKindEntry';
+export type { PaintKind, PaintKindEntry, PaintKindEditorProps, PaintKindFamily } from 'core/paint/paintKindEntry';
 export type {
   PaintDrawKind,
   PaintBindContext,

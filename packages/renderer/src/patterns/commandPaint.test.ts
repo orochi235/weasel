@@ -14,7 +14,7 @@ const BOUNDS_GRADIENT: Paint = {
   stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
   units: 'bounds',
 };
-const HATCH: Paint = { kind: 'pattern', pattern: { tile: 'hatch', color: '#000' }, units: 'bounds' };
+const HATCH: Paint = { kind: 'hatch', color: '#000', units: 'bounds' };
 
 describe('commandFill', () => {
   beforeEach(() => {
@@ -30,10 +30,11 @@ describe('commandFill', () => {
     });
   });
 
-  it('swaps a tile spec for its texture and anchors it to the box', () => {
+  it('swaps a tile paint for its texture and anchors it to the box', () => {
     const fill = commandFill(HATCH, BOX);
-    expect(fill).toMatchObject({ kind: 'pattern', units: 'local', origin: { x: 10, y: 20 } });
-    expect((fill as { pattern: { id: string } }).pattern.id).toEqual(expect.any(String));
+    expect(fill).toMatchObject({
+      kind: 'texture', texture: { id: expect.any(String) }, units: 'local', origin: { x: 10, y: 20 },
+    });
   });
 
   it('answers null for a spec that cannot rasterize', () => {
@@ -63,7 +64,7 @@ describe('PathDrawCommand paint', () => {
   it('rejects what only a node painter can resolve', () => {
     const cmds: PathDrawCommand[] = [
       // @ts-expect-error a tile spec is not a registered texture
-      { kind: 'path', path: RECT, fill: { kind: 'pattern', pattern: { tile: 'hatch', color: '#000' } } },
+      { kind: 'path', path: RECT, fill: { kind: 'hatch', color: '#000' } },
       // @ts-expect-error a command has no node box for 'bounds' to mean
       { kind: 'path', path: RECT, fill: BOUNDS_GRADIENT },
       // @ts-expect-error the same holds for a stroke's paint

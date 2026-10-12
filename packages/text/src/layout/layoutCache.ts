@@ -60,7 +60,7 @@
  * so it is a real LRU with a hard entry count.
  */
 
-import type { Paint, Stroke } from '@weasel-js/paint';
+import { isSolidPaint, type Paint, type Stroke } from '@weasel-js/paint';
 import { glyphGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { layoutRuns, type LaidOutRuns, type LayoutRunsOpts } from './layoutRuns';
@@ -121,7 +121,7 @@ function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string 
  */
 function paintKey(p: Paint | null): string {
   if (p === null) return 'none';
-  return 'color' in p ? `s${p.color}:${p.opacity ?? 1}` : `#${refId(p)}`;
+  return isSolidPaint(p) ? `s${p.color}:${p.opacity ?? 1}` : `#${refId(p)}`;
 }
 
 function strokeKey(s: Stroke | undefined): string {

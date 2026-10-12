@@ -332,7 +332,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getPaint: () => ({ fill: { kind: 'pattern', pattern: { id: 'test-tex' } } as const }),
+      getPaint: () => ({ fill: { kind: 'texture', texture: { id: 'test-tex' } } as const }),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -381,7 +381,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getPaint: () => ({ fill: { kind: 'pattern', pattern: { id: 'test-tex' } } as const }),
+      getPaint: () => ({ fill: { kind: 'texture', texture: { id: 'test-tex' } } as const }),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));

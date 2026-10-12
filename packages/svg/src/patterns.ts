@@ -1,5 +1,5 @@
 /**
- * Map between SVG `<pattern>` elements and weasel's `pattern` `Paint`.
+ * Map between SVG `<pattern>` elements and weasel's pattern paints.
  * The counterpart to `gradients.ts` for the other paint-server kind.
  *
  * The tile's shapes come from `tileGeometry` in core, so the vector form a
@@ -9,34 +9,30 @@
  * attribute back to recover the exact spec rather than reverse-engineering
  * it from geometry.
  *
- * A pattern whose payload is a `TextureHandle` has no vector form — the
- * handle is a session-scoped registry key with no tile description behind
- * it — and exports as nothing, with a warning. Same treatment conic
+ * A `texture` paint has no vector form — its handle is a session-scoped
+ * registry key with no tile description behind it — and exports as nothing,
+ * with a warning. Same treatment conic
  * gradients get.
  */
 
 import { escapeAttr } from './xmlEscape';
 import { tileGeometry, type TileShape } from '@weasel-js/core/patterns-builtin';
-import type { Paint, TilePatternSpec } from '@weasel-js/core';
+import {
+  isTileKind, isTilePaint, tileSpecOf,
+  type Paint, type PatternPaint, type TilePaint, type TilePatternSpec,
+} from '@weasel-js/core';
 import { collectElementsByTag } from './elements';
 import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } from './transform';
-
-type PatternFill = Extract<Paint, { kind: 'pattern' }>;
 
 /** Collected pattern definitions, keyed by element id. */
 export type PatternTable = Map<string, Paint>;
 
-/** Whether a pattern paint carries a serializable spec. */
-export function patternSpecOf(paint: PatternFill): TilePatternSpec | null {
-  return 'tile' in paint.pattern ? paint.pattern : null;
-}
-
-export function patternXml(id: string, paint: PatternFill, onWarn?: (m: string) => void): string {
-  const spec = patternSpecOf(paint);
-  if (!spec) {
-    onWarn?.('pattern fill carries a TextureHandle, which has no vector form — omitted from <defs>');
+export function patternXml(id: string, paint: PatternPaint, onWarn?: (m: string) => void): string {
+  if (!isTilePaint(paint)) {
+    onWarn?.('texture fill carries a TextureHandle, which has no vector form — omitted from <defs>');
     return '';
   }
+  const spec = tileSpecOf(paint);
   const geometry = tileGeometry(spec);
   const body = geometry.shapes.map(shapeXml).join('');
   const origin = paint.origin ?? { x: 0, y: 0 };
@@ -136,7 +132,7 @@ function readPattern(el: Element, onWarn?: (m: string) => void): Paint | null {
     onWarn?.(`<pattern id="${el.getAttribute('id')}"> has malformed data-weasel-tile — dropped`);
     return null;
   }
-  if (typeof spec?.tile !== 'string' || typeof spec?.color !== 'string') {
+  if (!isTileKind(spec?.kind) || typeof spec?.color !== 'string') {
     onWarn?.(`<pattern id="${el.getAttribute('id')}"> data-weasel-tile is not a tile spec — dropped`);
     return null;
   }
@@ -144,7 +140,7 @@ function readPattern(el: Element, onWarn?: (m: string) => void): Paint | null {
   const y = parseFloat(el.getAttribute('y') ?? '0');
   const m = parseTransform(el.getAttribute('patternTransform'), onWarn);
   const origin = applyMatrix(m, x, y);
-  const paint: PatternFill = { kind: 'pattern', pattern: spec };
+  const paint: TilePaint = { ...spec };
   if (origin.x !== 0 || origin.y !== 0) paint.origin = origin;
   if (!isIdentity([m[0], m[1], m[2], m[3], 0, 0])) paint.transform = [m[0], m[1], m[2], m[3]];
   return paint;

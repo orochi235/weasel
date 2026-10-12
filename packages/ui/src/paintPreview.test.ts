@@ -17,7 +17,7 @@ describe('paintPreviewCss', () => {
     expect(paintPreviewCss(null)).toBeUndefined();
     expect(paintPreviewCss(undefined)).toBeUndefined();
     expect(paintPreviewCss({
-      kind: 'pattern', pattern: { tile: 'checker', size: 8, color: '#000' },
+      kind: 'checker', size: 8, color: '#000',
     } as unknown as Paint)).toBeUndefined();
   });
 

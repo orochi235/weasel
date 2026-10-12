@@ -17,8 +17,7 @@ const H = 48;
 
 function render(transform: PatternTransform | undefined): RasterImage {
   const paint: Paint = {
-    kind: 'pattern',
-    pattern: { tile: 'hatch', color: '#ffffff', size: 8, lineWidth: 2 },
+    kind: 'hatch', color: '#ffffff', size: 8, lineWidth: 2,
     units: 'world',
     transform,
   };

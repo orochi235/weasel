@@ -10,7 +10,7 @@ import { serializeSvg } from '@weasel-js/svg';
 import type { SvgNode } from '@weasel-js/svg';
 import {
   registerPaintKind, _resetPaintKindsForTests, listPaintKinds, getPaintKind, paintKindRegistry,
-  registerPaintKindLoader,
+  registerPaintKindLoader, patternFamily,
 } from './paintKinds';
 import { asPaint, type PaintKindEntry } from './paintKindEntry';
 import { warmPaintKinds } from '@weasel-js/renderer';
@@ -114,10 +114,20 @@ describe('paint-kind registry', () => {
     _resetPaintKindsForTests();
   });
 
-  it('ships the five built-in kinds', () => {
+  it('ships the built-in kinds', () => {
     expect(listPaintKinds().map((k) => k.id)).toEqual([
-      'solid', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'pattern',
+      'solid', 'linear-gradient', 'radial-gradient', 'conic-gradient',
+      'hatch', 'crosshatch', 'dots', 'chunks', 'texture',
     ]);
+  });
+
+  it('offers the tiles and texture as one pattern family', () => {
+    const family = (id: string) => listPaintKinds().find((k) => k.id === id)?.family;
+    for (const id of ['hatch', 'crosshatch', 'dots', 'chunks', 'texture']) {
+      expect(family(id)).toBe(patternFamily);
+    }
+    expect(family('solid')).toBeUndefined();
+    expect(family('linear-gradient')).toBeUndefined();
   });
 
   it('registers the shader programs a kind declares, and re-registering the same source is not a duplicate', () => {

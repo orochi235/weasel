@@ -15,7 +15,7 @@
  * only — `domToRuns` reads straight through them.
  */
 
-import type { Paint } from '@weasel-js/paint';
+import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import {
   DEFAULT_TEXT_STYLE, isHardLineBreak, numericWeight, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
@@ -28,7 +28,7 @@ export { charOffsetToDomPosition, domPositionToCharOffset } from './domOffsets';
 
 function solidColor(p: Paint | null | undefined): string | null {
   if (!p) return null;
-  if ('color' in p) return p.color;
+  if (isSolidPaint(p)) return p.color;
   return null;
 }
 

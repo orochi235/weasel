@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isSolidPaint } from '@weasel-js/paint';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import {
@@ -886,7 +887,7 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.background = 'transparent';
   // Unfilled text still edits in black: the overlay has to be legible, and
   // there is no CSS spelling of "no fill" that leaves the glyphs visible.
-  el.style.color = style.fill !== null && 'color' in style.fill ? style.fill.color : '#000';
+  el.style.color = isSolidPaint(style.fill) ? style.fill.color : '#000';
   el.style.caretColor = style.caretColor;
   // The canvas's face, not the browser's reading of the family name.
   const fontFamily = cssFontFamily(style.fontFamily, {

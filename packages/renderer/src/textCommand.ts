@@ -23,7 +23,7 @@ import { resolveTextStyle, textPoseLayoutInput } from '@weasel-js/text';
 import { resolveRuns } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign, ResolvedRun } from '@weasel-js/text';
-import type { Paint } from '@weasel-js/paint';
+import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import type { FillPoseBox } from './fillInPoseFrame';
 import { commandFill } from './patterns/commandPaint';
 
@@ -116,5 +116,5 @@ function runsInPoseFrame(runs: ResolvedRun[], box: FillPoseBox): ResolvedRun[] {
 }
 
 function isSolid(paint: Paint | null | undefined): boolean {
-  return paint == null || (paint.kind ?? 'solid') === 'solid';
+  return paint == null || isSolidPaint(paint);
 }

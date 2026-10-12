@@ -6,7 +6,7 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import { getPaintKind, getMarker, resolveMarkerSize } from '@weasel-js/core';
+import { getPaintKind, getMarker, isPatternPaint, isTileKind, resolveMarkerSize } from '@weasel-js/core';
 import type {
   Paint, GradStop, PaintUnits, MarkerEntry, MarkerPaint, MarkerRef, Path, ScreenLength,
 } from '@weasel-js/core';
@@ -41,7 +41,8 @@ export const WEASEL_NS_PREFIX = 'wzl';
  *  linear and radial gradients, and patterns. Any other kind is written in
  *  weasel's namespace with a fallback color, which other renderers paint flat. */
 export function nativeSvgKind(kind: string): boolean {
-  return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'pattern';
+  return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient'
+    || kind === 'texture' || isTileKind(kind);
 }
 
 function hasNativeSvgForm(paint: Paint): boolean {
@@ -392,7 +393,7 @@ export class PaintServerRegistry {
   register(paint: Paint): string {
     const existing = this.byPaint.get(paint);
     if (existing) return existing;
-    const id = paint.kind === 'pattern' ? `pat${this.counter++}` : `grad${this.counter++}`;
+    const id = isPatternPaint(paint) ? `pat${this.counter++}` : `grad${this.counter++}`;
     this.byPaint.set(paint, id);
     this.order.push(paint);
     return id;
@@ -548,7 +549,7 @@ function markerPaintAttrs(
  *  carries `fill="url(#id)"`, so a silent omission is a dangling reference and
  *  the shape vanishes in a viewer. */
 function paintServerXml(id: string, paint: Paint, onWarn?: (m: string) => void): string {
-  if (paint.kind === 'pattern') return patternXml(id, paint, onWarn);
+  if (isPatternPaint(paint)) return patternXml(id, paint, onWarn);
   const builtin = gradientXml(id, paint);
   if (builtin) return builtin;
   const kind = getPaintKind(paint.kind);

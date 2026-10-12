@@ -11,7 +11,7 @@ import {
   installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas,
 } from './patterns/test-utils/fakeOffscreenCanvas';
 
-const shade = (i: number): TilePatternSpec => ({ tile: 'hatch', color: `#${i.toString(16).padStart(6, '0')}` });
+const shade = (i: number): TilePatternSpec => ({ kind: 'hatch', color: `#${i.toString(16).padStart(6, '0')}` });
 
 describe('a pattern tile evicted while a draw command still holds its handle', () => {
   beforeEach(() => {
@@ -27,12 +27,12 @@ describe('a pattern tile evicted while a draw command still holds its handle', (
   function setup() {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
-    const handle = resolvePatternSpec({ tile: 'dots', color: '#fff' })!;
+    const handle = resolvePatternSpec({ kind: 'dots', color: '#fff' })!;
     // A memoized painter's output: built once, drawn on every later frame.
     const commands: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      fill: { kind: 'pattern', pattern: handle },
+      fill: { kind: 'texture', texture: handle },
     }];
     rec.reset();
     r.render(commands);

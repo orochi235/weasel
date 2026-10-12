@@ -1,4 +1,4 @@
-import type { DrawCommand, Paint, Stroke, View } from '@weasel-js/core';
+import { isSolidPaint, type DrawCommand, type Paint, type Stroke, type View } from '@weasel-js/core';
 import type { SvgNode, SvgPaint, SvgStroke } from '@weasel-js/svg';
 import { type MarkStyle, markCommands, type PaintableMark } from './paint';
 
@@ -6,7 +6,7 @@ const NO_PAINT: SvgPaint = { kind: 'none' };
 
 function toSvgPaint(paint: Paint | undefined): SvgPaint {
   if (!paint) return NO_PAINT;
-  if ('color' in paint && typeof paint.color === 'string') {
+  if (isSolidPaint(paint)) {
     return {
       kind: 'solid',
       color: paint.color,

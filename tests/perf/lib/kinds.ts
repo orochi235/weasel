@@ -78,7 +78,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
   const patternFill = (i: number) => ({
     kind: 'path',
     path: rectPath(i),
-    fill: { kind: 'pattern' as const, pattern, origin: { x: i % 8, y: i % 8 } },
+    fill: { kind: 'texture' as const, texture: pattern, origin: { x: i % 8, y: i % 8 } },
   });
 
   const image = (i: number) => ({

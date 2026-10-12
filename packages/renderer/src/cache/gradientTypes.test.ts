@@ -38,11 +38,10 @@ describe('Paint gradient types (compile-time + runtime shape)', () => {
     expect(p.kind).toBe('conic-gradient');
   });
 
-  it('pattern Paint discriminates on fill', () => {
-    const p: Paint = {
-      kind: 'pattern',
-      pattern: { id: 'test-tex' },
-    };
-    expect(p.kind).toBe('pattern');
+  it('a pattern Paint is a tile kind or a texture', () => {
+    const tile: Paint = { kind: 'hatch', color: '#000' };
+    const texture: Paint = { kind: 'texture', texture: { id: 'test-tex' } };
+    expect(tile.kind).toBe('hatch');
+    expect(texture.kind).toBe('texture');
   });
 });

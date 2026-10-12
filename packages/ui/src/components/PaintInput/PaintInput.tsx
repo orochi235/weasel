@@ -1,7 +1,7 @@
 import { useCallback, useState, type ReactElement } from 'react';
 import {
   getAlpha01,
-  getPaintKind,
+  isPatternPaint,
   paintAlpha,
   paintWithAlpha,
   solid,
@@ -12,13 +12,14 @@ import {
   withAlpha01,
   type Paint,
   type PaintKind,
+  type PaintKindEntry,
 } from '@weasel-js/core';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { ColorField } from '../ColorField';
 import { OpacityRange } from '../ColorField/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
-import { PatternPicker, type PatternFill } from '../PatternPicker';
+import { PatternPicker } from '../PatternPicker';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import s from './PaintInput.module.css';
 
@@ -45,10 +46,6 @@ function solidFromField(color: string): Paint {
   return paint.opacity === undefined
     ? paint
     : { ...paint, opacity: Math.round(paint.opacity * 100) / 100 };
-}
-
-function isPattern(paint: Paint | undefined): paint is PatternFill {
-  return paint?.kind === 'pattern';
 }
 
 /** A paint's own discriminant. The solid member leaves `kind` off, and an
@@ -95,7 +92,8 @@ export interface PaintInputProps {
  *
  * The bar is driven by the paint-kind registry rather than a fixed list, so a
  * consumer's registered kind appears in it and renders that entry's `Editor`.
- * The five built-in kinds keep their branch here: their editors live in this
+ * Kinds sharing a `family` are one segment, and that segment's body picks the
+ * member. The built-in kinds keep their branch here: their editors live in this
  * package and `@weasel-js/core`, which owns the registry, cannot import it.
  *
  * Geometry is deliberately absent — on a canvas it belongs on the artwork,
@@ -108,7 +106,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   } = props;
   const ariaLabel = props['aria-label'];
 
-  // Per-kind memory, so linear → solid → linear comes back with its stops.
+  // Per-segment memory, so linear → solid → linear comes back with its stops.
   const [held, setHeld] = useState(() => ({ subject, kinds: new Map<PaintKind, Paint>() }));
   let memory = held;
   if (held.subject !== subject) {
@@ -117,13 +115,14 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   }
   const remembered = memory.kinds;
 
-  const active = mixed ? null : kindOf(value);
-  if (value != null && active !== null) remembered.set(active, value);
-
   const valueKind = usePaintKind(value?.kind);
   const entries = usePaintKinds().filter(
     (entry) => kinds === undefined || kinds.includes(entry.id),
   );
+  // A paint lights its family's segment when its kind has one.
+  const ownKind = kindOf(value);
+  const active = mixed || ownKind === null ? null : valueKind?.family?.id ?? ownKind;
+  if (value != null && active !== null) remembered.set(active, value);
   const segment = (id: string, label: string, icon: string | undefined): ToggleBarItem<PaintKind> =>
     icon && icon in ICON_PATHS
       // Icon-only: six labelled segments do not fit a property row, and the
@@ -133,9 +132,18 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       ? { value: id, label: <Icon name={icon as IconName} size={14} />, ariaLabel: label }
       : { value: id, label };
 
+  // One segment per family, seeded by its first member; a kind without a
+  // family is its own segment.
+  const firstOf = new Map<string, PaintKindEntry>();
+  for (const entry of entries) {
+    const id = entry.family?.id ?? entry.id;
+    if (!firstOf.has(id)) firstOf.set(id, entry);
+  }
   const items: readonly ToggleBarItem<PaintKind>[] = [
     ...(allowNone ? [segment(NONE, 'None', 'paintNone')] : []),
-    ...entries.map((entry) => segment(entry.id, entry.label, entry.icon)),
+    ...[...firstOf].map(([id, entry]) => segment(
+      id, entry.family?.label ?? entry.label, entry.family ? entry.family.icon : entry.icon,
+    )),
   ];
 
   /** The color a switch seeds from: whatever the current paint shows. */
@@ -160,7 +168,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       onChange(converted);
       return;
     }
-    const entry = getPaintKind(kind);
+    const entry = firstOf.get(kind);
     if (entry) onChange(entry.seed(currentColor()));
   };
 
@@ -227,7 +235,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
         />
       ));
     }
-    if (isPattern(value)) {
+    if (isPatternPaint(value)) {
       return withOpacity(
         value,
         <PatternPicker value={value} color={currentColor()} onChange={onChange} />,

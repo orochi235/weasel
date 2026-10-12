@@ -25,7 +25,7 @@ export interface TileGeometry {
 /** Defaults per tile kind, matching each factory's signature. */
 export function tileSize(spec: TilePatternSpec): number {
   if (spec.size !== undefined) return spec.size;
-  switch (spec.tile) {
+  switch (spec.kind) {
     case 'hatch': return 5;
     case 'crosshatch': return 6;
     case 'dots': return 6;
@@ -53,7 +53,7 @@ export function tileGeometry(spec: TilePatternSpec): TileGeometry {
   const s = tileSize(spec);
   const { color } = spec;
 
-  switch (spec.tile) {
+  switch (spec.kind) {
     case 'hatch': {
       const width = spec.lineWidth ?? 1;
       return { size: s, shapes: forwardDiagonals(s, width, color) };

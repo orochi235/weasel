@@ -46,7 +46,7 @@ const SWATCHES: { id: string; label: string; path: Path; paint: SwatchPaint }[] 
     },
   } },
   { id: 'pattern', label: 'built-in tile, named as data', path: BOX, paint: {
-    fill: { kind: 'pattern', pattern: { tile: 'hatch', color: PLUM, size: 10, lineWidth: 2 }, units: 'bounds' },
+    fill: { kind: 'hatch', color: PLUM, size: 10, lineWidth: 2, units: 'bounds' },
   } },
   { id: 'dashed', label: "dashForStrokeStyle('dashed', 6)", path: ZIGZAG, paint: {
     stroke: {

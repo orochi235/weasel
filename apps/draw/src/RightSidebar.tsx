@@ -5,6 +5,8 @@ import {
   inferredNodeRouting,
   isGradientFill,
   resolveTextStyle,
+  isSolidPaint,
+  isTilePaint,
   sampleGradientStops,
   toHex8,
   useOngoingAction,
@@ -69,18 +71,17 @@ export function layerSwatch(data: WeaselDrawData): string | undefined {
   if (data.fill != null) return paintChipColor(data.fill);
   if (data.text === undefined) return undefined;
   const { fill } = resolveTextStyle(data.style, { fill: data.fill });
-  return fill !== null && 'color' in fill ? fill.color : undefined;
+  return isSolidPaint(fill) ? fill.color : undefined;
 }
 
 /** One representative color for a `Paint`, for a chip too small to draw
  *  the real paint: a gradient shows its midpoint, which reads closer to the
  *  whole ramp than either end does, and a tile pattern shows the color it
- *  draws with. A pattern built from a raw `TextureHandle` has no color to
- *  report. */
+ *  draws with. A `texture` paint has no color to report. */
 export function paintChipColor(fill: Paint): string | undefined {
   if (isGradientFill(fill)) return sampleGradientStops(fill.stops, 0.5);
   if (fill.kind === undefined || fill.kind === 'solid') return fill.color;
-  if (fill.kind === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;
+  if (isTilePaint(fill)) return fill.color;
   return undefined;
 }
 

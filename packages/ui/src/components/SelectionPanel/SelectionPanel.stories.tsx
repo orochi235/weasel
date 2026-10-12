@@ -136,7 +136,7 @@ export const PatternFillPaint: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: { kind: 'pattern', pattern: { tile: 'crosshatch', color: '#7fb069ff', size: 8 }, units: 'bounds' },
+      fill: { kind: 'crosshatch', color: '#7fb069ff', size: 8, units: 'bounds' },
       stroke: strokeOf('#1c1c1c', 4),
     },
   },

@@ -9,7 +9,7 @@
  * the renderer in one frame.
  */
 
-import type { Paint, GradientFill, PosedFill } from '@weasel-js/paint';
+import { isPatternPaint, type GradientFill, type Paint, type PatternPaint, type PosedFill } from '@weasel-js/paint';
 import { getPaintDrawKind } from './paintKinds';
 
 /** The box a `'bounds'` gradient's normalized geometry is mapped onto —
@@ -73,7 +73,7 @@ export function fillToBoundsFrame(fill: Paint, box: FillPoseBox): Paint {
   if (!isBuiltinKind(fill)) {
     return getPaintDrawKind(fill.kind)?.toBoundsFrame?.(fill, box) ?? fill;
   }
-  if (fill.kind === 'pattern') {
+  if (isPatternPaint(fill)) {
     const o = fill.origin ?? { x: 0, y: 0 };
     return { ...fill, origin: { x: o.x - box.x, y: o.y - box.y }, units: 'bounds' as const };
   }
@@ -103,8 +103,8 @@ export function fillToBoundsFrame(fill: Paint, box: FillPoseBox): Paint {
  *  stretch them, which is the whole reason patterns get their own branch. */
 function isBoundsPattern(
   fill: Paint,
-): fill is Extract<Paint, { kind: 'pattern' }> {
-  return fill.kind === 'pattern' && fill.units === 'bounds';
+): fill is PatternPaint {
+  return isPatternPaint(fill) && fill.units === 'bounds';
 }
 
 /** True when this fill is a gradient declaring box-relative geometry. */
@@ -117,10 +117,10 @@ function isBoundsGradient(fill: Paint | undefined): fill is GradientFill {
   return fill.units === 'bounds';
 }
 
-/** The five kinds whose frame conversion is written above. Anything else is a
+/** The kinds whose frame conversion is written above. Anything else is a
  *  registered kind and converts through its own entry. */
 function isBuiltinKind(fill: Paint): boolean {
   const kind = fill.kind ?? 'solid';
-  return kind === 'solid' || kind === 'pattern'
+  return kind === 'solid' || isPatternPaint(fill)
     || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient';
 }

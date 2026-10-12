@@ -72,8 +72,8 @@ function paintFromLegacy(color: string): { color: string; opacity?: number } | n
 /**
  * Rewrite the pre-2026-08-26 string paint forms — `fill: '#abc'`,
  * `stroke: '#abc'` with a sibling `strokeWidth` — into the `Paint` and
- * `Stroke` objects every reader now expects, and a paint's tag from `fill` to
- * `kind`. Walks in place and returns the same node, like `reviveTypedArrays`.
+ * `Stroke` objects every reader now expects, a paint's tag from `fill` to
+ * `kind`, and a pattern's tile up into the paint. Walks in place and returns the same node, like `reviveTypedArrays`.
  *
  * Applied to node data and to the node data copied inside a history
  * snapshot's op payloads, so an undo after a reload cannot write a string
@@ -101,9 +101,29 @@ export function migrateLegacyPaint<T>(node: T): T {
     obj.stroke = paint === null ? null : { paint, width };
   }
   if ('strokeWidth' in obj) delete obj.strokeWidth;
+  liftLegacyPattern(obj);
 
   for (const k of Object.keys(obj)) migrateLegacyPaint(obj[k]);
   return node;
+}
+
+/**
+ * A pattern paint held its tile one level down until 2026-10-12, as
+ * `{ kind: 'pattern', pattern: { tile: 'hatch', … } }`. Each tile is now its own
+ * kind with its fields beside the placement, and a consumer-built handle is a
+ * `texture` paint.
+ */
+function liftLegacyPattern(obj: Record<string, unknown>): void {
+  const payload = obj.pattern;
+  if (obj.kind !== 'pattern' || typeof payload !== 'object' || payload === null) return;
+  delete obj.pattern;
+  if ('tile' in payload) {
+    const { tile, ...rest } = payload as Record<string, unknown>;
+    Object.assign(obj, rest, { kind: tile });
+  } else {
+    obj.kind = 'texture';
+    obj.texture = payload;
+  }
 }
 
 /**

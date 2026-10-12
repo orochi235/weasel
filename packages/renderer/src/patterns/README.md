@@ -11,8 +11,8 @@ Repeating texture tiles for `Paint`.
 2. It's converted to an `ImageBitmap`.
 3. That's registered via `registerTexture()`.
 
-The returned `TextureHandle` is what `Paint.pattern` accepts — so a
-patterned fill is `{ kind: 'pattern', pattern: handle }`. See
+The returned `TextureHandle` is what a `texture` paint holds, so a fill of
+your own tile is `{ kind: 'texture', texture: handle }`. See
 `@weasel-js/paint`.
 
 The tile is rasterized **once**, at build time, not per frame. Consequences
@@ -27,5 +27,6 @@ dots, chunks — exported through the `@weasel-js/renderer/patterns-builtin` sub
 rather than the main barrel, so consumers that don't use them don't pay for
 them.
 
-Reach for the built-ins first; drop to the tile builder when you need a pattern
-they don't cover.
+Each built-in is also a paint kind of its own: `{ kind: 'hatch', color }` is a
+fill as it stands, serializes, and needs no handle. Reach for those first; drop
+to the tile builder when you need a pattern they don't cover.

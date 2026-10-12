@@ -15,42 +15,28 @@
  * path tessellation and the selection overlay.
  */
 
-import type { TextureHandle } from './texture';
+import type { PatternPaint } from './patternPaint';
 import type { ColorSpace } from './colorSpaces';
-import type { PatternTransform } from './patternTransform';
 
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
  *
  * `kind` is optional and defaults to `'solid'` — `{ color: '#abc' }` is
- * equivalent to `{ kind: 'solid', color: '#abc' }`. Pattern paints must set
- * `kind: 'pattern'` explicitly.
+ * equivalent to `{ kind: 'solid', color: '#abc' }`. Every other paint names
+ * its kind.
  *
- * The `'pattern'` variant's payload is either a `TilePatternSpec` — plain
- * data naming one of the built-in tiles, which survives serialization — or a
- * `TextureHandle` for a tile the consumer built itself via
- * `createTilePattern()`. A handle is a session-scoped registry key, so a
- * paint carrying one cannot be persisted or exported; prefer the spec.
+ * A pattern is one of the built-in tile kinds or a `texture`; see
+ * `PatternPaint`.
  *
  * `interpolate` on a gradient names the space its stops blend through, and
  * defaults to `'rgb'` — the channel-wise sRGB lerp every other vector format
  * means by a gradient. `'oklab'` spaces the blend perceptually; `'oklch'`
  * additionally travels around the hue wheel, so red to blue stays saturated
  * instead of passing through a muddy purple. Alpha is linear in every space.
- *
- * `units` on a pattern names the space the tile's origin and scale live in,
- * not the space of any geometry (a pattern has none). Under `'bounds'` the
- * tile anchors to the painted node's box, so the pattern travels with the
- * node and a resize reveals more tiles rather than stretching them;
- * `fillInPoseFrame` resolves that to a `'local'` paint with an explicit
- * `origin` before the renderer sees it.
- *
- * `transform` on a pattern rotates, scales or skews the tile about `origin`
- * (SVG's `patternTransform`, less its translation). See `PatternTransform`.
  */
 export type Paint =
   | { kind?: 'solid'; color: string; opacity?: number }
-  | { kind: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: PaintUnits; origin?: { x: number; y: number }; transform?: PatternTransform; opacity?: number }
+  | PatternPaint
   | { kind: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
   | { kind: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
   | { kind: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number };
@@ -78,31 +64,6 @@ export type Paint =
  * this field existed.
  */
 export type PaintUnits = 'bounds' | 'local' | 'world' | 'screen';
-
-/**
- * A built-in tile, described as plain data. The serializable half of the
- * pattern paint: `resolvePatternSpec()` turns one into a `TextureHandle`
- * at paint time, memoized so identical specs share a texture.
- *
- * `size` is the tile's edge length, and doubles as its extent in paint
- * space — a bigger `size` rasterizes a bigger tile rather than magnifying
- * a small one, which is why there is no separate scale field.
- */
-export interface TilePatternSpec {
-  tile: 'hatch' | 'crosshatch' | 'dots' | 'chunks';
-  color: string;
-  /** `chunks` only — omit for a transparent tile background. */
-  bg?: string;
-  size?: number;
-  /** `hatch` / `crosshatch`. */
-  lineWidth?: number;
-  /** `dots`. */
-  radius?: number;
-  /** `chunks`. */
-  density?: number;
-  chunkSize?: number;
-  seed?: number;
-}
 
 /** A single color stop within a gradient. `offset` is in 0..1. */
 export interface GradStop {

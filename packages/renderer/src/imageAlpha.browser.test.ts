@@ -144,7 +144,7 @@ describe('a translucent image, in a real context', () => {
 describe('a translucent pattern tile, in a real context', () => {
   const pattern = (handle: TextureHandle) => {
     registered.push(handle);
-    return filled(0, { kind: 'pattern', pattern: handle, units: 'local' });
+    return filled(0, { kind: 'texture', texture: handle, units: 'local' });
   };
 
   it('paints the same from a bitmap as from an <img>', async () => {

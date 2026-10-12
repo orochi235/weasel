@@ -1,7 +1,7 @@
-import type { Paint } from '@weasel-js/paint';
+import type { Paint, TexturePaint } from '@weasel-js/paint';
 import type { PaintBindContext, PaintResources } from '../paintKinds';
 import { createPaintResources } from '../paintResources';
-import { getTexture, type TextureHandle } from '../textures/registerTexture';
+import { getTexture } from '../textures/registerTexture';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { patternTileSpace } from '../math/patternSpace';
@@ -51,10 +51,10 @@ function unownedPaintResources(gl: WebGL2RenderingContext): PaintResources {
 export function bindPattern(
   ctx: DrawContext,
   prog: ShaderProgram,
-  fill: Extract<Paint, { kind: 'pattern' }>,
+  fill: TexturePaint,
   model: GlMat3,
 ): ShaderProgram | null {
-  const tex = fill.pattern as TextureHandle;
+  const tex = fill.texture;
   const entry = getTexture(tex.id);
   if (!entry) {
     const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;

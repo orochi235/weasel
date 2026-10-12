@@ -1,7 +1,7 @@
 /**
  * Built-in pattern factories — generic line/dot/scatter textures. Each
  * returns a `TextureHandle` you can wrap in a `Paint` of
- * `{ kind: 'pattern', pattern }` and pass to anything that accepts a `Paint`
+ * `{ kind: 'texture', texture }` and pass to anything that accepts a `Paint`
  * (`Paint`-aware layers, path fills, etc.).
  * Imported from a subpath so consumers that ship their own catalog can
  * avoid the bundle cost.
@@ -12,8 +12,8 @@
  *
  * Each is a thin wrapper over `tileGeometry`, which describes the tile as
  * shapes so `@weasel-js/svg` can emit the same tile as a `<pattern>`.
- * Prefer naming a tile in a `TilePatternSpec` over calling these directly —
- * a spec serializes, a `TextureHandle` does not.
+ * Prefer a tile paint (`{ kind: 'hatch', color }`) over calling these directly —
+ * it serializes, a `TextureHandle` does not.
  */
 
 export { tileGeometry, tileSize, drawTileShapes } from './tileGeometry';
@@ -41,7 +41,7 @@ export interface HatchParams {
 
 /** Build a diagonal-hatch pattern texture. */
 export function hatch(params: HatchParams): TextureHandle | null {
-  return build({ tile: 'hatch', ...params });
+  return build({ kind: 'hatch', ...params });
 }
 
 /** Diagonal hatch in both directions. */
@@ -53,7 +53,7 @@ export interface CrosshatchParams {
 
 /** Build a crosshatch pattern texture. */
 export function crosshatch(params: CrosshatchParams): TextureHandle | null {
-  return build({ tile: 'crosshatch', ...params });
+  return build({ kind: 'crosshatch', ...params });
 }
 
 /** Regular grid of filled dots. */
@@ -65,7 +65,7 @@ export interface DotsParams {
 
 /** Build a dot-grid pattern texture. */
 export function dots(params: DotsParams): TextureHandle | null {
-  return build({ tile: 'dots', ...params });
+  return build({ kind: 'dots', ...params });
 }
 
 /**
@@ -87,5 +87,5 @@ export interface ChunksParams {
 
 /** Build a seeded random-scatter pattern texture. */
 export function chunks(params: ChunksParams): TextureHandle | null {
-  return build({ tile: 'chunks', ...params });
+  return build({ kind: 'chunks', ...params });
 }

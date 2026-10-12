@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
-import type { Paint, GradientFill } from '@weasel-js/paint';
+import type { Paint, GradientFill, PatternPaint, TilePaint, TilePatternSpec } from '@weasel-js/paint';
 
 const STOPS = [
   { offset: 0, color: '#000000' },
@@ -119,35 +119,31 @@ describe('fillToBoundsFrame', () => {
 
 describe('patterns', () => {
   const BOX = { x: 100, y: 50, width: 200, height: 80 };
-  const SPEC = { tile: 'hatch', color: '#0fb5a8' } as const;
+  const SPEC: TilePatternSpec = { kind: 'hatch', color: '#0fb5a8' };
 
   it('rebases a bounds pattern by translation, leaving the tile unscaled', () => {
-    const out = fillInPoseFrame(
-      { kind: 'pattern', pattern: SPEC, units: 'bounds' },
-      BOX,
-    ) as Extract<Paint, { kind: 'pattern' }>;
+    const paint: TilePaint = { ...SPEC, units: 'bounds' };
+    const out = fillInPoseFrame(paint, BOX) as PatternPaint;
     expect(out.units).toBe('local');
     expect(out.origin).toEqual({ x: 100, y: 50 });
     // A resize must reveal more tiles, not stretch them — so nothing about
     // the tile itself may change here.
-    expect(out.pattern).toEqual(SPEC);
+    expect(out).toMatchObject(SPEC);
   });
 
   it('carries an existing origin as an offset from the box', () => {
-    const out = fillInPoseFrame(
-      { kind: 'pattern', pattern: SPEC, units: 'bounds', origin: { x: 4, y: -6 } },
-      BOX,
-    ) as Extract<Paint, { kind: 'pattern' }>;
+    const paint: TilePaint = { ...SPEC, units: 'bounds', origin: { x: 4, y: -6 } };
+    const out = fillInPoseFrame(paint, BOX) as PatternPaint;
     expect(out.origin).toEqual({ x: 104, y: 44 });
   });
 
   it('leaves a pattern in any other space untouched', () => {
-    const world: Paint = { kind: 'pattern', pattern: SPEC, units: 'world' };
+    const world: TilePaint = { ...SPEC, units: 'world' };
     expect(fillInPoseFrame(world, BOX)).toBe(world);
   });
 
   it('round-trips through fillToBoundsFrame', () => {
-    const original: Paint = { kind: 'pattern', pattern: SPEC, units: 'bounds', origin: { x: 4, y: -6 } };
+    const original: TilePaint = { ...SPEC, units: 'bounds', origin: { x: 4, y: -6 } };
     const resolved = fillInPoseFrame(original, BOX);
     expect(fillToBoundsFrame(resolved, BOX)).toEqual(original);
   });

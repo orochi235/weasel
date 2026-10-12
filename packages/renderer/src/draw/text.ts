@@ -1,4 +1,4 @@
-import type { Paint } from '@weasel-js/paint';
+import type { Paint, TexturePaint } from '@weasel-js/paint';
 import {
   resolveTextStyle,
   type LaidOutGroup,
@@ -10,7 +10,7 @@ import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { resolveColor } from '@weasel-js/paint';
+import { isSolidPaint, resolveColor } from '@weasel-js/paint';
 import {
   ensureFontTexture,
   textureCacheKey,
@@ -169,7 +169,7 @@ function drawTextDecorations(
       drawOutlineMesh(ctx, d.fill, ruleMesh(d.x0 + dx, d.y0 + dy, d.x1 + dx, d.y1 + dy));
       continue;
     }
-    const [r, g, b, a] = 'color' in d.fill ? resolveColor(d.fill.color) : [0, 0, 0, 1];
+    const [r, g, b, a] = isSolidPaint(d.fill) ? resolveColor(d.fill.color) : [0, 0, 0, 1];
     let cut: ClipRect | null | undefined;
     for (;;) {
       const staged = stageSolid(ctx, 4);
@@ -236,7 +236,7 @@ function drawTextGroup(
     drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic, fieldScale);
     return;
   }
-  const color = group.fill !== null && 'color' in group.fill
+  const color = isSolidPaint(group.fill)
     ? resolveColor(group.fill.color)
     : [0, 0, 0, 1];
 
@@ -274,7 +274,7 @@ function drawTextGroup(
  *  draws as one color. */
 function glyphPaintKindOf(fill: Paint | null): GlyphPaintKind | null {
   const kind = fill?.kind ?? 'solid';
-  if (kind === 'pattern') return 'pattern';
+  if (kind === 'texture') return 'pattern';
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
     return 'gradient';
   }
@@ -307,7 +307,7 @@ function drawPaintedGlyphs(
   const m = ctx.state.transform;
   let bound: ShaderProgram | null;
   if (kind === 'pattern') {
-    bound = bindPattern(ctx, prog, fill as Extract<Paint, { kind: 'pattern' }>, BATCH_MODEL);
+    bound = bindPattern(ctx, prog, fill as TexturePaint, BATCH_MODEL);
   } else if (kind === 'gradient') {
     bound = bindGradient(ctx, prog, fill as Extract<Paint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, BATCH_MODEL);
   } else {
