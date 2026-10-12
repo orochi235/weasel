@@ -877,7 +877,8 @@ decomposition meant to absorb the first; it has not landed:
 ### labkit presentation mode
 
 `<Lab present>`, `?present` and `usePresentation()` show one trial without any
-chrome, for portfolio embeds, with a refit view, play controls and `gestures`;
+chrome, for portfolio embeds, with a refit view, play controls, `gestures`, a
+`still` for poster capture, and `postMessage` play and pause for a host page;
 README "Presenting a lab" and `packages/labkit/docs/AGENTS.md` cover it. What
 is left:
 
@@ -889,8 +890,10 @@ is left:
   that release before it can merge. agnew still plays from its own transport, because its
   three.js view advances the pen itself and holds a finished curve before redrawing it;
   moving it onto a lab clock is an agnew library change, and the owner's call.
-- **(P3) A still for poster capture, and `postMessage` play/pause** so a host
-  page's play control can reach a live lab.
+- **(P3) A still of a clock that is not seekable is taken where the clock
+  opens.** `<Lab still={1200}>` warns and leaves it there, because such an
+  instrument's state is built by running. Holding it at a time means running
+  it forward off screen, at a step the instrument would have to name.
 
 ### labkit's deprecated snapshot undo
 

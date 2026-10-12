@@ -254,8 +254,8 @@
     "longestFunction": 283
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "lines": 637,
-    "longestFunction": 310
+    "lines": 632,
+    "longestFunction": 298
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 160
