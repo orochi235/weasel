@@ -1,7 +1,7 @@
 /**
  * The routing core every input channel of `useGestureDispatcher` shares: which
  * view an event belongs to, that view's dispatcher and context, and the one
- * `dispatch` that requests a redraw around a gesture.
+ * `dispatch` every channel sends through.
  */
 import type { DepName, DepSchema } from '../../index';
 import { clientToCanvas } from '../../viewport/clientToCanvas';
@@ -62,7 +62,9 @@ export interface DispatchCoreSources {
   /** The dispatcher context, less the parts that depend on the routed view. */
   context(): DispatcherContext;
   actions(): ActionsRegistry;
-  requestRedraw(): void;
+  /** Told of the dispatcher each event is about to run on. A view's appears
+   *  with no render of the hook, so this is where one is first seen. */
+  uses(dispatcher: Dispatcher): void;
   disposed(): boolean;
 }
 
@@ -108,16 +110,10 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
       const [x, y] = clientToCanvas(canvas, cx, cy);
       return { x, y };
     },
-    // Redraws the host canvas when any handle was in flight before or after
-    // the event: dispatcher-only overlays (marquee, lasso) repaint on nothing
-    // else, and the pump that closes a gesture still has to clear the overlay.
     dispatch: (ev, on) => {
       const d = on ?? dispatcherNow();
-      const before = d.inFlight().size;
-      const result = d.handleInput(ev, ctxNow());
-      const after = d.inFlight().size;
-      if (before > 0 || after > 0) src.requestRedraw();
-      return result;
+      src.uses(d);
+      return d.handleInput(ev, ctxNow());
     },
     holdsKeys: () => (canvas ? src.actions().holdsKeys() : src.actions().isActive()),
     activate: () => src.actions().activate(),

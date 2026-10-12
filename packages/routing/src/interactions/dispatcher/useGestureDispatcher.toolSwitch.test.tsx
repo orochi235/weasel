@@ -79,6 +79,22 @@ describe('switching the active tool mid-gesture', () => {
     expect(log).toEqual(['deactivate:a', 'end:cancel', 'activate:b']);
   });
 
+  it('asks for a redraw, so the canceled gesture\'s overlay does not stay painted', () => {
+    const { redraw, tools, startDrag } = mount();
+    act(() => { tools().setActive('a'); });
+    startDrag();
+    redraw.mockClear();
+    act(() => { tools().setActive('b'); });
+    expect(redraw).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks for no redraw when nothing was in flight', () => {
+    const { redraw, tools } = mount();
+    act(() => { tools().setActive('a'); });
+    act(() => { tools().setActive('b'); });
+    expect(redraw).not.toHaveBeenCalled();
+  });
+
   it('runs the lifecycle hooks for a dispatcher that is not enabled', () => {
     const { log, tools } = mount({ enabled: false });
     act(() => { tools().setActive('a'); });

@@ -11,6 +11,7 @@ import { useDepRegistry } from '../actions/depRegistry';
 import { useToolLifecycle } from '../../tools/useToolLifecycle';
 import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { createDispatchCore } from './dispatchCore';
+import { dispatcherWatch } from './dispatcherWatch';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 import { contextMenuInput } from './channels/contextMenu';
 import { hoverCursorInput } from './channels/hoverCursor';
@@ -104,13 +105,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     let disposed = false;
     const canvas = canvasRef.current;
+    // Dispatcher-only overlays (marquee, lasso) repaint on nothing else, and
+    // the event that closes a gesture still has to clear its overlay.
+    const redraw = dispatcherWatch(() => { requestRedrawRef.current?.(); });
+    for (const d of allDispatchers()) redraw.watch(d);
     const core = createDispatchCore({
       canvas,
       root: () => rootTargetRef.current,
       views: () => viewsRef.current,
       context: () => ctxRef.current,
       actions: () => registryRef.current,
-      requestRedraw: () => { requestRedrawRef.current?.(); },
+      uses: redraw.watch,
       disposed: () => disposed,
     });
     const keys = keyboardInput(core);
@@ -184,6 +189,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // the way out, and `cancelAll` below is what ends the gestures.
       disposed = true;
       pointer.dispose();
+      redraw.stop();
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };
   }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,

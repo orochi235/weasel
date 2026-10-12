@@ -178,13 +178,12 @@ export interface UseGestureDispatcherOptions {
   clientToWorld?: (clientX: number, clientY: number) => { x: number; y: number };
 
   /**
-   * Invoked once per pump event (`pointermove`, `pointerup`, `pointercancel`,
-   * `key-held` up-phase, `multitouch` move) when a dispatcher-side handle is
-   * in flight. Lets the host canvas schedule a redraw so dispatcher-only
-   * overlays (marquee, lasso, preview-ghost) repaint on each frame; without
-   * it the chrome flashes once at gesture start and then sits frozen until
-   * the gesture ends. `<SceneCanvas>` wires this to the canvas's
-   * `requestRedraw`.
+   * Called whenever one of this hook's dispatchers notifies its subscribers:
+   * once for each input event, cancel, or UI-driven step that found or left a
+   * gesture in flight. Lets the host canvas schedule a redraw, so
+   * dispatcher-only overlays (marquee, lasso, preview-ghost) follow the
+   * gesture and clear when it ends, however it ends. `<SceneCanvas>` wires
+   * this to the canvas's `requestRedraw`.
    */
   requestRedraw?: () => void;
   /**
