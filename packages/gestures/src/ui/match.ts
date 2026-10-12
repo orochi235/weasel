@@ -31,6 +31,7 @@
 import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec, TargetPredicate } from './spec';
 import type { InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
+import { matchIngestTypes } from './ingestTypes';
 
 // ---------------------------------------------------------------------------
 // matchModifiers
@@ -317,30 +318,6 @@ function matchPhaseAtom(a: PhaseAtom, ctx: PhaseContext): boolean {
   if (a.phase === '*') return true;
   const isEngaged = ctx.engagedChannels.has(id);
   return a.phase === 'engaged' ? isEngaged : !isEngaged;
-}
-
-// ---------------------------------------------------------------------------
-// matchIngestTypes
-// ---------------------------------------------------------------------------
-
-/** MIME-glob match: `'image/*'` prefix-matches the major type; anything
- *  else is an exact (case-insensitive) match; bare `'*'` or `'*\/*'` matches all. */
-export function mimeMatchesGlob(mime: string, glob: string): boolean {
-  const m = mime.toLowerCase();
-  const g = glob.toLowerCase();
-  if (g === '*' || g === '*/*') return true;
-  if (g.endsWith('/*')) return m.startsWith(g.slice(0, -1));
-  return m === g;
-}
-
-/** True if ANY item's MIME matches ANY of the `types` globs.
- *  `types: []` (empty) ≡ omitted = match any. */
-export function matchIngestTypes(
-  items: readonly { mime: string }[],
-  types: string[] | undefined,
-): boolean {
-  if (!types || types.length === 0) return true;
-  return items.some((it) => types.some((g) => mimeMatchesGlob(it.mime, g)));
 }
 
 // ---------------------------------------------------------------------------

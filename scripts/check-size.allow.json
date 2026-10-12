@@ -193,7 +193,7 @@
     "longestFunction": 128
   },
   "packages/gestures/src/ui/match.ts": {
-    "lines": 489,
+    "lines": 466,
     "longestFunction": 132
   },
   "packages/guides/src/layout/strategies/tileGrid.ts": {

@@ -434,6 +434,46 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     expect(scene.roots).toHaveLength(0);
   });
 
+  function dragOver(canvas: Element): Event {
+    const ev = new Event('dragover', { bubbles: true, cancelable: true });
+    Object.assign(ev, {
+      dataTransfer: { items: [{ kind: 'file', type: 'image/png' }], files: [], types: ['Files'], dropEffect: 'none' },
+      clientX: 50, clientY: 60,
+      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    });
+    act(() => { canvas.dispatchEvent(ev); });
+    return ev;
+  }
+
+  it('edit alone is no drop target for an OS drag', () => {
+    const { canvas } = mount(['edit']);
+    const ev = dragOver(canvas);
+    expect(ev.defaultPrevented).toBe(false);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(false);
+  });
+
+  it('ingest makes the canvas a drop target', () => {
+    const { canvas } = mount(['ingest']);
+    const ev = dragOver(canvas);
+    expect(ev.defaultPrevented).toBe(true);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(true);
+  });
+
+  it('SceneCanvasApi.ingest reports whether the canvas had an ingest action to run', async () => {
+    const ref = createRef<SceneCanvasApi>();
+    const scene = makeScene();
+    const { rerender } = render(
+      <SceneCanvas features={['edit']} scene={scene} layers={{}} width={64} height={64} ref={ref} />,
+    );
+    let took = true;
+    act(() => { took = ref.current!.ingest([pngFile()]); });
+    expect(took).toBe(false);
+    rerender(<SceneCanvas features={['edit', 'ingest']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    act(() => { took = ref.current!.ingest([pngFile()]); });
+    expect(took).toBe(true);
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+  });
+
   it('edit alone runs no handler another canvas registered', async () => {
     const handle = vi.fn();
     // A bare canvas registers its `ingestion.handlers` and binds no paste, so

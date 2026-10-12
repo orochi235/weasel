@@ -27,14 +27,6 @@ Priority tags:
   not chosen yet. That leaves choosing it, then renaming the one path, its imports, and the section
   of the taxonomy.
 
-- **(P3) A canvas without `ingest` is still a drop target.** `SceneCanvas` attaches the
-  dispatcher's drop listeners whatever `features` says, so an OS drag over a bare or `edit`-only
-  canvas shows the copy cursor and `weasel-dropover`, and the drop is swallowed with nothing
-  inserted. `DispatcherChannels.ingest` covers drop and paste together and would need splitting,
-  which also decides whether a consumer's own drop binding works without the preset. Beside it:
-  `SceneCanvasApi.ingest()` is a silent no-op without the `ingest` preset, because it triggers an
-  action that was never registered.
-
 - **(P3) apps/draw enters most modes by double-click only.** Path-edit's `Enter` is bound
   (`apps/draw/src/modality/shortcuts.ts`); the other modes with an `entry` shortcut, free-transform
   and crop, are not, since nothing says what target each would take from the selection. Draw also
