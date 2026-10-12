@@ -1176,8 +1176,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) Conditions on a pref: what the 2026-10-11 rulings leave to build.** A leaf, group, or
   section holds a `PrefCondition` (`packages/prefs/src/condition.ts`) as `showIf` or `enableIf`;
   `packages/prefs/src/scope.ts` applies them in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's
-  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Ruled: a bad condition
-  warns where a schema is loaded as data and throws in labkit's builder, which warns today; a test
+  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Ruled: a test
   may read from the list or map entry its field sits in (`{ from: 'item', path: 'mode' }`), where
   every path is from the schema root today; `showIf` on a list's or a map's item is a bad
   condition, where it is ignored today; an alias row is shown and enabled only while its own

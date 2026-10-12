@@ -154,23 +154,21 @@ describe('isEntryShown', () => {
 });
 
 describe('resolveConfigSchema', () => {
-  it('warns of a condition its schema cannot answer', () => {
+  it('throws on a condition its schema cannot answer, naming each node and what is wrong', () => {
+    const bad = f.schema({
+      mode: f.enum('row', ['row', 'column']),
+      size: f.number(1).showIf({ path: 'mode', is: 'diagonal' }),
+      grid: f.group({ color: f.color('#fff').enableIf({ path: 'nowhere' }) }),
+    });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      resolveConfigSchema(
-        f.schema({
-          mode: f.enum('row', ['row', 'column']),
-          size: f.number(1).showIf({ path: 'mode', is: 'diagonal' }),
-        }),
-        [],
-      );
-      expect(warn.mock.calls).toEqual([
+      expect(() => resolveConfigSchema(bad, [])).toThrow(
         [
           `[labkit] showIf of "size": "mode" never holds 'diagonal': its options are 'row', 'column'`,
-        ],
-      ]);
-      warn.mockClear();
-      resolveConfigSchema(schema(), []);
+          `[labkit] enableIf of "grid.color": no leaf holds a value at "nowhere"`,
+        ].join('\n'),
+      );
+      expect(() => resolveConfigSchema(schema(), [])).not.toThrow();
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();

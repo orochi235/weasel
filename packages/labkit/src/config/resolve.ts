@@ -56,8 +56,13 @@ export function resolveConfigSchema<TC>(
     chain: [...rules, ...builtinRules],
   };
   const group = resolveShape(schema.nodes, '', '', sink);
-  for (const { field, at, problem } of checkPrefConditions(group)) {
-    console.warn(`[labkit] ${field} of "${at}": ${problem}`);
+  const problems = checkPrefConditions(group);
+  if (problems.length > 0) {
+    throw new Error(
+      problems
+        .map(({ field, at, problem }) => `[labkit] ${field} of "${at}": ${problem}`)
+        .join('\n'),
+    );
   }
   return {
     group,
