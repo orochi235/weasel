@@ -231,8 +231,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
 };
 
 /** Close the lasso. Returns whether it committed: a behavior's ops were
- *  applied, or the selection was set from a polygon. Clearing the selection
- *  under a lasso too short to be one does not count. */
+ *  applied, or the lasso set the selection. */
 function endLasso(scratch: LassoScratch, reason: 'commit' | 'cancel'): boolean {
   scratch.open = false;
   if (reason === 'cancel') {
@@ -253,7 +252,7 @@ function endLasso(scratch: LassoScratch, reason: 'commit' | 'cancel'): boolean {
   // Need at least 3 vertices for a meaningful polygon; otherwise no-op.
   if (vertices.length < 3) {
     if (!shiftHeld) d.setSelection([]);
-    return false;
+    return !shiftHeld;
   }
 
   const hits = hitTestPolygon(d, vertices, mode, view);

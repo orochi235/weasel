@@ -301,8 +301,9 @@ Each action pins the proposed/result shape; pick the matching alias
   array order — later behaviors see your refinement.
 - A move behavior's result can also carry `poses`, a preview pose per id in
   that node's stored frame. For a dragged id it replaces the group transform
-  this frame; any other id is shown there for this frame only, and
-  committing it is the behavior's job. `opaque` names the ids whose preview
+  this frame, unless a moving frame carries that node; any other id is shown
+  there for this frame only, and committing it is the behavior's job.
+  `opaque` names the ids whose preview
   paints at full opacity rather than as a ghost.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
@@ -315,10 +316,12 @@ Each action pins the proposed/result shape; pick the matching alias
   pointercancel). Release anything held outside the gesture in both.
 - `onSettled` runs once per gesture, after the commit's ops have applied (or
   the cancel has run) and the preview overrides are gone — the place to act
-  on the pose the document now holds. `committed` is true only when the
-  gesture wrote to the document; an abort, a release with nothing to write,
-  and a cancel all report false. Move, resize, rotate, insert, and
-  lasso-select call it.
+  on the pose the document now holds. `committed` is false when the gesture
+  was canceled, aborted by a behavior, or released with nothing to commit,
+  and true otherwise: the action or a behavior made the commit, a behavior
+  claiming it with no ops included. For move, resize, and rotate it is the
+  value `onGestureEnd` receives. Move, resize, rotate, insert, and
+  lasso-select call it, and every behavior's runs even if another's throws.
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:
   `ctx.scratch['snapToContainer']`.

@@ -82,10 +82,12 @@ export interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends Beha
   /**
    * Called once per gesture, for every behavior whose `onStart` ran, after
    * the commit's ops have applied (or the cancel has run) and after the
-   * gesture's preview overrides are dropped. `committed` is what the action
-   * reports to `onGestureEnd`: true only when the gesture wrote to the
-   * document. So it runs on commit, abort (`onEnd` returned `null`), a
-   * release with nothing to write, and cancel alike.
+   * gesture's preview overrides are dropped. `committed` is false when the
+   * gesture was canceled, aborted by a behavior (`onEnd` returned `null`),
+   * or released with nothing to commit, and true otherwise: the action or
+   * a behavior made the commit, a behavior claiming it with no ops
+   * included. For move, resize, and rotate it is the value `onGestureEnd`
+   * receives.
    */
   onSettled?(ctx: GestureContext<TPose>, committed: boolean): void;
 }
@@ -137,9 +139,12 @@ export interface BehaviorResult<TPose> {
   /** Preview poses for individual ids, each in its node's stored frame. For
    *  a dragged id the pose replaces the group transform this frame: a
    *  behavior that will commit its nodes where one translation cannot put
-   *  them, such as a slot each. Any other id is shown there for this frame
-   *  only, and committing it is the behavior's job. A later behavior's pose
-   *  for an id replaces an earlier one's. */
+   *  them, such as a slot each — except a descendant a moving frame
+   *  carries, which rides its frame whatever is posed for it. Any other id
+   *  is shown there for this frame only, and committing it is the
+   *  behavior's job; where a layout drop reflows the same id with no reflow
+   *  transition, the layout's pose wins. A later behavior's pose for an id
+   *  replaces an earlier one's. */
   poses?: ReadonlyMap<string, TPose>;
   /** Ids whose preview paints at full opacity this frame rather than as a
    *  ghost, added to those of the other behaviors. */

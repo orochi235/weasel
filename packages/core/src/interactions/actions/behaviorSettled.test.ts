@@ -5,6 +5,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
+import { createSetSelectionOp } from 'core/ops/select';
+import { createTransformOp } from 'core/ops/transform';
 import type { NodeId } from 'core/scene/types';
 import { moveAction } from './move/action';
 import { resizeAction } from './defaults/resize';
@@ -98,18 +100,33 @@ describe('moveAction — onSettled', () => {
     expect(verdicts(onSettled)).toEqual([false]);
   });
 
-  it('reports false on a release with nothing to write', () => {
-    const { drag } = setup();
-    const onSettled = vi.fn();
-    drag({ behaviors: [{ onSettled }] as never, params: { dragThresholdPx: 0 } }, 0);
-    expect(verdicts(onSettled)).toEqual([false]);
+  /** A behavior logging which of its closing hooks ran. */
+  const closing = (log: string[]) => ({
+    onEnd: () => { log.push('end'); },
+    onCancel: () => { log.push('cancel'); },
+    onSettled: (_ctx: unknown, committed: boolean) => { log.push(`settled:${committed}`); },
   });
 
-  it('reports false on a press that never became a drag', () => {
+  it('reports false on a release with nothing to write, which asked the behaviors to commit', () => {
     const { drag } = setup();
+    const log: string[] = [];
+    drag({ behaviors: [closing(log)] as never, params: { dragThresholdPx: 0 } }, 0);
+    expect(log).toEqual(['end', 'settled:false']);
+  });
+
+  it('reports false on a press that never became a drag, which canceled them', () => {
+    const { drag } = setup();
+    const log: string[] = [];
+    drag({ behaviors: [closing(log)] as never, params: { dragThresholdPx: 50 } }, 5);
+    expect(log).toEqual(['cancel', 'settled:false']);
+  });
+
+  it('reports true when a behavior claims the commit with no ops', () => {
+    const { scene, a, drag } = setup();
     const onSettled = vi.fn();
-    drag({ behaviors: [{ onSettled }] as never, params: { dragThresholdPx: 50 } }, 5);
-    expect(verdicts(onSettled)).toEqual([false]);
+    drag({ behaviors: [{ onEnd: () => [], onSettled }] as never }, 5);
+    expect(verdicts(onSettled)).toEqual([true]);
+    expect(scene.get(a)!.pose.x).toBe(0);
   });
 
   it('reports false on cancel, after onCancel', () => {
@@ -249,11 +266,16 @@ describe('insertAction — onSettled', () => {
     expect(log).toEqual(['commit', 'settled:true']);
   });
 
-  it('reports true when a behavior\'s ops are committed', () => {
-    const { scene } = sceneWithLeaf();
-    const onSettled = vi.fn();
-    draw({ onEnd: () => [], onSettled }, minted, 'commit', 40, { scene });
-    expect(verdicts(onSettled)).toEqual([true]);
+  it('reports true once a behavior\'s ops are in the document', () => {
+    const { scene, a } = sceneWithLeaf();
+    const from = scene.get(a)!.pose;
+    const log: string[] = [];
+    const behavior = {
+      onEnd: () => [createTransformOp<Pose>({ id: a, from, to: { ...from, x: 7 }, label: 'Place' })],
+      onSettled: (_ctx: unknown, committed: boolean) => { log.push(`settled:${committed}:${scene.get(a)!.pose.x}`); },
+    };
+    draw(behavior, minted, 'commit', 40, { scene });
+    expect(log).toEqual(['settled:true:7']);
   });
 
   it('reports false when nothing was inserted', () => {
@@ -294,17 +316,18 @@ describe('lassoSelectAction — onSettled', () => {
       getSelection: () => [],
       setSelection: (ids) => { selected.push([...ids]); },
     };
-    const at = (x: number, y: number): InvocationCtx =>
-      ({ world: { x, y }, screen: { x, y }, modifiers: MODS, deps: { lassoSelect: dep } }) as unknown as InvocationCtx;
+    const at = (x: number, y: number, shift = false): InvocationCtx =>
+      ({ world: { x, y }, screen: { x, y }, modifiers: { ...MODS, shift }, deps: { lassoSelect: dep } }) as unknown as InvocationCtx;
     /** Lasso through `points` from the origin. */
-    const lasso = (behavior: object, points: Array<[number, number]>, reason: Reason = 'commit'): void => {
-      const handle = start(lassoSelectAction, at(0, 0), { behaviors: [behavior] });
-      for (const [x, y] of points) handle.onMove?.(at(x, y));
-      handle.onEnd?.(at(0, 0), reason);
+    const lasso = (behavior: object, points: Array<[number, number]>, reason: Reason = 'commit', shift = false): void => {
+      const handle = start(lassoSelectAction, at(0, 0, shift), { behaviors: [behavior] });
+      for (const [x, y] of points) handle.onMove?.(at(x, y, shift));
+      handle.onEnd?.(at(0, 0, shift), reason);
     };
     return { selected, lasso };
   }
   const TRIANGLE: Array<[number, number]> = [[10, 0], [10, 10]];
+  const TOO_SHORT: Array<[number, number]> = [[10, 0]];
 
   it('runs once, after the selection is set, and reports true', () => {
     const { selected, lasso } = setup();
@@ -314,16 +337,34 @@ describe('lassoSelectAction — onSettled', () => {
     expect(log).toEqual(['settled:true:[["hit"]]']);
   });
 
-  it('reports true when a behavior\'s ops are applied', () => {
+  it('reports true once a behavior\'s ops are applied', () => {
+    const { selected, lasso } = setup();
+    const log: string[] = [];
+    const behavior = {
+      onEnd: () => [createSetSelectionOp({ from: [], to: ['picked' as NodeId] })],
+      onSettled: (_ctx: unknown, committed: boolean) => { log.push(`settled:${committed}:${JSON.stringify(selected)}`); },
+    };
+    lasso(behavior, TRIANGLE);
+    expect(log).toEqual(['settled:true:[["picked"]]']);
+  });
+
+  it('reports true when a lasso too short to enclose anything clears the selection', () => {
+    const { selected, lasso } = setup();
     const onSettled = vi.fn();
-    setup().lasso({ onEnd: () => [], onSettled }, TRIANGLE);
+    lasso({ onSettled }, TOO_SHORT);
+    expect(selected).toEqual([[]]);
     expect(verdicts(onSettled)).toEqual([true]);
   });
 
-  it('reports false for a lasso too short to enclose anything, and on abort', () => {
-    const short = vi.fn();
-    setup().lasso({ onSettled: short }, [[10, 0]]);
-    expect(verdicts(short)).toEqual([false]);
+  it('reports false when a too-short lasso with shift held leaves the selection alone', () => {
+    const { selected, lasso } = setup();
+    const onSettled = vi.fn();
+    lasso({ onSettled }, TOO_SHORT, 'commit', true);
+    expect(selected).toEqual([]);
+    expect(verdicts(onSettled)).toEqual([false]);
+  });
+
+  it('reports false when a behavior aborts', () => {
     const aborted = vi.fn();
     setup().lasso({ onEnd: () => null, onSettled: aborted }, TRIANGLE);
     expect(verdicts(aborted)).toEqual([false]);
