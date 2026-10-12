@@ -2,7 +2,7 @@ import {
   glide, patch as fnPatch, spring as springPatch, tween as tweenPatch,
   type Handle, type Motion, type Patch,
 } from '@msb235/blits';
-import { createLanes, type Out, type Reader, type Slot } from './lanes';
+import { createLanes, type LaneColumns, type LanePlace, type Out, type Reader, type Slot } from './lanes';
 
 export type { Reader } from './lanes';
 
@@ -66,6 +66,8 @@ export interface Codec {
   own(id: number): Own | undefined;
   /** How many voices the codec is running; for tests and diagnostics. */
   voiceCount(): number;
+  /** The lane of `group` as the last frame read it; null where it has none. */
+  columns(group: object): LaneColumns | null;
 }
 
 /** What the codec calls on a motion patch: a tween has no `push`, a glide no `to`. */
@@ -93,8 +95,9 @@ interface Voice {
   last?: number[];
 }
 
-export function createCodec(): Codec {
-  const lanes = createLanes();
+/** `placeOf` answers where a shared subject's voices run, for one kept in a lane of its own. */
+export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Codec {
+  const lanes = createLanes(placeOf);
   const voices = new Map<number, Voice>();
   // Tweens are cued together at the next frame, not one by one as they start: a burst of starts then
   // keeps the caller's objects together rather than each a voice apart, which the frame loop reads.
@@ -273,8 +276,7 @@ export function createCodec(): Codec {
       return (!v.queued && v.patch.read(v.slot.key))
         || { value: v.from, velocity: new Array<number>(v.from.length).fill(0) };
     },
-    voiceCount() {
-      return voices.size;
-    },
+    voiceCount: () => voices.size,
+    columns: (group) => lanes.columns(group),
   };
 }

@@ -37,7 +37,7 @@ export {
   DivideIcon,
   CropIcon,
 } from '../interactions/actions/defaults/icons/booleanIcons';
-export { CreateOutlinesIcon } from '../interactions/actions/defaults/icons/outlineIcons';
+export { CreateOutlinesIcon, OutlineStrokeIcon } from '../interactions/actions/defaults/icons/outlineIcons';
 
 // ─── Default edit-action icons ──────────────────────────────────────────────
 // Shipped on the clipboard, duplicate, group, reorder and flip actions.

@@ -23,7 +23,9 @@ import { locateChild } from 'core/ops/slot';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
-import { textToPath, TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
+import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
+import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
+import { resolveOperand, type BooleanOpOptions, type BooleanOperand } from './operands';
 
 /** Boolean op identifiers — five Pathfinder primaries plus Crop. */
 export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop';
@@ -49,15 +51,25 @@ export interface BooleansAdapter {
    * cut, united or intersected like any shape.
    */
   getTextSource?(id: NodeId): TextNodeSource | undefined;
+  /**
+   * Optional: the paint the path node behind `id` wears. An operation told to
+   * count strokes (`BooleanOpOptions.strokes`) reads it to learn whether the
+   * node is stroked and whether it is filled; without it every operand is its
+   * path alone.
+   */
+  getPaint?(id: NodeId): PathPaint | undefined;
   compareZ(a: NodeId, b: NodeId): number;
   /**
    * Mint a new node from a boolean-op result `Path`. `producedBy` names the
    * op that synthesized it — adapters that store provenance (e.g. for a
    * layer-panel icon) record it; others ignore the arg. `sourceId` is the
    * topmost source, whose slot the result takes: give the node that source's
-   * parent, or the kit's reorder cannot find it there.
+   * parent, or the kit's reorder cannot find it there. `paint` is passed when
+   * the topmost source's stroke went into the geometry, and the node must
+   * wear it as given: wearing the source's stroke again would draw it twice.
+   * Without `paint` the node's paint is the adapter's to choose.
    */
-  createPathNode(path: Path, producedBy: BooleanOp, sourceId: NodeId): { id: string };
+  createPathNode(path: Path, producedBy: BooleanOp, sourceId: NodeId, paint?: PathPaint): { id: string };
   /**
    * Optional: return the full object for an id, used by the delete ops so
    * their `invert` (an insert) can restore the complete object on undo.
@@ -100,16 +112,6 @@ export type BooleanOpResult =
    *  quietly dropped the operand would commit a different shape than asked. */
   | { kind: 'failed'; reason: 'text-outlines'; error: TextOutlinesError };
 
-function operandPath(adapter: BooleansAdapter, id: NodeId): Path | undefined {
-  const path = adapter.getWorldPath(id);
-  if (path) return path;
-  const text = adapter.getTextSource?.(id);
-  if (!text) return undefined;
-  // Blank text has no geometry, and is no more an operand than a group is.
-  const glyphs = textToPath(text.data, text.pose);
-  return glyphs.commands.length > 0 ? glyphs : undefined;
-}
-
 const LABEL: Record<BooleanOp, string> = {
   union: 'Union',
   intersect: 'Intersect',
@@ -130,11 +132,12 @@ function isEmpty(p: PolygonPath): boolean {
  * Operands are ordered back-to-front, which is what makes `subtract` mean
  * "everything in front removed from the backmost shape". Returns without
  * mutating anything when the selection holds no paths, or too few for the
- * requested operation.
+ * requested operation. `opts.strokes` says what a stroked operand gives.
  */
 export function applyBooleanOp(
   adapter: BooleansAdapter,
   op: BooleanOp,
+  opts: BooleanOpOptions = {},
 ): BooleanOpResult {
   const sel = [...adapter.getSelection()] as NodeId[];
   const zOrder = (id: NodeId): BooleanZOrder | undefined =>
@@ -143,15 +146,15 @@ export function applyBooleanOp(
   // the bottommost (back) member. `subtract` relies on this: it computes
   // `back − union(rest)`, which is Illustrator's "Minus Front." Keep this
   // convention in sync if compareZ semantics ever flip.
-  let resolved: { id: NodeId; path: Path | undefined }[];
+  let resolved: { id: NodeId; operand: BooleanOperand | undefined }[];
   try {
-    resolved = sel.map((id) => ({ id, path: operandPath(adapter, id) }));
+    resolved = sel.map((id) => ({ id, operand: resolveOperand(adapter, id, opts) }));
   } catch (err) {
     if (err instanceof TextOutlinesError) return { kind: 'failed', reason: 'text-outlines', error: err };
     throw err;
   }
   const entries = resolved
-    .filter((e): e is { id: NodeId; path: Path } => e.path != null)
+    .filter((e): e is { id: NodeId; operand: BooleanOperand } => e.operand != null)
     .sort((a, b) => adapter.compareZ(a.id, b.id));
 
   if (entries.length === 0) return { kind: 'noop', reason: 'no-paths' };
@@ -160,7 +163,7 @@ export function applyBooleanOp(
   }
   if (entries.length < 2) return { kind: 'noop', reason: 'no-paths' };
 
-  const paths = entries.map((e) => e.path);
+  const paths = entries.map((e) => e.operand.path);
   let results: PolygonPath[];
 
   switch (op) {
@@ -197,7 +200,7 @@ export function applyBooleanOp(
   // reorder runs, so the visual slot the topmost occupied lives at a lower
   // index after the deletes. Members in a different parent don't affect
   // this parent's indexing.
-  const topmostId = entries[entries.length - 1].id;
+  const { id: topmostId, operand: topmost } = entries[entries.length - 1];
   const topAnchor = zOrder(topmostId);
   let targetIndex = topAnchor?.index;
   if (topAnchor) {
@@ -211,7 +214,7 @@ export function applyBooleanOp(
     targetIndex = topAnchor.index - shift;
   }
 
-  const newNodes = results.map((p) => adapter.createPathNode(p, op, topmostId));
+  const newNodes = results.map((p) => adapter.createPathNode(p, op, topmostId, topmost.paint));
   const ops: Op[] = [];
   const captured: { node: { id: string }; index: number }[] = [];
   for (const e of entries) {

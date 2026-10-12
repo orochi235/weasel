@@ -221,6 +221,9 @@ export default defineConfig({
         test: {
           name: 'browser',
           include: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'],
+          // The default second is not enough on a fleet node running eight other projects: a smooth
+          // scroll or a dialog's close outlasts it there, and a poll that is going to pass costs nothing.
+          expect: { poll: { timeout: 5000 } },
           exclude: ['**/node_modules/**', '**/dist/**'],
           css: true,
           browser: {
