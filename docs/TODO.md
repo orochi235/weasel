@@ -1698,14 +1698,13 @@ only story runner in the repo.
   line and pencil use 2), and whether a line or a pencil trail takes the active fill.
 
 - **(P2) draw: Open adds the file to the current document instead of replacing it, and keeps the old
-  filename.** Open an SVG into a non-empty document and both sets of shapes are on the page; the
-  undo entry is labeled "Import SVG" while the button says "Open". The filename stays the previous
-  document's (`parsedToDoc` returns `title`, `pickSvgFile` drops `file.name`, and `onOpenSvg` in
-  `apps/draw/src/App.tsx` reads neither), so the next Save downloads under the wrong name. Paper
-  size and background are already taken from the file, which only makes sense for a replace.
-  Options: Open replaces (clear the scene in the same batch, take the filename from the picked file,
-  reset the background to white when the file names none) and a separate Import appends; or the
-  button is renamed Import and stops adopting the file's paper size and background.
+  filename.** The replace is built and tested and not yet called: `openSvgText` in
+  `apps/draw/src/openSvg.ts` clears the scene and adds the file's nodes in one "Open" undo entry,
+  and returns the picked file's name, its paper size, and its background (white when it names
+  none); `pickSvgFileNamed` in `svgInterop.ts` returns the name beside the text. What is left is the
+  call: `onOpenSvg` in `apps/draw/src/Toolbar.tsx` still holds the appending loop under "Import SVG",
+  and `Toolbar` has no `setFilename` prop to give the name to. With that wired, `pickSvgFile` has no
+  caller and goes. A separate Import that appends is not built.
 
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {

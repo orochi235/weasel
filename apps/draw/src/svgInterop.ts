@@ -361,11 +361,11 @@ export function downloadSvg(svg: string, filename: string): void {
 }
 
 /**
- * Pop a hidden file input; resolve with the chosen file's text (or null
- * if the user cancelled). Single-shot — the input is created and removed
+ * Pop a hidden file input; resolve with the chosen file's name and text (or
+ * null if the user cancelled). Single-shot — the input is created and removed
  * per invocation so there's no accumulated DOM cruft.
  */
-export function pickSvgFile(): Promise<string | null> {
+export function pickSvgFileNamed(): Promise<{ name: string; text: string } | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -385,7 +385,7 @@ export function pickSvgFile(): Promise<string | null> {
       }
       const reader = new FileReader();
       reader.onload = () => {
-        if (!resolved) { resolved = true; resolve(String(reader.result ?? '')); }
+        if (!resolved) { resolved = true; resolve({ name: file.name, text: String(reader.result ?? '') }); }
         cleanup();
       };
       reader.onerror = () => {
@@ -401,4 +401,9 @@ export function pickSvgFile(): Promise<string | null> {
     });
     input.click();
   });
+}
+
+/** {@link pickSvgFileNamed}, text only. */
+export async function pickSvgFile(): Promise<string | null> {
+  return (await pickSvgFileNamed())?.text ?? null;
 }
