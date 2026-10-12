@@ -8,7 +8,7 @@ import type { FillStyle, Stroke } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
-import { commandFill, commandStroke } from '../../features/patterns/commandPaint';
+import { commandFill, commandStroke } from 'renderer/patterns/commandPaint';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { PAINT_SLOT } from './memo';
 import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';

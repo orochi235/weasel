@@ -30,7 +30,7 @@ import {
   visualBoundsViaDescriptor,
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { alignedStrokeRect, type CommandFill, type CommandStroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import {
@@ -38,7 +38,7 @@ import {
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from 'interactions/actions/rotate/handle';
 import { rectCorners, rotatePoint } from 'interactions/actions/rotate/geometry';
-import { poseRotationOf } from 'core/geometry/poseRotation';
+import { poseRotationOf } from '@weasel-js/geom';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';

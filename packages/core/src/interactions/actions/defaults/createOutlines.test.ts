@@ -7,7 +7,7 @@ import type { DepRegistry } from '@weasel-js/routing/react';
 import { registerFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { asNodeId } from 'core/scene/types';
-import type { TextNodeSource } from 'features/text/textToPath';
+import type { TextNodeSource } from '@weasel-js/text';
 import type { CreateOutlinesAdapter } from '../outlines/createOutlines';
 import { createOutlinesAction, runCreateOutlines } from './createOutlines';
 

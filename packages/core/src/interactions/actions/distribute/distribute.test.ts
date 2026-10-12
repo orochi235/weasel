@@ -6,7 +6,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { DistributeAdapter } from './distribute';
 import type { Op } from 'core/ops/types';
 import { type NodeId } from 'core/scene/types';
-import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 

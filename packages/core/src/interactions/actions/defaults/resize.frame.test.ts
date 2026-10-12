@@ -4,13 +4,13 @@
  */
 import { describe, it, expect } from 'vitest';
 import { resizeAction } from './resize';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
   FRAME_FIXTURE_IDS,
   FRAME_FIXTURE_LOCAL,
-} from 'features/groups/frameFixture';
+} from 'core/scene/frameFixture';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
 import type { InvocationCtx } from '@weasel-js/routing';
 

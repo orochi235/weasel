@@ -66,7 +66,7 @@ Priority tags:
   container, pose-only fit-clamp + drop-point placement, one undoable
   batch per file). weaseldraw runs with `unpack` on, and its file-menu import
   and export carry `<image>` as an image object. An embedded SVG
-  re-rasterizes at its drawn size (see `features/images/README.md`).
+  re-rasterizes at its drawn size (see `renderer/images/README.md`).
   Remaining: check in a browser that it actually looks sharp at zoom — so far
   only jsdom has.
 
@@ -307,7 +307,7 @@ have shipped. What remains:
 
 - **(P3) a pose's `transform` is drawn, picked, and edited as a path, and the selection chrome and
   the resize and rotate handles do not read it.** A box pose may carry a `transform` (`PoseLinear`,
-  `packages/core/src/core/geometry/poseFrame.ts`): the skew or per-axis scale its box and rotation
+  `packages/geom/src/poseFrame.ts`): the skew or per-axis scale its box and rotation
   cannot hold, which is how svg import keeps `<text transform="scale(4 1)">` as editable text four
   times as wide. `poseFrameOf` composes it with the rotation, and the render wrap, culling,
   silhouettes, `axisAlignedBounds` / `unionAABB` / `visualBoundsViaDescriptor`, point and region
@@ -323,9 +323,9 @@ have shipped. What remains:
     the transform, so the result is drawn stretched; these have to change together.
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
     resize gives a turned leaf rather than writing it to the leaf's `transform`.
-  - `useNodeOverlayFrame` (`features/overlays/`), which places DOM chrome over a node, the text
+  - `useNodeOverlayFrame` (`core/viewport/`), which places DOM chrome over a node, the text
     edit overlay and its carets included, applies the rotation alone. Needs a browser to verify.
-  - `composeRectPose` / `composeRigidPose` (`features/groups/composePose.ts`) keep a child's own
+  - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
   - `svgLeafFromKit` (`packages/svg/src/fromKit.ts`) writes it for text and image leaves and not
@@ -372,7 +372,7 @@ have shipped. What remains:
 
 Core five + Crop shipped. Remaining:
 
-- **(P3) Outline.** `strokeToPath` (`packages/core/src/features/paths/strokeToPath.ts`) now gives a stroke's silhouette as a fillable path, with joins, caps, dashes, alignment, and marker heads. What is left is the action that applies it to a selection: it has to read a node's stroke and decide the result's paint, and `BooleansAdapter` sees paths only, the same style-awareness gap Trim and Merge wait on. `textToPath` still refuses synthetic-bold text (`reason: 'synthetic-bold'`): emboldening it is now a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
+- **(P3) Outline.** `strokeToPath` (`packages/stroke/src/strokeToPath.ts`) now gives a stroke's silhouette as a fillable path, with joins, caps, dashes, alignment, and marker heads. What is left is the action that applies it to a selection: it has to read a node's stroke and decide the result's paint, and `BooleansAdapter` sees paths only, the same style-awareness gap Trim and Merge wait on. `textToPath` still refuses synthetic-bold text (`reason: 'synthetic-bold'`): emboldening it is now a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
 - **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion — need per-path style awareness, which the kit deliberately doesn't have since `data` is opaque. Wait on a compound-path-with-styles model.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
@@ -424,7 +424,7 @@ Core five + Crop shipped. Remaining:
   deferred out of the stroke-markers arc.
 
 - **(P3) Images: nothing calls `releaseImage`.**
-  `packages/core/src/features/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
+  `packages/core/src/renderer/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
   `src` (a multi-megabyte `data:` URI for a pasted image) until `releaseImage(src)` is called, and
   the kit never calls it. It needs an owner: the scene when the last node using a `src` passes the
   undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
@@ -439,7 +439,7 @@ Core five + Crop shipped. Remaining:
   (`packages/core/src/renderer/shaders/batchFill.ts`, `vec4(mapped.rgb * a, a)`) assume straight
   texels. A pattern texture registered from an `ImageBitmap` goes through `GLTextureCache` the same
   way, and an `HTMLImageElement` source uploads straight, so the two source types disagree. Two ways
-  out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`features/images/imageCache.ts`,
+  out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`renderer/images/imageCache.ts`,
   `features/ingestion/imageHandler.ts`, the loupe) and document that requirement on
   `ImageDrawCommand.image`, which leaves a consumer's default bitmap wrong; or make image textures
   premultiplied by convention, set `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for the non-bitmap sources, and
@@ -613,30 +613,23 @@ Core five + Crop shipped. Remaining:
 - **(P2) Pull the standalone parts of core into their own packages.** Ruled 2026-10-11: whatever
   makes sense as a package gets extracted, whatever its size. Read from the source, not from a
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
-  for relative imports undercounts who uses what. In dependency order:
-  1. *Leaf math down.* Done for the color parser, `gradient`, `mat3`, `viewToMat3`,
-     `useVisibleRaf`, `pxExtent`, `meanScale`, and `MIXED`. Left: `poseFrame`, which
-     `textToPath.ts` and the anchor-edit files wait on.
-  2. *Dissolve and rehome.* Done for `focus`, `cursor`, the pointer store, `SelectionContext`,
-     text hit-testing and fitting, path anchors, and the run range-style algebra. Left:
-     `features/groups` folds into `core/scene` and `features/overlays` into `core/viewport`
-     after it (`core/` may not import `features/`, and `overlays` needs `composeRectPose` from
-     `groups`). The move action imports `features/groups/composePose` and `scenePoseAdapter`
-     from most of `interactions/actions/move/`. (`@weasel-js/simulation`, `@weasel-js/stroke`,
-     and `@weasel-js/text-dom` are out.)
-  3. *The renderer, under core.* It imports `core/paintKinds` as well as `@weasel-js/stroke`
-     and `@weasel-js/paint`. Gather `paintKinds`, `fillInPoseFrame`, `features/patterns`,
-     `images`, `meshPaint`, `text/textCommand.ts`, and `features/paths/markerCommands.ts` (marker
-     heads as draw commands, the half of the marker code that needs `PathDrawCommand`) under
-     `renderer/` first. `paintKinds.ts` subscribes a scene-memo bump and types an `Editor` slot
-     with React; `import-shims/renderer.ts` is a star export; `glRecorder` needs a testing
-     subpath.
-  4. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
+  for relative imports undercounts who uses what. The leaf math is down in geom, text, and
+  registry, `features/groups`, `overlays`, `focus`, and `cursor` are dissolved, and
+  `@weasel-js/simulation`, `@weasel-js/stroke`, and `@weasel-js/text-dom` are out. Left, in
+  dependency order:
+  1. *The renderer, under core.* Everything it draws with is gathered under `renderer/` now:
+     `paintKinds`, `fillInPoseFrame`, `patterns`, `images`, `meshPaint`, `textCommand.ts`, and
+     `markerCommands.ts`. What still ties it to core: `paintKinds.ts` bumps the scene's node
+     memo (`core/scene/nodeMemo`) and types an `Editor` slot with React; some of its test files
+     build a scene or call `canvas/renderSceneToPixels`, `canvas/NodeShape`, or
+     `core/layers/render`, and would stay behind in core; `import-shims/renderer.ts` is a star
+     export; `glRecorder` needs a testing subpath.
+  2. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
      `useAnimator`, so it cannot sit over core. It reaches the scene through `stagger.ts`'s
      `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
      `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
      and stay.
-  5. *Over core, like `@weasel-js/kernel3d`.* `features/parallax` with `tiling` (the barrel has
+  3. *Over core, like `@weasel-js/kernel3d`.* `features/parallax` with `tiling` (the barrel has
      to export `core/viewport/parallax` directly first); `poseRun` (needs a public way to publish
      preview poses: `interactions/actions/previewOverrides.ts` is in no barrel); `minimap` with
      `canvas/MinimapCanvas.tsx` (needs a public home for `accentColorOf`); the image and SVG
@@ -646,7 +639,7 @@ Core five + Crop shipped. Remaining:
   release job cannot create one: `npm run check:first-publish` names any that are missing.
 
   Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
-  (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 3,
+  (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 1,
   `selection/overlay.ts`, and the scene-bound text and path layers.
 
 - **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
@@ -1172,19 +1165,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
   theme that turns the glass on.
 
-- **(P3) What conditions on a pref leave undecided.** A leaf, group, or section holds a
-  `PrefCondition` (`packages/prefs/src/condition.ts`) as `showIf` or `enableIf`;
+- **(P3) Conditions on a pref: what the 2026-10-11 rulings leave to build.** A leaf, group, or
+  section holds a `PrefCondition` (`packages/prefs/src/condition.ts`) as `showIf` or `enableIf`;
   `packages/prefs/src/scope.ts` applies them in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's
-  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Undecided, with what is
-  built today: whether a bad condition throws or warns (warns; labkit's other schema mistakes
-  throw); a path relative to a list item (none: every path is from the schema root, so a field
-  cannot name its sibling in the same item); what an item's own `showIf` means, since it cannot
-  hide one entry (unasked; its `enableIf` and its fields' conditions apply); whether an alias row
-  uses its own conditions or its target's (its own); a form for "this list is not empty" (none: a
-  bare `{ path }` holds for an empty list); what a condition reads when the selected nodes in a
-  `SelectionPanel` disagree (shown if it holds for any, enabled only if for all); and whether a
-  number with a display unit is compared as stored or as shown (stored; only an `encoding` is
-  decoded).
+  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Ruled: a bad condition
+  warns where a schema is loaded as data and throws in labkit's builder, which warns today; a test
+  may read from the list or map entry its field sits in (`{ from: 'item', path: 'mode' }`), where
+  every path is from the schema root today; `showIf` on a list's or a map's item is a bad
+  condition, where it is ignored today; an alias row is shown and enabled only while its own
+  conditions and its target's both hold, where only its own are read today; a bare test means
+  "is set", and an empty list or map is not set, where it holds today; and a number with a display
+  unit is compared as stored, with `PrefConditionEditor`'s number field typed in the leaf's unit,
+  which it is not today. Kept as built: with several nodes selected in a `SelectionPanel`, a row
+  is shown if its condition holds for any and enabled only if it holds for all.
 
 - **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
   compares stored values, where every other reader decodes. A rail entry for a group drawn under
@@ -1221,18 +1214,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   target in a passive effect, a render behind the pointer, so a release in the same task as the
   last move read the previous row's target or none. `PrefSchemaEditor`'s `onPaletteDrop` gets
   around it with `flushSync`; any other caller dropping onto a `Tree` from outside has the same
-  race. To decide: whether `Tree` offers a synchronous "target at this point".
+  race. Ruled 2026-10-11: `Tree` resolves the target from the pointer's position at the drop, and
+  the editor's `flushSync` comes out.
 
-- **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
-  and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
-  fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the
-  columns and list layouts, any `PrefSection`) and draws as the default there. To decide first:
-  what `foldable` becomes, since it folds a rail entry's nested entries away and no `as` value
-  means that; whether a nested group with `as` unset is always a section, which stops
-  `PrefSchemaEditor`'s live preview (the one caller of `subPages` outside tests) giving nested
-  groups pages of their own; and how the rail marks its current entry once one rail holds both
-  scroll-to entries and page entries, where `RailLayout` runs in one mode for the whole form
-  today.
+- **(P3) `subPages` overlaps a group's `as`.** `PrefsForm`'s form-wide `subPages` prop decides
+  what `as: 'page'` on a nested group should. Ruled 2026-10-11: `subPages` goes; a nested group
+  with `as` unset is a section, and one that wants a page of its own says `as: 'page'`; `foldable`
+  stays a prop on the form, since folding is how the rail is drawn and not what a group is; and a
+  rail holding both kinds marks the open page as open and, under it, the section in view as
+  current. That leaves `RailLayout` deciding per entry from `as`, where it runs in one mode for
+  the whole form today, the second mark, and `PrefSchemaEditor`'s live preview, the one caller of
+  `subPages` outside tests. `as: 'page'` still means nothing where there is no rail
+  (`ControlPanel`, the columns and list layouts, any `PrefSection`) and draws as the default.
 
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
@@ -1241,23 +1234,24 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `onSelect` cover single-leaf rows, object-leaf fields, and bar cells, and `PrefSchemaEditor`'s
   section preview selects with its tree through them. A `pair` row and a section heading, tab, or
   panel neither mark nor report, which with core's default node properties leaves Position, Size,
-  and the stroke's cap and join row dead in that preview. To decide: what a `pair` row stands for
-  (marked when any of its leaves is selected, and which leaf a press on its label reports; a mark
-  per control needs a wrapper that breaks the `.rowControls > *` sizing), and how a section is
-  named in `selected`, since its key is no part of any value path and can collide with a leaf's.
+  and the stroke's cap and join row dead in that preview. Ruled 2026-10-11: a `pair` row is marked
+  when any of its leaves is selected, and a press on it reports its first leaf, as a fused `Bar`
+  cell does; a section is named in `selected` by its own key, in the one list with leaf paths, and
+  `PrefSchemaEditor` refuses a section key that equals a leaf's path. Only a top-level section
+  draws a heading, so only those can be selected.
 
 - **(P3) Loose ends beside the selection mark, none checked further.** The fragment mark in
   `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
   `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
   react-aria tab also carries.
 
-- **(P1.5) A number's `unit` in a labkit schema can only be code.** It is an object of
-  `toDisplay`/`fromDisplay` functions, so it cannot be written to JSON, set in `PrefSchemaEditor`,
-  or kept in a draft (a draft holds code as a pointer into the source schema, which a new leaf has
-  none of). In astv's settings every unit is an identity conversion carrying a suffix. Proposed,
-  not agreed: a unit may be `{ suffix, accepts }` with the conversion implied, the function form
-  staying for what data cannot say. `.showIf` had the same problem and takes a condition as data
-  now.
+- **(P1.5) A number's `unit` can only be code.** It is an object of `toDisplay`/`fromDisplay`
+  functions, so it cannot be written to JSON, set in `PrefSchemaEditor`, or kept in a draft (a
+  draft holds code as a pointer into the source schema, which a new leaf has none of). Ruled
+  2026-10-11: a unit may also be data with a linear conversion, `{ suffix, scale, offset, accepts }`,
+  where identity is `scale: 1`; that covers every unit astv writes, degrees over radians, and
+  every unit a `UnitSystem` builds, and is the shape an `accepts` entry already has. The function
+  form stays for what is not linear.
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
@@ -1567,17 +1561,21 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) A story gets controls only for the args it spells out.** `argsToSchema`
-  (`packages/forge/src/csf/argsToSchema.ts`) reads `args` and `argTypes` and
-  nothing else, so a story that names a `component` and declares neither shows
-  Settings with the Globals section alone. Storybook fills that gap by reading
-  the component's prop types at build time; forge has no such step. The vite
-  plugin would derive an `argTypes` table per `component` from its TypeScript
-  props, and the story's own `args` and `argTypes` would refine it.
+- **(P3) A story whose `render` takes no args has no controls.** forge reads a
+  control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
+  and leaves them off a story whose `render` declares no parameter, since nothing
+  would read them. By a grep of `render: () =>`, that is about 300 of the 508
+  stories. Each needs rewriting to draw from `args` before it gains controls.
+
+- **(P3) A control read from a string-union prop lists its options in the compiler's order.**
+  `controlFor` (`packages/forge/src/vite/propTypes.ts`) takes a union's members as the checker
+  returns them, which is not the order the type was written in: `Button`'s `variant` reads link,
+  ghost, primary, secondary. Reading the order from the declaration's type node would fix it where
+  the union is written out, and leave an aliased or computed union as it is.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
-  no Marks section and the tool rail holds only Info. The removed wiring — the
+  no Marks section and no tool rail. The removed wiring — the
   story as the one annotation target, sized and captured through the trial's
   frame registry — is in `git log --grep 'take marks out of forge'`.
 
@@ -1655,6 +1653,17 @@ only story runner in the repo.
   0 where the paused frame's shade was 3, in a full run on teitou on 2026-10-10 that passed the
   other 16,953 tests. Seen once and not rerun, so whether it is a race between the last paint and
   the readback or a real missed repaint is not known.
+
+- **(P3) Browser tests time out on the fleet, a different handful each run.** Across six full runs
+  on studio and teitou on 2026-10-11, each of these failed once or twice with a 15 s test timeout
+  or a `locator.screenshot` timeout, and passed in the runs around it:
+  `Prefs/PrefsForm.drop.browser.test.tsx`, `labkit/src/lightbox/Lightbox.browser.test.tsx`,
+  `labkit/src/controls/compoundRows.browser.test.tsx`,
+  `PatternPicker/PatternPicker.browser.test.tsx`, and
+  `core/src/features/text/overlayAlignment.browser.test.tsx`. The last two pass when run alone
+  on this machine at the commit that failed. The suite runs the `browser` project beside eight
+  others on one node. Not measured: whether the timeouts follow the node's load, and whether
+  running `browser` on its own, or with fewer workers, ends them.
 
 - **(P2) A docs minisite per package: overview, guides, and demos.** The API reference half is
   built: `npm run build:api` documents every published package in one TypeDoc site at `/api/`,

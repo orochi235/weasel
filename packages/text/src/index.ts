@@ -94,3 +94,9 @@ export type { Mixed, RangeStyle, RunStylePatch, StyleKey } from './runs/rangeSty
 export { effectiveRangeStyle, rangeWeight } from './runs/effectiveRangeStyle';
 export { setFlagOverRange, nodeHasFlag, unboldPatch } from './runs/flagRange';
 export type { FlagKey, SetFlagResult } from './runs/flagRange';
+
+export { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
+export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from './textToPath';
+export type {
+  TextOutlineSource, TextNodeSource, TextPaintPath, TextToPathOptions, TextOutlinesFailure,
+} from './textToPath';

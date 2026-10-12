@@ -16,7 +16,7 @@ import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';

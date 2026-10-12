@@ -9,13 +9,13 @@ import { sceneToAdapter } from './sceneAdapter';
 import { createScene } from 'core/scene/scene';
 import { unionOfChildren } from 'core/scene/kitRegistry';
 import { asNodeId, type Node, type RectPose, type Scene } from 'core/scene/types';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   FRAME_FIXTURE_IDS,
   FRAME_FIXTURE_WORLD,
   expectSamePose,
   makeFrameFixture,
-} from 'features/groups/frameFixture';
+} from 'core/scene/frameFixture';
 
 type D = { label: string };
 type S = Scene<D, 'main', RectPose>;

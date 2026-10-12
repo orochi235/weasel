@@ -54,7 +54,7 @@ import {
 } from 'features/selection/overlay';
 import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';

@@ -160,12 +160,12 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
-      { id: 'fg-info', region: 'palette', item: infoCommand },
       ...(config?.cssVars === false ? [] : [CSS_VARS_SECTION]),
       A11Y_SECTION,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
         : []),
+      { id: 'fg-info', region: 'header', group: 'story', item: infoCommand },
       ...(config?.labChrome ?? []),
     ],
     [index, infoCommand, declarations, config?.cssVars, config?.labChrome],

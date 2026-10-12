@@ -8,7 +8,7 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
 import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
 import { planDistribute } from './plan';
 import { poseFrame } from '../poseFrame';
-import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 
 /** Axis along which selection is distributed. `'x'` spreads horizontally. */
 export type DistributeAxis = 'x' | 'y';

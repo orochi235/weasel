@@ -663,7 +663,7 @@ declare module '@weasel-js/routing' {
      *  When absent, defaults to IDENTITY (absolute-pose: nodes store world
      *  coords). Local-pose consumers supply { compose: composeRectPose,
      *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
-    poseComposition?: import('../../features/groups/composePose').PoseComposition<unknown>;
+    poseComposition?: import('core/scene/composePose').PoseComposition<unknown>;
     /**
      * Ingestion dep — canvas viewport rect + consumer file→src resolver.
      *

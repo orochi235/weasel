@@ -1,4 +1,4 @@
-import { Fragment, useSyncExternalStore, type ReactNode } from 'react';
+import { useSyncExternalStore, type ReactNode } from 'react';
 import {
   asNodeId,
   type NodePropertiesEntry,
@@ -6,30 +6,16 @@ import {
   type Scene,
   type SelectionApi,
 } from '@weasel-js/core';
-import { renderCells, type LeafCell } from './cells';
-import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
-import { renderBuiltin } from './renderLeaf';
-import {
-  MIXED,
-  absentValue,
-  aggregateValue,
-  classifyKind,
-  kindBreakdown,
-  nodeValueAt,
-  panelLeafKey,
-  setAtPath,
-  type AnyNode,
-  type PanelLeaf,
-  type PanelSection,
-} from './model';
+import { commitLeaf } from './commitLeaf';
+import type { PropertyRenderer } from './renderContext';
+import { absentValue, classifyKind, kindBreakdown, panelLeafKey, type AnyNode } from './model';
 import { conditionedSections } from './conditions';
-import { HiddenBadge, hiddenAttrs, type MarkHiddenProps } from '../Prefs/hidden';
-import { prefDrawsNoControl } from '../Prefs/PrefWords';
-import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
-import { pathWithin, selectionAttrs, useSelectedRow, type PrefSelectHow } from '../Prefs/selection';
-import { BarLayout } from '../Bar/BarLayout';
-import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import { PanelMarksContext, PanelTabs, panelShownPath, type PanelMarks } from './selection';
+import type { MarkHiddenProps } from '../Prefs/hidden';
+import { prefFieldChoices } from '../Prefs/schema';
+import { useSelectedRow, type PrefSelectHow } from '../Prefs/selection';
+import type { PanelCellScope } from './panelCells';
+import { panelSections } from './panelSections';
+import { PanelMarksContext, panelShownPath, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
 export type { PropertyRenderContext, PropertyRenderer } from './renderContext';
@@ -124,29 +110,15 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     return <div className={[s.root, className].filter(Boolean).join(' ')}>{emptyState}</div>;
   }
 
-  /** Writes, into every selected node, what `next` derives from the value
-   *  that node holds at the leaf's path. */
-  const commit = (leaf: PanelLeaf, next: (prev: unknown) => unknown): void => {
-    const [head, ...rest] = leaf.path.split('.');
-    if (rest.length === 0) return;
-    const ids = selection.current.map(asNodeId);
-    scene.batch(`Edit ${leaf.leaf.name}`, () => {
-      for (const id of ids) {
-        const node = scene.get(id);
-        if (!node) continue;
-        const held = nodeValueAt(node as AnyNode, leaf.path);
-        const value = next(held === undefined ? absentValue(leaf.leaf) : held);
-        // `setAtPath` spreads plain objects/arrays down the schema path;
-        // consumer `pose`/`data` are assumed plain-object-shaped along
-        // that path (a class instance's prototype would be dropped by
-        // the spread) — the `as TPose`/`as TData` casts below rely on it.
-        if (head === 'pose') {
-          scene.setPose(id, setAtPath(node.pose as object, rest, value) as TPose);
-        } else if (head === 'data') {
-          scene.update(id, { data: setAtPath(node.data as object, rest, value) as TData });
-        }
-      }
-    });
+  const cells: PanelCellScope = {
+    nodes,
+    renderers,
+    commit: (leaf, next) => commitLeaf(scene, selection, leaf, next),
+    selectionKey,
+    fields,
+    absentAt,
+    disabled: scope.disabled,
+    hidden: scope.hidden,
   };
 
   return (
@@ -162,184 +134,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           </>
         )}
       </header>
-      {drawn(sections.flatMap((section) => {
-        if (section.as === 'bar') {
-          // One line of bar forms, with no heading and no row labels.
-          const cells = section.rows.flatMap((row) =>
-            renderCells(
-              row.leaves.map((panelLeaf) => ({
-                ...leafCell(panelLeaf, panelLeaf.leaf.name, nodes, renderers, commit, selectionKey, fields, absentAt, scope, 'bar'),
-                ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
-              })),
-              renderers,
-            ),
-          );
-          if (cells.length === 0) return [];
-          const bar = (
-            <BarLayout
-              framed
-              label={section.name === '' ? undefined : section.name}
-              nodes={cells.map((cell) => ({ kind: 'cell', path: cell.key, content: cell.content }))}
-              cells={() => []}
-              row={() => null}
-              attrs={(at, leaf) => selectionAttrs(at, marks, leaf)}
-            />
-          );
-          return [{ section, content: bar }];
-        }
-        // Render controls before emitting row chrome so a null-rendering
-        // leaf (custom renderer opting out) collapses its cell — and the
-        // whole row / section when nothing survives. PrefsForm precedent.
-        const rows = section.rows
-          .map((row) => {
-            const controls = renderCells(
-              row.leaves.map((panelLeaf) => ({
-                ...leafCell(
-                  panelLeaf,
-                  row.leaves.length > 1
-                    ? `${row.label} ${panelLeaf.leaf.name}`
-                    : panelLeaf.leaf.name,
-                  nodes,
-                  renderers,
-                  commit,
-                  selectionKey,
-                  fields,
-                  absentAt,
-                  scope,
-                ),
-                ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
-              })),
-              renderers,
-            );
-            return { row, controls };
-          })
-          .filter(({ controls }) => controls.length > 0);
-        if (rows.length === 0) return [];
-        const tab = section.as === 'tab';
-        const headed = section.name !== '' && !tab && section.as !== 'fragment';
-        // A section hidden whole carries one mark, on its heading; with no heading each of its rows does.
-        const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden));
-        const rowMarks: PanelMarks = whole ? { ...marks, hidden: undefined } : marks;
-        const marked = (controls: readonly { hidden: boolean }[]): boolean => !whole && controls.every((cell) => cell.hidden);
-        const content = (
-          <>
-            {headed && <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>}
-            {rows.map(({ row, controls }) => (
-              // A `block` leaf brings its own chrome — it spans the section
-              // instead of sitting in a labeled row's control cell. Under a
-              // headless section nothing else names it, so it heads itself;
-              // an object leaf already renders its own heading.
-              row.leaves.length === 1 && controls[0].block ? (
-                // An object leaf ends in rows of its own, each with the gap a row leaves under it.
-                <div key={panelLeafKey(row.leaves[0])} className={row.leaves[0].leaf.kind === 'object' ? undefined : s.blockRow}
-                  {...selectionAttrs(panelLeafKey(row.leaves[0]), rowMarks, true)}>
-                  {marked(controls) && <HiddenBadge lead />}
-                  {section.name === '' && row.leaves[0].leaf.kind !== 'object' && !prefDrawsNoControl(row.leaves[0].leaf) && (
-                    <h4 className={s.sectionTitle} title={row.leaves[0].leaf.description}>
-                      {row.leaves[0].leaf.name}
-                    </h4>
-                  )}
-                  {controls[0].content}
-                </div>
-              ) : (
-              // A row several leaves share stands for no one of them.
-              <div key={panelLeafKey(row.leaves[0])} className={s.row} {...(controls.every((cell) => cell.disabled) ? { 'data-disabled': '' } : {})}
-                {...(row.leaves.length === 1 ? selectionAttrs(panelLeafKey(row.leaves[0]), rowMarks, true) : hiddenAttrs(marked(controls)))}>
-                <span className={s.rowLabel} title={row.leaves[0].leaf.description}>
-                  {row.label}
-                  {marked(controls) && <HiddenBadge />}
-                </span>
-                <span className={s.rowControls}>
-                  {controls.map(({ key, content }) => (
-                    <Fragment key={key}>{content}</Fragment>
-                  ))}
-                </span>
-              </div>
-              )
-            ))}
-          </>
-        );
-        return [{ section, content, hidden: whole }];
-      }), marks.lead)}
+      {panelSections(sections, cells, marks)}
     </div>
     </PanelMarksContext.Provider>
   );
 }
-
-/** The sections in order: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
-function drawn(sections: ReadonlyArray<{ section: PanelSection; content: ReactNode; hidden?: boolean }>, lead: string | null | undefined): ReactNode[] {
-  const out: ReactNode[] = [];
-  for (let i = 0; i < sections.length; i++) {
-    const { section, content } = sections[i]!;
-    if (section.as !== 'tab') {
-      const cls = section.as === 'panel' ? `${s.section} ${s.sectionPanel}` : s.section;
-      out.push(<section key={section.key} className={cls} {...hiddenAttrs(sections[i]!.hidden === true)}>{content}</section>);
-      continue;
-    }
-    const run = [];
-    for (; i < sections.length && sections[i]!.section.as === 'tab'; i++) {
-      const at = sections[i]!.section;
-      const holds = at.rows.some((row) => row.leaves.some((item) => pathWithin(panelLeafKey(item), lead)));
-      run.push({ id: at.key, name: at.name, content: sections[i]!.content, holds });
-    }
-    i--;
-    out.push(<PanelTabs key={section.key} className={s.section} tabs={run} lead={lead} />);
-  }
-  return out;
-}
-
-function leafCell(
-  panelLeaf: PanelLeaf,
-  ariaLabel: string,
-  nodes: readonly AnyNode[],
-  renderers: Record<string, PropertyRenderer> | undefined,
-  commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void,
-  selectionKey: string,
-  fields: readonly PrefFieldChoice[],
-  absentAt: (path: string) => unknown,
-  { disabled, hidden }: { disabled: ReadonlySet<string>; hidden: ReadonlySet<string> },
-  surface: LeafSurface = 'row',
-): LeafCell {
-  const { path, leaf } = panelLeaf;
-  const absent = absentValue(leaf);
-  const aggregated = aggregateValue(nodes, path, absent);
-  const mixed = aggregated === MIXED;
-  const value = mixed ? undefined : aggregated;
-
-  const ctx: PropertyRenderContext = {
-    path,
-    pref: leaf,
-    value,
-    mixed,
-    unset: !mixed && aggregated === undefined,
-    each: nodes.map((n) => {
-      const held = nodeValueAt(n, path);
-      return held === undefined ? absent : held;
-    }),
-    setValue: (v) => commit(panelLeaf, () => v),
-    update: (fn) => commit(panelLeaf, fn),
-    valueAt: (p) => {
-      const at = aggregateValue(nodes, p, absentAt(p));
-      return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };
-    },
-    selectionKey,
-    fields,
-    disabled: disabled.has(panelLeafKey(panelLeaf)),
-    disabledAt: (at) => disabled.has(at),
-    hidden: hidden.has(panelLeafKey(panelLeaf)),
-    hiddenAt: (at) => hidden.has(at),
-  };
-
-  return {
-    key: panelLeafKey(panelLeaf),
-    leaf,
-    ctx,
-    ariaLabel,
-    render: () => {
-      const custom = renderers?.[path] ?? renderers?.[leaf.kind];
-      if (custom) return surface === 'bar' ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
-      return renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, surface });
-    },
-  };
-}
-

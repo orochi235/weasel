@@ -14,8 +14,8 @@ import {
   makeFrameFixture,
   type FrameFixtureData,
   type FrameFixtureLayer,
-} from 'features/groups/frameFixture';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
+} from 'core/scene/frameFixture';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { RectPose } from 'core/scene/types';
 
 /** Center of node `a`: local (20,25), world (75,20). The two are far apart,

@@ -39,7 +39,7 @@ import {
   strokeHitTest,
   type Path
 } from '@weasel-js/geom';
-import { pathThroughPoseFrame } from 'core/geometry/poseFrame';
+import { pathThroughPoseFrame } from '@weasel-js/geom';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
 import type { Node } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';

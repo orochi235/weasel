@@ -16,6 +16,7 @@ import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } fr
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from '@weasel-js/core';
 import { withUnsent } from './portSafe';
+import { PROP_ARG_TYPES_EXPORT } from './propArgTypes';
 import { timelineOf } from '../timeline/declare';
 
 type Args = Record<string, unknown>;
@@ -145,8 +146,10 @@ export function loadCsfModule(
 ): LoadedStory[] {
   const meta = (isPlainObject(mod.default) ? mod.default : {}) as Annotations;
   const stories: LoadedStory[] = [];
+  const propArgTypes = isPlainObject(mod[PROP_ARG_TYPES_EXPORT]) ? (mod[PROP_ARG_TYPES_EXPORT] as Record<string, ArgType>) : undefined;
 
   for (const [exportName, value] of Object.entries(mod)) {
+    if (exportName === PROP_ARG_TYPES_EXPORT) continue;
     if (exportName === 'default' || exportName === '__namedExportsOrder' || exportName === '__esModule') continue;
     if (meta.includeStories && !matches(exportName, meta.includeStories)) continue;
     if (meta.excludeStories && matches(exportName, meta.excludeStories)) continue;
@@ -159,16 +162,19 @@ export function loadCsfModule(
     const args = { ...meta.args, ...spec.args };
     const parameters = combineParameters(projectParameters, meta.parameters, spec.parameters);
     const matchers = (parameters.controls as { matchers?: ControlMatchers } | undefined)?.matchers;
+    const render = spec.render ?? meta.render;
+    // A render that takes no args draws the same thing whatever a prop's control says.
+    const fromProps = render === undefined || render.length > 0 ? propArgTypes : undefined;
     const config = argsToSchema(
       args,
-      combineParameters(meta.argTypes, spec.argTypes) as Record<string, ArgType>,
+      combineParameters(fromProps, meta.argTypes, spec.argTypes) as Record<string, ArgType>,
       isPlainObject(matchers) ? matchers : {},
     );
     const defaults = config.defaults() as Args;
     const storyGlobals = { ...meta.globals, ...spec.globals };
     const component = meta.component;
     const renderFn: CsfRender | undefined =
-      spec.render ?? meta.render ?? (component ? (a) => createElement(component, a) : undefined);
+      render ?? (component ? (a) => createElement(component, a) : undefined);
 
     const withArgs = (config: Args): Args =>
       Object.fromEntries(

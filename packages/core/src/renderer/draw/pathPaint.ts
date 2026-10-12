@@ -1,5 +1,5 @@
 import type { Stroke, FillStyle } from '@weasel-js/paint';
-import { getPaintKind } from 'core/paintKinds';
+import { getPaintKind } from 'renderer/paintKinds';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { ShaderProgram } from '../shaders/ShaderProgram';

@@ -1,6 +1,6 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
-import { poseLinearOf } from 'core/geometry/poseFrame';
+import { poseLinearOf } from '@weasel-js/geom';
 import type { TargetAxes } from '../../animation/target';
 
 /** `Bounds` with a required rotation angle (radians). Pivot is the AABB

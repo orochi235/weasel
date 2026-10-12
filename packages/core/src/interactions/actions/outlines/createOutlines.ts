@@ -17,7 +17,7 @@ import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import {
   textToPathsByPaint, TextOutlinesError, type TextNodeSource, type TextPaintPath,
-} from 'features/text/textToPath';
+} from '@weasel-js/text';
 
 /** What a path minted by Create Outlines must carry — see
  *  {@link CreateOutlinesAdapter.createPathNode}. */

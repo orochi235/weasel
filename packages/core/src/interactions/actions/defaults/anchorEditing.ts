@@ -41,7 +41,7 @@ import {
   openSubpathAt,
   translateAnchorBy,
   type AnchorSet,
-} from 'features/paths/anchorEdits';
+} from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { pxExtent } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors';

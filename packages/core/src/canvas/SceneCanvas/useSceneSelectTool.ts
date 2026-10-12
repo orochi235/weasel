@@ -20,7 +20,7 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { poseDescriptorForNode, type PoseDescriptor } from 'interactions/actions/resize/geometry';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseContains, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
 import { meanScale } from '@weasel-js/geom';

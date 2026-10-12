@@ -9,8 +9,8 @@
 import type { Bounds } from 'tools/builtin/select';
 import { applyToPoint, pointInPath, strokeHitTest } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
-import { poseFrameInverseOf, poseFrameOf, poseLinearOf } from 'core/geometry/poseFrame';
+import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'core/geometry/autoPoseDescriptor';
+import { poseFrameInverseOf, poseFrameOf, poseLinearOf } from '@weasel-js/geom';
 import { hasSlop, slopForStrokeHit, type ScreenSlop } from 'core/viewport/screenSlop';
 
 export { isPathLike };

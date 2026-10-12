@@ -72,7 +72,7 @@ import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
 } from 'features/selection/overlay';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { CanvasDebugSink, DebugConfig } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
@@ -86,7 +86,7 @@ import type { ResolvedCursor } from '@weasel-js/cursor';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
-import { commandFill } from '../features/patterns/commandPaint';
+import { commandFill } from 'renderer/patterns/commandPaint';
 
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { CursorCoordsHud } from './CursorCoordsHud';

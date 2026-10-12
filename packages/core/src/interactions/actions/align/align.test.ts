@@ -8,7 +8,7 @@ import type { AlignAdapter } from './align';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { Op } from 'core/ops/types';
 import { type NodeId } from 'core/scene/types';
-import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
 
 interface RectPose { x: number; y: number; width: number; height: number; rotation?: number; tag?: string }
