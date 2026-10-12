@@ -8,5 +8,5 @@ export type { CustomKinds, KindAttr, KindAttrs } from './kindSchemas';
 export { diffSchemas, formatChanges, printSchema, type SchemaChange } from './schemaExport';
 export type { PrefTypes } from './types';
 export type { SentAsset, SubmitAssets } from './useAssetChanges';
-export type { Asset, AssetHeading, LayoutAsset, ListedAsset, SchemaAsset, Workspace } from './workspace';
+export { headingOf, type Asset, type AssetHeading, type LayoutAsset, type ListedAsset, type SchemaAsset, type Workspace } from './workspace';
 export { workspaceCodec } from './workspaceCodec';

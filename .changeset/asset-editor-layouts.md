@@ -6,4 +6,4 @@
 
 The asset list files a layout whose root is drawn `as: 'bar'` under Toolbars.
 
-Adds API on `AssetEditor`: `elsewhere`, assets another editor holds, listed after its own under the same headings, with `onElsewhere(id)` for a pick of one; `startOn`, the id of the asset shown when it mounts; and `preview(asset, over)`, which draws an asset's preview in place of the editor's own. The `ListedAsset` and `AssetHeading` types are exported.
+Adds API on `AssetEditor`: `elsewhere`, assets another editor holds, listed after its own under the same headings, with `onElsewhere(id)` for a pick of one; `startOn`, the id of the asset shown when it mounts; and `preview(asset, over)`, which draws an asset's preview in place of the editor's own. The `ListedAsset` and `AssetHeading` types are exported, and `headingOf(asset)`, the heading the list files an asset under, for a host that lists another editor's.
