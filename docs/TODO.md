@@ -762,10 +762,6 @@ skin", "Animation target") describes them. What is left:
   keeps its own `Clip` type and `clipTrack`, with function easings, and `TimelineDemo.tsx`
   moves its nodes from `onTick` closures. Both would be `Clip` data bound with `bindClip` and
   `sceneClipTargets`.
-- **(P3) A clip names a rig track's axes by number** — `ClipSampledTrack.axes` is positions in
-  the target's axes, so a track on some of a rig's joints breaks when the skeleton's joint
-  order changes. Naming joints needs the binder to answer a target's axes for names, as
-  `jointAxes(skeleton, names)` does.
 - **(P3) Editing a skinned path's points leaves its weights misaligned** — inserting or deleting
   a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
   actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or

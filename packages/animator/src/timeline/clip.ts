@@ -29,7 +29,9 @@ export interface ClipSampledTrack {
    *  target's axes, or field by field. */
   interpolate?: string;
   weight?: number;
-  axes?: number[];
+  /** The part of the target the track holds: names for `ClipBinder.axes` to resolve, a rig's
+   *  joints among them, or positions in the target's axes where it has no names. */
+  axes?: number[] | string[];
 }
 
 /** An `EventTrack` as data: each event is a name and what to carry with it. */
@@ -70,6 +72,9 @@ export interface ClipBinder {
   /** Interpolations by name. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interpolate?: Readonly<Record<string, Interpolate<any>>>;
+  /** The axes of the target named `target` that `names` stand for, as `jointAxes` answers a
+   *  skeleton's joints, or `undefined` for a target it has no names for. */
+  axes?(target: string, names: readonly string[]): readonly number[] | undefined;
   /** What an event does: its `fire`, its `book`, or both. */
   event?(name: string, data: ClipValue | undefined): Pick<TimelineEvent, 'fire' | 'book'> | undefined;
 }
@@ -109,8 +114,21 @@ function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
     interpolate,
     interpolateName: track.interpolate,
     weight: track.weight,
-    axes: track.axes && [...track.axes],
+    ...bindAxes(track, binder),
   });
+}
+
+const isNames = (axes: readonly (number | string)[]): axes is readonly string[] => typeof axes[0] === 'string';
+
+function bindAxes(track: ClipSampledTrack, binder: ClipBinder): Pick<SampledTrack<ClipValue>, 'axes' | 'axisNames'> {
+  const { axes } = track;
+  if (!axes) return {};
+  if (!isNames(axes)) return { axes: [...axes] };
+  const quoted = axes.map((name) => `"${name}"`).join(', ');
+  if (track.target === undefined) throw new Error(`bindClip: track "${track.label ?? ''}" names axes and no target: ${quoted}.`);
+  const resolved = binder.axes?.(track.target, axes);
+  if (!resolved) throw new Error(`bindClip: the binder has no axes named ${quoted} on the target "${track.target}".`);
+  return { axes: [...resolved], axisNames: [...axes] };
 }
 
 function bindTimeline(timeline: ClipTimeline, binder: ClipBinder): NestedTimeline {
@@ -166,7 +184,7 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
     }),
     interpolate: track.interpolateName,
     weight: track.weight,
-    axes: track.axes && [...track.axes],
+    axes: track.axisNames ? [...track.axisNames] : track.axes && [...track.axes],
   });
 }
 
