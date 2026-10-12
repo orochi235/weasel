@@ -44,4 +44,33 @@ describe('<ControlPanel> alias', () => {
     render(<ControlPanel schema={schema} config={{ view: { grid: false } }} setConfig={vi.fn()} />);
     expect(screen.getByText('(alias: no control at view.gone)')).toBeInTheDocument();
   });
+
+  it("hides and disables an alias's row by its target's conditions and those of the group above the target", () => {
+    const gated = resolveConfigSchema(
+      f.schema({
+        shown: f.boolean(true),
+        open: f.boolean(true),
+        byCode: f.boolean(true),
+        view: f
+          .group({ grid: f.boolean(false).label('Show grid').enableIf({ path: 'open' }) })
+          .showIf({ path: 'shown' })
+          .enableIf((c) => c.byCode === true),
+        play: f.group({ grid: f.alias('view.grid').label('Grid while playing') }),
+      }),
+      [],
+    );
+    const draw = (config: Record<string, unknown>) =>
+      render(<ControlPanel schema={gated} config={{ shown: true, open: true, byCode: true, ...config }} setConfig={vi.fn()} />);
+    const all = draw({});
+    expect(screen.getByRole('checkbox', { name: 'Grid while playing' })).toBeEnabled();
+    all.unmount();
+    const hidden = draw({ shown: false });
+    expect(screen.queryByRole('checkbox', { name: 'Grid while playing' })).toBeNull();
+    hidden.unmount();
+    const closed = draw({ open: false });
+    expect(screen.getByRole('checkbox', { name: 'Grid while playing' })).toBeDisabled();
+    closed.unmount();
+    draw({ byCode: false });
+    expect(screen.getByRole('checkbox', { name: 'Grid while playing' })).toBeDisabled();
+  });
 });

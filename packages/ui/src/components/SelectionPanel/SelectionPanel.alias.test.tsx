@@ -49,6 +49,21 @@ describe('SelectionPanel alias leaves', () => {
     expect(screen.getByText('(alias: no pref at data.gone)')).toBeInTheDocument();
   });
 
+  it('hides an alias while a section above its target is hidden, and disables it while its target is', () => {
+    const gated = (extra: object): PrefSection['members'] => ({
+      main: { name: 'Main', ...extra, members: { 'data.locked': locked } },
+      more: { name: 'More', members: { 'data.lockedToo': alias('data.locked', 'Pinned') } },
+    });
+    setup(gated({ showIf: { path: 'data.kind', is: 'other' } }));
+    expect(screen.queryByRole('checkbox', { name: 'Pinned' })).toBeNull();
+    cleanup();
+    setup(gated({ enableIf: { path: 'data.kind', is: 'other' } }));
+    expect(screen.getByRole('checkbox', { name: 'Pinned' })).toBeDisabled();
+    cleanup();
+    setup(gated({ enableIf: { path: 'data.kind', is: 'thing' } }));
+    expect(screen.getByRole('checkbox', { name: 'Pinned' })).toBeEnabled();
+  });
+
   it('leaves an alias to a renderer given for the kind', () => {
     setup(
       { main: { name: 'Main', members: { 'data.locked': locked, 'data.lockedToo': alias('data.locked', 'Pinned') } } },

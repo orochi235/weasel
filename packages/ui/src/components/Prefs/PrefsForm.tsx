@@ -169,7 +169,7 @@ export function PrefsForm(props: PrefsFormProps) {
   // while they drop nothing, and a drop in flight restarts whenever the tree it is drawn in is a new one.
   const visible = useMemo(() => visiblePrefSubtree(schema, showHidden, keepEmpty), [schema, showHidden, keepEmpty]);
   const applied = useMemo(
-    () => (visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden })),
+    () => (visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden, aliasOver: schema })),
     [visible, schema, values, keepEmpty, markHidden],
   );
   const conditioned = applied?.shown ?? null;

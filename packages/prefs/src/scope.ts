@@ -3,9 +3,10 @@
 // it and everything above it is enabled. Every surface that draws a schema
 // asks here.
 
+import { prefAliasTarget, type PrefAlias } from './alias';
 import { prefConditionHolds, type PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection, prefValueAtPath } from './helpers';
+import { isPrefLeaf, isPrefSection, prefLeafAt, prefValueAtPath } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
@@ -107,6 +108,8 @@ export interface PrefConditionsOptions {
    * surface that edits the schema, where a node not drawn cannot be picked.
    */
   keepHidden?: boolean;
+  /** The schema an alias's `of` names a leaf of. Default: the schema walked. */
+  aliasOver?: PrefGroup | PrefSection;
 }
 
 /**
@@ -117,18 +120,21 @@ export interface PrefConditionsOptions {
  * whose `enableIf` fails is disabled with everything under it. The item of
  * a `list` or a `map` is walked as its entries are drawn: its fields hide and
  * disable by their conditions, and its own `enableIf` disables every entry.
+ * An alias is shown only while it and the leaf it shows both are, and enabled
+ * only while both are, with everything above that leaf counted.
  * Parts with nothing dropped come back as the objects they were.
  */
 export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   schema: T,
   holds: PrefConditionJudge,
-  { keepEmpty = false, keepHidden = false }: PrefConditionsOptions = {},
+  { keepEmpty = false, keepHidden = false, aliasOver }: PrefConditionsOptions = {},
 ): PrefConditionsApplied<T> {
   const disabled = new Set<string>();
   const hidden = new Set<string>();
 
   const leaf = (node: PrefLeaf, path: string, above: PrefScope): PrefLeaf | null => {
-    const scope = prefScopeUnder(above, node, holds);
+    const own = prefScopeUnder(above, node, holds);
+    const scope = node.kind === 'alias' ? withTarget(own, node as PrefAlias, aliasOver ?? schema, holds) : own;
     return scope.shown || keepHidden ? inside(node, path, scope) : null;
   };
 
@@ -236,15 +242,42 @@ function scopeInside(leaf: PrefLeaf, rest: string, scope: PrefScope, holds: Pref
   return scope;
 }
 
+/** `own`, an alias's scope by its own conditions, narrowed by that of the leaf it shows in `over`. */
+function withTarget(own: PrefScope, alias: PrefAlias, over: PrefGroup | PrefSection, holds: PrefConditionJudge): PrefScope {
+  const target = prefAliasTarget(alias, (path) => prefLeafAt(over, path));
+  if (target === undefined) return own;
+  const theirs = scopeAt(over, target.path, holds);
+  const shown = own.shown && theirs.shown;
+  const enabled = own.enabled && theirs.enabled;
+  return shown === own.shown && enabled === own.enabled ? own : { shown, enabled };
+}
+
+/** What {@link prefScopeAt} is told beyond the schema. */
+export interface PrefScopeAtOptions {
+  /** The schema an alias's `of` names a leaf of. Default: the schema asked. */
+  aliasOver?: PrefGroup | PrefSection;
+}
+
 /**
- * The scope of the node at `path` in a {@link PrefGroup} schema: a group, a
- * leaf, a field of an `object` or a `union` leaf, or an entry of a `list` or
- * a `map`, whose step may be any key. A path that runs past the schema
- * answers for the last node it reaches.
+ * The scope of the node at `path`: a group, a leaf, a field of an `object`
+ * or a `union` leaf, or an entry of a `list` or a `map`, whose step may be
+ * any key. Under a {@link PrefSection} schema a leaf's key is its whole
+ * path. A path that runs past the schema answers for the last node it
+ * reaches. An alias answers for itself and for the leaf it shows, as
+ * {@link applyPrefConditions} has it.
  */
-export function prefScopeAt(schema: PrefGroup, path: string, holds: PrefConditionJudge): PrefScope {
+export function prefScopeAt(
+  schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge, { aliasOver }: PrefScopeAtOptions = {},
+): PrefScope {
+  const own = scopeAt(schema, path, holds);
+  const leaf = prefLeafAt(schema, path);
+  return leaf?.kind === 'alias' ? withTarget(own, leaf as PrefAlias, aliasOver ?? schema, holds) : own;
+}
+
+function scopeAt(schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge): PrefScope {
   let scope = prefScopeUnder(PREF_SCOPE, schema, holds);
   if (path === '') return scope;
+  if (isPrefSection(schema)) return scopeAmong(schema.members, path, scope, holds) ?? scope;
   let node: PrefGroup = schema;
   const steps = path.split('.');
   for (let i = 0; i < steps.length; i++) {

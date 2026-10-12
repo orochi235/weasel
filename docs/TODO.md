@@ -1178,15 +1178,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `packages/prefs/src/scope.ts` applies them in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's
   `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Ruled: a test
   may read from the list or map entry its field sits in (`{ from: 'item', path: 'mode' }`), where
-  every path is from the schema root today; and an alias row is shown and enabled only while its own
-  conditions and its target's both hold, where only its own are read today.
+  every path is from the schema root today.
 
 - **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
   compares stored values, where every other reader decodes. A rail entry for a group drawn under
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
   `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet.
+  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the leaves its
+  aliases show as a function (`leafAt`), so an alias into another schema, as a layout over a dialog
+  has them, is hidden and disabled by its own conditions alone; `applyPrefConditions` takes that
+  schema as `aliasOver` once the form is given it. An alias of an `object` leaf draws a field
+  whose `showIf` hides it in the leaf's own row: `PrefsForm` resolves the alias against the
+  schema before its conditions are applied.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs

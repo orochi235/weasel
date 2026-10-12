@@ -46,6 +46,7 @@ export {
   type PrefConditionField,
   type PrefConditionJudge,
   type PrefConditionsApplied,
+  type PrefScopeAtOptions,
   type PrefConditionsOptions,
   type PrefScope,
 } from './scope';

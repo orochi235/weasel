@@ -1,9 +1,11 @@
 import {
   applyPrefConditions,
   PREF_SCOPE,
+  type PrefAlias,
   type PrefConditionJudge,
   type PrefLeaf,
   type PrefScope,
+  prefAliasTarget,
   prefConditionHolds,
   prefJudge,
   prefLeafAt,
@@ -30,11 +32,19 @@ function scopeAt(
     prefJudge(resolved.group, (at) => valueAtPath(config, at)),
   );
   let { shown, enabled } = data;
-  const steps = path.split('.');
-  for (let i = 1; i <= steps.length; i += 1) {
-    const at = steps.slice(0, i).join('.');
-    shown &&= resolved.showIf.get(at)?.(config) ?? true;
-    enabled &&= resolved.enableIf?.get(at)?.(config) ?? true;
+  // An alias answers for the leaf it shows as well, as `prefScopeAt` has it for the data conditions.
+  const leaf = prefLeafAt(resolved.group, path);
+  const target =
+    leaf?.kind === 'alias'
+      ? prefAliasTarget(leaf as PrefAlias, (at) => prefLeafAt(resolved.group, at))
+      : undefined;
+  for (const asked of target ? [path, target.path] : [path]) {
+    const steps = asked.split('.');
+    for (let i = 1; i <= steps.length; i += 1) {
+      const at = steps.slice(0, i).join('.');
+      shown &&= resolved.showIf.get(at)?.(config) ?? true;
+      enabled &&= resolved.enableIf?.get(at)?.(config) ?? true;
+    }
   }
   return { shown, enabled };
 }
