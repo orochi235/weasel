@@ -72,7 +72,8 @@ const SCHEMA: PrefGroup = {
 };
 
 /** A deeper schema than `SCHEMA`: enough top-level groups to overflow the
- *  columns layout, and a third level to show what the rail leaves out. */
+ *  columns layout, a section inside a section, and a nested group that opens
+ *  a page of its own, so one rail holds both kinds of entry. */
 const DEEP_SCHEMA: PrefGroup = {
   name: 'Preferences',
   children: {
@@ -92,7 +93,7 @@ const DEEP_SCHEMA: PrefGroup = {
             shiftStep: { kind: 'number', name: 'Shift step', description: 'Distance with shift held.', default: 10, min: 1, max: 100 },
             wrap: {
               name: 'Wrapping',
-              description: 'Third level: no rail entry, indented in the pane.',
+              description: 'Third level: a section of a section, indented in the pane.',
               children: {
                 atEdge: { kind: 'boolean', name: 'Wrap at edge', description: 'Continue from the opposite side.', default: false },
               },
@@ -119,6 +120,8 @@ const DEEP_SCHEMA: PrefGroup = {
         accent: { kind: 'color', name: 'Accent', description: 'Highlight color.', default: '#5841b8' },
         chrome: {
           name: 'Chrome',
+          as: 'page',
+          description: 'A nested group with a page of its own.',
           children: {
             statusBar: { kind: 'boolean', name: 'Status bar', description: 'Show the bar along the bottom.', default: true },
             rulers: { kind: 'boolean', name: 'Rulers', description: 'Show rulers around the page.', default: false },

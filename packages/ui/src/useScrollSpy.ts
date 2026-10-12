@@ -39,6 +39,10 @@ export interface UseScrollSpyOptions {
   ids: readonly string[];
   /** Pixels of tolerance at the container's top edge. */
   slack?: number;
+  /** How much of the container's top is covered while this section is at it, by a heading stuck there: the section
+   *  counts as arrived, and is scrolled to, that far below the edge. Default: none. Compared by identity, so not a
+   *  function made each render. */
+  covered?: (section: HTMLElement) => number;
 }
 
 /** What {@link useScrollSpy} returns. */
@@ -67,7 +71,7 @@ const SETTLE_MS = 700;
  * offsets ({@link pickActiveSection}) and is testable apart from the DOM.
  */
 export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
-  const { rootRef, ids, slack } = options;
+  const { rootRef, ids, slack, covered } = options;
   const [active, setActive] = useState<string | null>(null);
   // Set while a programmatic scroll runs: what to report, instead of what the
   // moving container would say.
@@ -87,13 +91,13 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     const offsets: SectionOffset[] = [];
     for (const id of ids) {
       const el = root.querySelector<HTMLElement>(`[data-spy-section="${CSS.escape(id)}"]`);
-      if (el) offsets.push({ id, top: el.getBoundingClientRect().top - rootTop });
+      if (el) offsets.push({ id, top: el.getBoundingClientRect().top - rootTop - (covered?.(el) ?? 0) });
     }
     setActive(pickActiveSection(offsets, slack));
     // `ids` is compared by content through `key`: a caller deriving the array
     // each render would otherwise resubscribe on every one.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rootRef, key, slack]);
+  }, [rootRef, key, slack, covered]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -122,9 +126,9 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     releaseRef.current = release;
     timerRef.current = setTimeout(release, SETTLE_MS);
     root.addEventListener('scrollend', release);
-    const top = el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop;
+    const top = el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - (covered?.(el) ?? 0);
     root.scrollTo?.({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-  }, [rootRef, measure]);
+  }, [rootRef, measure, covered]);
 
   useEffect(() => () => {
     if (timerRef.current !== null) clearTimeout(timerRef.current);

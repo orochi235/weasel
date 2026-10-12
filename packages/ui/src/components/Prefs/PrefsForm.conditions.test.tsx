@@ -58,13 +58,13 @@ describe('PrefsForm showIf', () => {
     expect(within(screen.getByRole('navigation')).getByText('Grid')).toBeInTheDocument();
   });
 
-  it('gives a hidden nested group no rail entry and no sub-page', () => {
-    const deep: PrefGroup = {
-      name: 'Root',
-      children: { snap: { name: 'Snap', children: { on: flag('Snap on'), more: { name: 'More', showIf: on, children: { fine: flag('Fine') } } } } },
-    };
-    for (const subPages of [false, true]) {
-      const { unmount } = render(<PrefsForm layout="rail" subPages={subPages} schema={deep} values={{}} onChange={noop} />);
+  it('gives a hidden nested group no rail entry, as a section or as a page of its own', () => {
+    for (const as of [undefined, 'page'] as const) {
+      const deep: PrefGroup = {
+        name: 'Root',
+        children: { snap: { name: 'Snap', children: { on: flag('Snap on'), more: { name: 'More', as, showIf: on, children: { fine: flag('Fine') } } } } },
+      };
+      const { unmount } = render(<PrefsForm layout="rail" schema={deep} values={{}} onChange={noop} />);
       expect(within(screen.getByRole('navigation')).queryByText('More')).toBeNull();
       expect(screen.queryByText('Fine')).toBeNull();
       unmount();
