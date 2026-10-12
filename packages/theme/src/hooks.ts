@@ -1,7 +1,9 @@
 /**
  * Consumer override hooks: custom properties kit CSS reads with a fallback and
- * **no theme declares**. Setting one on any container resizes the components
- * below it; leaving it unset takes the fallback.
+ * **the built-in theme does not declare**. Setting one on any container
+ * restyles the components below it; leaving it unset takes the fallback. A
+ * theme built with `defineTheme` may pin one, as the bevel and button-face
+ * hooks are there for, and a container below it still overrides the pin.
  *
  * They stay out of `tokens.css` on purpose. A `:root` declaration would win
  * over the in-CSS fallback, so the two would have to agree forever, and
@@ -26,6 +28,91 @@ export interface TokenHook {
 }
 
 export const TOKEN_HOOKS: readonly TokenHook[] = [
+  {
+    name: 'bevel-raised',
+    type: 'shadow',
+    value: 'none',
+    description:
+      'Box shadow of a raised face: a secondary or primary Button, a PropertyPanel. A theme that draws its edges in relief declares it; unset, a button keeps its glass rim (--btn-relief) and a panel draws no shadow.',
+  },
+  {
+    name: 'bevel-pressed',
+    type: 'shadow',
+    value: 'none',
+    description: 'Box shadow of a Button held down, or one that stays down. Unset, each draws its own inset (--btn-relief-pressed).',
+  },
+  {
+    name: 'bevel-sunken',
+    type: 'shadow',
+    value: 'none',
+    description: 'Box shadow of a well: the frame a field draws its value in.',
+  },
+  {
+    name: 'field-border',
+    type: 'border',
+    value: '1px solid var(--wzl-border)',
+    description: 'Border of a field’s frame. A theme whose --wzl-bevel-sunken draws the edge sets it to a border of no width.',
+  },
+  {
+    name: 'field-focus-shadow',
+    type: 'shadow',
+    value: '0 0 0 1px var(--wzl-focus-ring)',
+    description: 'Box shadow of a field’s frame while it holds focus. It replaces --wzl-bevel-sunken there, so a beveled theme restates the bevel in it.',
+  },
+  {
+    name: 'button-radius',
+    type: 'dimension',
+    value: 'calc(var(--btn-height) * 0.1)',
+    description: 'Corner radius of a Button. Unset, a tenth of its height.',
+  },
+  {
+    name: 'button-surface',
+    type: 'color',
+    value: 'var(--btn-glass)',
+    description: 'Background of a secondary Button. Unset, neutral glass mixed from the surfaces.',
+  },
+  {
+    name: 'button-pressed-surface',
+    type: 'color',
+    value: 'var(--btn-glass-pressed)',
+    description: 'Background of a secondary Button while it is held down.',
+  },
+  {
+    name: 'button-primary-surface',
+    type: 'color',
+    value: 'var(--btn-glass)',
+    description: 'Background of a primary Button. Unset, glass tinted with --wzl-accent.',
+  },
+  {
+    name: 'button-primary-pressed-surface',
+    type: 'color',
+    value: 'var(--btn-glass-pressed)',
+    description: 'Background of a primary Button while it is held down.',
+  },
+  {
+    name: 'button-primary-fg',
+    type: 'color',
+    value: 'var(--wzl-fg-on-accent)',
+    description: 'Text color of a primary Button, for a theme whose --wzl-button-primary-surface is not an accent fill.',
+  },
+  {
+    name: 'button-primary-bevel',
+    type: 'shadow',
+    value: 'var(--wzl-bevel-raised)',
+    description: 'Box shadow of a primary Button, where it differs from --wzl-bevel-raised: the heavier frame of a default button.',
+  },
+  {
+    name: 'button-gloss',
+    type: 'number',
+    value: '1',
+    description: 'Opacity of the specular sheen over a Button’s upper half. 0 for a flat face.',
+  },
+  {
+    name: 'button-text-shadow',
+    type: 'shadow',
+    value: 'var(--btn-engraving)',
+    description: 'Text shadow of a primary or secondary Button’s label. Unset, an engraving stamp under the glyphs in dark mode.',
+  },
   {
     name: 'detail-figure-min-width',
     type: 'dimension',

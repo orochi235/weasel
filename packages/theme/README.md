@@ -157,10 +157,11 @@ names the token bare (`"ref": "gray-800"`).
 
 ## Override hooks
 
-Ten custom properties resize kit components and **no theme declares them**:
-`--wzl-swatch-size`, `--wzl-timeline-label-w`, `--wzl-number-field-width` and
-the rest. Kit CSS reads each one with a fallback, so setting it on any
-container is what changes it, and leaving it alone takes the fallback:
+Some custom properties restyle kit components and **the built-in theme does
+not declare them**: `--wzl-swatch-size`, `--wzl-timeline-label-w`,
+`--wzl-number-field-width` and the rest. Kit CSS reads each one with a
+fallback, so setting it on any container is what changes it, and leaving it
+alone takes the fallback:
 
 ```css
 .dense-panel { --wzl-swatch-size: 20px; --wzl-number-field-width: 6ch; }
@@ -174,6 +175,13 @@ what it sizes:
 import { TOKEN_MANIFEST } from '@weasel-js/theme';
 const hooks = TOKEN_MANIFEST.filter((t) => t.hook);
 ```
+
+A theme built with `defineTheme` can pin one too, which is how a theme changes
+what a token cannot say: `--wzl-bevel-raised`, `--wzl-bevel-sunken` and
+`--wzl-bevel-pressed` are the box shadows of a raised face, a well and a pressed
+button, and the `--wzl-button-*` hooks replace a Button's glass with a flat
+face. A pin's value is fixed where the theme is applied, so one written with
+`var()` does not follow a token a container overrides further down.
 
 They stay out of `tokens.css` on purpose. A `:root` value would outrank the
 fallback written beside every read, so the two would have to agree forever, and

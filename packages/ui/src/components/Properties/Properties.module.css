@@ -60,6 +60,7 @@
   border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
   border-radius: var(--_s-radius);
   padding: var(--_s-pad);
+  box-shadow: var(--wzl-bevel-raised, none);
   backdrop-filter: blur(var(--_s-blur));
   -webkit-backdrop-filter: blur(var(--_s-blur));
 }
