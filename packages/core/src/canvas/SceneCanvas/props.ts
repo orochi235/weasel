@@ -364,8 +364,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  layer, and the undoable op. Return `null` to reject an insert. */
     insertNodeFactories?: Record<string, InsertNodeFactory>;
 
-    /** The fill and stroke a kit-built shape is inserted with, by tool `kind`
-     *  and insert count; the kit keeps the geometry. Default
+    /** The fill, stroke, and fill rule a kit-built shape is inserted with, by
+     *  tool `kind` and insert count; the kit keeps the geometry. Default
      *  `paletteInsertPaint`, the kit palette in turn. A kind with a factory in
      *  `insertNodeFactories` is not asked. */
     insertPaint?: InsertPaint;

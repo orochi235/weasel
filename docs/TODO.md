@@ -1453,14 +1453,6 @@ only story runner in the repo.
 - **(P3) draw: `EditorWithSharedScene` in `apps/draw/src/App.tsx` is one 500-line component.** The
   file is split by job; this component is what is left to split.
 
-- **(P3) draw: four preferences change nothing.** `view.gridVisible`, `view.snapToGrid`, and
-  `view.gridDensity` are in the Preferences dialog, and the grid reads none of them: `App.tsx` holds
-  `gridVisible` and `snapToGrid` in `useState(false)` and draws at a constant `GRID_SPACING` of 20,
-  where the prefs default to shown and 72. `drawing.pathFillRule` has no reader either. Wiring them
-  changes what a first run looks like (grid on, at 72), so the defaults are a call to make first;
-  not done in the 2026-10-12 pass because the grid state sits in the `appCommands` block another
-  branch was rewriting.
-
 ---
 
 ## Backends (WebGL future)

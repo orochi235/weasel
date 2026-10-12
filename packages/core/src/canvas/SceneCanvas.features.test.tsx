@@ -321,4 +321,30 @@ describe('<SceneCanvas insertPaint>', () => {
     act(() => { id = commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' }); });
     expect(scene.get(id!)!.data.fill).toBeNull();
   });
+
+  it('gives a drawn outline the fill rule it names, and leaves a shape with no rule alone', () => {
+    let commit!: (bounds: unknown, extras: unknown) => NodeId | null;
+    function Grab() {
+      const deps = useDepRegistry();
+      useEffect(() => {
+        commit = (deps.get('insert') as { commit: typeof commit }).commit;
+      });
+      return null;
+    }
+    const scene = createScene<{ path: Record<string, unknown> }, L, P>({ systemLayers: [{ id: 'main' }] });
+    render(
+      <SceneCanvas scene={scene} width={200} height={200} insertPaint={() => ({ fillRule: 'evenodd' })}>
+        <Grab />
+      </SceneCanvas>,
+    );
+    const box = { x: 0, y: 0, width: 10, height: 10 };
+    let trail: NodeId | null = null;
+    let rect: NodeId | null = null;
+    act(() => {
+      trail = commit(box, { kind: 'pencil', samples: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
+      rect = commit(box, { kind: 'rect' });
+    });
+    expect(scene.get(trail!)!.data.path.fillRule).toBe('evenodd');
+    expect(scene.get(rect!)!.data.path).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+  });
 });
