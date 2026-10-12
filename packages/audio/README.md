@@ -97,6 +97,38 @@ a loop that drifts in pitch. `patternVoicePeaks(events, opts)` returns the most
 voices the pattern holds at once on each bus, to check against `voiceLimit`
 before it plays.
 
+## Generative scoring
+
+`createScore` writes music from a mood instead of choosing a clip. A mood is
+three numbers — `valence` (-1 dark to 1 bright), `tension` and `urgency` (0 to
+1) — and each one moves its own musical parameters: valence picks the mode, the
+register and how open the chords are; tension picks the harmony and how many
+layers build up; urgency picks the tempo, the pulse, the articulation and how
+often the chord changes.
+
+```ts
+const score = createScore(engine, {
+  mood: { valence: -1, tension: 1, urgency: 0 },
+  bus: 'music',
+  onBar: (state) => {
+    label.textContent = `${state.cue.name}: ${state.params.mode}, ${state.params.tempo} bpm`;
+  },
+});
+score.start();
+score.setMood({ valence: 0, tension: 0.7, urgency: 1 }); // from the next bar line
+```
+
+The corners of that space are the stock devices of documentary and news
+scoring, listed in `scoreCues` with a sentence each on what they do: `dread`,
+`investigation`, `wonder` and `urgency`. They work on a listener without asking
+them, so the score says what it is doing: `state()` and `onBar` give the cue in
+force, each cue's share of the mood (`cue.weights`), and every parameter the bar
+was written from. Show it.
+
+The layers underneath are usable on their own: `scoreParams(mood)` resolves a
+mood, `scoreChord` and `scoreBar` write a chord and a bar of pattern events
+from the parameters, and `readScoreCue(mood)` names the cue.
+
 ## Insert effects
 
 Each bus has an ordered insert chain, `engine.bus(name).inserts`, between where

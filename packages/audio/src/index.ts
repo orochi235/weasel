@@ -30,6 +30,13 @@ export {
   type PatternHit, type PatternNoise, type PatternDetune,
 } from './patternPlayer';
 export { patternVoicePeaks, type PatternLoadOptions } from './patternLoad';
+export {
+  readScoreCue, scoreCues, scoreModes, scoreParams,
+  type ScoreMood, type ScoreCue, type ScoreCueName, type ScoreCueReading, type ScoreMode,
+  type ScoreParams,
+} from './scoreMood';
+export { SCORE_BAR_STEPS, scoreBar, scoreChord, type ScoreBarOptions } from './scoreBar';
+export { createScore, type Score, type ScoreOptions, type ScoreState } from './score';
 export { noiseSamples, partialPresets } from './synthVoice';
 export type {
   AudioEngineOptions, PlayOptions, StreamOptions, VoiceHandle, VoiceDropReason,
