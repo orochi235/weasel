@@ -841,10 +841,8 @@ built 2026-10-11. What that left:
 
 ### Earlier deferrals
 
-All from `docs/specs/2026-05-04-animation-primitive-design.md`. The timeline arc's
-decomposition meant to absorb the first; it has not landed:
+From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
-- **(P3) Animation-aware undo** — "rewind the animation" instead of cancel + jump.
 - **(P3) GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts.
 
 ---

@@ -297,6 +297,10 @@ it interrupts; `interrupt: false` shares the key and adds. When something else
 writes the committed value mid-flight, call `target.stop({ commit: false })` so
 the writer wins.
 
+A pose move can follow an undo instead: `tweenPose` and `springPose` given
+`rewind: true` travel back to where they began when the move is undone mid-flight,
+and forward again if it is redone on the way.
+
 What is built on it:
 
 | Value | Its target | Moved by |
