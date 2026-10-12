@@ -162,13 +162,14 @@ a.badge {
      from shape-specific rules still apply on top. */
   border: 0 solid transparent;
 }
+/* Mixed from what the edge is made of: a property that reads itself is a cycle, and resolves to nothing. */
 button.badge:hover,
 a.badge:hover {
-  --badge-edge: color-mix(in oklab, var(--badge-edge) 88%, white);
+  --badge-edge: color-mix(in oklab, var(--_s-accent, var(--badge-status-edge)) 88%, white);
 }
 @media (prefers-reduced-motion: reduce) {
   button.badge:hover,
-  a.badge:hover { --badge-edge: var(--badge-edge); }
+  a.badge:hover { --badge-edge: var(--_s-accent, var(--badge-status-edge)); }
 }
 
 .remove {
