@@ -107,9 +107,20 @@ describe('planPixelRender', () => {
     expect(g.transform[7]).toBe(-10);
   });
 
-  it('rejects nonpositive or non-finite dimensions', () => {
+  it('flips an axis whose scale is negative: size from the magnitude, origin at the far edge', () => {
+    const p = planPixelRender({ scene: fakeScene([]), sourceRect: RECT, scale: { x: 3, y: -2 } });
+    expect([p.width, p.height]).toEqual([120, 40]);
+    // The rect's bottom edge (y = 30) is the output's top row.
+    expect(p.view).toEqual({ x: 5, y: 30, scale: { x: 3, y: -2 } });
+    const q = planPixelRender({ scene: fakeScene([]), sourceRect: RECT, scale: { x: -1, y: 1 } });
+    expect([q.width, q.height]).toEqual([40, 20]);
+    expect(q.view).toEqual({ x: 45, y: 10, scale: { x: -1, y: 1 } });
+  });
+
+  it('rejects a zero or non-finite scale and nonpositive dimensions', () => {
     expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: { x: 0, y: 0, width: 0, height: 10 }, scale: { x: 1, y: 1 } })).toThrow();
-    expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: RECT, scale: { x: -1, y: 1 } })).toThrow();
+    expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: RECT, scale: { x: 0, y: 1 } })).toThrow();
+    expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: { ...RECT, height: -20 }, scale: { x: 1, y: 1 } })).toThrow();
     expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: RECT, scale: { x: NaN, y: 1 } })).toThrow();
   });
 

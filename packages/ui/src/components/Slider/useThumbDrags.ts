@@ -5,6 +5,7 @@ import { clamp } from '@weasel-js/geom';
 import { clampOrdered, resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useScale, useSpan } from './useSpan';
+import { useLatestHandlers } from './useLatestHandlers';
 
 /** A custom `ThumbShape.render` may put interactive content inside the thumb,
  *  and capture would retarget pointerup and kill the click on it. */
@@ -20,7 +21,8 @@ export interface ThumbDragArgs<T extends Thumb> {
 
 /** A slider's two pointer gestures: one thumb dragged along the rail, and every thumb moved together. */
 export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: ThumbDragArgs<T>) {
-  const { thumbs, onInput, onChange, step, constraint } = props;
+  const { thumbs, step, constraint } = props;
+  const { onInput, onChange } = useLatestHandlers(props);
   const { even, min, max } = span;
   const { valueToFraction, fractionToValue, valueAt } = scale;
   // In-flight thumb buffer during a drag; null when not dragging.
@@ -56,13 +58,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
 
         // Drop-off detection: pointer exits the track vertically by more than trackHeight.
         const bandHeight = rect.height;
-        if (props.onRemoveThumb) {
-          if (ev.clientY < rect.top - bandHeight || ev.clientY > rect.bottom + bandHeight) {
-            droppedOff = true;
-          } else {
-            droppedOff = false;
-          }
-        }
+        if (props.onRemoveThumb) droppedOff = ev.clientY < rect.top - bandHeight || ev.clientY > rect.bottom + bandHeight;
 
         buffer[index] = { ...buffer[index], value: v };
         onInput(buffer.map(t => ({ ...t })));
@@ -88,12 +84,12 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
           if (accepted) {
             const next = buffer.filter((_, i) => i !== index).map(t => ({ ...t })) as T[];
             onInput(next);
-            onChange?.(next);
+            onChange(next);
             return;
           }
         }
 
-        onChange?.(buffer.map(t => ({ ...t })));
+        onChange(buffer.map(t => ({ ...t })));
       };
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
@@ -154,7 +150,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
         sessionRef.current = null;
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
-        if (buffer) onChange?.(buffer.map(t => ({ ...t })));
+        if (buffer) onChange(buffer.map(t => ({ ...t })));
       };
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);

@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { DEMOS_ID, GET_STARTED_ID, RELEASES_ID } from '../routes';
 import { projectTheme } from './projectTheme';
+import { TAGLINE } from './tagline';
 import { Wordmark } from './Wordmark';
 import s from './FrontPage.module.css';
 
@@ -23,7 +24,7 @@ export function FrontPage() {
         <h1 className={s.title}>
           <Wordmark />
         </h1>
-        <p className={s.tagline}>A 2D scene-graph canvas engine for React.</p>
+        <p className={s.tagline}>{TAGLINE}</p>
         <code className={s.install}>npm i @weasel-js/core</code>
         <nav className={s.links} aria-label="Sections">
           {LINKS.map((link) => (

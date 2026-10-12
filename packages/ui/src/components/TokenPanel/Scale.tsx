@@ -120,6 +120,8 @@ function ScaleSlider({
   const amounts = tokens.map((t) => splitUnit(t.value)?.amount ?? 0);
   const places = Math.min(4, Math.max(0, ...amounts.map(placesOf)));
   const round = (n: number) => Number(n.toFixed(places));
+  // A key press moves a step by this much: a log track's own step is smaller than the scale can write.
+  const finest = 10 ** -places;
   // Held from the first render: a range that followed the thumbs would move the track under the pointer.
   const [range, setRange] = useState(() => [Math.log2(Math.min(...amounts) / MARGIN), Math.log2(Math.max(...amounts) * MARGIN)]);
   const [min, max] = [Math.min(range[0]!, ...amounts.map(Math.log2)), Math.max(range[1]!, ...amounts.map(Math.log2))];
@@ -136,13 +138,8 @@ function ScaleSlider({
 
   const commit = (next: StepThumb[]) => {
     next.forEach((thumb, i) => {
-      const was = amounts[i]!;
-      const moved = Math.sign(thumb.value - Math.log2(was));
-      if (moved === 0) return;
-      // An arrow key moves a log track by less than the scale's precision; it still moves a step by one unit.
-      const rounded = round(2 ** thumb.value);
-      const amount = rounded === was ? round(was + moved * 10 ** -places) : rounded;
-      if (amount <= 0) return;
+      const amount = round(2 ** thumb.value);
+      if (amount === amounts[i] || amount <= 0) return;
       const at = generator ? generator.tokens.indexOf(thumb.token) : -1;
       if (factors && generator && at >= 0) {
         onScaleChange?.(group, {
@@ -162,6 +159,7 @@ function ScaleSlider({
       min={min}
       max={max}
       step={0.001}
+      keyStep={(thumb, steps) => Math.log2(Math.max(finest, round(2 ** thumb.value + steps * finest)))}
       density="slim"
       readoutPlacement="below-thumb"
       renderReadout={(_, i) => (

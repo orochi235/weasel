@@ -40,7 +40,7 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
       for (let i = 0; i < a.coords.length; i++) {
         next[i] = a.coords[i] + (b.coords[i] - a.coords[i]) * t;
       }
-      return { kind: 'polygon', commands: a.commands, coords: next, fillRule: a.fillRule };
+      return { ...a, coords: next };
     }
     throw new Error('pathPoseDescriptor.lerp: incompatible path shapes');
   },
@@ -63,16 +63,15 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
         },
       };
     }
-    const { commands, fillRule } = like;
     return {
       count: like.coords.length,
       to: (p) => (p.kind === 'polygon' ? Array.from(p.coords) : []),
-      from: (a) => ({ kind: 'polygon', commands, coords: Float32Array.from(a as ArrayLike<number>), fillRule }),
+      from: (a) => ({ ...like, coords: Float32Array.from(a as ArrayLike<number>) }),
       add: (p, d) => {
         if (p.kind !== 'polygon') return p;
         const coords = new Float32Array(p.coords.length);
         for (let i = 0; i < coords.length; i++) coords[i] = p.coords[i]! + d[i]!;
-        return { kind: 'polygon', commands, coords, fillRule };
+        return { ...like, coords };
       },
       write: (p, out, at) => {
         if (p.kind !== 'polygon') return;

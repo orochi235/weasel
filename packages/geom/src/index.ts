@@ -18,7 +18,8 @@ export {
   flattenCubicWithArcLen, flattenQuadraticWithArcLen,
 } from './flatten';
 export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
-export type { Path, PolygonPath, RectPath, PathFillRule } from './path';
+export type { Path, PolygonPath, RectPath, PathFillRule, PathOpenFill } from './path';
+export { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
 export {
   PathBuilder, rectPath, polylineFromPoints, polygonFromPoints,
   ellipsePath, regularPolygonPath, starPath, linePath,
@@ -80,3 +81,7 @@ export {
 } from './paths/anchorEdits';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
+export {
+  reviveTypedArrays, tagTypedArray, tagTypedArrays, typedArrayReplacer, untagTypedArray,
+  type NumberTypedArray, type TaggedTypedArray, type TypedArrayTag,
+} from './typedArrayJson';

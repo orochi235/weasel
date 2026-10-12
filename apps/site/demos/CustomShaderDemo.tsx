@@ -52,8 +52,8 @@ void main() {
     vec2 dir = normalize(v_uv - r.xy + 1e-6);
     uv -= dir * ring * 0.04 * (1.0 - age / ${RIPPLE_SECONDS.toFixed(1)});
   }
-  vec4 c = texture(u_image, uv);
-  outColor = vec4(c.rgb * c.a, c.a);
+  // A registered texture is premultiplied already, which is what outColor takes.
+  outColor = texture(u_image, uv);
 }`;
 
 const VORONOI_FRAG = `#version 300 es

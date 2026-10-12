@@ -25,7 +25,7 @@ export {
   type PoseCascade, type PoseTargetOptions, type PoseTargetScene,
 } from './poseTarget';
 export { createWrittenPoseTarget, type WrittenPoseTargetOptions } from './writtenPoseTarget';
-export { sceneClipTargets, type SceneClipTargetsOptions } from './clipTargets';
+export { sceneClipAxes, sceneClipTargets, type SceneClipTargetsOptions } from './clipTargets';
 export {
   tweenPose, springPose, staggerSpringPose,
   type TweenPoseOptions, type SpringPoseOptions, type StaggerSpringPoseOptions,

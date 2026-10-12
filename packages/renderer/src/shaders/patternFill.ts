@@ -11,6 +11,8 @@
  * Output convention §2: PREMULTIPLIED alpha.
  */
 
+import { STRAIGHT_RGB_GLSL } from './straightRgb';
+
 export const PATTERN_VERT_SRC = /* glsl */ `#version 300 es
 in vec2 a_position;
 uniform mat3 u_proj;
@@ -39,10 +41,11 @@ uniform float u_opacity;
 uniform float u_alpha;
 uniform mat4  u_colorMatrix;
 uniform vec4  u_colorBias;
+${STRAIGHT_RGB_GLSL}
 vec4 shadePaint(vec2 world) {
   vec2 uv = world / max(u_tileSize, vec2(0.0001));
   vec4 texel = texture(u_sampler, uv);
-  vec4 mapped = clamp(u_colorMatrix * texel + u_colorBias, 0.0, 1.0);
+  vec4 mapped = clamp(u_colorMatrix * vec4(straightRgb(texel), texel.a) + u_colorBias, 0.0, 1.0);
   float a = mapped.a * u_opacity * u_alpha;
   return vec4(mapped.rgb * a, a);
 }

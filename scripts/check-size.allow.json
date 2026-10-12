@@ -65,7 +65,7 @@
     "lines": 471
   },
   "packages/core/src/canvas/renderSceneToPixels.ts": {
-    "lines": 422
+    "lines": 409
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 178
@@ -179,9 +179,6 @@
   },
   "packages/forge/src/vite/plugin.ts": {
     "longestFunction": 286
-  },
-  "packages/geom/src/pathHitTest.ts": {
-    "lines": 438
   },
   "packages/geom/src/paths/pathFromD.ts": {
     "lines": 406
@@ -446,10 +443,10 @@
     "longestFunction": 143
   },
   "packages/ui/src/components/Slider/SliderBody.tsx": {
-    "longestFunction": 269
+    "longestFunction": 239
   },
   "packages/ui/src/components/Slider/useThumbDrags.ts": {
-    "longestFunction": 145
+    "longestFunction": 140
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
     "longestFunction": 201

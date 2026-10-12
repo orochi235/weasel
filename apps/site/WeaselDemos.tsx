@@ -3,6 +3,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
 import { PageBoundary } from './PageBoundary';
+import { TAGLINE } from './FrontPage/tagline';
 import { Wordmark } from './FrontPage/Wordmark';
 import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
 
@@ -83,7 +84,7 @@ export function WeaselDemos() {
             ><Wordmark /></a>
             <span className="ckd-sidebar-version" title={buildTitle()}>v{VERSION}</span>
           </h1>
-          <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
+          <p>{TAGLINE}</p>
           <p><a href="./api/">API reference →</a></p>
           <p><a href="./docs/ui/forge/">Component workshop →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>

@@ -97,6 +97,10 @@ export type SliderStop = {
  * multi-thumb editor a stray click would yank a stop the user was not aiming
  * at; `onAddThumb`, where it is set, keeps the track press.
  *
+ * `keyStep` takes over the arrow and Page keys, for a track whose values are
+ * not what the user counts in (a logarithmic one, say): it returns where a
+ * thumb lands `steps` key presses away. Home and End still go to the ends.
+ *
  * `constraint: 'ordered'` keeps thumbs from crossing each other. Supplying
  * `onAddThumb` makes a click on empty track create a thumb, and supplying
  * `onRemoveThumb` lets a right-click or a drag off the track remove one —
@@ -116,6 +120,10 @@ export type SliderProps<T extends Thumb = Thumb> = {
   min: number;
   max: number;
   step?: number;
+  /** The value `steps` key presses from `thumb`: 1 or -1 for an arrow key, 10
+   *  or -10 with shift or for a Page key. The result is still held to the
+   *  track, the thumb's bounds, and `constraint`. */
+  keyStep?: (thumb: T, steps: number, index: number) => number;
   stops?: readonly (number | SliderStop)[];
   showStops?: boolean;
   stopLabels?: 'all' | 'ends' | 'none';

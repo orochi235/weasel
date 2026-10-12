@@ -68,7 +68,7 @@ function rotatePolygon(path: PolygonPath, cx: number, cy: number, rotation: numb
       next[ci + k + 1] = cy + dx * sin + dy * cos;
     }
   });
-  return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
+  return { ...path, coords: next };
 }
 
 function rotateRectCorners(

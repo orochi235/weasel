@@ -35,7 +35,7 @@ function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): Polygo
       next[ci + k + 1] = coords[ci + k + 1] + dy;
     }
   });
-  return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
+  return { ...path, coords: next };
 }
 
 /**

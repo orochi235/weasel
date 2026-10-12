@@ -14,8 +14,10 @@
  *   - 'repeat-x' → REPEAT on S, CLAMP on T
  *   - 'repeat-y' → CLAMP on S, REPEAT on T
  *
- * Convention §2: texels stored straight; shader premultiplies.
+ * Texels are stored premultiplied, whatever the source: see `uploadPremultiplied`.
  */
+
+import { uploadPremultiplied, type ImageTexSource } from './uploadPremultiplied';
 
 export type PatternRepetition = 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat';
 
@@ -26,7 +28,7 @@ export type PatternRepetition = 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat'
  */
 export type ImageMinification = 'linear' | 'mipmap' | 'auto';
 
-type TexSource = ImageBitmap | ImageData | HTMLCanvasElement | HTMLImageElement;
+type TexSource = ImageTexSource;
 
 /** Assumed when no live context has reported its `MAX_TEXTURE_SIZE`. Above
  *  WebGL2's guaranteed 2048, and at or below what every current GPU reports. */
@@ -170,7 +172,7 @@ export class GLImageCache {
     if (!tex) throw new Error('GLImageCache: createTexture failed');
 
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
+    uploadPremultiplied(gl, source);
     gl.texParameteri(
       gl.TEXTURE_2D,
       gl.TEXTURE_MIN_FILTER,

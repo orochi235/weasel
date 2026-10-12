@@ -174,14 +174,6 @@ have shipped. What remains:
   Composing would mean a view's camera derived from the view under its aim, and
   a resolver that descends rather than picking one rect.
 
-- **(P2) `renderDebugSnapshot`: a y-up view throws.** A canvas with `view.scale.y < 0` (valid per
-  `core/viewport/view.ts`) reaches `planPixelRender` with a negative `sourceRect.height` and
-  `scale.y`, which throws "sourceRect.height must be a positive finite number"
-  (`packages/core/src/canvas/renderDebugSnapshot.ts`, `renderSceneToPixels.ts`). So a flipped scene
-  cannot be rasterized headlessly. Options: let `planPixelRender` take a signed scale (size from the
-  magnitude, the view keeps the sign and offsets its origin), which changes `renderSceneToPixels`'s
-  contract, or keep the limit and say so in both docs.
-
 - **(P3) Canvas hosts: the renderer writes inline `width` and `height` style on a `<canvas>` it
   owns.** `WeaselRenderer`'s constructor and `resize` set `canvas.style.width`/`height`, so a
   `<SceneViewCanvas className>` or `<DrawCanvas className>` that sizes the element (`width: 100%`)
@@ -219,19 +211,28 @@ have shipped. What remains:
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
   - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
 
-- **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
-  100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)
-  triangulates the closed triangle and `pathSignedArea` (`paths/winding.ts`) counts it as closed
-  "the way a fill closes it", while `pointInPath` (`pathHitTest.ts`, `flatSubpaths`) files the run
-  under `open` and returns false, and `path.ts` documents that open subpaths "don't contribute to
-  fills". So the triangle paints and cannot be clicked. Ruled 2026-10-12: the path says which, in a
-  field beside `fillRule` that all three read (a fill closes every open subpath, as SVG and canvas
-  do, or an open subpath never fills), and an engine flag sets the answer for a path that carries
-  none. Still to settle while building: where that flag lives, since `@weasel-js/geom` has no
-  engine object, and which answer it starts at. Under the closing rule an unfilled open stroke is
-  picked across the area its ends enclose, because `containsInFrame`
-  (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls `pointInPath` without knowing
-  whether the node has a fill; a closed unfilled outline is already picked that way.
+- **(P3) Under `openFill: 'none'`, SVG import and export and the booleans still close an open subpath.** A path says
+  whether a fill closes its open subpaths (`PolygonPath.openFill`, or `setDefaultOpenFill` for a
+  path that names none), and `tessellate`, `pathSignedArea`, and the filled-region hit tests agree.
+  SVG always closes one, so two readers outside `@weasel-js/geom` disagree with a path that says
+  `'none'`: `packages/svg/src/lowerLeaf.ts` imports a filled `<polyline>` without stamping
+  `openFill: 'close'`, so it stops painting under a `'none'` default, and the SVG writer emits an
+  unfilled open subpath with its node's fill, which a browser then paints. The export half has to
+  split a path that mixes closed and open subpaths. The booleans close every open contour whatever
+  the path says (`packages/geom/src/booleans/contours.ts`, `implicitClose`). Also: a mesh the renderer cached keeps the rule
+  it was built under when the default changes (`packages/renderer/src/cache/cache.ts` keys on the
+  path), so the default has to be set before the first paint.
+
+- **(P3) A closed outline with no fill is selected from inside it.** A marquee or lasso in
+  `intersect` mode drawn wholly inside an unfilled closed shape takes it, though a click there
+  does not: `shapeCoversPoint` reads the painter's ink (`NodeInk.filled`) and `regionTakes`
+  (`packages/core/src/core/geometry/regionHit.ts`) is handed a path and tests its filled region.
+  `canvas/deps/hitTestArea.ts` passes the ink for open subpaths only (`asInked`), because a path
+  can say its open subpaths enclose nothing and cannot say that of a closed one. The same is true of
+  `containsInFrame` (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`), which calls
+  `pointInPath` on a path-shaped pose with no node in hand: wherever picking is not by shape, an
+  unfilled path is picked across what it encloses, open subpaths included now that a fill closes
+  them. Both want the region and frame tests to take "is this filled" beside the path.
 
 - **(P3) WeaselDraw: no browser has drawn an imported clipped group.** A `<g clip-path>` reaches
   the scene as a container whose `data` is the clip, an unpainted path the scene clips to, by Open,
@@ -262,6 +263,8 @@ Core five + Crop shipped. Remaining:
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
+- **(P2) A line drawn with the line tool is not counted as its stroke.** The Pathfinder actions pass `strokes: 'unfilled'`, which takes an operand as its stroke only when it has no fill, and `paletteInsertPaint` (`packages/core/src/canvas/deps/insert.ts`) gives a line and a pen path a fill beside the stroke. Seen in draw: Unite of a rect and a line across it returns the rect alone, where a rect with its fill set to None unites as its stroke's ring. Either an inserted line gets no fill, or `inkOf` (`booleans/operands.ts`) reads an open path, which a fill cannot show on, as unfilled.
+- **(P3) Outline Stroke and the Boolean operations drop draw's `data.label`.** `drawBooleansAdapter.createPathNode` (`apps/draw/src/booleansAdapter.ts`) builds a result from the path and its paint alone, so the starter rect's "Welcome" and its name in the layer list are gone after Outline Stroke. Undecided: which of an outline's two paths, or their group, keeps the label.
 
 ---
 
@@ -289,22 +292,6 @@ Core five + Crop shipped. Remaining:
   stroke enums (`cap`, `join`, `align`, `dash`) are icon toggles — authoring
   eight glyphs to this repo's icon standard is its own piece of work and was
   deferred out of the stroke-markers arc.
-
-- **(P2) Renderer: a translucent `ImageBitmap` is multiplied by its alpha twice.** A
-  half-transparent white bitmap drawn with an image command onto a cleared canvas reads back as
-  `(64, 64, 64, 128)` in headless Chromium where `(128, 128, 128, 128)` is correct, whether the
-  bitmap came from `ImageData`, a PNG blob, or a canvas. Every PNG with soft edges shows a dark
-  fringe. `createImageBitmap` with no options holds premultiplied pixels and `texImage2D` uploads
-  them as they are, while `GLImageCache` and the batch shader
-  (`packages/renderer/src/shaders/batchFill.ts`, `vec4(mapped.rgb * a, a)`) assume straight
-  texels. A pattern texture registered from an `ImageBitmap` goes through `GLTextureCache` the same
-  way, and an `HTMLImageElement` source uploads straight, so the two source types disagree. Two ways
-  out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`renderer/images/imageCache.ts`,
-  `features/ingestion/imageHandler.ts`, the loupe) and document that requirement on
-  `ImageDrawCommand.image`, which leaves a consumer's default bitmap wrong; or make image textures
-  premultiplied by convention, set `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for the non-bitmap sources, and
-  have the shader unpremultiply before the color matrix, which fixes every source and filters better
-  at edges.
 
 - **(P3) Renderer: geometry and paint space far from the origin are still single precision.** The
   transform stack is in doubles now and a large model translation is rebased before upload
@@ -510,18 +497,15 @@ intercepting the press that drags the body.
 The timeline, clips, the rig, and skinning are built; `docs/concepts.md` ("Clip", "Rig and
 skin", "Animation target") describes them. What is left:
 
-- **(P3) Two demos build by hand what a clip now holds** — `apps/site/demos/platformer/clips.ts`
-  keeps its own `Clip` type and `clipTrack`, with function easings, and `TimelineDemo.tsx`
-  moves its nodes from `onTick` closures. Both would be `Clip` data bound with `bindClip` and
-  `sceneClipTargets`.
-- **(P3) A clip cannot hold a path** — a key's value has to be what JSON reads back, and a
-  `Path` keeps its points in typed arrays, so a track tweening a path-shaped pose makes
-  `toClip` throw. `apps/draw/src/persistence.ts` tags typed arrays for its own files; a clip
-  would need the same, in `packages/animator/src/timeline/clip.ts`.
-- **(P3) A clip names a rig track's axes by number** — `ClipSampledTrack.axes` is positions in
-  the target's axes, so a track on some of a rig's joints breaks when the skeleton's joint
-  order changes. Naming joints needs the binder to answer a target's axes for names, as
-  `jointAxes(skeleton, names)` does.
+- **(P3) A paused looping timeline seeked to its `duration` shows its start** — the next frame
+  wraps a playhead at `duration` to 0 and counts a lap, paused or not (`tick` in
+  `packages/animator/src/timeline/createTimeline.ts`). In the timeline demo, dragging **scrub**
+  to its right end shows t = 0 (headless Chromium, 2026-10-12): the readout says
+  `3000 / 3000 ms`, then `0 / 3000 ms` a frame later.
+- **(P3) A pose typed by an interface is not a `ClipValue`** — `ClipValue`'s object arm is an
+  index signature, which an interface such as `RectPose` does not satisfy, so
+  `{ t: 0, value: pose }` is a type error for a `pose: RectPose` and fine for the same object
+  written inline. The clip demos leave their pose helpers' return types to inference.
 - **(P3) Editing a skinned path's points leaves its weights misaligned** — inserting or deleting
   a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
   actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or
@@ -915,6 +899,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   record, which stays for good. The call to make is whether the lab draws a failed tile with a way
   to discard it.
 
+- **(P2) labkit annotations: a target outside its stage is drawn, and takes input, over whatever
+  is beside it.** `AnnotationOverlay` (`packages/labkit/src/annotations/AnnotationOverlay.tsx`)
+  places its tile, its outline, and its input box at the target element's own rect, which the
+  stage's `overflow` does not clip. Seen in the `annotate-lab` example: mark the part, then press
+  Add trial, so the first trial narrows and its camera keeps the pan it had; the part is out of
+  its stage, and its marks, its blue outline, and a box that takes presses sit over the second
+  trial's sidebar. Wants the tile and the input box cut to the stage's visible rect, which makes
+  the scissor differ from the rect the marks are placed against.
+
 - **(P3) labkit lab: the lab itself re-renders whenever any trial's record changes.** `Lab`
   (`packages/labkit/src/lab/Lab.tsx`) subscribes to the store's `trials` for the workspace's ids,
   the focused trial, and `LabContext`'s value, so a pan frame, a job item, a clock write, or a mark
@@ -972,17 +965,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   so the pane could show such an attribute field by field; its `onChange` would then have to take
   a field path, where `attrOf` reads `default.width` as an attribute name.
 
-
-- **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On
-  a `px` scale with a step at 16, drag its thumb to 20 and back in one drag: near the start the
-  readout shows 17 (or 15 from below), and exactly at the start it stops updating. `Slider` keeps
-  calling the `onInput` it was given at pointerdown, so `commit` in
-  `packages/ui/src/components/TokenPanel/Scale.tsx` compares every move against the starting amount,
-  and its "an arrow key still moves a step by one unit" nudge fires for drags too. The nudge is only
-  right for a key press, and `Slider` gives its caller no way to tell one from a drag (both arrive
-  through `onInput`; a key press also calls `onChange`, but so does a drag's end). Options: `Slider`
-  passes the source of a change to `onInput`/`onChange`; or `Scale` owns the arrow keys for its
-  thumbs and `commit` never nudges.
 
 ### WeaselDraw app follow-ups (defer)
 
@@ -1128,7 +1110,8 @@ only story runner in the repo.
   twice the same evening on an assertion, and its wait was hardened in `de222e61f`; it then hit the
   15 s test timeout once on msb-uai at `076c8ab87`, the only failure of that run. Outside the
   `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
-  pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
+  pushes it again when a component file changes") failed once on studio at `bff047e78`, and again
+  there at `f1cd6a770` on 2026-10-12: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
   either side. A second test in that file ("titles a native story by its meta when forge's meta
   reaches it through a helper module, and re-decides when the helper changes") failed the same way
@@ -1181,6 +1164,16 @@ only story runner in the repo.
   `useSelectTool` / `useTools`, and then calls `adapter.setPose` / `adapter.insertNode` from button
   handlers, so those writes skip the op pipeline and undo. `<SceneCanvas>` should take the
   wrappers itself (an `animate={{ setPose, lifecycle }}` option, or a `SurfaceContribution` that
+- **(P3) draw warns of two route conflicts every time it loads.** Seen in the console of the dev
+  build, 2026-10-12, each "two bindings declare the same (phase, gesture, arg, target, modifiers)
+  tuple in the same scope, so declaration order alone decides which one fires":
+  `[*:*] drag ?shift ?alt — declared by slice, slice`, which is `useSliceTool`'s
+  `slice.dragPoint` binding (shift and alt optional) against its own plain `slice` drag
+  (`packages/core/src/tools/builtin/slice/useSliceTool.ts`), and
+  `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
+  mode.crop.commit`. Not looked into further: whether each is a real ambiguity, or bindings the
+  check cannot tell apart because a predicate or a mode keeps them from being live together.
+
   wraps the adapter the canvas already builds), so the demo keeps `features={['pick', 'move']}` and
   its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
   canvas's adapter, so the seat has to say where a scene-level write gets animated.
@@ -1274,7 +1267,10 @@ one dead `const` and four stale disable directives.
   glyphs") spent 7.8 s in `page.screenshot` waiting for the element to be stable. The first passes
   alone in 0.3 s. Two unrelated files failing the same way in one run reads as load, which nobody
   has confirmed; `AssetEditor.steps.test.tsx` has also timed out at 5 s under load and passed
-  alone.
+  alone. On teitou, 2026-10-12, while about twenty other runs shared the fleet, two more
+  did the same in separate runs and passed alone: `forge/src/vite/plugin.test.ts` ("serves the
+  component graph from source…", 15 s) and `forge/src/timeline/timeline.browser.test.tsx` ("plays
+  on real frames").
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
