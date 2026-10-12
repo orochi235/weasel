@@ -1173,19 +1173,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
   theme that turns the glass on.
 
-- **(P3) What conditions on a pref leave undecided.** A leaf, group, or section holds a
-  `PrefCondition` (`packages/prefs/src/condition.ts`) as `showIf` or `enableIf`;
+- **(P3) Conditions on a pref: what the 2026-10-11 rulings leave to build.** A leaf, group, or
+  section holds a `PrefCondition` (`packages/prefs/src/condition.ts`) as `showIf` or `enableIf`;
   `packages/prefs/src/scope.ts` applies them in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's
-  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Undecided, with what is
-  built today: whether a bad condition throws or warns (warns; labkit's other schema mistakes
-  throw); a path relative to a list item (none: every path is from the schema root, so a field
-  cannot name its sibling in the same item); what an item's own `showIf` means, since it cannot
-  hide one entry (unasked; its `enableIf` and its fields' conditions apply); whether an alias row
-  uses its own conditions or its target's (its own); a form for "this list is not empty" (none: a
-  bare `{ path }` holds for an empty list); what a condition reads when the selected nodes in a
-  `SelectionPanel` disagree (shown if it holds for any, enabled only if for all); and whether a
-  number with a display unit is compared as stored or as shown (stored; only an `encoding` is
-  decoded).
+  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Ruled: a bad condition
+  warns where a schema is loaded as data and throws in labkit's builder, which warns today; a test
+  may read from the list or map entry its field sits in (`{ from: 'item', path: 'mode' }`), where
+  every path is from the schema root today; `showIf` on a list's or a map's item is a bad
+  condition, where it is ignored today; an alias row is shown and enabled only while its own
+  conditions and its target's both hold, where only its own are read today; a bare test means
+  "is set", and an empty list or map is not set, where it holds today; and a number with a display
+  unit is compared as stored, with `PrefConditionEditor`'s number field typed in the leaf's unit,
+  which it is not today. Kept as built: with several nodes selected in a `SelectionPanel`, a row
+  is shown if its condition holds for any and enabled only if it holds for all.
 
 - **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
   compares stored values, where every other reader decodes. A rail entry for a group drawn under
