@@ -25,10 +25,6 @@
   "packages/core/src/animation/types.ts": {
     "lines": 491
   },
-  "packages/core/src/animation/useAnimator.ts": {
-    "lines": 486,
-    "longestFunction": 443
-  },
   "packages/core/src/canvas/Canvas.tsx": {
     "lines": 1347,
     "longestFunction": 781
