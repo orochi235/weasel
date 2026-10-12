@@ -371,7 +371,8 @@ A **skin** is one weight array per joint name, indexed by point: every coordinat
 pair of the path's `coords`, curve handles included. Each point goes where each of
 its joints' motions since the bind pose would carry it, averaged by weight
 (`skinPath`, in `@weasel-js/animator` with the rest of the scene-free rig code), so one outline flexes at a joint where bound nodes hinge. The fill,
-the stroke, picking, and the selection box all read the bent path. `autoSkin`
+the stroke, picking, and the selection box all read the bent path, and so does a
+node that derives from the skinned one, as its dependency's `path`. `autoSkin`
 makes a skin from each point's distance to the bones; a joint with no child gets
 no weight, so a limb needs an end joint.
 

@@ -125,3 +125,24 @@ describe('bindRig with skins', () => {
     expect(bind({ [sleeve]: SLEEVE }, { upper: sleeve })).toThrow(/both bound to joint "upper" and skinned/);
   });
 });
+
+describe('a node that derives from a skinned one', () => {
+  it('is handed the bent path, and the rest of what it reads once the rig lets go', () => {
+    const { scene, sleeve } = sleeveScene();
+    /** Sits on the second point of the path its dependency shows. */
+    const tag = scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 2, height: 2 }, data: {},
+      dependsOn: [sleeve],
+      derivePose: (_node, deps) => {
+        const path = deps[0]?.path;
+        return path?.kind === 'polygon' ? { x: path.coords[2], y: path.coords[3], width: 2, height: 2 } : null;
+      },
+    });
+    const at = () => effectivePose(scene, scene.get(tag)!);
+    const rig = bindRig({ scene, skeleton: ARM, skins: { [sleeve]: SLEEVE } });
+    rig.pose(BENT);
+    expect(at()).toMatchObject({ x: 155, y: 150 });
+    rig.release();
+    expect(at()).toEqual({ x: 0, y: 0, width: 2, height: 2 });
+  });
+});

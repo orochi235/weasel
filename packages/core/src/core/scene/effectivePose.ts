@@ -165,6 +165,7 @@ function depIn<TPose>(
 class SceneDep<TPose> implements DerivedDep<TPose> {
   readonly node: Node<unknown, string, TPose>;
   readonly pose: TPose;
+  private readonly shown: Path | undefined;
 
   constructor(
     private readonly source: PoseSource<TPose>,
@@ -172,10 +173,13 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
     private readonly reading: Reading,
   ) {
     this.node = posed as unknown as Node<unknown, string, TPose>;
-    this.pose = poseIn(source, posed, reading);
+    const override = reading === 'effective' ? source.overrides.read(posed.id) : undefined;
+    this.shown = override?.path;
+    this.pose = override?.pose ?? derivedPoseIn(source, posed, reading) ?? posed.pose;
   }
 
   get path(): Path | null {
+    if (this.shown !== undefined) return this.shown;
     const { source, reading } = this;
     return resolveDerivedPath(
       this.posed,

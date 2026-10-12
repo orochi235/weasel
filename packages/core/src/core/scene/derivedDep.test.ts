@@ -170,3 +170,56 @@ describe('a document read of a path-derived pose', () => {
     expect(poseOf(scene, l)).toEqual(box(300, 50, 4, 4));
   });
 });
+
+describe('a dependency shown by a pose override path', () => {
+  /** A plain shape, and a marker that sits at the end of whatever path the shape shows. */
+  function followed() {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    const shape = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0, 100, 10), data: {} });
+    const marker = scene.add({
+      kind: 'leaf', layer: 'main', pose: box(-1, -1, 4, 4), data: {},
+      dependsOn: [shape],
+      derivePose: (_node, deps): RectPose | null => {
+        const path = (deps[0] as DerivedDep<RectPose> | undefined)?.path;
+        if (path === null || path === undefined) return null;
+        const coords = (path as { coords: Float32Array }).coords;
+        return box(coords[coords.length - 2]!, coords[coords.length - 1]!, 4, 4);
+      },
+    });
+    return { scene, shape, marker };
+  }
+
+  it('answers the override\'s path as the dependency\'s, and the document reading none', () => {
+    const { scene, shape, marker } = followed();
+    expect(poseOf(scene, marker)).toEqual(box(-1, -1, 4, 4));
+    scene.overrides.set(shape, { pose: box(0, -50, 100, 60), path: segment({ x: 0, y: 0 }, { x: 60, y: -50 }) });
+    scene.overrides.commit();
+    expect(poseOf(scene, marker)).toEqual(box(60, -50, 4, 4));
+    expect(documentPose(scene, scene.get(marker)!)).toEqual(box(-1, -1, 4, 4));
+    scene.overrides.clear(shape);
+    scene.overrides.commit();
+    expect(poseOf(scene, marker)).toEqual(box(-1, -1, 4, 4));
+  });
+
+  it('follows a path that changes inside the same bounds', () => {
+    const { scene, shape, marker } = followed();
+    const entry = { pose: box(0, -50, 100, 60), path: segment({ x: 0, y: 0 }, { x: 60, y: -50 }) };
+    scene.overrides.set(shape, entry);
+    scene.overrides.commit();
+    expect(poseOf(scene, marker)).toEqual(box(60, -50, 4, 4));
+    entry.path = segment({ x: 0, y: 0 }, { x: 80, y: -20 });
+    scene.overrides.commit();
+    expect(poseOf(scene, marker)).toEqual(box(80, -20, 4, 4));
+  });
+
+  it('prefers the override\'s path to one the dependency derives', () => {
+    const { scene, a, line, label } = labeled();
+    const l = label();
+    expect(poseOf(scene, l)).toEqual(box(100, 0, 4, 4));
+    scene.overrides.set(line, { path: segment({ x: 0, y: 0 }, { x: 7, y: 7 }) });
+    scene.overrides.commit();
+    expect(poseOf(scene, l)).toEqual(box(7, 7, 4, 4));
+    expect(scene.get(a)).toBeDefined();
+  });
+});
+

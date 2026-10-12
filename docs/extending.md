@@ -524,11 +524,11 @@ memo slots wherever a dependency's pose can change, transitively, including on
 undo. On top of that, `resolveDerivedPath` re-resolves its dependencies on a
 memo hit and compares their poses *by value* against the ones the cached path
 was drawn from, so a dependency that moved with nothing pushed behind it — a
-paint-time `toPose` of your own, say — still re-routes. That pull covers poses
-only: a derivation reading a dependency's `data` or `layer` rides on the push.
+paint-time `toPose` of your own, say — still re-routes. That pull covers what a
+derivation may read of a dependency: its pose, its `data`, its `layer`, and its
+path, a pose override's included, where the derivation read it.
 
-`derivePose` has no such pull, so a pose derived from a pose is pushed
-invalidation alone.
+`derivePose` has the same pull.
 
 **Deleting a node deletes everything that derives from it**, transitively,
 including those nodes' own subtrees, as one undo entry. A dependent is not a
