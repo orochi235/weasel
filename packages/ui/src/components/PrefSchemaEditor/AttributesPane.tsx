@@ -151,9 +151,9 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
         </fieldset>
       </span>
     ), { group: true }),
-    [CONDITION_KIND]: Object.assign<PrefRenderer, { group: boolean }>(({ pref, value, setValue }) => (
+    [CONDITION_KIND]: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>(({ pref, value, setValue }) => (
       <PrefConditionEditor aria-label={pref.name} schema={schema} exclude={ownPaths} value={value as PrefCondition | undefined} onChange={setValue} />
-    ), { group: true }),
+    ), { group: true, wide: true }),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}
         onFocus={() => { nameAtFocus.current = node.name; }} onBlur={several ? undefined : followName} />

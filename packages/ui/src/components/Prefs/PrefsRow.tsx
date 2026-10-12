@@ -14,7 +14,7 @@ import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarL
 import { PrefActionButton } from './PrefActionButton';
 import { PrefMixed } from './PrefMixed';
 import { prefDrawsNoControl, PrefWords } from './PrefWords';
-import { drawsRows } from './compound';
+import { rowWidthOf } from './compound';
 import { entryConditions } from './entry';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
@@ -68,6 +68,9 @@ export interface PrefRenderContext {
 export type PrefRenderer = ((ctx: PrefRenderContext) => ReactNode) & {
   /** The control is several, or one a `<label>` may not wrap: its row is a group, and each control carries its own name. */
   group?: boolean;
+  /** The control wants the row's whole width, its label above it, as a `map`'s or a `union`'s gets: for one too
+   *  wide for the control column. In a field of an object leaf as in a row of the form. */
+  wide?: boolean;
 };
 
 export interface WalkCtx {
@@ -182,7 +185,8 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx, ctx.renderers);
   if (custom && control === null) return null;
 
-  const stacked = drawsRows(pref);
+  const width = rowWidthOf(pref, ctx.renderers);
+  const stacked = width !== 'column';
 
   // `block` leaves own their chrome (embedded editors with their own
   // header) — no label/tooltip row.
@@ -213,7 +217,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       hint={marked ? <><HiddenBadge />{inheritHint}</> : inheritHint}
       disabled={renderCtx.disabled}
     >
-      <span className={s.rowControl}>{control}</span>
+      <span className={width === 'filled' ? `${s.rowControl} ${s.rowControlFilled}` : s.rowControl}>{control}</span>
     </PropertyRow>
     </div>
   );
@@ -255,6 +259,7 @@ function renderBuiltin(
       ctx={of}
       renderField={(field, held, on) => renderPrefControl(field, renderers, held, on)}
       isGroup={(field, held) => rowIsGroup(field, renderers, held)}
+      rowWidth={(leaf) => rowWidthOf(leaf, renderers)}
     />
   );
   if (pref.kind === 'object') return object(ctx);
