@@ -347,14 +347,25 @@ Core five + Crop shipped. Remaining:
   measured `baselineDrop` is only rounding, but the overlay still cannot
   follow a fractional canvas baseline: moving its `top` by 0.4px moved its
   ink by exactly 1px in Chromium at DPR 1, and the matrix rows show the same
-  jump in WebKit, Firefox and at DPR 2. On top of that sits a steady ink bias,
-  overlay above canvas, of about -0.35px at DPR 1 and -0.17px at DPR 2
-  (derived from Chromium's rows), of unknown origin. Together they are the whole of
-  `dy` in `scripts/measure-overlay-alignment.config.ts` (mean |dy| about
-  0.2px, max 0.75), and why `overlayAlignment.browser.test.tsx` allows
-  `DY_TOLERANCE = 0.85`. Candidates: carry the fraction on a transform, snap
-  the canvas's text baseline to device pixels as browsers do, or find the
-  bias first. Recorded 2026-09-29.
+  jump in WebKit, Firefox and at DPR 2. The matrix rows also suggested a steady
+  ink bias, overlay above canvas, of about -0.35px at DPR 1 and -0.17px at
+  DPR 2 (derived from Chromium's rows). Together they are the whole of `dy` in
+  `scripts/measure-overlay-alignment.config.ts` (mean |dy| about 0.2px, max
+  0.75), and why `overlayAlignment.browser.test.tsx` allows
+  `DY_TOLERANCE = 0.85`. Recorded 2026-09-29.
+
+  Measured 2026-10-12 in headless Chromium at DPR 1 on macOS, by temporary
+  edits to that test. Nothing on the overlay's side can carry the fraction:
+  with `top` floored and the remainder on `transform: translateY()`, every
+  case's `dy` was the same to two decimals as before, with and without
+  `will-change: transform`, while adding 5px to that translate moved each by
+  5.00. And the bias did not show: stepping the pose's `y` through a pixel in
+  eighths gave a rounding sawtooth (Inter 40px from +0.43 to -0.42) whose mean
+  was -0.01 for Inter 40px, -0.02 for Inter 16px, -0.07 for Arial 40px, and
+  -0.14 for Georgia 23px, so the -0.35 looks like the matrix sampling two
+  phases of that sawtooth. Not checked in WebKit, Firefox, or at DPR 2. What is
+  left is a ruling: snap the canvas's text baseline to device pixels as
+  browsers do, which moves all canvas text, or keep the half pixel.
 
 - **(P3) WebKit at DPR 1 fails one overlay-alignment case, because it paints
   text on whole pixels.** `"Hgd" Inter 72px small caps` reports `dRight -0.79`
@@ -378,15 +389,6 @@ Core five + Crop shipped. Remaining:
   not at all — WebKit picks a pixel either way. Measured 2026-10-07 on macOS
   (Playwright WebKit).
 
-- **(P3) The character strip has no "no fill" chip.** WeaselDraw's text objects carry `fill: null`
-  through its SVG export and import, and the sidebar's Fill leaf already offers None for a text
-  node. What is missing is a None chip beside the strip's Color field. Ruled 2026-10-11: a run can
-  carry no fill, so the chip unfills only the selected range. A run now holds `fill: null` through
-  `resolveRuns`, the range algebra, the edit overlay, and SVG, so the chip is all that is left: a
-  control that sends `{ fill: null }` through `CharacterOptions`' `onPatch`, and a reading of a
-  `null` range fill (and of an unfilled node, which `effectiveRangeStyle` reports as an absent
-  `fill`) that lights it. It wants looking at on screen.
-
 - **(P3) At 12px with a script, the atlas tier's ink still sits ~0.55px off
   the overlay's at DPR 1, and the sign follows the sub-pixel phase.** `dx` is
   −0.5 at `x` 20 and +0.5 at 20.5 in every engine; DPR 2 agrees within 0.06.
@@ -400,32 +402,6 @@ Core five + Crop shipped. Remaining:
   scripts/measure-overlay-alignment.config.ts` show both.
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is synthesized today (capitals scaled by x-height over cap height), and a face with an `smcp` feature should get its own small-cap glyphs instead.
-
-- **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
-
-- **(P3) Text edit: an edit that changes text ending in a newline drops that newline.**
-  `trimCaretHolder` (`packages/core/src/features/text/useTextEdit.ts`) removes one trailing `\n` on
-  the assumption the browser added it as the caret's holder, so a node whose text is `"abc\n"`
-  becomes `"xabc"` when an `x` is typed at its start. An edit that changes nothing writes nothing,
-  so open-and-close is safe. Whether a browser adds a holder to seeded text that already ends in
-  `\n` has not been observed, and the fix turns on it.
-
-- **(P3) Text edit: typed text is inserted by hand in `beforeinput`.** Every `insertText` is
-  `preventDefault`-ed and inserted at the window selection
-  (`packages/core/src/features/text/useTextEdit.ts`, `onBeforeInput`). No `input` event follows, so
-  the `onInput` re-place that keeps a center- or bottom-aligned overlay from jumping a frame late
-  runs only for paste and delete. Two further effects are inferred and not observed in a browser:
-  input carrying its own target range (macOS double-space period, text replacement) would land at
-  the caret, and typing would not be on the native undo stack. The alternative is to intercept only
-  while a pending style is armed and normalize in `onInput` otherwise.
-
-- **(P3) Text edit: a paste lands in the overlay as whatever markup the browser inserts.**
-  `useTextEdit` has no `paste` handler. `domToRuns` and the caret-offset walkers
-  (`packages/core/src/features/text/domOffsets.ts`) now agree on `<br>`, `<div>`, and `<p>`, so a
-  pasted break reads as one newline and offsets hold after it, but other pasted structure (lists,
-  tables, nested blocks) is still read ad hoc. Undecided: insert `text/plain` only, or sanitize the
-  pasted markup to run spans and keep its styling. Which elements each browser inserts on paste has
-  not been observed.
 
 - **(P3) Text direction: the Align bar lights `start` / `end` as if an omitted `direction` were
   `ltr`.** An omitted `TextStyle.direction` is `'auto'`, each paragraph's first strong character, so

@@ -72,9 +72,11 @@ export function CharacterOptions({ style, onPatch, children, className }: Charac
 }
 
 /** One control's edit as a run patch. Only `fill` needs shaping: the schema
- *  draws a color, and a run's fill is a `FillStyle` object. */
+ *  draws a color and a chip for none, and a run's fill is a `FillStyle` object
+ *  or `null`. Turning the chip off fills with the color the field shows beside it. */
 function characterPatch(path: string, value: unknown): RunStylePatch {
   if (path === 'fill') return { fill: { color: value as string } satisfies StyledRun['fill'] };
+  if (path === 'noFill') return { fill: value === true ? null : { color: useTextTool.options.children.fill.default } };
   return { [path]: value } as RunStylePatch;
 }
 
@@ -100,6 +102,8 @@ function characterValues(style: RangeStyle): Record<string, unknown> {
     baselineShift: style.baselineShift ?? preset?.shift,
     fontScale: style.fontScale ?? preset?.size,
     fill: solidFill(style.fill),
+    // An unfilled node's range has no `fill` at all; one of its own is `null`.
+    noFill: style.fill == null,
   };
 }
 
@@ -126,7 +130,7 @@ function characterMixed(style: RangeStyle): Set<string> {
   // `{ fill: 'pattern', pattern, color }` hybrid can't be produced any more,
   // but one can still arrive in an old document.
   const fill = style.fill;
-  if (fill !== undefined && fill !== MIXED && solidFill(fill) === undefined) out.add('fill');
+  if (fill != null && fill !== MIXED && solidFill(fill) === undefined) out.add('fill');
   return out;
 }
 
@@ -141,7 +145,7 @@ function pick(style: RangeStyle): Record<string, unknown> {
 }
 
 function solidFill(fill: RangeStyle['fill']): string | undefined {
-  return fill !== undefined &&
+  return fill != null &&
     fill !== MIXED &&
     ((fill as { fill?: string }).fill === undefined || (fill as { fill?: string }).fill === 'solid')
     ? (fill as { color?: string }).color
