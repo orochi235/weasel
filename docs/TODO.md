@@ -958,17 +958,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Left as is for now by decision; draw loads `fonts.css` since the
   numeric-helper branch.
 
-- **(P3) Are `ToggleBar`, `ButtonBar` and `OptionsBar` one component?** They
-  differ only in what a segment does, yet `ToggleBar` keeps its own copy of the
-  segmented-control styles (`ToggleBar.module.css`) while the other two share
-  `components/segmentedControl.module.css`. The two files agree again on
-  every rule they share (`segmentedControl.browser.test.tsx` measures the
-  shared one), but a fix made in one still has to be made in the other.
-  What `ToggleBar` adds is a `.segmentMixed` state, a `.variant_minimal` that
-  genuinely diverges (bordered box, square corners, inner dividers, `gap: 0`)
-  and a `.variant_flat`. Folding the files makes the shared module a base that
-  `ToggleBar` overrides through descendant selectors, which `composes` handles
-  badly, so decide the component question first.
+- **(P3) `ToggleBar`'s `minimal` is not `ButtonBar`'s.** The three bars are three components on
+  one skin, `components/segmentedControl.module.css`. The one place it still forks is `minimal`:
+  `ButtonBar` and `OptionsBar` draw bare rounded segments with a gap, and `ToggleBar` adds
+  `.minimalBoxed` over that, a bordered box with square corners and a rule between neighbors.
+  Which look wins, or whether both are variants every bar takes, is a visual call.
 
 - **(P3) `@weasel-js/quantity` has no composites and no styling.** A value is one number, so a
   range (`1/64–1/2`, which `BandEditor`'s bands would want to report) or a vector readout has no

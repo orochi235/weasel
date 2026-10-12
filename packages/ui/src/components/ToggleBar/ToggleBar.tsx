@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import s from './ToggleBar.module.css';
+import s from '../segmentedControl.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -142,6 +142,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     s.root,
     size && s[`size_${size}`],
     variant && s[`variant_${variant}`],
+    variant === 'minimal' && s.minimalBoxed,
     className,
   ].filter(Boolean).join(' ');
 
