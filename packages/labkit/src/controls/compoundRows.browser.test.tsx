@@ -44,8 +44,10 @@ async function opened(label: string): Promise<{ box: DOMRect; inputs: DOMRect[] 
   const dialog = await screen.findByRole('dialog');
   const inputs = [...dialog.querySelectorAll('input')].map((el) => el.getBoundingClientRect());
   const box = dialog.getBoundingClientRect();
+  // Escape goes to whatever holds focus, and the dialog takes focus a beat after it mounts.
+  await expect.poll(() => dialog.contains(document.activeElement), { timeout: 5000 }).toBe(true);
   await userEvent.keyboard('{Escape}');
-  await expect.poll(() => screen.queryByRole('dialog')).toBeNull();
+  await expect.poll(() => screen.queryByRole('dialog'), { timeout: 5000 }).toBeNull();
   return { box, inputs };
 }
 
