@@ -1643,7 +1643,9 @@ only story runner in the repo.
   the 3 s it polls for, 422 px from where it ends. `labkit/src/lab/LabLightbox.browser.test.tsx`
   ("an expanded trial keeps its marks over it and takes new ones") hit the 15 s test timeout on
   teitou in two of four full runs on 2026-10-11, at `68e9d70bb` and `de222e61f`, and passed in
-  the two between; alone on this machine at `de222e61f` it passed 3 of 3. `compoundRows` failed
+  the two between; alone on this machine at `de222e61f` it passed 3 of 3. It hit
+  the same timeout on msb-uai at `4c93cc185`, the only failure of that run, and took 1.3 s alone
+  here at that commit. `compoundRows` failed
   twice the same evening on an assertion, and its wait was hardened in `de222e61f`; it then hit the
   15 s test timeout once on msb-uai at `076c8ab87`, the only failure of that run. Outside the
   `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
