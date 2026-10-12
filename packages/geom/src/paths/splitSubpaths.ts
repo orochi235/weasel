@@ -18,7 +18,7 @@ import type { PolygonPath } from '../path';
 /** Split a path into one path per subpath, cutting at each `M`. A path with a
  *  single subpath comes back as a one-element array. */
 export function splitSubpaths(path: PolygonPath): PolygonPath[] {
-  const { commands, coords, fillRule } = path;
+  const { commands, coords } = path;
   const out: PolygonPath[] = [];
 
   // Walk the command stream, tracking the (cmdStart, coordStart) of the
@@ -28,22 +28,12 @@ export function splitSubpaths(path: PolygonPath): PolygonPath[] {
 
   forEachSegment(commands, coords, (cmd, ci, _px, _py, i) => {
     if (cmd !== PATH_M || i <= cmdStart) return;
-    out.push({
-      kind: 'polygon',
-      commands: commands.slice(cmdStart, i),
-      coords: coords.slice(coordStart, ci),
-      fillRule,
-    });
+    out.push({ ...path, commands: commands.slice(cmdStart, i), coords: coords.slice(coordStart, ci) });
     cmdStart = i;
     coordStart = ci;
   });
 
-  out.push({
-    kind: 'polygon',
-    commands: commands.slice(cmdStart),
-    coords: coords.slice(coordStart),
-    fillRule,
-  });
+  out.push({ ...path, commands: commands.slice(cmdStart), coords: coords.slice(coordStart) });
 
   return out;
 }

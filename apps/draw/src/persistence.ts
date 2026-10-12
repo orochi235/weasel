@@ -1,35 +1,24 @@
 // Shared serialization helpers for WeaselDraw's localStorage persistence.
 //
-// PolygonPath stores `commands` as Uint8Array and `coords` as Float32Array.
-// JSON.stringify renders typed arrays as `{"0":1,"1":2,...}` plain objects —
-// the painter then sees a non-iterable shape and silently fails to draw. We
-// tag typed arrays on save and reconstruct them on load (with tolerance for
-// older saves that wrote the broken numeric-key object shape).
-//
-// These helpers are shared by both the scene snapshot and the undo-history
-// snapshot (whose serialized op payloads also carry path poses), so they live
-// outside App's component module to stay independently testable.
+// A path keeps its commands and coords in typed arrays, which `JSON.stringify`
+// writes as `{"0":1,"1":2,...}`. Saves tag them with `@weasel-js/geom`'s
+// encoding; loads read the tags back, and also the untagged shapes older saves
+// wrote, which is why the walk here is draw's own.
 
 import type { AddNodeSpec, SerializedScene } from '@weasel-js/core';
 import { asNodeId, solid } from '@weasel-js/core';
-
-type TaggedTypedArray = { __ta: 'u8' | 'f32'; data: number[] };
+import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
 
 /** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip. */
-export function serializeReplacer(_key: string, value: unknown): unknown {
-  if (value instanceof Uint8Array) return { __ta: 'u8', data: Array.from(value) } satisfies TaggedTypedArray;
-  if (value instanceof Float32Array) return { __ta: 'f32', data: Array.from(value) } satisfies TaggedTypedArray;
-  return value;
-}
+export const serializeReplacer = typedArrayReplacer;
 
 /** Walk a parsed snapshot and rebuild any tagged / numeric-key typed arrays in
  *  place. Returns the same node for call-site convenience. */
 export function reviveTypedArrays<T>(node: T): T {
   if (node == null || typeof node !== 'object') return node;
+  const tagged = untagTypedArray(node);
+  if (tagged) return tagged as unknown as T;
   const obj = node as Record<string, unknown>;
-  const tag = obj.__ta;
-  if (tag === 'u8' && Array.isArray(obj.data)) return Uint8Array.from(obj.data as number[]) as unknown as T;
-  if (tag === 'f32' && Array.isArray(obj.data)) return Float32Array.from(obj.data as number[]) as unknown as T;
   for (const k of Object.keys(obj)) {
     if (k === 'commands' || k === 'coords') {
       const v = obj[k];
@@ -49,7 +38,7 @@ export function reviveTypedArrays<T>(node: T): T {
         continue;
       }
     } else {
-      reviveTypedArrays(obj[k]);
+      obj[k] = reviveTypedArrays(obj[k]);
     }
   }
   return node;

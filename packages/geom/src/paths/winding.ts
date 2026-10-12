@@ -7,6 +7,7 @@
 
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, forEachSegment } from '../commands';
 import type { Path, PolygonPath } from '../path';
+import { fillsOpenSubpaths } from '../openFill';
 
 // Three-point Gauss-Legendre: exact for polynomials up to degree 5, and the
 // Green's-theorem integrand of a cubic is degree 5.
@@ -17,30 +18,34 @@ const GL_W = [5 / 18, 8 / 18, 5 / 18];
  * Signed area enclosed by `path`, summed over its contours. Positive for a
  * contour that turns clockwise on a y-down screen (the shoelace sign), so a
  * hole wound against its outer contour subtracts. An open contour counts as
- * closed by a straight edge back to its start, the way a fill closes it.
+ * closed by a straight edge back to its start where a fill closes it, and as
+ * nothing where one does not: see `fillsOpenSubpaths`.
  * Curved segments are integrated exactly, not through their control polygon.
  * A `RectPath` has no direction and counts as positive.
  */
 export function pathSignedArea(path: Path): number {
   if (path.kind === 'rect') return path.width * path.height;
   const { commands, coords } = path;
+  const fillsOpen = fillsOpenSubpaths(path);
+  let total = 0;
   let twice = 0;
   let startX = 0, startY = 0;
   let open = false;
   let endX = 0, endY = 0;
-  const close = () => {
-    if (open) twice += endX * startY - startX * endY;
+  const close = (drawn: boolean) => {
+    if (open && (drawn || fillsOpen)) total += twice + endX * startY - startX * endY;
+    twice = 0;
     open = false;
   };
   forEachSegment(commands, coords, (cmd, ci, px, py) => {
     if (cmd === PATH_M) {
-      close();
+      close(false);
       startX = endX = coords[ci];
       startY = endY = coords[ci + 1];
       open = true;
       return;
     }
-    if (cmd === PATH_Z) { close(); endX = startX; endY = startY; return; }
+    if (cmd === PATH_Z) { close(true); endX = startX; endY = startY; return; }
     if (!open) { startX = px; startY = py; open = true; }
     if (cmd === PATH_L) {
       endX = coords[ci]; endY = coords[ci + 1];
@@ -69,8 +74,8 @@ export function pathSignedArea(path: Path): number {
     }
     endX = x3; endY = y3;
   });
-  close();
-  return twice / 2;
+  close(false);
+  return total / 2;
 }
 
 interface Segment {
@@ -131,10 +136,5 @@ export function reversePath(path: PolygonPath): PolygonPath {
   });
   flush(false);
 
-  return {
-    kind: 'polygon',
-    commands: new Uint8Array(cmds),
-    coords: new Float32Array(out),
-    fillRule: path.fillRule,
-  };
+  return { ...path, commands: new Uint8Array(cmds), coords: new Float32Array(out) };
 }

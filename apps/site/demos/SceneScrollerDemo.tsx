@@ -132,7 +132,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
   useEffect(() => animator.keepAlive(), [animator]);
 
-  const player = useMemo(() => createPlayerPose(animator), [animator]);
+  const player = useMemo(() => createPlayerPose(animator, scene), [animator, scene]);
   useEffect(() => () => player.dispose(), [player]);
 
   useEffect(() => {

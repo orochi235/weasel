@@ -76,5 +76,5 @@ export function skinPath(path: Path, skin: Skin, motions: ReadonlyMap<string, Gl
     coords[2 * i] = t > 0 ? sum[2 * i] / t : from[2 * i];
     coords[2 * i + 1] = t > 0 ? sum[2 * i + 1] / t : from[2 * i + 1];
   }
-  return { kind: 'polygon', commands: rest.commands, coords, fillRule: rest.fillRule };
+  return { ...rest, coords };
 }

@@ -165,6 +165,12 @@ describe('persistence — scene snapshot → node specs', () => {
     const coords = (specs[0].data as { coords: unknown }).coords;
     expect(coords).toBeInstanceOf(Float32Array);
   });
+  it('revives a typed array under any key, not only a path\'s', () => {
+    const data = { weights: new Float32Array([0.25, 0.75]), nested: [{ ids: new Uint8Array([3, 4]) }] };
+    const revived = reviveTypedArrays(JSON.parse(JSON.stringify(data, serializeReplacer)) as typeof data);
+    expect(revived.weights).toBeInstanceOf(Float32Array);
+    expect(revived).toEqual(data);
+  });
   it('keeps an image node\'s data through the JSON hop', () => {
     const image = { src: 'data:image/png;base64,iVBORw0KGgo=', opacity: 0.5, source: { x: 0, y: 0, width: 0.5, height: 1 }, flipY: true };
     const json = JSON.parse(JSON.stringify({

@@ -11,7 +11,7 @@ import {
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { solid, strokeOf } from '../util/paint';
-import { pathContainsPoint, type PolygonPath } from '@weasel-js/geom';
+import { pathContainsPoint, pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';
 
@@ -404,6 +404,17 @@ describe('shapeCoversPoint', () => {
     const n = { ...node({ shape: 'ellipse', fill: solid('#000') }), pose };
     expect(shapeCoversPoint(n, pose, 50, 50)).toBe(true);
     expect(shapeCoversPoint(n, pose, 2, 2)).toBe(false);
+  });
+
+  it('covers the inside of a filled open path, and only the line of an unfilled one', () => {
+    const path = pathFromD('M0 0 L100 0 L100 100');
+    const pose = { x: 0, y: 0, width: 100, height: 100 };
+    const filled = { ...node({ path, fill: solid('#f00'), stroke: null }), pose };
+    expect(shapeCoversPoint(filled, pose, 75, 25)).toBe(true);
+    expect(shapeCoversPoint(filled, pose, 25, 75)).toBe(false);
+    const line = { ...node({ path, fill: null, stroke: strokeOf('#000', 2) }), pose };
+    expect(shapeCoversPoint(line, pose, 75, 25)).toBe(false);
+    expect(shapeCoversPoint(line, pose, 50, 0)).toBe(true);
   });
 
   it('answers true when the painter has no silhouette', () => {
