@@ -15,7 +15,7 @@ function counting(): LayoutStrategy<P> & { runs: number } {
   const self = {
     ...base,
     runs: 0,
-    childPoses(container: Parameters<typeof base.childPoses>[0], children: Parameters<typeof base.childPoses>[1]) {
+    childPoses(_container: Parameters<typeof base.childPoses>[0], children: Parameters<typeof base.childPoses>[1]) {
       self.runs++;
       return new Map(children.map((c) => [c.id, { x: self.runs, y: 0 }]));
     },
