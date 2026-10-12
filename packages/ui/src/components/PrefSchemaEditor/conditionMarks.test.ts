@@ -35,6 +35,19 @@ describe('what is wrong with the conditions a schema holds, by the row that hold
     expect([...conditionProblems(root).keys()]).toEqual(['rows']);
   });
 
+  it('marks a showIf on a list\'s entry, which is never hidden, and not its enableIf', () => {
+    const root: PrefGroup = { name: 'Root', children: {
+      on: flag(),
+      rows: { kind: 'list', name: 'Rows', description: '', default: [], item: flag({ showIf: { path: 'on' }, enableIf: { path: 'on' } }) } as PrefLeaf,
+      keyed: { kind: 'map', name: 'Keyed', description: '', default: {}, item: {
+        kind: 'object', name: 'Row', description: '', default: {}, children: { fine: flag({ showIf: { path: 'on' } }) },
+      } } as unknown as PrefLeaf,
+    } };
+    const found = conditionProblems(root);
+    expect([...found.keys()]).toEqual(['rows']);
+    expect(found.get('rows')).toMatchObject([{ field: 'showIf', code: 'item-show' }]);
+  });
+
   it('puts the conditions inside a union\'s variants on the union, a variant\'s own and its fields\'', () => {
     const root: PrefGroup = { name: 'Root', children: {
       fill: { kind: 'union', name: 'Fill', description: '', default: { type: 'flat' }, tag: 'type', variants: {

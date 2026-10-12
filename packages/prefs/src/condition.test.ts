@@ -1,8 +1,6 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  checkPrefCondition,
-  checkPrefConditions,
   isPrefCondition,
   mapPrefConditionPaths,
   prefConditionHolds,
@@ -11,6 +9,7 @@ import {
   prefIsShown,
   type PrefCondition,
 } from './condition';
+import { checkPrefCondition, checkPrefConditions } from './conditionCheck';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath, visiblePrefSubtree } from './helpers';
 import type { PrefLeaf } from './schema';

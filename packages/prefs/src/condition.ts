@@ -2,13 +2,6 @@
 // one still exports as a literal and survives a draft.
 
 import { isPlainObject } from '@weasel-js/registry';
-import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
-import { prefLeafHolding, UNSEEN } from './holding';
-import type { PrefList } from './list';
-import type { PrefMap } from './map';
-import { isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject } from './schema';
-import type { PrefUnion } from './union';
 
 /** What a condition can compare a leaf's value against. `null` stands for
  *  nothing held: a missing value as well as a stored `null`. */
@@ -44,16 +37,16 @@ export type PrefCondition =
   | { any: readonly PrefCondition[] }
   | { not: PrefCondition };
 
-const ORDERINGS = ['above', 'below', 'atLeast', 'atMost'] as const;
+export const ORDERINGS = ['above', 'below', 'atLeast', 'atMost'] as const;
 const TEST_KEYS: ReadonlySet<string> = new Set(['path', 'is', 'isNot', 'in', ...ORDERINGS]);
 
 const isValue = (v: unknown): v is PrefConditionValue =>
   v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
 
-type Form = 'all' | 'any' | 'not' | 'test';
+export type Form = 'all' | 'any' | 'not' | 'test';
 
 /** Which form `value` is, judged on its own keys and not on what it holds. */
-function formOf(value: unknown): Form | undefined {
+export function formOf(value: unknown): Form | undefined {
   if (!isPlainObject(value)) return undefined;
   const keys = Object.keys(value);
   if (keys.length === 1 && (keys[0] === 'all' || keys[0] === 'any')) return Array.isArray(value[keys[0]]) ? keys[0] : undefined;
@@ -66,7 +59,7 @@ function formOf(value: unknown): Form | undefined {
 }
 
 /** The conditions directly inside a combinator; none for a test. */
-function partsOf(condition: unknown, form: Form): readonly unknown[] {
+export function partsOf(condition: unknown, form: Form): readonly unknown[] {
   const held = condition as Record<string, unknown>;
   return form === 'test' ? [] : form === 'not' ? [held.not] : (held[form] as unknown[]);
 }
@@ -153,143 +146,4 @@ export function mapPrefConditionPaths(condition: PrefCondition, move: (path: str
   }
   const path = move(condition.path);
   return path === condition.path ? condition : { ...condition, path };
-}
-
-/** One thing wrong with a condition: it is not one, it reads a path no leaf
- *  holds a value at, it compares a leaf against a value it never holds, or
- *  it never holds whatever the leaf does, as an `in` of no values. */
-export interface PrefConditionProblem {
-  code: 'malformed' | 'no-leaf' | 'no-value' | 'value' | 'never';
-  /** The path read, where the problem is with one. */
-  path?: string;
-  problem: string;
-}
-
-/** A {@link PrefConditionProblem} and the node whose condition has it. */
-export interface PrefSchemaConditionProblem extends PrefConditionProblem {
-  /**
-   * Where the node sits: a key per step from the root, `''` for the root
-   * itself. An object leaf's fields and sections, a union's variants, and a
-   * list's or a map's `item` are steps too, so this is not always a path a
-   * value is read at.
-   */
-  at: string;
-  field: 'showIf' | 'enableIf';
-}
-
-const show = (value: unknown): string => (typeof value === 'string' ? `'${value}'` : String(value));
-
-/** Why `leaf` never holds `value`; `undefined` when it may. */
-function neverHolds(leaf: PrefLeaf, value: PrefConditionValue): string | undefined {
-  if (value === null || !isBuiltinPref(leaf)) return undefined;
-  switch (leaf.kind) {
-    case 'number':
-      return typeof value === 'number' ? undefined : 'it is a number';
-    case 'boolean':
-      return typeof value === 'boolean' ? undefined : 'it is a boolean';
-    case 'string':
-    case 'color':
-    case 'field':
-      return typeof value === 'string' ? undefined : `it is a ${leaf.kind === 'string' ? 'string' : `${leaf.kind}, held as a string`}`;
-    case 'enum': {
-      const { options } = leaf as PrefEnum;
-      if (options.some((option) => option.value === value)) return undefined;
-      return `its options are ${options.map((option) => show(option.value)).join(', ')}`;
-    }
-    case 'object':
-      return (leaf as PrefObject).fromScalar ? undefined : 'it is an object';
-    default:
-      return `it is a ${leaf.kind}`;
-  }
-}
-
-function testProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
-  const found = leafProblems(test, schema);
-  if (test.in?.length !== 0) return found;
-  return [...found, { code: 'never', path: test.path, problem: `"${test.path}" is one of nothing, which never holds` }];
-}
-
-function leafProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
-  const { path } = test;
-  const held = prefLeafHolding(schema, path);
-  if (held === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"` }];
-  if (held === UNSEEN) return [];
-  const { leaf } = held;
-  if (!prefHoldsValue(leaf)) return [{ code: 'no-value', path, problem: `"${path}" is a${leaf.kind === 'separator' || leaf.kind === 'label' ? '' : 'n'} ${leaf.kind}, which holds no value` }];
-  const out: PrefConditionProblem[] = [];
-  const compared = [test.is, test.isNot, ...(test.in ?? [])].filter((value) => value !== undefined);
-  for (const value of compared) {
-    const why = neverHolds(leaf, value);
-    if (why !== undefined) out.push({ code: 'value', path, problem: `"${path}" never holds ${show(value)}: ${why}` });
-  }
-  const ordering = ORDERINGS.find((op) => test[op] !== undefined);
-  if (ordering !== undefined && isBuiltinPref(leaf) && leaf.kind !== 'number') {
-    out.push({ code: 'value', path, problem: `"${path}" is a${leaf.kind === 'object' || leaf.kind === 'enum' ? 'n' : ''} ${leaf.kind}, and "${ordering}" compares numbers` });
-  }
-  return out;
-}
-
-/**
- * What is wrong with `condition` as one of `schema`'s: every part of it that
- * is not a condition, every path it reads that no leaf holds a value at,
- * every comparison against a value the leaf's kind or options rule out, and
- * every `in` of no values.
- * `null` is never ruled out, and neither is anything under an app-defined
- * kind or inside a list, a map, or a paint, which the schema does not
- * describe. Takes `unknown`, since a schema read from JSON or built without
- * types may hold anything where a condition goes.
- */
-export function checkPrefCondition(condition: unknown, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
-  const form = formOf(condition);
-  if (form === undefined) {
-    const shown = typeof condition === 'function' ? 'a function' : JSON.stringify(condition);
-    return [{ code: 'malformed', problem: `not a condition: ${shown}` }];
-  }
-  if (form === 'test') return testProblems(condition as PrefTest, schema);
-  return partsOf(condition, form).flatMap((part) => checkPrefCondition(part, schema));
-}
-
-type Conditioned = { showIf?: unknown; enableIf?: unknown };
-
-/** {@link checkPrefCondition} over every `showIf` and `enableIf` in `schema`, in schema order. */
-export function checkPrefConditions(schema: PrefGroup | PrefSection): PrefSchemaConditionProblem[] {
-  const out: PrefSchemaConditionProblem[] = [];
-  const own = (node: Conditioned, at: string): void => {
-    for (const field of ['showIf', 'enableIf'] as const) {
-      if (node[field] === undefined) continue;
-      for (const problem of checkPrefCondition(node[field], schema)) out.push({ ...problem, at, field });
-    }
-  };
-  const under = (at: string, key: string): string => (at === '' ? key : `${at}.${key}`);
-  const leaf = (node: PrefLeaf, at: string): void => {
-    own(node, at);
-    if (node.kind === 'object') members((node as PrefObject).children, at, true);
-    else if (node.kind === 'list' || node.kind === 'map') leaf((node as PrefList | PrefMap).item, under(at, 'item'));
-    else if (node.kind === 'union') {
-      for (const [key, variant] of Object.entries((node as PrefUnion).variants)) leaf(variant, under(at, key));
-    }
-  };
-  /** `nested`: inside an object leaf, where a key is relative to it; a section schema's own keys are whole. */
-  const members = (held: PrefSection['members'], at: string, nested: boolean): void => {
-    for (const [key, child] of Object.entries(held)) {
-      const here = nested ? under(at, key) : key;
-      if (isPrefLeaf(child)) leaf(child, here);
-      else {
-        own(child, here);
-        members(child.members, nested ? at : '', nested);
-      }
-    }
-  };
-  const group = (node: PrefGroup, at: string): void => {
-    own(node, at);
-    for (const [key, child] of Object.entries(node.children)) {
-      if (isPrefLeaf(child)) leaf(child, under(at, key));
-      else group(child, under(at, key));
-    }
-  };
-  if (isPrefSection(schema)) {
-    own(schema, '');
-    members(schema.members, '', false);
-  } else group(schema, '');
-  return out;
 }

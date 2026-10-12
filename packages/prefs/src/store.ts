@@ -1,5 +1,5 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { checkPrefConditions } from './condition';
+import { checkPrefConditions } from './conditionCheck';
 import { recordValue, stampRecord } from './stamp';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, prefSectionLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
 import type { PrefList } from './list';

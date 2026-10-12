@@ -18,8 +18,6 @@ export {
 } from './helpers';
 export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
 export {
-  checkPrefCondition,
-  checkPrefConditions,
   isPrefCondition,
   mapPrefConditionPaths,
   prefConditionHolds,
@@ -27,11 +25,16 @@ export {
   prefIsEnabled,
   prefIsShown,
   type PrefCondition,
-  type PrefConditionProblem,
   type PrefConditionValue,
-  type PrefSchemaConditionProblem,
   type PrefTest,
 } from './condition';
+export {
+  checkPrefCondition,
+  checkPrefConditions,
+  type PrefConditionProblem,
+  type PrefConditionSite,
+  type PrefSchemaConditionProblem,
+} from './conditionCheck';
 export {
   applyPrefConditions,
   PREF_ENTRY,
