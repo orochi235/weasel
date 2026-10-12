@@ -260,11 +260,6 @@ have shipped. What remains:
   `CanvasAdapter` gains a layer-list version or subscription, key the layer memo on that and drop
   the poll.
 
-- **(P3) `useHostAnchor`: a host that moves without resizing is not followed.** Unverified, from
-  reading `packages/core/src/canvas/useHostAnchor.ts`: it recomputes on scroll, window resize, and a
-  size change of the host or panel, so a sibling collapsing beside the host shifts it with none of
-  those firing, and the dev HUDs stay where the host was. The doc says it tracks reflows.
-
 ---
 
 ## Paths & booleans
