@@ -47,6 +47,7 @@ export * from './components/Properties';
 // The factories' bare names (`rule`, `tab`, …) are too generic for the root barrel; they come
 // from `@weasel-js/ui/components/MotifFrame`, and here only as `motifs.rule`.
 export {
+  DefaultMotif,
   type FrameParts,
   type HeadingParts,
   type Motif,
