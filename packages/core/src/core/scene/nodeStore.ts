@@ -9,6 +9,7 @@ import { dwarn } from 'debug/flag';
 import { createDependentsIndex } from './dependents';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import { restoreFn, type FnBearingNode, type NodeFn, type NodeFnField } from './nodeFnFields';
+import { SceneMembershipError } from './staleReplay';
 import type { AddNodeSpec, Node, NodeId } from './types';
 
 /** What the store keeps of a scene's state. */
@@ -97,7 +98,7 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
 
   function requireNode(id: NodeId): Node<TData, TLayer, TPose> {
     const n = state.nodes.get(id);
-    if (!n) throw new Error(`Scene: unknown node id "${id}"`);
+    if (!n) throw new SceneMembershipError(`Scene: unknown node id "${id}"`);
     return n;
   }
 

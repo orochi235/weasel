@@ -19,6 +19,7 @@ import { createArrivalWindow } from './arrivalWindow';
 import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
 import { createAppliedLog } from './appliedLog';
+import { createStaleReplay, SceneMembershipError } from './staleReplay';
 import { createLayerStack } from './layerStack';
 import { registerKitOps, type RemoveSnapshot, type SetLayoutPayload } from './kitOps';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
@@ -69,6 +70,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     layerIndex: new Map(),
   };
   const order = createRenderOrder(state);
+  const stale = createStaleReplay(state.nodes, () => version);
   const {
     isLocked: isLockedInternal, refuse: refuseLocked, refuseLayer: refuseLockedLayer, reachable,
     lifted: withLocksLifted,
@@ -173,7 +175,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   function rebuildOp(name: string, args: unknown): Op | null {
     if (registered.has(name)) return makeOp(name, args);
     // Its writes are the scene's own, so it replays without an adapter.
-    if (name === 'arrange') return createArrangeOp(args as ArrangeArgs, undefined, writePose);
+    if (name === 'arrange') return stale.tolerant(createArrangeOp(args as ArrangeArgs, undefined, writePose));
     if (name === CARRY_OP) {
       const { op, poses } = args as CarryArgs<TPose>;
       const inner = rebuildOp(op.name, op.args);
@@ -294,6 +296,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       apply: () => {
         const handler = registered.get(kind);
         if (!handler) throw new Error(`Scene: no registered op for kind "${kind}"`);
+        if (stale.skips(kind, payload, dir === 'fwd')) return 'noop';
         (dir === 'fwd' ? handler.apply : handler.revert)(payload);
         // Only a replay logs here: a first apply is recorded by the entry it
         // creates, and reverting it would leave that entry describing nothing.
@@ -343,7 +346,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
    *  journal stepping. The engine inverts whole ops when one throws; this
    *  also reverts the scene writes of the op that threw partway. */
   function replay(step: () => void): void {
-    atomically(() => withLocksLifted(() => withRecordingSuppressed(step)), () => true);
+    atomically(() => withLocksLifted(() => stale.during(() => withRecordingSuppressed(step))), () => true);
   }
 
   function executeAndLog(kind: string, payload: unknown, label: string): void {
@@ -378,6 +381,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   const sceneHistory = createSceneHistory({
     engine: history,
     applying: (step) => atomically(() => withRecordingSuppressed(step), () => true),
+    tolerant: stale.tolerant,
     replay,
     notify,
     refuseUntracked,
@@ -407,7 +411,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         // Either engine stores the ops and replays them later, so they are
         // rebound to this call's adapter: the scene's own engine, and any
         // journal opened on it, was built without one.
-        const bound = ops.map((op) => carried.recording(bindOpToAdapter(op, adapter)));
+        const bound = ops.map((op) => carried.recording(stale.tolerant(bindOpToAdapter(op, adapter))));
         if (journal) journal.applyBatch(bound, label);
         // Native path: one engine entry, coalescible across applyBatch
         // calls via the ops' own coalesceKeys.
@@ -472,9 +476,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
     add(spec) {
       const id = spec.id ?? generateId();
-      if (state.nodes.has(id)) {
-        throw new Error(`Scene: id collision on "${id}"`);
-      }
+      if (state.nodes.has(id)) throw new SceneMembershipError(`Scene: id collision on "${id}"`);
       requireLayerIndex(spec.layer);
       refuseLockedLayer(spec.layer, 'add to');
       const parent = spec.parent ?? null;
@@ -507,9 +509,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       return id;
     },
 
-    remove(id) {
-      scene.removeMany([id]);
-    },
+    remove: (id) => scene.removeMany([id]),
 
     removalClosure(rootIds) {
       return removalClosure(rootIds).ids;
@@ -818,9 +818,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
     setArrivalHandler: arrivalWindow.setHandler,
 
-    layoutOf(id) {
-      return layoutOfInternal(id);
-    },
+    layoutOf: layoutOfInternal,
 
     onReflow: arrivalWindow.onReflow,
 

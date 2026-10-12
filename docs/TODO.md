@@ -430,22 +430,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
-- **(P2) Scene history: an entry that names a node removed by an untracked edit can never be
-  undone.** `scene.add(n)`, `scene.setPose(n, p)`, then `scene.untracked(() => scene.remove(n))`,
-  which is what `reconcileSpecs` does when outside data drops a node
-  (`packages/core/src/core/scene/reconcileSpecs.ts`, called from
-  `packages/diagram/src/DiagramView.tsx`). `scene.undo()` throws `Scene: unknown node id "n"` and
-  the entry stays on top of the undo stack, so every later undo throws the same way and the entries
-  beneath it are unreachable. The stacks and the scene stay consistent; the stack is just stuck.
-  Options: have an untracked removal drop or neutralize the entries that touch the removed ids; have
-  kit ops whose target is gone report `'noop'` on replay instead of throwing (the policy restored
-  external ops already follow in `bindOpToHistoryAdapter`); or have `reconcileSpecs` clear history
-  when it removes a node. The second option alone does not cover a gesture's entry: a live external
-  op (`createTransformOp` bound by `bindOpToAdapter`) replays through `adapter.setPose` into
-  `scene.setPose`, which throws in `requireNode` before any kit op runs (read from the code, not
-  run). Nor does it cover the reverse case, an id that an untracked edit re-added: undoing an older
-  `kit:remove` of that id overwrites the live node and attaches it a second time.
-
 - **(P3) `packages/core/src/core/scene/scene.ts` is still 1,100 lines.** The jobs that closed over
   their own state are out, each in a module beside it: `nodeStore`, `kitOps`, `layerStack`,
   `arrivalWindow`, `lockGuard`, `appliedLog`, `historyFacade`, `renderOrder`, and `serialization`.
