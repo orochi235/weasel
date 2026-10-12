@@ -43,6 +43,7 @@ export {
   subscribeImageReady,
   isVectorImageSrc,
   releaseImage,
+  setImageCacheBudget,
   retryImage,
 } from '@weasel-js/renderer';
 export type { ImageNodeData, ImageRasterSize, ImageStatus } from '@weasel-js/renderer';

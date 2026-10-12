@@ -104,10 +104,10 @@ const isDev = (): boolean =>
  *   to compile, the renderer logs the error once and keeps drawing the old one.
  * - Prod mode: calling with an existing id throws.
  *
- * Actual GL compilation and `ShaderCompileError` throwing happen in
- * `WeaselRenderer.registerProgram()`, not here.
- *
- * @experimental API may break before v2.
+ * Nothing compiles here. A renderer compiles the source the first time it
+ * draws with it and reports a failure to the console, drawing nothing for
+ * that command; `WeaselRenderer.registerProgram()` compiles ahead of that and
+ * throws `ShaderCompileError`.
  */
 export function registerProgram(
   id: string,

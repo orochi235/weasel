@@ -61,6 +61,8 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   // Blend factors
   SRC_ALPHA: 0x0302,
   ONE_MINUS_SRC_ALPHA: 0x0303,
+  DST_ALPHA: 0x0304,
+  ONE_MINUS_DST_ALPHA: 0x0305,
   ZERO: 0,
   ONE: 1,
   // Buffer bits

@@ -19,8 +19,12 @@
 
 export type PatternRepetition = 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat';
 
-/** MIN_FILTER strategy for uploaded textures. */
-export type ImageMinification = 'linear' | 'mipmap';
+/**
+ * MIN_FILTER strategy for uploaded textures: `'linear'` never mipmaps,
+ * `'mipmap'` does at upload, and `'auto'` uploads linear and builds a
+ * texture's mipmaps the first time a frame draws it at half size or smaller.
+ */
+export type ImageMinification = 'linear' | 'mipmap' | 'auto';
 
 type TexSource = ImageBitmap | ImageData | HTMLCanvasElement | HTMLImageElement;
 
@@ -35,6 +39,12 @@ const live = new Set<GLImageCache>();
  *  re-uploads. */
 export function releaseImageSource(key: object): void {
   for (const cache of live) cache.release(key);
+}
+
+/** Whether any live renderer drew `key` in the latest frame it rendered. */
+export function imageSourceInLatestFrame(key: object): boolean {
+  for (const cache of live) if (cache.drewInLatestFrame(key)) return true;
+  return false;
 }
 
 /** The largest texture side every live renderer can hold: the smallest
@@ -72,13 +82,18 @@ export class GLImageCache {
   private readonly magFilters = new WeakMap<object, number>();
   private readonly finalizer: FinalizationRegistry<WebGLTexture>;
   private readonly pendingDeletes: WebGLTexture[] = [];
+  /** Under `'auto'`, the sources whose mipmaps are built. */
+  private readonly mipped = new WeakSet<object>();
+  private frame = 0;
+  private readonly lastDrawn = new WeakMap<object, number>();
 
   /** `minification` selects the MIN_FILTER strategy for uploaded textures.
    *  `'linear'` (default) is the screen path's existing behavior. `'mipmap'`
    *  generates mipmaps and filters LINEAR_MIPMAP_LINEAR — required for
    *  quality minification when a large source bitmap is drawn small (the
    *  headless print/export path); bilinear-only minification undersamples
-   *  and produces moiré. */
+   *  and produces moiré. `'auto'` pays for that only on the textures a
+   *  frame draws small, when it first does. */
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly minification: ImageMinification = 'linear',
@@ -93,8 +108,19 @@ export class GLImageCache {
     live.add(this);
   }
 
-  /** Delete the textures of sources collected since the last call. The
-   *  renderer calls this at the top of each `render()`. */
+  /** Open a frame: what {@link drewInLatestFrame} answers about from here on.
+   *  The renderer calls this at the top of each `render()`. */
+  beginFrame(): void {
+    this.frame++;
+    this.drainPendingDeletes();
+  }
+
+  /** Whether `key` was uploaded or bound since the last {@link beginFrame}. */
+  drewInLatestFrame(key: object): boolean {
+    return this.lastDrawn.get(key) === this.frame;
+  }
+
+  /** Delete the textures of sources collected since the last call. */
   drainPendingDeletes(): void {
     if (this.pendingDeletes.length === 0) return;
     for (const tex of this.pendingDeletes) this.gl.deleteTexture(tex);
@@ -110,6 +136,8 @@ export class GLImageCache {
     this.finalizer.unregister(key);
     this.map.delete(key);
     this.magFilters.delete(key);
+    this.lastDrawn.delete(key);
+    this.mipped.delete(key);
   }
 
   /** Delete every texture this cache uploaded and stop answering
@@ -133,6 +161,7 @@ export class GLImageCache {
     source: TexSource,
     repetition?: PatternRepetition,
   ): WebGLTexture {
+    this.lastDrawn.set(key, this.frame);
     const existing = this.map.get(key);
     if (existing) return existing;
 
@@ -162,9 +191,29 @@ export class GLImageCache {
     return tex;
   }
 
+  /** Whether `key` would gain from {@link buildMipmaps}: only under `'auto'`,
+   *  and only until they are built. */
+  lacksMipmaps(key: object): boolean {
+    return this.minification === 'auto' && !this.mipped.has(key);
+  }
+
+  /** Build `key`'s mipmaps and filter minification through them from here
+   *  on. Its texture must be uploaded. Leaves no texture bound. */
+  buildMipmaps(key: object): void {
+    const tex = this.map.get(key);
+    if (!tex || this.mipped.has(key)) return;
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.mipped.add(key);
+  }
+
   bind(key: object, unit: number): void {
     const tex = this.map.get(key);
     if (!tex) throw new Error('GLImageCache: image not uploaded; call upload() first');
+    this.lastDrawn.set(key, this.frame);
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, tex);

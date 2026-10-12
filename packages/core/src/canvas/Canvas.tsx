@@ -359,10 +359,10 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   debugSinkRef?: React.MutableRefObject<CanvasDebugSink | null>;
 
   /**
-   * Custom shader programs to compile on the renderer. Each handle must come
-   * from a module-level `registerProgram()` call. Compiled once per handle id
-   * on first render (or on context restore). Pass a stable reference (e.g.
-   * defined at module scope) — the array is read at renderer init time.
+   * Shader programs to compile before the frame that first draws them; one
+   * not named here compiles on that frame. Each handle comes from a
+   * module-level `registerProgram()`. Pass a stable reference (e.g. defined
+   * at module scope) — the array is read at renderer init time.
    * Re-registering one of these ids with new source repaints the canvas, and
    * the renderer recompiles it for that frame.
    */

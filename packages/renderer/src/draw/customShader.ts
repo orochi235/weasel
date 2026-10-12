@@ -10,15 +10,19 @@ import { applyClipTest } from './stencil';
 
 const warnedUniforms = new Set<string>();
 
-export function warnOnceUniform(programId: string, name: string): void {
-  const key = `${programId}:${name}`;
+function warnOnce(key: string, message: string): void {
   if (warnedUniforms.has(key)) return;
   warnedUniforms.add(key);
   const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-  if (isDev) {
-    console.warn(`weasel drawShader: uniform "${name}" not found in program "${programId}". ` +
-      `Check spelling, ensure it's used in the shader (unused uniforms are optimized away by the driver).`);
-  }
+  if (isDev) console.warn(message);
+}
+
+export function warnOnceUniform(programId: string, name: string): void {
+  warnOnce(
+    `${programId}:${name}`,
+    `weasel drawShader: uniform "${name}" not found in program "${programId}". ` +
+    `Check spelling, ensure it's used in the shader (unused uniforms are optimized away by the driver).`,
+  );
 }
 
 /**
@@ -181,11 +185,13 @@ export function setUniforms(
 export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   const { gl, programRegistry, quadVbo, quadIbo, textureCache } = ctx;
 
-  const program = programRegistry.get(cmd.program.id);
+  const program = ctx.ensureProgram?.(cmd.program.id) ?? programRegistry.get(cmd.program.id);
   if (!program) {
-    console.warn(
-      `weasel drawShader: program "${cmd.program.id}" not compiled on this renderer. ` +
-      `Call renderer.registerProgram(handle) after the module-level registerProgram().`,
+    warnOnce(
+      `${cmd.program.id}:(program)`,
+      `weasel drawShader: program "${cmd.program.id}" has no compiled program on this ` +
+      'renderer. Register its source with the module-level registerProgram() first; a ' +
+      'source that failed to compile is reported above.',
     );
     return;
   }

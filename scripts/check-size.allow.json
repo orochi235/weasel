@@ -74,7 +74,7 @@
     "longestFunction": 154
   },
   "packages/core/src/core/layers/render.ts": {
-    "lines": 541
+    "lines": 425
   },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 245
@@ -290,7 +290,7 @@
     "longestFunction": 246
   },
   "packages/minimap/src/MinimapCanvas.tsx": {
-    "longestFunction": 155
+    "longestFunction": 139
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439
@@ -299,7 +299,7 @@
     "longestFunction": 125
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 745
+    "lines": 744
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 663

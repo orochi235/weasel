@@ -1,5 +1,6 @@
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
+import { colorFolding, foldColor, isIdentityColorMatrix } from './foldColor';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { resolveColor } from '@weasel-js/paint';
 import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
@@ -60,11 +61,6 @@ type BatchTexture =
   | { kind: 'atlas'; id: string; fieldScale: readonly [number, number] }
   | { kind: 'ramps' };
 
-/** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
- *  clamp with nothing to do, which is what makes the alpha fold exact. */
-function isIdentityColorMatrix(cm: Float32Array): boolean {
-  return cm === IDENTITY_COLOR_MATRIX || sameValues(IDENTITY_COLOR_MATRIX, cm);
-}
 
 /**
  * Whether the live group state would draw the staged run identically.
@@ -77,6 +73,7 @@ function stagedStateIsLive(
   ctx: DrawContext, staged: StagedBatchState,
   image?: ImageBitmap, sampling?: 'linear' | 'nearest',
   synthBold = 0,
+  folds = false,
 ): boolean {
   if (staged.clipDepth !== (ctx.clipStack.length === 0 ? ctx.clipDepth : runClipDepth(ctx))) return false;
   // Solids and image quads ask with 0, which is what a run of them carries, so
@@ -85,7 +82,10 @@ function stagedStateIsLive(
   if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
   if (image !== undefined && slotForBitmap(staged, image, sampling!) < 0) return false;
   const colorMatrix = ctx.state.colorMatrix;
-  return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
+  if (staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix)) return true;
+  // A run drawn under identity takes any solid or glyph: `foldColor` maps its
+  // color before it is staged.
+  return folds && staged.foldsAlpha;
 }
 
 /**
@@ -165,22 +165,28 @@ function canBatchMesh(ctx: DrawContext, mesh: Mesh): boolean {
  * under. Returns the staged state, which the caller reads to resolve alpha.
  *
  * Fill opacity folds into the vertex alpha, exactly as `u_color` carried it
- * when each shape was its own draw. Group alpha folds in too, but only under an
- * identity color matrix: the shader is `a = clamp(CM * src + bias).a * u_alpha`,
- * so with a real matrix between them a pre-multiplied vertex alpha is a
- * different number. There it stays a uniform, and a differing alpha breaks the
- * run as before.
+ * when each shape was its own draw. Group alpha and the group's color matrix
+ * fold in too, in a run drawn under identity (`foldColor`). A solid that joins
+ * a run a textured quad opened under a real matrix leaves both to the shader,
+ * and there a differing alpha breaks the run.
  */
 export function stageSolid(ctx: DrawContext, vertices: number): StagedBatchState {
-  if (ctx.batchState !== undefined && !stagedStateIsLive(ctx, ctx.batchState)) flushBatch(ctx);
+  if (ctx.batchState !== undefined
+      && !stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, 0, colorFolding.enabled)) {
+    flushBatch(ctx);
+  }
   if (ctx.drawBatch.wouldOverflow(vertices)) flushBatch(ctx);
-  return openRun(ctx);
+  return openRun(ctx, colorFolding.enabled);
 }
 
-/** The staged state, opening a run under the live group state if none is. */
-function openRun(ctx: DrawContext): StagedBatchState {
+/**
+ * The staged state, opening a run if none is. `folds` says the caller's color
+ * is known here, so its run draws under identity whatever the group's matrix;
+ * a textured quad's is not, and its run draws under the live one.
+ */
+function openRun(ctx: DrawContext, folds = false): StagedBatchState {
   if (ctx.batchState === undefined) {
-    const colorMatrix = ctx.state.colorMatrix;
+    const colorMatrix = folds ? IDENTITY_COLOR_MATRIX : ctx.state.colorMatrix;
     const foldsAlpha = isIdentityColorMatrix(colorMatrix);
     ctx.batchState = {
       alpha: foldsAlpha ? 1 : ctx.state.alpha,
@@ -233,12 +239,12 @@ export function stageGlyphs(
   ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number], synthBold: number,
 ): { staged: StagedBatchState; slot: number } {
   if (ctx.batchState !== undefined
-      && (!stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, synthBold)
+      && (!stagedStateIsLive(ctx, ctx.batchState, undefined, undefined, synthBold, colorFolding.enabled)
           || slotForAtlas(ctx.batchState, atlasId) < 0)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
-  const staged = openRun(ctx);
+  const staged = openRun(ctx, colorFolding.enabled);
   // An empty run adopts the threshold; one that already has vertices agreed to
   // it above, since a mismatch flushed.
   staged.synthBold = synthBold;
@@ -293,7 +299,7 @@ function stagedColor(
   paint: { color: string; opacity?: number },
 ): [number, number, number, number] {
   const [r, g, b, a] = resolveColor(paint.color);
-  return [r, g, b, a * stagedAlpha(ctx, staged, paint.opacity)];
+  return foldColor(ctx, staged, r, g, b, a * (paint.opacity ?? 1));
 }
 
 export function pushRect(

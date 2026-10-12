@@ -15,7 +15,7 @@
  * round-trips the (serializable) `src` string untouched.
  */
 
-import { maxImageTextureSide, releaseImageSource } from '../cache/GLImageCache';
+import { imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from '../cache/GLImageCache';
 
 /** Public shape of an image node's `data`. `src` round-trips through
  *  serialization; the decoded bitmap is held in this cache, not on the node. */
@@ -63,6 +63,8 @@ interface Entry {
   status: ImageStatus;
   bitmap?: ImageBitmap;
   vector?: VectorRaster;
+  /** The value of `reads` when this entry was last read. */
+  readAt: number;
 }
 
 /** `size` is absent for the first load, which decodes at natural size. */
@@ -77,7 +79,14 @@ const SHRINK_SLACK = 4;
 const FALLBACK_WIDTH = 300;
 const FALLBACK_HEIGHT = 150;
 
+/** Decoded RGBA the cache holds before it starts dropping images: 256MB. */
+const DEFAULT_BUDGET_BYTES = 256 * 1024 * 1024;
+
 const cache = new Map<string, Entry>();
+let budgetBytes = DEFAULT_BUDGET_BYTES;
+let reads = 0;
+/** `reads` as the last {@link enforceBudget} left it. */
+let readsAtLastPass = 0;
 const subscribers = new Set<() => void>();
 const decodedVectors = new Map<string, Promise<HTMLImageElement>>();
 
@@ -142,8 +151,50 @@ function notify(): void {
   for (const cb of subscribers) cb();
 }
 
+const bytesOf = (bitmap: ImageBitmap | undefined): number =>
+  (bitmap ? bitmap.width * bitmap.height * 4 : 0);
+
+/**
+ * Drop least recently read images until the cache fits its budget. Run when a
+ * bitmap lands, which is the only time the total grows.
+ *
+ * Two kinds of image are never dropped, so the budget is a target and a scene
+ * showing more than it holds stays over: one a live renderer drew in its
+ * latest frame, and one read since the previous pass. Without the first a
+ * static canvas would lose what it is showing; without the second a reader
+ * that never draws through GL would reload on every pass.
+ */
+function enforceBudget(landed: string): void {
+  let total = 0;
+  for (const entry of cache.values()) total += bytesOf(entry.bitmap);
+  if (total > budgetBytes) {
+    const idle = [...cache].filter(([src, entry]) =>
+      src !== landed && entry.bitmap !== undefined && entry.readAt <= readsAtLastPass
+      && !imageSourceInLatestFrame(entry.bitmap));
+    idle.sort((a, b) => a[1].readAt - b[1].readAt);
+    for (const [src, entry] of idle) {
+      if (total <= budgetBytes) break;
+      total -= bytesOf(entry.bitmap);
+      releaseImage(src);
+    }
+  }
+  readsAtLastPass = reads;
+}
+
+/**
+ * Set how many bytes of decoded RGBA the cache may hold, and return the
+ * previous value. Default 256MB; `Infinity` never drops anything. Takes
+ * effect when the next image lands. A dropped image loads again on its next
+ * {@link getImageBitmap}, as one never requested does.
+ */
+export function setImageCacheBudget(bytes: number): number {
+  const previous = budgetBytes;
+  budgetBytes = bytes;
+  return previous;
+}
+
 function startLoad(src: string): void {
-  const entry: Entry = { status: 'loading' };
+  const entry: Entry = { status: 'loading', readAt: ++reads };
   cache.set(src, entry);
   loader(src).then(
     (bitmap) => {
@@ -153,16 +204,18 @@ function startLoad(src: string): void {
       cache.set(src, {
         status: 'ready',
         bitmap,
+        readAt: entry.readAt,
         ...(isVectorImageSrc(src)
           ? { vector: { natural: { width: bitmap.width, height: bitmap.height }, scale: 1, failed: new Set<number>(), floor: 0 } }
           : {}),
       });
+      enforceBudget(src);
       notify();
     },
     () => {
       // Cache the error so a broken `src` doesn't reload-storm.
       if (cache.get(src) !== entry) return;
-      cache.set(src, { status: 'error' });
+      cache.set(src, { status: 'error', readAt: entry.readAt });
       notify();
     },
   );
@@ -206,6 +259,7 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
       v.shrunkTo = grow ? undefined : target;
       v.scale = target;
       if (old && old !== bitmap) releaseImageSource(old);
+      enforceBudget(src);
       notify();
     },
     () => {
@@ -230,6 +284,7 @@ export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBit
     startLoad(src);
     return undefined;
   }
+  entry.readAt = ++reads;
   if (drawnAt && entry.vector) maybeReraster(src, entry, entry.vector, drawnAt);
   return entry.bitmap;
 }
@@ -283,4 +338,7 @@ export function _resetImageCacheForTests(): void {
   subscribers.clear();
   decodedVectors.clear();
   loader = defaultLoader;
+  budgetBytes = DEFAULT_BUDGET_BYTES;
+  reads = 0;
+  readsAtLastPass = 0;
 }

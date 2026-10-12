@@ -3,6 +3,7 @@ import { mat3 } from '@weasel-js/geom';
 import { getMesh } from './cache/cache';
 import type { EffectTargets } from './effects/EffectTargets';
 import { compositeProgramId } from './effects/composite';
+import { applyComposite, isOwnComposite } from './effects/compositeOp';
 import type { DrawContext } from './draw/drawContext';
 import { warnOnceUniform, drawShader } from './draw/customShader';
 import { returnToRenderTarget, drawFullscreenQuad } from './draw/effects';
@@ -85,7 +86,7 @@ function drawGroupWithEffects(
   // clip leaves the test on, and no pass target has that clip's bits.
   gl.disable(gl.BLEND);
   gl.disable(gl.STENCIL_TEST);
-  for (const effect of cmd.effects!) {
+  for (const effect of cmd.effects ?? []) {
     const program = ctx.ensureProgram?.(effect.program.id) ?? null;
     if (!program) {
       warnOnceUniform(effect.program.id, '(program)');
@@ -113,21 +114,29 @@ function drawGroupWithEffects(
   const composite = ctx.ensureProgram?.(compositeProgramId()) ?? null;
   if (composite) {
     applyClipTest(ctx);
+    const ownBlend = isOwnComposite(cmd.composite);
+    if (ownBlend) applyComposite(gl, cmd.composite!);
     drawFullscreenQuad(ctx, composite, front.texture, width, height, undefined, {
       alpha: composited.alpha,
       colorMatrix: composited.colorMatrix,
     });
+    if (ownBlend) applyComposite(gl, 'source-over');
   }
   targets.release(front);
 }
 
+/** Whether `cmd` draws into a buffer of its own before joining its parent. */
+function ownsSurface(cmd: GroupDrawCommand): boolean {
+  return cmd.isolate === true || isOwnComposite(cmd.composite)
+    || (cmd.effects !== undefined && cmd.effects.length > 0);
+}
+
 export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
-  // A group with effects is a render-target boundary rather than another
-  // accumulating frame. Without a renderer's buffer pool behind the context
+  // A group with effects, or an isolated one, is a render-target boundary
+  // rather than another accumulating frame. Without a renderer's buffer pool behind the context
   // there is nowhere to draw, so the effects are skipped and the children
   // paint straight through — a frame missing its blur, not a frame missing.
-  if (cmd.effects && cmd.effects.length > 0 && ctx.effectTargets
-      && ctx.deviceWidth && ctx.deviceHeight) {
+  if (ownsSurface(cmd) && ctx.effectTargets && ctx.deviceWidth && ctx.deviceHeight) {
     // The clip cuts the composite, so it goes on the parent's buffer, in the
     // group's own space.
     if (cmd.clip) {
@@ -164,6 +173,7 @@ export { mat3, getMesh };
 export type { DrawContext, ClipEntry, GlyphPaintKind } from './draw/drawContext';
 export { setUniform } from './draw/customShader';
 export { meshBatching, tryStageFill } from './draw/batch';
+export { colorFolding } from './draw/foldColor';
 export { flushBatch } from './draw/flushBatch';
 export { pushClip, popClip } from './draw/clip';
 export { OUTLINE_MIN_SCREEN_PX } from './draw/text';

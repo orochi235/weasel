@@ -351,9 +351,6 @@ export function CustomShaderDemo() {
           }
         />
       </div>
-      <small style={{ color: '#888' }}>
-        Custom shader API is <code>@experimental</code> — surface may shift before v1 stabilizes.
-      </small>
     </div>
   );
 }

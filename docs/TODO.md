@@ -286,21 +286,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
-  `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
-  still derives framing from document poses, so a node overridden outside the
-  document bounds paints outside the fitted frame. Deliberate — recomputing the
-  fit per frame would rescale the whole minimap through a drag or a settle, and
-  costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
-  framing that tracks a simulation.
-
-- **(P3) `GradientHandles` still draws its handles at a literal radius.**
-  `MeshHandles` sizes its corners and controls from `--wzl-handle-size-lg` and
-  `--wzl-handle-size`; `GradientHandles` keeps `HANDLE_RADIUS = 7`, so a ramp's
-  endpoints are 14px across while a mesh corner beside them is 10px. Moving it
-  onto the family is a visual call that wants a browser — it shrinks every
-  gradient handle.
-
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
@@ -318,20 +303,11 @@ Core five + Crop shipped. Remaining:
   `docs/proposals/2026-09-17-paint-kinds-beyond-svg.md` for what a richer kind
   writes inside that envelope.
 
-- **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three uses now exercise it (plasma / ripple / voronoi panels), which is enough to have validated the surface. Array uniforms take one flat value (`u_ripples: [x, y, t, …]`), and a re-registered source recompiles on each renderer's next frame. Left before stabilization: how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
-
 - **(P3) No marker icons.** `defaultNodeProperties`'s `markerStart` /
   `markerMid` / `markerEnd` leaves use a labelled `select`, where the sibling
   stroke enums (`cap`, `join`, `align`, `dash`) are icon toggles — authoring
   eight glyphs to this repo's icon standard is its own piece of work and was
   deferred out of the stroke-markers arc.
-
-- **(P3) Images: nothing calls `releaseImage`.**
-  `packages/renderer/src/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
-  `src` (a multi-megabyte `data:` URI for a pasted image) until `releaseImage(src)` is called, and
-  the kit never calls it. It needs an owner: the scene when the last node using a `src` passes the
-  undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
-  scene showing more than the bound would otherwise evict and reload on every paint.
 
 - **(P2) Renderer: a translucent `ImageBitmap` is multiplied by its alpha twice.** A
   half-transparent white bitmap drawn with an image command onto a cleared canvas reads back as
@@ -360,13 +336,6 @@ Core five + Crop shipped. Remaining:
   vertex stage receives (`u_view` on a shader command, `u_model` in a registered paint kind), which
   has no `u_origin` to rebase against. The first needs a per-path origin in `@weasel-js/geom`'s
   tessellation, the second the same rebase applied to the paint matrix.
-
-- **(P3) Layers: `LayerGroup.alpha` without `effects` fades each member, not the group.** Its doc
-  (`packages/core/src/core/layers/render.ts`) says the opacity applies "to the group's composited
-  result, not to each member", but `wrapGroup` emits a plain group command, whose alpha multiplies
-  into every child, so overlapping members show through each other. With `effects` set the group is
-  composited as one surface. Either route an alpha-only group through an isolated buffer or correct
-  the doc.
 
 ---
 
@@ -1529,9 +1498,8 @@ From the WebGL transition spec — all deferred:
 
 - **(P3) WebGPU backend.** Separate future spec.
 - **(P3) Worker-thread render offload.** Rendering the GL pipeline in a worker — major perf win, significant API complexity. Defer until measured pain on the single-thread pipeline. (Note: `OffscreenCanvas` is already used on the main thread for pattern-tile rasterization in `packages/core/src/features/patterns/` — that's not worker offload; the worker move is the open item.)
-- **(P3) Exotic composite operations** (xor, custom Porter-Duff) via framebuffer pingpong — deferred from v1 GL.
 - **(P3) Headless server-side rendering in Node.** The browser/worker headless path landed 2026-07-19 as `renderSceneToPixels` (`packages/core/src/canvas/renderSceneToPixels.ts`, public) — it accepts a caller-supplied `gl`, so it already works with an `OffscreenCanvas` in a worker. Remaining P3 scope is specifically Node: verify against a caller-supplied `gl` from `headless-gl` (untested there), or wire up a worker + `OffscreenCanvas` path for a Node-hosted consumer.
-- **(P3) Screen adoption of mipmap image minification** — `imageMinification: 'mipmap'` exists on `WeaselRenderer` but the screen path stays `'linear'`; evaluate upload-time `generateMipmap` cost before flipping the default (print already gets it).
+- **(P3) Screen adoption of mipmap image minification** — `imageMinification: 'auto'` on `WeaselRenderer` builds an image's mipmaps the first time a frame draws it at half size or smaller, so only an image that is drawn small pays for them. The screen path still builds its renderer with the default `'linear'` (`packages/core/src/canvas/canvasRenderer.ts`), and `<Canvas>` has no prop for it. Making `'auto'` the screen default changes the pixels of every minified image, so it needs the visual baselines regenerated and a look at a sprite sheet drawn small: trilinear filtering blends neighboring cells at the higher mip levels, which `'linear'` does not. The cost of `generateMipmap` on a large sheet is not measured. Never mipmap `GLTextureCache`; it holds MSDF atlases.
 - **(P3) Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
 
 (WebGL1 fallback explicitly rejected — WebGL2 only.)
@@ -1629,8 +1597,16 @@ one dead `const` and four stale disable directives.
 
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`),
     16 of it bind and draw; no other call in `flushBatch` moves it by more than
-    its noise, about 1.2 us. So what remains is the draw count: a color matrix,
-    synthetic bold, and an eighth texture all still break the run.
+    its noise, about 1.2 us. So what remains is the draw count: synthetic bold
+    and an eighth texture still break the run, and so does a color matrix
+    around an image or a gradient. A solid or a glyph under a color matrix no
+    longer does: its color is mapped on the CPU (`draw/foldColor.ts`), which
+    paints the same pixel as the shader in headless Chromium
+    (`colorMatrixFold.browser.test.ts`) and has not been timed. The specs that
+    break a run with a matrix on solid rects (`flush-anatomy`, `clip-cost`,
+    `flush-noise`) turn the mapping off through `colorFolding`, and have not
+    been run since that edit. An image under a diagonal matrix with no bias
+    could be mapped the same way and is not.
   - **A clip only the stencil can express still flushes on entry and exit**:
     a polygon, a rect turned off the axes, and a rect clip with a slanted item
     crossing it (`DrawBatch.clipQuad` says why a slanted edge cannot be cut).

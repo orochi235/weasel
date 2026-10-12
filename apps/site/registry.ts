@@ -400,7 +400,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'custom-shader',
     title: 'Custom shaders',
     category: 'Rendering & paint',
-    description: 'Three custom GLSL shader panels: plasma (animated sin/cos field that follows the cursor), ripple (click anywhere to spawn an expanding ring on a sampled image), and voronoi (drag the white seed points to reshape the cellular pattern). Each panel registers its program at module scope via `registerProgram()` and emits a `ShaderDrawCommand` over a panel-bound rect; the renderer compiles them via the `shaders` prop on SceneCanvas. Ripple and voronoi pass each array uniform as one flat list — `u_ripples: [x, y, t, x, y, t, …]` fills `uniform vec3 u_ripples[8]` from slot 0. Custom shader API is `@experimental`.',
+    description: 'Three custom GLSL shader panels: plasma (animated sin/cos field that follows the cursor), ripple (click anywhere to spawn an expanding ring on a sampled image), and voronoi (drag the white seed points to reshape the cellular pattern). Each panel registers its program at module scope via `registerProgram()` and emits a `ShaderDrawCommand` over a panel-bound rect; the `shaders` prop on SceneCanvas compiles them ahead of the first frame. Ripple and voronoi pass each array uniform as one flat list — `u_ripples: [x, y, t, x, y, t, …]` fills `uniform vec3 u_ripples[8]` from slot 0.',
     hint: 'plasma follows cursor · click ripple panel · drag voronoi seeds',
     load: () => import('./demos/CustomShaderDemo').then((m) => m.CustomShaderDemo),
     path: 'apps/site/demos/CustomShaderDemo.tsx',

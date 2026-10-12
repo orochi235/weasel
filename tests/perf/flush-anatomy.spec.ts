@@ -112,6 +112,12 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
       const { timeInterleaved } = await import(
         /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`
       );
+      // A solid's color matrix is mapped on the CPU and no longer breaks its
+      // run; this spec times the break, so it turns that off.
+      const { colorFolding } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/draw.ts`
+      );
+      colorFolding.enabled = false;
 
       const W = 800;
       const H = 600;
