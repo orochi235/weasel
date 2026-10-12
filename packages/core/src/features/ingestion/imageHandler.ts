@@ -15,8 +15,8 @@
  */
 import type { ContentHandlerEntry, IngestCtx } from './contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
+import { arrivalBounds } from './placement';
 
-const CASCADE_OFFSET_PX = 24;
 const VIEWPORT_FIT = 0.9;
 
 export type Measure = (file: File) => Promise<{ width: number; height: number }>;
@@ -80,22 +80,8 @@ export async function embedFilesAsImageNodes(
         (view.width * VIEWPORT_FIT) / natural.width,
         (view.height * VIEWPORT_FIT) / natural.height,
       );
-      const width = natural.width * scale;
-      const height = natural.height * scale;
-      const center = ctx.point ?? {
-        x: view.x + view.width / 2,
-        y: view.y + view.height / 2,
-      };
-      const offset = index * CASCADE_OFFSET_PX;
-      ctx.insert.commit(
-        {
-          x: center.x - width / 2 + offset,
-          y: center.y - height / 2 + offset,
-          width,
-          height,
-        },
-        { kind: 'image', src },
-      );
+      const size = { width: natural.width * scale, height: natural.height * scale };
+      ctx.insert.commit(arrivalBounds(ctx, size, index), { kind: 'image', src });
       index++;
     } catch (err) {
       console.warn(`weasel ingest: image "${file.name}" failed to load`, err);

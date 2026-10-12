@@ -32,6 +32,7 @@ import {
   __setSvgMeasureForTests,
   _resetSvgHandlerSeamsForTests,
 } from 'features/ingestion/svgHandler';
+import { createTextHandler } from 'features/ingestion/textHandler';
 import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
 
 type D = { image?: { src: string } };
@@ -97,6 +98,11 @@ function pngFile(name = 'pic.png'): File {
 const RESOLVE_SRC_INGESTION = { resolveSrc: async () => 'https://cdn/x.png' };
 const UNPACK_INGESTION = { svg: { unpack: unpackSvgFiles } };
 const CLIPBOARD_DISABLED_INGESTION = { clipboard: { enabled: false } };
+const TEXT_INGESTION = {
+  handlers: [createTextHandler({
+    measure: (t) => ({ width: Math.max(...t.split('\n').map((l) => l.length)) * 10, height: t.split('\n').length * 20 }),
+  })],
+};
 
 describe('SceneCanvas ingestion — handler registration lifecycle', () => {
   it('two mounted canvases share one refcounted kit:image handler', () => {
@@ -513,6 +519,35 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     await vi.waitFor(() => expect(scene.roots).toHaveLength(3));
     dropFile(canvas, pngFile());
     await vi.waitFor(() => expect(scene.roots).toHaveLength(4));
+  });
+
+  it('the text handler turns pasted plain text into a text node, and leaves node payloads and SVG alone', async () => {
+    const scene = makeScene();
+    render(
+      <SceneCanvas features={['ingest']} scene={scene} layers={{}} width={64} height={64}
+        ingestion={TEXT_INGESTION} />,
+    );
+    const textNodes = () => scene.roots.map((id) => scene.get(id)!)
+      .filter((n) => typeof (n.data as { text?: string }).text === 'string');
+
+    paste({ text: 'hello\nworld' });
+    await vi.waitFor(() => expect(textNodes()).toHaveLength(1));
+    expect((textNodes()[0].data as { text: string }).text).toBe('hello\nworld');
+    expect(textNodes()[0].pose).toMatchObject({ width: 50, height: 40 });
+
+    paste({ text: NODE_TEXT });
+    paste({ text: SVG_TEXT });
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(3));
+    await settle();
+    expect(textNodes()).toHaveLength(1);
+    expect(scene.roots).toHaveLength(3);
+  });
+
+  it('without the text handler, pasted plain text inserts nothing', async () => {
+    const { scene } = mount(['ingest']);
+    paste({ text: 'hello' });
+    await settle();
+    expect(scene.roots).toHaveLength(0);
   });
 
   it('ingest alone runs a registered consumer handler on a paste', async () => {

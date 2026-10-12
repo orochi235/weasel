@@ -95,9 +95,11 @@ export type {
 // `runIngest`, `getContentHandlers`, `kitImageHandler`, and the refcounted
 // kit-handler registration are deliberately NOT exported — consumers reach
 // the pipeline via `<SceneCanvas ingestion={…}>` and `SceneCanvasApi.ingest`.
+// `kitTextHandler` is exported because no canvas registers it by default.
 export {
   registerContentHandler,
   openFilePicker,
+  kitTextHandler,
 } from '../features/ingestion';
 export type {
   ContentHandlerEntry,

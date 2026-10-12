@@ -49,30 +49,18 @@ Priority tags:
   Remaining: check in a browser that it actually looks sharp at zoom — so far
   only jsdom has.
 
-- **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
-  `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste
-  gesture kinds (`DropSpec`/`PasteSpec`, MIME-glob `types`), dispatcher DOM
-  channels (drop/dragover/dragenter/paste + `weasel-dropover` class), ambient
-  `ingest` action, content-handler registry (`packages/core/src/features/ingestion/`,
-  refcounted kit-handler registration), kit `image/*` handler (data-URI embed
-  / `resolveSrc` override, fit-clamp, cascade), `openFilePicker`,
-  `SceneCanvasApi.ingest`, `<SceneCanvas ingestion={…}>`. Remaining:
-  (a) richer drag-over feedback (insertion ghost / per-handler accept cursor —
-  v1 is the class toggle); (b) SVG-file drop → shipped 2026-07-04, see the
-  SVG-file ingestion entry above; (c) kit `text/plain` handler → text-node
-  insert. Unblocked 2026-07-23: `text` is now a kit-native insert kind
-  (`useInsertDepSource` `case 'text'` mints `{ text }`, defaulting content to
-  `''` and reading `extras.text` when present). Remaining for the handler
-  itself: a dropped/pasted string has no drag rect, so the handler must choose
-  a **box size** — either measure the string (needs a text-measure context) or
-  default to a fixed box and let edit reflow it. Whether we even want
-  drop/paste-text-to-canvas is an open question.
-  Closed 2026-08-16: (d) `drop` and `paste` are route-grammar gesture names,
-  targetless, carrying the MIME-glob filter as their arg (`drop(image/*)`);
-  (e) paste now dispatches first and `preventDefault`s only on `'handled'`,
-  wheel's shape — clipboard items materialize synchronously, so unlike drop the
-  result is known while the default can still be suppressed, and a paste no
-  binding wanted stays the page's.
+- **(P3) External-content ingestion — follow-ups.** The pipeline is in
+  `packages/core/src/features/ingestion/` (its README is the map). Left:
+  (a) drag-over feedback. A canvas now accepts a drag only when a `drop` binding would take what
+  it carries, and shows `weasel-dropover` then. Still missing: asking the content handlers, so a
+  drag no handler would claim is refused, and an insertion ghost under the pointer. Both belong in
+  the `ingest` action (`interactions/actions/defaults/ingest.ts`), which gives prediction nothing
+  to ask yet.
+  (b) `kitTextHandler` turns pasted or dropped plain text into a text node sized to the string,
+  and is exported but registered nowhere: a canvas opts in with `ingestion={{ handlers:
+  [kitTextHandler] }}`. Whether `ingest` canvases should take text by default, and whether
+  weaseldraw should, is undecided. The node gets the default text style, since the `insert` dep's
+  `text` kind carries a string and nothing else.
 
 - **(P3) The image and SVG drop handlers could leave core.** `kitImageHandler`
   / `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed) and
