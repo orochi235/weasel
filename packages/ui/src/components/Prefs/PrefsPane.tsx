@@ -179,7 +179,7 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
         <div className={s.rows}>{paneChildren(ctx, Object.entries(inner.children), at, depth + 1)}</div>
       )), shown)}
       cells={(leaves) =>
-        leaves.flatMap(({ path: own, leaf, at }) => {
+        leaves.flatMap(({ path: own, leaf, at }): Array<{ path: string; content: ReactNode }> => {
           // An alias still here shows nothing, or is a renderer's to draw.
           const drawn = at === undefined ? shownLeaf(ctx, leaf) : { pref: leaf, at };
           // A wiring fault, shown where it sits as a row shows it.
