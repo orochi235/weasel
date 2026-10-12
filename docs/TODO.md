@@ -642,10 +642,8 @@ Core five + Crop shipped. Remaining:
      `canvas/MinimapCanvas.tsx` (needs a public home for `accentColorOf`); the image and SVG
      drop handlers (see the entry under Tools & gestures). Their exports leave `@weasel-js/core`.
 
-  `@weasel-js/simulation`, `@weasel-js/stroke`, and `@weasel-js/text-dom` have never been
-  published, and the release job
-  cannot create a package: `npm run check:first-publish` prints the commands to seed each by
-  hand. A release started before that stops halfway.
+  A package made by a later step has to be seeded on npm by hand before a release, since the
+  release job cannot create one: `npm run check:first-publish` names any that are missing.
 
   Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
   (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 3,
