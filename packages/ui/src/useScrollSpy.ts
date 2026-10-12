@@ -53,10 +53,10 @@ export interface ScrollSpy {
   scrollTo: (id: string) => void;
 }
 
-/** How long to keep a programmatic scroll's answer when `scrollend` never
- *  arrives — Safari and Firefox have not shipped it. Comfortably longer than a
- *  smooth scroll, short enough that a reader who then scrolls by hand is not
- *  left looking at a stale highlight. */
+/** How long the container has to sit still before a programmatic scroll counts
+ *  as over, for when `scrollend` never arrives — Safari and Firefox have not
+ *  shipped it. Counted from the last `scroll` event, not from the start: a
+ *  smooth scroll on a slow machine runs longer than any fixed allowance. */
 const SETTLE_MS = 700;
 
 /**
@@ -110,18 +110,25 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     if (!el) return;
     heldRef.current = id;
     setActive(id);
+    const settle = (): void => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(release, SETTLE_MS);
+    };
     const release = (): void => {
       heldRef.current = null;
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      timerRef.current = null;
       root.removeEventListener('scrollend', release);
+      root.removeEventListener('scroll', settle);
       measure();
     };
     // A scroll interrupted by the next one would otherwise leave its
-    // `scrollend` listener behind to fire against a later scroll.
+    // listeners behind to fire against a later scroll.
     releaseRef.current?.();
-    if (timerRef.current !== null) clearTimeout(timerRef.current);
     releaseRef.current = release;
-    timerRef.current = setTimeout(release, SETTLE_MS);
+    settle();
     root.addEventListener('scrollend', release);
+    root.addEventListener('scroll', settle, { passive: true });
     const top = el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop;
     root.scrollTo?.({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }, [rootRef, measure]);

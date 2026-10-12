@@ -224,6 +224,9 @@ export default defineConfig({
           // The default second is not enough on a fleet node running eight other projects: a smooth
           // scroll or a dialog's close outlasts it there, and a poll that is going to pass costs nothing.
           expect: { poll: { timeout: 5000 } },
+          // After every other project, not beside them: a browser test's clicks and screenshots
+          // stall when the node's cores are taken, and time out.
+          sequence: { groupOrder: 1 },
           exclude: ['**/node_modules/**', '**/dist/**'],
           css: true,
           browser: {
