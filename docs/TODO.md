@@ -1378,16 +1378,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
   changes what existing rail forms look like, which is why it is a decision.
 
-- **(P3) hud loupe: pixel mode keeps a stale picture when the scene changes under a parked aim.**
-  `createLoupe` (`packages/hud/src/loupe/createLoupe.ts`) re-reads the framebuffer only when the
-  aim, mode, factor, or window size changes (`scheduleRefresh` from `surface.changed` and
-  `onResize`). Park a pixel-mode loupe, then undo or nudge a node under it: vector mode follows,
-  pixel mode and `loupe.color` do not. `LoupeModel.resample()` exists for this and nothing in the
-  hud calls it. Refreshing on every landed frame would loop, since the new bitmap's own redraw lands
-  a frame, so it needs a scene-changed signal that the loupe's redraw does not raise (the painted
-  version from `CanvasExtensionApi.getPaintedVersion`, compared before and after the loupe's own
-  request, is one candidate), or a public `refresh()` on the handle that the consumer calls.
-
 - **(P2) LayerList: rows under a card are `role="row"` with no `treegrid` ancestor.** When a level
   holds any item with a body, `Level` in `packages/ui/src/components/LayerList/LayerList.tsx`
   renders it as a `PropertyList` with no role, and a nested level's container is `role="none"`, so
