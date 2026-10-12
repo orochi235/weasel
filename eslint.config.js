@@ -26,17 +26,17 @@ const CORE_ALIASES = (() => {
  * baseline block near the bottom carries rules that catch bugs.
  *
  * Deliberately off, and why — eslint-plugin-react-hooks v7's compiler rules,
- * evaluated one at a time on 2026-10-07:
- *   - `refs`: 387 reports across 103 files, because reading a ref during
+ * counted on 2026-10-12:
+ *   - `refs`: 408 reports across 83 files, because reading a ref during
  *     render is how a canvas library gets at mutable frame state. It cannot
  *     be narrowed to writes, so render-time ref writes are the local
  *     `weasel/no-render-ref-write` instead.
- *   - `immutability`: 52 reports, none a defect. A `useVisibleRaf` callback
+ *   - `immutability`: 51 reports in 37 files. A `useVisibleRaf` callback
  *     re-requesting its own loop reads as use-before-declare, and assigning to
  *     a forwarded ref, a mutable engine object or a DOM node reads as
  *     mutating a hook's value.
- *   - `preserve-manual-memoization`: reports where React Compiler would skip
- *     a component, and nothing here is compiled.
+ *   - `preserve-manual-memoization`: 16 reports in 9 files, of where React
+ *     Compiler would skip a component, and nothing here is compiled.
  */
 
 const languageOptions = {
@@ -241,6 +241,13 @@ export default [
       'react-hooks/use-memo': 'error',
       'react-hooks/globals': 'error',
       'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/set-state-in-render': 'error',
+      'react-hooks/purity': 'error',
+      'react-hooks/error-boundaries': 'error',
+      'react-hooks/component-hook-factories': 'error',
+      'react-hooks/void-use-memo': 'error',
+      'react-hooks/unsupported-syntax': 'error',
+      'react-hooks/incompatible-library': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',

@@ -1797,7 +1797,7 @@ From the WebGL transition spec — all deferred:
 
 A correctness baseline runs over `packages` and `apps` as of 2026-08-22, on
 top of the scoped `no-restricted-imports` blocks that were previously the whole
-config. Eleven rules, enumerated in `eslint.config.js` rather than spread from
+config. The rules are enumerated in `eslint.config.js` rather than spread from
 a plugin `recommended` so a dependency upgrade can't change what's enforced.
 `npm run lint` gates it in CI.
 
@@ -1811,17 +1811,24 @@ was hiding an assertion that read `.space` without narrowing.
 Deferred, with the rationale in `eslint.config.js` next to each:
 
 - **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
-  `static-components`, `use-memo`, `globals` (outside tests) and
-  `set-state-in-effect` are on; each effect that sets state legitimately says
-  why in its disable comment. The rest:
-  - `refs` — 387 reports; reading a ref during render is how a canvas library
-    reaches frame state, and there is no writes-only mode
+  Every compiler rule with no reports is on, as is `set-state-in-effect`, where
+  each effect that sets state legitimately says why in its disable comment.
+  Three are off, counted on 2026-10-12:
+  - `refs` — 408 reports in 83 files; reading a ref during render is how a
+    canvas library reaches frame state, and there is no writes-only mode
     (`weasel/no-render-ref-write` covers writes).
-  - `immutability` — 52 reports, none a defect: `useVisibleRaf` loops
-    re-requesting themselves, and writes to forwarded refs, DOM nodes and
-    mutable engine objects.
-  - `preserve-manual-memoization` — reports where React Compiler would bail,
-    and nothing here is compiled.
+  - `immutability` — 51 reports in 37 files, 26 of them in tests that assign to
+    a prop or an outer variable from inside a probe component. The rest are
+    `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
+    refs, DOM nodes, and mutable engine objects.
+  - `preserve-manual-memoization` — 16 reports in 9 files, of a `useMemo` or
+    `useCallback` whose listed dependencies differ from the ones the compiler
+    infers. Nothing here is compiled, but a mismatch is also where a stale
+    closure would hide, so each wants reading: `SceneCanvas.tsx` (4),
+    forge's `useStoryRegistry.ts` (3), `StoryTrial.tsx` (2), and `FrameView.tsx`,
+    labkit's `Trial.tsx` (2) and `useTiledSurface.ts`, core's
+    `GestureDispatcherMounter.tsx`, ui's `useOutsideDrop.ts`, and the
+    `ForceGraphDemo`.
 
 `eqeqeq`, `@typescript-eslint/no-unused-vars` and
 `reportUnusedDisableDirectives` are all on as of 2026-09-05. The counts that
