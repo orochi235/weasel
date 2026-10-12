@@ -1,4 +1,5 @@
-export { createScene, sceneFromJSON, sceneSelectionStore } from './scene';
+export { createScene, sceneFromJSON } from './scene';
+export { sceneSelectionStore } from './sceneSelection';
 export { useScene } from './useScene';
 export { asNodeId } from './types';
 export type {

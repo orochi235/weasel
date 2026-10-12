@@ -1,4 +1,4 @@
-import type { HistorySelection, Journal } from '@weasel-js/history';
+import type { Journal } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { createHistory } from 'core/ops/createHistory';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
@@ -21,6 +21,7 @@ import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
 import { createNotifier } from './notifier';
 import { createEditMode } from './editMode';
+import { createSceneSelection } from './sceneSelection';
 import { createAppliedLog } from './appliedLog';
 import { createStaleReplay, SceneMembershipError } from './staleReplay';
 import { statedFields } from './statedFields';
@@ -127,14 +128,12 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   // Accessor for the adapter restored external ops apply against.
   let historyAdapterAccessor: (() => unknown) | null = null;
 
-  /** The transient set of active ids. Deliberately not part of `state`:
-   *  selection is not document content and never reaches `toJSON`. It is
-   *  handed to the history engine so entries can restore it. */
-  let selection: readonly NodeId[] = [];
+  const selection = createSceneSelection(reachable);
+  // A selection change is a scene change to every subscriber.
+  selection.subscribe(notify);
 
-  /** Ephemeral per-node overrides. Deliberately not part of `state`, for the
-   *  same reason `selection` isn't: not document content, never reaches
-   *  `toJSON`, and never touches history. */
+  /** Ephemeral per-node overrides. Deliberately not part of `state`: not
+   *  document content, never reaches `toJSON`, and never touches history. */
   const overrides = createPoseOverrides<TPose>(
     (id) => state.nodes.get(id),
     invalidateDependents,
@@ -143,10 +142,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   // The scene's undo/redo engine. Recorded ops are `makeOp` wrappers that
   // close over their payloads, so the engine's adapter argument is unused.
   const history = createHistory(undefined, {
-    selection: {
-      get: () => selection,
-      set: (ids) => { selection = reachable(ids as readonly NodeId[]); notify(); },
-    },
+    selection: { get: selection.get, set: (ids) => selection.set(ids as readonly NodeId[]) },
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
     // Restore-time rebuild. A null return, when the global registry also
@@ -208,8 +204,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   const { atomically, logApplied } = createAppliedLog({
     registered,
     lifted: withLocksLifted,
-    getSelection: () => selection,
-    setSelection: (ids) => { selection = ids; },
+    getSelection: selection.get,
+    setSelection: selection.replace,
     notify,
   });
 
@@ -221,8 +217,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     rebuildLayerIndex,
     invalidateOrder,
     fnFields,
-    // A new array only when one is dropped: readers compare the selection by identity.
-    narrowSelection: (gone) => { selection = reachable(selection.some((id) => gone?.has(id)) ? selection.filter((id) => !gone?.has(id)) : selection); },
+    narrowSelection: selection.narrow,
   });
 
   // ── Op execution (used by both kit mutations and consumer recordOp) ────
@@ -656,12 +651,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
     overrides,
 
-    getSelection: () => selection,
-
-    setSelection(ids) {
-      selection = reachable([...ids]);
-      notify();
-    },
+    getSelection: selection.get,
+    setSelection: (ids) => selection.set([...ids]),
 
     history: sceneHistory,
 
@@ -675,7 +666,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       // Captured at open, not at recordEntry: by the time the batch closes
       // the selection has already moved to wherever the batch put it.
       const outermost = !mode.open();
-      if (outermost) currentBatch = { label, ops: [], selectionBefore: selection };
+      if (outermost) currentBatch = { label, ops: [], selectionBefore: selection.get() };
       const ownsArrivals = outermost && openArrivals(true);
       return notifier.deferred(() => mode.during('batch', () => {
         if (!outermost) return fn();
@@ -752,7 +743,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       history.clear();
       // Rebuild nodes (bypass the log, exactly like construction).
       applyConstructionSpecs(specs);
-      selection = selection.filter((id) => state.nodes.has(id));
+      selection.replace(selection.get().filter((id) => state.nodes.has(id)));
       notify();
     },
 
@@ -802,20 +793,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   }
 
   return scene;
-}
-
-/** The scene's selection in the shape `createHistory` wants, for a consumer
- *  building a second History over the same scene (a modality machine, a
- *  journal owner) that should restore selection the way the scene's own
- *  history does. */
-export function sceneSelectionStore(scene: {
-  getSelection(): readonly NodeId[];
-  setSelection(ids: readonly NodeId[]): void;
-}): HistorySelection {
-  return {
-    get: () => scene.getSelection(),
-    set: (ids) => scene.setSelection(ids as readonly NodeId[]),
-  };
 }
 
 /** Reconstruct a Scene from a JSON snapshot produced by `scene.toJSON()`.
