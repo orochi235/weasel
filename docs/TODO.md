@@ -169,11 +169,6 @@ Priority tags:
   them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
   from `PointerState`, or carry the client point through `InvocationCtx`.
 
-- **(P3) `useDragHandle`: a drag canceled while the button is still down, then released over its
-  source row, delivers a click to the row.** The click guard is removed on cancel so it cannot eat a
-  later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
-  the pointer session to say which.
-
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` now treats a `contextmenu` that arrives while a touch or pen hold is in
   progress as that hold's long-press: it fires the pending one early, or is dropped if the
