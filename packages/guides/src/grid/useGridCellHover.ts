@@ -18,8 +18,8 @@ import {
   useLatest,
   screenToWorld,
   type ViewTransform,
-  type UnitSystem,
-  type UnitValue,
+  type PlaneUnits,
+  type PlaneValue,
 } from '@weasel-js/core';
 import { pointToGridCell } from '../strategies/grid';
 
@@ -32,9 +32,9 @@ export interface UseGridCellHoverOptions {
   view: () => ViewTransform;
   /** Cell spacing in world units. Same value you pass to `createGridLayer`
    *  and `createCellHighlightLayer`. */
-  spacing: UnitValue;
+  spacing: PlaneValue;
   /** Required if `spacing` is tagged (e.g. `{ value: 1, unit: 'ft' }`). */
-  unitSystem?: UnitSystem;
+  unitSystem?: PlaneUnits;
   /** Origin the cell grid is anchored to, in world units. Default `(0, 0)`. */
   origin?: { x: number; y: number };
   /** Fires when the hovered cell changes (including to/from `null`). Use it

@@ -472,7 +472,9 @@ writes in the same undo entry as the change.
 siblings live on drag and calls `commitDrop` on release. The contract is
 in `packages/core/src/layout/types.ts`; the strategies are in `@weasel-js/guides`:
 `freeform` (absolute positioning), `tileGrid` (row/column grid), `snapPoint`
-(named anchor positions), under `packages/guides/src/layout/strategies/`.
+(named anchor positions), `slots` (a sequence along a row, grid, or ring),
+`pack` (shelves of mixed sizes), and `quadtree` (cells quartered to fit),
+under `packages/guides/src/layout/strategies/`.
 
 ### Selection
 

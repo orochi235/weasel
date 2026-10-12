@@ -203,7 +203,7 @@ const SPELLINGS: readonly (readonly string[])[] = [
   ['ft', "'", '′', '’'],
 ];
 
-function withSpellings(units: Readonly<UnitTable>): Readonly<UnitTable> {
+export function withSpellings(units: Readonly<UnitTable>): Readonly<UnitTable> {
   let out: UnitTable | undefined;
   for (const group of SPELLINGS) {
     const known = group.find((n) => units[n] !== undefined);

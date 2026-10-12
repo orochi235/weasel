@@ -697,15 +697,10 @@ intercepting the press that drags the body.
   making composition the scene's own. That leaves the offset itself, folded in by painting, picking,
   selection chrome, move, resize, and snapping with the rest of the frame, and a host that reads
   `contentExtent` and scrolls.
-- **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
-- **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
-- **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
 
 ### Units
 
-- **(P3) Per-subobject scale.** Today the unit system is global per consumer. Real apps want a child object (a sub-assembly in a CAD scene) to declare its own unit/scale, with conversion at the parent boundary. Likely lives on the parent/group node.
-- **(P3) Mixed-unit arithmetic** (`50% + 2ft`) — needs a context to resolve percentages against. Separate design problem.
-- **(P3) Per-axis units** — x and y carrying different units (timeline charts where x is time and y is value).
+- **(P3) Per-subobject scale: a container cannot declare its unit scope.** `@weasel-js/quantity` has the conversion (`UnitScope`, `resolveScoped`, `scopesOf`), but a scope is still something the consumer keeps beside the scene and hands to `scopesOf` through `scopeOf`. What is left is a `ContainerNode` field holding the scope, which belongs in `packages/core/src/core/scene/types.ts`, and the readers that would take it from there: the grid strategies and the property fields resolve against one `unitSystem` option today.
 
 ---
 
@@ -895,11 +890,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   booleans, outlines, edit-anchors, lasso-select) holds its options, geometry, and gesture
   adapter. One directory per action would hold both. `move` is done; the rest follow it.
 
-- **(P3) Range selection on the canvas.** `@weasel-js/select` ranges over an `order` the caller
-  supplies, and a canvas has none of its own, so core's `useSelection` never ranges and keeps no
-  anchor. The order could be z-order, tree order, or a layer panel's row order handed across;
-  which one is the open question, not the plumbing.
-
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
@@ -924,11 +914,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ToggleBar` overrides through descendant selectors, which `composes` handles
   badly, so decide the component question first.
 
-- **(P3) `@weasel-js/quantity` has no composites and no styling.** A value is one number, so a
-  range (`1/64–1/2`, which `BandEditor`'s bands would want to report) or a vector readout has no
-  display of its own yet; `Slider`'s thumbs still take bare numbers where `BandEditor`'s bands take
-  tagged ones; and nothing styles the `data-part` spans the HTML form emits, so `PropertyField`
-  still draws its suffix from its own `unit` prop.
+- **(P3) Nothing in `@weasel-js/ui` shows a quantity's composites or styles its parts.**
+  `presentRange` and `presentVector` exist, but no component calls them: `BandEditor` does not
+  report a band as a range. `Slider`'s thumbs still take bare numbers where `BandEditor`'s bands
+  take tagged ones; and nothing styles the `data-part` or `data-composite` spans the HTML form
+  emits, so `PropertyField` still draws its suffix from its own `unit` prop.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The

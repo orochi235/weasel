@@ -62,6 +62,7 @@ export interface SelectionApi {
    * Apply a click to the selection per the configured mode/extend key.
    * - `single`: replaces selection with `[id]`, regardless of modifiers.
    * - `multi`: with the extend key held, toggles `id` in/out of the selection;
+   *   with the range key held, selects from the last pressed id through `id`;
    *   otherwise replaces with `[id]`.
    */
   applyClick(id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): void;
