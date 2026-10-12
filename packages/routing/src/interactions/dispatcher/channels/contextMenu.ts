@@ -2,12 +2,19 @@
 import type { DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 
-export function contextMenuInput(core: DispatchCore): (e: MouseEvent) => void {
+/**
+ * `takeNativeHold` answers whether a touch or pen hold is in progress, firing
+ * its long-press if that is still pending. A browser that sends `contextmenu`
+ * for a hold (Android Chrome) is reporting the same hold the dispatcher times,
+ * so the event stands for the long-press and never dispatches a second menu.
+ */
+export function contextMenuInput(core: DispatchCore, takeNativeHold: () => boolean): (e: MouseEvent) => void {
   const { routeAt, toWorld, target, dispatch } = core;
 
   const onContextMenu = (e: MouseEvent) => {
     // Suppress native menu so tools/actions own the right-click UX.
     e.preventDefault();
+    if (takeNativeHold()) return;
     routeAt(null, e.clientX, e.clientY);
     const w = toWorld(e.clientX, e.clientY);
     // A secondary button never reaches `onPointerDown`, so unlike click and

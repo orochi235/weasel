@@ -132,6 +132,21 @@ function beginPointerDrag(
   };
 }
 
+/**
+ * Run `fn` once pointer `pointerId` is no longer held: a beat after its
+ * release, so a click that release brings is dispatched first, or at once when
+ * the pointer is canceled or pressed again.
+ */
+function afterRelease(doc: Document, pointerId: number, fn: () => void): void {
+  const on = (e: PointerEvent) => {
+    if (e.pointerId !== pointerId) return;
+    for (const type of ['pointerup', 'pointercancel', 'pointerdown'] as const) doc.removeEventListener(type, on, true);
+    if (e.type === 'pointerup') setTimeout(fn, 0);
+    else fn();
+  };
+  for (const type of ['pointerup', 'pointercancel', 'pointerdown'] as const) doc.addEventListener(type, on, true);
+}
+
 /** Options for `useDragHandle`; supply `createGhost` to override the default DOM-clone ghost. */
 export interface DragHandleOptions {
   createGhost?: (source: HTMLElement, payload: DragPayload) => HTMLElement;
@@ -155,6 +170,7 @@ export function useDragHandle(
     const target = e.currentTarget as HTMLElement;
     if (e.target instanceof HTMLElement && e.target.closest('input, button, select, textarea')) return;
     const start = { clientX: e.clientX, clientY: e.clientY };
+    const pointerId = e.pointerId;
     let ghost: GhostDrag | null = null;
     let past = false;
     let dropClickGuard: (() => void) | null = null;
@@ -186,7 +202,14 @@ export function useDragHandle(
         // dispatched before a timer runs.
         if (dropClickGuard) setTimeout(dropClickGuard, 0);
       },
-      onCancel: () => { live.current = null; ghost?.cancel(); dropClickGuard?.(); },
+      onCancel: (reason) => {
+        live.current = null;
+        ghost?.cancel();
+        if (!dropClickGuard) return;
+        // Only an abort leaves the button down, with a release still to come.
+        if (reason === 'aborted') afterRelease(target.ownerDocument, pointerId, dropClickGuard);
+        else dropClickGuard();
+      },
     }, { capture: false });
   }, [getPayload, optsRef]);
 

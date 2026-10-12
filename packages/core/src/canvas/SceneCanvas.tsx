@@ -1261,17 +1261,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const items: IngestItem[] = (input as (File | IngestItem)[]).map((entry) =>
         entry instanceof File ? itemsFromFiles([entry])[0] : entry,
       );
-      if (items.length === 0) return;
+      if (items.length === 0) return false;
       if (!actionsRegistryRef.current) {
         // The registry is stashed by a descendant effect — a consumer calling
         // ingest() from its own ref callback / layout effect lands here.
         dwarn('ingest', 'CanvasExtensionApi.ingest called before the action registry mounted — call ignored. Defer to an effect or event handler.');
-        return;
+        return false;
       }
-      actionsRegistryRef.current.trigger('ingest', {
-        items,
-        ...(point ? { worldX: point.x, worldY: point.y } : {}),
-      });
+      const params = { items, ...(point ? { worldX: point.x, worldY: point.y } : {}) };
+      const ran = actionsRegistryRef.current.trigger('ingest', params);
+      if (!ran) dwarn('ingest', 'CanvasExtensionApi.ingest ran nothing: this canvas has no `ingest` action. Add `ingest` to `features`.');
+      return ran;
     },
     [],
   );

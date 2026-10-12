@@ -27,73 +27,23 @@ Priority tags:
   not chosen yet. That leaves choosing it, then renaming the one path, its imports, and the section
   of the taxonomy.
 
-- **(P3) A canvas without `ingest` is still a drop target.** `SceneCanvas` attaches the
-  dispatcher's drop listeners whatever `features` says, so an OS drag over a bare or `edit`-only
-  canvas shows the copy cursor and `weasel-dropover`, and the drop is swallowed with nothing
-  inserted. `DispatcherChannels.ingest` covers drop and paste together and would need splitting,
-  which also decides whether a consumer's own drop binding works without the preset. Beside it:
-  `SceneCanvasApi.ingest()` is a silent no-op without the `ingest` preset, because it triggers an
-  action that was never registered.
-
-- **(P3) `Widget.claims` is static.** A widget that is decoration in one mode
-  and interactive in another can't change what it consumes without being
-  swapped out. `claimsPointer` folded into `claims` on 2026-08-12, so this is
-  one field rather than two, but it is still a declaration read at hit-test
-  time. Fine while `rect` / `text` / `image` are unconditionally decorative;
-  revisit when a stateful-claims widget appears.
-
 - **(P3) apps/draw enters most modes by double-click only.** Path-edit's `Enter` is bound
   (`apps/draw/src/modality/shortcuts.ts`); the other modes with an `entry` shortcut, free-transform
   and crop, are not, since nothing says what target each would take from the selection. Draw also
   still enters every mode from `SceneCanvas`'s `onDoubleClick` observer rather than from
   `entry.trigger`, which nothing reads.
-- **(P3) A press on empty canvas can't be an ambient binding beside the select tool.**
-  `select.pick` binds `pointerDown` on empty space at active scope, and active
-  outranks ambient, so an ambient contribution's `pointerDown` never fires while
-  select is active. With no base tool it works: `CustomShaderDemo` spawns its
-  ripple from an ambient binding on a bare canvas.
-
-- **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
-  content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
-  ahead of `kit:image`, behind consumer handlers) matching `image/svg+xml`
-  plus `.svg`-extension sniff for empty-MIME files. Default keeps a dropped
-  SVG as **one embedded-image node** (`data:image/svg+xml` URI, bytes
-  verbatim; measured via an `Image` element since `createImageBitmap`
-  rejects SVG blobs, 300×150 fallback for no-intrinsic-size files).
-  `ingestion={{ svg: { unpack: unpackSvgFiles } }}` parses to native scene nodes
-  instead (`@weasel-js/svg`'s `unpack.ts`: kit-painter-native path/text leaves under
-  containers mirroring `<g>` structure, multi-root files wrapped in one
-  container, pose-only fit-clamp + drop-point placement, one undoable
-  batch per file). weaseldraw runs with `unpack` on, and its file-menu import
-  and export carry `<image>` as an image object. An embedded SVG
-  re-rasterizes at its drawn size (see `renderer/images/README.md`).
-  Remaining: check in a browser that it actually looks sharp at zoom — so far
-  only jsdom has.
-
-- **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
-  `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`): drop/paste
-  gesture kinds (`DropSpec`/`PasteSpec`, MIME-glob `types`), dispatcher DOM
-  channels (drop/dragover/dragenter/paste + `weasel-dropover` class), ambient
-  `ingest` action, content-handler registry (`packages/core/src/features/ingestion/`,
-  refcounted kit-handler registration), kit `image/*` handler (data-URI embed
-  / `resolveSrc` override, fit-clamp, cascade), `openFilePicker`,
-  `SceneCanvasApi.ingest`, `<SceneCanvas ingestion={…}>`. Remaining:
-  (a) richer drag-over feedback (insertion ghost / per-handler accept cursor —
-  v1 is the class toggle); (b) SVG-file drop → shipped 2026-07-04, see the
-  SVG-file ingestion entry above; (c) kit `text/plain` handler → text-node
-  insert. Unblocked 2026-07-23: `text` is now a kit-native insert kind
-  (`useInsertDepSource` `case 'text'` mints `{ text }`, defaulting content to
-  `''` and reading `extras.text` when present). Remaining for the handler
-  itself: a dropped/pasted string has no drag rect, so the handler must choose
-  a **box size** — either measure the string (needs a text-measure context) or
-  default to a fixed box and let edit reflow it. Whether we even want
-  drop/paste-text-to-canvas is an open question.
-  Closed 2026-08-16: (d) `drop` and `paste` are route-grammar gesture names,
-  targetless, carrying the MIME-glob filter as their arg (`drop(image/*)`);
-  (e) paste now dispatches first and `preventDefault`s only on `'handled'`,
-  wheel's shape — clipboard items materialize synchronously, so unlike drop the
-  result is known while the default can still be suppressed, and a paste no
-  binding wanted stays the page's.
+- **(P3) External-content ingestion — follow-ups.** The pipeline is in
+  `packages/core/src/features/ingestion/` (its README is the map). Left:
+  (a) drag-over feedback. A canvas now accepts a drag only when a `drop` binding would take what
+  it carries, and shows `weasel-dropover` then. Still missing: asking the content handlers, so a
+  drag no handler would claim is refused, and an insertion ghost under the pointer. Both belong in
+  the `ingest` action (`interactions/actions/defaults/ingest.ts`), which gives prediction nothing
+  to ask yet.
+  (b) `kitTextHandler` turns pasted or dropped plain text into a text node sized to the string,
+  and is exported but registered nowhere: a canvas opts in with `ingestion={{ handlers:
+  [kitTextHandler] }}`. Whether `ingest` canvases should take text by default, and whether
+  weaseldraw should, is undecided. The node gets the default text style, since the `insert` dep's
+  `text` kind carries a string and nothing else.
 
 - **(P3) The image and SVG drop handlers could leave core.** `kitImageHandler`
   / `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed) and
@@ -169,19 +119,13 @@ Priority tags:
   them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
   from `PointerState`, or carry the client point through `InvocationCtx`.
 
-- **(P3) `useDragHandle`: a drag canceled while the button is still down, then released over its
-  source row, delivers a click to the row.** The click guard is removed on cancel so it cannot eat a
-  later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
-  the pointer session to say which.
-
-- **(P3) Long-press: a browser that sends its own `contextmenu` on a touch hold may fire the menu
-  twice.** `useGestureDispatcher`
-  (`packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx`) synthesizes `longpress`
-  after 500 ms and falls back to dispatching `contextmenu`; its `onContextMenu` listener also
-  dispatches `contextmenu` for the native event. Android Chrome sends a native `contextmenu` on a
-  touch hold, so a `contextMenu` binding could run from both. Not reproduced: it needs a real touch
-  device, since jsdom sends no native event. If real, drop the native event while a touch pointer
-  whose long-press fired is still held.
+- **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
+  `useGestureDispatcher` now treats a `contextmenu` that arrives while a touch or pen hold is in
+  progress as that hold's long-press: it fires the pending one early, or is dropped if the
+  long-press already ran, so a `contextMenu` binding runs once. Tested in jsdom with a hand-sent
+  event (`useGestureDispatcher.nativeLongPress.test.tsx`). Left: hold a finger on a canvas with a
+  `contextMenu` binding in Android Chrome and confirm one menu, and that the event really arrives
+  while the pointer is still held rather than after a `pointercancel`.
 
 - **(P3) AltGr matching is unchecked in a real browser.** A key typed with AltGr now matches a
   binding for its character: the keyboard channel

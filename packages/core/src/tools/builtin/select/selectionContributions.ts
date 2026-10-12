@@ -198,6 +198,10 @@ export const AREA_SELECT_ID = 'selection.areaSelect';
  *  handle and the outer half of a resize handle sit off the body. */
 export const onEmptyCanvas = hitPredicate((hit, body) => hit == null && body === 'empty');
 
+/** A press on a node, off chrome. With no `classifyTarget` wired there is no
+ *  body class to read, and every press off chrome passes. */
+export const onBody = hitPredicate((hit, body) => hit == null && body !== 'empty');
+
 /** An always-live entry that marquee-selects on a drag across empty canvas,
  *  under any tool that does not claim the drag itself. No preset installs it:
  *  the select tool already marquees, and a canvas that wants it under every

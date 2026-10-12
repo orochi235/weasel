@@ -127,7 +127,7 @@
     "longestFunction": 124
   },
   "packages/core/src/tools/builtin/select/useSelectTool.ts": {
-    "lines": 426,
+    "lines": 423,
     "longestFunction": 276
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
@@ -193,7 +193,7 @@
     "longestFunction": 128
   },
   "packages/gestures/src/ui/match.ts": {
-    "lines": 489,
+    "lines": 466,
     "longestFunction": 132
   },
   "packages/guides/src/layout/strategies/tileGrid.ts": {
@@ -315,8 +315,8 @@
     "longestFunction": 923
   },
   "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx": {
-    "lines": 1178,
-    "longestFunction": 1038
+    "lines": 1156,
+    "longestFunction": 1031
   },
   "packages/simulation/src/useSimulation.ts": {
     "longestFunction": 130

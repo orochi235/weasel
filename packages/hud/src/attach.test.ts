@@ -298,6 +298,36 @@ describe('attachHud claims', () => {
     expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
   });
 
+  it('reads a widget’s claims at each hit-test, so a getter can change them', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    let interactive = false;
+    hud.add(widgetAt('under'));
+    hud.add({
+      ...widgetAt('modal'),
+      get claims(): readonly ClaimableGesture[] { return interactive ? ['pointer'] : []; },
+    });
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
+    interactive = true;
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('modal');
+    expect(hitAt(api)?.claimedKinds).toEqual(['pointer']);
+  });
+
+  it('a kit rect stops the walk once setClaims gives it something to consume', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('under'));
+    const scrim = hud.rect({ id: 'scrim', x: 0, y: 0, w: 50, h: 50, fill: '#000' });
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
+    scrim.setClaims(['pointer', 'wheel']);
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('scrim');
+    expect(hitAt(api)?.claimedKinds).toEqual(['pointer', 'wheel']);
+    scrim.setClaims([]);
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
+  });
+
   it('the hit walk stops at an interior that passes, claiming nothing', () => {
     const hud = createHud();
     const api = makeApi();

@@ -1,4 +1,5 @@
 import { createRevision } from '../widget';
+import type { ClaimableGesture } from '@weasel-js/core';
 import type { Widget, HudDrawCtx, HudPointerEvent, WidgetBounds } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import type { RectPath } from '@weasel-js/core';
@@ -15,6 +16,9 @@ export interface RectOptions {
    *  injects this so mutations trigger `requestRedraw`. Direct callers of
    *  `createRect` may set it themselves or omit it (no auto-redraw). */
   onChange?: () => void;
+  /** Gestures this widget consumes. Default `[]`: decoration, which a press
+   *  falls through. Listing some makes it a scrim over what lies beneath. */
+  claims?: readonly ClaimableGesture[];
   /** Injected by Hud factories. Called from dispose() to remove this widget
    *  from its HUD's list. No-op for bare-factory consumers. */
   removeFromHud?: () => void;
@@ -25,6 +29,8 @@ export interface RectOptions {
 export interface RectWidget extends Widget {
   setBounds(b: WidgetBounds): void;
   setHidden(hidden: boolean): void;
+  /** Replace the gestures this widget consumes; `[]` returns it to decoration. */
+  setClaims(claims: readonly ClaimableGesture[]): void;
   setFill(color: string): void;
   dispose(): void;
 }
@@ -37,6 +43,7 @@ export function createRect(opts: RectOptions): RectWidget {
   const rev = createRevision(opts.onChange);
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
   let hidden = false;
+  let claims = opts.claims ?? [];
   let fill = opts.fill;
 
   const assertNotDisposed = () => {
@@ -66,7 +73,8 @@ export function createRect(opts: RectOptions): RectWidget {
       if (hidden) return false;
       return px >= bounds.x && px < bounds.x + bounds.w && py >= bounds.y && py < bounds.y + bounds.h;
     },
-    claims: [],
+    get claims() { return claims; },
+    setClaims(c) { assertNotDisposed(); claims = c; rev.changed(); },
     onPointer(_evt: HudPointerEvent): void {},
     dispose() {
       if (disposed) return;

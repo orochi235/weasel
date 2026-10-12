@@ -27,6 +27,7 @@ the same `IngestItem`. Handlers never branch on where content came from.
 | `kitWeaselJsonHandler` | The kit's own clipboard format — full-fidelity node round-trip. |
 | `kitSvgHandler` | SVG files and SVG text (`sniffSvgText` catches markup pasted as a string). |
 | `kitImageHandler` | Raster images. |
+| `kitTextHandler` | Plain text, as a text node sized to the string. Not registered by default: pass it in `ingestion.handlers`. |
 
 Registration order matters: the kit's JSON handler is what makes an internal
 copy/paste preserve everything rather than degrading to an image, so it must get
@@ -47,11 +48,5 @@ several times, and the last unmount cleans up.
 | `contentHandlers.ts` | Registry, `runIngest`, `IngestCtx`. |
 | `openFilePicker.ts` | Programmatic file picker → the same `IngestItem[]`. |
 | `registerKitHandlers.ts` | Refcounted default registration. |
-| `*Handler.ts` | The three built-in handlers above. |
-
-## Known gap
-
-`drop` and `paste` shipped without route-grammar gesture names, so bindings of
-those kinds are invisible to the Bundle Inspector's route tables (they're
-skipped in `SPEC_KIND_TO_GESTURE`). Tracked in `docs/TODO.md` under ingestion
-residuals.
+| `placement.ts` | Where arriving content lands: on the point or the viewport center, cascading. |
+| `*Handler.ts` | The built-in handlers above. |

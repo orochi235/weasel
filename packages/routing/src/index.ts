@@ -163,7 +163,7 @@ export type { KeyBinding } from './interactions/keyHelpers';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
-  INGEST_STRING_MIMES, itemsFromFiles, itemsFromDataTransfer, itemsFromClipboardData,
+  INGEST_STRING_MIMES, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';

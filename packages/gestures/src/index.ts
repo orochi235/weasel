@@ -106,7 +106,8 @@ export type {
 export { hitPredicate, bodyPredicate } from './ui/spec';
 
 // Pure matcher functions
-export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, mimeMatchesGlob, matchIngestTypes, parseTargetSpec } from './ui/match';
+export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, parseTargetSpec } from './ui/match';
+export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
 export { isApplePlatform } from './ui/platform';
 
