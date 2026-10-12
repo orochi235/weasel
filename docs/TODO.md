@@ -740,7 +740,6 @@ intercepting the press that drags the body.
   making composition the scene's own. That leaves the offset itself, folded in by painting, picking,
   selection chrome, move, resize, and snapping with the rest of the frame, and a host that reads
   `contentExtent` and scrolls.
-- **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 
 ### Units
 
