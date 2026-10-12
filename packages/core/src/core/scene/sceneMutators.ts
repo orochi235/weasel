@@ -11,7 +11,7 @@
 import type { LayoutStrategy } from '../../layout/types';
 import { documentPose } from './effectivePose';
 import { fnFieldsOfNode } from './nodeFnFields';
-import { pickability } from './pickability';
+import { statedFields } from './statedFields';
 import { asNodeId, type Node, type Scene } from './types';
 
 export interface SceneMutators<TData, TLayer extends string, TPose> {
@@ -70,7 +70,7 @@ export function sceneMutators<TData, TLayer extends string, TPose>(
         // Derivation travels with the node, or undo of a delete brings an
         // edge back as a static path that never follows its endpoints again.
         ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
-        ...pickability(node),
+        ...statedFields(node),
         ...fnFieldsOfNode(node),
       });
     },

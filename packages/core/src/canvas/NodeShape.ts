@@ -72,9 +72,9 @@ export interface NodePaintCtx {
    *  view when absent. Lets a painter size resolution-dependent work, such as
    *  re-rasterizing an SVG image; one that has no such work ignores it. */
   pixelScale?: number;
-  /** The node's derived path, resolved by the scene-aware `drawOne` wrapper
-   *  before painting: `paint` has no scene handle, and deriving needs the
-   *  dependencies' poses. **Absent** for a node that derives from nothing —
+  /** The node's derived path, resolved before painting by the `drawOne`
+   *  wrapper of whichever scene or adapter is drawn: `paint` has no handle on
+   *  either, and deriving needs the dependencies' poses. **Absent** for a node that derives from nothing —
    *  the wrapper hands such a node the caller's own ctx untouched. `null`
    *  means the node derives but has nothing to draw. */
   derivedPath?: Path | null;

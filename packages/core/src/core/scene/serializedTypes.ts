@@ -1,3 +1,4 @@
+import type { UnitScope } from '@weasel-js/quantity';
 import type { SystemLayerSpec } from './types';
 
 /** One layer as it appears in a snapshot. A snapshot written before layer
@@ -46,4 +47,6 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   derivePoseKey?: string;
   /** Registry key for the container's layout strategy. Omitted when it has none. */
   layoutKey?: string;
+  /** Mirrors `ContainerNode.units`. Omitted when the container declares none. */
+  units?: UnitScope;
 }

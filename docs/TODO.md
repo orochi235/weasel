@@ -198,13 +198,6 @@ have shipped. What remains:
   That leaves dropping both style writes, checking every host for a layout that depends on them, and
   taking the caveat back out of the docs.
 
-- **(P3) Scene layer list: `<Canvas>` learns of a layer change by polling at paint.**
-  `useSceneLayerList` (`packages/core/src/canvas/useSceneLayerList.ts`) re-reads
-  `adapter.getLayers()` on every paint and queues a render when the ids differ, because the adapter
-  contract has no layer-list subscription. That costs one skipped frame per change. If
-  `CanvasAdapter` gains a layer-list version or subscription, key the layer memo on that and drop
-  the poll.
-
 ---
 
 ## Paths & booleans
@@ -429,32 +422,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
-- **(P2) Scene history: an entry that names a node removed by an untracked edit can never be
-  undone.** `scene.add(n)`, `scene.setPose(n, p)`, then `scene.untracked(() => scene.remove(n))`,
-  which is what `reconcileSpecs` does when outside data drops a node
-  (`packages/core/src/core/scene/reconcileSpecs.ts`, called from
-  `packages/diagram/src/DiagramView.tsx`). `scene.undo()` throws `Scene: unknown node id "n"` and
-  the entry stays on top of the undo stack, so every later undo throws the same way and the entries
-  beneath it are unreachable. The stacks and the scene stay consistent; the stack is just stuck.
-  Options: have an untracked removal drop or neutralize the entries that touch the removed ids; have
-  kit ops whose target is gone report `'noop'` on replay instead of throwing (the policy restored
-  external ops already follow in `bindOpToHistoryAdapter`); or have `reconcileSpecs` clear history
-  when it removes a node. The second option alone does not cover a gesture's entry: a live external
-  op (`createTransformOp` bound by `bindOpToAdapter`) replays through `adapter.setPose` into
-  `scene.setPose`, which throws in `requireNode` before any kit op runs (read from the code, not
-  run). Nor does it cover the reverse case, an id that an untracked edit re-added: undoing an older
-  `kit:remove` of that id overwrites the live node and attaches it a second time.
-
-- **(P3) Scene: the selection keeps ids of nodes a removal took.** After `scene.setSelection([z])`
-  and `scene.remove(z)`, `scene.getSelection()` still returns `['z']`, so every reader guards
-  `scene.get(id)`. `kit:remove`'s apply in `packages/core/src/core/scene/scene.ts` could filter the
-  selection the way `kit:setLayerLocked` does, but `reconcileSpecs` replaces a node by removing and
-  re-adding its id, and filtering there would deselect a node the user sees as unchanged. The call
-  is whether selection is a set of ids (stale ids are the reader's problem) or a set of live nodes
-  (then a replace has to carry the selection across). `loadState` already drops ids the snapshot
-  does not hold, but `setSelection` keeps an id no node has (`reachable` filters on locks only, and
-  `scene.selection.test.ts` selects ids it never added), so today it is a set of ids.
-
 - **(P3) `packages/core/src/core/scene/scene.ts` is still 1,100 lines.** The jobs that closed over
   their own state are out, each in a module beside it: `nodeStore`, `kitOps`, `layerStack`,
   `arrivalWindow`, `lockGuard`, `appliedLog`, `historyFacade`, `renderOrder`, and `serialization`.
@@ -500,24 +467,6 @@ intercepting the press that drags the body.
   `{ pose?, alpha? }`. Decide whether overrides grow a `data` field or the two
   channels stay split by what they carry rather than by who writes them.
 
-- **(P3) A derived node is unpickable through a bare adapter.** The
-  scene-backed half of this landed: `NodeShapeEntry.silhouette` takes a `NodeSilhouetteCtx`
-  carrying `derivedPath`, `kit:derived` reports it plus its `ink`, and
-  `PickSource.derivedPathOf` / `buildSceneTree`'s optional argument resolve it
-  where a scene is in scope. What is left is the other side of that split:
-  `adapterPickSource` and `Canvas`'s bare-adapter render path cannot derive —
-  it needs the dependencies' poses — so a derived node there still answers from
-  its own placeholder pose. Closing it means giving the adapter surface a
-  dependency read, which is a bigger decision than picking.
-
-- **(P3) A derived path's pull covers poses only.** `resolveDerivedPath`
-  value-compares its dependencies' poses on a memo hit, so a moved dependency
-  re-routes with nothing pushed behind it. But a derivation is handed
-  `DerivedDep`, so it can read a dependency's `data` and its `layer` too, and
-  those still ride on the scene's pushed invalidation on `kit:setData` and
-  `kit:setLayer`. Widening the pull to those means deciding what a derivation
-  is allowed to read, not just how a pose is compared.
-
 ### `useScene` follow-ups
 
 - **(P3) Scene layout: what the first cut left.** A container declares its layout
@@ -556,7 +505,7 @@ intercepting the press that drags the body.
 
 ### Units
 
-- **(P3) Per-subobject scale: a container cannot declare its unit scope.** `@weasel-js/quantity` has the conversion (`UnitScope`, `resolveScoped`, `scopesOf`), but a scope is still something the consumer keeps beside the scene and hands to `scopesOf` through `scopeOf`. What is left is a `ContainerNode` field holding the scope, which belongs in `packages/core/src/core/scene/types.ts`, and the readers that would take it from there: the grid strategies and the property fields resolve against one `unitSystem` option today.
+- **(P3) Per-subobject scale: nothing in the kit reads a container's unit scope yet.** A container declares one (`ContainerNode.units`, set at `scene.add` or by `scene.setUnits`, kept through undo, snapshots, copy, and paste), and `sceneUnitScopes(scene, id, root)` answers the chain `resolveScoped` and `formatScoped` take. What is left is the readers. `gridSnapStrategy`, `createGridLayer`, `createCellHighlightLayer`, and `useGridCellHover` in `packages/guides` resolve their spacing against one `unitSystem` option, and a snap strategy is handed a gesture context with an adapter but no scene, so the adapter needs a scope read before a grid inside a millimeter sub-assembly can snap in millimeters. A property field's unit is built from one unit system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it, so whether a scoped container's children are also stored in its units is undecided.
 
 ---
 

@@ -80,10 +80,9 @@ export function buildSceneTree<
    *  ancestor clips) and only this layer's group is returned. Used to render
    *  scene layers as separate, individually-orderable canvas slots. */
   forLayer?: string,
-  /** The path a container computes from its dependencies' poses. Only a
-   *  scene-backed caller can answer — deriving needs the dependencies' poses —
-   *  so the bare-adapter path omits it and a derived container contributes no
-   *  clip there, exactly as before. */
+  /** The path a container computes from its dependencies' poses: the scene's
+   *  lookup, or `adapterDerivedPathOf` for an adapter with no scene. Left out,
+   *  a derived container contributes no clip. */
   derivedPathOf?: (node: TNode, pose: TPose) => Path | null,
   /** True for a node whose paint cannot be seen — see `paintMissesView`. Its
    *  painter is not called; its clip and its children are walked as usual. */

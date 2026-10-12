@@ -18,6 +18,9 @@ export interface SceneHistoryEnv {
   /** Run a step that applies ops through an engine: all-or-nothing, with
    *  scene-side recording suppressed. */
   applying(step: () => void): void;
+  /** An op as the stack should hold it: one whose replay skips a node an
+   *  untracked edit took. */
+  tolerant(op: Op): Op;
   /** Run a step that replays recorded ops: an undo, a redo, a cancel. */
   replay(step: () => void): void;
   notify(): void;
@@ -45,7 +48,7 @@ export function createSceneHistory(env: SceneHistoryEnv): History {
       forkedAtEntryId: raw.forkedAtEntryId,
       applyBatch(ops, label) {
         runArrivalEdit(ops, (all) => {
-          env.applying(() => raw.applyBatch(all, label));
+          env.applying(() => raw.applyBatch(all.map(env.tolerant), label));
           notify();
         });
       },
@@ -86,8 +89,8 @@ export function createSceneHistory(env: SceneHistoryEnv): History {
       refuseUntracked('history.apply');
       runArrivalEdit([op], (all) => {
         const run = () => (all.length === 1
-          ? history.apply(op, label)
-          : history.applyOps(all, label ?? op.label ?? ''));
+          ? history.apply(env.tolerant(op), label)
+          : history.applyOps(all.map(env.tolerant), label ?? op.label ?? ''));
         env.applying(run);
         notify();
       });
@@ -95,7 +98,7 @@ export function createSceneHistory(env: SceneHistoryEnv): History {
     applyOps(ops, label) {
       refuseUntracked('history.applyOps');
       runArrivalEdit(ops, (all) => {
-        env.applying(() => history.applyOps(all, label));
+        env.applying(() => history.applyOps(all.map(env.tolerant), label));
         notify();
       });
     },
