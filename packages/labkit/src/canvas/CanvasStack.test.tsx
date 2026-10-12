@@ -108,8 +108,8 @@ describe('<CanvasStack>', () => {
 });
 
 describe('<CanvasStack> backing size', () => {
-  // jsdom has no `matchMedia`, so the stand-in below is what fires; that a real display
-  // change fires the query is the browser's to prove.
+  // jsdom has no `matchMedia`, so the stand-in below is what fires; `Lab.density.browser.test`
+  // has a real one.
   it('resizes its canvases when the dpr changes and the box did not', () => {
     const rect = { left: 0, top: 0, width: 200, height: 100, right: 200, bottom: 100 };
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(

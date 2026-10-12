@@ -1276,12 +1276,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   reader. `LabContextValue.trials` is public, so splitting it out (a separate context, or a selector
   hook over the store, with the commands in a value that does not change) is an API decision.
 
-- **(P3) labkit canvases: a device-pixel-ratio change is tested only against a stand-in.**
-  `useTiledSurface` and `CanvasStack` now re-measure through core's `watchDevicePixelRatio`, and
-  their tests fire a stubbed `matchMedia`, which jsdom lacks. Unverified: that the shared buffer and
-  the layer canvases take the new backing size in a real browser when the ratio changes with no
-  resize. Wants a browser test that emulates the change (`Emulation.setDeviceMetricsOverride`).
-
 - **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
   them.** A trial builds its annotation store once from `record.annotations`
   (`packages/labkit/src/trial/Trial.tsx`, "One store for the trial's lifetime") and never reads the
