@@ -1581,7 +1581,7 @@ only story runner in the repo.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
-  no Marks section and the tool rail holds only Info. The removed wiring — the
+  no Marks section and no tool rail. The removed wiring — the
   story as the one annotation target, sized and captured through the trial's
   frame registry — is in `git log --grep 'take marks out of forge'`.
 
