@@ -3,7 +3,7 @@
  * each section of them as its `as` says.
  */
 import { useContext, type ReactNode } from 'react';
-import { isPrefLeaf, pairRowsOf, prefSectionLeaves, type PrefObject } from '@weasel-js/prefs';
+import { isPrefLeaf, pairRuns, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { objectRows, type ObjectLeafParts } from '../Prefs/objectRows';
 import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { renderCells, type LeafCell } from './cells';
@@ -12,6 +12,30 @@ import { objectFieldRows } from './objectFieldRows';
 import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
 import { PanelMarksContext, PanelTabs } from './selection';
 import s from './SelectionPanel.module.css';
+
+/** The paired row of each field that shares one, by the field's full path, which is what a `pair` names. Fields
+ *  are neighbors within one run of them: a section between two ends it. */
+function fieldPairs(
+  children: PrefObject['children'], base: string, out = new Map<string, { key: string; label: string }>(),
+): Map<string, { key: string; label: string }> {
+  let run: Array<readonly [string, PrefLeaf]> = [];
+  const flush = (): void => {
+    for (const { items, pair } of pairRuns(run, (field) => field)) {
+      if (pair) for (const [path] of items) out.set(path, pair);
+    }
+    run = [];
+  };
+  for (const [key, child] of Object.entries(children)) {
+    if (isPrefLeaf(child)) {
+      run.push([`${base}.${key}`, child]);
+    } else {
+      flush();
+      fieldPairs(child.members, base, out);
+    }
+  }
+  flush();
+  return out;
+}
 
 /**
  * Renders an object leaf: the object's own fields, as rows. A child's edit
@@ -40,11 +64,7 @@ export function ObjectLeaf({
   // own heading would stack onto the first one and name nothing new.
   const allGrouped = Object.values(pref.children).every((child) => !isPrefLeaf(child));
 
-  // Every field's full path, so a `pair` resolves against the paths the
-  // fields are written at.
-  const pairs = pairRowsOf(
-    prefSectionLeaves(pref.children).map(([key, leaf]) => [`${ctx.path}.${key}`, leaf] as const),
-  );
+  const pairs = fieldPairs(pref.children, ctx.path);
   const owner: ObjectFieldOwner = { ctx, held, eachObject, pairs, renderers, selectionKey };
 
   const parts: ObjectLeafParts<LeafCell> = {

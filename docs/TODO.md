@@ -1327,15 +1327,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   labkit, and `PrefsPane` has no emptiness check. Home: a pure "children as runs" helper in
   `@weasel-js/prefs` (leaf, tab run, or group with its resolved `as`) that all five walk.
 
-- **(P3) Merging `pair`ed leaves into one row is written three times.** `pairRows` in
-  `SelectionPanel/model.ts`, `rowsOf` in `SelectionPanel/renderLeaf.tsx`, and `rowsFor` in labkit's
-  `ControlPanel.tsx`. `pairRows` drops `pair` from a row left with one leaf; the other two keep it,
-  so a lone paired leaf is labeled by the pair and loses its own name. `effectiveSections` filters
-  leaves after pairing and does not re-run that drop, so a multi-kind selection whose intersection
-  keeps half of a pair draws a row labeled for the pair holding one field, and a lone `toggle`
-  boolean there becomes a one-segment flag bar. Home: `pairRowsOf` in `@weasel-js/prefs` returning
-  the rows, not only the lookup map.
-
 - **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns, and gets a unit's
   step wrong.** `packages/labkit/examples/schema-lab/prefsToFields.ts` converts `min` and `max` with
   the unit's `toDisplay` and passes `step` through unconverted, so a leaf stored in radians and
