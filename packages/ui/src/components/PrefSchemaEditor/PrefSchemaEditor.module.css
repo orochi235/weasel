@@ -51,7 +51,7 @@
 .asideHandle { grid-column: 6; grid-row: 2 / -1; }
 /* The tree reads at the size of the fields in the pane beside it. */
 .treeArea, .storedArea, .shelfPane { min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); }
-.treeArea { flex: 1; }
+.treeArea { flex: 1; --wzl-tree-leaf-indent: var(--wzl-space-2); }
 /* A group's glyph folds it, and says it is open. */
 :is(.treeArea, .storedArea, .shelfPane) [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }
 /* Padded all the time, so the outline a drop draws inside its edge has room and nothing moves when it appears. */
