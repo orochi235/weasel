@@ -2,6 +2,7 @@
 import { clientToCanvasRect } from '../../../viewport/clientToCanvas';
 import type { DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
+import { underPointer } from '../underPointer';
 
 export function wheelInput(core: DispatchCore, pinchLive: () => boolean): (e: WheelEvent) => void {
   const { canvas, routeAt, toWorld, target, dispatch } = core;
@@ -25,21 +26,13 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): (e: Wh
       ? clientToCanvasRect(rect, e.clientX, e.clientY)
       : [e.clientX, e.clientY];
     const hitPoint = toWorld(e.clientX, e.clientY);
-    const affordance = target().affordanceAt?.(hitPoint) ?? undefined;
-    const body = target().classifyTarget?.(hitPoint);
     const ev: InputEvent = {
       kind: 'wheel',
-      altKey: e.altKey,
-      ctrlKey: e.ctrlKey,
-      metaKey: e.metaKey,
-      shiftKey: e.shiftKey,
       deltaX: e.deltaX,
       deltaY: e.deltaY,
       clientX: localX,
       clientY: localY,
-      ...(affordance !== undefined ? { affordance } : {}),
-      ...(body?.body !== undefined ? { bodyTarget: body.body } : {}),
-      ...(body?.kind !== undefined ? { bodyKind: body.kind } : {}),
+      ...underPointer(target(), e, hitPoint),
     };
     const result = dispatch(ev);
     // A claimed wheel neither scrolls the page nor reaches the canvas's other listeners

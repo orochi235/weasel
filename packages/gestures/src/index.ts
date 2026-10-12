@@ -93,6 +93,7 @@ export type {
   DropEvent,
   PasteEvent,
 } from './ui/inputEvent';
+export { stylusOf } from './ui/stylus';
 
 // GestureSpec union + sub-types + ModSpec + TargetSpec + PhaseSpec
 export type {

@@ -45,6 +45,7 @@ import type { InputEvent, BindingScope, MatchResult, ScopedBinding } from './mat
 import { matchSortedWithBarred, specificity } from './matcher';
 import type { DispatchRecord, WalkStep } from './dispatchRecord';
 import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
+import { stylusOf } from '@weasel-js/gestures';
 import { buildDispatchRecord } from './buildDispatchRecord';
 import { DEV, recordTrace } from './dispatchTrace';
 import { carriedBy, immediateParams, worldPointOf } from './inputFacts';
@@ -383,13 +384,7 @@ export function createDispatcher(opts?: {
       // every vertex rather than the press point alone.
       const pts = dragPoints.get(gestureId);
       if (pts) {
-        pts.push({
-          x: event.x,
-          y: event.y,
-          ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
-          ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
-          ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
-        });
+        pts.push({ x: event.x, y: event.y, ...stylusOf(event) });
       }
       if (handle.onMove) {
         const moveCtx = buildInvocationCtx(event, {}, gestureId);
@@ -502,13 +497,7 @@ export function createDispatcher(opts?: {
           ...(event.clientY !== undefined ? { clientY: event.clientY } : {}),
         });
         // Initialize empty drag-points history for the new gesture.
-        dragPoints.set(gestureId, [{
-          x: event.x ?? 0,
-          y: event.y ?? 0,
-          ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
-          ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
-          ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
-        }]);
+        dragPoints.set(gestureId, [{ x: event.x ?? 0, y: event.y ?? 0, ...stylusOf(event) }]);
       }
       // Record start spread for pinch-zoom gestures.
       if (event.kind === 'multitouch' && event.spread !== undefined) {

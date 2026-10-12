@@ -11,13 +11,13 @@ import { isTool } from '../../tools/types';
 import {
   createDispatcher, pointerGestureId, publishLiveDispatch, type Dispatcher, type DispatcherContext,
 } from './dispatcher';
-import { isApplePlatform, isInControlWithin, pastDragThreshold } from '@weasel-js/gestures';
+import { isApplePlatform, isInControlWithin, pastDragThreshold, stylusOf } from '@weasel-js/gestures';
 import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import type { InputEvent } from './matcher';
 import { LONG_PRESS_MS } from './longPressState';
 import { underPointer, type UnderPointer } from './underPointer';
-import { longPressEvents, type PressFacts } from './pressFacts';
+import { clickEvents, longPressEvents, type PressFacts } from './pressFacts';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { resolveCursorTier } from '@weasel-js/cursor';
 import { createDispatchCore } from './dispatchCore';
@@ -31,20 +31,6 @@ import { wheelInput } from './channels/wheel';
 export type {
   DispatcherChannels, DispatcherViewTarget, UseGestureDispatcherOptions, ViewIdResolver,
 } from './gestureDispatcherOptions';
-
-/**
- * The stylus fields of a DOM `PointerEvent`, as a spread-able partial so a
- * synthetic event that carries none of them stays free of `undefined`-valued keys.
- */
-function stylusOf(e: PointerEvent): {
-  pressure?: number; tiltX?: number; tiltY?: number;
-} {
-  return {
-    ...(typeof e.pressure === 'number' ? { pressure: e.pressure } : {}),
-    ...(typeof e.tiltX === 'number' ? { tiltX: e.tiltX } : {}),
-    ...(typeof e.tiltY === 'number' ? { tiltY: e.tiltY } : {}),
-  };
-}
 
 const IS_MAC = isApplePlatform();
 
@@ -355,10 +341,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       routeDown(e.pointerId, e.clientX, e.clientY);
 
       const w = toWorld(e.clientX, e.clientY);
-      const affordance = target().affordanceAt?.(w) ?? undefined;
-      const body = target().classifyTarget?.(w);
-      const bodyTarget = body?.body;
-      const bodyKind = body?.kind;
+      const where = underPointer(target(), e, w);
       const ev: InputEvent = {
         kind: 'pointerdown',
         target: e.target,
@@ -367,14 +350,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         y: w.y,
         clientX: e.clientX,
         clientY: e.clientY,
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
         ...stylusOf(e),
-        ...(affordance !== undefined ? { affordance } : {}),
-        ...(bodyTarget !== undefined ? { bodyTarget } : {}),
-        ...(bodyKind !== undefined ? { bodyKind } : {}),
+        ...where,
       };
       // The session owns the rest of this pointer: capture, the moves, the
       // release, and recovery from a release that never arrives. A press on a
@@ -397,13 +374,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           clientY: e.clientY,
           worldX: w.x,
           worldY: w.y,
-          affordance,
-          bodyTarget,
-          bodyKind,
-          altKey: e.altKey,
-          ctrlKey: e.ctrlKey,
-          metaKey: e.metaKey,
-          shiftKey: e.shiftKey,
+          ...where,
         },
       });
 
@@ -789,24 +760,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // canvas and releasing synthesizes a click.
       if (!hadDragInFlight && staysUnderThreshold && down) {
         const wClick = toWorld(e.clientX, e.clientY);
-        const clickEv: InputEvent = {
-          kind: 'click',
-          target: e.target,
-          altKey: e.altKey,
-          ctrlKey: e.ctrlKey,
-          metaKey: e.metaKey,
-          shiftKey: e.shiftKey,
-          x: wClick.x,
-          y: wClick.y,
-          clientX: e.clientX,
-          clientY: e.clientY,
-          pressX: down.worldX,
-          pressY: down.worldY,
-          ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
-          ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
-          ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
-        };
-        dispatch(clickEv);
+        const evs = clickEvents(down, {
+          target: e.target, clientX: e.clientX, clientY: e.clientY, worldX: wClick.x, worldY: wClick.y,
+          altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+        });
+        dispatch(evs.click);
         onClickRef.current?.({ x: wClick.x, y: wClick.y });
 
         // A `doubleclick` follows the second click. The tracker resets after
@@ -816,25 +774,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         const dx = e.clientX - (prev?.clientX ?? 0);
         const dy = e.clientY - (prev?.clientY ?? 0);
         if (prev && now - prev.t < DOUBLE_CLICK_MAX_MS && Math.hypot(dx, dy) < DOUBLE_CLICK_MAX_PX) {
-          const dblEv: InputEvent = {
-            kind: 'doubleclick',
-            target: e.target,
-            altKey: e.altKey,
-            ctrlKey: e.ctrlKey,
-            metaKey: e.metaKey,
-            shiftKey: e.shiftKey,
-            x: wClick.x,
-            y: wClick.y,
-            clientX: e.clientX,
-            clientY: e.clientY,
-            ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
-            ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
-            ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
-          };
           // Notify observers first — see `onDoubleClick`'s doc for why this
           // is not modeled as a binding.
           onDoubleClickRef.current?.({ x: wClick.x, y: wClick.y });
-          const handled = dispatch(dblEv) === 'handled';
+          const handled = dispatch(evs.doubleclick) === 'handled';
           claimedDoubleClick = handled || onDoubleClickRef.current !== undefined;
           lastClickRef.current = null;
         } else {

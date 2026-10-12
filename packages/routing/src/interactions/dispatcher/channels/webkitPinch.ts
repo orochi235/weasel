@@ -2,6 +2,7 @@
 import { clientToCanvasRect } from '../../../viewport/clientToCanvas';
 import type { DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
+import { underPointer } from '../underPointer';
 
 export function webkitPinchInput(core: DispatchCore): {
   onGestureStart: (e: Event) => void;
@@ -39,21 +40,17 @@ export function webkitPinchInput(core: DispatchCore): {
     routeAt(null, cx, cy);
     const [localX, localY] = rect ? clientToCanvasRect(rect, cx, cy) : [cx, cy];
     const hitPoint = toWorld(cx, cy);
-    const affordance = target().affordanceAt?.(hitPoint) ?? undefined;
-    const body = target().classifyTarget?.(hitPoint);
+    const mods = {
+      altKey: g.altKey === true, ctrlKey: g.ctrlKey === true,
+      metaKey: g.metaKey === true, shiftKey: g.shiftKey === true,
+    };
     return {
       kind: 'pinch',
-      altKey: g.altKey === true,
-      ctrlKey: g.ctrlKey === true,
-      metaKey: g.metaKey === true,
-      shiftKey: g.shiftKey === true,
       scale,
       rotation,
       clientX: localX,
       clientY: localY,
-      ...(affordance !== undefined ? { affordance } : {}),
-      ...(body?.body !== undefined ? { bodyTarget: body.body } : {}),
-      ...(body?.kind !== undefined ? { bodyKind: body.kind } : {}),
+      ...underPointer(target(), mods, hitPoint),
     };
   };
 
