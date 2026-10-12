@@ -83,7 +83,7 @@ describe('drawBooleansAdapter on an op that keeps its pieces apart', () => {
     scene.setSelection([asNodeId('a'), asNodeId('b')]);
     const result = applyBooleanOp(adapter, 'crop');
     const [id] = result.kind === 'applied' ? result.resultIds : [];
-    expect(scene.get(asNodeId(id!))?.data.fill).toEqual({ color: '#f00' });
+    expect(scene.get(asNodeId(id!))?.data.fill).toEqual({ paint: { color: '#f00' } });
   });
 });
 
@@ -95,7 +95,7 @@ describe('drawBooleansAdapter result data', () => {
     scene.setSelection([asNodeId('b'), asNodeId('a')]);
     const result = applyBooleanOp(adapter, 'union');
     const [id] = result.kind === 'applied' ? result.resultIds : [];
-    expect(scene.get(asNodeId(id!))!.data).toMatchObject({ label: 'over', fill: { color: '#f00' } });
+    expect(scene.get(asNodeId(id!))!.data).toMatchObject({ label: 'over', fill: { paint: { color: '#f00' } } });
   });
 
   it('keeps the label when the topmost source\'s stroke became the result\'s shape', () => {
@@ -107,7 +107,7 @@ describe('drawBooleansAdapter result data', () => {
     const result = applyBooleanOp(adapter, 'union', { strokes: 'unfilled' });
     const [id] = result.kind === 'applied' ? result.resultIds : [];
     const { data } = scene.get(asNodeId(id!))!;
-    expect(data).toMatchObject({ label: 'ring', fill: { color: '#f00' } });
+    expect(data).toMatchObject({ label: 'ring', fill: { paint: { color: '#f00' } } });
     expect(data.stroke).toBeUndefined();
   });
 });

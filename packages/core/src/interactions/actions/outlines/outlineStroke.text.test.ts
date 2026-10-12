@@ -47,7 +47,7 @@ describe('applyOutlineStroke on text', () => {
     const h = harness({ data: { text: 'I', style, fill: { paint: BLUE }, stroke: { paint: RED, width: 6 } }, pose });
     const result = applyOutlineStroke(h.adapter);
     expect(result.kind).toBe('applied');
-    expect(h.made.map((m) => m.paint)).toEqual([{ fill: BLUE }, { fill: RED }]);
+    expect(h.made.map((m) => m.paint)).toEqual([{ fill: { paint: BLUE } }, { fill: { paint: RED } }]);
     const [glyphs, stroke] = h.made.map((m) => boundsOfPath(m.path));
     expect(stroke!.width).toBeCloseTo(glyphs!.width + 6, 1);
   });
@@ -55,7 +55,7 @@ describe('applyOutlineStroke on text', () => {
   it('gives unfilled stroked text its stroke alone', () => {
     const h = harness({ data: { text: 'I', style, fill: null, stroke: { paint: RED, width: 6 } }, pose });
     applyOutlineStroke(h.adapter);
-    expect(h.made.map((m) => m.paint)).toEqual([{ fill: RED }]);
+    expect(h.made.map((m) => m.paint)).toEqual([{ fill: { paint: RED } }]);
   });
 
   it('keeps the glyphs of an unstroked run beside a stroked one', () => {
@@ -64,7 +64,7 @@ describe('applyOutlineStroke on text', () => {
       pose,
     });
     applyOutlineStroke(h.adapter);
-    expect(h.made.map((m) => m.paint)).toEqual([{ fill: BLUE }, { fill: RED }, { fill: BLUE }]);
+    expect(h.made.map((m) => m.paint)).toEqual([{ fill: { paint: BLUE } }, { fill: { paint: RED } }, { fill: { paint: BLUE } }]);
   });
 
   it('leaves text with no stroke alone', () => {

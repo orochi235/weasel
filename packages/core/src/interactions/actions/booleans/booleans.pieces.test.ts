@@ -58,7 +58,7 @@ describe('applyBooleanOp: the source each piece stands in for', () => {
       { id: 'mask', path: rect(0, 0, 100, 100), paint: { fill: { paint: BLUE } } },
     ]);
     applyBooleanOp(h.adapter, 'crop', { strokes: 'unfilled' });
-    expect(h.made).toEqual([{ source: 'line', paint: { fill: RED } }]);
+    expect(h.made).toEqual([{ source: 'line', paint: { fill: { paint: RED } } }]);
   });
 });
 

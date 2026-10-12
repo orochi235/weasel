@@ -41,7 +41,7 @@ describe('previewBooleanOp', () => {
       { id: 'line', path: pathFromD('M-20 50 L120 50'), paint: { fill: null, stroke: { paint: RED, width: 10 } } },
     ]);
     const preview = previewBooleanOp(h.adapter, 'intersect', { strokes: 'unfilled' });
-    expect(preview.kind === 'pieces' && preview.pieces.map((p) => p.paint)).toEqual([{ fill: RED }]);
+    expect(preview.kind === 'pieces' && preview.pieces.map((p) => p.paint)).toEqual([{ fill: { paint: RED } }]);
   });
 
   it('answers what applying would, where there is nothing to make', () => {

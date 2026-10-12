@@ -1765,7 +1765,7 @@ describe('drawText — decoration reaches the GPU', () => {
       ],
       children: [{
         kind: 'text', x: 0, y: 0,
-        runs: [decoratedRun({ underline: true, fill: { kind: 'solid', color: '#ff0000' } })],
+        runs: [decoratedRun({ underline: true, fill: { paint: { kind: 'solid', color: '#ff0000' } } })],
         maxWidth: Infinity, align: 'left', style: {},
       }],
     } as DrawCommand);

@@ -38,7 +38,7 @@ describe('drawOutlinesAdapter', () => {
     });
     const result = applyOutlineStroke(adapter);
     const [made] = result.kind === 'applied' ? result.resultIds : [];
-    expect(dataOf(scene, made!)).toMatchObject({ label: 'Frame', fill: strokeOf('#00f', 2).paint });
+    expect(dataOf(scene, made!)).toMatchObject({ label: 'Frame', fill: { paint: strokeOf('#00f', 2).paint } });
     expect(dataOf(scene, made!).stroke).toBeUndefined();
   });
 });

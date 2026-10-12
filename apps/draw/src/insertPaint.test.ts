@@ -41,6 +41,6 @@ describe('activeInsertPaint', () => {
     let fill = RED;
     const paint = activeInsertPaint(() => ({ fill, stroke: NONE }), () => 'nonzero');
     fill = BLUE;
-    expect(paint('rect', 2).fill).toBe(BLUE);
+    expect(paint('rect', 2).fill?.paint).toBe(BLUE);
   });
 });

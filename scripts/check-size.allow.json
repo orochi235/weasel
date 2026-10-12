@@ -47,7 +47,7 @@
     "longestFunction": 224
   },
   "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
-    "longestFunction": 139
+    "longestFunction": 134
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 827
@@ -102,7 +102,7 @@
     "longestFunction": 140
   },
   "packages/core/src/features/selection/overlay.ts": {
-    "lines": 796
+    "lines": 795
   },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
     "longestFunction": 167
@@ -340,7 +340,7 @@
     "lines": 498
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 875,
+    "lines": 826,
     "longestFunction": 422
   },
   "packages/text/src/layout/layoutRuns.ts": {
@@ -402,7 +402,7 @@
     "longestFunction": 196
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
-    "longestFunction": 149
+    "longestFunction": 139
   },
   "packages/ui/src/components/Plot2D/Plot2D.tsx": {
     "longestFunction": 221

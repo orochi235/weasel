@@ -1,4 +1,4 @@
-import { prefUnit, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
+import { prefUnit, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefLeaf, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';
@@ -104,6 +104,22 @@ function markerLeaf(leaf: Omit<PrefEnum, 'kind' | 'options' | 'default' | 'contr
   };
 }
 
+/** `data.fill` is a whole `Fill`, so it is an object leaf, as the stroke is.
+ *  Its field is a `paint` leaf, not a `color` one, because a color control
+ *  would read `undefined` off a gradient and write a bare string over it.
+ *  `block` for the same reason every stroke field is: the kind bar and the
+ *  per-kind editor want the width a 64px label column takes. */
+const FILL_LEAF: PrefLeaf = {
+  kind: 'object',
+  name: 'Fill',
+  description: 'Fill paint.',
+  default: { paint: { kind: 'solid', color: '#000000ff' } },
+  block: true,
+  children: {
+    paint: { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
+  },
+};
+
 /** Build the standard shape schema — Layout (pose box + rotation) +
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
  *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
@@ -143,22 +159,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
         // reader is looking at.
         name: '',
         members: {
-          // An object leaf, as the stroke is: `data.fill` is a whole `Fill`.
-          // Its field is a `paint` leaf, not a `color` one, because a color
-          // control would read `undefined` off a gradient and write a bare
-          // string over it. `block` for the same reason every stroke field
-          // is: the kind bar and the per-kind editor want the width a 64px
-          // label column takes.
-          'data.fill': {
-            kind: 'object',
-            name: 'Fill',
-            description: 'Fill paint.',
-            default: { paint: { kind: 'solid', color: '#000000ff' } },
-            block: true,
-            children: {
-              paint: { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
-            },
-          },
+          'data.fill': FILL_LEAF,
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.

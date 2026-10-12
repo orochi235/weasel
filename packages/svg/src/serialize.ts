@@ -7,9 +7,7 @@
 
 import { escapeAttr, escapeText } from './xmlEscape';
 import type { FontRequest, Stroke, StrokeAlign } from '@weasel-js/core';
-import {
-  isSolidPaint, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
-} from '@weasel-js/core';
+import { isSolidPaint, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
 import type {
   NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
@@ -496,9 +494,8 @@ function textXml(
   // no installed base exists to compat against.
   if (node.fill !== undefined) {
     const paint = node.fill?.paint;
-    if (!paint) {
-      attrs.push('fill="none"');
-    } else {
+    if (!paint) attrs.push('fill="none"');
+    else {
       attrs.push(`fill="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`);
       attrs.push(...opacityAttr('fill-opacity', paint.opacity));
     }

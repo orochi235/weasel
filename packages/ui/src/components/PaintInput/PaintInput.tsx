@@ -56,6 +56,38 @@ function kindOf(paint: Paint | null | undefined): PaintKind | null {
   return paint.kind ?? 'solid';
 }
 
+function segment(id: string, label: string, icon: string | undefined): ToggleBarItem<PaintKind> {
+  return isIconName(icon)
+    // Icon-only: six labeled segments do not fit a property row, and the
+    // full label stays the accessible name.
+    // 14 to match the panel's other glyph segments. A `sm` bar is 17px tall
+    // over 1px of padding, so 15 fills the segment box edge to edge.
+    ? { value: id, label: <Icon name={icon} size={14} />, ariaLabel: label }
+    : { value: id, label };
+}
+
+/** The entry that seeds each segment of the kind bar: one segment per family,
+ *  seeded by its first member; a kind without a family is its own segment. */
+function firstOfSegment(entries: readonly PaintKindEntry[]): Map<string, PaintKindEntry> {
+  const firstOf = new Map<string, PaintKindEntry>();
+  for (const entry of entries) {
+    const id = entry.family?.id ?? entry.id;
+    if (!firstOf.has(id)) firstOf.set(id, entry);
+  }
+  return firstOf;
+}
+
+function segmentItems(
+  firstOf: ReadonlyMap<string, PaintKindEntry>, allowNone: boolean,
+): readonly ToggleBarItem<PaintKind>[] {
+  return [
+    ...(allowNone ? [segment(NONE, 'None', 'paintNone')] : []),
+    ...[...firstOf].map(([id, entry]) => segment(
+      id, entry.family?.label ?? entry.label, entry.family ? entry.family.icon : entry.icon,
+    )),
+  ];
+}
+
 /** Props for {@link PaintInput}. `onInput` fires throughout a gesture and
  *  `onChange` once at its end. */
 export interface PaintInputProps {
@@ -123,28 +155,8 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   const ownKind = kindOf(value);
   const active = mixed || ownKind === null ? null : valueKind?.family?.id ?? ownKind;
   if (value != null && active !== null) remembered.set(active, value);
-  const segment = (id: string, label: string, icon: string | undefined): ToggleBarItem<PaintKind> =>
-    isIconName(icon)
-      // Icon-only: six labelled segments do not fit a property row, and the
-      // full label stays the accessible name.
-      // 14 to match the panel's other glyph segments. A `sm` bar is 17px tall
-      // over 1px of padding, so 15 fills the segment box edge to edge.
-      ? { value: id, label: <Icon name={icon} size={14} />, ariaLabel: label }
-      : { value: id, label };
-
-  // One segment per family, seeded by its first member; a kind without a
-  // family is its own segment.
-  const firstOf = new Map<string, PaintKindEntry>();
-  for (const entry of entries) {
-    const id = entry.family?.id ?? entry.id;
-    if (!firstOf.has(id)) firstOf.set(id, entry);
-  }
-  const items: readonly ToggleBarItem<PaintKind>[] = [
-    ...(allowNone ? [segment(NONE, 'None', 'paintNone')] : []),
-    ...[...firstOf].map(([id, entry]) => segment(
-      id, entry.family?.label ?? entry.label, entry.family ? entry.family.icon : entry.icon,
-    )),
-  ];
+  const firstOf = firstOfSegment(entries);
+  const items = segmentItems(firstOf, allowNone);
 
   /** The color a switch seeds from: whatever the current paint shows. */
   const currentColor = useCallback((): string => {

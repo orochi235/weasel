@@ -66,6 +66,6 @@ describe('applyBooleanOp: trim and merge', () => {
       { id: 'v', path: pathFromD('M50 0 L50 100'), paint: { fill: null, stroke } },
     ]);
     applyBooleanOp(h.adapter, 'merge', { strokes: 'unfilled' });
-    expect(h.made.map((m) => [m.source, m.paint])).toEqual([['v', { fill: RED }]]);
+    expect(h.made.map((m) => [m.source, m.paint])).toEqual([['v', { fill: { paint: RED } }]]);
   });
 });
