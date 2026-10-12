@@ -841,32 +841,34 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P3) A read of a moving target is bound by memory past a few thousand targets** — profiled
-  2026-10-11 in plain Node 26 on orochi: `engine/core.ts` bundled by esbuild with a script that
-  moves N `{ x, y }` targets and reads them all, timed and run under `--cpu-prof`. A read costs
-  the same at 100 and 1,000 targets and climbs from there:
+- **(P2) A target table: many like values as rows of flat arrays, read in one pass** — measured
+  2026-10-11, not built. A read of one moving target is bound by memory past a few thousand:
+  it reaches the target's state, slot, `adjust` array, axes, its owner's `get` closure, and the
+  committed value. A table keeps the committed values, where each row's offsets are, and its
+  adjustments in flat arrays, and fills every row's value on screen in one pass.
+  `node tests/perf/target-reads/run.mjs table 1000 10000 100000` on orochi, plain Node 26, ns a
+  row with every row moving:
 
-  | Targets | `readInto` | `read()` |
-  |---:|---:|---:|
-  |     100 |  37 ns |  53 ns |
-  |   1,000 |  36 ns |  53 ns |
-  |  10,000 |  65 ns |  82 ns |
-  | 100,000 | 178 ns | not run |
+  | Rows | `readInto` per target | table reaching each state | table, flat |
+  |---:|---:|---:|---:|
+  |   1,000 |  44 | 8.8 | 5.6 |
+  |  10,000 |  90 | 9.7 | 5.5 |
+  | 100,000 | 233 | 66  | 5.7 |
 
-  So about 37 ns of a `readInto` is work, and the rest at 10k and beyond is cache misses. The
-  pieces of that work, each timed alone over 10k: the owner's `get` 6.5 ns, `axes.write` 12,
-  the slot 3, `adjust` 3, and for `read()`, `axes.add` building the value 31. In the profile
-  47% of `readTargetInto`'s ticks sit on the one line that loads `slot.cols` and `adjust`, the
-  first touch of two more objects per target; the function is in TurboFan with no deopt.
-  Each target is a state object, a slot, an `adjust` array, an axes object, its owner's `get`
-  closure, and the committed value, all reached per read. A fix keeps what a read needs in
-  flat arrays the animator owns, the offsets already being flat in `slot.cols`, and reads every
-  target in one pass. That changes who holds the committed value, so it is a design, not a
-  patch. For scale: 10k tweens storing through `onTick` cost 0.53 ms a frame on teitou against
-  1.50 ms for 10k targets read after the frame (`tests/perf/bench/animator-on-blits.bench.ts`,
-  2026-10-11, before `axes.add` and `readInto`, which the bench's "on targets, readInto" row has
-  not yet been run with). Mike accepted the earlier costs of moving values onto blits on
-  2026-10-04 and 2026-10-08; this one is not ruled on.
+  So the table has to be flat all the way: one that still reaches each row's state falls back
+  to cache misses at 100k. The flat column is a ceiling. The script reads each row's place in
+  the codec's columns off its state once, where the engine would have to keep that current as
+  rows start and stop and as a lane compacts, and it takes adjustments as zero.
+  Shape, as put to Mike, who said to try it: `createTargetTable({ axes })`, `table.add(value)`
+  answering a row, `table.target(row)` for the animator, and `table.committed` and
+  `table.shown` as arrays. Single targets and scene poses stay as they are. Holds on rows need
+  the per-axis fold of `engine/holds.ts` to write into the same pass. Vertex colors are the
+  first candidate in the kit. Of a single `readInto`, about 37 ns is work
+  (`run.mjs read 10000 parts`: the owner's `get` 6.5 ns, `axes.write` 12, the slot 3, `adjust`
+  3; `axes.add` for `read()` 31) and the rest is misses; in a CPU profile 47% of its ticks sit
+  on the line that first loads `slot.cols` and `adjust`. For scale, 10k tweens storing through
+  `onTick` cost 0.53 ms a frame on teitou against 1.50 ms for 10k targets read after the frame
+  (`tests/perf/bench/animator-on-blits.bench.ts`, before `axes.add` and `readInto`).
 - **(P3) A tween or spring started on a target under a full-weight hold shows its whole travel
   on top of the hold** — it commits its destination, which the hold stands in front of, and its
   offset is added over the hold, so the value on screen jumps by the travel and settles back.
