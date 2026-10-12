@@ -23,15 +23,12 @@ export interface StagedBatchState {
   colorMatrix: Float32Array;
   clipDepth: number;
   /**
-   * The SDF threshold shift `u_synthBold` draws this run under.
-   *
-   * A uniform rather than a vertex attribute, and so a thing that breaks a run.
-   * A per-vertex float costs every rect and quad in the run (see "Mode and slot
-   * share one attribute" in `shaders/batchFill.ts`): the batch's whole point is
-   * one cheap buffer write a frame, and a float only glyphs read still widens the write
-   * for every rect and quad beside them. What it costs instead is a break
-   * wherever faked-bold text meets text that is not, which is a fallback path:
-   * a registered bold face never sets this at all.
+   * The SDF threshold shift `u_synthBold` draws this run under. A uniform
+   * rather than a vertex attribute, and so a thing that breaks a run: a
+   * per-vertex float only glyphs read would widen the buffer write for every
+   * rect and quad beside them. The break falls wherever faked-bold text meets
+   * text that is not, which is a fallback path: a registered bold face never
+   * sets this at all.
    */
   synthBold: number;
   /** Whether group alpha folded into the vertex colors. */
@@ -137,8 +134,8 @@ function nextFreeSlot(staged: StagedBatchState): number {
  * frame, where a mesh already in the persistent cache costs nothing per frame
  * beyond the draw. Drawn alone with a run open, a mesh also closes that run and
  * switches program twice, so it breaks even far later there. Both values sit
- * below what `tests/perf/mesh-batch.spec.ts` measured, recorded in
- * `docs/TODO.md`: being wrong on the open-run side costs ten times more.
+ * below what `tests/perf/mesh-batch.spec.ts` measured: being wrong on the
+ * open-run side costs ten times more.
  */
 const MAX_BATCHED_MESH_VERTICES = 96;
 
@@ -202,12 +199,10 @@ function openRun(ctx: DrawContext, folds = false): StagedBatchState {
 
 /**
  * Open or continue a run for one more image quad, flushing first if the run
- * would overflow or cannot give this bitmap a slot.
- *
- * A run adopts a bitmap it has not seen rather than breaking, which is what
- * lets a wall's ground rect and its atlas quad share a draw, and what lets a
- * cell's art and its badge share one too. Returns the staged state and the slot
- * the quad's vertices must carry.
+ * would overflow or cannot give this bitmap a slot. A run adopts a bitmap it
+ * has not seen rather than breaking, which is what lets a ground rect and the
+ * atlas quad over it share a draw. Returns the staged state and the slot the
+ * quad's vertices must carry.
  */
 export function stageImage(
   ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
@@ -228,12 +223,9 @@ export function stageImage(
 
 /**
  * Open or continue a run for a glyph off the font atlas `atlasId`, flushing
- * first if the run would overflow or has no slot left for it.
- *
- * The atlas is the unit of coalescing the way a sprite sheet is: every glyph a
- * face contributes to a frame shares one texture, so a paragraph is one run
- * however many glyphs it is, and a second face costs one more slot rather than
- * a flush per word.
+ * first if the run would overflow or has no slot left for it. Every glyph a
+ * face contributes to a frame shares one texture, so a paragraph is one run,
+ * and a second face costs one more slot rather than a flush per word.
  */
 export function stageGlyphs(
   ctx: DrawContext, atlasId: string, fieldScale: readonly [number, number], synthBold: number,

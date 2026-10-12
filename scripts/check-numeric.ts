@@ -10,8 +10,6 @@
  *   - a rule that takes the helper and also sets `font`, `font-family` or
  *     `font-variant-numeric`. A composed class is declared before the rule that
  *     composes it, so any of those in the same rule quietly replaces it.
- *
- * Runs under tsx so it shares the root tsconfig's resolution, like its siblings.
  */
 
 import { readFileSync } from 'node:fs';

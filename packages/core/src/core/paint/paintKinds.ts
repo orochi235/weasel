@@ -1,10 +1,7 @@
 /**
- * The paint-kind registry — what makes `Paint` open.
- *
- * A consumer registers a kind of its own and it renders, converts between the
- * bounds and pose frames, and serializes, with no kit edits. The built-in
- * kinds are registered here at module load so an editor's kind bar can
- * enumerate every kind through one list.
+ * The paint-kind registry — what makes `Paint` open. The built-in kinds
+ * are registered here at module load so an editor's kind bar can enumerate
+ * every kind through one list.
  *
  * Every entry is also handed to the renderer's own registry, which reads only
  * its draw slots. A built-in kind has none: its render slot is a branch in the
@@ -143,10 +140,8 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
  *
  * Until it lands the kind is unregistered: the renderer draws nothing for its
  * paints, and every other reader treats it as unknown. Registering it fires
- * `paintKindRegistry`'s subscribers, which is what `<SceneCanvas>` repaints
- * on. Call `warmPaintKinds` to load ahead of the first frame instead — with no
- * list it loads the kit's lazily loaded built-ins (`mesh-gradient`) plus any
- * declared here.
+ * `paintKindRegistry`'s subscribers. Call `warmPaintKinds` to load ahead of
+ * the first frame instead.
  *
  * A kind that is already registered never calls its loader. Returns a
  * disposer that removes the loader.
@@ -209,8 +204,7 @@ const gradientKinds = derivedList(
  * Between two of the stop gradients this is `withGradientKind`, which carries
  * the geometry. Any other pair goes through the stop list — `stopsOf` on the
  * way out, `fromStops` on the way in — keeping `interpolate` and `opacity`.
- * Lossy wherever the kinds hold different information; an editor that wants a
- * switch to be undoable should keep the original paint.
+ * Lossy wherever the kinds hold different information.
  */
 export function switchGradientKind(paint: Paint, kind: PaintKind): Paint | undefined {
   const from = paintKindOf(paint);

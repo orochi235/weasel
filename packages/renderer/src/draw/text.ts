@@ -52,14 +52,9 @@ export const OUTLINE_MIN_SCREEN_PX = 48;
 
 /**
  * Uniform scale the model matrix applies, as the geometric mean of its two
- * axis lengths. Used to turn a screen-pixel threshold into the world-space
- * size layout compares against.
- *
- * The mean rather than either axis alone so a non-uniform scale answers with
- * something between the two instead of picking a side; anisotropy that
- * extreme is not a case this threshold needs to be exact about, since being
- * one glyph-size late or early only changes which of two correct renderings
- * is used.
+ * axis lengths, so a non-uniform scale answers with something between the
+ * two. Being one glyph-size late or early only changes which of two correct
+ * renderings is used.
  */
 function modelScale(m: GlMat3): number {
   const sx = Math.hypot(m[0], m[1]);
@@ -74,8 +69,7 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const direction = cmd.direction ?? style.direction;
   const maxWidth = cmd.maxWidth ?? Infinity;
 
-  // Screen threshold → world threshold. Zooming in lowers the world size that
-  // qualifies, which is the whole point: a 12px label at 8× zoom is 96 screen
+  // Screen threshold → world threshold: a 12px label at 8× zoom is 96 screen
   // pixels of text and wants outlines exactly as much as a 96px heading does.
   const minScreen = ctx.textOutlineMinScreenSize ?? OUTLINE_MIN_SCREEN_PX;
   const outlineMinSize = Number.isFinite(minScreen)
@@ -91,11 +85,9 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   if (laid.groups.length === 0 && laid.decorations.length === 0) return;
 
   // `laid` is origin-relative, so this is the command's position plus the
-  // verticalAlign shift. Applied at upload time, not baked in: the layout is
-  // shared and not ours to edit — a cached layout that absorbed either offset
-  // would gain another one every frame and slide off the page. Every consumer
-  // below adds them while packing vertices, which costs one addition inside
-  // loops that are already walking every vertex.
+  // verticalAlign shift. Applied at upload time, not baked in: a cached layout
+  // that absorbed either offset would gain another one every frame and slide
+  // off the page.
   const dx = cmd.x;
   const dy = cmd.y + verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
 
@@ -108,18 +100,10 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
 }
 
 /**
- * Paint one group of tessellated glyph outlines.
- *
- * The whole group becomes a single mesh: cached em-space triangles are
- * transformed on the CPU into world space and appended to one buffer, so a
- * paragraph set in one face and color is one draw call — the same batching
- * the atlas tier gets from packing glyphs into one texture. The alternative,
- * a model matrix per glyph, would be a draw call per glyph.
- *
- * Going through `drawPathFillByKind` rather than straight to `pathFill` is
- * what makes gradient- and pattern-filled text fall out for free: a glyph
- * here is geometry like any other, and those programs shade in world space,
- * so they need nothing from the text pipeline.
+ * Paint one group of tessellated glyph outlines as a single mesh: cached
+ * em-space triangles are transformed on the CPU into world space and appended
+ * to one buffer, so a paragraph set in one face and color is one draw call
+ * rather than one per glyph.
  */
 function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number): void {
   const fill = group.fill?.paint;
@@ -138,13 +122,10 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
 }
 
 /**
- * Paint one merged glyph-outline mesh, staging it where it fits.
- *
- * Through `tryStageFill` rather than straight to `drawPathFillByKind`,
- * because a paragraph can mix tiers: a heading drawn as outlines and a caption
- * drawn from the atlas are groups of one command, and the atlas half now
- * stages. An outline that painted itself while glyphs sat staged behind it
- * would come out under them.
+ * Paint one merged glyph-outline mesh, staging it where it fits. A paragraph
+ * can mix tiers — a heading drawn as outlines and a caption drawn from the
+ * atlas are groups of one command — and an outline that painted itself while
+ * glyphs sat staged behind it would come out under them.
  */
 function drawOutlineMesh(ctx: DrawContext, fill: Paint, mesh: Mesh): void {
   const paint = batchPaint(ctx, fill, false);
@@ -203,16 +184,12 @@ const SYNTH_BOLD_AMOUNT = 0.08;
 /**
  * Stage one group of atlas glyphs into the batch.
  *
- * Everything that used to be a uniform per group rides the vertices instead —
- * the text color, and the atlas as a slot index packed with the paint mode — so
- * a run off a baked MSDF atlas and one off the runtime canvas bake belong to
- * the same draw, and so does whatever else the page put around them. The
- * synthetic-bold threshold is the exception, and `StagedBatchState.synthBold`
- * says why.
- *
- * The synthetic oblique is the one that changes shape rather than home: the
- * old program skewed in the vertex stage against `u_synthItalic`, and the
- * batch places its own corners, so `pushGlyph` shears them as it places them.
+ * The text color and the atlas (a slot index packed with the paint mode) ride
+ * the vertices, so a run off a baked MSDF atlas and one off the runtime canvas
+ * bake belong to the same draw, and so does whatever else the page put around
+ * them. The synthetic-bold threshold is the exception, and
+ * `StagedBatchState.synthBold` says why. The synthetic oblique is sheared
+ * into the corners as `pushGlyph` places them.
  */
 function drawTextGroup(
   ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number,

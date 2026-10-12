@@ -1,6 +1,6 @@
 # @weasel-js/d3
 
-d3 bridge for weasel: data-join + transition chain over useScene and useAnimator. d3-force already integrates via useSimulation in the main kit.
+d3 bridge for weasel: data-join + transition chain over `useScene` and `useAnimator`.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the

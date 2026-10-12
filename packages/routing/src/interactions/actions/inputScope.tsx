@@ -10,11 +10,10 @@ import { ActiveToolNodeContext, ToolNode } from './activeToolContext';
 /**
  * @experimental
  * Canvases that share input on purpose: the active tool, the gesture in
- * flight, history and yoke-wide actions. Made once with `useYoke()` where the
- * sharing is decided, and passed to each canvas that joins it (`yoke={yoke}`)
- * and to `<Yoke value={yoke}>` around anything else that should reach it — a
- * toolbar, say. The members can sit anywhere in the tree: the handle, not the
- * tree, says who shares.
+ * flight, history, and yoke-wide actions. Made once with `useYoke()`, and
+ * passed to each canvas that joins it (`yoke={yoke}`) and to
+ * `<Yoke value={yoke}>` around anything else that should reach it — a
+ * toolbar, say. The members can sit anywhere in the tree.
  */
 export interface Yoke {
   /** @internal */

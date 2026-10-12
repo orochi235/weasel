@@ -1,20 +1,4 @@
-/**
- * SceneCanvas seam-refactor coverage
- *
- * Targeted tests for the 9 behaviors that must stay green through the
- * Canvas / SceneCanvas seam refactor.  Only behaviors that had no direct
- * coverage in the existing test files are exercised here.
- *
- * Behaviors covered:
- *   2. a supplied multi selection accumulates via shift-click through SceneCanvas
- *   3. pickEvery receives view-adjusted worldXY (pan offset applied)
- *   7. SceneCanvas backgroundFill wires a layer (mounts, layer appears in debug)
- *   8. cursorCoordsHud / pickHud render into the DOM when enabled
- *   9. viewport.pan / viewport.zoom register their action descriptors
- *
- * Public-prop forwards (appended; not part of the 9-behavior seam list):
- *   - selectTool.pickBest forwards an alt-aware body-pick into useSelectTool
- */
+/** Behaviors at the Canvas / SceneCanvas seam that no other suite covers. */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -24,17 +8,9 @@ import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { useActionsRegistry, ActionsProvider } from '@weasel-js/routing/react';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 type D = { kind: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
-
-// ---------------------------------------------------------------------------
-// jsdom canvas setup
-// ---------------------------------------------------------------------------
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -55,10 +31,6 @@ beforeAll(() => {
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
@@ -88,10 +60,6 @@ function pd(canvas: HTMLCanvasElement, x: number, y: number, opts: PointerEventI
 function pu(canvas: HTMLCanvasElement, x: number, y: number, opts: PointerEventInit = {}) {
   canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1, ...opts }));
 }
-
-// ---------------------------------------------------------------------------
-// Behavior 2: a supplied multi selection allows multi-select via shift-click
-// ---------------------------------------------------------------------------
 
 describe('Behavior 2: a supplied multi selection accumulates', () => {
   it('shift-click on a second node adds it to the selection (does not replace)', () => {
@@ -158,16 +126,10 @@ describe('Behavior 2: a supplied multi selection accumulates', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Behavior 3 + 5: pickEvery / dispatcher receive view-adjusted worldXY
-// ---------------------------------------------------------------------------
-
 describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
   it('worldXY passed to pickEvery accounts for view.x pan offset', () => {
-    // With view.x = 50 and clientX = 60 at scale=1:
-    //   worldX = (60 - 0) / 1 + 50 = 110
-    // A node at world x=100 (width=40) is hit; without the view offset it
-    // would be missed (clientX=60 < node.x=100 at identity view).
+    // With view.x = 50, clientX = 60 is worldX = 110, inside the node at
+    // world x=100..140. Without the view offset it would miss.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     scene.batch('seed', () => {
       scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
@@ -204,9 +166,6 @@ describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
         layers={{}}
         width={400}
         height={400}
-        // Pan the view 50 units to the right: world origin is at clientX = -50.
-        // So clientX=60 maps to worldX = 60/1 + 50 = 110, which is inside the
-        // node at world x=100..140.
         view={{ x: 50, y: 0, scale: { x: 1, y: 1 } }}
         onViewChange={() => {}}
         selection={selApi as Parameters<typeof SceneCanvas>[0]['selection']}
@@ -225,10 +184,6 @@ describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
     expect(selState).toContain(id);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Behavior 7: SceneCanvas backgroundFill wires a layer
-// ---------------------------------------------------------------------------
 
 describe('Behavior 7: backgroundFill prop wires a layer', () => {
   it('mounts without throwing when backgroundFill is set', () => {
@@ -259,15 +214,8 @@ describe('Behavior 7: backgroundFill prop wires a layer', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Behavior 8: cursorCoordsHud / pickHud render into the DOM
-// ---------------------------------------------------------------------------
-
 describe('Behavior 8: cursorCoordsHud and pickHud render when enabled', () => {
   it('cursorCoordsHud=true mounts without throwing and canvas is present', () => {
-    // CursorCoordsHud renders null until the first pointermove (anchor is null
-    // until useEffect fires getBoundingClientRect). Under jsdom we can only
-    // assert no throw and that the canvas is still rendered.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
       <SceneCanvas features={['draw']}
@@ -311,10 +259,7 @@ describe('Behavior 8: cursorCoordsHud and pickHud render when enabled', () => {
   });
 
   it('cursorCoordsHud updates world coords on pointermove via document listener', () => {
-    // CursorCoordsHud renders after the anchor useEffect fires; trigger a
-    // pointermove on document and verify the component remains mounted (no
-    // error, no unmount). The HUD logic that transforms client→world is the
-    // same formula as Canvas's clientToWorld: (clientX / scale) + view.x.
+    // Asserts only that the HUD's update does not throw.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container, unmount } = render(
       <SceneCanvas features={['draw']}
@@ -336,10 +281,6 @@ describe('Behavior 8: cursorCoordsHud and pickHud render when enabled', () => {
     unmount();
   });
 });
-
-// ---------------------------------------------------------------------------
-// Behavior 9: viewport.pan / viewport.zoom register action descriptors
-// ---------------------------------------------------------------------------
 
 describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors', () => {
   /** Probe component that reads the actions registry and reports action ids. */
@@ -412,10 +353,6 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
   });
 
   it('without explicit viewport prop, viewport.pan and viewport.zoom ARE still registered (defaults to enabled)', () => {
-    // SceneCanvas passes `viewport?.pan !== false` and `viewport?.zoom !== false`
-    // to StandardActionsRegistrar — both are `true` when the viewport prop is
-    // omitted (undefined !== false = true). So both descriptors are registered
-    // by default even when the consumer passes no viewport prop at all.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     let capturedIds: string[] = [];
 
@@ -434,11 +371,8 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     expect(capturedIds).toContain('viewport.zoom');
   });
 
-  // The reported failure: `vertex-widths`, `curve-lab` and
-  // `rotated-resize-math` mount several canvases under one <ActionsProvider>,
-  // and wheel pan / zoom were dead in all of them. Both canvases register the
-  // same ids; the second displaces the first, and its teardown used to delete
-  // the entry outright rather than uncover what it had displaced.
+  // Canvases under one <ActionsProvider> register the same ids, and the second
+  // displaces the first. Its teardown must uncover what it displaced.
   it('a sibling canvas unmounting leaves the viewport actions registered', () => {
     const sceneA = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
@@ -463,13 +397,8 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
   });
 });
 
-// ---------------------------------------------------------------------------
-// Seam: selectTool.pickBest forwards through to the internal useSelectTool
-// ---------------------------------------------------------------------------
-
 /** Minimal mutable SelectionApi stub — `applyClick` replaces the selection
- *  with the clicked id (single-select), enough to observe which id a body
- *  pick settled on. */
+ *  with the clicked id. */
 function makeSelectionStub(initial: NodeId[] = []) {
   let selState: NodeId[] = [...initial];
   return {
@@ -497,10 +426,9 @@ function makeSelectionStub(initial: NodeId[] = []) {
 
 describe('Seam: selectTool.pickBest forwards into the internal select tool', () => {
   it('alt-click selects the pickBest-returned id even when it is NOT the top-most hit', () => {
-    // Two fully-overlapping nodes. The default body pick (pickEvery +
-    // pickTopMostHit) settles on the top-most (last in renderOrder = idB).
-    // A pickBest that returns the BOTTOM id (idA) on alt proves the option
-    // threaded through and overrode the default top-pick.
+    // Two fully-overlapping nodes. The default body pick settles on the
+    // top-most (idB), so a pickBest that returns the BOTTOM id (idA) on alt
+    // proves the option overrode it.
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     scene.batch('seed', () => {
       scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
@@ -570,10 +498,3 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
     expect(selApi.current).toEqual([idB]);
   });
 });
-
-// The `clickFallback` prop is gone. It was a slot on the tool-routing
-// dispatcher, consulted when the active tool's `pointer.onClick` returned
-// `'pass'` — a phase-table concept with no equivalent in the binding grammar,
-// where the same effect is what AMBIENT scope already means: a binding that
-// fires when no active-scope binding claims the gesture. It had no consumer
-// beyond this test.

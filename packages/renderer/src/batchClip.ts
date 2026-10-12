@@ -3,8 +3,7 @@
  * needs no stencil and does not break the run.
  *
  * A stencil clip is GL state, so content inside one cannot share a draw with
- * content outside it, and every clipped group paid a flush on the way in and
- * another on the way out. A rect under a transform that keeps it axis-aligned
+ * content outside it. A rect under a transform that keeps it axis-aligned
  * is the common clip, and for that one the clip can ride the geometry instead:
  * cut each staged polygon to the rect before it joins the run.
  *

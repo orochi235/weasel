@@ -50,10 +50,8 @@ export interface TileGridOptions<TPose> {
   snap?: LayoutSnap<TPose>;
   /** Optional: map a cell rect + the dragged pose to the new pose. Default
    *  writes `{ x, y, width, height }` into the dragged pose (assumes
-   *  `RectPose`). Override for point-only poses or other shapes. The
-   *  `dragged` argument is the pre-drop pose of the child being placed —
-   *  use it to preserve fields the cell rect doesn't carry (e.g. rotation,
-   *  domain metadata). */
+   *  `RectPose`). `dragged` is the pre-drop pose of the child being placed —
+   *  use it to preserve fields the cell rect doesn't carry (e.g. rotation). */
   cellToPose?(cellRect: Rect, dragged: TPose): TPose;
   /** Optional: the point that decides which cell a child occupies — a child
    *  occupies the cell containing it. Default reads `x`/`y` plus half of
@@ -161,12 +159,8 @@ export function tileGrid<TPose>(
       ? children.filter((c) => c.id !== dragged.id).length
       : children.length;
 
-  /**
-   * Compute the swap induced by dragging `dragged` onto `target`, if any.
-   * Returns `null` when there is no swap (cross-container drop, empty cell,
-   * or null target). The same logic backs both `reflowPoses` (preview) and
-   * `commitDrop` (commit) so they cannot disagree.
-   */
+  /** The swap dragging `dragged` onto `target` causes, or `null`. Preview and
+   *  commit both use it, so they cannot disagree. */
   function computeSwap(
     container: LayoutContainer,
     children: ReadonlyArray<LayoutChild<TPose>>,

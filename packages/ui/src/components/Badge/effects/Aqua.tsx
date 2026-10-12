@@ -4,23 +4,14 @@ import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
 /**
- * Aqua-glass treatment — composes onto any badge silhouette by walking the
- * sampler's perimeter and painting four layered sub-effects in one pass:
+ * Aqua-glass treatment — composes onto any badge silhouette: a body gradient,
+ * a specular gloss clipped to the body, a bezel highlight, and a rim outline.
+ * The bezel strokes perimeter segments whose outward normal points up
+ * (`ny < 0`) — normal-aware, not bbox-aligned, which is what makes it work on
+ * arbitrary silhouettes.
  *
- *  1. Body gradient    — vertical tint that runs translucent-top through a
- *                        bright equator band into a dark base.
- *  2. Specular gloss   — upper-hemisphere white-fade clipped to the body.
- *  3. Bezel highlight  — bright stroke along perimeter segments whose
- *                        outward normal points up (`ny < 0`). On a pill that's
- *                        the upper half; on a hex it's the three top edges;
- *                        on a starburst it's the upward tips. Normal-aware,
- *                        not bbox-aligned, which is what makes it work on
- *                        arbitrary silhouettes.
- *  4. Rim outline      — faint dark stroke along the full perimeter.
- *
- * For the *truly* translucent look (with backdrop-filter blur reading the
- * surface behind the badge), use this with `variant="outline"` so the badge's
- * own flat fill doesn't paint behind the gradient, and set
+ * For the *truly* translucent look, use this with `variant="outline"` so the
+ * badge's own flat fill doesn't paint behind the gradient, and set
  * `backdrop-filter: blur(...)` on the host element via CSS.
  */
 export interface AquaEffectParams {

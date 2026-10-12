@@ -1,16 +1,7 @@
 /**
- * useGestureDispatcher — React seam mounting the gesture dispatcher.
- *
- * Composes the input channels (window keydown/keyup, canvas wheel, WebKit
- * gesture events, canvas pointer events, multi-touch synthesized from
- * PointerEvents) and routes each
- * event to the dispatcher for the view it landed in — one view unless `views`
- * says otherwise. Reads ActiveToolContext + DepRegistry internally; consumer
- * passes the canvas ref, actions registry, and tools map.
- *
- * Side-effect only (returns void).
- *
- * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md` § Q4.
+ * Mounts the gesture dispatcher: composes the input channels (keys, wheel,
+ * WebKit gesture events, pointer events, and multi-touch synthesized from
+ * them) and routes each event to the dispatcher for the view it landed in.
  */
 import { useCallback, useEffect, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
@@ -42,13 +33,8 @@ export type {
 } from './gestureDispatcherOptions';
 
 /**
- * Lift the stylus fields off a DOM `PointerEvent` onto the normalized
- * `InputEvent`. Kept as a spread-able partial so a synthetic event that
- * carries none of them stays free of `undefined`-valued keys.
- *
- * These ride the drag trail (`InvocationCtx.drag.points`) so pressure- and
- * tilt-aware actions — `insertAction`'s pencil kind today — can reach the
- * per-sample data without their own pointer plumbing.
+ * The stylus fields of a DOM `PointerEvent`, as a spread-able partial so a
+ * synthetic event that carries none of them stays free of `undefined`-valued keys.
  */
 function stylusOf(e: PointerEvent): {
   pressure?: number; tiltX?: number; tiltY?: number;
@@ -60,15 +46,7 @@ function stylusOf(e: PointerEvent): {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Platform detection — module-level constant so it's stable across renders.
-// ---------------------------------------------------------------------------
-
 const IS_MAC = isApplePlatform();
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 /** A pointer held on the canvas, and everything a press is synthesized from. */
 interface HeldPointer {
@@ -85,9 +63,8 @@ interface HeldPointer {
 }
 
 /**
- * Compute centroid and spread (distance between first two pointers) from
- * the active pointer positions. Returns a centroid of (0, 0) and spread
- * of 0 when fewer than 2 pointers are present.
+ * Centroid of every pointer and spread (distance between the first two).
+ * Both are zero with fewer than 2 pointers.
  */
 function computeMultiTouchGeometry(
   positions: Iterable<{ x: number; y: number }>,
@@ -96,7 +73,6 @@ function computeMultiTouchGeometry(
   if (pts.length < 2) {
     return { centroid: { x: 0, y: 0 }, spread: 0 };
   }
-  // Centroid across all active pointers.
   let sumX = 0;
   let sumY = 0;
   for (const p of pts) {
@@ -104,25 +80,19 @@ function computeMultiTouchGeometry(
     sumY += p.y;
   }
   const centroid = { x: sumX / pts.length, y: sumY / pts.length };
-  // Spread = distance between the first two pointers (primary pair).
   const dx = pts[1].x - pts[0].x;
   const dy = pts[1].y - pts[0].y;
   const spread = Math.sqrt(dx * dx + dy * dy);
   return { centroid, spread };
 }
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
 /**
- * Attach the input pipeline to a canvas: DOM pointer, wheel, keyboard and
+ * Attach the input pipeline to a canvas: DOM pointer, wheel, keyboard, and
  * multitouch listeners in, normalized input events out, routed through the
  * dispatcher to whichever action a binding names.
  *
- * Everything it needs beyond its options — the active tool, the dep registry —
- * comes from context, so it must be mounted inside `<SceneCanvas>`'s
- * providers.
+ * The active tool and the dep registry come from context, so it must be
+ * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false } = opts;
@@ -139,15 +109,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
-  // Single dispatcher instance, stable across renders. When a `dispatcher`
-  // is supplied via options, adopt it; otherwise create one lazily.
   const dispatcherRef = useRef<Dispatcher | null>(null);
   if (!dispatcherRef.current) {
     dispatcherRef.current = dispatcherOpt ?? createDispatcher();
   }
 
-  // Stable ref to the latest context values so event listeners always see
-  // current state without needing to re-register on every render.
   // No `getRuleCtx` here: eligibility is a per-view answer, so it rides on the
   // dispatch record and `ctxNow` installs the routed view's.
   const registryRef = useLatest(actions);
@@ -176,18 +142,14 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const paintedCursorRef = useLatest(paintedCursor);
   const longPressRef = useLatest(longPress);
 
-  // Double-click synthesis state. Lives at hook level (not inside the effect)
-  // so it survives effect re-runs — otherwise HMR / StrictMode / a transient
-  // deps change resets it between the two clicks and the doubleclick never
-  // fires.
+  // Double-click state lives at hook level so it survives effect re-runs: a
+  // re-run between the two clicks would otherwise drop the doubleclick.
   const lastClickRef = useRef<{ t: number; clientX: number; clientY: number } | null>(null);
 
-  // Tool lifecycle. A tool is live while it holds the active slot or sits
-  // in the hotkey stack; `onActivate` fires as it becomes live in either and
-  // `onDeactivate` as it stops being live in both. A switch of the active
-  // tool also cancels in-flight handles, so the new tool does not inherit a
-  // live gesture — between the outgoing tools' cleanup and the incoming
-  // tools' setup.
+  // A tool is live while it holds the active slot or sits in the hotkey
+  // stack. A switch of the active tool also cancels in-flight handles, so the
+  // new tool does not inherit a live gesture — between the outgoing tools'
+  // cleanup and the incoming tools' setup.
   const liveToolsRef = useRef<ReadonlySet<string>>(new Set());
   const prevActiveRef = useRef(activeTool.active);
   const entriesByIdRef = useLatest(entriesById);
@@ -278,23 +240,16 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     });
     const canvas = canvasRef.current;
 
-    // Convert a client-space pointer position to world-space. When no
-    // `clientToWorld` thunk is wired (legacy harnesses / tests), this is the
-    // identity — preserves pre-fix behavior for callers that pass raw event
-    // coords as if they were world. SceneCanvas always wires the thunk via
-    // its canvas rect + current view, so `ctx.world` becomes real world coords
-    // for areaSelect / lassoSelect / world-space affordance consumers.
+    // Client-space to world-space. The identity when no `clientToWorld` is wired.
     const toWorld = (cx: number, cy: number): { x: number; y: number } => {
       const fn = target().clientToWorld;
       return fn ? fn(cx, cy) : { x: cx, y: cy };
     };
 
-    // Dispatch + bump the host canvas's redraw when any handle was in flight
-    // before, during, or after the event. Without this, dispatcher-only
-    // overlays (marquee, lasso) never repaint after their initial frame.
-    // `before` captures the pre-event state so we redraw on the pump that
-    // CLOSES a gesture (e.g. pointerup-with-no-remaining-handles still needs
-    // to clear the overlay).
+    // Dispatch, and redraw the host canvas when any handle was in flight
+    // before or after the event: dispatcher-only overlays (marquee, lasso)
+    // repaint on nothing else, and the pump that closes a gesture still has
+    // to clear the overlay.
     //
     // `on` is for an event that belongs to the dispatcher an earlier one ran
     // on, whichever view is routed now: the release of a held key.
@@ -329,14 +284,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const onContextMenu = contextMenuInput(core, () => takeNativeHold());
     const { onDragOver, onDragLeave, onDrop, onPaste } = ingestInput(core);
 
-    // Every pointer currently held on the canvas, one `openPointerSession`
-    // each. The session owns capture, pointer identity, teardown and the
-    // three recovery rules; the record owns what the dispatcher synthesizes.
     const held = new Map<number, HeldPointer>();
-    // Pinch anchors land in `zoomAt`, which measures from the canvas top-left,
-    // so the centroid is converted here — the same step the wheel listener
-    // takes for its own anchor. Client coords would drift the zoom by the
-    // canvas's offset from the viewport.
+    // Pinch anchors land in `zoomAt`, which measures from the canvas top-left:
+    // client coords would drift the zoom by the canvas's offset from the viewport.
     const toCanvasLocal = (p: { x: number; y: number }): { x: number; y: number } => {
       const rect = canvas?.getBoundingClientRect();
       if (!rect) return p;
@@ -350,9 +300,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       return { centroid: toCanvasLocal(centroid), spread };
     };
 
-    // Tracks the start state of an active multitouch episode so we can
-    // synthesize a `multitouchtap` event on release when the centroid hasn't
-    // moved past the tap threshold. `fingers` records the peak count.
+    // Start state of the active multitouch episode, for synthesizing a
+    // `multitouchtap` on release. `fingers` records the peak count.
     let multiTouchStart: {
       fingers: number;
       centroid: { x: number; y: number };
@@ -365,9 +314,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     } | null = null;
     const TAP_THRESHOLD_PX = 8;
 
-    // Long-press synthesis. Armed on pointerdown for touch/pen, cancelled by
-    // movement past `DRAG_THRESHOLD_PX`, by release, by cancel, or by a second
-    // pointer landing (so it can never fire mid-pinch).
+    // Long-press timers, armed on pointerdown for touch/pen. A second pointer
+    // landing cancels them, so one can never fire mid-pinch.
     const longPressTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
     const clearPending = (pointerId?: number): void => {
@@ -433,10 +381,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       return holding;
     };
 
-    // Double-click synthesis thresholds. 600ms matches the upper end of OS
-    // double-click settings; 8px tolerates the natural drift of a real
-    // mouse / trackpad between the two clicks. State (`lastClickRef`)
-    // lives at hook level so it survives effect re-runs.
+    // 600ms matches the upper end of OS double-click settings; 8px tolerates
+    // the drift of a real mouse or trackpad between the two clicks.
     const DOUBLE_CLICK_MAX_MS = 600;
     const DOUBLE_CLICK_MAX_PX = 8;
 
@@ -450,13 +396,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       keys.releaseAll();
     };
 
-    // -----------------------------------------------------------------------
-    // Canvas pointer listeners + multi-touch synthesis
-    // -----------------------------------------------------------------------
-
     // A double click this dispatcher acted on is spent: the browser's own
     // `dblclick` that follows is marked handled, so a container that opens or
-    // toggles on double-click (labkit's lightbox) leaves it alone.
+    // toggles on double-click leaves it alone.
     let claimedDoubleClick = false;
     const onNativeDoubleClick = (e: MouseEvent) => {
       if (!claimedDoubleClick) return;
@@ -466,14 +408,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const onPointerDown = (e: PointerEvent) => {
       claimedDoubleClick = false;
-      // Only the primary button drives gesture dispatch. `pointerdown` reports
-      // `button === 0` for the left mouse button and for touch / pen contact;
-      // secondary (right, `2`) and middle (`1`) mouse buttons are left for the
-      // consumer's own tools (e.g. right-drag viewport pan) and the browser
-      // context menu. Without this guard a right-drag is classified and routed
-      // exactly like a left-drag — selecting + transforming under the cursor
-      // instead of letting an ambient pan tool claim it. An absent `button`
-      // (synthetic / programmatic events) counts as primary.
+      // Only the primary button (left mouse, touch, pen contact) drives
+      // gesture dispatch; the others are left for the consumer's own tools and
+      // the browser context menu. An absent `button` (synthetic events) counts
+      // as primary.
       if ((e.button ?? 0) !== 0) return;
       if (!canvas) return;
       // A button or field laid over the canvas handles its own press: opening a
@@ -503,11 +441,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ...(bodyTarget !== undefined ? { bodyTarget } : {}),
         ...(bodyKind !== undefined ? { bodyKind } : {}),
       };
-      // The session owns the rest of this pointer: capture, the moves and the
-      // release, and the three recovery rules for a release that never
-      // arrives. A press on a pointer one is already open for cancels that
-      // stale gesture before this handler runs — its `pointerdown` listener is
-      // on the document, in the capture phase, ahead of this one on the canvas.
+      // The session owns the rest of this pointer: capture, the moves, the
+      // release, and recovery from a release that never arrives. A press on a
+      // pointer one is already open for cancels that stale gesture before this
+      // handler runs — its `pointerdown` listener is on the document, in the
+      // capture phase, ahead of this one on the canvas.
       held.set(e.pointerId, {
         session: openPointerSession(canvas, e, {
           onMove: onPointerMove,
@@ -535,15 +473,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       });
 
       // The press itself dispatches now, for bindings that must act while the
-      // button is still down and before the gesture is classified (select
-      // highlights the pressed node here). `matchSpec` routes the two copies
-      // to disjoint spec kinds — `pointerDown` matches only this one, `drag`
+      // button is still down and before the gesture is classified. The two
+      // copies match disjoint spec kinds — `pointerDown` only this one, `drag`
       // only the buffered one — so a single press never fires both.
       //
       // Withheld once a second pointer is down: this press belongs to the
-      // multitouch channel under the MULTI-POINTER POLICY below, which clears
-      // the buffered copy for the same reason. Without this a pinch's second
-      // finger ran `select.pick` and moved the selection under the gesture.
+      // multitouch channel under the MULTI-POINTER POLICY below, or a pinch's
+      // second finger would move the selection under the gesture.
       if (held.size < 2) dispatch({ ...ev, stage: 'press' });
 
       // Arm long-press for touch / pen only, and only for a lone pointer —
@@ -578,32 +514,21 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         }
       }
 
-      // Synthesize a multi-touch event when >= 2 pointers are active.
       if (held.size >= 2) {
         cancelAllLongPress();
         // MULTI-POINTER POLICY: the multitouch channel takes ownership of
         // every pointer that hasn't already committed to a gesture. Clearing
         // the buffered press is what enforces it — a claimed pointer opens no
         // drag handle on the next move, and synthesizes no click on release
-        // (both of those read the buffer). The `multitouch-<fingers>` handle
-        // and the `multitouchtap` synthesis below are the whole gesture.
+        // (both of those read the buffer).
         //
-        // This used to hold by accident: `gestureIdFor` returned one key for
-        // every pointer, so a second finger's press found the first's handle
-        // in flight and no-oped. Per-pointer keying removes the accident, so
-        // the policy has to be stated. Stating it is the improvement — a
-        // pointer that is part of a pinch is not also dragging something.
-        //
-        // Note the asymmetry: a pointer that already opened a drag has no
-        // buffer left to claim, so its gesture survives the second finger
-        // landing. Yanking a drag out from under someone who rested a palm is
-        // worse than letting it finish.
+        // A pointer that already opened a drag has no buffer left to claim,
+        // so its gesture survives the second finger landing. Yanking a drag
+        // out from under someone who rested a palm is worse than letting it finish.
         for (const p of held.values()) p.buffered = null;
 
         const { centroid, spread } = heldGeometry();
-        // Capture start state for tap synthesis. On the first 1→2 transition
-        // we record the centroid; subsequent pointerdowns at higher finger
-        // counts only bump the recorded peak fingers count.
+        // Later fingers only bump the recorded peak count.
         if (!multiTouchStart) {
           multiTouchStart = {
             fingers: held.size, centroid: { ...centroid }, at: new Map(), moved: false,
@@ -655,14 +580,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         multiTouchStart.moved = true;
       }
 
-      // Threshold gate: if a pointerdown is buffered for this pointer and
-      // the movement crossed the drag threshold, forward the buffered
-      // pointerdown to the dispatcher BEFORE the pointermove. This is what
-      // opens the ongoing drag handle (matching `kind: 'drag'` bindings);
-      // subsequent pointermoves pump it via `onMove`. Sub-threshold
-      // pointermoves are still forwarded so existing pump paths (e.g. other
-      // in-flight handles) keep working, but they're no-ops when no handle
-      // exists.
+      // Once movement crosses the drag threshold, the buffered pointerdown
+      // goes to the dispatcher BEFORE the pointermove: that is what opens the
+      // drag handle the following moves pump.
       const buffered = rec?.buffered;
       if (rec && buffered) {
         if (pastDragThreshold(buffered, e)) {
@@ -672,9 +592,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         }
       }
 
-      // If a multitouch handle is in flight, synthesize a multitouch pump event
-      // with the updated centroid + spread. The dispatcher routes this to the
-      // handle's onMove (because the event carries centroid data).
+      // Pump an in-flight multitouch handle with the updated centroid and spread.
       const mtGestureId = `multitouch-${held.size}`;
       if (held.size >= 2 && dispatcherNow().inFlight().has(mtGestureId)) {
         const { centroid, spread } = heldGeometry();
@@ -721,35 +639,18 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       refreshHoverCursor();
     };
 
-    // -----------------------------------------------------------------------
-    // Hover-cursor pump
-    // -----------------------------------------------------------------------
+    // Hover cursor. On every idle pointermove, resolve what sits under the
+    // pointer and write a cursor override to `canvas.style.cursor`:
     //
-    // On every idle pointermove (no pressed pointer, no in-flight handle),
-    // resolve what sits under the pointer and write a cursor override
-    // directly to `canvas.style.cursor`. Precedence:
+    //   1. an affordance hit declaring `AffordanceHit.cursor`;
+    //   2. the action a drag from here would route to, when it declares
+    //      `Action.cursor`;
+    //   3. otherwise the action a click here would route to, when it does;
+    //   4. no override — clear the inline style so the active tool's
+    //      React-managed `Tool.cursor` shows through.
     //
-    //   1. Affordance hit declaring `AffordanceHit.cursor` (resize corners,
-    //      rotate ring) — the same `affordanceAt` hit-test pointerdown uses.
-    //   2. The action a drag from here would route to (`resolveOnly`, the
-    //      same match walk pointerdown takes), when it declares
-    //      `Action.cursor` — e.g. `viewport.dragPan` → 'grab' over empty
-    //      canvas when pan would win the drag.
-    //   3. Otherwise the action a click here would route to, when it
-    //      declares one — e.g. Alt over a path segment in path-edit mode.
-    //   4. No override — clear the inline style so the active tool's
-    //      React-managed `Tool.cursor` (the implicit base) shows through.
-    //
-    // Mid-gesture the pump stands down; the tool-cursor pipeline
-    // (function-form `Tool.cursor` re-resolving on `gestureTick`) owns the
-    // cursor there. The override is an inline style on purpose: clearing it
-    // restores the React-managed base without effect churn.
-    //
-    // `lastHover` lets modifier keydown/keyup refresh the prediction without
-    // pointer movement (a held Space re-routes the drag to the hand tool).
-    // That refresh is deferred a tick so React can commit the hotkey-stack /
-    // active-tool state the key event just changed — `ctxRef` is only
-    // rewritten on commit.
+    // The override is an inline style on purpose: clearing it restores the
+    // React-managed base without effect churn.
     let lastHover: {
       clientX: number; clientY: number;
       altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean;
@@ -807,10 +708,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     function resolveHoverCursor(): void {
       if (!canvas || !lastHover) return;
-      // Mid-gesture the prediction is meaningless — what matters is what the
-      // gesture IS. An in-flight action's `activeCursor` wins; with none
-      // declared the override clears and the active tool's `Tool.cursor`
-      // shows through, as before.
+      // Mid-gesture an in-flight action's `activeCursor` wins; with none
+      // declared the override clears and `Tool.cursor` shows through.
       if (held.size > 0 || dispatcherNow().inFlight().size > 0) {
         applyHoverCursor(dispatcherNow().inFlightCursor());
         return;
@@ -877,11 +776,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const rec = held.get(e.pointerId);
       held.delete(e.pointerId);
 
-      // A press still buffered never crossed the drag threshold — the
-      // dispatcher never saw it, so no drag handle is in flight and this
-      // release is a click. Crossing the threshold clears the buffer whether
-      // or not a drag binding matched, which makes this the authoritative
-      // "did the pointer move?" signal for click synthesis.
+      // A press still buffered never crossed the drag threshold. Crossing it
+      // clears the buffer whether or not a drag binding matched, which makes
+      // this the authoritative "did the pointer move?" signal for click synthesis.
       const staysUnderThreshold = rec?.buffered != null;
 
       // Any finger lifting ends the multitouch gesture the hand was making,
@@ -889,11 +786,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // landed stays in flight (see the multi-pointer policy in onPointerDown).
       if (prevSize >= 2) endMultiTouch('commit', prevSize, e);
 
-      // When pointer count drops below 2 and the centroid never moved past the
-      // tap threshold, synthesize a `multitouchtap` event carrying the peak
-      // fingers count.
+      // When the pointer count drops below 2 and nothing moved past the tap
+      // threshold, synthesize a `multitouchtap` carrying the peak finger count.
       if (prevSize >= 2 && held.size < 2) {
-        // Synthesize a tap if the centroid hasn't moved past threshold.
         const start = multiTouchStart;
         if (start) {
           // Final centroid uses the pointer positions BEFORE this pointer was
@@ -924,10 +819,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         }
       }
 
-      // Check whether a drag handle is in-flight BEFORE sending pointerup.
-      // If THIS pointer's handle is in-flight AND the pointer moved between
-      // down and up, this is the end of a real drag — pump it and don't
-      // synthesize a click.
+      // Read BEFORE sending pointerup: this pointer's handle in flight and
+      // the pointer moved means the end of a real drag, so no click.
       const movedDuringDrag = rec
         ? (rec.down.clientX !== e.clientX || rec.down.clientY !== e.clientY)
         : true;
@@ -956,12 +849,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // pointerdown so click specs with string-form targets ('empty',
       // 'selected-body') match.
       //
-      // The threshold half of that test is load-bearing for any tool that
+      // The threshold half of the test is load-bearing for any tool that
       // binds `click` but not `drag`: without it, dragging clear across the
-      // canvas and releasing synthesized a click, because "no drag handle
-      // opened" was the only condition. `ClickSpec` documents itself as
-      // "pointerdown + pointerup without movement past the threshold" — this
-      // is the code finally agreeing with it.
+      // canvas and releasing synthesizes a click.
       if (!hadDragInFlight && staysUnderThreshold && down) {
         const wClick = toWorld(e.clientX, e.clientY);
         const clickEv: InputEvent = {
@@ -984,11 +874,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         dispatch(clickEv);
         onClickRef.current?.({ x: wClick.x, y: wClick.y });
 
-        // Double-click synthesis: emit a `doubleclick` event AFTER the
-        // second click when two clicks land within DOUBLE_CLICK_MAX_MS and
-        // DOUBLE_CLICK_MAX_PX. Reset the tracker after a successful
-        // doubleclick so a third click doesn't compose another one
-        // (triple-click semantics are not modeled).
+        // A `doubleclick` follows the second click. The tracker resets after
+        // one so a third click doesn't compose another.
         const now = Date.now();
         const prev = lastClickRef.current;
         const dx = e.clientX - (prev?.clientX ?? 0);
@@ -1036,13 +923,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       }, 0);
     };
 
-    // Every way a gesture ends without a release: the browser cancelling the
-    // pointer, capture going away, a press proving the tracked one had already
-    // ended. The session decides which of those happened; the dispatcher
-    // treats them alike, and reads the press's own modifiers because a cancel
-    // carries none of its own.
+    // Every way a gesture ends without a release. Reads the press's own
+    // modifiers because a cancel carries none of its own.
     const onPointerCancel = (pointerId: number) => {
-      // On teardown every session is cancelled at once; `cancelAll` ends those
+      // On teardown every session is canceled at once; `cancelAll` ends those
       // gestures, so re-entering dispatch here would end them twice.
       if (disposed) return;
       const rec = held.get(pointerId);
@@ -1052,8 +936,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       routeAt(pointerId, rec.pos.x, rec.pos.y);
       cancelLongPress(pointerId);
       if (prevSize >= 2) endMultiTouch('cancel', prevSize, rec.down);
-      // Drop any pending multitouch-tap start state — a cancel means we should
-      // not synthesize a tap on the subsequent up.
+      // A cancel must not synthesize a tap on the subsequent up.
       multiTouchStart = null;
       const ev: InputEvent = {
         kind: 'pointercancel',
@@ -1066,10 +949,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       dispatch(ev);
       routeRelease(pointerId);
     };
-
-    // -----------------------------------------------------------------------
-    // Attach
-    // -----------------------------------------------------------------------
 
     const onPressActivate = (): void => { registryRef.current.activate(); };
     const keyCapture = keyboard === 'first';
@@ -1107,10 +986,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.addEventListener('drop', onDrop);
       window.addEventListener('paste', onPaste);
     }
-
-    // -----------------------------------------------------------------------
-    // Cleanup
-    // -----------------------------------------------------------------------
 
     return () => {
       if (keyboard) {

@@ -1,22 +1,10 @@
 /**
- * Path-edit end-to-end integration test.
+ * Path-edit flow: dispatchDoubleClickEntry → ModeMachine.enterMode →
+ * ModeBreadcrumb shows "Path Edit" → Escape → machine.exitMode() → breadcrumb gone.
  *
- * Exercises the full wiring stack:
- *   dispatchDoubleClickEntry → ModeMachine.enterMode → registry change
- *   → ModeBreadcrumb shows "Path Edit"
- *   → keydown Escape → machine.exitMode() → breadcrumb gone
- *
- * jsdom limitation: <SceneCanvas> never mounts in jsdom (canvas element has
- * zero dimensions, so the hostDims gate in App prevents it from rendering).
- * This means we cannot simulate a real dblclick on a canvas hit area or
- * exercise the ToolPalette aria-disabled greying wired in <App> (which also
- * requires a live ToolsApi provided by SceneCanvas's onToolsCreated).
- * We therefore test at the layer below the canvas: we build a real
- * ModeMachine, call dispatchDoubleClickEntry with a fake path hit, and
- * render a ModeBreadcrumb that subscribes to the machine beside a bare
- * canvas carrying App's mode shortcuts. This is still a
- * genuine integration test — it exercises every real module in the
- * enter-mode → chrome-update → exit-mode flow except the canvas hit resolver.
+ * App's <SceneCanvas> never mounts in jsdom (the canvas has zero dimensions, so
+ * the hostDims gate holds it back), so this drives a real ModeMachine with a
+ * fake path hit, beside a bare canvas carrying App's mode shortcuts.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { screen, act, fireEvent } from '@testing-library/react';
@@ -56,11 +44,8 @@ function fakeHistory() {
 
 // ─── Reactive harness ─────────────────────────────────────────────────────────
 
-/**
- * Renders a ModeBreadcrumb that tracks a live ModeMachine via its registry
- * subscription, beside a canvas carrying the same mode shortcuts App.tsx
- * installs, so a window keydown exercises the real exit route.
- */
+/** The canvas carries the same mode shortcuts App.tsx installs, so a window
+ *  keydown exercises the real exit route. */
 function MachineHarness({
   machine,
 }: {

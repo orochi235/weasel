@@ -30,10 +30,8 @@ export interface DtcgExport {
  *
  * DTCG has one variant dimension, so the plain groups hold mode, with every
  * other axis at its default value: what a tool that ignores extensions reads.
- * The other values travel under `$extensions["com.weasel.axes"]` (see
- * `DtcgAxesExtension`), one override layer per combination of non-default values
- * some token actually varies by — axes that vary independently cost one layer
- * per value, not their cross-product.
+ * The other values travel under `$extensions["com.weasel.axes"]`, one override
+ * layer per combination of non-default values some token actually varies by.
  */
 export function toDTCG(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);

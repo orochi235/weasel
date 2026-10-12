@@ -21,13 +21,10 @@ export default defineConfig({
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
-  // tsup's built-in dts can't resolve the root-package core `@weasel-js/core`
-  // (it follows node_modules symlinks but the monorepo core is the repo ROOT,
-  // which has none) and ignores the tsconfig `paths` that tsc honors — so types
-  // drifted to `never`. .d.ts emission is therefore handled by a dedicated
-  // pipeline: see scripts/build-dts.mts, wired as the `build:dts` step after
-  // this build. Unlike the JS here, it imports the weasel siblings rather than
-  // inlining them; see the comment on `external` there.
+  // .d.ts emission is handled by a dedicated pipeline: see
+  // scripts/build-dts.mts, wired as the `build:dts` step after this build.
+  // Unlike the JS here, it imports the weasel siblings rather than inlining
+  // them; see the comment on `external` there.
   dts: false,
   sourcemap: true,
   clean: true,

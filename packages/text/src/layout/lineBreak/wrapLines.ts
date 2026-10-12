@@ -1,7 +1,7 @@
 /**
- * The greedy wrap every text layout in this package shares: `layoutRuns`,
- * `layoutMarkdown` and `measureText` each measure their own way and hand the
- * measuring in here, so where a line ends is decided in one place.
+ * The greedy wrap every text layout in this package shares: each measures its
+ * own way and hands the measuring in here, so where a line ends is decided in
+ * one place.
  */
 
 import { isHardLineBreak, lineBreakOpportunities, NO_BREAK } from './lineBreaks';

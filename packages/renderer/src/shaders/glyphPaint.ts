@@ -5,9 +5,8 @@
  * **The glyph is a mask over the paint.** The fragment takes its coverage from
  * the distance field exactly as the batch program does, and its color from the
  * same `shadePaint` the path program for that paint runs, at the same
- * paint-space point: `u_worldInv` applied to the screen position. An outline
- * glyph is a path, so it goes through that path program — which is what makes
- * a paint read the same on either side of the outline-tier threshold.
+ * paint-space point — so a paint reads the same on either side of the
+ * outline-tier threshold.
  *
  * **The vertices are the batch's.** A glyph run stages into `DrawBatch` as
  * usual and this program draws it in place of the batch program, so the
@@ -15,8 +14,7 @@
  * both. Positions arrive already in screen space, so `u_model` is identity.
  *
  * Coverage is taken before `shadePaint` runs, and outside any branch: `fwidth`
- * in non-uniform control flow is undefined. The gradient's branches are on a
- * uniform, so they could not make it so, but the order keeps it from mattering.
+ * in non-uniform control flow is undefined.
  *
  * Output: PREMULTIPLIED alpha, the paint's own scaled by coverage.
  */

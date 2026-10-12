@@ -4,9 +4,7 @@
  * Solids, patterns and the three gradients are branches inside the GL
  * renderer and never come through here. A kind beyond those registers its
  * bind slot, its frame conversions and its shaders, and the renderer consults
- * this registry for any kind it does not recognize. What an editor or a
- * serializer needs of a kind is not the renderer's to know; whoever owns
- * those registers it beside this.
+ * this registry for any kind it does not recognize.
  */
 
 import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';

@@ -25,8 +25,7 @@ const head = (x, y, dx, dy, len, half) => {
 // ── resize ───────────────────────────────────────────────────────────────
 // A double-headed straight arrow, horizontal at angle 0, so the baked angle
 // IS the direction the resize axis runs. One polygon rather than a shaft plus
-// two triangles: separate members leave a halo seam where they meet, and the
-// seam is a white notch through the shaft at 16px.
+// two triangles: separate members leave a halo seam where they meet.
 const TIP = 9.5;      // half-length; also the glyph's outer radius
 const HEAD_LEN = 4.5;
 const HEAD_HALF = 3.2;
@@ -53,16 +52,13 @@ const resize = (() => {
 // ── rotate ───────────────────────────────────────────────────────────────
 // A shallow arc bulging upward, with a head at each end continuing the sweep,
 // so it reads as "turn either way" rather than as a one-way arrow. The heads
-// are `ink` and the arc is `stroke`: the arc is a wire, and filling it would
-// close the ring.
+// are `ink` and the arc is `stroke`: filling the arc would close the ring.
 //
 // The sweep is 140° and not more. Past about 180° the two heads converge on
-// the bottom of the circle and the glyph reads as a horseshoe; a shallow arc
-// with the heads flaring outward is what every editor's rotate cursor is.
+// the bottom of the circle and the glyph reads as a horseshoe.
 //
-// The arc and heads are heavy for their radius because at 16 CSS px on a 1x
-// display the whole glyph gets 16 device pixels: at the weights the 11x sheet
-// flatters, both heads vanish and it reads as a plain hook.
+// The arc and heads are heavy for their radius: at 16 CSS px on a 1x display,
+// lighter weights lose both heads and it reads as a plain hook.
 const R = 6.6;
 const ARC_FROM = 200;                       // screen degrees, y down
 const ARC_TO = 340;                         // reached by sweeping over the top

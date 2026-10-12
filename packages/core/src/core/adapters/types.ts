@@ -5,12 +5,8 @@ import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import type { Target } from '@weasel-js/animator';
 
 /**
- * Opaque clipboard payload. `items` is `unknown[]` so each app's clipboard
- * adapter stores whatever shape it wants; the kit never inspects entries.
- *
- * The adapter is responsible for both producing snapshots
- * (`snapshotSelection`) and consuming them (`commitPaste`). Type safety lives
- * at that boundary, not in the kit.
+ * Opaque clipboard payload: the kit never inspects entries. The adapter both
+ * produces snapshots (`snapshotSelection`) and consumes them (`commitPaste`).
  */
 export interface ClipboardSnapshot {
   items: unknown[];
@@ -41,11 +37,9 @@ export interface PasteCtx {
 }
 
 /**
- * SnapTarget — where a dragged node would re-parent to if released.
- *
- * `slotPose` is the pose (in world coordinates) the node should snap to
- * within the target. `metadata` is an opaque pass-through for app-specific
- * snap details (slot index, visual hint, etc.).
+ * Where a dragged node would re-parent to if released. `slotPose` is the pose
+ * (in world coordinates) the node should snap to within the target;
+ * `metadata` is an opaque pass-through for app-specific snap details.
  */
 export interface SnapTarget<TPose = unknown> {
   parentId: string;
@@ -54,16 +48,11 @@ export interface SnapTarget<TPose = unknown> {
 }
 
 /**
- * Full scene adapter. Most consumers implement narrow per-hook subsets
- * (MoveAdapter, ResizeAdapter, ClipboardAdapter, ...) — TypeScript's
- * structural typing means a wider adapter satisfies any narrower interface.
+ * Full scene adapter; the narrower adapters below are subsets of it.
  *
  * **Pose semantics:** `getPose` / `setPose` work in **local** coordinates —
  * relative to the node's direct parent (or world, for root-parented nodes).
- * `getWorldPose` is the composed reading, and is what the render walk, picking
- * and chrome consume. For the common axis-aligned rect pose, `composeRectPose`
- * (translation only) and `composeRigidPose` (a container's pose is a frame, so
- * its rotation reaches its children) ship as the two canonical strategies.
+ * `getWorldPose` is the composed reading.
  */
 export interface SceneAdapter<TNode extends { id: string }, TPose> {
   // Pull (gesture-time queries)
@@ -73,9 +62,7 @@ export interface SceneAdapter<TNode extends { id: string }, TPose> {
   hitTest(worldX: number, worldY: number): string | null;
   getPose(id: string): TPose;
   /** The node's pose in world coordinates, with every ancestor's frame folded
-   *  in. Equal to `getPose` under the absolute-pose model; anything reasoning
-   *  about where a node actually is — picking, chrome, snapping, export —
-   *  wants this rather than `getPose`. */
+   *  in. Equal to `getPose` under the absolute-pose model. */
   getWorldPose?(id: string): TPose;
   getParent(id: string): string | null;
 
@@ -85,8 +72,7 @@ export interface SceneAdapter<TNode extends { id: string }, TPose> {
   /** `index` is the node's z-position among its siblings. `createDeleteOp`
    *  captures it and `invert()` forwards it, so an implementation that drops
    *  it makes undo of a delete restore the node at the top instead of where
-   *  it was. Treat it as required-if-you-have-order; omit only for an
-   *  unordered store. */
+   *  it was. Omit only for an unordered store. */
   insertNode(node: TNode, index?: number): void;
   removeNode(id: string): void;
   setSelection(ids: string[]): void;
@@ -99,18 +85,13 @@ export interface SceneAdapter<TNode extends { id: string }, TPose> {
    *  every call, so everything animating the node adds; `descriptor` supplies
    *  its axes the first time. `tweenPose`, `springPose`, and `momentum` move
    *  it where it is there, and write `setPose` each frame where it is not or
-   *  it answers `undefined`. A scene-backed adapter and `arrayAdapter` provide it. */
+   *  it answers `undefined`. */
   poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
 }
 
-/**
- * Narrow adapter for `useMove`. Includes optional snap-target
- * lookup; apps without container-snapping leave it out.
- */
+/** Narrow adapter for move. Apps without container-snapping leave out `findSnapTarget`. */
 export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getNode(id: string): TNode | undefined;
-  /** Enumerate all nodes. `<Canvas>` derives a default rect-pose `pickEvery`
-   *  and the scene-iteration loop from this. */
   getNodes(): TNode[];
   getPose(id: string): TPose;
   /** Optional. Required only by hierarchy-aware paths: layout-pass drop
@@ -124,8 +105,7 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getZIndex?(id: string): number | null | undefined;
   compareZ?(a: string, b: string): number;
   setPose(id: string, pose: TPose): void;
-  /** Optional. Used only by reparent ops (e.g. drag-into-container drops via
-   *  layout strategies). Flat scenes that never reparent may omit. */
+  /** Optional. Used only by reparent ops; flat scenes that never reparent may omit. */
   setParent?(id: string, parentId: string | null): void;
   /** Optional: see SceneAdapter.applyOps. */
   applyOps?(ops: Op[], label: string): void;
@@ -147,18 +127,12 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
    */
   getChildren?(parentId: string | null): string[];
   /** Optional: layout strategy attached to a container, or null if the
-   *  container uses absolute positioning (default behavior). When present,
-   *  `useMove` uses the strategy to compute drop targets, sibling reflow,
-   *  and the commit op batch when a drag ends over the container. */
+   *  container uses absolute positioning. When present, a move uses it to
+   *  compute drop targets, sibling reflow, and the commit op batch. */
   getLayout?(containerId: string): import('../../layout/types').LayoutStrategy<TPose> | null;
 }
 
-/**
- * Narrow adapter for `useResize`. Mirrors `MoveAdapter`'s shape
- * minus reparenting and snap-target lookup.
- * TPose is constrained to { x, y, width, height } inline to avoid a circular
- * import with interactions/types.ts.
- */
+/** Narrow adapter for resize. */
 export interface ResizeAdapter<
   TNode extends { id: string },
   TPose,
@@ -170,11 +144,7 @@ export interface ResizeAdapter<
   applyOps?(ops: Op[], label: string): void;
 }
 
-/**
- * Narrow adapter for `useRotate`. Mirrors `ResizeAdapter`'s shape — rotate
- * mutates pose only and never reparents. TPose is left fully generic so
- * non-rect rotated poses (e.g. a `RotatedPath`) compose without changes.
- */
+/** Narrow adapter for rotate, which mutates pose only and never reparents. */
 export interface RotateAdapter<
   TNode extends { id: string },
   TPose,
@@ -196,15 +166,12 @@ export interface RegionPickView {
 }
 
 /**
- * Narrow adapter for `useAreaSelect`. Transient: no checkpoint, no
- * history. The hook calls `applyOps(ops)` instead of `applyOps(ops, label)`.
+ * Narrow adapter for marquee selection. Transient: no checkpoint, no
+ * history — `applyOps(ops)` is called with no label.
  *
- * All fields are **optional** — area-select is opt-in. `useSelectTool` only
- * wires the default marquee behavior when `hitTestArea`, `getSelection`,
- * `setSelection`, and `applyOps` are all present on the adapter; otherwise
- * the gesture short-circuits (empty-space drags do nothing, sub-threshold
- * empty clicks still clear selection via the tool's `onClick` path).
- * Demos that don't need marquee selection can omit these methods entirely.
+ * All fields are **optional**. `useSelectTool` only wires the default marquee
+ * behavior when `hitTestArea`, `getSelection`, `setSelection`, and `applyOps`
+ * are all present on the adapter; otherwise empty-space drags do nothing.
  */
 export interface AreaSelectAdapter {
   /** Returns ids of nodes intersecting the world-space rect, as the view the
@@ -235,10 +202,8 @@ export interface AreaSelectAdapter {
 export type LassoHitMode = 'centers' | 'intersect' | 'enclosed';
 
 /**
- * Narrow adapter for lasso selection. Extends `AreaSelectAdapter` with a
- * polygon hit-test method. Transient — uses `applyOps` like its rectangular
- * sibling. `hitTestLasso` is optional; `selectFromLasso` does nothing
- * without it.
+ * Narrow adapter for lasso selection: `AreaSelectAdapter` plus a polygon
+ * hit-test. `selectFromLasso` does nothing without `hitTestLasso`.
  */
 export interface LassoSelectAdapter extends AreaSelectAdapter {
   /** Hit-test against a closed polygon. Vertex order may be CW or CCW; the
@@ -251,37 +216,24 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
 }
 
 /**
- * Narrow adapter for `useInsert` and `useClipboardOps`. The kit knows
- * nothing about what tool is active or what shape to construct; it asks the
- * adapter to produce node(s) given gesture or paste inputs.
- *
- * Drag-rectangle path: `commitInsert(bounds)` returns one new node or null.
- * Clipboard paste path: `commitPaste(clipboard, offset)` returns the array of
- *   newly-materialized nodes (in order). Both empty array and array of
- *   length N are valid; the kit wraps each entry in an `InsertOp`.
- *
- * `snapshotSelection(ids)` builds the payload that paste later consumes.
- * `getPasteOffset` is optional; the kit defaults to a fixed grid-cell offset
- * supplied by the consumer (passed to `useClipboardOps` options if needed; see
- * the hook for resolution order).
+ * Narrow adapter for insert and `useClipboardOps`. The kit knows nothing
+ * about what shape to construct; it asks the adapter to produce node(s) given
+ * gesture or paste inputs, and wraps each in an `InsertOp`.
  */
 export interface InsertAdapter<TNode extends { id: string }> {
   /** Materialize a new node from drag-rect bounds (drag-to-insert tools).
-   *  Optional — hooks that don't drive insertion (e.g. `useClone`,
-   *  read-only clipboard) won't call it, and `sceneToAdapter` only fills
-   *  it in when `options.commitInsert` is supplied. Hooks that *do* call
-   *  it (insert tools) document the requirement at their own surface. */
+   *  Optional: `sceneToAdapter` only fills it in when `options.commitInsert`
+   *  is supplied. */
   commitInsert?(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
-  /** Materialize one or more new nodes from a clipboard snapshot. Optional
-   *  — required by `useClipboard.paste`, ignored by other consumers. */
+  /** Materialize the new nodes from a clipboard snapshot, in order.
+   *  Optional — required only for paste. */
   commitPaste?(
     clipboard: ClipboardSnapshot,
     offset: { dx: number; dy: number },
     ctx?: PasteCtx,
   ): TNode[];
   /** Snapshot the current selection into the clipboard payload shape.
-   *  Optional — required by `useClipboard.copy` / `cut` and `useClone`'s
-   *  ghost capture, ignored by other consumers. */
+   *  Optional — required only for copy, cut, and clone's ghost capture. */
   snapshotSelection?(ids: string[]): ClipboardSnapshot;
   getPasteOffset?(clipboard: ClipboardSnapshot): { dx: number; dy: number };
   /** Mutator wired by `insertNode`-using ops (kit-side InsertOp). `index`
@@ -310,19 +262,13 @@ export interface LayerEnumerableAdapter<TLayer extends string = string> {
 }
 
 /**
- * Optional adapter mixin for sibling z-order.
- *
- * Both methods are optional. Reorder ops and `useReorder` no-op when
- * either is absent — adopt z-order incrementally without breaking existing
- * adapters.
+ * Optional adapter mixin for sibling z-order. Reorder ops no-op when either
+ * method is absent.
  *
  * **Convention:** array order IS z-order. Index 0 is the bottom of the
  * stack, the last index is the top. Hit-testing should iterate the returned
  * list in REVERSE (top to bottom). Render layers iterate FORWARD (bottom to
  * top).
- *
- * For groups, `parentId` may be a group id; the group adapter routes
- * `getChildren`/`setChildOrder` to the group's `members[]` array.
  */
 export interface OrderedAdapter {
   /** Ordered children of `parentId` (or root siblings if null), in z-order:

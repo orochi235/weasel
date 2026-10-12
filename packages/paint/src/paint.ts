@@ -1,18 +1,6 @@
 /**
  * Paint and Stroke types — the unified shape for "what color or texture
  * paints these pixels," modeled on SVG's paint-server concept.
- *
- * - `Paint` is a tagged union: solid color, pattern, or gradient. Used
- *   wherever a kit option previously took `fillStyle: string`.
- * - `Stroke` pairs a `Paint` with structural stroke parameters (width, dash,
- *   line cap/join, alignment).
- * - These types are consumed by the GL renderer's DrawCommand path fills
- *   and strokes.
- *
- * The 2D `applyPaint` / `applyStroke` / `renderFilledRegion` helpers that
- * formerly lived alongside these types were deleted with the 2D backend in
- * Step 10. `alignedStrokeRect` survives as a pure geometry helper used by
- * path tessellation and the selection overlay.
  */
 
 import type { PatternPaint } from './patternPaint';
@@ -29,8 +17,7 @@ import type { ColorSpace } from './colorSpaces';
  * `PatternPaint`.
  *
  * `interpolate` on a gradient names the space its stops blend through, and
- * defaults to `'rgb'` — the channel-wise sRGB lerp every other vector format
- * means by a gradient. `'oklab'` spaces the blend perceptually; `'oklch'`
+ * defaults to `'rgb'`. `'oklab'` spaces the blend perceptually; `'oklch'`
  * additionally travels around the hue wheel, so red to blue stays saturated
  * instead of passing through a muddy purple. Alpha is linear in every space.
  */
@@ -44,24 +31,19 @@ export type Paint =
 /**
  * Which coordinate space a gradient's geometry (`from`/`to`, `center`,
  * `radius`) is expressed in. SVG's `gradientUnits`, plus an option for
- * paints that are themselves viewport furniture.
+ * paints that are themselves viewport furniture. Defaults to `'screen'`.
  *
  * - `'bounds'`: fractions of the painted node's bounding box, `0..1` on each
- *   axis — SVG `objectBoundingBox`. Resolved by the node painter, before the
- *   renderer sees it, so the paint follows the node through moves, resizes
- *   and rotation. What a gradient on a scene node wants.
+ *   axis — SVG `objectBoundingBox`. The paint follows the node through moves,
+ *   resizes and rotation.
  * - `'local'`: the coordinate space the geometry was handed to the renderer
- *   in — the enclosing group's frame. For draw commands a consumer builds
- *   itself, where "the coordinates I just wrote" is the useful frame.
+ *   in — the enclosing group's frame.
  * - `'world'`: scene coordinates. The paint stays put under pan and zoom
  *   while the geometry moves through it. SVG `userSpaceOnUse`. Requires the
  *   renderer to have been handed a view matrix; falls back to `'screen'`
  *   when it has not.
  * - `'screen'`: CSS pixels of the drawing surface. For overlays and
  *   viewport-fixed washes that should not move with the content at all.
- *
- * Defaults to `'screen'`, which is the behavior every gradient had before
- * this field existed.
  */
 export type PaintUnits = 'bounds' | 'local' | 'world' | 'screen';
 
@@ -84,17 +66,12 @@ export type GradientKind = GradientPaint['kind'];
 /**
  * Where a stroke sits relative to the geometric edge it strokes.
  *
- * - `'center'` (default): canvas-native — half the stroke width sits inside
- *   the geometry, half outside.
- * - `'inner'`: the entire stroke lies inside the geometry. The outer edge of
- *   the stroke coincides with the geometric edge.
- * - `'outer'`: the entire stroke lies outside the geometry. The inner edge
- *   of the stroke coincides with the geometric edge.
+ * - `'center'` (default): half the stroke width sits inside the geometry,
+ *   half outside.
+ * - `'inner'`: the entire stroke lies inside the geometry.
+ * - `'outer'`: the entire stroke lies outside the geometry.
  *
- * Mirrors the (proposed) SVG `stroke-alignment` property. Honoring `inner`
- * or `outer` is the renderer's responsibility — for axis-aligned rects, the
- * kit shifts coordinates by `width / 2`. For arbitrary paths, renderers
- * typically use a stencil mask of the stroked path against the geometry.
+ * Mirrors the (proposed) SVG `stroke-alignment` property.
  */
 export type StrokeAlign = 'center' | 'inner' | 'outer';
 
@@ -153,9 +130,8 @@ export interface Fill {
 export interface Stroke {
   /**
    * Omitted, the stroke paints nothing — the same "no paint" a `fill: null`
-   * says for a node's fill. Documents written before mid-2026 can hold a
-   * stroke whose other fields were seeded without one, and the type is
-   * optional so every reader has to answer for that rather than throw on it.
+   * says for a node's fill. Stored documents can hold a stroke without one,
+   * so every reader has to answer for that rather than throw on it.
    */
   paint?: Paint;
   /** World units, or `{ px }` for screen pixels — resolved against the
@@ -199,14 +175,13 @@ export interface Stroke {
    * the tessellator interpolates half-widths along each segment to produce
    * a tapered ribbon. Entries are world units, even on a `{ px }` stroke.
    * `width` is used as the fallback for any anchor whose entry is missing or
-   * non-finite. Pressure-driven pencil strokes use
-   * this; pair with `pressureToWidth` to derive widths from stylus input.
+   * non-finite. Pair with `pressureToWidth` to derive widths from stylus
+   * input.
    *
    * Joins between adjacent segments whose widths differ by more than
    * `varyingWidthJoinThreshold` (default 1.5×) are forced to bevel
    * regardless of the `join` setting — miter math is unstable when widths
-   * vary across the corner; smooth round joins with mismatched widths
-   * are a future enhancement.
+   * vary across the corner.
    */
   vertexWidths?: number[];
   /**
@@ -220,13 +195,9 @@ export interface Stroke {
 
 /**
  * Inflate (positive) or deflate (negative) a rect to honor `align` when
- * stroking it. Returns the rect to pass to a stroked-rect renderer. `width`
- * is the stroke width (defaults to 1 to match canvas).
- *
- * Pure geometry helper — no rendering side effects. Used by path
- * tessellation and the selection overlay to produce a rect whose
- * center-aligned stroke visually coincides with the requested
- * inner/outer-aligned stroke of the original rect.
+ * stroking it: the returned rect's center-aligned stroke coincides with the
+ * requested inner/outer-aligned stroke of the original. `width` is the
+ * stroke width (defaults to 1 to match canvas).
  */
 export function alignedStrokeRect(
   rect: { x: number; y: number; width: number; height: number },

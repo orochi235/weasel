@@ -2,12 +2,6 @@
  * Toolkit Builder — assemble a canvas from a bundle preset and inspect the
  * resulting live registry, route table, conflicts, and dispatch trace. Mounted
  * under `#/dev/toolkits` (sibling to `RegistryInspector` at `#/dev/registry`).
- *
- * Post-purge surface: the legacy consumer hooks (useDelete / useEscape /
- * useNudge / useGroup / useFlip / ...) are gone — actions now live in the
- * Actions Registry mounted by SceneCanvas via `useStandardActions`. This
- * page picks a tool bundle, mounts a real SceneCanvas, and reflects on
- * what the kit registered.
  */
 import {
   isValidElement,
@@ -76,11 +70,6 @@ import { DevShell } from './DevShell';
 import { BUNDLE_DEFAULT_TOOLS } from './registryData';
 import s from './ToolkitBuilder.module.css';
 
-// ─────────────────────────────────────────────────────────────────────────
-// URL state — `?bundle=<id>`. Only the three named bundles are addressable;
-// each is `features={['draw']}` plus a `defaultTools` list.
-// ─────────────────────────────────────────────────────────────────────────
-
 type ToolBundle = keyof typeof BUNDLE_DEFAULT_TOOLS;
 const BUNDLE_IDS: readonly ToolBundle[] = ['minimal', 'standard', 'exhaustive'];
 const DEFAULT_BUNDLE: ToolBundle = 'standard';
@@ -98,11 +87,6 @@ function writeBundle(b: ToolBundle): void {
   if (window.location.hash !== next) window.history.replaceState(null, '', next);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Demo scene — a few rectangles so the chosen tool bundle has something
-// to act on (select / resize / rotate need targets, etc.).
-// ─────────────────────────────────────────────────────────────────────────
-
 interface ShapeData { fill: Fill }
 interface ShapePose { x: number; y: number; width: number; height: number }
 
@@ -112,22 +96,14 @@ const INITIAL_NODES = [
   { kind: 'leaf' as const, id: asNodeId('r3'), layer: 'default' as const, data: { fill: { paint: solid('#5a8bd0') } }, pose: { x: 140, y: 220, width: 160, height: 60 } },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
-// Inner shell — re-mounted with `key={bundle}` whenever the bundle changes
-// so SceneCanvas re-builds its tool set cleanly rather than trying to
-// reconcile a different tool set in place.
-// ─────────────────────────────────────────────────────────────────────────
-
 function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
   const scene = useScene<ShapeData, 'default', ShapePose>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
   });
 
-  // Capture the live ToolsApi when SceneCanvas synthesizes one. `useTools`
-  // rebuilds the api literal each render — track only the structural
-  // signature (sorted tool ids) so we don't spin in a render loop.
-  // (Same trick the RegistryProbe uses.)
+  // `useTools` rebuilds the api literal each render — track only the structural signature
+  // (sorted tool ids) so we don't spin in a render loop.
   const toolsRef = useRef<ToolsApi | null>(null);
   const [toolsSig, setToolsSig] = useState<string>('');
   const onToolsCreated = (api: ToolsApi) => {
@@ -243,10 +219,6 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Widget: registered tools.
-// ─────────────────────────────────────────────────────────────────────────
-
 function ToolsWidget({
   defs,
   slots,
@@ -295,10 +267,6 @@ const TOOL_COLUMNS: readonly DataGridColumn<ToolRow>[] = [
   },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
-// Widget: registered actions (kit-standard + anything else in scope).
-// ─────────────────────────────────────────────────────────────────────────
-
 function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElement {
   return (
     <PropertyPanel stance="debug" className={s.widget} title={`Actions · ${actions.length}`}>
@@ -331,11 +299,6 @@ const ACTION_COLUMNS: readonly DataGridColumn<Action>[] = [
   },
   { id: 'enabled', header: 'Enabled', sortable: false, className: s.nowrap, render: snapshotEnabled },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────
-// Widget: route signatures pulled from the live ToolDefs via
-// buildRouteRegistry. One row per binding.
-// ─────────────────────────────────────────────────────────────────────────
 
 // `slot` is a static fact (which slot the tool was mounted in); the runtime
 // `scope` the matcher sorts by — hotkey > active > ambient — depends on which
@@ -426,35 +389,17 @@ function withUniqueIds<T extends { key: string }>(rows: readonly T[]): (T & { id
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Widget: resolution — pick an input, see every binding that matches it in
-// dispatch precedence order, with the winner marked and each loser's reason.
+// Resolution: pick an input, see every binding that matches it in dispatch precedence order, with
+// the winner marked and each loser's reason. `Dispatcher.resolveAll` is that walk without the
+// invoking.
 //
-// The phase tables used to make precedence structurally legible: you read
-// which table an entry sat in and knew what beat it. Bindings made precedence
-// computed — scope, then the specificity tuple, then registration order, with
-// fall-through past anything whose `enabled()` says no — and nothing showed
-// it. `Dispatcher.resolveAll` is that walk without the invoking; this widget
-// is its display.
-//
-// What's trustworthy here, and what isn't:
-//
-//  - ORDER is exact. Scope, specificity, and registration order are all
-//    properties of the bindings themselves, so the ranking this shows is the
-//    ranking a real dispatch computes.
-//  - MODIFIERS are exact — a modifier is just a boolean the matcher reads.
-//  - TARGET is caveated. It stands in for a real hit-test, so a `kindOf`
-//    predicate can outrun the synthesized hit. `resolutionInput.ts` says
-//    exactly how far it goes; predicate rows carry a `?`.
-//  - `disabled` REASONS are caveated. `enabled()` runs against a stub
-//    DepRegistry that resolves every dep to undefined, so a predicate like
-//    `requiresSelection` reports "selection-required" whatever is really
-//    selected. Those rows carry a `?` too. Wiring the live canvas's dep
-//    registry through would fix it, and is the obvious next step if this
-//    panel gets real use.
-//  - `ineligible` never appears: no `getRuleCtx` is supplied, so the
-//    eligibility gate is skipped entirely rather than evaluated wrongly.
-// ─────────────────────────────────────────────────────────────────────────
+//  - Order and modifiers are exact: they are properties of the bindings themselves.
+//  - Target is caveated. It stands in for a real hit-test, so a `kindOf` predicate can outrun
+//    the synthesized hit; predicate rows carry a `?`.
+//  - `disabled` reasons are caveated. `enabled()` runs against a stub DepRegistry that resolves
+//    every dep to undefined, so `requiresSelection` reports "selection-required" whatever is
+//    really selected. Those rows carry a `?` too.
+//  - `ineligible` never appears: no `getRuleCtx` is supplied, so the eligibility gate is skipped.
 
 const MOD_KEYS = ['shift', 'alt', 'meta', 'ctrl'] as const;
 type ModKey = (typeof MOD_KEYS)[number];
@@ -499,10 +444,9 @@ export function ResolutionWidget({
   const [target, setTarget] = useState<string>('selected-body');
   const [mods, setMods] = useState<ResolutionMods>({});
 
-  // Chrome and node-kind options come from the targets the mounted tools
-  // actually bind against, so the picker can't offer a target nothing listens
-  // for. Both lists are empty for a tool set that describes its targets with
-  // predicates only — which is still true of every kit bundle.
+  // Options come from the targets the mounted tools actually bind against, so the picker can't
+  // offer a target nothing listens for. Both lists are empty for a tool set that describes its
+  // targets with predicates only.
   const { affordanceKinds, nodeKinds } = useMemo(() => {
     const affordances = new Set<string>();
     const nodes = new Set<string>();
@@ -541,11 +485,8 @@ export function ResolutionWidget({
         entriesById: new Map(tools.map((t) => [t.id, t])),
         isMac: false,
       },
-      // The question this panel exists to answer is "why didn't MY binding
-      // fire?", and on the default walk the answer is `shadowed` for
-      // everything below the winner — true but uninformative. Evaluating past
-      // the winner costs nothing here (throwaway dispatcher, no invocation),
-      // and it distinguishes "outranked" from "outranked AND disabled".
+      // On the default walk everything below the winner reads `shadowed`. Evaluating past the
+      // winner distinguishes "outranked" from "outranked AND disabled".
       { evaluateShadowed: true },
     );
   }, [gesture, target, mods, actions, activeToolId, tools]);
@@ -665,9 +606,7 @@ function verdictText(verdict: ResolvedCandidate['verdict']): string {
   return `${verdict.kind}: ${verdict.reason}`;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Widget: conflicts — same (phase, gesture, target, mods) on multiple tools.
-// ─────────────────────────────────────────────────────────────────────────
+// Conflicts: the same (phase, gesture, target, mods) on multiple tools.
 
 function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): ReactElement {
   return (
@@ -696,13 +635,8 @@ const CONFLICT_COLUMNS: readonly DataGridColumn<ConflictRow>[] = [
   { id: 'ownerIds', header: 'Claimed by', render: (r) => <code>{r.ownerIds}</code> },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
-// Widget: live dispatch trace. Reads the kit's dev-only rolling log
-// (`window.__weaselDispatchLog__`, populated by the gesture dispatcher the
-// mounted SceneCanvas runs). Unhandled events (idle mousemoves, wheels over
-// chrome) are noisy and hidden by default — toggle to reveal them when
-// diagnosing "X didn't fire".
-// ─────────────────────────────────────────────────────────────────────────
+// Reads the kit's dev-only rolling log (`window.__weaselDispatchLog__`). Unhandled events (idle
+// mousemoves, wheels over chrome) are noisy and hidden by default.
 
 function DispatchTraceWidget(): ReactElement {
   const { entries, live, now } = useDispatchTraceLog();
@@ -733,10 +667,6 @@ function DispatchTraceWidget(): ReactElement {
     </PropertyPanel>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// Helpers — binding render, icon render, enabled snapshot.
-// ─────────────────────────────────────────────────────────────────────────
 
 function renderBinding(action: Action): ReactNode {
   if (!action.defaultBinding) return <span className={s.empty}>—</span>;
@@ -805,10 +735,6 @@ function snapshotEnabled(a: Action): ReactNode {
     return <span className={s.enabledNo}>predicate-threw</span>;
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// Outer shell — bundle picker + remount on change.
-// ─────────────────────────────────────────────────────────────────────────
 
 export function ToolkitBuilder(): ReactElement {
   const [bundle, setBundle] = useState<ToolBundle>(() => parseBundle(window.location.hash));

@@ -1,16 +1,13 @@
 /**
- * Polygon-boolean operations on `Path` values, backed by
- * `polygon-clipping`.
+ * Polygon-boolean operations on `Path` values, backed by `polygon-clipping`.
  *
- * v1 limitations (documented; see design doc):
- *   - Bezier inputs are flattened to straight-line segments before clipping.
- *     The result therefore contains only M/L/Z commands.
- *   - Open contours are treated as closed for boolean purposes (a polyline
- *     has zero area and would otherwise be silently dropped).
- *   - Output `fillRule` is always `'nonzero'`. The engine emits canonical
- *     non-overlapping rings, so the choice is cosmetic on its output.
+ *   - Bezier inputs are flattened to straight-line segments before clipping,
+ *     so the result contains only M/L/Z commands.
+ *   - Open contours are treated as closed (a polyline has zero area and would
+ *     otherwise be silently dropped).
+ *   - Output `fillRule` is always `'nonzero'`.
  *
- * This is the ONLY geom module that depends on `polygon-clipping`; it lives in
+ * This is the only geom module that depends on `polygon-clipping`; it lives in
  * the `@weasel-js/geom/booleans` subpath so the core stays `deps: {}`.
  */
 import polygonClipping from 'polygon-clipping';
@@ -67,17 +64,11 @@ export function pathCrop(...paths: Path[]): PolygonPath[] {
 /**
  * Fracture N paths along every intersection into the maximal set of
  * non-overlapping regions. Returns one piece per region, naming every input
- * that covers it.
+ * that covers it. For N=2 these are the three Illustrator "Divide" outputs
+ * (A−B, B−A, A∩B).
  *
- * Algorithm: for every non-empty subset S ⊆ {A1..AN}, emit the region
- * `(∩ S) − (∪ complement)` — points covered by exactly the members of S
- * and no others. By construction the emitted regions are pairwise disjoint
- * and their union equals `pathUnion(A1..AN)`.
- *
- * For N=2 this collapses to the three Illustrator "Divide" outputs
- * (A−B, B−A, A∩B). For N=3 up to 7 regions are emitted. The 2^N − 1
- * subset count limits this to small N in practice; passing more than ~8
- * inputs is a misuse — the polygon-clipping kernel dominates anyway.
+ * One region per non-empty subset of the inputs, so the 2^N − 1 subset count
+ * limits this to small N; passing more than ~8 inputs is a misuse.
  */
 export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
   if (paths.length === 0) return [];
@@ -88,9 +79,8 @@ export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
   const n = mps.length;
   const out: BooleanPiece[] = [];
 
-  // Iterate every non-empty subset via bitmask. Emit subsets in size-
-  // ascending order so the output is stable and reads "exclusives first,
-  // then pairs, then triples, …" — matches the old N=2 ordering.
+  // Size-ascending, so the output is stable: exclusives first, then pairs,
+  // then triples, …
   const subsets: number[] = [];
   for (let mask = 1; mask < 1 << n; mask++) subsets.push(mask);
   subsets.sort((a, b) => popcount(a) - popcount(b) || a - b);
@@ -169,13 +159,10 @@ function popcount(n: number): number {
 }
 
 /**
- * Clip each non-topmost path to the topmost path (Illustrator "Crop").
- * Returns up to `N - 1` pieces, one per source-below-top, in input order,
- * each naming the one input it was clipped from.
- * Discards the topmost path itself — it acts purely as the clipping mask.
- *
- * Empty results (a source that lies entirely outside the mask) are
- * filtered. With `<2` inputs the result is empty.
+ * Clip each non-topmost path to the topmost path (Illustrator "Crop"), which
+ * acts purely as the mask and is discarded. Returns up to `N - 1` pieces in
+ * input order, each naming the one input it was clipped from; a source
+ * entirely outside the mask is dropped.
  */
 export function pathCropPieces(...paths: Path[]): BooleanPiece[] {
   if (paths.length < 2) return [];

@@ -5,21 +5,14 @@ import type { PluginOption } from 'vite';
 
 /**
  * Virtual module that exposes git-derived creation + last-modification
- * timestamps for every demo source file under `apps/site/demos/`. The demo
- * registry imports it and joins per-entry by `path`, so the demo header
- * can show "last modified" without anyone hand-curating dates.
+ * timestamps for every demo source file under `apps/site/demos/`.
  *
  *   import TIMESTAMPS from 'virtual:demo-timestamps';
  *   TIMESTAMPS['apps/site/demos/TransformDemo.tsx'] // → { created, lastModified }
  *
  * Both values are ISO-8601 author dates. `created` is the *first* commit
  * to add the file; `lastModified` is the most recent commit touching it.
- * Files not yet tracked by git are omitted (the consumer treats missing
- * entries as "unknown").
- *
- * Computed once at module load. In dev the plugin re-runs whenever any
- * file under `apps/site/demos/` changes, so saves don't require a server
- * restart to update the dates.
+ * Files not yet tracked by git are omitted.
  */
 export function demoTimestamps(opts: { root?: string } = {}): PluginOption {
   const VIRTUAL_ID = 'virtual:demo-timestamps';

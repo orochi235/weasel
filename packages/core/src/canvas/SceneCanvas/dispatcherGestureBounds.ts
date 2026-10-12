@@ -1,19 +1,7 @@
 /**
- * The dispatcher side of `<Canvas>`'s {@link GestureSource} seam.
- *
- * `<Canvas>` owns the `CanvasHelpers` gesture surface (`getGestureBounds`,
- * `subscribeGestures`, `getGestureVersion`) but knows nothing about the
- * gesture dispatcher — like `previewIdsExtra` / `previewPoseExtra`, the
- * dispatcher's contribution is wired in from `<SceneCanvas>`. This module is
- * the whole of that contribution:
- *
- *  - {@link dispatcherGestureIds} — every id any in-flight handle is
- *    previewing, so Canvas can resolve each one's preview bounds;
- *  - {@link dispatcherInsertBounds} — the AABBs of gestures that have no
- *    scene id at all (a drag-to-insert, pre-commit);
- *  - {@link createGestureSource} — those two plus the dispatcher's change
- *    signal, its in-flight preview surfaces and its published overlays,
- *    bundled into the object `<Canvas>` takes.
+ * The dispatcher side of `<Canvas>`'s {@link GestureSource} seam: `<Canvas>`
+ * knows nothing about the gesture dispatcher, so `<SceneCanvas>` wires its
+ * contribution in from here.
  *
  * `useDispatcherOverlayLayer` paints the same `insertPreview` overlays this
  * reads, and both size them through `insertPreviewExtent`, so the reported
@@ -48,11 +36,10 @@ export function dispatcherGestureIds(dispatcher: Dispatcher | null | undefined):
  * World-space AABBs of in-flight gestures with no scene node yet — the
  * `insertPreview` overlay variant, sized by {@link insertPreviewExtent}.
  *
- * Only `insertPreview`. `marquee` and `lasso` are in-flight gestures with
- * geometry too, but they *select* rather than *propose content*: a consumer
- * sizing itself to the gesture (lbx-editor's live auto-length) must not grow
- * because the user swept a selection rectangle. A `polyline` — a slice's cut
- * line, a connector being routed — proposes no content either.
+ * Only `insertPreview`. `marquee`, `lasso`, and `polyline` are in-flight
+ * gestures with geometry too, but they do not *propose content*: a consumer
+ * sizing itself to the gesture must not grow because the user swept a
+ * selection rectangle.
  */
 export function dispatcherInsertBounds(dispatcher: Dispatcher | null | undefined): Bounds[] {
   const out: Bounds[] = [];
@@ -61,10 +48,9 @@ export function dispatcherInsertBounds(dispatcher: Dispatcher | null | undefined
     const ov = handle.overlay?.();
     if (!ov || ov.kind !== 'insertPreview') continue;
     const b = insertPreviewExtent(ov).bounds;
-    // A zero-area extent is the pointerdown frame before the first move.
-    // Mirrors `useDispatcherOverlayLayer`'s skip, pencil exception included:
-    // a pencil gesture can be meaningful at near-zero AABB (closed loop /
-    // sub-threshold), so it reports its point rather than nothing.
+    // A zero-area extent is the pointerdown frame before the first move. A
+    // pencil gesture can be meaningful at near-zero AABB, so it reports its
+    // point rather than nothing.
     if (b.width === 0 && b.height === 0 && ov.shape !== 'pencil') continue;
     out.push({ x: b.x, y: b.y, width: b.width, height: b.height });
   }
@@ -75,11 +61,8 @@ const NO_OP_UNSUBSCRIBE = (): void => {};
 
 /**
  * Bundle a dispatcher into the {@link GestureSource} `<Canvas>` consumes.
- *
- * Reads the dispatcher through a getter rather than closing over it, so the
- * source can be built once and keep pointing at the live dispatcher across
- * re-renders. A `null` dispatcher yields the empty answers — no ids, no
- * bounds, a no-op subscription, version 0.
+ * The getter lets the source be built once and keep pointing at the live
+ * dispatcher across re-renders. A `null` dispatcher yields the empty answers.
  */
 export function createGestureSource(
   getDispatcher: () => Dispatcher | null | undefined,
@@ -104,9 +87,6 @@ export function createGestureSource(
 /**
  * The dispatcher's contribution to a view's overlay-aware lookups: which ids
  * an in-flight handle hides behind a ghost, and the pose it proposes for one.
- *
- * Separate from {@link createGestureSource} only because `<Canvas>` takes
- * these as two loose props rather than a bundle.
  */
 export function createDispatcherPreviewSources(
   getDispatcher: () => Dispatcher | null | undefined,

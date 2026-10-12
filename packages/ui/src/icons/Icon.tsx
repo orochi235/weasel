@@ -1,6 +1,7 @@
 import { useId, useMemo, type SVGProps } from 'react';
 import { ICON_SLOTS, inset } from './layers';
-import { ICON_FILLS, ICON_PATHS, type FillableIconName, type IconName, type MarkIconName } from './paths';
+import type { MarkIconName } from './groups';
+import { ICON_FILLS, ICON_PATHS, type FillableIconName, type IconName } from './paths';
 
 /** Shared prop shape for the icon set. Color comes from the surrounding
  *  `color` CSS property — every glyph strokes in `currentColor`. */

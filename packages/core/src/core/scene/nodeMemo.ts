@@ -2,29 +2,17 @@
  * `nodeMemo` — memoize anything derived from a node, keyed on the node's
  * identity plus the `pose` / `data` references the scene swaps on every edit.
  *
- * **Why this key works.** The scene mutates node objects in place but
- * *replaces* `pose` and `data` with new references — see the `kit:setPose` /
- * `kit:setData` ops in `core/scene/scene.ts`, which do `node.pose = p.to` /
- * `node.data = p.to`. So the node object is a stable identity, and those two
- * references are an exact freshness signal for anything derived per node: no
- * deep compare, no dirty flag, no subscription. The whole memo is three
- * reference comparisons.
- *
- * The assumption it rests on is the other side of that contract: nobody
- * mutates `node.data` (or `node.pose`) in place without replacing the
- * reference. A consumer who violates it sees a stale derivation until the next
- * real edit.
+ * The scene mutates node objects in place but *replaces* `pose` and `data`
+ * with new references, so those two references are an exact freshness signal.
+ * The assumption it rests on: nobody mutates `node.data` (or `node.pose`) in
+ * place without replacing the reference. A consumer who violates it sees a
+ * stale derivation until the next real edit.
  *
  * **What the key does not cover** is ambient state that `derive` reads — a
- * registry, a font set, a decode cache. Those change what `derive` would
- * return with no change to the node at all, which is the one failure a
- * `(pose, data)` key cannot see. {@link bumpNodeMemoGeneration} is the escape
- * hatch: whoever owns the ambient state bumps, and every slot on every node is
- * dropped. Derivations that read ambient state with *no* such signal (an async
- * image decode landing, say) must not be memoized here at all.
- *
- * Consumers: `canvas/NodeShape.ts` memoizes the painter match and the
- * silhouette path this way.
+ * registry, a font set, a decode cache. Whoever owns the ambient state calls
+ * {@link bumpNodeMemoGeneration}. Derivations that read ambient state with
+ * *no* such signal (an async image decode landing, say) must not be memoized
+ * here at all.
  */
 
 /** One memoized derivation: the references it was derived against, plus the
@@ -76,9 +64,7 @@ const MEMO = new WeakMap<object, NodeMemoRecord>();
 let generation = 0;
 
 /** A node, as far as the memo is concerned: an object identity that may carry
- *  a `data` reference. Deliberately not `Node<…>` — the memo doesn't read
- *  anything else, and typing it loosely keeps `core/scene` from depending on
- *  the full node shape for a three-comparison cache. */
+ *  a `data` reference. */
 type MemoizableNode = { data?: unknown };
 
 /**
@@ -86,19 +72,13 @@ type MemoizableNode = { data?: unknown };
  * node's `data` reference, the given `pose` reference, or the global
  * generation has changed since the last call for this `slot`.
  *
- * `slot` names the derivation. A node has more than one derived value — the
- * painter match, the silhouette, draw commands, text layout — and they
- * invalidate on the same signals but must not overwrite each other.
+ * `slot` names the derivation, so a node's several derived values do not
+ * overwrite each other.
  *
  * `pose` is a **parameter rather than a read off the node**, because callers
  * legitimately derive against a pose that isn't `node.pose`: a preview or
- * ghost pose mid-drag. Those miss and recompute, as they should, and must not
- * poison the entry for the node's real pose. Pass `undefined` for derivations
- * that don't depend on the pose at all (the painter match is one) — it
- * compares equal to itself, leaving `data` as the only key.
- *
- * `data` is read off the node rather than passed: no caller has had a reason
- * to derive against data the node doesn't hold.
+ * ghost pose mid-drag. Pass `undefined` for derivations that don't depend on
+ * the pose at all, leaving `data` as the only key.
  */
 export function nodeMemo<T>(
   node: MemoizableNode,
@@ -173,15 +153,8 @@ export function nodeMemoSlotCount(node: MemoizableNode): number {
 }
 
 /**
- * Drop every memoized slot on every node.
- *
- * For owners of ambient state that changes what a `derive` would return: the
- * shape-painter registry calls this when a painter is registered or disposed,
- * since a cache keyed only on `(pose, data)` would keep answering with the
- * painter that matched before.
- *
- * Cheap — it bumps a counter; records are re-stamped lazily on next access,
- * and unreachable nodes stay collectable via the `WeakMap`.
+ * Drop every memoized slot on every node. For owners of ambient state that
+ * changes what a `derive` would return. Cheap — it bumps a counter.
  */
 export function bumpNodeMemoGeneration(): void {
   generation++;
@@ -189,12 +162,10 @@ export function bumpNodeMemoGeneration(): void {
 
 /**
  * Drop the slots of `node` that were keyed on a pose, keeping the ones that
- * weren't (the painter match passes `undefined`, and re-matching it is a
- * registry scan).
+ * weren't.
  *
  * For per-frame pose overrides, which mutate one buffer in place rather than
- * replacing the reference: the `(pose, data)` key cannot see that, so the
- * override's `commit()` calls this for each node it holds.
+ * replacing the reference, which the `(pose, data)` key cannot see.
  * {@link bumpNodeMemoGeneration} is the wrong tool there — it would drop every
  * static node's slots too, every frame.
  */

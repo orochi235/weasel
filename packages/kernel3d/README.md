@@ -31,7 +31,7 @@ numbers: a 3D host passes the dispatcher an identity `clientToWorld`, so
 `ctx.world` is the screen point, and each dep rebuilds the ray itself. Tools,
 the select tool included, transfer untouched.
 
-One thing does not, and the kernel says so rather than guessing:
+One thing does not:
 
 - **`ViewApi` has no orientation**, so an orbit camera cannot travel through
   the kit's `view`. The kernel declares a `camera3d` dep of its own.
@@ -46,7 +46,7 @@ away it is.
 
 **The answer is "as far as it already was."** Both resolve the rectangle on the
 plane through the pose they were handed, facing the camera, so neither changes
-depth. Two consequences worth knowing before you build on them:
+depth. Two consequences:
 
 - A resize scales uniformly. The rectangle names two extents and a pose has
   three, so the factor is the geometric mean of the two it names.

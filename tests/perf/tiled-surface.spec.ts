@@ -1,15 +1,12 @@
 /**
  * What N renderers on one context cost. Mesh, texture and gradient-ramp caches
  * are per-renderer, so two panes drawing the same shapes hold two copies of
- * every uploaded mesh and glyph atlas on the same GL context. The spec's open
- * question is whether that duplication beats re-targeting one renderer between
- * panes each frame.
+ * every uploaded mesh and glyph atlas on the same GL context.
  *
  * The counters are installed on `WebGL2RenderingContext.prototype` before any
  * page script runs, so they see the warm-up uploads too — hooking a live
  * context after load reports zero and cannot tell "everything is cached" from
- * "nothing painted". Draw calls are counted for exactly that reason: they are
- * the proof the frames being timed are real.
+ * "nothing painted". Draw calls are counted for that reason.
  *
  * Reports; does not gate. See tests/perf/README.md.
  */
@@ -56,8 +53,7 @@ test('tiled-surface — uploads and frame time, two renderers on one context', a
     ({ ...(window as unknown as { __glStats: Record<string, number> }).__glStats }));
 
   // A drag, not a hover: a hover that changes nothing does not dirty the
-  // surface, and the first version of this measured 120 frames of vsync with
-  // zero draw calls behind them. The `draws` figure below is what caught it.
+  // surface, so the loop would time vsync with zero draw calls behind it.
   const paneB = await page.evaluate(() => {
     const r = (document.querySelector('[data-pane="B"]') as HTMLElement).getBoundingClientRect();
     return { left: r.left, top: r.top };

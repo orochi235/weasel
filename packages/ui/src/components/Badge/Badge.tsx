@@ -18,8 +18,7 @@ interface BadgeBaseProps extends StanceProps {
   variant?: BadgeVariant;
   size?: BadgeSize;
   /** "Edge bloat": offset every base perimeter sample outward by N CSS px along the normal
-   *  before any compose effects run. Negative values shrink the silhouette. Photoshop-style
-   *  expand-selection on the body. */
+   *  before any compose effects run. Negative values shrink the silhouette. */
   bloat?: number;
   padding?: number | string;
   /**
@@ -160,7 +159,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   const stanced = useStance({ stance, tone });
 
   // Compose-mode: explicit `base` prop wins; otherwise the shape may declare its own
-  // `compose()` spec to migrate legacy shapes through the new pipeline.
+  // `compose()` spec.
   const shapeComposeSpec = !base && shapeModule.compose ? shapeModule.compose(params) : null;
   const resolvedBaseKey = base ?? (shapeComposeSpec?.base as BadgeBase | undefined);
   const composeBase = resolvedBaseKey ? BASES[resolvedBaseKey] : null;
@@ -211,10 +210,8 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     'aria-label': ariaLabel,
   };
 
-  // Honest chaining: sample the base perimeter at COMPOSE_SAMPLES points and sum every
-  // offset-style effect's contribution at each sample. Stacked transforms therefore compose
-  // additively — `[bites, spikes]` produces a bitten outline with spikes radiating from
-  // wherever bites haven't dented inward.
+  // Sample the base perimeter at COMPOSE_SAMPLES points and sum every offset-style
+  // effect's contribution at each sample, so stacked transforms compose additively.
   const COMPOSE_SAMPLES = 600;
   const composedSampler = (() => {
     if (!composeBase || !sampler) return null;
@@ -231,9 +228,6 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     const sx = 100 / box.w;
     const sy = 100 / box.h;
     const totalCss = sampler.totalCss;
-    // Compute the warped sample point at any CSS arc length s — base perimeter sample
-    // bloated outward by a constant CSS distance plus the sum of every offset effect's
-    // contribution at that sample.
     const warpedXY = (sCss: number) => {
       const sm = ((sCss % totalCss) + totalCss) % totalCss;
       const pt = sampler.perimeterAt(sm);
@@ -258,9 +252,8 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
       d += (i === 0 ? `M ${w.x.toFixed(3)} ${w.y.toFixed(3)}` : ` L ${w.x.toFixed(3)} ${w.y.toFixed(3)}`);
     }
     d += ' Z';
-    // Replace perimeterAt with a warped version: warped point + normal recomputed from
-    // the warped tangent (clockwise rotation of unit tangent). This is what decorations
-    // like Bevel and Perforations need to follow the actual bumpy outline.
+    // The normal is recomputed from the warped tangent, so decorations follow the
+    // actual bumpy outline.
     const warpedPerimeterAt = (s: number) => {
       const sm = ((s % totalCss) + totalCss) % totalCss;
       const pt = warpedXY(sm);
@@ -271,13 +264,11 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
       const tx = (wB.x - wA.x) / sx;
       const ty = (wB.y - wA.y) / sy;
       const tl = Math.hypot(tx, ty) || 1;
-      // Outward normal: clockwise rotation of tangent (in CSS space), then renormalize
-      // for unit length in viewBox terms when returned.
+      // Outward normal: clockwise rotation of tangent (in CSS space).
       const nxC = ty / tl;
       const nyC = -tx / tl;
-      // Convert that CSS-space normal back to a viewBox-space unit-ish normal: the
-      // existing PerimeterPoint contract has nx/ny used multiplicatively with sx/sy in
-      // call sites, matching the convention base perimeters use.
+      // Returned in CSS space: call sites multiply nx/ny by sx/sy, the convention base
+      // perimeters use.
       return { x: pt.x, y: pt.y, nx: nxC, ny: nyC };
     };
     return { bodyPath: d, perimeterAt: warpedPerimeterAt, totalCss };

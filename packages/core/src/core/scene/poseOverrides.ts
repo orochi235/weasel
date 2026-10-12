@@ -11,14 +11,12 @@ const NOTHING: PoseOverride<never> = Object.freeze({});
 /**
  * Build a {@link PoseOverrides} map.
  *
- * `getNode` resolves an id to the node object the painter memo is keyed on —
- * the only thing this module needs from the scene, and the reason it doesn't
- * import one. `onInvalidate` lets the scene invalidate derived nodes from the
- * same chokepoint.
+ * `getNode` resolves an id to the node object the painter memo is keyed on.
+ * `onInvalidate` lets the scene invalidate derived nodes from the same
+ * chokepoint.
  *
  * What `read` answers is a blits mix folded per node. The entries a writer
- * `set`s are one voice on it, and the nodes holding an entry are the mix's
- * reach: a node outside it is never probed.
+ * `set`s are one voice on it, and a node holding no entry is never probed.
  */
 export function createPoseOverrides<TPose>(
   getNode: (id: NodeId) => { data?: unknown } | undefined,

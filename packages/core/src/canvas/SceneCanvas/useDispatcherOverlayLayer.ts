@@ -3,22 +3,12 @@
  *
  * Paints the overlay shapes the drawing view's in-flight handles publish,
  * taken off the draw envelope so a panel shows its own gesture rather than
- * the surface's. `resolveOverlays` does the reading — normalizing the drag,
- * sizing the nascent shape, dropping what is degenerate — and everything left
- * here is painting: projection into screen coordinates, the chrome-caps gate,
- * fill/stroke policy, the stroke each overlay role reads as, the anchor dot's
- * size, and the image bitmap.
+ * the surface's. `resolveOverlays` does the reading; everything here is
+ * painting.
  *
  * Distinct from `usePreviewGhostLayer`, which paints displaced scene-node
- * silhouettes via `previewIds()` / `previewPose(id)`. The dispatcher
- * overlay layer is for gestures whose visual feedback isn't a moved scene
- * node — marquee rect (area-select), polyline + dashed close-line (lasso),
- * and any future overlay-only chrome an action wants to render.
- *
- * Replaces the per-tool `select-overlay` rendering for the same gestures
- * once the dispatcher path is the sole driver. Until
- * then both run side-by-side; the visuals overlap exactly so the
- * user-visible result is identical.
+ * silhouettes. This layer is for gestures whose visual feedback isn't a moved
+ * scene node — a marquee rect, a lasso polyline, an insert preview.
  */
 import { useEffect, useMemo, useReducer } from 'react';
 import { useLatest } from '@weasel-js/react';
@@ -42,9 +32,7 @@ import { resolveOverlays } from 'interactions/actions/resolveOverlays';
 import { gestureOverlaysFrom, isVisibleFrom } from '../drawEnvelope';
 import { OVERLAY_ROLE_STROKES } from '../overlayRoleStrokes';
 
-/** Style knobs for the dispatcher-overlay layer's marquee + lasso paints.
- *  Defaults match the legacy `useSelectTool` `areaSelectOverlayStyle`
- *  defaults so the visual swap is invisible to users. */
+/** Style knobs for the dispatcher-overlay layer's marquee + lasso paints. */
 export interface DispatcherOverlayStyle {
   fill?: string;
   stroke?: string;
@@ -100,13 +88,10 @@ export function useDispatcherOverlayLayer(args: {
         const t = viewToTransform(view);
         const out: DrawCommand[] = [];
 
-        // Chrome-caps gate. Mirrors `composeAffordanceLayer` /
-        // `createSelectionOverlayLayer`: pull a visibility predicate off
-        // the data envelope and consult it per overlay before pushing draw
-        // commands. Absent envelope → every overlay paints. This stays on the
-        // painting side: the predicate is a property of the view's envelope,
-        // and two views of one surface may answer differently for the same
-        // in-flight gesture.
+        // Chrome-caps gate. Absent envelope → every overlay paints. This stays
+        // on the painting side: the predicate is a property of the view's
+        // envelope, and two views of one surface may answer differently for
+        // the same in-flight gesture.
         const isVisible = isVisibleFrom(data);
         const passes = (id: string) => (isVisible ? isVisible(id) : true);
 
@@ -208,11 +193,9 @@ export function useDispatcherOverlayLayer(args: {
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
             };
             out.push(cmd);
-            // Anchor dot at the drag's click point. Sells the anchoring
-            // visually for radial shapes (polygon/star — no vertex sits
-            // at the AABB corner) and for center mode (dot marks the
-            // growth axis). 4 CSS-px radius, same stroke color as the
-            // ghost so it reads as part of the chrome.
+            // Anchor dot at the drag's click point: for radial shapes no
+            // vertex sits at the AABB corner, and in center mode the dot marks
+            // the growth axis.
             if (ov.anchorPoint) {
               const anchorScreen = projectPoint(ov.anchorPoint.x, ov.anchorPoint.y);
               out.push({
@@ -230,11 +213,8 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'lasso') {
-            // Project every vertex to screen coords; build a single polygon
-            // path. The polygon already closes (polygonFromPoints adds Z),
-            // which renders as the dashed "close-line" implicit in the
-            // legacy hook's visual. Fill paints the would-be selection
-            // region; stroke paints the polyline + close-line.
+            // `polygonFromPoints` closes the path, which draws the dashed
+            // close-line back to the first vertex.
             const screenPts: { x: number; y: number }[] = [];
             for (const v of ov.vertices) {
               const [sx, sy] = worldToScreen(v.x, v.y, t);
@@ -269,8 +249,6 @@ export function useDispatcherOverlayLayer(args: {
         }
 
         if (out.length === 0) return [];
-        // Screen-space layer: emit commands directly. The worldToScreen
-        // projection above has already mapped every coord into CSS pixels.
         return out;
       },
     }),

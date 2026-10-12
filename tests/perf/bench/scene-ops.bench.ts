@@ -2,14 +2,13 @@
  * Scene mutations against tree depth, and `renderOrder()` against node count.
  *
  * Every mutation on a `Scene` is routed through the history engine, so what
- * these measure is "one undoable step", not a bare `Map.set`. That is the
- * cost a consumer actually pays.
+ * these measure is "one undoable step", not a bare `Map.set`.
  *
  * Mutating benchmarks are pinned to an explicit iteration count rather than
  * tinybench's default "run for 500ms": `add` grows the scene it is measuring,
- * and an open-ended run would measure a scene of unknowable size and allocate
- * proportionally. `historyLimit` is likewise small, so the undo log does not
- * become the thing under test.
+ * and an open-ended run would measure a scene of unknowable size.
+ * `historyLimit` is likewise small, so the undo log does not become the thing
+ * under test.
  */
 import { group } from './group';
 import type { NodeId } from 'core/scene/types';
@@ -43,9 +42,7 @@ group('scene.add — leaf, by tree depth', (bench) => {
 }, FIXED);
 
 group('scene.add + scene.remove — round trip, by tree depth', (bench) => {
-  // Paired so the scene stays the same size across iterations. `remove`
-  // snapshots the subtree for undo, so this is the honest cost of an insert
-  // the user immediately deletes.
+  // Paired so the scene stays the same size across iterations.
   for (const depth of DEPTHS) {
     const { scene, parent } = chainAt(depth);
     bench(`depth ${depth}`, () => {
@@ -73,16 +70,9 @@ group('scene.setPose — by tree depth', (bench) => {
 }, FIXED);
 
 /**
- * The three ways a 60 Hz loop can move a node, against each other.
- *
- * `docs/TODO.md` carried a P1 saying the fresh pose object `setPose` demands
- * per node per frame was the GC bill, and proposed a scalar setter or an
- * in-place write to remove it. The bare-allocation row is what settles that:
- * minting the object is a rounding error next to what `setPose` costs, so
- * neither remedy would have moved the number. The override row is the write
- * that actually costs nothing — `PoseOverrides` is set once and mutated in
- * place, and `commit()` drops the pose-keyed memo slots the reference key can
- * no longer see.
+ * The three ways a 60 Hz loop can move a node, against each other. The
+ * bare-allocation row prices the fresh pose object `setPose` demands per node
+ * per frame, apart from `setPose` itself.
  */
 group('per-frame pose write — one node, three paths', (bench) => {
   const scene = emptyScene(60);
@@ -100,7 +90,7 @@ group('per-frame pose write — one node, three paths', (bench) => {
     scene.overrides.commit();
   });
 
-  // No scene at all: the cost the two remedies above would have removed.
+  // No scene at all.
   const sink: { x: number; y: number; width: number; height: number }[] = [];
   bench('the pose object alone', () => {
     sink[0] = { x: i++, y: 0, width: 3, height: 4 };
@@ -178,9 +168,8 @@ group('renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)', (be
     if (c !== 10000) throw new Error(`renderOrder yielded ${c}, expected 10000`);
   };
   // One layer, bounced between the first two slots. Alternating *which* layer
-  // moves instead would ask the second call to put a layer where it already
-  // is, and `moveLayer` returns early on that — leaving the cache valid and
-  // the "cold" walk measuring a cache hit.
+  // moves would put a layer where it already is; `moveLayer` returns early on
+  // that, leaving the cache valid and the "cold" walk measuring a cache hit.
   let slot = 0;
   const reorderLayers = (): void => {
     slot = slot === 0 ? 1 : 0;

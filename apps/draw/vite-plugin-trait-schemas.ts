@@ -4,12 +4,7 @@
  *
  *   import schemas from 'virtual:weasel-trait-schemas';
  *
- * The Bundle Inspector consumes this index to render schema panels for
- * shape kinds, op factories, actions, gestures, and the SceneNode shape.
- *
- * The extractor runs lazily on first `load()` and the result is cached.
- * In `serve` mode, edits to any of the watched source files invalidate the
- * virtual module so the inspector picks up new schemas on the next render.
+ * The Bundle Inspector renders schema panels from this index.
  */
 import type { Plugin, ViteDevServer } from 'vite';
 import { resolve } from 'node:path';

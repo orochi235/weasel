@@ -7,9 +7,6 @@ import { tiledProject } from './tiledProject';
  * How far apart the copies sit, in world units. A bare number wraps the x
  * axis only — the side-scrolling backdrop this is usually reached for.
  * `{ x, y }` wraps both; naming one key wraps that axis alone.
- *
- * The period names the axes, so there is no separate `axis` option: two ways
- * to say which axes wrap is one way for them to disagree.
  */
 export type TilePeriod = number | { x?: number; y?: number };
 
@@ -64,9 +61,7 @@ function translate(tx: number, ty: number): Float64Array {
  * `+k * period` in world space.
  *
  * The lattice is per layer, not per shape. Content on two different periods
- * is two tiled layers stacked, which keeps each source ignorant of the other
- * — a per-shape period would move the lattice into the source and make the
- * wrapper unable to cull.
+ * is two tiled layers stacked.
  *
  * The plane is `space: 'world'`, which is what lets it be a `source` of
  * `createParallaxLayer`: the parallax plane hands it the derived inner view,

@@ -9,23 +9,10 @@ type ModKey = keyof ModifierState;
 /** Aspect-ratio lock: drag a corner/edge with `key` (default `'shift'`) held
  *  to keep the resized bounds at the start-pose's `width / height` ratio.
  *
- *  Strategy:
- *  - Compute the proposed deltas in width and height (signed, relative to
- *    origin). Whichever axis has the larger absolute delta "wins"; the other
- *    is recomputed from `(originW / originH) * winnerDelta`.
- *  - The opposite corner/edge stays anchored — for the corner case we infer
- *    the anchor from the proposed bounds; for an edge handle we resize the
- *    orthogonal axis symmetrically around the dragged edge's anchor (the
- *    handle's own line stays put, the orthogonal axis grows/shrinks centered
- *    on the un-dragged edge — see notes below).
- *  - No-op when the modifier is not held, when the origin has zero width or
- *    height (no defined ratio), or when the proposed pose hasn't moved.
- *
- *  Edge-handle handling: with `anchor.x !== 'free' && anchor.y === 'free'`
- *  (an `e` or `w` handle), only the width was driven by the pointer. We pick
- *  the new height as `width / ratio` and pin it to the un-dragged y axis by
- *  anchoring at the origin's top edge (`y` stays at `origin.y`). Symmetric
- *  for `n` / `s`.
+ *  On a corner handle the axis with the larger absolute delta wins and the
+ *  other follows from the ratio, with the opposite corner anchored. On an
+ *  edge handle the driven axis sets the other, which stays centered on the
+ *  origin. No-op when the origin has zero width or height.
  */
 export function lockAspectWithModifier<TPose extends Bounds>(opts: {
   key?: ModKey;
@@ -40,9 +27,6 @@ export function lockAspectWithModifier<TPose extends Bounds>(opts: {
       if (origin.width === 0 || origin.height === 0) return;
       const ratio = origin.width / origin.height; // w / h
 
-      // Signed deltas relative to origin. Negative deltas mean the user has
-      // dragged through the anchor and flipped the rect; we preserve sign on
-      // the recomputed axis so the flipped quadrant stays consistent.
       const dw = pose.width - origin.width;
       const dh = pose.height - origin.height;
 
@@ -56,8 +40,6 @@ export function lockAspectWithModifier<TPose extends Bounds>(opts: {
         // Edge handle: n or s. height is driven; width follows.
         nh = pose.height;
         nw = nh * ratio;
-        // sign-preserve width if the original height delta caused a flip.
-        // (height-driven only; width direction follows ratio absolutely.)
         if (nw < 0) nw = -nw;
       } else if (anchor.y === 'free') {
         // Edge handle: e or w. width is driven; height follows.
@@ -87,9 +69,7 @@ export function lockAspectWithModifier<TPose extends Bounds>(opts: {
         // East edge anchored at origin.x + origin.width.
         nx = origin.x + origin.width - nw;
       } else {
-        // Edge handle (n/s): width grew/shrunk via ratio. Center horizontally
-        // about the origin's center so the rect stays visually centered on
-        // the dragged edge's midline.
+        // Edge handle (n/s): center horizontally about the origin's center.
         nx = origin.x + origin.width / 2 - nw / 2;
       }
       if (anchor.y === 'min') {

@@ -3,25 +3,18 @@
 // the repo, and check that npm can actually resolve the release.
 //
 // `check:published` asks whether each version exists. This asks the question a
-// consumer asks, which is not the same one: the fixed group pins siblings by
-// range, so one package missing makes `npm i @weasel-js/core` fail with
-// ETARGET while sixteen of the eighteen versions are perfectly present. That is
-// how 1.2.0 was found — by a person installing it, days later.
+// consumer asks: the fixed group pins siblings by range, so one package missing
+// makes `npm i @weasel-js/core` fail with ETARGET while every other version is
+// present.
 //
-// The cache is a fresh directory on purpose. `npm view` reported ETARGET for a
-// package that was already live while chasing the 1.4.3 stragglers, so a check
-// that can be answered from anything cached locally is not worth running.
-//
-// Complements `test:smoke:consumer`, which bundles and typechecks against
-// locally packed tarballs. That one proves the tarballs are right; this one
-// proves the registry is serving them.
+// The cache is a fresh directory on purpose: npm can report ETARGET from a
+// cached packument for a package that is already live.
 //
 //   npm run test:smoke:registry -- --wait     retry a failed install for up to 15 minutes
 //   npm run test:smoke:registry -- --wait=5   ... or for that many minutes
 //
 // The release job waits: a version `check:published` has just seen can still be
-// missing from the packument npm resolves against. 1.9.2's install ran one
-// second after labkit listed, and resolved it as `labkit@undefined`.
+// missing from the packument npm resolves against.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -90,9 +83,8 @@ if (!ok) {
   process.exit(1);
 }
 
-// The install succeeding is most of the answer, but npm is happy to satisfy a
-// spec from somewhere other than where it was asked. Confirm each package
-// landed at the exact version main claims.
+// npm is happy to satisfy a spec from somewhere other than where it was asked.
+// Confirm each package landed at the exact version main claims.
 const wrong = [];
 const width = String(packages.length).length;
 

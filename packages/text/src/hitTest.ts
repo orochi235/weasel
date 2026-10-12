@@ -1,16 +1,8 @@
 /**
- * Hit-testing for text nodes.
- *
- * `pointInTextPose` does a coarse pose-rect test — suitable for click-to-edit
- * where the pose rect is the authoritative bounding box (selection outline,
- * drag target).
- *
- * `caretIndexAt` does the finer test: given a world-space (x, y) inside the
- * pose, returns the corresponding character offset so the consumer can place
- * the caret on click. It reads the caret stops off `layoutTextPose`, the
- * layout the painters draw and `textLineBoxes` picks against, so the caret
- * cannot land on a different line — or between different glyphs — than the
- * one under the pointer.
+ * Hit-testing for text nodes. `caretIndexAt` reads the caret stops off
+ * `layoutTextPose`, the layout the painters draw and `textLineBoxes` picks
+ * against, so the caret cannot land on a different line — or between different
+ * glyphs — than the one under the pointer.
  */
 
 import type { LaidOutCell } from './layout/layoutRuns';
@@ -68,8 +60,7 @@ export function pointInTextPose(
  * Map a world-space point inside `pose` to a character offset into the pose's
  * text (0..length). Clicks above the first line clamp to 0; clicks below the
  * last line clamp to the end. Within a line, the caret lands between two
- * glyphs at whichever side of the advance cell's midpoint `x` falls on — the
- * standard "snap caret to nearest character boundary" rule.
+ * glyphs at whichever side of the advance cell's midpoint `x` falls on.
  *
  * Honors `pose.runs` (a mixed-size line snaps on the cells each run actually
  * produced) and `pose.verticalAlign`. The offset is into the runs'

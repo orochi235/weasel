@@ -1,15 +1,10 @@
 /**
  * `Graph` — the adjacency index a layout runs over.
  *
- * The scene is the document, so there is no second graph kept in sync with it:
- * this one is built from the scene on demand, used, and thrown away. Rebuilding
- * per layout invocation is deliberate — a maintained index is a cache to
- * invalidate on every add, delete, reparent and `dependsOn` edit, and layout is
- * not on the hot path. Measure before changing that.
- *
- * A node's *identity* is its id and its *size* is its bounds; where it currently
- * sits is here too, because a re-layout that ignores where things already are
- * scrambles a diagram the author has arranged.
+ * Built from the scene on demand, used, and thrown away. Rebuilding per layout
+ * invocation is deliberate — a maintained index is a cache to invalidate on
+ * every add, delete, reparent, and `dependsOn` edit, and layout is not on the
+ * hot path.
  */
 import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core/math';
 import { expandGroupEdges, insetOf, type GroupInset } from './cluster';
@@ -65,8 +60,7 @@ export interface GraphEdge {
  * Nodes, edges, and the two adjacency reads a layout needs.
  *
  * Every list is in source order — render order, when the source is a scene —
- * which is what a layout's tiebreaks resolve against. There is no RNG anywhere
- * downstream of this, and this is where that starts.
+ * which is what a layout's tiebreaks resolve against.
  */
 export interface Graph {
   readonly nodes: readonly GraphNode[];
@@ -94,9 +88,8 @@ export interface BuildGraphOptions<TPose> {
  * dependencies; a group if its trait carries `group`, with its dependencies as
  * its members, which may be groups themselves (see `nestGroups`); a participant if the reader hands back any other
  * `DiagramNode`; and otherwise not in the diagram at all. An edge whose
- * endpoints are not both participants or groups is dropped — a dangling edge
- * should not be ranking anything — and an edge to a group ranks against its
- * members (see `expandGroupEdges`).
+ * endpoints are not both participants or groups is dropped, and an edge to a
+ * group ranks against its members (see `expandGroupEdges`).
  */
 export function buildGraph<TPose>(
   source: GraphSource<TPose>,

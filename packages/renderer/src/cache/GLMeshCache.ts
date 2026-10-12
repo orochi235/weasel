@@ -21,29 +21,16 @@ interface MeshResources {
  * Caches GL-side buffers + VAO per `Mesh` identity. Upload happens lazily
  * on first `handleFor(mesh)` call.
  *
- * **GC-aware cleanup (deferred-delete queue):** when a Mesh becomes
- * unreachable, the WeakMap entry is dropped automatically — but the
- * underlying GL resources (VAO, VBO, IBO) would leak forever without an
- * explicit `gl.delete*` call. We register each Mesh with a
+ * **GC-aware cleanup (deferred-delete queue):** we register each Mesh with a
  * `FinalizationRegistry`; when the Mesh is reclaimed, the finalizer pushes
- * the resources onto an internal queue. The renderer drains this queue at
- * the start of each `render()` call (via `drainPendingDeletes()`), when GL
- * is in a known state — no VAO bound, no draw mid-flight. Deleting from the
- * finalizer directly was racy (it could fire between two `gl.bindVertexArray`
- * calls inside `dispatch()`, sometimes corrupting the next draw); deferring
- * the actual delete to a known-safe point keeps the use-after-free risk to
- * zero.
- *
- * Caveats:
- *   - Finalizer timing is non-deterministic; resources may live for a frame
- *     or two beyond their Mesh, but they will be reclaimed.
- *   - If the GL context is lost between finalizer and drain, the drain
- *     no-ops safely (`gl.isContextLost()` makes deletes no-ops, and
- *     `gl.deleteBuffer(null)` is allowed).
+ * its GL resources (VAO, VBO, IBO) onto an internal queue. The renderer
+ * drains this queue at the start of each `render()` call (via
+ * `drainPendingDeletes()`), when GL is in a known state — no VAO bound, no
+ * draw mid-flight. Finalizer timing is non-deterministic; resources may live
+ * for a frame or two beyond their Mesh.
  *
  * The cache is GL-context-bound; if the context is lost and re-created, the
- * renderer should construct a new GLMeshCache. (Context loss handling lives
- * in `WeaselRenderer`.)
+ * renderer should construct a new GLMeshCache.
  */
 export class GLMeshCache {
   private readonly map = new WeakMap<Mesh, GLMeshHandle>();
@@ -61,10 +48,8 @@ export class GLMeshCache {
     private readonly gl: WebGL2RenderingContext,
   ) {
     this.finalizer = new FinalizationRegistry<MeshResources>((resources) => {
-      // Defer the actual gl.delete* until the renderer's next render(),
-      // when no VAO/buffer is bound mid-draw. Direct deletion from the
-      // finalizer caused use-after-free crashes when GC fired between
-      // bindVertexArray and drawElements inside dispatch().
+      // Defer the actual gl.delete* until the renderer's next render(): GC
+      // can fire between bindVertexArray and drawElements inside dispatch().
       if (!this.persistent.delete(resources)) return;
       this.pendingDeletes.push(resources);
     });
@@ -77,19 +62,14 @@ export class GLMeshCache {
     this.map.set(mesh, handle);
     const resources = { vao: handle.vao, vbo, ibo };
     this.persistent.add(resources);
-    // Register so the GL resources get freed when `mesh` is GC'd. The
-    // unregister token (mesh) lets us cancel if the Mesh is somehow
-    // re-uploaded under a different cache, though that's not a normal flow.
     this.finalizer.register(mesh, resources, mesh);
     return handle;
   }
 
   /**
-   * Upload a Mesh that the caller knows is single-use (e.g. the per-frame
-   * stroke ribbon from `tessellateStroke`). Returns a handle backed by fresh
-   * GL resources that the renderer will free deterministically at the end
-   * of the current frame via `freeTransient()`. Bypasses the WeakMap cache
-   * and the FinalizationRegistry, so transient meshes never wait on GC.
+   * Upload a Mesh that the caller knows is single-use. Returns a handle backed
+   * by fresh GL resources that the renderer frees at the end of the current
+   * frame via `freeTransient()`, so transient meshes never wait on GC.
    */
   uploadTransient(mesh: Mesh): GLMeshHandle {
     const { handle, vbo, ibo } = this.upload(mesh);

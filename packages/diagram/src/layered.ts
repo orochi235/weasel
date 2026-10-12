@@ -1,21 +1,18 @@
 /**
  * `layered` — ranks running one way, nodes running across.
  *
- * The flowchart / pipeline layout: an edge points from one rank to the next, so
- * reading down the page is reading the order things happen in. Ranks come from
- * longest-path layering, which puts every node as far along as its deepest
- * predecessor allows.
+ * The flowchart / pipeline layout: an edge points from one rank to the next.
+ * Ranks come from longest-path layering, which puts every node as far along as
+ * its deepest predecessor allows.
  *
  * Cycles do not disqualify a graph. A depth-first walk in graph order names the
  * edges that close a cycle, layering ignores those, and they draw as edges
- * running back up the page — which is what a reader expects a loop to look
- * like. Which edges get named depends only on the node order, so it is the same
- * every run.
+ * running back up the page. Which edges get named depends only on the node
+ * order, so it is the same every run.
  *
  * This is not crossing-minimization by default (`order: 'barycenter'` does
- * reorder ranks): within a rank, nodes keep the order they
- * already have on the cross axis. An author who dragged two branches into an
- * order gets that order back, and re-running the layout is free.
+ * reorder ranks): within a rank, nodes keep the order they already have on
+ * the cross axis.
  */
 import { barycenterOrder } from './barycenter';
 import { packClusters, rankGaps } from './cluster';

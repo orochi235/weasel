@@ -1,18 +1,13 @@
 /**
- * imageCache — the kit's per-`src` image loader + cache.
- *
- * The shape-painter chain (`kit:image` in `NodeShape.ts`) is synchronous, but
- * decoding an image is async. This module bridges the two: `getImageBitmap` is
- * a synchronous read that returns the decoded `ImageBitmap` when ready, and
- * otherwise returns `undefined` and lazily kicks off a de-duped async load.
- * When a load resolves (or errors), every `subscribeImageReady` listener fires
- * — `<SceneCanvas>` subscribes and calls `requestRedraw()`, so the painter
- * re-runs and emits the now-ready bitmap.
+ * The kit's per-`src` image loader + cache. Shape painters are synchronous
+ * and decoding an image is async, so `getImageBitmap` is a synchronous read
+ * that returns the decoded `ImageBitmap` when ready, and otherwise returns
+ * `undefined` and lazily kicks off a de-duped async load. When a load
+ * resolves (or errors), every `subscribeImageReady` listener fires.
  *
  * `src` is any browser-loadable image string: a remote URL, a `blob:` URL, or
- * a `data:image/…;base64,…` URI (the embedded-bytes path). The decoded bitmap
- * lives only here, keyed by `src` — never in node `data` — so `scene.toJSON()`
- * round-trips the (serializable) `src` string untouched.
+ * a `data:image/…;base64,…` URI. The decoded bitmap lives only here, keyed by
+ * `src` — never in node `data`.
  */
 
 import { createEmitter } from '@weasel-js/registry';

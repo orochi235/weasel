@@ -31,10 +31,6 @@ export function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle):
   el.style.textRendering = isCanvasFont(style.fontFamily) ? '' : 'geometricPrecision';
   el.style.lineHeight = String(style.lineHeight);
   applyOverlayDirection(el, style);
-  // Node-level decoration, so the overlay looks like the canvas the moment
-  // editing starts. Runs are additive over the node style (a run can't un-set
-  // a flag), which is exactly how CSS decoration propagates to descendants —
-  // a run span adds its own decoration but can't remove this one.
   const decorations: string[] = [];
   if (style.underline) decorations.push('underline');
   if (style.strikethrough) decorations.push('line-through');

@@ -2,14 +2,6 @@
  * The kit's single encoding of the pose-rotation convention: "rotate about the
  * pose's unrotated AABB center by `pose.rotation` (radians)."
  *
- * Every consumer that needs to apply rotation — the render-tree wrap
- * (`canvas/poseRotation.ts`), the world coordinate bake (`pathInWorld`), the
- * silhouette/clip bake (`findShapeSilhouette`), the hit-test inverse
- * (`poseContainsRotated`), and selection chrome — derives its pivot + angle
- * from `poseRotationOf` rather than re-inlining the `if (rotation && x != null
- * …)` gate. If the convention ever changes (a different pivot, say), it
- * changes here.
- *
  * A pose may also carry a `transform` inside the rotation. `poseFrameOf`
  * (`./poseFrame`) composes the two, and is what a reader that draws, bounds,
  * or picks the node wants; this module is the angle and pivot alone.
@@ -28,9 +20,7 @@ export interface PoseRotation {
  * Resolve a pose's rotation transform, or `null` when the pose carries no
  * effective rotation. Non-null requires a nonzero `rotation` **and** all four
  * AABB fields (`x`, `y`, `width`, `height`) — the pivot is the unrotated AABB
- * center. Poses missing any AABB field (e.g. a bare polygon pose) or with
- * zero/absent rotation return `null`, so callers can treat `null` as "draw /
- * hit / clip in the local frame, no rotation step."
+ * center.
  */
 export function poseRotationOf(pose: unknown): PoseRotation | null {
   const p = pose as Partial<{ x: number; y: number; width: number; height: number; rotation: number }>;
@@ -43,10 +33,7 @@ export function poseRotationOf(pose: unknown): PoseRotation | null {
 /**
  * Rotate every coordinate of `path` about `(cx, cy)` by `rotation` radians.
  * A `rect` promotes to a four-corner polygon (axis-aligned rects can't encode
- * rotation); a polygon keeps its command list and rotates each coord. Returns
- * a fresh `PolygonPath`; never mutates the input. This is the coordinate-baking
- * companion to `poseRotationOf` — `pathInWorld` and `findShapeSilhouette` both
- * apply it so they share one rotation implementation.
+ * rotation). Returns a fresh `PolygonPath`; never mutates the input.
  */
 export function rotatePathAround(path: Path, cx: number, cy: number, rotation: number): PolygonPath {
   if (path.kind === 'rect') {
@@ -86,7 +73,6 @@ function rotateRectCorners(
   const [x1, y1] = rotate(x + w, y);
   const [x2, y2] = rotate(x + w, y + h);
   const [x3, y3] = rotate(x, y + h);
-  // M, L, L, L, Z
   const commands = new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]);
   const coords = new Float32Array([x0, y0, x1, y1, x2, y2, x3, y3]);
   return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };

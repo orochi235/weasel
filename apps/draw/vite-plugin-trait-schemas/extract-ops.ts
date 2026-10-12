@@ -1,10 +1,6 @@
 /**
- * Op-factory extractor.
- *
- * Reads the kit's `src/core/ops/*.ts` modules and produces an `OpFactorySchema`
- * per exported `create*Op` function. The args object's type is resolved against
- * the same source file (interface or type alias) and its property signatures
- * become `PropertyDescriptor[]`.
+ * Produces an `OpFactorySchema` per exported `create*Op` function in the kit's
+ * ops modules. The args object's type is resolved against the same source file.
  *
  * Missing files are skipped silently so a kit rename doesn't crash the
  * inspector. Args types that can't be resolved emit an empty `params` list

@@ -1,19 +1,10 @@
 /**
  * The `mesh-gradient` paint kind — PDF's shading types 6 and 7 as a registered
- * paint.
+ * paint: a set of curved quadrilateral patches, each with a color at every
+ * corner.
  *
- * A mesh gradient is a set of curved quadrilateral patches, each with a color
- * at every corner. It is the paint SVG tried to standardize as
- * `<meshgradient>` and abandoned, and the one PDF has had since 1993; what it
- * buys over the three gradients is a color field that bends, so a highlight
- * can follow a form instead of running straight across it.
- *
- * This is a registered kind rather than a sixth branch in the renderer, and
- * deliberately: it uses only the slots `registerPaintKind` gives a consumer, so
- * whatever it can do, a consumer's own kind can do too. Its one concession is
- * living in this package, because that is where the shader registry is.
- *
- * `docs/proposals/2026-09-17-paint-kinds-beyond-svg.md` is the design.
+ * It uses only the slots `registerPaintKind` gives a consumer, so whatever it
+ * can do, a consumer's own kind can do too.
  */
 
 import type { GradStop } from '@weasel-js/paint';
@@ -38,9 +29,7 @@ export type { MeshPatch, MeshPoint } from './surface';
  * node's box, which is what lets the paint survive a resize.
  *
  * `interpolate` is the space corner colors blend through, matching the three
- * gradients. It is more visible here than there: a mesh blends in two
- * directions at once, so an sRGB blend's muddy middle covers area rather than
- * a line.
+ * gradients.
  */
 export interface MeshGradientPaint {
   kind: 'mesh-gradient';

@@ -20,12 +20,10 @@ export interface LabSurfaceProps {
  * pane can still hold a label. Tile rects are measured against the over
  * layer, which is also where a tile's own chrome on the surface (an
  * annotation input box) mounts. The layers are declared to any lightbox
- * inside, which lifts them around an expanded trial; while lifted they cover
- * the window, the surface re-measures against that, and the buffers resize.
+ * inside, which lifts them around an expanded trial.
  *
  * A host that already owns a surface keeps it: a lab embedded in a larger
- * shared-surface app must not open a second GL tenancy, and mounts no buffer
- * or layer of its own.
+ * shared-surface app must not open a second GL tenancy.
  */
 export function LabSurface({ bodyRef, children }: LabSurfaceProps) {
   const outerSurface = useSurfaceOptional();
@@ -41,9 +39,8 @@ export function LabSurface({ bodyRef, children }: LabSurfaceProps) {
   const surfaceRef = useRef<ReturnType<typeof useTiledSurface> | null>(null);
 
   // Sizing the buffer clears all of it, so every tile has to repaint — not
-  // only the one whose move triggered the measurement. Both buffers are sized
-  // together off one comparison: they are the same box, so a tenant of either
-  // is looking at the same rects, and one invalidateAll covers both.
+  // only the one whose move triggered the measurement. Both buffers are the
+  // same box, so one invalidateAll covers both.
   const onFrame = useCallback((frame: SurfaceFrame) => {
     const canvases = [ownUnderRef.current, ownOverRef.current].filter((c) => c !== null);
     if (canvases.length === 0) return;

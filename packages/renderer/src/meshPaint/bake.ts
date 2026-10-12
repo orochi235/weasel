@@ -1,16 +1,10 @@
 /**
- * A mesh paint baked into one RGBA bitmap.
+ * A mesh paint baked into one RGBA bitmap: each patch is subdivided into small
+ * quads and rasterized forward, once per paint, into a texture the shader then
+ * samples. Inverting a bicubic per fragment would be Newton iteration.
  *
- * A patch is a surface over `(u, v)`, but a paint has to answer "what color is
- * this fragment", which is the inverse question — and inverting a bicubic is
- * Newton iteration per fragment. Every renderer that draws these instead
- * subdivides the patch into small quads and rasterizes them forward, which is
- * what this does, once per paint, into a texture the shader then samples. The
- * cost is a texture and a resolution; the gain is that the paint composes with
- * every fill the renderer already knows how to draw, clipping included.
- *
- * The bitmap is straight (non-premultiplied) RGBA, matching the ramp atlas;
- * the fragment shader premultiplies.
+ * The bitmap is straight (non-premultiplied) RGBA; the fragment shader
+ * premultiplies.
  */
 
 import { resolveColor } from '@weasel-js/paint';
@@ -71,11 +65,9 @@ export function meshBounds(patches: readonly MeshPatch[]): MeshBox | null {
 type Rgba = readonly [number, number, number, number];
 
 /**
- * Corner colors blended at `(u, v)` in `space`.
- *
- * Bilinear as three lerps rather than four weights, because a perceptual space
- * has a midpoint between two colors and no meaningful four-way mix — OKLCh's
- * hue in particular is an arc, which only two endpoints define.
+ * Corner colors blended at `(u, v)` in `space`. Three lerps rather than four
+ * weights, because a perceptual space has no meaningful four-way mix — OKLCh's
+ * hue is an arc, which only two endpoints define.
  */
 function colorAt(corners: Rgba[], u: number, v: number, space: ColorSpace): number[] {
   const bottom = lerpColorArray(corners[0], corners[1], u, space);
@@ -84,10 +76,8 @@ function colorAt(corners: Rgba[], u: number, v: number, space: ColorSpace): numb
 }
 
 /**
- * Rasterize `patches` into a square bitmap covering their union.
- *
- * Returns `null` when no patch is drawable, which is the caller's cue to paint
- * nothing rather than a blank square.
+ * Rasterize `patches` into a square bitmap covering their union, or `null`
+ * when no patch is drawable.
  */
 export function bakeMesh(
   patches: readonly MeshPatch[],
@@ -140,11 +130,9 @@ interface Vertex {
 const EDGE_EPS = 1e-6;
 
 /**
- * One triangle, barycentric, colors interpolated across it.
- *
- * Neighboring cells share an edge, so a pixel exactly on one is claimed by
- * both — harmless here because both carry the same color there, and cheaper
- * than a fill rule.
+ * One triangle, barycentric, colors interpolated across it. A pixel exactly on
+ * an edge two cells share is claimed by both — harmless, because both carry
+ * the same color there.
  */
 function fillTriangle(
   pixels: Uint8ClampedArray, size: number, a: Vertex, b: Vertex, c: Vertex,

@@ -1,13 +1,10 @@
 /**
- * Typography for `TextPose` and friends. Every field is optional; consumers
- * pass `{}` or override the few they care about. Defaults live in
+ * Typography for `TextPose` and friends. Defaults live in
  * `DEFAULT_TEXT_STYLE` and are applied at render/measure time, never written
  * back to the pose.
  *
- * Paint is not typography and does not live here. A text node carries its
- * fill and stroke in `data.fill` / `data.stroke`, the slots every other node
- * kind uses; `resolveTextStyle` takes them as its second argument and
- * `StyledRun.fill` / `.stroke` override them per range.
+ * Paint does not live here. A text node carries its fill and stroke in
+ * `data.fill` / `data.stroke`, the slots every other node kind uses.
  */
 
 import type { Paint, ScreenLength, Stroke, Fill } from '@weasel-js/paint';
@@ -30,12 +27,9 @@ export type TextDirection = 'ltr' | 'rtl';
 
 /**
  * Collapse a possibly reading-order-relative alignment to an absolute edge.
- *
- * Layout works in absolute edges, so it runs this once per line, against the
- * direction of the paragraph the line is in, and `start` / `end` never reach
- * the geometry. `justify` collapses to the start edge, which
- * is where it sets every line it does not spread; whether to spread is carried
- * separately, as `LayoutRunsOpts.justify`.
+ * `justify` collapses to the start edge, which is where it sets every line it
+ * does not spread; whether to spread is carried separately, as
+ * `LayoutRunsOpts.justify`.
  */
 export function resolveAlign(
   align: TextAlign,
@@ -110,9 +104,8 @@ export interface TextStyle {
   fontVariantCaps?: FontVariantCaps;
   /**
    * Set the node's text as a superscript or subscript — the default every run
-   * inherits, exactly as a run's own `StyledRun.script` is for that run. The
-   * lines keep the height and baseline the unscripted text would have had.
-   * Absent is ordinary text.
+   * inherits. The lines keep the height and baseline the unscripted text would
+   * have had. Absent is ordinary text.
    */
   script?: 'super' | 'sub';
 }
@@ -154,10 +147,6 @@ function paintColor(p: Paint | null): string {
   return isSolidPaint(p) ? p.color : '#000';
 }
 
-/**
- * Default selection background derived from `textColor` — a 25% tint via
- * CSS `color-mix`. Caller passes `'none'` to opt out.
- */
 function defaultSelectionBackground(textColor: string): string {
   return `color-mix(in srgb, ${textColor} 25%, transparent)`;
 }
@@ -185,27 +174,19 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   fontVariantCaps: 'normal',
 };
 
-/**
- * The paint a text node hands its glyphs — `data.fill` and `data.stroke`,
- * read straight off the node. Runs inherit these when they name none of
- * their own.
- */
+/** The paint a text node hands its glyphs — `data.fill` and `data.stroke`. Runs inherit these when they name none of their own. */
 export interface TextPaint {
   /** `null` is an explicit no-fill and absent takes the default black — the
    *  reading every other node kind gives `data.fill`. Unfilled text paints
    *  through its stroke and nothing else, so it needs one to be visible. */
   fill?: Fill | null;
   /**
-   * Outline painted over the glyph fill. Absent means no outline — there is
-   * no such thing as a default text stroke.
+   * Outline painted over the glyph fill. Absent means no outline.
    *
-   * Only glyphs on the outline tier are stroked: above
-   * `textOutlineMinScreenSize` a glyph is a real `PolygonPath`, so it gets
-   * the ordinary tessellated ribbon with real joins, caps and miters, in any
-   * paint. Below it a glyph is a sampled distance field with no geometry to
-   * stroke, and it renders unstroked rather than approximated. `width` is in
-   * world units, like every other stroke in the kit — it does not scale with
-   * `fontSize`.
+   * Only glyphs on the outline tier are stroked: below
+   * `textOutlineMinScreenSize` a glyph is a sampled distance field with no
+   * geometry to stroke, and it renders unstroked. `width` is in world units —
+   * it does not scale with `fontSize`.
    */
   stroke?: Stroke | null;
 }
@@ -215,10 +196,7 @@ export interface TextPaint {
  * taking the glyph paint from the node rather than from the style.
  *
  * `scale` is the view scale any `{ px }` size resolves against — the same
- * mean-of-the-axes factor `resolveStrokeWidth` takes. It has to be applied
- * here, at the entry to layout, rather than at draw time: a screen-pixel size
- * changes the glyph advances, the wrap points and the measured bounds, and
- * everything downstream of `ResolvedTextStyle` reads a plain world number.
+ * mean-of-the-axes factor `resolveStrokeWidth` takes.
  */
 export function resolveTextStyle(
   style?: TextStyle,

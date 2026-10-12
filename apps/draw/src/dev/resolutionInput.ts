@@ -1,33 +1,23 @@
 /**
  * Synthesize an `InputEvent` from the Resolution widget's pickers.
  *
- * Kept out of the component so the synthesis rules are unit-testable without
- * rendering, and so the honesty boundary is stated in one place:
- *
  *  - A body target (`empty` / `selected-body` / `unselected-body`) sets
- *    `bodyTarget` and leaves `affordance` undefined. Predicates evaluate
- *    TRUTHFULLY against this — `isAnchorOrControl(undefined)` is a real
- *    `false`, not a guess. This is the "press landed on the scene" case.
+ *    `bodyTarget` and leaves `affordance` undefined, so predicates evaluate
+ *    truthfully against it.
  *  - An `affordance:<kind>` target synthesizes a minimal `{ kind }`
- *    `AffordanceHit`. Most kit predicates discriminate on `kind` alone, so
- *    those also evaluate truthfully. A predicate reading `payload`,
- *    `targetIds`, or `anchor` cannot be satisfied this way — which is why the
- *    widget badges predicate-target rows rather than claiming certainty.
+ *    `AffordanceHit`. A predicate reading `payload`, `targetIds`, or `anchor`
+ *    cannot be satisfied this way — which is why the widget badges
+ *    predicate-target rows rather than claiming certainty.
  *
- * Event-shape notes (verified against `packages/gestures/src/ui/inputEvent.ts`
- * and `.../ui/match.ts` — see those files for the authoritative arm shapes):
+ * Event shapes:
  *
  *  - There is no `kind: 'drag'` `InputEvent` arm. A `drag` `GestureSpec`
- *    matches a `pointerdown` event whose `stage` is NOT `'press'` — the
- *    dispatcher promotes to drag after the movement threshold, but the
- *    matcher itself fires on the (non-eager) pointerdown dispatch.
+ *    matches a `pointerdown` event whose `stage` is NOT `'press'`.
  *  - A `pointerDown` spec matches the OTHER dispatch of the same physical
  *    press: `kind: 'pointerdown'` with `stage: 'press'`.
  *  - `click`/`drag`/`pointerDown` specs run their `kindOf` predicate against
- *    `event.affordance` (see `matchTarget(e.affordance, spec.target, ...)`
- *    in match.ts). `doubleClick`/`contextMenu` specs run it against
- *    `event.target` instead — those event shapes have no `affordance` field
- *    at all.
+ *    `event.affordance`. `doubleClick`/`contextMenu` specs run it against
+ *    `event.target` instead — those event shapes have no `affordance` field.
  */
 import type { InputEvent, BodyTarget, EventModifiers } from '@weasel-js/gestures';
 
@@ -62,11 +52,8 @@ export interface ResolutionInput {
   key?: string;
 }
 
-/** Resolve the picker's flat `target` string into the field(s) that
- *  `matchTarget` actually reads for a given event shape: either a
- *  synthesized `{ kind }` hit (chrome) or a body classification
- *  (`bodyTarget` + optionally `bodyKind`). Chrome and body are mutually
- *  exclusive — see the module doc for why. */
+/** Resolve the picker's flat `target` string into either a synthesized
+ *  `{ kind }` hit (chrome) or a body classification, never both. */
 function resolveTarget(
   target: string,
 ): { hit?: { kind: string }; bodyTarget?: BodyTarget; bodyKind?: string } {
@@ -74,10 +61,8 @@ function resolveTarget(
     return { hit: { kind: target.slice(AFFORDANCE_PREFIX.length) } };
   }
   if (target.startsWith(KIND_PREFIX)) {
-    // A node-kind pick names a body, so it also has to say how that body
-    // relates to the selection. `:selected` says so explicitly; without it the
-    // pick is selection-agnostic, and 'unselected-body' is the reading that
-    // keeps a `kind:<k>:selected` binding from matching a `kind:<k>` pick.
+    // Without `:selected` the pick is selection-agnostic, and 'unselected-body'
+    // is the reading that keeps a `kind:<k>:selected` binding from matching it.
     let kind = target.slice(KIND_PREFIX.length);
     let bodyTarget: BodyTarget = 'unselected-body';
     if (kind.endsWith(':selected')) {
@@ -132,9 +117,7 @@ export function synthesizeInput(input: ResolutionInput): InputEvent {
     }
 
     case 'drag': {
-      // The non-eager pointerdown dispatch (stage omitted) is what a `drag`
-      // spec matches. `stage` must stay unset — 'press' is reserved for the
-      // pointerDown case below.
+      // A `drag` spec matches the pointerdown dispatch with `stage` unset.
       const { hit, bodyTarget, bodyKind } = resolveTarget(input.target);
       return { kind: 'pointerdown', ...mods, affordance: hit, bodyTarget, bodyKind };
     }
@@ -148,8 +131,7 @@ export function synthesizeInput(input: ResolutionInput): InputEvent {
 }
 
 /** Is this spec's target a `{ kindOf }` predicate rather than a named class?
- *  Drives the `?` badge — the caveat belongs on rows that can be wrong, not
- *  on rows with string targets, which need none. */
+ *  Drives the `?` badge. */
 export function isPredicateTarget(spec: unknown): boolean {
   const t = (spec as { target?: unknown } | null | undefined)?.target;
   return typeof t === 'object' && t !== null && 'kindOf' in t;

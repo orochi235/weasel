@@ -100,9 +100,8 @@ async function headless() {
 }
 
 async function headful() {
-  // An idle Mac's display sleeps, and a sleeping display captures black — or,
-  // dimmed, captures the page with no pointer drawn. Declaring user activity
-  // wakes it and holds it for the run.
+  // A sleeping display captures black, and a dimmed one captures the page
+  // with no pointer drawn.
   const awake = spawn('caffeinate', ['-u', '-d'], { stdio: 'ignore' });
   awake.unref();
   process.on('exit', () => awake.kill());

@@ -38,16 +38,13 @@ export function splitPathBySegment(
 }
 
 /**
- * Split `path` along the open polyline `cut` into closed pieces (Knife). A
- * freehand cut is a polyline through its samples.
+ * Split `path` along the open polyline `cut` into closed pieces (Knife).
  *
  * Only chords the cut crosses end to end are cut: a stretch of the cut that
  * starts or stops inside the fill cuts nothing, and nothing beyond the cut's
- * ends is touched, so a concave shape splits exactly where the stroke crosses
- * it. Curves are split at the crossing parameters by de Casteljau
- * subdivision, so every piece traces the original boundary exactly and keeps
- * its quadratic and cubic segments; the new edges follow the cut as straight
- * lines, bends included.
+ * ends is touched. Curves are split at the crossing parameters by de Casteljau
+ * subdivision, so every piece keeps its quadratic and cubic segments; the new
+ * edges follow the cut as straight lines, bends included.
  *
  * A loop the cut draws inside the fill, where it crosses its own track, cuts
  * out the region it encloses: that region is returned as its own piece, with
@@ -55,7 +52,7 @@ export function splitPathBySegment(
  * running through a loop leaves the loop uncut. A closed cut (its last point
  * equal to its first) is one such loop or, where it crosses the boundary, is
  * cut as the chords it makes. Chords that cross each other are cut one after
- * another, so a cross-hatch yields every piece.
+ * another.
  *
  * Each connected piece the cut produces is returned as its own path, holes
  * included. Contours the cut misses entirely are returned together as one

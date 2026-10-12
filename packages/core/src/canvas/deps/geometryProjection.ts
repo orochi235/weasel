@@ -1,14 +1,7 @@
 /**
- * `useGeometryProjection` — wires the `geometryProjection` dep consumed by
- * pose-transform actions (move, resize, nudge, flip).
- *
- * When the prop is absent (`undefined`), calling this hook with `undefined`
- * registers a source that returns `undefined`, which is indistinguishable from
- * no registration — actions treat a missing dep as "no geometry rewrite".
- * The canonical usage is to mount a `<GeometryProjectionRegistrar>` only when
- * the consumer has supplied a projection, which avoids registering at all.
- *
- * @see GeometryProjection — the dep schema entry.
+ * Wires the `geometryProjection` dep consumed by pose-transform actions.
+ * A source that returns `undefined` is indistinguishable from no registration:
+ * actions treat a missing dep as "no geometry rewrite".
  */
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';

@@ -1,18 +1,4 @@
-/**
- * Integration tests for lassoSelectAction via the gesture dispatcher.
- *
- * Proves:
- *   - pointerdown → match drag binding → start (lassoSelectAction)
- *   - pointermove×N → vertices accumulated in drag.points → onMove tracks
- *   - pointerup → onEnd('commit') → hitTestLasso called with polygon → setSelection
- *   - shift held → extends existing selection
- *   - pointercancel → onEnd('cancel') → no selection change
- *
- * ## Provider tree
- *
- *   DepRegistryProvider > ActiveToolContextProvider
- *     > ActionsProvider > [MountDispatcher + RegisterLassoSelectDep + RegisterLassoSelect]
- */
+/** Integration tests for lassoSelectAction via the gesture dispatcher. */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -26,10 +12,6 @@ import { lassoSelectAction } from '../actions/defaults/lassoSelect';
 import type { LassoSelectDep } from '../actions/depSchema';
 import type { Contribution } from '../../tools/overlayBinding';
 
-// ---------------------------------------------------------------------------
-// Canvas mock
-// ---------------------------------------------------------------------------
-
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
@@ -40,10 +22,6 @@ beforeAll(() => {
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeLassoDepFactory(hits: string[] = [], initial: string[] = []) {
   let selection = initial.slice();
@@ -151,10 +129,6 @@ function firePointerCancel(canvas: HTMLElement) {
     new PointerEvent('pointercancel', { bubbles: true }),
   );
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('lassoSelectAction integration', () => {
   it('drag → commit calls hitTestLasso and updates selection', () => {

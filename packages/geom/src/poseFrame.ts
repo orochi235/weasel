@@ -16,11 +16,6 @@ import { poseRotationOf, rotatePathAround } from './poseRotation';
  * `Mat3` order (`x' = a·x + c·y`, `y' = b·x + d·y`), applied about the
  * box center to what the node draws in its unrotated box, before the
  * rotation. Absent is the identity.
- *
- * The box, `rotation`, and flips keep their meaning beside it: a node at
- * `(x, y, width, height)` is laid out and painted in that box exactly as it
- * would be without a `transform`, and the result is then taken through
- * `rotate(rotation) · transform` about the box center.
  */
 export type PoseLinear = readonly [a: number, b: number, c: number, d: number];
 

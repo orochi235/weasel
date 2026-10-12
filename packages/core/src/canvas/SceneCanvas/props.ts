@@ -50,13 +50,8 @@ import type {
 import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 import type { VersionCheck } from './useContributionRoles';
 
-/**
- * Minimal adapter surface the legacy bridge factories need for delete /
- * duplicate / group / ungroup. Extracted from `SceneCanvasAdapter` to avoid
- * threading the full generic type through `StandardActionsRegistrar` (which is
- * non-generic). The actual adapter supplied is always a `SceneCanvasAdapter`
- * so the cast is safe.
- */
+/** The adapter surface delete / duplicate / group / ungroup need, narrowed from
+ *  `SceneCanvasAdapter` because `StandardActionsRegistrar` is non-generic. */
 export interface BridgeAdapter {
   applyOps(ops: Op[], label?: string): void;
   insertNode(node: { id: string; [k: string]: unknown }): void;
@@ -65,13 +60,8 @@ export interface BridgeAdapter {
 }
 
 /** Default size in CSS pixels for selection corner-handles AND their
- *  hit-test radius, at `targetScale = 1`. Used by the SceneCanvas defaults;
- *  consumers override via `selectTool.handleHitRadius` or
- *  `layers.selectionOverlay.handles.size`.
- *
- *  Deliberately unscaled: consumers reading this constant keep getting the
- *  number they always got. Kit-internal use sites multiply by
- *  `DeviceProfile.targetScale`. */
+ *  hit-test radius, at `targetScale = 1`. Deliberately unscaled; kit-internal
+ *  use sites multiply by `DeviceProfile.targetScale`. */
 export const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;
 
 /** `<SceneCanvas longPress>`. */
@@ -102,13 +92,8 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
 
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
  *  doesn't mention get filled with defaults; slots explicitly set to
- *  `null` are dropped (the existing "disable this slot" convention).
- *  Partial slot configs (e.g. `{ scene: { drawOne: customFn } }`) are
- *  shallow-spread on top of the default slot config.
- *
- *  `targetScale` comes from the resolved {@link DeviceProfile}. It is a
- *  parameter rather than a read because this function is module-scope and
- *  the profile is a hook value; the caller inside the component passes it. */
+ *  `null` are dropped. Partial slot configs are shallow-spread on top of the
+ *  default slot config. `targetScale` comes from the resolved {@link DeviceProfile}. */
 export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   user: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined,
   targetScale = 1,
@@ -187,17 +172,14 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'debug'           // re-declared below with SceneCanvas's own `slops`
   >
   & {
-    /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
-     *  JSON object, which SceneCanvas bakes into a Scene internally on
-     *  first render. The serialized form is read once; subsequent
-     *  changes to the prop are ignored. Pass a `key` prop on
-     *  `<SceneCanvas>` to force a fresh canvas from updated JSON.
+    /** A `Scene` (typically from `useScene`) — or a `SerializedScene` JSON
+     *  object, which SceneCanvas bakes into a Scene on first render. The
+     *  serialized form is read once; pass a `key` on `<SceneCanvas>` to force
+     *  a fresh canvas from updated JSON.
      *
-     *  The accepted JSON shape is intentionally relaxed (`version:
-     *  number` rather than `1` literal) so a `import json from './x.json'`
-     *  result satisfies the type without an `as` cast — Vite infers
-     *  number-literal types as `number` from JSON, which the strict
-     *  `SerializedScene<…>` would reject. */
+     *  The JSON shape is relaxed (`version: number` rather than the `1`
+     *  literal) so an `import json from './x.json'` result satisfies the type
+     *  without an `as` cast. */
     scene:
       | Scene<TData, TLayer, TPose>
       | SerializedScene<TData, TLayer, TPose>
@@ -230,40 +212,25 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     reflowTransition?: ReflowTransition<TPose> | null;
 
     /**
-     * Optional consumer seam for eager geometry sync: lets pose-transform
-     * actions (move, resize, nudge, flip — NOT rotate) also rewrite a node's
-     * data-held geometry. Given a node and the affine `m` applied to its pose,
-     * `transform(node, m)` returns updated `data` (geometry mapped by `m`) or
-     * `null` for nodes with no data-held geometry.
-     *
-     * Strictly opt-in: when absent, the kit emits only the pose op and leaves
-     * `data` untouched. Consumers wire this via `geometryProjection={myProjection}`.
+     * Lets pose-transform actions (move, resize, nudge, flip — NOT rotate) also rewrite a
+     * node's data-held geometry. Given a node and the affine `m` applied to its pose,
+     * `transform(node, m)` returns updated `data`, or `null` for nodes with no data-held
+     * geometry. When absent, the kit emits only the pose op and leaves `data` untouched.
      *
      * @see GeometryProjection
      */
     geometryProjection?: GeometryProjection;
 
     /**
-     * Routing-trait classifiers — list of `NodeRoutingEntry` entries. The kit
-     * constructs a `NodeRouting` registry per-`<SceneCanvas>` from this prop,
-     * then uses the resulting classifier to derive each hit's `kind` when
-     * building `getNodeAtPoint`. Tool routing tables (e.g.
-     * `{ target: 'rect', actionId: 'move' }`) match against the produced
-     * kind strings.
+     * Routing-trait classifiers. The kit builds a `NodeRouting` registry per `<SceneCanvas>`
+     * from this prop and uses it to derive each hit's `kind`, which tool routing tables
+     * (e.g. `{ target: 'rect', actionId: 'move' }`) match against. Pass `defaultNodeRouting`
+     * for the kit's built-in shape kinds; spread additional entries for consumer-defined
+     * kinds.
      *
-     * Pass `defaultNodeRouting` to pick up the kit's built-in shape kinds
-     * (rect, ellipse, polygon, …) for `data: { kind: '<shape>' }` nodes.
-     * Spread additional entries for consumer-defined kinds.
-     *
-     * See `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md`.
-     *
-     * **Memoize the `routing` value.** The kit memoizes the registry on the
-     * prop's reference identity. Passing a fresh array each render
-     * (e.g. `routing={[...defaultNodeRouting, custom]}` inline) rebuilds the
-     * registry and cascades into a new adapter, churning gesture state.
-     * Define the list as a module-level constant, or wrap it in `useMemo`.
-     * (`defaultNodeRouting` alone is a stable module-level constant; spreading
-     * it with extras is what needs the memo.)
+     * **Memoize the `routing` value.** The registry is memoized on the prop's reference
+     * identity: a fresh array each render rebuilds it and cascades into a new adapter,
+     * churning gesture state.
      */
     routing?: readonly NodeRoutingEntry[];
 
@@ -285,30 +252,20 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       /**
        * What "the pointer is on this node" means for the default body-pick.
        *
-       * - `'pose'` — the node's pose rect, rotation honored. What every
-       *   consumer got before `'shape'` existed, and now the opt-out.
+       * - `'pose'` — the node's pose rect, rotation honored.
        * - `'shape'` (default) — the pose rect as a pre-filter, then the ink the painter
-       *   actually lays down: its silhouette (`findShapeSilhouette`) filled
-       *   or not per the painter's `ink`, plus its outline widened by the
-       *   stroke half-width and `pickTolerancePx`. A click in the concave
-       *   notch of a star, in the corner outside an ellipse, or in the blank
-       *   half of a text box falls through to whatever is beneath; a click on
-       *   the thin outline of an unfilled shape hits it.
+       *   actually lays down: its silhouette filled or not per the painter's `ink`, plus
+       *   its outline widened by the stroke half-width and `pickTolerancePx`.
        *
-       * Painters with no silhouette are unaffected — they keep the pose-rect
-       * answer either way, so this can never make a node unreachable.
-       *
-       * Ignored when `pickEvery` is supplied: that override owns the test.
+       * Painters with no silhouette keep the pose-rect answer either way. Ignored when
+       * `pickEvery` is supplied: that override owns the test.
        */
       picking?: 'pose' | 'shape';
       /**
-       * Grab slop around a shape's outline, in **screen** pixels. Default 4.
-       *
-       * Screen pixels rather than world units so the target keeps its
-       * apparent size at any zoom. It widens the outline test under
-       * `picking: 'shape'` (a 1px hairline is otherwise a half-world-unit
-       * target, which is unhittable), and it grows the pose-rect pre-filter
-       * so those outline hits survive it. Set `0` for exact geometry.
+       * Grab slop around a shape's outline, in **screen** pixels, so the target keeps
+       * its apparent size at any zoom. Default 4. It widens the outline test under
+       * `picking: 'shape'` and grows the pose-rect pre-filter so those outline hits
+       * survive it. Set `0` for exact geometry.
        */
       pickTolerancePx?: number;
     };
@@ -321,10 +278,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;
       /** Rotation options, or `false` to disable rotation entirely — drops the
-       *  `rotate` action AND hides the selection rotation-handle chrome, so a
-       *  consumer whose objects don't rotate (e.g. a floor-plan / garden
-       *  editor) opts out with a single switch instead of pairing
-       *  `actions={{ rotate: null }}` with a `chromeVisibility` override. */
+       *  `rotate` action AND hides the selection rotation-handle chrome. */
       rotate?: UseRotateOptions<TPose> | false;
       snap?: SnapStrategy<TPose>;
       handleHitRadius?: number;
@@ -359,28 +313,23 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     insertPaint?: InsertPaint;
 
     /** External-content ingestion (OS drop / clipboard paste / picker).
-     *  `handlers` are consumer content handlers registered for this canvas's
-     *  lifetime (priority 0 by default — they beat the kit's `image/*` /
-     *  `image/svg+xml` handlers at -100/-90). `resolveSrc` overrides the
-     *  image handler's `data:`-URI embed (e.g. upload to an asset store,
-     *  return the URL). `svg.unpack` makes the kit SVG handler parse dropped
-     *  SVG files into native scene nodes instead of keeping each one a
-     *  single embedded-image node.
-     *  `clipboard` configures the kit weasel-JSON paste handler: enabled by
-     *  default (pastes of weasel clipboard payloads re-materialize through
-     *  this canvas's adapter); `reviver` restores JSON-unfriendly values the
-     *  copying side encoded via `jsonReplacer` (typed arrays etc.);
-     *  `enabled: false` opts the canvas out — but note the kit handler
-     *  still consumes weasel-matching items at match time; on a disabled
-     *  canvas it declines inert (a dwarn, nothing ingested) rather than
-     *  falling through. Only items that never match (non-weasel text)
-     *  flow on to other handlers.
-     *  `clipboard` also governs Cmd/Ctrl+V under the `edit` preset; the rest
-     *  takes the `ingest` preset.
-     *  Memoize `handlers` (useState/useMemo/module const) — an inline array
-     *  literal re-registers the handlers on every render. The same applies
-     *  to `clipboard.reviver`: an inline function identity-churns the
-     *  memoized clipboard ctx each render (harmless but wasteful). */
+     *
+     *  - `handlers` — consumer content handlers registered for this canvas's
+     *    lifetime (priority 0 by default — they beat the kit's `image/*` /
+     *    `image/svg+xml` handlers at -100/-90).
+     *  - `resolveSrc` — overrides the image handler's `data:`-URI embed (e.g.
+     *    upload to an asset store, return the URL).
+     *  - `svg.unpack` — makes the kit SVG handler parse dropped SVG files into
+     *    native scene nodes instead of one embedded-image node each.
+     *  - `clipboard` — the kit weasel-JSON paste handler, enabled by default.
+     *    `reviver` restores JSON-unfriendly values the copying side encoded via
+     *    `jsonReplacer`. `enabled: false` opts the canvas out, but the kit
+     *    handler still consumes weasel-matching items and declines them inert
+     *    rather than letting them fall through. Also governs Cmd/Ctrl+V under
+     *    the `edit` preset; the rest takes the `ingest` preset.
+     *
+     *  Memoize `handlers` and `clipboard.reviver`: an inline array literal
+     *  re-registers the handlers on every render. */
     ingestion?: {
       handlers?: ContentHandlerEntry[];
       resolveSrc?: (file: File) => Promise<string>;
@@ -395,7 +344,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       };
     };
 
-    // --- Selection ---
     selection?: SelectionApi;
     selectionOptions?: UseSelectionOptions;
 
@@ -448,7 +396,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     features?: readonly Feature[];
 
-    // --- Tools: extend, override, or take over ---
     /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
      *
      *  **Patch form** (`Record<string, AnyTool | true | false>`): merged
@@ -471,14 +418,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     tools?: ToolsApi | Record<string, AnyTool | true | false>;
 
     /**
-     * Auto-wire keyboard shortcuts. Default `true`. When `false`, SceneCanvas
-     * still mounts its tools but routes no keyboard input to them: it neither
-     * subscribes the legacy `useKeybindings` hook (tool hotkeys) nor lets the
-     * gesture dispatcher attach its `keydown`/`keyup` listeners (modern
-     * keyboard-bound actions like delete / escape / nudge). Pointer, wheel, and
-     * contextmenu interactions are unaffected. Leaves the consumer free to call
-     * `useKeybindings(tools, { ... })` themselves (e.g. with `disable`,
-     * `overrides`, or `defaultTool`).
+     * Auto-wire keyboard shortcuts. Default `true`. When `false`, SceneCanvas still mounts
+     * its tools but routes no keyboard input to them — neither tool hotkeys nor
+     * keyboard-bound actions like delete / escape / nudge. Pointer, wheel, and contextmenu
+     * interactions are unaffected.
      */
     enableKeybindings?: boolean;
 
@@ -493,24 +436,14 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     claimKeys?: boolean;
 
     /**
-     * Auto-mount the gesture dispatcher (`useGestureDispatcher`) inside
-     * `<SceneCanvas>`. Default `true`. When `false`, the dispatcher is not
-     * wired — useful in tests or demos that drive actions through alternative
-     * mechanisms, or that want to call `useGestureDispatcher` themselves.
-     *
-     * The dispatcher reads registered actions' `defaultBinding` fields and
-     * routes matching window keydown / canvas pointer / wheel events to the
-     * corresponding `invoker.run` (or `invoker.start` for ongoing gestures).
+     * Auto-mount the gesture dispatcher (`useGestureDispatcher`). Default `true`. `false` is
+     * for tests or demos that drive actions another way, or that call
+     * `useGestureDispatcher` themselves.
      */
     enableGestureDispatcher?: boolean;
 
-    /**
-     * Called once after SceneCanvas constructs (or receives) its
-     * `ToolsApi`. Useful for introspection — e.g. the toolkit-builder
-     * dev surface walks `tools.registry` to render the live route table.
-     * Fires with the consumer-supplied `tools` prop when present, or with
-     * the internally-synthesized one otherwise.
-     */
+    /** Called with the `ToolsApi` SceneCanvas constructs or receives, whenever its identity
+     *  changes. For introspection. */
     onToolsCreated?: (tools: ToolsApi) => void;
 
     /**
@@ -529,9 +462,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Initial active-slot tool id. Default: `'select'` when it is
      *  registered, otherwise none — a canvas can run on ambient bindings
-     *  alone. Must be one of the registered tools. The lasso demo starts with
-     *  `initialActiveTool="lasso"`. Ignored when the consumer supplies their
-     *  own `tools` prop. */
+     *  alone. Must be one of the registered tools. Ignored when the consumer
+     *  supplies their own `tools` prop. */
     initialActiveTool?: string;
 
     /** Always-on entries to register alongside the internal tools — every one
@@ -556,14 +488,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *
      *  - `inertia` and `animatedZoom` are opt-in: pass `true` for defaults or
      *    an object to tune. Omitted means off.
-     *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0) and `pinchZoom`
+     *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0), and `pinchZoom`
      *    (two-finger pinch) are on under `view`; pass `false` to disable one.
-     *    All three are wired by registering the kit's `viewport.*` action
-     *    descriptors with the actions registry — disabling via the `actions`
-     *    prop (`actions: { 'viewport.wheelPan': null }`) also works and runs
-     *    after this.
-     *
-     *  Without `view`, none of them are wired. */
+     *    Disabling via the `actions` prop
+     *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after
+     *    this. */
     viewport?: {
       inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
       /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
@@ -593,19 +522,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * @experimental
-     * Override / disable / extend the default action set. Resolution rules:
-     * see `docs/superpowers/specs/2026-05-09-actions-registry-design.md` §D.
-     * Pass `null` to disable all defaults.
+     * Override / disable / extend the default action set. Pass `null` to disable all
+     * defaults.
      */
     actions?: ActionsProp;
 
     /**
      * @experimental
-     * Inputs the kit can't synthesize on its own — currently `cloneNode`
-     * for the `duplicate` default. When omitted, the `duplicate` default is
-     * silently dropped from the registered set.
+     * @deprecated unused after legacy-bridge removal; will be deleted
      */
-    /** @deprecated unused after legacy-bridge removal; will be deleted */
     actionDefaults?: {
       cloneNode?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
       /** Per-clone offset for the duplicate default. Default {dx:8,dy:8}. */
@@ -618,30 +543,19 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * @experimental
-     * Optional resolver: given a scene node, return a short human-readable
-     * "kind" label (e.g. `'rectangle'`, `'path'`, `'sticky note'`). When
-     * supplied, the kit publishes per-id kinds into any surrounding
-     * `<SelectionContextProvider>` so non-canvas UI (palette, status bar)
-     * can render type-aware copy. Return `undefined` to skip an entry.
-     *
-     * Default behavior when omitted: containers report `'group'`, paths
-     * (poses with a `kind` property) report `'path'`, everything else is
-     * left unlabelled.
+     * Given a scene node, return a short human-readable "kind" label (e.g. `'rectangle'`,
+     * `'sticky note'`), which the kit publishes per id into any surrounding
+     * `<SelectionContextProvider>`. Return `undefined` to skip an entry. When omitted,
+     * containers report `'group'`, poses with a `kind` property report `'path'`, and
+     * everything else is left unlabelled.
      */
     describeKind?: (node: Node<TData, TLayer, TPose>) => string | undefined;
 
     /**
-     * Optional animator to bind for per-frame redraws. When supplied,
-     * SceneCanvas subscribes to `animator.onTick` and requests a redraw on
-     * every active animation frame, and paints `animator.colorOverrides`
-     * onto the scene's nodes: the kit's path and shape painters apply them,
-     * and a custom `drawOne` receives them as `ctx.vertexColors`. Scene
-     * mutations trigger repaints automatically, but `colorOverrides` writes
-     * do not.
-     *
-     * Omit when no animation channel touches the render pipeline; idle
-     * frames don't cost anything if no animations are active (the animator's
-     * subscriber list stays quiet).
+     * Animator to bind for per-frame redraws. SceneCanvas requests a redraw on every active
+     * animation frame and paints `animator.colorOverrides` onto the scene's nodes: the
+     * kit's path and shape painters apply them, and a custom `drawOne` receives them as
+     * `ctx.vertexColors`.
      */
     animator?: Animator;
 
@@ -672,15 +586,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Chrome-caps visibility overrides, keyed by chrome id (`selection.outline`,
-     * `selection.rotation-handle`, `gesture.marquee`, …). Each entry is a
-     * composable {@link Condition} built from the
-     * `cond()` builder. Merged on top of the kit's `defaultVisibilityRules`;
-     * unspecified ids fall through to the defaults.
-     *
-     * Set an id to `never` to suppress a chrome element entirely (also
-     * unhittable). Set to `always` to force-show. Mix `cond(...)` chains
-     * (e.g. `selectionIs(1).and(focused).andNot(gesturing)`) for the in-
-     * between cases.
+     * `selection.rotation-handle`, `gesture.marquee`, …). Each entry is a composable
+     * {@link Condition} built from the `cond()` builder, merged on top of the kit's
+     * `defaultVisibilityRules`. Set an id to `never` to suppress a chrome element
+     * entirely (also unhittable), or to `always` to force-show.
      */
     chromeVisibility?: import('features/chrome-caps').VisibilityRules;
 
@@ -701,56 +610,31 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * Override detected device facts. Merged over what `matchMedia` reports;
      * `targetScale` is re-derived from the merged `coarsePointer` unless you
      * override it explicitly.
-     *
-     * Reach for this in three cases: tests that need a coarse profile without
-     * stubbing `matchMedia`, demos that want to show touch-sized chrome on a
-     * desktop, and hybrid devices where the media query guesses wrong.
      */
     device?: Partial<DeviceProfile>;
 
     /**
-     * Optional live focus getter for chrome-caps' `focused` ctx field.
-     * SceneCanvas does not own focus state by default — wire this when
-     * your visibility rules read the `focused` atom (e.g. the kit's
-     * default `selection.rotation-handle` rule requires focus). Omit
-     * to default `focused` to `true` (rule fires regardless of focus).
+     * Live focus getter for chrome-caps' `focused` ctx field, for visibility rules that
+     * read the `focused` atom (the kit's default `selection.rotation-handle` rule does).
+     * Omit to default `focused` to `true`.
      */
     getFocused?: () => boolean;
 
-    /**
-     * Custom shader programs to compile on the renderer. Forwarded directly
-     * to `<Canvas shaders={...} />`. See `CanvasProps.shaders` for details.
-     */
+    /** Custom shader programs to compile on the renderer. See `CanvasProps.shaders`. */
     shaders?: ShaderProgramHandle[];
 
-    /**
-     * Flatness tolerance for curve tessellation, in world units. Forwarded
-     * directly to `<Canvas flattenTolerance={...} />`. See
-     * `CanvasProps.flattenTolerance` for details.
-     */
+    /** Flatness tolerance for curve tessellation, in world units. See
+     *  `CanvasProps.flattenTolerance`. */
     flattenTolerance?: number;
 
-    /**
-     * Paint applied to the full canvas behind the scene. Accepts the kit's
-     * `Paint` union (solid / pattern / linear-gradient / radial-gradient /
-     * conic-gradient) so consumers don't have to author a background node
-     * just to colorize the canvas. Rendered as a screen-space layer slotted
-     * before `'scene'` — independent of pan / zoom.
-     */
+    /** Fill for the full canvas behind the scene, drawn as a screen-space layer slotted
+     *  before `'scene'` — independent of pan / zoom. */
     backgroundFill?: Paint;
-    /**
-     * Dev HUD: when true, mounts a fixed-position widget in the top-left
-     * of the viewport showing live cursor coords in both viewport
-     * (client) and canvas (world) frames. Useful for diagnosing pointer-
-     * coord drift / pan-zoom misalignment without instrumenting events.
-     */
+    /** Dev HUD: a fixed-position widget showing live cursor coords in both viewport
+     *  (client) and canvas (world) frames. */
     cursorCoordsHud?: boolean;
-    /**
-     * Dev HUD: when true, mounts a fixed-position widget just below the
-     * cursor-coords HUD listing the ids returned by `pickEvery(world)`
-     * under the cursor. Useful for diagnosing hit-test order and
-     * container/leaf overlap during select-tool work.
-     */
+    /** Dev HUD: a fixed-position widget listing the ids `pickEvery(world)` returns under
+     *  the cursor. */
     pickHud?: boolean;
     /**
      * The debug overlay: `<Canvas debug>`'s config, plus `slops: true` for
@@ -766,13 +650,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     modalityHud?: boolean | { modeId?: string };
 
     /**
-     * Optional per-id alpha multiplier for the scene-render slot. When
-     * supplied, each node's draw output is wrapped in a `GroupDrawCommand`
-     * with the returned alpha so the renderer applies the multiplier.
-     * Values equal to 1 are a no-op (no wrapper emitted). Typical use:
-     * scoping-dim integration dims non-active nodes during a mode transition.
-     *
-     * Defaults to `() => 1` (no effect).
+     * Per-id alpha multiplier for the scene-render slot: each node's draw output is wrapped
+     * in a group with the returned alpha, and 1 emits no wrapper. Typical use: dimming
+     * non-active nodes during a mode transition.
      */
     alphaFor?: (id: string) => number;
 
@@ -798,25 +678,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     layerOrder?: string[];
 
     /**
-     * Optional per-id pointer-interactivity predicate. When supplied, ids
-     * for which the predicate returns `false` are excluded from hit-test
-     * results — `getNodeAtPoint` returns null for those positions.
-     * Typical use: scoping-dim integration suppresses pointer events for
-     * non-active nodes during a mode transition.
-     *
-     * Defaults to `() => true` (all nodes are interactive).
+     * Per-id pointer-interactivity predicate: an id it returns `false` for is excluded from
+     * hit-test results. Typical use: suppressing pointer events for dimmed nodes.
      */
     isPointerInteractive?: (id: string) => boolean;
 
     /**
-     * Called when the user double-clicks the canvas. Receives the hit node
-     * (id + kind) at the double-click position, or `null` when the click
-     * lands on empty canvas. Wired internally via a `dblclick` listener on
-     * the canvas element so it doesn't interfere with the pointer-gesture
-     * pipeline.
-     *
-     * Typical use: modality dispatch — enter path-edit on a path node,
-     * isolation on a group, text-edit on a text node.
+     * Called when the user double-clicks the canvas, with the hit node (id + kind) at that
+     * position, or `null` on empty canvas. Typical use: modality dispatch — enter path-edit
+     * on a path node, isolation on a group, text-edit on a text node.
      */
     onDoubleClick?: (hit: SceneCanvasHit | null) => void;
     /** Called on every click — a press and release without a drag — with the

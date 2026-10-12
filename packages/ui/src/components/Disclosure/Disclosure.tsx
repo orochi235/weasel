@@ -66,15 +66,12 @@ export interface DisclosureProps {
  * The twisty on a collapsible section: a `<DisclosureMark>` in a button.
  *
  * Presentational — it holds no open/closed state and renders no children.
- * The consumer owns the state and the panel; this is the control that toggles
- * it, and `aria-expanded` is what ties the two together.
+ * The consumer owns the state and the panel.
  *
- * Three things it settles that a hand-rolled twisty keeps getting wrong. The
- * mark is drawn rather than typed, because `--wzl-font-ui` carries no ▸/▾ and
- * a text glyph falls back to whatever the system offers at whatever size that
- * font renders it. The hit target is larger than the mark. And it is a sibling
- * of the row's label rather than a child, so clicking to expand does not
- * actuate the label's own control.
+ * The mark is drawn rather than typed, because `--wzl-font-ui` carries no ▸/▾
+ * and a text glyph falls back to whatever the system offers. The hit target is
+ * larger than the mark. And it is a sibling of the row's label rather than a
+ * child, so clicking to expand does not actuate the label's own control.
  */
 export function Disclosure({ open, onToggle, label, controls, size = 13, disabled, tabIndex, className }: DisclosureProps) {
   return (

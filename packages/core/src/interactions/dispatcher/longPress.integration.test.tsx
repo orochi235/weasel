@@ -1,15 +1,6 @@
 /**
  * Integration tests for long-press synthesis via the gesture dispatcher.
  *
- * Proves:
- *   - A held touch/pen press fires `longPress` after LONG_PRESS_MS
- *   - Mouse never fires it; movement, release, and a second finger cancel it
- *   - An unbound long-press falls back to `contextmenu`; a bound one does not
- *
- * ## Provider tree
- *
- *   DepRegistryProvider > ActiveToolContextProvider > ActionsProvider > Mount
- *
  * Bindings come from each action's `defaultBinding` (ambient scope) rather
  * than from a tool, which is the smallest wiring that exercises the matcher.
  */

@@ -1,26 +1,13 @@
 /**
- * The `unpack` half of the kit SVG handler (`svgHandler.ts`): parse an SVG
- * file into **native scene nodes** — path/text leaves under containers that
- * mirror the source `<g>` structure — instead of the default single
- * embedded-image node. Opted into via
- * `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>`.
+ * Parse an SVG file into **native scene nodes** — path/text leaves under
+ * containers that mirror the source `<g>` structure — instead of the default
+ * single embedded-image node.
  *
- * Leaf data targets the kit's built-in painters (`NodeShape.ts`): paths as
- * `{ path, fill?, stroke? }` (the `kit:path` contract), text
- * as `{ text, style?, runs?, fill?, stroke? }` (`kit:text`). Poses are absolute AABBs; the
- * renderer's `pathInPoseFrame` rebases stored geometry into the pose box,
- * so placement and fit-clamping operate on poses alone and never rewrite
- * path coordinates.
- *
- * Placement mirrors the image handler: the file's union AABB is fit-clamped
- * to 90% of the visible viewport and centered on the drop point (or the
- * viewport center), with multi-file batches cascading by a fixed offset.
- * Stroke widths, dashes, font sizes, and letter spacing take the clamp too:
- * they live in data, and only geometry is derived from the pose.
- * Multi-root files are wrapped in one synthesized container so a dropped
- * file arrives as a single selectable unit; a single-root file inserts
- * as-is. Each file commits as one `applyOps` batch, so the whole import is
- * a single undo step.
+ * Leaf data targets the kit's built-in painters. Poses are absolute AABBs, and
+ * the renderer rebases stored geometry into the pose box, so placement and
+ * fit-clamping operate on poses alone and never rewrite path coordinates.
+ * Stroke widths, dashes, font sizes, and letter spacing live in data, so
+ * they take the clamp separately.
  */
 import { parseSvg } from './parse';
 import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgStroke } from './types';
@@ -55,8 +42,8 @@ const VIEWPORT_FIT = 0.9;
 /**
  * One node the unpack wants the scene to materialize, in parent-before-child
  * order (a draft's `parentId` always names an earlier draft, or `null` for
- * roots). Leaf `data` is kit-painter-native (see module doc). `hidden` is the
- * source node's, for the caller to map onto whatever it hides a node with.
+ * roots). `hidden` is the source node's, for the caller to map onto whatever
+ * it hides a node with.
  *
  * A container's `data` is empty unless its `<g>` is clipped. A scene container
  * clips to what its painter draws, so a clipped one holds the clip as an
@@ -78,8 +65,7 @@ export interface SvgNodesToKitDraftsOptions<TData> {
   leaf?(id: string, draft: { pose: SvgDraftPose; data: SvgKitLeafData }, source: SvgLeafNode): TData | null;
 }
 
-/** `File.text()` via FileReader — same engine-compat choice as the image
- *  handler's `readAsDataURL` (jsdom ships `FileReader` but not `Blob.text`). */
+/** `File.text()` via FileReader: jsdom ships `FileReader` but not `Blob.text`. */
 function readFileText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -91,13 +77,11 @@ function readFileText(file: File): Promise<string> {
 
 /** Lower an `SvgPaint` onto the paint of the `kit:path` painter's
  *  `data.fill` — a `Paint`, or `null` for SVG's `fill="none"` (the painter
- *  skips the fill rather than falling back to its default). A solid paint keeps its
- *  `fill-opacity`.
+ *  skips the fill rather than falling back to its default).
  *
- *  A gradient rides through as the `Paint` it already is, normalized to
- *  the leaf's own box: `objectBoundingBox` gradients already are, and a
- *  `userSpaceOnUse` one is rebased so it survives the fit-clamp and the
- *  drop-point placement that move the geometry out from under it. */
+ *  A `userSpaceOnUse` gradient is rebased onto the leaf's own box, so it
+ *  survives the fit-clamp and the drop-point placement that move the
+ *  geometry out from under it. */
 export function fillDataFromSvg(
   paint: SvgPaint | undefined,
   box: SvgDraftBounds,
@@ -111,13 +95,9 @@ export function fillDataFromSvg(
 }
 
 
-/** Lower an `SvgStroke` onto the leaf's `data.stroke`.
- *
- *  Everything the SVG carried — paint, width, cap, join, dash, miter limit,
- *  opacity — lands on the one `Stroke` `data.stroke` takes. The paint is
- *  normalized to the leaf's own box the same way a fill is, so a
- *  `userSpaceOnUse` gradient survives the fit-clamp and the drop-point
- *  placement. */
+/** Lower an `SvgStroke` onto the leaf's `data.stroke`, or `undefined` for an
+ *  unpainted one. The paint is rebased onto the leaf's own box the same way
+ *  a fill is. */
 export function strokeDataFromSvg(
   stroke: SvgStroke | undefined,
   box: SvgDraftBounds,
@@ -138,10 +118,8 @@ export function strokeDataFromSvg(
   };
 }
 
-/** A text node's paint arrives already lowered to a kit `Paint`, not as
- *  the `SvgPaint` a path carries, so it skips `fillDataFromSvg` — but a
- *  `userSpaceOnUse` gradient still needs the same rebase onto the leaf's own
- *  box, or it survives neither the fit-clamp nor the drop-point placement. */
+/** Rebase a `userSpaceOnUse` gradient onto the leaf's own box. A text node's
+ *  paint is already a kit `Paint`, so it comes here directly. */
 function fillInBoxFrame(fill: Paint, box: SvgDraftBounds): Paint {
   const units = 'units' in fill ? fill.units : undefined;
   return units === 'world' ? fillToBoundsFrame(fill, box) : fill;
@@ -167,8 +145,8 @@ function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
 /**
  * Walk an `SvgNode[]` tree and emit a flat, parent-before-child list of
  * {@link SvgSceneDraft}s. Each `<g>` becomes a container whose pose is the
- * union AABB of its descendants (the kit `group` action's convention);
- * path/text leaves carry kit-painter-native data. Empty groups are dropped.
+ * union AABB of its descendants, or its clip's box when it has one; leaves
+ * carry kit-painter-native data. Empty groups are dropped.
  *
  * Handed a whole `ParseResult`, it also registers the document's markers
  * (`parsed.markers`), without which the strokes naming them draw bare.
@@ -263,8 +241,6 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       });
     }
 
-    // Path leaf. Bounds come from the geometry; `pathInPoseFrame` rebases
-    // the stored path onto whatever pose box placement settles on.
     const b = boxOfPath(n.path);
     const pose: SvgDraftPose = { x: b.x, y: b.y, width: b.width, height: b.height };
     if (n.rotation) pose.rotation = n.rotation;
@@ -293,11 +269,7 @@ function isNodeList(input: ParseResult | readonly SvgNode[]): input is readonly 
 /**
  * Apply the fit-clamp scale to the lengths a leaf holds in data rather than
  * in its pose, which `place` does not reach: stroke width and dashes on any
- * leaf, and a text leaf's font size and letter spacing. `pathInPoseFrame`
- * rebases a path's geometry into the shrunk pose but nothing else, so a
- * shrunk file would otherwise arrive with source-size strokes and text.
- *
- * An unscaled import passes through.
+ * leaf, and a text leaf's font size and letter spacing.
  */
 function scaleLeafData(
   data: Record<string, unknown>,
@@ -314,10 +286,14 @@ function scaleLeafData(
 }
 
 /**
- * Parse each file and insert its node tree — one undoable `applyOps` batch
- * per file. See the module doc for placement and wrapping policy. A file
- * that fails to parse (or parses to nothing) is skipped with a
- * `console.warn`; the rest proceed.
+ * Parse each file and insert its node tree, one undo step per file. Pass it
+ * as `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>`.
+ *
+ * Each file is fit-clamped to 90% of the visible viewport and centered on the
+ * drop point (or the viewport center), with later files cascading by a fixed
+ * offset. A multi-root file is wrapped in one container so it arrives as a
+ * single selectable unit. A file that fails to parse, or parses to nothing,
+ * is skipped with a `console.warn`.
  */
 export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<void> {
   const layer = ((ctx.scene.layers[0]?.id as string | undefined) ?? 'default');
@@ -333,8 +309,6 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         continue;
       }
 
-      // Wrap multi-root files in one synthesized container so the dropped
-      // file arrives as a single selectable unit.
       const roots = drafts.filter((d) => d.parentId === null);
       if (roots.length > 1) {
         const wrapperId = ctx.scene.mintId();
@@ -345,8 +319,9 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         ];
       }
 
-      // Fit-clamp + center, mirroring the image handler. Pose-only: the
-      // painter rebases stored geometry into the pose box.
+      // Fit-clamp and center. Pose-only: the painter rebases stored geometry
+      // into the pose box.
+
       const union = unionAABB(drafts.filter((d) => d.parentId === null).map((d) => d.pose))!;
       const view = ctx.viewportWorldRect();
       const scale = Math.min(

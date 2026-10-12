@@ -12,8 +12,7 @@ import { polygonSampler } from './polygonSampler';
  *
  * The interpolant is a **clamped natural cubic spline** with zero slope at both endpoints
  * (so the reflected/rotated full curve has no kink crossing the symmetry axes). C² across
- * the whole octant — continuous curvature, not just slope — which removes the "lumpy" feel
- * that local Hermite splines have when anchors are uneven.
+ * the whole octant — continuous curvature, not just slope.
  */
 export interface OctantSplineParams {
   mode?: 'octant' | 'quadrant';
@@ -23,11 +22,10 @@ export interface OctantSplineParams {
   s6?: number; s7?: number; s8?: number; s9?: number; s10?: number; s11?: number;
   r0?: number; r1?: number; r2?: number; r3?: number; r4?: number; r5?: number;
   r6?: number; r7?: number; r8?: number; r9?: number; r10?: number; r11?: number;
-  /** Per-anchor weight (0..3). The spline is constructed to pass through every anchor exactly;
-   *  the weight biases how strongly that anchor influences the rest of the curve. Implementation
-   *  detail: blends the C² interpolant with a polynomial fit weighted by w. Default 1 = pure
-   *  C² interpolation; <1 lets the curve sweep past the anchor (anchor still passed through);
-   *  >1 makes the curve hug the anchor more tightly (sharper local bend). */
+  /** Per-anchor weight (0..3). The spline passes through every anchor exactly; the weight
+   *  biases how strongly that anchor influences the rest of the curve. Default 1 = pure
+   *  C² interpolation; <1 lets the curve sweep past the anchor; >1 makes the curve hug the
+   *  anchor more tightly (sharper local bend). */
   w0?: number; w1?: number; w2?: number; w3?: number; w4?: number; w5?: number;
   w6?: number; w7?: number; w8?: number; w9?: number; w10?: number; w11?: number;
   rotation?: number;
@@ -143,10 +141,8 @@ export function evalCompiled(s: number, spline: CompiledSpline): number {
   if (h <= 0) return p0.r;
   const A = (p1.s - s) / h;
   const B = (s - p0.s) / h;
-  // Apply per-anchor weight as a local sharpening factor on the C² interpolant. With both
-  // weights = 1 this is pure natural cubic spline. Weights > 1 add a centered "lift" toward
-  // the anchor (sharpens), < 1 subtracts (smooths past). The lift kernel is the standard
-  // cubic-spline second-derivative term, scaled per-side by (w - 1).
+  // Per-anchor weight scales the standard cubic-spline second-derivative term per side:
+  // both weights = 1 is the pure cubic spline, > 1 sharpens, < 1 smooths past.
   const liftA = ((A * A * A - A) * h * h) / 6;
   const liftB = ((B * B * B - B) * h * h) / 6;
   const baseLine = A * p0.r + B * p1.r;

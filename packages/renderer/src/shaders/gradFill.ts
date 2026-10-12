@@ -1,14 +1,9 @@
 /**
  * GLSL ES 3.0 sources for gradient-fill paths (linear, radial, conic).
  *
- * Three gradient kinds via u_gradKind (0=linear, 1=radial, 2=conic).
- * The branch value is uniform across all fragments in one draw call — GPU
- * branch predictor handles uniform-value branches without warp divergence.
- *
- * Output convention §2: PREMULTIPLIED alpha.
- *
- * `u_ramp` is `GradientRampAtlas`'s texture, which holds every baked ramp in
- * the frame, one per row; `u_rampV` picks this fill's row.
+ * `u_gradKind` picks the kind (0=linear, 1=radial, 2=conic). `u_ramp` is
+ * `GradientRampAtlas`'s texture, which holds every baked ramp in the frame,
+ * one per row; `u_rampV` picks this fill's row. Output is PREMULTIPLIED alpha.
  */
 
 export const GRAD_VERT_SRC = /* glsl */ `#version 300 es

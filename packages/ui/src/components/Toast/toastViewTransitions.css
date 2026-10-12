@@ -13,9 +13,8 @@
  *   - pointer-events: none keeps the transition overlay from swallowing
  *     input while a background notification animates.
  *
- * Timing rides the theme motion tokens; entries use the medium/ease-out
- * pair, exits the fast/ease-in pair. Reduced-motion users never get here
- * (queue.ts skips the view transition entirely).
+ * Reduced-motion users never get here (queue.ts skips the view transition
+ * entirely).
  */
 
 :root.wzl-toast-vt {

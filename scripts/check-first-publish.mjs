@@ -5,25 +5,15 @@
 // "no such package", which is what makes it read like a registry outage rather
 // than a missing bootstrap. So a first publish must come from a human with
 // credentials.
-// Tracked upstream as https://github.com/npm/cli/issues/8544, open since 2025-09.
+// Tracked upstream as https://github.com/npm/cli/issues/8544.
 //
-// Half of what this comment used to say is no longer true, and the half that is
-// left is the half that matters. It said trust config could not be registered
-// before the package existed, because npm's UI needs a package to configure.
-// `npm trust github <name>` does not: it registered `@weasel-js/kernel3d` on
-// 2026-09-13 while the name was still a 404, and `npm trust list` returned a
-// real config id for it. Whether an OIDC *publish* can now create the package
-// is untested, and not worth testing on a live release — a half-published
-// fixed group is what this check exists to prevent.
+// `npm trust github <name>` can register trust config for a name that is still
+// a 404. Whether an OIDC *publish* can then create the package is untested.
 //
-// The damage is that `changeset publish` is not atomic. It publishes in
-// dependency order and stops at the first failure, so a new package strands the
-// release halfway: some of the fixed group at the new version, the rest at the
-// old one, and the registry disagreeing with `main`. That happened twice in two
-// releases — 1.4.0-pre.0 died on `@weasel-js/loupe`, 1.4.0-pre.1 on
-// `@weasel-js/cursor`, nine packages published each time.
-//
-// This asks the one question that predicts it, before anything ships.
+// `changeset publish` is not atomic. It publishes in dependency order and stops
+// at the first failure, so a new package strands the release halfway: some of
+// the fixed group at the new version, the rest at the old one, and the registry
+// disagreeing with `main`.
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 import { isPublished, registryBase } from './lib/registry.mjs';
 

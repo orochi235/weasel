@@ -1,22 +1,17 @@
 import type { PrefSection } from '@weasel-js/prefs';
 
 /**
- * NodePropertiesEntry — one kind's entry in the **properties trait's**
- * registry: a declarative schema of the kind's editable properties.
+ * One kind's entry in the **properties trait's** registry: a declarative
+ * schema of the kind's editable properties.
  *
  * `schema` is a `PrefSection`, not the `PrefGroup` a preferences schema
  * is: a leaf's own key is its whole dotted node path (`pose.x`,
- * `data.fill`, `data.style.fontSize`) — a path of any depth rooted at
- * `pose` or `data` — so schema consumers (weasel-ui `SelectionPanel`)
- * can read/aggregate/write generically with no per-kind code. The
+ * `data.fill`, `data.style.fontSize`), rooted at `pose` or `data`. The
  * sections it nests are headings only; their keys do not contribute to
  * the node path.
  *
  * Kind names share the routing trait's vocabulary — an entry registered
  * as `'rect'` describes nodes `NodeRouting.classify` maps to `'rect'`.
- * See `docs/superpowers/specs/2026-07-20-selection-panel-design.md` and
- * the trait taxonomy in
- * `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md`.
  */
 export interface NodePropertiesEntry {
   /** Kind name — same vocabulary as the routing trait. */
@@ -26,13 +21,9 @@ export interface NodePropertiesEntry {
 }
 
 /**
- * NodeProperties — the **properties trait's** registry. Each trait of a
- * node (shape, routing, properties, …) is its own registry; this one
- * answers "what editable properties does this kind expose?" Consumed by
- * weasel-ui's `<SelectionPanel>`.
- *
- * (Supersedes the speculative `NodePropertyRows` name in the traits
- * spec — the stored value is a schema, not render contributors.)
+ * The **properties trait's** registry. Each trait of a node (shape, routing,
+ * properties, …) is its own registry; this one answers "what editable
+ * properties does this kind expose?"
  */
 export interface NodeProperties {
   /** Register a kind. Throws if a kind with this name is already

@@ -173,9 +173,8 @@ function isNoopDrop(items: readonly ReorderItem[], draggedIds: readonly string[]
  * drop. A drop that would leave a contiguous block where it already is does
  * not call `onReorder`.
  *
- * The rows are the container's children, whatever they are: `ItemList` rows,
- * or the `PropertyGroup`s of a `PropertyList`. A row's `onPointerDown` can go
- * on the whole row or on a handle inside it.
+ * The rows are the container's children, whatever they are. A row's
+ * `onPointerDown` can go on the whole row or on a handle inside it.
  *
  * A press opens a `startThresholdDrag` on the *container*, which owns the
  * rest of the gesture: a drag that leaves the list still tracks, a release

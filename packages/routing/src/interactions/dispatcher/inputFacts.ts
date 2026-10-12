@@ -6,14 +6,10 @@ import type { InputEvent } from './matcher';
  * Modifier flags as an immediate invoker sees them, in the kit's
  * `ModifierState` spelling rather than the DOM's `*Key` one.
  *
- * Ongoing invokers read modifiers off `InvocationCtx`; immediate ones get only
- * `(deps, params)`, so pointer-driven immediate actions need them merged into
- * params the same way wheel deltas already are. Most actions should still
- * express modifier semantics as separate bindings with `opts.params` — that is
- * what makes them visible to conflict detection and the inspector. This is for
- * the cases where the modifier is data rather than a route, e.g. select
- * forwarding the press's modifiers into `SelectionApi.applyClick`, which
- * resolves them against the host's configured extend key.
+ * Most actions should still express modifier semantics as separate bindings
+ * with `opts.params` — that is what makes them visible to conflict detection
+ * and the inspector. This is for the cases where the modifier is data rather
+ * than a route.
  */
 export function modifiersOf(e: {
   altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean;

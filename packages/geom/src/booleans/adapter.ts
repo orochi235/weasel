@@ -1,17 +1,13 @@
 /**
  * Adapter between `Path` and `polygon-clipping`'s `MultiPolygon` format.
- * Kept in a dedicated module so the dep is one import away from being
- * swappable.
  *
  * `polygon-clipping` expects:
  *   MultiPolygon = Polygon[]
  *   Polygon      = Ring[]   (first ring outer, subsequent rings holes)
  *   Ring         = [x, y][] (closed — first vertex repeated as last)
  *
- * Bezier inputs are flattened (cubic; quadratics are degree-elevated to cubic
- * first) — v1 is straight-line only. Open contours are implicitly closed
- * because boolean ops are defined on closed regions; polylines have zero area
- * and would otherwise be silently dropped.
+ * Bezier inputs are flattened. Open contours are implicitly closed because
+ * boolean ops are defined on closed regions.
  *
  * The `[x,y][]` nested-array form here is the one place geom's flat-everywhere
  * rule is suspended — it is the third-party clipper's required API.
@@ -264,17 +260,14 @@ export function multiPolygonToPath(mp: MultiPolygon): PolygonPath {
     for (const ring of poly) {
       if (ring.length < 4) continue;
       const unique = ring.length - 1;
-      // M (first vertex)
       commands[ci++] = PATH_M;
       coords[pi++] = ring[0][0];
       coords[pi++] = ring[0][1];
-      // L for vertices 1..unique-1
       for (let k = 1; k < unique; k++) {
         commands[ci++] = PATH_L;
         coords[pi++] = ring[k][0];
         coords[pi++] = ring[k][1];
       }
-      // Z
       commands[ci++] = PATH_Z;
     }
   }

@@ -63,21 +63,9 @@ export function gridSnapStrategy<TPose>(
 }
 
 /**
- * Compute the integer cell `{col, row}` that contains `point`, given a grid
- * `spacing` and optional `origin` and `unitSystem`. Pair with
+ * The integer cell `{col, row}` that contains `point`. Pair with
  * `createCellHighlightLayer` (its `getCell` callback) to draw a snap-target
- * preview that uses the same spacing as `gridSnapStrategy` — so the visual
- * and behavioral grids stay in lockstep:
- *
- *     const SPACING = 20;
- *     const snap = gridSnapStrategy(SPACING);
- *     // visual grid:
- *     createGridLayer({ spacing: SPACING, bounds: () => ... });
- *     // hover-preview overlay:
- *     createCellHighlightLayer({
- *       spacing: SPACING,
- *       getCell: () => hoverPoint && pointToGridCell(hoverPoint, SPACING),
- *     });
+ * preview that uses the same spacing as `gridSnapStrategy`.
  */
 export function pointToGridCell(
   point: { x: number; y: number },

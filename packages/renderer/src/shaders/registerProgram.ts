@@ -1,15 +1,8 @@
 /**
- * registerProgram — public API for registering custom shader programs.
- *
- * Stores raw GLSL source strings in a module-level registry. GL compilation
- * happens on each WeaselRenderer via WeaselRenderer.registerProgram(), which
- * calls getProgramSource() and compiles the result. This keeps registerProgram
- * GL-context-agnostic — identical pattern to registerFont storing ImageBitmap.
- *
- * Module-level state = source strings only; compiled GL
- * programs live on each renderer's programRegistry (Map<id, ShaderProgram>).
- *
- * Lifecycle: program sources live for the module lifetime. No unregister in v1.
+ * Public API for registering custom shader programs. Module-level state is
+ * source strings only; each WeaselRenderer compiles them into its own
+ * programRegistry, which keeps registration GL-context-agnostic. Program
+ * sources live for the module lifetime.
  */
 
 import { createReflectable, type Reflection } from '@weasel-js/registry';

@@ -1,23 +1,7 @@
 /**
- * affordanceAt — the dispatcher-side affordance classifier.
- *
- * Answers "what piece of selection chrome is under this world point?" and
- * returns an `AffordanceHit`, which `GestureDispatcherMounter` packs onto
- * `InputEvent.pointerdown.affordance` so `resizeAction` / `rotateAction` /
- * `editAnchorsAction` can guard on affordance kind, and which the hover-cursor
- * pump reads `cursor` off of.
- *
- * It used to answer that question with its own geometry: its own corner
- * table, its own rotate-ring ellipse, its own anchor walk — all duplicating
- * the `Affordance` region declarations in `src/affordances/`, which had a
- * hit-tester of their own that nothing reached for kit chrome. Two
- * implementations of one question, and the declarative one was the dead
- * branch, which is why `AffordanceRegion.cursor` could be declared and set
- * and never consumed.
- *
- * Now this assembles the kit's affordances and runs the one shared walk
- * (`hitAffordanceRegions`). What remains here is the assembly and the
- * region-hit → `AffordanceHit` mapping.
+ * The dispatcher-side affordance classifier: answers "what piece of selection
+ * chrome is under this world point?" by assembling the kit's affordances and
+ * running the one shared walk (`hitAffordanceRegions`).
  */
 
 import type { BodyClassification } from '@weasel-js/gestures';
@@ -33,10 +17,6 @@ import { createPathAnchorAffordances, type AnchorState } from 'affordances/pathA
 import { targetSizesPx } from 'core/device/targets';
 
 export type { AnchorState };
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
 
 /** What decides the kit's chrome affordances — their sizes and which ones
  *  exist. Shared by the hit-test and the slops overlay, which draws them. */
@@ -108,9 +88,8 @@ export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordanc
 
 /**
  * Read anchor-editing state off a dep registry, for
- * {@link BuildAffordanceAtOpts.getAnchorState}. Returns `null` while no
- * `editAnchors` dep is registered — nothing is in anchor-edit mode, so
- * anchors are not hit-tested.
+ * {@link ChromeAffordanceOptions.getAnchorState}. Returns `null` while no
+ * `editAnchors` dep is registered, so anchors are not hit-tested.
  */
 export function anchorStateFrom(
   getRegistry: () => { get(name: 'editAnchors'): EditAnchorsDep | undefined } | null,
@@ -133,14 +112,9 @@ export function anchorStateFrom(
 }
 
 /**
- * Build the `affordanceAt` thunk for `GestureDispatcherMounter`.
- *
- * Returns `(worldPoint) => AffordanceHit | null`. The point is **world-space**;
- * callers convert from client coords first.
- *
- * Priority runs anchors → controls → resize handles → rotate ring, top to
- * bottom, matching how the chrome paints: a corner handle beats the rotate
- * band it sits inside, and a control handle beats everything.
+ * Build the `affordanceAt` thunk for `GestureDispatcherMounter`. The point is
+ * **world-space**; callers convert from client coords first. Priority follows
+ * the order of {@link chromeAffordances}, topmost first.
  */
 export function buildAffordanceAt(
   opts: BuildAffordanceAtOptions,
@@ -162,12 +136,9 @@ export function buildAffordanceAt(
 }
 
 /**
- * Region hit → `AffordanceHit`.
- *
- * `hitKind` is the routing discriminator; the handful of scratch fields named
- * by {@link CommonAffordanceScratch} are lifted onto the hit because the
- * actions that consume them read them there. Everything else in scratch rides
- * along untouched as `payload`.
+ * Region hit → `AffordanceHit`. The scratch fields named by
+ * {@link CommonAffordanceScratch} are lifted onto the hit because the actions
+ * that consume them read them there; the whole scratch rides along as `payload`.
  */
 function toAffordanceHit(hit: AffordanceRegionHit): AffordanceHit {
   const scratch = (hit.binding.initialScratch ?? {}) as CommonAffordanceScratch;
@@ -183,24 +154,13 @@ function toAffordanceHit(hit: AffordanceRegionHit): AffordanceHit {
   } as AffordanceHit;
 }
 
-// ---------------------------------------------------------------------------
-// classifyTarget helper
-// ---------------------------------------------------------------------------
-
 /**
- * Classify a world-space point against the current selection:
- * - `'empty'`: no scene body hit.
- * - `'selected-body'`: hit a node that is currently selected.
- * - `'unselected-body'`: hit a node that is NOT selected.
+ * Classify a world-space point against the current selection: `'empty'`,
+ * `'selected-body'`, or `'unselected-body'`.
  *
- * The caller supplies the hit-test function (already wired from
- * `useSceneSelectTool.pickEvery`).
- *
- * @param kindOfNode - Optional resolver from a hit node id to its semantic
- *   kind. `<SceneCanvas>` defaults it to the `data.kind` convention the kit
- *   already reads in `deps/textEdit` and the shape-tool inserts; consumers
- *   whose nodes name their kind elsewhere override it. Omitting it leaves
- *   `kind` undefined, which makes every `kind:` TargetSpec form no-match.
+ * @param kindOfNode - Resolver from a hit node id to its semantic kind.
+ *   Omitting it leaves `kind` undefined, which makes every `kind:` TargetSpec
+ *   form no-match.
  */
 export function buildClassifyTarget(
   getSelection: () => readonly string[],

@@ -428,8 +428,6 @@ export class WeaselRenderer {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   }
 
-  /** Viewport and scissor for this frame. Re-applied inside `render()` because
-   *  a co-tenant on the same context moves both between our frames. */
   /** This renderer's rect in device pixels, top-left origin. A tile rounds its
    *  edges rather than its size, so two that share a CSS edge share a device one. */
   private deviceRect(): { x: number; y: number; width: number; height: number } {
@@ -445,6 +443,8 @@ export class WeaselRenderer {
     };
   }
 
+  /** Viewport and scissor for this frame. Re-applied inside `render()` because
+   *  a co-tenant on the same context moves both between our frames. */
   private applyTarget(): void {
     const gl = this.gl;
     const { x, y, width, height } = this.deviceRect();
@@ -532,14 +532,9 @@ export class WeaselRenderer {
   }
 
   /** Free every GL resource this renderer created and detach its
-   *  context-loss listeners. Idempotent.
-   *
-   *  That covers the built-in and consumer-registered programs (their shaders
-   *  go with them), the shared quad geometry, the batch, the effect targets,
-   *  and every cache: atlas and gradient-ramp textures, bitmap and pattern
-   *  textures, and meshes — transient, persistent, and those whose Path was
-   *  already collected. The context itself is left alone, so a caller-owned
-   *  context can host renderer after renderer without accumulating anything.
+   *  context-loss listeners. Idempotent. The context itself is left alone, so
+   *  a caller-owned context can host renderer after renderer without
+   *  accumulating anything.
    *
    *  A disposed renderer ignores further `render()` and `registerProgram()`
    *  calls. */
@@ -592,10 +587,9 @@ export class WeaselRenderer {
     const spanStats: RenderSpanStats[] = [];
     this.stats = { drawCalls: 0, ms: 0, spans: spanStats };
     const gl = this.gl;
-    // Free GL resources whose Mesh was GC'd since the last frame. Done here
-    // (top of render, before any draws) because GL state is known clean —
-    // no VAO bound, no draw in flight. Deleting from the FinalizationRegistry
-    // callback directly was racy and caused mid-draw crashes.
+    // Free GL resources whose Mesh was GC'd since the last frame. Done here,
+    // before any draws, because GL state is known clean — deleting from the
+    // FinalizationRegistry callback directly races a draw in flight.
     this.meshCache.drainPendingDeletes();
     this.imageCache.beginFrame();
     this.textureCache.sweep(textureRegistry);

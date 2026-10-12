@@ -3,14 +3,14 @@
 Reference for the React hooks `@weasel-js/core` exports. Type details and
 option fields not covered here are in the source — every export carries JSDoc.
 
-> **Interaction is not hooks anymore.** Move, resize, rotate, insert,
+> **Interaction is not hooks.** Move, resize, rotate, insert,
 > area-select, clone, delete, duplicate, undo/redo and the rest are **action
 > descriptors** registered into the Actions Registry, driven by **gesture
-> bindings**. They are not hooks you call. See
+> bindings**. See
 > [Actions and bindings](#actions-and-bindings) below and
 > [concepts.md](./concepts.md) for the model.
 >
-> What remains on this page is the genuine hook surface: state primitives
+> The rest of this page is the hook surface: state primitives
 > (`useSelection`, `useTextEdit`), low-level drag primitives you build custom
 > chrome on, and viewport/utility hooks.
 
@@ -56,7 +56,7 @@ bindings: [
 | Hook / component | Purpose |
 |---|---|
 | `<ActionsProvider>` | Owns a root registry. Every `<SceneCanvas>` mounts an `<InputScope>` under whichever registry is in scope, or a root of its own where there is none — see "Input scope and yoke" in `docs/taxonomy.md`. |
-| `useStandardActions(opts)` | Registers the 51 kit-standard descriptors and publishes `selection` / `view` / `scene` / `history` / `activeTool` as live dep sources. No-ops silently when either provider is absent. |
+| `useStandardActions(opts)` | Registers the kit-standard descriptors and publishes `selection` / `view` / `scene` / `history` / `activeTool` as live dep sources. No-ops silently when either provider is absent. |
 | `useActionsRegistry()` | The registry handle: `register(action)`, `trigger(id, params?)`, enumeration for palettes and toolbars. |
 | `useAction(action)` | Register one `Action` descriptor for the lifetime of the calling component. No-ops when no `<ActionsProvider>` is in scope — with a dev-only warning, so a production build says nothing. |
 | `evaluateEnabled(...)` | Resolve an action's `enabled` predicate against current deps. |
@@ -151,11 +151,10 @@ standard set; `<SceneCanvas>` registers them under the `view` preset, from its
 | `useClone` | `clone` action, alt-gated by its binding; `CloneBehavior`s go on the binding |
 | `useEditAnchors` | `editAnchors` action, plus the `nudgeAnchors.*` / `deleteAnchors` / `marqueeAnchors` / `selectAnchor` / `cutPathAtAnchor` set; `hitAnchor`, `enumerateAnchors`, `withCoord` survive |
 | `useEscape`, `useSelectAll`, `useDelete`, `useDuplicate`, `useNudge`, `useReorder`, `useGroup`, `useUngroup`, `useUndoRedo` | same-named actions in the table above |
-| `useNest` / `useUnnest` | never shipped as hooks |
 | `useClipboard` | `useClipboardOps` (logic only) + the `ingest` action for inbound payloads |
 | `usePan` | `viewport.dragPan` / `viewport.wheelPan` actions |
 
-Behaviors did not go away — `options.behaviors` moved onto the action's
+`options.behaviors` moved onto the action's
 binding opts. See [extending.md](./extending.md) for the behavior contract.
 
 ## State primitives
@@ -281,5 +280,3 @@ Reusable chrome primitives consumed by tools. See
   affordances into a single `RenderLayer` whose `draw` iterates them and whose
   `hitTest` walks them top-down (last → first).
   `packages/core/src/affordances/composeAffordanceLayer.ts`.
-</content>
-</invoke>

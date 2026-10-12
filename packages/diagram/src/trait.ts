@@ -1,18 +1,15 @@
 /**
  * Reading the `DiagramNode` trait off a scene node.
  *
- * Two ways to attach it, both of which this module's default reader answers:
+ * Two ways to attach it:
  *
- *   - **On the node.** `data.diagram` holds the trait. One node, one answer;
- *     what a connect gesture writes when the author drags a new edge.
+ *   - **On the node.** `data.diagram` holds the trait.
  *   - **By kind.** A consumer declares once which data shapes take part, and
- *     every matching node gets the trait without being stamped. This mirrors
- *     `createNodeRouting` in the kit — a predicate over `data`, first match
- *     wins — and is the shape to reach for when the participants are a class
- *     of node rather than a hand-picked set.
+ *     every matching node gets the trait without being stamped — a predicate
+ *     over `data`, first match wins.
  *
  * A reader is a plain function, so a consumer whose data lives somewhere else
- * entirely passes their own and never touches either form.
+ * passes their own.
  */
 import type { DiagramNode } from './types';
 
@@ -48,9 +45,8 @@ export interface DiagramNodeEntry {
  *  An edge's trait lives under the same key, so `from` and `to` are what tells
  *  the two apart. Without that test an edge reads as a participant declaring
  *  no ports, and collects the four defaults on the degenerate pose an edge
- *  carries — four grabbable ports in the middle of nowhere. An edge label's
- *  `label` trait and an anchored node's `anchor` are the same story, and would
- *  also take a slot in every layout. */
+ *  carries. An edge label's `label` trait and an anchored node's `anchor` are
+ *  excluded the same way. */
 export const dataKeyReader: DiagramNodeReader = (node) => {
   const data = node.data;
   if (data === null || typeof data !== 'object') return null;
@@ -63,11 +59,8 @@ export const dataKeyReader: DiagramNodeReader = (node) => {
 
 /**
  * A reader over declared kinds. A trait on the node's own data still wins, so
- * a single node can opt out of, or override, whatever its kind says.
- *
- * Throws on a duplicate `name`, for the reason `mergeContributions` does: a
- * class of node silently losing its ports is what this registry exists to make
- * loud.
+ * a single node can opt out of, or override, whatever its kind says. Throws on
+ * a duplicate `name`.
  */
 export function createDiagramNodes(entries: readonly DiagramNodeEntry[]): DiagramNodeReader {
   const seen = new Set<string>();

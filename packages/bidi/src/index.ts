@@ -2,17 +2,11 @@
  * The Unicode Bidirectional Algorithm (UAX #9).
  *
  * Plain data in, plain data out: code points and a direction go in, embedding
- * levels and a visual order come out. Nothing here knows about fonts, glyphs,
- * canvases or the DOM, and nothing in weasel depends on this package — a text
- * layout that wants bidi is handed an implementation of this shape, and one
- * that is not handed one lays out in logical order.
+ * levels and a visual order come out.
  *
  * Two calls, because the algorithm splits at exactly one place: `analyze` is
  * per paragraph, `reorder` is per *line*. A caller wraps between them, and one
  * analysis serves every line the wrap produced.
- *
- * Verified against Unicode's own conformance data — all 91,707 cases of
- * `BidiCharacterTest.txt` and all 490,846 of `BidiTest.txt`.
  */
 
 import type { BidiClass } from './types';
@@ -34,12 +28,8 @@ export interface BidiAnalysis extends BidiResult {
   original: BidiClass[];
 }
 
-/**
- * Analyse one paragraph of text.
- *
- * `direction` defaults to `'auto'`, which is P2/P3's first-strong rule — the
- * right default for text whose language is not known up front.
- */
+/** Analyze one paragraph of text. `direction` defaults to `'auto'`, which is
+ *  P2/P3's first-strong rule. */
 export function analyze(
   codePoints: readonly number[],
   direction: BidiDirection = 'auto',
@@ -49,11 +39,8 @@ export function analyze(
   return { ...resolved, original };
 }
 
-/**
- * Order one line of an analysed paragraph for display, left to right.
- *
- * `start` and `end` index the same code point array `analyze` was given.
- */
+/** Order one line of an analyzed paragraph for display, left to right.
+ *  `start` and `end` index the same code point array `analyze` was given. */
 export function reorder(
   analysis: BidiAnalysis,
   start: number,

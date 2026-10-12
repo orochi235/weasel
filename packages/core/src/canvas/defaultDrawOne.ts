@@ -1,27 +1,10 @@
 /**
- * `defaultDrawOne` — the kit's default per-node draw function.
+ * The kit's default per-node draw function, kept apart from `SceneCanvas.tsx` so non-React
+ * callers (headless rasterization via `renderSceneToPixels`) can use it without importing the
+ * React component tree.
  *
- * Extracted from `SceneCanvas.tsx` so non-React callers (headless
- * rasterization via `renderSceneToPixels`) can use it without importing
- * the React component tree.
- *
- * Default scene-slot `drawOne` — dispatches through the shape-painter
- * registry (`./NodeShape`). The kit registers built-in painters for
- * text (`kit:text`), paths (`kit:path`), and a rect-from-pose fallback
- * (`kit:rect-fallback`) at module load, so every shape it ships out of
- * the box (rect, ellipse, polygon, star, line, pen, pencil, text) paints
- * without consumer intervention.
- *
- * To teach the kit about a new kind of shape, register a painter — do
- * not override `drawOne`. See `registerNodeShape` for the API and
- * priority semantics. Override `drawOne` only for cross-cutting
- * decoration (post-process every node, mix in overlays from outside
- * the per-node data, etc.).
- *
- * This function also emits an optional `data.label` overlay (sans-serif
- * 11px, top-left) on every non-text painter's output — a convenience
- * for naming zones in demos. Nodes whose painter is `kit:text` skip the
- * overlay since their content already shows.
+ * To teach the kit about a new kind of shape, register a painter (`registerNodeShape`) — do not
+ * override `drawOne`. Override `drawOne` only for cross-cutting decoration.
  */
 import type { Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
@@ -77,10 +60,9 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
     )];
   }
 
-  // Rotation and per-node alpha are applied OUTSIDE this function, by
-  // `wrapNodeOutput` in the scene walks (`buildSceneLayer`,
-  // `buildSceneViewCommands`) and the preview-ghost layer, so that
-  // consumer-supplied painters get them too. Doing it here would double-wrap.
+  // Rotation and per-node alpha are applied OUTSIDE this function, by `wrapNodeOutput` in
+  // the scene walks and the preview-ghost layer, so that consumer-supplied painters get
+  // them too.
   return primary;
 }
 

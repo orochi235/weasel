@@ -10,9 +10,7 @@ export interface CursorGlyph {
   readonly hotspot: readonly [number, number];
   /**
    * The glyph-unit radius a `worldRadius` spec means, for glyphs that measure
-   * something — a brush ring reads as a lie about the brush size unless the
-   * painter knows which circle in the drawing is the one being sized. Defaults
-   * to the box's inscribed radius.
+   * something, such as a brush ring. Defaults to the box's inscribed radius.
    */
   readonly radius?: number;
   readonly paths: readonly CursorPath[];
@@ -49,23 +47,17 @@ export const CURSOR_ANGLE_STEPS = 16;
 
 /**
  * Chrome silently drops a cursor image above this size and falls back to the
- * keyword after the comma, with no error anywhere. Measured on Chrome 152 /
- * macOS 26.5; see the spec's "Measured browser behavior".
+ * keyword after the comma, with no error anywhere.
  */
 export const CURSOR_MAX_CSS_PX = 128;
 
 /**
  * Visits the points that bound an authored `d` string, for the fit guards below.
  *
- * Command-aware on purpose. Scraping every number out of the string instead
- * reads an arc's radii and its three flags as coordinates, which reports a
- * bogus `0` for every `A` ever written.
- *
- * An arc is bounded by the circle it lies on: its centre is recovered from the
- * endpoints and radius, then the whole circle is admitted. Expanding the arc's
+ * An arc is bounded by the whole circle it lies on. Expanding the arc's
  * *endpoint* by the radii instead over-reports whenever an endpoint sits at an
- * extreme of the circle, which is exactly where the half-circle idiom these
- * glyphs use puts it.
+ * extreme of the circle, which is where the half-circle idiom these glyphs use
+ * puts it.
  *
  * The authored dialect is absolute `M`/`L`/`A`/`Z` with circular arcs. A
  * relative command would be measured as if absolute and silently under-report,
@@ -115,8 +107,7 @@ function walk(d: string, see: (x: number, y: number) => void): void {
 /**
  * True when every authored path sits at least half a halo stroke inside the
  * viewBox. A clipped halo is invisible at proof size and flattens the glyph's
- * outline at cursor size, so it is worth failing loudly at authoring time
- * rather than discovering it on a dark background.
+ * outline at cursor size.
  */
 export function haloFitsInBox(glyph: CursorGlyph): boolean {
   const margin = CURSOR_HALO_WIDTH / 2;
@@ -135,11 +126,9 @@ export function haloFitsInBox(glyph: CursorGlyph): boolean {
  * True when the glyph still fits its viewBox at every rotation — i.e. every
  * authored point is inside the box's inscribed circle, halo included.
  *
- * Bake rotates about the box centre in a viewBox that does not grow, so a
+ * Bake rotates about the box center in a viewBox that does not grow, so a
  * glyph that merely satisfies {@link haloFitsInBox} can have its corners
- * sheared off partway round. The loss is a few pixels at cursor size and
- * invisible until someone looks at exactly the wrong angle, which is why it
- * is worth failing at authoring time.
+ * sheared off partway round.
  */
 export function rotationFitsInBox(glyph: CursorGlyph): boolean {
   const c = glyph.box / 2;

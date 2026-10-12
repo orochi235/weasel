@@ -16,11 +16,9 @@ export type * from './staggerTypes';
  *  {@link InterpolatorFactory} when the blend has setup worth hoisting. */
 export type Interpolate<T> = (from: T, to: T, t: number) => T;
 
-/** Factory interpolator: built ONCE at tween start with (from, to), the returned
- *  function is called with `t ∈ [0, 1]` each frame. Use for interpolators with
- *  expensive setup (color-space conversion, path-string parsing) — d3-interpolate's
- *  shape exactly. For cheap interpolations the per-tick `Interpolate<T>` form is
- *  fine; this is the escape hatch when setup-per-tick is wasteful. */
+/** Built ONCE at tween start with (from, to); the returned function is called with `t ∈ [0, 1]`
+ *  each frame. Use for interpolators with expensive setup (color-space conversion, path-string
+ *  parsing) — d3-interpolate's shape exactly. */
 export type InterpolatorFactory<T> = (from: T, to: T) => (t: number) => T;
 
 
@@ -54,13 +52,10 @@ export interface TweenOptions<T> {
   to: T;
   ms: number;
   easing?: EasingSpec;
-  /** Required when T is not `number`. For T = number, defaults to linear numeric lerp.
-   *  Called per-tick with `(from, to, t)`. For interpolators with expensive setup,
-   *  prefer `interpolator` which is built once at tween start. */
+  /** Required when T is not `number`. For T = number, defaults to linear numeric lerp. */
   interpolate?: Interpolate<T>;
-  /** Factory interpolator built once at tween start. Takes precedence over
-   *  `interpolate` when both are provided. Use this for d3-interpolate or any
-   *  `(from, to) => (t) => v` shape. */
+  /** Factory interpolator built once at tween start. Takes precedence over `interpolate`
+   *  when both are provided. */
   interpolator?: InterpolatorFactory<T>;
   onTick: (value: T) => void;
   onDone?: () => void;
@@ -190,9 +185,8 @@ export interface Animator {
   tween<T>(opts: TweenOptions<T> | TargetTweenOptions<T>): AnimationHandle;
   spring<T>(opts: SpringOptions<T> | TargetSpringOptions<T>): AnimationHandle;
   decay<T>(opts: DecayOptions<T> | TargetDecayOptions<T>): AnimationHandle;
-  /** Unified spring/decay primitive. With `to` set, behaves as a spring;
-   *  with `to: null`, behaves as a velocity-driven decay. Supports
-   *  mid-flight retargeting via the returned handle's `setTarget`. */
+  /** With `to` set, behaves as a spring; with `to: null`, as a velocity-driven decay.
+   *  Retarget mid-flight via the returned handle's `setTarget`. */
   physics<T>(opts: PhysicsOptions<T> | TargetPhysicsOptions<T>): PhysicsHandle<T>;
   /** Shows a value on a {@link Target} in place of its committed one until canceled or released.
    *  It covers an animation's move to a destination; a coast, push, or `from` offset adds on top. */
@@ -206,11 +200,9 @@ export interface Animator {
   /** True iff at least one animation is active. With `key`, scoped to that cancelKey. */
   isActive(key?: string): boolean;
   /**
-   * True while the animator is currently executing an animation tick. Useful
-   * for adapter wrappers (e.g. `animateOnSetPose`) that need to detect
-   * "this `setPose` was called from inside another animation's onTick"
-   * (momentum decay, in-flight tween, spring) and avoid recursively
-   * scheduling a new wrap-animation that would fight the caller.
+   * True while the animator is executing an animation tick. Lets an adapter wrapper detect a
+   * `setPose` called from inside another animation's onTick and avoid scheduling a new
+   * animation that would fight the caller.
    */
   isTicking(): boolean;
   /** Freeze every animation managed by this animator. */
@@ -230,38 +222,26 @@ export interface Animator {
   /** Set per-animation timeScale for every animation whose `cancelKey` matches. */
   setTimeScaleByKey(key: string, scale: number): void;
   /**
-   * Loop primitive: repeatedly invoke `factory` to produce a child animation.
-   * The factory must wire its returned handle's `onDone` to call `next` so
-   * the loop advances. Returns a handle whose pause/resume/setTimeScale/cancel
-   * delegate to the current in-flight child (and prevent future iterations
-   * on cancel).
-   *
-   * The loop is registered with the animator under a supervisor entry so
+   * Repeatedly invokes `factory` to produce a child animation. The factory must wire its
+   * returned handle's `onDone` to call `next` so the loop advances. The returned handle's
+   * pause/resume/setTimeScale/cancel delegate to the in-flight child, and
    * `animator.cancel(handle)`, `animator.cancelKey(opts.cancelKey)`, and
    * `animator.isActive(opts.cancelKey)` all work for it.
    */
   loop(factory: LoopFactory, opts?: LoopOptions): AnimationHandle;
-  /** Sugar over `loop` for the common case of looping a tween between two
-   *  values with optional direction handling (`restart` | `reverse` |
-   *  `alternate`). Registered with the animator like `loop`. */
+  /** Sugar over `loop`: a tween between two values, repeated per `direction`. Registered
+   *  with the animator like `loop`. */
   tweenLoop<T>(opts: TweenLoopOptions<T>): AnimationHandle;
   /**
-   * Stagger primitive: schedule a per-item animation, offset by `delay` ms
-   * per index (or a custom function of the index). Two forms:
-   *   - Factory form: pass `factory` directly, returns a composite
-   *     `AnimationHandle`.
-   *   - Builder form: omit `factory`, get a `StaggerBuilder` for fluent
-   *     `.each` / `.tween` / `.spring` calls, the last two of which move the
-   *     items themselves where they are targets.
+   * Schedules a per-item animation, offset by `delay` ms per index (or a custom function of
+   * the index). Pass `factory` and get a composite `AnimationHandle`; omit it and get a
+   * `StaggerBuilder` for fluent `.each` / `.tween` / `.spring` calls, the last two of which
+   * move the items themselves where they are targets.
    *
-   * The composite handle's `cancel` cancels the items still waiting AND the
-   * in-flight children. The delays run on the animator's clock, not the
-   * wall's: a pause or a time scale, on the handle, by `cancelKey` or on the
-   * whole animator, holds or stretches the waiting items along with the
-   * children, and a hidden tab holds both.
-   *
-   * The stagger is registered with the animator under a supervisor entry so
-   * `animator.cancel(handle)`, `animator.cancelKey(opts.cancelKey)`, and
+   * The composite handle's `cancel` cancels the items still waiting AND the in-flight
+   * children. The delays run on the animator's clock, not the wall's: a pause or a time
+   * scale holds or stretches the waiting items along with the children, and a hidden tab
+   * holds both. `animator.cancel(handle)`, `animator.cancelKey(opts.cancelKey)`, and
    * `animator.isActive(opts.cancelKey)` all work for it.
    */
   stagger<TItem>(items: readonly TItem[], delay: StaggerDelay): StaggerBuilder<TItem>;
@@ -277,33 +257,21 @@ export interface Animator {
    * pure function of the playhead; event tracks fire only on forward playback.
    */
   timeline(opts: TimelineOptions): TimelineHandle;
-  /** Per-node, per-channel color override registry, painted onto scene nodes
-   *  by `<SceneCanvas animator>` and read by `createPathLayer`. `cycleVertexColors`
-   *  stores an override in it; `tweenVertexColors`, `springVertexColors`, and
-   *  `staggerVertexColors` move its per-node targets, which only this animator
-   *  can move. Cleared automatically on animator unmount. */
+  /** Per-node, per-channel color override registry, painted onto scene nodes by
+   *  `<SceneCanvas animator>` and read by `createPathLayer`. Only this animator can move its
+   *  per-node targets. Cleared automatically on animator unmount. */
   colorOverrides: ColorOverrideRegistry;
   /**
-   * Subscribe to a callback fired once per RAF frame while any animation is
-   * active. Returns an unsubscribe function. Used by consumers (typically
-   * `<SceneCanvas>`) that need to repaint when an animation's side-effect
-   * is read from a non-scene channel (e.g. `colorOverrides` consulted from
-   * a custom `drawOne`) — scene mutations naturally trigger a repaint, but
-   * `colorOverrides` writes do not.
-   *
-   * The callback fires AFTER the per-frame tick of each registered
-   * animation, so by the time it runs `colorOverrides.get(...)` returns
-   * the latest values. If no animations are active, no tick fires.
+   * Subscribe to a callback fired once per RAF frame while any animation is active; returns
+   * an unsubscribe. For consumers that repaint from a non-scene channel such as
+   * `colorOverrides`, whose writes do not trigger a repaint the way scene mutations do.
+   * Fires AFTER the frame's animations have ticked.
    */
   onTick(cb: () => void): () => void;
   /**
-   * Keep the animator's RAF loop running until the returned cancel
-   * function is called. Use for animations whose effect is read on every
-   * frame but which don't have a natural progress state (e.g.
-   * `cycleVertexColors`, which expresses its current value as a function
-   * of `performance.now()` rather than as a tween from `from` to `to`).
-   * Without a keep-alive entry the loop would idle and `onTick` would
-   * stop firing even though the override is still installed.
+   * Keeps the animator's RAF loop running until the returned cancel function is called. For
+   * effects read on every frame that have no progress state of their own; without it the
+   * loop would idle and `onTick` would stop firing.
    */
   keepAlive(): () => void;
   /**

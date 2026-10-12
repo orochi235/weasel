@@ -1,14 +1,12 @@
 /**
  * One draw command per renderer command kind, shared by the perf specs.
  *
- * Imported *by the page*, not by the Node side of a spec: the specs already
- * pull the renderer over vite's `@fs` route, and this rides the same one. It
- * therefore imports nothing — a bare-specifier import here would need the
- * package's tsconfig aliases, which the browser does not have.
+ * Imported *by the page* over vite's `@fs` route, so it imports nothing: a
+ * bare-specifier import here would need the package's tsconfig aliases, which
+ * the browser does not have.
  *
  * Every builder takes an index and returns a leaf at a position derived from
- * it, so the same index means the same place whatever the kind, and a frame
- * that mixes kinds spreads them the way a frame of one kind does.
+ * it, so the same index means the same place whatever the kind.
  */
 
 const PATH_M = 0;
@@ -31,9 +29,9 @@ export interface KindResources {
 export type LeafBuilder = (i: number) => unknown;
 
 /**
- * Every kind the draw loop dispatches differently. `solid`, `gradient`, `image`
+ * Every kind the draw loop dispatches differently. `solid`, `gradient`, `image`,
  * and `text` stage into one batch; the rest each flush it and bind their own
- * program, texture or stencil state, which is what makes a boundary cost anything.
+ * program, texture, or stencil state.
  */
 export const KIND_IDS = [
   'solid', 'gradient', 'pattern', 'image', 'text', 'shader', 'vcolor', 'stencil', 'clip',

@@ -35,17 +35,13 @@ export type PaintedFill = Fill & { paint: Paint };
 
 /** The stroke a built-in painter should emit, or `null` for "no stroke".
  *  `data.stroke` is a whole {@link Stroke} — width, cap, join, dash, miter
- *  limit and align all reach the renderer. {@link strokeOf} builds one from a
+ *  limit, and align all reach the renderer. {@link strokeOf} builds one from a
  *  color.
  *
- *  A stroke carrying no `paint` reads as no stroke. `Stroke.paint` is
- *  required by the type, so this is unreachable from well-formed data — but a
- *  document is data, and a stroke assembled a field at a time (a width
- *  written onto a node that had none) arrives here without one. Painting it
- *  threw out of `fillInPoseFrame`, and the throw escapes the painter and
- *  takes the whole frame with it: the page and every other node vanish, and
- *  the canvas stays stale until something unrelated requests a redraw. One
- *  malformed node must not be able to blank the document. */
+ *  A stroke carrying no `paint` reads as no stroke. The type requires `paint`,
+ *  but a document is data, and a stroke assembled a field at a time arrives
+ *  here without one; painting it throws out of the painter and takes the whole
+ *  frame with it. */
 export function resolveNodeStroke(stroke: Stroke | null | undefined): PaintedStroke | null {
   if (stroke?.paint == null) return null;
   return stroke as PaintedStroke;

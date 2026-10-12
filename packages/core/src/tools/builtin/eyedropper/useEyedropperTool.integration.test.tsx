@@ -1,14 +1,10 @@
 /**
- * Integration tests for `useEyedropperTool` through the gesture dispatcher,
- * mirroring the way apps/draw wires it: registry-active (sticky `I`) and
- * hotkey-engaged (alt-hold), with a `nodeAtPoint` dep standing in for the
- * scene picker `<SceneCanvas>` sources.
+ * Integration tests for `useEyedropperTool` through the gesture dispatcher:
+ * registry-active (sticky `I`) and hotkey-engaged (alt-hold).
  *
- * These walk the real pointerdown → pointerup path, which is what makes them
- * worth having: the tool declares one `click` binding and nothing else, so
- * everything about *when* it samples — sub-threshold release, hotkey scope
- * outranking the active tool — lives in the dispatcher rather than in the
- * tool. The unit tests next door drive its action directly.
+ * The tool declares one `click` binding and nothing else, so everything
+ * about *when* it samples — sub-threshold release, hotkey scope outranking
+ * the active tool — lives in the dispatcher rather than in the tool.
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
@@ -149,10 +145,6 @@ describe('useEyedropperTool through the gesture dispatcher', () => {
   });
 
   it('hotkey-engaged eyedropper outranks the active tool without a claim gate', () => {
-    // The old implementation carried a pointerDown route that returned
-    // `claim()` purely to pre-empt useSelectTool's always-claiming pointerdown
-    // route on the *other* dispatch pipeline. With one dispatcher, hotkey
-    // scope beats active scope and the gate is unnecessary.
     const onPick = vi.fn();
     const rivalSpy = vi.fn();
     let ctx!: ActiveToolContextValue;

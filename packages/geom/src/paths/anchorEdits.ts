@@ -1,29 +1,19 @@
 /**
- * Pure anchor-set edits — the geometry half of path editing, with no
- * dependency on any tool's scratch or on the action layer.
- *
- * The model is the one `pathToAnchors` produces: subpath-major
+ * Pure anchor-set edits on the model `pathToAnchors` produces: subpath-major
  * `PenAnchor[][]` plus a parallel `closed: boolean[]`. Every function here
  * mutates that structure in place; callers decode with `pathToAnchors`,
  * apply, and re-encode with `anchorsToPath` (see {@link editAnchorSet}).
  *
- * ## Two ways to name an anchor
- *
- * Callers address anchors by **flat index** — the sequential position in
- * walk order across all subpaths, which is exactly what
- * `enumerateAnchors` reports and therefore what the dispatcher's
- * `anchor:N` / `controlIn:N` / `controlOut:N` affordance kinds carry.
- * Internally, operations that have to reason about subpath structure
- * (deletion, scissors) need the `(sub, idx)` pair instead.
- * {@link locateAnchor} and {@link flatAnchorIndex} convert.
+ * Callers address anchors by flat index — the sequential position in walk
+ * order across all subpaths, which is what `enumerateAnchors` reports.
+ * {@link locateAnchor} and {@link flatAnchorIndex} convert to and from the
+ * `(sub, idx)` pair.
  *
  * The two orders agree because `pathToAnchors` and `enumerateAnchors`
  * walk the same command stream and emit one anchor per M/L/C/Q, less the
- * end of a closing curve that lands on its subpath's first point — see the
- * invariant test in `anchorEdits.test.ts`. `countPathAnchors`, which sizes
- * the renderer's per-anchor arrays, counts that end too and so can be one
- * higher per closed subpath. If you change either walker,
- * that test is the tripwire.
+ * end of a closing curve that lands on its subpath's first point.
+ * `countPathAnchors`, which sizes the renderer's per-anchor arrays, counts
+ * that end too and so can be one higher per closed subpath.
  */
 
 import type { PolygonPath } from '../path';
@@ -52,10 +42,6 @@ export interface AnchorRect {
   width: number;
   height: number;
 }
-
-// ---------------------------------------------------------------------------
-// Addressing
-// ---------------------------------------------------------------------------
 
 /** Total anchors across every subpath. */
 export function anchorCount(set: AnchorSet): number {
@@ -95,15 +81,10 @@ export function anchorAt(set: AnchorSet, flatIndex: number): PenAnchor | null {
   return set.anchors[loc.sub][loc.idx] ?? null;
 }
 
-// ---------------------------------------------------------------------------
-// Decode / apply / encode
-// ---------------------------------------------------------------------------
-
 /**
  * Decode `path`, hand the mutable anchor set to `edit`, and re-encode.
- * Returns the new path, or null when `edit` reports that it changed
- * nothing (returning `false`) — callers use that to skip a no-op commit
- * and avoid pushing an empty history entry.
+ * Returns null when `edit` returns `false` (it changed nothing), so callers
+ * can skip a no-op commit.
  */
 export function editAnchorSet(
   path: PolygonPath,
@@ -114,10 +95,6 @@ export function editAnchorSet(
   if (changed === false) return null;
   return anchorsToPath(set.anchors, set.closed, path);
 }
-
-// ---------------------------------------------------------------------------
-// Edits
-// ---------------------------------------------------------------------------
 
 /** Translate an anchor and both of its handles by `(dx, dy)`. */
 export function translateAnchorBy(
@@ -142,12 +119,9 @@ export function translateAnchorBy(
 }
 
 /**
- * Move one control handle to an absolute world position.
- *
- * When the anchor was smooth (handles collinear through the anchor) and
- * `breakSmoothness` is false, the opposite handle is mirrored so the curve
- * stays smooth — Illustrator's default. Alt-drag sets `breakSmoothness`
- * and the two handles become independent.
+ * Move one control handle to an absolute world position. When the anchor was
+ * smooth (handles collinear through the anchor) and `breakSmoothness` is
+ * false, the opposite handle is mirrored so the curve stays smooth.
  */
 export function moveHandleTo(
   set: AnchorSet,
@@ -178,9 +152,8 @@ export function moveHandleTo(
  * inserting a new anchor there. On a closed subpath `segIdx` may also name
  * the closing segment (`sub.length - 1`); its new anchor is appended.
  *
- * A straight segment splits linearly and stays straight — the new anchor
- * has no handles. A curved one splits by de Casteljau, which preserves the
- * curve exactly: the two halves trace the original path.
+ * A straight segment stays straight — the new anchor has no handles. A curved
+ * one splits by de Casteljau, so the two halves trace the original path.
  *
  * Returns the new anchor's flat index, or -1 when the segment doesn't
  * exist.
@@ -270,15 +243,10 @@ function pointOnSegment(a: PenAnchor, b: PenAnchor, t: number): { x: number; y: 
  * surviving segment is refitted through the gap (`fitCubicThroughDeletion`)
  * so the path keeps its shape instead of snapping to a straight line.
  *
- * Subpaths left with fewer than two anchors are dropped entirely — a
- * one-anchor subpath has no segments and would serialize to a stray `M`.
- *
- * If that would leave the path with **no** subpaths at all, the whole
- * deletion is refused (returns false, `set` untouched). Committing an
- * empty path turns the node into an invisible zombie: still selected,
- * still in the scene, nothing on screen and no anchors left to grab it
- * by. Deleting the object is the node-level Delete action's job, and the
- * user asked to delete anchors.
+ * Subpaths left with fewer than two anchors are dropped entirely. If that
+ * would leave the path with no subpaths at all, the whole deletion is refused
+ * (returns false, `set` untouched): an empty path leaves the node selected
+ * and in the scene with nothing on screen and no anchors to grab it by.
  */
 export function deleteAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>): boolean {
   const bySub = new Map<number, number[]>();

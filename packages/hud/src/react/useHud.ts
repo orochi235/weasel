@@ -32,8 +32,7 @@ export function useHud(
     api.requestRedraw();
     return detach;
     // canvasRef.current changing during component lifetime is unusual for
-    // canvas refs; treat as effectively-stable in v1. The dep on `hud` is
-    // also stable (it comes from useState's initializer, never changes).
+    // canvas refs; treat as effectively-stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hud, attachOptions]);
 

@@ -2,30 +2,20 @@
 // Consumer smoke test — guards BOTH the JS bundles and the .d.ts types of the
 // published @weasel-js packages, from outside the monorepo.
 //
-// This test used to assert the OPPOSITE of what it asserts now. While the
-// sub-packages were inlined into core via tsup `noExternal`, its job was to
-// prove that NO bare `@weasel-js/*` specifier survived into `dist` — because
-// those packages were raw, un-built source reachable only through the repo's
-// shared tsconfig `baseUrl`/`paths`, which no downstream consumer has.
-//
-// They are now real, independently-built, published packages. Bare
-// `@weasel-js/*` specifiers in core's dist are the desired outcome, and the
-// failure mode has inverted with them:
+// Bare `@weasel-js/*` specifiers in core's dist are the desired outcome. The
+// failures are:
 //
 //   1. An UNDECLARED specifier — core emitting `@weasel-js/foo` without
 //      `foo` in its `dependencies` — is unresolvable for a consumer.
 //   2. A repo-internal path alias (`core/ops/registry`, `features/…`,
-//      `debug/flag`) leaking into dist is still fatal, for the original reason.
-//   3. An INLINED sub-package is now a defect, not the fix: a consumer holding
-//      both core and, say, @weasel-js/geom would get two copies — the
-//      duplicate-module-identity hazard, where each copy holds its own registries.
+//      `debug/flag`) leaking into dist: a consumer has no `baseUrl`/`paths`.
+//   3. An INLINED sub-package: a consumer holding both core and, say,
+//      @weasel-js/geom would get two copies, each holding its own registries.
 //
-// Strategy: `npm pack` every published package (so `files`/`exports` are
-// exercised exactly as npm would), extract them into a node_modules tree in a
-// temp dir OUTSIDE the repo, then (a) bundle a consumer with esbuild and
-// (b) typecheck one with tsc. Because the packages physically live outside the
-// repo, neither the repo tsconfig paths nor the workspace symlinks are
-// discoverable — exactly a third party's situation.
+// Strategy: `npm pack` every published package, extract them into a
+// node_modules tree in a temp dir OUTSIDE the repo, then (a) bundle a consumer
+// with esbuild and (b) typecheck one with tsc. Outside the repo, neither the
+// repo tsconfig paths nor the workspace symlinks are discoverable.
 
 import { build } from 'esbuild';
 import { mkdtemp, writeFile, readFile, mkdir, readdir } from 'node:fs/promises';
@@ -39,12 +29,8 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
  * Every package directory under `packages/`, read off disk rather than listed
- * here. A hand-kept list drifts, and it drifts silently in the direction that
- * matters: a package missing from it is not packed, so an importer of it fails
- * to resolve and the whole audit reports a defect in the *importer*. `loupe`
- * and `bidi` were both missing this way.
- *
- * Order does not matter — every package is packed before anything is bundled.
+ * here: a package missing from a hand-kept list is not packed, so an importer
+ * of it fails to resolve and the audit reports a defect in the *importer*.
  */
 const PACKAGES = (await readdir(join(repoRoot, 'packages'), { withFileTypes: true }))
   .filter((e) => e.isDirectory() && existsSync(join(repoRoot, 'packages', e.name, 'package.json')))
@@ -58,8 +44,6 @@ const fail = (msg, detail) => {
 };
 
 // ── Phase 1: static audit of core's dist ───────────────────────────────────
-// Cheap, and it localizes the two failure classes precisely instead of leaving
-// them to surface as a confusing bundler error later.
 const corePkg = JSON.parse(
   await readFile(join(repoRoot, 'packages', 'core', 'package.json'), 'utf8'),
 );
@@ -79,18 +63,15 @@ try {
   fail(`${coreDist} not found — run \`npm run build\` before the smoke test.`);
 }
 
-// Only real import/export statements. A bare grep would also match the
-// `import { unpackSvgFiles } from '@weasel-js/svg'` sample inside a JSDoc
-// block, which is documentation, not a dependency.
+// Only real import/export statements: a bare grep would also match an import
+// sample inside a JSDoc block.
 const STMT = /^\s*(?:import|export)\b[^;'"]*?from\s*['"]([^'"]+)['"]/gm;
 const REPO_ALIASES = /^(core|features|affordances|interactions|tools|canvas|debug)\//;
 
-// JS and .d.ts are tracked SEPARATELY and deliberately. They come from two
-// builds with two external lists — vite.config.ts for the JS, tsup (deps +
-// peerDeps) for the declarations — so the JS can inline a package while the
-// .d.ts still emits clean external specifiers. Merging the two sets hides
-// exactly that state: duplicated at runtime, correct-looking types. It is the
-// worst failure mode, and an earlier version of this script was blind to it.
+// JS and .d.ts are tracked SEPARATELY. They come from two builds with two
+// external lists — vite.config.ts for the JS, tsup (deps + peerDeps) for the
+// declarations — so the JS can inline a package while the .d.ts still emits
+// clean external specifiers. Merging the two sets hides exactly that state.
 const seenJs = new Set();
 const seenDts = new Set();
 const undeclared = new Set();
@@ -103,8 +84,7 @@ for (const file of distFiles) {
     if (!spec.startsWith('@weasel-js/')) continue;
     bucket.add(spec);
     // A subpath is not a package: `@weasel-js/geom/booleans` is declared by
-    // `@weasel-js/geom`. Compare the package name, or every subpath import
-    // reads as undeclared.
+    // `@weasel-js/geom`.
     const pkgName = spec.split('/').slice(0, 2).join('/');
     if (!declared.has(pkgName)) undeclared.add(`${spec}  (in ${file})`);
   }
@@ -125,11 +105,10 @@ if (undeclared.size) {
   );
 }
 
-// The inverted assertion. A dependency core imports at RUNTIME must appear as
-// an external specifier in the JS bundle; if it doesn't, it was inlined and
-// consumers get duplicate module instances. A type-only dependency legitimately
-// appears in the .d.ts alone, so runtime-vs-type-only is read off core's
-// source rather than guessed from the output.
+// A dependency core imports at RUNTIME must appear as an external specifier in
+// the JS bundle; if it doesn't, it was inlined and consumers get duplicate
+// module instances. A type-only dependency legitimately appears in the .d.ts
+// alone, so runtime-vs-type-only is read off core's source.
 const coreSrc = join(repoRoot, 'packages', 'core', 'src');
 const srcFiles = [];
 const walk = async (dir) => {
@@ -179,19 +158,14 @@ console.log(
     `${seenDts.size} in types; no alias leaks.`,
 );
 
-// The same undeclared-dependency rule, applied to every published package
-// rather than to core alone. Packing cannot catch this on its own: every
-// @weasel-js package lands in the smoke tree whether or not the importer
-// declared it, so a bare specifier resolves either way and the bundle passes.
-// Only the manifest says whether a real consumer's install would have it.
-// @weasel-js/labkit shipped `@weasel-js/ui` as a devDependency while
-// re-exporting it from a published subpath, and every gate stayed green.
+// The same undeclared-dependency rule, applied to every published package.
+// Packing cannot catch this on its own: every @weasel-js package lands in the
+// smoke tree whether or not the importer declared it, so a bare specifier
+// resolves either way and the bundle passes.
 {
   // The clause may wrap across lines but never contains `;` or `*`. Without
-  // that bound the lazy scan walks out of a non-import `export` — an
-  // `export interface` with no `from` of its own — and on through thousands of
-  // characters until it hits a quoted specifier inside a JSDoc `@example`,
-  // reporting the documented import as a real one.
+  // that bound the lazy scan walks out of a non-import `export` and on until
+  // it hits a quoted specifier inside a JSDoc `@example`.
   const IMPORTS = /^[ \t]*(import|export)\b([^;*]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
   const problems = [];
 
@@ -256,12 +230,11 @@ console.log(
 // A @weasel-js peer is a package the consumer must resolve exactly once: it
 // owns something whose identity matters — core's registries, theme's React
 // context and its `wzl-themes` stylesheet handle. Bundling one into a
-// dependent's dist ships a second copy, and both failures are silent. Core's
-// reads an empty registry; theme's gives `useThemeOptional` a context the
-// app's own `ThemeProvider` never wrote to, so `<LabShell>` wraps a second
-// provider over the app's theme. Nothing else in the gate sees either: inside
-// the repo aliases resolve both copies to the same source, and the smoke tree
-// packs every package whether or not it was inlined.
+// dependent's dist ships a second copy, silently: core's reads an empty
+// registry, and theme's reads a context the app's own `ThemeProvider` never
+// wrote to. Nothing else in the gate sees either: inside the repo aliases
+// resolve both copies to the same source, and the smoke tree packs every
+// package whether or not it was inlined.
 {
   const problems = [];
   for (const name of PACKAGES) {
@@ -358,14 +331,10 @@ await mkdir(nodeModules, { recursive: true });
 /**
  * Third-party runtime dependencies **declared** by the packages being packed.
  *
- * These are marked external for the consumer bundle below, because a real
- * consumer's install resolves them from the registry and this clean tree has
- * no `npm install` step. Collected from each package's own manifest rather
- * than hand-listed, which is what makes the bundle a real check rather than a
- * formality: a package that *imports* something it never *declared* is not in
- * this set, so esbuild fails to resolve it — which is precisely the "names a
- * real dependency" rule the failure message states. Hand-listing would have
- * silently absolved exactly that mistake.
+ * These are marked external for the consumer bundle below, because this clean
+ * tree has no `npm install` step. Collected from each package's own manifest
+ * rather than hand-listed: a package that *imports* something it never
+ * *declared* is not in this set, so esbuild fails to resolve it.
  */
 const thirdPartyDeps = new Set();
 
@@ -390,7 +359,7 @@ for (const name of PACKAGES) {
 console.log(`[smoke] packed + extracted ${PACKAGES.length} packages into a clean tree.`);
 
 // ── Phase 3: consumer bundle ───────────────────────────────────────────────
-// Imports across the package boundary in both directions: core (which now
+// Imports across the package boundary in both directions: core (which
 // imports geom/gestures/history), a leaf directly, and svg (which imports core).
 const consumerEntry = join(workDir, 'consumer.mjs');
 await writeFile(
@@ -410,28 +379,21 @@ await writeFile(
     `import * as guidesResize from '@weasel-js/guides/resize';\n` +
     `import * as guidesInsert from '@weasel-js/guides/insert';\n` +
     `import * as theme from '@weasel-js/theme';\n` +
-    // Tier C — built with Vite library mode rather than tsup because they ship
-    // assets. ui pulls in its bundled stylesheet and hud its data-URI font
-    // atlas, so these two lines are what prove the asset pipeline published
-    // something a consumer can actually load.
+    // ui and hud are built with Vite library mode because they ship assets: ui
+    // its bundled stylesheet and hud its data-URI font atlas.
     `import * as ui from '@weasel-js/ui';\n` +
     `import '@weasel-js/ui/style.css';\n` +
-    // Core's debug HUDs are CSS modules too; their stylesheet shipped unexported
-    // through 1.7.1, so a consumer's HUD had class names and no rules.
+    // Core's debug HUDs are CSS modules too.
     `import '@weasel-js/core/style.css';\n` +
-    // The `./components/*` wildcard subpath — what lets a consumer pull one
-    // component instead of the whole barrel, and what the multi-entry Vite
-    // build exists to back. check:manifests cannot cover this: a wildcard
-    // describes a family of paths, not a file it can look for in the tarball.
-    // So these four (the set a real downstream editor imports) are the check.
+    // The `./components/*` wildcard subpath. check:manifests cannot cover this:
+    // a wildcard describes a family of paths, not a file it can look for in the
+    // tarball.
     `import * as toolPalette from '@weasel-js/ui/components/ToolPalette';\n` +
     `import * as prefs from '@weasel-js/ui/components/Prefs';\n` +
     `import * as callout from '@weasel-js/ui/components/Callout';\n` +
     // labkit re-exports @weasel-js/ui through its own `./weasel-ui` subpath, so
     // that path is only importable if labkit *declares* ui as a runtime
-    // dependency. It shipped as a devDependency, which a clean install cannot
-    // resolve — packing labkit is what turns that into a failed gate rather
-    // than a failed `npm i`.
+    // dependency.
     `import * as labkit from '@weasel-js/labkit';\n` +
     `import * as labkitUi from '@weasel-js/labkit/weasel-ui';\n` +
     `import * as labkitPrimitives from '@weasel-js/labkit/primitives';\n` +
@@ -462,10 +424,8 @@ try {
     // Required before esbuild will accept a CSS import, even with write:false —
     // it needs somewhere the emitted stylesheet *would* go. Nothing is written.
     outdir: join(workDir, 'out'),
-    // Declared third-party deps (see `thirdPartyDeps` above) plus the peer
-    // React surface, which no package lists as a plain dependency.
-    // `react/jsx-runtime` is a subpath, so it needs naming even though
-    // `react` is already here.
+    // Declared third-party deps plus the peer React surface. `react/jsx-runtime`
+    // is a subpath, so it needs naming even though `react` is already here.
     external: [...thirdPartyDeps, 'react', 'react-dom', 'react/jsx-runtime'],
   });
 } catch (err) {
@@ -528,22 +488,18 @@ await writeFile(
     `type _Tool = DepSchema['activeTool'];\n` +
     `const _k: keyof DepSchema = 'selection';\n` +
     // The re-export and the direct import must be the SAME type. If core
-    // inlined a private copy of history's declarations instead of importing
-    // them, these two resolve to structurally-separate types and the
-    // assignment below fails — the type-level duplicate-identity check.
+    // inlined a private copy of history's declarations, these two resolve to
+    // separate types and the assignment below fails.
     `declare const _viaCore: History;\n` +
     `const _viaDirect: HistoryDirect = _viaCore;\n` +
     `type _M = Mat3;\n` +
     `type _G = GestureSpec;\n` +
     `type _S = SelectionApi;\n` +
     `type _O = Op;\n` +
-    // Tier C gets its .d.ts from a standalone `tsc --emitDeclarationOnly` pass
-    // rather than from the bundler that emits its JS — a second step, able to
-    // fail on its own, and it did: ui@0.5.0 and hud@0.5.0 were published with
-    // no declarations at all while their `exports` maps advertised some. Phase 3
-    // could not see it, because esbuild strips types and resolves the JS fine.
-    // These name no export on purpose, so they cannot rot as the API changes:
-    // under `strict`, a module with no declarations is TS7016 right here.
+    // ui and hud get their .d.ts from a standalone `tsc --emitDeclarationOnly`
+    // pass, which can fail on its own, and Phase 3 cannot see it. These name no
+    // export on purpose, so they cannot rot as the API changes: under `strict`,
+    // a module with no declarations is TS7016 right here.
     `type _Ui = typeof import('@weasel-js/ui');\n` +
     `type _Hud = typeof import('@weasel-js/hud');\n` +
     // The subpath must carry types too, not just resolve as JS. The wildcard's
@@ -552,21 +508,15 @@ await writeFile(
     `type _UiSubpath = typeof import('@weasel-js/ui/components/Toast');\n` +
     // A consumer's own dep must merge into DepSchema. Declaration merging
     // targets the module where the interface is DECLARED, not one that
-    // re-exports the type. DepSchema now lives in `@weasel-js/routing` and
-    // core re-exports it, so this check is load-bearing: it is what says the
-    // merge still reaches through that hop in the PUBLISHED .d.ts, where
-    // rollup-plugin-dts has flattened the chunks. When it does not, the
-    // augmentation silently stops merging and `requires: ['smokeDep']`
-    // type-checks as an absent name with no error anywhere. `apps/draw` and
-    // the 3D lab both augment exactly like this, and both typecheck against
-    // SOURCE in-repo, so neither can catch it.
+    // re-exports the type. DepSchema lives in `@weasel-js/routing` and core
+    // re-exports it, so this says the merge still reaches through that hop in
+    // the PUBLISHED .d.ts, where rollup-plugin-dts has flattened the chunks.
+    // In-repo typechecks resolve to SOURCE and cannot catch it.
     //
     // The declaration has to sit in routing's own barrel — the module core
     // re-exports from — and not in a module that barrel re-exports. One hop
-    // further and TS declares a fresh interface in the shadowed alias's scope
-    // instead of merging, which surfaces as TS2536 on every `DepSchema[K]`
-    // back inside routing rather than as anything a reader would connect to
-    // an augmentation.
+    // further and TS declares a fresh interface instead of merging, which
+    // surfaces as TS2536 on every `DepSchema[K]` back inside routing.
     `declare module '@weasel-js/core' {\n` +
     `  interface DepSchema { smokeDep?: { ping(): number } }\n` +
     `}\n` +

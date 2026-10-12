@@ -1,17 +1,11 @@
 /**
  * Built-in pattern factories — generic line/dot/scatter textures. Each
  * returns a `TextureHandle` you can wrap in a `Paint` of
- * `{ kind: 'texture', texture }` and pass to anything that accepts a `Paint`
- * (`Paint`-aware layers, path fills, etc.).
- * Imported from a subpath so consumers that ship their own catalog can
- * avoid the bundle cost.
+ * `{ kind: 'texture', texture }`. Imported from a subpath so consumers that
+ * ship their own catalog can avoid the bundle cost.
  *
- * All factories require an explicit `color` (and `bg` for `chunks`). No
- * defaults are baked in — the caller's design system is the source of truth
- * for palette decisions.
+ * All factories require an explicit `color`; no defaults are baked in.
  *
- * Each is a thin wrapper over `tileGeometry`, which describes the tile as
- * shapes so `@weasel-js/svg` can emit the same tile as a `<pattern>`.
  * Prefer a tile paint (`{ kind: 'hatch', color }`) over calling these directly —
  * it serializes, a `TextureHandle` does not.
  */
@@ -70,10 +64,8 @@ export function dots(params: DotsParams): TextureHandle | null {
 
 /**
  * Random scatter of small ellipses on top of a solid background. Driven by a
- * seeded PRNG so the same `seed` produces a deterministic tile.
- *
- * Note: the `bg` field is optional — omit it for a transparent background
- * (the scatter shapes draw directly onto whatever sits beneath the overlay).
+ * seeded PRNG so the same `seed` produces a deterministic tile. Omit `bg` for
+ * a transparent background.
  */
 export interface ChunksParams {
   color: string;

@@ -1,32 +1,19 @@
 /**
  * Growable vertex staging for a run of solid-fill geometry, image quads and
- * glyphs.
+ * glyphs. Geometry only: the caller owns when a run starts, what breaks it, and
+ * the uniforms the flush draws under.
  *
- * Geometry only: `draw.ts` owns when a run starts, what breaks it, and the
- * uniforms the flush draws under.
+ * One batch for all of them, because a page interleaves them. Everything a
+ * vertex needs to say which it is fits in the same vertex: solids carry the UV
+ * of a 1x1 white texel and are their own color, quads carry their atlas UV and
+ * a white color, glyphs carry a font atlas UV, their text color, and a paint
+ * mode saying the texel is a distance field rather than a color. Gradients
+ * sample the ramp atlas. See `shaders/batchFill.ts`.
  *
- * **One batch for all three, because a page interleaves them.** A grid of
- * thumbnails is a ground rect under an atlas quad under a caption, per cell,
- * and while each kind staged separately every one had to drain the others
- * before it could stage — so a shape that batches perfectly in any one half
- * alone paid a flush per command. Everything a vertex needs to say which it is
- * fits in the same vertex: solids carry the UV of a 1x1 white texel and are
- * their own color, quads carry their atlas UV and a white color, glyphs carry
- * a font atlas UV, their text color, and a paint mode saying the texel is a
- * distance field rather than a color. Gradients join as a fourth off the ramp
- * atlas — a linear one without a mode of its own, since (ramp position, row) is
- * what the plain mode already samples, and a radial or conic one with a mode
- * that says its UV is a gradient-space coordinate to take a `length` or an
- * `atan` of. See `shaders/batchFill.ts`.
- *
- * Colors ride the vertices because shapes in a run differ in color and a merged
- * draw has one set of uniforms — and so does the model transform, applied here
- * rather than uploaded, so shapes under different transforms still share a
- * draw. The texture rides them too, as a slot index into the units the flush
- * binds: slot 0 is the white texel every solid samples, and `draw.ts` hands out
- * the rest per bitmap. A run holds as many bitmaps as there are slots, so an
- * atlas is what makes a wall of one sheet coalesce and a handful of loose
- * bitmaps no longer breaks a run per command.
+ * The model transform is applied here rather than uploaded, so shapes under
+ * different transforms still share a draw. The texture rides the vertices as a
+ * slot index into the units the flush binds: slot 0 is the white texel every
+ * solid samples.
  */
 
 import type { Mesh } from '@weasel-js/geom/tessellate';
@@ -40,9 +27,7 @@ import { clipConvexPolygon, type ClipRect } from './batchClip';
 export const MAX_VERTICES_PER_BATCH = 32768;
 
 /** vec2 a_position + vec4 a_vertexColor + vec2 a_uv + float a_post + float
- *  a_texSlot. Exported so the buffer-replay tests read fields by name rather
- *  than by a stride they repeat — a hard-coded one silently reads a different
- *  field when the vertex grows, instead of failing. */
+ *  a_texSlot. */
 export const FLOATS_PER_VERTEX = 10;
 
 /** Float offset of `a_texSlot` within a vertex, which carries the paint mode
@@ -61,9 +46,9 @@ export const WHITE_V = 0.5;
  * A gradient vertex's `a_uv`, each channel affine in the coordinates the
  * geometry arrives in: `u = ux*x + uy*y + u0`, and the same for `v`.
  *
- * One shape for all three gradients. A linear one's `v` row is the constant
- * atlas row and its `u` row is the ramp position; a radial or conic one's two
- * rows are the gradient-space coordinate, and the row rides `a_post` instead.
+ * A linear gradient's `v` row is the constant atlas row and its `u` row is the
+ * ramp position; a radial or conic one's two rows are the gradient-space
+ * coordinate, and the atlas row rides `a_post` instead.
  */
 export interface GradientUV {
   ux: number; uy: number; u0: number;
@@ -75,16 +60,10 @@ export interface GradientUV {
 const PLAIN_WHITE = packSlot(WHITE_SLOT, PAINT_MODE_PLAIN);
 
 /**
- * Flushes between one ring slot's write and its next.
- *
- * Sized for a driver that tracks a write hazard per buffer object, where
- * rewriting one buffer before every flush makes each write wait on the draw
- * still reading it. That was measured on an M2 Max by timing blocks of frames,
- * a method since retired (`tests/perf/README.md`, "Timing a frame"), and on
- * teitou (M5 Max, ANGLE Metal, 2026-10-05) one frame a task does not show it:
- * `tests/perf/image-quad.spec.ts` puts a quad through a ring of 64 at 3.3–5.2 us
- * over two sittings, through one buffer rewritten each time at 2.5–3.0, and
- * through a buffer nothing writes at 0.16–0.22.
+ * Flushes between one ring slot's write and its next. Sized for a driver that
+ * tracks a write hazard per buffer object, where rewriting one buffer before
+ * every flush makes each write wait on the draw still reading it.
+ * `tests/perf/image-quad.spec.ts` measures it.
  */
 export const SOLID_RING_SIZE = 64;
 
@@ -92,13 +71,9 @@ export const SOLID_RING_SIZE = 64;
  * Slot sizes, smallest first. A flush takes the first it fits in.
  *
  * **Tiered because a write into a big slot costs more than the same write into
- * a small one.** On teitou (M5 Max, ANGLE Metal, 2026-10-05), a frame of 20,000
- * quads each drawn alone (`tests/perf/image-quad.spec.ts`, `renderer/unmerged`)
- * costs 19.2–19.9 us a quad with these tiers against 21.0 with 1,024 vertices
- * as the smallest slot, and a merged run is unmoved either way. The 92 ms
- * against 53 recorded before came from timing blocks of frames, a method since
- * retired. The run that most wants a small buffer — one command, because the
- * next broke it — is exactly the run a batch is otherwise pure overhead for.
+ * a small one**, and the run that most wants a small buffer — one command,
+ * because the next broke it — is exactly the run a batch is otherwise pure
+ * overhead for. `tests/perf/image-quad.spec.ts` (`renderer/unmerged`) measures it.
  */
 export const BATCH_TIERS: readonly { vertices: number; indices: number }[] = [
   { vertices: 16, indices: 24 },
@@ -108,9 +83,7 @@ export const BATCH_TIERS: readonly { vertices: number; indices: number }[] = [
 /** What a standard slot holds, named for the tests and the flush-cost specs. */
 export const SOLID_RING_SLOT_VERTICES = BATCH_TIERS[BATCH_TIERS.length - 1].vertices;
 
-/** Slots for flushes past the largest tier. These grow to fit, so they are few:
- *  a run that big is a run few things broke, and there are not many of them in
- *  a frame to cycle between. */
+/** Slots for flushes past the largest tier. These grow to fit, so they are few. */
 export const SOLID_LARGE_RING_SIZE = 4;
 
 /** One VAO and the two buffers its attribute and element bindings name. */
@@ -127,9 +100,7 @@ interface BufferSet {
    * or a buffer just respecified).
    *
    * The pattern for N quads is a prefix of the pattern for any larger N, so a
-   * slot written to its capacity serves every quad flush it ever takes and the
-   * upload happens once per slot rather than once per flush. Rects and image
-   * quads share it: both wind 0-1-2 / 0-2-3.
+   * slot written to its capacity serves every quad flush it ever takes.
    */
   canonicalQuads: number;
 }
@@ -179,8 +150,7 @@ export class DrawBatch {
    *  pattern and a slot already holding that pattern needs no upload. */
   private pureRects = true;
 
-  /** The rect every push is cut to, or `null`. `draw.ts` sets it as rect
-   *  clips enter and leave — see `batchClip.ts`. A push returns `false`, having
+  /** The rect every push is cut to, or `null`. A push returns `false`, having
    *  staged nothing, for geometry it cannot cut exactly; see `clipQuad`. */
   clip: ClipRect | null = null;
   /** Polygon scratch for `clip`: a quad cut by four edges has at most eight
@@ -221,8 +191,7 @@ export class DrawBatch {
 
   /**
    * Append one rect's four corners through `m`, all carrying `rgba` (straight
-   * alpha). An affine maps a rect to a parallelogram, so two triangles still
-   * cover it and the batch draws at `u_model` identity.
+   * alpha).
    */
   pushRect(
     x: number, y: number, w: number, h: number, m: GlMat3,
@@ -249,15 +218,12 @@ export class DrawBatch {
   /**
    * Append one image quad: the destination rect `(x, y, w, h)` mapped through
    * `m`, sampling `(u0, v0)`-`(u1, v1)`, every corner carrying `post` as the
-   * after-the-color-matrix alpha factor.
+   * after-the-color-matrix alpha factor. `slot` is the texture unit the corners
+   * sample.
    *
-   * Corners wind top-left, top-right, bottom-right, bottom-left with UVs
-   * following — the same winding `pushRect` uses, which is what lets a run of
-   * mixed rects and quads keep the canonical index pattern. The flips a command
-   * asks for are already in the `u` / `v` the caller passes.
-   *
-   * `slot` is the texture unit the corners sample, which `draw.ts` assigns per
-   * bitmap within the run.
+   * Corners wind top-left, top-right, bottom-right, bottom-left — the same
+   * winding `pushRect` uses, which is what lets a run of mixed rects and quads
+   * keep the canonical index pattern.
    */
   pushQuad(
     x: number, y: number, w: number, h: number, m: GlMat3,
@@ -288,20 +254,11 @@ export class DrawBatch {
    * `rgba`.
    *
    * `mode` says which channels of that atlas carry the distance field, and
-   * rides the vertices packed into the slot — so a run off a baked MSDF atlas
-   * and one off the runtime canvas bake still share a draw. The synthetic-bold
-   * threshold does not: it is `u_synthBold`, and `draw.ts` breaks the run when
-   * it changes.
+   * rides the vertices packed into the slot. The synthetic-bold threshold does
+   * not: it is `u_synthBold`, and the caller breaks the run when it changes.
    *
-   * **A synthetic oblique is sheared here rather than in the shader.** The old
-   * text program carried the baseline per vertex and skewed against
-   * `u_synthItalic`; the batch places its own corners, so the shear is one
-   * multiply while they are being placed, and `tanItalic` is 0 for an upright
-   * face. It has to happen before `m`, which is where the shader had it too.
-   *
-   * Corners wind top-left, top-right, bottom-right, bottom-left — `pushQuad`'s
-   * winding, which is what lets a run of mixed rects, image quads and glyphs
-   * keep the canonical index pattern.
+   * A synthetic oblique is sheared here, before `m`; `tanItalic` is 0 for an
+   * upright face. Corners wind as `pushQuad`'s do.
    */
   pushGlyph(
     x0: number, y0: number, x1: number, y1: number,
@@ -336,16 +293,10 @@ export class DrawBatch {
    * through `m`, sampling the ramp atlas at `slot`.
    *
    * `uv` gives each channel of `a_uv` as an affine function of the coordinates
-   * the corners arrive in, which is what lets a gradient ride the vertices at
-   * all: a linear one's ramp position is affine in position outright, and a
-   * radial or conic one's gradient-space *coordinate* is, even though the ramp
-   * position it yields is not. Either way the rasterizer's interpolation across
-   * a triangle is exact. `mode` says which of the two the fragment shader is
-   * looking at, and `post` carries the atlas row for the modes that read it —
-   * see `shaders/batchFill.ts`.
-   *
-   * Values outside 0..1 are the sampler's business; the atlas clamps to the
-   * edge texel, which is what the gradient shader's own `clamp` did.
+   * the corners arrive in. `mode` says whether that is a ramp position or a
+   * gradient-space coordinate, and `post` carries the atlas row for the modes
+   * that read it — see `shaders/batchFill.ts`. Values outside 0..1 clamp to
+   * the atlas's edge texel.
    */
   pushGradientRect(
     x: number, y: number, w: number, h: number, m: GlMat3,
@@ -504,9 +455,7 @@ export class DrawBatch {
    * subpixel grid the rasterizer snaps to, and the shortened edge then covers
    * different samples than the whole one did; along an axis the cut edge is
    * the same line exactly. So a slanted quad that crosses is rolled back and
-   * refused, for `draw.ts` to clip through the stencil instead.
-   *
-   * A cut axis-aligned quad is still four corners, so the run stays pure.
+   * refused, for the caller to clip through the stencil instead.
    */
   private clipQuad(v0: number, i0: number, rect: ClipRect): boolean {
     const v = this.verts;

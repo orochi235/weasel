@@ -1,18 +1,11 @@
 /**
  * The font menu.
  *
- * WeaselDraw ships exactly one baked MSDF atlas (Inter, as `sans-serif`).
- * Baking more would mean committing an atlas per family per weight and
- * carrying the redistribution rights for each — a lot of repository weight
- * for a drawing toy. The kit's dynamic tier makes that unnecessary: a family
- * enrolled with `registerCanvasFont` is rasterized to an SDF from whatever
- * the browser already has, on demand, glyph by glyph. Nothing is downloaded
- * and nothing is redistributed — we name families, we don't ship them.
- *
- * The cost is that availability is the *machine's* business, so this list is
- * a set of candidates rather than a promise. `document.fonts.check` settles
- * each one before it reaches the menu, which is why the picker never offers
- * a family that would silently render as something else.
+ * WeaselDraw ships one baked MSDF atlas (Inter, as `sans-serif`). Every other
+ * family is enrolled with `registerCanvasFont` and rasterized to an SDF from
+ * whatever the browser already has — we name families, we don't ship them.
+ * So this list is a set of candidates: `document.fonts.check` settles each one
+ * before it reaches the menu.
  */
 
 import {
@@ -27,13 +20,7 @@ interface FontCandidate {
   genre: 'sans' | 'serif' | 'mono' | 'display' | 'script';
 }
 
-/**
- * Deliberately mainstream: these are the families that ship with macOS,
- * Windows, or both, so the same document opens looking the same on either.
- * Breadth of *character* matters more than count here — a serif, a
- * typewriter, a poster face, and a couple of disreputable ones beat six
- * near-identical grotesques.
- */
+/** Deliberately mainstream: the families that ship with macOS, Windows, or both. */
 const CANDIDATES: readonly FontCandidate[] = [
   // Sans — Inter is already registered as the baked default `sans-serif`.
   { family: 'Helvetica', genre: 'sans' },
@@ -61,14 +48,11 @@ const CANDIDATES: readonly FontCandidate[] = [
 ];
 
 /**
- * Is `family` actually installed? `document.fonts.check` reports whether the
- * font would be used for the given specifier, so a missing family answers
- * `false` rather than quietly resolving to a default.
+ * Is `family` actually installed?
  *
  * The quoted family name matters: `check('16px Comic Sans MS')` is a parse
  * error for a multi-word name and throws, which would take out the whole
- * menu. Anything unexpected is read as "not available" — a font missing from
- * the menu is a small loss, a menu that fails to build is not.
+ * menu. Anything unexpected is read as "not available".
  */
 function isInstalled(family: string): boolean {
   if (typeof document === 'undefined' || !document.fonts?.check) return false;
@@ -81,13 +65,8 @@ function isInstalled(family: string): boolean {
 
 /**
  * Enroll every candidate the machine actually has. Call once at startup,
- * after the baked atlas is registered.
- *
- * Returns the families enrolled, in menu order, for logging or a first-run
- * hint. The picker reads the same set back out of the registry via
- * `listCanvasFonts()` rather than from this return value — one source of
- * truth about what will render, and it stays right even if something else
- * enrolls a family later.
+ * after the baked atlas is registered. Returns the families enrolled, in menu
+ * order; the picker reads the set from `listCanvasFonts()` instead.
  */
 export function registerAvailableFonts(): string[] {
   const enrolled: string[] = [];
@@ -105,30 +84,14 @@ export function genreOf(family: string): FontCandidate['genre'] | undefined {
   return CANDIDATES.find((c) => c.family === family)?.genre;
 }
 
-/* ------------------------------------------------------------------ */
-/* Outlines for machine fonts                                          */
-/* ------------------------------------------------------------------ */
-
 /**
  * Upgrade the enrolled machine families from sampled distance fields to real
- * outlines.
- *
- * The dynamic tier above renders any installed family without ever seeing its
- * bytes — it asks canvas 2D to draw the glyph and takes the pixels. That is
- * what makes the font menu possible without shipping a single typeface, and
- * it is also its ceiling: the field is reconstructed from one 48px raster, so
- * magnifying it past a few times that size shows the raster as rippling
- * contours. Reading the font file fixes it exactly, and the only web API that
- * hands one over is `queryLocalFonts` — Chromium-only, and gated behind a
- * permission the user has to grant from a gesture.
- *
- * Scoped to the families already in the menu rather than everything
- * installed: a machine can carry hundreds of faces, and registering all of
- * them would hold hundreds of inert entries to serve a list of eighteen.
+ * outlines, read from the font files through `queryLocalFonts` — Chromium-only,
+ * and gated behind a permission the user has to grant from a gesture. Scoped to
+ * the families already in the menu rather than everything installed.
  *
  * Resolves to the families that gained outlines. Rejects when the API is
- * absent or the user says no — both ordinary, and neither changes what
- * renders today.
+ * absent or the user says no.
  */
 export async function enableMachineFontOutlines(): Promise<readonly string[]> {
   const families = listCanvasFonts().map((f) => f.family);
@@ -137,8 +100,7 @@ export async function enableMachineFontOutlines(): Promise<readonly string[]> {
 }
 
 /** Drop the machine-font outline registrations, returning those families to
- *  the canvas-SDF tier. The bundled default face is untouched — it is
- *  registered from a file this app ships, not from the machine. */
+ *  the canvas-SDF tier. */
 export function disableMachineFontOutlines(): void {
   for (const { family } of listCanvasFonts()) {
     for (const weight of [100, 200, 300, 400, 500, 600, 700, 800, 900]) {

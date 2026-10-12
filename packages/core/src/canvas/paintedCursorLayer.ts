@@ -2,15 +2,9 @@
  * The painted tier: draws a cursor glyph into the scene when it is too big,
  * or too tied to the view, to be a CSS `url()` cursor.
  *
- * A layer rather than something each tool draws in its own overlay, because
- * the alternative is every tool re-wiring the same thing. Riding the layer
- * system also means anything that reaches the cursor pipeline through a layer
- * claim — a HUD widget's `cursorAt` — gets the painted tier without knowing
- * this exists.
- *
- * Screen-space: the glyph is chrome at the pointer, not content in the
- * document, so it must not pan or zoom with the camera. What *does* track the
- * camera is a world-sized glyph's size, and `view.scale` is read for that.
+ * Screen-space: the glyph is chrome at the pointer, so it must not pan or zoom
+ * with the camera. What *does* track the camera is a world-sized glyph's size,
+ * and `view.scale` is read for that.
  */
 
 import { GLYPHS } from '@weasel-js/cursor';
@@ -29,11 +23,7 @@ import type { PaintedCursorState } from '@weasel-js/cursor';
 /** Layer id, so a consumer can order or hide it like any other. */
 export const PAINTED_CURSOR_LAYER_ID = 'painted-cursor';
 
-/**
- * `d` strings are fixed by the glyph set, so the parse is done once per glyph
- * member for the life of the process. Handing the renderer the same `Path`
- * object every frame also lets its own mesh cache hit.
- */
+/** Handing the renderer the same `Path` object every frame lets its mesh cache hit. */
 const pathCache = new Map<string, Path>();
 function pathFor(d: string): Path {
   let p = pathCache.get(d);
@@ -78,10 +68,9 @@ export function createPaintedCursorLayer(state: PaintedCursorState): RenderLayer
       const glyph = GLYPHS[cursor.glyph];
       if (!glyph) return [];
 
-      // A world-sized glyph is measured against the live camera, and holds its
-      // line weight in CSS px while its geometry grows — a ring at a 400px
-      // radius drawn with scaled weight is a filled blob, not a cursor.
-      // Radial, so a single radius needs one scale factor; average the axes.
+      // A world-sized glyph holds its line weight in CSS px while its geometry
+      // grows — a ring at a 400px radius drawn with scaled weight is a filled
+      // blob. A single radius needs one scale factor, so average the axes.
       const scale = (view.scale.x + view.scale.y) / 2;
       const worldSized = cursor.worldRadius !== undefined;
       const size = worldSized

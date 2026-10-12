@@ -140,13 +140,9 @@ const TYPEAHEAD_MS = 500;
  * A hierarchy of rows that expand and collapse: a file tree, a registry
  * browser, an outline.
  *
- * **Semantics.** WAI-ARIA `tree`: each node is a `treeitem` carrying
- * `aria-level`, `aria-setsize` and `aria-posinset`; a branch carries
- * `aria-expanded` and nests its children in a `group`, which is rendered only
- * while the branch is open. `aria-selected` appears only when `selectionMode`
- * is set. A treeitem may not contain interactive content, so `leading` and
- * `trailing` are decoration — an icon, a count — and the twisty is a drawn
- * `DisclosureMark`, not a button.
+ * **Semantics.** WAI-ARIA `tree`. A treeitem may not contain interactive
+ * content, so `leading` and `trailing` are decoration — an icon, a count —
+ * and the twisty is a drawn `DisclosureMark`, not a button.
  *
  * **Keyboard.** One treeitem is in the tab order: the one last focused, else
  * the first selected, else the first. Up/Down move between visible rows,

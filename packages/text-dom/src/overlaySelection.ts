@@ -6,9 +6,7 @@ import type { TextEditSelection } from './textEditTypes';
 
 /**
  * Character offsets of the current DOM selection within `overlay`, or `null`
- * when there is no selection or it lies outside the overlay. The one
- * DOM→offset conversion in the hook; everything that needs offsets goes
- * through here.
+ * when there is no selection or it lies outside the overlay.
  */
 export function readSelectionOffsets(overlay: HTMLElement): TextEditSelection | null {
   const sel = window.getSelection();
@@ -38,25 +36,15 @@ export function selectOffsets(overlay: HTMLElement, start: number, end: number):
 }
 
 /**
- * Replace the overlay's contents with `runs` and put the caret back on
- * `[start, end)`. Rewriting the DOM destroys the selection, and losing it
- * after every styling change would mean re-selecting the word to apply a
- * second style — so this is the only way styling writes back.
+ * Replace the overlay's contents with `runs` and put the selection back on
+ * `[start, end)`, which rewriting the DOM destroys.
  *
- * The caret is **not** restored while focus sits in a text-entry control.
- * Browsers route editing commands by selection rather than by focus, so a
- * document selection put back inside the contenteditable while a bar's
- * number field has focus means the very Enter that committed that field also
- * runs its `insertParagraph` default over the restored range — replacing the
- * text that was just styled with a line break. (Observed in Chrome.)
- *
- * Focus on a *button* is the opposite case and must still restore: toggling
- * bold, then italic, then underline is one flow over one selection, and
- * clicking a toolbar button does take focus. Buttons turn keystrokes into
- * clicks, not into editing commands, so the range is safe there.
- *
- * The hook remembers the range as character offsets either way, so a skipped
- * restore costs the highlight, never the target.
+ * The selection is **not** restored while focus sits in a text-entry control.
+ * Browsers route editing commands by selection rather than by focus, so with
+ * the range restored, the Enter that commits a number field also runs
+ * `insertParagraph` over it — replacing the text that was just styled with a
+ * line break. (Observed in Chrome.) Focus on a *button* still restores:
+ * buttons turn keystrokes into clicks, not into editing commands.
  */
 export function writeRunsPreservingSelection(
   overlay: HTMLElement,

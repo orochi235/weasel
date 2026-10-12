@@ -1,16 +1,7 @@
 /**
  * Synthesize a `<Canvas>`-compatible adapter from a `Scene` primitive.
- *
- * The Scene owns nodes/poses/parenting and auto-records ops on every mutation.
- * `<SceneCanvas>` calls `sceneToAdapter(scene)` and forwards the result to
- * `<Canvas>`'s `adapter` prop. Selection and hit-testing are not part of the
- * Scene model — Canvas's internal `useSelection` and pose-derived pickEvery
- * cover those.
- *
- * Pose semantics match the rest of the kit: `getPose` / `setPose` return /
- * write **local** coordinates (relative to parent). The Scene stores pose on
- * each node directly; world composition (when needed) is the renderer's job
- * via `composeWorldPose`, not the adapter's.
+ * `getPose` / `setPose` return / write **local** coordinates (relative to
+ * parent); world composition is the renderer's job via `composeWorldPose`.
  */
 import { useMemo } from 'react';
 import type {
@@ -80,10 +71,8 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & LayerEnumerableAdapter<TLayer>
   & ReorderAdapter
   & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>
-  // Tighten the parts that are optional on the underlying adapter contracts
-  // but unconditionally provided by a scene-backed adapter. Anything that
-  // routes scene mutations through this adapter (kit InsertOps, hierarchical
-  // hooks like useNest, etc.) can rely on these being present.
+  // Optional on the underlying adapter contracts, but unconditionally
+  // provided by a scene-backed adapter.
   & {
       getParent(id: string): string | null;
       /** The node's pose with every ancestor's frame folded in. Equal to
@@ -128,11 +117,9 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   } | null;
   /** Layer to place inserted nodes on. Defaults to the trivial-form layer. */
   insertLayer?: TLayer;
-  /** Selection source for `AreaSelectAdapter.getSelection` / `setSelection`.
-   *  Pass the result of `useSelection()` (or its `adapterMethods`). When
-   *  omitted, `getSelection` returns `[]` and `setSelection` is a noop —
-   *  fine for read-only or selection-less canvases, but the marquee gesture
-   *  won't update any external selection state. */
+  /** Selection source: the result of `useSelection()` (or its
+   *  `adapterMethods`). When omitted, `getSelection` returns `[]` and
+   *  `setSelection` is a noop, so the marquee gesture updates nothing. */
   selection?: SceneAdapterSelection;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
@@ -243,12 +230,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         ? options.layouts(id)
         : options.layouts[id] ?? null;
     },
-    // Unified applyOps: when a label is supplied the ops are wrapped in a
-    // batch checkpoint (history-aware path used by Move/Resize/Rotate/Insert/
-    // Delete tools). When a journal is active (via scene's getActiveJournal
-    // option), scene.applyBatch routes to the journal instead of recording a
-    // new parent-history entry. Without a label the ops are applied transiently
-    // via applyOpsTo (AreaSelectAdapter contract — no checkpoint).
+    // With a label the ops are one batch checkpoint; without one they are
+    // applied transiently, with no checkpoint (the AreaSelectAdapter contract).
     applyOps(ops: Op[], label?: string) {
       if (label !== undefined) {
         scene.applyBatch(ops, label, this);
@@ -256,10 +239,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         applyOpsTo(this, ops);
       }
     },
-    // AreaSelectAdapter surface — included unconditionally so plain
-    // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the
-    // marquee gesture. `applyOps` (above) dispatches transiently when called
-    // without a label, matching the AreaSelectAdapter contract.
     getSelection,
     setSelection,
     // The live marquee's and lasso's own hit-tests. Containers come back:
@@ -283,17 +262,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         { includeContainers: true },
       );
     },
-    // commitInsert (gesture-time leaf insert) is opt-in: present only when
-    // `options.commitInsert` is. The full insertNode/removeNode mutators
-    // above are always present so kit-side InsertOp / DeleteOp round-trip
-    // through scene.add / scene.remove regardless.
-    //
-    // Contract: this is a pure factory — it constructs a Node spec but does
-    // NOT touch the scene. `useInsert`'s onEnd dispatches an `InsertOp`
-    // whose apply() calls `adapter.insertNode` → `scene.add`, which is the
-    // sole insertion path. Calling `scene.add` here too would double-insert,
-    // and the second add throws on id collision (silently dropping the
-    // gesture's pointer-up cleanup and breaking the next drag).
+    // A pure factory: it constructs a Node spec but does NOT touch the scene.
+    // The `InsertOp` → `adapter.insertNode` → `scene.add` path is the sole
+    // insertion path. Calling `scene.add` here too would double-insert, and
+    // the second add throws on id collision.
     ...(options.commitInsert
       ? {
           commitInsert: (bounds: { x: number; y: number; width: number; height: number }) => {

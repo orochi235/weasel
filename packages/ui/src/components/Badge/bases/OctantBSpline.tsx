@@ -65,23 +65,12 @@ export function extractAnchorPairs(params: OctantBSplineParams = {}): Anchor[] {
 }
 
 /**
- * Cubic NURBS evaluation. Returns r at parameter u ∈ [0, 1].
- *
- * Implementation uses (s_i, r_i, w_i) as control points and treats `u` as the underlying
- * curve parameter, with the knot vector clamped at both ends. Because the control points'
- * `s` coordinates are themselves part of the curve, we need a parametric formulation:
- *   S(u) = Σ w_i N_i(u) s_i / Σ w_i N_i(u)
- *   R(u) = Σ w_i N_i(u) r_i / Σ w_i N_i(u)
- * Then we invert S(u) = s to get u and read out R(u).
- *
  * Two phantom control points are inserted at each end (mirror reflections of the second-
  * from-end anchors across the cardinal/diagonal axes), forcing zero slope at the endpoints
  * for clean symmetric closure.
  */
 function buildExtendedControls(anchors: Anchor[]): Anchor[] {
   const N = anchors.length;
-  // Phantom controls outside [0, 1]. They are mirrored versions of the second-from-end
-  // visible anchors. Symmetric reflection gives zero slope at the cardinal/diagonal endpoints.
   const phantomLeft1: Anchor = { s: -anchors[1].s, r: anchors[1].r, w: anchors[1].w };
   const phantomLeft2: Anchor = { s: -anchors[Math.min(2, N - 1)].s, r: anchors[Math.min(2, N - 1)].r, w: anchors[Math.min(2, N - 1)].w };
   const phantomRight1: Anchor = { s: 2 - anchors[N - 2].s, r: anchors[N - 2].r, w: anchors[N - 2].w };

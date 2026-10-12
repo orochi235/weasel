@@ -27,53 +27,36 @@ anywhere requiring explicit defaults would cause organizational chaos.
 
 ## Compose scenes in a terse path language, not builder calls
 
-We want the **expressive power of a path language** at the composition
-boundary — but **without minting a new external standard** for consumers
-to learn or for us to document, version, and maintain. The resolution is
-to adopt the path language the world already speaks: **SVG `d` syntax.**
-It's universal, needs no learning, and the kit parses it into a `Path`
-via `pathFromD(d)`. A bespoke weasel path DSL — even a
-"small" compact literal grammar — is exactly the wrong move: it's a new
-standard wearing a terse costume.
+The path language at the composition boundary is **SVG `d` syntax**,
+which the kit parses into a `Path` via `pathFromD(d)`. The kit defines no
+path DSL of its own, however small: that would be a new standard for
+consumers to learn and for us to document, version, and maintain.
 
-So a composer gets a **choice**, and the terse end of it is just SVG:
+A composer chooses among:
 
 1. **Terse declarative form — SVG `d`.** Declare a shape inline,
    `pathFromD("M0 0 L100 0 L100 100 Z")`, and hand it to a scene/op API.
-   Full path-language expressiveness, zero new vocabulary. Usually the
-   right default.
+   Usually the right default.
 2. **Imperative builders.** `PathBuilder`, `polygonFromPoints`,
    `rectPath`, `ellipsePath`, `regularPolygonPath`, `starPath`,
    `linePath` remain a first-class choice — sometimes the clearest one.
    For a quick triangle `polygonFromPoints([[0,0],[10,0],[5,10]])` may
    read better than a string, and for *computed* geometry (loops,
-   parametric shapes) a builder is the natural fit. These are ordinary
-   function calls with plain args — not a grammar — so they cost no new
-   standard either. The terse form makes them less frequently
-   *necessary*, not unavailable.
+   parametric shapes) a builder is the natural fit.
 3. **Typed-array `Path` (internal performance form).** The
    `commands: Uint8Array` / `coords: Float32Array` command stream
    (`packages/geom/src/path.ts`) is for the kit's monomorphic hot loops
    and low GC pressure. A consumer can reach for it for power, but is
    never required to construct or read it by hand.
 
-Two principles, both load-bearing: **choice** (don't push a composer
-toward a builder for simple authored geometry because nothing terser
-exists) and **no new standard** (reach the power through SVG `d`, which
-every consumer already knows, rather than a kit-invented path grammar).
-
 On the read/interchange side, standard formats stay first-class:
 `pathToAnchors` / `decomposePath` for friendly reads, `@weasel-js/svg`'s
 `parseSvg` / `serializeSvg` for document round-trips.
 
-**Why — and the paradox.** Adding a small path-language parser *reduces*
-net implementation complexity rather than adding to it. Without it, every
+**Why.** Without a parser, every
 consumer hand-assembles `polygonFromPoints([...])` (or worse) at each
-call site; the friction is paid N times across the ecosystem and the
-imperative code obscures intent. A terse declarative form pays the parser
-cost once, in the kit, and lets scene composition read as data. *Let
-consumers learn the typed-array form when they want its power — don't
-make them learn even the builders just to drop one shape on the canvas.*
+call site. A terse declarative form pays the parser
+cost once, in the kit, and lets scene composition read as data.
 
 **Status.** `pathFromD(d)` ships from `@weasel-js/geom` (`packages/geom/src/paths/pathFromD.ts`, re-exported by core)
 and accepts the full SVG `d` grammar (`M L H V C S Q T A Z`, absolute +
@@ -90,25 +73,19 @@ into those signatures.** A `d` string is converted exactly once, at the
 boundary, via an explicit `pathFromD(d)` call; the resulting `Path` is what
 flows through the kit.
 
-Three reasons this is the settled choice, not a deferral:
+Why:
 
-1. **Preserves a property the surface already has.** The path-bearing
-   surface is homogeneous on `Path` today — there are zero string-shaped
-   path params. Accepting `d` inline would *introduce* polymorphism where
-   none exists, not remove friction from it.
-2. **It can't be made universal anyway.** The kit is generic over `TNode` /
+1. **The surface is homogeneous on `Path`.** There are no string-shaped
+   path params; accepting `d` inline would introduce polymorphism where
+   none exists.
+2. **It can't be made universal.** The kit is generic over `TNode` /
    `TData` and does not own where geometry lives in a consumer's node. An
    inline-`d` convention could only intercept the kit's own typed slots, not
-   `node.data` — so it would buy an inconsistent surface (strings work
-   *here* but not *there*), which is worse than one uniform rule.
-3. **Honest about cost.** `pathFromD` parses on each call. An explicit call
+   `node.data`, so strings would work in some places and not others.
+3. **Cost.** `pathFromD` parses on each call. An explicit call
    at the boundary parses once and reuses the `Path`; a buried `string | Path`
    invites silent re-parsing in loops / re-inserts, and leaves `onWarn` with
    nowhere clean to go.
-
-The terse-authoring win is fully delivered by `pathFromD` *existing* — a
-consumer writes `pathFromD("M0 0 …")` instead of hand-assembling a builder.
-That one call is the ergonomic, and it's enough.
 
 **Scope.** Applies to public hooks, ops, and component props that ingest
 or emit geometry. Internal kit code uses the typed-array form directly —
@@ -233,7 +210,7 @@ stylesheet or in script, at or above the lowest rung.
 ### Panel labels
 
 Labels on the params surfaces — `PropertyPanel`, `Prefs` and labkit's
-`ControlPanel` — take their case, tracking, alignment and width from four
+`ControlPanel` — take their case, tracking, alignment and width from
 custom properties. Set any of them on an ancestor and every label beneath
 follows; nothing needs outranking, because no rule declares them — each label
 reads its default as a `var()` fallback.
@@ -256,9 +233,9 @@ up with a property panel's inline rows. labkit's `Readout` is a `DetailList`,
 so a lab's measurements line up with its `ControlPanel` the same way.
 
 Custom properties are the mechanism because they inherit across the CSS-module
-boundary: labkit's Less cannot name `PropertyPanel`'s label class, and before
-this it restated the recipe by hand. `npm run check:labels` fails on a label in
-those three surfaces that sets its case or tracking any other way.
+boundary: labkit's Less cannot name `PropertyPanel`'s label class.
+`npm run check:labels` fails on a label in
+those surfaces that sets its case or tracking any other way.
 
 ### Numeric text
 

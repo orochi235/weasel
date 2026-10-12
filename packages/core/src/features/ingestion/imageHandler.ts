@@ -1,14 +1,6 @@
 /**
- * The kit's `image/*` content handler — the one handler shipped by default.
- *
- * For each image file: resolve a `src` (consumer `resolveSrc` when provided,
- * else embed as a `data:` URI so the scene stays serializable), measure the
- * natural pixel size, fit-clamp to 90% of the visible viewport, and insert a
- * leaf node with `data.image = { src }` via the insert dep (id/layer/undoable
- * op supplied there — same contract as `useImageTool`).
- *
- * Placement: centered on `ctx.point` (drop / pointed ingest) or the viewport
- * center (paste / point-less). Multi-file ingests cascade by a fixed offset.
+ * The kit's `image/*` content handler. With no consumer `resolveSrc`, a file
+ * embeds as a `data:` URI so the scene stays serializable.
  *
  * Registered at priority -100 so any consumer handler (default 0) can take
  * image files first.

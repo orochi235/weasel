@@ -1,18 +1,7 @@
 /**
- * Coverage for the three `resizePolicy` dep code paths in `resizeAction`,
- * plus the `poseDescriptor` dep:
- *
- *   1. `behaviors[]`    — bounds-frame rewrite (test via `clampMinSize`).
- *   2. `pointSnap[]`    — world-space anchor-point snap back-solve.
- *   3. `expandIds`      — group expansion of a single id into multiple leaves.
- *   4. `poseDescriptor` — pose↔bounds through a non-identity descriptor
- *                         (rotation passthrough via `ROTATED_POSE_DESCRIPTOR`,
- *                         a non-rect pose via `CIRCLE_POSE_DESCRIPTOR`).
- *
- * Mirrors the helper shape from `resize.test.ts`: a stub scene with a
- * Map-backed pose store + a hand-rolled `InvocationCtx`. Behaviors are taken
- * from the kit's own library so the tests exercise the integration path
- * end-to-end rather than restating per-behavior math.
+ * Coverage for the `resizePolicy` dep code paths in `resizeAction`, plus the
+ * `poseDescriptor` dep. Behaviors are taken from the kit's own library so the
+ * tests exercise the integration path rather than restating per-behavior math.
  */
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
@@ -62,8 +51,7 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
     setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
     batch<T>(_label: string, fn: () => T): T { return fn(); },
     // Mirrors the real no-journal scene.applyBatch: apply each op against the
-    // commit adapter. resize's commit now routes through applyOps' fallback
-    // (`scene.applyBatch(ops, 'Resize', defaultCommitAdapter(scene))`).
+    // commit adapter.
     applyBatch(ops: { apply: (a: unknown) => void }[], _label: string, adapter: unknown): void {
       for (const op of ops) op.apply(adapter);
     },
@@ -105,10 +93,6 @@ function getOngoing(action: typeof resizeAction) {
   if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   return action.invoker;
 }
-
-// ---------------------------------------------------------------------------
-// 1. behaviors[] — clampMinSize prevents the bounds from going below a floor.
-// ---------------------------------------------------------------------------
 
 describe('resizeAction — behaviors[] via resizePolicy dep', () => {
   it('applies clampMinSize to rewrite proposed bounds before commit', () => {
@@ -194,10 +178,6 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 2. pointSnap[] — world-space grid snap back-solves the pose.
-// ---------------------------------------------------------------------------
-
 describe('resizeAction — pointSnap[] via resizePolicy dep', () => {
   it('snaps the dragged corner to a 20px grid', () => {
     const invoker = getOngoing(resizeAction);
@@ -216,9 +196,8 @@ describe('resizeAction — pointSnap[] via resizePolicy dep', () => {
       },
     });
     const handle = invoker.start(ctx, undefined);
-    // Drag to (133, 117) → dragged corner is the bottom-right at (133,117);
-    // grid snap rounds it to (140, 120). Width/height back-solve from
-    // fixed (0,0) → snapped (140,120): w=140, h=120.
+    // The dragged bottom-right corner lands at (133,117); grid snap rounds it
+    // to (140,120), and width/height back-solve from the fixed (0,0).
     handle.onMove!({
       ...ctx,
       drag: { start: { x: 100, y: 100 }, current: { x: 133, y: 117 }, delta: { x: 33, y: 17 } },
@@ -228,10 +207,6 @@ describe('resizeAction — pointSnap[] via resizePolicy dep', () => {
     expect(preview.height).toBeCloseTo(120);
   });
 });
-
-// ---------------------------------------------------------------------------
-// 3. expandIds — group expansion writes per-leaf poses.
-// ---------------------------------------------------------------------------
 
 describe('resizeAction — expandIds via resizePolicy dep', () => {
   it('takes the group path when expandIds returns a different id set', () => {
@@ -294,10 +269,6 @@ describe('resizeAction — expandIds via resizePolicy dep', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 4. geometry — non-identity descriptor (rotated pose passthrough).
-// ---------------------------------------------------------------------------
-
 describe('resizeAction — geometry via poseDescriptor dep', () => {
   it('uses geometry.getBounds + remapBounds when projecting poses', () => {
     const invoker = getOngoing(resizeAction);
@@ -314,8 +285,7 @@ describe('resizeAction — geometry via poseDescriptor dep', () => {
           expandIds: (ids: string[]) => ids,
         },
         // `ROTATED_POSE_DESCRIPTOR` preserves the `rotation` field on
-        // `remapBounds` via `...p` spread; the proposed pose should still
-        // carry rotation=0 (proves the descriptor was actually consulted).
+        // `remapBounds`, which proves the descriptor was actually consulted.
         poseDescriptor: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<unknown>,
       },
     });
@@ -373,21 +343,12 @@ describe('resizeAction — reads the poseDescriptor dep', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Tiny test spy — Vitest's `vi.fn()` would do this, but a local one keeps
-// the test self-contained and avoids a Vitest import widening.
-// ---------------------------------------------------------------------------
-
 function vi_fn() {
   const f = ((...args: unknown[]) => { f.calls.push(args); f.called = true; }) as ((...a: unknown[]) => void) & { calls: unknown[][]; called: boolean };
   f.calls = [];
   f.called = false;
   return f;
 }
-
-// ---------------------------------------------------------------------------
-// 5. Group resize with a rotated child.
-// ---------------------------------------------------------------------------
 
 describe('resizeAction — a rotated leaf inside a group', () => {
   /** The naive projection: what the group path used for every leaf. */

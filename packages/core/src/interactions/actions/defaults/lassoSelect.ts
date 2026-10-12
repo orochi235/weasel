@@ -1,40 +1,20 @@
 /**
  * `lassoSelectAction` — ongoing Action descriptor for polygon lasso selection.
  *
- * ## Status: REAL
- *
- * Implements lasso-select via the full pointermove stream (accumulated in
- * `InvocationCtx.drag.points` by the dispatcher extension):
- *   - `start`: initializes vertex list from the drag-start world point.
- *   - `onMove`: appends the current world point, skipping one closer than
- *     the binding's `params.minVertexSpacing` (default 2 world-px) to the
- *     last vertex.
- *   - `onEnd('commit')`: performs hit-testing against the accumulated polygon.
- *     Uses `dep.hitTestLasso(polygon, mode)` when available — `mode` from the
- *     binding's `params.mode`, default `'intersect'` — otherwise falls back to
- *     the polygon's AABB via `dep.hitTestArea(bounds)`.
- *     Extends selection with shift, replaces otherwise.
- *   - `onEnd('cancel')`: no-op.
- *
- * ## Behaviors
+ * A move adds a vertex unless it is closer than the binding's
+ * `params.minVertexSpacing` (default 2 world-px) to the last one. The commit
+ * hit-tests the polygon with `dep.hitTestLasso(polygon, mode)` — `mode` from
+ * the binding's `params.mode`, default `'intersect'` — falling back to the
+ * polygon's AABB via `dep.hitTestArea(bounds)`. Shift extends the selection.
+ * Always transient: no undo entry.
  *
  * `opts.behaviors` (`LassoSelectBehavior[]`) run over a `GestureContext`
  * whose `origin.get('gesture')` is the start pose, whose scratch holds the
  * vertices under `LASSO_VERTICES`, and whose adapter answers selection and
  * hit-testing from the `lassoSelect` dep. `onEnd` is first-non-undefined-wins:
  * `Op[]` is applied in place of the default selection, `null` aborts, and
- * all-`undefined` falls through to it.
- *
- * ## Dep
- *
- * Requires `lassoSelect` dep from DepSchema:
- *   `{ hitTestLasso?(...), hitTestArea(...), getSelection(), setSelection(ids) }`
- *
- * ## What this does NOT wire
- *
- * - Committed history — always transient (no undo entry); a behavior's ops
- *   are applied the same way.
- * - Debug sink recording.
+ * all-`undefined` falls through to it. A behavior's ops are applied
+ * transiently too.
  */
 
 import { gestureViewReader } from '../../gestures/shared/screenTolerance';
@@ -49,10 +29,6 @@ import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../..
 import { LASSO_VERTICES } from '../lasso-select/behaviors/selectFromLasso';
 import { reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
 import { selectionFromHits } from '../hitSelection';
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 /** Compute AABB of a polygon (for fallback hit-test when hitTestLasso is absent). */
 function polygonAABB(
@@ -95,10 +71,6 @@ function behaviorAdapter(dep: LassoSelectDep, view: ViewApi | undefined): LassoS
   return adapter;
 }
 
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
-
 const DEFAULT_MIN_VERTEX_SPACING = 2; // world-px
 
 interface LassoScratch {
@@ -121,18 +93,9 @@ interface LassoScratch {
   gesture: GestureContext<LassoSelectPose> | null;
 }
 
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
-
 /**
  * @experimental
  * Static descriptor for the `lassoSelect` Action.
- *
- * Requires dep-schema entry: `lassoSelect`.
- *
- * The invoker accumulates pointermove vertices via `InvocationCtx.drag.points`
- * (dispatcher extension) and commits a polygon hit-test at drag end.
  */
 export const lassoSelectAction: Action & { requires: string[] } = {
   id: 'lassoSelect',

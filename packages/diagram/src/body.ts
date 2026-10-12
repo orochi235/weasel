@@ -6,13 +6,10 @@
  * **The body measures a floor; the author sets the rest.** Rows measure to a
  * `{ minWidth, minHeight }` and the node's pose is the max of that and what
  * the author gave it. Adding a port row can grow a node; nothing here ever
- * shrinks one back. Because the pose stays authored data, resize, align,
- * distribute, guides, snapping and undo need no special case, and a node that
- * did not come from the builder just has whatever size it already had.
+ * shrinks one back.
  *
  * Text measurement is a seam rather than an import: measuring needs a 2D
- * context, which a geometry module has no business owning. `canvasMeasure`
- * adapts the kit's own `measureText` for a caller that has one.
+ * context, which a geometry module has no business owning.
  */
 import { cssFamilyName } from '@weasel-js/font';
 import { boxForContent, contentBox, outlinePath, type Bounds, type Outline } from './outline';
@@ -24,9 +21,7 @@ export type Row =
   /** Text. `label` is the node's name; `field` is a named value. */
   | { kind: 'label'; text: string; style?: RowTextStyle }
   | { kind: 'field'; label: string; value: string; style?: RowTextStyle }
-  /** A row that carries ports on its own left and right edges — the
-   *  visual-programming shape, where an operator's inputs line up with the
-   *  rows they feed. */
+  /** A row that carries ports on its own left and right edges. */
   | { kind: 'ports'; left?: readonly RowPort[]; right?: readonly RowPort[]; height?: number }
   /** Reserved space a consumer paints into. */
   | { kind: 'slot'; height: number; id?: string };
@@ -105,9 +100,8 @@ export interface RowPortBox extends Bounds {
 
 const DEFAULT_PADDING = 8;
 const DEFAULT_GAP = 4;
-/** What a row is worth when nothing measures its text. Enough that a body
- *  laid out headlessly is not zero-height — a zero-height body renders as an
- *  empty page with every unit test still green. */
+/** What a row is worth when nothing measures its text, so a body laid out
+ *  headlessly is not zero-height. */
 const FALLBACK_LINE = 16;
 
 /** Adapts the kit's `measureText` for a caller holding a 2D context. Pass the
@@ -181,8 +175,7 @@ export function measureBody(spec: BodySpec, measure?: MeasureRowText): BodyFloor
 
 /**
  * The authored size, grown to fit the body. Never shrinks: a row removed
- * leaves the node the size the author last saw it at, which is the only
- * behavior that survives a resize the author did on purpose.
+ * leaves the node the size the author last saw it at.
  */
 export function sizeToBody<TPose extends Bounds>(pose: TPose, floor: BodyFloor): TPose {
   const width = Math.max(pose.width, floor.minWidth);
@@ -217,8 +210,7 @@ export function layoutBody(
 }
 
 /**
- * Where each of a `ports` row's ports goes inside `box`, on the same terms
- * `layoutBody` gives one box per row.
+ * Where each of a `ports` row's ports goes inside `box`.
  *
  * Both sides are cut into the same number of slots — the longer side's count —
  * so the nth input faces the nth output whichever side has more. A label box
@@ -260,13 +252,12 @@ export function layoutRowPorts(
  * left or right edge.
  *
  * Anchors are normalized against `bounds`, so they survive the node being
- * resized — which is the whole reason `PortAnchor` is normalized.
+ * resized.
  *
  * **A row port on a side takes that side's compass default with it.** Both sit
  * on the same edge, and a row near the vertical middle puts one exactly on top
  * of `w` or `e` — where the later region wins the hit and the other is
- * grabbable nowhere. A body that declares where its inputs attach has said what
- * that side is for.
+ * grabbable nowhere.
  */
 export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowText): DiagramNode {
   const outline = spec.outline;
@@ -331,8 +322,7 @@ export interface BuildBodyOptions<TData, TLayer extends string, TPose extends Bo
   /** One row's data, or `null` to leave that row undrawn. */
   row: RowNodeData<TData>;
   /** One row port's label, or `null` to leave it undrawn. Ports with no
-   *  `label` are never offered. Omit to draw none — a body whose ports are
-   *  named only for the width they claim needs nothing here. */
+   *  `label` are never offered. Omit to draw none. */
   portLabel?: (text: string, box: RowPortBox) => TData | null;
 }
 
@@ -341,13 +331,9 @@ export interface BuildBodyOptions<TData, TLayer extends string, TPose extends Bo
  * leaf per row that wants drawing.
  *
  * Rows are ordinary scene nodes rather than something this package paints, so
- * the kit's own text painter draws them and text editing, styling and
- * selection work on them unchanged. The walk that places them is
- * `layoutBody` — the same one `bodyTrait` anchors its row ports against, which
- * is why a label and its ports cannot drift apart.
- *
- * The pose is `sizeToBody(at, measureBody(spec))`: the body measures a floor
- * and the authored size is grown to clear it, never shrunk.
+ * the kit's own text painter draws them and text editing, styling, and
+ * selection work on them unchanged. The returned pose is `at` grown to fit the
+ * body, never shrunk.
  */
 export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
   spec: BodySpec,

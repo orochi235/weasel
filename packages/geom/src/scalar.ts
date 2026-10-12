@@ -3,8 +3,7 @@
  *
  * Points are scalar pairs (px, py); there is no point struct. All math is
  * f64 (JS-native). Epsilons are f32-SCALE and magnitude-relative, because
- * stored coords are quantized to Float32 (~7 significant digits) — see the
- * geometry-kernel spec.
+ * stored coords are quantized to Float32 (~7 significant digits).
  */
 
 /** Base relative epsilon, sized for Float32 storage (~1 part in 1e-6). */
@@ -53,9 +52,8 @@ export function sign(n: number): -1 | 0 | 1 {
  *
  * The exception is a guard against an exact algebraic value that a formula
  * produces bit-for-bit: a homogeneous `w === 1`, a ray's `d === 0`. Those are
- * testing a branch, not comparing coordinates, and `geom/3d` has two of them
- * (`mat4.ts`, `ray3.ts`). Widening one to `approxEq` would change which branch
- * runs, not how precisely it runs.
+ * testing a branch, not comparing coordinates. Widening one to `approxEq`
+ * would change which branch runs, not how precisely it runs.
  */
 export function approxEq(a: number, b: number, eps: number = EPS): boolean {
   if (a === b) return true;   // also the only way two infinities compare equal

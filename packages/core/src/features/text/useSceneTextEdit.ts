@@ -1,23 +1,10 @@
 /**
- * `useSceneTextEdit` — scene-aware wrapper around `useTextEdit`.
- *
- * Every consumer that wires `useTextEdit` against a `useScene`-managed
- * scene writes the same callbacks: scene lookups for text / style /
- * runs / screen-pose, and `scene.update(id, { data })` for commits. This
- * helper bakes that wiring in. Consumers pass `scene` + `container` and
- * get back the same `UseTextEditReturn` shape (`startEdit`, `isEditing`,
- * `cancelEdit`, `commit`, `editingId`).
+ * `useSceneTextEdit` — scene-aware wrapper around `useTextEdit`: scene
+ * lookups for text / style / runs / screen-pose, and
+ * `scene.update(id, { data })` for commits.
  *
  * Defaults assume the node's `data` carries `text` / `style` / `runs`
- * directly — matches the `useScene({ items })` trivial form where
- * `data === item` for text-shaped items, and matches `TextPose`-shaped
- * data. For custom data shapes, override any of the optional projections
- * (`getText` / `getStyle` / `getRuns` / `setText` / `setRuns` / `setStyle`).
- *
- * Pose component: the helper reads `(x, y, width, height)` straight off
- * the node's pose (typed `RectPose`) and projects that box through the view
- * of the weasel canvas mounted inside `container` — see the `view` option.
- * The overlay is clipped to that canvas's box, where its glyphs are clipped.
+ * directly. For custom data shapes, override any of the optional projections.
  * Consumers with non-rect poses should drop down to raw `useTextEdit` and
  * supply their own `getScreenPose`.
  */
@@ -85,21 +72,14 @@ export interface UseSceneTextEditOptions<TData> {
   /**
    * The view to project through. Omit it and the view is read live from the
    * weasel canvas mounted inside `container` (the one a double-click landed
-   * on, when there are several) — which is all a canvas that pans or zooms
-   * needs. With no canvas there, the node's world box is passed through as
-   * screen pixels.
-   *
-   * The overlay is positioned at the node's projected origin and CSS-scaled
-   * by the view, so every typographic metric on it — including the
-   * `fontSize` / `letterSpacing` a *run* carries — stays in world units and
-   * scales together.
+   * on, when there are several). With no canvas there, the node's world box
+   * is passed through as screen pixels.
    *
    * The overlay takes a single scale factor, so a non-uniform view scale is
    * represented by its `scale.x`; text under `scale.x !== scale.y` will not
    * match the canvas.
    *
-   * Pass one to project through a camera other than the canvas's own. A
-   * thunk is re-read on every projection; a plain `View` is the value from
+   * A thunk is re-read on every projection; a plain `View` is the value from
    * the render that supplied it.
    */
   view?: View | (() => View);
@@ -125,9 +105,7 @@ function resolveView(view: View | (() => View) | undefined): View | undefined {
 export interface UseSceneTextEditReturn extends UseTextEditReturn {
   /** Bind to the element wrapping `<SceneCanvas>` (the same element
    *  passed as `container`, or any ancestor that receives the dblclick
-   *  bubble). The handler looks up the canvas via `e.target`, hits the
-   *  top-most text node under the cursor via `pointInTextPose`, resolves
-   *  a caret offset via `caretIndexAt`, and starts edit on that node. */
+   *  bubble). Starts an edit on the top-most text node under the cursor. */
   onDoubleClick: (e: MouseEvent<HTMLElement>) => void;
   /** The `isText` option asked of the node with this id: what
    *  `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
@@ -145,9 +123,8 @@ export function useSceneTextEdit<
   container: HTMLElement | null,
   options: UseSceneTextEditOptions<TData> = {},
 ): UseSceneTextEditReturn {
-  // Stash scene + options in refs so the useTextEdit callbacks always see
-  // the current values without re-binding (the underlying hook also reads
-  // its options through a ref, so any re-creation would be churn).
+  // Refs, so the useTextEdit callbacks always see the current values
+  // without re-binding.
   const sceneRef = useLatest(scene);
   const optsRef = useLatest(options);
   const containerRef = useLatest(container);

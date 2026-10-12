@@ -15,8 +15,6 @@ import { PAINT_SLOT } from './memo';
 import { inkReach, resolveNodeStroke } from './nodePaint';
 import { paintsPose } from './poseBox';
 
-// ─── Built-in painters ─────────────────────────────────────────────────
-
 /** The `data` a `kit:text` node carries. */
 export interface TextNodeData {
   text: string;
@@ -49,41 +47,29 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const d = node.data as { text?: string } | null;
     return d?.text != null;
   },
-  // Memoized, and not for its own sake — `resolveTextStyle` + `resolveRuns`
-  // are cheap (0.14 ms/frame at 1000 text nodes). It is the enabler: the
-  // renderer's layout cache keys on the `ResolvedRun[]` array identity, and
-  // `layoutRuns` costs 25.9 ms/frame for 200 wrapped paragraphs. Handing back
-  // a fresh runs array per frame would leave that cache missing on every
-  // draw, exactly as a fresh `Path` per frame defeated the mesh cache. Both
-  // resolvers are pure style merging — no font reads — so `(data, pose)` is
+  // Memoized because the renderer's layout cache keys on the `ResolvedRun[]` array
+  // identity: a fresh runs array per frame would leave that cache missing on every
+  // draw. Both resolvers are pure style merging — no font reads — so `(data, pose)` is
   // the whole key. See PAINT_SLOT.
   //
-  // `y` is the top of the first line box, not a baseline — see
-  // `TextDrawCommand.y`. Wrap, alignment and run resolution are
-  // `textCommandFromPose`'s, which `createTextLayer`, picking, the caret and
-  // the edit overlay all share.
+  // `y` is the top of the first line box, not a baseline — see `TextDrawCommand.y`.
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => [
     textCommandFromPose(textPoseOf(node.data as TextNodeData, pose)),
   ]),
-  // The pose is a layout box, not a bounding box — "Away" in a 300-unit box
-  // leaves most of it empty, and a pose-rect silhouette claims all of it. The
-  // union of the line boxes is what the node actually covers, so picking,
-  // lasso and clipping stop grabbing blank space.
+  // The pose is a layout box, not a bounding box: the union of the line boxes is what
+  // the node actually covers, so picking, lasso, and clipping stop grabbing blank space.
   //
-  // `null` rather than an empty path when there are no non-blank lines: an
-  // empty text node would otherwise become unpickable, and a caller reading
-  // "no silhouette" falls back to the pose rect, which is the behavior an
-  // empty box wants.
+  // `null` rather than an empty path when there are no non-blank lines: a caller
+  // reading "no silhouette" falls back to the pose rect, which keeps an empty text
+  // node pickable.
   silhouette: (node, pose) => {
     const boxes = textLineBoxes(textPoseOf(node.data as TextNodeData, pose));
     if (boxes.length === 0) return null;
     return rectsToPath(boxes);
   },
-  // `filled` is unconditional, `data.fill: null` included: the silhouette
-  // above is line boxes, not glyph ink, so reporting outline-only text as
-  // unfilled would leave it grabbable within a stroke width of a box edge and
-  // nowhere near the letters. The reach still matters — a heavily outlined
-  // glyph was unpickable across the width of its own outline.
+  // `filled` is unconditional, `data.fill: null` included: the silhouette above is line
+  // boxes, not glyph ink, so reporting outline-only text as unfilled would leave it
+  // grabbable within a stroke width of a box edge and nowhere near the letters.
   ink: (node, _pose, ctx) => {
     const d = node.data as { stroke?: Stroke | null };
     return { filled: true, ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale) };

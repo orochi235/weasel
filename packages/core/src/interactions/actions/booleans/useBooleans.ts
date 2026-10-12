@@ -1,17 +1,7 @@
 /**
- * `useBooleans` — selection-driven Boolean ops on path layers.
- *
- * Returns one imperative callable per operation (`union`, `intersect`,
- * `subtract`, `exclude`, `divide`, `crop`, `trim`, `merge`). Each reads the current selection,
- * performs the op in world space, and dispatches a single batch through
- * the adapter's `applyOps` (one undo step).
- *
- * Adapter shape: see `BooleansAdapter` in `./booleans.ts`. Consumers
- * supply how to read selection, fetch the world-space `Path` for an id,
- * compare ids by stacking order, and mint a node from a result `Path`.
- *
- * No-ops are silent in production; in dev, `subtract` with < 2 selected
- * paths emits a `console.warn`.
+ * `useBooleans` — selection-driven Boolean ops on path layers. No-ops are
+ * silent in production; in dev, `subtract` with < 2 selected paths emits a
+ * `console.warn`.
  */
 import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
@@ -33,8 +23,8 @@ export interface UseBooleansReturn {
 
 /** Options for `useBooleans`. */
 export interface UseBooleansOptions extends BooleanOpOptions {
-  /** No-op. Retained for source-compatibility; auto-registration is now
-   *  handled by `useStandardActions` via the Pathfinder descriptors. */
+  /** No-op. Retained for source-compatibility; `useStandardActions`
+   *  registers the actions. */
   enableActions?: boolean;
 }
 

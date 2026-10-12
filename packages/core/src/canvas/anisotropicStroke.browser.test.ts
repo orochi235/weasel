@@ -1,15 +1,8 @@
 /**
  * A 1px `{ px }` stroke is one device pixel wide in every direction at a 4:1
  * view, read back from real WebGL2 — the claim the glRecorder tests make about
- * vertices, made about pixels.
- *
- * The mean-scale width this replaced painted these lines 0.5px tall running
- * across, 2px wide running down, and 0.56px across the shallow diagonal, so
- * every check below sits far from where the old ink landed.
- *
- * Further down, the same view with lengths in mixed units: a `{ px }` head on
- * a world-width line, a world head and world `vertexWidths` on a `{ px }` line,
- * and a `{ px }` outline on text.
+ * vertices, made about pixels. A width taken through the mean scale would paint
+ * these lines 0.5px tall running across and 2px wide running down.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { CommandStroke, Path } from '@weasel-js/core';
@@ -142,9 +135,8 @@ function expectHead(m: { width: number; at: number }, width: number, length: num
 }
 
 describe('a head sized in other units than its line, at a 4:1 view', () => {
-  // The arrow is 3 units long and 3 wide. A 4px head is 12px both ways in
-  // either direction; through the mean scale of 2 it was 2 world units, 24px
-  // long and 6 tall running across.
+  // The arrow is 3 units long and 3 wide, so a 4px head is 12px both ways in
+  // either direction.
   it('builds a { px } head on a world-width line to its screen size, running across and down', () => {
     const head: CommandStroke = { width: 0.5, paint: WHITE, markerEnd: { key: 'arrow', size: { px: 4 } } };
     const img = renderCommands([strokeOf(ACROSS, head), strokeOf(DOWN, head)]);
@@ -156,7 +148,7 @@ describe('a head sized in other units than its line, at a 4:1 view', () => {
 
   // A 2-unit world head is 6 world units long and 6 wide, so the view
   // stretches it: 24px long and 6 tall running across, 6px long and 24 wide
-  // running down. Built in the stretch, it came out 12 by 12 both ways.
+  // running down.
   it('builds a world-sized head on a { px } line in world, running across and down', () => {
     const head: CommandStroke = { width: { px: 1 }, paint: WHITE, markerEnd: { key: 'arrow', size: 2 } };
     const img = renderCommands([strokeOf(ACROSS, head), strokeOf(DOWN, head)]);
@@ -166,8 +158,7 @@ describe('a head sized in other units than its line, at a 4:1 view', () => {
     expectHead(down, 24, 6, 84);
   });
 
-  // World widths of 2 are 2px running across and 8px running down; read in
-  // the stretch they were 4px both ways.
+  // World widths of 2 are 2px running across and 8px running down.
   it('keeps vertexWidths world widths on a { px } line', () => {
     const tapered: CommandStroke = { width: { px: 1 }, paint: WHITE, cap: 'butt', vertexWidths: [2, 2] };
     const img = renderCommands([strokeOf(ACROSS, tapered), strokeOf(DOWN, tapered)]);
@@ -210,8 +201,7 @@ describe('a 1px outline on text at a 4:1 view', () => {
     return sum;
   };
 
-  // The H's left stem: its outer edge runs down, its top edge across. Through
-  // the mean scale the first painted 2px wide and the second half a pixel.
+  // The H's left stem: its outer edge runs down, its top edge across.
   it('is one pixel wide down the stem and across its top', () => {
     const img = renderCommands([text()]);
     let minX = img.width, minY = img.height, maxY = 0;

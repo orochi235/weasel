@@ -36,13 +36,13 @@ export const Interactive = story({ isolate: 'asserts placement against the windo
 // CSF: parameters: { forge: { isolate: 'asserts placement against the window edge' } }
 ```
 
-It then renders in an iframe, as every story once did. The frame path is kept
-for those stories and gets no new features; `npm run check:forge-isolate`
+It then renders in an iframe. The frame path
+gets no new features; `npm run check:forge-isolate`
 lists the isolated stories and fails when their number goes above the one the
 script holds, so the count only goes down. The value is read from the source
 without running it, and must be a string literal.
 
-A story may stay isolated as long as it needs to. If the count ever reaches
+If the count ever reaches
 zero, the frame side goes: `FrameView`, `framePool`, `trialFrames`,
 `answers`, `readyKey`, `labHarness`, `mountFrame`, `protocol/*`, the frame
 entry, `frame.html`, `html.ts`, the frame page in `build.ts`, the `./frame`
@@ -231,6 +231,6 @@ appear as a user of everything.
 
 `forgeTest` from `@weasel-js/forge/vite` runs every story as a vitest browser
 test: each story renders in the test page through the same host the workshop
-uses, with its defaults, plays, and fails on any fault. Pass it the same `frameConfig`. It needs vitest 4 in browser mode with a provider, such as
+uses, with its defaults, plays, and fails on any fault. Pass it the same `frameConfig`. It needs vitest 4 or 5 in browser mode with a provider, such as
 `@vitest/browser-playwright`. This repo runs it with
 `npm run test:stories:forge`, not in CI.

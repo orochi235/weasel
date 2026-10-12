@@ -1,11 +1,6 @@
 /**
- * `cloneAction` — ongoing Action descriptor for alt-drag clone.
- *
- * `start` captures the world pose of every node the copy will hold, `onMove`
- * tracks the drag delta and previews the copies, and `onEnd('commit')` inserts
- * them as one batch — through the consumer `applyOps` hook when present, else
- * `scene.applyBatch`. Nothing is written before the commit, so a cancel only
- * clears the preview.
+ * `cloneAction` — ongoing Action descriptor for alt-drag clone. Nothing is
+ * written before the commit, so a cancel only clears the preview.
  *
  * The action does not gate on a modifier: it runs whenever the dispatcher
  * routes to it, and the binding that names it carries the `alt` requirement.
@@ -25,10 +20,6 @@ import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
-
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
 
 interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
@@ -51,8 +42,7 @@ interface CloneScratch {
   /** Preview poses keyed by the original's id: the copies have no ids yet. */
   previews: Map<NodeId, unknown>;
   /** Optional consumer commit hook captured at gesture start. When present,
-   *  the insert ops route through it (consumer history) instead of
-   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+   *  the insert ops route through it instead of `scene.applyBatch`. */
   applyOps?: (ops: Op[], label: string) => void;
 }
 
@@ -92,18 +82,10 @@ function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection
   return true;
 }
 
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
-
 /**
  * @experimental
- * Static descriptor for the `clone` Action.
- *
- * Requires dep-schema entries: `selection`, `scene`.
- *
- * Copies each selected node, with its subtree, to where the drag left it.
- * One undo entry.
+ * Static descriptor for the `clone` Action. Copies each selected node, with
+ * its subtree, to where the drag left it. One undo entry.
  */
 export const cloneAction: Action & { requires: string[] } = inPlane({
   id: 'clone',
@@ -111,9 +93,8 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   // No default binding: a bare `{ kind: 'drag' }` would clone a non-empty
   // selection on any drag no tool claimed. Alt-drag on a body binds it
   // (`selectionMoveBindings`, the `move` preset).
-  // The platform's duplicate cursor, and the whole reason this field is
-  // modifier-aware: the select tool binds clone behind `mods: { alt: true }`,
-  // so the pump predicts it — and shows this — only while Alt is down.
+  // The platform's duplicate cursor. The select tool binds clone behind
+  // `mods: { alt: true }`, so the pump shows this only while Alt is down.
   cursor: 'copy',
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
@@ -158,17 +139,12 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
 
       return {
         kind: 'clone',
-        // Clone: source stays visible at its committed pose; the ghost
-        // (rendered via previewIds/previewPose below) appears at the
-        // drag target. Opt out of the default "hide source" behavior
-        // move/resize/rotate use.
+        // The source stays visible at its committed pose; the ghost appears
+        // at the drag target.
         previewHidesSource: false,
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
           scratch.currentDelta = behaviors.shape(moveCtx, { dx: moveCtx.drag.delta.x, dy: moveCtx.drag.delta.y });
-          // Preview: paint each original's silhouette at the translated pose.
-          // The original stays at its committed location (we don't hide it);
-          // the ghost overlay shows where the new copy will land on commit.
           scratch.previews.clear();
           const { dx, dy } = scratch.currentDelta;
           if (dx === 0 && dy === 0) return;

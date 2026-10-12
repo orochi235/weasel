@@ -1,14 +1,10 @@
 /**
- * Shared, silhouette-aware area hit-test used by both `areaSelect` (marquee)
- * and `lassoSelect` dep sources, and by `sceneToAdapter`.
+ * Silhouette-aware area hit-test for marquee and lasso selection.
  *
- * The per-node decision is `regionTakes` (`core/geometry/regionHit`), which
- * `arrayAdapter` shares. This module supplies the scene walk — layers, clips,
- * pose composition, containers — and the node's drawn outline: the painter's
- * world-frame silhouette (`findShapeSilhouette`), which is what reaches the
- * kit's own inserted shapes, whose geometry sits on `node.data` behind a bare
- * `{x,y,w,h}` pose. With no painter the outline is the pose rect, rotated if
- * the pose is.
+ * The per-node decision is `regionTakes` (`core/geometry/regionHit`). This
+ * module supplies the scene walk and the node's drawn outline: the painter's
+ * world-frame silhouette (`findShapeSilhouette`), or with no painter the pose
+ * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
 import { pathIntersectsRect } from '@weasel-js/geom';

@@ -1,13 +1,8 @@
 /**
  * Text as path geometry: the glyph outlines a text node draws, placed in
- * world space and composed into one `Path`. What "Create Outlines" replaces a
- * text node with, and what a Boolean op reads when a text node is an operand.
- *
- * The walk is `layoutRuns`', so the glyphs land exactly where the renderer's
- * outline tier puts them — same pen positions, same baselines, same synthetic
- * italic shear — but with the tier forced on for every glyph whatever its
- * size, and with paint set aside: unfilled text has outlines too.
- * `textToPathsByPaint` is the same walk, split by the paint each glyph wears.
+ * world space and composed into one `Path`. The walk is `layoutRuns`', so the
+ * glyphs land exactly where the renderer's outline tier puts them, with the
+ * tier forced on for every glyph whatever its size.
  */
 
 import { isSolidPaint, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
@@ -75,8 +70,7 @@ export interface TextToPathOptions {
  * - `'outlines-failed'` — registered, and the bytes did not load or parse.
  * - `'synthetic-bold'` — the requested weight is faked from a lighter face.
  *   The renderer thickens the distance field for that, and a path has no
- *   field to thicken; emboldening geometry needs outline offsetting, which
- *   the kit does not have. Converting would silently lighten the text.
+ *   field to thicken. Converting would silently lighten the text.
  */
 export type TextOutlinesFailure =
   | 'no-outlines'
@@ -198,9 +192,7 @@ function paintKey(fill: Paint | null, stroke: Stroke | undefined): string {
 /**
  * The one glyph walk behind both entry points. Each resolved run is repainted
  * with an opaque solid whose color is its paint group's index, so the layout's
- * own groups and decoration rules come back labeled with it; nothing else in
- * the layout reads paint once `outlineMinSize` is 0, so the geometry is what
- * it would be with no paint at all.
+ * own groups and decoration rules come back labeled with it.
  */
 function walkOutlines(
   data: TextOutlineSource,
@@ -278,10 +270,10 @@ function walkOutlines(
  * curves; overlapping contours are not merged — run the result through
  * `pathUnion` for that, at the cost of flattening the curves.
  *
- * `pose` is the node's box, rotation, and `transform`. Synthetic italic is sheared exactly
- * as the renderer shears it. Throws {@link TextOutlinesError} when any run's
- * face cannot supply outlines — never returns a partial or empty path for
- * that. Text with no ink (empty, or only spaces) returns an empty path.
+ * `pose` is the node's box, rotation, and `transform`. Throws
+ * {@link TextOutlinesError} when any run's face cannot supply outlines — never
+ * returns a partial or empty path for that. Text with no ink (empty, or only
+ * spaces) returns an empty path.
  */
 export function textToPath(
   data: TextOutlineSource,
@@ -296,11 +288,8 @@ export function textToPath(
  * stroke, each gathering the glyphs and decoration rules that wear it — a
  * rule takes the fill of the run it underlines. Groups come in the order
  * their paint first appears in the text; a paint whose runs put down no ink
- * has none. Together the paths cover exactly what `textToPath` covers.
- *
- * Paint resolves as the renderer resolves it: a run's `fill` / `stroke`, else
- * the node's `data.fill` / `data.stroke` from `data`, else the default black
- * fill and no stroke. Throws as `textToPath` does.
+ * has none. Paint resolves as the renderer resolves it. Throws as
+ * `textToPath` does.
  */
 export function textToPathsByPaint(
   data: TextOutlineSource,

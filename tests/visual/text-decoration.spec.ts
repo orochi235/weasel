@@ -1,27 +1,21 @@
 /**
  * Real-GL assertion for underline / strikethrough geometry. Like
- * `text-aa.spec.ts`, deliberately NO committed baseline — the golden-image
- * suite cannot catch this class of defect. `text.spec.ts` runs at a 5% diff
- * tolerance (MSDF AA differs from Canvas 2D AA), and the whole decorated `t6`
- * node is well under 5% of a 600×360 canvas, so it was added and passed
- * against the *old* baseline without anyone noticing.
+ * `text-aa.spec.ts`, deliberately NO committed baseline: `text.spec.ts` runs
+ * at a 5% diff tolerance, and the whole decorated `t6` node is well under 5%
+ * of a 600×360 canvas.
  *
- * What it measures, instead of pixels: a decoration rule is a **gap-free
- * horizontal run** of ink tens of pixels wide. A row of glyphs never is —
- * stems and crossbars are a few pixels each, separated by gaps. So the rows
- * carrying a long unbroken run *are* the rules, and their positions and
- * extents can be asserted without knowing what the glyphs look like.
+ * What it measures: a decoration rule is a **gap-free horizontal run** of ink
+ * tens of pixels wide. A row of glyphs never is — stems and crossbars are a
+ * few pixels each, separated by gaps. So the rows carrying a long unbroken run
+ * *are* the rules.
  *
  * Pinned here:
- * - exactly two rule bands exist (underline + strikethrough), not one or three
+ * - exactly two rule bands exist (underline + strikethrough)
  * - their vertical separation is the gap between the demo font's own
- *   `post.underlinePosition` and `OS/2.yStrikeoutPosition`, as `gen-font`
- *   baked them into the atlas's `faceMetrics`. Asserting the separation rather
- *   than two absolute offsets keeps this independent of where the baseline
- *   lands, which is the ascender question `docs/TODO.md` tracks separately.
- * - each rule spans only its own run, not the whole line. `t6` puts
- *   `underline` on the first word and `strikethrough` on a later one, so a
- *   rule that leaked across spans would show up as one starting at the wrong x.
+ *   `post.underlinePosition` and `OS/2.yStrikeoutPosition`, as baked into the
+ *   atlas's `faceMetrics`. Asserting the separation rather than two absolute
+ *   offsets keeps this independent of where the baseline lands.
+ * - each rule spans only its own run, not the whole line.
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -121,15 +115,13 @@ test("text decoration — rules are gap-free runs at the font's own em offsets",
   const [upper, lower] = bands;
   const separation = centerOf(lower) - centerOf(upper);
   // Inter: (348 + 671) / 2048 em = 7.96px at fontSize 16. The window is slack
-  // for cross-driver AA, not for the measurement. The derived constants this
-  // replaced put the gap at 0.40 em, 6.4px, which falls outside it.
+  // for cross-driver AA, not for the measurement.
   expect(SEPARATION_EM).toBeCloseTo((348 + 671) / 2048, 9);
   expect(separation).toBeGreaterThan(SEPARATION_EM * FONT_SIZE - 1.2);
   expect(separation).toBeLessThan(SEPARATION_EM * FONT_SIZE + 1.2);
 
-  // The upper band is the strikethrough, on 'strikethrough' — a run that
-  // starts partway along the line. The lower is the underline, on
-  // 'Underline' — the first run, hard against the node's left edge.
+  // The upper band is the strikethrough, which starts partway along the line.
+  // The lower is the underline, hard against the node's left edge.
   const widest = (b: typeof bands[number]) => b.reduce((m, r) => (r.run > m.run ? r : m));
   const strike = widest(upper);
   const underline = widest(lower);

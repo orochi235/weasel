@@ -1,21 +1,8 @@
 /**
- * Kit-native SVG export for the WeaselDraw scene.
- *
- * Walks the scene's container tree (`scene.roots` + `scene.childrenOf`) via
- * `sceneToSvgNodes`: every `kind:'container'` node becomes an `SvgGroupNode`
- * (recursing) stamped with `meta.wd.attrs['group-id']` = its scene id, so the
- * structure round-trips back through `svgNodesToSceneDrafts` on import. Every
- * leaf is lowered to an `Obj` (pose baked into its `path`) and handed to
- * `objToSvgNode`.
- *
- * Pose rotation rides on `SvgPathNode.rotation` / `SvgTextNode.rotation`
- * so the serializer emits a `transform="rotate(... cx cy)"`. The path
- * itself is in unrotated, pose-aligned coordinates — same convention
- * used by the kit's path painter.
- *
- * Background fill is emitted as a leading `<path>` covering the viewBox.
- * Omitted when the color is white-equivalent so the SVG isn't bloated
- * with a redundant first node.
+ * SVG export for the WeaselDraw scene. Containers become groups stamped with
+ * their scene id so the structure round-trips on import; every leaf is lowered
+ * to an `Obj` with its pose baked into the path. Rotation is not baked: it
+ * rides on the node so the serializer emits a `rotate` transform.
  */
 import {
   type Scene,
@@ -48,13 +35,8 @@ import type { ImageObj, Obj, PathObj, TextObj } from './svgObj';
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
 
-/**
- * Lower a leaf node's `{data, pose}` to an `Obj` for `objToSvgNode`. The
- * pose is baked into the geometry (rect → fresh rect from pose dims;
- * polygon → translated so its AABB origin lands at pose.x/y), and rotation
- * rides on the `Obj` so the serializer emits a rotate transform. Returns
- * `null` for a leaf with no drawable data.
- */
+/** Lower a leaf node's `{data, pose}` to an `Obj`, or `null` for a leaf with
+ *  no drawable data. */
 function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj | null {
   if (data.image) {
     const o: ImageObj = {
@@ -88,10 +70,8 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     path,
     // The path above is baked into page coordinates, and the serializer
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
-    // to be resolved against the same pose, exactly as the painter does.
+    // to be resolved against the same pose.
     fill: data.fill?.paint == null ? null : { ...data.fill, paint: fillInPoseFrame(data.fill.paint, pose) },
-    // A gradient stroke paint gets the same pose-frame resolution the fill
-    // above gets, and for the same reason.
     // A stroke with no paint draws nothing, and exports as no stroke.
     stroke: data.stroke?.paint == null
       ? null
@@ -144,15 +124,8 @@ function poseOfIn<TLayer extends string>(
     stored(id) === undefined ? undefined : composeWorldPose(adapter, id, scene.composition.compose);
 }
 
-/**
- * Build the `SceneSource` `sceneToSvgNodes` walks: `objOf` lowers a leaf's
- * `data` at `poseOf(id)` to an `Obj` (pose baked into the path);
- * `sceneToSvgNodes` stamps each container's scene id onto `wd:group-id` so
- * groups round-trip; `isPainted` drops what a hidden layer holds, so an export
- * carries what the pixel path draws. Shared by {@link sceneToSvgString} (whole
- * scene) and {@link selectionToSvgString} (selection subset, via the `roots`
- * param).
- */
+/** The `SceneSource` `sceneToSvgNodes` walks. `isPainted` drops what a hidden
+ *  layer holds, so an export carries what the pixel path draws. */
 function sceneSourceOf<TLayer extends string>(
   scene: DrawScene<TLayer>,
   poseOf: (id: string) => WeaselDrawPose | undefined,
@@ -179,8 +152,7 @@ function sceneSourceOf<TLayer extends string>(
 /**
  * `serializeSvg` once every paint kind and face `nodes` export with has
  * loaded. A load that fails is reported through `onWarn` and the export goes
- * ahead without that def, the way `serializeSvg` treats any paint it cannot
- * write.
+ * ahead without that def.
  */
 async function serializeWarm(nodes: SvgNode[], opts: SerializeOptions): Promise<string> {
   try {
@@ -194,8 +166,7 @@ async function serializeWarm(nodes: SvgNode[], opts: SerializeOptions): Promise<
 /**
  * Serialize a WeaselDraw scene to an SVG document string. The scene is read
  * when this is called; only the serialization waits for lazily loaded paint
- * kinds. Caller is responsible for triggering the download (see `downloadSvg`
- * in `./svgInterop`).
+ * kinds.
  */
 export function sceneToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
@@ -222,17 +193,13 @@ export function sceneToSvgString<TLayer extends string>(
 }
 
 /**
- * Recover the true selected roots from a `ClipboardSnapshot.items` list
- * (adapter-shaped node copies from `sceneAdapter.snapshotSelection`).
+ * Recover the true selected roots from a `ClipboardSnapshot.items` list.
  *
- * A copied container's snapshot flattens its full subtree alongside it
- * (parents-before-children) — not just the ids the user selected. Feeding
- * every item's id to {@link selectionToSvgString} as a walk root would
- * double-emit descendants: once nested under the exported `<g>`, once
- * again as spurious top-level siblings. This mirrors the same `isRoot`
- * predicate `sceneAdapter.commitPaste` uses on the paste side: an item is
- * a root when its captured `parent` is null or wasn't itself captured in
- * this snapshot.
+ * A copied container's snapshot flattens its full subtree alongside it — not
+ * just the ids the user selected. Feeding every item's id to
+ * {@link selectionToSvgString} as a walk root would emit descendants twice:
+ * nested under the exported `<g>`, and again as top-level siblings. An item is
+ * a root when its captured `parent` is null or wasn't itself captured.
  */
 export function clipboardSnapshotRootIds(
   items: readonly { id: string; parent: string | null }[],
@@ -244,16 +211,12 @@ export function clipboardSnapshotRootIds(
 }
 
 /**
- * Serialize a subset of a WeaselDraw scene — exactly the given root ids
- * (and, for selected containers, their descendants) — to an SVG document
- * string, fitted to the union bounds of those roots rather than the full
- * page. This is the clipboard `produceFlavors` override's `image/svg+xml`
- * / `text/plain` source (see `apps/draw/src/App.tsx`).
+ * Serialize a subset of a WeaselDraw scene — the given root ids and, for
+ * containers, their descendants — to an SVG document string, fitted to the
+ * union bounds of those roots rather than the full page.
  *
- * Bounds are read from each root's own pose (world, under the scene's composition):
- * a container's pose is already the union-AABB of its leaf descendants (the
- * same convention the kit `group` action maintains), so no re-derivation from
- * children is needed.
+ * Bounds are read from each root's own world pose: a container's pose is
+ * already the union-AABB of its leaf descendants.
  */
 export function selectionToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
@@ -278,16 +241,12 @@ export function selectionToSvgString<TLayer extends string>(
 
 /**
  * {@link selectionToSvgString} plus the weasel clipboard payload embedded in
- * a `<metadata>` element (CDATA-wrapped) — the string `produceFlavors` puts
- * on `image/svg+xml` AND `text/plain`. External tools parse the SVG exactly
- * as before (`parseSvg` skips `<metadata>`); weasel's `kit:weasel-json`
- * handler extracts the payload so a draw→draw DOM paste — where Chromium
- * exposes ONLY `text/plain` — keeps full JSON fidelity (labels, typed data
- * the SVG mapping drops).
+ * a `<metadata>` element — the string that goes on `image/svg+xml` AND
+ * `text/plain`. A draw→draw DOM paste, where Chromium exposes ONLY
+ * `text/plain`, reads the payload back and keeps full JSON fidelity.
  *
  * `weaselPayloadText` must be the SAME text the custom-MIME JSON flavor
- * carries (built by `buildWeaselClipboardText`), so every flavor of one copy
- * decodes to one payload.
+ * carries, so every flavor of one copy decodes to one payload.
  */
 export async function selectionToClipboardSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,

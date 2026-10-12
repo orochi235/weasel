@@ -3,12 +3,6 @@
  * to it, guide lines and alignment to sibling edges, and the layout strategies
  * a container arranges its children with.
  *
- * Everything here is built on seams in `@weasel-js/core`: a snap strategy is
- * a `SnapStrategy` (wrap it with core's `snap` to get a `MoveBehavior`), the
- * resize and insert behaviors are `BoundsConstraint`s, `InsertBehavior`s and
- * `PointSnapBehavior`s, the layers are `RenderLayer`s for a canvas slot, and
- * a layout strategy implements core's `LayoutStrategy`.
- *
  * `snapToGrid` and `snapToGuides` exist for move, resize and insert with
  * different shapes, so they are imported from a per-action subpath:
  *   import { snapToGrid } from '@weasel-js/guides/move';

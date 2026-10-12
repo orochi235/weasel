@@ -7,18 +7,11 @@ import type { Path, PolygonPath } from '../path';
  *  composing transforms (a half turn's sine is 1.2e-16), not a slant. */
 const AXIS_ALIGNED_EPSILON = 1e-9;
 
-/** Apply an affine `Mat3` to a path's geometry.
+/** Apply an affine `Mat3` to a path's geometry. Never mutates the input.
  *
  * Axis-aligned maps (no rotation/shear: `m[1]` and `m[2]` within 1e-9 of 0) keep a
- * `RectPath` a rect — the four corners stay axis-aligned, so we transform the
- * two diagonal corners and normalize negative extent (mirror). Rotation or
- * shear promotes the rect's four corners to a `PolygonPath`. Polygon paths map
- * every coord via the kernel's `transformCoords`, preserving the command stream
- * and `fillRule`. Never mutates the input.
- *
- * `Mat3` here is the 6-tuple `number[]` from `@weasel-js/geom` (DOMMatrix order:
- * `[a, b, c, d, e, f]` where `x' = a·x + c·y + e`, `y' = b·x + d·y + f`),
- * not the renderer's 9-element `Float32Array`. */
+ * `RectPath` a rect, normalizing negative extent (mirror). Rotation or
+ * shear promotes the rect's four corners to a `PolygonPath`. */
 export function transformPath(path: Path, m: Mat3): Path {
   const [a, b, c, d, e, f] = m;
   if (path.kind === 'rect') {

@@ -8,12 +8,9 @@ export type { Rule };
 export type { RuleCtx } from '@weasel-js/routing';
 
 /**
- * Live state read by chrome-visibility {@link Condition}s. Backward-compat
- * alias for the legacy ChromeCtx shape — kept for consumers that still
- * import `ChromeCtx`. Subset of `RuleCtx`: legacy ChromeCtx didn't carry
- * mode/capability info. The resolver builds a `RuleCtx` for evaluation;
- * surfaces that still operate in `ChromeCtx` shape supply defaults
- * (mode='normal', empty allowedCapabilities) at the construction site.
+ * Live state read by chrome-visibility {@link Condition}s: the legacy
+ * subset of `RuleCtx`, without mode/capability info. The resolver fills
+ * in normal mode's defaults for evaluation.
  */
 export interface ChromeCtx {
   readonly focused: boolean;
@@ -27,17 +24,12 @@ export interface ChromeCtx {
 
 /**
  * Composable visibility predicate with fluent surface. Carries its underlying
- * `Rule` tree at `.rule` so the resolver can introspect / share trees with
- * the affordance pipeline and the dispatcher's eligibility filter.
- *
- * Callable form `cond(ctx)` evaluates the tree against ctx. The fluent
- * methods return new Conditions wrapping new trees.
+ * `Rule` tree at `.rule`; calling it evaluates the tree against ctx.
  *
  * **Chain semantics: strict left-to-right, no precedence.**
  * `a.and(b).or(c)` is `(a && b) || c`; `a.or(b).and(c)` is
- * `(a || b) && c`. Mix `.and` and `.or` only when you mean
- * left-to-right evaluation. For grouped disjunction, name the
- * subexpression or use the top-level `or(...)`.
+ * `(a || b) && c`. For grouped disjunction, name the subexpression or use
+ * the top-level `or(...)`.
  */
 export interface Condition {
   (ctx: RuleCtx): boolean;
@@ -54,22 +46,17 @@ export interface Condition {
 
 /**
  * Stable identifier for one user-visible chrome element. The same id
- * gates both paint and hit-test — there is no separate
- * `affordance.X` / `selection.X` split — so toggling a rule cannot
- * leave a visually-present but un-hittable handle (or vice versa).
+ * gates both paint and hit-test, so toggling a rule cannot leave a
+ * visually-present but un-hittable handle (or vice versa).
  *
  * Naming convention by lifecycle:
  *
- *   - `selection.*` — chrome reflecting committed selection state
- *     (persists between actions).
- *   - `action.*` — chrome that only exists during an in-flight
- *     action (vanishes on commit / cancel).
+ *   - `selection.*` — chrome reflecting committed selection state.
+ *   - `action.*` — chrome that only exists during an in-flight action.
  *   - `snap.*` — snapping system chrome (guides, target highlights).
  *   - `grid`, `debug.*` — environment chrome.
  *
- * The intersection `(string & {})` keeps the union open so consumers
- * can register their own ids; the kit's built-ins are listed
- * explicitly for autocomplete.
+ * The union is open: consumers can register their own ids.
  */
 export type ChromeId =
   | 'selection.outline'

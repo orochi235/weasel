@@ -92,12 +92,9 @@ export function rovingTarget(
  * With every item disabled there is no tab stop and the container drops out of
  * the tab order entirely.
  *
- * **When a bar should not use this.** What decides it is the items, not who
- * owns them. A container of compound controls — a number field, a select, a
- * color field — must leave the arrow keys alone, because those controls edit
- * their own value with them. `ToolOptionsBar` is that case, and keeps plain
- * DOM tab order. A bar whose items are all simple buttons is the case this
- * hook is for.
+ * **When a bar should not use this.** A container of compound controls — a
+ * number field, a select, a color field — must leave the arrow keys alone,
+ * because those controls edit their own value with them.
  */
 export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
   options: UseRovingTabIndexOptions = {},

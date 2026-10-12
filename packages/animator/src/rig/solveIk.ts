@@ -68,23 +68,16 @@ const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay *
 
 /**
  * Rotate a joint chain so its tip reaches `target`, returning the result as an
- * ordinary {@link Pose} — so it keys a `SampledTrack<Pose>`, drives a rig through
- * `Rig.pose`, and is held on a rig like any other. Weighting the IK against an
- * animated pose is `animator.hold({ target: rig.target, value: solved, weight: w })`
- * beside the clip at weight `1 - w`; with `axes: jointAxes(skeleton, joints)` on both, the
+ * ordinary {@link Pose}. Weighting the IK against an animated pose is
+ * `animator.hold({ target: rig.target, value: solved, weight: w })` beside the
+ * clip at weight `1 - w`; with `axes: jointAxes(skeleton, joints)` on both, the
  * rest of the body is left to whatever else holds it.
  *
- * The solver is cyclic coordinate descent: each step turns one joint so the
- * tip lies on the ray from that joint to the target. A joint's rotation is the
- * one term the rig lets it change, and a CCD step is exactly a change to it, so
- * limits clamp the value the pose stores and nothing has to be converted back
- * from positions. Each step is solved in the joint's parent frame, which makes
- * it exact under any parent transform the skeleton composes, mirrors included.
- *
- * A two-joint chain is solved analytically first: of the two bends that reach
- * the target it takes the one on `pole`'s side, or the input pose's side, and
- * falls back to the other bend and then to CCD when limits refuse it. A target
- * beyond the chain's reach straightens the chain toward it.
+ * The solver is cyclic coordinate descent, and limits clamp the rotation the
+ * pose stores. A two-joint chain is solved analytically first: of the two bends
+ * that reach the target it takes the one on `pole`'s side, or the input pose's
+ * side, and falls back to the other bend and then to CCD when limits refuse it.
+ * A target beyond the chain's reach straightens the chain toward it.
  */
 export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions): IkResult {
   const { tip, target, limits } = options;

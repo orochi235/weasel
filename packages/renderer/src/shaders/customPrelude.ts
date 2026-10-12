@@ -17,15 +17,6 @@
  *   out vec2 v_uv          0..1 across the bounds rect (top-left origin)
  *   out vec2 v_screen      screen-space pixel coordinate of this fragment
  *   out vec2 v_world       approximate world-space coordinate (via view inverse)
- *
- * PREMULTIPLIED ALPHA REQUIREMENT:
- * The canvas uses premultipliedAlpha:true (the WebGL2 default). Consumer
- * fragment shaders MUST output premultiplied alpha:
- *
- *   outColor = vec4(rgb * a, a);   // CORRECT
- *   outColor = vec4(rgb, a);       // WRONG — over-brightens translucent pixels
- *
- * The renderer uses gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA) to match.
  */
 
 /**
@@ -78,15 +69,9 @@ export const CUSTOM_ATTRIBUTES = ['a_position', 'a_uv'] as const;
 export const CUSTOM_KIT_UNIFORMS = ['u_bounds', 'u_view', 'u_proj'] as const;
 
 /**
- * Auto-quad geometry: 4 vertices covering NDC (-1..1) and UV (0..1).
- *
- * Layout per vertex: [a_position.x, a_position.y, a_uv.x, a_uv.y]
- *
- * Vertex order (UV space, screen y-down):
- *   0: top-left     (-1, -1, 0, 0)
- *   1: top-right    ( 1, -1, 1, 0)
- *   2: bottom-right ( 1,  1, 1, 1)
- *   3: bottom-left  (-1,  1, 0, 1)
+ * Auto-quad geometry: 4 vertices covering NDC (-1..1) and UV (0..1), each
+ * [a_position.x, a_position.y, a_uv.x, a_uv.y], in the order top-left,
+ * top-right, bottom-right, bottom-left (UV space, screen y-down).
  */
 export const QUAD_VERTICES = new Float32Array([
   -1, -1,  0, 0,

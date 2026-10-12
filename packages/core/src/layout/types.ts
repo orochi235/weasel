@@ -24,11 +24,9 @@ export interface DropTarget<TPose> {
   /** Reference point for distance metrics (snap algorithms). */
   origin: { x: number; y: number };
   /** Optional axis-aligned region (world units) used by region-aware snaps
-   *  (e.g. `containedThenNearest`). When present, a pointer inside this rect
-   *  is treated as a containment hit on this target. Strategies that emit
-   *  region-shaped targets (gutters, drop-zones) should populate this.
-   *  Strategies whose targets are point-like (free-form, snap-point) can omit
-   *  it and rely on `origin`-distance snaps. */
+   *  (e.g. `containedThenNearest`): a pointer inside this rect is a
+   *  containment hit on this target. A point-like target can omit it and
+   *  rely on `origin`-distance snaps. */
   hitBounds?: { x: number; y: number; width: number; height: number };
   /** Strategy-private metadata (e.g. cell coords for tile-grid). */
   meta?: unknown;
@@ -64,16 +62,12 @@ export type LayoutDropTargetMode = 'innermost' | 'topmost' | 'region';
 
 /**
  * Carries a layout's sibling reflow to its targets over time rather than in
- * one frame. `moveAction` hands every sibling a drag displaces to `glide`
- * instead of snapping it, and `settle`s each one when it stops reflowing or
- * the gesture ends; the dragged nodes themselves settle from where they were
- * let go, and a node grabbed mid-glide is held where it is shown and dragged
- * from there. What the node shows meanwhile is published through the
- * scene's pose overrides; the document is never written.
- *
- * The scene's own reflows — the arrangement it re-applies after an insert,
- * delete, reorder or resize inside a laid-out container — are `settle`d from
- * the pose each child had before.
+ * one frame. A drag `glide`s every sibling it displaces and `settle`s each
+ * one when it stops reflowing or the gesture ends; the scene's own reflows
+ * (after an insert, delete, reorder, or resize inside a laid-out container)
+ * are `settle`d from the pose each child had before. What a node shows
+ * meanwhile is published through the scene's pose overrides; the document is
+ * never written.
  *
  * `useAnimatedReflow` builds one over the animator. Supply it through
  * `<SceneCanvas reflowTransition>` or `LayoutDep.reflow`.
@@ -134,12 +128,11 @@ export interface LayoutDragged<TPose> {
  * How a container arranges its children, and what happens when one is dragged
  * into or around it.
  *
- * Declared on a container node (`ContainerNode.layout`). The four required
- * methods cover the whole cycle: `childPoses` is the resting arrangement,
- * which the scene re-applies whenever the container's children or size
- * change, `getDropTargets` enumerates where a drag could land,
- * `reflowPoses` is the live preview once a target is picked, and `commitDrop`
- * turns the result into ops so the drop is undoable.
+ * Declared on a container node (`ContainerNode.layout`). `childPoses` is the
+ * resting arrangement, which the scene re-applies whenever the container's
+ * children or size change, `getDropTargets` enumerates where a drag could
+ * land, `reflowPoses` is the live preview once a target is picked, and
+ * `commitDrop` turns the result into ops so the drop is undoable.
  */
 export interface LayoutStrategy<TPose> {
   childPoses(
@@ -169,11 +162,9 @@ export interface LayoutStrategy<TPose> {
 
   snap: LayoutSnap<TPose>;
 
-  /** Optional: predicate for whether a world-space point is inside this
-   *  container. When absent, callers fall back to an axis-aligned bounding-box
-   *  test on the container's pose. Strategies whose containers aren't
-   *  rectangular (circles, irregular zones) implement this to override the
-   *  AABB default. */
+  /** Optional: whether a world-space point is inside this container, for
+   *  containers that aren't rectangular. When absent, callers fall back to an
+   *  axis-aligned bounding-box test on the container's pose. */
   contains?(containerPose: TPose, point: { x: number; y: number }): boolean;
 
   /** Optional: where this container takes drops. When it returns a region,
@@ -183,8 +174,7 @@ export interface LayoutStrategy<TPose> {
    *  `LayoutDropTargetMode` `'region'`. `null` or absent keeps the body. */
   dropRegion?(container: LayoutContainer): DropRegion | null;
 
-  /** Optional: reject a drag before any drop-target work happens. A type-aware
-   *  container (a palette that only takes swatches, say) returns `false` and
+  /** Optional: reject a drag before any drop-target work happens. On `false`
    *  the drag falls through to whatever container is under it next. When
    *  absent, every drag is considered — rejection is still possible later, by
    *  `snap.pickTarget` returning null. */
@@ -201,9 +191,7 @@ export interface LayoutStrategy<TPose> {
    *  that finds no target. A drag onto the container arrives here too, after
    *  `commitDrop` has placed it, so a strategy leaves a child that already
    *  sits where it belongs alone. Absent, `childPoses` arranges them like
-   *  any other change to the container's children. Applied by the scene's
-   *  layout pass — for a layout the container declares, or one
-   *  `<SceneCanvas layouts>` / `useLayoutArrivals` installs. */
+   *  any other change to the container's children. */
   arrive?(
     container: LayoutContainer,
     children: ReadonlyArray<LayoutChild<TPose>>,
@@ -213,12 +201,10 @@ export interface LayoutStrategy<TPose> {
   /** Optional: rearrange a container that children left by an edit — a
    *  delete, or a reparent or drag out of it. `children` is what stays, in
    *  world poses, still where they were; `departed` is who went, so
-   *  `children.length + departed.size` is how many it held before. A
-   *  container that sizes itself to its children shrinks here, from the pitch
-   *  it had at that count. The edit's arrivals are placed afterward, by
-   *  `arrive`, or with `childPoses` when there is none. Absent, `childPoses`
-   *  arranges what stays like any other change. Applied by the scene's layout
-   *  pass, in the same undo step as the departure. */
+   *  `children.length + departed.size` is how many it held before. The
+   *  edit's arrivals are placed afterward, by `arrive`, or with `childPoses`
+   *  when there is none. Absent, `childPoses` arranges what stays like any
+   *  other change. Applied in the same undo step as the departure. */
   depart?(
     container: LayoutContainer,
     children: ReadonlyArray<LayoutChild<TPose>>,

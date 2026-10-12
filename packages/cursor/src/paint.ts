@@ -2,16 +2,11 @@ import { CURSOR_HALO, CURSOR_HALO_WIDTH, CURSOR_INK } from './types';
 import type { CursorGlyph, CursorPath } from './types';
 
 /**
- * One path of a glyph, with the paint the register gives it.
+ * One path of a glyph, with the paint the register gives it. Not a renderer's
+ * own type: the baker and the painted-tier layer both draw from the same
+ * list, so the two tiers show the same glyph.
  *
- * Deliberately not a renderer's own type: `@weasel-js/cursor` decides *what*
- * to paint and in what order, and leaves *how* to whoever is drawing — the
- * baker turns each op into an SVG element, the painted-tier layer turns it
- * into a draw command. Both get the same list, which is what makes the two
- * tiers show the same glyph rather than two drawings that resemble each other.
- *
- * Stroked ops are round-capped and round-joined; nothing in the register
- * wants a mitre.
+ * Stroked ops are round-capped and round-joined.
  */
 export interface CursorPaintOp {
   readonly d: string;
@@ -25,19 +20,15 @@ export interface PaintOptions {
    * Multiplies every stroke width, leaving geometry alone. Default 1.
    *
    * A world-sized glyph passes the reciprocal of its scale here so line weight
-   * stays chrome-weight in CSS px: a brush ring at a 400px radius otherwise
-   * carries a 40px-thick stroke and a halo to match.
+   * stays chrome-weight in CSS px.
    */
   readonly lineWidthScale?: number;
 }
 
 /**
- * The halo pass — every silhouette member drawn once, wide, in halo colour
- * before any ink lands.
- *
- * One pass under everything rather than a per-path `paint-order`: with each
- * path haloing itself, a later path's halo cuts a white trench through an
- * earlier path's fill wherever the two overlap.
+ * The halo pass. One pass under everything rather than a per-path
+ * `paint-order`: with each path haloing itself, a later path's halo cuts a
+ * white trench through an earlier path's fill wherever the two overlap.
  */
 function halo(p: CursorPath, k: number): CursorPaintOp | null {
   switch (p.role) {
@@ -92,16 +83,11 @@ export interface PaintPlacement {
 
 /**
  * Where a glyph's own units land, to place it under the pointer at a size and
- * an angle.
- *
- * Rotation is about the hotspot, not the box centre. That is the same
- * placement the baker produces — it turns the glyph about the centre and then
- * carries the hotspot around with it, and the centre cancels — but it is worth
- * stating, because a painter that rotates about the centre and forgets to move
- * the hotspot swings the glyph around a point the user never sees.
+ * an angle. Rotation is about the hotspot, not the box center, which is the
+ * same placement the baker produces.
  *
  * Unquantized on purpose: the 22.5° step exists to bound the bake cache, and
- * the painter has no cache to bound. A painted cursor turns smoothly.
+ * the painter has no cache to bound.
  */
 export function cursorPaintMatrix(glyph: CursorGlyph, placement: PaintPlacement): CursorMatrix {
   const s = placement.size / glyph.box;
@@ -115,11 +101,8 @@ export function cursorPaintMatrix(glyph: CursorGlyph, placement: PaintPlacement)
 
 /**
  * The CSS-px size a world-sized glyph is drawn at, so the circle its `radius`
- * names measures `worldRadius` world units on screen.
- *
- * A glyph with no `radius` is measured by its inscribed circle. Getting this
- * wrong scales every brush cursor by a constant factor, which reads as a
- * slightly-off cursor rather than as a bug.
+ * names measures `worldRadius` world units on screen. A glyph with no `radius`
+ * is measured by its inscribed circle.
  */
 export function cursorWorldSize(
   glyph: CursorGlyph,

@@ -4,73 +4,39 @@
  *
  * **Every vertex names the texture it samples.** `a_texSlot` is an index into
  * `u_samplers`, and slot 0 is always the 1x1 white texel, so a solid's
- * `texture() * a_vertexColor` is the vertex color exactly. The multiply is
- * exact: an 8-bit white texel samples to 1.0, and 1.0 * x is x.
- *
- * The slot is per vertex rather than per flush because the run holds several
- * textures at once. Reserving slot 0 for white is what makes a solid's promise
- * true no matter what else joins its run: before this, a solid carried the
- * white texel's UV but the flush bound the run's *image*, so every ground rect
- * beside an atlas quad came out multiplied by whatever texel sat at the middle
- * of that atlas. A wall of white grounds drew olive.
+ * `texture() * a_vertexColor` is the vertex color exactly.
  *
  * **The chain is unrolled because GLSL ES 3.0 will not index a sampler array
- * with a variable** — the index must be a constant expression, so `if (i == 0)
- * … if (i == 1) …` over constants is the only legal form. `v_texSlot` is
- * constant across a primitive, so the branch is uniform within any one
- * triangle; the coordinate it samples is a varying computed before the branch,
- * which is what keeps the implicit derivatives well defined.
+ * with a variable** — the index must be a constant expression. The coordinate
+ * it samples is a varying computed before the branch, which is what keeps the
+ * implicit derivatives well defined.
  *
- * **The paint mode rides in `a_texSlot`, and the glyph math runs either way.**
- * A glyph vertex names a font atlas whose texel is a distance field rather than
- * a color, so its coverage comes from `glyphCoverage` and its color comes from
- * the vertex alone. That coverage is computed on every fragment, glyph or not,
- * because a derivative in non-uniform control flow is undefined and it
- * has to be taken before anything selects on the mode — see
- * `GLYPH_COVERAGE_GLSL`. Priced head to head at 432M fragments a frame
- * (`tests/perf/fill-rate.spec.ts`, teitou, 2026-10-05), that adds a quarter to
- * a half to a fragment that is not a glyph — 27–48% over four sittings. The
- * figure recorded when text landed was 1.4%, and it was wrong: the control
- * gated its glyph math on a factor the compiler folds to zero, so it timed a
- * shader with that math deleted. Fill is not what a wall is bound by, which is
- * why the conclusion stands even though the number did not.
+ * **The glyph math runs on every fragment, glyph or not**, because a
+ * derivative in non-uniform control flow is undefined and it has to be taken
+ * before anything selects on the mode — see `GLYPH_COVERAGE_GLSL`.
+ * `tests/perf/fill-rate.spec.ts` prices it.
  *
  * **A gradient is a textured quad off the ramp atlas.** A linear one needs no
  * mode: its ramp position is affine in position, so `a_uv` is (ramp position,
  * atlas row) and the plain path samples it. A radial or conic one carries the
- * gradient-space coordinate instead — affine even where the ramp position is
- * not — with the row in `a_post`, and the fragment takes a `length` or an
- * `atan` of it behind a branch on the flat mode. That branch carries the sample
- * itself, not just the coordinate: a fetch from a varying is one the hardware
- * schedules ahead, and one from a computed coordinate is not: on teitou the
- * computed-coordinate form costs 29–54% of a fragment, and the split one
- * −5–11%, which is the spread of the measurement itself
- * (`tests/perf/fill-rate.spec.ts`, 2026-10-05).
+ * gradient-space coordinate instead, with the row in `a_post`, and the
+ * fragment takes a `length` or an `atan` of it behind a branch on the flat
+ * mode. That branch carries the sample itself, not just the coordinate: a
+ * fetch from a varying is one the hardware schedules ahead, and one from a
+ * computed coordinate is not.
  *
- * **Mode and slot share one attribute because the vertex is the thing that
- * costs.** Both are small enumerations, so `slot + 8 * mode` packs them with
- * room to spare. Carrying the mode as a float of its own instead measured
- * slower at the densest rung of `tests/perf/atlas-wall.spec.ts`, timed then in
- * blocks of frames, a method since retired (`tests/perf/README.md`, "Timing a
- * frame"), so the size of it is unknown. The reason holds without the number: the
- * whole batch exists to make one buffer write a frame cheap, and every extra
- * float widens that write for every rect and quad in the run, not just for the
- * glyphs that read it.
+ * **Mode and slot share one attribute**, as `slot + 8 * mode`, because every
+ * extra float widens the buffer write for every rect and quad in the run, not
+ * just for the glyphs that read it.
  *
- * **An image's texel is premultiplied, and nothing else's is.** A bitmap
- * holds premultiplied pixels and the caches upload every other image source
- * the same way (`uploadPremultiplied`), while the white texel, the ramp atlas
- * and a vertex color are straight. The color matrix wants straight color, so
- * an image vertex says what it is with `PAINT_MODE_IMAGE` and the fragment
- * divides its alpha back out. Sampling the texel as it stood drew every
- * translucent bitmap multiplied by its alpha twice.
+ * **An image's texel is premultiplied, and nothing else's is.** The color
+ * matrix wants straight color, so an image vertex says what it is with
+ * `PAINT_MODE_IMAGE` and the fragment divides its alpha back out.
  *
  * `a_post` is the alpha factor applied *after* the color matrix. An image quad
- * puts its opacity there, where `u_opacity` used to be — the fold is exact for
- * the same reason the old image shader's was, the matrix cannot see it. Solid
- * geometry and glyphs leave it at 1 and fold their own alpha into
- * `a_vertexColor`, which is only sound under an identity matrix; `draw.ts` owns
- * that condition.
+ * puts its opacity there. Solid geometry and glyphs leave it at 1 and fold
+ * their own alpha into `a_vertexColor`, which is only sound under an identity
+ * matrix; the caller owns that condition.
  *
  * Inputs:
  *   a_position     vec2   screen-space x,y of the corner
@@ -89,11 +55,8 @@ import { STRAIGHT_RGB_GLSL } from './straightRgb';
  * Texture units the batch program samples, slot 0 being the white texel.
  *
  * Fixed rather than queried: WebGL2 guarantees at least 16 fragment texture
- * units, so 8 is available everywhere without asking, and asking would mean a
- * `getParameter` the GL recorder answers with a recording function rather than
- * a number. Seven textures in one run is what "a document with a handful of
- * distinct images, and a font or two" needs; past that the run breaks as it
- * always did, and every extra slot is another compare in the fragment chain.
+ * units, so 8 is available everywhere. Every extra slot is another compare in
+ * the fragment chain.
  */
 export const BATCH_TEXTURE_SLOTS = 8;
 
@@ -105,17 +68,12 @@ export const PAINT_MODE_PLAIN = 0;
 
 /**
  * Paint modes for the two gradients whose ramp position is not affine in
- * position — the ones a vertex cannot simply carry.
+ * position. A vertex in these modes carries the *gradient-space coordinate*
+ * in `a_uv` and its atlas row in `a_post`. A linear gradient uses
+ * `PAINT_MODE_PLAIN`.
  *
  * They sit above the glyph modes (1 and 2), so `isGlyph` is a range rather than
- * a threshold. What a vertex carries in these modes is the *gradient-space
- * coordinate* in `a_uv` and its atlas row in `a_post`: that coordinate is
- * affine even where the ramp position is not, so the CPU folds it to two affine
- * rows and the shader takes a `length` or an `atan` of the result.
- *
- * A linear gradient has neither mode: its ramp position is affine outright, so
- * it is a textured quad off the atlas at `PAINT_MODE_PLAIN` and pays nothing
- * here.
+ * a threshold.
  */
 export const PAINT_MODE_RADIAL = 3;
 export const PAINT_MODE_CONIC = 4;

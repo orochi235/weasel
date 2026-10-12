@@ -108,9 +108,8 @@ export const ingestAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps, params) => ingestFromEvent(deps, params),
   },
-  // No `eligible` rule (always eligible): external-content arrival is
-  // mode-agnostic in v1. Revisit if a capability-restricted mode needs to
-  // refuse drops/pastes (the listener-level editable-target guard already
-  // keeps text-editing pastes away from the scene).
+  // No `eligible` rule: external-content arrival is mode-agnostic. The
+  // listener-level editable-target guard already keeps text-editing pastes
+  // away from the scene.
   enabled: (_deps, _at, carried) => claimable(carried),
 };

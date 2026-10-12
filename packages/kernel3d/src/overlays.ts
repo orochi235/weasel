@@ -1,14 +1,13 @@
 /**
  * What a host paints for a gesture that proposes chrome rather than a pose.
  *
- * A marquee sweep and a box-drag both publish an `OngoingOverlay`, which used
- * to reach paint only through core's own 2D layer. `resolveOverlays` hands back
- * world geometry with no renderer in it, so the same call `<SceneCanvas>` makes
- * serves a consumer-owned 3D renderer.
+ * A marquee sweep and a box-drag both publish an `OngoingOverlay`.
+ * `resolveOverlays` hands back world geometry with no renderer in it, so the
+ * same call `<SceneCanvas>` makes serves a consumer-owned 3D renderer.
  *
  * A 3D host's `clientToWorld` is identity, so an overlay's world bounds are the
  * client rect the deps already work in, and the pane origin comes off exactly
- * once. Only the rectangular variants resolve here: a lasso, a pencil and a run
+ * once. Only the rectangular variants resolve here: a lasso, a pencil, and a run
  * of points are paths, and a path is geometry this cannot flatten to a box.
  */
 

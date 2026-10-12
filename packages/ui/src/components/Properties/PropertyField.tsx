@@ -56,10 +56,7 @@ export type DistributiveOmit<U, K extends PropertyKey> = U extends unknown ? Omi
  * `control`): `<PropertyField kind="number" control="slider" label="Blur" …>`.
  *
  * The row is a {@link PropertyRow}; the control is the one
- * {@link PropertyControl} draws for the same props. Every schema-driven
- * settings surface in the kit — `ControlPanel`, `PrefsForm`, `SelectionPanel`
- * — draws its built-in kinds through that one mapping, so a kind's control
- * is decided once.
+ * {@link PropertyControl} draws for the same props.
  *
  * Callbacks follow the field's shape: a discrete control (a box, a choice)
  * reports each pick; a continuous or typed one reports every change through
@@ -127,11 +124,9 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
 
 /**
  * The control for one field, with no row around it — for a cell that shares
- * a row with others, or a surface that draws its own row. Keyed by `kind`
- * (and `control`), the same mapping {@link PropertyField} draws.
- *
- * A slider brings its readout beside the track. Several elements come back
- * as siblings rather than wrapped, so the surrounding row lays them out.
+ * a row with others, or a surface that draws its own row. A slider brings its
+ * readout beside the track. Several elements come back as siblings rather than
+ * wrapped, so the surrounding row lays them out.
  */
 export function PropertyControl<T extends string = string>(typed: PropertyControlProps<T>) {
   const props = typed as unknown as PropertyControlProps;

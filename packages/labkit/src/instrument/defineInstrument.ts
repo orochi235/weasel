@@ -12,12 +12,7 @@ export type InstrumentSpec<TS, TC, TItem = unknown> =
  * the literal rather than making them be written out.
  *
  * A spec declaring `config` gets its `defaultConfig` synthesized from the
- * schema, so nothing downstream branches on which way the config was
- * declared. A spec written the legacy way is returned unchanged, by
- * reference.
- *
- * Resolving the schema into controls does not happen here: rules are
- * lab-scoped and this runs at module load. `useConfigSchema` does that.
+ * schema. A spec written the legacy way is returned unchanged, by reference.
  *
  * TypeScript infers all three type arguments or none, so a call that names
  * `TS` and `TC` leaves `TItem` at `unknown` and a job's `onItem` needs a cast.

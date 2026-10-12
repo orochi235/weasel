@@ -55,12 +55,7 @@ function notify(set: Set<() => void>): void {
  * Create a timeline as a registered animator animation.
  *
  * The playhead is NOT the entry's `virtualNow` directly — it is
- * `virtualNow + offset`, where `offset` is what `seek` and looping move. That
- * keeps seek and wrap-around entirely inside the timeline and needs no setter
- * on the animator's entry.
- *
- * A sampled track naming a `target` is held on it through `hold` while the playhead is within its
- * keys; see `SampledTrack.target`.
+ * `virtualNow + offset`, where `offset` is what `seek` and looping move.
  *
  * A finished timeline leaves the animator's table, so `seek` and a
  * duration-extending `edit` re-register it. Staying registered instead would

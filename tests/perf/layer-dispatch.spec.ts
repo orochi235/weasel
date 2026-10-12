@@ -3,39 +3,26 @@
  * from a cached texture.
  *
  * `RenderLayer.deps` lets `drawLayers` reuse a layer's command tree, but the
- * reused tree still goes through `WeaselRenderer.render` every frame. Skipping
- * that would mean drawing each cached layer into a texture once and then
- * drawing one quad per layer. This prices both against a control, at `N`
- * layers of `M` commands each, none of which change between frames.
+ * reused tree still goes through `WeaselRenderer.render` every frame. This
+ * prices that against one quad per layer, at `N` layers of `M` commands each.
  *
- * Every variant draws one rect in a `live` layer that rebuilds each frame, so
- * the frame is never empty, and goes through the real `drawLayers` with a
- * command cache:
- *
- *   - `control`   — the live layer alone: what the frame costs without the
- *                   unchanged layers.
- *   - `submit`    — the live layer plus `N` world-space layers whose `deps`
- *                   never change, so every one is a cache hit. Today's path.
- *   - `composite` — the live layer plus `N` screen-space layers of one
- *                   canvas-sized image each, standing in for a cached layer
- *                   texture: one texture bind, one quad and a full-canvas fill
- *                   with blending per layer. It does not price the texture
- *                   memory (a 2560x1600 RGBA layer is 16 MB).
+ *   - `control`   — the live layer alone.
+ *   - `submit`    — plus `N` world-space layers whose `deps` never change, so
+ *                   every one is a cache hit.
+ *   - `composite` — plus `N` screen-space layers of one canvas-sized image
+ *                   each, standing in for a cached layer texture. It does not
+ *                   price the texture memory (a 2560x1600 RGBA layer is 16 MB).
  *   - `submitDirty`    — `submit` with the first layer's `deps` changing every
- *                        frame, so its command tree is rebuilt too.
- *   - `compositeDirty` — `composite` with the first layer changing every frame:
- *                        its `M` commands draw into an offscreen buffer as a
- *                        group with one copy effect, which is then composited.
- *                        The copy is one full-buffer pass a real layer texture
- *                        would not need, so this is an upper bound.
+ *                        frame.
+ *   - `compositeDirty` — `composite` with the first layer redrawn every frame
+ *                        through a copy effect. The copy is one full-buffer
+ *                        pass a real layer texture would not need, so this is
+ *                        an upper bound.
  *
  * The composite quads cycle through 8 distinct bitmaps rather than holding 64
- * canvas-sized textures. A run of image quads shares one draw until it runs out of
- * texture slots (7 images a draw), so 8 cycling bitmaps break it exactly where 64 distinct ones
- * would, and each quad reads every texel of a 16 MB texture once either way.
- *
- * A layer's `M` commands are a mix: half solid rects, a quarter text labels,
- * 15% images from six 64px bitmaps, and 10% linear gradients (`lib/kinds.ts`).
+ * canvas-sized textures. A run of image quads shares one draw until it runs out
+ * of texture slots (7 images a draw), so 8 cycling bitmaps break it exactly
+ * where 64 distinct ones would.
  *
  * `WEASEL_PERF_LAYERS` and `WEASEL_PERF_CMDS` override the ladders
  * (comma-separated). This reports; it does not gate. See `tests/perf/README.md`.
@@ -139,8 +126,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
       const dims = { width: w, height: h };
 
       let glRenderer = '';
-      /** A fresh context per cell, as `frame-budget` does, so no cell inherits
-       *  another's caches or GL state. Not attached to the document. */
+      /** A fresh context per cell, so no cell inherits another's caches or GL state. */
       function freshContext(): { gl: WebGL2RenderingContext; canvas: HTMLCanvasElement } {
         const canvas = document.createElement('canvas');
         canvas.width = w * dpr;
@@ -312,8 +298,6 @@ void main() { outColor = texture(u_source, v_uv); }
     },
   );
 
-  // ─── report ────────────────────────────────────────────────────────────
-
   const med = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
   const frames = (n: number, m: number, v: Variant) =>
     cells.filter((c) => c.layers === n && c.cmds === m && c.variant === v).map((c) => c.perFrameMs);
@@ -356,8 +340,7 @@ void main() { outColor = texture(u_source, v_uv); }
 
   expect(errors, `page errors:\n${errors.join('\n')}`).toEqual([]);
   // The batch binds up to 8 textures a draw (`BATCH_TEXTURE_SLOTS`), so a
-  // composite of n layers is at least n / 8 draws; fewer means layers went
-  // missing and the comparison is against less work than it claims.
+  // composite of n layers is at least n / 8 draws; fewer means layers went missing.
   for (const n of LAYERS) {
     for (const m of CMDS) expect(draws(n, m, 'composite'), `${n}x${m} composite`).toBeGreaterThanOrEqual(Math.ceil(n / 8));
   }

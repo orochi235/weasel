@@ -1,15 +1,11 @@
 /**
  * The paint walk against how many of its nodes carry a pose override.
  *
- * One iteration is one animated frame as a frame loop drives it: move every
- * overridden node's entry in place, `commit()`, then build the frame's draw
- * commands. The walk reads every node's override — its pose through
- * `effectivePose` and its alpha in the node wrapper — so the 0% row is what
- * the table costs a scene nothing is animating, and the 100% row is a
- * select-all drag.
- *
- * The override-read group isolates the table from the rest of the walk:
- * `effectivePose` on every node after a commit, nothing drawn.
+ * One iteration is one animated frame: move every overridden node's entry in
+ * place, `commit()`, then build the frame's draw commands. The walk reads every
+ * node's override, so the 0% row is what the table costs a scene nothing is
+ * animating. The override-read group isolates the table from the rest of the
+ * walk.
  */
 import { group } from './group';
 import { buildSceneViewCommands } from 'canvas/sceneViewRender';

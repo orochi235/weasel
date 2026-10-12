@@ -6,9 +6,8 @@
 //   node --import ./packages/cursor/scripts/ts-resolve.mjs \
 //        packages/cursor/scripts/proof-painted.mjs brush 8,40,200
 //
-// Renders through `cursorPaintOps` + `cursorPaintMatrix` — the same two calls
-// the canvas layer makes — so the geometry and the line weights under test are
-// the shipped ones. What it cannot check is the GL renderer's own rasterizing;
+// Renders through `cursorPaintOps` + `cursorPaintMatrix`, the same two calls
+// the canvas layer makes. It cannot check the GL renderer's own rasterizing;
 // for that, look at the layer in a browser.
 //
 // Requires resvg and ImageMagick on PATH.

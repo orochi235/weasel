@@ -39,16 +39,12 @@ export interface PrefFieldState {
 }
 
 /**
- * A schema leaf as {@link PropertyControl} props: its value, bounds and
+ * A schema leaf as {@link PropertyControl} props: its value, bounds, and
  * options in the form it is shown in, and a writer that stores what the
  * control reports in the form the leaf holds.
  *
- * The conversions every schema-driven surface needs live here once — a
- * number's display unit and its bounds, an enum's `encoding`, a color's
- * alpha, an icon resolved to a glyph. A leaf that is not a single control —
- * an `object` or a `union`, whose fields each are, a `list` or a `map`, whose
- * entries each are, an `action`, or an app-defined kind — returns `null`, and the surface draws it.
- *
+ * A leaf that is not a single control — an `object`, `union`, `list`, `map`,
+ * `action`, or an app-defined kind — returns `null`, and the surface draws it.
  * Spread the result and add what the surface decides: `chrome`, `name`, a
  * class, a different default `control`.
  */
@@ -105,8 +101,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
       const stored =
         typeof value === 'number' && (Number.isFinite(value) || endlessAllows(endless, value)) ? value : undefined;
       // `min`/`max`/`step` are declared in the stored unit, like the value, so
-      // they convert with it — a leaf storing radians and showing degrees was
-      // clamping typed degrees against 0..6.28.
+      // they convert with it.
       const bounds = prefDisplayBounds(leaf);
       const clamp = (n: number) =>
         endlessAllows(endless, n)
@@ -140,10 +135,8 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         onChange: setValue,
       };
     case 'enum': {
-      // An encoded leaf stores something other than the option string (a dash
-      // array), so the option comes from the encoding — and an absent field is
-      // one of the things it reads (no dash is `solid`), which is why `unset`
-      // does not blank it.
+      // An encoding reads an absent field too (no dash is `solid`), which is
+      // why `unset` does not blank an encoded leaf.
       const coded = leaf.encoding ? throughEncoding(leaf.encoding, state) : undefined;
       const option = coded
         ? coded.value
@@ -180,8 +173,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
       };
     case 'paint': {
       // `??` would read an explicit `null` — "no paint" — as absent and show
-      // the default over it. Unset shows the fallback actually in effect,
-      // dimmed by the control: true, but not chosen.
+      // the default over it.
       const paint =
         value === null
           ? null
@@ -230,10 +222,9 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
 }
 
 /**
- * An encoded leaf's shown value and its writer. Across nodes whose objects
- * differ, each node is read against its own object and the option is shown
- * only where every node reads the same one; a write lands in each node
- * computed from that node's object.
+ * An encoded leaf's shown value and its writer. Each node is read against its
+ * own object and the option is shown only where every node reads the same one;
+ * a write is computed per node from that node's object.
  */
 function throughEncoding<T>(
   encoding: {

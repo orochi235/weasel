@@ -8,15 +8,11 @@ import type { CursorSpec } from '@weasel-js/cursor';
 /** Options for `createRotationAffordance` — how thick the rotate band is
  *  outside the selection, and how (or whether) it is painted. */
 export interface RotationAffordanceOptions {
-  /** Minimum screen-space thickness of the rotate-zone band outside the
-   *  selection AABB. The outer ellipse semi-axes are clamped to
-   *  `max(w/√2, w/2 + bandPx/scale)` so the zone stays hoverable at any
-   *  zoom and any selection size. Default 24. */
+  /** Minimum screen-space thickness of the rotate-zone band outside the selection AABB, so
+   *  the zone stays hoverable at any zoom and any selection size. Default 24. */
   bandPx?: number;
-  /** Paint for the ring. `null` / `false` = invisible. Default is a
-   *  semi-transparent fill of the band, contracted by `insetPx` screen
-   *  pixels on the outer edge so the visible band sits inside the
-   *  hoverable zone with a clear margin. Pass a `Stroke` (or
+  /** Paint for the ring. `null` / `false` = invisible. Default is a semi-transparent fill of
+   *  the band, contracted by `insetPx` screen pixels on the outer edge. Pass a `Stroke` (or
    *  `{ fill, stroke, insetPx }`) to override. */
   paint?:
     | CommandStroke
@@ -57,32 +53,21 @@ const DEFAULT_PAINT: AnnulusPaintForm = {
 
 /**
  * @experimental
- * Rotation affordance for the active selection. Replaces the legacy
- * "small dot above the AABB" handle with an elliptical ring that wraps
- * the selection: the smallest ellipse containing the AABB, minus the AABB
- * itself. Hovering the ring sets the cursor (default the `rotate` glyph)
- * and drag-from-ring triggers `rotateAction` via the same
- * binding path the old point-handle used (id stays
- * `'selection.rotation-handle'`).
+ * Rotation affordance for the active selection: an elliptical ring that wraps the selection —
+ * the smallest ellipse containing the AABB, minus the AABB itself. Hovering the ring sets the
+ * cursor (default the `rotate` glyph) and a drag from it triggers `rotateAction`.
  *
- * The ring is target-local — under target rotation the ellipse rotates
- * with the AABB so the hoverable band always wraps the rendered shape.
- *
- * Visibility: gated by chrome-caps' `'selection.rotation-handle'` rule.
- * The ring paints as a faint band by default; `paint: null` leaves the
- * cursor change as the only cue.
+ * The ring is target-local — under target rotation the ellipse rotates with the AABB.
+ * Visibility is gated by chrome-caps' `'selection.rotation-handle'` rule. `paint: null` leaves
+ * the cursor change as the only cue.
  */
 export function createRotationAffordance(
   opts: RotationAffordanceOptions = {},
 ): Affordance {
   const { bandPx = 24, paint = DEFAULT_PAINT, cursor, handle } = opts;
 
-  // Normalize `paint` into the AnnulusPaint shape understood by
-  // `composeAffordanceLayer`. Three input forms are accepted: a bare
-  // `Stroke` (legacy outline form), the `{ fill, stroke, insetPx }`
-  // object form, or `null`/`false` for invisible. The object form is what
-  // carries these three keys; `Stroke` carries none of them, and cannot be
-  // told apart by its own `paint` since that is optional.
+  // A bare `Stroke` carries none of the object form's three keys, and cannot be told apart
+  // by its own `paint` since that is optional.
   const annulusPaint:
     | { kind: 'annulus'; fill?: CommandFill; stroke?: CommandStroke; insetPx?: number }
     | null = (() => {
@@ -105,19 +90,13 @@ export function createRotationAffordance(
       if (!target) return [];
       const b = target.bounds;
 
-      // The natural ring: the smallest ellipse containing the AABB. For a
-      // small or thin selection that band is too tight to hover, so
-      // `minBandPx` asks the framework to widen it to at least `bandPx`
-      // screen pixels outside the rect. The floor is declared in screen units
-      // rather than applied here because `ChromeState` carries no view scale
-      // — the framework applies it at paint and hit time, where the view is
-      // known, so the ring holds its apparent thickness at any zoom.
+      // The natural ring is the smallest ellipse containing the AABB. `minBandPx` asks the
+      // framework to widen it to at least `bandPx` screen pixels outside the rect; the floor is
+      // declared in screen units because `ChromeState` carries no view scale.
       const halfW = b.width / 2;
       const halfH = b.height / 2;
 
       // Turned with the target, so the arc follows the selection it rotates.
-      // Resolved per region rather than defaulted in the option list because
-      // the angle is only known once a target is picked.
       const regionCursor: CursorSpec = cursor ?? {
         glyph: 'rotate',
         angle: angleOf(transformOf(state, target.id)),
@@ -175,19 +154,15 @@ export function createRotationAffordance(
 function pickTarget(state: ChromeState): { id: string; bounds: Bounds } | null {
   if (state.selection.length === 1) {
     const id = state.selection[0];
-    // Skip when the selected node's pose-descriptor declares it can't
-    // carry a rotation. Without this the rotation affordance would expose
-    // a rotate cursor over (e.g.) polygon-Path selections whose
-    // `rotateAction` write is silently dropped at paint time.
+    // Skip when the selected node's pose-descriptor declares it can't carry a rotation;
+    // otherwise the ring would offer a rotate cursor over a node whose write is dropped.
     if (state.canRotate && !state.canRotate(id)) return null;
     const b = state.boundsOf(id);
     return b ? { id, bounds: b } : null;
   }
-  // Multi-selection: anchor the ring to the union AABB. `rotateAction`
-  // ignores the synthetic id and pivots at its own union center
-  // (`useUnionPivot: ids.length > 1` branch in `defaults/rotate.ts`).
-  // Require every selected id to support rotation — a partial multi-rotate
-  // (some ids rotate, others silently no-op) would feel broken.
+  // Multi-selection: anchor the ring to the union AABB; `rotateAction` ignores the synthetic
+  // id and pivots at its own union center. Every selected id must support rotation — a
+  // partial multi-rotate would feel broken.
   if (state.multiActive && state.unionBounds) {
     if (state.canRotate) {
       for (const id of state.selection) {

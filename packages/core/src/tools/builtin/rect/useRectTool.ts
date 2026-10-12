@@ -8,15 +8,10 @@ import { cursorFor } from '@weasel-js/cursor';
 /**
  * Drag-to-draw rectangle tool.
  *
- * The gesture is owned end-to-end by the dispatcher: the `drag` binding
- * routes to `insertAction`, which tracks the live bounds, paints the
- * preview through its `overlay()` surface, and commits via the `insert`
- * dep on release. `<SceneCanvas>` sources that dep from
- * `useInsertDepSource`; consumers wanting a custom node factory override
- * the dep (`useDepSource('insert', …)`) rather than the tool.
- *
- * Grid snapping comes from the `snap` dep, also read by `insertAction` —
- * see `SnapDep` in `interactions/actions/depSchema.ts`.
+ * The `drag` binding routes to `insertAction`, which owns the live preview
+ * and commits via the `insert` dep on release. Consumers wanting a custom
+ * node factory override the dep (`useDepSource('insert', …)`) rather than
+ * the tool. Grid snapping comes from the `snap` dep.
  */
 export function useRectTool(options: InsertToolOptions = {}): Tool<null> {
   const { behaviors } = options;
@@ -33,9 +28,8 @@ export function useRectTool(options: InsertToolOptions = {}): Tool<null> {
           icon: createElement(RectIcon),
           group: 'shape',
         },
-        // Single binding; insertAction toggles corner ⇄ center based on
-        // live Alt state so users can engage/disengage Alt mid-drag and
-        // see the bounds snap between the two modes.
+        // Single binding: insertAction toggles corner ⇄ center on live Alt
+        // state, so Alt can be engaged mid-drag.
         bindings: [
           {
             spec: { kind: 'drag' },

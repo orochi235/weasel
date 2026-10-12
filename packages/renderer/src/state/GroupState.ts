@@ -16,13 +16,8 @@ export interface GroupFrame {
 }
 
 /**
- * Compose two 4×5 color matrices: out = outer ∘ inner (inner applied first).
- *
- *   composed(x) = M_outer * (M_inner * x + b_inner) + b_outer
- *               = (M_outer * M_inner) * x + (M_outer * b_inner + b_outer)
- *
- * Each matrix is row-major. The 4×4 portion occupies indices
- * [0..3, 5..8, 10..13, 15..18]; bias column at [4, 9, 14, 19].
+ * Compose two row-major 4×5 color matrices: out = outer ∘ inner (inner
+ * applied first). The bias column is at [4, 9, 14, 19].
  */
 function compose4x5(outer: Float32Array, inner: Float32Array): Float32Array {
   const result = new Float32Array(20);
@@ -78,16 +73,13 @@ export class GroupState {
   }
 
   /**
-   * Push a frame whose children paint into a surface of their own.
-   *
-   * The transform still accumulates — the children draw where they would have
-   * drawn. Alpha and colour do not: they describe how the finished surface
-   * joins the frame, and applying them on the way in as well would fade the
-   * pixels an effect is about to read, then fade them again on the way out.
+   * Push a frame whose children paint into a surface of their own. The
+   * transform still accumulates. Alpha and color do not: applying them on the
+   * way in would fade the pixels an effect is about to read, then fade them
+   * again on the way out.
    *
    * Returns the pair the caller must apply at composite time — what `push`
-   * would have left on the stack — so the composition rules live here and not
-   * in the dispatcher.
+   * would have left on the stack.
    */
   pushIsolated(frame: GroupFrame): { alpha: number; colorMatrix: Float32Array } {
     this.push(frame);

@@ -1,14 +1,9 @@
 /**
  * GLSL ES 3.0 sources for the built-in solid-fill path shader.
  *
- * Two variants:
- *   - Flat: VERT_SRC + FRAG_SRC, uses uniform color only.
- *   - VColor: VCOLOR_VERT_SRC + VCOLOR_FRAG_SRC, multiplies a per-vertex
- *     `a_vertexColor` attribute with `u_color`.
- *
- * Both variants take `u_colorMatrix` (mat4) + `u_colorBias` (vec4); the
- * color transform is applied to the straight-alpha SRC color BEFORE
- * premultiplication. Identity matrix + zero bias = pass-through.
+ * The flat variant uses `u_color` only; the VColor variant multiplies a
+ * per-vertex `a_vertexColor` with it. In both, the color transform is applied
+ * to the straight-alpha color BEFORE premultiplication.
  *
  * Output (both variants): PREMULTIPLIED alpha.
  * Blend: caller sets `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)`.

@@ -1,24 +1,7 @@
 /**
  * Screen-space render layer for path-editing chrome — anchor squares,
  * tangent lines, and control-point dots for a polygon path that is the
- * current edit target. Companion to the kit's `editAnchorsAction` /
- * `buildAffordanceAt` hit-test wiring: the gesture works without chrome,
- * but a human user needs to see what's hittable.
- *
- * The layer reads the live edit target each frame via the supplied
- * `getEditingId()` + `getPose(...)` thunks, resolving the path against the
- * drawing view's own previews. Returns `[]` when no editing target is set or
- * the target isn't a polygon — the layer never throws.
- *
- * Anchors render as small white-filled stroked squares — filled solid
- * when selected; control points as small filled circles connected to
- * their anchor by a thin stem line. This is the kit's only anchor
- * chrome; the pen tool's parallel overlay and `apps/draw`'s
- * mode-decoration painter both drew the same thing from different state
- * and have been removed.
- *
- * All coordinates are projected via `worldToScreen` so the marker sizes
- * stay constant regardless of zoom.
+ * current edit target. Marker sizes stay constant regardless of zoom.
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -31,8 +14,7 @@ import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
  *  so the layer follows a changing edit target without being rebuilt. */
 export interface CreatePathEditingOverlayLayerOptions {
   /** Returns the id of the polygon currently in anchor-edit mode, or null
-   *  when no node is being edited. Read each frame so live selection /
-   *  edit-target changes show up without re-creating the layer. */
+   *  when no node is being edited. */
   getEditingId(): string | null;
   /**
    * Returns the pose for an id, or null if the node has been deleted.
@@ -47,9 +29,7 @@ export interface CreatePathEditingOverlayLayerOptions {
    */
   getPose(id: string, previews: readonly GesturePreviewSource[], view: View): Path | null;
   /** Flat indices of the selected anchors. Selected anchors render
-   *  filled; unselected ones hollow — the standard vector-editor cue for
-   *  "these are what the arrow keys and Delete will act on". Omit when
-   *  the consumer has no anchor selection to show. */
+   *  filled; unselected ones hollow. */
   getSelectedAnchors?(): ReadonlySet<number>;
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
    *  rubber band while `marqueeAnchorsAction` is dragging. */
@@ -66,12 +46,9 @@ export interface PathEditingOverlayStyle {
   anchorStroke?: string;
   handleStroke?: string;
   /** Fill of the control-point circle. Defaults to the handleStroke color
-   *  at 50% alpha — keeps the marker readable but lets the underlying
-   *  curve / background show through, which matches Figma's "translucent
-   *  handle dot" idiom. */
+   *  at 50% alpha. */
   handleDotFill?: string;
-  /** Fill of a selected anchor square. Defaults to the anchor stroke
-   *  color, so selection reads as "the marker filled in". */
+  /** Fill of a selected anchor square. Defaults to the anchor stroke color. */
   anchorFillSelected?: string;
   /** Stroke of the marquee rubber band. */
   marqueeStroke?: string;
@@ -81,9 +58,6 @@ export interface PathEditingOverlayStyle {
 
 const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
   anchorSizePx: 8,
-  // Control-point markers were 2px radius (4px diameter) — too small to
-  // grab reliably with a mouse and visually lost against the curve.
-  // 5px radius (10px diameter) is closer to typical Figma / Illustrator.
   handleDotRadiusPx: 5,
   anchorFill: '#ffffff',
   anchorStroke: '#3478f6',

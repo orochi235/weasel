@@ -1,45 +1,3 @@
-/**
- * `viewportZoomAction` — immediate Action descriptor for viewport zoom.
- *
- * ## Bindings (parametric — each passes `params.kind`)
- * - `{ kind: 'wheel', mods: { mod: true } }` → Cmd+wheel, params: `{ kind: 'wheel' }`
- * - `{ kind: 'wheel', mods: { ctrl: true } }` → trackpad pinch, params: `{ kind: 'wheel' }`.
- *   Browsers synthesize a trackpad pinch as ctrl+wheel. On a Mac that is a
- *   *different* event from the `mod` binding above (`mod` is metaKey there), so
- *   pinch needs its own binding or nothing claims it and the page zooms instead.
- * - `{ kind: 'pinch' }` → Safari trackpad pinch (WebKit `gesturechange`),
- *   params: `{ kind: 'pinch' }`. Safari may send the same pinch as ctrl+wheel
- *   as well; the dispatcher swallows that copy while a claimed gesture is live,
- *   so only one of the two bindings fires per pinch.
- * - `{ kind: 'key', key: '=' }` → zoom in, params: `{ kind: 'in' }`
- * - `{ kind: 'key', key: '-' }` → zoom out, params: `{ kind: 'out' }`
- * - `{ kind: 'key', key: '0' }` → reset zoom, params: `{ kind: 'reset' }`
- *
- * ## Design notes
- * The invoker switches on `params.kind`:
- * - `'wheel'` and `'pinch'`: both reduce to a scale factor about a focal
- *   point and share one `zoomAt` call. A wheel sample's factor is
- *   `wheelZoomFactor(deltaY)`, the kit's one statement of the wheel
- *   convention; a pinch sample carries its factor as `scale`. The dispatcher
- *   merges event data into params and converts client coords to canvas-local
- *   (subtracting the canvas's bounding rect) before merging — `zoomAt`
- *   expects canvas-local.
- * - `'in'`/`'out'`: step zoom by ×1.25 / ×0.8, anchored at the host center
- *   when the `view` dep wires `hostSize()` (SceneCanvas does), falling back
- *   to the canvas top-left origin for consumers that don't.
- * - `'reset'`: resets scale to 1, translation to 0, or calls the `view` dep's
- *   `recenter()`.
- *
- * The three discrete branches glide instead of jumping when the `animate`
- * option is configured and the `view` dep implements `animate` — they hand the
- * action a target and nothing in between, which is the whole condition for
- * tweening. `'wheel'` and `'pinch'` always jump per sample.
- *
- * ## Key binding modifier notes
- * The key bindings (`=`, `-`, `0`) require `mod: true` (Cmd on Mac, Ctrl elsewhere).
- * This matches the behaviour of the dissolved `useKeyboardZoomTool`.
- */
-
 import type { Action } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
@@ -53,14 +11,11 @@ import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 const KEY_STEP = 1.25;
 
 /** Keyboard-zoom anchor: the host center when the view dep can measure it,
- *  else the canvas top-left origin (see design notes). */
+ *  else the canvas top-left origin. */
 function keyAnchor(view: ViewApi): { x: number; y: number } {
   const size = view.hostSize?.();
   return size ? { x: size.width / 2, y: size.height / 2 } : { x: 0, y: 0 };
 }
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
 
 /**
  * @experimental
@@ -79,8 +34,7 @@ export interface ViewportZoomOptions {
   /**
    * Which wheel gesture triggers zoom.
    * - `'mod'` (default): Cmd/Ctrl+wheel — coexists with plain-wheel pan
-   *   (`viewport.wheelPan`). A Mac trackpad pinch arrives as ctrl+wheel, which
-   *   `mod: true` forbids on Mac; nothing here handles it.
+   *   (`viewport.wheelPan`).
    * - `'plain'`: bare wheel, no modifier. Pair with `viewport.pan: false`,
    *   since plain wheel otherwise drives pan and the two would compete.
    */
@@ -101,10 +55,9 @@ export interface ViewportZoomOptions {
 /**
  * @experimental
  * Build a `viewport.zoom` Action descriptor with a configurable wheel trigger
- * and scale clamp. The keyboard bindings (Cmd+=/-/0) are fixed; only the wheel
- * binding and the `zoomAt` clamp vary.
- *
- * Requires dep-schema entry: `view`.
+ * and scale clamp. The keyboard bindings (Cmd+=/-/0) and the two trackpad
+ * pinch bindings are fixed. A wheel or pinch sample zooms about its focal
+ * point, which `zoomAt` expects in canvas-local pixels.
  */
 export function makeViewportZoomAction(
   opts: ViewportZoomOptions = {},
@@ -127,19 +80,21 @@ export function makeViewportZoomAction(
     label: 'Zoom',
     group: 'viewport',
     defaultBinding: [
-      // wheel → wheel zoom (mod-gated by default; plain when configured)
       {
         spec: wheelSpec,
         opts: { params: { kind: 'wheel' } },
       },
       // Trackpad pinch, which the browser delivers as ctrl+wheel. Distinct from
-      // the `mod` binding on mac; a duplicate of it elsewhere, where `matchBest`
-      // picks a single winner. `viewport.wheelPan` forbids ctrl, so no contest.
+      // the `mod` binding on mac (`mod` is metaKey there), so without its own
+      // binding nothing claims it and the page zooms instead. Elsewhere it
+      // duplicates `mod`, and `matchBest` picks a single winner.
       {
         spec: { kind: 'wheel' as const, mods: { ctrl: true } },
         opts: { params: { kind: 'wheel' } },
       },
-      // Safari's trackpad pinch, reported as a scale rather than a wheel.
+      // Safari's trackpad pinch, reported as a scale rather than a wheel. Safari
+      // may send the same pinch as ctrl+wheel too; the dispatcher swallows that
+      // copy while a claimed gesture is live.
       {
         spec: { kind: 'pinch' as const },
         opts: { params: { kind: 'pinch' } },
@@ -149,12 +104,10 @@ export function makeViewportZoomAction(
         spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
         opts: { params: { kind: 'in' } },
       },
-      // Cmd+- → zoom out
       {
         spec: { kind: 'key', key: '-', mods: { mod: true } },
         opts: { params: { kind: 'out' } },
       },
-      // Cmd+0 → reset zoom
       {
         spec: { kind: 'key', key: '0', mods: { mod: true } },
         opts: { params: { kind: 'reset' } },
@@ -212,10 +165,8 @@ export function makeViewportZoomAction(
             break;
           }
           case 'reset': {
-            // Prefer the consumer-supplied recenter when available — typically
-            // re-fits the document page into the workspace. A recenter that
-            // returns its target can be animated; one that returns nothing
-            // dispatched the view itself and is already done.
+            // A recenter that returns its target can be animated; one that
+            // returns nothing dispatched the view itself and is already done.
             const target = view.recenter
               ? view.recenter()
               : { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -240,7 +191,5 @@ export function makeViewportZoomAction(
  * @experimental
  * Default `viewport.zoom` descriptor: Cmd/Ctrl+wheel zoom with the kit's
  * default 0.1–8 scale clamp. Equivalent to `makeViewportZoomAction()`.
- *
- * Requires dep-schema entry: `view`.
  */
 export const viewportZoomAction: Action & { requires: string[] } = makeViewportZoomAction();

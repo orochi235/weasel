@@ -8,16 +8,12 @@ import type {
 
 /**
  * Build a sink that stores recorded primitives in arrays keyed by feature.
- * Each `recordX` method checks the matching flag in `config` first — when
- * the feature is off, the call no-ops, so callers can record unconditionally
- * without an extra check.
+ * A `recordX` call no-ops when its flag in `config` is off, so callers can
+ * record unconditionally.
  *
- * `beginFrame()` clears every per-frame array. `clearSnap()` clears the snap
- * array. Snap, the latest viewport record and the last frame's stats survive
- * across frames.
- *
- * `snapshot()` returns live references — no copy. The overlay layer reads
- * these in the same render frame.
+ * `beginFrame()` clears every per-frame array. Snap, the latest viewport
+ * record, and the last frame's stats survive across frames. `snapshot()`
+ * returns live references — no copy.
  */
 export function createDebugSink(config: DebugConfig): CanvasDebugSink {
   const snap: DebugSnapshot = {

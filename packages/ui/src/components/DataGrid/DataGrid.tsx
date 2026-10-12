@@ -1,15 +1,7 @@
 /**
- * Lightweight sortable data grid. Use for inspector tables — action
- * registries, route maps, telemetry rows. Intentionally narrow:
- *
- * - Sortable columns (click header to cycle asc → desc → none)
- * - Custom cell render via per-column `render`
- * - Optional drag handles for row reordering (when `onReorder` is set); a
- *   focused handle also moves its row with Alt+ArrowUp/Down
- * - Per-row class, row activation, and expandable full-width detail rows
- *
+ * Lightweight sortable data grid for inspector tables. Intentionally narrow.
  * Not: virtual scrolling, column resizing, multi-column sort, filtering,
- * inline editing. Reach for a real grid library when you need those.
+ * inline editing.
  */
 import { Fragment, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
@@ -139,9 +131,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
     });
   };
 
-  // Drag handles via useReorderDragList. Adapter: the hook expects
-  // `{ id, label }`-shaped items; we map our rows to that shape (label
-  // unused — the hook only uses id and locked).
+  // `label` is unused: the hook only reads id and locked.
   const drag = useReorderDragList({
     items: sortedRows.map((r) => ({ id: r.id, label: '' })),
     selectedIds: [],

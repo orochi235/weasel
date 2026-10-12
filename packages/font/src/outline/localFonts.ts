@@ -8,17 +8,13 @@
  * and gated behind a permission prompt that requires a user gesture.
  *
  * So this is the one part of the tier a consumer has to *ask* for, from a
- * click. Everything downstream treats a refusal as ordinary: no
- * registrations, `glyphOutline` keeps answering `null`, and large text keeps
- * rendering from the SDF tier exactly as it does today. That ladder is
- * load-bearing rather than defensive — Safari and Firefox have no equivalent
- * API at all, so "denied" is the permanent state for most of the web.
+ * click. A refusal is ordinary: no registrations, and large text keeps
+ * rendering from the SDF tier. Safari and Firefox have no equivalent API at
+ * all, so "denied" is the permanent state for most of the web.
  *
  * Registration is eager but reading is lazy: every matching face gets a thunk
- * that calls `FontData.blob()` at first glyph request. A machine can easily
- * have hundreds of faces and a `.ttc` runs to tens of megabytes, so
- * downloading them all at enable time would be worse than not offering the
- * tier.
+ * that calls `FontData.blob()` at first glyph request. A machine can have
+ * hundreds of faces and a `.ttc` runs to tens of megabytes.
  */
 
 import type { FontStyle } from '../fontStyle';
@@ -26,10 +22,8 @@ import { createOpenTypeParser } from './opentypeParser';
 import { registerFontOutlines } from './outlineRegistry';
 
 /**
- * The slice of the Local Font Access API this module uses. Declared here
- * rather than pulled from a lib: `queryLocalFonts` is not in TypeScript's DOM
- * types, and the alternative — casting `window` to `any` at the call site —
- * would lose the shape of what comes back.
+ * The slice of the Local Font Access API this module uses. `queryLocalFonts`
+ * is not in TypeScript's DOM types.
  */
 interface LocalFontData {
   postscriptName: string;
@@ -81,10 +75,7 @@ function joinWeightWords(style: string): string {
  * Parse a `FontData.style` string — "Regular", "Bold Italic", "Condensed
  * ExtraLight Oblique" — into the CSS variant the kit's registry is keyed by.
  *
- * Anything unrecognized lands on 400/normal, which is what the string
- * "Regular" would have produced anyway. A wrong guess here costs a face that
- * registers under a variant nothing asks for; it cannot mis-paint anything,
- * because resolution is an exact-match lookup that simply misses.
+ * Anything unrecognized lands on 400/normal.
  */
 export function parseFontStyle(style: string): { weight: number; style: FontStyle } {
   const s = joinWeightWords(style);
@@ -104,18 +95,16 @@ function styleQualifierCount(style: string): number {
     && !WEIGHT_WORDS.some(([word]) => word === w)).length;
 }
 
-/** Options for `registerLocalFontOutlines`. */
+/** Options for `enableLocalFontOutlines`. */
 export interface LocalFontOutlinesOptions {
   /**
    * Restrict registration to these families. Defaults to every installed
-   * family. Worth passing when the consumer already knows its font menu:
-   * a machine with 900 faces otherwise gets 900 registry entries, all inert
-   * but all held.
+   * family, which can be hundreds of registry entries.
    */
   families?: readonly string[];
 }
 
-/** What `registerLocalFontOutlines` registered. */
+/** What `enableLocalFontOutlines` registered. */
 export interface LocalFontOutlinesResult {
   /** Families that now have at least one outline face, in menu order. */
   families: readonly string[];
@@ -128,9 +117,8 @@ export interface LocalFontOutlinesResult {
  * for the faces it returns. **Must be called from a user gesture** — the
  * permission prompt requires one, and without it the call rejects.
  *
- * Rejects when the API is missing or the user denies; both are ordinary
- * outcomes and neither leaves the registry in a partial state, so a caller
- * that simply ignores the rejection still has a working SDF tier.
+ * Rejects when the API is missing or the user denies; neither leaves the
+ * registry in a partial state.
  */
 export async function enableLocalFontOutlines(
   opts: LocalFontOutlinesOptions = {},
@@ -148,9 +136,7 @@ export async function enableLocalFontOutlines(
 
   // Several installed faces can land on one (family, weight, style) slot —
   // "Helvetica Neue Condensed Bold" reduces to 700/normal exactly like
-  // "Helvetica Neue Bold". Registering both left whichever `queryLocalFonts`
-  // happened to return last, so a condensed face could paint at the upright
-  // face's advances. Pick the least-qualified name for each slot instead.
+  // "Helvetica Neue Bold". Pick the least-qualified name for each slot.
   const chosen = new Map<string, { font: LocalFontData; qualifiers: number }>();
   for (const font of data) {
     if (wanted && !wanted.has(font.family)) continue;

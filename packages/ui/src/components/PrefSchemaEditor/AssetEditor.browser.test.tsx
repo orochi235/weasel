@@ -93,9 +93,12 @@ test('a changed asset\'s label takes the color of a changed row in the tree, and
   expect(option('Settings')).toHaveAttribute('data-changed');
   expect(option('Export')).toHaveAttribute('data-changed');
   expect(option('Canvas')).not.toHaveAttribute('data-changed');
-  const changed = getComputedStyle(labelOf(option('Settings'))).color;
+  const changed = getComputedStyle(labelOf(option('Export'))).color;
   expect(changed).not.toBe(plain);
-  expect(getComputedStyle(labelOf(option('Export'))).color).toBe(changed);
+  // The asset shown is filled in the accent, where that color would not read: its label takes one that does.
+  const shown = getComputedStyle(labelOf(option('Settings'))).color;
+  expect(shown).not.toBe(changed);
+  expect(shown).not.toBe(getComputedStyle(option('Settings')).color);
   expect(getComputedStyle(labelOf(option('Canvas'))).color).toBe(plain);
   fireEvent.click(within(structure()).getByText('(format)'));
   fireEvent.change(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' }), { target: { value: 'File type' } });

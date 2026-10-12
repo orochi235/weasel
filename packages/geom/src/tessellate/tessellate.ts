@@ -176,9 +176,6 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   //     with the smallest positive whose polygon contains its first vertex.
   //   - Each (positive, [its holes]) group is earcut'd independently;
   //     triangles concatenated.
-  // Authors mostly write disjoint-positives-with-same-winding; the previous
-  // implementation passed every subsequent contour as a hole, which broke
-  // those (a duck with body+head+beak, a hamburglar with brim+crown+cape).
   // Using shoelace sign relative to the first contour avoids guessing about
   // screen-down vs math-up axis conventions.
 
@@ -221,10 +218,9 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     };
   }
 
-  // Group each opposite-wound contour with the smallest positive that
-  // contains its first vertex. Orphans (opposite-wound but not inside any
-  // positive) get promoted to independent positives — author probably
-  // intended them as separate shapes with inconsistent winding.
+  // Orphans (opposite-wound but not inside any positive) get promoted to
+  // independent positives — author probably intended them as separate shapes
+  // with inconsistent winding.
   const holesByPositive = new Map<number, number[]>();
   const orphanPositives: number[] = [];
   for (const n of negatives) {

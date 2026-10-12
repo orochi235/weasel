@@ -2,18 +2,9 @@ import type { ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 
 /**
- * Shared `enabled` predicate for selection-gated actions (reorder, duplicate,
- * flip, nudge, …).
- *
- * Returns `true` when the active selection is non-empty, otherwise
- * `SelectionRequired` so the palette/ActionBar can grey the entry out.
- *
- * The dispatcher evaluates this gate with the action's built deps, so a
- * deps-aware predicate is required for these actions to dispatch at all — a
- * constant `() => SelectionRequired` stub falls through forever. When called
- * without deps (e.g. a bare `enabled()` introspection) it conservatively
- * reports `SelectionRequired`; the invoker independently no-ops on an empty
- * selection, so dispatch correctness never relies on the gate alone.
+ * Shared `enabled` predicate for selection-gated actions: `true` when the
+ * selection is non-empty, otherwise `SelectionRequired`. Called without deps
+ * it reports `SelectionRequired`.
  */
 export function requiresSelection(deps?: ActionDeps): true | ActionDisabledReason {
   const selection = deps?.selection;

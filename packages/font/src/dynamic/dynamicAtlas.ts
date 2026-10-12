@@ -65,11 +65,8 @@ export interface CanvasFontEntry {
 }
 
 const canvasFamilies = new Set<string>();
-// Enrollment provenance. A family the `'canvas'` fallback policy enrolled on
-// its own is only canvas-served while that policy is in force; one a consumer
-// named via registerCanvasFont outranks every policy. Tracked here rather
-// than in fallback.ts so the two sets can only ever be mutated together —
-// every register / unregister / reset path is in this file.
+// Enrollment provenance; see `isCanvasFont`. Tracked here rather than in
+// fallback.ts so the two sets can only ever be mutated together.
 const autoEnrolledFamilies = new Set<string>();
 let faces = new Map<string, DynamicFace>();
 let packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
@@ -113,12 +110,6 @@ export function registerCanvasFont(family: string): void {
  *     so returning to `'canvas'` makes it `true` again.
  *   - never enrolled → `false`, including under `'canvas'` (that policy
  *     enrolls lazily, on the first miss).
- *
- * The membership reading would answer `true` for an auto-enrolled family
- * under `'substitute'` / `'none'`, where nothing routes to this tier — a
- * caller predicting what renders would be told the opposite of the truth.
- * Mirrors `listFonts`, which reports the baked registry alone for the same
- * reason: "enrolled" is not "will render".
  */
 export function isCanvasFont(family: string): boolean {
   if (!canvasFamilies.has(family)) return false;
@@ -129,13 +120,8 @@ export function isCanvasFont(family: string): boolean {
  * Every family the dynamic canvas-SDF tier will serve *right now* — the
  * enumeration companion to `isCanvasFont`, which answers one family at a
  * time. Same "service, not membership" rule: an auto-enrolled family appears
- * only while the `'canvas'` policy is in force.
- *
- * Exists so a consumer can offer these families in a font picker.
- * `listFonts` reports the baked registry alone, so without this the only
- * ways to present canvas-served families were to hard-code a list beside the
- * `registerCanvasFont` calls or to omit them — a UI inventing its own answer
- * about what will render.
+ * only while the `'canvas'` policy is in force. `listFonts` reports the baked
+ * registry alone.
  *
  * `enrollment` distinguishes a consumer's explicit `registerCanvasFont` from
  * a lazy enrollment the policy made on a miss; both render identically, but
@@ -360,10 +346,6 @@ export function resetBakeBudget(n: number = DEFAULT_BAKE_BUDGET): void {
   if (asked === 0 && pending.length === 0) settled = true;
   asked = 0;
 }
-
-/* ------------------------------------------------------------------ */
-/* Test seams                                                          */
-/* ------------------------------------------------------------------ */
 
 /** @internal test seam — inject a fake rasterizer (jsdom has no canvas
  *  metrics). Pass null to restore the lazy default. */

@@ -2,15 +2,12 @@ import type { AnimationSeed } from './engine/context';
 import type { AnimationHandle } from './types';
 
 /**
- * Supervisor: an internal capability exposed by `useAnimator` to composite
- * primitives (loop / stagger) so they can sit in the animator's id table
- * without being a "real" animation. A supervisor's tick is a no-op — it
- * never completes naturally; only its `cancel()` removes it from the
- * registry. The owning composite installs `setOnCancel` to tear down its
- * children (in-flight handles, items still waiting) when external cancel
- * fires (`animator.cancel(handle)`, `animator.cancelKey(key)`).
+ * Lets a composite (loop / stagger) sit in the animator's id table without
+ * being a real animation: its tick never completes, so only `cancel()` or
+ * `finish()` removes it. The owning composite installs `setOnCancel` to tear
+ * down its children when an external cancel fires.
  *
- * Not part of the public Animator surface. Passed in at bind time.
+ * Not part of the public Animator surface.
  */
 export interface Supervisor {
   id: number;
@@ -92,15 +89,9 @@ export function supervisors(host: SupervisorHost): SupervisorFactory {
 }
 
 /**
- * Subscribe to "this animation id finished or was cancelled and is no longer
+ * Subscribe to "this animation id finished or was canceled and is no longer
  * in the registry." Returns an unsubscribe. Fires at most once, and at once
- * for an id that has already left. Used by
- * stagger to detect natural completion of children so the supervising
- * composite can retire itself when the last child finishes.
- *
- * Implementation detail: fires for both natural completion (tick returned
- * true) and external cancel — the stagger composite tolerates this because
- * its cancel path is idempotent and a cancelled supervisor will already be
- * marked finished.
+ * for an id that has already left. Fires for both natural completion and
+ * external cancel.
  */
 export type WatchCompletion = (id: number, cb: () => void) => () => void;

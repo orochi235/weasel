@@ -2,16 +2,13 @@ import type { Action } from '@weasel-js/routing';
 
 /**
  * @experimental
- * Static descriptor for the `cancelGesture` Action — Escape mid-drag
- * tells the dispatcher to abort every in-flight handle (`onEnd('cancel')`
- * on each, scratch discarded, no scene mutation).
+ * Escape mid-drag tells the dispatcher to abort every in-flight handle
+ * (`onEnd('cancel')` on each, no scene mutation).
  *
- * Phase-gated to `[*:engaged]` so it fires only when at least one tool
- * has a handle in flight; the unmodified `escape` action retains its
- * idle-phase binding (clears selection) without conflict.
+ * Phase-gated to `[*:engaged]` so it fires only when a handle is in flight,
+ * leaving the idle-phase `escape` action (clears selection) without conflict.
  */
-// No `eligible` field → always eligible. Cancelling an in-flight gesture
-// must work regardless of mode.
+// No `eligible` field: canceling an in-flight gesture must work in every mode.
 export const cancelGestureAction: Action & { requires: string[] } = {
   id: 'cancelGesture',
   label: 'Cancel gesture',

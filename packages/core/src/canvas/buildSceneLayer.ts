@@ -16,12 +16,8 @@ import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { wrapNodeOutput } from './wrapNodeOutput';
 
-/**
- * The scene-tree reading methods Canvas feature-detects at draw time, as an
- * *optional* mixin. A `SceneCanvasAdapter` supplies them; flat / bare-Canvas
- * adapters don't. `getPose` already lives on the base move adapter, so only the
- * three tree-walk methods are added here.
- */
+/** The scene-tree reading methods Canvas feature-detects at draw time, as an *optional*
+ *  mixin. A `SceneCanvasAdapter` supplies them; flat / bare-Canvas adapters don't. */
 type OptionalSceneHierarchy<TNode, TPose> = Partial<
   Pick<HierarchicalAdapter<TNode, TPose>, 'getLayers' | 'getNode' | 'getChildren'>
 >;
@@ -50,29 +46,18 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
   derivedPathOf?: (obj: TNode, pose: TPose) => Path | null;
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
-  /**
-   * Optional per-id alpha multiplier. When supplied, each node's emitted
-   * `DrawCommand[]` is wrapped in a `{ kind: 'group', alpha }` when the
-   * returned value is not 1. The scoping-dim integration supplies this to
-   * dim non-active nodes during a mode transition.
-   *
-   * Defaults to `() => 1` (no effect).
-   */
+  /** Per-id alpha multiplier. A node's emitted `DrawCommand[]` is wrapped in a
+   *  `{ kind: 'group', alpha }` when the returned value is not 1. */
   alphaFor?: (id: string) => number;
   /**
-   * Optional post-processor for the scene slot's emitted commands. Called
-   * with the final world-space `DrawCommand[]` each time a scene canvas
-   * layer draws (after per-node rotation wrapping and `alphaFor`); the
-   * return value replaces the array handed to the renderer. When the scene
-   * slot is split into per-scene-layer canvas layers (`scene:<layerId>`),
-   * it runs once per layer. Identity by default.
+   * Post-processor for the scene slot's emitted commands: called with the final
+   * world-space `DrawCommand[]` each time a scene canvas layer draws (after per-node
+   * rotation wrapping and `alphaFor`), once per layer when the slot is split into
+   * `scene:<layerId>` layers. Its return value replaces the array handed to the renderer.
    *
-   * Commands are world-space — `drawLayers` applies the view transform
-   * afterward, so e.g. a `clip` path in a wrapping group is authored in
-   * world coordinates. Note clip nesting is capped at 7 levels; a wrapping
-   * group with `clip` consumes one.
-   *
-   * The move-overlay ghost (drag preview) is not post-processed.
+   * Commands are world-space — `drawLayers` applies the view transform afterward. Clip
+   * nesting is capped at 7 levels; a wrapping group with `clip` consumes one. The
+   * move-overlay ghost (drag preview) is not post-processed.
    */
   postProcess?: (cmds: DrawCommand[], view: View, dims: Dims) => DrawCommand[];
   /**
@@ -130,11 +115,8 @@ function withAdapterDerivedPaths<TNode extends { id: string }, TPose>(
 }
 
 /**
- * Build the scene layer. Tool ghosts (in-flight drag/resize/rotate poses) are
- * published via the active tool's `previewPose`/`previewIds` and rendered on
- * top of this layer (see SceneCanvas's preview-ghost layer); we draw committed
- * poses here, and `hideIds()` lets us skip the committed paint of ids the
- * active tool is currently ghosting so the source doesn't show through.
+ * Build the scene layer, which draws committed poses. `hideIds()` skips the committed paint
+ * of ids the active tool is currently ghosting so the source doesn't show through.
  */
 export function buildSceneLayer<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
@@ -143,10 +125,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
   /** When set, the returned layer carries this `id` and paints ONLY the named
-   *  scene layer (the rest are walked for ancestor clips). Used to split the
-   *  scene slot into per-scene-layer, individually-orderable canvas layers
-   *  (`scene:<layerId>`) so consumers can interleave custom layers between
-   *  them. Omit for the single bundled `scene` layer. */
+   *  scene layer (the rest are walked for ancestor clips). Omit for the single
+   *  bundled `scene` layer. */
   slot?: { id: string; forLayer: string },
 ): RenderLayer<unknown> {
   const toPose =
@@ -210,9 +190,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }
-      // Flat fallback — keep existing body verbatim. (Per-layer slotting only
-      // applies on the hierarchical path; a flat adapter has no scene layers,
-      // so the `scene:<layer>` split is a no-op and we emit the whole scene.)
+      // Flat fallback: a flat adapter has no scene layers, so the `scene:<layer>` split is
+      // a no-op and we emit the whole scene.
       const objects = cfg.objects ?? adapter?.getNodes() ?? [];
       const children: DrawCommand[] = [];
       const culled = culledIn(view, dims);
@@ -239,13 +218,10 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
 }
 
 /**
- * Build the scene slot as one canvas layer **per scene layer** — keyed
- * `scene:<layerId>` — when the adapter is hierarchical (exposes `getLayers`).
- * This lets consumers interleave custom layers *between* scene layers via the
- * standard slot anchoring (`before: 'scene:plantings'`). Each per-layer canvas
- * layer re-runs the scene walk for its own layer only (others are still walked
- * for ancestor clips). Falls back to a single `scene` layer for flat adapters
- * or adapters with no declared layers.
+ * The scene slot as one canvas layer **per scene layer** — keyed `scene:<layerId>` — when the
+ * adapter is hierarchical, so consumers can interleave custom layers *between* scene layers via
+ * the standard slot anchoring (`before: 'scene:plantings'`). Falls back to a single `scene`
+ * layer for flat adapters or adapters with no declared layers.
  */
 export function buildSceneLayers<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,

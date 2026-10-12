@@ -13,10 +13,6 @@ import type { PluginOption } from 'vite';
  *
  * `load()` is a dynamic import of a per-file virtual module, so a demo's
  * source is a chunk of its own, fetched when the panel asks for it.
- *
- * Resolving the companion tabs here rather than in the browser is the point:
- * the previous registry did it at module load with an eager `import.meta.glob`
- * over `packages/ ** /src`, which inlined ~1,880 files to produce 11 tabs.
  */
 export function demoSources(opts: { root?: string } = {}): PluginOption {
   const INDEX_ID = 'virtual:demo-sources';
@@ -51,9 +47,7 @@ export function demoSources(opts: { root?: string } = {}): PluginOption {
     },
     configureServer(server) {
       // A demo's own text and its derived tab list both go stale when any
-      // file it can reach changes, so invalidate the index plus that file's
-      // source module. Which demos cite a given file is exactly what the
-      // index computes, so drop the index and let it recompute.
+      // file it can reach changes.
       server.watcher.on('change', (file) => {
         const rel = relative(root, file).replace(/\\/g, '/');
         for (const modId of [RESOLVED_INDEX, RESOLVED_FILE_PREFIX + rel + FILE_SUFFIX]) {

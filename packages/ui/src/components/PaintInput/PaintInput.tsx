@@ -26,9 +26,8 @@ import s from './PaintInput.module.css';
 /** What a kind with no color of its own seeds from. */
 const FALLBACK_COLOR = '#000000ff';
 
-/** The bar's answer for "no paint at all". Not a registered kind — absence
- *  has no seed, no color and nothing to render — so it is this control's own
- *  segment rather than a registry entry. */
+/** The bar's answer for "no paint at all". Not a registered kind, so it is
+ *  this control's own segment. */
 const NONE = 'none';
 
 /** A solid paint as the one `#rrggbbaa` a color field edits. Its alpha lives
@@ -58,10 +57,8 @@ function kindOf(paint: Paint | null | undefined): PaintKind | null {
 
 function segment(id: string, label: string, icon: string | undefined): ToggleBarItem<PaintKind> {
   return isIconName(icon)
-    // Icon-only: six labeled segments do not fit a property row, and the
-    // full label stays the accessible name.
-    // 14 to match the panel's other glyph segments. A `sm` bar is 17px tall
-    // over 1px of padding, so 15 fills the segment box edge to edge.
+    // Icon-only: the full label stays the accessible name. 14, not 15: a
+    // `sm` bar is 17px tall over 1px of padding, so 15 fills the segment box.
     ? { value: id, label: <Icon name={icon} size={14} />, ariaLabel: label }
     : { value: id, label };
 }
@@ -101,9 +98,8 @@ export interface PaintInputProps {
   unset?: boolean;
   /** Restrict the kind bar. Default: every registered kind. */
   kinds?: readonly PaintKind[];
-  /** Offer "None". Default `true` — the bar answers "what kind of paint is
-   *  this?" and no-paint is one of the answers. Turn it off where the slot
-   *  cannot express absence. */
+  /** Offer "None". Default `true`. Turn it off where the slot cannot express
+   *  absence. */
   allowNone?: boolean;
   /** What the control is pointed at: a selection key, a node id. Switching
    *  kinds brings back the paint last seen for that kind, and that memory is
@@ -120,13 +116,9 @@ export interface PaintInputProps {
 
 /**
  * Editor for a whole `Paint` — a kind bar over whichever body that kind
- * wants.
- *
- * The bar is driven by the paint-kind registry rather than a fixed list, so a
- * consumer's registered kind appears in it and renders that entry's `Editor`.
- * Kinds sharing a `family` are one segment, and that segment's body picks the
- * member. The built-in kinds keep their branch here: their editors live in this
- * package and `@weasel-js/core`, which owns the registry, cannot import it.
+ * wants. The bar is driven by the paint-kind registry, so a consumer's
+ * registered kind appears in it and renders that entry's `Editor`. Kinds
+ * sharing a `family` are one segment, and that segment's body picks the member.
  *
  * Geometry is deliberately absent — on a canvas it belongs on the artwork,
  * via `<SceneGradientHandles>`.
@@ -231,8 +223,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     // Absence has nothing to edit. The lit segment is the whole statement.
     if (value === null) return null;
     // A registered `Editor` wins even for a built-in id: re-registering one is
-    // how a consumer replaces a kit control, and the built-in branches below
-    // are the fallback for the ids that ship without an entry editor.
+    // how a consumer replaces a kit control.
     if (valueKind?.Editor) {
       const Editor = valueKind.Editor;
       return withOpacity(value, <Editor value={value} onInput={onInput} onChange={onChange} />);

@@ -202,9 +202,6 @@ function wheelAction(): Action {
  * The other four are one binding each. Every binding gates on both the
  * affordance kind and the hit widget's claim set, so it fires only for input
  * the HUD's own layer claimed *and* the widget under it consumes.
- *
- * This replaces a `DragChannel` the HUD's `hitTest` used to hand back for the
- * tool-routing dispatcher to drive. That dispatcher is gone.
  */
 export function createHudContribution(hud?: Hud, options?: AttachHudOptions): SurfaceContribution {
   return {

@@ -3,11 +3,8 @@
  *
  * opentype.js reads GPOS kerning only from lookups of type 2 and skips type 9
  * (Extension), which is where a large font puts its main kerning — Inter's
- * class-based pairs all sit behind one. What it misses is most of the kerning
- * a browser applies: "AVATAR" at 72px sets 22px narrower in every engine than
- * the sum of its advances. So the pair lookups are read here, extensions
- * unwrapped, and both the outline tier and the atlas generator take kerning
- * from this one reader.
+ * class-based pairs all sit behind one. So the pair lookups are read here,
+ * extensions unwrapped.
  *
  * Scope: horizontal pair adjustment (PairPos formats 1 and 2), first glyph's
  * XAdvance, lookups of every `kern` feature in LookupList order regardless of

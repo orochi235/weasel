@@ -1,31 +1,12 @@
-/**
- * AABB bounds of a `Path`. Returned as `RectPath` for direct reuse with the
- * rect fast path machinery (selection AABB, area-select intersection).
- *
- * `RectPath` is its own bounds — O(1). For `PolygonPath`, walk segment by
- * segment, computing the tight bound per segment:
- *
- *   - `M` / `L`: just the endpoint.
- *   - `Q`: quadratic Bezier — endpoints plus axis-aligned extrema (one
- *     possible inflection per axis).
- *   - `C`: cubic Bezier — endpoints plus axis-aligned extrema (up to two
- *     possible inflections per axis, found via the quadratic formula on
- *     the derivative).
- *
- * Control points are NOT included directly; they're used only to compute
- * extrema that actually lie on the curve. This avoids the classic "AABB
- * extends past where the curve visibly reaches" bug for curved paths whose
- * control points poke outside the visible extent.
- *
- * Empty paths (no commands) return a zero-size rect anchored at the
- * origin — the convention used elsewhere in the kit for missing geometry.
- */
-
 import { cubicBounds, elevateQuadraticToCubic } from '../curve';
 import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path, RectPath } from '../path';
 
-/** AABB of a `Path`, returned as a `RectPath` for direct reuse with rect-fast-path machinery. */
+/**
+ * AABB of a `Path`, returned as a `RectPath` for direct reuse with rect-fast-path machinery.
+ * Control points are NOT included directly; they're used only to compute extrema that actually
+ * lie on the curve. Empty paths (no commands) return a zero-size rect anchored at the origin.
+ */
 export function boundsOfPath(path: Path): RectPath {
   if (path.kind === 'rect') return path;
 

@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 /**
- * Every frame loop in the kit runs behind `useVisibleRaf`, so that "a weasel
- * loop does no work nobody can see" holds by construction rather than by each
- * loop's author remembering. A bare `requestAnimationFrame` or `setInterval`
- * in shipped source is how that stops being true, so this fails the build on
- * one.
+ * Every frame loop in the kit runs behind `useVisibleRaf`, so a loop does no
+ * work nobody can see. This fails the build on a bare `requestAnimationFrame`
+ * or `setInterval` in shipped source.
  *
- * Tests, stories and app code are out of scope: they are not the surface the
- * rule is about. To add a site to the allowlist, say in the entry why the loop
- * cannot go through the gate. An entry covers one use: a second in the same
- * file fails until the entry says how many it covers and why.
+ * To add a site to the allowlist, say in the entry why the loop cannot go
+ * through the gate. An entry covers one use: a second in the same file fails
+ * until the entry says how many it covers and why.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';

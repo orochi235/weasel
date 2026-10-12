@@ -3,15 +3,8 @@
  * already has a rung for. The ladder is what carries spacing across density, so
  * a literal here is a hole: it stays put while everything around it moves.
  *
- * Every package and app stylesheet is read, `.less` included.
- *
- * Only those three properties. `border`, `outline` and `box-shadow` are not
- * spacing and are meant to stay put, and a `var()` fallback is the default of
- * the property it belongs to — `var(--slider-thumb-size, 8px)` is a thumb, not
- * a gap — so both are left alone.
- *
- * Runs under tsx so theme modules resolve through the root tsconfig's paths to
- * source, with no build first.
+ * A `var()` fallback is the default of the property it belongs to —
+ * `var(--slider-thumb-size, 8px)` is a thumb, not a gap — so it is left alone.
  */
 
 import { readFileSync } from 'node:fs';

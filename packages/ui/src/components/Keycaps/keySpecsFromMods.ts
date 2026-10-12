@@ -34,9 +34,8 @@ export interface LogicalModSpec {
 export interface KeySpecsFromModsOptions {
   /** Override OS detection. Defaults to {@link detectPlatform}. */
   platform?: Platform;
-  /** Defaults to `'auto'` (symbol on macOS, text everywhere else). Pass
-   *  `'symbol'` or `'text'` to force a specific style regardless of
-   *  platform. */
+  /** Defaults to `'auto'`. Pass `'symbol'` or `'text'` to force a specific
+   *  style regardless of platform. */
   legend?: LegendStyle;
 }
 
@@ -93,23 +92,14 @@ export function detectPlatform(): Platform {
 
 /**
  * Map a list of **logical** modifiers (`'mod'`, `'shift'`, …) to **visual**
- * `KeySpec`s appropriate for the current platform.
- *
- * The kit-side gesture grammar uses logical names so the same route reads
- * correctly on every OS — `'mod'` means "Cmd on Mac, Ctrl on Win/Linux".
- * `KeySequence` is purely visual and renders the labels you give it; this
- * helper is the bridge.
+ * `KeySpec`s appropriate for the current platform — `'mod'` means "Cmd on
+ * Mac, Ctrl on Win/Linux".
  *
  * ```ts
  * <KeySequence
  *   keys={keySpecsFromMods([{ name: 'mod' }, { name: 'shift', optional: true }])}
  * />
  * ```
- *
- * On a Mac: renders `⌘ ⇧`. On Windows: renders `Ctrl Shift`. Pass an
- * explicit `platform` to override detection (e.g. for docs that always
- * show the macOS form). Pass `legend: 'text'` to force "Cmd" over "⌘"
- * even on macOS.
  */
 export function keySpecsFromMods(
   mods: readonly LogicalModSpec[],

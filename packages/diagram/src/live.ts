@@ -6,14 +6,12 @@
  * channel, and the whole thing commits as one batch when it settles. Nothing
  * here writes the document.
  *
- * Two producers, because the two kinds of layout are different processes.
- * `force` is a relaxation whose target changes every tick. `layered` and `tree`
- * know where they are going before they start, so they ease into it.
+ * Two producers: `force` is a relaxation whose target changes every tick;
+ * `layered` and `tree` know where they are going, so they ease into it.
  *
- * **A node another gesture owns is a pin.** The run reports it, `force` holds
- * it with `fx`/`fy` and relaxes its neighbors around it, and an eased layout
- * simply leaves it alone. Dragging a body mid-run is therefore the consumer's
- * ordinary move tool — this package contributes no gesture for it.
+ * **A node another gesture owns is a pin.** `force` holds it with `fx`/`fy`
+ * and relaxes its neighbors around it, and an eased layout leaves it alone, so
+ * dragging a body mid-run is the consumer's ordinary move tool.
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
@@ -81,21 +79,13 @@ const REST_TICKS = 5;
 /**
  * A relaxation, one tick a frame, done when the graph stops moving.
  *
- * Motion ends long before alpha cools — a few dozen ticks against three
- * hundred — so a run that waited for alpha would sit visibly still for
- * seconds while still reporting itself running. It finishes on whichever
- * comes first: `restTicks` ticks in a row with no node moving `restDistance`,
- * or the cooling schedule running out. Nothing rests while a node is held.
+ * Motion ends long before alpha cools, so it finishes on whichever comes
+ * first: `restTicks` ticks in a row with no node moving `restDistance`, or the
+ * cooling schedule running out. Nothing rests while a node is held.
  *
- * The forces are `forceRelaxation`'s — the same ones the one-shot `force`
- * runs, wound up once here and ticked rather than run to completion.
- *
- * It does **not** re-anchor the way the one-shot does. That translation exists
- * so a single 300-tick jump does not move the diagram off where the author left
- * it; a live run cannot jump, every frame being one step from the last, and
- * gravity holds the graph around the centroid it was seeded from. Re-anchoring
- * per frame would also fight a drag: the anchor is measured from where the
- * nodes were, and a pinned node is deliberately somewhere else.
+ * It does **not** re-anchor the way the one-shot `force` does. Re-anchoring
+ * per frame would fight a drag: the anchor is measured from where the nodes
+ * were, and a pinned node is deliberately somewhere else.
  */
 export function forceProducer<TPose>(
   graph: Graph,
@@ -282,10 +272,9 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       pinned: ctx.pinned,
       frame: producerFrame.current++,
     });
-    // A pinned participant takes its subtree out of the frame with it. The run
-    // skips the participant itself, but its rows and labels are ids of their
-    // own — left in, they would be published from the pose the document still
-    // holds while the gesture carries the box somewhere else.
+    // A pinned participant takes its subtree out of the frame with it: its
+    // rows and labels are ids of their own, and left in they would be
+    // published from the pose the document still holds.
     let placed = result;
     if (ctx.pinned.size > 0) {
       const held = new Map(result);

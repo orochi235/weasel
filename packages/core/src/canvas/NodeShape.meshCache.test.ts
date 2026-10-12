@@ -1,21 +1,11 @@
 /**
- * Does memoizing `paint` actually turn the tessellation cache on?
+ * The renderer memoizes tessellation as `WeakMap<Path, Mesh>`, keyed on
+ * **`Path` object identity**, which only pays off if a painter hands back the
+ * same `Path` object frame after frame.
  *
- * `renderer/cache/cache.ts` memoizes tessellation as `WeakMap<Path, Mesh>`,
- * keyed on **`Path` object identity**. That only pays off if the same `Path`
- * object is handed back frame after frame — and before `kit:shape` and
- * `kit:path` memoized their `paint`, it wasn't: `pathForShape` built a fresh
- * `Uint8Array` + `Float32Array` for every ellipse, polygon and star, every
- * frame. So the cache was allocated, consulted, missed and repopulated on
- * every draw, for the whole shape family the kit ships.
- *
- * The measurement below counts **distinct `Mesh` objects** produced by driving
- * `getMesh` with each frame's paint output. One mesh per node means every
- * frame after the first was a cache hit; N×frames means every frame missed.
- *
- * The control arm is the pre-memo painter, running side by side — so the
- * regression this guards against isn't a historical red, it's the number in
- * the other column.
+ * These tests count **distinct `Mesh` objects** produced by driving `getMesh`
+ * with each frame's paint output. One mesh per node means every frame after
+ * the first was a cache hit; N×frames means every frame missed.
  */
 import { describe, expect, it, afterEach, beforeEach } from 'vitest';
 import { defaultDrawOne } from './defaultDrawOne';
@@ -55,8 +45,7 @@ function buildScene(): Node<unknown, string, RectPose>[] {
 }
 
 /** Draw every node for `FRAMES` frames, pushing each emitted path through the
- *  renderer's mesh cache exactly as `fillMeshHandle` does. Returns how many
- *  distinct meshes the cache had to build. */
+ *  renderer's mesh cache. Returns how many distinct meshes it had to build. */
 function meshesBuiltOver(nodes: Node<unknown, string, RectPose>[]): number {
   const seen = new Set<Mesh>();
   for (let frame = 0; frame < FRAMES; frame++) {
@@ -70,8 +59,8 @@ function meshesBuiltOver(nodes: Node<unknown, string, RectPose>[]): number {
   return seen.size;
 }
 
-/** The `kit:shape` painter as it was before the memo: rebuilds its path on
- *  every call. Registered at `'high'` so it wins over the real one. */
+/** A shape painter that rebuilds its path on every call. Registered at
+ *  `'high'` so it wins over the real one. */
 function registerUnmemoizedShapePainter(): void {
   registerNodeShape(
     {
@@ -102,10 +91,7 @@ describe('mesh cache hit rate', () => {
   });
 
   it('control: the pre-memo painter rebuilds every mesh, every frame', () => {
-    // Same scene, same shapes, same frames — the only difference is that this
-    // painter allocates a fresh `Path` per call. This is the number the kit
-    // was paying before, and what this test exists to keep it from paying
-    // again.
+    // Same scene and frames; this painter allocates a fresh `Path` per call.
     registerUnmemoizedShapePainter();
     expect(meshesBuiltOver(buildScene())).toBe(NODE_COUNT * FRAMES);
   });

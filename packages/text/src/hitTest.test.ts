@@ -4,10 +4,7 @@
  *
  * The `inter` fixture atlas is baked at size 32 and carries exactly two
  * glyphs — `A` (advance 23) and `B` (advance 22) — plus one kerning pair,
- * `A→B` at -1. At `fontSize: 32` the scale is 1, so those are world units,
- * and the pair is the whole point: the previous caret summed
- * `ctx.measureText` per character, which cannot see a kern at all and put
- * every boundary after an `A` one unit to the right of the painted glyph.
+ * `A→B` at -1. At `fontSize: 32` the scale is 1, so those are world units.
  * There is no space glyph, so a space takes the `fontSize * 0.25` fallback
  * advance (8).
  */
@@ -86,9 +83,9 @@ describe('caretIndexAt', () => {
   });
 
   it('places the boundary after a kerned pair where the glyph is painted', () => {
-    // The regression the `ctx.measureText` stub could never show. Per-character
-    // measurement sums 23 + 22 with no kern, putting 'B' at 23..46 and its
-    // midpoint at 34.5 — so 33.5 answered 1 where the painted glyph says 2.
+    // Per-character measurement sums 23 + 22 with no kern, putting 'B' at
+    // 23..46 and its midpoint at 34.5 — so 33.5 answers 1 where the painted
+    // glyph says 2.
     const p = textPose();
     expect(caretIndexAt(33.5, 5, p)).toBe(2);
     // And the kerned line is a unit narrower than the unkerned sum, so the
@@ -98,8 +95,7 @@ describe('caretIndexAt', () => {
 
   it('honors a per-run font size', () => {
     // 'A' at 32 advances 23; 'B' at 64 advances 44, and the kern between them
-    // scales with the *left* glyph's size, so it is still -1. The old path read
-    // `pose.text` only and stepped both cells at the node's fontSize.
+    // scales with the *left* glyph's size, so it is still -1.
     const p = textPose({
       text: 'AB',
       runs: [

@@ -3,14 +3,7 @@
  * Every vitest file in the tree must be claimed by a project `npm test` runs.
  *
  * The projects each own an include glob, so a test file in a directory no glob
- * reaches is collected by nobody: it does not run, and nothing says so. Two
- * agents in the 2026-08-22 review pass read a green `test:core` as "the kit
- * passes", and one nearly wrote tests under a package that project never
- * globs.
- *
- * The claim comes from vitest itself (`vitest list --filesOnly`), for the
- * projects named in package.json's `test` script, so this checks the command
- * people actually run rather than a second copy of the globs.
+ * reaches is collected by nobody: it does not run, and nothing says so.
  *
  * CI names its projects on its own `vitest run` lines, so those are held to
  * the same list: a project `npm test` runs and CI does not is a failure here.
@@ -117,9 +110,6 @@ if (orphans.length > 0) {
   process.exit(1);
 }
 
-// The reverse mapping is the thing that was hard to see: which project runs a
-// given package's tests. Printing it makes `test:core` covers what? a
-// one-command question.
 const perDir = new Map();
 for (const [file, owners] of byFile) {
   const dir = file.split('/').slice(0, 2).join('/');

@@ -20,24 +20,16 @@ export interface MomentumOptions {
   /** Optional clock override for tests. Defaults to `Date.now`. */
   now?: () => number;
   /**
-   * Optional bounds for the object's top-left corner (in world units). When
-   * supplied, momentum-driven translation is clamped: each tick's new
-   * position is constrained so the object's `(x, y)` stays inside the rect.
-   * Without bounds, a hard flick carries the object indefinitely until
-   * friction dampens velocity below `threshold`.
-   *
-   * Note: ignores object size for now — the bound is on the top-left, not
-   * the visible edges. A consumer wanting "object stays fully inside" should
-   * pass `bounds = { x: canvas.x, y: canvas.y, width: canvas.w - obj.w,
-   * height: canvas.h - obj.h }` (and accept that it doesn't adapt to
-   * variable-sized objects mid-flight).
+   * Optional bounds for the object's top-left corner (in world units): each
+   * tick's new position is clamped so the object's `(x, y)` stays inside the
+   * rect. Object size is ignored, so to keep an object fully inside, shrink
+   * the rect by the object's width and height.
    */
   bounds?: { x: number; y: number; width: number; height: number };
   /**
-   * Boundary policy when the clamped position hits an edge. 'stop' cancels
-   * the decay (instant settle at the edge). 'continue' keeps decaying but
-   * subsequent ticks stay clamped (object drifts along the edge as friction
-   * decays the velocity). Default 'stop'.
+   * Boundary policy when the clamped position hits an edge. 'stop' settles at
+   * the edge at once. 'continue' keeps decaying, so the object drifts along
+   * the edge. Default 'stop'.
    */
   boundary?: 'stop' | 'continue';
   /** How to translate poses. Default `AUTO_POSE_DESCRIPTOR`. */
@@ -57,16 +49,13 @@ const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
  * released, at the velocity it was traveling, until friction brings it to
  * rest. A release slower than `threshold` does not coast at all.
  *
- * Plugs into the move action rather than replacing it, so the drag itself is
- * unchanged — this only decides what happens after the release. The whole
- * flick, coast included, records as one undoable transform, written once it
- * comes to rest. Over an adapter with `poseTarget`, which a scene-backed one
- * has, each node coasts on its own pose target, so anything else animating it
- * adds; over one without, the coast is shown through `previewPoses`, or
- * written through `setPose` each frame. Dragging a node
+ * The whole flick, coast included, records as one undoable transform, written
+ * once it comes to rest. Over an adapter with `poseTarget`, which a
+ * scene-backed one has, each node coasts on its own pose target, so anything
+ * else animating it adds; over one without, the coast is shown through
+ * `previewPoses`, or written through `setPose` each frame. Dragging a node
  * again while it coasts stops the coast and records it where it stands. A
- * `tweenPose` or `springPose` of a coasting node ends its coast, and what the
- * coast had traveled springs to nothing under the new move. A node
+ * `tweenPose` or `springPose` of a coasting node ends its coast. A node
  * something else moves or deletes mid-coast, an undo included, drops out of
  * the coast where that left it, and nothing is recorded for it.
  */

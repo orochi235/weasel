@@ -1,16 +1,14 @@
 /**
- * The scene every consumer migrated to world poses is checked against.
+ * A test scene where local and world poses differ.
  *
- * It exists because **under `IDENTITY_POSE_COMPOSITION` a local pose and a
- * world pose are the same value**, so a test written against a default scene
- * passes whether or not the consumer composes. Anything asserting that a
- * consumer reads world coordinates has to run against a scene where the two
- * differ, and this is that scene.
+ * **Under `IDENTITY_POSE_COMPOSITION` a local pose and a world pose are the
+ * same value**, so a test written against a default scene passes whether or
+ * not the consumer composes. Anything asserting that a consumer reads world
+ * coordinates has to run against this one.
  *
  * Shape: a container turned 90° holding two children at non-zero local
- * offsets, one of them turned again. The right angle is deliberate — it makes
- * every expected coordinate an integer, so a wrong answer is obvious rather
- * than nearly right.
+ * offsets, one of them turned again. The right angle makes every expected
+ * coordinate an integer.
  */
 import { createScene } from 'core/scene/scene';
 import { RIGID_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';

@@ -1,14 +1,4 @@
-/**
- * Pure math helpers for `<MinimapCanvas>`.
- *
- * `computeFitView` derives a `View` that fits a chosen world rect into a
- * minimap canvas of given pixel dims. `computeIndicatorCommand` builds the
- * dashed "visible window" rect — the main canvas's screen window projected
- * into the minimap's own screen coordinates.
- *
- * Neither helper touches GL, the DOM, or the renderer; they're pure
- * functions, unit-testable with `expect`.
- */
+/** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
 import { documentPose, effectivePose } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
@@ -19,10 +9,7 @@ import type { PathDrawCommand } from '@weasel-js/core';
 /** Inset (CSS px) around the fit rect on each side. Matches the spec note. */
 const DEFAULT_FIT_PADDING = 8;
 
-/**
- * Fallback view returned when there is nothing to fit (empty scene, etc.).
- * Identity view at the origin — produces a 1:1 mapping centered on (0, 0).
- */
+/** Fallback view returned when there is nothing to fit (empty scene, etc.). */
 export const FALLBACK_FIT_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /**
@@ -126,14 +113,8 @@ export interface ComputeFitViewOptions {
  * Derive a `View` that fits the chosen world rect into a minimap of
  * `dims.width × dims.height` CSS px. Uniform scale on both axes; the rect
  * is centered with `padding` (default 8) on each side. The smaller-axis
- * fit ratio wins, so the whole rect is visible.
- *
- * - `fit === "scene"`: union AABB of leaf-node poses via `descriptor`.
- *   Empty scene → {@link FALLBACK_FIT_VIEW}. `"live"` is the same over the
- *   poses being shown.
- * - `fit` is `{ kind: "world", rect }`: fit `rect`.
- * - `fit` is a function: called with `(scene, dims)`; its return is
- *   passed through unchanged.
+ * fit ratio wins, so the whole rect is visible. An empty scene gives
+ * {@link FALLBACK_FIT_VIEW}; a function `fit` is passed through unchanged.
  *
  * A rect with one zero axis (a line) is fitted along the other. One with no
  * positive axis falls back to identity scale centered on its top-left.
@@ -160,21 +141,11 @@ export function computeFitView<TData, TLayer extends string, TPose>(
 }
 
 /**
- * Build the visible-window indicator `DrawCommand` for the minimap.
- *
- * The main canvas's visible world rect is:
- * ```
- * worldX = mainView.x
- * worldY = mainView.y
- * worldW = mainViewDims.width  / mainView.scale.x
- * worldH = mainViewDims.height / mainView.scale.y
- * ```
- * That world rect is then transformed into the minimap's screen
- * coordinates through `minimapView`.
- *
- * The returned command is a dashed-stroke `path` rect with no fill. Pass the
- * `minimapView` it will be drawn through, so the stroke width and dash come
- * out in CSS px at any fit scale; without it they are in world units.
+ * Build the visible-window indicator `DrawCommand` for the minimap: the main
+ * canvas's visible world rect as a dashed-stroke `path` rect with no fill, in
+ * world coordinates. Pass the `minimapView` it will be drawn through, so the
+ * stroke width and dash come out in CSS px at any fit scale; without it they
+ * are in world units.
  */
 export function computeIndicatorCommand(
   mainView: View,
@@ -182,11 +153,9 @@ export function computeIndicatorCommand(
   style: IndicatorStyle = {},
   minimapView?: View,
 ): PathDrawCommand {
-  // World-space rect: returned as-is. The caller wraps the command list
-  // (scene + extras) in a group transformed by the minimap's view, so the
-  // indicator lands in screen coords automatically. Returning screen coords
-  // here would get the view transform applied a second time — a bug that
-  // manifested as the indicator drifting at non-identity minimap scale.
+  // World-space rect, returned as-is: the caller wraps the command list in a
+  // group transformed by the minimap's view, and screen coords here would get
+  // that transform applied a second time.
   const x = mainView.x;
   const y = mainView.y;
   const width = mainViewDims.width / mainView.scale.x;

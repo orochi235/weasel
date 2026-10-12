@@ -1,11 +1,7 @@
 /**
  * Running a layout against a scene: `LAYOUTS`, one batch of pose writes, and
- * the action that reaches both.
- *
- * The split is the point. A layout is a pure function of the graph and is
- * tested as one; `applyLayout` is the only thing that touches a scene, and it
- * writes every move inside a single `scene.batch`, so a re-layout is one undo
- * entry rather than one per node.
+ * the action that reaches both. A layout is a pure function of the graph;
+ * `applyLayout` is the only thing that touches a scene.
  */
 import {
   translatePoseViaDescriptor,
@@ -46,8 +42,7 @@ export interface ApplyLayoutOptions<TPose> {
  * descriptor knows how to move one.
  *
  * A participant that is a container takes its whole subtree along. `setPose`
- * does not cascade — poses are absolute — so a built body would otherwise walk
- * out from under its own label rows with every test green.
+ * does not cascade — poses are absolute.
  */
 export function applyLayout<TPose>(
   scene: Scene<unknown, string, TPose>,
@@ -70,10 +65,9 @@ export function applyLayout<TPose>(
  * The poses a layout result implies, without writing any of them: each moved
  * node translated to its new top-left, and its subtree translated with it.
  *
- * Split out because a *live* layout needs the same answer every frame and must
- * not write it — it publishes to the override channel and commits once. The
- * translation is measured from the node's document pose, which a run in flight
- * never changes, so a frame's answer does not depend on the frame before it.
+ * The translation is measured from the node's document pose, which a live run
+ * in flight never changes, so a frame's answer does not depend on the frame
+ * before it.
  */
 export function layoutPoses<TPose>(
   scene: Scene<unknown, string, TPose>,
@@ -132,10 +126,6 @@ export interface LayoutActionOptions<TPose> {
 
 /**
  * `diagram.layout` — rebuild the graph, run a layout, write the result.
- *
- * A factory rather than a singleton for the reason every other entry point in
- * this package is one: which nodes are in the diagram is the consumer's, and
- * this package has no scene at module scope.
  */
 export function createLayoutAction<TPose>(opts: LayoutActionOptions<TPose>): Action {
   const algorithm = typeof opts.algorithm === 'function'

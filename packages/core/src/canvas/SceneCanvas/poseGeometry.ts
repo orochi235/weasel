@@ -1,10 +1,7 @@
 /**
- * Pose-shape helpers shared by `<SceneCanvas>` internals.
- *
- * Every bounds read goes through a `PoseDescriptor`, defaulting to
- * `AUTO_POSE_DESCRIPTOR` (path descriptor for `{kind:'polygon'|'rect'}` poses,
- * rect descriptor for everything else). Used by hit-test, marquee and bounds
- * extraction, so a consumer-supplied descriptor reaches all three.
+ * Pose-shape helpers shared by `<SceneCanvas>` internals. Every bounds read goes through a
+ * `PoseDescriptor`, defaulting to `AUTO_POSE_DESCRIPTOR`, so a consumer-supplied descriptor
+ * reaches hit-test, marquee, and bounds extraction alike.
  */
 import type { Bounds } from 'tools/builtin/select';
 import { applyToPoint, pointInPath, strokeHitTest, type Mat3 } from '@weasel-js/geom';
@@ -22,9 +19,8 @@ export function aabbOfPose<TPose>(
   return descriptor.getBounds(pose);
 }
 
-/** Screen-px slop applied to the stroke-distance hit-test for paths. Catches
- *  fingertip-imprecision around thin lines / curves without depending on the
- *  stroke's actual rendered width (which the hit-test layer doesn't know). */
+/** Default slop for the stroke-distance hit-test on paths, in world units. Independent of
+ *  the stroke's rendered width, which the hit-test layer doesn't know. */
 const DEFAULT_PATH_STROKE_SLOP = 4;
 
 /** A containment slop: `reach` world units the caller knows the ink extends
@@ -38,8 +34,7 @@ export interface PoseSlop extends ScreenSlop {
  * @param tolerance - Grab slop. A number is **world** units and grows the
  *   AABB test and the path stroke-distance test alike; a {@link PoseSlop}
  *   is measured on screen, from `reach` world units out. Defaults to
- *   {@link DEFAULT_PATH_STROKE_SLOP} for path-like poses (the historical
- *   fixed slop) and to `0` for rect poses, whose edges were never fuzzy.
+ *   {@link DEFAULT_PATH_STROKE_SLOP} for path-like poses and to `0` for rect poses.
  */
 export function poseContains<TPose>(
   pose: TPose,
@@ -55,10 +50,9 @@ export function poseContains<TPose>(
  * Containment for `<SceneCanvas>`'s default `pickEvery`. When the pose has a
  * frame (`poseFrameOf`: a rotation, a `transform`, or both), takes the query
  * point back through it and tests in the pose's own box frame, mirroring the
- * renderer's wrap so the click target matches the drawn shape. This covers
- * rect-shaped poses and `kind:'rect'`/polygon poses that carry an AABB. A pose
- * with no frame tests directly, and one whose `transform` is singular draws
- * nothing and contains nothing.
+ * renderer's wrap so the click target matches the drawn shape. A pose with no
+ * frame tests directly, and one whose `transform` is singular draws nothing and
+ * contains nothing.
  *
  * Rotation comes from the descriptor when one is supplied, and otherwise from
  * `pose.rotation`, the convention the renderer reads. A `tolerance` is a
@@ -105,9 +99,7 @@ function containsInFrame<TPose>(
     : typeof tolerance === 'object' ? tolerance : undefined;
   const { opts } = slopForStrokeHit(screen, frame);
   if (pathLike) {
-    // Precise inside-filled-region OR within-stroke-slop. Replaces the old
-    // "AABB-conservative-fallback" path that returned true anywhere inside
-    // the path's bounding box (which over-picked on open / non-convex paths).
+    // Inside the filled region, or within stroke slop.
     if (pointInPath(pose, x, y)) return true;
     return strokeHitTest(pose, x, y, reach, opts);
   }

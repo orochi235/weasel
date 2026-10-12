@@ -7,23 +7,16 @@ export type { LayerGroup };
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-/**
- * Canvas size in CSS pixels — passed to `draw` for layers that anchor to
- * canvas edges (e.g. the debug overlay's layer-list panel). The GL backend
- * supplies it explicitly so layers don't have to know about DPR.
- */
+/** Canvas size in CSS pixels, so layers don't have to know about DPR. */
 export interface Dims {
   width: number;
   height: number;
 }
 
 /**
- * What a layer's `draw` threw, and which layer threw it.
- *
- * A `draw` runs on the frame loop, so a throw that escapes it surfaces as an
- * uncaught `requestAnimationFrame` error on the window and takes the whole
- * frame with it — every other layer included. One broken layer painting
- * nothing, named in the console, is the lesser wrong.
+ * What a layer's `draw` threw, and which layer threw it. A throw that escaped
+ * the frame loop would take the whole frame with it, every other layer
+ * included.
  */
 export interface LayerDrawFailure {
   layerId: string;
@@ -45,11 +38,6 @@ export type LayerCommandCache = Map<
   { deps: readonly unknown[]; cmds: DrawCommand[] }
 >;
 
-/**
- * A single named render sub-layer within a canvas renderer.
- *
- * @template TData - The data object passed to each draw call.
- */
 /** Something outside React whose changes a paint reads — a mode registry, a
  *  scoping lookup. A notification repaints the canvas; the listener takes no
  *  arguments and the returned function unsubscribes. */
@@ -58,9 +46,7 @@ export interface RedrawSource {
 }
 
 /** The `subscribe` for a layer that draws `sources`: it notifies whenever any
- *  of them does. A thunk is read when the subscription is made. Every layer
- *  that draws other layers declares this, so wrapping never silences what
- *  repaints a source. */
+ *  of them does. A thunk is read when the subscription is made. */
 export function subscribeToSources(
   sources: readonly { subscribe?: RedrawSource['subscribe'] }[]
     | (() => readonly { subscribe?: RedrawSource['subscribe'] }[]),
@@ -72,8 +58,12 @@ export function subscribeToSources(
   };
 }
 
-/** One layer of a canvas: `draw` turns `data` and the view into draw commands;
- *  the other fields control caching, visibility, coordinate space and hit-testing. */
+/**
+ * One layer of a canvas: `draw` turns `data` and the view into draw commands;
+ * the other fields control caching, visibility, coordinate space and hit-testing.
+ *
+ * @template TData - The data object passed to each draw call.
+ */
 export interface RenderLayer<TData> {
   /** Unique identifier used in visibility maps and ordering arrays. When a
    *  cache is in use, an id must identify the same logical layer across
@@ -82,17 +72,8 @@ export interface RenderLayer<TData> {
   /** Human-readable name for UI toggles. */
   label: string;
   /**
-   * Emit a DrawCommand tree for the GL backend to dispatch.
-   *
-   * For world-space layers (the default), emit commands in WORLD COORDS —
-   * `drawLayers` automatically wraps them in `{ kind: 'group', transform:
-   * viewToMat3(view), ... }` before handing them to the renderer. Do NOT
-   * apply the view transform yourself.
-   *
-   * For screen-space layers (`space: 'screen'`), emit commands in CSS-pixel
-   * coords directly; `drawLayers` passes them through unchanged. If part
-   * of a screen-space layer's output needs to track the view, wrap that
-   * subset manually with `viewToMat3(view)`.
+   * Emit a DrawCommand tree, in the coordinates `space` names. A world-space
+   * layer must NOT apply the view transform itself.
    */
   draw: (data: TData, view: View, dims: Dims) => DrawCommand[];
   /**
@@ -110,15 +91,10 @@ export interface RenderLayer<TData> {
    * `deps` if `draw` reads them.
    */
   deps?: (data: TData, view: View, dims: Dims) => readonly unknown[];
-  /**
-   * Whether the layer is shown when no explicit visibility entry exists.
-   * Defaults to `true` when absent.
-   */
+  /** Whether the layer is shown when no explicit visibility entry exists.
+   *  Defaults to `true` when absent. */
   defaultVisible?: boolean;
-  /**
-   * When true, the layer is always drawn regardless of the visibility map.
-   * Useful for layers that must never be hidden (e.g. base grid).
-   */
+  /** When true, the layer is always drawn regardless of the visibility map. */
   alwaysOn?: boolean;
   /**
    * Coordinate space the layer draws in.
@@ -135,38 +111,28 @@ export interface RenderLayer<TData> {
   /**
    * Where the layer learns that state `draw` reads, outside the scene and the
    * props, has changed. The canvas painting it subscribes while the layer is
-   * mounted and repaints on every notification, so a layer reading a mode
-   * registry needs no consumer code to follow a mode switch.
+   * mounted and repaints on every notification.
    */
   subscribe?: RedrawSource['subscribe'];
   /**
    * Full-screen passes run over this layer's own pixels before it joins the
-   * frame — a blur here blurs the world and leaves the HUD drawn above it
-   * sharp, which is the thing a CSS `filter` on the `<canvas>` cannot do.
-   *
-   * Costs nothing while empty: the renderer allocates no offscreen buffer
-   * until a layer actually declares one. See `GroupDrawCommand.effects` for
-   * what a pass may read, and {@link LayerGroup} to run one chain over
-   * several layers at once instead of one chain each.
+   * frame. See `GroupDrawCommand.effects` for what a pass may read, and
+   * {@link LayerGroup} to run one chain over several layers at once.
    */
   effects?: readonly Effect[];
   /**
    * Optional hit-test for **consumer-attached** layers.
    *
    * Only layers registered through `CanvasExtensionApi.registerLayer` are
-   * hit-tested: `hitTestExtras` walks them last-registered-first on
-   * pointerdown, and `<SceneCanvas>` folds the result into its `affordanceAt`
-   * thunk ahead of the kit's own selection chrome. First non-null result
-   * wins; null means "I don't claim this hit, try the next layer."
+   * hit-tested, last-registered-first, ahead of the kit's own selection
+   * chrome. First non-null result wins; null means "I don't claim this hit,
+   * try the next layer."
    *
    * Layers that reach the draw stack some other way — a `Tool.overlay`, an
    * entry in the `layers` map — are painted but never hit-tested, so defining
-   * `hitTest` on one has no effect. (The kit's own chrome doesn't need it: it
-   * goes through `buildAffordanceAt`.)
+   * `hitTest` on one has no effect.
    *
-   * Coordinates are world-space. The `data` arg is the layer's
-   * configured data slot (same as `draw`); `view` and `dims` mirror
-   * `draw`'s arguments.
+   * Coordinates are world-space.
    */
   hitTest?: (
     worldX: number,
@@ -180,11 +146,9 @@ export interface RenderLayer<TData> {
     isVisible?: (id: string) => boolean,
   ) => import('../../affordances/types').LayerHit | null;
   /**
-   * Called on every pointermove when no gesture is currently captured.
-   * Lets layers (e.g. HUD widgets) track hover state without participating
-   * in the drag pipeline. Coords are world-space; the layer is responsible
-   * for any further conversion (e.g. world→screen for screen-space layers)
-   * and for its own throttling.
+   * Called on every pointermove when no gesture is currently captured, so a
+   * layer can track hover state. Coords are world-space, and the layer does
+   * its own throttling.
    */
   onUncapturedMove?: (
     worldX: number,
@@ -193,10 +157,7 @@ export interface RenderLayer<TData> {
     view: View,
     dims: Dims,
   ) => void;
-  /**
-   * Called when the cursor leaves the canvas element. Lets layers clear
-   * any hover state they're holding.
-   */
+  /** Called when the cursor leaves the canvas element. */
   onUncapturedLeave?: () => void;
 }
 
@@ -218,24 +179,12 @@ function clockMs(): number {
  * Walk visible layers and concatenate their emitted DrawCommand arrays into
  * one flat list, ready to feed to `WeaselRenderer.render(commands)`.
  *
- * Visibility resolution order:
- *   1. `alwaysOn` — always drawn, ignores visibility map.
- *   2. Explicit entry in `visibility` map — overrides default.
- *   3. `layer.defaultVisible` — falls back to `true` when absent.
- *
- * Transform composition: world-space layers (the default; `space` unset or
- * `'world'`) have their commands wrapped in a `kind: 'group'` with
- * `viewToMat3(view)` before they reach the renderer. Screen-space layers
- * (`space: 'screen'`) pass through unchanged.
- *
  * A layer whose `draw` throws is dropped for the frame and reported through
  * `onLayerError` — the rest of the frame still paints.
  *
  * `groups` brackets runs of consecutive layers so they composite as one — see
- * `LayerGroup`. A layer named by no group is emitted exactly as it was before
- * groups existed, and a frame that declares none allocates nothing.
- *
- * `spans`, when passed, receives one {@link LayerDrawSpan} per layer drawn.
+ * `LayerGroup`. `spans`, when passed, receives one {@link LayerDrawSpan} per
+ * layer drawn.
  */
 export function drawLayers<TData>(
   layers: RenderLayer<TData>[],
@@ -283,9 +232,7 @@ export function drawLayers<TData>(
     const t0 = spans ? clockMs() : 0;
     const cmds = drawOneLayer(layer, data, v, dims, cache, onLayerError);
     const buildMs = spans ? clockMs() - t0 : 0;
-    // A layer that painted nothing neither joins a run nor breaks one. Letting
-    // it break one would split a group over a debug overlay that is switched
-    // on but currently empty.
+    // A layer that painted nothing neither joins a run nor breaks one.
     if (cmds.length === 0) {
       spans?.push({ id: layer.id, start: out.length, end: out.length, buildMs });
       continue;
@@ -337,9 +284,7 @@ export function isLayerVisible<TData>(
  *
  * **A listed `order` is the whole list**, so omission from it drops a layer
  * that `visibility` would have shown, and `alwaysOn` does not rescue it.
- * Hit-testing asks this, not `isLayerVisible`: a layer that is not painted
- * but still claims pointer events is a pointer landing on nothing the user
- * can see.
+ * Hit-testing asks this, not `isLayerVisible`.
  */
 export function isLayerPainted<TData>(
   layer: RenderLayer<TData>,
@@ -355,14 +300,11 @@ export function isLayerPainted<TData>(
  * world-space output wrapped in a `viewToMat3(view)` group, screen-space
  * output passed through.
  *
- * Anything rendering layers through a view — the canvas itself, a viewport
- * node's inner pass — goes through here. A second copy of this rule that
- * forgets the wrap draws world content at raw world coords, which looks
- * plausible at the identity view and wrong everywhere else.
+ * Anything rendering layers through a view goes through here.
  *
  * A `draw` that throws yields no commands, and `onLayerError` is told which
  * layer it was. The layer's cache entry goes with it, so the next frame is a
- * real re-attempt rather than a stale tree served under fresh deps.
+ * real re-attempt.
  */
 export function drawOneLayer<TData>(
   layer: RenderLayer<TData>,

@@ -3,24 +3,19 @@
  *
  * A layout is a pure function of the graph — no scene, no ops, no history. It
  * hands back the new top-left for every node that **moves**, and a node already
- * standing where the layout wants it is simply absent from the answer. That is
- * what makes re-running a layout free rather than destructive, and it is the
- * property the idempotence test asserts.
+ * standing where the layout wants it is absent from the answer.
  *
- * Three rules keep re-layout non-destructive, and all three live here rather
- * than in each algorithm:
+ * Three rules keep re-layout non-destructive:
  *
  *   - **No RNG anywhere.** Every tiebreak falls back to the graph's own node
- *     order, which is the source's order — render order, for a scene.
+ *     order.
  *   - **Within-rank order is seeded from where the nodes already are**, read
- *     off the cross axis, rather than from crossing-minimization. An author who
- *     dragged two boxes into an order gets that order back.
+ *     off the cross axis, rather than from crossing-minimization.
  *   - **A pin set nothing moves.** Pinned nodes are never in the result, and
  *     the rest of the layout is translated to sit around them.
  *
- * `layered` and `tree` are idempotent by construction: the second run reads the
- * order the first run produced and computes the same slots. `force` is an
- * iterative relaxation and makes no such claim — re-running it keeps relaxing.
+ * `layered` and `tree` are idempotent; `force` is an iterative relaxation and
+ * re-running it keeps relaxing.
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import type { Graph, GraphNode } from './graph';
@@ -115,18 +110,13 @@ export interface Slot {
 }
 
 /**
- * Turn canonical slots into the positions to write.
+ * Turn canonical slots into the positions to write: map the canonical frame
+ * onto the world axes, translate the whole layout so it lands where the graph
+ * already is, and drop everything that is pinned or that would not move.
  *
- * Three steps, in order: map the canonical frame onto the world axes the
- * direction names; translate the whole layout so it lands where the graph
- * already is; drop everything that is pinned or that would not move.
- *
- * The translation is what makes the layout non-destructive, and it is chosen so
- * that a second run lands on the same answer. With a pin, it is whatever keeps
- * the first pinned node exactly where it is. Without one, it is whatever puts
- * the layout's own bounding box where the graph's bounding box already starts —
- * which the first run then makes true, so the second run computes the same
- * translation and writes nothing.
+ * With a pin, the translation keeps the first pinned node exactly where it is.
+ * Without one, it puts the layout's bounding box where the graph's already
+ * starts, so a second run computes the same translation and writes nothing.
  */
 export function settle(
   graph: Graph,
@@ -156,10 +146,8 @@ export function settle(
  * each node.
  *
  * A layout that keeps groups together can move an outsider out of a group's
- * column, which changes the order the next run would start from. Its answer
- * has to be the arrangement a re-run keeps, so it re-runs here rather than
- * leaving the second pass to the caller. `passes` bounds an arrangement that
- * never comes to rest.
+ * column, which changes the order the next run would start from. `passes`
+ * bounds an arrangement that never comes to rest.
  */
 export function untilSettled(
   once: LayoutFn,
@@ -193,8 +181,7 @@ export function untilSettled(
 
 /**
  * {@link settle}'s second half, for a layout that already works in world
- * coordinates — `force` does, since the integrator moves points around rather
- * than filling slots.
+ * coordinates.
  */
 export function translated(
   graph: Graph,
@@ -246,9 +233,6 @@ function anchorDelta(
 /**
  * Lay a list of nodes out along the cross axis, in the order given, and hand
  * back each one's low corner plus the total span.
- *
- * Shared by `layered`'s ranks and `tree`'s sibling rows, which pack a row the
- * same way and differ only in what decides the order.
  */
 export function packAcross(
   nodes: readonly GraphNode[],

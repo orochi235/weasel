@@ -8,8 +8,8 @@
  * the same unit, so a run does not break per gradient. The atlas is
  * GL-context-bound; discard and recreate on context loss.
  *
- * Output convention §2: texels are stored as straight RGBA. The fragment
- * shader applies premultiplication before writing outColor.
+ * Texels are stored as straight RGBA. The fragment shader applies
+ * premultiplication before writing outColor.
  */
 
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
@@ -147,10 +147,8 @@ export class GradientRampAtlas {
   }
 
   /**
-   * Delete the atlas texture and forget every row in it. Called by
-   * `WeaselRenderer.dispose()`. The CPU mirror goes with it, so the atlas is
-   * unusable but refillable afterward (stats are left as-is; call
-   * `resetStats()` separately if desired).
+   * Delete the atlas texture and forget every row in it. The CPU mirror goes
+   * with it, so the atlas is refillable afterward. Stats are left as-is.
    */
   free(): void {
     if (this.texture) this.gl.deleteTexture(this.texture);

@@ -1,7 +1,6 @@
 /**
- * Pure matcher primitives live in `@weasel-js/gestures`. This file
- * re-exports them for kit-internal consumers and layers the actions-layer
- * binding-scope / matchBest logic on top.
+ * Re-exports the pure matcher primitives from `@weasel-js/gestures` and layers
+ * the actions-layer binding-scope / matchBest logic on top.
  */
 
 import { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, parseTargetSpec, specificity } from '@weasel-js/gestures';
@@ -14,10 +13,6 @@ import { isDev } from '../../devFlag';
 
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, specificity };
 export type { InputEvent, PhaseContext };
-
-// ---------------------------------------------------------------------------
-// BindingScope / ScopedBinding / MatchResult
-// ---------------------------------------------------------------------------
 
 /** Where a binding came from, which is also its priority: a held hotkey beats
  *  the active tool, which beats bindings that are always in scope. */
@@ -43,23 +38,14 @@ export interface MatchResult {
   ownerId: string | null;
 }
 
-// ---------------------------------------------------------------------------
-// matchBest / matchSorted
-// ---------------------------------------------------------------------------
-
 const SCOPE_PRIORITY: readonly BindingScope[] = ['hotkey', 'active', 'ambient'];
-
-// ---------------------------------------------------------------------------
-// Binding specificity
-// ---------------------------------------------------------------------------
 
 /**
  * True when a spec's target actually consults the affordance hit rather than
  * only the body classification. `kindOf` predicates are handed the hit;
  * `affordance:<k>` matches on its `kind`. The body-class strings (`'empty'`,
  * `'selected-body'`, `'unselected-body'`) and the `kind:` forms resolve from
- * `bodyTarget` / `bodyKind` and never see it — which is why chrome floating
- * over empty canvas used to read as empty canvas.
+ * `bodyTarget` / `bodyKind` and never see it.
  *
  * A predicate declares which it is with `readsAffordance`; one that declares
  * nothing, which only untyped code can write, counts as not reading the hit.
@@ -135,9 +121,8 @@ function reportDeadClaim(owner: string | undefined, warn: (message: string) => v
   );
 }
 
-/** Lexicographic compare for use as an Array.prototype.sort callback.
- *  Returns negative when `a` is MORE specific than `b` (so `a` sorts first
- *  in a descending sort), positive when less, zero when equal. */
+/** Sort callback: negative when `a` is MORE specific than `b`, so `a` sorts
+ *  first. */
 function compareSpecificity(a: GestureSpec, b: GestureSpec): number {
   const sa = specificity(a);
   const sb = specificity(b);
@@ -147,18 +132,7 @@ function compareSpecificity(a: GestureSpec, b: GestureSpec): number {
   return 0;
 }
 
-/**
- * Find the best-matching binding across all scopes.
- *
- * Precedence: hotkey > active > ambient.
- * Within a scope, more-specific bindings win; same-specificity bindings keep
- * registration order (see `matchSorted`).
- * Returns null when nothing matches.
- *
- * Note: this returns only the single best match. The dispatcher uses
- * `matchSorted` so it can fall through to lower-specificity matches when a
- * higher-specificity match's `enabled()` reports disabled.
- */
+/** The first of {@link matchSorted}'s matches, or null when nothing matches. */
 export function matchBest(
   e: InputEvent,
   bindings: readonly ScopedBinding[],
@@ -176,12 +150,7 @@ export function matchBest(
  *   - Scopes by priority: hotkey > active > ambient.
  *   - Within a scope, more-specific bindings beat less-specific (see
  *     `specificity()`).
- *   - Among same-specificity bindings, first-declared wins (stable sort
- *     preserves registration order — same tiebreaker as pre-specificity).
- *
- * Used by the dispatcher to implement specificity-ordered fall-through:
- * when the top match's `enabled()` returns a disabled reason (or the
- * action's `start()` returns an empty handle), the next match is tried.
+ *   - Among same-specificity bindings, first-declared wins.
  */
 export function matchSorted(
   e: InputEvent,
@@ -219,8 +188,7 @@ export function matchSortedWithBarred(
   const engaged = engagedChannels ?? EMPTY_ENGAGED;
   // An exclusive claim outranks the scope tier. Scope is the outermost sort
   // key below, so without this a vague active binding beats the claim owner's
-  // precise ambient one — the whole reason chrome got swallowed by whichever
-  // tool was active.
+  // precise ambient one.
   const exclusive = isExclusiveClaim(e);
   const admits = (sb: ScopedBinding): boolean =>
     !exclusive || targetConsultsAffordance(specTargetOf(sb.binding.spec));
@@ -247,8 +215,7 @@ export function matchSortedWithBarred(
     barred.push(...scopeBarred);
   }
   // Checked against the final result, not the pool: a binding can declare a
-  // `kindOf`/`affordance:` target and still fail to match this particular
-  // claim, which used to read as "handled" even though nothing fired.
+  // `kindOf`/`affordance:` target and still fail to match this particular claim.
   if (exclusive && out.length === 0 && bindings.length > 0) {
     reportDeadClaim(claimOf(e)?.owner, warn);
   }

@@ -15,12 +15,11 @@ type Params = Record<string, unknown> | undefined;
 export type PickParam = <T>(key: string) => T | undefined;
 
 /**
- * What distinguishes one paint action from the other three.
+ * What distinguishes one paint action from another.
  *
- * `TState` is the action's gesture state — a color plus an optional paint for
- * the two setters, a bare alpha for the two opacity actions. It is a reducer,
- * not a paint: `setFill` and `setStroke` supersede a paint with a later color,
- * which no per-field merge of the params can express.
+ * `TState` is the action's gesture state. It is a reducer, not a paint:
+ * `setFill` and `setStroke` supersede a paint with a later color, which no
+ * per-field merge of the params can express.
  */
 export interface PaintActionSpec<TState, TValue, K extends string> {
   id: string;
@@ -44,25 +43,17 @@ interface Scratch<TState, TValue, K extends string> {
   /** Data snapshot at gesture start, keyed by node id. */
   startData: Map<NodeId, PaintData<K, TValue>>;
   state: TState;
-  /** Preview data entries — the merged value per selected node. Populated on
-   *  start and refreshed on every onMove. */
+  /** Preview data entries — the merged value per selected node. */
   previews: Map<NodeId, PaintData<K, TValue>>;
-  /** Optional consumer commit hook captured at gesture start. When present,
-   *  the ops-based commit routes through it (consumer history) instead of
-   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+  /** Consumer commit hook captured at gesture start; undefined falls back to
+   *  `scene.applyBatch`. */
   applyOps?: (ops: Op[], label: string) => void;
 }
 
 /**
- * The one ongoing-action body the four paint actions share.
- *
- * On start it captures each selected node's data; on each onMove it refreshes
- * the preview without touching the scene; on commit it emits one
- * `createSetDataOp` per node (from = pre-commit data, to = the same data with
- * the merged value) and routes the batch through the consumer `applyOps` hook
- * when present (consumer history) else `scene.applyBatch` +
- * `defaultCommitAdapter` (whose `setData` delegates to `scene.update({ data })`).
- * Either path is a single batch → one undo entry.
+ * The ongoing-action body the paint actions share: it previews without
+ * touching the scene, and commits one batch (one undo entry) through the
+ * consumer `applyOps` hook when present, else `scene.applyBatch`.
  *
  * The `from` data is re-read at commit rather than reused from the start
  * snapshot, so a concurrent edit to a field this action does not own is not

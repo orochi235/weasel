@@ -1,26 +1,12 @@
 /**
- * Tessellated glyph *outlines' strokes*, in em space.
+ * Tessellated glyph *outlines' strokes*, in em space: the sibling of
+ * `outlineMeshCache`.
  *
- * The sibling of `outlineMeshCache`, and cached for the same reason: parsing
- * `d` and tessellating a ribbon costs far more than the per-instance
- * transform that follows, and em space is size- and position-independent, so
- * one tessellation serves every occurrence of that glyph.
- *
- * ### Why the width is in the key
- *
- * A fill mesh is the same triangles at every size. A stroke's is not — the
- * ribbon's width relative to the glyph decides the geometry, so the em-space
- * mesh depends on `strokeWidth / fontSize`. That ratio is a property of the
- * run's style, not of the frame, so it is stable across frames and makes a
- * perfectly good cache key; what it is *not* is free, so a document that
- * animates stroke width or font size will miss every frame. That is the same
- * bargain `tessellate` makes everywhere else, and it is the reason the width
- * is quantized before it reaches the key: neighbouring sub-quantum widths
- * would otherwise each get their own entry and evict each other.
- *
- * Joins, caps, miter limit, alignment and dash all change the ribbon too, so
- * they are in the key as well — assembled by the caller, which already has
- * the `Stroke` in hand.
+ * A stroke's em-space mesh depends on `strokeWidth / fontSize`, so the width is
+ * in the key, and a document that animates stroke width or font size will miss
+ * every frame. The width is quantized before it reaches the key: neighboring
+ * sub-quantum widths would otherwise each get their own entry and evict each
+ * other.
  */
 
 import { pathFromD } from '@weasel-js/geom';
@@ -30,16 +16,12 @@ import type { Stroke } from '@weasel-js/paint';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { OUTLINE_FLATTEN_TOLERANCE } from './outlineMeshCache';
 
-/** Cached ribbons before the cache is dropped wholesale. Matches the fill
- *  cache's cap: the working set is a charset times the handful of stroke
- *  widths a document actually uses. */
+/** Cached ribbons before the cache is dropped wholesale. */
 export const OUTLINE_STROKE_MESH_CACHE_LIMIT = 2048;
 
 /**
- * Em-width quantum. 1/1024 em is finer than any width a reader can
- * distinguish at the sizes this tier serves — a 0.001 em difference is a
- * fifth of a screen pixel on 200px text — and coarse enough that a slider
- * dragged across a range lands on a bounded set of keys.
+ * Em-width quantum: a 0.001 em difference is a fifth of a screen pixel on
+ * 200px text, and a slider dragged across a range lands on a bounded set of keys.
  */
 const WIDTH_QUANTUM = 1 / 1024;
 
@@ -52,15 +34,12 @@ export function quantizeEmWidth(emWidth: number): number {
 }
 
 /**
- * The em-space stroke tessellation of one glyph.
+ * The em-space stroke tessellation of one glyph, or `null` when the ribbon has
+ * no area — a zero or negative width, or a glyph whose path is empty (a space).
  *
- * `glyphKey` identifies the glyph (face identity plus codepoint, assembled by
- * `layoutRuns`); `emWidth` is the stroke width in em, already quantized, and
- * `stroke`'s dashes are in em too. Given a `metric`, the ribbon is built in its
- * space and both are lengths there. `d` is only read on a miss.
- *
- * Returns `null` when the ribbon has no area — a zero or negative width, or a
- * glyph whose path is empty (a space).
+ * `emWidth` is the stroke width in em, already quantized, and `stroke`'s dashes
+ * are in em too. Given a `metric`, the ribbon is built in its space and both
+ * are lengths there. `d` is only read on a miss.
  */
 export function outlineStrokeMesh(
   glyphKey: string,

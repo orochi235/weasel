@@ -1,27 +1,16 @@
 /**
  * `@weasel-js/diagram/layout` — the half of this package that is arithmetic.
  *
- * Measuring a box from its rows, ranking a graph, relaxing one under forces,
- * and finding the point on a box's perimeter where an edge should leave: none
- * of it touches a scene, a canvas or a component, and a server that renders a
- * diagram needs exactly this and must not need the rest. The barrel cannot
- * serve that — it reaches `live` (a React hook) and `connect` (an interaction),
- * so importing `@weasel-js/diagram` from Node pulls React in whether or not a
- * component is ever rendered.
+ * None of it touches a scene, a canvas, or a component, so a server that
+ * renders a diagram can import it without React. The barrel cannot serve that:
+ * it reaches `live` (a React hook) and `connect` (an interaction).
  *
  * **A `Graph` is an interface, not a class.** `buildGraph` reads one out of a
- * scene and is therefore absent here, but nothing requires it: a caller with
- * its own nodes and edges implements `nodes`, `edges`, `node`, `outgoing` and
- * `incoming` over whatever it already has, and every layout below accepts it.
+ * scene and is therefore absent here; a caller with its own nodes and edges
+ * implements `Graph` over whatever it already has.
  *
- * Absent for a reason, not by oversight:
- *
- * - **The routers** (`bezier`, `orthogonal`, `straight`) live in `edge`, which
- *   is where this package meets the scene registry — and they are typed in
- *   `Vec2`, so a consumer routing in three dimensions cannot call them anyway.
- * - **Anything that reads or writes a node's trait** (`trait`, `connect`,
- *   `contribution`, `portAffordance`, `portLayer`, `shape`, `label`), which is
- *   the scene half by definition.
+ * Also absent on purpose: the routers, which live in `edge` where this package
+ * meets the scene registry, and anything that reads or writes a node's trait.
  */
 
 export type {

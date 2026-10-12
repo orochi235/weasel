@@ -3,17 +3,14 @@
  *
  * Passes through every anchor and guarantees the curve never
  * overshoots `min(neighbors)` / `max(neighbors)` along either axis.
- * The right choice for animation timing curves (no anticipation) or
- * audio envelopes (no out-of-range values).
  *
  * Parameterized by index — works for both 1D (function-shaped) and
  * 2D (parametric) anchor sequences. The x and y coordinates are
  * interpolated independently as functions of the anchor index.
  *
  * Reference: Fritsch & Carlson 1980, "Monotone piecewise cubic
- * interpolation." Steffen's 1990 refinement is conceptually the same;
- * we use a min-clamp variant that's monotonicity-preserving by
- * construction.
+ * interpolation." We use a min-clamp variant that's
+ * monotonicity-preserving by construction.
  */
 
 import type { Point } from './catmullRom';
@@ -40,9 +37,8 @@ function tangents(ys: readonly number[]): number[] {
       // the curve to settle without overshoot).
       t[i] = 0;
     } else {
-      // Weighted average of adjacent secants (with dx_i = dx_{i-1} = 1,
-      // this is just the arithmetic mean). Clamped by Steffen's rule
-      // so the cubic stays monotone within each segment.
+      // Clamped by Steffen's rule so the cubic stays monotone within each
+      // segment.
       const avg = (m[i - 1] + m[i]) / 2;
       const mag = Math.min(Math.abs(m[i - 1]), Math.abs(m[i]), Math.abs(avg));
       t[i] = Math.sign(avg) * mag;

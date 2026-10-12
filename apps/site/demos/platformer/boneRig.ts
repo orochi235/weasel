@@ -1,4 +1,3 @@
-// apps/site/demos/platformer/boneRig.ts
 import { type RectPose } from '@weasel-js/core';
 import { mirrorPose, type Pose } from '@weasel-js/animator';
 import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from './skeleton';
@@ -6,13 +5,11 @@ import type { Vec2 } from './level';
 
 /**
  * The rig as scene-tree parenting: one local `RectPose` per bone, composed to
- * world by `RIGID_POSE_COMPOSITION` rather than by resolving every joint to a
- * matrix here.
+ * world by `RIGID_POSE_COMPOSITION`.
  *
  * A bone's box is its joint's frame slid half a bone along local +x, so a
- * child bone's local pose under its parent bone's frame is fixed by the
- * child joint's own offset and rotation — the parent's angle never appears,
- * because composition supplies it.
+ * child bone's local pose is fixed by the child joint's own offset and
+ * rotation — the parent's angle never appears, because composition supplies it.
  *
  * Facing left is `mirrorPose`: `RectPose` has no scale term to carry a
  * reflection, so the mirror goes into the joint data. A mirrored joint frame
@@ -32,11 +29,8 @@ function localOf(name: string, pose: Pose): { x: number; y: number; rotation: nu
 }
 
 /**
- * Local poses for every bone, keyed by joint name. `hip` is the rig root and
- * its pose is world; the other ten are local to their parent bone.
- *
- * `at` is the player's center and `facing` its 1 | -1 mirror, the same pair
- * the world-matrix placement took.
+ * Local poses for every bone, keyed by joint name. The rig root's pose is
+ * world; the others are local to their parent bone. `at` is the player's center.
  */
 export function boneLocalPoses(pose: Pose, at: Vec2, facing: 1 | -1): Map<string, RectPose> {
   const out = new Map<string, RectPose>();

@@ -8,18 +8,14 @@ import { cursorFor } from '@weasel-js/cursor';
 /** A single pointer sample captured during a freehand pencil stroke.
  *
  *  `pressure` / `tiltX` / `tiltY` come straight from the underlying
- *  `PointerEvent` and let downstream consumers modulate stroke width or
- *  opacity by stylus input. Mouse and ordinary touch report
- *  `pressure: 0.5` while a button is held, `0` otherwise (per the Pointer
- *  Events spec), so a consumer that wants stylus-only modulation should
- *  gate on `pointerType` from the originating event — the kit exposes
- *  `usePointerStylus()` for that.
+ *  `PointerEvent`. Mouse and ordinary touch report `pressure: 0.5` while a
+ *  button is held, `0` otherwise (per the Pointer Events spec), so a consumer
+ *  that wants stylus-only modulation should gate on `pointerType` — the kit
+ *  exposes `usePointerStylus()` for that.
  *
- *  The dispatcher accumulates these on the drag trail and hands the whole
- *  array to `insertAction`, which forwards it as the `pencil` insert
- *  extras' `samples`. A consumer that wants pressure-driven
- *  `Stroke.vertexWidths` reads it off the samples in its own `insert` dep
- *  (`useDepSource('insert', …)`) — see `apps/site/demos/StrokeAndFillDemo.tsx`.
+ *  The samples reach the `insert` dep as the `pencil` insert extras'
+ *  `samples`; a consumer that wants pressure-driven `Stroke.vertexWidths`
+ *  reads it off them in its own `insert` dep (`useDepSource('insert', …)`).
  */
 export interface PencilPoint {
   x: number;

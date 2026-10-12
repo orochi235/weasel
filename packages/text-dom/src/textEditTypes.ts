@@ -50,16 +50,10 @@ export interface TextEditScreenPose {
    * transform does the world→screen conversion.
    *
    * This is the only way run-level typography can be correct at a zoom other
-   * than 1. `runsToDom` emits run `fontSize` / `letterSpacing` in world units
-   * and `domToRuns` reads them straight back; threading a scale through the
-   * writer and its inverse through the reader would go lossy on fractional
-   * zooms. Scaling the whole overlay instead leaves that serializer pure and
-   * scales node-level and run-level values by the same factor for free.
-   *
-   * Omit it (the default, `1`) and the pose is plain screen pixels — the hook
-   * then infers the world→screen factor from `fontSize / style.fontSize` to
-   * scale node-level `letterSpacing`, and run-level overrides are left
-   * unscaled. Correct only at zoom 1.
+   * than 1. Omit it (the default, `1`) and the pose is plain screen pixels —
+   * the hook then infers the world→screen factor from
+   * `fontSize / style.fontSize` to scale node-level `letterSpacing`, and
+   * run-level overrides are left unscaled.
    */
   zoom?: number;
 }
@@ -141,8 +135,7 @@ export interface UseTextEditOptions {
    * commit calls both `setText` (with `runsToPlainText(runs)`) and
    * `setRuns(id, runs)` — but only when runs are actually in play: the node
    * already had some, or the edit produced styling. A plain-text edit of a
-   * plain-text node still calls `setText` alone, so a node that has never
-   * been styled doesn't grow a single-run `runs` array just for being edited.
+   * plain-text node still calls `setText` alone.
    */
   setRuns?: (id: string, runs: StyledRun[]) => void;
   /**
@@ -150,8 +143,7 @@ export interface UseTextEditOptions {
    * color popover, anything whose whole purpose is to style the text being
    * edited? Focus moving into one does not end the edit.
    *
-   * Without this, the controls the feature exists for are exactly what
-   * destroys it: clicking a size field blurs the overlay, blur commits, and
+   * Without this, clicking a size field blurs the overlay, blur commits, and
    * the caret the control was about to act on is gone. Toggle buttons can
    * dodge it by `preventDefault()`-ing their own mousedown, but a field the
    * user has to type into cannot.
@@ -169,9 +161,7 @@ export interface UseTextEditOptions {
    *
    * The overlay stands in for canvas text the host has hidden, so the wait
    * shows nothing at all; past it, the fallback shows and reflows to the real
-   * face when that lands. A face already loaded — the usual case, since
-   * `@weasel-js/font` builds it as soon as its bytes arrive — shows at once.
-   * `0` never waits.
+   * face when that lands. A face already loaded shows at once. `0` never waits.
    */
   fontHold?: number;
 }
@@ -185,10 +175,8 @@ export const TEXT_EDIT_FONT_HOLD = 100;
 
 /** Options for `useTextEdit().startEdit`. */
 export interface StartEditOptions {
-  /**
-   * Where to place the caret on edit start. Number = caret offset (0..text.length);
-   * `'all'` selects the whole text (default — preserves the prior behavior).
-   */
+  /** Where to place the caret on edit start. Number = caret offset (0..text.length);
+   *  `'all'` selects the whole text (default). */
   caret?: number | 'all';
 }
 
@@ -215,7 +203,7 @@ export interface UseTextEditReturn {
    * n" stay distinguishable — a styling written at a collapsed caret arms
    * {@link UseTextEditReturn.pendingStyle} instead of restyling a range.
    *
-   * Follows the DOM selection, which browsers (and jsdom) report from a task
+   * Follows the DOM selection, which browsers report from a task
    * rather than synchronously; anything this hook writes itself updates it
    * synchronously. A DOM selection that leaves the overlay does **not** clear
    * it: that is what happens when the user clicks a styling control, and
@@ -240,8 +228,7 @@ export interface UseTextEditReturn {
    * Styling armed at a collapsed caret, applied to the next character typed
    * and then dropped. `{}` when nothing is armed — which is always the case
    * while `selection` covers a real range, since a range is styled directly.
-   *
-   * Moving the caret abandons it, as in any other editor.
+   * Moving the caret abandons it.
    */
   pendingStyle: RunStylePatch;
   /**
@@ -265,10 +252,7 @@ export interface UseTextEditReturn {
    * re-selecting, and `rangeStyle` reflects the write before this returns.
    */
   applyStyleToSelection: (patch: RunStylePatch) => void;
-  /**
-   * Toggle one styling over `selection` — set it if the range doesn't
-   * uniformly carry it, clear it if it does. The shape a B / I / x² control
-   * or a keyboard shortcut wants, and what this hook's own shortcuts call.
-   */
+  /** Toggle one styling over `selection` — set it if the range doesn't
+   *  uniformly carry it, clear it if it does. */
   toggleStyle: (toggle: StyleToggle) => void;
 }

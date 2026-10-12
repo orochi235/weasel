@@ -7,20 +7,11 @@ import {
 type ModKey = keyof ModifierState;
 
 /**
- * Generic snap behavior factory: wraps a `SnapStrategy` and returns a
- * `MoveBehavior` whose `onMove` returns a uniform `GroupTransform`.
+ * Wraps a `SnapStrategy` as a `MoveBehavior`. The strategy snaps the first
+ * dragged node's proposed pose, and the delta that produces is applied to
+ * every dragged id.
  *
- * Implementation:
- *   1. Compute the primary's proposed pose by applying the gesture's
- *      `transform` (translate) to `origin.get(primaryId)`.
- *   2. Call `strategy.snap(proposed)`. If null, no-op.
- *   3. Derive the snapped delta via the `OriginProjection`:
- *        dx = origin(snapped).x - origin(originPose).x
- *      ...so the gesture applies the same delta to every dragged id.
- *
- * The pose-shape-aware delta extraction lives here — gestures stay pose-shape
- * agnostic. Default projection reads a rect's `{x, y}` or a Path's bounds
- * origin, the same default the snap strategies use.
+ * The default projection reads a rect's `{x, y}` or a Path's bounds origin.
  * Pass `origin` for exotic poses.
  */
 export function snap<TPose>(
@@ -33,9 +24,7 @@ export function snap<TPose>(
   return {
     onMove(ctx, transform) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
-      // The new contract: behaviors see a GroupTransform, not a pose. But
-      // strategies still operate on poses. Reconstruct the proposed pose
-      // by applying the (translate) transform to the primary's origin.
+      // Behaviors see a GroupTransform, but strategies operate on poses.
       if (transform.kind !== 'translate') return;
       const primaryId = ctx.draggedIds[0];
       if (primaryId === undefined) return;

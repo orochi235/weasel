@@ -2,14 +2,13 @@
  * World reads and local writes, paired, for the default actions.
  *
  * A container's pose defines a frame, so a node's stored pose is expressed in
- * its parent's. The geometry an action reasons about — a rotate pivot, an
- * alignment edge, a distribute span, a flip axis — is world; every pose it
+ * its parent's. The geometry an action reasons about is world; every pose it
  * writes back through `setPose` or a pose op is local. An action that reads
  * world and writes world looks right for one gesture and drifts on the next,
  * because the stored pose is then read in the parent's frame again.
  *
- * Under `IDENTITY_POSE_COMPOSITION`, the default, local and world are the same value and all of this is an
- * identity. `core/scene/frameFixture.ts` is the scene where they differ.
+ * Under `IDENTITY_POSE_COMPOSITION`, the default, local and world are the same
+ * value. `core/scene/frameFixture.ts` is the scene where they differ.
  */
 import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
