@@ -1286,11 +1286,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   enum's `radio` is segments in labkit and `menu` is a select; `font-family` and `font-weight` get
   "no control for" in labkit because `labField` gates on `isBuiltinPref` before `prefFieldProps` can
   answer; a stored value that is absent is the default in the form, unset in the panel, and `??
-  default` in labkit, where `null` also reads as absent. The icon lookup against `ICON_PATHS` is
-  written four times (`Prefs/prefField.tsx`, `Bar/renderBarLeaf.tsx`, `useLeafAction.tsx`,
-  `SelectionPanel/renderLeaf.tsx`). Home: a `surface` argument on `prefFieldProps` (`'form' |
-  'panel' | 'lab'`) carrying these defaults in one table. labkit's "radio means segments" and "a
-  slider needs bounds" are the two to decide on purpose.
+  default` in labkit, where `null` also reads as absent. Home: a `surface` argument on
+  `prefFieldProps` (`'form' | 'panel' | 'lab'`) carrying these defaults in one table. labkit's
+  "radio means segments" and "a slider needs bounds" are the two to decide on purpose.
 
 - **(P3) When an edit is written differs by params surface, with no one place saying so.** A typed
   number writes on blur, Enter, or step in `PrefsForm` and `SelectionPanel`, and on every keystroke
