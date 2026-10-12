@@ -99,6 +99,7 @@ function buildGestureContext(
   scene: Scene<unknown, string, unknown>,
   origins: ReadonlyMap<NodeId, TurnOrigin>,
   readers: GestureReaders,
+  selectionMethods: SelectionApi['adapterMethods'],
 ): GestureContext<unknown> {
   return {
     draggedIds: [...origins.keys()] as string[],
@@ -109,7 +110,7 @@ function buildGestureContext(
     pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
     view: readers.view(),
     plane: readers.plane(),
-    adapter: moveGestureAdapter(scene) as unknown as GestureContext<unknown>['adapter'],
+    adapter: moveGestureAdapter(scene, undefined, selectionMethods) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };
 }
@@ -142,7 +143,7 @@ export function beginRotate(
   const union = unionAABB(visual)!;
   const pivot = { x: union.x + union.width / 2, y: union.y + union.height / 2 };
   const readers = gestureReaders(ctx.deps);
-  const gestureCtx = buildGestureContext(ctx, scene, origins, readers);
+  const gestureCtx = buildGestureContext(ctx, scene, origins, readers, selection.adapterMethods);
   for (const b of behaviors) b.onStart?.(gestureCtx);
 
   const session: RotateSession = {

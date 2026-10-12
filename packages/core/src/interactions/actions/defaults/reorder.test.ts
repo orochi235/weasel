@@ -121,8 +121,8 @@ describe('reorderForwardAction (descriptor)', () => {
       { distance: 'adjacent' },
     );
 
-    // One batch entry (the applyBatch fallback wraps the op in a single batch).
-    expect(scene.batch).toHaveBeenCalledOnce();
+    // One history entry: the op lands through a single applyBatch.
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
     // After bringForward(['a','b','c'], ['b']) → ['a','c','b']. Re-stamping
     // 'c' to index 1 shifts 'b' to index 2 in the live order, so only the
     // single changed slot fires (realistic in-place reorder semantics).
@@ -140,7 +140,7 @@ describe('reorderForwardAction (descriptor)', () => {
       { distance: 'extreme' },
     );
 
-    expect(scene.batch).toHaveBeenCalledOnce();
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
     // bringToFront(['a','b','c'], ['b']) → ['a','c','b'] — same result for a
     // single item; only the one changed slot re-stamps under live order.
     expect(scene.reorder).toHaveBeenCalledWith(asNodeId('c'), 1);
@@ -156,7 +156,7 @@ describe('reorderForwardAction (descriptor)', () => {
       undefined,
     );
 
-    expect(scene.batch).toHaveBeenCalledOnce();
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
   });
 
   it('invoker.run is a no-op on empty selection', () => {
@@ -241,7 +241,7 @@ describe('reorderBackwardAction (descriptor)', () => {
       { distance: 'adjacent' },
     );
 
-    expect(scene.batch).toHaveBeenCalledOnce();
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
     // sendBackward(['a','b','c'], ['b']) → ['b','a','c']. Moving 'b' to index 0
     // shifts 'a' to index 1 in the live order, so only the one slot fires.
     expect(scene.reorder).toHaveBeenCalledWith(asNodeId('b'), 0);
@@ -258,7 +258,7 @@ describe('reorderBackwardAction (descriptor)', () => {
       { distance: 'extreme' },
     );
 
-    expect(scene.batch).toHaveBeenCalledOnce();
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
     expect(scene.reorder).toHaveBeenCalledWith(asNodeId('b'), 0);
   });
 
@@ -271,7 +271,7 @@ describe('reorderBackwardAction (descriptor)', () => {
       undefined,
     );
 
-    expect(scene.batch).toHaveBeenCalledOnce();
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
   });
 
   it('invoker.run is a no-op on empty selection', () => {
@@ -360,7 +360,6 @@ describe('reorder commit routing', () => {
     expect(scene.applyBatchLog[0].ops).toHaveLength(1);
     // Scene reflects the mutation: the op's setChildOrder re-stamped the one
     // changed slot via scene.reorder (live order shifts 'b' to 2 implicitly).
-    expect(scene.batch).toHaveBeenCalledOnce();
     expect(scene.reorder).toHaveBeenCalledWith(asNodeId('c'), 1);
     expect(scene.reorder).toHaveBeenCalledTimes(1);
   });

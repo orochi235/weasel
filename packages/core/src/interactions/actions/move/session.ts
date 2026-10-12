@@ -114,7 +114,7 @@ export function beginMove(
 
   const reflow = layout?.reflow ?? null;
   const { startPoses, cascadeIds, caught } = captureStartPoses(scene, ids, reflow, projection);
-  const { carried, frames } = captureFrames(scene, startPoses, pc);
+  const { carried, frames } = captureFrames(scene, ids, startPoses, pc);
 
   // Everything a move does beyond translating is a behavior: the binding's
   // own, then the layout drop, then reparent-on-drop. On release the first to
@@ -131,7 +131,7 @@ export function beginMove(
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
-    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops));
+    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops), selection.adapterMethods);
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);

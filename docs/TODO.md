@@ -169,13 +169,6 @@ Priority tags:
   them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
   from `PointerState`, or carry the client point through `InvocationCtx`.
 
-- **(P3) The move action decides which ids a moving frame carries in its own walk.**
-  `captureStartPoses` and `captureFrames` (`actions/move/capture.ts`) collect the dragged roots and
-  their descendants, then mark the ones stored in the frame of another moving node as `carried`.
-  `translateTargets` (`actions/selectionSubtree.ts`) makes the same decision for nudge and clone.
-  Move still needs the full descendant list for its previews, so the fold is `carried` derived from
-  `translateTargets`, not the walk replaced by it.
-
 - **(P3) `useDragHandle`: a drag canceled while the button is still down, then released over its
   source row, delivers a click to the row.** The click guard is removed on cancel so it cannot eat a
   later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
@@ -688,27 +681,16 @@ Core five + Crop shipped. Remaining:
   the call for a copy made inside the same scene, where the originals are still there to follow, is
   whether it does the same, keeps the list, or re-points the ids it can.
 
-- **(P2) Container-pose cascade: a batch that poses a container and its descendants does not undo.**
-  Through `sceneToAdapter(scene, { cascadeContainerPose: true })` (what `<SceneCanvas>` uses without
-  a composing strategy), `adapter.applyOps([move(A), move(B), move(C)], 'Move')` with B inside A and
-  C inside B applies correctly, but `scene.undo()` runs the inverses in reverse and each container's
-  inverse cascades again: with A, B, and C at x = 0, 100, and 200 moved by 5, undo leaves them at 0,
-  95, and 190 (measured). The kit's own move action builds this shape of batch (roots plus
-  `cascadeIds`) but commits through `moveGestureAdapter`, which does not cascade, so only a consumer
-  routing `applyOps` to the canvas adapter hits it. Belongs with "Container-pose cascade as a
-  scene-primitive semantic": a cascade inside `setPose` cannot know what else the batch poses.
-
-- **(P3) Scene adapters: three implementations of the same scene-backed mutators.**
-  `canvas/sceneAdapter.ts`, `interactions/actions/defaultCommitAdapter.ts`, and
-  `interactions/actions/move/gestureAdapter.ts` each restate `insertNode`, `setParent`,
-  `getChildren`, and `setChildOrder` over a `Scene`, and have drifted: `getPose` is `effectivePose`
-  in one and `documentPose` in two, `getNodes` filters hidden layers in one, `setChildOrder` opens a
-  `scene.batch` in two, and only one cascades container poses. `rotateAction` hands behaviors the
-  gesture adapter and commits their ops through the default one, while `moveAction` uses the gesture
-  adapter for both, so a behavior's delete op captures its removal closure under rotate and not
-  under move. The copies exist to avoid an
-  `interactions → canvas → interactions` import cycle; moving the mutators into `core/scene`, below
-  both, removes the reason.
+- **(P2) Container-pose cascade: a restored history still undoes a mixed batch wrong.**
+  `sceneToAdapter(scene, { cascadeContainerPose: true }).applyOps(ops, label)` records the poses
+  each op changes, and the op's inverse restores them (`canvas/cascadeRecord.ts`), so a batch that
+  poses a container and its descendants undoes and redoes in a live session. Two paths never pass
+  through that record and still work the cascade out a second time on the way back: a history
+  restored with `restoreHistory`, whose rebuilt ops replay through the `setHistoryAdapter` adapter
+  (measured: A, B, and C at x = 0, 100, and 200 moved by 5, then restored and undone, land at 0,
+  95, and 190), and ops handed straight to `scene.applyBatch` with the cascading adapter. Neither
+  has a fix at the adapter, which sees pose writes and no op boundaries; both go with the cascade
+  itself under "Container-pose cascade as a scene-primitive semantic".
 
 ### Derived geometry follow-ups
 
@@ -969,13 +951,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
-
-- **(P3) Reparent-on-drop may misplace a node grabbed mid-glide.** Read, not reproduced. The
-  layout release and exit commits measure a dragged node from where it was shown at the grab
-  (`grabbedPoseAdapter`), and the translate commit adds the grab offset (`caught`); the
-  reparent-on-drop commit composes the node's document pose and uses neither. A node caught while
-  a reflow transition is still gliding it, then dropped with `reparentOnDrop` on, would land off by
-  that offset. Write the test first; if it passes there is nothing here.
 
 - **(P3) A consumer's behavior cannot do frame math.** `GestureContext` carries no pose
   composition and no per-layer plane map, so `ctx.current` is a stored pose shifted by a plane

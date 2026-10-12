@@ -1,7 +1,7 @@
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { effectivePose } from 'core/scene/effectivePose';
-import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
+import type { NodeId, Scene } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
 import {
   composeWorldPose,
@@ -12,6 +12,8 @@ import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
 import { invertPlane, planeOf } from '../planeInput';
+import { scenePoseFrame } from '../poseFrame';
+import { translateTargets } from '../selectionSubtree';
 import type { MoveGestureAdapter } from './gestureAdapter';
 import { catchGliding } from './layout/glide';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
@@ -66,25 +68,26 @@ export function captureStartPoses(
 /** Which ids ride a moving frame, and the world poses of the rest that sit under one. */
 export function captureFrames(
   scene: Scene<unknown, string, unknown>,
+  ids: readonly NodeId[],
   startPoses: ReadonlyMap<NodeId, unknown>,
   pc: PoseComposition<unknown>,
 ): { carried: Set<NodeId>; frames: Map<NodeId, { world: unknown; frameWorld: unknown }> } {
   const carried = new Set<NodeId>();
   const frames = new Map<NodeId, { world: unknown; frameWorld: unknown }>();
-  if (pc.closure !== 'identity') {
-    const poseAdapter = scenePoseAdapter(scene);
-    for (const id of startPoses.keys()) {
-      const frame = frameAtOrAbove(poseAdapter, scene.get(id)?.parent ?? null);
-      if (frame === null) continue;
-      if (startPoses.has(asNodeId(frame))) {
-        carried.add(id);
-        continue;
-      }
-      frames.set(id, {
-        world: composeWorldPose(poseAdapter, id as string, pc.compose),
-        frameWorld: composeWorldPose(poseAdapter, frame, pc.compose),
-      });
+  if (pc.closure === 'identity') return { carried, frames };
+  const written = new Set(translateTargets(scene, scenePoseFrame(scene, pc), ids));
+  const poseAdapter = scenePoseAdapter(scene);
+  for (const id of startPoses.keys()) {
+    if (!written.has(id)) {
+      carried.add(id);
+      continue;
     }
+    const frame = frameAtOrAbove(poseAdapter, scene.get(id)?.parent ?? null);
+    if (frame === null) continue;
+    frames.set(id, {
+      world: composeWorldPose(poseAdapter, id as string, pc.compose),
+      frameWorld: composeWorldPose(poseAdapter, frame, pc.compose),
+    });
   }
   return { carried, frames };
 }

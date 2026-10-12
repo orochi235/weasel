@@ -68,8 +68,7 @@
     "lines": 422
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "lines": 454,
-    "longestFunction": 275
+    "longestFunction": 188
   },
   "packages/core/src/canvas/useViewHelpers.ts": {
     "longestFunction": 154
