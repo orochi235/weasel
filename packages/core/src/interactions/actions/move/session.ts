@@ -136,7 +136,7 @@ export function beginMove(
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
-    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops));
+    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops), selection.adapterMethods);
   const readers: MoveReaders = { view: gestureViewReader(ctx.deps), plane: gesturePlaneReader(ctx.deps) };
   const gestureCtx = buildGestureContext(ctx, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);

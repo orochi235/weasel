@@ -30,8 +30,7 @@ import type { LayoutStrategy } from '../layout/types';
 import type { Op } from 'core/ops/types';
 import type { Node, Scene } from 'core/scene/types';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
-import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
-import { pickability } from 'core/scene/pickability';
+import { sceneMutators } from 'core/scene/sceneMutators';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
 import { hitTestArea, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
@@ -104,6 +103,8 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       setData(id: string, data: TData): void;
       /** Swap a container's layout — what a `setLayout` op writes through. */
       setLayout(id: string, layout: LayoutStrategy<TPose> | string | null): void;
+      /** Move a node to another layer — what a `setLayer` op writes through. */
+      setLayer(id: string, layer: TLayer): void;
       getRemovalClosure(ids: readonly string[]): string[];
       applyOps(ops: Op[], label?: string): void;
       snapshotSelection(ids: string[]): ClipboardSnapshot;
@@ -207,9 +208,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   };
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
-    getNode(id) {
-      return scene.get(asNodeId(id));
-    },
+    ...sceneMutators(scene),
+    // What is shown, where the mutators' other users read the document:
+    // visible layers only, and the effective pose.
     getNodes() {
       const visible = visibleLayers();
       const out: Node<TData, TLayer, TPose>[] = [];
@@ -223,10 +224,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const n = scene.get(nid);
       if (!n) throw new Error(`sceneToAdapter: unknown node "${id}"`);
       return effectivePose(scene, n);
-    },
-    getParent(id) {
-      const n = scene.get(asNodeId(id));
-      return n?.parent ?? null;
     },
     definesFrame(id) {
       const n = scene.get(asNodeId(id));
@@ -276,32 +273,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const cascade = containerCascade(scene, asNodeId(id), d, (pose) => adapter.setPose(id, pose));
       return scenePoseTarget(scene, id, descriptor ?? d, cascade);
     },
-    setParent(id, parentId) {
-      scene.move(asNodeId(id), parentId === null ? null : asNodeId(parentId));
-    },
-    getChildren(id) {
-      // Reorder ops call this with parentId === null to mean "root siblings."
-      // The kit's existing callers always pass a string, so this widening is
-      // additive — falls through to scene.childrenOf for the typed path and
-      // returns scene.roots for the null path.
-      if (id === null) return [...scene.roots];
-      return [...scene.childrenOf(asNodeId(id))];
-    },
-    setChildOrder(parentId, ids) {
-      // Batched reorder: each scene.reorder call is its own kit:move log
-      // entry, but scene.batch wraps them into one undo unit + one notify.
-      scene.batch('Reorder', () => {
-        for (let i = 0; i < ids.length; i++) {
-          // Skip ids that are already in the target slot to avoid useless
-          // log entries.
-          const current = parentId === null
-            ? scene.roots
-            : scene.childrenOf(asNodeId(parentId));
-          if (current[i] === ids[i]) continue;
-          scene.reorder(asNodeId(ids[i]), i);
-        }
-      });
-    },
     getLayers() {
       return scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax }));
     },
@@ -324,38 +295,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       } else {
         applyOpsTo(this, ops);
       }
-    },
-    // Node-mutation surface used by kit InsertOps / DeleteOps (e.g.
-    // useNest wrapping the selection in a new container node, or its
-    // inverse). Re-adds via the full structural spec so the round-trip
-    // survives undo/redo; removes by id.
-    insertNode(node: Node<TData, TLayer, TPose>, index?: number) {
-      scene.add({
-        kind: node.kind,
-        layer: node.layer,
-        pose: node.pose,
-        data: node.data,
-        id: node.id,
-        ...(index !== undefined ? { index } : {}),
-        ...(node.parent !== null ? { parent: node.parent } : {}),
-        // Derivation travels with the node, or undo of a delete brings an
-        // edge back as a static path that never follows its endpoints again.
-        ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
-        ...pickability(node),
-        ...fnFieldsOfNode(node),
-      });
-    },
-    removeNode(id: string) {
-      scene.remove(asNodeId(id));
-    },
-    setData(id: string, data: TData) {
-      scene.update(asNodeId(id), { data });
-    },
-    setLayout(id: string, layout: LayoutStrategy<TPose> | string | null) {
-      scene.setLayout(asNodeId(id), layout);
-    },
-    getRemovalClosure(ids: readonly string[]): string[] {
-      return [...scene.removalClosure(ids.map(asNodeId))];
     },
     // AreaSelectAdapter surface — included unconditionally so plain
     // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the

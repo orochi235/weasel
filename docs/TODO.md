@@ -691,18 +691,6 @@ Core five + Crop shipped. Remaining:
   routing `applyOps` to the canvas adapter hits it. Belongs with "Container-pose cascade as a
   scene-primitive semantic": a cascade inside `setPose` cannot know what else the batch poses.
 
-- **(P3) Scene adapters: three implementations of the same scene-backed mutators.**
-  `canvas/sceneAdapter.ts`, `interactions/actions/defaultCommitAdapter.ts`, and
-  `interactions/actions/move/gestureAdapter.ts` each restate `insertNode`, `setParent`,
-  `getChildren`, and `setChildOrder` over a `Scene`, and have drifted: `getPose` is `effectivePose`
-  in one and `documentPose` in two, `getNodes` filters hidden layers in one, `setChildOrder` opens a
-  `scene.batch` in two, and only one cascades container poses. `rotateAction` hands behaviors the
-  gesture adapter and commits their ops through the default one, while `moveAction` uses the gesture
-  adapter for both, so a behavior's delete op captures its removal closure under rotate and not
-  under move. The copies exist to avoid an
-  `interactions → canvas → interactions` import cycle; moving the mutators into `core/scene`, below
-  both, removes the reason.
-
 ### Derived geometry follow-ups
 
 Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` /

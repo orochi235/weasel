@@ -216,7 +216,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
           pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
           view: readView(),
           plane: readPlane(),
-          adapter: moveGestureAdapter(scene) as unknown as GestureContext<unknown>['adapter'],
+          adapter: moveGestureAdapter(scene, undefined, selection.adapterMethods) as unknown as GestureContext<unknown>['adapter'],
           scratch: {},
         },
       };
