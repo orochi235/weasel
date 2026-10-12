@@ -1672,14 +1672,6 @@ only story runner in the repo.
   declaration, not a pointer. Type references do cross: core's pages link into the sibling's.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
-- **(P2) draw: the swatches' active fill and stroke never reach a newly drawn shape.** With nothing
-  selected, pick red in the fill swatch and drag out a rectangle: it takes the kit's next palette
-  color, and `INITIAL_FILL_COLOR` in `apps/draw/src/App.tsx` reaches no shape either. The seam is
-  there: `<SceneCanvas insertPaint>` takes `(kind, seq) => { fill?, stroke? }` and the kit keeps the
-  geometry. Draw has to feed it from `useColorContext()`, mapping `{ kind: 'none' }` to `null`, and
-  that needs two answers the color context does not hold: the width of a new stroke (the kit's
-  line and pencil use 2), and whether a line or a pencil trail takes the active fill.
-
 - **(P2) draw: Open adds the file to the current document instead of replacing it, and keeps the old
   filename.** Open an SVG into a non-empty document and both sets of shapes are on the page; the
   undo entry is labeled "Import SVG" while the button says "Open". The filename stays the previous

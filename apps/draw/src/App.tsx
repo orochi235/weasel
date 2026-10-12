@@ -103,6 +103,7 @@ import { Toolbar } from './Toolbar';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import './app.css';
 import { DRAW_POSE_COMPOSITION, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { activeInsertPaint } from './insertPaint';
 import { reportPasteOmissions } from './pasteOmissions';
 import { HISTORY_KEY, loadHistory, loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
@@ -429,6 +430,7 @@ function EditorWithSharedScene({
   const hudTool = useHudContribution();
   const colorsRef = useLatest(colors);
   const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
+  const insertPaint = useMemo(() => activeInsertPaint(() => colorsRef.current), [colorsRef]);
   const appCommands: AppCommands = {
     gridVisible,
     toggleGrid: () => setGridVisible(!gridVisible),
@@ -628,6 +630,7 @@ function EditorWithSharedScene({
             defaultTools={BUILTIN_TOOL_IDS}
             tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
             ingestion={DRAW_INGESTION}
+            insertPaint={insertPaint}
             // Pick on the drawn shape, not the bounding box. In a drawing app
             // the pose rect is an implementation detail: clicking the blank
             // right half of a text box, or the notch of a star, should reach
