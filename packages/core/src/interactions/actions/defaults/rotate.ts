@@ -30,8 +30,7 @@ import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/scr
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
-import type { Scene, NodeId } from 'core/scene/types';
-import { syncPreviewOverrides } from '../previewOverrides';
+import type { Scene, NodeId, PoseHold } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -104,7 +103,7 @@ interface RotateScratch {
   useUnionPivot: boolean;
   /** In-flight preview poses keyed by node id. */
   previews: Map<NodeId, unknown>;
-  overrideEntries: Map<NodeId, { pose: unknown }>;
+  hold: PoseHold<unknown>;
   /** Optional consumer commit hook captured at gesture start. When present,
    *  ops-based commits route through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
@@ -204,7 +203,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         currentDelta: 0,
         useUnionPivot: ids.length > 1 && params?.['pivot'] !== 'each',
         previews: new Map<NodeId, unknown>(),
-        overrideEntries: new Map<NodeId, { pose: unknown }>(),
+        hold: scene.overrides.hold(),
         applyOps,
         lifecycle: readGestureLifecycle(params, 'Rotate', behaviors),
         behaviors,
@@ -314,7 +313,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
             scratch.previews.set(id, scratch.frame.local(id, carryPose(scratch.descriptorOf(id), turned, own)));
           }
         }
-        syncPreviewOverrides(scratch);
+        scratch.hold.set(scratch.previews);
       };
 
       for (const b of behaviors) b.onStart?.(scratch.gestureCtx);
@@ -337,7 +336,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
             if (reason === 'commit') committed = commitRotate();
             else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
           } finally {
-            closeGesture({ publish: scratch, behaviors: scratch.behaviors, ctx: scratch.gestureCtx, lifecycle }, committed);
+            closeGesture({ hold: scratch.hold, previews: scratch.previews, behaviors: scratch.behaviors, ctx: scratch.gestureCtx, lifecycle }, committed);
           }
         },
         previewIds: () => scratch.previews.keys(),

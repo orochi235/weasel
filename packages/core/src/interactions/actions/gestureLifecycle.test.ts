@@ -119,7 +119,8 @@ describe('closeGesture', () => {
     const lifecycle = readGestureLifecycle({ onGestureEnd }, 'Test');
     lifecycle.start([]);
     return {
-      publish: { scene: scene as never, previews: new Map(), overrideEntries: new Map() },
+      hold: scene.overrides.hold(),
+      previews: new Map(),
       behaviors: [{ onSettled }],
       ctx: 'ctx',
       lifecycle,

@@ -40,8 +40,7 @@
 import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { Scene, NodeId } from 'core/scene/types';
-import { syncPreviewOverrides } from '../previewOverrides';
+import type { Scene, NodeId, PoseHold } from 'core/scene/types';
 import type {
   GestureContext,
   ModifierState,
@@ -285,7 +284,7 @@ interface ResizeScratch {
   fixedWorld: { x: number; y: number };
   /** In-flight preview poses buffered during drag. */
   previews: Map<NodeId, unknown>;
-  overrideEntries: Map<NodeId, { pose: unknown }>;
+  hold: PoseHold<unknown>;
   geometryOf: (id: NodeId) => PoseDescriptor<unknown>;
   behaviors: BoundsConstraint<Bounds>[];
   pointSnap: PointSnapBehavior<Bounds>[];
@@ -449,7 +448,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
         originRotation,
         fixedWorld,
         previews: new Map<NodeId, unknown>(),
-        overrideEntries: new Map<NodeId, { pose: unknown }>(),
+        hold: scene.overrides.hold(),
         geometryOf,
         behaviors,
         pointSnap,
@@ -604,7 +603,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
             const id = scratch.writeIds[0];
             const g = scratch.geometryOf(id);
             let proposedPose = computePose(id);
-            if (proposedPose === undefined) { syncPreviewOverrides(scratch); return; }
+            if (proposedPose === undefined) { scratch.hold.set(scratch.previews); return; }
 
             if (scratch.originRotation !== 0) {
               const newCenterX = proposedBounds.x + proposedBounds.width / 2;
@@ -660,7 +659,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
             }
           }
 
-          syncPreviewOverrides(scratch);
+          scratch.hold.set(scratch.previews);
         },
 
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -669,7 +668,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
             if (reason === 'commit') committed = commitResize();
             else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx as unknown as GestureContext<Bounds>);
           } finally {
-            closeGesture({ publish: scratch, behaviors: scratch.behaviors, ctx: ctxAsRect, lifecycle }, committed);
+            closeGesture({ hold: scratch.hold, previews: scratch.previews, behaviors: scratch.behaviors, ctx: ctxAsRect, lifecycle }, committed);
           }
         },
         previewIds: () => scratch.previews.keys(),

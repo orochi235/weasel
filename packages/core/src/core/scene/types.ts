@@ -4,6 +4,9 @@ import type { ParallaxOpts } from '../viewport/parallax';
 import type { ContainerBounds, LayoutStrategy } from '../../layout/types';
 import type { PoseComposition } from './composeFrame';
 import type { PoseLinear } from '@weasel-js/geom';
+import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
+
+export type { PoseHold, PoseOverride, PoseOverrides };
 
 /**
  * Axis-aligned rectangle pose with optional rotation. The canonical pose
@@ -466,62 +469,6 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
    *  loop, a simulation — and nothing in the host's DOM derives from it.
    *  Read by `useScene`; `createScene` ignores it. */
   subscribe?: boolean;
-}
-
-/**
- * One node's ephemeral presentation override — what a frame loop wants to say
- * about a node without saying it about the document.
- *
- * Not document content: never recorded in history, never in `toJSON`, and
- * writing one does not bump `Scene.getVersion()`. Hoist one entry per node and
- * mutate it in place on a frame loop; `PoseOverrides.commit()` is what makes a
- * mutation visible.
- */
-export interface PoseOverride<TPose> {
-  /** Replaces the node's document pose everywhere the render and hit-test
-   *  paths read one, including the clip a container derives from its pose, and
-   *  winning over a `derivePose`. Resolved by `effectivePose` — reading
-   *  `node.pose` directly is how those paths came to disagree about where a
-   *  node is. */
-  pose?: TPose;
-  /** Multiplied into the node's painted alpha, on top of any `alphaFor`. */
-  alpha?: number;
-}
-
-/**
- * The scene's ephemeral per-node overrides — see {@link PoseOverride}.
- *
- * The intended shape of a frame is: `set` each node once, mutate the entries
- * in place per frame, `commit()` once. `commit` is not optional bookkeeping —
- * the painter memo keys on pose *reference*, so a mutation without a commit
- * paints the previous frame with no error.
- *
- * To promote a frame to document state (dropping a drag, baking an animation),
- * write it once through `Scene.setPose` and `clear` the override.
- */
-export interface PoseOverrides<TPose> {
-  /** Store `entry` for `id` **by reference**; the caller keeps mutating it. */
-  set(id: NodeId, entry: PoseOverride<TPose>): void;
-  /** The entry `set` stored, by reference — what a writer checks to know
-   *  whether its own entry is still installed. Painting reads `read`. */
-  get(id: NodeId): PoseOverride<TPose> | undefined;
-  /** What the node is drawn and picked with: every source of overrides for
-   *  it folded into one, as of the last write or `commit()`. `undefined` for
-   *  a node nothing overrides. The object is reused per node. */
-  read(id: NodeId): PoseOverride<TPose> | undefined;
-  has(id: NodeId): boolean;
-  /** The overridden ids, as a snapshot array. */
-  ids(): readonly NodeId[];
-  clear(id: NodeId): void;
-  clearAll(): void;
-  /** Publish this frame's in-place mutations: invalidate the painter memo for
-   *  every overridden node, then notify subscribers. */
-  commit(): void;
-  /** Notified after every write. The canvas uses this to repaint without a
-   *  scene version bump. */
-  subscribe(fn: () => void): () => void;
-  /** Monotonic write counter. A snapshot for observers that poll. */
-  getGeneration(): number;
 }
 
 /**

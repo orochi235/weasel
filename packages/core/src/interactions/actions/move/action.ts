@@ -45,7 +45,6 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { pastDragThreshold } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-import { syncPreviewOverrides, type PreviewOverrideState } from '../previewOverrides';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
@@ -91,7 +90,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const begun = beginMove(ctx, opts, () => frame);
       if (!begun) return {};
       const { session, readers } = begun;
-      const publish: PreviewOverrideState = { scene: session.scene, previews: frame.previews, overrideEntries: new Map() };
+      const hold = session.scene.overrides.hold();
       // Where the last move put the pointer, once the drag has passed its
       // threshold; null until then.
       let engaged: { x: number; y: number } | null = null;
@@ -106,8 +105,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           }
           engaged = moveCtx.world;
           frame = nextFrame(session, readers, moveCtx);
-          publish.previews = frame.previews;
-          syncPreviewOverrides(publish);
+          hold.set(frame.previews);
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
@@ -126,11 +124,11 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           } finally {
             // After the commit, so no frame can paint the pre-drag pose between
             // the override going away and the document catching up.
-            closeGesture({ publish, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
+            closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
-        previewIds: () => publish.previews.keys(),
-        previewPose: (id: string) => publish.previews.get(id as NodeId) ?? null,
+        previewIds: () => frame.previews.keys(),
+        previewPose: (id: string) => frame.previews.get(id as NodeId) ?? null,
         previewOpaqueIds: () => (frame.opaque.size === 0 ? null : frame.opaque),
       };
     },
