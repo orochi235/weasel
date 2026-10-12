@@ -1,4 +1,10 @@
-import { isSolidPaint, type DrawCommand, type Paint, type Stroke, type View } from '@weasel-js/core';
+import {
+  type DrawCommand,
+  isSolidPaint,
+  type Paint,
+  type Stroke,
+  type View,
+} from '@weasel-js/core';
 import type { SvgNode, SvgPaint, SvgStroke } from '@weasel-js/svg';
 import { type MarkStyle, markCommands, type PaintableMark } from './paint';
 
