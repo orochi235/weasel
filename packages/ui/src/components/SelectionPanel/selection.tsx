@@ -2,7 +2,9 @@ import { createContext } from 'react';
 import { prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
 import { pathWithin, useHeldTab, type PrefMarks } from '../Prefs/selection';
+import { isFlagLeaf } from './cells';
 import { pairRows, panelLeafKey, type PanelRow, type PanelSection } from './model';
+import type { PropertyRenderer } from './renderContext';
 
 /** What a panel marks while it draws, and the one of those it brings into view. */
 export interface PanelMarks extends PrefMarks {
@@ -45,6 +47,21 @@ function sharedRows(rows: readonly PanelRow[], out = new Map<string, string>()):
   return out;
 }
 
+/** Each flag a bar fuses into a cell with the flags before it, by the flag that cell is drawn for: the run's first. */
+function fusedFlags(rows: readonly PanelRow[], renderers: Record<string, PropertyRenderer> | undefined): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const row of rows) {
+    if (row.pair === undefined) continue;
+    let first: string | null = null;
+    for (const item of row.leaves) {
+      if (!isFlagLeaf(item.leaf, item.path, renderers)) first = null;
+      else if (first === null) first = panelLeafKey(item);
+      else out.set(panelLeafKey(item), first);
+    }
+  }
+  return out;
+}
+
 /** Whether a panel draws `section` under a heading of its own. */
 export const sectionHeaded = (section: PanelSection): boolean =>
   section.name !== '' && section.as !== 'tab' && section.as !== 'fragment' && section.as !== 'bar';
@@ -55,18 +72,22 @@ export const sectionNamed = (section: PanelSection): boolean =>
 
 /**
  * What a panel of `sections` marks for `selected`, as the paths its elements carry: a row for a leaf, the one row
- * a pair's leaves share for any of them, and a section {@link sectionNamed} holds for its own key. A path it
- * draws nothing for is left out, a section nested in another among them.
+ * a pair's leaves share for any of them, the one cell a bar fuses from a run of flags, and a section
+ * {@link sectionNamed} holds for its own key. A path it draws nothing for is left out, a section nested in another
+ * among them. `renderers` are the panel's, since a flag one of them draws joins no run.
  */
-export function panelMarkedPaths(sections: readonly PanelSection[], selected: readonly string[]): string[] {
+export function panelMarkedPaths(
+  sections: readonly PanelSection[], selected: readonly string[], renderers?: Record<string, PropertyRenderer>,
+): string[] {
   const rows = sections.flatMap((section) => section.rows);
   const drawn = rows.flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const));
   // A bar draws a cell a leaf, and no row for a pair to share.
   const shared = sharedRows(sections.filter((section) => section.as !== 'bar').flatMap((section) => section.rows));
+  const fused = fusedFlags(sections.filter((section) => section.as === 'bar').flatMap((section) => section.rows), renderers);
   const keys = new Set(sections.filter(sectionNamed).map((section) => section.key));
   const out = selected.flatMap((path) => {
     const at = panelShownPath(drawn, path);
-    if (at !== null) return [shared.get(at) ?? at];
+    if (at !== null) return [shared.get(at) ?? fused.get(at) ?? at];
     return keys.has(path) ? [path] : [];
   });
   return [...new Set(out)];

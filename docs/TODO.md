@@ -1183,15 +1183,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
 
-- **(P3) What `SelectionPanel`'s `selected` still does not reach.** A `pair` row and a top-level
-  section under a heading, in a tab, or in a panel mark and report now. Left: a cell a bar fuses
-  from a run of flags is marked only for its first leaf, so a later flag in `selected` marks
-  nothing (seen in a browser, in a section `as: 'bar'`); doing it needs the panel's `renderers`
-  where the marks are worked out, since a renderer decides whether flags fuse. A top-level
-  section drawn `as: 'bar'` or `as: 'fragment'`, or with no name, draws no heading, tab, or panel,
-  and its key marks and reports nothing, which is ruled to stay so (2026-10-11). Cmd or Ctrl on a press of
-  a tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
-  so the press arrives as the focus it causes, which carries no modifier.
+- **(P3) What `SelectionPanel`'s `selected` still does not reach.** A `pair` row, a cell a bar fuses
+  from a run of flags, and a top-level section under a heading, in a tab, or in a panel mark and
+  report now. Left: a top-level section drawn `as: 'bar'` or `as: 'fragment'`, or with no name,
+  draws no heading, tab, or panel, and its key marks and reports nothing, which is ruled to stay
+  so (2026-10-11). Cmd or Ctrl on a press of a tab does not toggle, in the panel or in
+  `PrefsForm`: a react-aria tab keeps its pointer events, so the press arrives as the focus it
+  causes, which carries no modifier.
 
 - **(P3) Loose ends beside a number's unit as data.** A unit is data (`PrefLinearUnit`) or code,
   read through `resolvePrefUnit`. `PrefSchemaEditor` edits a number's default, and its auto value,
