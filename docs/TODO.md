@@ -862,9 +862,11 @@ built 2026-10-11. What that left:
   `useAnimator.hold.test.tsx` ("hands what a canceled offset left under it to the next
   animation"), not fixed: whether an offset under a hold should show at all is a call on the
   model, since a hold at a weight below 1 shows part of the committed value.
-- **(P3) Whether blits moves into the monorepo as its own `@weasel-js` package** — open since
-  2026-09-30. `@weasel-js/core` depends on `@msb235/blits` pinned exactly, at 0.8.1; the blits
-  checkout in `~/src/blits` was at 0.10.0 on 2026-10-11.
+- **(P3) core pins `@msb235/blits` at 0.8.1, and blits was at 0.10.0 on 2026-10-11** — its log
+  since includes "play a voice once unless it is told to loop", and the codec cues its hold
+  with `loop: true` and its paths with `loop: false`. Raising the pin means reading blits'
+  changelog against `engine/blitsContract.test.ts`. Ruled 2026-10-11: blits stays in its own
+  repo and does not become a `@weasel-js` package.
 
 ### Earlier deferrals
 
