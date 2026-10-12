@@ -710,9 +710,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *    journal's inner history — not the scene's undo stack — tracks the batch.
    *    Mutations still happen on `adapter` / scene state.
    *
-   *  `adapter` must be the adapter the ops expect (typically a
-   *  `SceneCanvasAdapter`). Returns false when the scene's arrival handler
-   *  refused the batch: it was reverted, and nothing landed or was recorded. */
+   *  `adapter` is the one the ops expect (typically a `SceneCanvasAdapter`).
+   *  Returns false when the arrival handler refused the batch: it is reverted
+   *  and unrecorded. Inside `batch` it is true; that batch may still refuse. */
   applyBatch(ops: import('core/ops/types').Op[], label: string, adapter: unknown): boolean;
 
   // Selection

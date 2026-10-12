@@ -97,6 +97,22 @@ describe('Scene — arrival handler', () => {
     expect(placed.scene.applyBatch([], 'Nothing', placed.adapter)).toBe(true);
   });
 
+  it('applyBatch answers false, and lands nothing, for a batch refused under an active journal', () => {
+    const { scene, spy, adapter } = setup(() => null);
+    const journal = scene.history.beginJournal({ label: 'session' });
+    scene.setActiveJournalAccessor(() => (journal.isActive() ? journal : null));
+    const depth = scene.history.undoDepth();
+    expect(scene.applyBatch(
+      [createReparentOp({ id: 'loose', fromParentId: null, toParentId: 'box' })], 'Move', adapter,
+    )).toBe(false);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(scene.get(asNodeId('loose'))?.parent).toBeNull();
+    expect(scene.childrenOf(asNodeId('box'))).toEqual([]);
+    expect([...scene.roots]).toEqual([asNodeId('box'), asNodeId('loose')]);
+    expect(journal.entries().undo).toHaveLength(0);
+    expect(scene.history.undoDepth()).toBe(depth);
+  });
+
   it('a refused scene.batch reverts and throws SceneArrivalRefused', () => {
     const { scene } = setup(() => null);
     expect(() => scene.batch('Add', () => {

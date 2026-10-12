@@ -178,15 +178,18 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
     abandon,
     runEdit(ops, run) {
       const { ops: all, owned } = withArrivalOps(ops);
+      // An edit inside another's window leaves a refusal to the one that owns
+      // it, which reverts the whole edit and answers for it.
+      if (!owned) return run(all), true;
       try {
         run(all);
-        if (owned) emitReflow();
+        emitReflow();
         return true;
       } catch (err) {
         if (!(err instanceof SceneArrivalRefused)) throw err;
         return false;
       } finally {
-        if (owned) abandon();
+        abandon();
       }
     },
   };
