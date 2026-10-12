@@ -43,9 +43,7 @@ export interface ApiHost {
 function eachUnder(
   table: Table, key: string, pace: (a: ActiveAnimation) => [paused: boolean, timeScale: number],
 ): void {
-  for (const a of table.animations.values()) {
-    if (a.cancelKey === key) table.pace(a, ...pace(a));
-  }
+  for (const a of table.under(key)) table.pace(a, ...pace(a));
 }
 
 function liveRows(table: Table): LiveAnimation[] {
@@ -119,9 +117,7 @@ export function createAnimatorApi(host: ApiHost): Animator {
     },
     isActive: (key) => {
       if (key == null) return animations.size > 0;
-      for (const a of animations.values()) {
-        if (a.cancelKey === key) return true;
-      }
+      for (const _ of table.under(key)) return true;
       return false;
     },
     isTicking: host.ticking,

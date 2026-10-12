@@ -825,15 +825,15 @@ built 2026-10-11. What that left:
   rest by, so it still costs a call a frame as an object, as anything with an `onTick` must.
   A bound on when a spring can first be at rest, from its damping, would give it a `due`;
   retargeting and pushing it would move the bound. The rest of a frame is blits' pull.
-- **(P2) Stopping and starting an animation costs more as more are running, and most of it is
-  in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the parts (orochi,
-  plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs with 1,000
-  running and 21 with 10,000, a start 1 and 2, and the frame after them 1.1 ms and 4.1 against
-  0.08 and 0.93 steady. The cancel is blits' `forget` walking every subject the mix holds, and
-  the slow frame is blits' first read of the new voices; the animator's own lane and codec
-  code is under 4% of the profile. `~/src/blits/NOTES-FROM-WEASEL.md` ("Stopping a subject's
-  voice") has the lines and a fix. What is the animator's is the entry above: its two walks
-  over every animation and every moving target read slower in a frame that follows restarts.
+- **(P2) Stopping and starting an animation costs more as more are running, and what is left
+  of that is in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the
+  parts (orochi, plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs
+  with 1,000 running and 21 with 10,000, a start 1 and 2, and the frame after them 1.1 ms and
+  4.1 against 0.08 and 0.93 steady. The cancel is blits' `forget` walking every subject the
+  mix holds, and the slow frame is blits' first read of the new voices.
+  `~/src/blits/NOTES-FROM-WEASEL.md` ("Stopping a subject's voice") has the lines and a fix.
+  The animator's own searches of its table, for a start's cancel key and for a stopped
+  target's animations, are gone: `... churn 10000 keyed` and `... churn 10000 stop` time those.
 - **(P3) Playing an animation backward** — a time scale below 0 is refused where it is set
   (`timeScaleOf`, `engine/table.ts`). Playing backward needs the animator's clock to keep going
   forward and hand each voice a rate below 0, which blits 0.9.0 ends where the voice started,

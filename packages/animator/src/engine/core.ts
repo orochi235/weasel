@@ -54,7 +54,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   });
   const targets = createTargetBook({
     stop: (s) => {
-      for (const a of [...table.animations.values()]) if (a.target === s) table.retire(a.id);
+      for (const a of [...table.on(s)]) table.retire(a.id);
     },
     reread: (s) => {
       codec.touch(s);
@@ -86,8 +86,8 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     interrupt: (key, by) => table.cancelByKey(key, by as ActiveAnimation),
     velocityUnder: (key, target) => {
       let sum: number[] | null = null;
-      for (const a of table.animations.values()) {
-        if (a.cancelKey !== key || a.target !== target) continue;
+      for (const a of table.under(key)) {
+        if (a.target !== target) continue;
         const v = a.velocity?.() ?? codec.own(a.id)?.velocity;
         if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
       }

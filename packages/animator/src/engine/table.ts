@@ -37,6 +37,10 @@ export interface Table {
    *  claiming its key; given `error`, the caller reports it. */
   retire(id: number, by?: ActiveAnimation, error?: true): void;
   cancelByKey(key: string, by?: ActiveAnimation): void;
+  /** The animations holding `key`, in the order they registered. */
+  under(key: string): Iterable<ActiveAnimation>;
+  /** The animations moving `target`, in the order they registered. */
+  on(target: TargetState): Iterable<ActiveAnimation>;
   /** Sets `a`'s pause and time scale, and gives its codec subject the rate they ask for. */
   pace(a: ActiveAnimation, paused: boolean, timeScale: number): void;
   /** `a`'s own clock now, in virtual ms. */
@@ -104,11 +108,8 @@ export function createTable(host: TableHost): Table {
   };
 
   const cancelByKey = (key: string, by?: ActiveAnimation): void => {
-    const ids: number[] = [];
-    for (const anim of animations.values()) {
-      if (anim.cancelKey === key) ids.push(anim.id);
-    }
-    for (const id of ids) retire(id, by);
+    // A copy: each one leaves the set as it is retired, and its `onCancel` may retire others.
+    for (const a of [...roster.under(key)]) retire(a.id, by);
   };
 
   const pace = (a: ActiveAnimation, paused: boolean, timeScale: number): void => {
@@ -150,6 +151,8 @@ export function createTable(host: TableHost): Table {
     reportEnd,
     retire,
     cancelByKey,
+    under: roster.under,
+    on: roster.on,
     pace,
     clockOf: schedule.clockOf,
     ticks: schedule.ticks,
