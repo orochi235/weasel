@@ -6,6 +6,8 @@ Breaking: `PrefsForm` and `PrefsDialog` no longer take `subPages`. In the rail l
 
 A page has a rail entry at any depth. A section has one only when it sits directly on a page, and choosing it scrolls that page to it; a section inside a section is drawn on the page under its parent with no entry, so a rail still stops one level under each page. A group that deserves an entry further down says `as: 'page'`. A page inside a section with no entry nests under the nearest entry above it.
 
+The root's own page is a page like any other. A top-level group that is `as: 'section'` sits on it beside the root's loose leaves and has a rail entry nested under the root's, which scrolls that page to it; before, it had none. The root has an entry whenever its page holds anything, a section alone included. A group that is `as: 'page'` inside a top-level section has an entry and a page of its own, where the root's page drew it as a section.
+
 One rail can hold both kinds, and marks both. The open page's entry is `aria-current="page"` and the entry of the section in view is `aria-current="location"`. `data-rail-mark="current"` is the strong mark, on the section in view, or on the open page while none of its sections is; under a current section the open page carries `data-rail-mark="open"`, a weaker one. `foldable` is unchanged.
 
 `PrefRailItem` has `page` in place of `section`: the path of the page the entry's group is drawn on, which is the entry's own path when choosing it opens a page. `prefRailItems` takes the root alone, and `depth` counts the entries above an entry, not the groups.

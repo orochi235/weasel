@@ -24,6 +24,12 @@ export interface PrefConditionEditorProps {
   /** The schema the condition belongs to: a row reads one of its leaves, and the condition is checked against it. */
   schema: PrefGroup | PrefSection;
   /**
+   * The schema `schema` is drawn over, as a layout is over its dialog's: a condition may read a pref of it at any
+   * path no leaf of `schema` holds. The pickers offer those prefs after `schema`'s own, each named for this schema,
+   * and a row on one is checked against it.
+   */
+  over?: PrefGroup | PrefSection;
+  /**
    * Value paths no row is offered: the pref at one, and every pref beneath one, is left out of the pickers. For
    * what the condition belongs to, which cannot sensibly be shown or enabled by its own value. A row that
    * already reads such a pref keeps it.
@@ -51,21 +57,22 @@ export interface PrefConditionEditorProps {
  * offer are each a row of text, which can be removed and is otherwise handed back as the object it was. Whatever
  * `checkPrefCondition` finds wrong with a row is said on that row. With no rows left the condition is `undefined`.
  */
-export function PrefConditionEditor({ value, onChange, schema, exclude = NO_PATHS, entryOf, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
-  const leaves = useMemo(() => conditionLeaves(schema, entryOf), [schema, entryOf]);
+export function PrefConditionEditor({ value, onChange, schema, over, exclude = NO_PATHS, entryOf, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
+  const leaves = useMemo(() => conditionLeaves(schema, entryOf, over), [schema, entryOf, over]);
   const site = useMemo<PrefConditionSite>(() => (entryOf ? { within: entryOf } : {}), [entryOf]);
   const prefOptions = useMemo<SelectOption[]>(() => leaves
-    .filter(({ path, from }) => from === 'item' || !exclude.some((out) => path === out || path.startsWith(`${out}.`)))
+    .filter((found) => found.from === 'item' || found.over || !exclude.some((out) => found.path === out || found.path.startsWith(`${out}.`)))
     .map((found) => {
       const { path, leaf, from } = found;
-      // A field of the entry is named as the entry's, so it reads apart from a root pref at the same path.
-      const where = from === 'item' ? `this ${entryOf?.item.name || 'entry'}: ${path}` : path;
+      // A field of the entry is named as the entry's, so it reads apart from a root pref at the same path; a pref
+      // of the schema this one is drawn over is named for that schema.
+      const where = from === 'item' ? `this ${entryOf?.item.name || 'entry'}: ${path}` : found.over ? `${over?.name || 'another schema'}: ${path}` : path;
       return {
         value: leafKey(found),
         label: <>{leaf.name || path} <span className={s.path}>{where}</span></>,
         textValue: `${leaf.name} ${where}`,
       };
-    }), [leaves, exclude, entryOf]);
+    }), [leaves, exclude, entryOf, over]);
   const classes = [s.editor, className].filter(Boolean).join(' ');
 
   if (value !== undefined && !isPrefCondition(value)) {
@@ -74,7 +81,7 @@ export function PrefConditionEditor({ value, onChange, schema, exclude = NO_PATH
         <div className={s.row} data-invalid>
           <Code size="xs" status="muted" className={s.text}>{JSON.stringify(value) ?? String(value)}</Code>
           <Button size="sm" onClick={() => onChange(undefined)}>Remove</Button>
-          {checkPrefCondition(value, schema, site).map((p, i) => <p key={i} className={s.problem}>{p.problem}</p>)}
+          {checkPrefCondition(value, schema, site, over).map((p, i) => <p key={i} className={s.problem}>{p.problem}</p>)}
         </div>
       </div>
     );
@@ -89,7 +96,7 @@ export function PrefConditionEditor({ value, onChange, schema, exclude = NO_PATH
           onChange={(next) => { if (next !== null && next !== mode) write(parts, next); }} />
       )}
       {parts.map((part, i) => (
-        <ConditionRow key={i} n={i + 1} part={part} schema={schema} site={site} leaves={leaves} prefOptions={prefOptions}
+        <ConditionRow key={i} n={i + 1} part={part} schema={schema} over={over} site={site} leaves={leaves} prefOptions={prefOptions}
           onChange={(next) => write(parts.map((p, j) => (j === i ? next : p)))}
           onRemove={() => write(parts.filter((_, j) => j !== i))} />
       ))}

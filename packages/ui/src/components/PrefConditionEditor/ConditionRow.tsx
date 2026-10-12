@@ -16,6 +16,8 @@ export interface ConditionRowProps {
   n: number;
   part: PrefCondition;
   schema: PrefGroup | PrefSection;
+  /** The schema `schema` is drawn over, which the row is checked against as well. */
+  over?: PrefGroup | PrefSection;
   /** Where the condition's node sits, which the row is checked against. */
   site: PrefConditionSite;
   /** Every pref a row may read, which is how the row finds its own. */
@@ -63,8 +65,8 @@ function ValueControl({ n, test, found, comparison, onChange }: {
 }
 
 /** One row of a {@link PrefConditionEditor}: a test as its three controls, or any other condition as text. */
-export function ConditionRow({ n, part, schema, site, leaves, prefOptions, onChange, onRemove }: ConditionRowProps) {
-  const problems = checkPrefCondition(part, schema, site);
+export function ConditionRow({ n, part, schema, over, site, leaves, prefOptions, onChange, onRemove }: ConditionRowProps) {
+  const problems = checkPrefCondition(part, schema, site, over);
   const found = isTest(part) ? leafOf(leaves, part) : undefined;
   const comparison = isTest(part) && found ? comparisonOf(part, found.leaf) : undefined;
   return (

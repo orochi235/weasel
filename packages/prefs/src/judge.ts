@@ -3,6 +3,7 @@
 import { prefConditionHolds, prefConditionReadsItem, type PrefCondition, type PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefSectionLeaves, prefValueAtPath } from './helpers';
+import { prefSchemaHolding } from './holding';
 import type { PrefLeaf } from './schema';
 import { prefShownReader } from './shown';
 
@@ -34,11 +35,15 @@ function entryValue({ item, value }: PrefEntry, path: string): unknown {
  * value as the control over its leaf in `schema` shows it
  * ({@link prefShownReader}), so `read` hands back what is stored. A test
  * that reads from the entry (`from: 'item'`) reads `entry`, and finds nothing
- * held where none is given.
+ * held where none is given. `over` is the schema `schema` is drawn over: a
+ * path no leaf of `schema` holds is compared as the leaf of `over` there
+ * shows it.
  */
-export function prefJudge(schema: PrefGroup | PrefSection, read: (path: string) => unknown, entry?: PrefEntry): PrefConditionJudge {
+export function prefJudge(
+  schema: PrefGroup | PrefSection, read: (path: string) => unknown, entry?: PrefEntry, over?: PrefGroup | PrefSection,
+): PrefConditionJudge {
   const stored: PrefConditionReader = (path, from) => (from === 'item' ? entry && entryValue(entry, path) : read(path));
-  const shown = prefShownReader(schema, stored, entry?.item);
+  const shown = prefShownReader(schema, stored, entry?.item, over);
   return (condition) => prefConditionHolds(condition, shown);
 }
 
@@ -54,12 +59,15 @@ export function deferEntryConditions(holds: PrefConditionJudge): PrefConditionJu
 /**
  * Reads a value by path the way a form over `schema` shows it: what `values`
  * holds there, else the default of the leaf at that path, or the part of a
- * leaf's default the rest of the path names.
+ * leaf's default the rest of the path names. `over` is the schema `schema`
+ * is drawn over: a path no leaf of `schema` holds takes its default there.
  */
-export function prefReader(schema: PrefGroup | PrefSection, values: unknown): (path: string) => unknown {
+export function prefReader(schema: PrefGroup | PrefSection, values: unknown, over?: PrefGroup | PrefSection): (path: string) => unknown {
+  const beyond = over && prefReader(over, values);
   return (path) => {
     const held = prefValueAtPath(values, path);
     if (held !== undefined) return held;
+    if (beyond && prefSchemaHolding(schema, path, over) === over) return beyond(path);
     if (isPrefSection(schema)) {
       for (const [key, leaf] of prefSectionLeaves(schema.members)) {
         if (path === key) return leaf.default;

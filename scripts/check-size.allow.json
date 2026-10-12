@@ -1,4 +1,16 @@
 {
+  "packages/animator/src/engine/codec.ts": {
+    "longestFunction": 184
+  },
+  "packages/animator/src/timeline/booking.ts": {
+    "longestFunction": 135
+  },
+  "packages/animator/src/timeline/createTimeline.ts": {
+    "longestFunction": 187
+  },
+  "packages/animator/src/types.ts": {
+    "lines": 467
+  },
   "packages/audio/src/createAudioEngine.ts": {
     "lines": 765,
     "longestFunction": 611
@@ -10,20 +22,8 @@
     "lines": 419,
     "longestFunction": 169
   },
-  "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 184
-  },
   "packages/core/src/animation/reflow.ts": {
     "longestFunction": 165
-  },
-  "packages/animator/src/timeline/booking.ts": {
-    "longestFunction": 135
-  },
-  "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 187
-  },
-  "packages/animator/src/types.ts": {
-    "lines": 467
   },
   "packages/core/src/canvas/Canvas.tsx": {
     "lines": 1347,
@@ -241,17 +241,14 @@
   "packages/labkit/src/controls/ControlMatrix.tsx": {
     "longestFunction": 207
   },
-  "packages/labkit/src/controls/ControlPanel.tsx": {
-    "longestFunction": 127
-  },
   "packages/labkit/src/controls/ControlRow.tsx": {
-    "longestFunction": 141
+    "longestFunction": 123
   },
   "packages/labkit/src/controls/MatrixCell.tsx": {
     "longestFunction": 129
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 283
+    "longestFunction": 274
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "lines": 632,

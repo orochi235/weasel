@@ -80,11 +80,11 @@ export interface AttributesPaneProps {
  * Draws a `showIf` or an `enableIf` as its editor. `holder` is the selected list or map: the condition of its
  * entry may read the entry's own fields, where the node's own reads the schema's.
  */
-function conditionRenderer(schema: SchemaRoot, exclude: readonly string[], holder: PrefList | PrefMap | undefined): PrefRenderer {
+function conditionRenderer(schema: SchemaRoot, exclude: readonly string[], holder: PrefList | PrefMap | undefined, over: SchemaRoot | undefined): PrefRenderer {
   return Object.assign<PrefRenderer, { group: boolean; wide: boolean }>(({ path, pref, value, setValue }) => {
     const entryOf = path.startsWith(`${ENTRY}.`) ? holder : undefined;
     return (
-      <PrefConditionEditor aria-label={entryOf ? `Entry ${pref.name.toLowerCase()}` : pref.name} schema={schema} exclude={exclude}
+      <PrefConditionEditor aria-label={entryOf ? `Entry ${pref.name.toLowerCase()}` : pref.name} schema={schema} over={over} exclude={exclude}
         entryOf={entryOf} value={value as PrefCondition | undefined} onChange={setValue} />
     );
   }, { group: true, wide: true });
@@ -170,7 +170,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
         </fieldset>
       </span>
     ), { group: true }),
-    [CONDITION_KIND]: conditionRenderer(schema, ownPaths, item ? (node as PrefList | PrefMap) : undefined),
+    [CONDITION_KIND]: conditionRenderer(schema, ownPaths, item ? (node as PrefList | PrefMap) : undefined, over),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}
         onFocus={() => { nameAtFocus.current = node.name; }} onBlur={several ? undefined : followName} />

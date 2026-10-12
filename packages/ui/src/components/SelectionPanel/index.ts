@@ -16,5 +16,6 @@ export {
   type PanelLeaf,
   type PanelRow,
   type PanelSection,
+  type PanelShown,
 } from './model';
 export { conditionedSections, selectionJudge } from './conditions';

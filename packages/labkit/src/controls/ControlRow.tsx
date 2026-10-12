@@ -2,12 +2,13 @@ import {
   PREF_ENTRY,
   type PrefAction,
   type PrefAlias,
+  type PrefAliasTargets,
+  type PrefGroup,
   type PrefLeaf,
   type PrefList,
-  prefAliasedLeaf,
-  prefAliasTarget,
+  type PrefSection,
+  prefAliasName,
   prefIsCompound,
-  prefLeafAt,
 } from '@weasel-js/prefs';
 import {
   DialogRow,
@@ -26,7 +27,7 @@ import { useMemo } from 'react';
 import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
-import { conditionedLeaf } from '../config/visible';
+import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField } from './fields';
@@ -50,6 +51,9 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   setRowAuto?: (path: string, next: boolean, value: unknown) => void;
   /** The row takes no input: its `enableIf`, or that of a group above it, does not hold. */
   disabled?: boolean;
+  /** The schema an alias points into, where that is not `resolved`'s: the row is drawn as the leaf of it at the
+   *  alias's path, and reads and writes `config` there. A condition inside the row's leaf may read its settings. */
+  over?: PrefGroup | PrefSection;
 }
 
 /** An auto value as tooltip text. A computed number is cut to 6 significant
@@ -74,16 +78,12 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
   }
   if (leaf.kind !== 'alias' || drawn) return <LeafRow {...props} />;
   const alias = leaf as PrefAlias;
-  const target = prefAliasTarget(alias, (path) => prefLeafAt(resolved.group, path));
-  if (target)
-    return <LeafRow {...props} path={target.path} leaf={prefAliasedLeaf(alias, target.leaf)} />;
+  const targets = aliasTargetsOf(resolved, props.config, props.over);
+  const target = targets.shown(alias);
+  if (target) return <LeafRow {...props} {...target} inside={props.over && targets} />;
   // An alias of nothing is a wiring fault, shown where it sits and not dropped from the panel.
   return (
-    <PropertyRow
-      label={alias.name === '' ? 'Alias' : alias.name}
-      description={alias.description}
-      layout={props.layout}
-    >
+    <PropertyRow label={prefAliasName(alias)} description={alias.description} layout={props.layout}>
       <span>(alias: no control at {alias.of === '' ? 'an empty path' : alias.of})</span>
     </PropertyRow>
   );
@@ -99,14 +99,21 @@ function CompoundControl({
   value,
   onChange,
   renderers,
-}: Pick<ControlRowProps<Record<string, unknown>>, 'path' | 'leaf' | 'resolved' | 'config'> & {
+  over,
+  given,
+}: Pick<
+  ControlRowProps<Record<string, unknown>>,
+  'path' | 'leaf' | 'resolved' | 'config' | 'over'
+> & {
+  /** What the leaf answers to when it is one of another schema, which `resolved` holds no conditions for. */
+  given: PrefAliasTargets | undefined;
   label: string;
   value: unknown;
   onChange: (value: unknown) => void;
   renderers: Record<string, ControlRenderer> | undefined;
 }) {
   const choices = useFieldChoices();
-  const inside = conditionedLeaf(resolved, path, leaf, config);
+  const inside = given ? { leaf, ...given } : conditionedLeaf(resolved, path, leaf, config, over);
   // Plain text entries keep the list's own fields, and the placeholder only they have.
   if (leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined)) {
     const list = leaf as PrefList;
@@ -136,6 +143,54 @@ function CompoundControl({
   );
 }
 
+/** What draws the row at `path` in place of the built-in. Most specific wins, and within a tier the lab's entry
+ *  beats the instrument's: controls[path] -> node .render/.dialog -> controls[kind]. */
+function customRow(
+  resolved: ResolvedConfig,
+  renderers: Record<string, ControlRenderer> | undefined,
+  path: string,
+  leaf: PrefLeaf,
+): ControlRenderer | undefined {
+  const dialog = resolved.dialogs[path];
+  return (
+    renderers?.[path] ??
+    resolved.renderers[path] ??
+    (dialog ? inDialog(dialog.body, dialog) : undefined) ??
+    renderers?.[leaf.kind]
+  );
+}
+
+/** What a row would read as auto, pinned or not; `cycles` where unpinning it would close a resolver cycle. */
+function useUnpinned<TC extends Record<string, unknown>>({
+  resolves,
+  isAutoRow,
+  shown,
+  resolved,
+  config,
+  auto,
+  path,
+}: Pick<ControlRowProps<TC>, 'shown' | 'resolved' | 'config' | 'auto' | 'path'> & {
+  resolves: boolean;
+  isAutoRow: boolean;
+}): { value?: unknown; cycles?: true } {
+  return useMemo(() => {
+    if (!resolves) return {};
+    if (isAutoRow) return { value: valueAtPath(shown, path) };
+    try {
+      return {
+        value: valueAtPath(
+          resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
+          path,
+        ),
+      };
+    } catch {
+      // Unpinning this path would close a resolver cycle: the row has no auto
+      // value to quote, and going auto would throw out of the panel's render.
+      return { cycles: true };
+    }
+  }, [resolves, isAutoRow, shown, resolved, config, auto, path]);
+}
+
 function LeafRow<TC extends Record<string, unknown>>({
   path,
   leaf,
@@ -149,7 +204,9 @@ function LeafRow<TC extends Record<string, unknown>>({
   auto,
   setRowAuto,
   disabled = false,
-}: ControlRowProps<TC>) {
+  over,
+  inside,
+}: ControlRowProps<TC> & { inside?: PrefAliasTargets }) {
   const write = (value: unknown): void => setConfig(path, value);
   const choices = useFieldChoices();
   const fallback = extra<unknown>(leaf, 'default');
@@ -171,34 +228,12 @@ function LeafRow<TC extends Record<string, unknown>>({
   // What the row would read as auto, pinned or not: the config resolved with
   // this path unpinned beside the ones that already are.
   const resolves = canAuto && autoResolverOf(leaf) !== undefined;
-  const unpinned = useMemo((): { value?: unknown; cycles?: true } => {
-    if (!resolves) return {};
-    if (isAutoRow) return { value: valueAtPath(shown, path) };
-    try {
-      return {
-        value: valueAtPath(
-          resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
-          path,
-        ),
-      };
-    } catch {
-      // Unpinning this path would close a resolver cycle: the row has no auto
-      // value to quote, and going auto would throw out of the panel's render.
-      return { cycles: true };
-    }
-  }, [resolves, isAutoRow, shown, resolved, config, auto, path]);
+  const unpinned = useUnpinned({ resolves, isAutoRow, shown, resolved, config, auto, path });
   const onAutoChange = canAuto && !unpinned.cycles ? setAuto : undefined;
   const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value);
   const autoProps = { auto: isAutoRow, onAutoChange, autoValue };
 
-  // Most specific wins, and within a tier the lab's entry beats the
-  // instrument's: controls[path] -> node .render/.dialog -> controls[kind] -> built-in.
-  const dialog = resolved.dialogs[path];
-  const custom =
-    renderers?.[path] ??
-    resolved.renderers[path] ??
-    (dialog ? inDialog(dialog.body, dialog) : undefined) ??
-    renderers?.[leaf.kind];
+  const custom = customRow(resolved, renderers, path, leaf);
   // A custom row places itself like any other; one that needs the full width
   // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
   if (custom)
@@ -257,6 +292,8 @@ function LeafRow<TC extends Record<string, unknown>>({
             value={value}
             onChange={write}
             renderers={renderers}
+            over={over}
+            given={inside}
           />
         )}
       </DialogRow>

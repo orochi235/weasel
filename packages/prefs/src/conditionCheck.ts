@@ -4,7 +4,7 @@
 import { formOf, ORDERINGS, partsOf, type PrefConditionValue, type PrefTest } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
-import { prefLeafHolding, prefLeafHoldingIn, UNSEEN } from './holding';
+import { prefLeafHolding, prefLeafHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import { isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject } from './schema';
@@ -68,20 +68,22 @@ function neverHolds(leaf: PrefLeaf, value: PrefConditionValue): string | undefin
   }
 }
 
-function testProblems(test: PrefTest, schema: PrefGroup | PrefSection, site: PrefConditionSite): PrefConditionProblem[] {
+type Schema = PrefGroup | PrefSection;
+
+function testProblems(test: PrefTest, schema: Schema, site: PrefConditionSite, over: Schema | undefined): PrefConditionProblem[] {
   const { path } = test;
   if (test.from === 'item' && site.within === undefined) {
     return [{ code: 'no-item', path, problem: `"${path}" is read from an entry, and this is inside no list or map` }];
   }
-  const found = leafProblems(test, schema, site);
+  const found = leafProblems(test, schema, site, over);
   if (test.in?.length !== 0) return found;
   return [...found, { code: 'never', path, problem: `"${path}" is one of nothing, which never holds` }];
 }
 
-function leafProblems(test: PrefTest, schema: PrefGroup | PrefSection, site: PrefConditionSite): PrefConditionProblem[] {
+function leafProblems(test: PrefTest, schema: Schema, site: PrefConditionSite, over: Schema | undefined): PrefConditionProblem[] {
   const { path } = test;
   const inEntry = test.from === 'item';
-  const held = inEntry ? prefLeafHoldingIn(site.within!.item, path) : prefLeafHolding(schema, path);
+  const held = inEntry ? prefLeafHoldingIn(site.within!.item, path) : prefLeafHolding(prefSchemaHolding(schema, path, over), path);
   if (held === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"${inEntry ? ' in the entry' : ''}` }];
   if (held === UNSEEN) return [];
   const { leaf } = held;
@@ -111,33 +113,35 @@ function leafProblems(test: PrefTest, schema: PrefGroup | PrefSection, site: Pre
  * types may hold anything where a condition goes. `site` says where the
  * condition's node sits; without it the node is taken to be outside every
  * list and map. A path read from the entry is held to the `item` of
- * `site.within`, and is a problem where there is none.
+ * `site.within`, and is a problem where there is none. `over` is the schema
+ * `schema` is drawn over: a path no leaf of `schema` holds is held to it,
+ * and is a problem only where it holds none either.
  */
-export function checkPrefCondition(condition: unknown, schema: PrefGroup | PrefSection, site: PrefConditionSite = {}): PrefConditionProblem[] {
+export function checkPrefCondition(condition: unknown, schema: Schema, site: PrefConditionSite = {}, over?: Schema): PrefConditionProblem[] {
   if (site.itemShowIf && site.within) {
     const { kind } = site.within;
     const problem = `a ${kind}'s item is drawn with each entry and is never hidden: put the condition on the entry's fields, or on the ${kind}`;
-    return [{ code: 'item-show', problem }, ...checkPrefCondition(condition, schema, { within: site.within })];
+    return [{ code: 'item-show', problem }, ...checkPrefCondition(condition, schema, { within: site.within }, over)];
   }
   const form = formOf(condition);
   if (form === undefined) {
     const shown = typeof condition === 'function' ? 'a function' : JSON.stringify(condition);
     return [{ code: 'malformed', problem: `not a condition: ${shown}` }];
   }
-  if (form === 'test') return testProblems(condition as PrefTest, schema, site);
-  return partsOf(condition, form).flatMap((part) => checkPrefCondition(part, schema, site));
+  if (form === 'test') return testProblems(condition as PrefTest, schema, site, over);
+  return partsOf(condition, form).flatMap((part) => checkPrefCondition(part, schema, site, over));
 }
 
 type Conditioned = { showIf?: unknown; enableIf?: unknown };
 
-/** {@link checkPrefCondition} over every `showIf` and `enableIf` in `schema`, in schema order. */
-export function checkPrefConditions(schema: PrefGroup | PrefSection): PrefSchemaConditionProblem[] {
+/** {@link checkPrefCondition} over every `showIf` and `enableIf` in `schema`, in schema order, each held to `over` as well. */
+export function checkPrefConditions(schema: Schema, over?: Schema): PrefSchemaConditionProblem[] {
   const out: PrefSchemaConditionProblem[] = [];
   const own = (node: Conditioned, at: string, within: PrefList | PrefMap | undefined, isItem = false): void => {
     for (const field of ['showIf', 'enableIf'] as const) {
       if (node[field] === undefined) continue;
       const site = { ...(within ? { within } : {}), ...(isItem && field === 'showIf' ? { itemShowIf: true } : {}) };
-      for (const problem of checkPrefCondition(node[field], schema, site)) out.push({ ...problem, at, field });
+      for (const problem of checkPrefCondition(node[field], schema, site, over)) out.push({ ...problem, at, field });
     }
   };
   const under = (at: string, key: string): string => (at === '' ? key : `${at}.${key}`);

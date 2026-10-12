@@ -1126,18 +1126,25 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
   `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the schema its
-  aliases point into as `over`; `SelectionPanel`, `Bar`, and labkit's `ControlPanel` take none
-  and find an alias's leaf in their own schema, so a layout whose root is a `PrefSection` has no
-  surface that draws its aliases into a dialog. A condition on a node of the form's own schema
-  reads `values` with that schema's leaves and defaults, so one that names a setting of `over`
-  compares the stored value and finds no default. A vertical bar inside a
-  `PrefsForm` names the popover of an alias left unnamed with the empty string, where `Bar`
-  names it for the leaf it shows. `PrefSchemaEditor` edits an entry's own `enableIf` and
-  nothing inside an object entry, whose fields it draws no rows for, so a field's
+  own. `Properties.module.css` is one 1,597-line sheet. `PrefSchemaEditor` edits an entry's own
+  `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
   `{ from: 'item' }` condition is written in code. A list of plain text entries is one
   `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
   entry does nothing there.
+
+- **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
+  into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting
+  of `over` takes that leaf's default only where the surface takes its own leaves': a `Bar`
+  reads `values` alone and a `SelectionPanel` only an `absentIsDefault` leaf's. Whether `over`'s
+  default should stand in there is not decided. (2) `PrefSchemaEditor`'s preview of a properties
+  layout seeds its one node from the layout's own leaves and writes only under `pose` and
+  `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
+  Its drag ghost draws a pointer with no `over`, as an alias of nothing. (3) labkit's
+  `ControlMatrix` takes no `over`, so a cell's popover finds an alias's leaf in the matrix's own
+  schema, and a lab resolves its instrument's config schema with none (`useConfigSchema`), so
+  that schema cannot hold a condition on another's setting. (4) An alias of nothing in a bar
+  inside a `PrefsForm` draws no cell on a horizontal bar, where a `Bar` draws
+  `(alias: no pref at …)`.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -1167,14 +1174,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
   effect, a render behind, and its docstring says so. Whether it should go is not decided.
 
-- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists a page
-  at any depth, and a section only when it sits directly on a page. (1) A foldable rail unfolds an
-  entry only while the open page is it or under it, so a section holding pages of its own keeps
-  their entries shut while the reader scrolls through it. Whether the section in view should
-  unfold is open; it would move the rail under a reader who is scrolling. (2) A top-level group
-  that is not a page (`as: 'section'` beside the root's loose leaves) sits directly on the root's
-  own page and gets no entry, where a section directly on any other page gets one. (3) A
-  section's rail entry and a nested page's look the same until one is chosen.
+- **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
+  at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
+  foldable rail unfolds an entry only while the open page is it or under it, so a section holding
+  pages of its own keeps their entries shut while the reader scrolls through it. Whether the
+  section in view should unfold is open; it would move the rail under a reader who is scrolling.
+  (2) A section's rail entry and a nested page's look the same until one is chosen.
 
 - **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
   is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the

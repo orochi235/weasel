@@ -46,7 +46,7 @@ export interface PreviewPaneProps {
  * and a toolbar for a group drawn as a bar.
  */
 export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless, over }: PreviewPaneProps) {
-  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} />;
+  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} over={over} />;
   if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} over={over} />;
   return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} over={over} />;
 }
@@ -146,12 +146,13 @@ function sceneOf(schema: PrefSection): PreviewScene {
   return scene;
 }
 
-function SectionPreview({ schema, renderers, selected, onSelect, onDefaults }: {
+function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, over }: {
   schema: PrefSection;
   renderers?: Record<string, PropertyRenderer>;
   selected: readonly string[];
   onSelect?: (path: string | null, how: PrefSelectHow) => void;
   onDefaults(edits: readonly DefaultEdit[]): void;
+  over?: SchemaRoot;
 }) {
   // Each leaf's value as the node was seeded, which is no value for a key outside `pose` and `data`: only what an edit changed is a new default.
   const [scene, seeded] = useMemo(() => {
@@ -173,7 +174,7 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults }: {
       <PaneHeader title="Live preview" />
       <div className={s.previewPanel}>
         <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
-          renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden
+          renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden over={over}
           onSelect={onSelect && ((path, how) => {
             const at = treePathOfPanel(schema, path);
             if (at !== null) onSelect(at, how);

@@ -76,22 +76,22 @@ export function RailLayout(props: PrefsFormProps & {
   useLayoutEffect(toTop, [open]);
 
   // A section's entry chosen on a page that is not open: scrolled to once its page has drawn.
-  const awaited = useRef<string | null>(null);
+  const awaited = useRef<{ path: string; page: string } | null>(null);
   const reach = (path: string): void => {
     const home = items.find((i) => i.path === path)?.page ?? open;
     if (home === open) {
       spy.scrollTo(path);
       return;
     }
-    awaited.current = path;
+    awaited.current = { path, page: home };
     show(home);
   };
   const arrive = useRef(spy.scrollTo);
   useEffect(() => { arrive.current = spy.scrollTo; });
   useEffect(() => {
-    const path = awaited.current;
+    const section = awaited.current;
     awaited.current = null;
-    if (path !== null && path.startsWith(`${open}.`)) arrive.current(path);
+    if (section !== null && section.page === open) arrive.current(section.path);
   }, [open]);
 
   // The page holding the selection: the deepest page it is or lies under, else the loose leaves.
@@ -119,7 +119,7 @@ export function RailLayout(props: PrefsFormProps & {
   // A page being dragged stays the open one, drawn where it would land.
   const page = dropDrawnPath(drop, open);
   const whole = drawn === null ? null : paneGroup(drawn, page, schema.name);
-  const group = useMemo(() => (page !== '' && whole !== null ? ownOf(whole) : whole), [page, whole]);
+  const group = useMemo(() => (whole === null ? null : ownOf(whole)), [whole]);
 
   return (
     <div className={[s.railLayout, className].filter(Boolean).join(' ')} data-across={props.rowsAcross === 2 ? 2 : undefined} {...formAttrs(drop)}

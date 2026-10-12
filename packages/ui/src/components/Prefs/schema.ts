@@ -88,12 +88,13 @@ export function prefRailParent(path: string): string | null {
 }
 
 /** Path of the rail entry the one at `path` nests under: the nearest group above it that `items` lists, since a
- *  section inside a section has no entry. Null when there is none. */
+ *  section inside a section has no entry, and the root's for a section of the root's own page. Null when there is
+ *  none. */
 export function prefRailAbove(items: readonly PrefRailItem[], path: string): string | null {
   for (let at = prefRailParent(path); at !== null; at = prefRailParent(at)) {
     if (items.some((i) => i.path === at)) return at;
   }
-  return null;
+  return path !== '' && items.some((i) => i.path === path && i.page === '') ? '' : null;
 }
 
 /** What the rail and pane call a root's loose leaves: the root's name, or `General` when it has none. */
@@ -115,17 +116,14 @@ function countPrefLeaves(node: PrefLeaf | PrefGroup): number {
  * a section, listed only when it sits directly on a page; a section inside a section is drawn on that page with
  * no entry. Nothing inside a tab or a panel is listed.
  *
- * Loose leaves directly under the root lead the list under an entry named for
- * the root itself, since they belong to no group that could name them.
+ * The root's own page leads the list under an entry named for the root itself: its loose leaves, which belong to
+ * no group that could name them, and every top-level group that is not a page. A top-level section is a section
+ * of that page and nests under its entry, as one does on any other page.
  */
 export function prefRailItems(root: PrefGroup): PrefRailItem[] {
   const items: PrefRailItem[] = [];
   // The root's own page holds its leaves and every top-level group that is not a page itself.
   const loose = Object.values(root.children).filter((c) => isPrefLeaf(c) || !prefGroupIsPage(c));
-  if (loose.length > 0) {
-    const matches = loose.reduce((n, c) => n + countPrefLeaves(c), 0);
-    items.push({ path: '', name: looseEntryName(root.name), depth: 0, page: '', matches });
-  }
   const passing = (group: PrefGroup): { passes?: true } => {
     const kids = Object.values(group.children);
     return kids.length > 0 && kids.every((c) => !isPrefLeaf(c) && prefGroupOpensPage(c)) ? { passes: true } : {};
@@ -133,7 +131,9 @@ export function prefRailItems(root: PrefGroup): PrefRailItem[] {
   const nest = (group: PrefGroup, path: string, depth: number, page: string): void => {
     for (const [key, sub] of Object.entries(group.children)) {
       if (isPrefLeaf(sub) || !prefGroupNests(sub)) continue;
-      const subPath = `${path}.${key}`;
+      // A top-level page is no part of the root's own page.
+      if (path === '' && prefGroupIsPage(sub)) continue;
+      const subPath = path === '' ? key : `${path}.${key}`;
       const opens = prefGroupOpensPage(sub);
       const listed = opens || path === page;
       const on = opens ? subPath : page;
@@ -141,6 +141,11 @@ export function prefRailItems(root: PrefGroup): PrefRailItem[] {
       nest(sub, subPath, listed ? depth + 1 : depth, on);
     }
   };
+  if (loose.length > 0) {
+    const matches = loose.reduce((n, c) => n + countPrefLeaves(c), 0);
+    items.push({ path: '', name: looseEntryName(root.name), depth: 0, page: '', matches });
+    nest(root, '', 1, '');
+  }
   for (const [key, child] of Object.entries(root.children)) {
     if (isPrefLeaf(child) || !prefGroupIsPage(child)) continue;
     items.push({ path: key, name: child.name, depth: 0, page: key, matches: countPrefLeaves(child), ...passing(child) });

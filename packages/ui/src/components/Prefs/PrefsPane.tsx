@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode, type RefObject } from 'react';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
-import { BarLayout, groupBarNodes, type BarOrientation } from '../Bar/BarLayout';
+import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { pathWithin, selectionAttrs, useHeldTab } from './selection';
@@ -152,25 +152,31 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
   depth: number;
   orientation?: BarOrientation;
 }) {
+  // The leaf an alias shows stands in its place, so the bar names its cell and its popover for that leaf.
+  const shown = (node: BarLeafNode): BarLeafNode => {
+    const drawn = shownLeaf(ctx, node.leaf);
+    return drawn?.at === undefined ? node : { path: node.path, at: drawn.at, leaf: drawn.pref };
+  };
   return (
     <BarLayout
       framed
       orientation={orientation}
       rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
       label={group.name === '' ? undefined : group.name}
-      nodes={groupBarNodes(group, path, (inner, at) => (
+      nodes={shownBarNodes(groupBarNodes(group, path, (inner, at) => (
         <div className={s.rows}>{paneChildren(ctx, Object.entries(inner.children), at, depth + 1)}</div>
-      ))}
+      )), shown)}
       cells={(leaves) =>
-        leaves.flatMap(({ path: at, leaf }) => {
-          const shown = shownLeaf(ctx, leaf);
-          if (!shown) return [];
-          const { renderCtx } = prefRenderContext(ctx, at, shown.pref, shown.at);
+        leaves.flatMap(({ path: own, leaf, at }) => {
+          // An alias still here shows nothing, or is a renderer's to draw.
+          const drawn = at === undefined ? shownLeaf(ctx, leaf) : { pref: leaf, at };
+          if (!drawn) return [];
+          const { renderCtx } = prefRenderContext(ctx, own, drawn.pref, drawn.at);
           const content = renderPrefControl(renderCtx, ctx.renderers, undefined, 'bar');
-          return content == null ? [] : [{ path: at, content }];
+          return content == null ? [] : [{ path: own, content }];
         })
       }
-      row={({ path: at, leaf }) => <PrefRow ctx={ctx} path={at} pref={leaf} />}
+      row={({ path: own, leaf, at }) => <PrefRow ctx={ctx} path={own} pref={leaf} at={at} />}
       attrs={(at, leaf) => selectionAttrs(at, ctx, leaf)}
     />
   );

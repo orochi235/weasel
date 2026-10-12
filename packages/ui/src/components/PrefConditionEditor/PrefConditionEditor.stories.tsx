@@ -31,11 +31,11 @@ const SCHEMA: PrefGroup = {
 };
 
 /** The editor over a condition it holds, with what it wrote last under it. */
-function Live({ start }: { start?: PrefCondition }) {
+function Live({ start, schema = SCHEMA, over }: { start?: PrefCondition; schema?: PrefGroup; over?: PrefGroup }) {
   const [value, setValue] = useState<PrefCondition | undefined>(start);
   return (
     <div className={s.frame}>
-      <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={value} onChange={setValue} />
+      <PrefConditionEditor aria-label="Shown if" schema={schema} over={over} value={value} onChange={setValue} />
       <pre className={s.written}>{value === undefined ? 'undefined' : JSON.stringify(value, null, 2)}</pre>
     </div>
   );
@@ -85,4 +85,15 @@ export const Problems: Story = {
       { path: 'canvas.units', is: 'cm' },
     ] }} />
   ),
+};
+
+const LAYOUT: PrefGroup = {
+  name: 'Sidebar',
+  children: { compact: { kind: 'boolean', name: 'Compact', description: '', default: false } },
+};
+
+/** `over`: the condition belongs to a layout drawn over another schema, and may read that schema's prefs. The
+ *  picker lists them after the layout's own, each named for the schema it is in. */
+export const OverAnotherSchema: Story = {
+  render: () => <Live schema={LAYOUT} over={SCHEMA} start={{ all: [{ path: 'compact', is: false }, { path: 'canvas.showGrid', is: true }] }} />,
 };

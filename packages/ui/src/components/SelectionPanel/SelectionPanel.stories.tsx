@@ -219,3 +219,32 @@ export const Conditions: Story = {
     );
   },
 };
+
+const CARD: PrefSection = {
+  name: 'Card',
+  members: {
+    'data.rounded': { kind: 'boolean', name: 'Rounded', description: 'Enables the radius.', default: false } as PrefLeaf,
+    'data.radius': { ...field('Radius'), enableIf: { path: 'data.rounded' } },
+    'data.title': field('Title', 'string'),
+  },
+};
+const pointer = (of: string): PrefLeaf => ({ kind: 'alias', name: '', description: '', default: undefined, of });
+const CORNERS: PrefSection = {
+  name: 'Card',
+  members: { corners: { name: 'Corners', members: { 'layout.rounded': pointer('data.rounded'), 'layout.radius': pointer('data.radius') } } },
+};
+const CORNERS_PROPERTIES: NodePropertiesEntry[] = [{ name: 'card', schema: CORNERS }];
+
+/** `over`: a panel drawn from a layout of aliases into another schema, the one that holds the kind's settings.
+ *  Each row is that schema's leaf, reads and writes its path on the node, and follows its conditions: Radius is
+ *  disabled while Rounded is off. */
+export const AliasesIntoAnotherSchema: Story = {
+  render: function OverStory() {
+    const scene = useMemo(() => sceneWith({ text: '', rounded: true, radius: 6 } as Data), []);
+    return (
+      <div className={s.narrow}>
+        <SelectionPanel scene={scene} selection={selection} properties={CORNERS_PROPERTIES} routing={SECTIONED_ROUTING} over={CARD} />
+      </div>
+    );
+  },
+};

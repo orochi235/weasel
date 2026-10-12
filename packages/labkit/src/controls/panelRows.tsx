@@ -1,4 +1,10 @@
-import { isPrefLeaf, type PrefGroup, type PrefLeaf, pairRowsOf } from '@weasel-js/prefs';
+import {
+  isPrefLeaf,
+  type PrefGroup,
+  type PrefLeaf,
+  type PrefSection,
+  pairRowsOf,
+} from '@weasel-js/prefs';
 import {
   type CollapseProps,
   GroupTabs,
@@ -43,6 +49,8 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
   renderers: Record<string, ControlRenderer> | undefined;
+  /** The schema the panel's aliases point into, where that is not `resolved`'s. */
+  over: PrefGroup | PrefSection | undefined;
   showHidden: boolean;
   density: PropertyDensity | undefined;
   align: PropertyAlign | undefined;
@@ -64,6 +72,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     shown,
     setConfig,
     renderers,
+    over,
     showHidden,
     density,
     align,
@@ -73,7 +82,9 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   } = source;
 
   const enabled = (path: string): boolean =>
-    isLeafEnabled(resolved, path, config as Record<string, unknown>);
+    isLeafEnabled(resolved, path, config as Record<string, unknown>, over);
+  const visible = (path: string): boolean =>
+    isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden, over);
 
   /** A group's paths that no section inside it claims, in schema order. */
   const loosePaths = (group: PrefGroup, at: string): string[] => {
@@ -89,10 +100,9 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     const found = headingLeaf(resolved, heading, paths, renderers);
     if (!found) return { path: undefined, control: undefined };
     const { path, leaf } = found;
-    const visible = isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden);
     return {
       path,
-      control: visible ? (
+      control: visible(path) ? (
         <BareControl
           leaf={leaf}
           value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
@@ -108,7 +118,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const node = (path: string, rows: Rows): ReactNode => {
     const found = schemaNodeAtPath(resolved.group, path);
     if (!found) return null;
-    if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden)) return null;
+    if (!visible(path)) return null;
     if (isPrefLeaf(found)) {
       return (
         <ControlRow
@@ -125,6 +135,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           auto={auto}
           setRowAuto={setRowAuto}
           disabled={!enabled(path)}
+          over={over}
         />
       );
     }
@@ -134,16 +145,11 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           key={path}
           group={found}
           path={path}
-          visible={(p) => isLeafVisible(resolved, p, config as Record<string, unknown>, showHidden)}
+          visible={visible}
           enabled={enabled}
           value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
           write={setConfig}
-          custom={(p, leaf) =>
-            (renderers?.[p] ??
-              resolved.renderers[p] ??
-              resolved.dialogs[p] ??
-              renderers?.[leaf.kind]) !== undefined
-          }
+          custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
           row={(p) => (
             <PropertyList pack={rows.grid} density={density} align={align}>
               {node(p, rows)}
@@ -218,15 +224,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     if (!found || !isPrefLeaf(found)) return undefined;
     const pair = pairs.get(path);
     if (pair === undefined) return undefined;
-    if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden))
-      return undefined;
-    if (
-      renderers?.[path] ??
-      resolved.renderers[path] ??
-      resolved.dialogs[path] ??
-      renderers?.[found.kind]
-    )
-      return undefined;
+    if (!visible(path)) return undefined;
+    if (drawsOwn(resolved, renderers, path, found)) return undefined;
     // A cell is one bare control, so a leaf with no one field keeps its row.
     if (isSliderLeaf(found) || labField(found, undefined, unwritten, NO_CHOICES) === null)
       return undefined;
@@ -250,7 +249,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       for (; past < paths.length; past += 1) {
         const found = schemaNodeAtPath(resolved.group, paths[past]!);
         if (!found || isPrefLeaf(found) || found.as !== 'tab') break;
-        if (isLeafVisible(resolved, paths[past]!, config as Record<string, unknown>, showHidden)) {
+        if (visible(paths[past]!)) {
           run.push({ path: paths[past]!, name: found.name });
         }
       }
@@ -339,6 +338,21 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   };
 
   return { body, lift, loosePaths };
+}
+
+/** Whether the lab or the instrument draws the control of the leaf at `path` itself: by path, in a dialog, or by kind. */
+function drawsOwn(
+  resolved: ResolvedConfig,
+  renderers: Record<string, ControlRenderer> | undefined,
+  path: string,
+  leaf: PrefLeaf,
+): boolean {
+  const own =
+    renderers?.[path] ??
+    resolved.renderers[path] ??
+    resolved.dialogs[path] ??
+    renderers?.[leaf.kind];
+  return own !== undefined;
 }
 
 /** What a section says of its own frame. */
