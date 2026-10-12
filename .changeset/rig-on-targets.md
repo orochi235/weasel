@@ -20,7 +20,7 @@ What replaces each use of `blendPoses`:
 Where the result differs from `blendPoses`:
 
 - Weights are not normalized. `[0.3, 0.3]` is an even mix at 60% strength over the committed pose; weights summing past 1 share full strength, so `[1, 1]` is still an even mix.
-- Rotation takes the short way round from the committed pose, not between the poses. Two held rotations more than half a turn apart through the committed one, such as 3 and -3 over a bind pose at 0, meet on the committed side.
+- Rotations meet at their average direction by weight, where `blendPoses` turned each pose in order from the first. Two poses give the same answer; three or more spread around the circle can differ. At weights short of 1 the joint turns the short way from the committed pose toward that meeting point.
 - A pose read back names every joint of the skeleton in full.
 
 Also fixed: a frame the animator requested from inside its own ticks ran ahead of the paint a canvas requests from `onTick`, which cost one painted frame each time a track took hold of its target or an `onDone` started another animation. The request now waits until after `onTick`.

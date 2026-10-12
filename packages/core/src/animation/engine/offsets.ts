@@ -11,15 +11,18 @@ export function axesFor<T>(axes: TargetAxes<T>, value: T, what: string): number[
   return a;
 }
 
+/** The angle `x` as the turn of at most half a circle that reaches it. */
+export function shortWay(x: number): number {
+  x %= TAU;
+  if (x > Math.PI) return x - TAU;
+  if (x <= -Math.PI) return x + TAU;
+  return x;
+}
+
 /** `a - b` per axis, the short way round on an angle axis. */
 export function travel<T>(axes: TargetAxes<T>, a: readonly number[], b: readonly number[]): number[] {
   const d = a.map((x, i) => x - b[i]!);
-  for (const i of axes.angles ?? []) {
-    let x = d[i]! % TAU;
-    if (x > Math.PI) x -= TAU;
-    if (x <= -Math.PI) x += TAU;
-    d[i] = x;
-  }
+  for (const i of axes.angles ?? []) d[i] = shortWay(d[i]!);
   return d;
 }
 

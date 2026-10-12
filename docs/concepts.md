@@ -272,7 +272,9 @@ Two on one target combine, by two rules:
 - **A hold stands in.** `animator.hold({ target, value, weight })` shows a value
   in place of the committed one: a drag preview, a timeline's sampled track, a
   rig clip. Several holds on a target are alternatives, mixed by weight; weights
-  short of 1 leave the rest to the committed value; offsets add on top.
+  short of 1 leave the rest to the committed value; offsets add on top. On an
+  angle axis the holds meet at their average direction by weight, so two turn the
+  short way toward each other.
 
 Leaving never moves the value on screen: a canceled animation commits where it
 was, and so does a released hold unless told not to. One canceled under a hold,

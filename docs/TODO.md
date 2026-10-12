@@ -865,10 +865,6 @@ built 2026-10-11. What that left:
   `read` builds an axes array and a value object per call. The earlier costs of moving the
   values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling) were accepted on
   2026-10-04 and 2026-10-08; their tables are in `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`.
-- **(P3) Holds on a rig turn the short way from the committed pose, not from each other** —
-  rotations of 3 and −3 over a bind of 0 meet at 0, where the deleted `blendPoses` met at π.
-  Pinned in `packages/core/src/animation/rig/poseHolds.test.tsx`. Meeting between the holds
-  needs a blits channel that lerps angles, in place of the sum the codec's lanes use.
 - **(P3) A hold over some of a rig's joints** — a hold covers every joint, so an arm solved by
   IK at full strength cannot sit beside clips holding the body; the rig demo samples the body
   from a track to work around it.

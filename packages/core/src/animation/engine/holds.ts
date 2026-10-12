@@ -1,6 +1,6 @@
 import type { TargetState } from '../target';
 import type { AnimationContext } from './context';
-import { absorb, axesFor, travel } from './offsets';
+import { absorb, axesFor, shortWay, travel } from './offsets';
 
 /** What {@link openHold} takes. */
 export interface HoldSource<T> {
@@ -21,9 +21,26 @@ export interface OpenHold {
 }
 
 interface Member {
+  /** Its value's axes. */
+  value(): number[];
   /** How far its value is from the committed one, per axis. */
   at(): number[];
   weight(): number;
+}
+
+/** The direction the group's values on angle axis `i` average to by weight, or null where they
+ *  cancel out. */
+function meanAngle(group: Set<Member>, i: number): number | null {
+  let sin = 0;
+  let cos = 0;
+  for (const m of group) {
+    const w = m.weight();
+    if (!(w > 0)) continue;
+    const a = m.value()[i]!;
+    sin += w * Math.sin(a);
+    cos += w * Math.cos(a);
+  }
+  return Math.hypot(sin, cos) < 1e-9 ? null : Math.atan2(sin, cos);
 }
 
 const groups = new WeakMap<TargetState, Set<Member>>();
@@ -63,19 +80,29 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   axesFor(ax, o.value(), 'value');
   const id = ctx.nextId();
   let gone = false;
+  const group = groups.get(state) ?? new Set<Member>();
+  groups.set(state, group);
   const member: Member = {
+    value: () => ax.to(o.value()),
     at: () => {
       const committed = ax.to(s.get());
       s.heldAt = committed;
-      return travel(ax, ax.to(o.value()), committed);
+      const value = ax.to(o.value());
+      const d = travel(ax, value, committed);
+      if (group.size < 2) return d;
+      // Among several holds an angle goes by way of where they meet, so two holds turn the
+      // short way toward each other and not each the short way from the committed value.
+      for (const i of ax.angles ?? []) {
+        const mean = meanAngle(group, i);
+        if (mean !== null) d[i] = shortWay(mean - committed[i]!) + shortWay(value[i]! - mean);
+      }
+      return d;
     },
     weight: () => (gone ? 0 : share(o.weight())),
   };
 
   ctx.targets.attach(state);
   s.held += 1;
-  let group = groups.get(state);
-  if (!group) groups.set(state, group = new Set());
   group.add(member);
   ctx.seedClock();
   s.slot = ctx.codec.hold({ id, on: s, axes: ax.count, at: member.at, weight: member.weight });
