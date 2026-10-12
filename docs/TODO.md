@@ -810,12 +810,15 @@ built 2026-10-11. What that left:
   left of a frame of many values. In a CPU profile of 10k tweens: `tickEach` 15%, the target
   book's `settle` 12 to 13%, which zeroes an `adjust` array per moving target every frame, and
   the rest in blits' pull. Not investigated further.
-- **(P2) Stopping and starting an animation costs about 50 µs at 10k animations, and more as
-  there are more** — the same script's "rows restarted a frame" rows: 100 restarted a frame took
-  a 10k frame from about 1 ms to 6 to 8 ms, and 1,000 took a 100k frame from 29 ms to about
-  200, on a table or on targets alike. The profile under churn shows blits' `forget`,
-  `unindex`, and `prune`. `~/src/blits/NOTES-FROM-WEASEL.md` ("Churn, what is left") has the
-  earlier reading of the same cost, at one restart a frame.
+- **(P2) Stopping and starting an animation costs more as more are running, and most of it is
+  in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the parts (orochi,
+  plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs with 1,000
+  running and 21 with 10,000, a start 1 and 2, and the frame after them 1.1 ms and 4.1 against
+  0.08 and 0.93 steady. The cancel is blits' `forget` walking every subject the mix holds, and
+  the slow frame is blits' first read of the new voices; the animator's own lane and codec
+  code is under 4% of the profile. `~/src/blits/NOTES-FROM-WEASEL.md` ("Stopping a subject's
+  voice") has the lines and a fix. What is the animator's is the entry above: its two walks
+  over every animation and every moving target read slower in a frame that follows restarts.
 - **(P3) A tween or spring started on a target under a full-weight hold shows its whole travel
   on top of the hold** — it commits its destination, which the hold stands in front of, and its
   offset is added over the hold, so the value on screen jumps by the travel and settles back.
