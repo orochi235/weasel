@@ -1,16 +1,3 @@
-/**
- * @experimental
- * Command palette overlay. Reads every Action registered with the
- * surrounding `<ActionsProvider>` and exposes a search-and-run UI.
- *
- * Reads the ambient selection (when an `<SelectionContextProvider>` is in
- * scope) so the palette can show "N selected" in its footer — purely informational;
- * action-availability is driven by each Action's own `enabled` predicate.
- *
- * Snapshot semantics: the action list and each row's `enabled` state are
- * captured when the palette opens; live reactive updates while open are out
- * of scope. See `Action.enabled` JSDoc in the kit.
- */
 import {
   useEffect,
   useId,
@@ -66,6 +53,7 @@ const HINTS = [
   { keys: [keySpecFromKey('Escape')], label: 'close' },
 ];
 
+/** Props for {@link CommandPalette}. */
 export interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
@@ -124,6 +112,14 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
   );
 }
 
+/**
+ * @experimental
+ * A dialog that lists every action registered with the surrounding
+ * `<ActionsProvider>`, filters by label, and runs the chosen one. The host
+ * owns `open`. The list and each row's `enabled` state are read when it
+ * opens and not again while it is open. With a `<SelectionContextProvider>`
+ * in scope the footer says how much is selected.
+ */
 export function CommandPalette({ open, onClose, reasonLabels }: CommandPaletteProps) {
   const selectionCtx = useSelectionContext();
   const [query, setQuery] = useState('');

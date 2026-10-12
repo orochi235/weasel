@@ -19,8 +19,8 @@
   border-bottom: 1px solid var(--wzl-border);
   color: var(--wzl-fg);
   font-family: inherit;
-  font-size: calc(var(--wzl-font-size-md) + 1px);
-  padding: 12px 14px;
+  font-size: var(--wzl-font-size-md);
+  padding: var(--wzl-space-6) var(--wzl-space-7);
   outline: none;
 }
 .input::placeholder {
@@ -33,7 +33,7 @@
 .list {
   list-style: none;
   margin: 0;
-  padding: 4px;
+  padding: var(--wzl-space-2);
   overflow-y: auto;
   flex: 1 1 auto;
 }
@@ -42,8 +42,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 7px 10px;
+  gap: var(--wzl-space-6);
+  padding: 7px var(--wzl-space-5);
   border-radius: var(--wzl-radius-sm);
   font-size: var(--wzl-font-size-md);
   color: var(--wzl-fg);
@@ -77,12 +77,12 @@
 .shortcuts {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   flex-shrink: 0;
 }
 
 .empty {
-  padding: 18px 14px;
+  padding: 18px var(--wzl-space-7);
   font-size: var(--wzl-font-size-md);
   color: var(--wzl-fg-muted);
   text-align: center;
@@ -96,7 +96,7 @@
 .hint {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--wzl-space-2);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
 }
