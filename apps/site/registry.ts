@@ -275,6 +275,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/RigDemo.tsx',
   },
   {
+    id: 'skin',
+    title: 'Skinning',
+    category: 'Animation',
+    description: "Skinning bends one path with a skeleton. A rig's `bindings` carry whole nodes, one joint each, so an arm made of two rects hinges: the pieces overlap inside the bend and gape outside it. Its `skins` give each point of a path a weight for each joint, and the point goes where those joints would carry it, averaged by weight, so one outline flexes. `autoSkin` makes the weights from each point's distance to the bones; its `power` sets how far the bend spreads. The rig shows the bent path through the node's pose override, with the pose at the path's bounds, so the fill, the stroke, picking, and the selection box all follow the bend with no document write.",
+    hint: 'Drag elbow to bend both arms · raise falloff power to tighten the bend toward a hinge · click the bent arm to see its selection box · play loops the same bend from a SampledTrack<Pose>.',
+    load: () => import('./demos/SkinDemo').then((m) => m.SkinDemo),
+    path: 'apps/site/demos/SkinDemo.tsx',
+  },
+  {
     id: 'scene-scroller',
     title: 'Side-scroller',
     category: 'Animation',

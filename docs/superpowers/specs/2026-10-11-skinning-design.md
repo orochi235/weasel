@@ -72,7 +72,8 @@ Each is reversible.
   `bake` writes the bent path into the document.
 - [ ] **Binding from a node.** A rig read from `data.skeleton` and the `data.skin` of paths under
   it, rebound when either changes.
-- [ ] **Demo.** One path bending, in `apps/site/demos/`.
+- [x] **Demo.** `apps/site/demos/SkinDemo.tsx`, seen in headless Chromium: the fill and stroke
+  bend as one outline, and a click on the bent forearm selects it with the box at its bounds.
 - [ ] **Bone tool.** Draw, select, and move joints of a node's `data.skeleton`, each drag one
   scene op.
 - [ ] **Weight tool.** Show a joint's influence as color on the path, and edit weights of
