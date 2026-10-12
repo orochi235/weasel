@@ -339,11 +339,14 @@ have shipped. What remains:
   `apps/draw/src/Toolbar.tsx` still adds every container with `data: {}`; it has to add
   `draft.data`. Nothing has drawn a clipped import in a browser yet.
 
-- **(P3) svg import: `<tspan>` positioning beyond line breaks is not read.** A `<tspan>` with its
-  own `x` and a `dy` or new `y` now starts a line (`packages/svg/src/tspanLines.ts`), but the line
-  pitch the `dy` states is discarded in favor of the default 1.2 line height, and `dx`, `rotate`,
-  and list-valued per-glyph `x` / `y` are not applied; each now warns, on `<text>` and `<tspan>`
-  alike. Kerned text exported as one `<tspan>` per glyph run imports with the glyphs run together.
+- **(P3) svg import: `<tspan>` glyph positioning is not read.** A `<tspan>` with its own `x` and
+  a `dy` or new `y` starts a line (`packages/svg/src/tspanLines.ts`), and the pitch the lines state
+  is read as the node's `lineHeight`. `dx`, `rotate`, and list-valued per-glyph `x` / `y` are not
+  applied; each warns, on `<text>` and `<tspan>` alike. Kerned text exported as one `<tspan>` per
+  glyph run imports with the glyphs run together: turning a positioned run into a letter spacing or
+  a space needs the advance of the glyphs before it, which a parse with no face loaded cannot
+  measure. `serializeSvg` writes no line height either, so a pitch read on import is dropped on
+  export unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
 - **(P3) svg import: a dropped file's hidden content is still left out.** `parseSvg(svg, {
   keepHidden: true })` keeps `display="none"` and `visibility="hidden"` content, each node marked
