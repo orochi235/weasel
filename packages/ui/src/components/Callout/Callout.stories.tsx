@@ -13,15 +13,18 @@ export default meta;
 type Story = StoryObj<typeof Callout>;
 
 export const Composed: Story = {
-  render: () => (
+  args: {
+    title: 'Boolean union',
+    placement: 'bottom',
+    children:
+      'Merges the selected paths into a single shape. Original paths are replaced; undo restores them.',
+  },
+  render: (args) => (
     <CalloutTrigger>
       <Pressable>
         <button type="button">What does this do?</button>
       </Pressable>
-      <Callout title="Boolean union" placement="bottom">
-        Merges the selected paths into a single shape. Original paths are
-        replaced; undo restores them.
-      </Callout>
+      <Callout {...args} />
     </CalloutTrigger>
   ),
 };
@@ -49,7 +52,13 @@ export const Tones: Story = {
 };
 
 export const Modal: Story = {
-  render: () => {
+  args: {
+    modal: true,
+    stance: 'danger',
+    title: 'Really delete?',
+    children: 'This clears the whole document. The app is blocked until you choose (or press Esc).',
+  },
+  render: (args) => {
     function Subject() {
       const ref = useRef<HTMLButtonElement>(null);
       const [open, setOpen] = useState(false);
@@ -57,21 +66,17 @@ export const Modal: Story = {
         <>
           <button ref={ref} type="button" onClick={() => setOpen(true)}>Delete everything</button>
           <Callout
+            {...args}
             triggerRef={ref}
             isOpen={open}
             onOpenChange={setOpen}
-            modal
-            stance="danger"
-            title="Really delete?"
             footer={
               <>
                 <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
                 <Button variant="primary" size="sm" onClick={() => setOpen(false)}>Delete</Button>
               </>
             }
-          >
-            This clears the whole document. The app is blocked until you choose (or press Esc).
-          </Callout>
+          />
         </>
       );
     }
