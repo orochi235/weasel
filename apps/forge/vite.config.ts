@@ -22,7 +22,14 @@ export default defineConfig(({ command, isPreview }) => ({
     react(),
     traitSchemasPlugin({ repoRoot }),
     themeStorePlugin(repoThemeStoreOptions(repoRoot)),
-    forge({ stories, frameConfig, shellConfig, frameStyles }),
+    forge({
+      stories,
+      frameConfig,
+      shellConfig,
+      frameStyles,
+      // react-aria's DOM-level props: ids, ARIA labeling, `dir`, `lang`, `hidden`, and the like.
+      propControls: { skip: (file) => /@react-types[\\/]shared[\\/]src[\\/]dom\.d\.ts$/.test(file) },
+    }),
     localWake(),
   ],
   server: { port: ports.forge, strictPort: true, host: '::' },
