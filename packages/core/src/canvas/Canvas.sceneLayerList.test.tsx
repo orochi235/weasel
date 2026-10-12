@@ -83,9 +83,20 @@ describe('<SceneCanvas> scene layers changed after mount', () => {
       scene.addLayer({ id: 'fx', name: 'Effects' });
       scene.add({ kind: 'leaf', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 20, y: 0, width: 10, height: 10 } });
     });
-    // The frame that finds the list changed rebuilds the layers; the next paints them.
-    await nextFrame();
+    // One frame: the canvas hears of the change from the adapter, not from a paint.
     await nextFrame();
     expect(colors()).toEqual([BASE, FX]);
+  });
+
+  it('stops painting a layer removed after mount', async () => {
+    const scene = mount();
+    act(() => {
+      scene.addLayer({ id: 'fx', name: 'Effects' });
+      scene.add({ kind: 'leaf', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 20, y: 0, width: 10, height: 10 } });
+    });
+    await nextFrame();
+    act(() => { scene.removeLayer('fx'); });
+    await nextFrame();
+    expect(colors()).toEqual([BASE]);
   });
 });

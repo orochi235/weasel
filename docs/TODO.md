@@ -198,13 +198,6 @@ have shipped. What remains:
   That leaves dropping both style writes, checking every host for a layout that depends on them, and
   taking the caveat back out of the docs.
 
-- **(P3) Scene layer list: `<Canvas>` learns of a layer change by polling at paint.**
-  `useSceneLayerList` (`packages/core/src/canvas/useSceneLayerList.ts`) re-reads
-  `adapter.getLayers()` on every paint and queues a render when the ids differ, because the adapter
-  contract has no layer-list subscription. That costs one skipped frame per change. If
-  `CanvasAdapter` gains a layer-list version or subscription, key the layer memo on that and drop
-  the poll.
-
 ---
 
 ## Paths & booleans

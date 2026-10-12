@@ -303,6 +303,10 @@ export interface InsertAdapter<TNode extends { id: string }> {
  */
 export interface LayerEnumerableAdapter<TLayer extends string = string> {
   getLayers?(): readonly { id: TLayer; visible: boolean; parallax?: ParallaxOpts }[];
+  /** Call `listener` whenever the list `getLayers` answers may have changed.
+   *  A canvas reads the list at mount and again on each call, so an adapter
+   *  whose list never changes leaves this out. */
+  subscribeLayers?(listener: () => void): () => void;
 }
 
 /**
