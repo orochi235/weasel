@@ -1831,6 +1831,16 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P2) Two browser tests timed out once in a fleet run, each inside a Playwright action.** On
+  studio at `9df030cfa`, 2026-10-11, with 19,605 other tests and the gate passing:
+  `PrefSchemaEditor.types.browser.test.tsx` ("a list's entry is edited inside the attributes
+  pane…") spent 14.5 s in `userEvent.click` after the tree row was found and scrolled to, and
+  `core/src/features/text/overlayAlignment.browser.test.tsx` ("sans-serif 16px lands on the canvas
+  glyphs") spent 7.8 s in `page.screenshot` waiting for the element to be stable. The first passes
+  alone in 0.3 s. Two unrelated files failing the same way in one run reads as load, which nobody
+  has confirmed; `AssetEditor.steps.test.tsx` has also timed out at 5 s under load and passed
+  alone.
+
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
   React overlay, and a DOM layer moved as one element, on an idle node
