@@ -1,12 +1,16 @@
 // apps/site/demos/__tests__/platformerClips.test.ts
 import { describe, it, expect } from 'vitest';
-import { createTarget, skeletonAxes, resolveSkeleton, sampleTrack } from '@weasel-js/animator';
-import type { Pose } from '@weasel-js/animator';
+import { bindClip, createTarget, skeletonAxes, resolveSkeleton, sampleTrack, toClip } from '@weasel-js/animator';
+import type { Clip, Pose, SampledTrack } from '@weasel-js/animator';
 import { BONE_LENGTH, JOINT_ORDER, PLAYER_SKELETON } from '../platformer/skeleton';
-import { CLIPS, clipTrack, type Clip } from '../platformer/clips';
+import { CLIPS, FADE, PLAYER } from '../platformer/clips';
 
 const target = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(PLAYER_SKELETON) });
-const samplePose = (clip: Clip, t: number): Pose => sampleTrack(clipTrack(clip, target), t)!;
+const bound = (clip: Clip) => bindClip(clip, {
+  target: (name) => (name === PLAYER ? target : undefined),
+  weight: (name) => (name === FADE ? () => 1 : undefined),
+});
+const samplePose = (clip: Clip, t: number): Pose => sampleTrack(bound(clip).tracks[0] as SampledTrack<Pose>, t)!;
 
 describe('PLAYER_SKELETON', () => {
   it('has eleven joints in topological order', () => {
@@ -31,6 +35,14 @@ describe('PLAYER_SKELETON', () => {
 });
 
 describe('a clip sampled on a pose target', () => {
+  it('is data: every clip reads back from JSON as it was written', () => {
+    for (const [name, clip] of Object.entries(CLIPS)) {
+      const back = JSON.parse(JSON.stringify(clip)) as Clip;
+      expect(back, name).toEqual(clip);
+      expect(toClip(bound(back)), name).toEqual(clip);
+    }
+  });
+
   it('returns a pose at any t within every clip', () => {
     for (const [name, clip] of Object.entries(CLIPS)) {
       for (const u of [0, 0.13, 0.5, 0.87, 1]) {
