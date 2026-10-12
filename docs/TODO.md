@@ -864,8 +864,16 @@ built 2026-10-11. What that left:
   costs of moving the values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling)
   were accepted on 2026-10-04 and 2026-10-08; their tables are in
   `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`. This one has not been.
+- **(P3) A tween or spring started on a target under a full-weight hold shows its whole travel
+  on top of the hold** — it commits its destination, which the hold stands in front of, and its
+  offset is added over the hold, so the value on screen jumps by the travel and settles back.
+  With no hold the two cancel and nothing moves as it starts. Seen in
+  `useAnimator.hold.test.tsx` ("hands what a canceled offset left under it to the next
+  animation"), not fixed: whether an offset under a hold should show at all is a call on the
+  model, since a hold at a weight below 1 shows part of the committed value.
 - **(P3) Whether blits moves into the monorepo as its own `@weasel-js` package** — open since
-  2026-09-30. `@weasel-js/core` depends on `@msb235/blits` pinned exactly.
+  2026-09-30. `@weasel-js/core` depends on `@msb235/blits` pinned exactly, at 0.8.1; the blits
+  checkout in `~/src/blits` was at 0.10.0 on 2026-10-11.
 
 ### Earlier deferrals
 
