@@ -75,6 +75,18 @@ describe('drawBooleansAdapter', () => {
   });
 });
 
+describe('drawBooleansAdapter on an op that keeps its pieces apart', () => {
+  it('paints each cropped piece like the source it was cut from, not like the mask', () => {
+    const { scene, adapter } = setup();
+    scene.update(asNodeId('a'), { data: { path: rectPath(0, 0, 10, 10), fill: { color: '#f00' } } });
+    scene.update(asNodeId('b'), { data: { path: rectPath(0, 0, 10, 10), fill: { color: '#00f' } } });
+    scene.setSelection([asNodeId('a'), asNodeId('b')]);
+    const result = applyBooleanOp(adapter, 'crop');
+    const [id] = result.kind === 'applied' ? result.resultIds : [];
+    expect(scene.get(asNodeId(id!))?.data.fill).toEqual({ color: '#f00' });
+  });
+});
+
 describe('drawBooleansAdapter with strokes counted', () => {
   it('fills a result in its topmost source\'s stroke paint, and does not stroke it again', () => {
     const { scene, adapter } = setup();
