@@ -1324,13 +1324,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   labkit, and `PrefsPane` has no emptiness check. Home: a pure "children as runs" helper in
   `@weasel-js/prefs` (leaf, tab run, or group with its resolved `as`) that all five walk.
 
-- **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns, and gets a unit's
-  step wrong.** `packages/labkit/examples/schema-lab/prefsToFields.ts` converts `min` and `max` with
-  the unit's `toDisplay` and passes `step` through unconverted, so a leaf stored in radians and
-  shown in degrees with `step: 0.01` steps by 0.01 degrees; a decreasing conversion yields `min >
-  max`. `prefDisplayBounds` converts the step as a distance and swaps flipped ends.
-  `decodePrefValue` there applies an enum `encoding` and not a boolean one, and a `field` leaf
-  becomes free text. Not hit today, since the lab's schema is the rect's. The example exists to show
+- **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns.**
+  `packages/labkit/examples/schema-lab/prefsToFields.ts` turns each leaf of a property schema into
+  a `ConfigField` by hand, and a `field` leaf becomes free text there. The example exists to show
   the API, and `ControlPanel`'s `fields` prop is marked deprecated in favor of `schema`: pass the
   schema, which goes through `prefFieldProps`, and delete the file. Not a drop-in today: an
   instrument's `config` takes labkit's own `ConfigSchema` (`packages/labkit/src/config/types.ts`),
