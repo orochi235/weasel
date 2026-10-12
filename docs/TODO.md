@@ -1538,12 +1538,6 @@ only story runner in the repo.
   do nothing. Where a story holds a value in state, as `Timeline`'s playhead and
   `Jog`'s index are, the control only sets where it starts.
 
-- **(P3) A control read from a string-union prop lists its options in the compiler's order.**
-  `controlFor` (`packages/forge/src/vite/propTypes.ts`) takes a union's members as the checker
-  returns them, which is not the order the type was written in: `Button`'s `variant` reads link,
-  ghost, primary, secondary. Reading the order from the declaration's type node would fix it where
-  the union is written out, and leave an aliased or computed union as it is.
-
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
   no Marks section and no tool rail. The removed wiring — the

@@ -124,7 +124,9 @@ function propTable(
   for (const prop of checker.getPropertiesOfType(checker.getApparentType(props))) {
     const files = (prop.getDeclarations() ?? []).map((declaration) => declaration.getSourceFile().fileName);
     if (files.length > 0 && files.every(skipped)) continue;
-    const argType = controlFor(tsm, checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(prop, at)));
+    const argType = controlFor(tsm, checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(prop, at)), () =>
+      writtenOrder(tsm, checker, prop),
+    );
     if (!argType) continue;
     const description = tsm.displayPartsToString(prop.getDocumentationComment(checker)).replace(/\s+/g, ' ').trim();
     argTypes[prop.getName()] = description ? { ...argType, description } : argType;
@@ -133,7 +135,7 @@ function propTable(
   return { argTypes, sources: [...sources] };
 }
 
-function controlFor(tsm: typeof ts, type: ts.Type): ArgType | null {
+function controlFor(tsm: typeof ts, type: ts.Type, written: () => string[] | null): ArgType | null {
   const { TypeFlags } = tsm;
   const parts = type.isUnion() ? type.types : [type];
   const every = (flags: ts.TypeFlags) => parts.every((part) => part.flags & flags);
@@ -142,7 +144,45 @@ function controlFor(tsm: typeof ts, type: ts.Type): ArgType | null {
   if (type.flags & TypeFlags.Number) return { control: { type: 'number' } };
   // No control type: the options alone make it a select, and a story's own argType may still say radio.
   if (parts.length > 1 && every(TypeFlags.StringLiteral)) {
-    return { options: parts.map((part) => (part as ts.StringLiteralType).value) };
+    const options = parts.map((part) => (part as ts.StringLiteralType).value);
+    const order = written();
+    const same = order?.length === options.length && options.every((option) => order.includes(option));
+    return { options: same ? order : options };
   }
   return null;
+}
+
+/**
+ * A prop's string literals in the order its type is written in, following a plain alias to where it is spelled out.
+ * Null when any part of the type is computed.
+ */
+function writtenOrder(tsm: typeof ts, checker: ts.TypeChecker, prop: ts.Symbol): string[] | null {
+  const [declaration, ...others] = prop.getDeclarations() ?? [];
+  if (!declaration || others.length > 0) return null;
+  if (!tsm.isPropertySignature(declaration) && !tsm.isPropertyDeclaration(declaration)) return null;
+  const seen = new Set<ts.Node>();
+  const literals = (node: ts.TypeNode | undefined): string[] | null => {
+    if (!node || seen.has(node)) return null;
+    seen.add(node);
+    if (tsm.isParenthesizedTypeNode(node)) return literals(node.type);
+    if (tsm.isLiteralTypeNode(node)) {
+      if (node.literal.kind === tsm.SyntaxKind.NullKeyword) return [];
+      return tsm.isStringLiteralLike(node.literal) ? [node.literal.text] : null;
+    }
+    if (node.kind === tsm.SyntaxKind.UndefinedKeyword) return [];
+    if (tsm.isUnionTypeNode(node)) {
+      const parts = node.types.map(literals);
+      return parts.every((part) => part !== null) ? [...new Set(parts.flat())] : null;
+    }
+    if (tsm.isTypeReferenceNode(node) && !node.typeArguments) {
+      const named = checker.getSymbolAtLocation(node.typeName);
+      const target = named && named.flags & tsm.SymbolFlags.Alias ? checker.getAliasedSymbol(named) : named;
+      const [alias, ...rest] = target?.getDeclarations() ?? [];
+      if (alias && rest.length === 0 && tsm.isTypeAliasDeclaration(alias) && !alias.typeParameters) {
+        return literals(alias.type);
+      }
+    }
+    return null;
+  };
+  return literals(declaration.type);
 }
