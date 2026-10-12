@@ -1,4 +1,4 @@
-import { type ReactElement, type RefObject } from 'react';
+import { useLayoutEffect, useRef, type ReactElement, type RefObject } from 'react';
 import {
   fillInPoseFrame,
   fillToBoundsFrame,
@@ -51,7 +51,8 @@ export interface SceneGradientHandlesProps<
  * Scene-aware paint handles: on-canvas geometry handles for the gradient in
  * one node's `fill` or `stroke` — `GradientHandles` for the three ramps,
  * `MeshHandles` for a mesh — committed through the `setFill` / `setStroke`
- * actions as a single undo entry per drag. A canceled drag cancels the action.
+ * actions as a single undo entry per drag. A canceled drag cancels the action,
+ * and so does unmounting the overlay while a handle is held.
  *
  * Renders nothing unless the targeted slot holds a gradient or a mesh. The
  * node stores its gradient in `units: 'bounds'` — fractions of its own box, so the paint
@@ -70,11 +71,23 @@ export function SceneGradientHandles<
   const { scene, containerRef, nodeId, slot, view, className } = props;
   const frame = useNodeOverlayFrame(scene, containerRef, nodeId, { view });
   const edit = useOngoingAction(slot === 'fill' ? 'setFill' : 'setStroke');
+  // An edit is open here only while a handle is held, so one still open at unmount is a drag cut short, and
+  // that is a cancel. `useOngoingAction` would commit it in its own cleanup, which this layout cleanup runs
+  // ahead of; the handle's unmount cancel comes after both and must not open a second edit to cancel.
+  const gone = useRef(false);
+  useLayoutEffect(() => {
+    gone.current = false;
+    return () => {
+      gone.current = true;
+      edit.cancel();
+    };
+  }, [edit]);
 
   const paint = frame ? paintOf(scene, nodeId, slot) : null;
   if (!frame || !paint) return null;
 
   const dispatch = (next: FillStyle, phase: 'input' | 'commit'): void => {
+    if (gone.current) return;
     const normalized = fillToBoundsFrame(next, frame.box);
     if (phase === 'commit') edit.commit({ paint: normalized });
     else edit.input({ paint: normalized });

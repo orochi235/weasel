@@ -1397,16 +1397,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   for its card, with `aria-level` restarting there. That leaves that markup in `Level`, and what a
   lone row among cards belongs to, since it has no card to be named for.
 
-- **(P3) SceneGradientHandles: unmounting mid-drag commits the half-finished drag.** Deselect the
-  node (or anything else that unmounts the overlay) while a handle is held: the parent's
-  `useOngoingAction` cleanup runs first and commits the value under the pointer, then `DragPoint`'s
-  own unmount cancel opens a second `setFill` at the starting value and cancels it, which changes
-  nothing (seen in jsdom: ends `commit`, `cancel`, in
-  `packages/ui/src/components/GradientEditor/SceneGradientHandles.tsx`). `useOngoingAction`
-  documents the commit on unmount as "what the user was looking at", which fits a slider left
-  mid-edit; whether a pointer drag cut short by an unmount should commit or cancel is the call. To
-  cancel, the overlay has to learn a drag is live before the parent's cleanup runs.
-
 - **(P2) DataGrid: rows can be reordered by pointer only, and the handler sits on the `<td>`.** With
   `onReorder`, the handle in `packages/ui/src/components/DataGrid/DataGrid.tsx` is a `<td>` holding
   an `aria-hidden` glyph with `onPointerDown` on the cell: not focusable, and no key moves a row.
