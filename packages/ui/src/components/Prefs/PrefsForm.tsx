@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { applyPrefConditions, prefJudge, prefLeafAt, prefReader, visiblePrefSubtree, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { useMemo, useState, type ReactNode } from 'react';
+import { applyPrefConditions, prefJudge, prefReader, visiblePrefSubtree, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { entryApplier } from './entry';
@@ -14,6 +14,7 @@ import { BarRootLayout } from './BarRootLayout';
 import type { BarOrientation } from '../Bar/BarLayout';
 import { RailLayout } from './RailLayout';
 import { selectionAttrs, shownPath, useSelectedRow, type PrefSelectHow, type SelectionRoot } from './selection';
+import { aliasTargets } from './targets';
 import s from './Prefs.module.css';
 
 export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
@@ -100,9 +101,11 @@ export interface PrefsFormProps extends MarkHiddenProps {
   /** The fields a `field` leaf may name. Default: this schema's own — a form
    *  that edits another schema passes that one's. */
   fields?: readonly PrefFieldChoice[];
-  /** The leaf whose value lives at a dotted path, which an `alias` leaf is drawn as. Default: this schema's own. A
-   *  form over a schema of aliases into another passes that one's, and its rows read and write at the paths they name. */
-  leafAt?: (path: string) => PrefLeaf | undefined;
+  /** The schema this one's `alias` leaves point into. Default: this schema itself. A form drawn from a schema of
+   *  aliases into another passes that other: each alias row is drawn as the leaf of it at the alias's path, reads
+   *  and writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own.
+   *  Those conditions read `values`, and that schema's defaults where `values` holds nothing. */
+  over?: PrefGroup | PrefSection;
   /** Small text after an inherited leaf's label, e.g. `() => 'from Defaults'`.
    *  Default: none. */
   inheritHint?: (path: string) => string | undefined;
@@ -157,16 +160,16 @@ export function PrefsForm(props: PrefsFormProps) {
     className,
   } = props;
   const [query, setQuery] = useState('');
-  // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
-  const ownLeafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
-  const leafAt = props.leafAt ?? ownLeafAt;
+  // The whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
+  const over = props.over ?? schema;
+  const targets = useMemo(() => aliasTargets(over, values, { showHidden, markHidden }), [over, values, showHidden, markHidden]);
   const keepEmpty = props.showEmpty === true;
   // Apart from the conditions, which a new `values` object asks again: what they hand back is this tree itself
   // while they drop nothing, and a drop in flight restarts whenever the tree it is drawn in is a new one.
   const visible = useMemo(() => visiblePrefSubtree(schema, showHidden, keepEmpty), [schema, showHidden, keepEmpty]);
   const applied = useMemo(
-    () => (visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden, aliasOver: schema })),
-    [visible, schema, values, keepEmpty, markHidden],
+    () => (visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden, aliasOver: over, aliasHolds: targets.holds })),
+    [visible, schema, values, keepEmpty, markHidden, over, targets],
   );
   const entryAt = useMemo(
     () => entryApplier((entry) => prefJudge(schema, prefReader(schema, values), entry), markHidden),
@@ -174,8 +177,8 @@ export function PrefsForm(props: PrefsFormProps) {
   );
   const conditioned = applied?.shown ?? null;
   const root = useMemo(
-    () => (conditioned === null ? null : filterPrefRoot(conditioned, query, leafAt)),
-    [conditioned, query, leafAt],
+    () => (conditioned === null ? null : filterPrefRoot(conditioned, query, over)),
+    [conditioned, query, over],
   );
 
   // Every field of the whole schema, not only the visible ones: a reference may name a hidden field.
@@ -188,7 +191,7 @@ export function PrefsForm(props: PrefsFormProps) {
   );
   const lead = shown.at(-1) ?? null;
   const selection = useSelectedRow(selected, lead, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined, entryAt };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined, entryAt };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

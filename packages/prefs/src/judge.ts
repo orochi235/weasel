@@ -2,7 +2,7 @@
 
 import { prefConditionHolds, prefConditionReadsItem, type PrefCondition, type PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, prefValueAtPath } from './helpers';
+import { isPrefLeaf, isPrefSection, prefSectionLeaves, prefValueAtPath } from './helpers';
 import type { PrefLeaf } from './schema';
 import { prefShownReader } from './shown';
 
@@ -56,10 +56,17 @@ export function deferEntryConditions(holds: PrefConditionJudge): PrefConditionJu
  * holds there, else the default of the leaf at that path, or the part of a
  * leaf's default the rest of the path names.
  */
-export function prefReader(schema: PrefGroup, values: unknown): (path: string) => unknown {
+export function prefReader(schema: PrefGroup | PrefSection, values: unknown): (path: string) => unknown {
   return (path) => {
     const held = prefValueAtPath(values, path);
     if (held !== undefined) return held;
+    if (isPrefSection(schema)) {
+      for (const [key, leaf] of prefSectionLeaves(schema.members)) {
+        if (path === key) return leaf.default;
+        if (path.startsWith(`${key}.`)) return prefValueAtPath(leaf.default, path.slice(key.length + 1));
+      }
+      return undefined;
+    }
     const steps = path.split('.');
     let node: PrefGroup = schema;
     for (let i = 0; i < steps.length; i++) {

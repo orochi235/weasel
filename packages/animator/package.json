@@ -37,7 +37,7 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@msb235/blits": "0.8.1",
+    "@msb235/blits": "0.10.0",
     "@weasel-js/geom": "1.9.4",
     "@weasel-js/paint": "1.9.4",
     "@weasel-js/react": "1.9.4",

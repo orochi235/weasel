@@ -11,7 +11,7 @@ import {
 import {
   useMemo, useRef
 } from 'react';
-import { drawBooleansAdapter, type DrawScene, textSourceOf } from './booleansAdapter';
+import { drawBooleansAdapter, type DrawScene, pathPaintAt, textSourceOf, worldPathOf } from './booleansAdapter';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 // ─── Outer App: install the color context so swatches + actions resolve ─────
@@ -35,8 +35,9 @@ export function BooleansAdapterPublisher({
   return null;
 }
 
-/** Publishes the adapter the kit's `createOutlines` action converts text
- *  through. A text wearing several paints becomes a group of paths. */
+/** Publishes the adapter the kit's `createOutlines` and `outlineStroke`
+ *  actions convert text and strokes through. A source that becomes several
+ *  paths becomes a group of them. */
 export function CreateOutlinesAdapterPublisher({
   scene,
   selection,
@@ -49,6 +50,8 @@ export function CreateOutlinesAdapterPublisher({
     const a: CreateOutlinesAdapter = {
       ...defaultCommitAdapter(scene, selection.adapterMethods),
       getTextSource: (id) => textSourceOf(scene, id),
+      getWorldPath: (id) => worldPathOf(scene, id),
+      getPaint: (id) => pathPaintAt(scene, id),
       createPathNode: (path, sourceId, { fill, stroke, parent }) => {
         const b = boundsOfPath(path);
         return {
@@ -72,7 +75,7 @@ export function CreateOutlinesAdapterPublisher({
         derivePose: scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren,
       }) as { id: string },
       applyOps: (ops, label) => {
-        scene.applyBatch(ops, label ?? 'Create Outlines', a);
+        scene.applyBatch(ops, label ?? 'Outline', a);
       },
     };
     return a;

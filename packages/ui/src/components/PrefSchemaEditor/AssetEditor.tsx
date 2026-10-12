@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
-import { prefLeafAt, type PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { CloseButton } from '../CloseButton';
 import { ResizeHandle } from '../ResizeHandle';
 import { AssetList } from './AssetList';
@@ -80,7 +80,6 @@ export function AssetEditor(
   const readOnly = asset.readOnly === true;
   const pageless = asset.kind === 'layout';
   const over = overOf(workspace, asset);
-  const leafAt = useMemo(() => over && ((path: string) => prefLeafAt(over, path)), [over]);
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ workspace, schema, paths: selection.paths });
@@ -247,7 +246,7 @@ export function AssetEditor(
           // The root's own entry names no node to add to a selection.
           if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
           else reveal(path === null ? [] : [path]);
-        }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} leafAt={leafAt} />
+        }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} />
       <ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} />
       {list && (
         <>
