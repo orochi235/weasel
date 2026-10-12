@@ -288,14 +288,16 @@ What is built on it:
 
 | Value | Its target | Moved by |
 |---|---|---|
-| A node's pose | `scenePoseTarget(scene, id)`, through `adapter.poseTarget` | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
+| A node's pose | `adapter.poseTarget(id)`: `scenePoseTarget(scene, id)` over a scene, `createWrittenPoseTarget` over an `arrayAdapter` | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
 | The camera | `ViewAnimationApi.viewTarget`; on a `<SceneCanvas>` ref, `camera.target` | `useViewAnimation`, `animateView`; add a shake on the same animator, which the ref hands out as `camera.animator` |
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
 | Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |
 
-A pose animation therefore writes the document once, at its start, and shows its
-travel through a pose override. The values are computed by blits
+A pose animation over a scene therefore writes the document once, at its start,
+and shows its travel through a pose override. An `arrayAdapter` has no overrides,
+so its array is written the pose on screen each frame while the target keeps the
+committed pose. The values are computed by blits
 (`@msb235/blits`), behind `packages/core/src/animation/engine/`; no blits type is
 public. A target is moved by one animator at a time.
 

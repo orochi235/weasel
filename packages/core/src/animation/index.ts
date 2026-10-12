@@ -27,6 +27,7 @@ export {
   createPoseTarget, poseAxes, scenePoseTarget,
   type PoseTargetOptions, type PoseTargetScene,
 } from './poseTarget';
+export { createWrittenPoseTarget, type WrittenPoseTargetOptions } from './writtenPoseTarget';
 export {
   tweenPose, springPose,
   type TweenPoseOptions, type SpringPoseOptions, type PoseAnimationAdapter,

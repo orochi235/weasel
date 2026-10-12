@@ -19,6 +19,8 @@ import {
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
 import type { Path } from '@weasel-js/geom';
+import type { Target } from '../../animation/target';
+import { createWrittenPoseTarget } from '../../animation/writtenPoseTarget';
 import {
   polygonRegion,
   poseOutline,
@@ -27,6 +29,13 @@ import {
   regionTakes,
   type SelectRegion,
 } from 'core/geometry/regionHit';
+
+/** An array adapter's pose targets by node id. See {@link ArrayAdapterConfig.poseTargets}. */
+export type ArrayPoseTargets<TPose> = Map<string, {
+  target: Target<TPose>;
+  /** The node's pose in the items of the adapter that last asked for the target. */
+  read(): TPose | undefined;
+}>;
 
 /** Configuration for `arrayAdapter`. */
 export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {
@@ -74,6 +83,11 @@ export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {
    *  when available, otherwise a monotonic `paste-<n>` counter. Override
    *  when consumers want stable id schemes (e.g. `clip-${n++}`). */
   nextId?: () => string;
+
+  /** Where the adapter keeps each node's pose target. Default: a map of its own. Give one map
+   *  to every adapter built over the same items, so a node keeps one target and everything
+   *  animating it adds; `useArrayAdapter` does. */
+  poseTargets?: ArrayPoseTargets<TPose>;
 }
 
 /**
@@ -146,6 +160,8 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
   const d = (config.poseDescriptor ?? RECT_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const getSelection = selectionRef ? () => selectionRef.current : () => [];
+  const poseTargets: ArrayPoseTargets<TPose> = config.poseTargets ?? new Map();
+  const find = (id: string): TNode | undefined => ref.current.find((o) => o.id === id);
 
   const takenBy = (region: SelectRegion, mode: LassoHitMode): string[] => {
     const out: string[] = [];
@@ -187,6 +203,24 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
     },
     setPose: (id, pose) => {
       setItems((items) => items.map((o) => (o.id === id ? fromPose(o, pose) : o)));
+    },
+    poseTarget(id, descriptor) {
+      const read = (): TPose | undefined => { const o = find(id); return o && toPose(o); };
+      const held = poseTargets.get(id);
+      if (held) {
+        held.read = read;
+        return held.target;
+      }
+      const entry = { read, target: null as Target<TPose> | null };
+      entry.target = createWrittenPoseTarget<TPose>({
+        read: () => entry.read(),
+        write: (pose) => setItems((items) => items.map((o) => (o.id === id ? fromPose(o, pose) : o))),
+        descriptor: descriptor ?? d,
+        onRest: () => { if (entry.read() === undefined) poseTargets.delete(id); },
+      });
+      if (!entry.target) return undefined;
+      poseTargets.set(id, entry as { read: typeof read; target: Target<TPose> });
+      return entry.target;
     },
     getParent,
     setParent,

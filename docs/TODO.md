@@ -859,8 +859,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P3) `arrayAdapter` has no `poseTarget`** — it has no overrides table to show a moving pose
-  through, so `tweenPose` and `springPose` over it still write each frame and replace each other.
 - **(P3) Reading 10k targets costs about 3× the `onTick` path** — one pass of
   `tests/perf/bench/animator-on-blits.bench.ts` on teitou, 2026-10-11: 0.53 ms a frame for 10k
   tweens storing through `onTick`, 1.50 ms on 10k targets read after the frame. Not profiled;

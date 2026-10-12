@@ -63,7 +63,7 @@ export { swapOp } from '@weasel-js/history';
 // ─── Adapters: contract types + reference arrayAdapter ──────────────────────
 export * from '../core/adapters/types';
 export { arrayAdapter } from '../core/adapters/arrayAdapter';
-export type { ArrayAdapter, ArrayAdapterConfig } from '../core/adapters/arrayAdapter';
+export type { ArrayAdapter, ArrayAdapterConfig, ArrayPoseTargets } from '../core/adapters/arrayAdapter';
 export { useArrayAdapter } from '../core/adapters/useArrayAdapter';
 export type { UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 
