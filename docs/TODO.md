@@ -1656,6 +1656,17 @@ only story runner in the repo.
   other 16,953 tests. Seen once and not rerun, so whether it is a race between the last paint and
   the readback or a real missed repaint is not known.
 
+- **(P3) Browser tests time out on the fleet, a different handful each run.** Across six full runs
+  on studio and teitou on 2026-10-11, each of these failed once or twice with a 15 s test timeout
+  or a `locator.screenshot` timeout, and passed in the runs around it:
+  `Prefs/PrefsForm.drop.browser.test.tsx`, `labkit/src/lightbox/Lightbox.browser.test.tsx`,
+  `labkit/src/controls/compoundRows.browser.test.tsx`,
+  `PatternPicker/PatternPicker.browser.test.tsx`, and
+  `core/src/features/text/overlayAlignment.browser.test.tsx`. The last two pass when run alone
+  on this machine at the commit that failed. The suite runs the `browser` project beside eight
+  others on one node. Not measured: whether the timeouts follow the node's load, and whether
+  running `browser` on its own, or with fewer workers, ends them.
+
 - **(P2) A docs minisite per package: overview, guides, and demos.** The API reference half is
   built: `npm run build:api` documents every published package in one TypeDoc site at `/api/`,
   each package a module with its README as the landing page. Still to design: an overview and
