@@ -1544,13 +1544,16 @@ only story runner in the repo.
   story as the one annotation target, sized and captured through the trial's
   frame registry — is in `git log --grep 'take marks out of forge'`.
 
-- **(P3) The CSS Vars panel saves scale edits only.** A single token edited by
-  hand — a color, a step changed after its scale — stays a per-trial override,
-  because a token's value comes from a semantic rule, a ramp or a pin and the
-  panel has no mapping back to which. Scale edits save through
-  `applyScaleEdits` (`packages/forge/src/shell/cssVars/saveScales.ts`). A save
-  also refuses a param that differs by `mode` while the trial's mode is Auto,
-  since the panel does not know which scheme the frame resolved.
+- **(P3) The CSS Vars panel does not save a token the theme derives.** A token
+  edited by hand saves when the definition writes its value out: a pin, a
+  component or a literal semantic, in the branch the trial's globals read
+  (`applyTokenEdits`, `packages/forge/src/shell/cssVars/saveTokens.ts`). One
+  that follows another token, a ramp, a contrast rule or an alpha stays a
+  per-trial override, and so does a scale step changed after its scale, because
+  a value written over it would drop the derivation for every mode and density
+  the branch covers. A save also refuses a param that differs by `mode` while
+  the trial's mode is Auto, since the panel does not know which scheme the
+  frame resolved.
 
 - **(P3, isolated stories only) A forge story whose `viewport` the index cannot
   read reloads its frame once when first opened.** The index reads a native

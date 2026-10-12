@@ -204,7 +204,7 @@ describe('CssVarsPanel', () => {
     const { received } = await openTrial('A');
     await editFontBase(String(editedBase));
 
-    fireEvent.click(vars().getByRole('button', { name: 'Save scales to theme' }));
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
     await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved to themes/weasel.json.'));
     const put = calls.find((c) => c.init?.method === 'PUT');
     expect(put?.url).toMatch(/\/__theme\/weasel$/);
@@ -218,7 +218,33 @@ describe('CssVarsPanel', () => {
     expect(cleared.map((m) => m.name).sort()).toEqual(
       fontSteps.map((step) => `--wzl-font-size-${step}`).sort(),
     );
-    expect(vars().queryByRole('button', { name: 'Save scales to theme' })).toBeNull();
+    expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
+  });
+
+  it('saves a token edited by hand where the theme writes its value out, and offers no save for one it derives', async () => {
+    location.hash = '#/x--a';
+    const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { received } = await openTrial('A');
+    const edit = async (name: string, value: string) => {
+      fireEvent.change(vars().getByLabelText('Filter'), { target: { value: name.replace('--wzl-', '') } });
+      fireEvent.change(row(vars(), name).getByRole('textbox'), { target: { value } });
+      await flush();
+    };
+    await edit('--wzl-surface-sunken', '#101010');
+    expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
+    await edit('--wzl-gray-50', '#123456');
+
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
+    await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved to themes/weasel.json.'));
+    const body = JSON.parse(String(calls.find((c) => c.init?.method === 'PUT')?.init?.body));
+    expect(body.definition.pins['gray-50']).toEqual({ ...weasel.pins?.['gray-50'], value: '#123456' });
+    expect(body.definition.semantics['surface-sunken']).toEqual(weasel.semantics?.['surface-sunken']);
+
+    await flush();
+    const cleared = (setsOf(received) as VarsSet[]).filter((m) => m.value === null);
+    expect(cleared.map((m) => m.name)).toEqual(['--wzl-gray-50']);
+    expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
   });
 
   it('reports a file changed on disk and keeps the edit', async () => {
@@ -228,11 +254,11 @@ describe('CssVarsPanel', () => {
     const { received } = await openTrial('A');
     const font = await editFontBase(String(editedBase));
 
-    fireEvent.click(vars().getByRole('button', { name: 'Save scales to theme' }));
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
     await waitFor(() => expect(vars().getByRole('alert')).toHaveTextContent('changed on disk'));
     expect((setsOf(received) as VarsSet[]).some((m) => m.value === null)).toBe(false);
     expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue(String(editedBase));
-    expect(vars().getByRole('button', { name: 'Save scales to theme' })).toBeInTheDocument();
+    expect(vars().getByRole('button', { name: 'Save to theme' })).toBeInTheDocument();
   });
 });
 
@@ -328,7 +354,7 @@ describe('CssVarsPanel history', () => {
     await openTrial('A');
     await editFontBase(String(editedBase));
     expect(step('Undo')).toBeEnabled();
-    fireEvent.click(vars().getByRole('button', { name: 'Save scales to theme' }));
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
     await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved'));
     expect(step('Undo')).toBeDisabled();
   });
