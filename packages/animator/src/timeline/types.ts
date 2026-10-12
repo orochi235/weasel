@@ -45,6 +45,8 @@ export interface SampledTrack<T> {
   interpolateName?: string;
   /** The track's share among the target's holds, as `HoldOptions.weight`. Default 1. */
   weight?: number | (() => number);
+  /** What a function `weight` goes by in a clip, as `targetName` is for `target`. */
+  weightName?: string;
   /** The axes of the target the track holds, as `HoldOptions.axes`. Default: every axis. */
   axes?: readonly number[];
   /** What `axes` goes by in a clip, where its target has names for them: a rig's joints.

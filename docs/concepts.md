@@ -351,6 +351,7 @@ function or a target.
 |---|---|---|
 | `target` | `target: 'pose:box'` | `ClipBinder.target(name)` |
 | `interpolate` | `interpolate: 'oklab'` | `ClipBinder.interpolate[name]` |
+| a function `weight` | `weight: 'fade'` | `ClipBinder.weight(name)` |
 | `axes`, on a target with names for them | `axes: ['armL', 'foreL']` | `ClipBinder.axes(target, names)` |
 | an event's `fire` and `book` | `name`, with `data` | `ClipBinder.event(name, data)` |
 | a function easing | its built-in name, or `{ bezier }` | nothing: both are data |
@@ -358,7 +359,7 @@ function or a target.
 
 `bindClip(clip, binder)` answers what `animator.timeline` takes, and `toClip` reads a
 live timeline back, an edited one included, because a live track keeps its names
-(`targetName`, `interpolateName`, `axisNames`, an event's `name`). `sceneClipTargets(scene, { rigs })`
+(`targetName`, `interpolateName`, `weightName`, `axisNames`, an event's `name`). `sceneClipTargets(scene, { rigs })`
 is the binder's `target` for a scene: `pose:<node id>` and `rig:<name>`. `sceneClipAxes(rigs)`
 is its `axes`: a track over part of a rig names joints, so it holds the same joints after the
 skeleton's order changes. A target with no names takes `axes` as numbers. A track that

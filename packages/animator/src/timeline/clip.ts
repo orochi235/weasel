@@ -28,7 +28,9 @@ export interface ClipSampledTrack {
   /** Resolved from `ClipBinder.interpolate`. Without one the track is sampled in its
    *  target's axes, or field by field. */
   interpolate?: string;
-  weight?: number;
+  /** The track's share of its target: a number, or a name for `ClipBinder.weight` to resolve
+   *  into a function read each frame, as a crossfade's is. */
+  weight?: number | string;
   /** The part of the target the track holds: names for `ClipBinder.axes` to resolve, a rig's
    *  joints among them, or positions in the target's axes where it has no names. */
   axes?: number[] | string[];
@@ -75,6 +77,8 @@ export interface ClipBinder {
   /** The axes of the target named `target` that `names` stand for, as `jointAxes` answers a
    *  skeleton's joints, or `undefined` for a target it has no names for. */
   axes?(target: string, names: readonly string[]): readonly number[] | undefined;
+  /** The function a track's named weight stands for. */
+  weight?(name: string): (() => number) | undefined;
   /** What an event does: its `fire`, its `book`, or both. */
   event?(name: string, data: ClipValue | undefined): Pick<TimelineEvent, 'fire' | 'book'> | undefined;
 }
@@ -113,12 +117,20 @@ function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
     targetName: track.target,
     interpolate,
     interpolateName: track.interpolate,
-    weight: track.weight,
+    ...bindWeight(track, binder),
     ...bindAxes(track, binder),
   });
 }
 
 const isNames = (axes: readonly (number | string)[]): axes is readonly string[] => typeof axes[0] === 'string';
+
+function bindWeight(track: ClipSampledTrack, binder: ClipBinder): Pick<SampledTrack<ClipValue>, 'weight' | 'weightName'> {
+  const { weight } = track;
+  if (typeof weight !== 'string') return { weight };
+  const read = binder.weight?.(weight);
+  if (!read) throw new Error(`bindClip: the binder has no weight named "${weight}".`);
+  return { weight: read, weightName: weight };
+}
 
 function bindAxes(track: ClipSampledTrack, binder: ClipBinder): Pick<SampledTrack<ClipValue>, 'axes' | 'axisNames'> {
   const { axes } = track;
@@ -172,7 +184,9 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
   if (track.target && track.targetName === undefined) throw new Error(`toClip: ${where} has a target and no targetName.`);
   if (track.interpolator) throw new Error(`toClip: ${where} has an interpolator, which a clip cannot hold.`);
   if (track.interpolate && track.interpolateName === undefined) throw new Error(`toClip: ${where} has an interpolate and no interpolateName.`);
-  if (typeof track.weight === 'function') throw new Error(`toClip: ${where} has a function for its weight.`);
+  if (typeof track.weight === 'function' && track.weightName === undefined) {
+    throw new Error(`toClip: ${where} has a function for its weight and no weightName.`);
+  }
   return defined<ClipSampledTrack>({
     kind: 'sampled',
     label: track.label,
@@ -183,7 +197,7 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
       return defined<ClipKey>({ t: k.t, value, easing: easingOf(k.easing, where) });
     }),
     interpolate: track.interpolateName,
-    weight: track.weight,
+    weight: typeof track.weight === 'function' ? track.weightName : track.weight,
     axes: track.axisNames ? [...track.axisNames] : track.axes && [...track.axes],
   });
 }

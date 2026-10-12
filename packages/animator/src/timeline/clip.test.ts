@@ -130,7 +130,7 @@ describe('toClip', () => {
     expect(clip({ ...base, targetName: undefined } as never)).toThrow(/track "x" has a target and no targetName/);
     expect(clip({ ...base, onTick: () => {}, target: undefined, targetName: undefined } as never)).toThrow(/track "x" has an onTick/);
     expect(clip({ ...base, interpolate: (a: number) => a } as never)).toThrow(/track "x" has an interpolate and no interpolateName/);
-    expect(clip({ ...base, weight: () => 1 } as never)).toThrow(/track "x" has a function for its weight/);
+    expect(clip({ ...base, weight: () => 1 } as never)).toThrow(/track "x" has a function for its weight and no weightName/);
     expect(clip({ ...base, keys: [{ t: 0, value: 1, easing: (u: number) => u * u }] } as never)).toThrow(/track "x" eases a key by a function that is not a built-in/);
     expect(clip({ ...base, keys: [{ t: 0, value: new Map() }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
     expect(clip({ ...base, keys: [{ t: 0, value: Float32Array.of(NaN) }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
@@ -181,6 +181,30 @@ describe('a clip naming a target\'s axes', () => {
     expect(() => bindClip(ARM, over(skeleton('hip')))).toThrow(/no joint "armL"/);
     const untargeted: Clip = { version: 1, tracks: [{ kind: 'sampled', label: 'loose', axes: ['armL'], keys: [{ t: 0, value: 1 }] }] };
     expect(() => bindClip(untargeted, over(skeleton('armL')))).toThrow(/names axes and no target/);
+  });
+});
+
+describe('a clip naming a track\'s weight', () => {
+  const FADED: Clip = {
+    version: 1,
+    tracks: [{ kind: 'sampled', target: 'pose:box.x', weight: 'fade', keys: [{ t: 0, value: 1 }] }],
+  };
+
+  it('asks the binder for the function the name stands for, and keeps the name', () => {
+    let fade = 0.25;
+    const track = bindClip(FADED, binder({ weight: (name) => (name === 'fade' ? () => fade : undefined) })).tracks[0] as SampledTrack<number>;
+    expect(track.weightName).toBe('fade');
+    expect((track.weight as () => number)()).toBe(0.25);
+    fade = 1;
+    expect((track.weight as () => number)()).toBe(1);
+  });
+
+  it('writes the name back', () => {
+    expect(toClip(bindClip(FADED, binder({ weight: () => () => 1 })))).toEqual(FADED);
+  });
+
+  it('throws on a name the binder cannot resolve', () => {
+    expect(() => bindClip(FADED, binder())).toThrow(/no weight named "fade"/);
   });
 });
 

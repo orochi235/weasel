@@ -758,10 +758,15 @@ intercepting the press that drags the body.
 The timeline, clips, the rig, and skinning are built; `docs/concepts.md` ("Clip", "Rig and
 skin", "Animation target") describes them. What is left:
 
-- **(P3) Two demos build by hand what a clip now holds** — `apps/site/demos/platformer/clips.ts`
-  keeps its own `Clip` type and `clipTrack`, with function easings, and `TimelineDemo.tsx`
-  moves its nodes from `onTick` closures. Both would be `Clip` data bound with `bindClip` and
-  `sceneClipTargets`.
+- **(P3) A paused looping timeline seeked to its `duration` shows its start** — the next frame
+  wraps a playhead at `duration` to 0 and counts a lap, paused or not (`tick` in
+  `packages/animator/src/timeline/createTimeline.ts`). In the timeline demo, dragging **scrub**
+  to its right end shows t = 0 (headless Chromium, 2026-10-12): the readout says
+  `3000 / 3000 ms`, then `0 / 3000 ms` a frame later.
+- **(P3) A pose typed by an interface is not a `ClipValue`** — `ClipValue`'s object arm is an
+  index signature, which an interface such as `RectPose` does not satisfy, so
+  `{ t: 0, value: pose }` is a type error for a `pose: RectPose` and fine for the same object
+  written inline. The clip demos leave their pose helpers' return types to inference.
 - **(P3) Editing a skinned path's points leaves its weights misaligned** — inserting or deleting
   a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
   actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or
