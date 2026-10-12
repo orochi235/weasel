@@ -248,12 +248,11 @@ have shipped. What remains:
   (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls `pointInPath` without knowing
   whether the node has a fill; a closed unfilled outline is already picked that way.
 
-- **(P3) WeaselDraw: an imported clipped group is clipped to the clip's box, not its outline.**
-  `svgNodesToKitDrafts` now gives a `<g clip-path>` container the clip as its `data`, an unpainted
-  path the scene clips to, and `unpackSvgFiles` and `svgNodesFromKit` carry it both ways.
-  `svgNodesToSceneDrafts` (`apps/draw/src/svgInterop.ts`) passes that `data` on, but the import in
-  `apps/draw/src/Toolbar.tsx` still adds every container with `data: {}`; it has to add
-  `draft.data`. Nothing has drawn a clipped import in a browser yet.
+- **(P3) WeaselDraw: no browser has drawn an imported clipped group.** A `<g clip-path>` reaches
+  the scene as a container whose `data` is the clip, an unpainted path the scene clips to, by Open,
+  Import, and a dropped file alike, and the unit tests stop at that data. What is left is a
+  `*.browser.test` that opens one and reads a pixel inside the group's box and outside the clip's
+  outline.
 
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** A `<tspan>` with its own `x` and
   a `dy` or new `y` starts a line (`packages/svg/src/tspanLines.ts`), and the pitch the lines state
