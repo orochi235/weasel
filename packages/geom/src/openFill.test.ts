@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { pathFromD } from './paths/pathFromD';
 import { pathSignedArea } from './paths/winding';
-import { pathIntersectsRect, pointInPath } from './pathHitTest';
+import {
+  pathContainsRect, pathIntersectsPolygon, pathIntersectsRect, pointInPath, strokeHitTest,
+} from './pathHitTest';
 import { tessellate } from './tessellate/tessellate';
 import { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
 import { translatePath } from './paths/transform';
@@ -84,5 +86,39 @@ describe('whether an open subpath fills', () => {
     const out = reshape(source) as PolygonPath;
     expect(out.openFill).toBe('none');
     expect(out.fillRule).toBe('evenodd');
+  });
+});
+
+describe('everything that asks about a fill agrees on an open subpath it closes', () => {
+  const OPEN_TRIANGLE = open('close');
+
+  it('contains a point the triangle paints, and not one past its closing edge', () => {
+    expect(pointInPath(OPEN_TRIANGLE, 75, 25)).toBe(true);
+    expect(pointInPath(OPEN_TRIANGLE, 25, 75)).toBe(false);
+  });
+
+  it('answers region questions against the same triangle', () => {
+    expect(pathContainsRect(OPEN_TRIANGLE, { x: 70, y: 20, width: 10, height: 10 })).toBe(true);
+    // Straddles the closing edge, which no command draws.
+    expect(pathContainsRect(OPEN_TRIANGLE, { x: 45, y: 45, width: 10, height: 10 })).toBe(false);
+    expect(pathIntersectsRect(OPEN_TRIANGLE, { x: 45, y: 45, width: 10, height: 10 })).toBe(true);
+    expect(pathIntersectsPolygon(OPEN_TRIANGLE, [{ x: 70, y: 20 }, { x: 80, y: 20 }, { x: 75, y: 30 }])).toBe(true);
+  });
+
+  it('closes a curved run the same way', () => {
+    const lobe = pathFromD('M0 0 C0 100 100 100 100 0') as PolygonPath;
+    expect(pointInPath(lobe, 50, 40)).toBe(true);
+    expect(pointInPath(lobe, 50, 90)).toBe(false);
+  });
+
+  it('fills nothing for a run of two points', () => {
+    const line = pathFromD('M0 0 L100 100');
+    expect(pointInPath(line, 50, 50)).toBe(false);
+    expect(tessellate(line).indices.length).toBe(0);
+  });
+
+  it('leaves the stroke open: the closing edge is not part of the outline', () => {
+    expect(strokeHitTest(OPEN_TRIANGLE, 50, 50, 2)).toBe(false);
+    expect(strokeHitTest(OPEN_TRIANGLE, 50, 0, 2)).toBe(true);
   });
 });

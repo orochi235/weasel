@@ -320,16 +320,28 @@ have shipped. What remains:
   - A world-unit pick tolerance is measured in the node's own frame (`poseContainsRotated`), so
     the transform stretches it with the node.
 
-- **(P3) Under `openFill: 'none'`, SVG import and export still close an open subpath.** A path says
+- **(P3) Under `openFill: 'none'`, SVG import and export and the booleans still close an open subpath.** A path says
   whether a fill closes its open subpaths (`PolygonPath.openFill`, or `setDefaultOpenFill` for a
   path that names none), and `tessellate`, `pathSignedArea`, and the filled-region hit tests agree.
   SVG always closes one, so two readers outside `@weasel-js/geom` disagree with a path that says
   `'none'`: `packages/svg/src/lowerLeaf.ts` imports a filled `<polyline>` without stamping
   `openFill: 'close'`, so it stops painting under a `'none'` default, and the SVG writer emits an
   unfilled open subpath with its node's fill, which a browser then paints. The export half has to
-  split a path that mixes closed and open subpaths. Also: a mesh the renderer cached keeps the rule
+  split a path that mixes closed and open subpaths. The booleans close every open contour whatever
+  the path says (`packages/geom/src/booleans/contours.ts`, `implicitClose`). Also: a mesh the renderer cached keeps the rule
   it was built under when the default changes (`packages/renderer/src/cache/cache.ts` keys on the
   path), so the default has to be set before the first paint.
+
+- **(P3) A closed outline with no fill is selected from inside it.** A marquee or lasso in
+  `intersect` mode drawn wholly inside an unfilled closed shape takes it, though a click there
+  does not: `shapeCoversPoint` reads the painter's ink (`NodeInk.filled`) and `regionTakes`
+  (`packages/core/src/core/geometry/regionHit.ts`) is handed a path and tests its filled region.
+  `canvas/deps/hitTestArea.ts` passes the ink for open subpaths only (`asInked`), because a path
+  can say its open subpaths enclose nothing and cannot say that of a closed one. The same is true of
+  `containsInFrame` (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`), which calls
+  `pointInPath` on a path-shaped pose with no node in hand: wherever picking is not by shape, an
+  unfilled path is picked across what it encloses, open subpaths included now that a fill closes
+  them. Both want the region and frame tests to take "is this filled" beside the path.
 
 - **(P3) svg unpack: a clipped group arrives unclipped.** `parseSvg` puts a `<g clip-path>` on
   `SvgGroupNode.clip`, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) builds the container

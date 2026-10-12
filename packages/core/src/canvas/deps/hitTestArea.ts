@@ -11,7 +11,7 @@
  * the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { pathIntersectsRect, type Path } from '@weasel-js/geom';
+import { pathIntersectsRect } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -120,12 +120,11 @@ export function hitTestLassoPolygon(
   return region ? walkArea(scene, region, mode, opts, descriptor, query) : [];
 }
 
-/** What a region is tested against: the node's silhouette, with its open
- *  subpaths enclosing nothing when the painter lays down no fill. */
-function regionSilhouette(node: unknown, pose: unknown, bounds: AABBBounds): Path {
-  const sil = findShapeSilhouette(node as never, pose) ?? poseOutline(pose, bounds);
-  if (sil.kind !== 'polygon' || findShapeInk(node as never, pose)?.filled !== false) return sil;
-  return { ...sil, openFill: 'none' };
+/** `shape` as a region reads it: a polygon path's open subpaths enclose
+ *  nothing when the node's painter lays down no fill. */
+function asInked<T>(node: unknown, pose: unknown, shape: T): T {
+  if ((shape as { kind?: unknown } | null)?.kind !== 'polygon') return shape;
+  return findShapeInk(node as never, pose)?.filled === false ? { ...shape, openFill: 'none' } : shape;
 }
 
 /** The walk every region query shares: skip containers unless asked, gate on
@@ -150,7 +149,8 @@ function walkArea(
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
       const b = regionBoundsOf(node as object, pose, g);
-      return regionTakes(r, mode, pose, b, () => regionSilhouette(node, pose, b));
+      return regionTakes(r, mode, asInked(node, pose, pose), b, () =>
+        asInked(node, pose, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)));
     },
     inPlane: (m) => regionQuery(regionInPlane(r, m)),
   });

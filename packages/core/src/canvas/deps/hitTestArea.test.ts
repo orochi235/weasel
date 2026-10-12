@@ -11,6 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { hitTestArea, hitTestLassoPolygon } from './hitTestArea';
+import { registerNodeShape } from 'canvas/NodeShape';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
@@ -401,6 +402,20 @@ describe('intersect reads an open subpath by whether it fills', () => {
     expect(hitTestLassoPolygon(scene, between, 'intersect')).toEqual([]);
     const arm = [{ x: 10, y: 20 }, { x: 40, y: 20 }, { x: 25, y: 40 }];
     expect(hitTestLassoPolygon(scene, arm, 'intersect')).toEqual(['vee']);
+  });
+
+  it('a lasso between the arms misses a path-shaped pose painted with no fill', () => {
+    const drop = registerNodeShape({
+      id: 'test:wire',
+      matches: (n) => (n.data as { wire?: boolean } | null)?.wire === true,
+      paint: () => [],
+      ink: () => ({ filled: false, outset: 1, inset: 1 }),
+    }, { priority: 'high' });
+    try {
+      expect(hitTestLassoPolygon(sceneOf(vee, { wire: true }), between, 'intersect')).toEqual([]);
+    } finally {
+      drop();
+    }
   });
 
   it('a lasso across one arm takes it', () => {
