@@ -1646,9 +1646,7 @@ only story runner in the repo.
   `labkit/src/controls/compoundRows.browser.test.tsx`,
   `PatternPicker/PatternPicker.browser.test.tsx`, and
   `core/src/features/text/overlayAlignment.browser.test.tsx`. The last two pass when run alone
-  on this machine at the commit that failed. `Prefs/PrefsRail.marks.browser.test.tsx` failed once
-  on teitou the same way, on an assertion and not a timeout: its scroll had not settled inside
-  the 3 s it polls for, 422 px from where it ends. `labkit/src/lab/LabLightbox.browser.test.tsx`
+  on this machine at the commit that failed. `labkit/src/lab/LabLightbox.browser.test.tsx`
   ("an expanded trial keeps its marks over it and takes new ones") hit the 15 s test timeout on
   teitou in two of four full runs on 2026-10-11, at `68e9d70bb` and `de222e61f`, and passed in
   the two between; alone on this machine at `de222e61f` it passed 3 of 3. It hit
@@ -1668,11 +1666,17 @@ only story runner in the repo.
   the server to follow it. A site dev server on orochi that evening also served a file as it was
   before an edit, and a `touch` did not wake it, so there the watcher missed the write. `browser`
   timeouts on the same fleet runs added `SelectionPanel/SelectionPanel.selection.browser.test.tsx`
-  and `PrefSchemaEditor/PrefSchemaEditor.types.browser.test.tsx` to the list above. The suite runs the `browser` project beside eight
-  others on one node. Since 2026-10-11 the `browser` project polls for 5 s, not the default 1 s, which
-  three of these failures had outlasted (`PrefsRail.marks` twice, `compoundRows`); a 15 s test
-  timeout or a stalled Playwright action is untouched by that. Not measured: whether the timeouts follow the node's load, and whether
-  running `browser` on its own, or with fewer workers, ends them.
+  and `PrefSchemaEditor/PrefSchemaEditor.types.browser.test.tsx` to the list above. Measured 2026-10-12, nine full runs at one
+  commit, three on each of studio, teitou, and msb-uai: with `browser` run after the other
+  projects (`sequence.groupOrder`, now on `main`) none of six runs had a timeout, and one of three
+  baseline runs did (`overlayAlignment`, on studio). That is suggestive and no more: at a one in
+  three rate six clean runs come up about 9% of the time. It cost 12 to 52 s a run on teitou and
+  msb-uai and nothing on studio, which takes about 175 s either way against 100 to 115 s on the
+  others and hosts a long-running render service; both failing runs were there. A 15 s `browser`
+  timeout in a run made since would mean running beside the other projects was not the cause, and
+  the `groupOrder` line should come out. Not measured: fewer workers for `browser`, and whether
+  studio's own load is the cause. The `PrefsRail` failures were a different thing, a bug in
+  `useScrollSpy`, fixed in `addb11568`.
 
 - **(P2) A docs minisite per package: overview, guides, and demos.** The API reference half is
   built: `npm run build:api` documents every published package in one TypeDoc site at `/api/`,
