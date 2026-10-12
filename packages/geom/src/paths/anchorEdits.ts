@@ -26,7 +26,8 @@
  * that test is the tripwire.
  */
 
-import { cubicPointAt, fitCubicThroughDeletion, splitCubicAtT, type PolygonPath } from '@weasel-js/geom';
+import type { PolygonPath } from '../path';
+import { withinPxRadius, type Scale2 } from '../pxExtent';
 import {
   pathToAnchors,
   anchorsToPath,
@@ -35,8 +36,8 @@ import {
   nearestSegmentT,
   segmentEnds,
   type PenAnchor,
-} from '@weasel-js/geom';
-import { withinPxRadius, type Scale2 } from '@weasel-js/geom';
+} from './anchors';
+import { cubicPointAt, fitCubicThroughDeletion, splitCubicAtT } from './cubicMath';
 
 /** Subpath-major anchor model — the decoded form of a `PolygonPath`. */
 export interface AnchorSet {

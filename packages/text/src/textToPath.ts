@@ -16,16 +16,17 @@ import {
   loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle,
 } from '@weasel-js/font';
 import {
-  layoutRuns, textPoseLayoutInput, verticalAlignOffset,
-  type ResolvedRun, type StyledRun, type TextPose, type TextStyle, type TextVerticalAlign,
-} from '@weasel-js/text';
-import {
-  PATH_L, PATH_M, PATH_Z, pathFromD, pathSignedArea, reversePath,
-  transformPath, type Mat3, type PolygonPath,
+  PATH_L, PATH_M, PATH_Z, pathFromD, pathSignedArea, poseFrameOf, reversePath,
+  transformPath, type Mat3, type PathInWorldPose, type PolygonPath,
 } from '@weasel-js/geom';
-import { poseFrameOf } from '@weasel-js/geom';
-import type { PathInWorldPose } from 'features/paths/pathInWorld';
-import { SYNTHETIC_ITALIC_RADIANS } from 'renderer/syntheticItalic';
+import { layoutRuns } from './layout/layoutRuns';
+import { textPoseLayoutInput } from './layout/textPoseLayout';
+import { verticalAlignOffset, type TextVerticalAlign } from './measure/verticalAlign';
+import type { TextPose } from './pose';
+import type { StyledRun } from './runs';
+import type { ResolvedRun } from './runs/resolveRuns';
+import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
+import type { TextStyle } from './textStyle';
 
 /** The fields of a text node's data that decide its glyph geometry, and the
  *  paint `textToPathsByPaint` splits it by. Paint never changes the geometry. */

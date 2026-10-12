@@ -23,7 +23,7 @@ import { locateChild } from 'core/ops/slot';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
-import { textToPath, TextOutlinesError, type TextNodeSource } from 'features/text/textToPath';
+import { textToPath, TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
 
 /** Boolean op identifiers — five Pathfinder primaries plus Crop. */
 export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop';

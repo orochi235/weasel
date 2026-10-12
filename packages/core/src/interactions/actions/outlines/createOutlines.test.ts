@@ -12,7 +12,7 @@ import { boundsOfPath, pointInPath, type Path, type Rect } from '@weasel-js/geom
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { TextOutlinesError, type TextOutlineSource } from 'features/text/textToPath';
+import { TextOutlinesError, type TextOutlineSource } from '@weasel-js/text';
 import { applyCreateOutlines, type CreateOutlinesAdapter } from './createOutlines';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../../assets/fonts/inter/inter.ttf');

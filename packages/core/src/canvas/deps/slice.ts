@@ -15,7 +15,7 @@ import type { Op } from 'core/ops/types';
 import type { Path } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { pathInWorld, worldEditToStorage, type PathInWorldPose } from 'features/paths/pathInWorld';
+import { pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 import { poseLinearOf } from '@weasel-js/geom';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';

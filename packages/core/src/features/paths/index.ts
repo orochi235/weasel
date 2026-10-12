@@ -97,8 +97,8 @@ export {
   type AnchorRect,
   type AnchorSet,
   type SegmentHit,
-} from './anchorEdits';
-export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './pathInWorld';
+} from '@weasel-js/geom';
+export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
 export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,

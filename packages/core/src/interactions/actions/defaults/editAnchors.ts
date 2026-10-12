@@ -44,9 +44,9 @@ import {
   moveHandleTo,
   translateAnchorBy,
   type AnchorSet,
-} from 'features/paths/anchorEdits';
+} from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { worldEditToStorage } from 'features/paths/pathInWorld';
+import { worldEditToStorage } from '@weasel-js/geom';
 // Commit goes through dep.applyEdit (routes setPose or setPose+update
 // based on the node's path-storage shape); no direct op or dispatch
 // helpers needed here.

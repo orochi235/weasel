@@ -10,7 +10,7 @@ import { asNodeId } from 'core/scene/types';
 import { pxExtent, withinPxRadius } from '@weasel-js/geom';
 import { PenIcon } from '../../../icons';
 import { boundsOfPath, type PolygonPath, anchorsToPath, pathToAnchors } from '@weasel-js/geom';
-import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from 'features/paths/nearestAnchor';
+import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';

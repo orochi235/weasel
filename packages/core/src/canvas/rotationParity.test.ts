@@ -11,7 +11,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { rotateAroundAABBCenter } from './poseRotation';
-import { pathInWorld } from 'features/paths/pathInWorld';
+import { pathInWorld } from '@weasel-js/geom';
 import { poseRotationOf } from '@weasel-js/geom';
 import { poseContainsRotated } from './SceneCanvas/poseGeometry';
 import { rotatedRectCorners, rotatePoint } from 'interactions/actions/rotate/geometry';

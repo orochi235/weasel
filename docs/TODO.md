@@ -372,7 +372,7 @@ have shipped. What remains:
 
 Core five + Crop shipped. Remaining:
 
-- **(P3) Outline.** `strokeToPath` (`packages/core/src/features/paths/strokeToPath.ts`) now gives a stroke's silhouette as a fillable path, with joins, caps, dashes, alignment, and marker heads. What is left is the action that applies it to a selection: it has to read a node's stroke and decide the result's paint, and `BooleansAdapter` sees paths only, the same style-awareness gap Trim and Merge wait on. `textToPath` still refuses synthetic-bold text (`reason: 'synthetic-bold'`): emboldening it is now a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
+- **(P3) Outline.** `strokeToPath` (`packages/stroke/src/strokeToPath.ts`) now gives a stroke's silhouette as a fillable path, with joins, caps, dashes, alignment, and marker heads. What is left is the action that applies it to a selection: it has to read a node's stroke and decide the result's paint, and `BooleansAdapter` sees paths only, the same style-awareness gap Trim and Merge wait on. `textToPath` still refuses synthetic-bold text (`reason: 'synthetic-bold'`): emboldening it is now a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
 - **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion — need per-path style awareness, which the kit deliberately doesn't have since `data` is opaque. Wait on a compound-path-with-styles model.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
@@ -615,8 +615,8 @@ Core five + Crop shipped. Remaining:
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
   for relative imports undercounts who uses what. In dependency order:
   1. *Leaf math down.* Done for the color parser, `gradient`, `mat3`, `viewToMat3`,
-     `useVisibleRaf`, `pxExtent`, `meanScale`, and `MIXED`. Left: `poseFrame`, which
-     `textToPath.ts` and the anchor-edit files wait on.
+     `useVisibleRaf`, `pxExtent`, `meanScale`, `MIXED`, the pose frame and rotation math, and
+     with them the anchor edits, `pathInWorld`, and `textToPath`. Nothing is left here.
   2. *Dissolve and rehome.* Done for `focus`, `cursor`, the pointer store, `SelectionContext`,
      text hit-testing and fitting, path anchors, and the run range-style algebra. Left:
      `features/groups` folds into `core/scene` and `features/overlays` into `core/viewport`

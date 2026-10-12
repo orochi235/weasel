@@ -5,7 +5,7 @@ import { applyBooleanOp, type BooleansAdapter } from './booleans';
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { registerFontOutlines, loadFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
-import { TextOutlinesError, type TextNodeSource } from 'features/text/textToPath';
+import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
 import type { Op } from 'core/ops/types';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { createScene } from 'core/scene/scene';

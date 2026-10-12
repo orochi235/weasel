@@ -15,7 +15,7 @@ import {
   textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError, type TextOutlineSource,
 } from './textToPath';
 
-const INTER = resolve(import.meta.dirname, '../../../../../assets/fonts/inter');
+const INTER = resolve(import.meta.dirname, '../../../assets/fonts/inter');
 
 function ttf(): ArrayBuffer {
   // Copied into this realm's own ArrayBuffer: every jsdom test file runs in

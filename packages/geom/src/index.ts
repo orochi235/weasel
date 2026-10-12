@@ -73,3 +73,10 @@ export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotat
 export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
 } from './poseFrame';
+export {
+  anchorAt, anchorCount, anchorsInRect, deleteAnchorsAt, editAnchorSet, flatAnchorIndex, insertAnchorOnSegment,
+  locateAnchor, moveHandleTo, openSubpathAt, segmentAt, translateAnchorBy,
+  type AnchorRect, type AnchorSet, type SegmentHit,
+} from './paths/anchorEdits';
+export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
+export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';

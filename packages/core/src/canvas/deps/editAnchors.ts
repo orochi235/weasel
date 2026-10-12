@@ -37,7 +37,7 @@ import type { Scene, NodeId, RectPose } from 'core/scene/types';
 import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Path, PolygonPath } from '@weasel-js/geom';
-import { pathInWorld, worldEditToStorage } from 'features/paths/pathInWorld';
+import { pathInWorld, worldEditToStorage } from '@weasel-js/geom';
 import { recordModeSwitch } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';

@@ -16,7 +16,7 @@ import { useSliceDep } from './slice';
 import { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { pathInWorld } from 'features/paths/pathInWorld';
+import { pathInWorld } from '@weasel-js/geom';
 
 afterEach(() => { cleanup(); });
 

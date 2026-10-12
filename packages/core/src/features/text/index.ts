@@ -19,7 +19,7 @@ export {
   charOffsetToDomPosition,
   domPositionToCharOffset,
 } from '@weasel-js/text-dom';
-export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from './textToPath';
+export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from '@weasel-js/text';
 export type {
   TextOutlineSource, TextNodeSource, TextPaintPath, TextToPathOptions, TextOutlinesFailure,
-} from './textToPath';
+} from '@weasel-js/text';

@@ -18,16 +18,12 @@
  * where operating on the unrotated source path produces wrong shapes.
  */
 
-import {
-  applyToPoint,
-  boxToBox,
-  boundsOfPath,
-  type Path,
-  type PolygonPath,
-  translatePath,
-  transformPath,
-} from '@weasel-js/geom';
-import { poseFrameInverseOf, poseFrameOf, type PoseLinear } from '@weasel-js/geom';
+import { applyToPoint, boxToBox } from '../mat3';
+import type { Path, PolygonPath } from '../path';
+import { poseFrameInverseOf, poseFrameOf, type PoseLinear } from '../poseFrame';
+import { boundsOfPath } from './bounds';
+import { translatePath } from './transform';
+import { transformPath } from './transformPath';
 
 /** Subset of pose fields this helper consumes. Matches the kit's auto-rotate
  *  convention (`SceneCanvas.defaultDrawOne`): `x/y/width/height` define an
