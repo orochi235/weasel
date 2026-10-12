@@ -1202,11 +1202,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   whose accepted suffix is all digits moves to the front of the list, as an object's integer keys
   do.
 
-- **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
-  and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
-  is to be a pure macro, `prefRailItems` and `RailLayout`'s `ownOf` would treat its children as its parent's.
-  Its element has no box (`display: contents`), so a drag in `PrefSchemaEditor`'s preview cannot land beside or
-  into the group itself, only beside the rows inside it; the structure tree takes both.
+- **(P3) A fragment has no box for a preview drag to land on.** Its element is `display: contents`, so a drag in
+  `PrefSchemaEditor`'s preview cannot land beside or into an `as: 'fragment'` group itself, only beside the rows
+  inside it; the structure tree takes both.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { isPrefLeaf, prefGroupIsPage, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefGroupIsPage, type PrefGroup } from '@weasel-js/prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { useScrollSpy } from '../../useScrollSpy';
 import { dropDrawnPath, withDrop } from './drop';
@@ -10,7 +10,7 @@ import type { PrefsFormProps } from './PrefsForm';
 import { PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
 import type { WalkCtx } from './PrefsRow';
-import { looseEntryName, prefGroupNests, prefGroupOpensPage, prefRailAbove, prefRailItems, prefRailParent } from './schema';
+import { looseEntryName, prefGroupNests, prefGroupOpensPage, prefPageHasOwn, prefRailAbove, prefRailItems, prefRailParent } from './schema';
 import { pathWithin, type SelectionRoot } from './selection';
 import s from './Prefs.module.css';
 
@@ -176,24 +176,19 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
   return node ?? null;
 }
 
-const isOwn = (child: PrefLeaf | PrefGroup): boolean => isPrefLeaf(child) || !prefGroupOpensPage(child);
+const hasOwn = (group: PrefGroup | null): boolean => group !== null && prefPageHasOwn(group);
 
-/** Whether a group has anything a page of its own would draw: a leaf, or a group that opens no page itself. */
-function hasOwn(group: PrefGroup | null): boolean {
-  return group !== null && Object.values(group.children).some(isOwn);
-}
-
-/** A group cut down to what its own page draws: itself and its sections, less each group in them that opens a page
- *  of its own. The group itself when that is all of it. */
+/** A group cut down to what its own page draws: itself, its sections, and its fragments, less each group in them
+ *  that opens a page of its own. The group itself when that is all of it. */
 function ownOf(group: PrefGroup): PrefGroup {
   let cut = false;
   const children: PrefGroup['children'] = {};
   for (const [key, child] of Object.entries(group.children)) {
-    if (!isOwn(child)) {
+    if (!isPrefLeaf(child) && prefGroupOpensPage(child)) {
       cut = true;
       continue;
     }
-    const own = isPrefLeaf(child) || !prefGroupNests(child) ? child : ownOf(child);
+    const own = isPrefLeaf(child) || !(prefGroupNests(child) || child.as === 'fragment') ? child : ownOf(child);
     if (own !== child) cut = true;
     children[key] = own;
   }
