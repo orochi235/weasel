@@ -14,7 +14,7 @@ export const Stacked: Story = {
   render: (args) => (
     <Field {...args}>
       <label className={fieldClasses.label}>Width</label>
-      <input className={fieldClasses.label} defaultValue="120" style={{ width: 120 }} />
+      <input defaultValue="120" style={{ width: 120 }} />
       <span className={fieldClasses.hint}>In document units.</span>
     </Field>
   ),
