@@ -34,7 +34,7 @@ describe('<ThemeEditor>', () => {
   it('falls back to the built themes, read-only, when no dev server answers', async () => {
     const failing: ThemeApi = { list: () => Promise.reject(new Error('404')), get: vi.fn(), put: vi.fn() };
     render(<ThemeEditor api={failing} />);
-    expect(await screen.findByText('23 of 176 overridden')).toBeInTheDocument();
+    expect(await screen.findByText('23 of 185 overridden')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
     expect(failing.put).not.toHaveBeenCalled();
   });
@@ -100,7 +100,7 @@ describe('<ThemeEditor>', () => {
     render(<ThemeEditor api={{ list: async () => [stored], get, put: vi.fn() }} />);
     expect(await screen.findByText(/harbor does not derive/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Discard this unsaved theme' }));
-    expect(await screen.findByText('23 of 176 overridden')).toBeInTheDocument();
+    expect(await screen.findByText('23 of 185 overridden')).toBeInTheDocument();
     expect(get).not.toHaveBeenCalled();
     expect(loadDraft('harbor')).toBeNull();
   });

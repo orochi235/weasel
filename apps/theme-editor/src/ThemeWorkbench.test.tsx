@@ -78,7 +78,7 @@ describe('<ThemeWorkbench>', () => {
 
   it('reports how many own tokens a pin overrides, and each layer in the rail', () => {
     renderBench();
-    expect(screen.getByText('23 of 176 overridden')).toBeInTheDocument();
+    expect(screen.getByText('23 of 185 overridden')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Ramps/ })).toHaveTextContent('23 pinned');
   });
 
