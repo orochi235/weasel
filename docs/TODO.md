@@ -518,13 +518,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
-- **(P3) Text edit: an edit that changes text ending in a newline drops that newline.**
-  `trimCaretHolder` (`packages/core/src/features/text/useTextEdit.ts`) removes one trailing `\n` on
-  the assumption the browser added it as the caret's holder, so a node whose text is `"abc\n"`
-  becomes `"xabc"` when an `x` is typed at its start. An edit that changes nothing writes nothing,
-  so open-and-close is safe. Whether a browser adds a holder to seeded text that already ends in
-  `\n` has not been observed, and the fix turns on it.
-
 - **(P3) Text edit: typed text is inserted by hand in `beforeinput`.** Every `insertText` is
   `preventDefault`-ed and inserted at the window selection
   (`packages/core/src/features/text/useTextEdit.ts`, `onBeforeInput`). No `input` event follows, so

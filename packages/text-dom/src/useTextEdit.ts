@@ -20,7 +20,7 @@ import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
 import {
-  runsToDom, domToRuns, appendOverlayText, charOffsetToDomPosition, domPositionToCharOffset, normalizeSmallCaps,
+  runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset, normalizeSmallCaps,
   SMALL_CAPS_SCALE_PROPERTY, type OverlayRunBase,
 } from './domRuns';
 import {
@@ -28,6 +28,7 @@ import {
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { applyOverlayDirection, overlayAlignEdge } from './overlayDirection';
+import { seedOverlay, type CaretHolder } from './overlaySeed';
 import { TEXT_EDIT_FONT_HOLD } from './textEditTypes';
 import type {
   StartEditOptions, StyleToggle, TextEditClipRect, TextEditScreenPose, TextEditSelection, UseTextEditOptions,
@@ -296,24 +297,6 @@ function writeRunsPreservingSelection(
   sel.addRange(range);
 }
 
-/**
- * Drop the one trailing newline a contenteditable keeps so the caret has
- * somewhere to sit on the last line. `domToRuns` maps the `<br>` to a
- * literal `'\n'`, which the edit never typed. Exactly one, so a newline
- * the user actually typed survives — the holder is never doubled.
- *
- * An empty run left behind is dropped: it carries no text and would otherwise
- * defeat `runsCarryStyling`'s "did this edit produce styling" question by
- * existing.
- */
-function trimCaretHolder(runs: StyledRun[]): StyledRun[] {
-  const last = runs[runs.length - 1];
-  if (last === undefined || !last.text.endsWith('\n')) return runs;
-  const trimmed = { ...last, text: last.text.slice(0, -1) };
-  const head = runs.slice(0, -1);
-  return trimmed.text === '' ? head : [...head, trimmed];
-}
-
 function sameSelection(a: TextEditSelection | null, b: TextEditSelection | null): boolean {
   if (a === null || b === null) return a === b;
   return a.start === b.start && a.end === b.end;
@@ -351,6 +334,7 @@ export function useTextEdit(
   const initialCaretRef = useRef<number | 'all'>('all');
   /** What the overlay read back as when the edit opened, before any input. */
   const openedRef = useRef<string | null>(null);
+  const holderRef = useRef<CaretHolder | null>(null);
   const [selection, setSelection] = useState<TextEditSelection | null>(null);
   const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
   const [pendingStyle, setPendingStyle] = useState<RunStylePatch>(NO_PENDING);
@@ -464,7 +448,7 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    const runs = trimCaretHolder(read);
+    const runs = holderRef.current?.trim(read) ?? read;
     const hadRuns = priorRuns != null && priorRuns.length > 0;
     const runsInPlay = hadRuns || runsCarryStyling(runs);
     // Read from the DOM, not `innerText`: a browser applies `text-transform`
@@ -594,16 +578,7 @@ export function useTextEdit(
     overlay.spellcheck = false;
     baseRef.current = style;
     const initialRuns = optsRef.current.getRuns?.(editingId);
-    if (initialRuns && initialRuns.length > 0) {
-      runsToDom(initialRuns, overlay, style);
-    } else if (style.fontVariantCaps === 'small-caps') {
-      // Small caps needs its lowercase in pieces, which only a run span holds.
-      runsToDom([{ text: getText(editingId) }], overlay, style);
-    } else {
-      // Not `innerText`, which turns each newline into a `<br>` the caret
-      // walkers cannot count and U+2028 into a space.
-      appendOverlayText(overlay, getText(editingId));
-    }
+    holderRef.current = seedOverlay(overlay, getText(editingId), initialRuns, style);
     openedRef.current = JSON.stringify(domToRuns(overlay));
     applyOverlayStyle(overlay, style);
     const hold = holdForFaces(style, initialRuns ?? []);
@@ -717,6 +692,7 @@ export function useTextEdit(
         sel.removeAllRanges();
         sel.addRange(after);
       }
+      holderRef.current?.edited(overlay);
       resplitSmallCaps();
     };
 
@@ -738,6 +714,7 @@ export function useTextEdit(
       sel.addRange(r);
     };
     const onInput = (e: Event) => {
+      holderRef.current?.edited(overlay);
       resplitSmallCaps(e);
       place();
     };
