@@ -1,8 +1,9 @@
 /**
- * Low-level WebGL surface + viewport + pointer routing primitive. Composes layers into a single
- * GL render pass, applies a view transform, and routes pointer/keyboard events to the supplied
- * `tools.dispatcher`. Canvas owns NO scene-shaped state — selection, picking, kind registry,
- * scene-aware overlays all live in `<SceneCanvas>`, which wraps it.
+ * Low-level WebGL surface + viewport primitive. Composes layers into a single GL render pass,
+ * applies a view transform, and delivers hover to the layers that ask for it. It routes no
+ * gesture: `<SceneCanvas>` mounts the gesture dispatcher on this same element. Canvas owns NO
+ * scene-shaped state — selection, picking, kind registry, scene-aware overlays all live in
+ * `<SceneCanvas>`, which wraps it.
  *
  * The `layers` prop is a map keyed by slot name. Standard slots render at a canonical position;
  * custom entries (any other key, value carrying `.layer`) insert at `after`/`before` an existing
@@ -137,9 +138,9 @@ export type LayersMap<
 };
 
 /**
- * Props for `<Canvas>`. Canvas is scene-agnostic: it owns the GL surface, view state,
- * pointer/keyboard dispatch, and slot composition, and not selection state, picking logic, kind
- * registries, or scene-aware overlays.
+ * Props for `<Canvas>`. Canvas is scene-agnostic: it owns the GL surface, view state, hover
+ * delivery, and slot composition, and not gesture dispatch, selection state, picking logic,
+ * kind registries, or scene-aware overlays.
  */
 export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
   /** CSS-pixel width. */
@@ -181,8 +182,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   redrawOn?: readonly RedrawSource[];
 
   /**
-   * Combined adapter for scene-slot rendering, bounds computation, and move/resize/rotate
-   * gesture math. Required only for the scene or selection-overlay slots. The scene-tree
+   * Adapter the scene slot draws from and pose and bounds lookups read. Required only for the
+   * scene or selection-overlay slots. The scene-tree
    * methods (`getLayers`/`getNode`/`getChildren`) are optional — present on a hierarchical
    * `SceneCanvasAdapter`, absent on flat adapters — and feature-detected at draw time.
    */
@@ -192,8 +193,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   layers: LayersMap<TNode, TPose>;
 
   /**
-   * Current selection state; Canvas owns none of its own. When absent, Canvas behaves as if
-   * nothing is selected: no selection chrome, no select-on-click, no clear-on-background.
+   * Current selection state; Canvas owns none of its own and never writes it. When absent,
+   * Canvas behaves as if nothing is selected: no selection chrome.
    */
   selection?: SelectionApi;
 
@@ -206,8 +207,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   poseDescriptor?: PoseDescriptor<TPose>;
 
   /**
-   * Used by `PickHud` to display the list of ids under the cursor.
-   * NOT used for tool routing — see `getNodeAtPoint` for that.
+   * Used by `PickHud` to display the list of ids under the cursor. Canvas routes no input
+   * with it.
    */
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
   /**
@@ -267,8 +268,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   autoFocusOnPointerDown?: boolean;
 
-  /** Tool primitive substrate. Pointer/keyboard/wheel events are routed
-   *  through `tools.dispatcher`. */
+  /** The tool set. Canvas reads the active tool's cursor, its overlays, and
+   *  its in-flight preview ids and poses; it dispatches nothing to a tool. */
   tools?: import('../tools/overlayBinding').ToolsApi;
 
   /** Controlled viewport. When supplied, Canvas does not own the value —
@@ -300,8 +301,9 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  - `false`: force off, ignore URL.
    *  - `DebugConfig` object: force on with that config, ignore URL.
    *
-   * When enabled, the Canvas appends a screen-space `debug-overlay` layer and threads a
-   * `DebugSink` into every interaction hook so they record hit math + handle positions.
+   * When enabled, the Canvas appends a screen-space `debug-overlay` layer and builds the
+   * sink it paints: the scene slot and each paint record into it, and the layer helpers, a
+   * tool's cursor ctx, and the ref handle's `getDebug` hand it to whatever else records.
    */
   debug?: DebugConfig | false;
 
@@ -312,10 +314,10 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   /**
    * Shader programs to compile before the frame that first draws them; one
    * not named here compiles on that frame. Each handle comes from a
-   * module-level `registerProgram()`. Pass a stable reference (e.g. defined
-   * at module scope) — the array is read at renderer init time.
-   * Re-registering one of these ids with new source repaints the canvas, and
-   * the renderer recompiles it for that frame.
+   * module-level `registerProgram()`. The array is read at each paint and
+   * registered again when its ids change, so a handle added after mount is
+   * picked up. Re-registering one of these ids with new source repaints the
+   * canvas, and the renderer recompiles it for that frame.
    */
   shaders?: ShaderProgramHandle[];
 
@@ -439,8 +441,6 @@ function resolveToolsCursor(
   }
 }
 
-/** Stable empty map, so an omitted `layerVisibility` doesn't remake the paint
- *  effect's deps every render. */
 const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
 
 /** The origin a canvas-local point is measured from. */

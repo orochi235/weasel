@@ -22,8 +22,8 @@ type OptionalSceneHierarchy<TNode, TPose> = Partial<
   Pick<HierarchicalAdapter<TNode, TPose>, 'getLayers' | 'getNode' | 'getChildren'>
 >;
 
-/** The full adapter shape Canvas threads through layers + gesture hooks: the
- *  move/resize/rotate intersection plus the optional scene-tree methods. */
+/** The adapter shape `<Canvas>` accepts: the move/resize/rotate intersection
+ *  plus the optional scene-tree methods. */
 export type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPose> &
   ResizeAdapter<TNode, TPose> &
   RotateAdapter<TNode, TPose> &
