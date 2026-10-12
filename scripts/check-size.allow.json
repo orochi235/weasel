@@ -449,10 +449,10 @@
     "longestFunction": 143
   },
   "packages/ui/src/components/Slider/SliderBody.tsx": {
-    "longestFunction": 269
+    "longestFunction": 239
   },
   "packages/ui/src/components/Slider/useThumbDrags.ts": {
-    "longestFunction": 145
+    "longestFunction": 140
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
     "longestFunction": 201

@@ -4,6 +4,7 @@ import { qty } from '@weasel-js/quantity';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
 import { crossEnd } from './crossEnd';
+import { keyMoveOf } from './keyMove';
 import { snapToStep } from '../spin';
 import { READOUT, clampOrdered, defaultStep, fractionToPosition, resolveBounds, stepStops } from './stops';
 import type { SliderProps, Thumb } from './types';
@@ -104,53 +105,23 @@ export function SliderBody<T extends Thumb = Thumb>(
   };
 
   const onThumbKeyDown = (index: number) => (e: ReactKeyboardEvent) => {
+    const move = keyMoveOf(e);
+    if (!move) return;
     const range = props.range ?? [min, max];
     const stepSize = defaultStep(step, range[0], range[1]);
-    let delta = 0;
-    // With stops, a keystroke moves by whole stops rather than by value.
-    let stopDelta = 0;
-    let snapTo: 'home' | 'end' | null = null;
-
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'ArrowUp':
-        delta = e.shiftKey ? stepSize * 10 : stepSize;
-        stopDelta = e.shiftKey ? 10 : 1;
-        break;
-      case 'ArrowLeft':
-      case 'ArrowDown':
-        delta = e.shiftKey ? -stepSize * 10 : -stepSize;
-        stopDelta = e.shiftKey ? -10 : -1;
-        break;
-      case 'PageUp':
-        delta = stepSize * 10;
-        stopDelta = 10;
-        break;
-      case 'PageDown':
-        delta = -stepSize * 10;
-        stopDelta = -10;
-        break;
-      case 'Home':
-        snapTo = 'home';
-        break;
-      case 'End':
-        snapTo = 'end';
-        break;
-      default:
-        return;
-    }
-
     e.preventDefault();
     const next = thumbs.map(t => ({ ...t }));
     const [bLo, bHi] = resolveBounds(next[index], { thumbs: next, index }, min, max);
     const lo = Math.max(min, bLo);
     const hi = Math.min(max, bHi);
     let v: number;
-    if (snapTo === 'home') v = lo;
-    else if (snapTo === 'end') v = hi;
-    else if (stops.length > 0) {
-      v = stepStops(stops, next[index].value, stopDelta > 0 ? 1 : -1, Math.abs(stopDelta));
-    } else {
+    if (move === 'home') v = lo;
+    else if (move === 'end') v = hi;
+    else if (props.keyStep) v = props.keyStep(next[index], move, index);
+    // With stops, a keystroke moves by whole stops rather than by value.
+    else if (stops.length > 0) v = stepStops(stops, next[index].value, move > 0 ? 1 : -1, Math.abs(move));
+    else {
+      const delta = move * stepSize;
       v = crossEnd(next[index].value, delta, stepSize, range, [min, max]) ?? snapToStep(next[index].value + delta, step, min);
     }
     v = clamp(v, lo, hi);

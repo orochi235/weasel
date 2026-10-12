@@ -1434,17 +1434,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   select after a choice is made, which is every bound key, modifier chords included
   (`useGestureDispatcher.tsx`).
 
-- **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On
-  a `px` scale with a step at 16, drag its thumb to 20 and back in one drag: near the start the
-  readout shows 17 (or 15 from below), and exactly at the start it stops updating. `Slider` keeps
-  calling the `onInput` it was given at pointerdown, so `commit` in
-  `packages/ui/src/components/TokenPanel/Scale.tsx` compares every move against the starting amount,
-  and its "an arrow key still moves a step by one unit" nudge fires for drags too. The nudge is only
-  right for a key press, and `Slider` gives its caller no way to tell one from a drag (both arrive
-  through `onInput`; a key press also calls `onChange`, but so does a drag's end). Options: `Slider`
-  passes the source of a change to `onInput`/`onChange`; or `Scale` owns the arrow keys for its
-  thumbs and `commit` never nudges.
-
 - **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
   handler removes the focused row: the tab stop recomputes to the first selected or first row, but
   DOM focus falls to `<body>` and the next arrow key goes nowhere (`stopId` in
