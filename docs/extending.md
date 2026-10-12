@@ -308,6 +308,9 @@ Each action pins the proposed/result shape; pick the matching alias
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
   or the action's default ops (move emits one `createTransformOp` per id).
+  Every behavior's `onEnd` runs, with `end.answered` true once an earlier one
+  has answered or thrown; after a throw nothing commits, and the first error
+  is rethrown once all have run.
 - A move behavior that claims the commit but places only some of the
   dragged nodes returns `end.translateOps(ids)` beside its own ops: the
   action's default translate for those dragged roots and the descendants
@@ -349,9 +352,9 @@ adds itself:
 | Behavior | From | What it does | Turned on by |
 |---|---|---|---|
 | `snap(strategy)` | `@weasel-js/core` | Shifts the whole selection so its first node lands where the strategy says. | `selectTool.snap`, or in `behaviors` |
-| `snapToGrid`, `snapToGuides`, `alignMoveBehavior` | `@weasel-js/guides` | Snap to a grid, to ruler guides, or to other nodes' edges and centers. | in `behaviors` |
-| `snapToContainer(...)` | `@weasel-js/core` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
-| `snapBackOrDelete(...)` | `@weasel-js/core` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
+| `snapToGrid`, `snapToGuides`, `alignMoveBehavior` | `@weasel-js/guides/move` for the first two, `@weasel-js/guides` for `alignMoveBehavior` | Snap to a grid, to ruler guides, or to other nodes' edges and centers. | in `behaviors` |
+| `snapToContainer(...)` | `@weasel-js/core/move` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
+| `snapBackOrDelete(...)` | `@weasel-js/core/move` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
 | `momentum(...)` | `@weasel-js/core` | Keeps a flicked node coasting after release, and records the whole flick as one undo step. | in `behaviors` |
 | layout drop | the move action | Drops the selection into the layout container under it: previews the slot and the siblings that make room, and commits the container's `commitDrop`. Released outside every layout container, each source container's `releaseDrop` decides, and a node let go outside its container leaves it. | a layout on a container (`ContainerNode.layout`, or `<SceneCanvas layouts>`) |
 | reparent on drop | the move action | Reparents the selection under the node the pointer is released over, keeping where it was dropped. | the move binding's `reparentOnDrop: 'top' \| 'above'` param |
