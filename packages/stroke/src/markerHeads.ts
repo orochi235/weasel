@@ -23,7 +23,7 @@ function placed(path: Path, site: MarkerSite): PolygonPath {
     coords[i] = site.x + x * cos - y * sin;
     coords[i + 1] = site.y + x * sin + y * cos;
   }
-  return { kind: 'polygon', commands: src.commands, coords, fillRule: src.fillRule };
+  return { ...src, coords };
 }
 
 /** One head's placed geometry, before any paint is applied. */

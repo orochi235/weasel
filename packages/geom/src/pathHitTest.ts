@@ -5,15 +5,16 @@
  * A `rect` path short-circuits to AABB arithmetic. A `polygon` path is its
  * filled region: beziers are flattened, `fillRule` is honored (default
  * `nonzero`), and every closed subpath counts — the hole of a donut is not
- * part of the shape under `evenodd`. Open subpaths enclose no area, so the
- * filled-region tests ignore them.
+ * part of the shape under `evenodd`. An open subpath counts as closed where a
+ * fill closes it and encloses nothing where one does not: see
+ * `fillsOpenSubpaths`.
  */
 
-import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from './commands';
-import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic } from './flatten';
+import { DEFAULT_FLATTEN_TOLERANCE } from './flatten';
 import { pointInPolygon, pointSegmentDist2, segmentsCross } from './polyline';
 import type { Rect } from './box';
-import type { Path, PolygonPath } from './path';
+import type { Path } from './path';
+import { closedSubpaths, flatSubpaths, regionSubpaths } from './pathSubpaths';
 import type { Mat3 } from './mat3';
 import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screenBand';
 
@@ -35,67 +36,6 @@ export interface StrokeHitTestOptions {
    *  screen distance, and under a non-uniform or rotated-then-squished
    *  transform no world distance equals it. */
   slop?: { px: number; transform: Mat3 };
-}
-
-// ─── Flattening ─────────────────────────────────────────────────────────────
-
-/**
- * `path` flattened to interleaved `[x, y, …]` runs, sorted by whether each
- * subpath encloses area. A `Z` closing fewer than three points yields an open
- * run, as does any subpath a `Z` never ends. The closing edge of a closed run
- * back to its first vertex is implicit.
- */
-function flatSubpaths(
-  path: PolygonPath,
-  tolerance: number,
-): { closed: number[][]; open: number[][] } {
-  const { commands, coords } = path;
-  const closed: number[][] = [];
-  const open: number[][] = [];
-  let sub: number[] = [];
-
-  forEachSegment(commands, coords, (cmd, ci, curX, curY, _i, opensSubpath) => {
-    if (opensSubpath) sub = [curX, curY];
-    switch (cmd) {
-      case PATH_M:
-        if (sub.length >= 2) open.push(sub);
-        sub = [coords[ci], coords[ci + 1]];
-        break;
-      case PATH_L:
-        sub.push(coords[ci], coords[ci + 1]);
-        break;
-      case PATH_C:
-        flattenCubic(
-          curX, curY,
-          coords[ci], coords[ci + 1],
-          coords[ci + 2], coords[ci + 3],
-          coords[ci + 4], coords[ci + 5],
-          tolerance, sub,
-        );
-        break;
-      case PATH_Q:
-        flattenQuadratic(
-          curX, curY,
-          coords[ci], coords[ci + 1],
-          coords[ci + 2], coords[ci + 3],
-          tolerance, sub,
-        );
-        break;
-      case PATH_Z:
-        if (sub.length >= 6) closed.push(sub);
-        else if (sub.length >= 2) open.push(sub);
-        sub = [];
-        break;
-      default:
-        throw new Error(`pathHitTest: unknown command ${cmd}`);
-    }
-  });
-  if (sub.length >= 2) open.push(sub);
-  return { closed, open };
-}
-
-function closedSubpaths(path: PolygonPath, opts: PointInPathOptions): number[][] {
-  return flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE).closed;
 }
 
 // ─── Point vs path ──────────────────────────────────────────────────────────
@@ -398,7 +338,7 @@ export function polygonContainsPath(
   if (path.kind === 'rect') {
     subpaths = [flattenVerts(rectToVerts(path))];
   } else {
-    const { closed, open } = flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
+    const { closed, open } = regionSubpaths(path, opts);
     subpaths = [...closed, ...open];
   }
   if (subpaths.length === 0) return false;
@@ -426,7 +366,7 @@ export function polygonIntersectsPath(
 ): boolean {
   if (polygon.length < 3) return false;
   if (path.kind === 'rect') return polygonsIntersect(rectToVerts(path), polygon);
-  const { closed, open } = flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
+  const { closed, open } = regionSubpaths(path, opts);
   const flatPoly = flattenVerts(polygon);
   if (anyVertexInPolygon(closed, flatPoly) || anyVertexInPolygon(open, flatPoly)) return true;
   if (anyEdgeCrossesPolygon(closed, polygon) || anyOpenEdgeCrossesPolygon(open, polygon)) {

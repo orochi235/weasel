@@ -18,7 +18,8 @@ export {
   flattenCubicWithArcLen, flattenQuadraticWithArcLen,
 } from './flatten';
 export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
-export type { Path, PolygonPath, RectPath, PathFillRule } from './path';
+export type { Path, PolygonPath, RectPath, PathFillRule, PathOpenFill } from './path';
+export { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
 export {
   PathBuilder, rectPath, polylineFromPoints, polygonFromPoints,
   ellipsePath, regularPolygonPath, starPath, linePath,

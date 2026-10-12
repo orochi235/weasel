@@ -320,19 +320,16 @@ have shipped. What remains:
   - A world-unit pick tolerance is measured in the node's own frame (`poseContainsRotated`), so
     the transform stretches it with the node.
 
-- **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
-  100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)
-  triangulates the closed triangle and `pathSignedArea` (`paths/winding.ts`) counts it as closed
-  "the way a fill closes it", while `pointInPath` (`pathHitTest.ts`, `flatSubpaths`) files the run
-  under `open` and returns false, and `path.ts` documents that open subpaths "don't contribute to
-  fills". So the triangle paints and cannot be clicked. Ruled 2026-10-12: the path says which, in a
-  field beside `fillRule` that all three read (a fill closes every open subpath, as SVG and canvas
-  do, or an open subpath never fills), and an engine flag sets the answer for a path that carries
-  none. Still to settle while building: where that flag lives, since `@weasel-js/geom` has no
-  engine object, and which answer it starts at. Under the closing rule an unfilled open stroke is
-  picked across the area its ends enclose, because `containsInFrame`
-  (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls `pointInPath` without knowing
-  whether the node has a fill; a closed unfilled outline is already picked that way.
+- **(P3) Under `openFill: 'none'`, SVG import and export still close an open subpath.** A path says
+  whether a fill closes its open subpaths (`PolygonPath.openFill`, or `setDefaultOpenFill` for a
+  path that names none), and `tessellate`, `pathSignedArea`, and the filled-region hit tests agree.
+  SVG always closes one, so two readers outside `@weasel-js/geom` disagree with a path that says
+  `'none'`: `packages/svg/src/lowerLeaf.ts` imports a filled `<polyline>` without stamping
+  `openFill: 'close'`, so it stops painting under a `'none'` default, and the SVG writer emits an
+  unfilled open subpath with its node's fill, which a browser then paints. The export half has to
+  split a path that mixes closed and open subpaths. Also: a mesh the renderer cached keeps the rule
+  it was built under when the default changes (`packages/renderer/src/cache/cache.ts` keys on the
+  path), so the default has to be set before the first paint.
 
 - **(P3) svg unpack: a clipped group arrives unclipped.** `parseSvg` puts a `<g clip-path>` on
   `SvgGroupNode.clip`, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) builds the container
@@ -1808,7 +1805,10 @@ one dead `const` and four stale disable directives.
   glyphs") spent 7.8 s in `page.screenshot` waiting for the element to be stable. The first passes
   alone in 0.3 s. Two unrelated files failing the same way in one run reads as load, which nobody
   has confirmed; `AssetEditor.steps.test.tsx` has also timed out at 5 s under load and passed
-  alone.
+  alone. On teitou, 2026-10-12, while about twenty other runs shared the fleet, two more
+  did the same in separate runs and passed alone: `forge/src/vite/plugin.test.ts` ("serves the
+  component graph from source…", 15 s) and `forge/src/timeline/timeline.browser.test.tsx` ("plays
+  on real frames").
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
