@@ -5,8 +5,8 @@ import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/types';
-import type { Skin } from '../../../animation/rig/skin';
-import { IDENTITY_JOINT, type Skeleton } from '../../../animation/rig/types';
+import type { Skin } from '@weasel-js/animator';
+import { IDENTITY_JOINT, type Skeleton } from '@weasel-js/animator';
 import { createRigEditState } from '../bone/rigEditState';
 import { useWeightTool } from './useWeightTool';
 

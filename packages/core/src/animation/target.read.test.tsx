@@ -4,12 +4,12 @@ import { linear, PATH_L, PATH_M, PATH_Z, type Path } from '@weasel-js/geom';
 import { RECT_POSE_DESCRIPTOR } from '../core/geometry/poseDescriptor';
 import { pathPoseDescriptor } from '../core/geometry/pathPoseDescriptor';
 import { viewAxes } from '../core/viewport/useViewAnimation';
-import { axesOf } from './engine/axes';
+import { axesOf } from '@weasel-js/animator';
 import { liveAxes } from './poseTarget';
-import { skeletonAxes } from './rig/skeletonAxes';
-import { IDENTITY_JOINT } from './rig/types';
-import { createTarget, type TargetAxes } from './target';
-import { useAnimator } from './useAnimator';
+import { skeletonAxes } from '@weasel-js/animator';
+import { IDENTITY_JOINT } from '@weasel-js/animator';
+import { createTarget, type TargetAxes } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator';
 
 type Pt = { x: number; y: number };
 

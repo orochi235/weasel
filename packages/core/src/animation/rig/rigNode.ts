@@ -4,8 +4,8 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId } from '../../core/scene/types';
 import type { BindRigOptions, Rig, RigScene } from './bindRig';
-import type { Skin } from './skin';
-import type { Skeleton } from './types';
+import type { Skin } from '@weasel-js/animator';
+import type { Skeleton } from '@weasel-js/animator';
 import { useRig } from './useRig';
 
 /** What a rig reads from node data: a `skeleton` on the node that is the rig, and on the nodes

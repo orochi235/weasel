@@ -5,10 +5,10 @@ import {
   PATH_M,
   SceneCanvas,
   textCommandFromRuns,
-  useAnimator,
   useScene,
   useSelection,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import type { DrawCommand, RenderLayer } from '@weasel-js/core';
 import {
   createAudioEngine, createDelayEffect, createFilterEffect, createPatternPlayer,

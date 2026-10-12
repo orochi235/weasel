@@ -4,10 +4,10 @@ import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
-import { jointPositions } from '../../../animation/rig/skeletonEdits';
+import { jointPositions } from '@weasel-js/animator';
 import { placeSkeleton } from '../../../animation/rig/rigNode';
-import type { Skin } from '../../../animation/rig/skin';
-import type { Skeleton } from '../../../animation/rig/types';
+import type { Skin } from '@weasel-js/animator';
+import type { Skeleton } from '@weasel-js/animator';
 import { createRigEditState } from './rigEditState';
 import { useBoneTool } from './useBoneTool';
 

@@ -3,30 +3,34 @@ import {
   asNodeId,
   easeInOutSine,
   effectivePose,
-  jointAxes,
   mat3,
   RECT_POSE_DESCRIPTOR,
-  resolveSkeleton,
   rigidRigApply,
-  sampleTrack,
   SceneCanvas,
   solid,
-  solveIk,
-  useAnimator,
   useRig,
   useScene,
 } from '@weasel-js/core';
+import {
+  jointAxes,
+  resolveSkeleton,
+  sampleTrack,
+  solveIk,
+  useAnimator,
+} from '@weasel-js/animator';
 import type {
   FillStyle,
-  HoldHandle,
   NodeId,
-  Pose,
   RectPose,
   RigApply,
-  SampledTrack,
-  Skeleton,
   TextStyle,
 } from '@weasel-js/core';
+import type {
+  HoldHandle,
+  Pose,
+  SampledTrack,
+  Skeleton,
+} from '@weasel-js/animator';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 340;

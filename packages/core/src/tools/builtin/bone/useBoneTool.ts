@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
-import type { Skeleton } from '../../../animation/rig/types';
+import type { Skeleton } from '@weasel-js/animator';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { createBoneActions, type BoneEnv } from './boneActions';

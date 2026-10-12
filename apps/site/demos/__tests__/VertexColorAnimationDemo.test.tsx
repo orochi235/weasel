@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { rainbowVertexColors, solidVertexColors } from '@weasel-js/core';
+import { rainbowVertexColors, solidVertexColors } from '@weasel-js/animator';
 import { VertexColorAnimationDemo } from '../VertexColorAnimationDemo';
 
 const RAINBOW = rainbowVertexColors(7);

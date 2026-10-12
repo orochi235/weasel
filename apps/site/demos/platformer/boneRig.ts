@@ -1,5 +1,6 @@
 // apps/site/demos/platformer/boneRig.ts
-import { mirrorPose, type Pose, type RectPose } from '@weasel-js/core';
+import { type RectPose } from '@weasel-js/core';
+import { mirrorPose, type Pose } from '@weasel-js/animator';
 import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from './skeleton';
 import type { Vec2 } from './level';
 

@@ -7,18 +7,18 @@ import {
   oklabToSrgbU8,
   SceneCanvas,
   srgbU8ToOklab,
-  useAnimator,
   useLatest,
   useScene,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
+import type { DrawCommand } from '@weasel-js/core';
 import type {
-  DrawCommand,
   EventTrack,
   SampledTrack,
   TimelineHandle,
   TimelineTrack,
   Track,
-} from '@weasel-js/core';
+} from '@weasel-js/animator';
 import num from '@weasel-js/theme/numeric.module.css';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number }

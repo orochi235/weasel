@@ -44,8 +44,9 @@ export default defineConfig({
     /^@weasel-js\/core\//,
     '@weasel-js/theme',
     /^@weasel-js\/theme\//,
+    '@weasel-js/animator',
   ],
-  // Bundle labkit's weasel siblings into its dist — but never core or theme.
+  // Bundle labkit's weasel siblings into its dist — but never core, theme, or the animator.
   //
   // Core owns module-global registries (content handlers, paint kinds, shape
   // painters, markers, programs). Inlining it ships a second set, and a consumer
@@ -62,11 +63,14 @@ export default defineConfig({
   // theme — and where `adoptedStyleSheets` is missing, both copies append their
   // own `<style id="wzl-themes">`.
   //
+  // The animator keeps what it knows of each target in a module-scoped map, which core's
+  // pose targets are read through: a second copy would not know core's targets.
+  //
   // The lookahead has to cover subpaths as well as the bare specifier: the
   // bundled siblings import `@weasel-js/core/patterns-builtin` and labkit
   // imports `@weasel-js/theme/react`, and matching only the bare names would
   // inline those.
-  noExternal: [/^@weasel-js\/(?!(?:core|theme)(?:$|\/))/],
+  noExternal: [/^@weasel-js\/(?!(?:core|theme|animator)(?:$|\/))/],
   splitting: true,
   treeshake: true,
 });

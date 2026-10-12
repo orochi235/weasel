@@ -107,13 +107,15 @@ export type {
   TextRenderer,
 } from '@weasel-js/text';
 
-// ─── Create Outlines: text nodes to path geometry ───────────────────────────
+// ─── Create Outlines and Outline Stroke: text and strokes to path geometry ───────────────────────────
 export {
   applyCreateOutlines,
+  applyOutlineStroke,
   useCreateOutlinesAdapter,
 } from '../interactions/actions/outlines';
 export type {
   CreateOutlinesAdapter,
   CreateOutlinesResult,
   OutlinePathSpec,
+  OutlineStrokeResult,
 } from '../interactions/actions/outlines';

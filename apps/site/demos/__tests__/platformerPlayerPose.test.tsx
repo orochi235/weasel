@@ -1,8 +1,8 @@
 // apps/site/demos/__tests__/platformerPlayerPose.test.tsx
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { createTarget, skeletonAxes, sampleTrack, useAnimator } from '@weasel-js/core';
-import type { Pose } from '@weasel-js/core';
+import { createTarget, skeletonAxes, sampleTrack, useAnimator } from '@weasel-js/animator';
+import type { Pose } from '@weasel-js/animator';
 import { FADE_MS, createAnimState, nextAnimState, type AnimCtx, type AnimState } from '../platformer/animState';
 import { CLIPS, clipTrack, type ClipName } from '../platformer/clips';
 import { createPlayerPose } from '../platformer/playerPose';

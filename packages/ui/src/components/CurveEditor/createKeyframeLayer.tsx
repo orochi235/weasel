@@ -8,7 +8,8 @@
  * them, so the two do not share curve maths.
  */
 import type { ReactNode } from 'react';
-import { cubicBezierEasing, resolveEasing, type EasingFn, type Keyframe } from '@weasel-js/core';
+import { cubicBezierEasing, resolveEasing } from '@weasel-js/core';
+import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { handleHalf } from '../../handles';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';

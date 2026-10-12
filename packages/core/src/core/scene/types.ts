@@ -5,8 +5,9 @@ import type { ContainerBounds, LayoutStrategy } from '../../layout/types';
 import type { PoseComposition } from './composeFrame';
 import type { PoseLinear } from '@weasel-js/geom';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
+import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 
-export type { PoseHold, PoseOverride, PoseOverrides };
+export type { PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
 
 /**
  * Axis-aligned rectangle pose with optional rotation. The canonical pose
@@ -339,54 +340,6 @@ export interface AddLayerSpec<TLayer extends string> {
   index?: number;
 }
 
-/** One layer as it appears in a snapshot. A snapshot written before layer
- *  kind was serialized carries neither field, and loads as a system layer —
- *  which is what every layer in such a snapshot was. */
-export interface SerializedLayer<TLayer extends string>
-  extends SystemLayerSpec<TLayer> {
-  kind?: 'system' | 'user';
-  /** Present on a user layer, absent on a system one. */
-  name?: string;
-}
-
-/** JSON-serializable shape of a Scene's current state. Produced by
- *  `scene.toJSON()`; consumed by `sceneFromJSON()`. Function fields
- *  (e.g., `clipFromPose`) appear as string keys (`clipFromPoseKey`) and
- *  are resolved through `SceneRegistry` at load time. */
-export interface SerializedScene<TData, TLayer extends string, TPose> {
-  version: 1;
-  /** The whole layer stack, system and user alike — the name predates user
-   *  layers and is kept so existing snapshots still parse. */
-  systemLayers: readonly SerializedLayer<TLayer>[];
-  nodes: readonly SerializedNode<TData, TLayer, TPose>[];
-}
-
-/** JSON-serializable shape of a single node. Mirrors `AddNodeSpec` but
- *  with function fields replaced by registry keys. */
-export interface SerializedNode<TData, TLayer extends string, TPose> {
-  id: string;
-  kind: 'leaf' | 'container';
-  layer: TLayer;
-  pose: TPose;
-  data: TData;
-  /** Parent id; omitted for roots. */
-  parent?: string;
-  /** Registry key for the container's clip-path factory.
-   *  Containers only; omitted when the container has no clip. */
-  clipFromPoseKey?: string;
-  /** Ids this node's geometry derives from, or `'children'`. Omitted when it
-   *  derives from nothing. */
-  dependsOn?: readonly string[] | 'children';
-  /** Mirrors `SceneNode.pickable`. Omitted when the node is pickable. */
-  pickable?: boolean;
-  /** Registry key for the node's `derivePath` function. Omitted when it has none. */
-  derivePathKey?: string;
-  /** Registry key for the node's `derivePose` function. Omitted when it has none. */
-  derivePoseKey?: string;
-  /** Registry key for the container's layout strategy. Omitted when it has none. */
-  layoutKey?: string;
-}
-
 /** Per-scene registry mapping string keys to live function references.
  *  Passed to `createScene({ ..., registry })` and `sceneFromJSON(json, { registry })`.
  *  Each function-field type has its own keyed map. */
@@ -547,6 +500,12 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   removalClosure(ids: readonly NodeId[]): readonly NodeId[];
   update(id: NodeId, patch: { data: TData }): void;
   setPose(id: NodeId, pose: TPose): void;
+  /** Write a pose on behalf of the op now applying, one the op's own inverse
+   *  will not put back: the op records it, and undoing the op restores it.
+   *  For an adapter that moves more than it was asked to, such as one that
+   *  moves a container's descendants with it. Outside an op it is `setPose`;
+   *  while an op that recorded its carried poses replays, it does nothing. */
+  carry(id: NodeId, pose: TPose): void;
   /** Retag `id` to `layer`. On a **container this cascades**: every descendant
    *  is moved to the same layer, recorded as a **single** undo step.
    *

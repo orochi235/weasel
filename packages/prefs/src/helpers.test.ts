@@ -79,7 +79,7 @@ describe('filterPrefSubtree', () => {
 
     const hidden = { ...schema, children: { quick: schema.children.quick! } };
     expect(filterPrefSubtree(hidden, 'alignment')).toBeNull();
-    const kept = filterPrefSubtree(hidden, 'alignment', '', (path) => (path === 'canvas.showGrid' ? ((SCHEMA.children.canvas as PrefGroup).children.showGrid as never) : undefined));
+    const kept = filterPrefSubtree(hidden, 'alignment', '', SCHEMA);
     expect(Object.keys((kept?.children.quick as PrefGroup).children)).toEqual(['grid']);
   });
 

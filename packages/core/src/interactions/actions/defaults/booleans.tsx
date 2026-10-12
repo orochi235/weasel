@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { applyBooleanOp, type BooleanOp } from '../booleans/booleans';
+import type { BooleanStrokes } from '../booleans/operands';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
@@ -39,6 +40,9 @@ const ICON_FOR: Record<BooleanOp, ReactNode> = {
   crop: <CropIcon />,
 };
 
+/** What a stroked operand gives the built-in Pathfinder actions. */
+const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
+
 // ---------------------------------------------------------------------------
 // Static descriptors
 // ---------------------------------------------------------------------------
@@ -50,7 +54,7 @@ function makePathfinderAction(op: BooleanOp): Action {
     icon: ICON_FOR[op],
     group: 'pathfinder',
     eligible: { capability: 'creates-shapes' },
-    requires: ['selection', 'booleansAdapter'],
+    requires: ['selection', 'booleansAdapter', 'view'],
     // No default keybindings — there's no industry-standard chord set for
     // boolean ops. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -58,7 +62,11 @@ function makePathfinderAction(op: BooleanOp): Action {
       run: (deps) => {
         const adapter = deps.booleansAdapter;
         if (!adapter) return;
-        const result = applyBooleanOp(adapter, op);
+        const scale = deps.view?.get().scale;
+        const result = applyBooleanOp(adapter, op, {
+          strokes: PATHFINDER_STROKES,
+          ...(scale ? { scale: Math.sqrt(Math.abs(scale.x * scale.y)) } : {}),
+        });
         if (result.kind === 'failed') console.warn(`[pathfinder] ${result.error.message}`);
       },
     } satisfies ImmediateInvoker,

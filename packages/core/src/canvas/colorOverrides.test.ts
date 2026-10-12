@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import { ColorOverrideRegistry } from '../animation/colorRegistry';
+import { ColorOverrideRegistry } from '@weasel-js/animator';
 import { pathFromD, countPathAnchors } from '@weasel-js/geom';
 import { defaultDrawOne } from './defaultDrawOne';
 import { wireSceneSlotToScene } from './sceneSlotWiring';

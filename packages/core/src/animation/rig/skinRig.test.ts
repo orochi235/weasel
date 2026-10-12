@@ -4,8 +4,8 @@ import { createScene } from '../../core/scene/scene';
 import { effectivePose } from '../../core/scene/effectivePose';
 import type { NodeId, RectPose } from '../../core/scene/types';
 import { bindRig } from './bindRig';
-import type { Skin } from './skin';
-import type { Skeleton } from './types';
+import type { Skin } from '@weasel-js/animator';
+import type { Skeleton } from '@weasel-js/animator';
 
 type Data = { path?: Path; fill?: string; outline?: Path };
 

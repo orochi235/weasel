@@ -2,12 +2,12 @@ import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId, PoseOverride } from '../../core/scene/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import { createTarget, type Target } from '../target';
-import { skeletonAxes } from './skeletonAxes';
-import { resolveSkeleton } from './resolveSkeleton';
+import { createTarget, type Target } from '@weasel-js/animator';
+import { skeletonAxes } from '@weasel-js/animator';
+import { resolveSkeleton } from '@weasel-js/animator';
+import type { Pose, Skeleton } from '@weasel-js/animator';
+import type { Skin } from '@weasel-js/animator';
 import { bindSkins, dataRestPath, type RestPath, type SkinScene } from './skinBinding';
-import type { Skin } from './skin';
-import type { Pose, Skeleton } from './types';
 
 /** The part of a scene a rig writes to. */
 export interface RigScene<TPose> extends SkinScene<TPose> {
@@ -62,7 +62,7 @@ export interface Rig {
    * pose, and each frame the rig is posed with what the target shows. A clip is a
    * `SampledTrack<Pose>` given this as its `target`: clips on one rig crossfade by their
    * `weight`s, weights short of 1 leave the rest to the committed pose, and a `spring` or
-   * `tween` on it adds on top. `animator.hold` shows a pose made elsewhere the same way, an
+   * `tween` from a pose away from the committed one adds on top. `animator.hold` shows a pose made elsewhere the same way, an
    * IK solve included.
    */
   readonly target: Target<Pose>;

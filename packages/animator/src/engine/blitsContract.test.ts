@@ -1,0 +1,183 @@
+import { describe, expect, it } from 'vitest';
+import { kit, mix, patch, spring, sum, tween, vec } from '@msb235/blits';
+
+type U = { u: number };
+type P = { p: number[] };
+const linear = (x: number) => x;
+
+describe('blits behaviors the animator codec relies on', () => {
+  it('a tween subject started with to(id, 1, at) is at ease((t - at) / ms)', () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const ms = new Map([[1, 1000], [2, 500]]);
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: (id) => ms.get(id)!, ease: linear });
+    m.cue({ patch: tw });
+    tw.to(1, 1, 0);
+    tw.to(2, 1, 0);
+    m.sync(250);
+    const cols = { u: new Float64Array(2) };
+    m.pull([1, 2], cols);
+    expect(cols.u[0]).toBeCloseTo(0.25, 9);
+    expect(cols.u[1]).toBeCloseTo(0.5, 9);
+  });
+
+  it('pull reads a sum channel no voice reaches as 0', () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const cols = { u: new Float64Array([42]) };
+    m.pull([7], cols);
+    expect(cols.u[0]).toBe(0);
+  });
+
+  it('fade({ subject, over: 0 }) takes one subject off a voice and leaves the rest', () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
+    const h = m.cue({ patch: tw });
+    tw.to(1, 1, 0);
+    tw.to(2, 1, 0);
+    m.sync(100);
+    h.fade({ subject: 1, over: 0 });
+    m.sync(200);
+    const cols = { u: new Float64Array([42, 42]) };
+    m.pull([1, 2], cols);
+    expect(cols.u[0]).toBe(0);
+    expect(h.weightOf(1)).toBe(0);
+    expect(cols.u[1]).toBeCloseTo(0.2, 9);
+  });
+
+  it('a voice seeked to an elapsed time reads where the shared voice would', () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
+    const h = m.cue({ patch: tw, subjects: [3] });
+    tw.to(3, 1, 0);
+    m.sync(100);
+    h.seek(600);
+    m.sync(100);
+    const cols = { u: new Float64Array(1) };
+    m.pull([3], cols);
+    expect(cols.u[0]).toBeCloseTo(0.6, 9);
+  });
+
+  it('rate 0 holds a voice still', () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
+    const h = m.cue({ patch: tw });
+    tw.to(1, 1, 0);
+    m.sync(300);
+    h.rate = 0;
+    m.sync(900);
+    const cols = { u: new Float64Array(1) };
+    m.pull([1], cols);
+    expect(cols.u[0]).toBeCloseTo(0.3, 9);
+  });
+
+  it('a spring carries position and velocity through to() and push(), once a frame has met it', () => {
+    const m = mix<number, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const sp = spring<number, P, number[]>('p', { from: [0, 0], to: [10, 0], stiffness: 170, damping: 26, mass: 1 });
+    m.cue({ patch: sp });
+    sp.to(1, [10, 0], 0);
+    m.sync(100);
+    expect(sp.read(1)).toBeUndefined();
+    m.pull([1], { p: new Float64Array(2) });
+    const before = sp.read(1)!;
+    sp.to(1, [0, 10]);
+    const after = sp.read(1)!;
+    expect(after.value).toEqual(before.value);
+    expect(after.velocity).toEqual(before.velocity);
+    sp.push(1, [5, 5]);
+    expect(sp.read(1)!.velocity).toEqual([5, 5]);
+  });
+
+  it('voices that each name the same subject pull as their sum', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    const a = tween<object, P, number[]>('p', { from: [100, 0], to: [100, 0], ms: 1000, ease: linear });
+    const b = tween<object, P, number[]>('p', { from: [0, 50], to: [0, 50], ms: 1000, ease: linear });
+    m.cue({ patch: a, subjects: [subject] });
+    m.cue({ patch: b, subjects: [subject] });
+    a.to(subject, [0, 0], 0);
+    b.to(subject, [0, 0], 0);
+    m.sync(500);
+    const cols = { p: new Float64Array(2) };
+    m.pull([subject], cols);
+    expect([...cols.p]).toEqual([50, 25]);
+  });
+
+  it("a tween's read answers its velocity, in units a second", () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const tw = tween<number, U>('u', { from: 0, to: 0, ms: 1000, ease: linear });
+    m.cue({ patch: tw });
+    tw.to(1, 100, 0);
+    m.sync(250);
+    m.pull([1], { u: new Float64Array(1) });
+    expect(tw.read(1)!.velocity).toBeCloseTo(100, 9);
+  });
+
+  it('a tween voice cued with no loop still answers its end long past its ms', () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const tw = tween<number, U>('u', { from: 0, to: 0, ms: 1000, ease: linear });
+    const h = m.cue({ patch: tw, subjects: [1] });
+    tw.to(1, 1, 0);
+    m.sync(5000);
+    const cols = { u: new Float64Array(1) };
+    m.pull([1], cols);
+    expect(cols.u[0]).toBe(1);
+    expect(h.weightOf(1)).toBe(1);
+  });
+
+  it('a patch with a duration answers past it only when told to loop', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    m.cue({ patch: patch<object, P>(1, () => ({ p: [3, 0] }), { writes: ['p'] }), subjects: [subject], loop: true });
+    m.sync(5000);
+    const cols = { p: new Float64Array(2) };
+    m.pull([subject], cols);
+    expect(cols.p[0]).toBe(3);
+  });
+
+  /** A voice answering whatever `read` returns now, the way a hold answers its value. */
+  const live = (read: () => number[]) =>
+    patch<object, P>(1, () => ({ p: read() }), { writes: ['p'] });
+  const pulled = (m: ReturnType<typeof mix<object, P>>, subject: object): number[] => {
+    const cols = { p: new Float64Array(2) };
+    m.pull([subject], cols);
+    return [...cols.p];
+  };
+
+  it('a patch reading an outside value keeps its answer while the clock stands still, until touch', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    let x = 1;
+    m.cue({ patch: live(() => [x, 0]), subjects: [subject], loop: true });
+    m.sync(16);
+    expect(pulled(m, subject)[0]).toBe(1);
+    x = 2;
+    m.sync(16);
+    expect(pulled(m, subject)[0]).toBe(1);
+    m.touch(subject);
+    expect(pulled(m, subject)[0]).toBe(2);
+    expect(m.probe(subject).p[0]).toBe(2);
+  });
+
+  it('a voice cued or faded since the last sync is in or out of the next read at once', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    const a = m.cue({ patch: live(() => [1, 0]), subjects: [subject], loop: true });
+    m.sync(16);
+    expect(pulled(m, subject)[0]).toBe(1);
+    m.cue({ patch: live(() => [10, 0]), subjects: [subject], loop: true });
+    expect(m.probe(subject).p[0]).toBe(11);
+    a.fade({ over: 0 });
+    expect(m.probe(subject).p[0]).toBe(10);
+  });
+});

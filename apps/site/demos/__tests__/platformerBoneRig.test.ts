@@ -2,11 +2,12 @@ import {
   composeRigidPose,
   createScene,
   mat3,
-  resolveSkeleton,
   RIGID_POSE_COMPOSITION,
   sceneToAdapter,
 } from '@weasel-js/core';
-import type { Pose, RectPose } from '@weasel-js/core';
+import { resolveSkeleton } from '@weasel-js/animator';
+import type { RectPose } from '@weasel-js/core';
+import type { Pose } from '@weasel-js/animator';
 import { describe, expect, it } from 'vitest';
 import { boneLocalPoses } from '../platformer/boneRig';
 import { boneId, boneNodes, type WorldData, type WorldLayer } from '../platformer/sceneWorld';

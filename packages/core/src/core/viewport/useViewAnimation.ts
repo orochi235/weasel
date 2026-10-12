@@ -1,9 +1,9 @@
 import { useId, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { useAnimator } from '../../animation/useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { easeOutCubic } from '@weasel-js/geom';
-import type { Animator, EasingSpec, InterpolatorFactory } from '../../animation/types';
-import { createTarget, type Target, type TargetAxes } from '../../animation/target';
+import type { Animator, EasingSpec, InterpolatorFactory } from '@weasel-js/animator';
+import { createTarget, type Target, type TargetAxes } from '@weasel-js/animator';
 import { interpolateView } from './interpolateView';
 import { fitViewToBounds } from './fitViewToBounds';
 import type { Bounds, FitViewToBoundsOptions, ViewportDims } from './fitViewToBounds';

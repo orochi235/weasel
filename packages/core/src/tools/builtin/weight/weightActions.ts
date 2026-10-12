@@ -6,10 +6,10 @@ import { createSetDataOp } from 'core/ops/setData';
 import type { NodeId, Scene } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import type { RigNodeData } from '../../../animation/rig/rigNode';
-import { jointAt } from '../../../animation/rig/skeletonEdits';
-import { skinnable, type Skin } from '../../../animation/rig/skin';
+import { jointAt } from '@weasel-js/animator';
+import { skinnable, type Skin } from '@weasel-js/animator';
 import { dataRestPath } from '../../../animation/rig/skinBinding';
-import { brushWeights, setWeights } from '../../../animation/rig/weightEdits';
+import { brushWeights, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
 

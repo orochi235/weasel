@@ -111,8 +111,8 @@ export function paneChildren(
   return out;
 }
 
-/** A nested group inside a pane, named by `data-spy-section` for the rail entry that scrolls to it. A section
- *  inside another indents. */
+/** A nested group inside a pane. One directly on the page is named by `data-spy-section` for the rail entry that
+ *  scrolls to it; a section inside another indents and has no entry. */
 function PaneSection({ ctx, group, path, depth, box }: {
   ctx: WalkCtx;
   group: PrefGroup;
@@ -124,7 +124,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
   return (
     <section
       className={depth === 0 ? s.paneSection : s.paneSubsection}
-      data-spy-section={path}
+      data-spy-section={depth === 0 ? path : undefined}
       {...selectionAttrs(path, ctx)}
       aria-label={group.name}
     >

@@ -258,6 +258,14 @@ a:hover { text-decoration: underline; }
   align-items: flex-start;
 }
 
+/* A strip above a demo's canvas: as wide as the canvas, never wider. Zero
+ * width keeps its controls out of the column's own width, so a strip with
+ * more controls than fit scrolls instead of widening the demo. */
+.ckd-strip {
+  width: 0;
+  min-width: 100%;
+}
+
 /* Positioning context for absolutely-placed canvas overlays (gradient
  * handles, and anything else that draws on top of the canvas). Sized by
  * the canvas it wraps. */

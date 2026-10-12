@@ -1,11 +1,5 @@
-import type {
-  Animator,
-  AnimationHandle,
-  EasingFn,
-  NodeId,
-  PoseDescriptor,
-  Scene,
-} from '@weasel-js/core';
+import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
+import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
 import type { D3Transition } from './types';
 
 interface TransitionCtx<TData, TPose> {

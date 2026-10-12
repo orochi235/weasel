@@ -10,20 +10,20 @@
     "lines": 419,
     "longestFunction": 169
   },
-  "packages/core/src/animation/engine/codec.ts": {
-    "longestFunction": 185
+  "packages/animator/src/engine/codec.ts": {
+    "longestFunction": 184
   },
   "packages/core/src/animation/reflow.ts": {
     "longestFunction": 165
   },
-  "packages/core/src/animation/timeline/booking.ts": {
+  "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135
   },
-  "packages/core/src/animation/timeline/createTimeline.ts": {
+  "packages/animator/src/timeline/createTimeline.ts": {
     "longestFunction": 187
   },
-  "packages/core/src/animation/types.ts": {
-    "lines": 491
+  "packages/animator/src/types.ts": {
+    "lines": 467
   },
   "packages/core/src/canvas/Canvas.tsx": {
     "lines": 1347,
@@ -68,7 +68,7 @@
     "lines": 422
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "longestFunction": 188
+    "longestFunction": 187
   },
   "packages/core/src/canvas/useViewHelpers.ts": {
     "longestFunction": 154
@@ -86,11 +86,11 @@
     "longestFunction": 166
   },
   "packages/core/src/core/scene/scene.ts": {
-    "lines": 1133,
-    "longestFunction": 1033
+    "lines": 1100,
+    "longestFunction": 999
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 778
+    "lines": 737
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -137,7 +137,7 @@
     "longestFunction": 140
   },
   "packages/d3/src/transition.ts": {
-    "lines": 476,
+    "lines": 470,
     "longestFunction": 337
   },
   "packages/diagram/src/cluster.ts": {
@@ -254,8 +254,8 @@
     "longestFunction": 283
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "lines": 637,
-    "longestFunction": 310
+    "lines": 632,
+    "longestFunction": 298
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 160
@@ -273,7 +273,7 @@
     "longestFunction": 149
   },
   "packages/labkit/src/specimen/Specimen.tsx": {
-    "lines": 883,
+    "lines": 884,
     "longestFunction": 132
   },
   "packages/labkit/src/state/bindLabStore.ts": {
@@ -356,8 +356,8 @@
     "lines": 498
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 1332,
-    "longestFunction": 482
+    "lines": 1090,
+    "longestFunction": 481
   },
   "packages/text/src/layout/layoutRuns.ts": {
     "lines": 1284,
@@ -401,7 +401,7 @@
     "longestFunction": 320
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
-    "lines": 438,
+    "lines": 439,
     "longestFunction": 296
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {
@@ -424,7 +424,7 @@
     "longestFunction": 221
   },
   "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
-    "longestFunction": 195
+    "longestFunction": 194
   },
   "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
     "longestFunction": 190

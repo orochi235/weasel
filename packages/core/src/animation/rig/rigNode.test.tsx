@@ -5,8 +5,8 @@ import { createScene } from '../../core/scene/scene';
 import type { RectPose } from '../../core/scene/types';
 import type { Rig } from './bindRig';
 import { placeSkeleton, rigFromNode, unplaceSkeleton, useRigNode } from './rigNode';
-import type { Skin } from './skin';
-import type { Skeleton } from './types';
+import type { Skin } from '@weasel-js/animator';
+import type { Skeleton } from '@weasel-js/animator';
 
 type Data = { skeleton?: Skeleton; skin?: Skin; joint?: string; path?: Path };
 

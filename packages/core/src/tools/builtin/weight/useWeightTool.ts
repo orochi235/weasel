@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
-import type { Skin } from '../../../animation/rig/skin';
+import type { Skin } from '@weasel-js/animator';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { createBoneOverlay } from '../bone/boneOverlay';

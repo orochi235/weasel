@@ -1,7 +1,7 @@
 import { boundsOfPath, pathInWorld, type GlMat3, type Path, type PathInWorldPose } from '@weasel-js/geom';
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId, PoseOverride, PoseOverrides } from '../../core/scene/types';
-import { skinPath, type Skin } from './skin';
+import { skinPath, type Skin } from '@weasel-js/animator';
 
 /** The part of a scene a rig's skins read and write. */
 export interface SkinScene<TPose> {

@@ -5,7 +5,7 @@
  * timeline's frame does.
  */
 import { resolveEasing } from '@weasel-js/geom';
-import { sampleTrack, type SampledTrack } from '@weasel-js/core';
+import { sampleTrack, type SampledTrack } from '@weasel-js/animator';
 import { group } from './group';
 
 /** Read once: a module export read per call adds vitest getter overhead. */

@@ -5,8 +5,8 @@ import { createSetDataOp } from 'core/ops/setData';
 import type { NodeId, Scene } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { unplaceSkeleton, type RigNodeData } from '../../../animation/rig/rigNode';
-import { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from '../../../animation/rig/skeletonEdits';
-import type { Skeleton } from '../../../animation/rig/types';
+import { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from '@weasel-js/animator';
+import type { Skeleton } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from './placedRig';
 import type { RigEditState } from './rigEditState';
 

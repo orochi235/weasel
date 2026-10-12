@@ -4,7 +4,7 @@ import { linear, PATH_L, PATH_M, PATH_Z, type Path } from '@weasel-js/geom';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import { sceneToAdapter } from '../canvas/sceneAdapter';
-import { useAnimator } from './useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { tweenPose } from './poseHelpers';
 import type { SceneAdapter } from '../core/adapters/types';
 

@@ -3,8 +3,8 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { jointPositions } from '../../../animation/rig/skeletonEdits';
-import type { Skeleton } from '../../../animation/rig/types';
+import { jointPositions } from '@weasel-js/animator';
+import type { Skeleton } from '@weasel-js/animator';
 
 const BONE = '#4f9cf7';
 const JOINT_FILL = '#ffffff';

@@ -272,15 +272,24 @@ Two on one target combine, by two rules:
 - **A hold stands in.** `animator.hold({ target, value, weight })` shows a value
   in place of the committed one: a drag preview, a timeline's sampled track, a
   rig clip. Several holds on a target are alternatives, mixed by weight; weights
-  short of 1 leave the rest to the committed value; offsets add on top. On an
+  short of 1 leave the rest to the committed value. On an
   angle axis the holds meet at their average direction by weight, so two turn the
   short way toward each other. A hold given `axes` holds only those, so an arm
   solved by IK sits beside the clips holding the rest of a rig
   (`jointAxes(skeleton, names)`).
+- **A hold covers the committed value on its way too.** The move a destination
+  makes in the committed value is behind the hold, by the hold's weight on each
+  axis: `tween({ target, to })` under a full hold shows nothing, and under one at
+  0.5 shows half its travel, with no jump as it starts. What an animation shows
+  apart from that move rides on top of the hold at full: a coast, a spring pushed
+  where it stands, and a `from` away from the committed value, such as a recoil
+  over a rig clip.
 
 Leaving never moves the value on screen: a canceled animation commits where it
-was, and so does a released hold unless told not to. One canceled under a hold,
-which stands in front of the committed value, keeps what it had left on screen
+was, and so does a released hold unless told not to. A hold released that way
+takes with it the share it covered of each move behind it, so a tween under a
+full hold stays where the hold put the value and does not then play out. What
+was riding on top of a hold when its animation stopped stays on screen
 beside the hold; it is committed when the target's last hold goes, or taken up by
 the next animation given a destination. Under one `cancelKey` a new
 animation still interrupts the old, and a spring starts at the velocity of what
@@ -297,15 +306,32 @@ What is built on it:
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
 | Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |
+| Many like values | a row of `createTargetTable({ axes })` | any of the above primitives, on `table.target(row)` |
 
 A pose animation over a scene therefore writes the document once, at its start,
 and shows its travel through a pose override. An `arrayAdapter` has no overrides,
 so its array is written the pose on screen each frame while the target keeps the
 committed pose. The values are computed by blits
-(`@msb235/blits`), behind `packages/core/src/animation/engine/`; no blits type is
+(`@msb235/blits`), behind `packages/animator/src/engine/`; no blits type is
 public. blits clocks the voices and sums them; how a target's holds share it is
 folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
-cover some axes and turn an angle. A target is moved by one animator at a time.
+cover some axes and turn an angle. blits stays a repository of its own, not a
+`@weasel-js` package (ruled 2026-10-11). A target is moved by one animator at a time.
+
+Thousands of like values go in a **target table**, where a target apiece would
+cost a read apiece:
+
+```ts
+const dots = createTargetTable({ axes: 2 });          // each row is [x, y]
+const row = dots.add([10, 20]);
+animator.tween({ target: dots.target(row), to: [300, 40], ms: 400 });
+// after each frame, every row's value on screen, back to back:
+upload(dots.shown);
+```
+
+A row is a target like any other. Its committed value lives in `table.committed`,
+and the animator fills `table.shown` for every moving row in one pass over flat
+arrays, about 3 ns a row.
 
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that
@@ -327,7 +353,7 @@ two ways:
 A **skin** is one weight array per joint name, indexed by point: every coordinate
 pair of the path's `coords`, curve handles included. Each point goes where each of
 its joints' motions since the bind pose would carry it, averaged by weight
-(`skinPath`), so one outline flexes at a joint where bound nodes hinge. The fill,
+(`skinPath`, in `@weasel-js/animator` with the rest of the scene-free rig code), so one outline flexes at a joint where bound nodes hinge. The fill,
 the stroke, picking, and the selection box all read the bent path. `autoSkin`
 makes a skin from each point's distance to the bones; a joint with no child gets
 no weight, so a limb needs an end joint.

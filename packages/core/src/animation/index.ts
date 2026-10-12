@@ -1,4 +1,3 @@
-export * from './types';
 export {
   linear,
   easeIn, easeOut, easeInOut,
@@ -20,17 +19,16 @@ export {
   cubicBezierEasing,
   resolveEasing,
 } from '@weasel-js/geom';
-export type { BezierEasing, EasingSpec } from '@weasel-js/geom';
-export { useAnimator } from './useAnimator';
-export { createTarget, type AxisBuffer, type Target, type TargetAxes, type TargetOptions } from './target';
+export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName } from '@weasel-js/geom';
 export {
   createPoseTarget, poseAxes, scenePoseTarget,
   type PoseCascade, type PoseTargetOptions, type PoseTargetScene,
 } from './poseTarget';
 export { createWrittenPoseTarget, type WrittenPoseTargetOptions } from './writtenPoseTarget';
 export {
-  tweenPose, springPose,
-  type TweenPoseOptions, type SpringPoseOptions, type PoseAnimationAdapter,
+  tweenPose, springPose, staggerSpringPose,
+  type TweenPoseOptions, type SpringPoseOptions, type StaggerSpringPoseOptions,
+  type PoseAnimationAdapter,
 } from './poseHelpers';
 export * from './wrappers';
 export {
@@ -38,11 +36,6 @@ export {
   type AnimatedReflow, type ReflowScene, type ReflowTransitionOptions,
 } from './reflow';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
-export { createSlew, slewToward, type Slew, type SlewRates } from './slew';
-export {
-  ColorOverrideRegistry,
-  type ColorOverride, type ColorOverrideFn, type VertexColorChannel,
-} from './colorRegistry';
 export {
   srgbU8ToOklab, srgbFloatToOklab, oklabToSrgbU8,
   lerpOklab, oklabToOklch, oklchToOklab, lerpOklch,
@@ -54,40 +47,9 @@ export {
   type ColorSpace, type OklchDeg, type ColorInterpolationSpace, type HueInterpolation,
 } from '@weasel-js/paint';
 export {
-  tweenVertexColors, springVertexColors, staggerVertexColors,
-  type TweenVertexColorsOptions, type SpringVertexColorsOptions, type StaggerVertexColorsOptions,
-} from './colorHelpers';
-export { cycleVertexColors, type CycleVertexColorsOptions, type CycleHandle } from './colorCycle';
-export { rainbowVertexColors, solidVertexColors } from './colorArrays';
-export type { ColorInterpolate } from './colorInterpolate';
-export { sampleTrack } from './timeline';
-export type {
-  EventBooking,
-  EventBookingHandle,
-  EventTrack,
-  Keyframe,
-  NestedTimeline,
-  SampledTrack,
-  TimelineClock,
-  TimelineEvent,
-  TimelineHandle,
-  TimelineOptions,
-  TimelineTrack,
-  Track,
-} from './timeline';
-export {
-  addJoint, brushWeights, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint, setWeights,
-  autoSkin, bindRig, dataRestPath, jointAxes, mirrorPose, motionsFromRest, skeletonAxes, placeSkeleton, resolveSkeleton, rigFromNode, rigidRigApply,
-  skinPath, solveIk, unplaceSkeleton, useRig, useRigNode, IDENTITY_JOINT,
+  bindRig, dataRestPath, placeSkeleton, rigFromNode, rigidRigApply, unplaceSkeleton, useRig, useRigNode,
 } from './rig';
 export type {
-  AutoSkinOptions, BindRigOptions, IkLimit, IkPoint, IkResult, Joint, JointTransform, Pose, Rig, RigApply,
-  RestPath, RigApplyContext, RigNodeData, RigNodeParts, RigNodeSource, RigScene, Skeleton, Skin, SolveIkOptions,
+  BindRigOptions, RestPath, Rig, RigApply, RigApplyContext, RigNodeData, RigNodeParts, RigNodeSource, RigScene,
   UseRigNodeOptions,
 } from './rig';
-
-// `createLoop` / `createTweenLoop` / `createStagger` / `createTimeline` are
-// intentionally NOT re-exported. They take internal seams (supervisor factory,
-// completion watcher, timer pair, register) that only `useAnimator` can supply.
-// Consumers access these primitives via `animator.loop` / `animator.tweenLoop` /
-// `animator.stagger` / `animator.timeline`.

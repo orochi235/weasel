@@ -45,7 +45,7 @@ import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from 
 import type { DrawCommand } from '@weasel-js/renderer';
 import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
-import type { Animator } from '../animation/types';
+import type { Animator } from '@weasel-js/animator';
 
 /** Props for `<SceneViewCanvas>`. */
 export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {

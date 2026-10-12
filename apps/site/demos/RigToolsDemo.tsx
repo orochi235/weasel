@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { autoSkin } from '@weasel-js/animator';
+import type { Skeleton, Skin } from '@weasel-js/animator';
 import {
   asNodeId,
-  autoSkin,
   createRigEditState,
   dataRestPath,
   placeSkeleton,
@@ -13,7 +14,7 @@ import {
   useScene,
   useWeightTool,
 } from '@weasel-js/core';
-import type { FillStyle, NodeId, Path, RectPose, Skeleton, Skin, Stroke } from '@weasel-js/core';
+import type { FillStyle, NodeId, Path, RectPose, Stroke } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 320;

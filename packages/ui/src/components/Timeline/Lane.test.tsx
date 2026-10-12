@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
-import type { Track } from '@weasel-js/core';
+import type { Track } from '@weasel-js/animator';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { Lane } from './Lane';
 import { buildLanes } from './lanes';

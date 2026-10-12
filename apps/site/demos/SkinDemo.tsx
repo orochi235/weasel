@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
+import { autoSkin, useAnimator } from '@weasel-js/animator';
+import type { Pose, SampledTrack, Skeleton } from '@weasel-js/animator';
 import {
   asNodeId,
-  autoSkin,
   easeInOutSine,
   polygonFromPoints,
   SceneCanvas,
   solid,
-  useAnimator,
   useRig,
   useScene,
 } from '@weasel-js/core';
-import type { FillStyle, NodeId, Path, Pose, RectPose, SampledTrack, Skeleton, Stroke } from '@weasel-js/core';
+import type { FillStyle, NodeId, Path, RectPose, Stroke } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 300;

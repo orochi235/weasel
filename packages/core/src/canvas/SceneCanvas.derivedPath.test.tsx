@@ -19,8 +19,8 @@ import { type Path, linePath } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import type { GesturePreviewSource } from './gestureBounds';
 import { createPaintedCursorState } from '@weasel-js/cursor';
-import { ColorOverrideRegistry } from '../animation/colorRegistry';
-import type { Animator } from '../animation/types';
+import { ColorOverrideRegistry } from '@weasel-js/animator';
+import type { Animator } from '@weasel-js/animator';
 import { strokeOf } from '../util/paint';
 
 type Data = Record<string, never>;
