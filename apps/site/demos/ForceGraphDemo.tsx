@@ -7,7 +7,6 @@ import {
   dragPanContribution,
   useScene,
   useSelection,
-  useSimulation,
   ellipsePath,
   linePath,
 } from '@weasel-js/core';
@@ -17,11 +16,11 @@ import type {
   InvocationCtx,
   OngoingHandle,
   RenderLayer,
-  Simulation,
-  SimulationNode,
   View,
 } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { Simulation, SimulationNode } from '@weasel-js/simulation';
+import { useSimulation } from '@weasel-js/simulation/react';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { bakeGraphPoses, syncGraphPoses } from './forceGraph/overrides';
 import s from './ForceGraphDemo.module.css';
 
