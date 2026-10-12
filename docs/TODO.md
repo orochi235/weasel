@@ -1424,11 +1424,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Aria's Popover. Left: changing the anchor span's size by a sub-pixel instead, which trips React
   Aria's own `ResizeObserver` without touching `window`; whether that repositions needs a browser.
 
-- **(P3) BandEditor: splitting a band has no keyboard path.** A band is split only by clicking the
-  ruler (`onTrackPointerDown` in `packages/ui/src/components/BandEditor/BandEditor.tsx`); every
-  other edit has a key. It needs a key and a rule for where the split lands (the selected band's
-  midpoint on the scale is the obvious one).
-
 - **(P3) ui/routing: "is this key press aimed at a text field" is answered twice.** `isTextEntry`
   (`packages/ui/src/components/BandEditor/track.ts`) says yes for input, textarea, select, and
   `isContentEditable`; `isEditableTarget` (`packages/routing/src/interactions/keyHelpers.ts`,
