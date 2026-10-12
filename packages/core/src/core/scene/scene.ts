@@ -40,7 +40,6 @@ import {
   type NodeId,
   type RegisteredOp,
   type Scene,
-  type SceneArrivalHandler,
   type SceneRegistry,
   type SerializedScene,
   type UseSceneOptions,
@@ -101,23 +100,23 @@ function buildScene<TData, TLayer extends string, TPose>(
   // reloads in any scene, not only one whose consumer registered the key.
   const registry = withKitRegistry(options.registry ?? {});
 
+  const layoutFrame = resolveLayoutFrame(options.layoutFrame);
+  const arrivalWindow = createArrivalWindow<TData, TLayer, TPose>({
+    nodes: state.nodes,
+    layoutPass: (arrived, touched, departed) =>
+      runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame, departed),
+    recordsBareEdits: () => !mode.open(),
+    writePose,
+  });
+  const { noteArrival, noteDeparture, noteChange, runEdit: runArrivalEdit } = arrivalWindow;
+
   /** The registry-keyed function fields, each with its key maps. A function
    *  cannot travel through a serializable op payload, so an op carries its key. */
-  const fnFields = createNodeFnFields<TPose>(registry);
+  const fnFields = createNodeFnFields<TPose>(registry, (field) => {
+    if (field === 'layout') arrivalWindow.layoutDeclared();
+  });
   const fnField = (name: 'clipFromPose' | 'derivePath' | 'derivePose' | 'layout'): NodeFnField =>
     fnFields.find((f) => f.spec.field === name)!;
-
-  const layoutFrame = resolveLayoutFrame(options.layoutFrame);
-  /** Latched on the first layout a container is given. */
-  let hasLayouts = false;
-  {
-    const field = fnField('layout');
-    const write = field.write;
-    (field as { write: NodeFnField['write'] }).write = (node, fn) => {
-      if (node.kind === 'container') hasLayouts = true;
-      write(node, fn);
-    };
-  }
 
   function layoutOfInternal(id: NodeId) {
     const node = state.nodes.get(id);
@@ -184,19 +183,6 @@ function buildScene<TData, TLayer extends string, TPose>(
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
 
-  const arrivalWindow = createArrivalWindow<TData, TLayer, TPose>({
-    nodes: state.nodes,
-    declared: () => (hasLayouts ? declaredLayouts : null),
-    recordsBareEdits: () => !mode.open(),
-    writePose,
-  });
-  const { noteArrival, noteDeparture, noteChange, runEdit: runArrivalEdit } = arrivalWindow;
-
-  /** The pass a scene runs over its declared layouts when nothing else is
-   *  installed. */
-  const declaredLayouts: SceneArrivalHandler<TPose> = (arrived, touched, departed) =>
-    runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame, departed);
-
   function writePose(id: string, pose: unknown): void {
     scene.setPose(asNodeId(id), pose as TPose);
   }
@@ -228,6 +214,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     invalidateOrder,
     fnFields,
     narrowSelection: selection.narrow,
+    clearOverride: overrides.clear,
   });
 
   // ── Op execution (used by both kit mutations and consumer recordOp) ────
@@ -459,9 +446,6 @@ function buildScene<TData, TLayer extends string, TPose>(
         .filter((n) => n.parent === null || !removing.has(n.parent))
         .map((n) => ({ id: n.id, parent: n.parent, index: siblingsOf(n.parent).indexOf(n.id) }))
         .sort((l, r) => l.index - r.index);
-      // Ephemeral, and ids are reusable: an override left behind would
-      // reattach itself to whatever is added under this id next.
-      for (const nid of ids) overrides.clear(nid);
       const fnKeys = snapshot.flatMap((n) => {
         const keys = fnKeysOf(fnFields, n as unknown as FnBearingNode, 'opKey');
         return Object.keys(keys).length === 0 ? [] : [{ id: n.id, ...keys }];
@@ -549,7 +533,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       }
       const from = node.layout ?? null;
       if (from === to) return;
-      if (to !== null) hasLayouts = true;
+      if (to !== null) arrivalWindow.layoutDeclared();
       const fromKey = from === null ? undefined : field.keyOf(from);
       const toKey = to === null ? undefined : field.keyOf(to);
       const payload: SetLayoutPayload = {

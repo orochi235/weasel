@@ -88,6 +88,26 @@ describe('Scene.overrides — lifecycle', () => {
     expect(scene.get(id)).toBeDefined();
     expect(scene.overrides.has(id)).toBe(false);
   });
+
+  it('clears an override set on a node that a redo then removes again', () => {
+    const { scene, id } = makeScene();
+    scene.remove(id);
+    scene.undo();
+    scene.overrides.set(id, { pose: { x: 9, y: 9, width: 10, height: 10 } });
+    scene.redo();
+
+    expect(scene.get(id)).toBeUndefined();
+    expect(scene.overrides.has(id)).toBe(false);
+  });
+
+  it('clears the override of a node whose add is undone', () => {
+    const { scene, id } = makeScene();
+    scene.overrides.set(id, { pose: { x: 9, y: 9, width: 10, height: 10 } });
+    scene.undo();
+
+    expect(scene.get(id)).toBeUndefined();
+    expect(scene.overrides.has(id)).toBe(false);
+  });
 });
 
 describe('Scene.overrides — baking', () => {
