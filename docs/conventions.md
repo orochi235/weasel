@@ -183,8 +183,9 @@ Spacing is the `space-1` … `space-8` ladder, 2px rungs. `space-xs/sm/md/lg` ar
 aliases for rungs 2/4/6/8. It does not vary by density — the rungs are finer
 than any density factor could resolve without rounding two of them onto the same
 pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal that
-has a rung, in any package or app stylesheet. Core and forge's story frame, which
-draw without a theme, write the rung with its px as the fallback.
+has a rung, in any package or app stylesheet. Core, which draws on a page that
+may load no theme, writes the rung with its px as the fallback; it is the one
+package `check:token-reads` lets do that.
 
 Control heights are four ranks, `control-h-xs` / `-sm` / `control-h` /
 `tb-height` — 18/20/24/28 at `comfortable`. A control box sizes itself from one
@@ -214,7 +215,7 @@ ladder, so a consumer who retunes a rung moves every layer on it:
 | `--wzl-z-drag` | 10000 | drag ghosts |
 
 Core reads its rungs with a fallback (`var(--wzl-z-hud, 900)`), since it draws
-without a theme. A small literal that orders siblings inside one stacking
+on a page that may load no theme. A small literal that orders siblings inside one stacking
 context is fine. `npm run check:layers` fails on a `z-index` literal, in a
 stylesheet or in script, at or above the lowest rung.
 
