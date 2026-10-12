@@ -1482,12 +1482,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `.focus()` after a render). When `focusId` leaves the tree while focus was inside it, focus should
   move to a row; which one (the next sibling, the previous row, the parent) is the decision.
 
-- **(P3) Timeline: an omitted `transport` draws play controls that do nothing.** With no `transport`
-  prop the bar draws Play, Loop, and Rate wired to no-ops
-  (`packages/ui/src/components/Timeline/Timeline.tsx`); `false` hides the whole row. The row also
-  holds the time readout and the Graph switch, which both work without a transport, so the open
-  call is what an omitted `transport` draws: the readout and the switch alone, or nothing.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Multi-page documents.**
