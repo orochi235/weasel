@@ -36,7 +36,6 @@ export {
   createLongPressFeedbackContribution, LONG_PRESS_FEEDBACK_ID,
 } from '../features/longPress/longPressFeedback';
 export type { LongPressFeedbackOptions } from '../features/longPress/longPressFeedback';
-export type { MinimapCanvasProps } from '../canvas/MinimapCanvas';
 export {
   buildSceneViewCommands,
   renderSceneToCanvas,
@@ -61,16 +60,6 @@ export type {
 export { renderDebugSnapshot, debugSnapshotArgs } from '../canvas/renderDebugSnapshot';
 export type { RenderDebugSnapshotArgs } from '../canvas/renderDebugSnapshot';
 export { rasterToPng } from '../canvas/rasterToPng';
-export {
-  FALLBACK_FIT_VIEW,
-  computeFitView,
-  computeIndicatorCommand,
-} from '../canvas/minimapMath';
-export type {
-  ComputeFitViewOptions,
-  IndicatorStyle,
-  MinimapFit,
-} from '../canvas/minimapMath';
 
 // --- @experimental Pointer ambient context (2026-05-16) ---------------------
 export {

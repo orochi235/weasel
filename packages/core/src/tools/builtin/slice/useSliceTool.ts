@@ -3,7 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { RenderLayer } from 'core/layers/render';
-import type { DrawCommand } from '../../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { Action, ActionDeps, InvocationCtx, ToolKeybinding } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { createPointerFollower } from '../shared/pointerFollower';

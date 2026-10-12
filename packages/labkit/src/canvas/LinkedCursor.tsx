@@ -1,4 +1,5 @@
-import { crosshairRects, usePointerPosition } from '@weasel-js/core';
+import { usePointerPosition } from '@weasel-js/core';
+import { crosshairRects } from '@weasel-js/minimap';
 import { useContext } from 'react';
 import { CameraContext, pointerElsewhere, STAGE_VIEW_ID } from './CameraInput';
 

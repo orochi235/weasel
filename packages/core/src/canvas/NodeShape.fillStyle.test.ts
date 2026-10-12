@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { findNodeShape, findShapeInk } from './NodeShape';
 import type { Node } from 'core/scene/types';
-import type { PathDrawCommand } from '../renderer';
+import type { PathDrawCommand } from '@weasel-js/renderer';
 import type { FillStyle } from '@weasel-js/paint';
 import { solid, strokeOf } from '../util/paint';
 

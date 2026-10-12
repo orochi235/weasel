@@ -4,8 +4,8 @@ import { createViewResolver } from './viewResolver';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import type { RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
-import type { GroupDrawCommand } from '../../renderer';
-import { viewToMat3 } from '../../renderer';
+import type { GroupDrawCommand } from '@weasel-js/renderer';
+import { viewToMat3 } from '@weasel-js/renderer';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 
 const OUTER: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };

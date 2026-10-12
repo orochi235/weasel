@@ -13,7 +13,7 @@ import type { CanvasExtensionApi } from './canvasExtension';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { defineTool, useTools } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();

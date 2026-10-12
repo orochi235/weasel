@@ -114,7 +114,7 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
       // it reads are the module instances this code writes to. A second
       // specifier can land on a second copy, and the symptom is a kind that
       // silently paints nothing and therefore measures free.
-      const rendererMod = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
+      const rendererMod = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
       const { WeaselRenderer, registerFont, registerProgram, registerTexture } = rendererMod;
       const kindsMod = await import(/* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`);
       const { frameMs } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);

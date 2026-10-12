@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { Canvas } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder, type GLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 let recorders: Map<HTMLCanvasElement, GLRecorder>;
 const original = HTMLCanvasElement.prototype.getContext;

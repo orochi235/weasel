@@ -131,7 +131,7 @@ export default [
   },
   {
     /**
-     * `@weasel-js/text` is a leaf: core's renderer depends on it (its
+     * `@weasel-js/text` is a leaf: the renderer depends on it (its
      * `DrawCommand` names `ResolvedRun`), never the reverse. A reach back into
      * core would duplicate the layout module the renderer caches against.
      */
@@ -147,6 +147,26 @@ export default [
               group: ['@weasel-js/core', '@weasel-js/core/*', ...CORE_ALIASES],
               message:
                 '@weasel-js/text is a leaf package and must not import from core.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    /** `@weasel-js/renderer` draws commands and sits under core, never over it. */
+    files: ['packages/renderer/src/**/*.{ts,tsx}'],
+    languageOptions,
+    plugins,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@weasel-js/core', '@weasel-js/core/*', ...CORE_ALIASES],
+              message:
+                '@weasel-js/renderer sits under core and must not import from it.',
             },
           ],
         },

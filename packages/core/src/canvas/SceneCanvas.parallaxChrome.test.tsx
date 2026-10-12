@@ -10,7 +10,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type Pose = { x: number; y: number; width: number; height: number };
 type Helpers = { getEffectiveBounds(id: string): { x: number; y: number; width: number; height: number } | null };

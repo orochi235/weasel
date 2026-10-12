@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
 import { buildSceneTree } from './buildSceneTree';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 
 interface Data { label: string }

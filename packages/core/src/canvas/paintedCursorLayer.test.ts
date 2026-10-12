@@ -3,7 +3,7 @@ import { GLYPHS } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import type { PaintedCursor } from '@weasel-js/cursor';
-import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '../renderer';
+import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 
 const VIEW = (scale = 1) => ({ x: 0, y: 0, scale: { x: scale, y: scale } });
 const DIMS = { width: 800, height: 600 };

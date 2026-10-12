@@ -10,11 +10,11 @@
  * `TextDrawCommand`'s contract).
  */
 
-import { type DrawCommand } from '../../renderer';
+import { type DrawCommand } from '@weasel-js/renderer';
 import type { TextPose } from '@weasel-js/text';
 
 import type { RenderLayer } from 'core/layers/render';
-import { textCommandFromPose } from 'renderer/textCommand';
+import { textCommandFromPose } from '@weasel-js/renderer';
 import { runsToPlainText } from '@weasel-js/text';
 
 

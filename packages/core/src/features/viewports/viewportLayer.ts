@@ -1,4 +1,4 @@
-import type { DrawCommand, GroupDrawCommand } from '../../renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { drawOneLayer, subscribeToSources, type Dims, type RenderLayer } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { mat3, type GlMat3 } from '@weasel-js/geom';

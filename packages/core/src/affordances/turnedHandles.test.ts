@@ -6,7 +6,7 @@
  * the hit-test uses — not its own reconstruction of it.
  */
 import { describe, expect, it } from 'vitest';
-import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '../renderer';
+import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createSelectionOverlayLayer } from 'features/selection/overlay';
 import { createCornerResizeAffordance } from './cornerResize';
 import { hitAffordanceRegions } from './hitAffordanceRegions';

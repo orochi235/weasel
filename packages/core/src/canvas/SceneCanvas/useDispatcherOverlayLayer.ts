@@ -22,7 +22,7 @@
  */
 import { useEffect, useMemo, useReducer } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { DrawCommand, PathDrawCommand } from '../../renderer';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import type { CommandStroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
@@ -37,7 +37,7 @@ import {
   regularPolygonPath,
   starPath,
 } from '@weasel-js/geom';
-import { getImageBitmap } from 'renderer/images/imageCache';
+import { getImageBitmap } from '@weasel-js/renderer';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
 import { gestureOverlaysFrom, isVisibleFrom } from '../drawEnvelope';
 import { OVERLAY_ROLE_STROKES } from '../overlayRoleStrokes';

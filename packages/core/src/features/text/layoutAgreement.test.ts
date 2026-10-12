@@ -19,11 +19,11 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { cachedLayoutRuns, resolveTextStyle, textLineBoxes, type TextPose, caretIndexAt } from '@weasel-js/text';
-import type { DrawCommand, TextDrawCommand } from '../../renderer/DrawCommand';
+import type { DrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import { findNodeShape } from '../../canvas/NodeShape';
 import { createTextLayer } from './textLayer';
-import { textCommandFromRuns } from 'renderer/textCommand';
+import { textCommandFromRuns } from '@weasel-js/renderer';
 
 const SIZE = 32;
 const STYLE = { fontFamily: 'inter', fontSize: SIZE };

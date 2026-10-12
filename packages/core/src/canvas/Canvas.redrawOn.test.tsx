@@ -12,7 +12,7 @@ import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { Canvas } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { defineTool, useTools } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
 

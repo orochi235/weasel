@@ -8,11 +8,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { FillStyle } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import {
-  _resetPaintKindsForTests, getPaintKind, paintKindRegistry, warmPaintKinds,
-} from 'renderer/paintKinds';
+  _resetPaintKindsForTests, getPaintKind, paintKindRegistry,
+} from 'core/paint/paintKinds';
+import { warmPaintKinds } from '@weasel-js/renderer';
 import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 /** One straight-edged patch over the 64×48 output, green on the left, blue on
  *  the right, in the space the command's coordinates are in. */

@@ -17,9 +17,9 @@
   "sideEffects": [
     "*.css",
     "./src/import-shims/mesh.ts",
-    "./src/renderer/meshPaint/register.ts",
+    "./src/core/paint/registerMesh.ts",
     "./dist/mesh.js",
-    "./dist/renderer/meshPaint/register.js"
+    "./dist/core/paint/registerMesh.js"
   ],
   "engines": {
     "node": ">=22"
@@ -101,6 +101,7 @@
     "@weasel-js/quantity": "1.9.4",
     "@weasel-js/react": "1.9.4",
     "@weasel-js/registry": "1.9.4",
+    "@weasel-js/renderer": "1.9.4",
     "@weasel-js/routing": "1.9.4",
     "@weasel-js/select": "1.9.4",
     "@weasel-js/simulation": "1.9.4",

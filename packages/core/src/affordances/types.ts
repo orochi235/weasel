@@ -1,5 +1,5 @@
 import type { ChromeState } from 'core/selection/chromeState';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
 import type { CursorSpec } from '@weasel-js/cursor';

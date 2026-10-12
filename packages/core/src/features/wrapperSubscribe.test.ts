@@ -5,9 +5,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { RenderLayer } from 'core/layers/render';
 import { gateLayer } from 'core/layers/gateLayer';
-import { createTiledLayer } from 'features/tiling/createTiledLayer';
 import { createViewportLayer } from 'features/viewports/viewportLayer';
-import { createParallaxLayer } from 'features/parallax/createParallaxLayer';
 
 function source() {
   const listeners = new Set<() => void>();
@@ -22,12 +20,10 @@ function source() {
 
 const wrappers: [string, (src: RenderLayer<unknown>) => RenderLayer<unknown>][] = [
   ['gateLayer', (src) => gateLayer({ layer: src, visible: () => true })],
-  ['createTiledLayer', (src) => createTiledLayer({ id: 't', label: 't', source: [src], period: 100 })],
   ['createViewportLayer', (src) => createViewportLayer({
     id: 'v', label: 'v', source: [src], view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     bounds: () => ({ x: 0, y: 0, w: 10, h: 10 }),
   })],
-  ['createParallaxLayer', (src) => createParallaxLayer({ id: 'p', label: 'p', source: [src], parallax: { pan: 0.5 } })],
 ];
 
 describe.each(wrappers)('%s', (_name, wrap) => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { rotateAroundAABBCenter, wrapWithPoseRotation } from './poseRotation';
-import type { DrawCommand, GroupDrawCommand } from '../renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 
 describe('rotateAroundAABBCenter', () => {
   it('returns an identity-like matrix when rotation is zero', () => {

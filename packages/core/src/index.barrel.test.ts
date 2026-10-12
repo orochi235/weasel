@@ -160,7 +160,7 @@ describe('draw command exports', () => {
   it('names every DrawCommand variant on the main barrel', () => {
     const variantsIn = (src: string) =>
       new Set([...src.matchAll(/\b(\w+DrawCommand)\b/g)].map((m) => m[1]));
-    const fromRenderer = variantsIn(barrelSrc('renderer/index.ts'));
+    const fromRenderer = variantsIn(barrelSrc('../../renderer/src/index.ts'));
     const fromMain = variantsIn(readdirSync(join(ROOT, 'barrel')).map((f) => barrelSrc(`barrel/${f}`)).join('\n'));
     expect(fromRenderer.size).toBeGreaterThan(4);
     expect([...fromRenderer].filter((n) => !fromMain.has(n))).toEqual([]);

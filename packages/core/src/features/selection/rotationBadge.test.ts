@@ -6,7 +6,7 @@
  * slops overlay all put it in the same place.
  */
 import { describe, expect, it } from 'vitest';
-import type { GroupDrawCommand, PathDrawCommand } from '../../renderer';
+import type { GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createSelectionOverlayLayer } from './overlay';
 import { createRotationAffordance } from 'affordances/rotationHandle';
 import { hitAffordanceRegions } from 'affordances/hitAffordanceRegions';

@@ -2,7 +2,7 @@
  * Where a mesh stops being cheaper to batch than to draw on its own.
  *
  * `MAX_BATCHED_MESH_VERTICES` and `MAX_BATCHED_MESH_VERTICES_IN_RUN` in
- * `packages/core/src/renderer/draw.ts` decide it, for a mesh arriving with no
+ * `packages/renderer/src/draw.ts` decide it, for a mesh arriving with no
  * run open and with one. A batched mesh is copied into the run and uploaded
  * again every frame; one drawn alone sits in the persistent mesh cache and
  * costs a draw call, plus the flush of whatever run was open before it. This
@@ -103,8 +103,8 @@ test('mesh batch: where batching a mesh stops paying', async ({ page, browser, b
       }).__meshReport;
 
       const base = `/weasel/@fs${root}`;
-      const { WeaselRenderer, tessellate } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
-      const { meshBatching } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/draw.ts`);
+      const { WeaselRenderer, tessellate } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
+      const { meshBatching } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/draw.ts`);
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
       const defaults = { ...meshBatching };
 

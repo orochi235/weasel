@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DrawCommand, PathDrawCommand } from '../../renderer';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createChildrenLayer } from './children';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };

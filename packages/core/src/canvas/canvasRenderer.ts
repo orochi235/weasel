@@ -11,10 +11,10 @@
  * the element's one context. Release frees only what that renderer created;
  * the context itself is never lost.
  */
-import { WeaselRenderer, type RenderOptions } from '../renderer/WeaselRenderer';
+import { WeaselRenderer, type RenderOptions } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
-import type { ShaderProgramHandle } from '../renderer/shaders/registerProgram';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { ShaderProgramHandle } from '@weasel-js/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 
 /** The live renderers painting into each element, across every lease. */

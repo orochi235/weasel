@@ -42,7 +42,7 @@ import { useLateContentRedraw } from './useLateContentRedraw';
 import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
 import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { Animator } from '../animation/types';

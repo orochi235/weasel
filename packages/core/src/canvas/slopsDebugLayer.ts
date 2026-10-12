@@ -9,7 +9,7 @@
  * exactly the pixels that grab.
  */
 
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Affordance } from 'affordances/types';
 import { pointRegionScreenQuad, transformOf } from 'affordances/hitAffordanceRegions';

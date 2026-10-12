@@ -120,7 +120,7 @@ test('flush noise: which side of the command buffer the spread lives on', async 
 
   const header = await page.evaluate(async ({ root, n }) => {
     const { WeaselRenderer } = await import(
-      /* @vite-ignore */ `/weasel/@fs${root}/packages/core/src/renderer/index.ts`
+      /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
     );
     const W = 800; const H = 600;
     const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);

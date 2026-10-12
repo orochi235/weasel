@@ -154,7 +154,7 @@ test('frame budget: commands per kind that fit one frame', async ({ page, browse
       // specifiers can land on a second copy of the registry, and the symptom
       // is a kind that silently paints nothing and therefore measures free.
       const rendererMod = await import(
-        /* @vite-ignore */ `/weasel/@fs${root}/packages/core/src/renderer/index.ts`
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
       );
       const { WeaselRenderer, registerFont, registerProgram } = rendererMod;
       const { frameMs } = await import(

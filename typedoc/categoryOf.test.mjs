@@ -65,7 +65,7 @@ describe('categoryOf', () => {
   });
 
   it('handles a path that is already relative', () => {
-    expect(categoryOf('packages/core/src/renderer/WeaselRenderer.ts', 'WeaselRenderer')).toBe(
+    expect(categoryOf('packages/renderer/src/WeaselRenderer.ts', 'WeaselRenderer')).toBe(
       'Rendering',
     );
   });

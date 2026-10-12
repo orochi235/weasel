@@ -5,8 +5,10 @@ export { VERSION } from '../version';
 
 // ─── Features: multi-viewport composition ───────────────────────────────────
 export * from '../features/viewports';
-export * from '../features/parallax';
-export * from '../features/tiling';
+export {
+  deriveParallaxView, planeMap, toPlane, fromPlane, rectToPlane, rectFromPlane, planeToPlane, planeMatrix,
+} from '../core/viewport/parallax';
+export type { ParallaxOpts, ScalarOrXY, PlaneMap } from '../core/viewport/parallax';
 export {
   createSimulation,
   DEFAULT_ALPHA_DECAY,
@@ -101,19 +103,8 @@ export type { SceneViewCanvasProps } from '../canvas/SceneViewCanvas';
 // command list painted onto a canvas of its own.
 export { DrawCanvas } from '../canvas/DrawCanvas';
 export type { DrawCanvasProps, DrawCanvasDraw } from '../canvas/DrawCanvas';
-export { MinimapCanvas } from '../canvas/MinimapCanvas';
-export {
-  createMinimapContribution,
-  createLinkedCursorContribution,
-  minimapCenterAction,
-  minimapPanAction,
-  centerRootOn,
-  MINIMAP_CENTER,
-  MINIMAP_PAN,
-  crosshairRects,
-  CROSSHAIR_HALO,
-} from '../features/minimap';
-export type { MinimapContributionOptions, LinkedCursorOptions, CrosshairRect } from '../features/minimap';
+// The accent a canvas's chrome paints in, read off the theme cascade.
+export { accentColorOf, FALLBACK_ACCENT } from '../canvas/accentColor';
 
 // ─── Canvas focus & visibility gating ───────────────────────────────────────
 export { gateLayer } from '../core/layers/gateLayer';

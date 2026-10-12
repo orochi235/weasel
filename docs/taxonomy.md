@@ -117,7 +117,7 @@ roles cannot say), `beforePaint` / `afterPaint` (run on the surface's frame
 loop) and `requires` (the kit versions it was written against). `<SceneCanvas ambient>` installs every role an entry
 declares and removes them with it; `mergeContributions` concatenates features
 and throws on a duplicate entry id, dep name or view id. The minimap
-(`features/minimap`) and the HUD (`useHudContribution(hud)`) are built this
+(`@weasel-js/minimap`) and the HUD (`useHudContribution(hud)`) are built this
 way. `docs/extending.md` has the full map. See
 `packages/core/src/canvas/surfaceContribution.ts`.
 
@@ -827,7 +827,7 @@ Two distinct context shapes that appear at different layers:
 
 The kit renders exclusively via **WebGL2** through `WeaselRenderer`
 (`@weasel-js/gl` was a separate package until Step 10; its sources are now
-folded into `packages/core/src/renderer/`). The 2D canvas codepath was deleted in Step 10
+folded into `packages/renderer/src/`). The 2D canvas codepath was deleted in Step 10
 (2026-05-09). The `backend` prop existed temporarily during the soak period and is
 gone. WebGPU is a future option tracked in `docs/TODO.md`.
 

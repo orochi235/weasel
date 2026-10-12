@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { planPixelRender, renderSceneToPixels } from './renderSceneToPixels';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { rotateAroundAABBCenter } from './poseRotation';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node, Scene } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 

@@ -1,6 +1,6 @@
 import type { Rect } from '@weasel-js/geom';
 import type { ModeDecorations, ModeRegistry } from '@weasel-js/modes';
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';

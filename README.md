@@ -179,7 +179,7 @@ Every package is published under `@weasel-js` and released together at one versi
 
 | Package | What it is |
 |---|---|
-| `core` | the scene graph, `<SceneCanvas>`, actions, tools, and the WebGL2 renderer |
+| `core` | the scene graph, `<SceneCanvas>`, actions, and tools |
 | `geom` | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
 | `gestures` | the gesture taxonomy, route grammars and matchers; no React, no DOM |
 | `history` | undo/redo with scoped sub-histories; no React, no DOM |
@@ -189,6 +189,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent`, `useVisibleRaf` |
 | `paint` | fills, strokes, gradients and dashes as plain data |
 | `stroke` | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |
+| `renderer` | the WebGL2 renderer: draw commands, batched fills and strokes, text, images, gradients, patterns, shader programs, and effects |
 | `text` | styled runs, kerned layout, wrapping and measurement |
 | `text-dom` | in-place text editing: a contenteditable overlay that reads and writes styled runs |
 | `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |
@@ -202,6 +203,8 @@ Every package is published under `@weasel-js` and released together at one versi
 | `diagram` | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
 | `guides` | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
 | `hud` | WebGL-rendered widgets composited into a canvas |
+| `parallax` | parallax planes and tiled surfaces: layers that draw other layers through a derived view |
+| `minimap` | a minimap with linked cursors: an overview you press and drag to move the main camera, on the canvas's own surface or one of its own |
 | `kernel3d` | poses, an orbit camera, ray picking and screen-projected chrome over core's scene graph; hosts a renderer |
 | `cursor` | tool cursors as authored glyphs, baked to CSS or painted when too large |
 | `loupe` | a magnifier model: where it's aimed, how far it magnifies, what's under it |

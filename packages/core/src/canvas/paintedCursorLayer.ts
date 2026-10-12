@@ -21,7 +21,7 @@ import {
   cursorWorldSize,
 } from '@weasel-js/cursor';
 import type { CursorPaintOp } from '@weasel-js/cursor';
-import type { DrawCommand, PathDrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { pathFromD, type Path } from '@weasel-js/geom';
 import type { PaintedCursorState } from '@weasel-js/cursor';

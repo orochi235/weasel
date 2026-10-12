@@ -23,7 +23,7 @@ import {
 } from 'core/scene/frameFixture';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { RectPose } from 'core/scene/types';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };

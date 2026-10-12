@@ -104,7 +104,7 @@ happens.
 
 ### Worked example: the minimap
 
-`createMinimapContribution` (`packages/core/src/features/minimap/`) uses every
+`createMinimapContribution` (`packages/minimap/`) uses every
 role:
 
 | Role | What it holds |

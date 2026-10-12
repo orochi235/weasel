@@ -3,8 +3,8 @@ import {
 } from '@weasel-js/geom';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
-import { commandFill, commandStroke } from 'renderer/patterns/commandPaint';
-import type { DrawCommand } from '../../renderer';
+import { commandFill, commandStroke } from '@weasel-js/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { derivesPath } from './memo';
 import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';

@@ -4,7 +4,7 @@ import type { View } from '../core/viewport/view';
 import type { IngestItem } from '@weasel-js/routing';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
 import type { PaintedCursorState } from '@weasel-js/cursor';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
 import type { Target } from '../animation/target';

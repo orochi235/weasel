@@ -142,7 +142,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       }).__wallReport;
 
       const base = `/weasel/@fs${root}`;
-      const rendererMod = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
+      const rendererMod = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
       const { WeaselRenderer } = rendererMod;
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
 

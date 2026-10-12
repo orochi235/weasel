@@ -260,7 +260,7 @@ async function install(
   const base = `/weasel/@fs${root}`;
   // One import of the renderer barrel, so the font registry the renderer reads
   // is the one written here; a second specifier can load a second copy.
-  const { WeaselRenderer, registerFont } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
+  const { WeaselRenderer, registerFont } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
   const { createHud, attachHud } = await import(/* @vite-ignore */ `${base}/packages/hud/src/index.ts`);
   const { mountReactOverlay } = await import(/* @vite-ignore */ reactUrl);
 

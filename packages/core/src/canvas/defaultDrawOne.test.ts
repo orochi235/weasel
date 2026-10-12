@@ -3,7 +3,7 @@ import { defaultDrawOne } from './defaultDrawOne';
 import { registerNodeShape } from './NodeShape';
 import { solid, strokeOf } from '../util/paint';
 import type { Node } from 'core/scene/types';
-import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 
 // Minimal Node-shaped fixture. The runtime fields the kit actually reads
 // from `node.data` are duck-typed inside `defaultDrawOne`; the rest of the

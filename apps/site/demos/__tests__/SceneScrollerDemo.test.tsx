@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, beforeAll, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Profiler } from 'react';
 import type { View } from '@weasel-js/core';
-import { makeGLRecorder } from 'renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { SceneScrollerDemo } from '../SceneScrollerDemo';
 import { WORLD } from '../platformer/worldLevel';
 import { tileNodes } from '../platformer/sceneWorld';

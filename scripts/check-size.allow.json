@@ -33,7 +33,7 @@
     "lines": 424,
     "longestFunction": 286
   },
-  "packages/core/src/canvas/MinimapCanvas.tsx": {
+  "packages/minimap/src/MinimapCanvas.tsx": {
     "longestFunction": 155
   },
   "packages/core/src/canvas/NodeShape.ts": {
@@ -137,16 +137,13 @@
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 716
   },
-  "packages/core/src/renderer/WeaselRenderer.ts": {
+  "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 745
   },
-  "packages/core/src/renderer/drawBatch.ts": {
+  "packages/renderer/src/drawBatch.ts": {
     "lines": 663
   },
-  "packages/core/src/renderer/paintKinds.ts": {
-    "lines": 456
-  },
-  "packages/core/src/renderer/shaders/extractUniformNames.ts": {
+  "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {

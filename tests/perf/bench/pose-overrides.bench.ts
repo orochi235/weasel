@@ -14,7 +14,7 @@
 import { group } from './group';
 import { buildSceneViewCommands } from 'canvas/sceneViewRender';
 import { effectivePose } from 'core/scene/effectivePose';
-import type { DrawCommand } from 'renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { NodeId, PoseOverride } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { scatterScene, type BenchScene } from './fixtures';

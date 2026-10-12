@@ -1,4 +1,4 @@
-import type { DrawCommand, GroupDrawCommand } from '../renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';

@@ -6,7 +6,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { DrawCanvas, type DrawCanvasProps } from './DrawCanvas';
 
 let root: Root | null = null;

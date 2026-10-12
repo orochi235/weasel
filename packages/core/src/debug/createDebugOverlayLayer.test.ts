@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import { buildDebugOverlayCommands, createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
 import type { CreateDebugOverlayLayerOpts } from './index';

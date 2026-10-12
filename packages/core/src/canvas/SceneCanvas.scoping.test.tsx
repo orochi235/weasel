@@ -22,7 +22,7 @@ import { buildSceneLayer } from './Canvas';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 // ---------------------------------------------------------------------------
 // Shared fixtures

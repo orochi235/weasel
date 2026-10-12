@@ -14,7 +14,7 @@ import type { View } from 'core/viewport/view';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { SurfaceContribution } from './surfaceContribution';
 import { useContributionFrameHooks } from './SceneCanvas/contributionFrameHooks';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

@@ -123,6 +123,7 @@
   "dependencies": {
     "@weasel-js/geom": "1.9.4",
     "@weasel-js/loupe": "1.9.4",
+    "@weasel-js/minimap": "1.9.4",
     "@weasel-js/prefs": "1.9.4",
     "@weasel-js/quantity": "1.9.4",
     "@weasel-js/storage": "1.9.4",

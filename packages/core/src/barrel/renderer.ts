@@ -18,32 +18,32 @@ export type {
   ImageMinification,
   SpriteSheet,
   RenderTarget,
-} from '../renderer';
+} from '@weasel-js/renderer';
 // Uniform-grid sprite sheet layout: frame index → `ImageDrawCommand.source`.
-export { frameRect } from '../renderer';
+export { frameRect } from '@weasel-js/renderer';
 // Floats per sprite in a `SpritesDrawCommand.sprites` array — a consumer
 // cannot pack one without it.
-export { SPRITE_STRIDE } from '../renderer';
+export { SPRITE_STRIDE } from '@weasel-js/renderer';
 // Full-screen effect passes. Here rather than only on the `/renderer` subpath
 // because `RenderLayer.effects` is on this barrel, and a consumer typing that
 // field should not have to reach past it for the values that go in it.
-export { blur, vignette, registerEffect } from '../renderer';
+export { blur, vignette, registerEffect } from '@weasel-js/renderer';
 // World-space RenderLayer draw functions wrap their commands in a
 // `kind: 'group'` whose transform is `viewToMat3(view)`. Exported here so
 // custom layers in consumer code can construct that wrapper without reaching
 // into the renderer subpath.
-export { viewToMat3 } from '../renderer';
+export { viewToMat3 } from '@weasel-js/renderer';
 
 // Drops the commands that cannot reach a screen rectangle — what the scene
 // slot's `cull` option runs, for a custom layer to run over its own output.
-export { cullDrawCommands, type CullRect } from '../renderer';
+export { cullDrawCommands, type CullRect } from '@weasel-js/renderer';
 
 // The renderer's 3x3 matrix namespace, operating on `GlMat3` — 9 elements,
 // column-major, in doubles; `mat3.toUniform` is the float32 copy a GL uniform
 // upload wants. `mat3.toAffine` and `mat3.fromAffine` convert to and from
 // `@weasel-js/geom`'s 6-element `Mat3`,
 // which is what an `SvgGroupNode.transform` already is.
-export { mat3 } from '../renderer';
+export { mat3 } from '@weasel-js/renderer';
 
 // MSDF font registration — consumers register (family, variant, metrics
 // JSON URL, atlas PNG URL) at startup so TextDrawCommand can resolve glyphs.

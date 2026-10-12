@@ -43,6 +43,10 @@ const ENTRIES = [
     why: 'the integrator; the frame-loop hook lives behind @weasel-js/simulation/react',
   },
   {
+    file: 'packages/renderer/dist/index.js',
+    why: 'draw commands to pixels; a paint kind\'s editor is registered in core',
+  },
+  {
     file: 'packages/prefs/dist/index.js',
     why: 'the schema and the store; the hooks live behind @weasel-js/prefs/react',
   },

@@ -1,0 +1,230 @@
+/**
+ * Moving text must not change how it is drawn, only where.
+ *
+ * `layoutRuns` emits origin-relative geometry and `drawText` translates at
+ * upload, which is what lets `layoutCache` ignore position and stay a hit
+ * through a drag (0.130 ms/frame → 1.7e-4 ms for 500 wrapped glyphs). The
+ * risk that buys is a missed translate: a channel — glyph quads, the
+ * synthetic-italic baseline, decoration rules, outline geometry — that reads
+ * the layout as absolute and paints at the origin while everything else
+ * moves. This renders the same text at a spread of positions and asserts
+ * every uploaded float lands exactly where the same text at (0, 0) would,
+ * shifted.
+ *
+ * The comparison allows one float32 ulp at the magnitude of the largest term
+ * — under 1e-5 world units here, four orders of magnitude below a subpixel
+ * and seven below the error a dropped translate would produce. The slack is
+ * the test's own, not the renderer's: the reference is read back out of a
+ * vertex buffer, so it arrives already quantized, and offsetting *that*
+ * carries a rounding error the renderer never incurs.
+ */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT, registerFontOutlines, glyphOutline } from '@weasel-js/font';
+import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
+import { makeGLRecorder } from './testing/glRecorder';
+import { makeUploadTracker, type UploadTracker } from './testing/vertexUploads';
+import { WeaselRenderer } from './WeaselRenderer';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
+import type { DrawCommand } from './DrawCommand';
+import type { ResolvedRun } from '@weasel-js/text';
+import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
+import { paintModeOf } from './shaders/batchFill';
+
+let recorder: ReturnType<typeof makeGLRecorder>;
+let tracker: UploadTracker;
+let r: WeaselRenderer;
+
+beforeEach(async () => {
+  _resetFontRegistryForTests();
+  _resetFontOutlinesForTests();
+  _resetLayoutCacheForTests();
+  const encoder = new TextEncoder();
+  global.fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.endsWith('.json')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+    }
+    return Promise.resolve({
+      ok: true,
+      blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+    });
+  }) as typeof fetch;
+  global.createImageBitmap = vi.fn().mockResolvedValue({
+    width: 512, height: 512, close: vi.fn(),
+  } as unknown as ImageBitmap);
+  await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
+
+  recorder = makeGLRecorder();
+  tracker = makeUploadTracker(recorder);
+  r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+  recorder.reset();
+});
+
+const RUN = (text: string, over: Partial<ResolvedRun> = {}): ResolvedRun => ({
+  text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
+  fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0,
+  underline: false, strikethrough: false, overline: false, baselineShift: 0,
+  ...over,
+});
+
+/**
+ * Every vertex buffer uploaded this frame, with its floats-per-vertex read off
+ * the `vertexAttribPointer` recorded for that buffer rather than guessed from
+ * the length. Glyphs, rules and outline meshes all stage into the batch now,
+ * so these are the batch's vertices; a paint that takes its own draw still
+ * arrives at whatever stride its own program declares.
+ */
+function uploaded(): { stride: number; data: Float32Array }[] {
+  return tracker.uploads();
+}
+
+/** Spacing between adjacent float32 values at the largest of `vs` — the
+ *  magnitude whose quantization dominates a sum of them. */
+function ulp32(...vs: number[]): number {
+  const m = Math.max(...vs.map(Math.abs));
+  if (!(m > 0)) return 1.4e-45;
+  return Math.pow(2, Math.floor(Math.log2(m)) - 23);
+}
+
+/**
+ * Assert the frame just recorded is `base` translated by `(dx, dy)`.
+ *
+ * `u`/`v` must be untouched — a translate that leaked into a UV would sample
+ * the wrong corner of the atlas. The synthetic-italic shear is checked by the
+ * `x` comparison rather than by a channel of its own: `pushGlyph` folds it into
+ * the corner it places, and it reads `baselineY - y`, which a translate leaves
+ * alone. A shear applied against an untranslated baseline would show up here as
+ * an x that moved by the wrong amount.
+ */
+function expectTranslated(
+  base: { stride: number; data: Float32Array }[],
+  dx: number,
+  dy: number,
+  label: string,
+): void {
+  const got = uploaded();
+  expect(got.length, `${label}: buffer count`).toBe(base.length);
+  expect(got.length).toBeGreaterThan(0);
+  const shifted = (actual: number, was: number, d: number, what: string) => {
+    const want = was + d;
+    expect(
+      Math.abs(actual - want) <= ulp32(want, was, d),
+      `${label}: ${what} expected ${want} (±1 float32 ulp), got ${actual}`,
+    ).toBe(true);
+  };
+  for (let b = 0; b < got.length; b++) {
+    const a = base[b].data;
+    const g = got[b].data;
+    const stride = base[b].stride;
+    expect(g.length, `${label}: buffer ${b} length`).toBe(a.length);
+    for (let i = 0; i < a.length; i += stride) {
+      const at = `buffer ${b} vertex ${i / stride}`;
+      shifted(g[i], a[i], dx, `${at} x`);
+      shifted(g[i + 1], a[i + 1], dy, `${at} y`);
+      if (stride === FLOATS_PER_VERTEX) {
+        expect(g[i + 6], `${label}: ${at} u`).toBe(a[i + 6]);
+        expect(g[i + 7], `${label}: ${at} v`).toBe(a[i + 7]);
+      }
+    }
+  }
+}
+
+const ORIGINS = [
+  { x: 1, y: 1 },
+  { x: 0.5, y: 0.25 },
+  { x: -317.75, y: 42.125 },
+  { x: 240, y: -90.5 },
+];
+
+const CASES: { name: string; cmd: (x: number, y: number) => DrawCommand }[] = [
+  {
+    name: 'plain, unwrapped',
+    cmd: (x, y) => ({
+      kind: 'text', x, y, runs: [RUN('AB BA')], maxWidth: Infinity,
+      align: 'left', style: {},
+    } as DrawCommand),
+  },
+  {
+    name: 'wrapped and centered',
+    cmd: (x, y) => ({
+      kind: 'text', x, y, runs: [RUN('AB BA AAB BBA AB')], maxWidth: 137.5,
+      align: 'center', style: {},
+    } as DrawCommand),
+  },
+  {
+    name: 'right-aligned in a box',
+    cmd: (x, y) => ({
+      kind: 'text', x, y, runs: [RUN('AB BA AAB')], maxWidth: 220,
+      align: 'right', style: {},
+    } as DrawCommand),
+  },
+  {
+    name: 'decorated and bottom-aligned',
+    cmd: (x, y) => ({
+      kind: 'text', x, y, height: 400, verticalAlign: 'bottom',
+      runs: [RUN('AB', { underline: true, strikethrough: true }), RUN(' BA', { underline: true })],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand),
+  },
+  {
+    name: 'tracked, mixed size',
+    cmd: (x, y) => ({
+      kind: 'text', x, y,
+      runs: [RUN('AB ', { letterSpacing: 3.7, fontSize: 17.5 }), RUN('BAAB', { fontSize: 40 })],
+      maxWidth: 400, align: 'left', style: {},
+    } as DrawCommand),
+  },
+];
+
+describe('drawText places the layout rather than baking it', () => {
+  for (const { name, cmd } of CASES) {
+    it(`translates every channel: ${name}`, () => {
+      r.render([cmd(0, 0)]);
+      const base = uploaded();
+      for (const o of ORIGINS) {
+        recorder.reset();
+        r.render([cmd(o.x, o.y)]);
+        expectTranslated(base, o.x, o.y, `${name} @ ${JSON.stringify(o)}`);
+      }
+    });
+  }
+
+  it('translates tessellated outline geometry too', async () => {
+    registerFontOutlines('inter', {}, new ArrayBuffer(4), {
+      parser: () => ({
+        unitsPerEm: 1000,
+        ascender: 0.8,
+        advanceOf: (cp: number) => (cp === 32 ? 0.25 : 0.6),
+        kernOf: () => 0,
+        glyphD: (cp: number) => (cp === 32 ? null : 'M0 0L0.5 -0.7L1 0Z'),
+      }),
+    });
+    glyphOutline('inter', 400, 'normal', 65);
+    await new Promise<void>((res) => setTimeout(res, 0));
+
+    // 64 clears OUTLINE_MIN_SCREEN_PX (48) at scale 1, so these glyphs are
+    // tessellated rather than sampled.
+    const cmd = (x: number, y: number) => ({
+      kind: 'text', x, y, runs: [RUN('AB BA', { fontSize: 64 })],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand);
+
+    recorder.reset();
+    r.render([cmd(0, 0)]);
+    const base = uploaded();
+    // Every vertex at paint mode 0 means tessellated triangles rather than
+    // atlas samples — without this the test would pass on the atlas tier.
+    const modes = new Set(
+      base.flatMap((b) => Array.from(
+        { length: b.data.length / b.stride },
+        (_, k) => (b.stride === FLOATS_PER_VERTEX ? paintModeOf(b.data[k * b.stride + TEX_SLOT_OFFSET]) : 0),
+      )),
+    );
+    expect(base.length).toBeGreaterThan(0);
+    expect(modes).toEqual(new Set([0]));
+    for (const o of ORIGINS) {
+      recorder.reset();
+      r.render([cmd(o.x, o.y)]);
+      expectTranslated(base, o.x, o.y, `outline @ ${JSON.stringify(o)}`);
+    }
+  });
+});

@@ -5,14 +5,12 @@ import {
   asNodeId,
   useAnimator,
   useScene,
-  createParallaxLayer,
-  createParallaxPlane,
-  createTiledLayer,
   ellipsePath,
   polygonFromPoints,
   rectPath,
   solid,
 } from '@weasel-js/core';
+import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { FillStyle, ParallaxOpts, Path, View, RenderLayer } from '@weasel-js/core';
 

@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
-  MinimapCanvas,
   PointerContextProvider,
   SceneCanvas,
-  createMinimapContribution,
   dragPanContribution,
   useScene,
   useSelection,
   type SceneViewDrawOne,
 } from '@weasel-js/core';
+import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
 import styles from './MinimapDemo.module.css';
