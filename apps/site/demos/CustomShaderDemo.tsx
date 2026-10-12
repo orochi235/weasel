@@ -4,7 +4,7 @@ import type { Action, RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
-} from '@weasel-js/core/renderer';
+} from '@weasel-js/renderer';
 import weaselMarkUrl from '../assets/weasel-mark.png';
 
 const PANEL_W = 240;
