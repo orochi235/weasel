@@ -60,11 +60,6 @@ export function shareBehind<T>(
   return travel(axes, committed, to).map((m, i) => (start[i] === 0 ? 0 : m / start[i]!));
 }
 
-/** As `shareBehind` for a spring, whose offset does not shrink in proportion: all of it on an
- *  axis where its destination moves the committed value by `move`, and else what it was. */
-export const wholeWhere = (move: readonly number[], was: readonly number[]): number[] =>
-  move.map((m, i) => (m === 0 ? was[i]! : 1));
-
 export const times = (a: readonly number[], b: readonly number[]): number[] => a.map((x, i) => x * b[i]!);
 
 /** Puts an animation behind `s`'s holds. `left` answers what is left of its move. */
