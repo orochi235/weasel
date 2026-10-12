@@ -1574,6 +1574,12 @@ only story runner in the repo.
   would read them. By a grep of `render: () =>`, that is about 300 of the 508
   stories. Each needs rewriting to draw from `args` before it gains controls.
 
+- **(P3) A control read from a string-union prop lists its options in the compiler's order.**
+  `controlFor` (`packages/forge/src/vite/propTypes.ts`) takes a union's members as the checker
+  returns them, which is not the order the type was written in: `Button`'s `variant` reads link,
+  ghost, primary, secondary. Reading the order from the declaration's type node would fix it where
+  the union is written out, and leave an aliased or computed union as it is.
+
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
   no Marks section and no tool rail. The removed wiring — the
