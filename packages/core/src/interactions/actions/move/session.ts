@@ -11,6 +11,7 @@ import type { GeometryProjection } from '../geometryProjection';
 import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { moveSources } from '../selectionSubtree';
+import { layoutDrop } from './behaviors/layoutDrop';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
 
@@ -61,11 +62,19 @@ export interface MoveSession {
 export interface MoveFrame {
   readonly delta: { dx: number; dy: number };
   /** Stored-frame pose of every displaced id, roots and descendants, and of
-   *  any other id a behavior posed. The layout pass adds the siblings it
-   *  displaced. */
+   *  any other id a behavior posed. */
   readonly previews: Map<NodeId, unknown>;
   /** Ids the behaviors asked to have painted at full opacity. */
   readonly opaque: ReadonlySet<NodeId>;
+}
+
+/** What the behaviors the action builds itself read of the drag they belong
+ *  to. Neither is readable from `onStart`, which runs before the session
+ *  exists. */
+export interface MoveGesture {
+  session(): MoveSession;
+  /** The latest frame: the previous one while an `onMove` is running. */
+  frame(): MoveFrame;
 }
 
 export interface MoveReaders {
@@ -74,10 +83,12 @@ export interface MoveReaders {
 }
 
 /** Capture a drag at press. Null when there is nothing to move. Runs each
- *  behavior's `onStart`. */
+ *  behavior's `onStart`. `frame` reads the drag's latest frame, for the
+ *  behaviors appended to the binding's own. */
 export function beginMove(
   ctx: InvocationCtx,
   opts: BindingOpts | undefined,
+  frame: () => MoveFrame,
 ): { session: MoveSession; readers: MoveReaders } | null {
   const selection = ctx.deps.selection;
   const scene = ctx.deps.scene;
@@ -107,7 +118,13 @@ export function beginMove(
   const { startPoses, cascadeIds, caught } = captureStartPoses(scene, ids, reflow, projection);
   const { carried, frames } = captureFrames(scene, startPoses, pc);
 
-  const behaviors = (opts?.behaviors ?? []) as MoveBehavior<unknown>[];
+  // Everything a move does beyond translating is a behavior: the binding's
+  // own, then the layout drop, so a behavior that claims the commit preempts it.
+  const gesture: MoveGesture = { session: () => session, frame };
+  const behaviors: MoveBehavior<unknown>[] = [
+    ...((opts?.behaviors ?? []) as MoveBehavior<unknown>[]),
+    ...(layout ? [layoutDrop(gesture)] : []),
+  ];
   const dragThresholdPx = (params?.['dragThresholdPx'] as number | undefined)
     ?? DRAG_THRESHOLD_PX;
   const lifecycle = readGestureLifecycle(params, 'Move', behaviors);

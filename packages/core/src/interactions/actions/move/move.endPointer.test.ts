@@ -48,8 +48,9 @@ describe('MoveEnd.pointer', () => {
 
   it('is null when the commit is handed no point', () => {
     const { press, opts, seen } = fixture();
-    const begun = beginMove(press, opts)!;
-    commitMove({ session: begun.session, delta: { dx: 5, dy: 0 }, pass: null, dropCenter: null, at: null });
+    const frame = { delta: { dx: 5, dy: 0 }, previews: new Map(), opaque: new Set<never>() };
+    const begun = beginMove(press, opts, () => frame)!;
+    commitMove({ session: begun.session, delta: frame.delta, at: null });
     expect(seen).toEqual([null]);
   });
 });

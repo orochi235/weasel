@@ -47,9 +47,6 @@ import { syncPreviewOverrides, type PreviewOverrideState } from '../previewOverr
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
-import { runDropPass } from './layout/dropPass';
-import { landReleased, releasedPoses, stepGlide } from './layout/glide';
-import type { DropPass } from './layout/types';
 import { nextFrame } from './frame';
 import { commitMove } from './commit';
 export type { ReparentOnDrop };
@@ -88,13 +85,11 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-      const begun = beginMove(ctx, opts);
+      let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: new Map(), opaque: new Set() };
+      const begun = beginMove(ctx, opts, () => frame);
       if (!begun) return {};
       const { session, readers } = begun;
-      const publish: PreviewOverrideState = { scene: session.scene, previews: new Map(), overrideEntries: new Map() };
-      const gliding = new Set<NodeId>();
-      let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: publish.previews, opaque: new Set() };
-      let drop: DropPass | null = null;
+      const publish: PreviewOverrideState = { scene: session.scene, previews: frame.previews, overrideEntries: new Map() };
       let lastWorld: { x: number; y: number } | null = null;
       let engaged = false;
       return {
@@ -110,25 +105,10 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           }
           frame = nextFrame(session, readers, moveCtx);
           publish.previews = frame.previews;
-
-          // Layout reflow pass — no-op without a layout dep.
-          drop = null;
-          drop = runDropPass(session, frame.delta, moveCtx.drag.current);
-          const reflow = session.layout?.reflow;
-          const targets = new Map<NodeId, unknown>();
-          for (const [id, pose] of drop?.reflow ?? []) {
-            if (reflow) targets.set(id, pose);
-            else frame.previews.set(id, pose);
-          }
-          if (reflow) stepGlide(reflow, gliding, targets);
-
-          // After the layout pass, so a reflowed sibling publishes too.
           syncPreviewOverrides(publish);
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
-          const reflow = session.layout?.reflow ?? null;
-          const released = reflow ? releasedPoses(session, publish.previews) : null;
           try {
             // On cancel the document was never mutated — dropping the
             // ephemeral overrides below restores the committed poses.
@@ -138,33 +118,18 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               committed = commitMove({
                 session,
                 delta: frame.delta,
-                pass: drop?.pass ?? null,
-                dropCenter: drop?.dropCenter ?? null,
                 at: endCtx.drag ? endCtx.world : lastWorld,
               });
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
             // After the commit, so no frame can paint the pre-drag pose between
             // the override going away and the document catching up.
-            closeGesture({ publish, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed, () => {
-              // Also after the commit: each glide settles onto the pose the
-              // document now holds, or back home on a cancel — the dragged ids
-              // from where they were let go.
-              if (reflow && released) {
-                for (const id of gliding) reflow.settle(id as string);
-                landReleased(session, reflow, released);
-              }
-              gliding.clear();
-            });
+            closeGesture({ publish, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
         previewIds: () => publish.previews.keys(),
         previewPose: (id: string) => publish.previews.get(id as NodeId) ?? null,
-        previewOpaqueIds: () => {
-          const reflowed = drop?.pass?.reflowIds;
-          if (frame.opaque.size === 0) return reflowed ?? null;
-          return reflowed ? new Set([...frame.opaque, ...reflowed]) : frame.opaque;
-        },
+        previewOpaqueIds: () => (frame.opaque.size === 0 ? null : frame.opaque),
       };
     },
   },
