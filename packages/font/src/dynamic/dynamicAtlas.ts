@@ -25,6 +25,7 @@ import {
   PAGE_SIZE, MAX_PAGES, blitToPage, clearPages, _resetPagesForTests,
 } from './dynamicPages';
 import { alphaToSdf } from './distanceTransform';
+import { familyKey, watchFontLoads } from './fontLoads';
 import {
   createCanvasRasterizer, BAKE_SIZE,
   type GlyphRasterizer, type RasterizedGlyph,
@@ -81,6 +82,7 @@ let asked = 0;
  *  with none waiting to bake: until what was on screen has baked again. */
 let settled = true;
 let reclaimScheduled = false;
+let stopWatchingLoads: (() => void) | null = null;
 const warned = new Set<string>();
 
 function getRasterizer(): GlyphRasterizer {
@@ -192,22 +194,13 @@ export function getDynamicFace(
   if (existing) return existing;
 
   const r = getRasterizer();
-  const metrics = r.faceMetrics(family, weight, style);
-  const base = Math.round(metrics.ascent);
   const font: BmFont = {
     info: { face: family, size: BAKE_SIZE },
-    common: {
-      lineHeight: Math.round(metrics.ascent + metrics.descent),
-      base,
-      scaleW: PAGE_SIZE,
-      scaleH: PAGE_SIZE,
-    },
+    common: { lineHeight: 0, base: 0, scaleW: PAGE_SIZE, scaleH: PAGE_SIZE },
     chars: [],
     kernings: [], // no kerning in v1 (measured-pair kerning is future work)
     charMap: new Map(),
     kerningMap: new Map(),
-    // Unrounded, unlike `common`: layout places the baseline from these.
-    faceMetrics: { ascent: metrics.ascent / BAKE_SIZE, descent: metrics.descent / BAKE_SIZE },
   };
 
   const face: DynamicFace = {
@@ -219,7 +212,7 @@ export function getDynamicFace(
       const char: BmFontChar = {
         id: cp, x: 0, y: 0, width: 0, height: 0,
         xoffset: raster.left,
-        yoffset: base - raster.top,
+        yoffset: font.common.base - raster.top,
         xadvance: raster.advance,
         page: -1,
       };
@@ -240,8 +233,50 @@ export function getDynamicFace(
       return char;
     },
   };
+  measureFace(face);
   faces.set(key, face);
+  stopWatchingLoads ??= watchFontLoads(refreshFamilies);
   return face;
+}
+
+/** Read `face`'s metrics off the canvas, and forget the glyphs measured before. */
+function measureFace(face: DynamicFace): void {
+  const { font } = face;
+  const metrics = getRasterizer().faceMetrics(face.family, face.weight, face.style);
+  font.common.lineHeight = Math.round(metrics.ascent + metrics.descent);
+  font.common.base = Math.round(metrics.ascent);
+  // Unrounded, unlike `common`: layout places the baseline from these.
+  font.faceMetrics = { ascent: metrics.ascent / BAKE_SIZE, descent: metrics.descent / BAKE_SIZE };
+  font.charMap.clear();
+  font.chars.length = 0;
+}
+
+/**
+ * Measure `family`'s canvas faces again, or every family's when none is named.
+ *
+ * The tier keeps each face's metrics and each glyph's shape and advance from
+ * the first time it is asked. A web font that finishes loading after that is
+ * picked up from `document.fonts` without this call; a face the document
+ * never announces, one loaded before it was added, needs it.
+ */
+export function refreshCanvasFont(family?: string): void {
+  refreshFamilies(family === undefined ? null : [family]);
+}
+
+function refreshFamilies(families: readonly string[] | null): void {
+  const keys = families && new Set(families.map(familyKey));
+  const dropped = new Set<BmFontChar>();
+  let measured = 0;
+  for (const face of faces.values()) {
+    if (keys && !face.family.split(',').some((name) => keys.has(familyKey(name)))) continue;
+    for (const char of face.font.chars) dropped.add(char);
+    measureFace(face);
+    measured++;
+  }
+  if (measured === 0) return;
+  // Their rects stay taken until the pages next fill and are emptied.
+  pending = pending.filter((job) => !dropped.has(job.char));
+  notifyGlyphReady();
 }
 
 function bake(char: BmFontChar, raster: RasterizedGlyph): void {
@@ -348,6 +383,8 @@ export function _resetDynamicFontsForTests(): void {
   settled = true;
   reclaimScheduled = false;
   warned.clear();
+  stopWatchingLoads?.();
+  stopWatchingLoads = null;
   budget = DEFAULT_BAKE_BUDGET;
   _clearGlyphReadySubscribers();
   rasterizer = null;

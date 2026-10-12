@@ -44,6 +44,7 @@ export { cssFamilyName } from './cssFamily';
 export {
   registerCanvasFont,
   unregisterCanvasFont,
+  refreshCanvasFont,
   isCanvasFont,
   listCanvasFonts,
   syncDynamicPageTexture,

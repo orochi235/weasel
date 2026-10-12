@@ -551,18 +551,6 @@ Core five + Crop shipped. Remaining:
   and `write` should be handed the whole node, or the bar should show `start` / `end` as their own
   state instead of resolving them to an edge.
 
-- **(P2) Canvas font tier: a web font that loads after first use never replaces the fallback face it
-  was measured with.** `getDynamicFace` and `requestGlyph`
-  (`packages/font/src/dynamic/dynamicAtlas.ts`) cache face metrics and each glyph's bitmap and
-  advance on first request and never invalidate. If `registerCanvasFont('Roboto')` runs while Roboto
-  is a CSS web font still loading, canvas draws its fallback face, and the text keeps those shapes
-  and advances for the session; nothing in `packages/font` listens for `document.fonts`
-  `loadingdone`. This rests on canvas using a fallback for a not-yet-loaded face, which has not been
-  measured here: a `*.browser.test.ts` that registers a canvas font, lays out, adds the `FontFace`,
-  and compares advances would settle it. The fix (drop the affected faces on `loadingdone` and call
-  `notifyGlyphReady()`) depends on the eviction entry below, since dropped faces currently leave
-  their atlas rects allocated.
-
 - **(P2) Text: emoji paint as flat silhouettes, and multi-code-point emoji paint as their parts.**
   The canvas tier keeps only the alpha channel (`packages/font/src/dynamic/glyphRasterizer.ts`), and
   `layoutRuns` looks glyphs up one code point at a time, so `👍🏽` is a thumb plus a swatch, `🇨🇦` is

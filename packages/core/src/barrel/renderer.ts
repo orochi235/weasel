@@ -56,6 +56,7 @@ export {
   registerCanvasFont,
   isCanvasFont,
   unregisterCanvasFont,
+  refreshCanvasFont,
   subscribeGlyphReady,
 } from '@weasel-js/font';
 
