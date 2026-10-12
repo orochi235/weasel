@@ -31,7 +31,7 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
   for (const draft of drafts) {
     const parent = draft.parentId != null ? sceneIdOf.get(draft.parentId) : undefined;
     const node = draft.kind === 'container'
-      ? { kind: 'container' as const, pose: draft.pose, data: draft.data }
+      ? { kind: 'container' as const, pose: draft.pose, data: draft.data as WeaselDrawData }
       : { kind: 'leaf' as const, ...leafOfObj(draft.obj) };
     sceneIdOf.set(draft.id, scene.add({ ...node, layer: 'default', ...(parent != null ? { parent } : {}) }));
   }

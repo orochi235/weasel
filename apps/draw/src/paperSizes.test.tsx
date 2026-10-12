@@ -8,7 +8,7 @@ import { parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 
 describe('paper sizes', () => {
   it('labels the New menu from the table the document properties read', () => {
-    render(<CommandBar onSaveSvg={vi.fn()} onOpenSvg={vi.fn()} onNew={vi.fn()} />);
+    render(<CommandBar onSaveSvg={vi.fn()} onOpenSvg={vi.fn()} onImportSvg={vi.fn()} onNew={vi.fn()} />);
     act(() => { fireEvent.click(screen.getByRole('button', { name: /New/ })); });
     const menu = screen.getAllByRole('menuitem').map((el) => el.textContent);
     expect(menu).toEqual(PAPER_SIZES.map((s) => s.label));

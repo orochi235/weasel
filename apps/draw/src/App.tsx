@@ -436,7 +436,7 @@ function EditorWithSharedScene({
   const [pathFillRule] = usePref('drawing.pathFillRule');
   const fillRuleRef = useLatest(pathFillRule);
   const insertPaint = useMemo(
-    () => activeInsertPaint(() => colorsRef.current, () => fillRuleRef.current),
+    () => activeInsertPaint(() => colorsRef.current, () => (fillRuleRef.current === 'evenodd' ? 'evenodd' : 'nonzero')),
     [colorsRef, fillRuleRef],
   );
   const grid = useGrid(paper, backgroundColor);
