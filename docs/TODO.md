@@ -307,7 +307,7 @@ have shipped. What remains:
 
 - **(P3) a pose's `transform` is drawn, picked, and edited as a path, and the selection chrome and
   the resize and rotate handles do not read it.** A box pose may carry a `transform` (`PoseLinear`,
-  `packages/core/src/core/geometry/poseFrame.ts`): the skew or per-axis scale its box and rotation
+  `packages/geom/src/poseFrame.ts`): the skew or per-axis scale its box and rotation
   cannot hold, which is how svg import keeps `<text transform="scale(4 1)">` as editable text four
   times as wide. `poseFrameOf` composes it with the rotation, and the render wrap, culling,
   silhouettes, `axisAlignedBounds` / `unionAABB` / `visualBoundsViaDescriptor`, point and region

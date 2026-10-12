@@ -23,7 +23,7 @@ import {
   PATH_L, PATH_M, PATH_Z, pathFromD, pathSignedArea, reversePath,
   transformPath, type Mat3, type PolygonPath,
 } from '@weasel-js/geom';
-import { poseFrameOf } from 'core/geometry/poseFrame';
+import { poseFrameOf } from '@weasel-js/geom';
 import type { PathInWorldPose } from 'features/paths/pathInWorld';
 import { SYNTHETIC_ITALIC_RADIANS } from 'renderer/syntheticItalic';
 

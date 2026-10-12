@@ -27,7 +27,7 @@ import {
   translatePath,
   transformPath,
 } from '@weasel-js/geom';
-import { poseFrameInverseOf, poseFrameOf, type PoseLinear } from 'core/geometry/poseFrame';
+import { poseFrameInverseOf, poseFrameOf, type PoseLinear } from '@weasel-js/geom';
 
 /** Subset of pose fields this helper consumes. Matches the kit's auto-rotate
  *  convention (`SceneCanvas.defaultDrawOne`): `x/y/width/height` define an

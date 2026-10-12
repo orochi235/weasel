@@ -99,10 +99,10 @@ export {
   type SegmentHit,
 } from './anchorEdits';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './pathInWorld';
-export { poseRotationOf, rotatePathAround, type PoseRotation } from 'core/geometry/poseRotation';
+export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
 export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
-} from 'core/geometry/poseFrame';
+} from '@weasel-js/geom';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export { pathPoseDescriptor } from './poseDescriptor';
 export { pathOriginProjection } from './originProjection';

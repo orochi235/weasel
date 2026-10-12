@@ -69,3 +69,7 @@ export {
 export { cubicBezierEasing, resolveEasing, type BezierEasing, type EasingSpec } from './easingSpec';
 export { meanScale } from './meanScale';
 export { pxExtent, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';
+export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotation';
+export {
+  poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
+} from './poseFrame';

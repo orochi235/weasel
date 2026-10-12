@@ -13,18 +13,9 @@
  * A pose may also carry a `transform` inside the rotation. `poseFrameOf`
  * (`./poseFrame`) composes the two, and is what a reader that draws, bounds,
  * or picks the node wants; this module is the angle and pivot alone.
- *
- * Lives in `core/geometry` so `core/`'s own adapters can bake rotation too.
  */
-import {
-  forEachSegment,
-  pathCommandCoordCount,
-  PATH_L,
-  PATH_M,
-  PATH_Z,
-  type Path,
-  type PolygonPath,
-} from '@weasel-js/geom';
+import { forEachSegment, pathCommandCoordCount, PATH_L, PATH_M, PATH_Z } from './commands';
+import type { Path, PolygonPath } from './path';
 
 /** Pivot (`cx`, `cy`) and angle resolved from a pose's rotation convention. */
 export interface PoseRotation {

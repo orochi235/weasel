@@ -5,9 +5,9 @@
  * picking all read a pose through `poseFrameOf` so they agree on where the
  * node is.
  */
-import {
-  invert, multiply, rotateAboutPoint, transformPath, type Mat3, type Path,
-} from '@weasel-js/geom';
+import { invert, multiply, rotateAboutPoint, type Mat3 } from './mat3';
+import type { Path } from './path';
+import { transformPath } from './paths/transformPath';
 import { poseRotationOf, rotatePathAround } from './poseRotation';
 
 /**

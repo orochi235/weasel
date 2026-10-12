@@ -56,9 +56,8 @@ tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 > data via `pathFromD` — the kit does not define a bespoke path DSL. Builders
 > are a co-equal choice, not a lesser one. See `docs/conventions.md`.
 
-**Here** — the pose-rotation convention is in `core/geometry/poseRotation.ts`,
-because `core/adapters/arrayAdapter.ts` needs it and core may not import from
-here.
+**Here** — the pose-rotation convention (`poseRotationOf`) and the pose frame
+(`poseFrameOf`) are in `@weasel-js/geom`.
 
 **Transform** — `pathInWorld.ts`, `poseDescriptor.ts`, `originProjection.ts`
 

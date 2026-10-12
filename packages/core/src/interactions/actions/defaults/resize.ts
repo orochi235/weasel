@@ -56,7 +56,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ResizePolicy } from '../depSchema';
 import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
 import { remapRotatedLeaf, translatePoseViaDescriptor, visualBoundsViaDescriptor, type PoseDescriptor } from '../resize/geometry';
-import { poseRotationOf } from 'core/geometry/poseRotation';
+import { poseRotationOf } from '@weasel-js/geom';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { isRectPose } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';

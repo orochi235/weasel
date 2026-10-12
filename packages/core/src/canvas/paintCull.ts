@@ -1,6 +1,6 @@
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { poseFrameOf } from 'core/geometry/poseFrame';
+import { poseFrameOf } from '@weasel-js/geom';
 import { boundsMissRect, type CullRect } from '../renderer/cullDrawCommands';
 import { mat3, viewToMat3 } from '@weasel-js/geom';
 
