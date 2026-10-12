@@ -962,13 +962,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   each move (`frame.ts`), and commit paths that return ops (`commit/`). `resize.ts` also carries its point-snap helpers, and `insert.ts`
   (621) holds two actions.
 
-- **(P3) Reparent-on-drop may misplace a node grabbed mid-glide.** Read, not reproduced. The
-  layout release and exit commits measure a dragged node from where it was shown at the grab
-  (`grabbedPoseAdapter`), and the translate commit adds the grab offset (`caught`); the
-  reparent-on-drop commit composes the node's document pose and uses neither. A node caught while
-  a reflow transition is still gliding it, then dropped with `reparentOnDrop` on, would land off by
-  that offset. Write the test first; if it passes there is nothing here.
-
 - **(P3) A consumer's behavior cannot do frame math.** `GestureContext` carries no pose
   composition and no per-layer plane map, so `ctx.current` is a stored pose shifted by a plane
   delta and a behavior outside core cannot compose it to world. Move's own behaviors close over the
