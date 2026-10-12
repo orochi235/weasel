@@ -811,8 +811,6 @@ built 2026-10-11. What that left:
   at 10k and at 100k, where `readInto` on a target apiece costs about 140 and 230
   (`node tests/perf/target-reads/run.mjs table 10000 table`, one case a process; orochi, plain
   Node 26). Left:
-  - Nothing in the kit is on one. Vertex colors (`colorOverrides.target`) are the first
-    candidate: arrays of numbers a registry already holds.
   - A row with a hold, or with an offset canceled under one, is read by itself each frame at
     a single target's cost. Putting it in the pass needs `engine/holds.ts` to fold into the
     table's arrays.

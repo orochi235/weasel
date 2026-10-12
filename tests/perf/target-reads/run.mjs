@@ -7,6 +7,7 @@
  *   node tests/perf/target-reads/run.mjs                 # table.ts at 1,000 and 10,000 rows
  *   node tests/perf/target-reads/run.mjs table 100000
  *   node tests/perf/target-reads/run.mjs read 10000 parts
+ *   node tests/perf/target-reads/run.mjs colors 10000    # vertex colors, resolved per node
  */
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';

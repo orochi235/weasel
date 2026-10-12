@@ -7,6 +7,11 @@ export interface TargetTableOptions {
   axes: number;
   /** Rows to make room for at first. The table grows past it. Default 64. */
   capacity?: number;
+  /** Called after `row` is committed: by `set`, by an animation starting on it, and by one
+   *  canceled on it. */
+  set?(row: number): void;
+  /** Called once a frame, after the animator has filled `shown` for the rows it is moving. */
+  show?(): void;
 }
 
 /**
@@ -28,12 +33,19 @@ export interface TargetTable {
   readonly shown: Float64Array;
   /** Adds a row at `value` and answers its index, which a removed row's index is reused for. */
   add(value: ArrayLike<number>): number;
-  /** Stops whatever is moving `row` and frees it. */
+  /** Stops whatever is moving `row` and frees it. Its target is dead from here: a row added
+   *  later may take the index, and gets a target of its own. */
   remove(row: number): void;
   /** Commits `value` to `row`. A row that is moving keeps what its animations have left on top. */
   set(row: number, value: ArrayLike<number>): void;
   /** Row `row` as a target, the same one on every call. */
   target(row: number): Target<number[]>;
+}
+
+/** Writes `value` as row `row` of `into`, whose rows are `n` numbers. */
+function put(into: Float64Array, n: number, row: number, value: ArrayLike<number>): void {
+  if (value.length !== n) throw new Error(`target table: a row is ${n} numbers, and this value is ${value.length}`);
+  for (let k = 0; k < n; k++) into[row * n + k] = value[k]!;
 }
 
 /** Make a {@link TargetTable} whose rows each hold `axes` numbers. */
@@ -48,13 +60,10 @@ export function createTargetTable(opts: TargetTableOptions): TargetTable {
   const free: number[] = [];
   const targets: (Target<number[]> | undefined)[] = [];
   const states: (TargetState<number[]> | undefined)[] = [];
+  /** How many times each row has been removed: what tells a row's target from its last one's. */
+  const removals: number[] = [];
   /** Rows whose value on screen the pass over the table's columns does not give: read apart. */
   const marks = new Set<number>();
-
-  const put = (into: Float64Array, row: number, value: ArrayLike<number>): void => {
-    if (value.length !== n) throw new Error(`target table: a row is ${n} numbers, and this value is ${value.length}`);
-    for (let k = 0; k < n; k++) into[row * n + k] = value[k]!;
-  };
 
   const flush = (): void => {
     for (const row of marks) {
@@ -64,10 +73,11 @@ export function createTargetTable(opts: TargetTableOptions): TargetTable {
   };
 
   const commit = (row: number, value: ArrayLike<number>): void => {
-    put(committed, row, value);
+    put(committed, n, row, value);
     const s = states[row];
     if (s && s.live > 0) marks.add(row);
-    else put(shown, row, value);
+    else put(shown, n, row, value);
+    opts.set?.(row);
   };
 
   const rows: RowTable = {
@@ -90,6 +100,7 @@ export function createTargetTable(opts: TargetTableOptions): TargetTable {
         }
       }
       flush();
+      opts.show?.();
     },
   };
 
@@ -111,14 +122,15 @@ export function createTargetTable(opts: TargetTableOptions): TargetTable {
         wider.set(shown);
         shown = wider;
       }
-      put(committed, row, value);
-      put(shown, row, value);
+      put(committed, n, row, value);
+      put(shown, n, row, value);
       size += 1;
       return row;
     },
     remove(row) {
       targets[row]?.stop();
       targets[row] = undefined;
+      removals[row] = (removals[row] ?? 0) + 1;
       states[row] = undefined;
       marks.delete(row);
       free.push(row);
@@ -128,9 +140,22 @@ export function createTargetTable(opts: TargetTableOptions): TargetTable {
     target(row) {
       const held = targets[row];
       if (held) return held;
+      const made = (removals[row] ??= 0);
+      const mine = (): void => {
+        if (removals[row] !== made) throw new Error(`target table: row ${row} was removed, and this is its old target`);
+      };
       const target = createTarget<number[]>({
-        get: () => Array.from(committed.subarray(row * n, (row + 1) * n)),
-        set: (value) => commit(row, value),
+        get: () => {
+          mine();
+          // Array.from over a typed array's view measured several times this loop.
+          const value = new Array<number>(n);
+          for (let k = 0; k < n; k++) value[k] = committed[row * n + k]!;
+          return value;
+        },
+        set: (value) => {
+          mine();
+          commit(row, value);
+        },
       });
       const state = stateOf(target);
       state.row = { table: rows, index: row };

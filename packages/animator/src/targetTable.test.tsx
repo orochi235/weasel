@@ -23,6 +23,41 @@ const committed = (t: TargetTable, row: number): number[] =>
   Array.from(t.committed.subarray(row * t.axes, (row + 1) * t.axes));
 
 describe('a target table', () => {
+  it('says which row was committed, and once a frame that its rows were shown', () => {
+    const { animator, frame } = setup();
+    const sets: number[] = [];
+    let shows = 0;
+    const t = createTargetTable({ axes: 1, set: (row) => sets.push(row), show: () => { shows += 1; } });
+    const a = t.add([0]);
+    const b = t.add([0]);
+    expect(sets).toEqual([]);
+    t.set(b, [3]);
+    expect(sets).toEqual([b]);
+    act(() => { animator.tween({ target: t.target(a), to: [10], ms: 100, easing: linear }); });
+    expect(sets).toEqual([b, a]);
+    expect(shows).toBe(0);
+    frame(0);
+    frame(50);
+    expect(shows).toBe(2);
+    frame(100);
+    frame(116);
+    const rested = shows;
+    frame(132);
+    expect(shows).toBe(rested);
+  });
+
+  it('refuses a write through the target of a row that was removed', () => {
+    const t = createTargetTable({ axes: 1 });
+    const a = t.add([1]);
+    const stale = t.target(a);
+    t.remove(a);
+    const b = t.add([7]);
+    expect(b).toBe(a);
+    expect(() => stale.commit([2])).toThrow('was removed');
+    expect(() => stale.read()).toThrow('was removed');
+    expect(shown(t, b)).toEqual([7]);
+  });
+
   it('shows each row at its committed value while nothing moves it', () => {
     const t = createTargetTable({ axes: 2 });
     const a = t.add([1, 2]);
