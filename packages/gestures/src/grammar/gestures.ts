@@ -11,6 +11,7 @@
 export type GestureName =
   | 'click'
   | 'pointerDown'
+  | 'hover'
   | 'dblTap'
   | 'drag'
   | 'wheel'
@@ -69,6 +70,7 @@ export interface GestureDescriptor {
 export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'click',         hasTarget: true  },
   { name: 'pointerDown',   hasTarget: true  },
+  { name: 'hover',         hasTarget: true  },
   { name: 'dblTap',        hasTarget: true  },
   { name: 'drag',          hasTarget: true  },
   { name: 'wheel',         hasTarget: true,  arg: { name: 'direction', values: ['up', 'down', '*'], default: '*' } },

@@ -182,6 +182,7 @@ const SPEC_BY_KIND: Record<GestureSpec['kind'], GestureSpec> = {
   longPress: { kind: 'longPress' },
   drag: { kind: 'drag' },
   pointerDown: { kind: 'pointerDown' },
+  hover: { kind: 'hover' },
   multiTouch: { kind: 'multiTouch' },
   multiTouchTap: { kind: 'multiTouchTap', fingers: 2 },
   drop: { kind: 'drop' },

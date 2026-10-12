@@ -993,15 +993,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   checked 2026-10-07. The installed 1.21.1 was read again on 2026-10-11: no
   `PortalProvider` in `dist/exports/index.*`, its types, or as a file under `dist/exports/`.
 
-- **(P3) The grammar names no hover gesture.** The loupe now routes its peek key
-  and its wheel through the dispatcher, but aiming the lens is still a plain
-  `pointermove` listener in `packages/labkit/src/loupe/useLoupe.ts`, because
-  `GESTURE_DESCRIPTORS` has no continuous-motion entry. Every other consumer that
-  wants to follow the pointer without a press — a coordinate readout, an
-  eyedropper preview, a hover ruler, `CustomShaderDemo`'s cursor-following
-  panels — hand-attaches the same listener. Adding one
-  is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
-  action, and `docs/taxonomy.md` would need to say what a hover binding claims.
+- **(P3) Hover reports motion only, and nothing in the kit binds it yet.** `hover` is a gesture
+  now (`HoverSpec`; `docs/taxonomy.md`, "Gesture"): an immediate action bound to it runs on every
+  unpressed pointer move. It does not say when the pointer leaves the surface or passes from one
+  target to another, so the loupe (`packages/labkit/src/loupe/useLoupe.ts`), which puts its lens
+  away on `pointerleave`, still hand-attaches both listeners, and so does `CustomShaderDemo`.
+  Wants a leave signal (and a decision on whether crossing between targets is one), then the loupe's
+  aim and the demo's cursor-following panels moved onto bindings. Only jsdom has run a hover binding.
 
 - **(P3) Split `Properties.module.css`.** It is 73 KB and styles the panel, list, rows, group,
   subpanel, cards, and every field in one file, with three generated stance blocks inside it. Its
