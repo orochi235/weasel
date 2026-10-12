@@ -841,20 +841,32 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P3) A read of a moving target costs 75 to 100 ns, which no longer comes from what it
-  allocates** — 10k tweens storing through `onTick` cost 0.53 ms a frame on teitou
-  (`tests/perf/bench/animator-on-blits.bench.ts`, 2026-10-11) against 1.50 ms for 10k targets
-  read after the frame. A probe under vitest on orochi split that: the frame costs the same
-  either way (about 0.8 ms there), and the rest was 10k reads at 1.2 ms. `axes.add` and
-  `target.readInto` (2026-10-11) take the array and the value out of a read, and the same probe
-  then read 10k `{ x, y }` targets in about 1.0 ms through `read()` and 0.75 to 0.95 ms through
-  `readInto`, single passes that moved by 0.1 ms between runs. So a read that builds nothing still
-  costs about 75 ns. Not profiled; the likely cost is reaching each target's state, slot, and
-  `adjust` array, which are separate objects per target. The fix that would follow is a target
-  book that keeps its targets' numbers in flat arrays and reads them all in one pass. The bench
-  has an "on targets, readInto" row that no fleet pass has recorded yet. Mike accepted the
-  earlier costs of moving values onto blits on 2026-10-04 and 2026-10-08
-  (`git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`); this one is not ruled on.
+- **(P3) A read of a moving target is bound by memory past a few thousand targets** — profiled
+  2026-10-11 in plain Node 26 on orochi: `engine/core.ts` bundled by esbuild with a script that
+  moves N `{ x, y }` targets and reads them all, timed and run under `--cpu-prof`. A read costs
+  the same at 100 and 1,000 targets and climbs from there:
+
+  | Targets | `readInto` | `read()` |
+  |---:|---:|---:|
+  |     100 |  37 ns |  53 ns |
+  |   1,000 |  36 ns |  53 ns |
+  |  10,000 |  65 ns |  82 ns |
+  | 100,000 | 178 ns | not run |
+
+  So about 37 ns of a `readInto` is work, and the rest at 10k and beyond is cache misses. The
+  pieces of that work, each timed alone over 10k: the owner's `get` 6.5 ns, `axes.write` 12,
+  the slot 3, `adjust` 3, and for `read()`, `axes.add` building the value 31. In the profile
+  47% of `readTargetInto`'s ticks sit on the one line that loads `slot.cols` and `adjust`, the
+  first touch of two more objects per target; the function is in TurboFan with no deopt.
+  Each target is a state object, a slot, an `adjust` array, an axes object, its owner's `get`
+  closure, and the committed value, all reached per read. A fix keeps what a read needs in
+  flat arrays the animator owns, the offsets already being flat in `slot.cols`, and reads every
+  target in one pass. That changes who holds the committed value, so it is a design, not a
+  patch. For scale: 10k tweens storing through `onTick` cost 0.53 ms a frame on teitou against
+  1.50 ms for 10k targets read after the frame (`tests/perf/bench/animator-on-blits.bench.ts`,
+  2026-10-11, before `axes.add` and `readInto`, which the bench's "on targets, readInto" row has
+  not yet been run with). Mike accepted the earlier costs of moving values onto blits on
+  2026-10-04 and 2026-10-08; this one is not ruled on.
 - **(P3) A tween or spring started on a target under a full-weight hold shows its whole travel
   on top of the hold** — it commits its destination, which the hold stands in front of, and its
   offset is added over the hold, so the value on screen jumps by the travel and settles back.
