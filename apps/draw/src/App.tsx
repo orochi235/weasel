@@ -227,8 +227,8 @@ export function App(): ReactElement {
   }, []);
 
   const [recentColors] = useState(() => createRecentColorsStore({ key: RECENT_COLORS_KEY }));
-  const initialFill: ActivePaint = { kind: 'solid', color: INITIAL_FILL_COLOR };
-  const initialStroke: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR };
+  const initialFill: ActivePaint = { fill: 'solid', color: INITIAL_FILL_COLOR };
+  const initialStroke: ActivePaint = { fill: 'solid', color: DEFAULT_STROKE_COLOR };
 
   return (
     <RecentColorsProvider store={recentColors}>

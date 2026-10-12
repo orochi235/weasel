@@ -8,6 +8,7 @@ import { qty, zoom } from '@weasel-js/quantity';
 import {
   StatusBar,
   StatusBarItem,
+  solidColorOf,
   StatusBarSpacer,
   ThemeSwitcher
 } from '@weasel-js/ui';
@@ -57,7 +58,7 @@ export function EditorStatusBar({
     if (n && n.kind === 'container') groupCount++;
   }
   const paintLabel = (p: ActivePaint): string =>
-    p.kind === 'solid' ? p.color : p.kind;
+    p === null ? 'none' : solidColorOf(p) ?? p.fill ?? 'solid';
   const engaged = activeTool.hotkeyStack[activeTool.hotkeyStack.length - 1];
   const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
   return (

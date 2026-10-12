@@ -1466,10 +1466,6 @@ only story runner in the repo.
   not done in the 2026-10-12 pass because the grid state sits in the `appCommands` block another
   branch was rewriting.
 
-- **(P3) draw: "no paint" is defined more than once.** `{ kind: 'none' }` in the color context's
-  `ActivePaint`, `null` in node data, with `toFillStyle` in `ActiveSwatches.tsx` translating;
-  `ActivePaint` could be `FillStyle | null` and the translation would go.
-
 ---
 
 ## Backends (WebGL future)
