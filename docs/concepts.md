@@ -248,6 +248,54 @@ To promote a frame to document state — dropping a drag, baking a settle — wr
 it once through `setPose` and `clearAll()`. That is the one step that belongs in
 the undo stack.
 
+## Animation target
+
+A **target** is one value the animator can move. Its owner says how to read and
+set the **committed** value, what shows when nothing is animating, and the
+animator takes `target` in place of `onTick` on `tween`, `spring`, `physics`,
+and `decay`.
+
+```ts
+const x = createTarget<number>({ get: () => box.x, set: (v) => { box.x = v; }, show: draw });
+animator.tween({ target: x, to: 100, ms: 300 });
+// 150 ms later, from anywhere:
+animator.spring({ target: x, to: 40 });   // bends the motion; neither cancels the other
+```
+
+Two animations that each write a value through `onTick` are last-writer-wins.
+Two on one target combine, by two rules:
+
+- **An offset adds.** A tween or spring commits its destination as it starts and
+  contributes only what it has left to travel, so `target.read()` is the
+  committed value plus every offset. A coast has no destination and commits
+  where it stops.
+- **A hold stands in.** `animator.hold({ target, value, weight })` shows a value
+  in place of the committed one: a drag preview, a timeline's sampled track, a
+  rig clip. Several holds on a target are alternatives, mixed by weight; weights
+  short of 1 leave the rest to the committed value; offsets add on top.
+
+Leaving never moves the value on screen: a canceled animation commits where it
+was, and so does a released hold unless told not to. Under one `cancelKey` a new
+animation still interrupts the old, and a spring starts at the velocity of what
+it interrupts; `interrupt: false` shares the key and adds. When something else
+writes the committed value mid-flight, call `target.stop({ commit: false })` so
+the writer wins.
+
+What is built on it:
+
+| Value | Its target | Moved by |
+|---|---|---|
+| A node's pose | `scenePoseTarget(scene, id)`, through `adapter.poseTarget` | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
+| The camera | `ViewAnimationApi.viewTarget` | `useViewAnimation`; add a shake on the same animator |
+| Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
+| A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
+| Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |
+
+A pose animation therefore writes the document once, at its start, and shows its
+travel through a pose override. The values are computed by blits
+(`@msb235/blits`), behind `packages/core/src/animation/engine/`; no blits type is
+public. A target is moved by one animator at a time.
+
 ## Descriptor
 
 `PoseDescriptor<TPose>` projects an arbitrary `TPose` onto the kit's

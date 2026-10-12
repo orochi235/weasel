@@ -1,6 +1,6 @@
 /**
  * Keyframe sampling before and after it moved onto a blits `keys` patch
- * (step 3 of `docs/proposals/2026-09-30-animator-on-blits.md`). One iteration
+ * (`packages/core/src/animation/timeline/sampleTrack.ts`). One iteration
  * samples N four-key tracks once each at an advancing playhead, the way a
  * timeline's frame does.
  */

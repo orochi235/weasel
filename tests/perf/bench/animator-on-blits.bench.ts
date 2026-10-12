@@ -1,6 +1,6 @@
 /**
- * The animator's frame against blits', for step 3 of
- * `docs/proposals/2026-09-30-animator-on-blits.md`.
+ * The animator's frame against blits', and against the same tweens on targets
+ * (`docs/concepts.md`, "Animation target").
  *
  * Every row animates N nodes' `{ x, y }` and one iteration is one 16 ms frame:
  * advance the clock, compute every node's value, store it where a painter
