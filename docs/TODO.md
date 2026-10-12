@@ -32,23 +32,6 @@ Priority tags:
   and crop, are not, since nothing says what target each would take from the selection. Draw also
   still enters every mode from `SceneCanvas`'s `onDoubleClick` observer rather than from
   `entry.trigger`, which nothing reads.
-- **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
-  content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
-  ahead of `kit:image`, behind consumer handlers) matching `image/svg+xml`
-  plus `.svg`-extension sniff for empty-MIME files. Default keeps a dropped
-  SVG as **one embedded-image node** (`data:image/svg+xml` URI, bytes
-  verbatim; measured via an `Image` element since `createImageBitmap`
-  rejects SVG blobs, 300×150 fallback for no-intrinsic-size files).
-  `ingestion={{ svg: { unpack: unpackSvgFiles } }}` parses to native scene nodes
-  instead (`@weasel-js/svg`'s `unpack.ts`: kit-painter-native path/text leaves under
-  containers mirroring `<g>` structure, multi-root files wrapped in one
-  container, pose-only fit-clamp + drop-point placement, one undoable
-  batch per file). weaseldraw runs with `unpack` on, and its file-menu import
-  and export carry `<image>` as an image object. An embedded SVG
-  re-rasterizes at its drawn size (see `renderer/images/README.md`).
-  Remaining: check in a browser that it actually looks sharp at zoom — so far
-  only jsdom has.
-
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
   (a) drag-over feedback. A canvas now accepts a drag only when a `drop` binding would take what
