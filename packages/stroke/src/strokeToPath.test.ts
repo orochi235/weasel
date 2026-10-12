@@ -15,6 +15,36 @@ describe('strokeToPath', () => {
     expect(area(out)).toBeCloseTo(1000, 3);
   });
 
+  it('outlines a stroke drawn in a stretched frame as that frame stretches it', () => {
+    // A 10-unit square drawn four times as wide: the stroke is 8 thick on its
+    // upright sides and 2 on the level ones.
+    const drawn: Path = new PathBuilder().moveTo(0, 0).lineTo(40, 0).lineTo(40, 10).lineTo(0, 10).close().build();
+    const out = strokeToPath(drawn, { paint: PAINT, width: 2 }, { frame: [4, 0, 0, 1, 0, 0] });
+    const b = boundsOfPath(out);
+    expect(b.x).toBeCloseTo(-4);
+    expect(b.y).toBeCloseTo(-1);
+    expect(b.width).toBeCloseTo(48);
+    expect(b.height).toBeCloseTo(12);
+    expect(pathContainsPoint(out, 3, 5)).toBe(true);
+    expect(pathContainsPoint(out, 5, 5)).toBe(false);
+    expect(pathContainsPoint(out, 20, 0.9)).toBe(true);
+    expect(pathContainsPoint(out, 20, 1.5)).toBe(false);
+  });
+
+  it('holds a { px } width on screen under a view that scales each axis apart', () => {
+    // Two pixels wide at 4 by 1: half a world unit across x, two across y.
+    const screen = { frame: [1 / 4, 0, 0, 1, 0, 0] as const };
+    const out = strokeToPath(line(0, 0, 0, 100), { paint: PAINT, width: { px: 2 } }, screen);
+    expect(boundsOfPath(out).width).toBeCloseTo(0.5);
+    const level = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: { px: 2 } }, screen);
+    expect(boundsOfPath(level).height).toBeCloseTo(2);
+  });
+
+  it('answers an empty path for a frame that flattens everything', () => {
+    const out = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: 10 }, { frame: [0, 0, 0, 0, 0, 0] });
+    expect(out.commands.length).toBe(0);
+  });
+
   it('carries the cap', () => {
     const out = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: 10, cap: 'square' });
     expect(boundsOfPath(out)).toMatchObject({ x: -5, width: 110 });

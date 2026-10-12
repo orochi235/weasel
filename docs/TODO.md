@@ -361,7 +361,7 @@ Core five + Crop shipped. Remaining:
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
-- **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not.
+- **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not. `strokeToPath` now takes the `frame` a stroke is drawn in and stretches the outline with it; what is left is the two callers passing the node's `poseFrameOf`, or the screen's frame for a `{ px }` width, which `BooleansAdapter` and `CreateOutlinesAdapter` have no way to hand them yet.
 
 ---
 
