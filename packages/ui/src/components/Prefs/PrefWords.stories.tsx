@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { PrefLeaf } from '@weasel-js/prefs';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import { PrefsForm } from './PrefsForm';
 import { PrefLabelLine, PrefRule } from './PrefWords';
 
 const note: PrefLeaf = { kind: 'label', name: 'Sizes are in world units.', description: 'Zoom does not change them.', default: undefined };
@@ -28,4 +29,20 @@ export const Separator: Story = {
       <PrefLabelLine pref={{ ...note, name: 'Angles are in degrees.', description: '' }} />
     </>
   ),
+};
+
+const FORM: PrefGroup = {
+  name: 'Units',
+  children: {
+    intro: { kind: 'label', name: 'Sizes are in world units.', description: 'Zoom does not change them.', default: undefined },
+    width: { kind: 'number', name: 'Width', description: 'Of a new shape.', default: 120, min: 1, max: 999 },
+    rule: { kind: 'separator', name: '', default: undefined },
+    angles: { kind: 'label', name: 'Angles are in degrees.', default: undefined },
+    turn: { kind: 'number', name: 'Turn', description: 'Of a new shape.', default: 0, min: -180, max: 180 },
+  },
+};
+
+/** Both kinds as rows of a `PrefsForm`, between rows that hold a control. */
+export const InForm: Story = {
+  render: () => <PrefsForm layout="list" schema={FORM} values={{}} onChange={() => {}} />,
 };
