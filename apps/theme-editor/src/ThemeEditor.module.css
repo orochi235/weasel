@@ -406,7 +406,7 @@
 .deadDraft {
   flex: 1;
   min-width: 0;
-  padding: 12px 16px;
+  padding: var(--wzl-space-6) var(--wzl-space-8);
 }
 
 .repair {

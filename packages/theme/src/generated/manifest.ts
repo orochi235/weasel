@@ -234,6 +234,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-prefs-column-width', type: "dimension", group: "prefs", defaultValue: "300px", description: "Width of the Prefs category column.", hook: true },
   { name: '--wzl-prefs-control-min', type: "dimension", group: "prefs", defaultValue: "80px", description: "Narrowest a PrefsForm row’s control gets in a two-across pane before the row wraps it under its label.", hook: true },
   { name: '--wzl-prefs-rail-width', type: "dimension", group: "prefs", defaultValue: "216px", description: "Width of the Prefs navigation rail.", hook: true },
+  { name: '--wzl-prop-columns', type: "string", group: "prop", defaultValue: "1fr 1fr", description: "Column tracks of a Properties list, group body, and subpanel. A container too narrow for two columns sets `minmax(0, 1fr)` to stack every row.", hook: true },
   { name: '--wzl-prop-number-width', type: "dimension", group: "prop", defaultValue: "9ch", description: "Width of a numeric field in the Properties panel.", hook: true },
   { name: '--wzl-prop-panel-actions-align', type: "string", group: "prop", defaultValue: "center", description: "How a PropertyPanel’s title row lines its actions up with the title: center, or baseline for actions that are text.", hook: true },
   { name: '--wzl-prop-panel-actions-basis', type: "dimension", group: "prop", defaultValue: "auto", description: "Width a PropertyPanel’s title row gives its actions. Set, it holds that width whatever the actions are.", hook: true },

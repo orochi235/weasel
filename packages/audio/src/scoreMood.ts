@@ -20,6 +20,7 @@ export interface ScoreCue {
   device: string;
 }
 
+/** The built-in cues: each names a mood and the musical device that carries it. */
 export const scoreCues: readonly ScoreCue[] = [
   {
     name: 'dread',

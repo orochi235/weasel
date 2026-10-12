@@ -44,4 +44,8 @@ export function createTextHandler(opts: TextHandlerOptions = {}): ContentHandler
   };
 }
 
+/**
+ * Turns pasted or dropped plain text into a text node sized to the string. Registered nowhere by
+ * default: a canvas opts in with `ingestion={{ handlers: [kitTextHandler] }}`.
+ */
 export const kitTextHandler: ContentHandlerEntry = createTextHandler();

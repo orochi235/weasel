@@ -237,6 +237,13 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Width of the Prefs category column.',
   },
   {
+    name: 'prop-columns',
+    type: 'string',
+    value: '1fr 1fr',
+    description:
+      'Column tracks of a Properties list, group body, and subpanel. A container too narrow for two columns sets `minmax(0, 1fr)` to stack every row.',
+  },
+  {
     name: 'prop-number-width',
     type: 'dimension',
     value: '9ch',
