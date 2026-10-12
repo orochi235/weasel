@@ -659,11 +659,6 @@ declare module '@weasel-js/routing' {
      * When absent, commits fall back to `scene.applyBatch`.
      */
     applyOps?: (ops: Op[], label: string) => void;
-    /** Optional pose-composition strategy for hierarchical (local-pose) scenes.
-     *  When absent, defaults to IDENTITY (absolute-pose: nodes store world
-     *  coords). Local-pose consumers supply { compose: composeRectPose,
-     *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
-    poseComposition?: import('core/scene/composePose').PoseComposition<unknown>;
     /**
      * Ingestion dep — canvas viewport rect + consumer file→src resolver.
      *

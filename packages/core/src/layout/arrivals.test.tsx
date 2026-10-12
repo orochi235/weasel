@@ -7,14 +7,14 @@ import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, renderHook, act } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import { composeRectPose, decomposeRectPose, IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
+import { composeRectPose, decomposeRectPose, type PoseComposition } from 'core/scene/composePose';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { layoutArrivalHandler, useLayoutArrivals } from './arrivals';
 import type { LayoutArrival, LayoutStrategy } from './types';
 
 type P = { x: number; y: number; width: number; height: number };
 const rect = (x: number, y: number, width = 10, height = 10): P => ({ x, y, width, height });
-const LOCAL = { compose: composeRectPose, decompose: decomposeRectPose, closure: 'translation' as const };
+const LOCAL: PoseComposition<P> = { compose: composeRectPose, decompose: decomposeRectPose, closure: 'translation' };
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -39,21 +39,24 @@ function arriving(fn: NonNullable<LayoutStrategy<P>['arrive']>): LayoutStrategy<
   };
 }
 
-function sceneWithBox(boxPose = rect(100, 100, 50, 50)) {
-  const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
+function sceneWithBox(boxPose = rect(100, 100, 50, 50), composition?: PoseComposition<P>) {
+  const scene = createScene<object, 'main', P>({
+    systemLayers: [{ id: 'main' }],
+    ...(composition ? { composition } : {}),
+  });
   scene.add({ kind: 'container', id: 'box' as NodeId, layer: 'main', data: {}, pose: boxPose });
   return scene;
 }
 
 describe('layoutArrivalHandler', () => {
   it('hands the strategy world poses and stores its answer in the local frame', () => {
-    const scene = sceneWithBox();
+    const scene = sceneWithBox(undefined, LOCAL);
     const seen: unknown[] = [];
     const grid = arriving((container, children, arrivals) => {
       seen.push({ bounds: container.bounds, children, arrivals: [...arrivals] });
       return { poses: new Map([['kid', rect(120, 130)]]) };
     });
-    scene.setArrivalHandler(layoutArrivalHandler(scene, { layouts: { box: grid }, poseComposition: LOCAL as never }));
+    scene.setArrivalHandler(layoutArrivalHandler(scene, { layouts: { box: grid } }));
     // Stored relative to the box: world (105, 105).
     scene.add({ kind: 'leaf', id: 'kid' as NodeId, parent: 'box' as NodeId, layer: 'main', data: {}, pose: rect(5, 5) });
     expect(seen).toEqual([{
@@ -65,12 +68,12 @@ describe('layoutArrivalHandler', () => {
   });
 
   it('resizes the container and rebases children into its new frame', () => {
-    const scene = sceneWithBox();
+    const scene = sceneWithBox(undefined, LOCAL);
     const grid = arriving((): LayoutArrival<P> => ({
       poses: new Map([['kid', rect(100, 160)]]),
       bounds: rect(100, 100, 50, 80),
     }));
-    scene.setArrivalHandler(layoutArrivalHandler(scene, { layouts: { box: grid }, poseComposition: LOCAL as never }));
+    scene.setArrivalHandler(layoutArrivalHandler(scene, { layouts: { box: grid } }));
     scene.add({ kind: 'leaf', id: 'kid' as NodeId, parent: 'box' as NodeId, layer: 'main', data: {}, pose: rect(0, 0) });
     expect(scene.get('box' as NodeId)!.pose).toEqual(rect(100, 100, 50, 80));
     expect(scene.get('kid' as NodeId)!.pose).toEqual(rect(0, 60));
@@ -83,7 +86,6 @@ describe('layoutArrivalHandler', () => {
     scene.add({ kind: 'container', id: 'free' as NodeId, layer: 'main', data: {}, pose: rect(0, 0, 50, 50) });
     const handler = layoutArrivalHandler(scene, {
       layouts: (id) => (id === 'box' ? arriving(() => null) : null),
-      poseComposition: IDENTITY_POSE_COMPOSITION as never,
     });
     scene.setArrivalHandler(handler);
     expect(() => scene.add({ kind: 'leaf', parent: 'box' as NodeId, layer: 'main', data: {}, pose: rect(0, 0) })).toThrow();

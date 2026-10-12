@@ -99,7 +99,6 @@ export {
   type UseResizePolicyOptions,
 } from '../canvas/deps/resizePolicy';
 export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
-export { usePoseCompositionDepSource } from '../canvas/deps/poseComposition';
 export { CORNER_ANCHORS, cornerPoint } from '../interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge } from '../interactions/actions/resize/cornerHandles';
 export { useSliceDep, useSliceDepSource } from '../canvas/deps/slice';

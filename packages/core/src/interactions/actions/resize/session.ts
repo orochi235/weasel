@@ -91,7 +91,7 @@ export function beginResize(
   // The drag delta is world, so the anchor math runs on world poses — carried
   // into the plane the edit is measured in — and each result is carried back
   // to its node's plane and stored in the node's own parent frame.
-  const poseFrame = scenePoseFrame(scene, ctx.deps.poseComposition);
+  const poseFrame = scenePoseFrame(scene);
   const view = ctx.deps.view;
   const starts = captureStarts(scene, writeIds, geometryOf, poseFrame, view);
   if (starts.startPoses.size === 0) return null;

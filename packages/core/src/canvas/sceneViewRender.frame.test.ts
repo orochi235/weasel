@@ -21,7 +21,7 @@ import {
   type FrameFixtureData,
   type FrameFixtureLayer,
 } from 'core/scene/frameFixture';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import type { RectPose } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
@@ -59,14 +59,13 @@ const drawPoseBox = (node: { id: string }, pose: RectPose): DrawCommand[] => [
 ];
 
 function cornersFor(compose: boolean, id: string): [number, number][] {
-  const scene = makeFrameFixture();
+  const scene = compose
+    ? makeFrameFixture()
+    : makeFrameFixture(IDENTITY_POSE_COMPOSITION as PoseComposition<RectPose>);
   const cmds = buildSceneViewCommands<FrameFixtureData, FrameFixtureLayer, RectPose>(
     scene,
     VIEW,
     drawPoseBox as never,
-    undefined,
-    undefined,
-    compose ? RIGID_POSE_COMPOSITION : undefined,
   );
   return drawnCorners(cmds, id);
 }

@@ -68,12 +68,11 @@ function alignSelection(
   scene: Scene<unknown, string, unknown>,
   edge: AlignEdge,
   geom: PoseDescriptor<unknown>,
-  poseComposition: unknown,
   params: Record<string, unknown> | undefined,
   pointer: PointerContextValue | undefined,
 ): void {
   const ids = selection.get();
-  const frame = scenePoseFrame(scene, poseComposition);
+  const frame = scenePoseFrame(scene);
   const poses = ids.map((id) => frame.world(id));
   const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
   const target = alignTargetBounds(
@@ -97,7 +96,7 @@ function makeAlignAction(edge: AlignEdge): Action {
     icon: ICON_FOR[edge],
     group: 'align',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor', 'poseComposition', 'pointer'],
+    requires: ['selection', 'scene', 'poseDescriptor', 'pointer'],
     // No default keybindings — six edges/centers don't fit a clean default
     // chord set. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -107,7 +106,7 @@ function makeAlignAction(edge: AlignEdge): Action {
         const scene = deps.scene;
         if (!selection || !scene) return;
         alignSelection(
-          selection, scene, edge, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition,
+          selection, scene, edge, poseDescriptorOf(deps.poseDescriptor),
           params, deps.pointer,
         );
       },

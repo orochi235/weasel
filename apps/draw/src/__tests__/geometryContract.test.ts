@@ -38,6 +38,7 @@ import {
   pathSubtract,
   splitPathBySegment,
   createPoseOverrides,
+  IDENTITY_POSE_COMPOSITION,
 } from '@weasel-js/core';
 import type {
   Path, ResizeAnchor, InvocationCtx, OngoingInvoker, Action, Op, PoseOverrides,
@@ -83,6 +84,7 @@ function nodeFromPath(id: string, path: Path): DrawNode {
 interface StubScene {
   poses: Map<string, WeaselDrawPose>;
   overrides: PoseOverrides<unknown>;
+  composition: typeof IDENTITY_POSE_COMPOSITION;
   datas: Map<string, WeaselDrawData>;
   get(id: string): { pose: WeaselDrawPose; data: WeaselDrawData; kind: 'leaf'; layer: string; parent: null } | undefined;
   setPose(id: string, pose: WeaselDrawPose): void;
@@ -106,6 +108,7 @@ function makeStubScene(node: DrawNode): StubScene {
     poses,
     datas,
     overrides: stubOverrides(),
+    composition: IDENTITY_POSE_COMPOSITION,
     roots: [node.id],
     get(id) {
       if (!poses.has(id)) return undefined;

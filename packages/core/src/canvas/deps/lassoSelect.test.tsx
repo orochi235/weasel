@@ -4,6 +4,7 @@ import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-j
 import { useLassoSelectDepSource } from './lassoSelect';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 function makeScene(): Scene<unknown, string, unknown> {
   const nodes = new Map<string, { id: string; kind: 'leaf'; pose: { x: number; y: number; width: number; height: number }; data: unknown }>();
@@ -12,6 +13,7 @@ function makeScene(): Scene<unknown, string, unknown> {
     layers: [{ id: 'default' }],
     renderOrder: () => ['a'] as NodeId[],
     renderOrderNodes: () => [...nodes.values()],
+    composition: IDENTITY_POSE_COMPOSITION,
     get: (id: NodeId) => nodes.get(id as string) as never,
     // A real `Scene` always carries this; `hitTestArea` resolves poses through it.
     overrides: { read: () => undefined },

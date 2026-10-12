@@ -159,7 +159,7 @@ The schema is `DepSchema` in
 
 Plus the per-feature deps: `insert`, `areaSelect`, `lassoSelect`,
 `editAnchors`, `textEdit`, `snap`, `layout`, `slice`, `ingestion`,
-`resizePolicy`, `geometryProjection`, `poseComposition`, `booleansAdapter`,
+`resizePolicy`, `geometryProjection`, `booleansAdapter`,
 `nodeAtPoint`, `dispatcher`.
 
 And `poseDescriptor` — how to read and rewrite this scene's poses. Every

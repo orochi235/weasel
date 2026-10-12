@@ -37,20 +37,20 @@
     "lines": 471
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 1552,
-    "longestFunction": 1351
+    "lines": 1544,
+    "longestFunction": 1343
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 276
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 229
+    "longestFunction": 224
   },
   "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
     "longestFunction": 139
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 843
+    "lines": 836
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 208
@@ -62,13 +62,13 @@
     "longestFunction": 143
   },
   "packages/core/src/canvas/pickWalk.ts": {
-    "lines": 478
+    "lines": 471
   },
   "packages/core/src/canvas/renderSceneToPixels.ts": {
     "lines": 422
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "longestFunction": 187
+    "longestFunction": 178
   },
   "packages/core/src/canvas/useViewHelpers.ts": {
     "longestFunction": 154
@@ -86,7 +86,7 @@
     "longestFunction": 166
   },
   "packages/core/src/core/scene/scene.ts": {
-    "lines": 1100,
+    "lines": 1098,
     "longestFunction": 999
   },
   "packages/core/src/core/scene/types.ts": {
@@ -117,7 +117,7 @@
     "longestFunction": 129
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
-    "lines": 716
+    "lines": 711
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 749,

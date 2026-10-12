@@ -83,13 +83,12 @@ function flipSelection(
   applyOps: ((ops: Op[], label: string) => void) | undefined,
   geometryProjection: GeometryProjection | undefined,
   geom: PoseDescriptor<unknown>,
-  poseComposition: unknown,
   params: Record<string, unknown> | undefined,
   pointer: PointerContextValue | undefined,
 ): void {
   const selected = selection.get();
   if (selected.length === 0) return;
-  const frame = scenePoseFrame(scene, poseComposition);
+  const frame = scenePoseFrame(scene);
 
   // A group whose pose derives from its children mirrors by mirroring them,
   // about the group's own box where each selected node flips in place.
@@ -178,7 +177,7 @@ export const flipAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'poseComposition', 'pointer'],
+  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -191,7 +190,7 @@ export const flipAction: Action & { requires: string[] } = {
       if (!selection || !scene) return;
       flipSelection(
         selection, scene, axis, pivot, applyOps, geometryProjection,
-        poseDescriptorOf(deps.poseDescriptor), deps.poseComposition,
+        poseDescriptorOf(deps.poseDescriptor),
         params, deps.pointer,
       );
     },

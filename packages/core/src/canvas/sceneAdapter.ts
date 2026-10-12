@@ -42,7 +42,7 @@ import {
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { composeWorldPose, frameAtOrAbove, type PoseComposition } from 'core/scene/composePose';
+import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
 import { cascadingSetPose, containerCascade } from './poseCascade';
@@ -87,7 +87,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & {
       getParent(id: string): string | null;
       /** The node's pose with every ancestor's frame folded in. Equal to
-       *  `getPose` unless a `poseComposition` is configured. */
+       *  `getPose` unless the scene composes poses. */
       getWorldPose(id: string): TPose;
       /** Whether `id`'s pose is a frame its children are expressed in — see
        *  `definesFrame`. */
@@ -144,22 +144,17 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   layouts?:
     | Record<string, LayoutStrategy<TPose>>
     | ((containerId: string) => LayoutStrategy<TPose> | null);
-  /** When true, `setPose` on a container translates every descendant by the
-   *  same delta, through the pose descriptor. Scene v1 stores absolute poses,
-   *  so without it children stay behind. A batch that poses descendants too
-   *  undoes exactly only when it goes through this adapter's `applyOps`. */
-  cascadeContainerPose?: boolean;
-  /** How a child's stored pose folds into its parent's frame. Omit for the
-   *  absolute-pose model, where a parent contributes no transform. Supplying a
-   *  composing strategy makes a container's pose a **frame**: rotating the
-   *  container rotates its contents, and `setPose` on it must not also
-   *  translate them, so it cannot be combined with `cascadeContainerPose`. */
-  poseComposition?: PoseComposition<TPose>;
 }
 
 /** Derive the adapter for a scene. Reads go straight to the scene; writes are
  *  ops applied through its history, so anything done through the adapter is
- *  undoable. */
+ *  undoable.
+ *
+ *  Moving a container carries its contents either way the scene composes
+ *  poses. Under a frame (`scene.composition`) the one pose written moves them.
+ *  Under the absolute-pose model `setPose` on a container translates every
+ *  descendant by the same delta, and a batch that poses descendants too undoes
+ *  exactly only when it goes through this adapter's `applyOps`. */
 export function sceneToAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
@@ -183,23 +178,14 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       p, dx, dy, node === undefined ? d : poseDescriptorForNode(d, node),
     );
 
-  const composition = options.poseComposition;
-  const composes = composition !== undefined && composition.closure !== 'identity';
-  const pickOpts: ScenePickSourceOptions<unknown> = composition
-    ? { poseComposition: composition as PoseComposition<unknown> }
-    : {};
+  const composition = scene.composition;
+  const composes = composesFrames(composition);
+  const pickOpts: ScenePickSourceOptions<unknown> = {};
   // The asking view's layer gate and camera, over the adapter's own options.
   const pickOptsFor = (view: RegionPickView | undefined): ScenePickSourceOptions<unknown> =>
-    (view ? { ...pickOpts, ...regionPickOptions(view, undefined, undefined) } : pickOpts);
-  if (composes && options.cascadeContainerPose) {
-    throw new Error(
-      'sceneToAdapter: poseComposition and cascadeContainerPose contradict each other. ' +
-      'Under a composing strategy a child\'s pose is already relative to its parent, so ' +
-      'the cascade would move every descendant twice. Drop cascadeContainerPose.',
-    );
-  }
+    (view ? { ...pickOpts, ...regionPickOptions(view, undefined) } : pickOpts);
 
-  const cascade = options.cascadeContainerPose ? { setPose: cascadingSetPose(scene, d) } : null;
+  const cascade = composes ? null : { setPose: cascadingSetPose(scene, d) };
 
   const clipboardEnv: SceneClipboardEnv<TData, TLayer, TPose> = {
     scene,
@@ -234,19 +220,19 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     },
     getWorldPose(id) {
       if (!composes) return adapter.getPose(id);
-      return composeWorldPose(adapter, id, composition!.compose);
+      return composeWorldPose(adapter, id, composition.compose);
     },
     // Only present when it would do something: the render walk skips the fold
     // entirely when this is absent, which is the absolute-pose path.
-    ...(composes ? { composePose: composition!.compose } : {}),
+    ...(composes ? { composePose: composition.compose } : {}),
     ...(cascade ? { setPose: (id: string, pose: TPose) => cascade.setPose(asNodeId(id), pose) } : {}),
     poseTarget(id, descriptor) {
-      if (!options.cascadeContainerPose || scene.get(asNodeId(id))?.kind !== 'container') {
+      if (cascade === null || scene.get(asNodeId(id))?.kind !== 'container') {
         return scenePoseTarget(scene, id, descriptor ?? d);
       }
       // Its descendants hold poses of their own: a commit moves them, and they are shown beside it.
-      const cascade = containerCascade(scene, asNodeId(id), d, (pose) => adapter.setPose(id, pose));
-      return scenePoseTarget(scene, id, descriptor ?? d, cascade);
+      const carried = containerCascade(scene, asNodeId(id), d, (pose) => adapter.setPose(id, pose));
+      return scenePoseTarget(scene, id, descriptor ?? d, carried);
     },
     getLayers() {
       return scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax }));
@@ -357,12 +343,12 @@ export function useSceneAdapter<TData, TLayer extends string, TPose>(
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
 ): SceneCanvasAdapter<TData, TLayer, TPose> {
   const {
-    selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition,
+    selection, commitInsert, insertLayer, layouts, poseDescriptor,
   } = options;
   return useMemo(
     () => sceneToAdapter(scene, {
-      selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition,
+      selection, commitInsert, insertLayer, layouts, poseDescriptor,
     }),
-    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition],
+    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor],
   );
 }

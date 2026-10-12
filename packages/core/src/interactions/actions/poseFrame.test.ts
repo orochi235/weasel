@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { scenePoseFrame } from './poseFrame';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
@@ -14,10 +14,7 @@ function fixtureFrame() {
   const scene = makeFrameFixture();
   return {
     scene,
-    frame: scenePoseFrame(
-      scene,
-      RIGID_POSE_COMPOSITION,
-    ),
+    frame: scenePoseFrame(scene),
   };
 }
 
@@ -46,9 +43,9 @@ describe('scenePoseFrame', () => {
     expectSamePose(world, { x: 85, y: 5, width: 20, height: 10, rotation: Math.PI / 2 });
   });
 
-  it('is the identity in both directions with no composition dep', () => {
-    const scene = makeFrameFixture();
-    const frame = scenePoseFrame(scene, undefined);
+  it('is the identity in both directions under the identity composition', () => {
+    const scene = makeFrameFixture(IDENTITY_POSE_COMPOSITION as PoseComposition<RectPose>);
+    const frame = scenePoseFrame(scene);
     for (const id of [FRAME_FIXTURE_IDS.upright, FRAME_FIXTURE_IDS.turned] as const) {
       expect(frame.world(id)).toEqual(FRAME_FIXTURE_LOCAL[id]);
       expect(frame.local(id, FRAME_FIXTURE_LOCAL[id])).toEqual(FRAME_FIXTURE_LOCAL[id]);

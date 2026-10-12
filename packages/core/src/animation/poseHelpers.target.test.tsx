@@ -168,9 +168,9 @@ describe('springPose on a scene', () => {
   });
 });
 
-describe('a container under cascadeContainerPose', () => {
+describe('a container whose scene composes nothing', () => {
   function family() {
-    const s = setup({ cascadeContainerPose: true });
+    const s = setup();
     const box = s.scene.add({ kind: 'container', layer: 'main', pose: at(0), data: {} });
     const child = s.scene.add({ kind: 'leaf', layer: 'main', pose: at(5), data: {}, parent: box });
     const shownX = (id: typeof box): number => effectivePose(s.scene, s.scene.get(id)!).x;

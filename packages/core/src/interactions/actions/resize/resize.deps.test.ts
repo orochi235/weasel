@@ -14,6 +14,7 @@
  * from the kit's own library so the tests exercise the integration path
  * end-to-end rather than restating per-behavior math.
  */
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
@@ -53,6 +54,7 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
   return {
     poses,
     overrides: createPoseOverrides<unknown>((id) => (poses.has(id) ? { } : undefined)),
+    composition: IDENTITY_POSE_COMPOSITION,
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };

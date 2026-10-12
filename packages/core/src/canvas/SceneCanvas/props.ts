@@ -241,13 +241,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  they snap. */
     reflowTransition?: ReflowTransition<TPose> | null;
 
-    /** How a child's stored pose folds into its parent's frame. Omit for the
-     *  absolute-pose model, where a container groups its children but imposes
-     *  no transform. Pass `RIGID_POSE_COMPOSITION` to make a container's pose
-     *  a frame, so rotating it rotates its contents and moving it carries them
-     *  without touching their poses. */
-    poseComposition?: SceneToAdapterOptions<TData, TLayer, TPose>['poseComposition'];
-
     /**
      * Optional consumer seam for eager geometry sync: lets pose-transform
      * actions (move, resize, nudge, flip — NOT rotate) also rewrite a node's

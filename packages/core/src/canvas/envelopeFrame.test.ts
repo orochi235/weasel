@@ -17,7 +17,7 @@ import { pickWalk, scenePickSource } from 'canvas/pickWalk';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { expectSamePose } from 'core/scene/frameFixture';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -37,11 +37,12 @@ const B: RectPose = { x: 40, y: 60, width: 40, height: 20, rotation: Math.PI / 2
 const AB_UNION: RectPose = { x: 10, y: 20, width: 60, height: 70 };
 
 type S = Scene<{ label: string }, 'main', RectPose>;
+type Composition = PoseComposition<RectPose>;
 
 /** An envelope at the root, stored translated and turned — values its
  *  derivation must override — holding `A` and `B`. */
-function envelopeAtRoot(): S {
-  const scene = createScene<{ label: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+function envelopeAtRoot(composition: Composition = RIGID_POSE_COMPOSITION): S {
+  const scene = createScene<{ label: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition });
   scene.add({
     id: ids.envelope, kind: 'container', layer: 'main', data: { label: 'env' },
     pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 },
@@ -55,7 +56,10 @@ function envelopeAtRoot(): S {
 /** A turned frame holding an envelope holding an envelope holding `A`: the
  *  envelopes are transparent, so `A` is stored in the frame's frame. */
 function envelopesInFrame(): S {
-  const scene = createScene<{ label: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<{ label: string }, 'main', RectPose>({
+    systemLayers: [{ id: 'main' }],
+    composition: RIGID_POSE_COMPOSITION,
+  });
   scene.add({
     id: ids.frame, kind: 'container', layer: 'main', data: { label: 'frame' },
     pose: { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2 },
@@ -79,7 +83,7 @@ function envelopesInFrame(): S {
 const A_IN_FRAME: RectPose = { x: 65, y: 15, width: 20, height: 10, rotation: Math.PI / 2 };
 
 function painterPoses(scene: S): Map<string, RectPose> {
-  const adapter = sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+  const adapter = sceneToAdapter(scene);
   const seen = new Map<string, RectPose>();
   buildSceneTree(
     adapter as unknown as Parameters<typeof buildSceneTree>[0],
@@ -95,14 +99,14 @@ function painterPoses(scene: S): Map<string, RectPose> {
 describe('a derived container under a rigid strategy', () => {
   it('leaves its children where they are stored', () => {
     const scene = envelopeAtRoot();
-    const adapter = sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+    const adapter = sceneToAdapter(scene);
     expectSamePose(adapter.getWorldPose(ids.a), A);
     expectSamePose(adapter.getWorldPose(ids.b), B);
   });
 
   it('envelopes its children where they are drawn', () => {
     const scene = envelopeAtRoot();
-    const adapter = sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+    const adapter = sceneToAdapter(scene);
     expectSamePose(adapter.getWorldPose(ids.envelope), AB_UNION);
   });
 
@@ -115,7 +119,7 @@ describe('a derived container under a rigid strategy', () => {
 
   it('is transparent inside a frame, however deeply nested', () => {
     const scene = envelopesInFrame();
-    const adapter = sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+    const adapter = sceneToAdapter(scene);
     expectSamePose(adapter.getWorldPose(ids.a), A_IN_FRAME);
     expectSamePose(adapter.getWorldPose(ids.inner), A_IN_FRAME);
     expectSamePose(adapter.getWorldPose(ids.envelope), A_IN_FRAME);
@@ -126,7 +130,7 @@ describe('a derived container under a rigid strategy', () => {
 
   it('resolves the same way for actions, and rebases writes into the right frame', () => {
     const scene = envelopesInFrame();
-    const frame = scenePoseFrame(scene as never, RIGID_POSE_COMPOSITION);
+    const frame = scenePoseFrame(scene as never);
     expectSamePose(frame.world(ids.a) as RectPose, A_IN_FRAME);
     expectSamePose(frame.parentWorld(ids.a) as RectPose, {
       x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2,
@@ -137,7 +141,7 @@ describe('a derived container under a rigid strategy', () => {
 
   it('picks children where they are drawn', () => {
     const scene = envelopeAtRoot();
-    const src = scenePickSource(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+    const src = scenePickSource(scene);
     // A's center; the displaced reading would put A at (20,40)-(40,50).
     const hit = pickWalk<RectPose>(src, {
       includeContainers: false,
@@ -150,7 +154,7 @@ describe('a derived container under a rigid strategy', () => {
 
 describe('a derived container with no strategy', () => {
   it('is unchanged', () => {
-    const scene = envelopeAtRoot();
+    const scene = envelopeAtRoot(IDENTITY_POSE_COMPOSITION as Composition);
     const adapter = sceneToAdapter(scene);
     expectSamePose(adapter.getWorldPose(ids.a), A);
     expectSamePose(adapter.getWorldPose(ids.envelope), AB_UNION);

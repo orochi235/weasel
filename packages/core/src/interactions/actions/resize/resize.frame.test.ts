@@ -32,7 +32,6 @@ function ctxAt(
     deps: {
       selection: { get: () => [upright] as NodeId[] },
       scene,
-      poseComposition: RIGID_POSE_COMPOSITION,
     },
     drag: {
       start: { x: 0, y: 0 },

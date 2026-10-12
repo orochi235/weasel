@@ -1,4 +1,5 @@
 import type { Action } from '@weasel-js/routing';
+import { composesFrames } from 'core/scene/composePose';
 import { createElement } from 'react';
 import { DuplicateIcon } from './icons/editIcons';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -27,7 +28,7 @@ export const duplicateAction: Action & { requires: string[] } = {
   // `selection` is read by the `enabled` gate as well as the invoker. An
   // undeclared read throws inside the dev-build deps Proxy before the gate can
   // answer, which is how this action spent a while doing nothing at all.
-  requires: ['scene', 'selection', 'applyOps', 'poseComposition', 'poseDescriptor'],
+  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -39,9 +40,9 @@ export const duplicateAction: Action & { requires: string[] } = {
       if (ids.length === 0) return;
 
       const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps.poseDescriptor));
-      // With a `poseComposition` a child's pose is relative, so offsetting the
-      // root carries the subtree and offsetting a child again would double it.
-      const offsetDescendants = deps.poseComposition === undefined;
+      // Under a frame a child's pose is relative, so offsetting the root
+      // carries the subtree and offsetting a child again would double it.
+      const offsetDescendants = !composesFrames(scene.composition);
       const { ops, copies: newIds } = copySelection(
         scene,
         ids,

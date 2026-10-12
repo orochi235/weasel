@@ -22,6 +22,7 @@ function demoWorld() {
   const game = freshGame();
   const scene = createScene<WorldData, WorldLayer, RectPose>({
     systemLayers: [{ id: 'tiles' }, { id: 'entities' }, { id: 'player' }],
+    composition: RIGID_POSE_COMPOSITION,
   });
   for (const spec of [
     ...tileNodes(WORLD), ...entityNodes(game.coins, game.enemies), ...flagpoleNodes(POLE), ...boneNodes(),
@@ -37,7 +38,7 @@ function paintCalls(cull: boolean, view: View): { calls: number; nodes: number }
   }).scene;
   const layer = buildSceneLayer(
     slot as never,
-    sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION }) as never,
+    sceneToAdapter(scene) as never,
     null, () => null, () => null,
   );
   const spies = getNodeShapes().map((p) => vi.spyOn(p, 'paint'));

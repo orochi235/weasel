@@ -28,7 +28,7 @@ function fixture(coalesceWindowMs?: number) {
   const b = add('container', 100, a);
   const c = add('container', 200, b);
   const leaf = add('leaf', 300, c);
-  const adapter = sceneToAdapter(scene, { cascadeContainerPose: true });
+  const adapter = sceneToAdapter(scene);
   const xs = (): number[] => [a, b, c, leaf].map((id) => scene.get(id)!.pose.x);
   const move = (id: NodeId, from: number, to: number): Op =>
     createTransformOp<Pose>({ id, from: at(from), to: at(to), label: 'Move' });

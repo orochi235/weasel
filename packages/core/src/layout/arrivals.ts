@@ -4,7 +4,6 @@ import { runLayoutPass, type ResolvedLayoutFrame } from 'core/scene/layoutPass';
 import type { NodeId, Scene, SceneArrivalHandler } from 'core/scene/types';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import type { LayoutStrategy } from './types';
 
 /** Where a container's layout comes from: a map by container id, or a
@@ -18,9 +17,6 @@ export interface LayoutArrivalOptions<TPose> {
   layouts: LayoutSource<TPose>;
   /** How poses are read and resized. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
-  /** How a child's stored pose folds into its parent's frame. Default: the
-   *  absolute-pose model, where it does not. */
-  poseComposition?: PoseComposition<TPose>;
 }
 
 /**
@@ -28,7 +24,7 @@ export interface LayoutArrivalOptions<TPose> {
  * (`depart` for children that left a container, `arrive` for children that
  * joined it, `childPoses` for any other change to its children or size),
  * measured through the canvas's pose
- * descriptor and composition. A container that declares its own layout
+ * descriptor. A container that declares its own layout
  * (`ContainerNode.layout`) is arranged by that one; `layouts` fills in for
  * the rest.
  */
@@ -46,7 +42,6 @@ export function layoutArrivalHandler<TData, TLayer extends string, TPose>(
   const frame: ResolvedLayoutFrame<TPose> = {
     bounds: (pose, id) => descriptorOf(id).getBounds(pose),
     remap: (pose, from, to, id) => descriptorOf(id).remapBounds(pose, from, to),
-    composition: (opts.poseComposition ?? IDENTITY_POSE_COMPOSITION) as PoseComposition<TPose>,
   };
   return (arrivals, changed, departures) =>
     runLayoutPass(scene, layoutOf, arrivals, changed, frame, departures);
@@ -66,9 +61,9 @@ export function useLayoutArrivals<TData, TLayer extends string, TPose>(
   useEffect(() => {
     if (!wired) return;
     return scene.setArrivalHandler((arrivals, changed, departures) => {
-      const { layouts, poseDescriptor, poseComposition } = latest.current;
+      const { layouts, poseDescriptor } = latest.current;
       if (!layouts) return new Map();
-      return layoutArrivalHandler(scene, { layouts, poseDescriptor, poseComposition })(arrivals, changed, departures);
+      return layoutArrivalHandler(scene, { layouts, poseDescriptor })(arrivals, changed, departures);
     });
   }, [scene, wired, latest]);
 }

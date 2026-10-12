@@ -16,7 +16,6 @@
  * arranged in turn, so nested layouts settle in the same edit.
  */
 import {
-  IDENTITY_POSE_COMPOSITION,
   composeWorldPose,
   rebaseLocalPose,
   type PoseAdapter,
@@ -31,13 +30,13 @@ import type { LayoutFrame, NodeId } from './types';
 /** What the pass reads a scene through. */
 export interface LayoutPassSource<TPose> extends PoseSource<TPose> {
   get(id: NodeId): (PosedNode<TPose> & { parent: NodeId | null }) | undefined;
+  readonly composition: PoseComposition<TPose>;
 }
 
 /** How the pass measures and resizes poses, with every default filled. */
 export interface ResolvedLayoutFrame<TPose> {
   bounds(pose: TPose, id: NodeId): ContainerBounds | null;
   remap(pose: TPose, from: ContainerBounds, to: ContainerBounds, id: NodeId): TPose;
-  composition: PoseComposition<TPose>;
 }
 
 /** The pose writes one edit's layouts ask for, or `null` when a strategy
@@ -51,7 +50,6 @@ export function resolveLayoutFrame<TPose>(frame: LayoutFrame<TPose> | undefined)
       return r === null ? null : { x: r.x, y: r.y, width: r.width, height: r.height };
     }),
     remap: frame?.remap ?? ((pose, _from, to) => ({ ...(pose as object), ...to }) as TPose),
-    composition: frame?.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
   };
 }
 
@@ -87,7 +85,7 @@ export function runLayoutPass<TPose>(
       return node === undefined || definesFrame(node);
     },
   };
-  const { compose, decompose } = frame.composition;
+  const { compose, decompose } = source.composition;
   const world = (id: NodeId): TPose => composeWorldPose(pa, id, compose);
 
   const queue: NodeId[] = [...new Set<NodeId>([...arrivals.keys(), ...changed])];

@@ -1,3 +1,4 @@
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { cloneAction } from './clone';
@@ -28,6 +29,7 @@ interface StubScene {
   mintId(): NodeId;
   applyBatch(ops: Op[], label: string, adapter: unknown): void;
   overrides: ReturnType<typeof createPoseOverrides<unknown>>;
+  composition: typeof IDENTITY_POSE_COMPOSITION;
 }
 
 function makeStubScene(
@@ -47,6 +49,7 @@ function makeStubScene(
     poses,
     nodes,
     overrides: createPoseOverrides<unknown>(() => undefined),
+    composition: IDENTITY_POSE_COMPOSITION,
     mintId: () => `clone-${nextId++}` as NodeId,
     addLog,
     applyBatchLog,

@@ -18,8 +18,8 @@ const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: 
 
 /** A frame holding a leaf and an envelope; the envelope holds a leaf and a
  *  second frame with a leaf of its own. `free` sits outside all of it. */
-function fixture() {
-  const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+function fixture(composition: PoseComposition<RectPose> = RIGID_POSE_COMPOSITION) {
+  const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition });
   const add = (kind: 'leaf' | 'container', pose: RectPose, parent?: NodeId, more: object = {}): NodeId =>
     scene.add({ kind, layer: 'main', data: {}, pose, ...(parent ? { parent } : {}), ...more });
   const frame = add('container', box(0, 0, 400, 400));
@@ -35,9 +35,9 @@ function fixture() {
   };
 }
 
-function carriedBy(scene: Scene<unknown, string, unknown>, ids: NodeId[], pc: PoseComposition<unknown>) {
+function carriedBy(scene: Scene<unknown, string, unknown>, ids: NodeId[]) {
   const { startPoses } = captureStartPoses(scene, ids, null, AUTO_POSE_DESCRIPTOR);
-  const { carried, frames } = captureFrames(scene, ids, startPoses, pc);
+  const { carried, frames } = captureFrames(scene, ids, startPoses);
   const written = [...startPoses.keys()].filter((id) => !carried.has(id));
   return { carried, frames, written };
 }
@@ -45,7 +45,6 @@ function carriedBy(scene: Scene<unknown, string, unknown>, ids: NodeId[], pc: Po
 const sorted = (ids: Iterable<NodeId>): string[] => [...ids].map(String).sort();
 
 describe('move — which ids a moving frame carries', () => {
-  const pc = RIGID_POSE_COMPOSITION as unknown as PoseComposition<unknown>;
   const selections: [string, (i: ReturnType<typeof fixture>['ids']) => NodeId[]][] = [
     ['a frame', (i) => [i.frame]],
     ['an envelope inside a frame', (i) => [i.envelope]],
@@ -59,27 +58,27 @@ describe('move — which ids a moving frame carries', () => {
   it.each(selections)('writes what translateTargets names: %s', (_name, pick) => {
     const { scene, ids } = fixture();
     const selected = pick(ids);
-    const { written } = carriedBy(scene, selected, pc);
-    expect(sorted(written)).toEqual(sorted(translateTargets(scene, scenePoseFrame(scene, pc), selected)));
+    const { written } = carriedBy(scene, selected);
+    expect(sorted(written)).toEqual(sorted(translateTargets(scene, scenePoseFrame(scene), selected)));
   });
 
   it('carries the contents of a dragged frame, through an envelope', () => {
     const { scene, ids } = fixture();
-    const { carried, frames } = carriedBy(scene, [ids.frame], pc);
+    const { carried, frames } = carriedBy(scene, [ids.frame]);
     expect(sorted(carried)).toEqual(sorted([ids.leaf, ids.envelope, ids.inEnvelope, ids.inner, ids.inInner]));
     expect(frames.size).toBe(0);
   });
 
   it('records a frame for each written id stored under one that is not moving', () => {
     const { scene, ids } = fixture();
-    const { carried, frames } = carriedBy(scene, [ids.envelope], pc);
+    const { carried, frames } = carriedBy(scene, [ids.envelope]);
     expect(sorted(carried)).toEqual(sorted([ids.inInner]));
     expect(sorted(frames.keys())).toEqual(sorted([ids.envelope, ids.inEnvelope, ids.inner]));
   });
 
   it('carries nothing under the identity strategy', () => {
-    const { scene, ids } = fixture();
-    const { carried, frames } = carriedBy(scene, [ids.frame], IDENTITY_POSE_COMPOSITION);
+    const { scene, ids } = fixture(IDENTITY_POSE_COMPOSITION as PoseComposition<RectPose>);
+    const { carried, frames } = carriedBy(scene, [ids.frame]);
     expect(carried.size).toBe(0);
     expect(frames.size).toBe(0);
   });

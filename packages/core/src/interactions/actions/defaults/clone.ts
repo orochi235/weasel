@@ -78,7 +78,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   cursor: 'copy',
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -92,7 +92,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       if (ids.length === 0) return {};
 
       // Capture origin poses once at drag start.
-      const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
+      const frame = scenePoseFrame(scene);
       const originPoses = new Map<NodeId, unknown>();
       const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(ctx.deps.poseDescriptor));
       for (const id of translateTargets(scene, frame, ids)) {

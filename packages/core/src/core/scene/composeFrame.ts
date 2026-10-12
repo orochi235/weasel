@@ -32,8 +32,8 @@ export type PoseClosure = 'identity' | 'translation' | 'rigid';
  *  is its inverse. Default is IDENTITY — an absolute-pose scene where every
  *  node already stores world coords (parent is grouping-only, no transform). */
 export interface PoseComposition<TPose> {
-  compose: (parent: TPose, child: TPose) => TPose;
-  decompose: (parent: TPose, world: TPose) => TPose;
+  compose(parent: TPose, child: TPose): TPose;
+  decompose(parent: TPose, world: TPose): TPose;
   closure: PoseClosure;
 }
 
@@ -47,6 +47,12 @@ export const IDENTITY_POSE_COMPOSITION: PoseComposition<unknown> = {
   decompose: (_parent, world) => world,
   closure: 'identity',
 };
+
+/** Whether `composition` makes a container's pose a frame, so a stored pose
+ *  is local to it. False for the absolute-pose model. */
+export function composesFrames(composition: { closure: PoseClosure }): boolean {
+  return composition.closure !== 'identity';
+}
 
 /**
  * Walk `id`'s parent chain (root first to id last) and fold local poses into

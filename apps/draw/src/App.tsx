@@ -103,7 +103,7 @@ import { RightSidebar } from './RightSidebar';
 import { Toolbar } from './Toolbar';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import './app.css';
-import { DRAW_POSE_COMPOSITION, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { activeInsertPaint } from './insertPaint';
 import { reportPasteOmissions } from './pasteOmissions';
 import { HISTORY_KEY, loadHistory, loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
@@ -629,7 +629,6 @@ function EditorWithSharedScene({
             view={view}
             onViewChange={setView}
             scene={scene}
-            poseComposition={DRAW_POSE_COMPOSITION}
             selection={selection}
             defaultTools={BUILTIN_TOOL_IDS}
             tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}

@@ -29,7 +29,6 @@ import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 export { hiddenLayerIds } from 'canvas/pickWalk';
 import type { HitTestView } from 'interactions/actions/depSchema';
-import type { PoseComposition } from 'core/scene/composePose';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import {
   polygonRegion,
@@ -58,16 +57,13 @@ export interface RegionQueryOptions {
 
 
 /** The pick options a region dep hands the shared walk: the asking view's
- *  layer gate and camera, the surface's alpha, and the scene's pose
- *  composition. */
+ *  layer gate and camera, and the surface's alpha. */
 export function regionPickOptions(
   view: HitTestView | undefined,
   alphaOf: ((id: string) => number) | undefined,
-  poseComposition: PoseComposition<unknown> | undefined,
 ): ScenePickSourceOptions<unknown> {
   const camera = view?.get?.();
   return {
-    ...(poseComposition ? { poseComposition } : {}),
     ...(alphaOf ? { alphaOf } : {}),
     ...(view?.layerIsPainted ? { layerIsPainted: (layer: string) => view.layerIsPainted!(layer) } : {}),
     ...(camera ? { camera } : {}),

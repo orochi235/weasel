@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
-import { asPaint, registerPaintKindLoader } from '@weasel-js/core';
+import { asPaint, IDENTITY_POSE_COMPOSITION, registerPaintKindLoader } from '@weasel-js/core';
 import { downloadSvg } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
 
@@ -26,7 +26,10 @@ function slowPaintScene(id: string, ms: number) {
     pose: { x: 0, y: 0, width: 10, height: 10 },
     data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: asPaint({ fill: id }) },
   };
-  return { roots: ['a'], get: (n: string) => (n === 'a' ? rect : undefined), childrenOf: () => [] } as never;
+  return {
+    roots: ['a'], get: (n: string) => (n === 'a' ? rect : undefined), childrenOf: () => [],
+    composition: IDENTITY_POSE_COMPOSITION,
+  } as never;
 }
 
 /** How long past the load a download may take to arrive. */

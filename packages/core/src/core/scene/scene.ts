@@ -23,6 +23,7 @@ import { createLayerStack } from './layerStack';
 import { registerKitOps, type RemoveSnapshot, type SetLayoutPayload } from './kitOps';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from './composeFrame';
 import type { LayoutStrategy } from '../../layout/types';
 import {
   asNodeId,
@@ -100,7 +101,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   const fnField = (name: 'clipFromPose' | 'derivePath' | 'derivePose' | 'layout'): NodeFnField =>
     fnFields.find((f) => f.spec.field === name)!;
 
-  /** How declared layouts are measured; see `LayoutFrame`. */
   const layoutFrame = resolveLayoutFrame(options.layoutFrame);
   /** Latched on the first layout a container is given, so a scene that never
    *  declares one records exactly the entries it did before layouts existed. */
@@ -468,6 +468,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     nodesOnLayer: order.nodesOnLayer,
 
     mintId: generateId,
+    composition: options.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
 
     add(spec) {
       const id = spec.id ?? generateId();
@@ -1080,6 +1081,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     coalesceWindowMs?: number;
     generateId?: () => NodeId;
     ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
+    composition?: UseSceneOptions<TData, TLayer, TPose>['composition'];
     layoutFrame?: UseSceneOptions<TData, TLayer, TPose>['layoutFrame'];
   } = {},
 ): Scene<TData, TLayer, TPose> {
@@ -1087,13 +1089,9 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
   // Built empty and then loaded, so the snapshot's layer stack is rebuilt by
   // the one reader that knows how — `createScene` mints system layers only.
   const scene = createScene<TData, TLayer, TPose>({
+    ...options,
     systemLayers: json.systemLayers.map((l) => ({ id: l.id })),
     registry,
-    ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
-    ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
-    ...(options.generateId !== undefined ? { generateId: options.generateId } : {}),
-    ...(options.ops !== undefined ? { ops: options.ops } : {}),
-    ...(options.layoutFrame !== undefined ? { layoutFrame: options.layoutFrame } : {}),
   });
   scene.loadState(json);
   return scene;

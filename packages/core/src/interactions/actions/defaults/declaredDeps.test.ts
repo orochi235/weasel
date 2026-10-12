@@ -6,6 +6,7 @@
  * exercise them through the real bag instead.
  */
 
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
@@ -31,6 +32,7 @@ function makeDeps() {
   const scene = {
     get: (id: string) => ({ id: asNodeId(id), pose: { x: 0, y: 0, width: 10, height: 10 }, parent: null }),
     overrides: createPoseOverrides<unknown>(() => undefined),
+    composition: IDENTITY_POSE_COMPOSITION,
     roots: IDS.map(asNodeId),
     childrenOf: () => [],
     setPose: vi.fn(),

@@ -1,7 +1,7 @@
 /**
  * The adapter `<SceneCanvas>` synthesizes for its scene: its identity across
  * renders, the container cascade under absolute poses, and the frame model
- * reaching it when `poseComposition` is set. Read through `useOptionalViewInputs`,
+ * reaching it when the scene composes. Read through `useOptionalViewInputs`,
  * which carries the same adapter `<Canvas>` is handed.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
@@ -27,8 +27,11 @@ beforeAll(() => {
   proto.getContext = vi.fn(() => null);
 });
 
-function makeScene(): Scene<D, L, P> {
-  const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+function makeScene(framed = false): Scene<D, L, P> {
+  const s = createScene<D, L, P>({
+    systemLayers: [{ id: 'main' }],
+    ...(framed ? { composition: RECT_POSE_COMPOSITION } : {}),
+  });
   s.add({ id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'rect' } });
   s.add({ id: asNodeId('kid'), kind: 'leaf', layer: 'main', parent: asNodeId('box'), pose: { x: 10, y: 10, width: 5, height: 5 }, data: { kind: 'rect' } });
   s.history.clear();
@@ -43,16 +46,11 @@ function Probe() {
 }
 
 let bump: () => void = () => {};
-function Host({ scene, framed }: { scene: Scene<D, L, P>; framed?: boolean }) {
+function Host({ scene }: { scene: Scene<D, L, P> }) {
   const [, setN] = useState(0);
   bump = () => setN((n) => n + 1);
   return (
-    <SceneCanvas<D, L, P>
-      scene={scene}
-      width={400}
-      height={400}
-      {...(framed ? { poseComposition: RECT_POSE_COMPOSITION } : {})}
-    >
+    <SceneCanvas<D, L, P> scene={scene} width={400} height={400}>
       <Probe />
     </SceneCanvas>
   );
@@ -83,8 +81,8 @@ describe('SceneCanvas adapter', () => {
 
   it('under a frame, reads world poses through it and leaves children where they are', () => {
     seen.length = 0;
-    const scene = makeScene();
-    render(<Host scene={scene} framed />);
+    const scene = makeScene(true);
+    render(<Host scene={scene} />);
     const adapter = seen[seen.length - 1];
     expect(adapter.getWorldPose('kid')).toEqual({ x: 110, y: 110, width: 5, height: 5 });
     act(() => adapter.setPose('box', { x: 120, y: 90, width: 50, height: 50 }));

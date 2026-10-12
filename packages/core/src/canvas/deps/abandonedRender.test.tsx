@@ -8,6 +8,7 @@ import { cleanup, renderHook } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { Dispatcher } from '@weasel-js/routing';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
@@ -21,7 +22,6 @@ import { useIngestionDepSource } from './ingestion';
 import { useInsertDepSource } from './insert';
 import { useLayoutDepSource } from './layout';
 import { useNodeAtPointDepSource } from './nodeAtPoint';
-import { usePoseCompositionDepSource } from './poseComposition';
 import { usePoseDescriptorDepSource } from './poseDescriptor';
 import { useResizePolicy } from './resizePolicy';
 import { useSliceDep } from './slice';
@@ -58,6 +58,7 @@ const sceneWith = (get: (id: string) => unknown = () => undefined) =>
   ({
     layers: [{ id: 'default' }], get, renderOrderNodes: () => [], layoutOf: () => null, onReflow: () => () => {},
     mintId: () => 'minted',
+    composition: IDENTITY_POSE_COMPOSITION,
   }) as unknown as Scene<unknown, string, unknown>;
 
 describe('dep sources after an abandoned render', () => {
@@ -162,13 +163,6 @@ describe('dep sources after an abandoned render', () => {
       useNodeAtPointDepSource(pick);
     });
     expect(dep(reg, 'nodeAtPoint')({ x: 0, y: 0 })).toBe('a');
-  });
-
-  it('poseComposition hands out the committed composition', () => {
-    const a = { closure: 'identity' };
-    const b = { closure: 'identity' };
-    const reg = registryAfterAbandon(a, b, (c) => { usePoseCompositionDepSource(c as never); });
-    expect(dep(reg, 'poseComposition')).toBe(a);
   });
 
   it('poseDescriptor hands out the committed descriptor', () => {

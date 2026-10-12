@@ -1,3 +1,4 @@
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
@@ -28,6 +29,7 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
     poses,
     batchLog,
     overrides: createPoseOverrides<unknown>((id: string) => (poses.has(id) ? { } : undefined)),
+    composition: IDENTITY_POSE_COMPOSITION,
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };

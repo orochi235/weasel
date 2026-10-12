@@ -14,6 +14,7 @@ import { hitTestArea, hitTestLassoPolygon } from './hitTestArea';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 /** The hand-rolled scenes below stand in for a real `Scene`, which always
  *  carries an overrides map; `hitTestArea` resolves poses through it. */
@@ -35,6 +36,7 @@ function triangleScene(): Scene<unknown, string, unknown> {
     layers: [{ id: 'default' }],
     renderOrder: () => ['t'] as NodeId[],
     renderOrderNodes: () => [...nodes.values()],
+    composition: IDENTITY_POSE_COMPOSITION,
     get: (id: NodeId) => nodes.get(id as string) as never,
     overrides: NO_OVERRIDES,
   } as unknown as Scene<unknown, string, unknown>;
@@ -63,6 +65,7 @@ describe('hitTestArea — silhouette awareness', () => {
       layers: [{ id: 'default' }],
       renderOrder: () => ['m'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
+      composition: IDENTITY_POSE_COMPOSITION,
       get: (id: NodeId) => nodes.get(id as string) as never,
       overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
@@ -98,6 +101,7 @@ describe('hitTestArea — geometry held on node.data', () => {
       layers: [{ id: 'default' }],
       renderOrder: () => ['t'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
+      composition: IDENTITY_POSE_COMPOSITION,
       get: (id: NodeId) => nodes.get(id as string) as never,
       overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
@@ -123,6 +127,7 @@ describe('hitTestArea — geometry held on node.data', () => {
       layers: [{ id: 'default' }],
       renderOrder: () => ['p'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
+      composition: IDENTITY_POSE_COMPOSITION,
       get: (id: NodeId) => nodes.get(id as string) as never,
       overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
