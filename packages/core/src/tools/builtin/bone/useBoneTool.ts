@@ -1,0 +1,97 @@
+import { useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/react';
+import type { ToolKeybinding } from '@weasel-js/routing';
+import type { NodeId, Scene } from 'core/scene/types';
+import { placeSkeleton, type RigNodeData } from '../../../animation/rig/rigNode';
+import type { Skeleton } from '../../../animation/rig/types';
+import { defineTool } from '../../overlayBinding';
+import type { Tool } from '../../overlayBinding';
+import { createBoneActions, type BoneEnv } from './boneActions';
+import { createBoneOverlay } from './boneOverlay';
+import { createRigEditState, type RigEditState } from './rigEditState';
+
+/** Options for `useBoneTool`. */
+export interface UseBoneToolOptions {
+  scene: Scene<unknown, string, unknown>;
+  /** The node whose data holds the skeleton, or will once a bone is drawn: usually read from
+   *  the selection. `null` leaves the tool with nothing to edit. */
+  rig: () => NodeId | null;
+  /** Shared with `useWeightTool`, so both act on one joint. Default: the tool's own. */
+  state?: RigEditState;
+  /** Override the default keybinding (`{ key: 'J' }`). Pass `null` to omit. */
+  keybinding?: ToolKeybinding | null;
+  /** Screen px around a joint within which a press takes it. Default 10. */
+  reach?: number;
+}
+
+const EMPTY: Skeleton = { joints: [] };
+
+/**
+ * Draws and edits the skeleton in a node's `data.skeleton`. A drag on a joint moves it, with
+ * the joints under it; a drag from anywhere else draws a bone, from the active joint if there
+ * is one and from the press if not, and the new joint becomes the active one. A click picks
+ * the active joint or clears it, Delete removes it with everything under it, taking its
+ * weights out of every skin beneath the rig node, and Escape clears it. Each edit is one undo
+ * entry.
+ */
+export function useBoneTool(options: UseBoneToolOptions): Tool<null> {
+  const ownState = useMemo(() => createRigEditState(), []);
+  const state = options.state ?? ownState;
+  const opts = useLatest({ scene: options.scene, rig: options.rig, reach: options.reach ?? 10 });
+  /** The skeleton a drag is shaping, in the scene's space. */
+  const liveRef = useRef<Skeleton | null>(null);
+
+  const env = useMemo(() => {
+    const listeners = new Set<() => void>();
+    const tool: BoneEnv & { listen(fn: () => void): () => void } = {
+      state,
+      scene: () => opts.current.scene,
+      reachPx: () => opts.current.reach,
+      placed() {
+        const id = opts.current.rig();
+        const node = id === null ? undefined : opts.current.scene.get(id);
+        if (id === null || !node) return null;
+        const local = (node.data as RigNodeData | null | undefined)?.skeleton ?? EMPTY;
+        return { id, skeleton: placeSkeleton(local, node.pose) };
+      },
+      shown: () => liveRef.current,
+      show(skeleton) {
+        liveRef.current = skeleton;
+        for (const fn of [...listeners]) fn();
+      },
+      listen(fn) {
+        listeners.add(fn);
+        const off = state.listen(fn);
+        return () => { listeners.delete(fn); off(); };
+      },
+    };
+    return tool;
+  }, [opts, state]);
+
+  const actions = useMemo(() => createBoneActions(env), [env]);
+  const overlay = useMemo(() => createBoneOverlay({
+    id: 'bone-tool-skeleton',
+    skeleton: () => env.shown() ?? env.placed()?.skeleton ?? null,
+    active: state.active,
+    subscribe: env.listen,
+  }), [env, state]);
+
+  const { keybinding } = options;
+  return useMemo(() => defineTool<null>({
+    id: 'bone',
+    capabilities: ['edits-page'],
+    hookName: 'useBoneTool',
+    cursor: 'crosshair',
+    presentation: { label: 'Bone', group: 'shape' },
+    ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'J' } }),
+    actions,
+    overlay,
+    onDeactivate: () => env.show(null),
+    bindings: [
+      { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.pick' },
+      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.drag' },
+      { spec: { kind: 'key', key: ['Delete', 'Backspace'] }, actionId: 'bone.remove' },
+      { spec: { kind: 'key', key: 'Escape' }, actionId: 'bone.clear' },
+    ],
+  }), [actions, overlay, keybinding, env]);
+}

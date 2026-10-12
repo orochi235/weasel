@@ -1,5 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
-import { poseFrameOf } from '@weasel-js/geom';
+import { poseFrameInverseOf, poseFrameOf } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId } from '../../core/scene/types';
@@ -35,24 +35,58 @@ interface Reading extends RigNodeParts {
   refs: unknown[];
 }
 
+type Affine = readonly [number, number, number, number, number, number];
+const through = (m: Affine | null, x: number, y: number): [number, number] =>
+  (m ? [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]] : [x, y]);
+
+/**
+ * A skeleton as a rig node's data keeps it, moved to where the node's pose puts it: its root
+ * joints are offset from the pose box's top-left corner and turned as the node is. Joints
+ * under a root are relative to their parents and are left as they are.
+ */
+export function placeSkeleton<TPose>(
+  skeleton: Skeleton,
+  pose: TPose,
+  descriptor: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
+): Skeleton {
+  const box = descriptor.getBounds(pose);
+  const frame = poseFrameOf(pose);
+  const turn = descriptor.getRotation?.(pose) ?? 0;
+  return {
+    joints: skeleton.joints.map((joint) => {
+      if (joint.parent != null) return joint;
+      const [x, y] = through(frame, box.x + joint.bind.x, box.y + joint.bind.y);
+      return { ...joint, bind: { ...joint.bind, x, y, rotation: joint.bind.rotation + turn } };
+    }),
+  };
+}
+
+/** The inverse of {@link placeSkeleton}: a skeleton in the scene's space, as the node at
+ *  `pose` would keep it in its data. */
+export function unplaceSkeleton<TPose>(
+  skeleton: Skeleton,
+  pose: TPose,
+  descriptor: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
+): Skeleton {
+  const box = descriptor.getBounds(pose);
+  const inverse = poseFrameInverseOf(pose);
+  const turn = descriptor.getRotation?.(pose) ?? 0;
+  return {
+    joints: skeleton.joints.map((joint) => {
+      if (joint.parent != null) return joint;
+      const [x, y] = through(inverse, joint.bind.x, joint.bind.y);
+      return { ...joint, bind: { ...joint.bind, x: x - box.x, y: y - box.y, rotation: joint.bind.rotation - turn } };
+    }),
+  };
+}
+
 function read<TPose>(scene: RigNodeSource<TPose>, id: NodeId, descriptor: PoseDescriptor<TPose>): Reading {
   const node = scene.get(id);
   if (!node) throw new Error(`rigFromNode: the rig is node "${id}", which the scene lacks.`);
   const local = (node.data as RigNodeData | null | undefined)?.skeleton;
   if (!local) throw new Error(`rigFromNode: node "${id}" has no skeleton in its data.`);
 
-  const box = descriptor.getBounds(node.pose);
-  const frame = poseFrameOf(node.pose);
-  const turn = descriptor.getRotation?.(node.pose) ?? 0;
-  const skeleton: Skeleton = {
-    joints: local.joints.map((joint) => {
-      if (joint.parent != null) return joint;
-      const x = box.x + joint.bind.x;
-      const y = box.y + joint.bind.y;
-      const at = frame ? [frame[0] * x + frame[2] * y + frame[4], frame[1] * x + frame[3] * y + frame[5]] : [x, y];
-      return { ...joint, bind: { ...joint.bind, x: at[0], y: at[1], rotation: joint.bind.rotation + turn } };
-    }),
-  };
+  const skeleton = placeSkeleton(local, node.pose, descriptor);
 
   const out: Reading = { skeleton, bindings: {}, skins: {}, refs: [node.pose, node.data] };
   const walk = (parent: NodeId): void => {

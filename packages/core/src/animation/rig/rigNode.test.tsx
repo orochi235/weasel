@@ -4,7 +4,7 @@ import type { Path, PolygonPath } from '@weasel-js/geom';
 import { createScene } from '../../core/scene/scene';
 import type { RectPose } from '../../core/scene/types';
 import type { Rig } from './bindRig';
-import { rigFromNode, useRigNode } from './rigNode';
+import { placeSkeleton, rigFromNode, unplaceSkeleton, useRigNode } from './rigNode';
 import type { Skin } from './skin';
 import type { Skeleton } from './types';
 
@@ -65,6 +65,17 @@ describe('rigFromNode', () => {
     const { scene, sleeve } = rigScene();
     expect(() => rigFromNode(scene, sleeve)).toThrow(/has no skeleton/);
     expect(() => rigFromNode(scene, 'nope' as never)).toThrow(/which the scene lacks/);
+  });
+});
+
+describe('unplaceSkeleton', () => {
+  it('undoes placeSkeleton, turned node included', () => {
+    const pose = { ...BOX, rotation: 0.7 };
+    const back = unplaceSkeleton(placeSkeleton(ARM, pose), pose);
+    expect(back.joints[0].bind.x).toBeCloseTo(0, 4);
+    expect(back.joints[0].bind.y).toBeCloseTo(50, 4);
+    expect(back.joints[0].bind.rotation).toBeCloseTo(0, 6);
+    expect(back.joints[1]).toBe(ARM.joints[1]);
   });
 });
 

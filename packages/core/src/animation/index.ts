@@ -77,8 +77,8 @@ export type {
 } from './timeline';
 export {
   addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint,
-  autoSkin, bindRig, dataRestPath, jointAxes, mirrorPose, motionsFromRest, skeletonAxes, resolveSkeleton, rigFromNode, rigidRigApply, skinPath,
-  solveIk, useRig, useRigNode, IDENTITY_JOINT,
+  autoSkin, bindRig, dataRestPath, jointAxes, mirrorPose, motionsFromRest, skeletonAxes, placeSkeleton, resolveSkeleton, rigFromNode, rigidRigApply,
+  skinPath, solveIk, unplaceSkeleton, useRig, useRigNode, IDENTITY_JOINT,
 } from './rig';
 export type {
   AutoSkinOptions, BindRigOptions, IkLimit, IkPoint, IkResult, Joint, JointTransform, Pose, Rig, RigApply,
