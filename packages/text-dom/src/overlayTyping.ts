@@ -1,43 +1,21 @@
 /**
- * Typed text in the edit overlay. The browser inserts a typed character
+ * Text entering the edit overlay. The browser inserts a typed character
  * itself, which keeps the keystroke on its undo stack and lets input that
  * names its own range (a text replacement, the double-space period) land
  * there. The hook inserts by hand only where the character has to open a run
  * of its own: under an armed style, and at a caret between two run spans.
+ *
+ * A paste or a drop is never the browser's to insert: it would land as
+ * whatever markup the clipboard held. It is read into runs and written
+ * through them.
  */
 
-import { applyStyleToRange, type RunStylePatch, type StyledRun } from '@weasel-js/text';
-import { domToRuns, normalizeSmallCaps, type OverlayRunBase } from './domRuns';
+import { runsToPlainText, supersededKey, type RunStylePatch, type StyledRun } from '@weasel-js/text';
+import { domPositionToCharOffset, domToRuns, normalizeSmallCaps, type OverlayRunBase } from './domRuns';
 import { readSelectionOffsets, selectOffsets, writeRunsPreservingSelection } from './overlaySelection';
+import { clipboardRuns } from './pasteRuns';
+import { replaceRunRange, runStyleAt } from './runSplice';
 import type { TextEditSelection } from './textEditTypes';
-
-/**
- * Splice `run` into `runs` at character offset `at`, splitting whichever run
- * spans it. The result is normalized (empty runs dropped, identical
- * neighbors merged) by the same algebra every other write goes through.
- */
-function spliceRunAt(runs: readonly StyledRun[], at: number, run: StyledRun): StyledRun[] {
-  const out: StyledRun[] = [];
-  let pos = 0;
-  let placed = false;
-  for (const r of runs) {
-    const end = pos + r.text.length;
-    if (!placed && at <= end) {
-      const k = at - pos;
-      if (k > 0) out.push({ ...r, text: r.text.slice(0, k) });
-      out.push(run);
-      if (k < r.text.length) out.push({ ...r, text: r.text.slice(k) });
-      placed = true;
-    } else {
-      out.push({ ...r });
-    }
-    pos = end;
-  }
-  if (!placed) out.push(run);
-  // An empty patch over an empty range: this is the array-wide normalization
-  // pass, not a styling.
-  return applyStyleToRange(out, 0, 0, {});
-}
 
 /**
  * Put the caret *between* two run spans when `offset` falls on the boundary
@@ -84,6 +62,40 @@ function namesItsRange(ie: InputEvent, caret: Range): boolean {
   return target !== undefined && caret.collapsed && !target.collapsed;
 }
 
+/** The characters `ie` replaces: the range it names, else the selection. */
+function replacedOffsets(overlay: HTMLElement, ie: InputEvent, host: TypingHost): TextEditSelection | null {
+  const target = ie.getTargetRanges?.()[0];
+  if (target && overlay.contains(target.startContainer) && overlay.contains(target.endContainer)) {
+    const a = domPositionToCharOffset(overlay, target.startContainer, target.startOffset);
+    const b = domPositionToCharOffset(overlay, target.endContainer, target.endOffset);
+    return { start: Math.min(a, b), end: Math.max(a, b) };
+  }
+  return readSelectionOffsets(overlay) ?? host.lastRange();
+}
+
+/**
+ * `pasted` styled for where it lands: the run it joins and any armed style
+ * underneath, its own emphasis on top.
+ */
+function styledForRange(
+  pasted: readonly StyledRun[], runs: readonly StyledRun[], at: TextEditSelection, pending: RunStylePatch,
+): StyledRun[] {
+  // Over a selection, the first character replaced; at a caret, the one before it.
+  const base: Record<string, unknown> = { ...runStyleAt(runs, at.start === at.end ? at.start : at.start + 1) };
+  for (const [key, value] of Object.entries(pending)) {
+    if (value === undefined || value === false) delete base[key];
+    else base[key] = value;
+  }
+  return pasted.map((run) => {
+    const styled: Record<string, unknown> = { ...base, ...run };
+    const superseded = supersededKey(run);
+    if (superseded !== undefined) delete styled[superseded];
+    return styled as unknown as StyledRun;
+  });
+}
+
+const PASTES: ReadonlySet<string> = new Set(['insertFromPaste', 'insertFromDrop']);
+
 /** What the typing handlers read from, and report to, the edit that owns the overlay. */
 export interface TypingHost {
   /** The style armed for the next character; no keys when none is. */
@@ -92,8 +104,8 @@ export interface TypingHost {
   base: () => OverlayRunBase;
   /** The last range published inside the overlay, for when the DOM selection has left it. */
   lastRange: () => TextEditSelection | null;
-  /** The armed style went into a run of its own, and the caret now sits at `caret`. */
-  onPendingTyped: (caret: number) => void;
+  /** The runs were rewritten with new text in them, any armed style spent, and the caret now sits at `caret`. */
+  onWritten: (caret: number) => void;
   /** The overlay's text changed, by the browser's hand or this module's. */
   onEdited: () => void;
 }
@@ -108,7 +120,23 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
     host.onEdited();
   };
 
+  const onPaste = (ie: InputEvent): void => {
+    // An engine that hands the event no data inserts for itself, as before.
+    const at = ie.dataTransfer ? replacedOffsets(overlay, ie, host) : null;
+    if (!ie.dataTransfer || !at) return;
+    ie.preventDefault();
+    const pasted = clipboardRuns(ie.dataTransfer);
+    if (pasted.length === 0) return;
+    const runs = domToRuns(overlay);
+    const next = replaceRunRange(runs, at.start, at.end, styledForRange(pasted, runs, at, host.pending()));
+    const after = at.start + runsToPlainText(pasted).length;
+    writeRunsPreservingSelection(overlay, next, after, after, host.base());
+    host.onWritten(after);
+    host.onEdited();
+  };
+
   const onBeforeInput = (ie: InputEvent): void => {
+    if (PASTES.has(ie.inputType)) { onPaste(ie); return; }
     if (ie.inputType !== 'insertText' || !ie.data) return;
     const sel = window.getSelection();
     const caret = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
@@ -126,11 +154,12 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
       const at = readSelectionOffsets(overlay) ?? host.lastRange();
       if (!at || at.start !== at.end) return;
       ie.preventDefault();
-      const next = spliceRunAt(domToRuns(overlay), at.start, { ...pending, text: ie.data } as StyledRun);
+      const typed = { ...pending, text: ie.data } as StyledRun;
+      const next = replaceRunRange(domToRuns(overlay), at.start, at.start, [typed]);
       const after = at.start + ie.data.length;
       writeRunsPreservingSelection(overlay, next, after, after, host.base());
       placeCaretBetweenRuns(overlay, next, after);
-      host.onPendingTyped(after);
+      host.onWritten(after);
       host.onEdited();
       return;
     }

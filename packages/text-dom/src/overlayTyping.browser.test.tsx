@@ -123,3 +123,66 @@ describe('typing into the edit overlay', () => {
     expect(committed().text).toBe('hi');
   });
 });
+
+/** Copy `source`'s contents with the browser's own copy, then paste at the overlay's caret. */
+async function copyThenPaste(source: HTMLElement, overlay: HTMLElement): Promise<void> {
+  const at = document.getSelection()!.getRangeAt(0).cloneRange();
+  document.getSelection()!.selectAllChildren(source);
+  await userEvent.copy();
+  overlay.focus();
+  document.getSelection()!.removeAllRanges();
+  document.getSelection()!.addRange(at);
+  await userEvent.paste();
+}
+
+describe('pasting into the edit overlay', () => {
+  const PAGE =
+    '<p style="color: red; font-family: Georgia; font-size: 30px">Hello <b>bold</b> and <i>it</i></p>\n'
+    + '<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>'
+    + '<table><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>';
+
+  it('reads a page\'s markup as runs: its blocks as lines, its emphasis kept, its face and color left behind', async () => {
+    const source = document.createElement('div');
+    source.innerHTML = PAGE;
+    document.body.appendChild(source);
+    const overlay = await open({ text: 'xy', runs: [{ text: 'xy', fontSize: 12 }], caret: 1 });
+    await copyThenPaste(source, overlay);
+    source.remove();
+    expect(overlay.querySelector('ul, table, p, b, i')).toBeNull();
+    expect([...overlay.children].every((el) => el.matches('span[data-run]'))).toBe(true);
+    const edit = committed();
+    expect(edit.text).toBe('xHello bold and it\none\ntwo\na\tb\nc\tdy');
+    expect(edit.runs).toEqual([
+      { text: 'xHello ', fontSize: 12 },
+      { text: 'bold', fontSize: 12, bold: true },
+      { text: ' and ', fontSize: 12 },
+      { text: 'it', fontSize: 12, italic: true },
+      { text: '\none\ntwo\na\tb\nc\tdy', fontSize: 12 },
+    ]);
+  });
+
+  it('pastes the overlay\'s own runs back with their emphasis, over the selection', async () => {
+    const source = document.createElement('div');
+    source.style.whiteSpace = 'pre';
+    document.body.appendChild(source);
+    const { runsToDom } = await import('./domRuns');
+    runsToDom([{ text: 'plain ' }, { text: 'bold\nline', bold: true }], source);
+    const overlay = await open({ text: 'abc', caret: 'all' });
+    await copyThenPaste(source, overlay);
+    source.remove();
+    const edit = committed();
+    expect(edit.text).toBe('plain bold\nline');
+    expect(edit.runs).toEqual([{ text: 'plain ' }, { text: 'bold\nline', bold: true }]);
+  });
+
+  it('leaves the caret after the pasted text', async () => {
+    const source = document.createElement('div');
+    source.textContent = 'PQ';
+    document.body.appendChild(source);
+    const overlay = await open({ text: 'ab', caret: 1 });
+    await copyThenPaste(source, overlay);
+    source.remove();
+    await userEvent.keyboard('!');
+    expect(committed().text).toBe('aPQ!b');
+  });
+});

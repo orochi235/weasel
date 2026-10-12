@@ -507,14 +507,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is synthesized today (capitals scaled by x-height over cap height), and a face with an `smcp` feature should get its own small-cap glyphs instead.
 
-- **(P3) Text edit: a paste lands in the overlay as whatever markup the browser inserts.**
-  `useTextEdit` has no `paste` handler. `domToRuns` and the caret-offset walkers
-  (`packages/core/src/features/text/domOffsets.ts`) now agree on `<br>`, `<div>`, and `<p>`, so a
-  pasted break reads as one newline and offsets hold after it, but other pasted structure (lists,
-  tables, nested blocks) is still read ad hoc. Undecided: insert `text/plain` only, or sanitize the
-  pasted markup to run spans and keep its styling. Which elements each browser inserts on paste has
-  not been observed.
-
 - **(P3) Text direction: the Align bar lights `start` / `end` as if an omitted `direction` were
   `ltr`.** An omitted `TextStyle.direction` is `'auto'`, each paragraph's first strong character, so
   right-to-left text aligned `start` paints from the right while the bar lights Left. The bar's

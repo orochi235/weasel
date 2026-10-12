@@ -517,7 +517,7 @@ export function useTextEdit(
       pending: () => pendingRef.current,
       base: () => baseRef.current,
       lastRange: () => selectionRef.current,
-      onPendingTyped: (caret) => {
+      onWritten: (caret) => {
         dropPending();
         publishRange(overlay, { start: caret, end: caret });
       },

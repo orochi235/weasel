@@ -12,7 +12,7 @@ function mount(pending: RunStylePatch = {}) {
     pending: () => pending,
     base: () => DEFAULT_TEXT_STYLE,
     lastRange: () => null,
-    onPendingTyped: vi.fn(),
+    onWritten: vi.fn(),
     onEdited: vi.fn(),
   };
   return { overlay, host, ...typingHandlers(overlay, host) };
@@ -64,7 +64,7 @@ describe('typingHandlers', () => {
     onBeforeInput(ev);
     expect(ev.defaultPrevented).toBe(true);
     expect(domToRuns(overlay)).toEqual([{ text: 'ab' }, { text: 'X', bold: true }]);
-    expect(host.onPendingTyped).toHaveBeenCalledWith(3);
+    expect(host.onWritten).toHaveBeenCalledWith(3);
     expect(host.onEdited).toHaveBeenCalledTimes(1);
   });
 
@@ -88,5 +88,78 @@ describe('typingHandlers', () => {
     onInput(new InputEvent('input', { inputType: 'insertText', data: 'x' }));
     expect(host.onEdited).toHaveBeenCalledTimes(1);
     overlay.remove();
+  });
+});
+
+function paste(inputType: string, data: Record<string, string> | null, targetRange?: StaticRange): InputEvent {
+  const ev = new InputEvent('beforeinput', { inputType, cancelable: true });
+  Object.defineProperty(ev, 'dataTransfer', {
+    value: data && { getData: (type: string) => data[type] ?? '' },
+  });
+  if (targetRange) ev.getTargetRanges = () => [targetRange];
+  return ev;
+}
+
+describe('typingHandlers: a paste or a drop', () => {
+  beforeEach(() => { document.body.innerHTML = ''; });
+
+  it('writes pasted markup as runs styled like the run they join, emphasis added', () => {
+    const { overlay, host, onBeforeInput } = mount();
+    runsToDom([{ text: 'ab', fontSize: 30, fontWeight: 300 }, { text: 'cd' }], overlay);
+    caretAt(overlay.firstChild!.firstChild!, 1);
+    const ev = paste('insertFromPaste', { 'text/html': '<p style="font-size: 9px">x <b>y</b></p><p>z</p>' });
+    onBeforeInput(ev);
+    expect(ev.defaultPrevented).toBe(true);
+    expect(domToRuns(overlay)).toEqual([
+      { text: 'ax ', fontSize: 30, fontWeight: 300 },
+      { text: 'y', fontSize: 30, bold: true },
+      { text: '\nzb', fontSize: 30, fontWeight: 300 },
+      { text: 'cd' },
+    ]);
+    expect(overlay.querySelector('p, b')).toBeNull();
+    expect(host.onWritten).toHaveBeenCalledWith(6);
+    expect(host.onEdited).toHaveBeenCalledTimes(1);
+    expect(window.getSelection()!.getRangeAt(0).collapsed).toBe(true);
+  });
+
+  it('replaces the selection, in the style of its first character', () => {
+    const { overlay, onBeforeInput } = mount();
+    runsToDom([{ text: 'ab' }, { text: 'cd', italic: true }], overlay);
+    const sel = window.getSelection()!;
+    sel.setBaseAndExtent(overlay.children[1].firstChild!, 0, overlay.children[1].firstChild!, 2);
+    onBeforeInput(paste('insertFromPaste', { 'text/plain': 'X\r\nY' }));
+    expect(domToRuns(overlay)).toEqual([{ text: 'ab' }, { text: 'X\nY', italic: true }]);
+  });
+
+  it('drops at the range the event names, not at the selection', () => {
+    const { overlay, onBeforeInput } = mount();
+    runsToDom([{ text: 'abcd' }], overlay);
+    const text = overlay.firstChild!.firstChild!;
+    caretAt(text, 0);
+    const at = new StaticRange({ startContainer: text, startOffset: 3, endContainer: text, endOffset: 3 });
+    onBeforeInput(paste('insertFromDrop', { 'text/plain': 'X' }, at));
+    expect(domToRuns(overlay)).toEqual([{ text: 'abcXd' }]);
+  });
+
+  it('gives an armed style to what is pasted', () => {
+    const { overlay, onBeforeInput } = mount({ underline: true });
+    runsToDom([{ text: 'ab' }], overlay);
+    caretAt(overlay.firstChild!.firstChild!, 2);
+    onBeforeInput(paste('insertFromPaste', { 'text/plain': 'X' }));
+    expect(domToRuns(overlay)).toEqual([{ text: 'ab' }, { text: 'X', underline: true }]);
+  });
+
+  it('inserts nothing for a clipboard with no text, and leaves an event with no data to the browser', () => {
+    const { overlay, host, onBeforeInput } = mount();
+    runsToDom([{ text: 'ab' }], overlay);
+    caretAt(overlay.firstChild!.firstChild!, 1);
+    const image = paste('insertFromPaste', { 'text/html': '<img src="x.png">' });
+    onBeforeInput(image);
+    expect(image.defaultPrevented).toBe(true);
+    expect(domToRuns(overlay)).toEqual([{ text: 'ab' }]);
+    expect(host.onEdited).not.toHaveBeenCalled();
+    const bare = paste('insertFromPaste', null);
+    onBeforeInput(bare);
+    expect(bare.defaultPrevented).toBe(false);
   });
 });
