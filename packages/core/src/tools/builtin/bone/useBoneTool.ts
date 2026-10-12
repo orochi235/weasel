@@ -2,12 +2,12 @@ import { useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
-import { placeSkeleton, type RigNodeData } from '../../../animation/rig/rigNode';
 import type { Skeleton } from '../../../animation/rig/types';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { createBoneActions, type BoneEnv } from './boneActions';
 import { createBoneOverlay } from './boneOverlay';
+import { placedRig } from './placedRig';
 import { createRigEditState, type RigEditState } from './rigEditState';
 
 /** Options for `useBoneTool`. */
@@ -23,8 +23,6 @@ export interface UseBoneToolOptions {
   /** Screen px around a joint within which a press takes it. Default 10. */
   reach?: number;
 }
-
-const EMPTY: Skeleton = { joints: [] };
 
 /**
  * Draws and edits the skeleton in a node's `data.skeleton`. A drag on a joint moves it, with
@@ -47,13 +45,7 @@ export function useBoneTool(options: UseBoneToolOptions): Tool<null> {
       state,
       scene: () => opts.current.scene,
       reachPx: () => opts.current.reach,
-      placed() {
-        const id = opts.current.rig();
-        const node = id === null ? undefined : opts.current.scene.get(id);
-        if (id === null || !node) return null;
-        const local = (node.data as RigNodeData | null | undefined)?.skeleton ?? EMPTY;
-        return { id, skeleton: placeSkeleton(local, node.pose) };
-      },
+      placed: () => placedRig(opts.current.scene, opts.current.rig()),
       shown: () => liveRef.current,
       show(skeleton) {
         liveRef.current = skeleton;

@@ -13,6 +13,7 @@ export type { Skin } from './skin';
 export { dataRestPath } from './skinBinding';
 export type { RestPath } from './skinBinding';
 export { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from './skeletonEdits';
+export { brushWeights, setWeights } from './weightEdits';
 export { autoSkin } from './autoSkin';
 export type { AutoSkinOptions } from './autoSkin';
 export { IDENTITY_JOINT } from './types';

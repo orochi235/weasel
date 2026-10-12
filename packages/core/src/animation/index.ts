@@ -76,7 +76,7 @@ export type {
   Track,
 } from './timeline';
 export {
-  addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint,
+  addJoint, brushWeights, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint, setWeights,
   autoSkin, bindRig, dataRestPath, jointAxes, mirrorPose, motionsFromRest, skeletonAxes, placeSkeleton, resolveSkeleton, rigFromNode, rigidRigApply,
   skinPath, solveIk, unplaceSkeleton, useRig, useRigNode, IDENTITY_JOINT,
 } from './rig';

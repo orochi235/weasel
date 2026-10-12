@@ -1,4 +1,3 @@
-import { pxExtent } from '@weasel-js/geom';
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/history';
@@ -8,13 +7,14 @@ import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter'
 import { unplaceSkeleton, type RigNodeData } from '../../../animation/rig/rigNode';
 import { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from '../../../animation/rig/skeletonEdits';
 import type { Skeleton } from '../../../animation/rig/types';
+import { sceneReach, type PlacedRig } from './placedRig';
 import type { RigEditState } from './rigEditState';
 
 /** What the bone tool's actions read and write, all of it the tool's own. */
 export interface BoneEnv {
   scene(): Scene<unknown, string, unknown>;
   /** The rig node and its skeleton in the scene's space, or `null` with nothing to edit. */
-  placed(): { id: NodeId; skeleton: Skeleton } | null;
+  placed(): PlacedRig | null;
   state: RigEditState;
   /** Screen px around a joint within which a press takes it. */
   reachPx(): number;
@@ -25,10 +25,7 @@ export interface BoneEnv {
 
 const eligible = { capability: 'edits-page' } as const;
 
-const reachOf = (env: BoneEnv, deps: ActionDeps): number => {
-  const e = pxExtent(env.reachPx(), deps.view?.get().scale ?? { x: 1, y: 1 });
-  return Math.max(e.x, e.y);
-};
+const reachOf = (env: BoneEnv, deps: ActionDeps): number => sceneReach(deps, env.reachPx());
 
 const activeIn = (env: BoneEnv, skeleton: Skeleton): string | null => {
   const name = env.state.active();
