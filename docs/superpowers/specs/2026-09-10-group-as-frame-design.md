@@ -1,9 +1,11 @@
 # A group is a frame
 
 **Status: built**, except where "What this does not fix" says otherwise. Turn
-it on with `<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>`, or
-`sceneToAdapter(scene, { poseComposition })` for a hand-built adapter. Omitting
-it leaves the absolute-pose behavior the kit shipped before, unchanged.
+it on with `useScene({ composition: RIGID_POSE_COMPOSITION })`; the scene holds
+the strategy and everything else reads `scene.composition`. Omitting it leaves
+the absolute-pose behavior the kit shipped before, unchanged. Where this
+document says a consumer passes `poseComposition` to the canvas, the adapter,
+or a dep, read "the scene's composition": those seams were removed 2026-10-12.
 
 **What this is:** the design for making a container's pose mean something to
 its children. Today nesting contributes a clip chain and nothing else, so a
@@ -188,9 +190,7 @@ Two guards were needed that this design did not anticipate, both because the
 absolute-pose model bakes a *cascade* into moving a container: dragging one
 translates every descendant so they stay attached. Under a frame the
 descendants ride the frame and the cascade moves them twice. `sceneToAdapter`
-refuses `poseComposition` together with `cascadeContainerPose`, and
-`useSceneSelectTool` — which writes the same cascade inline rather than through
-that option — skips it when a strategy is configured.
+cascades only for a scene that does not compose.
 
 
 ## Testing: the identity trap

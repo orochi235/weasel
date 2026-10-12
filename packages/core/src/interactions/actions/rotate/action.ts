@@ -49,7 +49,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
   // any drag no active tool claimed rotate a non-empty selection. The rotation
   // handle binds it (`selectionRotateBindings`, the `rotate` preset).
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition', 'view'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {

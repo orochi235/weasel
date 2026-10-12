@@ -724,17 +724,20 @@ intercepting the press that drags the body.
   arrival, departure, reorder and resize, and to a layout swapped in by
   `scene.setLayout` / `createSetLayoutOp`. Still open: a declared layout is measured by
   `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
-  canvas composes poses or uses a custom descriptor states that twice — folds away once
-  composition is a scene property (see the cascade entry below); and whether the `layouts` prop, now a second way to name a container's layout, should
-  be retired in favor of the node declaration.
-- **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is adapter-level
-  configuration, two mutually exclusive ways: `sceneToAdapter({ cascadeContainerPose: true })`
-  translates every descendant by a container's delta through the pose descriptor, and
-  `poseComposition` makes a container's pose a frame its children are relative to. `Scene.setPose`
-  itself still stores absolute poses. Ruled 2026-10-11: the scene owns composition: a child's pose
-  is relative to its container's frame, and moving a container writes one pose. That leaves building
-  it into the scene, deciding where the composition is supplied to the `useScene` constructor, and
-  settling what becomes of `cascadeContainerPose`.
+  canvas uses a custom pose descriptor states how a pose is measured twice; and whether the
+  `layouts` prop, now a second way to name a container's layout, should be retired in favor
+  of the node declaration.
+- **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
+  composition: a child's pose is relative to its container's frame, and moving a container writes
+  one pose. The scene owns it now (`useScene({ composition })`, read everywhere as
+  `scene.composition`), but the default is still the absolute-pose model, where `sceneToAdapter`
+  translates every descendant of a moved container (`cascadingSetPose`,
+  `packages/core/src/canvas/sceneAdapter.ts`) and `Scene.setPose` on a container leaves its
+  children behind. Making a frame the default deletes that walk and the identity branches beside
+  it. It needs an answer for a scene whose `TPose` is not a rect (`RIGID_POSE_COMPOSITION` reads
+  `x`, `y`, `width`, `height`), and it rewrites every stored child pose as local: `apps/draw`'s
+  saved documents and SVG import, `packages/diagram`'s layouts, and the tests that build a
+  container with children, about ninety files.
 
 ### Container layout strategies
 
@@ -743,9 +746,9 @@ intercepting the press that drags the body.
   overflow past the container's last visible line and reports the region through
   `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
   container's bounds. Ruled 2026-10-11: a container's scroll offset is view state, part of the frame
-  the container gives its children, and the document never moves. An absolute-pose scene has no
-  container frame today, so this waits on "Container-pose cascade as a scene-primitive semantic"
-  making composition the scene's own. That leaves the offset itself, folded in by painting, picking,
+  the container gives its children, and the document never moves. A scene that composes poses
+  (`useScene({ composition })`) has that frame; an absolute-pose scene has none, and is the
+  default until "A scene composes poses only when asked to" lands. That leaves the offset itself, folded in by painting, picking,
   selection chrome, move, resize, and snapping with the rest of the frame, and a host that reads
   `contentExtent` and scrolls.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.

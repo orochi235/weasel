@@ -17,7 +17,7 @@
 
 import type { WeaselRenderer } from '@weasel-js/renderer';
 import { cachedCanvasRenderer, paintCanvas } from './canvasRenderer';
-import type { PoseComposition } from 'core/scene/composePose';
+import { composesFrames } from 'core/scene/composePose';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
@@ -167,9 +167,6 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
   extraCommands?: ReadonlyArray<DrawCommand>,
   alphaFor?: (id: string) => number,
-  /** How a child's stored pose folds into its parent's frame. Omit for the
-   *  absolute-pose model. */
-  poseComposition?: PoseComposition<TPose>,
   /** This view's own layer visibility and order. */
   layers?: SceneViewLayers,
   /** Animated vertex colors to paint, typically an animator's `colorOverrides`. */
@@ -181,9 +178,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   // The scene is in scope here, so this is where the override's alpha and the
   // derived paths are applied on the headless path; `SceneCanvas` does the same
   // for the live one. `Canvas` itself never sees a scene, so it can't and doesn't.
-  const derivedOnly = withDerivedPaths(scene, drawOne, undefined, poseComposition);
+  const derivedOnly = withDerivedPaths(scene, drawOne);
   const derived = colorOverrides ? withColorOverrides(colorOverrides, derivedOnly) : derivedOnly;
-  const derivedPathOf = sceneDerivedPathOf(scene, undefined, poseComposition);
+  const derivedPathOf = sceneDerivedPathOf(scene);
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
     pose: TPose,
@@ -197,9 +194,8 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     );
   };
 
-  const composes = poseComposition !== undefined && poseComposition.closure !== 'identity';
-  const hierarchy = composes
-    ? { ...sceneAsHierarchy(scene, layers), composePose: poseComposition!.compose }
+  const hierarchy = composesFrames(scene.composition)
+    ? { ...sceneAsHierarchy(scene, layers), composePose: scene.composition.compose }
     : sceneAsHierarchy(scene, layers);
 
   const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
@@ -236,7 +232,7 @@ export function sceneViewFrame<TData, TLayer extends string, TPose>(
     colorOverrides, cull,
   } = args;
   return buildSceneViewCommands(
-    scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder }, colorOverrides,
+    scene, view, drawOne, extraCommands, alphaFor, { layerVisibility, layerOrder }, colorOverrides,
     cull ? { width, height, paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
   );
 }

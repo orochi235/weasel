@@ -518,7 +518,7 @@ describe('buildSceneViewCommands — per-view layer visibility', () => {
     scene: ReturnType<typeof makeNestedScene>['scene'],
     layers: { layerVisibility?: Record<string, boolean>; layerOrder?: readonly string[] },
   ) => paintedColors(
-    buildSceneViewCommands(scene, identityView, nestedDrawOne, undefined, undefined, undefined, layers),
+    buildSceneViewCommands(scene, identityView, nestedDrawOne, undefined, undefined, layers),
   );
 
   it('skips a layer this view hides', () => {

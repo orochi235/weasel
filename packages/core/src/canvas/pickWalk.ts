@@ -26,7 +26,6 @@ import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
-import type { PoseComposition } from 'core/scene/composePose';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { clipCarrier } from './planeClips';
@@ -277,11 +276,6 @@ export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
    *  which is `layerVisibility` and `layerOrder` on top of the scene's own
    *  `visible` flag. Consulted after the scene's flag, never instead of it. */
   layerIsPainted?: (layer: string) => boolean;
-  /** How a child's stored pose folds into its parent's frame. Needed because
-   *  picking tests where a node is drawn, and under a composing strategy that
-   *  is not where its own pose says. Ignored when `getPose` already answers in
-   *  world coordinates. */
-  poseComposition?: PoseComposition<TPose>;
   /** The asking view's camera. With it, a layer carrying `parallax` is picked
    *  through its plane; without it, every layer is taken to move with the
    *  camera. */
@@ -316,8 +310,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 
   // A composing strategy makes a node's own pose local, so picking folds the
   // parent chain the same way the render walk does: one definition of both.
-  const composition = opts.poseComposition;
-  const paintedPoseOf = scenePaintedPoseOf(scene, undefined, composition);
+  const paintedPoseOf = scenePaintedPoseOf(scene);
   const poseOf = getPose
     ? (node: PickCandidate<TPose>) => getPose(node.id)
     : (node: PickCandidate<TPose>) => paintedPoseOf(node as never);
@@ -337,7 +330,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     };
   };
 
-  const sceneDerivedPath = getPose ? null : sceneDerivedPathOf(scene, undefined, composition);
+  const sceneDerivedPath = getPose ? null : sceneDerivedPathOf(scene);
   const derivedPathOf = (node: PickCandidate<TPose>): Path | null => {
     const n = node as unknown as Node<TData, TLayer, TPose>;
     if (!sceneDerivedPath) return n.dependsOn === undefined ? null : resolveDerivedPath(n, depOf, childrenOf);

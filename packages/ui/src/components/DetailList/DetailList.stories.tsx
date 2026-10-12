@@ -22,7 +22,7 @@ const rows = (
     <DetailRow label="kind"><Badge status="accent" size="xs">action</Badge></DetailRow>
     <DetailRow label="shortcut"><KeySequence keys={[{ label: '⌘' }, { label: '⇧' }, { label: 'G' }]} /></DetailRow>
     <DetailRow label="requires">
-      {['selection', 'scene', 'poseDescriptor', 'poseComposition'].map((d) => <Code key={d}>{d}</Code>)}
+      {['selection', 'scene', 'poseDescriptor'].map((d) => <Code key={d}>{d}</Code>)}
     </DetailRow>
     <DetailRow label="source"><Button variant="link">packages/core/src/actions/builtin/select/collapseDeferred.ts</Button></DetailRow>
     <DetailRow label="description">

@@ -36,11 +36,10 @@ function nudgeSelection(
   applyOps: ((ops: Op[], label: string) => void) | undefined,
   geometryProjection: GeometryProjection | undefined,
   d: PoseDescriptor<unknown>,
-  poseComposition: unknown,
 ): void {
   const descriptorOf = nodeDescriptors(scene, d);
   const ids = translateTargets(
-    scene, scenePoseFrame(scene, poseComposition), moveSources(scene, selection.get()),
+    scene, scenePoseFrame(scene), moveSources(scene, selection.get()),
   );
   if (ids.length === 0) return;
   // Pure translation by the nudge step. Pushed alongside each transform op so
@@ -91,7 +90,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'poseComposition'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -101,7 +100,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
         const applyOps = deps.applyOps;
         const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
-        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition);
+        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor));
       },
     },
     enabled: requiresSelection,

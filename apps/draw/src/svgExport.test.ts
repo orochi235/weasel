@@ -34,11 +34,12 @@ function fakeScene(nodes: Record<string, {
   children?: string[];
   dependsOn?: readonly string[];
   derivePose?: () => { x: number; y: number; width: number; height: number } | null;
-}>, roots: string[]) {
+}>, roots: string[], composition: unknown = IDENTITY_POSE_COMPOSITION) {
   const parentOf = new Map<string, string>();
   for (const [id, n] of Object.entries(nodes)) for (const c of n.children ?? []) parentOf.set(c, id);
   return {
     roots,
+    composition,
     get: (id: string) => {
       const n = nodes[id];
       if (!n) return undefined;
@@ -582,7 +583,7 @@ describe('pose composition', () => {
   // A container whose pose is a frame: turned a quarter about its center
   // (20, 10). The child's local box centers on (5, 5) in the container's
   // unrotated frame, which the turn carries to (25, -5).
-  function framedScene() {
+  function framedScene(composition: unknown = RIGID_POSE_COMPOSITION) {
     return fakeScene({
       g: {
         kind: 'container',
@@ -594,7 +595,7 @@ describe('pose composition', () => {
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: solid('#ff0000') },
       },
-    }, ['g']);
+    }, ['g'], composition);
   }
 
   function leafOf(svg: string) {
@@ -608,7 +609,7 @@ describe('pose composition', () => {
   it('lowers a leaf at its world pose under a composing strategy', async () => {
     const svg = await sceneToSvgString(framedScene(), {
       filename: 'f', paperSize: 'letter', paperWidth: 100, paperHeight: 100,
-      backgroundColor: '#ffffff', poseComposition: RIGID_POSE_COMPOSITION,
+      backgroundColor: '#ffffff',
     });
     const a = leafOf(svg);
     const b = boundsOfPath(a.path);
@@ -618,18 +619,16 @@ describe('pose composition', () => {
   });
 
   it('fits a selection to its world bounds under a composing strategy', async () => {
-    const parsed = parseSvg(await selectionToSvgString(framedScene(), ['a'], RIGID_POSE_COMPOSITION));
+    const parsed = parseSvg(await selectionToSvgString(framedScene(), ['a']));
     expect(parsed.viewBox!.x).toBeCloseTo(20);
     expect(parsed.viewBox!.y).toBeCloseTo(-10);
     expect(parsed.viewBox!.width).toBeCloseTo(10);
     expect(parsed.viewBox!.height).toBeCloseTo(10);
   });
 
-  it('bakes stored poses when no strategy is given, byte-identical to IDENTITY', async () => {
-    const scene = framedScene();
-    const bare = await selectionToSvgString(scene, ['g']);
+  it('bakes stored poses under the identity composition', async () => {
+    const bare = await selectionToSvgString(framedScene(IDENTITY_POSE_COMPOSITION), ['g']);
     expect(leafOf(bare).rotation).toBeUndefined();
-    expect(await selectionToSvgString(scene, ['g'], IDENTITY_POSE_COMPOSITION as never)).toBe(bare);
   });
 });
 

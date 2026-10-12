@@ -52,7 +52,7 @@ describe('animated vertex colors on default-painted nodes', () => {
     const { scene, id } = strokedScene();
     const registry = new ColorOverrideRegistry();
     registry.set(id, 'stroke', RED);
-    const cmds = buildSceneViewCommands(scene, VIEW, defaultDrawOne, undefined, undefined, undefined, undefined, registry);
+    const cmds = buildSceneViewCommands(scene, VIEW, defaultDrawOne, undefined, undefined, undefined, registry);
     expect(bodyOf(cmds).stroke?.vertexColors).toEqual(RED);
   });
 

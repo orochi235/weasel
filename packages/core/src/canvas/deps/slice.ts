@@ -19,7 +19,6 @@ import { pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-j
 import { poseLinearOf } from '@weasel-js/geom';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
-import type { PoseComposition } from 'core/scene/composePose';
 
 /** Publish how a slice (knife cut) is performed, so the `slice` action can
  *  run against the consumer's geometry. */
@@ -44,26 +43,24 @@ interface OpsApplier {
  * appears, and each piece is mapped back into the source's frame: it keeps the
  * source's rotation in its pose when the descriptor can write one
  * (`withRotation`), and has the rotation baked into its path otherwise. The
- * piece's pose is then stored in its parent's frame through `poseComposition`.
+ * piece's pose is then stored in its parent's frame through the scene's composition.
  * The pieces of a selected leaf take its place in the selection.
  */
 export function useSliceDepSource(
   scene: Scene<unknown, string, unknown>,
   selection: SelectionApi,
   adapter: OpsApplier,
-  poseComposition?: PoseComposition<unknown>,
   poseDescriptor?: PoseDescriptor<unknown>,
 ): void {
   const sceneRef = useLatest(scene);
   const selectionRef = useLatest(selection);
   const adapterRef = useLatest(adapter);
-  const compositionRef = useLatest(poseComposition);
   const descriptorRef = useLatest(poseDescriptor);
 
   useDepSource('slice', (): SliceDep => ({
     commit(cut) {
       const sc = sceneRef.current;
-      const frame = scenePoseFrame(sc, compositionRef.current);
+      const frame = scenePoseFrame(sc);
       const descriptor = descriptorRef.current ?? AUTO_POSE_DESCRIPTOR;
       const leaves: SliceLeaf<Node<unknown, string, unknown>>[] = [];
       const drawnAt = new Map<string, DrawnPose>();

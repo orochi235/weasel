@@ -4,7 +4,6 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { flipAction } from './flip';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
@@ -30,7 +29,6 @@ function run(
     {
       selection: { get: () => ids },
       scene,
-      poseComposition: RIGID_POSE_COMPOSITION,
       ...extraDeps,
     } as never,
     { axis: 'x', pivot: 'union' },

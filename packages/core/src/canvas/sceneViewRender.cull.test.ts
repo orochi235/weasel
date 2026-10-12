@@ -22,7 +22,7 @@ describe('buildSceneViewCommands — cull', () => {
   it('does not paint a node its paint bounds put outside the view, and keeps extras', () => {
     const { scene, inside, drawOne, painted } = world();
     const [root] = buildSceneViewCommands(
-      scene, VIEW, drawOne, [EXTRA], undefined, undefined, undefined, undefined,
+      scene, VIEW, drawOne, [EXTRA], undefined, undefined, undefined,
       { width: 400, height: 300, paintBounds: defaultPaintBounds },
     );
     expect(painted()).toEqual([inside]);

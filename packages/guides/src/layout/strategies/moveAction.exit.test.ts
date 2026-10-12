@@ -6,10 +6,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  composeRectPose,
   createScene,
-  decomposeRectPose,
   moveAction,
+  RECT_POSE_COMPOSITION,
   type InvocationCtx,
   type LayoutDep,
   type NodeId,
@@ -38,11 +37,9 @@ function drag(
   ids: NodeId[],
   dx: number,
   dy: number,
-  local = false,
 ): void {
   const layout: LayoutDep = { getLayout: (id) => scene.layoutOf(id as NodeId) as never };
   const deps: Record<string, unknown> = { selection: { get: () => ids }, scene, layout };
-  if (local) deps.poseComposition = { compose: composeRectPose, decompose: decomposeRectPose };
   const ctx = (moved: boolean): InvocationCtx => ({
     world: { x: 20 + (moved ? dx : 0), y: 20 + (moved ? dy : 0) },
     screen: { x: 0, y: 0 },
@@ -74,14 +71,17 @@ describe('moveAction: dropping a child outside its layout container', () => {
   });
 
   it('keeps the world position under a local pose model', () => {
-    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<object, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      composition: RECT_POSE_COMPOSITION,
+    });
     const C = scene.add({
       kind: 'container', layer: 'main', data: {}, pose: box(50, 50, 100, 100),
       layout: freeform<RectPose>(),
     });
     // Local to C: world (60, 60).
     const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, parent: C, pose: box(10, 10) });
-    drag(scene, [a], 300, 0, true);
+    drag(scene, [a], 300, 0);
     expect(scene.get(a)!.parent).toBeNull();
     expect(scene.get(a)!.pose).toEqual(box(360, 60));
   });

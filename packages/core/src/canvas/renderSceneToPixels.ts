@@ -167,7 +167,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
     });
   }
   commands.push(...buildSceneViewCommands(
-    args.scene, view, drawOne, undefined, args.alphaFor, undefined, undefined, args.colorOverrides,
+    args.scene, view, drawOne, undefined, args.alphaFor, undefined, args.colorOverrides,
   ));
   if (args.overlay) commands.push(...args.overlay);
   return { width, height, view, commands };

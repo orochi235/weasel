@@ -9,8 +9,9 @@ import {
   type LayoutStrategy,
   type ReflowTransition,
   type NodeId,
-  composeRectPose,
-  decomposeRectPose,
+  IDENTITY_POSE_COMPOSITION,
+  RECT_POSE_COMPOSITION,
+  type PoseComposition,
 } from '@weasel-js/core';
 import { tileGrid } from './tileGrid';
 import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
@@ -27,11 +28,10 @@ function squarePolygon(x: number, y: number, w: number, h: number): PolygonPath 
   };
 }
 
-/** Local-pose composition strategy (parent translation). Supplied as the
- *  `poseComposition` dep so the existing tests below keep exercising the
- *  local-pose model. Omitting it falls back to the kit's IDENTITY default
- *  (absolute-pose), exercised by the dedicated absolute-model test. */
-const LOCAL_PC = { compose: composeRectPose, decompose: decomposeRectPose };
+/** A scene here composes by parent translation unless a test asks for
+ *  `ABSOLUTE`, the kit's identity default. */
+const LOCAL_PC = RECT_POSE_COMPOSITION as PoseComposition<unknown>;
+const ABSOLUTE = IDENTITY_POSE_COMPOSITION;
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -43,6 +43,7 @@ interface AppliedBatch {
 interface StubScene {
   poses: Map<string, P>;
   overrides: PoseOverrides<unknown>;
+  composition: PoseComposition<unknown>;
   childMap: Map<string, NodeId[]>;
   roots: NodeId[];
   appliedBatches: AppliedBatch[];
@@ -58,6 +59,7 @@ function makeScene(
   parents: Record<string, string | null>,
   childMap: Record<string, string[]>,
   roots: string[],
+  composition: PoseComposition<unknown> = LOCAL_PC,
 ): StubScene {
   const p = new Map(Object.entries(poses));
   const c = new Map(Object.entries(childMap).map(([k, v]) => [k, v as NodeId[]]));
@@ -66,6 +68,7 @@ function makeScene(
     poses: p,
     childMap: c,
     overrides: createPoseOverrides<unknown>((id) => (p.has(id) ? { } : undefined)),
+    composition,
     roots: roots as NodeId[],
     appliedBatches,
     get(id) {
@@ -90,10 +93,6 @@ function makeCtx(
   drag?: InvocationCtx['drag'],
   getLayout?: GetLayout,
   applyOps?: (ops: unknown[], label?: string) => void,
-  // Pose-composition strategy. Defaults to LOCAL (parent translation) so the
-  // existing local-model tests keep passing. Pass `null` to OMIT the dep and
-  // exercise the kit's IDENTITY (absolute-pose) default.
-  poseComposition: typeof LOCAL_PC | null = LOCAL_PC,
 ): InvocationCtx {
   const grid = tileGrid<P>({ cols: 2, rows: 1 });
   const defaultGet: LayoutDep['getLayout'] = (id) => (id === 'C' ? (grid as never) : null);
@@ -108,7 +107,6 @@ function makeCtx(
     scene,
     layout,
   };
-  if (poseComposition) deps.poseComposition = poseComposition;
   if (applyOps) deps.applyOps = applyOps;
   return {
     world: { x: 0, y: 0 },
@@ -181,7 +179,7 @@ describe('moveAction layout reflow', () => {
 
   it('finds a container whose pose is non-rect (PolygonPath) via its AABB', () => {
     // Container C carries a PolygonPath pose (no direct x/y/width/height).
-    // Absolute-pose model (no poseComposition) so composeWorldPose leaves the
+    // Absolute-pose model so composeWorldPose leaves the
     // non-rect pose intact. The layout hit-test must derive C's AABB from the
     // pose descriptor; casting the polygon to `{x,y,width,height}` yields NaN
     // and the container is never found — no reflow fires.
@@ -194,16 +192,16 @@ describe('moveAction layout reflow', () => {
       { C: null, a: 'C', b: 'C' },
       { C: ['a', 'b'] },
       ['C'],
+      ABSOLUTE,
     );
     const invoker = moveAction.invoker;
     if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-    // `null` → omit poseComposition → IDENTITY (absolute) default.
-    const handle = invoker.start(makeCtx(scene, ['a'], undefined, undefined, undefined, null));
+    const handle = invoker.start(makeCtx(scene, ['a']));
     handle.onMove!(makeCtx(scene, ['a'], {
       start: { x: 25, y: 50 },
       current: { x: 75, y: 50 },
       delta: { x: 50, y: 0 },
-    }, undefined, undefined, null) as InvocationCtx);
+    }) as InvocationCtx);
 
     const ids = [...(handle.previewIds!() as Iterable<string>)];
     expect(ids).toContain('b'); // sibling reflowed → container WAS found
@@ -460,14 +458,14 @@ describe('moveAction layout reflow', () => {
     expect(drop!.args?.to).toMatchObject({ x: 0, y: 0 }); // local to D; world = {150,0}
   });
 
-  it('ABSOLUTE model (no poseComposition): commits the WORLD cell origin, not rebased to local', () => {
+  it('ABSOLUTE model: commits the WORLD cell origin, not rebased to local', () => {
     // Absolute-pose scene (mirrors the kit's base scene + layoutDemo): every
     // node stores WORLD coords; containers are grouping-only with no transform.
     // Source container C at world {40,40} holds child `a` stored at WORLD
     // {40,40}; destination D at world {200,0} holds d1 at WORLD {250,0}.
     // Dragging a into D's cell 0 (world {200,0}) must commit a's pose AS the
     // world cell origin {200,0} — NOT rebased to local {0,0} under D — because
-    // with no poseComposition dep the kit defaults to IDENTITY composition.
+    // the scene composes nothing.
     const scene = makeScene(
       {
         C: { x: 40, y: 40, width: 100, height: 100 },
@@ -479,18 +477,18 @@ describe('moveAction layout reflow', () => {
       { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
       { C: ['a', 'b'], D: ['d1'] },
       ['C', 'D'],
+      ABSOLUTE,
     );
     const grid = tileGrid<P>({ cols: 2, rows: 1 });
     const layouts = { C: grid, D: grid };
     const invoker = moveAction.invoker;
     if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-    // `null` → omit poseComposition → IDENTITY (absolute) default.
-    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts, undefined, null));
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts));
     // a world center {40+25, 40+50} = {65,90}; delta {160,-40} → world center
     // {225,50}, inside D's cell 0 (world {200,0,50,100}).
     const drag = { start: { x: 65, y: 90 }, current: { x: 225, y: 50 }, delta: { x: 160, y: -40 } };
-    handle.onMove!(makeCtx(scene, ['a'], drag, layouts, undefined, null) as InvocationCtx);
-    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts, undefined, null) as InvocationCtx, 'commit');
+    handle.onMove!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx, 'commit');
 
     const ops = scene.appliedBatches[0].ops;
     const reparent = ops.find((o) => o.name === 'reparent' && o.args?.id === 'a');

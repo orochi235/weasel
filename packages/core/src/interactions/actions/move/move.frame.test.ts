@@ -33,14 +33,13 @@ function ctx(scene: S, ids: string[], drag?: typeof DRAG): InvocationCtx {
     deps: {
       selection: { get: () => ids } as unknown as SelectionApi,
       scene,
-      poseComposition: RIGID_POSE_COMPOSITION,
     },
     drag,
   } as unknown as InvocationCtx;
 }
 
 const worldOf = (scene: S, id: string): RectPose =>
-  scenePoseFrame(scene as never, RIGID_POSE_COMPOSITION).world(id as NodeId) as RectPose;
+  scenePoseFrame(scene as never).world(id as NodeId) as RectPose;
 
 /** Drag `ids` by `DRAG`, checking `expected` world poses mid-drag and after. */
 function dragAndCheck(scene: S, ids: string[], expected: Record<string, RectPose>): void {
@@ -52,7 +51,10 @@ function dragAndCheck(scene: S, ids: string[], expected: Record<string, RectPose
 }
 
 function sceneWith(): S {
-  return createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+  return createScene<object, 'main', RectPose>({
+    systemLayers: [{ id: 'main' }],
+    composition: RIGID_POSE_COMPOSITION,
+  });
 }
 
 describe('moveAction under a container frame', () => {

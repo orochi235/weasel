@@ -66,6 +66,10 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
   const scene = useScene<WorldData, WorldLayer, RectPose>({
     systemLayers: [{ id: 'tiles' }, { id: 'entities' }, { id: 'player' }],
+    // The player's eleven bones are a parented chain, so a bone's pose is
+    // local to the bone it hangs off. Everything else in this scene is a
+    // root, where local and world are the same value.
+    composition: RIGID_POSE_COMPOSITION,
     initial: useMemo(
       () => [
         ...tileNodes(WORLD),
@@ -290,10 +294,6 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        // The player's eleven bones are a parented chain, so a bone's pose is
-        // local to the bone it hangs off. Everything else in this scene is a
-        // root, where local and world are the same value.
-        poseComposition={RIGID_POSE_COMPOSITION}
         selectable={false}
         animator={animator}
         ref={canvas}

@@ -18,6 +18,7 @@
  * Do NOT weaken the assertions to make it pass; do NOT implement the fix here.
  */
 
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
@@ -103,6 +104,7 @@ function nodeFromPath(id: string, path: Path): TestNode {
 interface StubScene {
   poses: Map<string, AABBPose>;
   overrides: PoseOverrides<unknown>;
+  composition: typeof IDENTITY_POSE_COMPOSITION;
   datas: Map<string, DrawData>;
   get(id: NodeId): { pose: AABBPose; data: DrawData; kind: 'leaf'; layer: string; parent: null } | undefined;
   setPose(id: NodeId, pose: AABBPose): void;
@@ -119,6 +121,7 @@ function makeStubScene(node: TestNode): StubScene {
     poses,
     datas,
     overrides: createPoseOverrides<unknown>((id) => (poses.has(id as string) ? { } : undefined)),
+    composition: IDENTITY_POSE_COMPOSITION,
     roots: [node.id as NodeId],
     get(id: NodeId) {
       if (!poses.has(id as string)) return undefined;

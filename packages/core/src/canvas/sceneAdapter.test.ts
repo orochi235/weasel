@@ -642,7 +642,7 @@ describe('sceneToAdapter — non-rect poses', () => {
     const scene = createScene<object, 'bg', CirclePose>({ systemLayers: [{ id: 'bg' }] });
     const box = scene.add({ kind: 'container', layer: 'bg', pose: circle(50, 50, 50), data: {} });
     const kid = scene.add({ kind: 'leaf', layer: 'bg', parent: box, pose: circle(40, 40, 5), data: {} });
-    const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR, cascadeContainerPose: true });
+    const adapter = sceneToAdapter(scene, { poseDescriptor: CIRCLE_POSE_DESCRIPTOR });
     adapter.setPose(box, circle(60, 50, 50));
     expect(scene.get(kid)!.pose).toEqual(circle(50, 40, 5));
   });

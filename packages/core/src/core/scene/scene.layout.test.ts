@@ -333,12 +333,17 @@ describe('scene container layout', () => {
   it('lays out in world and writes local poses under a composing frame', () => {
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
-      layoutFrame: { composition: TRANSLATE },
+      composition: TRANSLATE,
       initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null, layout: stack() }],
     });
     add(scene as ReturnType<typeof makeScene>, 'a');
     add(scene as ReturnType<typeof makeScene>, 'b');
     expect(scene.get(asNodeId('b'))!.pose).toEqual({ x: 0, y: 10, width: 50, height: 10 });
+    expect(scene.composition).toBe(TRANSLATE);
+  });
+
+  it('answers the identity composition when none is given', () => {
+    expect(makeScene(stack()).composition.closure).toBe('identity');
   });
 
   it('round-trips a registered layout through toJSON', () => {

@@ -1,3 +1,4 @@
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
@@ -9,13 +10,12 @@ import { asNodeId } from 'core/scene/types';
 import type { NodeAtPointDep } from '../depSchema';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
-import { composeRectPose, decomposeRectPose } from 'core/scene/composePose';
+import { RECT_POSE_COMPOSITION } from 'core/scene/composePose';
 
-/** Local-pose composition strategy. The reparentOnDrop tests below assert
- *  LOCAL rebasing (world pose → local under the new parent), so they supply
- *  this as the `poseComposition` dep. Without it the kit defaults to IDENTITY
- *  (absolute-pose) and the committed pose would stay in world coords. */
-const LOCAL_PC = { compose: composeRectPose, decompose: decomposeRectPose };
+/** The reparentOnDrop tests below assert LOCAL rebasing (world pose → local
+ *  under the new parent), so their scenes compose. Under the IDENTITY default
+ *  the committed pose would stay in world coords. */
+const LOCAL_PC = RECT_POSE_COMPOSITION;
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -48,6 +48,7 @@ function makeCtx(
 interface StubScene {
   poses: Map<string, unknown>;
   overrides: PoseOverrides<unknown>;
+  composition: typeof IDENTITY_POSE_COMPOSITION;
   batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }>;
   children: Map<string, NodeId[]>;
   get(id: NodeId): { pose: unknown } | undefined;
@@ -74,6 +75,7 @@ function makeStubScene(
     batchLog,
     children,
     overrides: createPoseOverrides<unknown>((id) => (poses.has(id) ? { } : undefined)),
+    composition: IDENTITY_POSE_COMPOSITION,
     childrenOf(id: NodeId): readonly NodeId[] {
       return children.get(id) ?? [];
     },
@@ -468,6 +470,7 @@ describe('moveAction — reparentOnDrop', () => {
   function buildScene(): Scene<Data, Layer, Pose> {
     return createScene<Data, Layer, Pose>({
       systemLayers: [{ id: 'main' as Layer, visible: true, locked: false }],
+      composition: LOCAL_PC,
     });
   }
 
@@ -489,7 +492,6 @@ describe('moveAction — reparentOnDrop', () => {
       deps: {
         selection,
         scene: scene,
-        poseComposition: LOCAL_PC,
         ...(nodeAtPoint ? { nodeAtPoint } : {}),
       },
     };
@@ -609,6 +611,7 @@ describe('moveAction — reparentOnDrop', () => {
         { id: 'a', visible: true, locked: false },
         { id: 'b', visible: true, locked: false },
       ],
+      composition: LOCAL_PC,
     });
     const movingId = scene.add({ kind: 'leaf', layer: 'a', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
     const targetId = scene.add({ kind: 'container', layer: 'b', pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'group' } });
@@ -646,7 +649,6 @@ describe('moveAction — reparentOnDrop', () => {
     const sources: Record<string, () => unknown> = {
       selection: () => selection,
       scene: () => scene,
-      poseComposition: () => LOCAL_PC,
       nodeAtPoint: () => nodeAtPoint,
     };
     const registry = {

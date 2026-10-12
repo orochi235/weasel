@@ -20,7 +20,7 @@ import {
 } from 'react';
 import { CommandBar, type PaperSizeKey } from './CommandBar';
 import { DEFAULT_FILENAME, PAPER_PRESETS } from './docPersistence';
-import { DRAW_POSE_COMPOSITION, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { serializeReplacer } from './persistence';
 import { clipboardSnapshotRootIds, sceneToSvgString, selectionToClipboardSvgString } from './svgExport';
 import { leafOfObj } from './svgImport';
@@ -67,7 +67,7 @@ export function Toolbar({
     // The SVG flavors carry `json` embedded in <metadata> too: Chromium's
     // DOM paste event exposes ONLY text/plain, so this is what preserves
     // full fidelity (labels, typed data) on a draw→draw paste.
-    const svg = selectionToClipboardSvgString(scene, roots, json, DRAW_POSE_COMPOSITION);
+    const svg = selectionToClipboardSvgString(scene, roots, json);
     return {
       [WEASEL_CLIPBOARD_MIME]: json,
       'image/svg+xml': svg,
@@ -110,7 +110,6 @@ export function Toolbar({
             paperHeight: paper.height,
             backgroundColor,
             onWarn: (w) => console.warn('[svg export]', w),
-            poseComposition: DRAW_POSE_COMPOSITION,
           }).then((svg) => downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`));
         }}
         onOpenSvg={() => {

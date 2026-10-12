@@ -4,6 +4,7 @@ import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glR
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node, Scene } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 
@@ -18,6 +19,7 @@ function fakeScene(nodes: Node<unknown, 'default', RectPose>[]): Scene<unknown, 
     roots: nodes.map((n) => n.id),
     renderOrder: () => nodes.map((n) => n.id),
     renderOrderNodes: () => nodes,
+    composition: IDENTITY_POSE_COMPOSITION,
     get: (id: string) => byId.get(id as never),
     overrides: createPoseOverrides<RectPose>((id) => byId.get(id as never)),
   } as unknown as Scene<unknown, 'default', RectPose>;
