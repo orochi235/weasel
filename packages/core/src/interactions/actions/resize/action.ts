@@ -17,15 +17,15 @@
  *
  *  - Calls `expandIds([id])` at start. When the result expands beyond the
  *    starting id, takes the group path (union-AABB origin, per-leaf remap).
- *  - Runs `behaviors[]` after the raw anchor-math bounds are computed.
- *    Behaviors return `{ pose? }` and rewrite the proposed bounds before
+ *  - Runs `constraints[]` after the raw anchor-math bounds are computed.
+ *    Constraints return `{ pose? }` and rewrite the proposed bounds before
  *    they're projected back into pose space.
  *  - Runs `pointSnap[]` after the bounds→pose projection. The first non-null
  *    `PointSnapResult` wins; this invoker back-solves a pose so the chosen
  *    frame's world point lands on the snap target.
  *
- * When the dep is absent the invoker falls back to identity defaults
- * (no behaviors, no snap, `ids => ids` expansion).
+ * When the dep is absent the invoker falls back to defaults
+ * (the kit's default constraints, no snap, `ids => ids` expansion).
  *
  * ## Pose geometry — via the `poseDescriptor` dep
  *
@@ -37,160 +37,14 @@
  * @see src/interactions/actions/resize/geometry.ts — `PoseDescriptor`.
  */
 
-import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { Scene, NodeId, PoseHold } from 'core/scene/types';
-import type {
-  GestureContext,
-  PointSnapBehavior,
-  ResizeAnchor,
-  BoundsConstraint,
-  RotatedPose,
-} from '../../gestures/types';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { ResizePolicy } from '../depSchema';
-import { DEFAULT_RESIZE_BEHAVIORS } from './behaviors';
-import { remapRotatedLeaf, translatePoseViaDescriptor, visualBoundsViaDescriptor, type PoseDescriptor } from './geometry';
-import { poseRotationOf } from '@weasel-js/geom';
-import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
-import { fixedCornerOf } from './cornerHandles';
-import { snapPose } from './pointSnap';
-import { boundsForRules } from './ruleBounds';
-import { rotatePoint } from '../rotate/geometry';
-import type { Op } from 'core/ops/types';
-import { type Mat3, boxToBox } from '@weasel-js/geom';
-import { createTransformOp } from 'core/ops/transform';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
-import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
-import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { closeGesture, commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
-import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
-import { shapeSources } from '../selectionSubtree';
-
-// ---------------------------------------------------------------------------
-// Defaults applied when `resizePolicy` dep is absent.
-// ---------------------------------------------------------------------------
-
-const IDENTITY_EXPAND = (ids: string[]) => ids;
-const EMPTY_POINT_SNAP: PointSnapBehavior<Bounds>[] = [];
-
-function resolveDeps(ctx: InvocationCtx): {
-  behaviors: BoundsConstraint<Bounds>[];
-  pointSnap: PointSnapBehavior<Bounds>[];
-  expandIds: (ids: string[]) => string[];
-  geometry: PoseDescriptor<unknown>;
-  policy: ResizePolicy<unknown> | undefined;
-} {
-  const geometry = poseDescriptorOf(ctx.deps.poseDescriptor);
-  const dep = ctx.deps.resizePolicy;
-  if (!dep) {
-    return {
-      // Standard kit behaviors (shift = aspect lock) apply even with no
-      // policy wired; consumers opt out via an explicit `behaviors: []`.
-      behaviors: DEFAULT_RESIZE_BEHAVIORS as BoundsConstraint<Bounds>[],
-      pointSnap: EMPTY_POINT_SNAP,
-      expandIds: IDENTITY_EXPAND,
-      geometry,
-      policy: undefined,
-    };
-  }
-  return {
-    behaviors: dep.constraints as unknown as BoundsConstraint<Bounds>[],
-    pointSnap: dep.pointSnap as unknown as PointSnapBehavior<Bounds>[],
-    expandIds: dep.expandIds,
-    geometry,
-    policy: dep,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Anchor math (rotated and unrotated).
-// ---------------------------------------------------------------------------
-
-function computeProposedBounds(
-  ob: Bounds,
-  anchor: ResizeAnchor,
-  dx: number,
-  dy: number,
-  rotation: number,
-): Bounds {
-  if (rotation !== 0) {
-    const cs = Math.cos(-rotation);
-    const sn = Math.sin(-rotation);
-    const dxLocal = cs * dx - sn * dy;
-    const dyLocal = sn * dx + cs * dy;
-    dx = dxLocal;
-    dy = dyLocal;
-  }
-  let nx = ob.x;
-  let ny = ob.y;
-  let nw = ob.width;
-  let nh = ob.height;
-  if (anchor.x === 'min') {
-    nw = ob.width + dx;
-  } else if (anchor.x === 'max') {
-    nx = ob.x + dx;
-    nw = ob.width - dx;
-  }
-  if (anchor.y === 'min') {
-    nh = ob.height + dy;
-  } else if (anchor.y === 'max') {
-    ny = ob.y + dy;
-    nh = ob.height - dy;
-  }
-  return { x: nx, y: ny, width: nw, height: nh };
-}
-
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
-
-interface ResizeScratch {
-  /** Ids the gesture writes to. For group expansion this is the leaf set;
-   *  for the single-id path it's the original selection. */
-  writeIds: NodeId[];
-  scene: Scene<unknown, string, unknown>;
-  /** World reads and local writes over the scene's composition strategy. */
-  frame: PoseFrame<unknown>;
-  /** Start poses keyed by write id, as stored — the `from` of each op. */
-  startPoses: Map<NodeId, unknown>;
-  /** Start poses in world — the frame the anchor math and the drag share. */
-  startWorlds: Map<NodeId, unknown>;
-  /** Shared origin bounds (union for group/multi-select, own bounds for
-   *  single). Used as the `src` rect for `geometry.remapBounds`. */
-  originBounds: Bounds;
-  anchor: ResizeAnchor;
-  startWorld: { x: number; y: number };
-  /** Rotation captured at gesture start (from `geometry.getRotation?`). */
-  originRotation: number;
-  /** World-space position of the diagonally opposite corner at start. Used
-   *  for the rotated-resize fixed-corner pin correction. */
-  fixedWorld: { x: number; y: number };
-  /** In-flight preview poses buffered during drag. */
-  previews: Map<NodeId, unknown>;
-  hold: PoseHold<unknown>;
-  geometryOf: (id: NodeId) => PoseDescriptor<unknown>;
-  behaviors: BoundsConstraint<Bounds>[];
-  pointSnap: PointSnapBehavior<Bounds>[];
-  /** Gesture context handed to behaviors. Reused across move/end. */
-  gestureCtx: GestureContext<unknown>;
-  /** Optional consumer commit hook captured at gesture start. When present,
-   *  the final pose commit routes through it (consumer history) instead of
-   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
-  applyOps?: (ops: Op[], label: string) => void;
-  /** Optional eager-sync seam captured at gesture start. When present, the
-   *  commit emits a `setData` op per leaf mapping its data-held geometry by
-   *  the box→box affine the pose underwent. Undefined → pose-only commit. */
-  geometryProjection?: GeometryProjection;
-  /** Label, history and callbacks from the `resizePolicy` dep. */
-  lifecycle: GestureLifecycle;
-}
-
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
+import type { NodeId } from 'core/scene/types';
+import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
+import { inPlane, selectionLayer } from '../planeInput';
+import { commitResize } from './commit';
+import { nextFrame } from './frame';
+import { beginResize, type ResizeFrame } from './session';
 
 /**
  * @experimental
@@ -211,337 +65,30 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
-      const selection = ctx.deps.selection;
-      const scene = ctx.deps.scene;
-      const applyOps = ctx.deps.applyOps;
-      const geometryProjection = ctx.deps.geometryProjection;
-
-      if (!selection || !scene) return {};
-
-      const ids = selection.get() as NodeId[];
-      if (ids.length === 0) return {};
-
-      const affordance = ctx.drag?.affordance;
-      const anchor = affordance?.anchor;
-      if (!anchor) return {};
-
-      const { behaviors, pointSnap, expandIds, geometry, policy } = resolveDeps(ctx);
-      const geometryOf = nodeDescriptors(scene, geometry);
-
-      // Group expansion. When the starting selection is a single id but
-      // `expandIds` returns a different set, we're in the group path:
-      // every leaf is written, and origin bounds is the union AABB.
-      // When `expandIds` returns the same list (identity default or no-op),
-      // we write the selected ids directly.
-      // A group whose pose derives from its children is resized by resizing
-      // them, whatever the policy expanded to.
-      const expanded = shapeSources(scene, expandIds(ids as unknown as string[]));
-      if (expanded.length === 0) return {};
-
-      const isGroupPath =
-        ids.length === 1 && (expanded.length !== 1 || expanded[0] !== (ids[0] as string));
-      const writeIds = (isGroupPath || ids.length > 1 ? expanded : (ids as unknown as string[])) as NodeId[];
-
-      // Capture start poses + per-leaf bounds. The drag delta is world, so
-      // the anchor math runs on world poses — carried into the plane the edit
-      // is measured in — and each result is carried back to its node's plane
-      // and stored in the node's own parent frame.
-      const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
-      const view = ctx.deps.view;
-      /** A world result for `id`, as stored. */
-      const stored = (id: NodeId, world: unknown): unknown => {
-        const layer = scene.get(id)?.layer;
-        return frame.local(id, carryPose(geometryOf(id), world, layer === undefined ? null : planeOf(view, layer)));
-      };
-      const startPoses = new Map<NodeId, unknown>();
-      const startWorlds = new Map<NodeId, unknown>();
-      const leafBounds: Bounds[] = [];
-      const drawnBounds: Bounds[] = [];
-      for (const id of writeIds) {
-        const node = scene.get(id);
-        if (!node) continue;
-        startPoses.set(id, node.pose);
-        const g = geometryOf(id);
-        const world = carryPose(g, frame.world(id), invertPlane(planeOf(view, node.layer)));
-        startWorlds.set(id, world);
-        leafBounds.push(g.getBounds(world));
-        drawnBounds.push(visualBoundsViaDescriptor(world, g));
-      }
-      if (startPoses.size === 0) return {};
-
-      // `leafBounds` is non-empty here (startPoses.size === 0 guarded above),
-      // and the union branches only run for length >= 2 → `!` is safe. A
-      // multi-selection's handles sit on the union of what is drawn, so that
-      // is the box its drag resizes.
-      const originBounds = leafBounds.length === 1
-        ? leafBounds[0]
-        : isGroupPath ? unionBounds(leafBounds)! : unionAABB(drawnBounds)!;
-
-      // Rotation captured only for the single-write-id path; group-resize
-      // takes the AABB-frame (unrotated) path even if leaves have rotation.
-      const originPose = !isGroupPath && writeIds.length === 1
-        ? startWorlds.get(writeIds[0])
-        : (originBounds as unknown);
-      // A lone target is read as its own shape; a shared box is a plain rect.
-      const originGeometry = !isGroupPath && writeIds.length === 1 ? geometryOf(writeIds[0]) : geometry;
-      const originRotation = !isGroupPath
-        ? (originGeometry.getRotation?.(originPose) ?? 0)
-        : 0;
-
-      const fixedLocal = fixedCornerOf(originBounds, anchor);
-      const fixedWorld = originRotation === 0
-        ? fixedLocal
-        : rotatePoint(
-            fixedLocal.x, fixedLocal.y,
-            originBounds.x + originBounds.width / 2,
-            originBounds.y + originBounds.height / 2,
-            originRotation,
-          );
-
-      const startWorld = { x: ctx.drag?.start.x ?? 0, y: ctx.drag?.start.y ?? 0 };
-
-      // Minimal GestureContext for behaviors. `draggedIds` matches the
-      // legacy hook: the starting id (not the expanded leaf set).
-      const readView = gestureViewReader(ctx.deps);
-      const readPlane = gesturePlaneReader(ctx.deps);
-      const ruleOrigin = boundsForRules(originGeometry, originPose);
-      const gestureCtx: GestureContext<unknown> = {
-        draggedIds: ids as unknown as string[],
-        origin: new Map<string, unknown>([[ids[0] as string, ruleOrigin]]),
-        current: new Map<string, unknown>([[ids[0] as string, ruleOrigin]]),
-        snap: null,
-        modifiers: { ...ctx.modifiers },
-        pointer: { worldX: startWorld.x, worldY: startWorld.y, clientX: 0, clientY: 0 },
-        view: readView(),
-        plane: readPlane(),
-        // `adapter` is unused by the kit's behaviors; cast to satisfy the type.
-        adapter: undefined as unknown as GestureContext<unknown>['adapter'],
-        scratch: {},
-      };
-
-      const ctxAsRect = gestureCtx as unknown as GestureContext<Bounds>;
-      for (const b of behaviors) b.onStart?.(ctxAsRect);
-
-      const scratch: ResizeScratch = {
-        writeIds,
-        scene,
-        frame,
-        startPoses,
-        startWorlds,
-        originBounds,
-        anchor,
-        startWorld,
-        originRotation,
-        fixedWorld,
-        previews: new Map<NodeId, unknown>(),
-        hold: scene.overrides.hold(),
-        geometryOf,
-        behaviors,
-        pointSnap,
-        gestureCtx,
-        applyOps,
-        geometryProjection,
-        lifecycle: readGestureLifecycle(policy, 'Resize', behaviors),
-      };
-      const { lifecycle } = scratch;
-      lifecycle.start(writeIds as string[]);
-
-      // Returns whether anything reached the document.
-      const commitResize = (): boolean => {
-        const target = {
-          scene,
-          applyOps: scratch.applyOps,
-          adapter: defaultCommitAdapter(scene, selection.adapterMethods),
-        };
-        const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx as unknown as GestureContext<Bounds>);
-        if (r === null) return false;
-        if (r !== undefined) {
-          return commitGestureOps(target, lifecycle, r);
-        }
-
-        if (scratch.previews.size === 0) return false;
-
-        // One transform op per write id (from = pre-drag start pose, to =
-        // final preview pose), committed as a single batch → one undo entry.
-        const ops: Op[] = [];
-        for (const id of scratch.writeIds) {
-          const next = scratch.previews.get(id);
-          if (next === undefined) continue;
-          const from = scratch.startPoses.get(id);
-          if (from === undefined) continue;
-          let committed = next;
-          // Eager-sync: map data-held geometry by the box→box affine the
-          // pose underwent (start-pose bounds → final-pose bounds). Opt-in
-          // via the geometryProjection seam; a no-op when the dep is absent.
-          if (scratch.geometryProjection) {
-            const node = scratch.scene.get(id);
-            if (node) {
-              const sb = scratch.geometryOf(id).getBounds(from);
-              const db = scratch.geometryOf(id).getBounds(next);
-              const m: Mat3 = boxToBox(
-                sb.x, sb.y, sb.width, sb.height,
-                db.x, db.y, db.width, db.height,
-              );
-              const dataOp = geometryDataOp(
-                scratch.geometryProjection,
-                { id: id as string, data: node.data, pose: from },
-                m,
-                lifecycle.label,
-              );
-              if (dataOp) {
-                ops.push(dataOp);
-                // The data absorbed the affine — including any mirror from a
-                // drag past the opposite edge — so the pose must commit as a
-                // normalized AABB. Leaving signed extents on the pose makes
-                // the node unhittable (hit-testing assumes normalized boxes).
-                // Without the seam the signed pose is kept: a bare-AABB pose
-                // is the only carrier of the flip there.
-                if (db.width < 0 || db.height < 0) {
-                  const nb = {
-                    ...db,
-                    x: db.width < 0 ? db.x + db.width : db.x,
-                    y: db.height < 0 ? db.y + db.height : db.y,
-                    width: Math.abs(db.width),
-                    height: Math.abs(db.height),
-                  };
-                  committed = scratch.geometryOf(id).remapBounds(next, db, nb) as typeof next;
-                }
-              }
-            }
-          }
-          ops.push(createTransformOp<unknown>({
-            id: id as string,
-            from,
-            to: committed,
-            label: lifecycle.label,
-          }));
-        }
-        if (ops.length === 0) return false;
-        return commitGestureOps(target, lifecycle, ops);
-      };
-
+      const begun = beginResize(ctx);
+      if (!begun) return {};
+      const { session, readers } = begun;
+      const hold = session.scene.overrides.hold();
+      let frame: ResizeFrame = { previews: new Map() };
+      session.lifecycle.start(session.writeIds as readonly string[]);
       return {
         kind: 'resize',
-        onMove(mctx: InvocationCtx): void {
-          if (!mctx.drag) return;
-          const dx = mctx.drag.current.x - scratch.startWorld.x;
-          const dy = mctx.drag.current.y - scratch.startWorld.y;
-
-          // Refresh modifiers + pointer on the gesture ctx for behaviors.
-          scratch.gestureCtx.modifiers = { ...mctx.modifiers };
-          scratch.gestureCtx.pointer = {
-            worldX: mctx.drag.current.x,
-            worldY: mctx.drag.current.y,
-            clientX: 0,
-            clientY: 0,
-          };
-          scratch.gestureCtx.view = readView();
-          scratch.gestureCtx.plane = readPlane();
-
-          let proposedBounds = computeProposedBounds(
-            scratch.originBounds,
-            scratch.anchor,
-            dx,
-            dy,
-            scratch.originRotation,
-          );
-
-          // Behaviors run in bounds-space.
-          const behaviorCtx = scratch.gestureCtx as unknown as GestureContext<Bounds>;
-          for (const b of scratch.behaviors) {
-            const r = b.onMove?.(behaviorCtx, {
-              pose: proposedBounds,
-              anchor: scratch.anchor,
-            });
-            if (!r) continue;
-            if (r.pose !== undefined) {
-              proposedBounds = {
-                x: r.pose.x, y: r.pose.y, width: r.pose.width, height: r.pose.height,
-              };
-            }
-          }
-
-          // Project bounds → pose. For the group path, each leaf is remapped
-          // from its own startPose; for single, from the start pose directly.
-          //
-          // A rotated leaf resized with others needs its own frame: `src`/`dst`
-          // are world-frame there, unlike the single path where the drag delta
-          // was already projected into the leaf's frame, so the naive affine
-          // scales the wrong pair of extents. See `remapRotatedLeaf`.
-          const sharedBox = isGroupPath || scratch.writeIds.length > 1;
-          const computePose = (id: NodeId): unknown => {
-            const sp = scratch.startWorlds.get(id);
-            if (sp === undefined) return undefined;
-            if (sharedBox && poseRotationOf(sp) !== null) {
-              return remapRotatedLeaf(
-                sp as RotatedPose, scratch.originBounds, proposedBounds,
-              );
-            }
-            return scratch.geometryOf(id).remapBounds(sp, scratch.originBounds, proposedBounds);
-          };
-
-          // Single-id path: apply rotation correction + point-snap, then
-          // store. Group path: rotation correction + point-snap don't apply
-          // (group resize is AABB-frame).
-          scratch.previews.clear();
-
-          if (!isGroupPath && scratch.writeIds.length === 1) {
-            const id = scratch.writeIds[0];
-            const g = scratch.geometryOf(id);
-            let proposedPose = computePose(id);
-            if (proposedPose === undefined) { scratch.hold.set(scratch.previews); return; }
-
-            if (scratch.originRotation !== 0) {
-              const newCenterX = proposedBounds.x + proposedBounds.width / 2;
-              const newCenterY = proposedBounds.y + proposedBounds.height / 2;
-              const newFixedLocal = fixedCornerOf(proposedBounds, scratch.anchor);
-              const newFixedWorld = rotatePoint(
-                newFixedLocal.x, newFixedLocal.y,
-                newCenterX, newCenterY,
-                scratch.originRotation,
-              );
-              const correctionX = scratch.fixedWorld.x - newFixedWorld.x;
-              const correctionY = scratch.fixedWorld.y - newFixedWorld.y;
-              proposedPose = translatePoseViaDescriptor(proposedPose, correctionX, correctionY, g);
-            }
-
-            proposedPose = snapPose(
-              scratch.pointSnap,
-              g,
-              proposedPose,
-              scratch.originRotation,
-              scratch.anchor,
-              scratch.gestureCtx.modifiers,
-              scratch.gestureCtx.plane ?? null,
-            );
-
-            scratch.previews.set(id, stored(id, proposedPose));
-            scratch.gestureCtx.current = new Map<string, unknown>([
-              [id as string, boundsForRules(g, proposedPose)],
-            ]);
-          } else {
-            // Group / multi path: remap each leaf and store.
-            for (const id of scratch.writeIds) {
-              const next = computePose(id);
-              if (next === undefined) continue;
-              scratch.previews.set(id, stored(id, next));
-            }
-          }
-
-          scratch.hold.set(scratch.previews);
+        onMove(moveCtx: InvocationCtx): void {
+          if (!moveCtx.drag) return;
+          frame = nextFrame(session, readers, moveCtx);
+          hold.set(frame.previews);
         },
-
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
           try {
-            if (reason === 'commit') committed = commitResize();
-            else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx as unknown as GestureContext<Bounds>);
+            if (reason === 'commit') committed = commitResize(session, frame);
+            else runBehaviorCancel(session.constraints, session.gestureCtx);
           } finally {
-            closeGesture({ hold: scratch.hold, previews: scratch.previews, behaviors: scratch.behaviors, ctx: ctxAsRect, lifecycle }, committed);
+            closeGesture({ hold, previews: frame.previews, behaviors: session.constraints, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
-        previewIds: () => scratch.previews.keys(),
-        previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,
+        previewIds: () => frame.previews.keys(),
+        previewPose: (id: string) => frame.previews.get(id as NodeId) ?? null,
       };
     },
   },

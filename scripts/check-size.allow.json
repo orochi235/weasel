@@ -124,10 +124,6 @@
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 716
   },
-  "packages/core/src/interactions/actions/resize/action.ts": {
-    "lines": 561,
-    "longestFunction": 334
-  },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 749,
     "longestFunction": 499
