@@ -806,17 +806,17 @@ built 2026-10-11. What that left:
     (`hidden` in `packages/animator/src/target.ts`), which the pass has no column for.
   - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
     frame is the caller's until the table can be asked for one.
-- **(P3) A hold costs 0.3 to 0.7 µs a frame, where a tween costs under 0.1** — `node
-  tests/perf/target-reads/run.mjs table 10000 held`: 10,000 table rows with one hold each and
-  nothing else take 6.8 to 7.4 ms a frame, and 1,000 take 0.29 to 0.30 (orochi, 2026-10-12,
-  plain Node 26). That is after a hold stopped building arrays every frame, which took a third
-  off. What is left, from the CPU profile at 10,000: a quarter is blits running a voice that
-  answers through a function (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap` read per
-  voice); the rest is the hold's own voice reaching, one after another, the group, each
-  member, the function that gives its value, that value, and the committed value. Two designs
-  would move it and neither is started: a hold whose `value` and `weight` are not functions
-  need not be read again until its target's committed value changes, and holds on a target
-  table's rows could keep their values and weights as rows of the table's own arrays.
+- **(P3) A hold whose value is a function costs 0.3 to 0.7 µs a frame, where a tween costs
+  under 0.1** — `node tests/perf/target-reads/run.mjs table 10000 heldfn`. A timeline track, a
+  rig clip, and any `animator.hold` given a function are such holds. A hold of plain values no
+  longer is: its target is read again only when touched or when its committed value moves
+  (`still` in `packages/animator/src/engine/codec.ts`). What a function costs, from the CPU
+  profile at 10,000: a quarter is blits running a voice that answers through a function
+  (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap` read per voice); the rest is the hold's
+  own voice reaching, one after another, the group, each member, the function that gives its
+  value, that value, and the committed value. The design left would move it and is not
+  started: holds on a target table's rows could keep their values and weights as rows of the
+  table's own arrays, which adds public API to the table whose shape is not ruled on.
 - **(P2) A frame of the animator costs about 75 ns an animation at 10k, read or not, and a
   fifth of it is ticking each animation as an object** — `node
   tests/perf/target-reads/run.mjs table 10000 idle` (orochi, plain Node 26; five runs read 0.73

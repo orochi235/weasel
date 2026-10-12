@@ -10,11 +10,12 @@ export function startHold<T>(ctx: AnimationContext, o: HoldOptions<T>): HoldHand
   const target = stateOf(o.target);
   const id = ctx.nextId();
   const { value, weight = 1 } = o;
+  // A hold of plain values changes only when told to, so it asks for no frames of its own.
+  const fixed = !isFn(value) && !isFn(weight);
   const seed = {
     id, kind: 'hold', cancelKey: o.cancelKey, label: o.label, target,
     keepExisting: o.interrupt === false,
-    // A hold of plain values changes only when told to, so it asks for no frames of its own.
-    idle: !isFn(value) && !isFn(weight),
+    idle: fixed,
   } as AnimationSeed;
   // Ahead of opening: an interrupted hold commits what it showed, which this one then stands in for.
   if (o.cancelKey != null && o.interrupt !== false) ctx.interrupt(o.cancelKey, seed);
@@ -23,6 +24,7 @@ export function startHold<T>(ctx: AnimationContext, o: HoldOptions<T>): HoldHand
     value: isFn(value) ? (value as () => T) : () => value,
     weight: isFn(weight) ? weight : () => weight,
     axes: o.axes,
+    fixed,
   });
   seed.onCancel = () => held.leave(true);
   seed.tick = () => {
