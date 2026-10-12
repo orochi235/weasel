@@ -859,6 +859,33 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/ToolReflectionDemo').then((m) => m.ToolReflectionDemo),
     path: 'apps/site/demos/ToolReflectionDemo.tsx',
   },
+  {
+    id: 'prefs',
+    title: 'Preferences store',
+    package: 'prefs',
+    description: 'A `PrefGroup` schema opened with `openPrefsSync` over `localStorageAdapter`, so values survive a reload. `usePrefsValues` hands `PrefsForm` its `values` and `onChange`, and the table sets `store.values()` beside `store.stored()`: a leaf with no record follows its default and reads as unset. An `enableIf` and a `showIf` on the schema disable or hide rows while the grid is off.',
+    hint: 'Press "Store size 500": the record keeps 500, and the value reads 64, the leaf\'s max. Reload to see it persist.',
+    load: () => import('./demos/PrefsDemo').then((m) => m.PrefsDemo),
+    path: 'apps/site/demos/PrefsDemo.tsx',
+  },
+  {
+    id: 'registry',
+    title: 'Reflectable registry',
+    package: 'registry',
+    description: 'One `createReflectable` store of cursor names keyed by tool id, and a table drawn from its read-only `reflection` through `useSyncExternalStore(reflection.subscribe, reflection.getVersion)` and `reflection.entries()`. `push(key, value, { source })` stacks a registrant over whatever the key holds, so a second source pushing the same key shows the first as shadowed. Each release button calls the function `push` returned: releasing the live registrant uncovers the one it displaced, and releasing a shadowed one removes only it. `set` replaces the live registrant in place and records no conflict.',
+    hint: 'Push pen as kit, then as plugin, and release each in turn. Then set as app: the shadowed column stays as it was.',
+    load: () => import('./demos/RegistryDemo').then((m) => m.RegistryDemo),
+    path: 'apps/site/demos/RegistryDemo.tsx',
+  },
+  {
+    id: 'animator',
+    title: 'Animator on its own',
+    package: 'animator',
+    description: 'Seven marks moved by `useAnimator` with no scene behind them. Each mark is a value the demo owns, wrapped by `createTarget`, and drawn from the target\'s `show` callback. Tween slides the row with `animator.tween`, Spring sends it to the other level with `animator.spring`, and Stagger runs that spring down the row through `animator.stagger`. None of them cancels another, so pressing one while another is running bends the motion instead of restarting it. Hold pins every mark\'s `y` to the midline with `animator.hold` while `x` keeps moving, and the row under the canvas counts what `animator.live()` reports.',
+    hint: 'Press Tween, then Spring or Stagger before it arrives. Turn Hold on and press Tween again.',
+    load: () => import('./demos/AnimatorDemo').then((m) => m.AnimatorDemo),
+    path: 'apps/site/demos/AnimatorDemo.tsx',
+  },
 ];
 
 export const DEMOS: DemoEntry[] = DEMO_META.map((meta) => ({

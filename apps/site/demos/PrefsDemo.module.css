@@ -1,0 +1,43 @@
+.demo {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  width: 720px;
+  align-items: start;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.table {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th {
+  text-align: start;
+  font-weight: 500;
+  color: var(--ckd-muted);
+  padding: 4px 8px;
+}
+
+.table td {
+  padding: 3px 8px;
+}
+
+.path {
+  color: var(--ckd-muted);
+}
+
+.unset {
+  color: var(--ckd-faint);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
