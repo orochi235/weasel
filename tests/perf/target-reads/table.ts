@@ -1,6 +1,7 @@
 // A frame of N moving [x, y] values, read every frame: as targets read one at a time, and as
 // rows of a target table. Steady, then with rows stopping and starting every frame.
-// Run through `node tests/perf/target-reads/run.mjs table <N>... <idle | targets | table>`.
+// Run through `node tests/perf/target-reads/run.mjs table <N>... <idle | targets | table | held>`.
+// `held` is N table rows with a hold each and no animation.
 // `idle` is the frame with nothing read, to take off the other two.
 import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
 import { createTarget, stateOf, type Target } from '../../../packages/animator/src/target';
@@ -124,9 +125,28 @@ const idleCase = (): Case => {
   return build((row) => targets[row]!, mount(), () => {}, () => new Float64Array(0));
 };
 
-// One case a process (argv[2]: idle | targets | table): three sets of targets alive together
+/** N rows of a table with a hold on each and nothing else moving them. */
+function heldCase(): void {
+  const m = mount();
+  const table = createTargetTable({ axes: AXES });
+  for (let row = 0; row < N; row++) {
+    table.add([0, 0]);
+    m.api.hold({ target: table.target(row), value: [row, 100], weight: 0.5 });
+  }
+  for (let f = 0; f < 5; f++) m.frame();
+  time('held, steady', () => { m.frame(); void table.shown; });
+  const row = N >> 1;
+  const want = table.target(row).read();
+  if (table.shown[row * AXES] !== want[0] || want[0] !== row / 2) throw new Error(`held: row ${row} shows ${table.shown[row * AXES]}`);
+}
+
+// One case a process (argv[2]: idle | targets | table | held): three sets of targets alive together
 // push each other out of cache, and a frame at 100k rows is bound by memory.
 const which = process.argv[2] ?? 'table';
+if (which === 'held') {
+  heldCase();
+  process.exit(0);
+}
 const c = which === 'idle' ? idleCase() : which === 'targets' ? targetsCase() : tableCase();
 if (which !== 'idle') check(which, c);
 time(`${which}, steady`, c.frame);

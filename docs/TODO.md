@@ -796,15 +796,23 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
 built 2026-10-11. What that left:
 
 - **(P3) What `createTargetTable` leaves** — the table is built (2026-10-11;
-  `docs/concepts.md`, "Animation target"). Its pass over a table's rows costs 3 to 4 ns a row
-  at 10k and at 100k, where `readInto` on a target apiece costs about 140 and 230
-  (`node tests/perf/target-reads/run.mjs table 10000 table`, one case a process; orochi, plain
-  Node 26). Left:
-  - A row with a hold, or with an offset canceled under one, is read by itself each frame at
-    a single target's cost. Putting it in the pass needs `engine/holds.ts` to fold into the
-    table's arrays.
+  `docs/concepts.md`, "Animation target"), vertex colors are on one, and a row with a hold is
+  shown by its pass. Left:
+  - A row is still read by itself, at a single target's cost, while a tween or spring with a
+    destination runs under a hold on it, and while something a stopped animation left waits
+    beside a hold. What a hold hides of such a move is worked out per animation
+    (`hidden` in `packages/animator/src/target.ts`), which the pass has no column for.
   - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
     frame is the caller's until the table can be asked for one.
+- **(P2) A hold costs 1 to 2 µs a frame, whatever reads it** — `node
+  tests/perf/target-reads/run.mjs table 10000 held`: 10,000 table rows with one hold each and
+  nothing else took 11.7 to 26 ms a frame over six runs on orochi while other work ran, where
+  10,000 tweens take under 1. In the CPU profile: `fold` in
+  `packages/animator/src/engine/holds.ts` 20%, which builds two arrays and an object a member
+  every frame; the row's `get` and its axes' `to` 12% each, two copies of the committed value
+  for the hold to measure from; the hold voice's `at` 10%, which builds `cover` and `heldAt`
+  again; and collecting what those leave, 7%. A rig of 50 joints under clips pays about 0.1 ms
+  a frame for it. Folding into arrays the group keeps would take most of it.
 - **(P2) A frame of the animator costs about 75 ns an animation at 10k, read or not, and a
   fifth of it is ticking each animation as an object** — `node
   tests/perf/target-reads/run.mjs table 10000 idle` (orochi, plain Node 26; five runs read 0.73

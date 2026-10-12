@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
+import { stateOf } from './target';
 import { createTargetTable, type TargetTable } from './targetTable';
 import { useAnimator } from './useAnimator';
 
@@ -130,8 +131,77 @@ describe('a target table', () => {
     expect(shown(t, a)).toEqual([40, 40]);
     t.set(a, [30, 10]);
     expect(shown(t, a)).toEqual([50, 40]);
+    frame(32);
+    frame(48);
+    expect(shown(t, a)).toEqual([50, 40]);
     act(() => { h.release({ commit: false }); });
     expect(shown(t, a)).toEqual([30, 10]);
+  });
+
+  it('shows a held row from the pass over the table, with no read of the row by itself', () => {
+    const { animator, frame } = setup();
+    const t = createTargetTable({ axes: 2 });
+    const a = t.add([10, 10]);
+    let weight = 0.5;
+    let h!: ReturnType<typeof animator.hold>;
+    act(() => { h = animator.hold({ target: t.target(a), value: [70, 70], weight: () => weight }); });
+    frame(0);
+    frame(50);
+    // A read of the row by itself goes through its axes, which the pass never asks.
+    const axes = stateOf(t.target(a)).axes;
+    const to = vi.spyOn(axes, 'to');
+    const write = vi.spyOn(axes, 'write');
+    frame(60);
+    frame(70);
+    expect(shown(t, a)).toEqual([40, 40]);
+    expect(write).not.toHaveBeenCalled();
+    // The hold's own voice asks twice a frame: the committed value's axes, and its value's.
+    expect(to).toHaveBeenCalledTimes(4);
+    to.mockRestore();
+    write.mockRestore();
+    expect(shown(t, a)).toEqual(t.target(a).read());
+    weight = 1;
+    act(() => { h.touch(); });
+    expect(shown(t, a)).toEqual([70, 70]);
+    frame(80);
+    expect(shown(t, a)).toEqual(t.target(a).read());
+  });
+
+  it('shows a hold whose value an animation changes in its own tick, that frame', () => {
+    const { animator, frame } = setup();
+    const t = createTargetTable({ axes: 1 });
+    const a = t.add([0]);
+    const driver = t.add([0]);
+    let value = 10;
+    let h!: ReturnType<typeof animator.hold>;
+    act(() => { h = animator.hold({ target: t.target(a), value: () => [value], weight: 1 }); });
+    act(() => {
+      animator.tween({
+        target: t.target(driver), to: [100], ms: 100, easing: linear,
+        onTick: (v) => { value = 10 + v[0]!; h.touch(); },
+      });
+    });
+    frame(0);
+    for (const at of [20, 40, 60]) {
+      frame(at);
+      expect(shown(t, a)[0]).toBeCloseTo(10 + at, 9);
+      expect(shown(t, a)).toEqual(t.target(a).read());
+    }
+  });
+
+  it('shows a tween under a hold as far as the hold leaves it, frame by frame', () => {
+    const { animator, frame } = setup();
+    const t = createTargetTable({ axes: 1 });
+    const a = t.add([0]);
+    act(() => { animator.hold({ target: t.target(a), value: [50], weight: 0.5 }); });
+    frame(0);
+    frame(16);
+    act(() => { animator.tween({ target: t.target(a), to: [100], ms: 100, easing: linear }); });
+    for (const at of [16, 36, 66, 116, 132, 148]) {
+      frame(at);
+      expect(shown(t, a)).toEqual(t.target(a).read());
+    }
+    expect(shown(t, a)[0]).toBeCloseTo(75, 9);
   });
 
   it('moves a row on screen at once when its committed value is set under an animation', () => {

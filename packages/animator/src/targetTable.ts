@@ -83,12 +83,12 @@ export function createTargetTable(opts: TargetTableOptions): TargetTable {
   const rows: RowTable = {
     mark: (row) => { marks.add(row); },
     settle() {
-      // What a mark stood for is on screen once it is read; a hold, and what waits beside one,
-      // the columns never carry whole.
+      // What a mark stood for is on screen once it is read. A hold is a voice among the row's
+      // columns; what waits beside one, and what a hold hides of a move behind it, are not.
       flush();
       for (const row of marks) {
         const s = states[row];
-        if (!s || s.live === 0 || (s.held === 0 && !s.beside && !s.dimmed)) marks.delete(row);
+        if (!s || s.live === 0 || !(s.beside || s.dimmed || (s.held > 0 && s.behind.size > 0))) marks.delete(row);
       }
     },
     fill(columns: LaneColumns | null) {
