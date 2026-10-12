@@ -48,10 +48,11 @@ import {
 } from './defaults/booleans';
 import { createOutlinesAction } from './defaults/createOutlines';
 import { moveAction } from './move/action';
-import { resizeAction } from './defaults/resize';
-import { rotateAction } from './defaults/rotate';
+import { resizeAction } from './resize/action';
+import { rotateAction } from './rotate/action';
 import { areaSelectAction } from './defaults/areaSelect';
-import { insertAction, insertRotateAction } from './defaults/insert';
+import { insertAction } from './insert/action';
+import { insertRotateAction } from './insert/rotateAction';
 import { clearSelectionAction } from './defaults/clearSelection';
 import { cloneAction } from './defaults/clone';
 import { editAnchorsAction } from './defaults/editAnchors';

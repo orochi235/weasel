@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
-import { rotateAction } from './rotate';
+import { rotateAction } from './action';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import type { RotateBehavior } from '../../gestures/types';

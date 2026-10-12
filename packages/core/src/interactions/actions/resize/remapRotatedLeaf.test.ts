@@ -111,7 +111,7 @@ describe('remapRotatedLeaf', () => {
   });
 
   it('does not drift across the frames of one drag', () => {
-    // `resize.ts` remaps from the gesture's `startPoses` on every move, never
+    // `resize/frame.ts` remaps from the gesture's `startPoses` on every move, never
     // from the previous preview, so the one approximate quantity is computed
     // once from the origin however many times the pointer moves.
     const p = leaf({ rotation: 0.4 });

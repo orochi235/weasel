@@ -1,13 +1,14 @@
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
+import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BehaviorResult, GroupTransform } from '../../gestures/types';
 import { translatePoseViaDescriptor } from '../resize/geometry';
 import { localDelta, planeDelta } from './delta';
-import type { MoveFrame, MoveReaders, MoveSession } from './session';
+import type { MoveFrame, MoveSession } from './session';
 
 function foldBehaviors(
   session: MoveSession,
-  readers: MoveReaders,
+  readers: GestureReaders,
   moveCtx: InvocationCtx,
   dx0: number,
   dy0: number,
@@ -58,7 +59,7 @@ function foldBehaviors(
 /** One move's delta and previews: the pointer's delta as the behaviors shaped
  *  it, every displaced id's stored pose under it, and whatever else the
  *  behaviors posed. */
-export function nextFrame(session: MoveSession, readers: MoveReaders, moveCtx: InvocationCtx): MoveFrame {
+export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx: InvocationCtx): MoveFrame {
   const { dx, dy, posed, opaque } = foldBehaviors(session, readers, moveCtx, moveCtx.drag!.delta.x, moveCtx.drag!.delta.y);
 
   // The delta stays in the frame — no scene writes, no history entries.
