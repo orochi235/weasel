@@ -13,15 +13,13 @@
  * dependency that moved with no scene edit behind it: a lookup answering poses
  * of its own (`sceneDepLookup(scene, toPose)`), an ancestor's frame moving, a
  * dependency appearing or going away. Value, not reference: a pose override
- * mutates its buffer in place, so the reference never moves.
- *
- * The pull covers poses only. A derivation is handed each dependency's whole
- * node, so one reading `data` or `layer` still rides on the scene's push.
+ * mutates its buffer in place, so the reference never moves. `depMemo.ts`
+ * says what else of a dependency the pull covers.
  */
 import type { Path } from '@weasel-js/geom';
 import { dependencyIdsOf } from './dependents';
 import { dropPoseKeyedMemoSlots, nodeMemo, type NodeMemoScope } from './nodeMemo';
-import { recordDeps, sameDeps, type DepRecord } from './depMemo';
+import { deriveRecorded, emptyDepRecord, sameDeps, type DepRecord } from './depMemo';
 import type { DerivedDep, DerivePathFn, NodeId } from './types';
 
 const SLOT = 'kit:derivedPath';
@@ -83,7 +81,7 @@ export function resolveDerivedPath<TPose>(
     let computed = false;
     const record = nodeMemo<PathMemo<TPose>>(node, memoSlot, node.pose, () => {
       computed = true;
-      return draw(node, derivePath, ids.map(depOf), { nodes: [], poses: [], path: null });
+      return draw(node, derivePath, ids.map(depOf), { ...emptyDepRecord<TPose>(), path: null });
     });
     // Mutating the record in place is what updates the memo slot, which holds
     // this object.
@@ -104,8 +102,7 @@ function draw<TPose>(
   deps: readonly (DerivedDep<TPose> | undefined)[],
   into: PathMemo<TPose>,
 ): PathMemo<TPose> {
-  into.path = derivePath(node as never, deps);
-  recordDeps(into, deps);
+  into.path = deriveRecorded(into, deps, (handed) => derivePath(node as never, handed));
   return into;
 }
 

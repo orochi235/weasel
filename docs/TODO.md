@@ -478,14 +478,6 @@ intercepting the press that drags the body.
   its own placeholder pose. Closing it means giving the adapter surface a
   dependency read, which is a bigger decision than picking.
 
-- **(P3) A derived path's pull covers poses only.** `resolveDerivedPath`
-  value-compares its dependencies' poses on a memo hit, so a moved dependency
-  re-routes with nothing pushed behind it. But a derivation is handed
-  `DerivedDep`, so it can read a dependency's `data` and its `layer` too, and
-  those still ride on the scene's pushed invalidation on `kit:setData` and
-  `kit:setLayer`. Widening the pull to those means deciding what a derivation
-  is allowed to read, not just how a pose is compared.
-
 ### `useScene` follow-ups
 
 - **(P3) Scene layout: what the first cut left.** A container declares its layout
