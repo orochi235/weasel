@@ -57,6 +57,14 @@
  * float widens that write for every rect and quad in the run, not just for the
  * glyphs that read it.
  *
+ * **An image's texel is premultiplied, and nothing else's is.** A bitmap
+ * holds premultiplied pixels and the caches upload every other image source
+ * the same way (`uploadPremultiplied`), while the white texel, the ramp atlas
+ * and a vertex color are straight. The color matrix wants straight color, so
+ * an image vertex says what it is with `PAINT_MODE_IMAGE` and the fragment
+ * divides its alpha back out. Sampling the texel as it stood drew every
+ * translucent bitmap multiplied by its alpha twice.
+ *
  * `a_post` is the alpha factor applied *after* the color matrix. An image quad
  * puts its opacity there, where `u_opacity` used to be — the fold is exact for
  * the same reason the old image shader's was, the matrix cannot see it. Solid
@@ -75,6 +83,7 @@
  */
 
 import { GLYPH_COVERAGE_GLSL } from '@weasel-js/font';
+import { STRAIGHT_RGB_GLSL } from './straightRgb';
 
 /**
  * Texture units the batch program samples, slot 0 being the white texel.
@@ -110,6 +119,10 @@ export const PAINT_MODE_PLAIN = 0;
  */
 export const PAINT_MODE_RADIAL = 3;
 export const PAINT_MODE_CONIC = 4;
+
+/** Paint mode for an image quad, whose texel is premultiplied. Above the
+ *  gradient modes, so `isGrad` is a range too. */
+export const PAINT_MODE_IMAGE = 5;
 
 /** 1 / 2π, which turns a conic gradient's angle into a ramp position. */
 const INV_TAU = (1 / (2 * Math.PI)).toFixed(10);
@@ -191,8 +204,9 @@ ${sampleChain(BATCH_TEXTURE_SLOTS)}
   return texture(u_samplers[0], uv);
 }
 ${GLYPH_COVERAGE_GLSL}
+${STRAIGHT_RGB_GLSL}
 void main() {
-  float isGrad = step(2.5, v_paintMode);
+  float isGrad = step(2.5, v_paintMode) * step(v_paintMode, ${PAINT_MODE_CONIC + 0.5});
   // A radial or conic vertex carries a gradient-space coordinate rather than a
   // texture coordinate, and its atlas row rather than an alpha. The sample is
   // split across the branch rather than the coordinate selected before it: an
@@ -214,6 +228,8 @@ void main() {
   } else {
     texel = sampleSlot(v_texSlot, v_uv);
   }
+  // At 0 the mix is the texel itself, so a solid still gets its color exactly.
+  texel.rgb = mix(texel.rgb, straightRgb(texel), step(${PAINT_MODE_IMAGE - 0.5}, v_paintMode));
   float isGlyph = step(0.5, v_paintMode) * step(v_paintMode, 2.5);
   // Unconditional, and multiplied out afterwards rather than branched around:
   // see the file header.

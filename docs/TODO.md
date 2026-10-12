@@ -257,14 +257,6 @@ have shipped. What remains:
   Composing would mean a view's camera derived from the view under its aim, and
   a resolver that descends rather than picking one rect.
 
-- **(P2) `renderDebugSnapshot`: a y-up view throws.** A canvas with `view.scale.y < 0` (valid per
-  `core/viewport/view.ts`) reaches `planPixelRender` with a negative `sourceRect.height` and
-  `scale.y`, which throws "sourceRect.height must be a positive finite number"
-  (`packages/core/src/canvas/renderDebugSnapshot.ts`, `renderSceneToPixels.ts`). So a flipped scene
-  cannot be rasterized headlessly. Options: let `planPixelRender` take a signed scale (size from the
-  magnitude, the view keeps the sign and offsets its origin), which changes `renderSceneToPixels`'s
-  contract, or keep the limit and say so in both docs.
-
 - **(P3) Canvas hosts: the renderer writes inline `width` and `height` style on a `<canvas>` it
   owns.** `WeaselRenderer`'s constructor and `resize` set `canvas.style.width`/`height`, so a
   `<SceneViewCanvas className>` or `<DrawCanvas className>` that sizes the element (`width: 100%`)
@@ -365,6 +357,8 @@ Core five + Crop shipped. Remaining:
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
+- **(P2) A line drawn with the line tool is not counted as its stroke.** The Pathfinder actions pass `strokes: 'unfilled'`, which takes an operand as its stroke only when it has no fill, and `paletteInsertPaint` (`packages/core/src/canvas/deps/insert.ts`) gives a line and a pen path a fill beside the stroke. Seen in draw: Unite of a rect and a line across it returns the rect alone, where a rect with its fill set to None unites as its stroke's ring. Either an inserted line gets no fill, or `inkOf` (`booleans/operands.ts`) reads an open path, which a fill cannot show on, as unfilled.
+- **(P3) Outline Stroke and the Boolean operations drop draw's `data.label`.** `drawBooleansAdapter.createPathNode` (`apps/draw/src/booleansAdapter.ts`) builds a result from the path and its paint alone, so the starter rect's "Welcome" and its name in the layer list are gone after Outline Stroke. Undecided: which of an outline's two paths, or their group, keeps the label.
 - **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not.
 
 ---
@@ -417,22 +411,6 @@ Core five + Crop shipped. Remaining:
   the kit never calls it. It needs an owner: the scene when the last node using a `src` passes the
   undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
   scene showing more than the bound would otherwise evict and reload on every paint.
-
-- **(P2) Renderer: a translucent `ImageBitmap` is multiplied by its alpha twice.** A
-  half-transparent white bitmap drawn with an image command onto a cleared canvas reads back as
-  `(64, 64, 64, 128)` in headless Chromium where `(128, 128, 128, 128)` is correct, whether the
-  bitmap came from `ImageData`, a PNG blob, or a canvas. Every PNG with soft edges shows a dark
-  fringe. `createImageBitmap` with no options holds premultiplied pixels and `texImage2D` uploads
-  them as they are, while `GLImageCache` and the batch shader
-  (`packages/renderer/src/shaders/batchFill.ts`, `vec4(mapped.rgb * a, a)`) assume straight
-  texels. A pattern texture registered from an `ImageBitmap` goes through `GLTextureCache` the same
-  way, and an `HTMLImageElement` source uploads straight, so the two source types disagree. Two ways
-  out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`renderer/images/imageCache.ts`,
-  `features/ingestion/imageHandler.ts`, the loupe) and document that requirement on
-  `ImageDrawCommand.image`, which leaves a consumer's default bitmap wrong; or make image textures
-  premultiplied by convention, set `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for the non-bitmap sources, and
-  have the shader unpremultiply before the color matrix, which fixes every source and filters better
-  at edges.
 
 - **(P3) Renderer: geometry and paint space far from the origin are still single precision.** The
   transform stack is in doubles now and a large model translation is rebased before upload
@@ -1292,6 +1270,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the layer canvases take the new backing size in a real browser when the ratio changes with no
   resize. Wants a browser test that emulates the change (`Emulation.setDeviceMetricsOverride`).
 
+- **(P2) labkit annotations: a target outside its stage is drawn, and takes input, over whatever
+  is beside it.** `AnnotationOverlay` (`packages/labkit/src/annotations/AnnotationOverlay.tsx`)
+  places its tile, its outline, and its input box at the target element's own rect, which the
+  stage's `overflow` does not clip. Seen in the `annotate-lab` example: mark the part, then press
+  Add trial, so the first trial narrows and its camera keeps the pan it had; the part is out of
+  its stage, and its marks, its blue outline, and a box that takes presses sit over the second
+  trial's sidebar. Wants the tile and the input box cut to the stage's visible rect, which makes
+  the scissor differ from the rect the marks are placed against.
+
 - **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
   them.** A trial builds its annotation store once from `record.annotations`
   (`packages/labkit/src/trial/Trial.tsx`, "One store for the trial's lifetime") and never reads the
@@ -1441,17 +1428,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   type-ahead, and also stops Delete and Cmd+Z in the dispatcher for as long as focus rests on a
   select after a choice is made, which is every bound key, modifier chords included
   (`useGestureDispatcher.tsx`).
-
-- **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On
-  a `px` scale with a step at 16, drag its thumb to 20 and back in one drag: near the start the
-  readout shows 17 (or 15 from below), and exactly at the start it stops updating. `Slider` keeps
-  calling the `onInput` it was given at pointerdown, so `commit` in
-  `packages/ui/src/components/TokenPanel/Scale.tsx` compares every move against the starting amount,
-  and its "an arrow key still moves a step by one unit" nudge fires for drags too. The nudge is only
-  right for a key press, and `Slider` gives its caller no way to tell one from a drag (both arrive
-  through `onInput`; a key press also calls `onChange`, but so does a drag's end). Options: `Slider`
-  passes the source of a change to `onInput`/`onChange`; or `Scale` owns the arrow keys for its
-  thumbs and `commit` never nudges.
 
 - **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
   handler removes the focused row: the tab stop recomputes to the first selected or first row, but

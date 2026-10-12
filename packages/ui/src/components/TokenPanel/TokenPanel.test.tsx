@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { toHex } from './color';
 import { TokenPanel } from './TokenPanel';
@@ -96,6 +97,41 @@ describe('TokenPanel', () => {
     fireEvent.click(family.getByRole('button', { name: 'Reset radius' }));
     expect(onChange).toHaveBeenCalledWith('--wzl-radius-md', null);
     expect(onChange).not.toHaveBeenCalledWith('--wzl-radius-sm', null);
+  });
+
+  it('reads the amount under the pointer through a drag out and back, with no step of its own added', () => {
+    const start: TokenEntry[] = [
+      { name: '--s-sm', type: 'dimension', group: 's', value: '8px' },
+      { name: '--s-md', type: 'dimension', group: 's', value: '16px' },
+      { name: '--s-lg', type: 'dimension', group: 's', value: '32px' },
+    ];
+    function Held() {
+      const [held, setHeld] = useState(start);
+      return (
+        <TokenPanel
+          tokens={held}
+          onChange={(name, value) => setHeld((was) => was.map((t) => (t.name === name && value !== null ? { ...t, value } : t)))}
+        />
+      );
+    }
+    render(<Held />);
+    const md = () => within(screen.getByRole('group', { name: 's' })).getByRole('slider', { name: '--s-md' });
+    const rail = md().parentElement!;
+    rail.getBoundingClientRect = () =>
+      ({ x: 0, y: 0, left: 0, top: 0, width: 1000, height: 24, right: 1000, bottom: 24, toJSON: () => ({}) }) as DOMRect;
+    // The track is logarithmic, from 8 / 1.5 to 32 * 1.5.
+    const [lo, hi] = [Math.log2(8 / 1.5), Math.log2(32 * 1.5)];
+    const at = (amount: number) => ({ clientX: ((Math.log2(amount) - lo) / (hi - lo)) * 1000, clientY: 12, pointerId: 1 });
+
+    fireEvent.pointerDown(md(), { ...at(16), button: 0 });
+    fireEvent.pointerMove(document, at(20));
+    expect(md()).toHaveAttribute('aria-valuetext', '20px');
+    fireEvent.pointerMove(document, at(16.3));
+    expect(md()).toHaveAttribute('aria-valuetext', '16px');
+    fireEvent.pointerMove(document, at(18));
+    fireEvent.pointerMove(document, at(16));
+    expect(md()).toHaveAttribute('aria-valuetext', '16px');
+    fireEvent.pointerUp(document, at(16));
   });
 
   describe('a generated scale', () => {

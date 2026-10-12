@@ -11,7 +11,7 @@
  * - Density arrives exclusively via `scale` (output pixels per scene unit,
  *   per axis — anisotropic values are first-class). This function never
  *   reads `window.devicePixelRatio`.
- * - Rounding policy: output width = max(1, round(sourceRect.width × scale.x)),
+ * - Rounding policy: output width = max(1, round(sourceRect.width × |scale.x|)),
  *   height analogously. The scene-space rect is authoritative; the pixel
  *   grid derives from it. When round() lands below rect × scale, the
  *   rightmost/bottom sub-pixel band of scene content is cropped; when it
@@ -54,6 +54,7 @@ import { defaultDrawOne } from './defaultDrawOne';
 import { warmFonts, type FontRequest } from '@weasel-js/font';
 import { isPaintKindKnown, warmPaintKinds } from '@weasel-js/renderer';
 import { renderNeeds } from './renderNeeds';
+import { straightTopDown } from './rasterReadback';
 
 /** Plain RGBA raster — structurally `ImageData`-compatible ({ width, height,
  *  data }), deliberately free of printer/dpi/physical-unit concepts. */
@@ -78,7 +79,9 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
   /** Scene-space rect to render (origin + size in scene units). Output pixel
    *  dimensions follow from rect × scale (round, min 1 — see module doc). */
   sourceRect: { x: number; y: number; width: number; height: number };
-  /** Output pixels per scene unit, per axis. Anisotropic values supported. */
+  /** Output pixels per scene unit, per axis. Anisotropic values supported. A
+   *  negative axis is flipped: the output is sized from its magnitude, and the
+   *  rect's far edge on that axis lands on the output's top or left. */
   scale: { x: number; y: number };
   /** Per-node draw callback. Default: `defaultDrawOne` with `resolveImage`
    *  merged into the `NodePaintCtx` the scene walk supplies. Custom `drawOne`
@@ -135,10 +138,14 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
   const { sourceRect, scale } = args;
   for (const [label, v] of [
     ['sourceRect.width', sourceRect.width], ['sourceRect.height', sourceRect.height],
-    ['scale.x', scale.x], ['scale.y', scale.y],
   ] as const) {
     if (!Number.isFinite(v) || v <= 0) {
       throw new Error(`renderSceneToPixels: ${label} must be a positive finite number, got ${v}`);
+    }
+  }
+  for (const [label, v] of [['scale.x', scale.x], ['scale.y', scale.y]] as const) {
+    if (!Number.isFinite(v) || v === 0) {
+      throw new Error(`renderSceneToPixels: ${label} must be a nonzero finite number, got ${v}`);
     }
   }
   for (const [label, v] of [
@@ -148,9 +155,13 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
       throw new Error(`renderSceneToPixels: ${label} must be a finite number, got ${v}`);
     }
   }
-  const width = Math.max(1, Math.round(sourceRect.width * scale.x));
-  const height = Math.max(1, Math.round(sourceRect.height * scale.y));
-  const view: View = { x: sourceRect.x, y: sourceRect.y, scale: { x: scale.x, y: scale.y } };
+  const width = Math.max(1, Math.round(sourceRect.width * Math.abs(scale.x)));
+  const height = Math.max(1, Math.round(sourceRect.height * Math.abs(scale.y)));
+  const view: View = {
+    x: scale.x < 0 ? sourceRect.x + sourceRect.width : sourceRect.x,
+    y: scale.y < 0 ? sourceRect.y + sourceRect.height : sourceRect.y,
+    scale: { x: scale.x, y: scale.y },
+  };
 
   const resolveImage = args.resolveImage as ((n: Node<unknown, string, unknown>) => ImageBitmap | undefined) | undefined;
   const drawOne: SceneViewDrawOne<TData, TLayer, TPose> =
@@ -184,28 +195,6 @@ function defaultCreateCanvas(width: number, height: number): HeadlessCanvasLike 
     return c;
   }
   throw new Error('renderSceneToPixels: no canvas source in this environment — supply `gl` or `createCanvas`');
-}
-
-/** Flip GL's bottom-up readback rows into top-down image order. */
-function flipRows(raw: Uint8Array, width: number, height: number): Uint8ClampedArray {
-  const rowBytes = width * 4;
-  const out = new Uint8ClampedArray(raw.length);
-  for (let y = 0; y < height; y++) {
-    out.set(raw.subarray((height - 1 - y) * rowBytes, (height - y) * rowBytes), y * rowBytes);
-  }
-  return out;
-}
-
-/** Convert premultiplied RGBA to straight RGBA in place. */
-function unpremultiply(data: Uint8ClampedArray): void {
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3];
-    if (a === 0 || a === 255) continue;
-    const inv = 255 / a;
-    data[i] = data[i] * inv;
-    data[i + 1] = data[i + 1] * inv;
-    data[i + 2] = data[i + 2] * inv;
-  }
 }
 
 /** Where a {@link RasterSession} draws. Pass `gl` or `createCanvas`, or
@@ -293,7 +282,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
       const plan = planPixelRender(args);
       const { width, height } = plan;
       const ctx = contextFor(width, height);
-      const flattenTolerance = (args.flattenTolerancePx ?? 0.25) / Math.max(args.scale.x, args.scale.y);
+      const flattenTolerance = (args.flattenTolerancePx ?? 0.25) / Math.max(Math.abs(args.scale.x), Math.abs(args.scale.y));
       if (!renderer) {
         renderer = new WeaselRenderer({
           gl: ctx,
@@ -316,9 +305,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
       }
       const raw = new Uint8Array(width * height * 4);
       ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, raw);
-      const data = flipRows(raw, width, height);
-      unpremultiply(data);
-      return { width, height, data };
+      return { width, height, data: straightTopDown(raw, width, height) };
     },
     dispose() {
       if (disposed) return;

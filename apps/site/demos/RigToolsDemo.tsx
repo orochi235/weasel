@@ -96,6 +96,7 @@ export function RigToolsDemo() {
         scene={scene}
         features={['pick']}
         tools={tools}
+        claimKeys
       />
       <div className="ckd-hint">
         The arm is one container node with a skeleton in its <code>data.skeleton</code> and one

@@ -88,7 +88,12 @@ export function getTexture(id: string): TextureEntry | null {
  * Returns a TextureHandle whose `id` can be passed as a ShaderUniform value.
  * The handle is valid for the lifetime of the renderer it will be used with.
  *
+ * The texture holds premultiplied texels whichever source it came from, so a
+ * shader sampling one reads `vec4(rgb * a, a)`, the form its own output takes.
+ *
  * @param image  The image to register. HTMLImageElement must be fully loaded.
+ *               An ImageBitmap must hold premultiplied pixels, the
+ *               `createImageBitmap` default.
  * @returns      Opaque TextureHandle.
  */
 export function registerTexture(

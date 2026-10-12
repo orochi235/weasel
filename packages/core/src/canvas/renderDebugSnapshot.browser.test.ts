@@ -54,6 +54,28 @@ describe('renderDebugSnapshot', () => {
     expect(px(img, 5, 5)).toEqual([0, 0, 0, 255]);
   });
 
+  it('rasterizes a y-up view, with larger world y nearer the top', () => {
+    const { scene, debug, drawOne } = fixture();
+    const img = renderDebugSnapshot({
+      scene, drawOne, debug,
+      config: { bounds: true },
+      // World y = 40 is the top row and y = 0 the bottom one.
+      view: { x: 0, y: 40, scale: { x: 1, y: -1 } },
+      size: { width: 40, height: 40 },
+      pixelRatio: 2,
+      background: '#000000',
+    });
+    expect([img.width, img.height]).toEqual([80, 80]);
+    // The square spans world y 10–20: CSS rows 20–30, output rows 40–60.
+    expect(px(img, 30, 50)).toEqual([255, 0, 0, 255]);
+    expect(px(img, 30, 30)).toEqual([0, 0, 0, 255]);
+    expect(px(img, 30, 70)).toEqual([0, 0, 0, 255]);
+    const [r, g, b] = px(img, 20, 50);
+    expect(r).toBeGreaterThan(200);
+    expect(g).toBeGreaterThan(200);
+    expect(b).toBeLessThan(100);
+  });
+
   it('encodes a raster as a PNG', async () => {
     const { scene, debug, drawOne } = fixture();
     const img = renderDebugSnapshot({
