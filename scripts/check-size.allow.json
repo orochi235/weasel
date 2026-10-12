@@ -65,7 +65,7 @@
     "lines": 471
   },
   "packages/core/src/canvas/renderSceneToPixels.ts": {
-    "lines": 422
+    "lines": 409
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 178

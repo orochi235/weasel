@@ -257,14 +257,6 @@ have shipped. What remains:
   Composing would mean a view's camera derived from the view under its aim, and
   a resolver that descends rather than picking one rect.
 
-- **(P2) `renderDebugSnapshot`: a y-up view throws.** A canvas with `view.scale.y < 0` (valid per
-  `core/viewport/view.ts`) reaches `planPixelRender` with a negative `sourceRect.height` and
-  `scale.y`, which throws "sourceRect.height must be a positive finite number"
-  (`packages/core/src/canvas/renderDebugSnapshot.ts`, `renderSceneToPixels.ts`). So a flipped scene
-  cannot be rasterized headlessly. Options: let `planPixelRender` take a signed scale (size from the
-  magnitude, the view keeps the sign and offsets its origin), which changes `renderSceneToPixels`'s
-  contract, or keep the limit and say so in both docs.
-
 - **(P3) Canvas hosts: the renderer writes inline `width` and `height` style on a `<canvas>` it
   owns.** `WeaselRenderer`'s constructor and `resize` set `canvas.style.width`/`height`, so a
   `<SceneViewCanvas className>` or `<DrawCanvas className>` that sizes the element (`width: 100%`)
