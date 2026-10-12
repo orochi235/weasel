@@ -333,14 +333,14 @@ have shipped. What remains:
   triangulates the closed triangle and `pathSignedArea` (`paths/winding.ts`) counts it as closed
   "the way a fill closes it", while `pointInPath` (`pathHitTest.ts`, `flatSubpaths`) files the run
   under `open` and returns false, and `path.ts` documents that open subpaths "don't contribute to
-  fills". So the triangle paints and cannot be clicked. The options are SVG's rule (a fill closes
-  every subpath implicitly), which means `flatSubpaths` treats an open run of three or more points
-  as closed for the fill test and `path.ts` says so; or the kit rule (open never fills), which means
-  `tessellate` skips open contours and `pathSignedArea` returns 0 for them, and SVG import has to
-  close filled open shapes itself. SVG's rule cannot land in `pointInPath` alone: `containsInFrame`
-  (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls it without knowing whether the
-  node has a fill, so every unfilled open stroke would become pickable across the area its ends
-  enclose.
+  fills". So the triangle paints and cannot be clicked. Ruled 2026-10-12: the path says which, in a
+  field beside `fillRule` that all three read (a fill closes every open subpath, as SVG and canvas
+  do, or an open subpath never fills), and an engine flag sets the answer for a path that carries
+  none. Still to settle while building: where that flag lives, since `@weasel-js/geom` has no
+  engine object, and which answer it starts at. Under the closing rule an unfilled open stroke is
+  picked across the area its ends enclose, because `containsInFrame`
+  (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls `pointInPath` without knowing
+  whether the node has a fill; a closed unfilled outline is already picked that way.
 
 - **(P3) svg unpack: a clipped group arrives unclipped.** `parseSvg` puts a `<g clip-path>` on
   `SvgGroupNode.clip`, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) builds the container
