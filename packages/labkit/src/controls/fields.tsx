@@ -5,6 +5,7 @@ import {
   PropertyControl,
   type PropertyControlProps,
   prefFieldProps,
+  withCommitPolicy,
 } from '@weasel-js/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFieldChoices } from './fieldChoices';
@@ -42,8 +43,9 @@ export function labField(
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
   if (leaf.kind === 'paint' || leaf.kind === 'object') return null;
-  const field = prefFieldProps(leaf, { value, setValue: write, fields, disabled });
-  if (field === null) return null;
+  const drawn = prefFieldProps(leaf, { value, setValue: write, fields, disabled });
+  if (drawn === null) return null;
+  const field = withCommitPolicy(drawn, 'lab');
   switch (field.kind) {
     case 'number':
       // `prefFieldProps` clamps what it stores, so an instrument is never

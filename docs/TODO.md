@@ -1290,16 +1290,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `prefFieldProps` (`'form' | 'panel' | 'lab'`) carrying these defaults in one table. labkit's
   "radio means segments" and "a slider needs bounds" are the two to decide on purpose.
 
-- **(P3) When an edit is written differs by params surface, with no one place saying so.** A typed
-  number writes on blur, Enter, or step in `PrefsForm` and `SelectionPanel`, and on every keystroke
-  in labkit's `ControlPanel`; a slider writes on release in the form and on every move in the other
-  two; text writes per keystroke in the form, on blur or Enter in the panel, and debounced 150 ms in
-  labkit; a color writes once per gesture in the form and panel and on every move in labkit. Each is
-  a no-op `onInput` passed or withheld, and `settledOnly` is declared twice (`Prefs/PrefsRow.tsx`,
-  `SelectionPanel/renderLeaf.tsx`). The panel's comment gives undo steps as the reason text and
-  color settle, yet a slider there writes per move; whether `scene.batch` coalesces those into one
-  undo step is unverified. Home: the same `surface` argument on `prefFieldProps`, returning props
-  with the commit policy applied.
+- **(P3) Two things the params commit table does not settle.** `PARAMS_SETTLES` in
+  `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
+  a lab, and `withCommitPolicy` applies it for all three. (1) labkit's `ControlPanel` debounces
+  text by 150 ms in its own row (`useDebouncedText`), which the table has no word for: it reads
+  as "writes as it changes". (2) The panel's reason for settling text and color is that every
+  write is an undo step, yet a slider there writes per move; whether `scene.batch` coalesces
+  those into one undo step is unverified.
 
 - **(P3) Collecting a run of `tab` groups, and what each other `as` draws, is written five times.**
   `Prefs/PrefsPane.tsx`, `Prefs/ObjectLeaf.tsx`, `SelectionPanel/SelectionPanel.tsx` (`drawn`),
