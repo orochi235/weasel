@@ -11,7 +11,8 @@ export default meta;
 type Story = StoryObj<typeof OptionsBar>;
 
 export const Independent: Story = {
-  render: () => {
+  args: { ariaLabel: 'Text style' },
+  render: (args) => {
     const [b, setB] = useState(true);
     const [i, setI] = useState(false);
     const [u, setU] = useState(false);
@@ -20,12 +21,13 @@ export const Independent: Story = {
       { value: 'i', label: 'I', selected: i, onChange: setI },
       { value: 'u', label: 'U', selected: u, onChange: setU },
     ];
-    return <OptionsBar items={items} ariaLabel="Text style" />;
+    return <OptionsBar {...args} items={items} />;
   },
 };
 
 export const Minimal: Story = {
-  render: () => {
+  args: { variant: 'minimal' },
+  render: (args) => {
     const [b, setB] = useState(true);
     const [i, setI] = useState(false);
     const [u, setU] = useState(true);
@@ -34,12 +36,12 @@ export const Minimal: Story = {
       { value: 'i', label: 'I', selected: i, onChange: setI },
       { value: 'u', label: 'U', selected: u, onChange: setU },
     ];
-    return <OptionsBar items={items} variant="minimal" />;
+    return <OptionsBar {...args} items={items} />;
   },
 };
 
 export const Disabled: Story = {
-  render: () => {
+  render: (args) => {
     const [a, setA] = useState(true);
     const [c, setC] = useState(false);
     const items: OptionsBarItem[] = [
@@ -47,6 +49,6 @@ export const Disabled: Story = {
       { value: 'b', label: 'B', selected: false, onChange: () => {}, disabled: true },
       { value: 'c', label: 'C', selected: c, onChange: setC },
     ];
-    return <OptionsBar items={items} />;
+    return <OptionsBar {...args} items={items} />;
   },
 };
