@@ -19,8 +19,12 @@
 
 export type PatternRepetition = 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat';
 
-/** MIN_FILTER strategy for uploaded textures. */
-export type ImageMinification = 'linear' | 'mipmap';
+/**
+ * MIN_FILTER strategy for uploaded textures: `'linear'` never mipmaps,
+ * `'mipmap'` does at upload, and `'auto'` uploads linear and builds a
+ * texture's mipmaps the first time a frame draws it at half size or smaller.
+ */
+export type ImageMinification = 'linear' | 'mipmap' | 'auto';
 
 type TexSource = ImageBitmap | ImageData | HTMLCanvasElement | HTMLImageElement;
 
@@ -78,6 +82,8 @@ export class GLImageCache {
   private readonly magFilters = new WeakMap<object, number>();
   private readonly finalizer: FinalizationRegistry<WebGLTexture>;
   private readonly pendingDeletes: WebGLTexture[] = [];
+  /** Under `'auto'`, the sources whose mipmaps are built. */
+  private readonly mipped = new WeakSet<object>();
   private frame = 0;
   private readonly lastDrawn = new WeakMap<object, number>();
 
@@ -86,7 +92,8 @@ export class GLImageCache {
    *  generates mipmaps and filters LINEAR_MIPMAP_LINEAR — required for
    *  quality minification when a large source bitmap is drawn small (the
    *  headless print/export path); bilinear-only minification undersamples
-   *  and produces moiré. */
+   *  and produces moiré. `'auto'` pays for that only on the textures a
+   *  frame draws small, when it first does. */
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly minification: ImageMinification = 'linear',
@@ -130,6 +137,7 @@ export class GLImageCache {
     this.map.delete(key);
     this.magFilters.delete(key);
     this.lastDrawn.delete(key);
+    this.mipped.delete(key);
   }
 
   /** Delete every texture this cache uploaded and stop answering
@@ -181,6 +189,25 @@ export class GLImageCache {
     this.textures.add(tex);
     this.finalizer.register(key, tex, key);
     return tex;
+  }
+
+  /** Whether `key` would gain from {@link buildMipmaps}: only under `'auto'`,
+   *  and only until they are built. */
+  lacksMipmaps(key: object): boolean {
+    return this.minification === 'auto' && !this.mipped.has(key);
+  }
+
+  /** Build `key`'s mipmaps and filter minification through them from here
+   *  on. Its texture must be uploaded. Leaves no texture bound. */
+  buildMipmaps(key: object): void {
+    const tex = this.map.get(key);
+    if (!tex || this.mipped.has(key)) return;
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.mipped.add(key);
   }
 
   bind(key: object, unit: number): void {

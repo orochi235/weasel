@@ -127,10 +127,10 @@ export interface WeaselRendererOptions {
   height: number;
   /** Device pixels per CSS pixel. */
   dpr: number;
-  /** MIN_FILTER strategy for image/pattern textures (`GLImageCache`).
-   *  Default `'linear'` — the existing screen behavior. The headless
-   *  `renderSceneToPixels` path passes `'mipmap'` for print-quality
-   *  minification. Explicitly passing `'linear'` is always valid. */
+  /** MIN_FILTER strategy for image textures (`GLImageCache`). Default
+   *  `'linear'`. `'mipmap'` builds mipmaps for every image at upload, as
+   *  the headless `renderSceneToPixels` path does; `'auto'` builds them
+   *  for an image the first time a frame draws it at half size or smaller. */
   imageMinification?: ImageMinification;
   /** Flatness tolerance for curve tessellation, in WORLD units (see
    *  `TessellateOptions.flattenTolerance`). When set, path fills are
