@@ -1659,7 +1659,10 @@ only story runner in the repo.
   `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
   pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
-  either side. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
+  either side. A second test in that file ("titles a native story by its meta when forge's meta
+  reaches it through a helper module, and re-decides when the helper changes") failed the same way
+  on teitou at `8f86cc034`, the only failure of that run: the index had not followed the rewritten
+  helper inside its poll. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
   others on one node. Not measured: whether the timeouts follow the node's load, and whether
   running `browser` on its own, or with fewer workers, ends them.
 
