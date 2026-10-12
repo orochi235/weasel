@@ -1,5 +1,6 @@
 import { poseRotationOf } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
@@ -130,7 +131,7 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
   const at = moveCtx.drag!.current;
   const { box, gestureCtx: gctx } = session;
   gctx.modifiers = { ...moveCtx.modifiers };
-  gctx.pointer = { worldX: at.x, worldY: at.y, clientX: 0, clientY: 0 };
+  gctx.pointer = pointerStateOf(at, moveCtx);
   gctx.view = readers.view();
   gctx.plane = readers.plane();
 

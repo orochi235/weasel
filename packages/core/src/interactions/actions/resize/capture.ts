@@ -1,4 +1,5 @@
 import type { InvocationCtx } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -147,7 +148,7 @@ export function buildGestureContext(
     current: new Map<string, Bounds>([[ids[0] as string, ruleOrigin]]),
     snap: null,
     modifiers: { ...ctx.modifiers },
-    pointer: { worldX: startWorld.x, worldY: startWorld.y, clientX: 0, clientY: 0 },
+    pointer: pointerStateOf(startWorld, ctx),
     view: readers.view(),
     plane: readers.plane(),
     // `adapter` is unused by the kit's behaviors; cast to satisfy the type.

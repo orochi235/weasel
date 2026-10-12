@@ -116,10 +116,6 @@ Priority tags:
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
   `cloneAction` the way move, rotate, and insert do, or remove the behavior and the type.
 
-- **(P3) `GestureContext.pointer.clientX` / `clientY` are always 0.** Every default action fills
-  them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
-  from `PointerState`, or carry the client point through `InvocationCtx`.
-
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` now treats a `contextmenu` that arrives while a touch or pen hold is in
   progress as that hold's long-press: it fires the pending one early, or is dropped if the

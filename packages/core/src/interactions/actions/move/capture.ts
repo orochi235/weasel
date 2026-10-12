@@ -1,4 +1,5 @@
 import type { InvocationCtx } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { effectivePose } from 'core/scene/effectivePose';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -127,7 +128,7 @@ export function buildGestureContext(
     current: new Map(origin),
     snap: null,
     modifiers: { ...ctx.modifiers },
-    pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+    pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
     adapter: adapter as unknown as GestureContext<unknown>['adapter'],

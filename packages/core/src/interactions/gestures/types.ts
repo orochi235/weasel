@@ -7,12 +7,13 @@ import type { View } from 'core/viewport/view';
 import type { ModifierState } from '@weasel-js/routing';
 export type { ModifierState };
 
-/** Pointer position in both world and client coords. */
+/** Pointer position in world coords, and in client coords when the event carried them
+ *  (a keystroke, a UI-driven trigger, and a synthetic probe do not). */
 export interface PointerState {
   worldX: number;
   worldY: number;
-  clientX: number;
-  clientY: number;
+  clientX?: number;
+  clientY?: number;
 }
 
 /**
