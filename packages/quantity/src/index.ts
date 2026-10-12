@@ -58,6 +58,7 @@ export {
   zoom,
   zoomKind,
   type FractionDisplay,
+  type FractionOptions,
   type NamedConstant,
   type MultiplierDisplay,
   type PercentDisplay,

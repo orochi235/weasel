@@ -14,11 +14,13 @@ import {
   type NodeOptions,
 } from '@weasel-js/labkit/config';
 
+/** The section a described entry sits in, as structured-clone data. */
 export interface SectionDescription {
   label: string;
   collapsed?: boolean;
 }
 
+/** One key of a described shape: a leaf, or a branch holding more. */
 export type DescribedEntry =
   | {
       branch: true;
@@ -39,6 +41,7 @@ export type DescribedEntry =
       customControl: boolean;
     };
 
+/** A config shape as structured-clone data: each key's entry, described. */
 export type DescribedShape = { [key: string]: DescribedEntry };
 
 /** A story's `f.schema` as structured-clone data. */

@@ -7,12 +7,13 @@
  * via the recorder Proxy without further special-casing.
  */
 
-export type Stage = 'vertex' | 'fragment' | 'link';
+/** The step of building a program that a `ShaderCompileError` came from. */
+export type ShaderStage = 'vertex' | 'fragment' | 'link';
 
 /** Thrown when a shader fails to compile or link, carrying which stage failed
  *  and the driver's log. */
 export class ShaderCompileError extends Error {
-  constructor(public readonly stage: Stage, public readonly log: string) {
+  constructor(public readonly stage: ShaderStage, public readonly log: string) {
     super(`shader ${stage} failure: ${log}`);
     this.name = 'ShaderCompileError';
   }
@@ -73,7 +74,7 @@ export class ShaderProgram {
     this.handle = program;
   }
 
-  private compile(type: number, source: string, stage: Stage): WebGLShader {
+  private compile(type: number, source: string, stage: ShaderStage): WebGLShader {
     const gl = this.gl;
     const shader = gl.createShader(type);
     if (!shader) throw new Error('createShader returned null');

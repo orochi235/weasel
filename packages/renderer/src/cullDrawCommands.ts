@@ -113,7 +113,7 @@ function strokeReach(stroke: Stroke, m: GlMat3): number {
 }
 
 /**
- * {@link strokeReach} at a known world-to-screen scale — what a painter
+ * How far a stroke reaches past its geometry at a known world-to-screen scale — what a painter
  * bounding its own output before it paints can know. `least` is the scale
  * along the axis the transform shrinks most, where it differs from `scale`.
  *

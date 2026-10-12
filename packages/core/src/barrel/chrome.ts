@@ -55,6 +55,7 @@ export {
   type PathAnchorAffordanceOptions,
   type RotationAffordanceOptions,
   type RotationScratch,
+  type TargetTransform,
 } from '../affordances';
 export type { ClaimableGesture } from '@weasel-js/gestures';
 export type { ChromeState } from '../core/selection/chromeState';

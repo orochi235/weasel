@@ -37,6 +37,7 @@ export const SDF_CUTOFF = 0.5;
  *  notify through `onGlyphReady`. */
 export const DEFAULT_BAKE_BUDGET = 16;
 
+/** A face whose glyphs are rasterized on demand into a shared atlas page, rather than shipped as a prebuilt one. */
 export interface DynamicFace {
   family: string;
   weight: number;

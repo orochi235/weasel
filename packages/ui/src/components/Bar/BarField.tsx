@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
-import { PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
+import { type DistributiveOmit, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { BarPopover } from './BarPopover';
 import s from './Bar.module.css';
 
@@ -17,7 +17,6 @@ export interface BarFieldCellProps {
 export type BarFieldProps<T extends string = string> = DistributiveOmit<PropertyControlProps<T>, 'id'> &
   BarFieldCellProps;
 
-type DistributiveOmit<U, K extends PropertyKey> = U extends unknown ? Omit<U, K> : never;
 
 /**
  * One field as a bar holds it: its control at bar size, behind its name where

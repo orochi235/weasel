@@ -1,21 +1,19 @@
 import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
 import type { A11yReport, CssVarReport, ToFrame } from '../protocol/messages';
 
-type Send = (msg: ToFrame) => void;
-
 /** What an axe run in the frame came back with. */
 export type A11yOutcome = { ok: true; report: A11yReport } | { ok: false; message: string };
 
 /** The half of a trial's frame that answers a request: each call is one round trip over the frame's channel. */
 export interface TrialFrameCalls {
-  send: Send;
+  send: (msg: ToFrame) => void;
   audit: () => Promise<A11yOutcome>;
 }
 
 /** What trial chrome can reach of the frame its trial shows. */
 export interface TrialFrame {
   /** Null while no frame is connected. */
-  send: Send | null;
+  send: ((msg: ToFrame) => void) | null;
   /** The frame's latest `vars` report. */
   vars: readonly CssVarReport[];
   /** Runs axe over the story and records the answer as `a11y`. Null while no frame is connected. */

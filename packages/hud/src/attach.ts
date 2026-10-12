@@ -18,6 +18,7 @@ import {
   type ColorContext, type ColorList, type ResolvedTheme,
 } from '@weasel-js/theme';
 
+/** Options for `attachHud`. */
 export interface AttachHudOptions {
   /** Resolved theme the widgets draw with. Defaults to the built-in theme's
    *  default mode; pass `useTheme().resolved` to follow a live theme. */

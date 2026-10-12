@@ -39,7 +39,7 @@ import type {
 } from './types';
 
 /** A mark's box in its target's world. Matches weasel's default `RectPose`. */
-type MarkPose = WorldRect;
+export type MarkPose = WorldRect;
 
 /** The scene one target's marks live in. */
 export type MarkScene = Scene<AnnotationData, 'marks', MarkPose>;

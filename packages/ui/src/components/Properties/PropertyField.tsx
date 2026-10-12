@@ -47,7 +47,8 @@ export interface PropertyFieldRowProps extends PropertyMetricProps {
 export type PropertyFieldProps<T extends string = string> = PropertyFieldRowProps &
   DistributiveOmit<PropertyControlProps<T>, 'className' | 'id'>;
 
-type DistributiveOmit<U, K extends PropertyKey> = U extends unknown ? Omit<U, K> : never;
+/** `Omit` applied to each member of a union, so a discriminated union stays one. */
+export type DistributiveOmit<U, K extends PropertyKey> = U extends unknown ? Omit<U, K> : never;
 
 /**
  * A labeled settings row for one field, its control chosen by `kind` (and

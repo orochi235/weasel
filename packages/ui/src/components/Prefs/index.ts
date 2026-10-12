@@ -19,6 +19,7 @@ export { MapEditor, type MapEditorProps } from './MapEditor';
 export { UnionPicker, type UnionPickerProps } from './UnionPicker';
 export { PrefsRail, type PrefsRailProps } from './PrefsRail';
 export { PrefsPane, type PrefsPaneProps } from './PrefsPane';
+export type { WalkCtx } from './PrefsRow';
 export { PrefsDialog, type PrefsDialogProps } from './PrefsDialog';
 export { PrefKindBadge, type PrefKindBadgeProps } from './PrefKindBadge';
 export {

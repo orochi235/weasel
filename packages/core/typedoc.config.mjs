@@ -15,11 +15,9 @@ export default packageOptions(import.meta.dirname, {
     // public point type, and `Vec2` is a third spelling of the same shape —
     // consolidating them is a real API decision, not a docs fix.
     'Point',
-    'HandScratch',
     'HitAdapter',
     'BooleanZOrder',
     'ReorderAdapter',
-    'CreateDebugOverlayLayerOpts',
     'STANDARD_SLOTS',
     'PenAnchor',
   ],

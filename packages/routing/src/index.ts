@@ -155,7 +155,7 @@ export { isTool } from './tools/types';
 
 // ─── route grammar reflection ─────────────────────────────────────────────
 export * from './tools/routing';
-export { reportRouteConflicts } from './tools/routing/reflection/conflicts';
+export { reportRouteConflicts, type ToolScopes } from './tools/routing/reflection/conflicts';
 
 // ─── input plumbing ───────────────────────────────────────────────────────
 export { activatesFocusedControl, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';

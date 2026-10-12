@@ -12,7 +12,7 @@ export { MarkList } from './MarkList';
 export type { MarkStyle, PaintableMark } from './paint';
 export { markCommands } from './paint';
 export { isStale, seenFrom } from './staleness';
-export type { AnnotationStoreOptions, CaptureDeps, MarkScene } from './store';
+export type { AnnotationStoreOptions, CaptureDeps, MarkPose, MarkScene } from './store';
 export { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
 export { markSvgNodes } from './svgNodes';
 export type {
@@ -25,6 +25,7 @@ export type {
   AnnotationQuery,
   AnnotationSelectionMode,
   AnnotationStatus,
+  AnnotationStorage,
   AnnotationsApi,
   AnnotationsCapability,
   AnnotationTarget,
@@ -35,5 +36,6 @@ export type {
   CaptureSource,
   FracPoint,
   FracRect,
+  PaintedMark,
   SerializedAnnotations,
 } from './types';

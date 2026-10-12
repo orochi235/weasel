@@ -41,25 +41,14 @@ import {
   type ImageNodeData,
   type IngestCtx,
   type Op,
-  type PoseLinear,
   type Stroke,
   type StyledRun,
   type TextStyle,
 } from '@weasel-js/core';
+import type { SvgDraftBounds, SvgDraftPose } from './draftPose';
 
 const CASCADE_OFFSET_PX = 24;
 const VIEWPORT_FIT = 0.9;
-
-/** Axis-aligned box, in the coordinate space of the SVG being unpacked. Used
- *  for the bounds a draft occupies before it becomes a scene node. */
-export interface SvgDraftBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-type DraftPose = SvgDraftBounds & { rotation?: number; transform?: PoseLinear };
 
 /**
  * One node the unpack wants the scene to materialize, in parent-before-child
@@ -67,8 +56,8 @@ type DraftPose = SvgDraftBounds & { rotation?: number; transform?: PoseLinear };
  * roots). Leaf `data` is kit-painter-native (see module doc).
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
-  | { kind: 'container'; id: string; parentId: string | null; pose: DraftPose }
-  | { kind: 'leaf'; id: string; parentId: string | null; pose: DraftPose; data: TData };
+  | { kind: 'container'; id: string; parentId: string | null; pose: SvgDraftPose }
+  | { kind: 'leaf'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData };
 
 /** A leaf `SvgNode`: everything but a group. */
 export type SvgLeafNode = Exclude<SvgNode, SvgGroupNode>;
@@ -78,7 +67,7 @@ export interface SvgNodesToKitDraftsOptions<TData> {
   /** Lower a leaf yourself, from the kit data the default writes for it and
    *  the node it came from — for data shaped other than the kit painters', or
    *  metadata the document carries. `null` leaves it out. */
-  leaf?(id: string, draft: { pose: DraftPose; data: SvgKitLeafData }, source: SvgLeafNode): TData | null;
+  leaf?(id: string, draft: { pose: SvgDraftPose; data: SvgKitLeafData }, source: SvgLeafNode): TData | null;
 }
 
 /** `File.text()` via FileReader — same engine-compat choice as the image
@@ -213,7 +202,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     for (const m of input.markers ?? []) if (getMarker(m.id) === undefined) registerMarker(m);
   }
   const drafts: SvgSceneDraft<TData>[] = [];
-  const pushLeaf = (source: SvgLeafNode, parentId: string | null, pose: DraftPose, data: SvgKitLeafData): DraftPose | null => {
+  const pushLeaf = (source: SvgLeafNode, parentId: string | null, pose: SvgDraftPose, data: SvgKitLeafData): SvgDraftPose | null => {
     const id = nextId(source);
     const out = options.leaf ? options.leaf(id, { pose, data }, source) : (data as TData);
     if (out === null) return null;
@@ -224,7 +213,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
   // Returns the pose `n` was drafted with, so a parent container can union
   // its children's axis-aligned boxes; null for empty groups. `inherited` is
   // the product of the enclosing groups' opacities.
-  const visit = (n: SvgNode, parentId: string | null, inherited: number): DraftPose | null => {
+  const visit = (n: SvgNode, parentId: string | null, inherited: number): SvgDraftPose | null => {
     const k = inherited * (n.opacity ?? 1);
     if (n.kind === 'group') {
       const draft: Extract<SvgSceneDraft<TData>, { kind: 'container' }> = {
@@ -244,7 +233,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     }
 
     if (n.kind === 'text') {
-      const pose: DraftPose = {
+      const pose: SvgDraftPose = {
         x: n.x, y: n.y, width: n.width, height: n.height,
       };
       if (n.rotation) pose.rotation = n.rotation;
@@ -270,7 +259,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     }
 
     if (n.kind === 'image') {
-      const pose: DraftPose = { x: n.x, y: n.y, width: n.width, height: n.height };
+      const pose: SvgDraftPose = { x: n.x, y: n.y, width: n.width, height: n.height };
       if (n.rotation) pose.rotation = n.rotation;
       if (n.transform) pose.transform = n.transform;
       return pushLeaf(n, parentId, pose, {
@@ -289,7 +278,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const b = n.path.kind === 'rect'
       ? { x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height }
       : boundsOfPath(n.path);
-    const pose: DraftPose = { x: b.x, y: b.y, width: b.width, height: b.height };
+    const pose: SvgDraftPose = { x: b.x, y: b.y, width: b.width, height: b.height };
     if (n.rotation) pose.rotation = n.rotation;
     const fill = fillDataFromSvg(n.fill, b);
     const strokeFromSvg = strokeDataFromSvg(n.stroke, b);
@@ -380,7 +369,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       const offset = index * CASCADE_OFFSET_PX;
       const cx = union.x + union.width / 2;
       const cy = union.y + union.height / 2;
-      const place = (p: DraftPose): DraftPose => ({
+      const place = (p: SvgDraftPose): SvgDraftPose => ({
         ...p,
         x: target.x + (p.x - cx) * scale + offset,
         y: target.y + (p.y - cy) * scale + offset,

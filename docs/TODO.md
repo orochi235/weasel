@@ -1676,13 +1676,21 @@ only story runner in the repo.
   hand-written guides per package (only labkit has any, in its own VitePress site), and the
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
-- **(P2) The API reference build reports warnings in the packages it newly covers.**
-  `docs/conventions.md` says `npx typedoc` reports none; that held while it read only core.
-  Most are a documented export referencing a type its barrel does not export, each one a call
-  between exporting the type and listing it under `intentionallyNotExported` in that package's
-  `typedoc.config.mjs`. 91 warnings remain as of 2026-10-11: 87 of that kind, `{@link Field}`
-  in ui's `Input` and `ComboBox` props (unresolved only where labkit re-exports them), and
-  `{@link KEEP}` in `PrefSchemaEditor/schemaExport.ts`.
+- **(P2) The API reference build still reports 12 warnings.** `docs/conventions.md` says
+  `npx typedoc` reports none. Each is a documented export naming a type its barrel does not export:
+  - `Bivariant` (`core/scene/types.ts`), `OpsApplier` (`canvas/deps/slice.ts`), `XY` (geom's
+    `pathHitTest.ts`), and `OnTokenChange` (ui's `TokenPanel`): a one-line export each, in files
+    other branches were rewriting on 2026-10-12.
+  - `LabBaseProps` (labkit's `Lab.tsx`) and `CreateOptions` (storage's `records.ts`): an exported
+    type needs a doc line, and both files sit at their `check:size` cap, so each wants its split
+    first.
+  - `BadgePropsByShape` in ui: exporting it surfaces `BadgeBaseProps`, `BadgeShapeParams`, and
+    about thirty per-shape, per-base, and per-effect parameter types behind them.
+  - `Key` (`string | number`), declared three times in ui: `useAsyncOptions.ts`, `ComboBox.tsx`,
+    and `Select.tsx`. It wants one exported definition.
+  - `DepSchema` and `OverlaySchema` in routing, which its root does export. core merges into both
+    with `declare module`, and TypeDoc appears to file the merged interface under another symbol
+    than the one `DepName` and `KernelOverlay` reference (read from the warning, not traced).
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
 - **(P2) draw: the swatches' active fill and stroke never reach a newly drawn shape.** With nothing
