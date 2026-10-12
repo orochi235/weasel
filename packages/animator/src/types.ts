@@ -192,8 +192,8 @@ export interface Animator {
    *  with `to: null`, behaves as a velocity-driven decay. Supports
    *  mid-flight retargeting via the returned handle's `setTarget`. */
   physics<T>(opts: PhysicsOptions<T> | TargetPhysicsOptions<T>): PhysicsHandle<T>;
-  /** Shows a value on a {@link Target} in place of its committed one until canceled or released:
-   *  a drag preview, a pose driven from outside. Animations on the target add on top of it. */
+  /** Shows a value on a {@link Target} in place of its committed one until canceled or released.
+   *  It covers an animation's move to a destination; a coast, push, or `from` offset adds on top. */
   hold<T>(opts: HoldOptions<T>): HoldHandle;
   /** Cancel a specific animation by handle. Pose stays at current value (no jump). */
   cancel(handle: AnimationHandle): void;

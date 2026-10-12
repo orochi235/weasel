@@ -94,6 +94,15 @@ export interface RowTable {
   fill(columns: LaneColumns | null): void;
 }
 
+/** An animation's share in moving a target's committed value, which its holds stand in front of. */
+export interface Behind {
+  /** What is left of the move its destination made in the committed value. */
+  left(): readonly number[];
+  /** The share of that still to show, per axis, once a hold released over it has committed what
+   *  showed; null for all of it. */
+  kept: number[] | null;
+}
+
 /** What an animator keeps on a target it is moving. */
 export interface TargetState<T = unknown> {
   readonly get: () => T;
@@ -110,9 +119,17 @@ export interface TargetState<T = unknown> {
   heldAt: number[] | null;
   /** How many holds stand in for its committed value. */
   held: number;
-  /** What animations canceled under those holds had left to travel. A hold stands in front of
-   *  the committed value, so it waits here, on screen, until the holds go or an animation with
-   *  a destination takes it up. */
+  /** The share of each axis those holds cover, 0 to 1, as they last read; null beside `heldAt`. */
+  cover: number[] | null;
+  /** The animations with a destination on it. A destination moves the committed value at once
+   *  and the animation shows what is left of that move, so a hold covers it as it covers the
+   *  committed value. */
+  behind: Set<Behind>;
+  /** Whether any of `behind` has a `kept`. */
+  dimmed: boolean;
+  /** What animations stopped under those holds were showing on top of them: how far a coast
+   *  had gone, or what was left of a `from` away from the committed value. It waits here, on
+   *  screen, until the holds go or an animation with a destination takes it up. */
   beside: number[] | null;
   /** Its place in a table of targets, for a row of one. */
   row: { readonly table: RowTable; readonly index: number } | null;
@@ -128,6 +145,21 @@ const states = new WeakMap<object, TargetState>();
 
 /** Where a read gathers what a target's animations add, on the way to `axes.add`. */
 let scratch = new Float64Array(16);
+
+/** What `s`'s holds, and holds released over it, hide of its animations; null where none. */
+function hidden<T>(s: TargetState<T>): number[] | null {
+  const { cover } = s;
+  if (s.behind.size === 0 || (!cover && !s.dimmed)) return null;
+  const out = new Array<number>(s.axes.count).fill(0);
+  for (const b of s.behind) {
+    const left = b.left();
+    for (let i = 0; i < out.length; i++) {
+      const shows = (cover ? 1 - cover[i]! : 1) * (b.kept ? b.kept[i]! : 1);
+      out[i] = out[i]! + left[i]! * (1 - shows);
+    }
+  }
+  return out;
+}
 
 /** `committed`'s axes, with `s`'s holds read again where it has moved under them. */
 function heldAxes<T>(s: TargetState<T>, committed: T): number[] {
@@ -145,10 +177,12 @@ export function readTarget<T>(s: TargetState<T>): T {
   if (s.live === 0) return committed;
   const { axes, slot, beside, adjust } = s;
   // A hold answers how far it is from the committed value, which takes that value's axes to check.
-  if (!axes.add || s.heldAt) {
+  if (!axes.add || s.heldAt || s.dimmed) {
     const a = heldAxes(s, committed);
+    const hid = hidden(s);
     for (let i = 0; i < a.length; i++) {
-      a[i] = a[i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0);
+      a[i] = a[i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0)
+        - (hid ? hid[i]! : 0);
     }
     return axes.from(a);
   }
@@ -172,8 +206,10 @@ export function readTargetInto<T>(s: TargetState<T>, out: AxisBuffer, at: number
     for (let i = 0; i < a.length; i++) out[at + i] = a[i]!;
   }
   if (!moving) return;
+  const hid = hidden(s);
   for (let i = 0; i < axes.count; i++) {
-    out[at + i] = out[at + i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0);
+    out[at + i] = out[at + i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0)
+      - (hid ? hid[i]! : 0);
   }
 }
 
@@ -200,6 +236,9 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     discard: false,
     heldAt: null,
     held: 0,
+    cover: null,
+    behind: new Set(),
+    dimmed: false,
     beside: null,
     row: null,
     live: 0,

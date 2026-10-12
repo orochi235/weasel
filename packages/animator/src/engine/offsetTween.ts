@@ -2,7 +2,7 @@ import { easeOut, resolveEasing } from '@weasel-js/geom';
 import { stateOf } from '../target';
 import type { AnimationHandle, TargetTweenOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { axesFor, bump, keep, minus, plus, takeUp, travel } from './offsets';
+import { axesFor, bump, comeOut, commitOffset, goBehind, minus, plus, shareBehind, takeUp, times, travel } from './offsets';
 
 /** A tween on a target: its destination is committed as it starts, and its voice is what is
  *  left to travel. */
@@ -19,6 +19,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   } as AnimationSeed;
   // Ahead of reading the committed value: an interrupted animation commits where it stopped.
   if (o.cancelKey != null && interrupts) ctx.interrupt(o.cancelKey, seed);
+  const committed = ax.to(s.get());
   const base = takeUp(s);
   const from = o.from === undefined ? ax.from(base) : o.from;
   const path = o.interpolator ? o.interpolator(from, o.to)
@@ -38,6 +39,8 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
       to: new Array<number>(ax.count).fill(0),
     });
   bump(s as never, codec.own(id)!.value, 1);
+  const share = shareBehind(ax, committed, to, travel(ax, given ?? base, to));
+  const behind = goBehind(s, () => times(codec.own(id)!.value, share));
 
   let left = false;
   /** Takes its voice off the target, committing what it had left to travel when `commit`. */
@@ -45,8 +48,10 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
     if (left) return;
     left = true;
     const own = codec.own(id);
+    const moved = own ? behind.left() : [];
+    const shown = comeOut(s, behind, moved);
     if (own) {
-      if (commit) keep(s, own.value);
+      if (commit) commitOffset(s, own.value, moved, shown);
       bump(s as never, own.value, -1);
     }
     codec.stop(id);

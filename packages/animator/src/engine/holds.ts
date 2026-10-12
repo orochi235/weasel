@@ -107,6 +107,24 @@ function settle(group: Group, leaving: Member, committed: readonly number[]): nu
   });
 }
 
+/**
+ * Keeps what shows of each move behind `s`'s holds as their weights go from `before` to
+ * `after` on a release that commits: a hold that covered a share of a move takes that share
+ * with it, so the move goes on as far as it was showing and no further.
+ */
+function dim(s: TargetState, before: readonly number[], after: readonly number[]): void {
+  for (const b of s.behind) {
+    for (let a = 0; a < before.length; a++) {
+      const open = 1 - Math.min(after[a]!, 1);
+      const was = 1 - Math.min(before[a]!, 1);
+      if (open < 1e-9 || open === was) continue;
+      b.kept ??= new Array<number>(before.length).fill(1);
+      b.kept[a] = (b.kept[a]! * was) / open;
+      s.dimmed = true;
+    }
+  }
+}
+
 function coverOf(axes: readonly number[] | undefined, count: number): Uint8Array | null {
   if (!axes) return null;
   const covers = new Uint8Array(count);
@@ -147,8 +165,10 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
       axes: ax.count,
       at: () => {
         const committed = ax.to(s.get());
+        const { delta, total } = fold(made, committed);
         s.heldAt = committed;
-        return fold(made, committed).delta;
+        s.cover = total.map((t) => Math.min(t, 1));
+        return delta;
       },
     });
   }
@@ -160,12 +180,18 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
     touch: () => { if (!gone) ctx.touch(state); },
     leave(commit) {
       if (gone) return;
-      if (commit) absorb(s, settle(groups.get(state)!, member, ax.to(s.get())));
+      if (commit && !s.discard) {
+        const group = groups.get(state)!;
+        const committed = ax.to(s.get());
+        absorb(s, settle(group, member, committed));
+        dim(state, fold(group, committed).total, fold(group, committed, member).total);
+      }
       gone = true;
       members.delete(member);
       s.held -= 1;
       if (s.held === 0) {
         s.heldAt = null;
+        s.cover = null;
         groups.delete(state);
         ctx.codec.stop(voice);
         // Nothing stands in front of the committed value now, so it takes what waited beside it.

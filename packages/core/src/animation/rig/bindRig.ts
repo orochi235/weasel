@@ -56,7 +56,7 @@ export interface Rig {
    * pose, and each frame the rig is posed with what the target shows. A clip is a
    * `SampledTrack<Pose>` given this as its `target`: clips on one rig crossfade by their
    * `weight`s, weights short of 1 leave the rest to the committed pose, and a `spring` or
-   * `tween` on it adds on top. `animator.hold` shows a pose made elsewhere the same way, an
+   * `tween` from a pose away from the committed one adds on top. `animator.hold` shows a pose made elsewhere the same way, an
    * IK solve included.
    */
   readonly target: Target<Pose>;

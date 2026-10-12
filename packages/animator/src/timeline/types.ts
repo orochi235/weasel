@@ -28,8 +28,8 @@ export interface SampledTrack<T> {
   onTick?: (value: T) => void;
   /**
    * A value for the track to move. While the playhead is within the track's keys, the target
-   * shows the sampled value in place of its committed one, as under `animator.hold`, and
-   * animations on the target add on top. Once the playhead is past the last key, or the
+   * shows the sampled value in place of its committed one, as under `animator.hold`, with
+   * what an animation on the target shows apart from its destination added on top. Once the playhead is past the last key, or the
    * timeline finishes or is canceled, the target keeps the value it was showing; before the
    * first key the track leaves the target alone.
    *
