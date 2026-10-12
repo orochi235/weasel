@@ -2090,11 +2090,12 @@ one dead `const` and four stale disable directives.
   `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`. One GPU and backend
   only.
 - **(P3) The pull request benchmark job has never run.** `.github/workflows/perf-pr.yml` runs
-  `perf:bench` and `test:perf` on a pull request's base and head and posts the `perf:compare` table
-  as a comment, without gating. It was written on 2026-10-11 with no pull request open to try it on:
-  the comment and directory-compare scripts are tested, the workflow steps are not. Unmeasured: how
-  long two full runs take on the one self-hosted machine (the job allows 100 minutes), and whether
-  the base, measured first, reads differently from the head for that reason alone.
+  `perf:bench` and `test:perf` on a pull request's merge base and head and posts the `perf:compare`
+  table as a comment, without gating. No pull request has been open to try it on: the comment and
+  directory-compare scripts are tested, the workflow steps have only been read. `perf:bench` has
+  never run on the runner at all, since `perf.yml` runs `test:perf` alone. Unmeasured: how long two
+  full runs take on the one self-hosted machine (the job allows 100 minutes), and whether the base,
+  measured first, reads differently from the head for that reason alone.
 
 - **(P3) Overlays sit on two unrelated z-index scales.** The theme defines `--wzl-z-toolbar`,
   `--wzl-z-overlay`, and `--wzl-z-modal` as 10, 20, and 30. `Dialog` (1000), `Toast` (1100),

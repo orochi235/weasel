@@ -15,7 +15,7 @@ one.
 **Nothing here gates CI.** `.github/workflows/perf.yml` runs `test:perf`
 nightly on a self-hosted machine with a real GPU and keeps the result files as
 an artifact; read those as a trend, never as pass/fail on a change.
-`.github/workflows/perf-pr.yml` runs everything on a pull request's base and on
+`.github/workflows/perf-pr.yml` runs everything on a pull request's merge base and on
 its head, on that same machine, and posts the comparison below as a comment; it
 cannot fail the checks. Shared
 runners are noisy enough that an honest threshold would have to be loose enough
