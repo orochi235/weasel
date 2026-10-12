@@ -1,3 +1,4 @@
+import { cssColorLiteral } from '@weasel-js/paint';
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { CSSProperties, ReactNode } from 'react';
@@ -42,7 +43,7 @@ describe('titlebar', () => {
   it('fills the strip with the edge color and inks the title to read on it', () => {
     render(
       <Scope>
-        <MotifFrame title="Display" motif={titlebar()} tone="rgb(10, 20, 120)">
+        <MotifFrame title="Display" motif={titlebar()} tone={cssColorLiteral("rgb(10, 20, 120)")}>
           x
         </MotifFrame>
       </Scope>,
@@ -69,7 +70,7 @@ describe('titlebar', () => {
   it('paints a named tone over the theme’s strip', () => {
     render(
       <Scope vars={THEMED}>
-        <MotifFrame title="Display" motif={titlebar()} tone="rgb(250, 240, 120)">
+        <MotifFrame title="Display" motif={titlebar()} tone={cssColorLiteral("rgb(250, 240, 120)")}>
           x
         </MotifFrame>
       </Scope>,
