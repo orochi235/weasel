@@ -51,9 +51,9 @@ import {
   type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
 import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
-import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
+import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore, useRedrawOnShaderSource } from './useCanvasRenderer';
+import { shaderKeyOf } from './canvasRenderer';
 import { useSceneLayerList } from './useSceneLayerList';
-import { getProgramSource, programSourceRegistry } from '@weasel-js/renderer';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -437,6 +437,9 @@ function resolveToolsCursor(
  *  effect's deps every render. */
 const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
 
+/** The origin a canvas-local point is measured from. */
+const CANVAS_ORIGIN = { left: 0, top: 0 };
+
 /** Client coords to world, through the `clientToWorld` prop when one is
  *  supplied and the canvas rect otherwise. Every pointer path in this file
  *  goes through here so the two cannot drift. */
@@ -463,7 +466,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     contentVersion,
     syncPaint = false,
     redrawOn,
-    adapter: adapterProp,
+    adapter,
     layers: layersMap,
     selection,
     boundsOf,
@@ -520,8 +523,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }, [resolvedDebugConfig]);
   const committedDebugSinkRef = useLatest(debugSink);
   const getDebug = useCallback(() => committedDebugSinkRef.current, [committedDebugSinkRef]);
-
-  const adapter = adapterProp;
 
   // The element input comes from and every client→world conversion measures: the `<canvas>`
   // this component renders, or under `paintInto` the caller's `inputElement`.
@@ -676,6 +677,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const lease = useCanvasRenderer();
   useRedrawOnRestore(lease, requestRedraw);
   useRedrawOnDensityChange(requestRedraw, dprProp);
+  useRedrawOnShaderSource(shaders, requestRedraw);
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
 
   // Views registered on this surface — declared as `views` descriptors or
@@ -896,7 +898,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // itself. Published by reference and read at draw time.
   const surfaceLayersRef = useLatest<readonly RenderLayer<unknown>[]>(layers);
   useEffect(() => {
-    viewRegistry?.attachSurface({
+    return viewRegistry?.attachSurface({
       origin: () => {
         const c = canvasRef.current;
         if (!c) return { left: 0, top: 0 };
@@ -911,10 +913,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       hitTestExtras: hitTestExtrasIn,
       claimsAbove: (x, y) => {
         const view = viewRef.current;
-        return hitTestExtrasIn(
-          view.x + x / view.scale.x, view.y + y / view.scale.y,
-          view, dimsRef.current, helpersForLayersRef.current,
-        ) !== null;
+        const [worldX, worldY] = clientToWorldHelper(x, y, CANVAS_ORIGIN, view);
+        return hitTestExtrasIn(worldX, worldY, view, dimsRef.current, helpersForLayersRef.current) !== null;
       },
     });
   }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef]);
@@ -946,7 +946,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   useRedrawOn(redrawOn, requestRedraw);
 
-  const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
+  const shaderIdKey = shaderKeyOf(shaders);
 
   // Everything the paint, hit-testing and the view registry read that a React
   // render owns. `useLatest` and the insertion effect below publish committed
@@ -1043,18 +1043,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       clearSubscribers();
     };
   }, [clearSubscribers]);
-
-  useEffect(() => {
-    if (!shaderIdKey) return;
-    const ids = shaderIdKey.split('|');
-    let seen = ids.map(getProgramSource);
-    return programSourceRegistry.subscribe(() => {
-      const now = ids.map(getProgramSource);
-      const changed = now.some((src, i) => src !== seen[i]);
-      seen = now;
-      if (changed) requestRedraw();
-    });
-  }, [shaderIdKey, requestRedraw]);
 
   // Resolved during render, so it reads this render's view, not the ref's
   // last committed one.
@@ -1202,7 +1190,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
  *  the `adapter` prop. */
 export const Canvas = forwardRef(CanvasInner) as <
   TNode extends { id: string } = { id: string },
-  TPose = TNode,
+  TPose = unknown,
 >(
   props: CanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;
