@@ -199,18 +199,6 @@ export default defineConfig({
           exclude: ['**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
-      // The typecheck, lint, and check:* steps CI runs, as tests, so a fleet
-      // run (`.onto/tests`, which is one vitest command) fails on what a push
-      // would. Not in `npm test`: CI runs those steps itself.
-      {
-        test: {
-          name: 'gate',
-          environment: 'node',
-          pool: 'threads',
-          testTimeout: 900_000,
-          include: ['scripts/**/*.gate.ts'],
-        },
-      },
       // Tests that need a real browser — layout, real IndexedDB, CSS that jsdom
       // resolves none of. Headless Chromium, like forge-stories below.
       {
