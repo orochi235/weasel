@@ -25,4 +25,14 @@ describe('rotated resize math', () => {
     const pose = (n: number) => ({ ...INITIAL_GREEN, x: n, y: -n, width: n * 2, height: 1, rotation: 0 });
     expect(medianPose(pose(3), pose(1), pose(2))).toMatchObject({ x: 2, y: -2, width: 4, height: 1 });
   });
+
+  it('recovers size and rotation as the median of the three broken poses, and not position', () => {
+    const green = resized('green');
+    const median = medianPose(resized('orange'), resized('purple'), resized('teal'));
+    for (const key of ['width', 'height', 'rotation'] as const) {
+      expect(median[key]).toBeCloseTo(green[key], 6);
+    }
+    // Orange and purple both skip the correction, so they outvote teal on x and y.
+    expect(Math.hypot(median.x - green.x, median.y - green.y)).toBeGreaterThan(1);
+  });
 });

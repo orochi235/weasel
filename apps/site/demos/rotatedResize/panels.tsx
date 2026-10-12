@@ -230,7 +230,7 @@ export function MedianPanel({
           transform={`rotate(${deg} ${cx} ${cy})`}
         />
       </svg>
-      <OverlayLabel title="Median(orange, purple, teal)" subtitle="per-component recovers green" />
+      <OverlayLabel title="Median(orange, purple, teal)" subtitle="recovers size and rotation, not position" />
     </div>
   );
 }

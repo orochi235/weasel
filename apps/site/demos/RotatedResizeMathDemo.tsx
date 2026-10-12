@@ -3,8 +3,8 @@
  * math" explainer. Four parallel rect panels each apply a different
  * `PoseDescriptor` to the SAME drag input, so one corner-drag drives four
  * diverging poses. A fifth panel stacks them at 60% opacity; a sixth panel
- * shows the per-component median of the three broken poses (triple modular
- * redundancy → recovers the correct green pose, frame-by-frame).
+ * shows the per-component median of the three broken poses, which recovers
+ * green's size and rotation and not its position.
  *
  * ## Post-purge architecture
  *
@@ -254,7 +254,7 @@ export function RotatedResizeMathDemo() {
           <li><strong>No correction (purple):</strong> projection on, but the post-remap fixed-corner correction is a no-op &mdash; the perceived fixed corner drifts.</li>
           <li><strong>Coupled rotation (teal):</strong> remap couples rotation to the AABB diagonal angle &mdash; rect rotates as you resize.</li>
           <li><strong>Live overlay:</strong> all four stacked at 60% opacity so divergence shows as color separation.</li>
-          <li><strong>Median panel:</strong> per-component median of orange + purple + teal. Each broken descriptor differs from green in exactly one component, so the median recovers green frame-by-frame &mdash; triple modular redundancy.</li>
+          <li><strong>Median panel:</strong> per-component median of orange + purple + teal. Two of the three get each of width, height, and rotation right, so the median recovers size and rotation. Position stays wrong: orange and purple both skip the fixed-corner correction, and outvote teal.</li>
         </ul>
       </header>
       <div className="rrmd-grid">
