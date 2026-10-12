@@ -32,20 +32,18 @@ describe('ShelfPacker', () => {
     expect(p.pageCount).toBe(2);
   });
 
-  it('returns null and warns exactly once at the page cap', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('returns null at the page cap, for a rect that would fit an empty page', () => {
     const p = new ShelfPacker(16, 1);
     expect(p.alloc(16, 16)).toEqual({ page: 0, x: 0, y: 0 });
     expect(p.alloc(16, 16)).toBeNull();
     expect(p.alloc(4, 4)).toBeNull();
-    expect(warn).toHaveBeenCalledTimes(1);
+    expect(p.fits(16, 16)).toBe(true);
   });
 
   it('rejects rects larger than a page without creating pages', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const p = new ShelfPacker(16, 4);
+    expect(p.fits(17, 4)).toBe(false);
     expect(p.alloc(17, 4)).toBeNull();
     expect(p.pageCount).toBe(0);
-    expect(warn).toHaveBeenCalledTimes(1);
   });
 });

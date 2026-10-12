@@ -97,6 +97,7 @@ export type {
   LaidOutDecoration,
   LaidOutLineBox,
   MeasuredText,
+  MeasuredSpan,
   MeasureTextBoundsOpts,
   TextLineBoxesOpts,
   MarkdownFontOptions,

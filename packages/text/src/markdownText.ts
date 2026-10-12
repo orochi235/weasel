@@ -6,6 +6,7 @@ import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/
 import { transformRunTexts } from './runs/textTransform';
 import { smallCapsScale, smallCapsText } from './runs/smallCaps';
 import { hangs, wrapLines } from './layout/lineBreak/wrapLines';
+import { DEFAULT_TAB_SIZE, tabAdvance, widthWithTabs, type TabStop } from './layout/tabStops';
 
 export type { StyledRun };
 
@@ -74,7 +75,8 @@ export interface LayoutResult {
 /**
  * Word-wrap parsed runs into lines bounded by `maxWidth`, breaking at the
  * UAX #14 opportunities `layoutRuns` breaks at; pass `Infinity` for
- * single-line layout.
+ * single-line layout. A tab is a run of its own, as wide as it takes to reach
+ * its next stop, `tabSize` spaces apart.
  */
 export function layoutMarkdown(
   runs: StyledRun[],
@@ -83,6 +85,7 @@ export function layoutMarkdown(
   measure: MeasureFn,
   lineHeightFactor: number = 1.3,
   faceOf?: FaceMetricsFn,
+  tabSize: number = DEFAULT_TAB_SIZE,
 ): LayoutResult {
   if (runs.length === 0) return { lines: [], width: 0, height: 0 };
   // No caret reads this layout, so the transformed text simply replaces the source.
@@ -141,7 +144,7 @@ export function layoutMarkdown(
     const out: Piece[] = [];
     for (let k = from; k < to; k++) {
       const last = out[out.length - 1];
-      if (last && last.run === runOf[k] && last.end === startOf[k]) {
+      if (last && last.run === runOf[k] && last.end === startOf[k] && cps[k] !== 9 && cps[k - 1] !== 9) {
         out[out.length - 1] = { ...last, end: endOf[k] };
       } else {
         out.push({ run: runOf[k], start: startOf[k], end: endOf[k] });
@@ -158,7 +161,8 @@ export function layoutMarkdown(
     const positioned: PositionedRun[] = [];
     for (const p of line) {
       const { run, face, size, y, runSize } = placed[p.run];
-      const width = pieceWidth(p);
+      const tab = run.text[p.start] === '\t' ? stopOf(p.run) : null;
+      const width = tab ? tabAdvance(x, tab.stop, tab.min) : pieceWidth(p);
       positioned.push({ ...run, text: run.text.slice(p.start, p.end), x, width, y, size, ...(face ? { face } : {}) });
       x += width;
       maxSize = Math.max(maxSize, runSize);
@@ -166,8 +170,17 @@ export function layoutMarkdown(
     lines.push({ runs: positioned, width: x, height: (maxSize > 0 ? maxSize : fontSize) * lineHeightFactor });
   }
 
-  const widthOf = (start: number, end: number): number =>
+  const stopOf = (run: number): TabStop => {
+    const { run: r, size } = placed[run];
+    const space = measure(' ', size, r.bold ?? false, r.italic ?? false);
+    return { stop: tabSize * space, min: space / 2 };
+  };
+  const tabs: number[] = [];
+  cps.forEach((cp, k) => { if (cp === 9) tabs.push(k); });
+  const flatWidth = (start: number, end: number): number =>
     piecesOf(start, end).reduce((w, p) => w + pieceWidth(p), 0);
+  const widthOf = (start: number, end: number): number =>
+    widthWithTabs(start, end, tabs, (k) => stopOf(runOf[k]), flatWidth);
   for (const line of wrapLines(cps, maxWidth, widthOf)) {
     let end = line.end;
     // A wrapped line's trailing spaces hang past the edge, as they do in `layoutRuns`.
@@ -199,6 +212,8 @@ export interface MarkdownFontOptions {
   color?: string;
   /** Multiplier applied to font size for line height. Default 1.3. */
   lineHeight?: number;
+  /** Distance between tab stops, in spaces, as CSS `tab-size`. Default 8. */
+  tabSize?: number;
 }
 
 function buildFont(
@@ -270,7 +285,7 @@ export function createMarkdownRenderer(
   const weight = numericWeight(fontOpts.weight ?? 400);
   const faceOf: FaceMetricsFn = (bold, italic) =>
     faceMetricsFor(family, bold ? 700 : weight, italic ? 'italic' : 'normal');
-  const layout = layoutMarkdown(parsed, maxWidth, fontSize, measure, fontOpts.lineHeight, faceOf);
+  const layout = layoutMarkdown(parsed, maxWidth, fontSize, measure, fontOpts.lineHeight, faceOf, fontOpts.tabSize);
 
   /** Walk the layout, setting each run's font and handing over its
    *  left-aligned paint position and the index of its line. */

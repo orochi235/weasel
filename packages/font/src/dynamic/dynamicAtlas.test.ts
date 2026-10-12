@@ -4,7 +4,7 @@ import {
   autoEnrollCanvasFont, listCanvasFonts,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
   PAGE_SIZE, _getPagesForTests,
-  resetBakeBudget,
+  resetBakeBudget, syncDynamicPageTexture,
 } from './dynamicAtlas';
 import { subscribeGlyphReady } from '../glyphReady';
 import type { FontFallbackPolicy } from '../fallback';
@@ -198,16 +198,25 @@ describe('requestGlyph', () => {
     expect(_getPagesForTests().length).toBe(0);
   });
 
-  it('leaves the glyph invisible (width 0) when pages are full', () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    __setGlyphRasterizerForTests({
-      faceMetrics: () => ({ ascent: 40, descent: 8 }),
-      rasterize: () => ({
-        width: PAGE_SIZE, height: PAGE_SIZE,
-        alpha: new Uint8ClampedArray(PAGE_SIZE * PAGE_SIZE).fill(255),
-        left: 0, top: 0, advance: PAGE_SIZE,
-      }),
-    });
+});
+
+/** Every glyph fills a page, so four of them fill the atlas. */
+function pageSizedGlyphs(): void {
+  __setGlyphRasterizerForTests({
+    faceMetrics: () => ({ ascent: 40, descent: 8 }),
+    rasterize: () => ({
+      width: PAGE_SIZE, height: PAGE_SIZE,
+      alpha: new Uint8ClampedArray(PAGE_SIZE * PAGE_SIZE).fill(255),
+      left: 0, top: 0, advance: PAGE_SIZE,
+    }),
+  });
+}
+
+describe('full pages', () => {
+  beforeEach(() => { vi.useFakeTimers(); pageSizedGlyphs(); });
+  afterEach(() => vi.useRealTimers());
+
+  it('leaves the glyph that did not fit invisible for the frame that asked', () => {
     const face = getDynamicFace('Big', 400, 'normal');
     for (let i = 0; i < 4; i++) expect(face.requestGlyph(65 + i).page).toBe(i);
     const fifth = face.requestGlyph(70);
@@ -215,10 +224,94 @@ describe('requestGlyph', () => {
     expect(fifth.width).toBe(0);
     expect(fifth.xadvance).toBe(PAGE_SIZE); // advance still valid
   });
+
+  it('empties every page once the frame is over, and bakes what is asked for again', () => {
+    const notified = vi.fn();
+    subscribeGlyphReady(notified);
+    const face = getDynamicFace('Big', 400, 'normal');
+    const other = getDynamicFace('Other', 400, 'normal');
+    other.requestGlyph(65);
+    for (let i = 0; i < 4; i++) face.requestGlyph(65 + i);
+    expect(notified).not.toHaveBeenCalled();
+    expect(face.font.charMap.size).toBe(4);
+
+    vi.runAllTimers();
+    expect(notified).toHaveBeenCalledTimes(1);
+    expect(face.font.charMap.size).toBe(0);
+    expect(face.font.chars).toEqual([]);
+    expect(other.font.charMap.size).toBe(0);
+    expect(getDynamicFace('Big', 400, 'normal')).toBe(face);
+    expect(face.requestGlyph(68).page).toBe(0);
+  });
+
+  it('uploads an emptied page whole, so no renderer keeps a stale glyph', () => {
+    const face = getDynamicFace('Big', 400, 'normal');
+    const calls: string[] = [];
+    const ids = new Set<string>();
+    const sink = {
+      has: (id: string) => ids.has(id),
+      upload: (id: string) => id,
+      uploadR8: (id: string) => { ids.add(id); calls.push('full'); },
+      subImageR8: (_id: string, x: number, y: number, w: number, h: number, data: Uint8Array) => {
+        calls.push(`${x},${y} ${w}x${h} ${data[0]}`);
+      },
+    };
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    syncDynamicPageTexture(sink, 0);
+    expect(calls).toEqual(['full']);
+
+    vi.runAllTimers();
+    syncDynamicPageTexture(sink, 0);
+    expect(calls).toEqual(['full', `0,0 ${PAGE_SIZE}x${PAGE_SIZE} 0`]);
+    expect(_getPagesForTests()[0].patches).toHaveLength(1);
+  });
+
+  it('does not empty the pages again while refilling them, however much is asked for', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const notified = vi.fn();
+    const face = getDynamicFace('Big', 400, 'normal');
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    vi.runAllTimers();
+    subscribeGlyphReady(notified);
+
+    // The frame the emptying asked for lays out more than the pages hold.
+    resetBakeBudget(Infinity);
+    for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
+    vi.runAllTimers();
+    expect(notified).not.toHaveBeenCalled();
+    expect(face.font.charMap.size).toBe(5);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toMatch(/more glyphs/);
+
+    // That frame asked for glyphs, so the next is the first that asks for none.
+    resetBakeBudget(Infinity);
+    resetBakeBudget(Infinity);
+    face.requestGlyph(90);
+    vi.runAllTimers();
+    expect(notified).toHaveBeenCalledTimes(1);
+    expect(face.font.charMap.size).toBe(0);
+  });
+
+  it('does not empty the pages for a glyph no page could hold', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: (_f, _w, _s, cp) => {
+        const side = cp === 66 ? PAGE_SIZE + 1 : 8;
+        return { width: side, height: side, alpha: new Uint8ClampedArray(side * side), left: 0, top: 0, advance: side };
+      },
+    });
+    const face = getDynamicFace('Big', 400, 'normal');
+    face.requestGlyph(65);
+    expect(face.requestGlyph(66).page).toBe(-1);
+    vi.runAllTimers();
+    expect(face.font.charMap.size).toBe(2);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('unregisterCanvasFont', () => {
-  it('drops the family faces but keeps baked pages (no eviction)', () => {
+  it('drops the family faces and leaves their glyphs in the pages until those fill', () => {
     registerCanvasFont('Futura');
     const face = getDynamicFace('Futura', 400, 'normal');
     face.requestGlyph(65);

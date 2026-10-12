@@ -551,48 +551,12 @@ Core five + Crop shipped. Remaining:
   and `write` should be handed the whole node, or the bar should show `start` / `end` as their own
   state instead of resolving them to an edge.
 
-- **(P2) Canvas font tier: a web font that loads after first use never replaces the fallback face it
-  was measured with.** `getDynamicFace` and `requestGlyph`
-  (`packages/font/src/dynamic/dynamicAtlas.ts`) cache face metrics and each glyph's bitmap and
-  advance on first request and never invalidate. If `registerCanvasFont('Roboto')` runs while Roboto
-  is a CSS web font still loading, canvas draws its fallback face, and the text keeps those shapes
-  and advances for the session; nothing in `packages/font` listens for `document.fonts`
-  `loadingdone`. This rests on canvas using a fallback for a not-yet-loaded face, which has not been
-  measured here: a `*.browser.test.ts` that registers a canvas font, lays out, adds the `FontFace`,
-  and compares advances would settle it. The fix (drop the affected faces on `loadingdone` and call
-  `notifyGlyphReady()`) depends on the eviction entry below, since dropped faces currently leave
-  their atlas rects allocated.
-
-- **(P2) Canvas font tier: a full dynamic atlas is permanent.** `ShelfPacker`
-  (`packages/font/src/dynamic/shelfPack.ts`) has no free, `bake` in `dynamicAtlas.ts` returns early
-  once the four 1024-pixel pages are full, and `unregisterCanvasFont` deletes faces but leaves their
-  rects allocated. A font picker previewing many canvas families, or CJK text through the canvas
-  tier, fills the pages; after that every new glyph in any canvas font, including single code points
-  escalated from an atlas font, is invisible until reload, with one console warning. Options: reset
-  the packer and every face's `charMap` wholesale when full and bump the glyph generation, so only
-  what is on screen re-bakes; or a real per-rect free list with eviction by last use.
-
 - **(P2) Text: emoji paint as flat silhouettes, and multi-code-point emoji paint as their parts.**
   The canvas tier keeps only the alpha channel (`packages/font/src/dynamic/glyphRasterizer.ts`), and
   `layoutRuns` looks glyphs up one code point at a time, so `👍🏽` is a thumb plus a swatch, `🇨🇦` is
   two letters, and `👨‍👩‍👧` is three people, all in the run's fill color. Needs grapheme segmentation
   before glyph lookup and a color (RGBA) atlas page drawn untinted for clusters with emoji
   presentation. `LaidOutCell.clusterEnd` already marks where each cluster closes.
-
-- **(P3) Outline fonts: a `.ttc` member that does not match by PostScript name is used silently.**
-  `sfntFromCollection` (`packages/font/src/outline/sfnt.ts`) falls back to the collection's first
-  member and returns `matched: false`, on purpose and with a test; `createOpenTypeParser`
-  (`opentypeParser.ts`) drops the flag. When `queryLocalFonts` reports a name the `name` table
-  spells differently, bold text tessellates the first member (usually Regular) above the outline
-  threshold while the canvas tier draws real bold below it, so the text gets lighter as you zoom in.
-  Options: reject on a mismatch so the registry leaves the run on the SDF tier with its usual
-  warning, or keep the fallback and warn once naming both spellings.
-
-- **(P3) Text layout: the canvas-2D label paths read a tab as one space.** `layoutRuns` runs a tab
-  to the next stop (`TextStyle.tabSize`, default 8 spaces). `measureText` and `layoutMarkdown`
-  measure with `ctx.measureText` and paint with `fillText`, which draws a tab as a single space, so
-  they agree with their own painter and not with the GL tier. Undecided: whether those paths should
-  split a line at its tabs and paint the pieces at tab stops, or keep the canvas's reading.
 
 ---
 
