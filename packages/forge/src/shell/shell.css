@@ -316,6 +316,11 @@
   gap: 0;
 }
 
+/* A trial's pins of the globals sit under its story's own controls, at the size of the CSS Vars rows beside them. */
+.fg-globals-pins {
+  --wzl-font-size-sm: var(--wzl-font-size-2xs);
+}
+
 .fg-globals__popover {
   display: flex;
   flex-direction: column;

@@ -124,6 +124,8 @@ export interface SectionSpec {
   layout?: 'block' | 'inline';
   /** How the section packs its rows, over the panel's `pack`. */
   pack?: 'auto' | 'pairs' | 'one-up';
+  /** A class on the section's frame, for a look the section alone takes. */
+  className?: string;
 }
 
 /** A schema resolved against a set of rules: the vocabulary weasel-ui renders,
@@ -172,6 +174,8 @@ export interface SectionOption {
   layout?: 'block' | 'inline';
   /** How the section packs its rows, over the panel's `pack`. */
   pack?: 'auto' | 'pairs' | 'one-up';
+  /** A class on the section's frame, for a look the section alone takes. */
+  className?: string;
 }
 
 /** Per-node extras that do not belong on a `PrefLeaf`. */

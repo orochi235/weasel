@@ -323,7 +323,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           return (
             <PropertyGroup
               key={sectionKey(section)}
-              title={section.label}
+              {...sectionFrame(section)}
               actions={heading.control}
               {...fold(sectionKey(section), section.collapsed, inner.grid)}
             >
@@ -339,6 +339,11 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   };
 
   return { body, lift, loosePaths };
+}
+
+/** What a section says of its own frame. */
+function sectionFrame(section: SectionSpec): { title: string; className?: string } {
+  return { title: section.label, className: section.className };
 }
 
 /** How a section is keyed for folding: its label at the root, and its group's
