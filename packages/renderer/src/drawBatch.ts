@@ -32,7 +32,7 @@
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
-import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot } from './shaders/batchFill';
+import { PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, WHITE_SLOT, packSlot } from './shaders/batchFill';
 import { clipConvexPolygon, type ClipRect } from './batchClip';
 
 /** Vertices per flush. Caps staging memory; a longer run flushes in chunks,
@@ -273,7 +273,7 @@ export class DrawBatch {
     const bx = ma * x1 + mc * y + mtx,  by = mb * x1 + md * y + mty;
     const cx = ma * x1 + mc * y1 + mtx, cy = mb * x1 + md * y1 + mty;
     const dx = ma * x + mc * y1 + mtx,  dy = mb * x + md * y1 + mty;
-    const P = packSlot(slot, PAINT_MODE_PLAIN);
+    const P = packSlot(slot, PAINT_MODE_IMAGE);
     i = this.writeVertex(i, ax, ay, 1, 1, 1, 1, u0, v0, post, P);
     i = this.writeVertex(i, bx, by, 1, 1, 1, 1, u1, v0, post, P);
     i = this.writeVertex(i, cx, cy, 1, 1, 1, 1, u1, v1, post, P);

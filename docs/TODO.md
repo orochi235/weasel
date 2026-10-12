@@ -410,22 +410,6 @@ Core five + Crop shipped. Remaining:
   undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
   scene showing more than the bound would otherwise evict and reload on every paint.
 
-- **(P2) Renderer: a translucent `ImageBitmap` is multiplied by its alpha twice.** A
-  half-transparent white bitmap drawn with an image command onto a cleared canvas reads back as
-  `(64, 64, 64, 128)` in headless Chromium where `(128, 128, 128, 128)` is correct, whether the
-  bitmap came from `ImageData`, a PNG blob, or a canvas. Every PNG with soft edges shows a dark
-  fringe. `createImageBitmap` with no options holds premultiplied pixels and `texImage2D` uploads
-  them as they are, while `GLImageCache` and the batch shader
-  (`packages/renderer/src/shaders/batchFill.ts`, `vec4(mapped.rgb * a, a)`) assume straight
-  texels. A pattern texture registered from an `ImageBitmap` goes through `GLTextureCache` the same
-  way, and an `HTMLImageElement` source uploads straight, so the two source types disagree. Two ways
-  out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`renderer/images/imageCache.ts`,
-  `features/ingestion/imageHandler.ts`, the loupe) and document that requirement on
-  `ImageDrawCommand.image`, which leaves a consumer's default bitmap wrong; or make image textures
-  premultiplied by convention, set `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for the non-bitmap sources, and
-  have the shader unpremultiply before the color matrix, which fixes every source and filters better
-  at edges.
-
 - **(P3) Renderer: geometry and paint space far from the origin are still single precision.** The
   transform stack is in doubles now and a large model translation is rebased before upload
   (`setProjAndModel`, `u_origin`), so panning at world x = 262,144 and 64x zoom steps by fractions of

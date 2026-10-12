@@ -11,7 +11,14 @@
  * linear filtering, and mipmap resampling corrupts the multi-channel SDF signal.
  */
 
-type TexSource = HTMLImageElement | ImageBitmap | ImageData | HTMLCanvasElement;
+import { uploadPremultiplied, type ImageTexSource } from './uploadPremultiplied';
+
+type TexSource = ImageTexSource;
+
+/** Send a source's bytes as it holds them. A font atlas's channels are a distance field, not a color. */
+function uploadAsHeld(gl: WebGL2RenderingContext, source: TexSource): void {
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+}
 
 /** How a texture samples outside `0..1`. Pattern tiles need `'repeat'`;
  *  everything else clamps. WebGL2 allows `REPEAT` on NPOT textures, so a
@@ -42,6 +49,10 @@ export class GLTextureCache {
    *  be a clamped shader texture in one draw and a repeating pattern tile in
    *  the next, and first-upload-wins gave the second one the first one's mode. */
   upload(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
+    return this.ensure(id, source, wrap, uploadAsHeld);
+  }
+
+  private ensure(id: string, source: TexSource, wrap: TextureWrap, send: typeof uploadAsHeld): string {
     const cached = this.map.get(id);
     if (cached) {
       if (this.wraps.get(id) !== wrap) this.applyWrap(id, cached, wrap);
@@ -55,7 +66,7 @@ export class GLTextureCache {
     const wrapMode = wrap === 'repeat' ? gl.REPEAT : gl.CLAMP_TO_EDGE;
 
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
+    send(gl, source);
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -70,17 +81,18 @@ export class GLTextureCache {
   }
 
   /** `upload` for an id from the texture registry, whose image can be replaced
-   *  under the same id: a changed source sends its pixels again. */
+   *  under the same id: a changed source sends its pixels again. A registered
+   *  texture is an image, so its texels are premultiplied. */
   uploadRegistered(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
     const cached = this.map.get(id);
     if (cached && this.registered.get(id) !== source) {
       const gl = this.gl;
       gl.bindTexture(gl.TEXTURE_2D, cached);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
+      uploadPremultiplied(gl, source);
       gl.bindTexture(gl.TEXTURE_2D, null);
     }
     this.registered.set(id, source);
-    return this.upload(id, source, wrap);
+    return this.ensure(id, source, wrap, uploadPremultiplied);
   }
 
   /**

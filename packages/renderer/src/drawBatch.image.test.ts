@@ -15,7 +15,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { SOLID_RING_SIZE, MAX_VERTICES_PER_BATCH, FLOATS_PER_VERTEX } from './drawBatch';
-import { BATCH_TEXTURE_SLOTS } from './shaders/batchFill';
+import { BATCH_TEXTURE_SLOTS, PAINT_MODE_IMAGE, PAINT_MODE_PLAIN, paintModeOf } from './shaders/batchFill';
 import type { DrawCommand } from './DrawCommand';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
 
@@ -120,11 +120,18 @@ describe('renderer — consecutive image batching', () => {
     // One draw over three quads, not one per bitmap change.
     expect(draws()).toEqual([18]);
     const v = quadUploads()[0];
-    const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT];
+    const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT] % BATCH_TEXTURE_SLOTS;
     // Slot 0 is the white texel, so the first bitmap is 1 and the second 2 —
     // and the third quad returns to the first bitmap's slot rather than taking
     // a third.
     expect([slot(0), slot(4), slot(8)]).toEqual([1, 2, 1]);
+  });
+
+  it('marks an image vertex with the image paint mode, which a solid in its run does not carry', () => {
+    r.render([rect(40), img(0)]);
+    const v = quadUploads()[0];
+    const mode = (vertex: number) => paintModeOf(v[vertex * FLOATS_PER_VERTEX + SLOT]);
+    expect([mode(0), mode(4)]).toEqual([PAINT_MODE_PLAIN, PAINT_MODE_IMAGE]);
   });
 
   it('binds the white texel at slot 0 and each bitmap above it', () => {
@@ -348,7 +355,7 @@ describe('renderer — consecutive image batching', () => {
       r.render([img(0), sprites(packed(2), { image: other }), img(60)]);
       expect(draws()).toEqual([24]);
       const v = quadUploads()[0];
-      const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT];
+      const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT] % BATCH_TEXTURE_SLOTS;
       // Both packed sprites carry the sheet's slot, and the quad after them
       // returns to the first bitmap's.
       expect([slot(0), slot(4), slot(8), slot(12)]).toEqual([1, 2, 2, 1]);
