@@ -1237,20 +1237,23 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
 
-- **(P3) `SelectionPanel`'s `selected` does not reach paired rows or sections.** `selected` and
-  `onSelect` cover single-leaf rows, object-leaf fields, and bar cells, and `PrefSchemaEditor`'s
-  section preview selects with its tree through them. A `pair` row and a section heading, tab, or
-  panel neither mark nor report, which with core's default node properties leaves Position, Size,
-  and the stroke's cap and join row dead in that preview. Ruled 2026-10-11: a `pair` row is marked
-  when any of its leaves is selected, and a press on it reports its first leaf, as a fused `Bar`
-  cell does; a section is named in `selected` by its own key, in the one list with leaf paths, and
-  `PrefSchemaEditor` refuses a section key that equals a leaf's path. Only a top-level section
-  draws a heading, so only those can be selected.
+- **(P3) What `SelectionPanel`'s `selected` still does not reach.** A `pair` row and a top-level
+  section under a heading, in a tab, or in a panel mark and report now. Left: a cell a bar fuses
+  from a run of flags is marked only for its first leaf, so a later flag in `selected` marks
+  nothing (seen in a browser, in a section `as: 'bar'`); doing it needs the panel's `renderers`
+  where the marks are worked out, since a renderer decides whether flags fuse. A top-level
+  section drawn `as: 'bar'` or `as: 'fragment'`, or with no name, draws no heading, tab, or panel,
+  and its key marks and reports nothing: whether it should is not ruled. Cmd or Ctrl on a press of
+  a tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
+  so the press arrives as the focus it causes, which carries no modifier.
 
 - **(P3) Loose ends beside the selection mark, none checked further.** The fragment mark in
   `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
   `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
-  react-aria tab also carries.
+  react-aria tab also carries. That is a drawn bug too: `PrefsForm` puts `data-pref-path` on each
+  tab, so the open tab of a run always wears the selection mark, with nothing selected (seen in a
+  browser: `outline-style: solid`). `SelectionPanel` names its tab with `data-pref-rail` instead
+  and marks the tab's panel.
 
 - **(P1.5) A number's `unit` in a labkit schema can only be code.** It is an object of
   `toDisplay`/`fromDisplay` functions, so it cannot be written to JSON, set in `PrefSchemaEditor`,
