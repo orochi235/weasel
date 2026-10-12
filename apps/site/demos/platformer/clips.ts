@@ -1,6 +1,6 @@
 // apps/site/demos/platformer/clips.ts
 import { easeInOutSine } from '@weasel-js/core';
-import type { Keyframe, Pose, SampledTrack, Target } from '@weasel-js/core';
+import type { Keyframe, Pose, SampledTrack, Target } from '@weasel-js/animator';
 
 export interface Clip {
   /** Milliseconds. */

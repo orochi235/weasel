@@ -45,7 +45,7 @@ import type { Node } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewport/screenSlop';
 import type { View } from 'core/viewport/view';
-import type { VertexColorChannel } from '../animation/colorRegistry';
+import type { VertexColorChannel } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER } from './nodeShapes/derivedPainter';
 import { IMAGE_PAINTER } from './nodeShapes/imagePainter';

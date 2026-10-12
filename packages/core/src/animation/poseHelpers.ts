@@ -3,8 +3,8 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'interactions/actions/
 import type { Op } from 'core/ops/types';
 import type {
   AnimationHandle, Animator, EasingSpec, SpringPresetName, StaggerDelay, StaggerOptions,
-} from './types';
-import type { Target } from './target';
+} from '@weasel-js/animator';
+import type { Target } from '@weasel-js/animator';
 
 /** The part of an adapter `tweenPose` and `springPose` use. Any `SceneAdapter` is one, and so is
  *  the adapter `sceneToAdapter` and `useSceneAdapter` build. */

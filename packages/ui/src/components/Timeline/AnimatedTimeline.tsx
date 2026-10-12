@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactElement } from 'react';
-import { useLatest, useVisibleRaf, type TimelineHandle, type Track } from '@weasel-js/core';
+import { useLatest, useVisibleRaf } from '@weasel-js/core';
+import { type TimelineHandle, type Track } from '@weasel-js/animator';
 import { Timeline, type TimelineProps } from './Timeline';
 
 /** Props for {@link AnimatedTimeline}: `<Timeline>`'s, less what it reads off `handle`. */

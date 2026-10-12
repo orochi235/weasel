@@ -1,4 +1,5 @@
-import { sampleTrack, type EasingSpec, type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack, type Track } from '@weasel-js/core';
+import { type EasingSpec } from '@weasel-js/core';
+import { sampleTrack, type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack, type Track } from '@weasel-js/animator';
 import { trackAtPath } from './lanes';
 
 /** One keyframe, addressed by its track's place in the tree and its index in that track's `keys`. */

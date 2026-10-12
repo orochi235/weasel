@@ -3,7 +3,7 @@
  * color overrides to its painter. The overrides live in an animator's
  * `ColorOverrideRegistry`, which `tweenVertexColors` and its siblings write.
  */
-import type { ColorOverrideRegistry } from '../animation/colorRegistry';
+import type { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { SceneViewDrawOne } from './NodeShape';
 
 const clock = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());

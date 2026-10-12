@@ -25,7 +25,7 @@ import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
 import type { Bounds } from 'tools/builtin/select';
-import type { Animator } from '../../animation/types';
+import type { Animator } from '@weasel-js/animator';
 import { HANDLE_BASE_PX, targetSizesPx } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';

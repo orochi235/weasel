@@ -2,7 +2,7 @@ import { tweenPose } from '../poseHelpers';
 import { setPoseInstant } from './instantPose';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
-import type { Animator, EasingSpec } from '../types';
+import type { Animator, EasingSpec } from '@weasel-js/animator';
 
 /** How nodes enter and leave. `enterFrom` derives the pose a new node starts
  *  at, given where it belongs; `exitTo` derives the pose a departing node

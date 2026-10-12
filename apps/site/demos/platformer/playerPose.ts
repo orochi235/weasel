@@ -1,6 +1,6 @@
 // apps/site/demos/platformer/playerPose.ts
-import { createTarget, skeletonAxes } from '@weasel-js/core';
-import type { Animator, Pose, TimelineHandle } from '@weasel-js/core';
+import { createTarget, skeletonAxes } from '@weasel-js/animator';
+import type { Animator, Pose, TimelineHandle } from '@weasel-js/animator';
 import type { AnimState } from './animState';
 import { CLIPS, clipTrack } from './clips';
 import { PLAYER_SKELETON } from './skeleton';

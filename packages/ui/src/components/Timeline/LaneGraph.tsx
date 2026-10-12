@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { useLatest, type Keyframe } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
+import { type Keyframe } from '@weasel-js/animator';
 import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';
 import {
   applyKeyframeDrag, createKeyframeLayer, type KeyframeLayerState,

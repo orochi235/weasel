@@ -1,7 +1,7 @@
 // apps/site/demos/__tests__/platformerClips.test.ts
 import { describe, it, expect } from 'vitest';
-import { createTarget, skeletonAxes, resolveSkeleton, sampleTrack } from '@weasel-js/core';
-import type { Pose } from '@weasel-js/core';
+import { createTarget, skeletonAxes, resolveSkeleton, sampleTrack } from '@weasel-js/animator';
+import type { Pose } from '@weasel-js/animator';
 import { BONE_LENGTH, JOINT_ORDER, PLAYER_SKELETON } from '../platformer/skeleton';
 import { CLIPS, clipTrack, type Clip } from '../platformer/clips';
 

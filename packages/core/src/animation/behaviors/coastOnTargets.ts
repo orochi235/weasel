@@ -1,8 +1,8 @@
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { Target, TargetAxes } from '../target';
-import type { AnimationHandle } from '../types';
+import type { Target, TargetAxes } from '@weasel-js/animator';
+import type { AnimationHandle } from '@weasel-js/animator';
 import { poseKey } from '../poseHelpers';
 import { clampCorner, coastKey, sameBounds, type Coast, type CoastArgs } from './coast';
 

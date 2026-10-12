@@ -7,8 +7,8 @@ import type { PaintedCursorState } from '@weasel-js/cursor';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
-import type { Target } from '../animation/target';
-import type { Animator } from '../animation/types';
+import type { Target } from '@weasel-js/animator';
+import type { Animator } from '@weasel-js/animator';
 
 /**
  * A view added through {@link SceneCanvasApi.addView}.

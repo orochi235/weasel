@@ -2,10 +2,10 @@ import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId, PoseOverride, PoseOverrides } from '../../core/scene/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import { createTarget, type Target } from '../target';
-import { skeletonAxes } from './skeletonAxes';
-import { resolveSkeleton } from './resolveSkeleton';
-import type { Pose, Skeleton } from './types';
+import { createTarget, type Target } from '@weasel-js/animator';
+import { skeletonAxes } from '@weasel-js/animator';
+import { resolveSkeleton } from '@weasel-js/animator';
+import type { Pose, Skeleton } from '@weasel-js/animator';
 
 /** The part of a scene a rig writes to. */
 export interface RigScene<TPose> {

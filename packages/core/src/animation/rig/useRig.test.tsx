@@ -4,7 +4,7 @@ import { createScene } from '../../core/scene/scene';
 import type { RectPose } from '../../core/scene/types';
 import { useRig } from './useRig';
 import type { Rig } from './bindRig';
-import type { Skeleton } from './types';
+import type { Skeleton } from '@weasel-js/animator';
 
 const SKELETON: Skeleton = {
   joints: [{ name: 'root', parent: null, bind: { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } }],

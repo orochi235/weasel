@@ -1,7 +1,7 @@
 import type { GestureContext } from 'interactions/gestures/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { Animator } from '../types';
+import type { Animator } from '@weasel-js/animator';
 
 /** One flick still traveling: the nodes it carries, and how a new drag of one stops it. */
 export interface Coast {

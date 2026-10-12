@@ -2,19 +2,21 @@ import { useEffect, useState } from 'react';
 import {
   asNodeId,
   boundsOfPath,
-  cycleVertexColors,
   pathFromD,
-  rainbowVertexColors,
   SceneCanvas,
-  solidVertexColors,
-  staggerVertexColors,
   strokeOf,
-  tweenVertexColors,
-  useAnimator,
   useScene,
   type Path,
   type Stroke,
 } from '@weasel-js/core';
+import {
+  cycleVertexColors,
+  rainbowVertexColors,
+  solidVertexColors,
+  staggerVertexColors,
+  tweenVertexColors,
+  useAnimator,
+} from '@weasel-js/animator';
 
 const W = 440, H = 240;
 const ANCHORS = 7;

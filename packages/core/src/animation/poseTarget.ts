@@ -1,8 +1,8 @@
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { documentPose, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
-import { axesOf } from './engine/axes';
-import { createTarget, type Target, type TargetAxes } from './target';
+import { axesOf } from '@weasel-js/animator';
+import { createTarget, type Target, type TargetAxes } from '@weasel-js/animator';
 
 /** What {@link createPoseTarget} takes. */
 export interface PoseTargetOptions<TPose> {

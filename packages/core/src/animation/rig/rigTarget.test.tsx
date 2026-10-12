@@ -5,10 +5,10 @@ import { createScene } from '../../core/scene/scene';
 import { effectivePose } from '../../core/scene/effectivePose';
 import type { NodeId, RectPose } from '../../core/scene/types';
 import { mat3 } from '@weasel-js/geom';
-import type { SampledTrack } from '../timeline/types';
-import { useAnimator } from '../useAnimator';
+import type { SampledTrack } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator';
 import { bindRig } from './bindRig';
-import type { Pose, Skeleton } from './types';
+import type { Pose, Skeleton } from '@weasel-js/animator';
 
 /** A two-bone arm: shoulder at (100, 100) pointing +x, elbow 50 along it. */
 const ARM: Skeleton = {

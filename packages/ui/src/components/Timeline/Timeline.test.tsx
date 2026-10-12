@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
-import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/core';
+import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/animator';
 import { Timeline } from './Timeline';
 
 const TRACK_WIDTH = 500;

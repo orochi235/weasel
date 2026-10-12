@@ -5,11 +5,11 @@ import { createScene } from '../../core/scene/scene';
 import { effectivePose } from '../../core/scene/effectivePose';
 import { asNodeId, type RectPose } from '../../core/scene/types';
 import { sceneToAdapter } from '../../canvas/sceneAdapter';
-import { useAnimator } from '../useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { animateLifecycle } from './animateLifecycle';
 import { animateOnSetPose } from './animateOnSetPose';
 import type { SceneAdapter } from '../../core/adapters/types';
-import type { Animator } from '../types';
+import type { Animator } from '@weasel-js/animator';
 
 function setup() {
   const cbs: ((t: number) => void)[] = [];

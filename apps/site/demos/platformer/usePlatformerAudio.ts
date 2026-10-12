@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
-import type { Animator, TimelineHandle } from '@weasel-js/core';
+import type { Animator, TimelineHandle } from '@weasel-js/animator';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { MOVE_SPEED } from './physics';

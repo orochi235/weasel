@@ -27,7 +27,7 @@ import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { effectivePose } from 'core/scene/effectivePose';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
-import type { ColorOverrideRegistry } from '../animation/colorRegistry';
+import type { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
 import { cullDrawCommands } from '@weasel-js/renderer';

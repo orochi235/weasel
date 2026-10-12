@@ -604,26 +604,6 @@ Core five + Crop shipped. Remaining:
 
 ## Scene, adapters & layout
 
-- **(P2) Pull the standalone parts of core into their own packages.** Ruled 2026-10-11: a package
-  either needs none of the rest of weasel or is an obviously well-defined functional area,
-  whatever its size (CLAUDE.md, "What gets its own package"). Read from the source, not from a
-  trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
-  for relative imports undercounts who uses what. Left: *the animator, under core.*
-  `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call `useAnimator`, so it cannot sit over
-  core. It reaches the scene through `stagger.ts`'s `.springPose`, which has to be cut first.
-  `poseHelpers.ts`, `wrappers/`, `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and
-  `rig/useRig.ts` are scene-bound and stay.
-
-  A new package has to be seeded on npm by hand before a release, since the release job cannot
-  create one: `npm run check:first-publish` names any that are missing.
-
-  Staying in core: `features/poseRun` (it needs the scene and is no functional area of its own),
-  the image and SVG drop handlers (see the entry under Tools & gestures),
-  `features/viewports` (`CanvasView` is built on it), `chrome-caps`
-  (`SceneCanvas` runs it), `modes`, `longPress`, `selection/overlay.ts`, the parallax math
-  (`core/viewport/parallax`, which a scene layer's own `parallax` uses), and the scene-bound text
-  and path layers.
-
 - **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
   it (`identity`, `multiply`, `invert`) are the six-number affine; `mat3` and `GlMat3`, which
   moved in from core's renderer, are the nine-element column-major matrix a GL uniform takes.
@@ -792,7 +772,7 @@ intercepting the press that drags the body.
 ## Animation
 
 - **(P3) Timeline: a frame that skips whole laps fires them under `loop: n` and not under
-  `loop: true`.** In `packages/core/src/animation/timeline/createTimeline.ts`, a frame long enough
+  `loop: true`.** In `packages/animator/src/timeline/createTimeline.ts`, a frame long enough
   to skip whole laps fires every skipped lap's events under `loop: n` but none under `loop: true`,
   where `booking.ts` says crossings fire "nothing of the laps in between". Which of the two is
   meant is undecided.
@@ -803,10 +783,11 @@ Design: `docs/superpowers/specs/2026-08-22-animation-timeline-rig-design.md`.
 Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decomposition.md`.
 
 - [x] **Timeline primitive and hierarchical rig — landed 2026-08-22.**
-  `animator.timeline(opts)` (`packages/core/src/animation/timeline/`) registers
+  `animator.timeline(opts)` (`packages/animator/src/timeline/`) registers
   in the animator's table, with sampled / event / nested tracks. The rig
-  (`packages/core/src/animation/rig/`) ships `blendPoses`, `resolveSkeleton`,
-  `IDENTITY_JOINT`, and `useRig` / `bindRig`, which drive bound scene nodes
+  ships `blendPoses`, `resolveSkeleton`, and `IDENTITY_JOINT` from
+  `packages/animator/src/rig/`, and `useRig` / `bindRig` from
+  `packages/core/src/animation/rig/`, which drive bound scene nodes
   through pose overrides; animating one is a `SampledTrack<Pose>`. Demos:
   `apps/site/demos/TimelineDemo.tsx`, `RigDemo.tsx`.
 

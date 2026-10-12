@@ -49,7 +49,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import type { Node, Scene } from 'core/scene/types';
 import { buildSceneViewCommands, type SceneViewDrawOne } from './sceneViewRender';
-import type { ColorOverrideRegistry } from '../animation/colorRegistry';
+import type { ColorOverrideRegistry } from '@weasel-js/animator';
 import { defaultDrawOne } from './defaultDrawOne';
 import { warmFonts, type FontRequest } from '@weasel-js/font';
 import { isPaintKindKnown, warmPaintKinds } from '@weasel-js/renderer';

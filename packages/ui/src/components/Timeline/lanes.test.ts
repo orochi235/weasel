@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Track } from '@weasel-js/core';
+import type { Track } from '@weasel-js/animator';
 import { buildLanes, trackAtPath } from './lanes';
 
 const sampled = (label: string, values: unknown[]): Track => ({

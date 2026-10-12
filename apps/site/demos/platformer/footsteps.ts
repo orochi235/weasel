@@ -1,4 +1,4 @@
-import type { EventBookingHandle, EventTrack } from '@weasel-js/core';
+import type { EventBookingHandle, EventTrack } from '@weasel-js/animator';
 import { CLIPS } from './clips';
 
 /** The two contacts in one run cycle, in milliseconds. */

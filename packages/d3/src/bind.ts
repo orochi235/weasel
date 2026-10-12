@@ -1,5 +1,6 @@
 import { asNodeId, RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
-import type { Animator, NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
+import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
+import type { Animator } from '@weasel-js/animator';
 import { cancelPendingRemoval, createTransition, takeCustomKeys } from './transition';
 import type {
   BindOptions,

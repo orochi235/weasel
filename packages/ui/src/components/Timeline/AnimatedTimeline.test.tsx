@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, render, fireEvent, screen } from '@testing-library/react';
-import type { SampledTrack, TimelineHandle, Track } from '@weasel-js/core';
+import type { SampledTrack, TimelineHandle, Track } from '@weasel-js/animator';
 import { AnimatedTimeline } from './AnimatedTimeline';
 
 const TRACK_WIDTH = 500;
