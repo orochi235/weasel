@@ -6,6 +6,7 @@ import { resolveStrokeWidth } from '@weasel-js/stroke';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { paintDrawKindRegistry } from '@weasel-js/renderer';
 import { bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
+import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 
 // The painters memoize a node's paint and resolve a fill's frame inside the
 // memo, so the kind set is ambient state that memo cannot see change.
@@ -95,4 +96,23 @@ export function withAnimatedVertexColors(cmds: DrawCommand[], ctx: NodePaintCtx 
     ...(strokeChanged ? { stroke: { ...body.stroke!, vertexColors: stroke as number[] } } : {}),
   };
   return [next, ...cmds.slice(1)];
+}
+
+/** The paint a path node wears, resolved: what an action that turns ink into
+ *  geometry reads from a node and tells a consumer to put on a result. */
+export interface PathPaint {
+  /** `null` is no fill. */
+  fill: FillStyle | null;
+  /** Absent for no stroke. */
+  stroke?: Stroke;
+}
+
+/** {@link PathPaint} of a node that keeps its paint in `data.fill` and
+ *  `data.stroke`, as the built-in path painter draws it: a stroke with no
+ *  `paint` is none, and an undeclared fill is the default shape fill unless
+ *  the node is stroked. */
+export function pathPaintOf(data: { fill?: FillStyle | null; stroke?: Stroke | null }): PathPaint {
+  const stroke = resolveNodeStroke(data.stroke);
+  const fill = resolveNodeFill(data.fill, stroke !== null ? null : DEFAULT_SHAPE_FILL);
+  return stroke !== null ? { fill, stroke } : { fill };
 }

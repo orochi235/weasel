@@ -85,7 +85,7 @@ export const FEATURE_ACTION_IDS: Readonly<Record<BaseFeature, readonly string[]>
   ],
   paths: [
     'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
-    'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop', 'createOutlines',
+    'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop', 'createOutlines', 'outlineStroke',
     'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor',
     'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
     'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
