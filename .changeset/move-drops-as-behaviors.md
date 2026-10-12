@@ -16,3 +16,5 @@ What a consumer can observe:
 - A layout drop the destination refuses reports `committed = false`. It reported `true`, and threw `SceneArrivalRefused` out of the gesture when the move was transient.
 - A refused arrival in a transient resize, rotate, or insert no longer throws out of the gesture either. Nothing lands, and it reports `committed = false`.
 - A consumer `applyOps` hook is still taken at its word: a commit handed to it reports `true`.
+
+Fixed: a layout container inside the dragged subtree no longer takes the drop. A short drag of a group holding one could pick it, since it is tested where the document still holds it, and the commit then tried to reparent the group under its own descendant.

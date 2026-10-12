@@ -92,7 +92,6 @@ export function pickContainer(
     return pointInBounds(aabb, at);
   };
   const consider = (id: NodeId, zPath: number[]): void => {
-    if (draggedIds.has(id)) return;
     const layout = layoutDep.getLayout(id as string);
     if (!layout) return;
     const node = scene.get(id);
@@ -118,6 +117,9 @@ export function pickContainer(
   const walk = (parentId: NodeId | null, parentPath: number[]): void => {
     const childIds = parentId === null ? scene.roots : scene.childrenOf(parentId);
     for (let i = 0; i < childIds.length; i++) {
+      // A dragged root's subtree goes with it: dropping into one of its own
+      // descendants would reparent it under itself.
+      if (draggedIds.has(childIds[i])) continue;
       const childPath = [...parentPath, i];
       consider(childIds[i], childPath);
       walk(childIds[i], childPath);
