@@ -1270,15 +1270,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the layer canvases take the new backing size in a real browser when the ratio changes with no
   resize. Wants a browser test that emulates the change (`Emulation.setDeviceMetricsOverride`).
 
-- **(P2) labkit annotations: a target outside its stage is drawn, and takes input, over whatever
-  is beside it.** `AnnotationOverlay` (`packages/labkit/src/annotations/AnnotationOverlay.tsx`)
-  places its tile, its outline, and its input box at the target element's own rect, which the
-  stage's `overflow` does not clip. Seen in the `annotate-lab` example: mark the part, then press
-  Add trial, so the first trial narrows and its camera keeps the pan it had; the part is out of
-  its stage, and its marks, its blue outline, and a box that takes presses sit over the second
-  trial's sidebar. Wants the tile and the input box cut to the stage's visible rect, which makes
-  the scissor differ from the rect the marks are placed against.
-
 - **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
   them.** A trial builds its annotation store once from `record.annotations`
   (`packages/labkit/src/trial/Trial.tsx`, "One store for the trial's lifetime") and never reads the
