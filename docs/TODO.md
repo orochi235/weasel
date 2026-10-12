@@ -1848,8 +1848,16 @@ one dead `const` and four stale disable directives.
 
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`),
     16 of it bind and draw; no other call in `flushBatch` moves it by more than
-    its noise, about 1.2 us. So what remains is the draw count: a color matrix,
-    synthetic bold, and an eighth texture all still break the run.
+    its noise, about 1.2 us. So what remains is the draw count: synthetic bold
+    and an eighth texture still break the run, and so does a color matrix
+    around an image or a gradient. A solid or a glyph under a color matrix no
+    longer does: its color is mapped on the CPU (`draw/foldColor.ts`), which
+    paints the same pixel as the shader in headless Chromium
+    (`colorMatrixFold.browser.test.ts`) and has not been timed. The specs that
+    break a run with a matrix on solid rects (`flush-anatomy`, `clip-cost`,
+    `flush-noise`) turn the mapping off through `colorFolding`, and have not
+    been run since that edit. An image under a diagonal matrix with no bias
+    could be mapped the same way and is not.
   - **A clip only the stencil can express still flushes on entry and exit**:
     a polygon, a rect turned off the axes, and a rect clip with a slanted item
     crossing it (`DrawBatch.clipQuad` says why a slanted edge cannot be cut).

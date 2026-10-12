@@ -117,6 +117,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const { timeInterleaved } = await import(
         /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`
       );
+      // A solid's color matrix is mapped on the CPU and no longer breaks its
+      // run; the `-cmbreak` frames time the break, so this turns that off.
+      const { colorFolding } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/draw.ts`
+      );
+      colorFolding.enabled = false;
 
       const W = 800;
       const H = 600;

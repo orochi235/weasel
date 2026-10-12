@@ -432,7 +432,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     0, 0, 0, 1, 0,
   ];
 
-  it('uploads u_colorMatrix and u_colorBias during a text draw inside a group with colorMatrix', () => {
+  it('maps a glyph color through the group colorMatrix before staging it, leaving the uniform at identity', () => {
     const cmd: DrawCommand = {
       kind: 'group',
       colorMatrix: NO_RED,
@@ -441,16 +441,14 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       ],
     };
     r.render([cmd]);
+    // A glyph's color is its vertex color alone, so white under NO_RED is staged as cyan.
+    const upload = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+    )!;
+    expect(Array.from((upload.args[2] as Float32Array).slice(2, 6))).toEqual([0, 1, 1, 1]);
     const matrixCalls = recorder.calls.filter((c) => c.name === 'uniformMatrix4fv');
-    const biasCalls = recorder.calls.filter((c) => c.name === 'uniform4f');
     expect(matrixCalls.length).toBeGreaterThan(0);
-    // The matrix payload is a Float32Array of length 16.
-    const someIsColorMatrix = matrixCalls.some((c) => {
-      const arr = c.args[2];
-      return arr instanceof Float32Array && arr.length === 16 && arr[0] === 0 && arr[5] === 1;
-    });
-    expect(someIsColorMatrix).toBe(true);
-    expect(biasCalls.length).toBeGreaterThan(0);
+    for (const c of matrixCalls) expect((c.args[2] as Float32Array)[0]).toBe(1);
   });
 
   it('uploads u_colorMatrix and u_colorBias during an image draw inside a group with colorMatrix', () => {
@@ -1753,7 +1751,7 @@ describe('drawText — decoration reaches the GPU', () => {
     expect(func).toEqual([0x0202, 0x02, 0x02]);
   });
 
-  it('uploads the group color matrix and alpha for the rule, as the glyph path does', () => {
+  it('maps the rule through the group color matrix and alpha, as the glyph path does', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, {
       kind: 'group',
@@ -1767,29 +1765,20 @@ describe('drawText — decoration reaches the GPU', () => {
       ],
       children: [{
         kind: 'text', x: 0, y: 0,
-        runs: [decoratedRun({ underline: true })],
+        runs: [decoratedRun({ underline: true, fill: { fill: 'solid', color: '#ff0000' } })],
         maxWidth: Infinity, align: 'left', style: {},
       }],
     } as DrawCommand);
-    flushBatch(ctx);
-    // Look only at what was uploaded after the batch was bound to flush.
-    const from = calls.findIndex((c) => c.name === 'useProgram' && c.args[0] === ctx.batchFill.handle);
-    expect(from).toBeGreaterThanOrEqual(0);
-    const after = calls.slice(from);
-    // Group alpha reaches u_alpha, and the group color matrix reaches
-    // u_colorMatrix — the rule must be tinted and faded like the glyphs.
-    expect(after.some((c) => c.name === 'uniform1f' && c.args[1] === 0.5)).toBe(true);
+    // The glyph quad and its rule: red swapped to green and faded by the
+    // group, on every vertex, so the rule is tinted and faded like the glyph.
+    const v = stagedVertices(ctx, calls);
+    expect(v).toHaveLength(2 * 4 * FLOATS_PER_VERTEX);
+    for (let i = 0; i < v.length; i += FLOATS_PER_VERTEX) {
+      expect(Array.from(v.slice(i + 2, i + 6))).toEqual([0, 1, 0, 0.5]);
+    }
     // u_proj / u_model, without which the rect lands in raw clip space.
-    expect(after.filter((c) => c.name === 'uniformMatrix3fv')).toHaveLength(2);
-    const cm = after.find((c) => c.name === 'uniformMatrix4fv');
-    expect(cm).toBeDefined();
-    // The same matrix, transposed to column-major as setColorMatrixUniforms does.
-    expect(Array.from(cm!.args[2] as Float32Array)).toEqual([
-      0, 1, 0, 0,
-      1, 0, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    ]);
+    const from = calls.findIndex((c) => c.name === 'useProgram' && c.args[0] === ctx.batchFill.handle);
+    expect(calls.slice(from).filter((c) => c.name === 'uniformMatrix3fv')).toHaveLength(2);
   });
 });
 
@@ -2324,10 +2313,14 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
     // Identity for the first rect, a real matrix for the second.
     const tinted = new Array(20).fill(0);
     tinted[0] = 0.5; tinted[6] = 0.5; tinted[12] = 0.5; tinted[18] = 1;
+    // Images, whose color only the shader can map: a solid's is mapped on the
+    // CPU and never moves the uniform.
+    const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 });
     r.render([
-      rect(0),
-      { kind: 'group', colorMatrix: tinted, children: [rect(20)] } as unknown as DrawCommand,
-      rect(40),
+      img(0),
+      { kind: 'group', colorMatrix: tinted, children: [img(20)] } as unknown as DrawCommand,
+      img(40),
     ]);
     // Identity, then the tint, then back to identity on the way out.
     expect(countOf('uniformMatrix4fv')).toBeGreaterThanOrEqual(3);

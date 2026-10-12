@@ -173,6 +173,7 @@ export { mat3, getMesh };
 export type { DrawContext, ClipEntry, GlyphPaintKind } from './draw/drawContext';
 export { setUniform } from './draw/customShader';
 export { meshBatching, tryStageFill } from './draw/batch';
+export { colorFolding } from './draw/foldColor';
 export { flushBatch } from './draw/flushBatch';
 export { pushClip, popClip } from './draw/clip';
 export { OUTLINE_MIN_SCREEN_PX } from './draw/text';
