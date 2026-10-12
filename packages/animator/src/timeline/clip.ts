@@ -1,4 +1,6 @@
-import { EASINGS, type BezierEasing, type EasingName, type EasingSpec } from '@weasel-js/geom';
+import {
+  EASINGS, reviveTypedArrays, tagTypedArrays, type BezierEasing, type EasingName, type EasingSpec,
+} from '@weasel-js/geom';
 import type { Target } from '../target';
 import type { Interpolate } from '../types';
 import type { EventTrack, NestedTimeline, SampledTrack, TimelineEvent, TimelineTrack, Track } from './types';
@@ -10,6 +12,8 @@ export type ClipValue = number | string | boolean | null | ClipValue[] | { [key:
 /** A keyframe as data. Its easing is a built-in's name or bezier control points. */
 export interface ClipKey {
   t: number;
+  /** A typed array in the live key's value, as a `Path` has, is held as a `TaggedTypedArray`
+   *  from `@weasel-js/geom`: `{ __ta: 'f32', data: [...] }`. `bindClip` makes it the array again. */
   value: ClipValue;
   easing?: EasingName | BezierEasing;
 }
@@ -99,7 +103,7 @@ function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
   return defined<SampledTrack<ClipValue>>({
     kind: 'sampled',
     label: track.label,
-    keys: track.keys.map((k) => ({ ...k })),
+    keys: track.keys.map((k) => ({ ...k, value: reviveTypedArrays(k.value) as ClipValue })),
     target,
     targetName: track.target,
     interpolate,
@@ -156,8 +160,9 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
     label: track.label,
     target: track.targetName,
     keys: track.keys.map((k) => {
-      if (!isClipValue(k.value)) throw new Error(`toClip: ${where} holds a value JSON cannot round-trip, at t = ${k.t}.`);
-      return defined<ClipKey>({ t: k.t, value: k.value, easing: easingOf(k.easing, where) });
+      const value = tagTypedArrays(k.value);
+      if (!isClipValue(value)) throw new Error(`toClip: ${where} holds a value JSON cannot round-trip, at t = ${k.t}.`);
+      return defined<ClipKey>({ t: k.t, value, easing: easingOf(k.easing, where) });
     }),
     interpolate: track.interpolateName,
     weight: track.weight,
@@ -190,8 +195,9 @@ function timelineToClip(timeline: NestedTimeline): ClipTimeline {
  * A live timeline as a clip: `{ tracks, duration }` as `animator.timeline` takes them, or
  * `{ tracks: handle.tracks() }` off a running one. Each track is written by the names it
  * carries (`targetName`, `interpolateName`, an event's `name`), which `bindClip` sets and a
- * track written by hand can set too. Throws, naming the track, on anything a clip cannot
- * hold: a function with no name, an `onTick`, or a value JSON would not read back.
+ * track written by hand can set too. A typed array in a key's value is written tagged.
+ * Throws, naming the track, on anything a clip cannot hold: a function with no name, an
+ * `onTick`, or a value JSON would not read back.
  */
 export function toClip(timeline: NestedTimeline): Clip {
   return { version: 1, ...timelineToClip(timeline) };

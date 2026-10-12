@@ -762,10 +762,6 @@ skin", "Animation target") describes them. What is left:
   keeps its own `Clip` type and `clipTrack`, with function easings, and `TimelineDemo.tsx`
   moves its nodes from `onTick` closures. Both would be `Clip` data bound with `bindClip` and
   `sceneClipTargets`.
-- **(P3) A clip cannot hold a path** — a key's value has to be what JSON reads back, and a
-  `Path` keeps its points in typed arrays, so a track tweening a path-shaped pose makes
-  `toClip` throw. `apps/draw/src/persistence.ts` tags typed arrays for its own files; a clip
-  would need the same, in `packages/animator/src/timeline/clip.ts`.
 - **(P3) A clip names a rig track's axes by number** — `ClipSampledTrack.axes` is positions in
   the target's axes, so a track on some of a rig's joints breaks when the skeleton's joint
   order changes. Naming joints needs the binder to answer a target's axes for names, as

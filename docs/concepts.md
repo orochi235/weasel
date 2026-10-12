@@ -353,6 +353,7 @@ function or a target.
 | `interpolate` | `interpolate: 'oklab'` | `ClipBinder.interpolate[name]` |
 | an event's `fire` and `book` | `name`, with `data` | `ClipBinder.event(name, data)` |
 | a function easing | its built-in name, or `{ bezier }` | nothing: both are data |
+| a typed array in a key's value, as a `Path` has | `{ __ta: 'f32', data: [...] }` | nothing: `bindClip` reads it back |
 
 `bindClip(clip, binder)` answers what `animator.timeline` takes, and `toClip` reads a
 live timeline back, an edited one included, because a live track keeps its names

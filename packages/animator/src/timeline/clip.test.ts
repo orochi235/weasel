@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { easeInOutSine } from '@weasel-js/geom';
+import { easeInOutSine, PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 import { createTarget, type Target } from '../target';
-import { bindClip, toClip, type Clip, type ClipBinder } from './clip';
+import { bindClip, toClip, type Clip, type ClipBinder, type ClipSampledTrack } from './clip';
 import { sampleTrack } from './sampleTrack';
 import type { EventTrack, NestedTimeline, SampledTrack, TimelineTrack, Track } from './types';
 
@@ -130,7 +130,46 @@ describe('toClip', () => {
     expect(clip({ ...base, interpolate: (a: number) => a } as never)).toThrow(/track "x" has an interpolate and no interpolateName/);
     expect(clip({ ...base, weight: () => 1 } as never)).toThrow(/track "x" has a function for its weight/);
     expect(clip({ ...base, keys: [{ t: 0, value: 1, easing: (u: number) => u * u }] } as never)).toThrow(/track "x" eases a key by a function that is not a built-in/);
-    expect(clip({ ...base, keys: [{ t: 0, value: new Float32Array(2) }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
+    expect(clip({ ...base, keys: [{ t: 0, value: new Map() }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
+    expect(clip({ ...base, keys: [{ t: 0, value: Float32Array.of(NaN) }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
     expect(clip({ kind: 'event', label: 'e', events: [{ t: 0, fire: () => {} }] })).toThrow(/track "e" has an event with no name/);
+  });
+});
+
+describe('a clip holding a path', () => {
+  const shape = (...coords: number[]): PolygonPath => ({
+    kind: 'polygon', commands: Uint8Array.of(PATH_M, PATH_L), coords: Float32Array.from(coords), fillRule: 'nonzero',
+  });
+  const live = (): NestedTimeline => ({
+    tracks: [
+      {
+        kind: 'sampled', label: 'outline', target: numberTarget() as never, targetName: 'pose:blob',
+        keys: [{ t: 0, value: shape(0, 0, 10, 0) }, { t: 500, value: shape(0, 0, 10, 20) }],
+      },
+    ],
+  });
+
+  it('writes a typed array as a tag and its numbers', () => {
+    const track = toClip(live()).tracks[0] as ClipSampledTrack;
+    expect(track.keys[1].value).toEqual({
+      kind: 'polygon', commands: { __ta: 'u8', data: [PATH_M, PATH_L] }, coords: { __ta: 'f32', data: [0, 0, 10, 20] }, fillRule: 'nonzero',
+    });
+  });
+
+  it('reads the typed arrays back through JSON', () => {
+    const clip = JSON.parse(JSON.stringify(toClip(live()))) as Clip;
+    const back = bindClip(clip, binder({ target: () => numberTarget() as never }));
+    const keys = (back.tracks[0] as SampledTrack<PolygonPath>).keys;
+    expect(keys[1].value.coords).toBeInstanceOf(Float32Array);
+    expect(keys[1].value.commands).toBeInstanceOf(Uint8Array);
+    expect(keys.map((k) => k.value)).toEqual([shape(0, 0, 10, 0), shape(0, 0, 10, 20)]);
+    expect(toClip(back)).toEqual(clip);
+  });
+
+  it('leaves a clip\'s own values out of reach of an edit to the live track', () => {
+    const clip = toClip(live());
+    const back = bindClip(clip, binder({ target: () => numberTarget() as never }));
+    (back.tracks[0] as SampledTrack<PolygonPath>).keys[0].value.coords[2] = 99;
+    expect((clip.tracks[0] as ClipSampledTrack).keys[0].value).toMatchObject({ coords: { data: [0, 0, 10, 0] } });
   });
 });
