@@ -11,8 +11,8 @@
   gap: var(--wzl-space-4);
   min-height: 44px;
   padding: var(--wzl-space-5);
-  background: var(--ckd-surface-2);
-  border: 1px solid var(--ckd-border-2);
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border);
   border-radius: 4px;
 }
 
@@ -28,7 +28,7 @@
 }
 
 .selected {
-  border-color: var(--ckd-text);
+  border-color: var(--wzl-fg);
 }
 
 .controls {
@@ -50,7 +50,7 @@
 
 .hint {
   font-size: 12px;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .stacks {
@@ -65,13 +65,13 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .empty {
   margin: 0;
   font-size: 12px;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
   font-style: italic;
 }
 
@@ -89,25 +89,25 @@
   gap: var(--wzl-space-4);
   padding: 3px var(--wzl-space-4);
   font-size: 12px;
-  border-inline-start: 2px solid var(--ckd-border-2);
+  border-inline-start: 2px solid var(--wzl-border);
 }
 
 .next {
-  border-inline-start-color: var(--ckd-accent);
-  background: color-mix(in srgb, var(--ckd-accent) 12%, transparent);
+  border-inline-start-color: var(--wzl-accent-strong);
+  background: color-mix(in srgb, var(--wzl-accent-strong) 12%, transparent);
 }
 
 .label {
-  color: var(--ckd-text);
+  color: var(--wzl-fg);
 }
 
 .id {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .pushes {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   margin-inline-start: auto;
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
 }

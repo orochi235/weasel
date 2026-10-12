@@ -990,15 +990,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   swatch tabs against `ToggleBar`'s flat variant and its hex and number inputs against `Input`
   and `NumberField`.
 
-- **(P3) The site's chrome colors come from its own `--ckd-*` palette, not theme tokens.**
-  `canvas-kit-demo.css` declares `--ckd-*`, and it and the demos' stylesheets read them directly, so
-  the site ignores light mode and any theme a reader picks. Its `:root` block already feeds most of
-  them into `--wzl-*` (`--ckd-text` → `--wzl-fg`, `--ckd-muted` → `--wzl-fg-muted`, …), but
-  `--ckd-bg` and `--ckd-surface-2` have no counterpart there, and `--ckd-accent` /
-  `--ckd-accent-dim` split what `--wzl-accent` means. Ruled 2026-10-11: the site follows the
-  reader's mode and theme through the theme tokens, and gives up its fixed dark look. That leaves
-  picking tokens for those four, moving the stylesheets off `--ckd-*`, and dropping the
-  `color-scheme: dark` that pins `canvas-kit-demo.css`.
+- **(P3) Nothing on the site sets the mode.** Its stylesheets read theme tokens now, so the chrome
+  follows `data-wzl-mode` and whatever theme is applied, but no reader can pick one: the demo
+  shell draws the default theme in dark. `useColorModePreference` and a `ColorModeControl` in the
+  sidebar would do it. Look at the pages in light mode first: demo scenes still draw in colors
+  chosen for a dark page (`#d4c4a8` labels in `ViewportDemo` and `AudioDemo`), a few rules darken
+  with `rgba(0, 0, 0, 0.2)` in either mode, and the front page pins its own theme to dark.
 
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
   Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not

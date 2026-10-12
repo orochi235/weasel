@@ -11,19 +11,19 @@
 }
 
 .crosshair {
-  stroke: var(--ckd-text);
+  stroke: var(--wzl-fg);
   stroke-width: 1.5;
   fill: none;
   pointer-events: none;
 }
 
 .lensGround {
-  fill: var(--ckd-surface);
+  fill: var(--wzl-surface-raised);
 }
 
 .lensFrame {
   fill: none;
-  stroke: var(--ckd-accent);
+  stroke: var(--wzl-accent-strong);
   stroke-width: 1;
   pointer-events: none;
 }
@@ -37,7 +37,7 @@
 .readout th {
   text-align: start;
   font-weight: 500;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   padding: var(--wzl-space-1) var(--wzl-space-6) var(--wzl-space-1) 0;
 }
 
@@ -51,11 +51,11 @@
   height: 12px;
   margin-inline-end: var(--wzl-space-3);
   vertical-align: -1px;
-  outline: 1px solid var(--ckd-border);
+  outline: 1px solid var(--wzl-border-strong);
 }
 
 .note {
   margin-inline-start: var(--wzl-space-6);
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
   font-family: system-ui, sans-serif;
 }

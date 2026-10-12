@@ -20,6 +20,6 @@
 .json {
   margin: 0;
   font-size: 12px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   white-space: pre-wrap;
 }

@@ -15,7 +15,7 @@
 }
 
 .hint {
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .row {
@@ -26,7 +26,7 @@
 
 .minimapPanel {
   padding: var(--wzl-space-4);
-  border: 1px solid var(--ckd-border);
+  border: 1px solid var(--wzl-border-strong);
   background: rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
@@ -35,7 +35,7 @@
 
 .minimapTitle {
   font-size: 11px;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

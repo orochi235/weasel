@@ -18,11 +18,11 @@
 }
 
 .demo .anchor {
-  box-shadow: inset 2px 0 0 var(--ckd-accent);
+  box-shadow: inset 2px 0 0 var(--wzl-accent-strong);
 }
 
 .demo .locked {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .tag {
@@ -30,7 +30,7 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .tag + .tag {
@@ -47,7 +47,7 @@
 }
 
 .state dt {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .state dd {

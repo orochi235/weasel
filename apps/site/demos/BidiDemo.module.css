@@ -37,16 +37,16 @@
   align-items: center;
   min-width: 30px;
   padding: 3px var(--wzl-space-1);
-  border: 1px solid var(--ckd-border-2);
+  border: 1px solid var(--wzl-border);
   border-radius: 3px;
 }
 
 .even {
-  background: var(--ckd-surface);
+  background: var(--wzl-surface-raised);
 }
 
 .odd {
-  background: color-mix(in srgb, var(--ckd-accent) 22%, var(--ckd-surface));
+  background: color-mix(in srgb, var(--wzl-accent-strong) 22%, var(--wzl-surface-raised));
 }
 
 .removed {
@@ -55,8 +55,8 @@
 }
 
 .mirrored {
-  border-color: var(--ckd-accent);
-  box-shadow: 0 0 0 1px var(--ckd-accent);
+  border-color: var(--wzl-accent-strong);
+  box-shadow: 0 0 0 1px var(--wzl-accent-strong);
 }
 
 .glyph {
@@ -68,7 +68,7 @@
 .meta {
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 10px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .compare {
@@ -82,7 +82,7 @@
 .compare dt {
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   align-self: center;
 }
 

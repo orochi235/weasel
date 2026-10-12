@@ -20,14 +20,14 @@
 .route {
   font: 14px ui-monospace, SFMono-Regular, monospace;
   padding: var(--wzl-space-3) var(--wzl-space-4);
-  color: var(--ckd-text);
-  background: var(--ckd-surface);
-  border: 1px solid var(--ckd-accent);
+  color: var(--wzl-fg);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-accent-strong);
   border-radius: 4px;
 }
 
 .invalid {
-  border-color: var(--ckd-muted);
+  border-color: var(--wzl-fg-muted);
   border-style: dashed;
 }
 
@@ -44,7 +44,7 @@
 
 .error {
   margin: 0;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
 }
@@ -56,7 +56,7 @@
 .table th {
   text-align: start;
   font-weight: 500;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   padding: 3px var(--wzl-space-6) 3px 0;
   white-space: nowrap;
 }
@@ -78,7 +78,7 @@
 
 .prose {
   margin: 0;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .prose abbr {
@@ -92,8 +92,8 @@
   justify-content: center;
   gap: 24px;
   height: 180px;
-  background: var(--ckd-surface);
-  border: 1px solid var(--ckd-border);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border-strong);
   border-radius: 6px;
   user-select: none;
   touch-action: none;
@@ -101,12 +101,12 @@
 }
 
 .pad:focus-visible {
-  outline: 2px solid var(--ckd-accent);
+  outline: 2px solid var(--wzl-accent-strong);
   outline-offset: 2px;
 }
 
 .engaged {
-  border-color: var(--ckd-accent);
+  border-color: var(--wzl-accent-strong);
 }
 
 .body {
@@ -115,14 +115,14 @@
   justify-content: center;
   width: 120px;
   height: 80px;
-  border: 1px solid var(--ckd-muted);
-  color: var(--ckd-muted);
+  border: 1px solid var(--wzl-fg-muted);
+  color: var(--wzl-fg-muted);
   font-size: 12px;
 }
 
 .selected {
-  border: 2px solid var(--ckd-accent);
-  color: var(--ckd-text);
+  border: 2px solid var(--wzl-accent-strong);
+  color: var(--wzl-fg);
 }
 
 .ellipse {
@@ -134,15 +134,15 @@
   inset-inline-start: 8px;
   inset-block-end: 6px;
   font-size: 12px;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .hit {
-  background: color-mix(in srgb, var(--ckd-accent) 16%, transparent);
+  background: color-mix(in srgb, var(--wzl-accent-strong) 16%, transparent);
 }
 
 .mark {
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
   font-size: 12px;
 }
 
@@ -161,10 +161,10 @@
 .num {
   font-size: 12px;
   white-space: pre;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .muted {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
   font-size: 12px;
 }

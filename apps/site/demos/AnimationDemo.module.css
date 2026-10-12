@@ -4,7 +4,7 @@
   gap: var(--wzl-space-6);
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .watch h4 {

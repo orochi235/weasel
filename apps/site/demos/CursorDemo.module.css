@@ -17,16 +17,16 @@
   align-items: center;
   gap: var(--wzl-space-1);
   padding: var(--wzl-space-4) var(--wzl-space-2) var(--wzl-space-3);
-  border: 1px solid var(--ckd-border);
+  border: 1px solid var(--wzl-border-strong);
   border-radius: 6px;
-  background: var(--ckd-surface);
-  color: var(--ckd-text);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
   font: inherit;
 }
 
 .selected {
-  border-color: var(--ckd-accent);
-  background: color-mix(in srgb, var(--ckd-accent) 12%, var(--ckd-surface));
+  border-color: var(--wzl-accent-strong);
+  background: color-mix(in srgb, var(--wzl-accent-strong) 12%, var(--wzl-surface-raised));
 }
 
 .glyph {
@@ -48,7 +48,7 @@
 .coords {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: 11px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .controls {
@@ -69,7 +69,7 @@
 
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   white-space: pre;
 }
 
@@ -78,14 +78,14 @@
   font-size: 12px;
   padding: var(--wzl-space-1) var(--wzl-space-4);
   border-radius: 10px;
-  border: 1px solid var(--ckd-border);
+  border: 1px solid var(--wzl-border-strong);
 }
 
 .tierCss {
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .tierPainted {
-  color: var(--ckd-accent);
-  border-color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
+  border-color: var(--wzl-accent-strong);
 }

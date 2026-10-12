@@ -13,29 +13,29 @@
 }
 
 .active {
-  border-color: var(--ckd-accent);
-  background: color-mix(in srgb, var(--ckd-accent) 18%, var(--ckd-surface));
+  border-color: var(--wzl-accent-strong);
+  background: color-mix(in srgb, var(--wzl-accent-strong) 18%, var(--wzl-surface-raised));
 }
 
 .tag {
   margin-inline-start: var(--wzl-space-3);
   padding: var(--wzl-space-1) var(--wzl-space-4);
-  border: 1px solid var(--ckd-border-2);
+  border: 1px solid var(--wzl-border);
   border-radius: 3px;
   font-size: 12px;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .on {
-  border-color: var(--ckd-accent-dim);
-  color: var(--ckd-text);
-  background: color-mix(in srgb, var(--ckd-accent) 14%, transparent);
+  border-color: var(--wzl-accent);
+  color: var(--wzl-fg);
+  background: color-mix(in srgb, var(--wzl-accent-strong) 14%, transparent);
 }
 
 .stage {
   display: block;
-  background: var(--ckd-surface-2);
-  border: 1px solid var(--ckd-border);
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border-strong);
   border-radius: 4px;
   touch-action: none;
   user-select: none;
@@ -43,7 +43,7 @@
 }
 
 .stage:focus-visible {
-  outline: 2px solid var(--ckd-accent-dim);
+  outline: 2px solid var(--wzl-accent);
   outline-offset: 2px;
 }
 
@@ -58,7 +58,7 @@
 .c3 { fill: #c98bb9; }
 
 .selected .box {
-  stroke: var(--ckd-text);
+  stroke: var(--wzl-fg);
 }
 
 .label {
@@ -70,8 +70,8 @@
 }
 
 .marquee {
-  fill: color-mix(in srgb, var(--ckd-accent) 12%, transparent);
-  stroke: var(--ckd-accent);
+  fill: color-mix(in srgb, var(--wzl-accent-strong) 12%, transparent);
+  stroke: var(--wzl-accent-strong);
   stroke-dasharray: 4 3;
 }
 
@@ -84,11 +84,11 @@
 }
 
 .handled {
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
 }
 
 .unhandled {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .table {
@@ -100,7 +100,7 @@
 .table th {
   text-align: start;
   font-weight: 500;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   padding: 3px var(--wzl-space-5) 3px 0;
 }
 
@@ -114,12 +114,12 @@
 }
 
 .winner td:first-child {
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
   font-weight: 600;
 }
 
 .would-fire {
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
 }
 
 .ineligible,
@@ -128,12 +128,12 @@
 }
 
 .shadowed {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .hint {
   margin: 0;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .log {
@@ -142,9 +142,9 @@
   list-style: none;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .log li:first-child {
-  color: var(--ckd-text);
+  color: var(--wzl-fg);
 }

@@ -17,7 +17,7 @@
 
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .table {
@@ -31,7 +31,7 @@
 .fn {
   white-space: nowrap;
   font-family: ui-monospace, SFMono-Regular, monospace;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .num {

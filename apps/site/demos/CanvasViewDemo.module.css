@@ -12,5 +12,5 @@
 
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }

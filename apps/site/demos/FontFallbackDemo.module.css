@@ -12,7 +12,7 @@
 }
 
 .label {
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .readout {
@@ -23,15 +23,15 @@
 .readout th,
 .readout td {
   padding: 3px var(--wzl-space-4);
-  border-bottom: 1px solid var(--ckd-border-2);
+  border-bottom: 1px solid var(--wzl-border);
   text-align: left;
 }
 
 .readout th {
   font-weight: 500;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .swap {
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
 }
