@@ -30,7 +30,7 @@ import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import { rectFromPlane } from 'core/viewport/parallax';
-import { useViewAnimationOn } from 'core/viewport/useViewAnimation';
+import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { normalizeView, viewZoom, type View } from 'core/viewport/view';
 import type { RuleCtx } from 'features/chrome-caps';
 import {
@@ -67,7 +67,6 @@ import {
   selectionResizeContribution,
   selectionRotateContribution,
 } from 'tools/builtin/select';
-import { useAnimator } from '../animation/useAnimator';
 import { targetSizesPx } from '../core/device/targets';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { createNodeRouting } from '../core/scene/NodeRouting';
@@ -346,15 +345,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onViewChangeProp?.(normalizeView(v));
   }, [viewProp, onViewChangeProp]);
 
-  // The camera runs on its own animator, never the `animator` prop's: that prop
-  // is the consumer's scene animator, and their `cancelAll()` or `pause()` must
-  // not strand a zoom half-finished or freeze the camera.
-  const cameraAnimator = useAnimator();
   const viewChannel = useMemo(
     () => ({ get: () => currentViewRef.current, set: handleViewChange }),
     [handleViewChange],
   );
-  const viewAnimation = useViewAnimationOn(viewChannel, cameraAnimator);
+  const { viewAnimation, camera } = useCanvasCamera(viewChannel);
 
   // Never writes back to the canvas — `handleViewChange` would recurse. Every
   // `Canvas.setView` lands here on both branches, so it is also the runner's
@@ -1314,6 +1309,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             animateView: viewAnimation.animate,
             stopViewAnimation: viewAnimation.stop,
             isViewAnimating: viewAnimation.isAnimating,
+            camera,
             addView,
           }
         : null;
@@ -1321,7 +1317,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       setCanvasReady(extended !== null);
       assignRef(ref, extended);
     },
-    [ref, ingestImpl, viewAnimation, addView, trackHoverOn],
+    [ref, ingestImpl, viewAnimation, camera, addView, trackHoverOn],
   );
 
   // What a view needs to build its own overlay-aware state. `geometry` is the

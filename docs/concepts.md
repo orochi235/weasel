@@ -289,7 +289,7 @@ What is built on it:
 | Value | Its target | Moved by |
 |---|---|---|
 | A node's pose | `scenePoseTarget(scene, id)`, through `adapter.poseTarget` | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
-| The camera | `ViewAnimationApi.viewTarget` | `useViewAnimation`; add a shake on the same animator |
+| The camera | `ViewAnimationApi.viewTarget`; on a `<SceneCanvas>` ref, `camera.target` | `useViewAnimation`, `animateView`; add a shake on the same animator, which the ref hands out as `camera.animator` |
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
 | Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |

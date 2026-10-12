@@ -7,6 +7,8 @@ import type { PaintedCursorState } from '@weasel-js/cursor';
 import type { DrawCommand } from '../renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
+import type { Target } from '../animation/target';
+import type { Animator } from '../animation/types';
 
 /**
  * A view added through {@link SceneCanvasApi.addView}.
@@ -189,6 +191,16 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
   /** Cancel a camera animation. The view stays where it is. */
   stopViewAnimation(): void;
   isViewAnimating(): boolean;
+  /**
+   * The camera as an animation target, and the animator that moves it. An
+   * animation started on `animator` with `target` adds to a glide in flight: a
+   * shake, a nudge, a spring toward a followed node. Start it without a
+   * `cancelKey` and neither `animateView` nor `stopViewAnimation` ends it.
+   *
+   * `animator` is the canvas's own for its camera, apart from the `animator`
+   * prop. A target is moved by one animator at a time, so use this one.
+   */
+  readonly camera: { readonly target: Target<View>; readonly animator: Animator };
   /**
    * Add a view — the same declaration as a `<CanvasView>` child, for code
    * outside React: chrome that opens a lens, a panel a plugin owns. Input over
