@@ -232,6 +232,16 @@ describe('a group shared by several layers', () => {
     expect(recorder.calls.map((c) => c.name)).not.toContain('createFramebuffer');
   });
 
+  it('hands a group composite operator to its bracket', () => {
+    const cmds = drawLayers(
+      IDS.map(plain), null, {}, undefined, undefined,
+      { width: 100, height: 50 }, undefined, undefined,
+      [{ id: 'world', layers: IDS, composite: 'destination-out' }],
+    );
+    expect(cmds).toHaveLength(1);
+    expect(cmds[0]).toMatchObject({ kind: 'group', composite: 'destination-out' });
+  });
+
   it('leaves a layer outside the group out of the shared buffer', () => {
     // The HUD is drawn after the composite, so it is not among the group's
     // pixels — the one thing a CSS filter on the canvas cannot arrange.

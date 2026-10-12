@@ -3,6 +3,7 @@ import { mat3 } from '@weasel-js/geom';
 import { getMesh } from './cache/cache';
 import type { EffectTargets } from './effects/EffectTargets';
 import { compositeProgramId } from './effects/composite';
+import { applyComposite, isOwnComposite } from './effects/compositeOp';
 import type { DrawContext } from './draw/drawContext';
 import { warnOnceUniform, drawShader } from './draw/customShader';
 import { returnToRenderTarget, drawFullscreenQuad } from './draw/effects';
@@ -113,17 +114,21 @@ function drawGroupWithEffects(
   const composite = ctx.ensureProgram?.(compositeProgramId()) ?? null;
   if (composite) {
     applyClipTest(ctx);
+    const ownBlend = isOwnComposite(cmd.composite);
+    if (ownBlend) applyComposite(gl, cmd.composite!);
     drawFullscreenQuad(ctx, composite, front.texture, width, height, undefined, {
       alpha: composited.alpha,
       colorMatrix: composited.colorMatrix,
     });
+    if (ownBlend) applyComposite(gl, 'source-over');
   }
   targets.release(front);
 }
 
 /** Whether `cmd` draws into a buffer of its own before joining its parent. */
 function ownsSurface(cmd: GroupDrawCommand): boolean {
-  return cmd.isolate === true || (cmd.effects !== undefined && cmd.effects.length > 0);
+  return cmd.isolate === true || isOwnComposite(cmd.composite)
+    || (cmd.effects !== undefined && cmd.effects.length > 0);
 }
 
 export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {

@@ -1,4 +1,4 @@
-import type { DrawCommand, Effect } from '@weasel-js/renderer';
+import type { BlendFactors, CompositeOp, DrawCommand, Effect } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import type { Dims } from './render';
 
@@ -46,6 +46,9 @@ export interface LayerGroup {
   /** 4×5 color matrix (row-major, 20 numbers) applied to the composited
    *  result. See `GroupDrawCommand.colorMatrix`. */
   colorMatrix?: number[];
+  /** How the composited result joins the layers under it. Default
+   *  `source-over`. See `GroupDrawCommand.composite`. */
+  composite?: CompositeOp | BlendFactors;
 }
 
 /**
@@ -111,7 +114,8 @@ export function wrapGroup(
     ? group.effects(view, dims)
     : group.effects;
   const effects = declared && declared.length > 0 ? declared : undefined;
-  if (!effects && group.alpha === undefined && group.colorMatrix === undefined) return children;
+  if (!effects && group.alpha === undefined && group.colorMatrix === undefined
+      && group.composite === undefined) return children;
   const fades = group.alpha !== undefined && group.alpha < 1;
   return [{
     kind: 'group',
@@ -119,6 +123,7 @@ export function wrapGroup(
     ...(!effects && (fades || group.colorMatrix !== undefined) ? { isolate: true } : {}),
     ...(group.alpha !== undefined ? { alpha: group.alpha } : {}),
     ...(group.colorMatrix !== undefined ? { colorMatrix: group.colorMatrix } : {}),
+    ...(group.composite !== undefined ? { composite: group.composite } : {}),
     children,
   }];
 }

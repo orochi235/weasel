@@ -151,3 +151,37 @@ describe('an isolated group, in a real context', () => {
     expect(at(4, 4)[0]).toBeGreaterThan(50);
   });
 });
+
+describe('a group composite operator, in a real context', () => {
+  const LEFT_BLUE: DrawCommand = {
+    kind: 'path',
+    path: { kind: 'rect', x: 0, y: 0, width: 4, height: SIZE },
+    fill: { color: '#0000ff' },
+  };
+
+  it('xor clears where both cover and keeps each where only one does', () => {
+    const TOP_RED: DrawCommand = { ...RED, path: { kind: 'rect', x: 0, y: 0, width: SIZE, height: 4 } };
+    const at = paint([TOP_RED, { kind: 'group', composite: 'xor', children: [LEFT_BLUE] }]);
+    expect(at(1, 1)).toEqual([0, 0, 0, 0]);
+    expect(at(6, 1)).toEqual([255, 0, 0, 255]);
+    expect(at(1, 6)).toEqual([0, 0, 255, 255]);
+    expect(at(6, 6)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('destination-out erases what the group covers', () => {
+    const at = paint([RED, { kind: 'group', composite: 'destination-out', children: [LEFT_BLUE] }]);
+    expect(at(1, 4)).toEqual([0, 0, 0, 0]);
+    expect(at(6, 4)).toEqual([255, 0, 0, 255]);
+  });
+
+  it('destination-in keeps the destination only under the group', () => {
+    const at = paint([RED, { kind: 'group', composite: 'destination-in', children: [LEFT_BLUE] }]);
+    expect(at(1, 4)).toEqual([255, 0, 0, 255]);
+    expect(at(6, 4)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('draws what follows under source-over again', () => {
+    const at = paint([RED, { kind: 'group', composite: 'destination-out', children: [LEFT_BLUE] }, LEFT_BLUE]);
+    expect(at(1, 4)).toEqual([0, 0, 255, 255]);
+  });
+});

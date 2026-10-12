@@ -5,6 +5,7 @@ import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 import type { Effect } from './effects/types';
+import type { BlendFactors, CompositeOp } from './effects/compositeOp';
 
 /**
  * Solid-fill paint variant (subset of the full `FillStyle` union from
@@ -95,6 +96,16 @@ export interface GroupDrawCommand {
    * its own. Costs a device-resolution buffer and a full-screen composite.
    */
   isolate?: boolean;
+  /**
+   * How the group's finished surface joins what is already drawn. Default
+   * `source-over`. Any other operator isolates the group, and its composite
+   * covers the whole target inside the enclosing clip, so an operator that
+   * scales the destination by the source's alpha (`source-in`,
+   * `destination-in`, `destination-atop`, `copy`) also clears everything the
+   * group left empty. Operators reading the destination's alpha need a target
+   * that has one: a context created with `alpha: false` reads as opaque.
+   */
+  composite?: CompositeOp | BlendFactors;
   children: DrawCommand[];
 }
 
