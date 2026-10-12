@@ -9,6 +9,8 @@ import { html } from './html.ts';
 import { foreignCallees } from './indexFile.ts';
 import { indexStory } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
+import { frameEntry, shellEntry } from './entries.ts';
+import { propControls } from './propControls.ts';
 import { shellTitle } from './shellTitle.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
@@ -26,6 +28,11 @@ export interface ForgeOptions {
   frameStyles?: string[];
   /** Alias Storybook's runtime modules to forge shims. Default true. */
   storybookShims?: boolean;
+  /**
+   * Give a CSF story a control for each prop of its meta's `component`, read from the component's TypeScript types;
+   * the story's own `args` and `argTypes` refine them. Needs `typescript` installed. Default true.
+   */
+  propControls?: boolean;
 }
 
 const PREFIX = 'virtual:forge/';
@@ -149,49 +156,8 @@ export function forge(options: ForgeOptions): Plugin[] {
     },
     'frame-config.js': () => configModule(options.frameConfig),
     'shell-config.js': () => configModule(options.shellConfig),
-    'shell-entry.js': () => `import { mountWorkshop } from '@weasel-js/forge/shell';
-import '@weasel-js/labkit/styles.css';
-import '@weasel-js/forge/shell.css';
-import index from 'virtual:forge/index.js';
-import importers from 'virtual:forge/importers.js';
-import config from 'virtual:forge/shell-config.js';
-import setup from 'virtual:forge/frame-config.js';
-
-const workshop = mountWorkshop({
-  index,
-  importers,
-  setup,
-  config,
-  frameUrl: ${JSON.stringify(`${base}frame.html`)},
-  stories: ${JSON.stringify(options.stories)},
-});
-import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
-// Read from source on first request, so the graph costs nothing until the page is up.
-import('virtual:forge/deps.js').then((m) => workshop.setDependencies(m.default));
-import.meta.hot?.on('forge:deps', (next) => workshop.setDependencies(next));
-// An edit to a story file, or to a module one imports, reaches here as an update of the importers module, whose
-// fresh import() URLs carry the new timestamps; the files it reaches arrive just before, so the reload waits for
-// the importers that can fetch them.
-const stale = new Set();
-import.meta.hot?.on('forge:story', ({ file }) => stale.add(file));
-import.meta.hot?.accept('virtual:forge/importers.js', (next) => {
-  if (!next) return;
-  workshop.setImporters(next.default);
-  for (const file of stale) workshop.reloadStory(file);
-  stale.clear();
-});
-`,
-    'frame-entry.js': () => `import { mountFrame } from '@weasel-js/forge/frame';
-import '@weasel-js/forge/frame.css';
-${(options.frameStyles ?? []).map((path) => `import ${JSON.stringify(resolve(root, path))};\n`).join('')}import index from 'virtual:forge/index.js';
-import importers from 'virtual:forge/importers.js';
-import setup from 'virtual:forge/frame-config.js';
-
-mountFrame({ index, importers, setup });
-// The importers module is shared with the workshop page, which accepts a story edit in place; a frame document
-// showing the old module reloads instead, and without this the edit would dead-end here and reload every page.
-import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
-`,
+    'shell-entry.js': () => shellEntry(base, options.stories),
+    'frame-entry.js': () => frameEntry((options.frameStyles ?? []).map((path) => resolve(root, path))),
   };
 
   const invalidate = (server: ViteDevServer, names: readonly string[]): void => {
@@ -279,6 +245,7 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
 
   return [
     ...(options.storybookShims === false ? [] : [storybookShims()]),
+    ...(options.propControls === false ? [] : [propControls(() => [...files().keys()])]),
     {
       name: 'weaselforge',
       config(config, { command }) {

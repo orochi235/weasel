@@ -218,7 +218,7 @@
     "longestFunction": 183
   },
   "packages/forge/src/vite/plugin.ts": {
-    "longestFunction": 326
+    "longestFunction": 286
   },
   "packages/geom/src/pathHitTest.ts": {
     "lines": 438
