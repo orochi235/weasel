@@ -111,11 +111,6 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
-- **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
-  ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
-  gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
-  `cloneAction` the way move, rotate, and insert do, or remove the behavior and the type.
-
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` now treats a `contextmenu` that arrives while a touch or pen hold is in
   progress as that hold's long-press: it fires the pending one early, or is dropped if the
