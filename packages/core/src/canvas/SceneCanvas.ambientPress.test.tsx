@@ -11,8 +11,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Contribution } from '../tools/overlayBinding';
-import { useSelection } from 'core/selection/useSelection';
-import type { SelectionApi } from 'core/selection/types';
+import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 
 type D = { kind: 'rect' };
 type L = 'main';
