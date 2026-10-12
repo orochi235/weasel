@@ -76,12 +76,19 @@ Each is reversible.
   target is not carried over.
 - [x] **Demo.** `apps/site/demos/SkinDemo.tsx`, seen in headless Chromium: the fill and stroke
   bend as one outline, and a click on the bent forearm selects it with the box at its bounds.
-- [ ] **Bone tool.** Draw, select, and move joints of a node's `data.skeleton`, each drag one
-  scene op.
-- [ ] **Weight tool.** Show a joint's influence as color on the path, and edit weights of
-  selected points.
+- [x] **Bone tool.** `useBoneTool`: draw, pick, move, and remove joints of a node's
+  `data.skeleton`, each edit one scene op. Seen in headless Chromium.
+- [x] **Weight tool.** `useWeightTool`: a dot per point colored by the active joint's share, and
+  a brush that raises or lowers it. Seen in headless Chromium. A stroke bends the path when it
+  ends, not while it is painted, because the rig is bound from the document.
+- [ ] **Docs and TODO.** `docs/concepts.md` gets a section on skinning, and the TODO entry is
+  rewritten around what is left.
 
 ## Limits to state in the docs
+
+- A container clips its children to its painter's silhouette, its box by default, so a rig
+  node whose paths bend past its box needs `clipFromPose: () => null`. Seen in the rig tools
+  demo, where the bent arm was cut off at the box.
 
 - Averaging positions pinches the inside of a sharp bend. A wider blend or extra points near the
   joint hide it.
