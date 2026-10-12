@@ -169,13 +169,6 @@ Priority tags:
   them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
   from `PointerState`, or carry the client point through `InvocationCtx`.
 
-- **(P3) The move action decides which ids a moving frame carries in its own walk.**
-  `captureStartPoses` and `captureFrames` (`actions/move/capture.ts`) collect the dragged roots and
-  their descendants, then mark the ones stored in the frame of another moving node as `carried`.
-  `translateTargets` (`actions/selectionSubtree.ts`) makes the same decision for nudge and clone.
-  Move still needs the full descendant list for its previews, so the fold is `carried` derived from
-  `translateTargets`, not the walk replaced by it.
-
 - **(P3) `useDragHandle`: a drag canceled while the button is still down, then released over its
   source row, delivers a click to the row.** The click guard is removed on cancel so it cannot eat a
   later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs

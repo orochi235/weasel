@@ -119,7 +119,7 @@ export function beginMove(
 
   const reflow = layout?.reflow ?? null;
   const { startPoses, cascadeIds, caught } = captureStartPoses(scene, ids, reflow, projection);
-  const { carried, frames } = captureFrames(scene, startPoses, pc);
+  const { carried, frames } = captureFrames(scene, ids, startPoses, pc);
 
   // Everything a move does beyond translating is a behavior: the binding's
   // own, then the layout drop, then reparent-on-drop. On release the first to
