@@ -1,7 +1,8 @@
 /**
  * Shelf packer for the dynamic glyph atlas: fixed-size square pages, rows
  * ("shelves") of same-ish-height rects filled left to right. Simple and
- * good enough for glyph rects; no rotation, no eviction (v1).
+ * good enough for glyph rects; no rotation, and no free: the atlas reclaims
+ * room by replacing the packer.
  */
 
 export interface ShelfAlloc {
@@ -15,7 +16,6 @@ interface Page { shelves: Shelf[]; nextY: number; }
 
 export class ShelfPacker {
   private pages: Page[] = [];
-  private warned = false;
 
   constructor(
     private readonly pageSize: number,
@@ -26,9 +26,14 @@ export class ShelfPacker {
     return this.pages.length;
   }
 
-  /** Allocate a w×h rect. Returns null (warning once) when capacity is out. */
+  /** Whether an empty page could hold a w×h rect. */
+  fits(w: number, h: number): boolean {
+    return w <= this.pageSize && h <= this.pageSize;
+  }
+
+  /** Allocate a w×h rect. Returns null when capacity is out. */
   alloc(w: number, h: number): ShelfAlloc | null {
-    if (w > this.pageSize || h > this.pageSize) return this.fail();
+    if (!this.fits(w, h)) return null;
     for (let p = 0; p < this.pages.length; p++) {
       const spot = this.allocInPage(this.pages[p], w, h);
       if (spot) return { page: p, ...spot };
@@ -39,7 +44,7 @@ export class ShelfPacker {
       const spot = this.allocInPage(page, w, h);
       if (spot) return { page: this.pages.length - 1, ...spot };
     }
-    return this.fail();
+    return null;
   }
 
   private allocInPage(page: Page, w: number, h: number): { x: number; y: number } | null {
@@ -59,14 +64,4 @@ export class ShelfPacker {
     return null;
   }
 
-  private fail(): null {
-    if (!this.warned) {
-      this.warned = true;
-      console.warn(
-        `weasel DynamicGlyphAtlas: glyph pages full (${this.maxPages} × ${this.pageSize}²); ` +
-        'further dynamic glyphs will not render.',
-      );
-    }
-    return null;
-  }
 }

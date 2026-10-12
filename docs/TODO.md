@@ -563,15 +563,6 @@ Core five + Crop shipped. Remaining:
   `notifyGlyphReady()`) depends on the eviction entry below, since dropped faces currently leave
   their atlas rects allocated.
 
-- **(P2) Canvas font tier: a full dynamic atlas is permanent.** `ShelfPacker`
-  (`packages/font/src/dynamic/shelfPack.ts`) has no free, `bake` in `dynamicAtlas.ts` returns early
-  once the four 1024-pixel pages are full, and `unregisterCanvasFont` deletes faces but leaves their
-  rects allocated. A font picker previewing many canvas families, or CJK text through the canvas
-  tier, fills the pages; after that every new glyph in any canvas font, including single code points
-  escalated from an atlas font, is invisible until reload, with one console warning. Options: reset
-  the packer and every face's `charMap` wholesale when full and bump the glyph generation, so only
-  what is on screen re-bakes; or a real per-rect free list with eviction by last use.
-
 - **(P2) Text: emoji paint as flat silhouettes, and multi-code-point emoji paint as their parts.**
   The canvas tier keeps only the alpha channel (`packages/font/src/dynamic/glyphRasterizer.ts`), and
   `layoutRuns` looks glyphs up one code point at a time, so `👍🏽` is a thumb plus a swatch, `🇨🇦` is
