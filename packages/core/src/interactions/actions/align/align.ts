@@ -8,7 +8,7 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { poseFrame } from '../poseFrame';
-import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { usePointerContext } from '@weasel-js/routing/react';
 import { resolveSpatialReference, type SpatialReference, type SpatialReferenceSources } from '../spatialReference';
 

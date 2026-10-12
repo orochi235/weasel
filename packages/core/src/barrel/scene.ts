@@ -20,14 +20,14 @@ export {
   IDENTITY_POSE_COMPOSITION,
   RECT_POSE_COMPOSITION,
   RIGID_POSE_COMPOSITION,
-} from '../features/groups/composePose';
-export type { PoseAdapter, PoseComposition, PoseClosure } from '../features/groups/composePose';
-export { nestedHitTester } from '../features/groups/nestedHit';
-export { unionOfChildrenVia } from '../features/groups/unionOfChildren';
+} from 'core/scene/composePose';
+export type { PoseAdapter, PoseComposition, PoseClosure } from 'core/scene/composePose';
+export { nestedHitTester } from 'core/scene/nestedHit';
+export { unionOfChildrenVia } from 'core/scene/unionOfChildren';
 export type {
   NestedHitOpts,
   NestedHitTester,
-} from '../features/groups/nestedHit';
+} from 'core/scene/nestedHit';
 
 // ─── Groups: union the bounds of a node set ─────────────────────────────────
 export { unionBounds, unionAABB, axisAlignedBounds } from '../core/geometry/unionBounds';

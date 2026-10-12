@@ -17,7 +17,7 @@ import {
   __setImageLoaderForTests,
   _resetImageCacheForTests,
   getImageBitmap,
-} from 'features/images/imageCache';
+} from 'renderer/images/imageCache';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';

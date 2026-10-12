@@ -1,7 +1,7 @@
 /**
  * Folding a node's pose up its parent chain to world, and back down. Lives
  * under `core/` so the scene can lay out in world without reaching up into
- * `features/`; `features/groups/composePose` re-exports all of it.
+ * `features/`; `composePose.ts` beside it re-exports all of it.
  */
 
 /** Minimal adapter needed by `composeWorldPose` and friends — pose lookup plus parent walk. */

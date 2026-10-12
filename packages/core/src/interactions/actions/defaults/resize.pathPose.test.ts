@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
-import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { GestureContext, PointSnapBehavior, PointSnapContext } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';

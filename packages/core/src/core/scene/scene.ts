@@ -52,7 +52,7 @@ const defaultGenerateId = (): NodeId =>
 /** Build a scene outside React. `useScene` is the usual entry point; reach for
  *  this in tests, in headless rendering, or wherever a scene must outlive a
  *  component. Throws if no system layers are declared. */
-export function createScene<TData, TLayer extends string, TPose = import('../../features/groups/composePose').RectPose>(
+export function createScene<TData, TLayer extends string, TPose = import('./composePose').RectPose>(
   options: UseSceneOptions<TData, TLayer, TPose>,
 ): Scene<TData, TLayer, TPose> {
   if (!options.systemLayers || options.systemLayers.length === 0) {

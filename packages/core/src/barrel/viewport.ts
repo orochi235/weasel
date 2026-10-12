@@ -23,7 +23,12 @@ export type {
 } from '@weasel-js/simulation';
 export { useSimulation } from '@weasel-js/simulation/react';
 export * from '../features/poseRun';
-export * from '../features/overlays';
+export { useNodeOverlayFrame } from '../core/viewport/useNodeOverlayFrame';
+export type {
+  NodeOverlayFrame,
+  OverlayPoint,
+  UseNodeOverlayFrameOptions,
+} from '../core/viewport/useNodeOverlayFrame';
 
 // ─── Viewport: ViewTransform + helpers ──────────────────────────────────────
 export * from '../core/viewport/viewTransform';

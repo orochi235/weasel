@@ -10,7 +10,7 @@
  *
  * Under `IDENTITY_POSE_COMPOSITION` — the default, and what every consumer
  * ships today — local and world are the same value and all of this is an
- * identity. `features/groups/frameFixture.ts` is the scene where they differ.
+ * identity. `core/scene/frameFixture.ts` is the scene where they differ.
  */
 import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
@@ -21,7 +21,7 @@ import {
   IDENTITY_POSE_COMPOSITION,
   type PoseAdapter,
   type PoseComposition,
-} from 'features/groups/composePose';
+} from 'core/scene/composePose';
 
 /** The two directions an action needs, over one composition strategy. */
 export interface PoseFrame<TPose> {

@@ -18,7 +18,7 @@ import {
   visualBoundsViaDescriptor,
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import {
   pickWalk,
   scenePickSource,
@@ -29,7 +29,7 @@ import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 export { hiddenLayerIds } from 'canvas/pickWalk';
 import type { HitTestView } from 'interactions/actions/depSchema';
-import type { PoseComposition } from 'features/groups/composePose';
+import type { PoseComposition } from 'core/scene/composePose';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import {
   polygonRegion,

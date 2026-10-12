@@ -71,7 +71,7 @@ export function useScene<TItem extends { id: string }>(
 ): Scene<TItem, DefaultLayer, TItem>;
 /** The full call shape: explicit layers, initial nodes, custom ops, and
  *  history configuration. */
-export function useScene<TData, TLayer extends string, TPose = import('../../features/groups/composePose').RectPose>(
+export function useScene<TData, TLayer extends string, TPose = import('./composePose').RectPose>(
   options: UseSceneOptions<TData, TLayer, TPose>,
 ): Scene<TData, TLayer, TPose>;
 /** Create and subscribe to a scene. */

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { subscribeGlyphReady } from '@weasel-js/font';
-import { subscribeImageReady } from 'features/images/imageCache';
-import { paintKindRegistry } from 'core/paintKinds';
+import { subscribeImageReady } from 'renderer/images/imageCache';
+import { paintKindRegistry } from 'renderer/paintKinds';
 
 /**
  * Repaint whenever something a frame could not draw becomes drawable: an image

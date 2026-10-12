@@ -10,8 +10,8 @@ import {
   type PolygonPath,
   translatePath,
 } from '@weasel-js/geom';
-import { rotatePathAround } from 'core/geometry/poseRotation';
-import { pathPoseDescriptor } from './poseDescriptor';
+import { rotatePathAround } from '@weasel-js/geom';
+import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 
 /** One command of every code the table declares, with distinct nonzero coords. */
 function pathOverEveryCommand(): PolygonPath {

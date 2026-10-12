@@ -10,7 +10,7 @@ import { textLineBoxes } from '@weasel-js/text';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
-import { textCommandFromPose } from 'features/text/textCommand';
+import { textCommandFromPose } from 'renderer/textCommand';
 import { PAINT_SLOT } from './memo';
 import { inkReach, resolveNodeStroke } from './nodePaint';
 import { paintsPose } from './poseBox';

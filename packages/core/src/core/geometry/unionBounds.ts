@@ -12,7 +12,7 @@
 
 import { applyToPoint } from '@weasel-js/geom';
 import type { RectPose } from 'core/scene/types';
-import { poseFrameOf } from './poseFrame';
+import { poseFrameOf } from '@weasel-js/geom';
 export type { RectPose };
 
 /** Compute the AABB envelope of a set of rect-shaped poses, ignoring any

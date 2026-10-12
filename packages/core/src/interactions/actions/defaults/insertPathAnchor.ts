@@ -24,7 +24,7 @@ import {
   segmentAt,
   type AnchorSet,
   type SegmentHit,
-} from 'features/paths/anchorEdits';
+} from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 
 /** Screen-px reach of a segment, and the radius around each anchor that

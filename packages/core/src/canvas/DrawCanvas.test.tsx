@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { registerPaintKind, getPaintKind } from 'core/paintKinds';
+import { registerPaintKind, getPaintKind } from 'renderer/paintKinds';
 import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
 import { makeMatchMedia } from '../core/device/testing/matchMedia';
 import { DrawCanvas } from './DrawCanvas';

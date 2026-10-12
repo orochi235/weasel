@@ -13,13 +13,13 @@ import type { Scene, NodeId, Node } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import type { Path } from '@weasel-js/geom';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { pathInWorld, worldEditToStorage, type PathInWorldPose } from 'features/paths/pathInWorld';
-import { poseLinearOf } from 'core/geometry/poseFrame';
+import { pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
+import { poseLinearOf } from '@weasel-js/geom';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
-import type { PoseComposition } from 'features/groups/composePose';
+import type { PoseComposition } from 'core/scene/composePose';
 
 /** Publish how a slice (knife cut) is performed, so the `slice` action can
  *  run against the consumer's geometry. */

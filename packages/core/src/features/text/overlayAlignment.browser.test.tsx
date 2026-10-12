@@ -15,7 +15,7 @@ import { flushSync } from 'react-dom';
 import { registerFont, registerCanvasFont, registerFontOutlines } from '@weasel-js/font';
 import { resolveTextStyle, type TextStyle } from '@weasel-js/text';
 import { createScene } from 'core/scene/scene';
-import type { RectPose } from 'features/groups/composePose';
+import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
 import { useTextEdit, type TextEditScreenPose } from '@weasel-js/text-dom';
 import { baselineDrop } from '@weasel-js/text-dom/testing/baselineDrop';

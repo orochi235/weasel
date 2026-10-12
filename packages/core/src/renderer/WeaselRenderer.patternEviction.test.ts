@@ -6,10 +6,10 @@ import type { DrawCommand } from './DrawCommand';
 import { _resetTextureRegistryForTests, textureRegistry } from './textures/registerTexture';
 import {
   resolvePatternSpec, _resetPatternSpecCacheForTests, PATTERN_TILE_CACHE_LIMIT,
-} from '../features/patterns/resolveSpec';
+} from 'renderer/patterns/resolveSpec';
 import {
   installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas,
-} from '../features/patterns/test-utils/fakeOffscreenCanvas';
+} from 'renderer/patterns/test-utils/fakeOffscreenCanvas';
 
 const shade = (i: number): TilePatternSpec => ({ tile: 'hatch', color: `#${i.toString(16).padStart(6, '0')}` });
 

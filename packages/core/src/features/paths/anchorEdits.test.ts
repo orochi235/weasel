@@ -15,7 +15,7 @@ import {
   segmentAt,
   translateAnchorBy,
   type AnchorSet,
-} from './anchorEdits';
+} from '@weasel-js/geom';
 
 /** Closed triangle, straight segments. */
 function triangle() {

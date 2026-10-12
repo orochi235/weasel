@@ -1,8 +1,8 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { documentPose } from 'core/scene/effectivePose';
-import { composeWorldPose, frameAtOrAbove, rebaseLocalPose } from 'features/groups/composePose';
-import { scenePoseAdapter } from 'features/groups/scenePoseAdapter';
+import { composeWorldPose, frameAtOrAbove, rebaseLocalPose } from 'core/scene/composePose';
+import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../../layout/types';
 import type { MoveSession } from '../session';
 

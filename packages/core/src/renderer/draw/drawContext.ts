@@ -1,5 +1,5 @@
 import type { Path, GlMat3 } from '@weasel-js/geom';
-import type { PaintResources } from 'core/paintKinds';
+import type { PaintResources } from 'renderer/paintKinds';
 import type { GroupState } from '../state/GroupState';
 import type { GLMeshCache } from '../cache/GLMeshCache';
 import type { GLTextureCache } from '../cache/GLTextureCache';
