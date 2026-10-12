@@ -24,19 +24,13 @@ import {
 } from '../chrome/LabChrome';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
-import { ClockRegistryContext, createClockRegistry } from '../clock/clockRegistry';
-import {
-  type ClockCapability,
-  type ClockPosition,
-  clockPosition,
-  createTrialClock,
-} from '../clock/trialClock';
-import { useClockLoop } from '../clock/useClockLoop';
+import { ClockRegistryContext } from '../clock/clockRegistry';
+import type { ClockCapability } from '../clock/trialClock';
+import { useLabClocks } from '../clock/useLabClocks';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import { Split } from '../primitives/Split';
 import { LabStoreContext } from '../state/context';
-import { valueRecord } from '../state/labRecords';
 import { PersistenceContext } from '../state/Persistence';
 import type { LabDensity, LabMode, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
@@ -71,11 +65,14 @@ import {
 } from './openLab';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import {
-  hasPresentParam,
+  labClassName,
   PresentationContext,
+  type PresentationStart,
   type PresentedTransportOptions,
+  presentationStart,
   useLabPresentation,
 } from './presentation';
+import type { PresentationMessageOptions } from './presentationMessages';
 import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
@@ -175,6 +172,17 @@ interface LabBaseProps {
    *  replaying an ended run after a hold until a visitor touches them.
    *  Default `true`; options say how narrow is too narrow. */
   transport?: boolean | PresentedTransportOptions;
+  /** Start presenting as a still, for a poster to be taken of it: every clock
+   *  paused — at this many ms, or where it opens for `true` — with no play
+   *  controls, nothing read from or written to storage, and `lk-lab--still-ready`
+   *  on the lab's root once it has painted. `?still` and `?still=<ms>` in the
+   *  page's URL do the same. Read once, at mount. */
+  still?: boolean | number;
+  /** Whether a presented lab answers its host page's `labkit:play`,
+   *  `labkit:pause`, `labkit:seek` and `labkit:query` messages and posts its
+   *  `labkit:state` back. Default `true`; options name the lab and say which
+   *  origins it takes messages from. */
+  messages?: boolean | PresentationMessageOptions;
 }
 
 /** Props for `<Lab>`. With a `storageKey` the lab persists — to IndexedDB
@@ -185,8 +193,6 @@ export type LabProps = LabBaseProps &
     | { storageKey?: undefined; storage?: undefined }
     | { storageKey: string; storage?: StorageAdapter }
   );
-
-const LAB_CLOCK_RECORD = valueRecord(null, 'lk-lab-clock');
 
 function LabFallback({
   title,
@@ -287,22 +293,23 @@ export function Lab(props: LabProps) {
   if (process.env.NODE_ENV !== 'production' && props.instruments.length === 0) {
     throw new Error('[labkit] <Lab> requires a non-empty `instruments` array');
   }
-  const { storageKey, storage, present, clock } = props;
-  useWarnIgnoredChange('<Lab>', { storageKey, storage, present, clock });
-  const [startsPresenting] = useState(() => present === true || hasPresentParam());
-  if (process.env.NODE_ENV !== 'production' && props.seed && !startsPresenting) {
+  const { storageKey, storage, present, still, clock } = props;
+  useWarnIgnoredChange('<Lab>', { storageKey, storage, present, still, clock });
+  const [start] = useState(() => presentationStart(present, still));
+  if (process.env.NODE_ENV !== 'production' && props.seed && !start.presenting) {
     warnSeedIgnored();
   }
   const opened = useOpenOnce<OpenedLab>(() => {
-    const seed = startsPresenting ? (props.seed ?? {}) : undefined;
-    if (storageKey === undefined) return openUnstoredLab(props, seed);
-    const key = startsPresenting ? presentStorageKey(storageKey) : storageKey;
+    const seed = start.presenting ? (props.seed ?? {}) : undefined;
+    // A still is the seed and nothing else, whoever's browser takes it.
+    if (storageKey === undefined || start.still) return openUnstoredLab(props, seed);
+    const key = start.presenting ? presentStorageKey(storageKey) : storageKey;
     return openStoredLab(props, key, storage, seed);
   });
   if (!opened) {
     if (props.fallback !== undefined) return props.fallback;
     // An embed shows nothing until its trial is ready, never the lab's shell.
-    if (startsPresenting) return null;
+    if (start.presenting) return null;
     return (
       <LabFallback
         title={props.title}
@@ -315,7 +322,7 @@ export function Lab(props: LabProps) {
       />
     );
   }
-  return <LabRuntime {...props} opened={opened} startsPresenting={startsPresenting} />;
+  return <LabRuntime {...props} opened={opened} start={start} />;
 }
 
 let seedWarned = false;
@@ -349,10 +356,11 @@ function LabRuntime({
   controls,
   gestures,
   transport = true,
+  messages = true,
   children,
   opened,
-  startsPresenting,
-}: LabProps & { opened: OpenedLab; startsPresenting: boolean }) {
+  start,
+}: LabProps & { opened: OpenedLab; start: PresentationStart }) {
   const { store } = opened;
 
   // The store opened against the list <Lab> mounted with; a later list reaches
@@ -363,21 +371,7 @@ function LabRuntime({
 
   const trials = useStore(store, (s) => s.trials);
   const [cameras] = useState(createCameraRegistry);
-  const [clocks] = useState(() =>
-    createClockRegistry(
-      clock
-        ? createTrialClock(clock, opened.records.get(LAB_CLOCK_RECORD) as ClockPosition | undefined)
-        : null,
-    ),
-  );
-  useEffect(() => {
-    const lab = clocks.lab;
-    if (!lab) return;
-    return lab.clock.subscribe(() =>
-      opened.records.set(LAB_CLOCK_RECORD, clockPosition(lab.clock, clock?.duration)),
-    );
-  }, [clocks, clock, opened.records]);
-  useClockLoop(clocks);
+  const clocks = useLabClocks(clock, opened.records);
   const [focusPick, setFocusPick] = useState<string | null>(null);
   const focusedTrialId = trials.some((t) => t.id === focusPick)
     ? focusPick
@@ -397,7 +391,8 @@ function LabRuntime({
   useLabFitWarning(labBody);
 
   useFocusPick(labBody, store, setFocusPick);
-  const presentation = useLabPresentation(startsPresenting, focusedTrialId, labBody, transport);
+  const options = { transport, messages };
+  const presentation = useLabPresentation(start, focusedTrialId, labBody, clocks, options);
   const presenting = presentation.active;
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
@@ -576,7 +571,7 @@ function LabRuntime({
                     <ThemeProvider
                       theme={theme}
                       selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
-                      className={presenting ? 'lk-lab lk-lab--present' : 'lk-lab'}
+                      className={labClassName(presentation)}
                       style={backdropStyle}
                     >
                       <LabShell

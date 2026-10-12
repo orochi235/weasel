@@ -875,7 +875,8 @@ decomposition meant to absorb the first; it has not landed:
 ### labkit presentation mode
 
 `<Lab present>`, `?present` and `usePresentation()` show one trial without any
-chrome, for portfolio embeds, with a refit view, play controls and `gestures`;
+chrome, for portfolio embeds, with a refit view, play controls, `gestures`, a
+`still` for poster capture, and `postMessage` play and pause for a host page;
 README "Presenting a lab" and `packages/labkit/docs/AGENTS.md` cover it. What
 is left:
 
@@ -887,8 +888,10 @@ is left:
   that release before it can merge. agnew still plays from its own transport, because its
   three.js view advances the pen itself and holds a finished curve before redrawing it;
   moving it onto a lab clock is an agnew library change, and the owner's call.
-- **(P3) A still for poster capture, and `postMessage` play/pause** so a host
-  page's play control can reach a live lab.
+- **(P3) A still of a clock that is not seekable is taken where the clock
+  opens.** `<Lab still={1200}>` warns and leaves it there, because such an
+  instrument's state is built by running. Holding it at a time means running
+  it forward off screen, at a step the instrument would have to name.
 
 ### labkit's deprecated snapshot undo
 
@@ -1656,7 +1659,10 @@ only story runner in the repo.
   `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
   pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
-  either side. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
+  either side. A second test in that file ("titles a native story by its meta when forge's meta
+  reaches it through a helper module, and re-decides when the helper changes") failed the same way
+  on teitou at `8f86cc034`, the only failure of that run: the index had not followed the rewritten
+  helper inside its poll. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
   others on one node. Since 2026-10-11 the `browser` project polls for 5 s, not the default 1 s, which
   three of these failures had outlasted (`PrefsRail.marks` twice, `compoundRows`); a 15 s test
   timeout or a stalled Playwright action is untouched by that. Not measured: whether the timeouts follow the node's load, and whether

@@ -56,6 +56,28 @@ describe('<TrialTransport>', () => {
     expect(c().rate).toBe(0);
   });
 
+  it('shares the chosen speed between two transports over one clock', async () => {
+    const twice: Instrument = {
+      ...timed({ duration: 1000 }),
+      render: (ctx) => {
+        clock = ctx.trial.clock ?? null;
+        return (
+          <>
+            <TrialTransport />
+            <TrialTransport />
+          </>
+        );
+      },
+    };
+    await renderSettled(<Lab instruments={[twice]} defaultInstrument="Timed" />);
+    const [first] = screen.getAllByRole('slider', { name: /rate/i });
+    fireEvent.keyDown(first as HTMLElement, { key: 'ArrowRight' });
+    await act(async () =>
+      fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[1] as HTMLElement),
+    );
+    expect(c().rate).toBe(2);
+  });
+
   it('reverses and scrubs a seekable clock', async () => {
     await mount({ duration: 1000, rate: 1 });
     act(() => {
