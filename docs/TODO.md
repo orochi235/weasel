@@ -1181,8 +1181,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   every path is from the schema root today; an alias row is shown and enabled only while its own
   conditions and its target's both hold, where only its own are read today; and a number with a display
   unit is compared as stored, with `PrefConditionEditor`'s number field typed in the leaf's unit,
-  which it is not today. Kept as built: with several nodes selected in a `SelectionPanel`, a row
-  is shown if its condition holds for any and enabled only if it holds for all.
+  which it is not today.
 
 - **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
   compares stored values, where every other reader decodes. A rail entry for a group drawn under

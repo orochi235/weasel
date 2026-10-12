@@ -5,7 +5,7 @@ import { absentValue, effectiveSections, nodeValueAt, type AnyNode, type PanelSe
 /**
  * Whether a condition of `schema` holds across `nodes`, each read at its own
  * values: a `showIf` holds while it does for any node, an `enableIf` only
- * while it does for all of them. Provisional for more than one node.
+ * while it does for all of them.
  */
 export function selectionJudge(schema: PrefSection, nodes: readonly AnyNode[]): PrefConditionJudge {
   const judges = nodes.map((node) =>
