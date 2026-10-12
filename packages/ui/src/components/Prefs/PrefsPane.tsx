@@ -28,8 +28,8 @@ type Entry = [key: string, child: PrefLeaf | PrefGroup];
 const join = (path: string, key: string): string => (path === '' ? key : `${path}.${key}`);
 
 /**
- * One rail section's settings: the group's own leaves, then its nested groups,
- * each drawn as its `as` says.
+ * One rail page's settings: the group's leaves and nested groups in schema order,
+ * each group drawn as its `as` says.
  *
  * Nothing here draws a panel unless a group asks for one. The rail is the
  * layout's structure, and a card inside a dialog that already has a border
@@ -41,10 +41,6 @@ export function PrefsPane(props: PrefsPaneProps) {
   const entries = Object.entries(group.children);
   // Whatever hides it, a page is drawn apart from what it sits in, so it carries the mark itself.
   const marked = ctx.hidden?.has(path) === true;
-  // A fragment's rows are rows among the leaves', not a block after them.
-  const inRows = ([, child]: Entry): boolean => isPrefLeaf(child) || child.as === 'fragment';
-  const leaves = entries.filter(inRows);
-  const groups = entries.filter((entry) => !inRows(entry));
 
   return (
     // A hidden page is marked whole: its heading and its rows share no element but this one.
@@ -56,11 +52,26 @@ export function PrefsPane(props: PrefsPaneProps) {
         )}
       </div>
       <Fragment key={pageKey}>
-        {leaves.length > 0 && <div className={s.rows}>{paneChildren(ctx, leaves, path, 0)}</div>}
-        {paneChildren(ctx, groups, path, 0)}
+        {paneRuns(entries).map((run) =>
+          run.rows
+            ? <div key={run.entries[0]![0]} className={s.rows}>{paneChildren(ctx, run.entries, path, 0)}</div>
+            : paneChildren(ctx, run.entries, path, 0))}
       </Fragment>
     </div>
   );
+}
+
+/** A page's children in schema order, cut where rows give way to a group that draws a block of its own or back.
+ *  A fragment's rows are rows among the leaves'. */
+function paneRuns(entries: readonly Entry[]): Array<{ rows: boolean; entries: Entry[] }> {
+  const runs: Array<{ rows: boolean; entries: Entry[] }> = [];
+  for (const entry of entries) {
+    const rows = isPrefLeaf(entry[1]) || entry[1].as === 'fragment';
+    const last = runs.at(-1);
+    if (last?.rows === rows) last.entries.push(entry);
+    else runs.push({ rows, entries: [entry] });
+  }
+  return runs;
 }
 
 /**

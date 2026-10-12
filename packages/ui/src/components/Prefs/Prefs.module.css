@@ -373,6 +373,11 @@
   padding: var(--wzl-space-5) var(--wzl-space-6);
 }
 
+/* Rows that follow a group on the page stand off it as a group does. */
+.pane > :not(.paneHead) + .rows {
+  margin-top: var(--wzl-space-4);
+}
+
 .paneHead {
   display: flex;
   flex-direction: column;

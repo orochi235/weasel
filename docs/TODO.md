@@ -1367,15 +1367,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   so the pane could show such an attribute field by field; its `onChange` would then have to take
   a field path, where `attrOf` reads `default.width` as an attribute name.
 
-- **(P3) `PrefsForm` rail layout: the pane draws a group's leaves before its groups, where columns
-  and list keep schema order.** `PrefsPane` (`packages/ui/src/components/Prefs/PrefsPane.tsx`)
-  filters leaves and fragments out ahead of the groups, so children `{ light: tab, note: leaf, dark:
-  tab }` draw as the row and then one `Light | Dark` strip in the rail, and as a `Light` strip, the
-  row, and a `Dark` strip elsewhere; a drop placeholder between two sections is drawn up among the
-  leaves. `paneChildren`'s doc says "in schema order", which the pane's own call does not honor. One
-  walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
-  changes what existing rail forms look like, which is why it is a decision.
-
 - **(P3) hud loupe: pixel mode keeps a stale picture when the scene changes under a parked aim.**
   `createLoupe` (`packages/hud/src/loupe/createLoupe.ts`) re-reads the framebuffer only when the
   aim, mode, factor, or window size changes (`scheduleRefresh` from `surface.changed` and
