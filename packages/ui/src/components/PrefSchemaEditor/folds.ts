@@ -1,3 +1,4 @@
+import { scopedKey } from './assetScope';
 import { branchPaths, type SchemaRoot } from './schemaEdit';
 
 /**
@@ -9,26 +10,43 @@ export function openAfterStep(open: ReadonlySet<string>, before: SchemaRoot, was
   return new Set([...open, ...[...(was ?? [])].filter((path) => !had.has(path))]);
 }
 
-const foldsKey = (draftKey: string): string => `${draftKey}:folds`;
-
-/**
- * The rows of the structure tree a reader has folded, kept in this browser beside the draft under `draftKey`.
- * Always `localStorage`, wherever the draft itself is kept: how a tree is folded is one reader's view of it.
- */
-export function openFolds(draftKey: string): string[] {
-  try {
-    const folded: unknown = JSON.parse(localStorage.getItem(foldsKey(draftKey)) ?? '[]');
-    return Array.isArray(folded) ? folded.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
+/** Where the rows a reader folded in each asset's structure tree are kept. */
+export interface Folds {
+  /** The rows folded in the asset `assetId`. */
+  open(assetId: string): string[];
+  save(assetId: string, folded: readonly string[]): void;
 }
 
-export function saveFolds(draftKey: string, folded: readonly string[]): void {
-  try {
-    if (folded.length === 0) localStorage.removeItem(foldsKey(draftKey));
-    else localStorage.setItem(foldsKey(draftKey), JSON.stringify(folded));
-  } catch {
-    // A browser that refuses storage opens every row next time.
+/**
+ * The folds of one editor. Under a `draftKey` they are kept in this browser beside the draft, always in
+ * `localStorage` wherever the draft itself is: how a tree is folded is one reader's view of it. With no key they
+ * last as long as what this returns.
+ */
+export function foldsUnder(draftKey: string | undefined): Folds {
+  if (draftKey === undefined) {
+    const held = new Map<string, readonly string[]>();
+    return {
+      open: (assetId) => [...(held.get(scopedKey('folds', assetId)) ?? [])],
+      save: (assetId, folded) => { held.set(scopedKey('folds', assetId), folded); },
+    };
   }
+  const key = (assetId: string): string => scopedKey(`${draftKey}:folds`, assetId);
+  return {
+    open(assetId) {
+      try {
+        const folded: unknown = JSON.parse(localStorage.getItem(key(assetId)) ?? '[]');
+        return Array.isArray(folded) ? folded.filter((id): id is string => typeof id === 'string') : [];
+      } catch {
+        return [];
+      }
+    },
+    save(assetId, folded) {
+      try {
+        if (folded.length === 0) localStorage.removeItem(key(assetId));
+        else localStorage.setItem(key(assetId), JSON.stringify(folded));
+      } catch {
+        // A browser that refuses storage opens every row next time.
+      }
+    },
+  };
 }

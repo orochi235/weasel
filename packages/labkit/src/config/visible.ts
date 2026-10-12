@@ -82,7 +82,7 @@ export function conditionedLeaf(
   config: Record<string, unknown>,
 ): { leaf: PrefLeaf; disabledAt: (at: string) => boolean } {
   const judge = prefJudge(resolved.group, (at) => valueAtPath(config, at));
-  const { shown, disabled } = applyPrefConditions(resolved.group, judge, true);
+  const { shown, disabled } = applyPrefConditions(resolved.group, judge, { keepEmpty: true });
   const drawn = shown === null ? undefined : prefLeafAt(shown, path);
   // An alias draws its target under its own name, which the tree does not hold.
   const own =

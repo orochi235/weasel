@@ -42,6 +42,8 @@ export interface RenderedCell {
   block: boolean;
   /** Every leaf the cell draws is disabled. */
   disabled: boolean;
+  /** Every leaf the cell draws is one a `showIf` hides. */
+  hidden: boolean;
   content: ReactNode;
   pair?: { key: string; label: string };
 }
@@ -76,7 +78,7 @@ export function renderCells(
     if (!isFlagCell(cell, renderers)) {
       const content = cell.render();
       if (content != null) {
-        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf), disabled: cell.ctx.disabled === true, content, ...(cell.pair ? { pair: cell.pair } : {}) });
+        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf), disabled: cell.ctx.disabled === true, hidden: cell.ctx.hidden === true, content, ...(cell.pair ? { pair: cell.pair } : {}) });
       }
       i += 1;
       continue;
@@ -95,6 +97,7 @@ export function renderCells(
       leaf: cell.leaf,
       block: run.every((c) => c.leaf.block === true),
       disabled: run.every((c) => c.ctx.disabled === true),
+      hidden: run.every((c) => c.ctx.hidden === true),
       content: <FlagBar run={run} ariaLabel={cell.pair?.label ?? cell.leaf.name} />,
       ...(cell.pair ? { pair: cell.pair } : {}),
     });

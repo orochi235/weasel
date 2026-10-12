@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyRow } from '../Properties/PropertyRow';
-import { drawsRows } from './compound';
+import { rowWidthOf, type RowWidth } from './compound';
+import { HiddenBadge, hiddenAttrs } from './hidden';
 import { objectRows, type ObjectLeafParts } from './objectRows';
 import type { PrefRenderContext } from './PrefsRow';
 import s from './Prefs.module.css';
@@ -16,12 +17,15 @@ export function ObjectLeaf({
   ctx,
   renderField,
   isGroup,
+  rowWidth = rowWidthOf,
 }: {
   ctx: PrefRenderContext;
   /** Draws one field, for a row or for a bar. `siblings` is the object it is a field of. */
   renderField: (ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined, surface?: LeafSurface) => ReactNode;
   /** Whether a field's row is a group and not a `<label>`. */
   isGroup: (ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined) => boolean;
+  /** The room a field's control needs. Default: by its kind alone. */
+  rowWidth?: (leaf: PrefLeaf) => RowWidth;
 }) {
   const pref = ctx.pref as PrefObject;
   const { value, setValue } = ctx;
@@ -48,14 +52,19 @@ export function ObjectLeaf({
       ...(ctx.fields ? { fields: ctx.fields } : {}),
       disabled: ctx.disabled === true || ctx.disabledAt?.(path) === true,
       disabledAt: ctx.disabledAt,
+      hidden: ctx.hidden === true || ctx.hiddenAt?.(path) === true,
+      hiddenAt: ctx.hiddenAt,
     };
   };
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: PrefRenderContext }> = {
     path: ctx.path,
     cell: (key, child) => ({ key, child, field: fieldCtx(key, child) }),
     rows: (cells) => cells.map(({ key, child, field }) => {
-      const stacked = drawsRows(child);
-      return (
+      const width = rowWidth(child);
+      const stacked = width !== 'column';
+      // The leaf's own mark covers its fields; a field hidden on its own carries one.
+      const marked = field.hidden === true && ctx.hidden !== true;
+      const row = (
         <PropertyRow
           key={key}
           label={child.name}
@@ -63,13 +72,15 @@ export function ObjectLeaf({
           layout={stacked ? 'block' : 'inline'}
           group={isGroup(field, held)}
           disabled={field.disabled}
+          hint={marked ? <HiddenBadge /> : undefined}
           className={stacked ? undefined : s.objectRow}
         >
-          <span className={s.rowControl}>
+          <span className={width === 'filled' ? `${s.rowControl} ${s.rowControlFilled}` : s.rowControl}>
             {renderField(field, held)}
           </span>
         </PropertyRow>
       );
+      return marked ? <div key={key} {...hiddenAttrs(true)}>{row}</div> : row;
     }),
     barCells: (cells) => cells.flatMap(({ key, field }) => {
       const content = renderField(field, held, 'bar');

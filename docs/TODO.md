@@ -616,39 +616,37 @@ Core five + Crop shipped. Remaining:
   for relative imports undercounts who uses what. In dependency order:
   1. *Leaf math down.* Done for the color parser, `gradient`, `mat3`, `viewToMat3`,
      `useVisibleRaf`, `pxExtent`, `meanScale`, and `MIXED`. Left: `poseFrame`, which
-     `textToPath.ts` and the anchor-edit files wait on. It should go before or after the move
-     action's phase split, not during it.
+     `textToPath.ts` and the anchor-edit files wait on.
   2. *Dissolve and rehome.* Done for `focus`, `cursor`, the pointer store, `SelectionContext`,
      text hit-testing and fitting, path anchors, and the run range-style algebra. Left:
      `features/groups` folds into `core/scene` and `features/overlays` into `core/viewport`
      after it (`core/` may not import `features/`, and `overlays` needs `composeRectPose` from
-     `groups`); `move.ts` imports `groups`, so this waits on the phase split.
-  3. *DOM text editing, under core.* `useTextEdit` with `domRuns` and `domOffsets`, which need
-     React and no scene. (`@weasel-js/simulation` and `@weasel-js/stroke` are out.)
-  4. *The renderer, under core.* It imports `core/paintKinds` as well as `@weasel-js/stroke`
+     `groups`). The move action imports `features/groups/composePose` and `scenePoseAdapter`
+     from most of `interactions/actions/move/`. (`@weasel-js/simulation`, `@weasel-js/stroke`,
+     and `@weasel-js/text-dom` are out.)
+  3. *The renderer, under core.* It imports `core/paintKinds` as well as `@weasel-js/stroke`
      and `@weasel-js/paint`. Gather `paintKinds`, `fillInPoseFrame`, `features/patterns`,
      `images`, `meshPaint`, `text/textCommand.ts`, and `features/paths/markerCommands.ts` (marker
      heads as draw commands, the half of the marker code that needs `PathDrawCommand`) under
      `renderer/` first. `paintKinds.ts` subscribes a scene-memo bump and types an `Editor` slot
      with React; `import-shims/renderer.ts` is a star export; `glRecorder` needs a testing
      subpath.
-  5. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
+  4. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
      `useAnimator`, so it cannot sit over core. It reaches the scene through `stagger.ts`'s
      `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
      `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
      and stay.
-  6. *Over core, like `@weasel-js/kernel3d`.* `features/parallax` with `tiling` (the barrel has
+  5. *Over core, like `@weasel-js/kernel3d`.* `features/parallax` with `tiling` (the barrel has
      to export `core/viewport/parallax` directly first); `poseRun` (needs a public way to publish
      preview poses: `interactions/actions/previewOverrides.ts` is in no barrel); `minimap` with
      `canvas/MinimapCanvas.tsx` (needs a public home for `accentColorOf`); the image and SVG
      drop handlers (see the entry under Tools & gestures). Their exports leave `@weasel-js/core`.
 
-  `@weasel-js/simulation` and `@weasel-js/stroke` have never been published, and the release job
-  cannot create a package: `npm run check:first-publish` prints the commands to seed each by
-  hand. A release started before that stops halfway.
+  A package made by a later step has to be seeded on npm by hand before a release, since the
+  release job cannot create one: `npm run check:first-publish` names any that are missing.
 
   Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
-  (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 4,
+  (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 3,
   `selection/overlay.ts`, and the scene-bound text and path layers.
 
 - **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
@@ -858,18 +856,31 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 
 ### Combining animations
 
-- **(P3) The animator on blits** — weasel has no model for two animations on one property; every
-  case is last-writer-wins. Proposal: `docs/proposals/2026-09-30-animator-on-blits.md`, which keeps
-  the animator's control surface and moves every value computation onto blits. Built: pose
-  overrides fold through a mix (step 2), and tweens, springs, physics, decay and keyframe
-  sampling compute in blits (step 3), at about 3× today's tween frame for 10k nodes, which Mike
-  accepted on 2026-10-04, and 2.5–3.5× today's keyframe sampling, which Mike accepted on 2026-10-08
-  (the rest of that gap is blits' read path).
-  Animation targets are built (`createTarget`), and pose animation is on them: `tweenPose`,
-  `springPose`, reflow, and momentum move a node's pose target, so two moves on one node add.
-  Left: the color and camera, timeline, and rig arcs in the proposal's "The arcs". Also left
-  from the pose arc: `arrayAdapter` has no `poseTarget`, so moves over it still write each
-  frame and replace each other.
+Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
+built 2026-10-11. What that left:
+
+- **(P3) `arrayAdapter` has no `poseTarget`** — it has no overrides table to show a moving pose
+  through, so `tweenPose` and `springPose` over it still write each frame and replace each other.
+- **(P3) Reading 10k targets costs about 3× the `onTick` path** — one pass of
+  `tests/perf/bench/animator-on-blits.bench.ts` on teitou, 2026-10-11: 0.53 ms a frame for 10k
+  tweens storing through `onTick`, 1.50 ms on 10k targets read after the frame. Not profiled;
+  `read` builds an axes array and a value object per call. The earlier costs of moving the
+  values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling) were accepted on
+  2026-10-04 and 2026-10-08; their tables are in `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`.
+- **(P3) Holds on a rig turn the short way from the committed pose, not from each other** —
+  rotations of 3 and −3 over a bind of 0 meet at 0, where the deleted `blendPoses` met at π.
+  Pinned in `packages/core/src/animation/rig/poseHolds.test.tsx`. Meeting between the holds
+  needs a blits channel that lerps angles, in place of the sum the codec's lanes use.
+- **(P3) A hold over some of a rig's joints** — a hold covers every joint, so an arm solved by
+  IK at full strength cannot sit beside clips holding the body; the rig demo samples the body
+  from a track to work around it.
+- **(P3) A coast that a `tweenPose` interrupts drops out with a visible jump.**
+- **(P3) An offset canceled under a full-weight hold loses what it had left on screen** — it
+  commits its remaining travel, but the hold stands in front of the committed value.
+- **(P3) `<SceneCanvas>` does not expose the camera's `viewTarget`** — its camera animator is
+  private, and a target is no use without the animator that moves it.
+- **(P3) Whether blits moves into the monorepo as its own `@weasel-js` package** — open since
+  2026-09-30. `@weasel-js/core` depends on `@msb235/blits` pinned exactly.
 
 ### Earlier deferrals
 
@@ -1169,21 +1180,26 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
   theme that turns the glass on.
 
-- **(P2) Disable a pref by the values of others.** A condition is a structure over other leaves'
-  paths (`PrefCondition` in `packages/prefs/src/condition.ts`; ruled 2026-10-11 over an expression
-  string). A leaf, group, or section holds one as `showIf` or `enableIf`; `packages/prefs/src/scope.ts`
-  applies them for `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, and
-  `PrefSchemaEditor` edits both. Left: labkit's `ControlMatrix` reads neither; a condition on a
-  list's or a map's `item` is not applied; the schema editor's live preview drops a node whose
-  `showIf` fails, so it cannot be picked there; a boolean with an `encoding` is compared as
-  stored, not as shown. Undecided: whether a bad condition throws or warns (the prefs store and
-  `resolveConfigSchema` warn, where labkit's other schema mistakes throw); a path relative to a
-  list item, since every path is from the schema root and a field cannot name its sibling in the
-  same item; whether an alias row uses its own conditions or its target's (built: its own; labkit's
-  `AliasNode` says its own `.showIf` places it, and `prefAliasedLeaf` spreads the target); a form
-  for "this list is not empty", since a bare `{ path }` holds for an empty list; and what a
-  condition reads when the selected nodes in a `SelectionPanel` disagree (built, provisionally:
-  shown if it holds for any node, enabled only if it holds for all).
+- **(P3) What conditions on a pref leave undecided.** A leaf, group, or section holds a
+  `PrefCondition` (`packages/prefs/src/condition.ts`) as `showIf` or `enableIf`;
+  `packages/prefs/src/scope.ts` applies them in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's
+  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Undecided, with what is
+  built today: whether a bad condition throws or warns (warns; labkit's other schema mistakes
+  throw); a path relative to a list item (none: every path is from the schema root, so a field
+  cannot name its sibling in the same item); what an item's own `showIf` means, since it cannot
+  hide one entry (unasked; its `enableIf` and its fields' conditions apply); whether an alias row
+  uses its own conditions or its target's (its own); a form for "this list is not empty" (none: a
+  bare `{ path }` holds for an empty list); what a condition reads when the selected nodes in a
+  `SelectionPanel` disagree (shown if it holds for any, enabled only if for all); and whether a
+  number with a display unit is compared as stored or as shown (stored; only an `encoding` is
+  decoded).
+
+- **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
+  compares stored values, where every other reader decodes. A rail entry for a group drawn under
+  `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
+  `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
+  `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
+  own. `Properties.module.css` is one 1,597-line sheet.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -1558,6 +1574,14 @@ in the workshop page as a lab trial with controls. A story that sets `isolate`
 renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
+
+- **(P2) A story gets controls only for the args it spells out.** `argsToSchema`
+  (`packages/forge/src/csf/argsToSchema.ts`) reads `args` and `argTypes` and
+  nothing else, so a story that names a `component` and declares neither shows
+  Settings with the Globals section alone. Storybook fills that gap by reading
+  the component's prop types at build time; forge has no such step. The vite
+  plugin would derive an `argTypes` table per `component` from its TypeScript
+  props, and the story's own `args` and `argTypes` would refine it.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show

@@ -1,7 +1,7 @@
 // apps/site/demos/__tests__/platformerAnimState.test.ts
 import { describe, it, expect } from 'vitest';
 import { CLIPS } from '../platformer/clips';
-import { FADE_MS, createAnimState, nextAnimState, resolvePose, type AnimCtx } from '../platformer/animState';
+import { FADE_MS, createAnimState, nextAnimState, type AnimCtx } from '../platformer/animState';
 
 const GROUND: AnimCtx = { onGround: true, vx: 0, vy: 0, hurt: false };
 const RUNNING: AnimCtx = { onGround: true, vx: 150, vy: 0, hurt: false };
@@ -14,15 +14,17 @@ describe('nextAnimState', () => {
     expect(s.current).toBe('idle');
     for (let i = 0; i < 30; i++) s = nextAnimState(s, GROUND, 1 / 60);
     expect(s.current).toBe('idle');
-    expect(s.outgoing).toBe(null);
+    expect(s.fade).toBe(1);
+    expect(s.switches).toBe(0);
   });
 
   it('switches to run when moving and back to idle when stopped', () => {
     let s = nextAnimState(createAnimState(), RUNNING, 1 / 60);
     expect(s.current).toBe('run');
-    expect(s.outgoing).not.toBe(null);
+    expect(s.switches).toBe(1);
     for (let i = 0; i < 60; i++) s = nextAnimState(s, GROUND, 1 / 60);
     expect(s.current).toBe('idle');
+    expect(s.switches).toBe(2);
   });
 
   it('picks jump while rising and fall while descending', () => {
@@ -37,14 +39,21 @@ describe('nextAnimState', () => {
     expect(s.current).toBe('hurt');
   });
 
-  it('completes the cross-fade over FADE_MS and then drops the outgoing snapshot', () => {
+  it('completes the cross-fade over FADE_MS', () => {
     let s = nextAnimState(createAnimState(), RUNNING, 1 / 60);
-    expect(s.fade).toBeLessThan(1);
-    expect(s.outgoing).not.toBe(null);
+    expect(s.fade).toBeCloseTo(1000 / 60 / FADE_MS, 9);
     const steps = Math.ceil(FADE_MS / 1000 / (1 / 60)) + 2;
     for (let i = 0; i < steps; i++) s = nextAnimState(s, RUNNING, 1 / 60);
     expect(s.fade).toBe(1);
-    expect(s.outgoing).toBe(null);
+  });
+
+  it('starts the fade over at a switch made before the last one finished', () => {
+    let s = nextAnimState(createAnimState(), RUNNING, 1 / 60);
+    s = nextAnimState(s, RUNNING, 1 / 60);
+    const mid = s.fade;
+    s = nextAnimState(s, RISING, 1 / 60);
+    expect(s.fade).toBeLessThan(mid);
+    expect(s.switches).toBe(2);
   });
 
   it('scales the run cycle phase with ground speed', () => {
@@ -69,34 +78,5 @@ describe('nextAnimState', () => {
     for (let i = 0; i < 2000; i++) s = nextAnimState(s, RUNNING, 1 / 60);
     expect(s.phase).toBeGreaterThanOrEqual(0);
     expect(s.phase).toBeLessThanOrEqual(CLIPS.run.duration);
-  });
-
-  it('does not pop when a clip switches again before the previous fade finishes', () => {
-    // idle -> run, one tick in: fade is well under 1, so run's cross-fade is
-    // still visibly blending with idle when the very next switch happens.
-    let s = nextAnimState(createAnimState(), RUNNING, 1 / 60);
-    const before = resolvePose(s);
-    s = nextAnimState(s, RISING, 1 / 60);
-    const after = resolvePose(s);
-    // torso and foreL distinguish idle/run/jump sharply enough to catch a pop,
-    // but a real one-tick blend step moves them only a hair.
-    expect(Math.abs(after.torso!.rotation! - before.torso!.rotation!)).toBeLessThan(0.02);
-    expect(Math.abs(after.foreL!.rotation! - before.foreL!.rotation!)).toBeLessThan(0.02);
-  });
-});
-
-describe('resolvePose', () => {
-  it('returns a pose with no outgoing snapshot', () => {
-    const pose = resolvePose(createAnimState());
-    expect(Object.keys(pose).length).toBeGreaterThan(0);
-  });
-
-  it('blends toward the new clip as the fade advances', () => {
-    let s = nextAnimState(createAnimState(), RUNNING, 1 / 60);
-    const early = resolvePose(s);
-    for (let i = 0; i < 4; i++) s = nextAnimState(s, RUNNING, 1 / 60);
-    const later = resolvePose(s);
-    expect(early).not.toEqual(later);
-    expect(Object.keys(later).length).toBeGreaterThan(0);
   });
 });

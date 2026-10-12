@@ -64,7 +64,11 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   const id = ctx.nextId();
   let gone = false;
   const member: Member = {
-    at: () => travel(ax, ax.to(o.value()), ax.to(s.get())),
+    at: () => {
+      const committed = ax.to(s.get());
+      s.heldAt = committed;
+      return travel(ax, ax.to(o.value()), committed);
+    },
     weight: () => (gone ? 0 : share(o.weight())),
   };
 
@@ -83,6 +87,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
       if (commit) absorb(s, settle(group, member, ax.count));
       gone = true;
       group.delete(member);
+      if (group.size === 0) s.heldAt = null;
       ctx.codec.stop(id);
       ctx.targets.detach(state);
       ctx.touch(state, true);

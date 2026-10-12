@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
-import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { DragGhost } from '../DragGhost';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
@@ -35,20 +35,24 @@ export interface PreviewPaneProps {
   onStagePointerDown?(e: PointerEvent): void;
   /** What follows the pointer while something from the form is dragged. */
   ghost?: PreviewGhost | null;
+  /** The root files nothing onto pages, as a layout's does not: what sits directly under it is drawn, not left out as unplaced. */
+  pageless?: boolean;
+  /** The leaf at a value path, where an alias is not of one in `schema`: a layout's pointers name settings in its dialog. */
+  leafAt?: (path: string) => PrefLeaf | undefined;
 }
 
 /**
  * The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section,
  * and a toolbar for a group drawn as a bar.
  */
-export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: PreviewPaneProps) {
+export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless, leafAt }: PreviewPaneProps) {
   if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} />;
-  if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
-  return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
+  if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} leafAt={leafAt} />;
+  return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} leafAt={leafAt} />;
 }
 
 /** A root drawn as a bar: the toolbar itself on a stage, run either way. */
-function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: GroupPreviewProps) {
+function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, leafAt }: GroupPreviewProps) {
   const [vertical, setVertical] = useState(false);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
   const marked = useMemo(() => selected.map((p) => keysOf(p).join('.')), [selected]);
@@ -59,7 +63,7 @@ function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRe
       </PaneHeader>
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown}>
         <PrefsForm className={s.previewBar} schema={schema} values={NO_VALUES} renderers={renderers} orientation={vertical ? 'vertical' : 'horizontal'}
-          showHidden showEmpty drop={drop} selected={marked}
+          showHidden showEmpty markHidden drop={drop} selected={marked} leafAt={leafAt}
           onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
           onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
         <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
@@ -78,6 +82,8 @@ interface GroupPreviewProps {
   drop?: PrefDrop | null;
   onStagePointerDown?(e: PointerEvent): void;
   ghost?: PreviewGhost | null;
+  pageless?: boolean;
+  leafAt?: (path: string) => PrefLeaf | undefined;
 }
 
 /** What follows the pointer while the form draws the dragged node nowhere. */
@@ -88,12 +94,12 @@ function PreviewDragGhost({ ghost, stageRef, drop, renderers }: Pick<GroupPrevie
   );
 }
 
-function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: GroupPreviewProps) {
+function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless = false, leafAt }: GroupPreviewProps) {
 
   const [showHidden, setShowHidden] = useState(true);
   const size = useEditorSize('previewWidth');
   // What sits on no page is listed as unplaced, and the form would file it under a page of its own.
-  const placed = useMemo(() => placedOnly(schema), [schema]);
+  const placed = useMemo(() => (pageless ? schema : placedOnly(schema)), [schema, pageless]);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
   const marked = useMemo(() => selected.map((p) => keysOf(p).join('.')), [selected]);
   return (
@@ -103,9 +109,9 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
       </PaneHeader>
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-w': `${size.value}px` } as CSSProperties}>
       <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" subPages rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
-        schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden}
+        schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden} leafAt={leafAt}
         // An empty group is drawn too: it is somewhere to drop into.
-        showEmpty drop={drop}
+        showEmpty markHidden drop={drop}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
         selected={marked}
         onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
@@ -167,7 +173,7 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults }: {
       <PaneHeader title="Live preview" />
       <div className={s.previewPanel}>
         <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
-          renderers={renderers} kindLabel={() => schema.name} selected={marked}
+          renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden
           onSelect={onSelect && ((path, how) => {
             const at = treePathOfPanel(schema, path);
             if (at !== null) onSelect(at, how);

@@ -2,10 +2,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch
 import { createPortal, flushSync } from 'react-dom';
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
-import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeNode } from '../Tree';
-import { Badge } from '../Badge';
+import { filterTree, Tree, treeBranchIds, type TreeDragEffect } from '../Tree';
 import type { PrefRenderer } from '../Prefs';
-import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
@@ -20,6 +18,7 @@ import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
 import { UnplacedTree } from './UnplacedTree';
+import { toTreeNodes } from './structureRows';
 import { stillUnplaced } from './unplaced';
 import { blankGroup, blankSection, leafOf, type CustomKinds } from './kindSchemas';
 import { kindChoices, type PrefTypes } from './types';
@@ -28,35 +27,6 @@ import {
   uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
-
-/** How many leaves `nodes` come to, counting those under each at any depth. */
-function leafCount(nodes: readonly SchemaNode[]): number {
-  return nodes.reduce((n, node) => n + (isPrefLeaf(node) ? 1 : leafCount(Object.values(childrenOf(node) ?? {}))), 0);
-}
-
-const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
-
-function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>, mark?: (path: string) => ReactNode): TreeNode[] {
-  return Object.entries(childrenOf(node) ?? {}).map(([key, child]) => {
-    const p = joinPath(path, key);
-    const kids = childrenOf(child);
-    const { name } = child;
-    const label = name ? <>{name} <span className={s.treeKey}>({key})</span></> : key;
-    return {
-      id: p,
-      label: changed.has(p) ? <span className={s.changed}>{label}</span> : label,
-      textValue: name ? `${name} ${key}` : key,
-      ...(child.description ? { tooltip: child.description } : {}),
-      // Unset, a group is drawn by its depth: a page under the root, a section below that.
-      ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
-      trailing: isPrefLeaf(child)
-        ? <>{mark?.(p)}<PrefKindBadge kind={child.type ?? child.kind} /></>
-        // Its glyph says how a group is drawn, so it carries no badge to say it again.
-        : <>{mark?.(p)}{countBadge(leafCount([child]))}</>,
-      ...(kids ? { children: toTreeNodes(child, p, changed, mark) } : {}),
-    };
-  });
-}
 
 export interface StructurePaneProps {
   schema: SchemaRoot;
@@ -91,6 +61,11 @@ export interface StructurePaneProps {
   outsideDraws?: boolean;
   /** The most levels of groups the schema may nest. */
   maxDepth?: number;
+  /** The schema takes no edit: no tool adds or removes, and nothing is dropped here. Its rows can still be dragged out. */
+  readOnly?: boolean;
+  /** The dialog a layout's pointers name settings in. Given, the schema is a layout: what sits directly under its
+   *  root is a row of it and not unplaced, a pointer's row is named as its setting, and nothing adds a pref or a page. */
+  over?: SchemaRoot;
   /** What a host draws on a node's row before its kind, by the node's path in this tree. */
   rowMark?: (path: string) => ReactNode;
   /** Remove the selected nodes. */
@@ -117,13 +92,14 @@ export interface DropOutside {
 const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
-export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
+  const pageless = over !== undefined;
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
-    const all = toTreeNodes(schema, null, changed, rowMark);
-    const loose = new Set(looseKeys(schema));
+    const all = toTreeNodes(schema, null, changed, rowMark, over);
+    const loose = new Set(looseKeys(schema, pageless));
     return [all.filter((n) => !loose.has(n.id)), all.filter((n) => loose.has(n.id))];
-  }, [schema, changed, rowMark]);
+  }, [schema, changed, rowMark, over, pageless]);
   const [query, setQuery] = useState('');
   const sought = query.trim().toLowerCase();
   const shown = useMemo(
@@ -146,7 +122,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const overUnplaced = (ids: readonly string[], point: { x: number; y: number }): boolean => {
     const box = unplacedArea.current?.getBoundingClientRect();
     if (!box || point.x < box.left || point.x > box.right || point.y < box.top || point.y > box.bottom) return false;
-    return mayUnplace(schema, ids);
+    return !readOnly && mayUnplace(schema, ids, pageless);
   };
   const waiting = useMemo(() => (unplaced ? stillUnplaced(unplaced, schema) : null), [unplaced, schema]);
 
@@ -163,8 +139,10 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const host = nodeAt(schema, addTarget().parent) ?? schema;
   const branch = branchUnder(host ?? schema);
   const choices = useMemo(() => kindChoices(kinds, types), [kinds, types]);
+  // Unset, a group under the root is drawn as a page, which a layout has none of.
+  const heading = pageless && addTarget().parent === null;
   const add = ({ key, name, kind }: NewNode) => {
-    const node: SchemaNode = kind !== undefined ? { ...leafOf(kind, types, custom), name } : { ...(branch === 'section' ? blankSection() : blankGroup()), name };
+    const node: SchemaNode = kind !== undefined ? { ...leafOf(kind, types, custom), name } : { ...(branch === 'section' ? blankSection() : blankGroup()), ...(heading ? { as: 'section' as const } : {}), name };
     setAdding(null);
     const { parent, index } = addTarget();
     onChange(addNode(schema, parent, key, node, index));
@@ -181,9 +159,9 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   /** Where the bar's aliases of the selected prefs go: together after the one that leads, to be dragged where they
    *  belong. Null when one of what is selected has no alias to make, or they do not fit there. */
   const aliasAt = ((): SchemaTarget | null => {
-    if (lead === null || !selected.every((p) => nodeAt(schema, p)) || !canLand(selected, 'link')) return null;
+    if (readOnly || lead === null || !selected.every((p) => nodeAt(schema, p)) || !canLand(selected, 'link')) return null;
     const parent = parentPath(lead);
-    const fits = landing(selected, 'link').every((made) => treeTakesNew(schema, made, parent, maxDepth));
+    const fits = landing(selected, 'link').every((made) => treeTakesNew(schema, made, parent, maxDepth, pageless));
     if (!fits && !(parent === null && !isPrefSection(schema))) return null;
     const sibs = Object.keys(childrenOf(nodeAt(schema, parent) ?? schema) ?? {});
     return { parentPath: parent, index: sibs.indexOf(keyOf(lead)) + 1 };
@@ -203,7 +181,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     // The tree answers a drag from an effect, a render after the pointer moved; a drop is asked about where it was let go.
     flushSync(() => setPaletteDrag(drag));
     const at = treeTarget.current;
-    const target = at ? schemaTarget(schema, at.parentId, at.index) : outside?.target(carried(drag), [], drag) ?? null;
+    const target = at ? schemaTarget(schema, at.parentId, at.index, pageless) : outside?.target(carried(drag), [], drag) ?? null;
     if (!target) return;
     if (drag.from !== undefined) {
       move(drag.from, target);
@@ -219,7 +197,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   /** Whether the nodes at `ids`, which the schema holds, may be dropped under tree row `parentId`. */
   const takes = (ids: readonly string[], parentId: string | null): boolean => {
     if (!withinDepth(parentId, nodesAt(ids), maxDepth)) return false;
-    const top = topLevelAllows(schema, ids, parentId);
+    const top = topLevelAllows(schema, ids, parentId, pageless);
     if (top !== undefined) return top;
     const parent = nodeAt(schema, parentId)!;
     return !!childrenOf(parent) && ids.every((id) => fitsUnder(parent, nodeAt(schema, id)!));
@@ -238,12 +216,12 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         <Input value={query} onChange={setQuery} aria-label="Filter structure" placeholder="Filter" />
       </div>
       {toolSlot && createPortal(
-        <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
-          <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" onClick={() => setAdding('pref')} />
-          <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth)} onClick={() => setAdding('branch')} />
+        <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} disabled={readOnly} pages={!pageless} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
+          <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" disabled={readOnly || pageless} onClick={() => setAdding('pref')} />
+          <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={readOnly || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onClick={() => setAdding('branch')} />
           <ToolButton icon={<Icon name="link" mark="markAdd" />} label="Add alias" title="Show each selected pref in a second place"
             disabled={aliasAt === null} onClick={() => { if (aliasAt) alias(selected, aliasAt); }} />
-          <ToolButton icon={<Icon name="delete" />} label="Remove" disabled={selected.length === 0} onClick={onRemove} />
+          <ToolButton icon={<Icon name="delete" />} label="Remove" disabled={readOnly || selected.length === 0} onClick={onRemove} />
         </Palette>,
         toolSlot,
       )}
@@ -291,25 +269,25 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         onDropOutside={(ids, point, effect) => {
           setUnplacing(false);
           if (!canLand(ids, effect)) return;
-          const target = overUnplaced(ids, point) && holdsPages(schema) ? looseTarget(schema) : outside?.target(landing(ids, effect), effect === 'move' ? ids : [], point);
+          const target = overUnplaced(ids, point) && holdsPages(schema, pageless) ? looseTarget(schema) : outside?.target(landing(ids, effect), effect === 'move' ? ids : [], point);
           if (target) ({ move, copy, link: alias })[effect](ids, target);
         }}
         canDrop={(ids, t, effect) => {
           // A place among the rows shown is not that place among all of them.
-          if (sought !== '') return false;
+          if (readOnly || sought !== '') return false;
           if (ids.length === 0) {
             if (paletteDrag === null) return false;
-            return paletteDrag.from === undefined ? treeTakesNew(schema, paletteDrag.node, t.parentId, maxDepth) : takes(paletteDrag.from, t.parentId);
+            return paletteDrag.from === undefined ? treeTakesNew(schema, paletteDrag.node, t.parentId, maxDepth, pageless) : takes(paletteDrag.from, t.parentId);
           }
-          if (effect === 'link') return canLand(ids, effect) && landing(ids, effect).every((node) => treeTakesNew(schema, node, t.parentId, maxDepth));
+          if (effect === 'link') return canLand(ids, effect) && landing(ids, effect).every((node) => treeTakesNew(schema, node, t.parentId, maxDepth, pageless));
           return takes(ids, t.parentId);
         }}
-        onMove={(ids, t) => move(ids, schemaTarget(schema, t.parentId, t.index))}
-        onCopy={(ids, t) => copy(ids, schemaTarget(schema, t.parentId, t.index))}
-        onLink={(ids, t) => alias(ids, schemaTarget(schema, t.parentId, t.index))}
+        onMove={(ids, t) => move(ids, schemaTarget(schema, t.parentId, t.index, pageless))}
+        onCopy={(ids, t) => copy(ids, schemaTarget(schema, t.parentId, t.index, pageless))}
+        onLink={(ids, t) => alias(ids, schemaTarget(schema, t.parentId, t.index, pageless))}
       />
       </div>
-      {(unplaced !== undefined || holdsPages(schema)) && (
+      {(unplaced !== undefined || holdsPages(schema, pageless)) && (
         <>
           <ResizeHandle orientation="horizontal" invert {...unplacedSize} min={60} max={600}
             ariaLabel="Resize unplaced" />

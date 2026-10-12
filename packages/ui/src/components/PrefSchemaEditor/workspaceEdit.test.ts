@@ -194,3 +194,33 @@ describe('editAsset', () => {
     expect(editAsset(locked, 'settings', setAttribute(SETTINGS, 'view/grid', 'name', 'Lines'), NO_MOVES)).toBe(locked);
   });
 });
+
+describe('a pointer to a field inside an object leaf', () => {
+  const dialog: PrefGroup = { ...SETTINGS, children: { ...SETTINGS.children, box: box('Box', {}) } };
+  const start = workspaceOf(dialog, { ...CODE_POINTERS, lost: pointer('view.gone') });
+  const inside = moveInAsset(start, 'settings', ['view/grid'], { parentPath: 'box', index: 0 }).workspace;
+
+  it('stays, dead, while the field stands', () => {
+    expect(ofAt(inside, 'grid')).toBe('box.grid');
+    expect(deadPointers(assetOf(inside, 'code')!.root, assetOf(inside, 'settings')!.root)).toEqual(['grid', 'lost']);
+  });
+
+  it('goes with the field when the field is removed', () => {
+    expect(Object.keys(codeOf(removeInAsset(inside, 'settings', ['box/grid'])))).toEqual(['snap', 'lost']);
+  });
+
+  it('goes with the object leaf when that is removed', () => {
+    expect(Object.keys(codeOf(removeInAsset(inside, 'settings', ['box'])))).toEqual(['snap', 'lost']);
+  });
+
+  it('is live again once the field moves back out', () => {
+    const out = moveInAsset(inside, 'settings', ['box/grid'], { parentPath: 'view', index: 0 }).workspace;
+    expect(ofAt(out, 'grid')).toBe('view.grid');
+    expect(deadPointers(assetOf(out, 'code')!.root, assetOf(out, 'settings')!.root)).toEqual(['lost']);
+  });
+
+  it('is kept when it names nothing at all, whatever else is removed', () => {
+    expect(Object.keys(codeOf(removeInAsset(start, 'settings', ['view/snap'])))).toEqual(['grid', 'lost']);
+    expect(Object.keys(codeOf(removeInAsset(inside, 'settings', ['box'])))).toContain('lost');
+  });
+});

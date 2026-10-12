@@ -3,6 +3,7 @@ import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
+import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { pathWithin, selectionAttrs, useHeldTab } from './selection';
 import s from './Prefs.module.css';
 
@@ -38,15 +39,18 @@ const join = (path: string, key: string): string => (path === '' ? key : `${path
 export function PrefsPane(props: PrefsPaneProps) {
   const { ctx, group, path, scrollRef, pageKey = path, className } = props;
   const entries = Object.entries(group.children);
+  // Whatever hides it, a page is drawn apart from what it sits in, so it carries the mark itself.
+  const marked = ctx.hidden?.has(path) === true;
   // A fragment's rows are rows among the leaves', not a block after them.
   const inRows = ([, child]: Entry): boolean => isPrefLeaf(child) || child.as === 'fragment';
   const leaves = entries.filter(inRows);
   const groups = entries.filter((entry) => !inRows(entry));
 
   return (
-    <div className={[s.pane, className].filter(Boolean).join(' ')} ref={scrollRef} data-pref-into={path} data-pref-scroll="">
-      <div className={s.paneHead} {...selectionAttrs(path, ctx)}>
-        <h3 className={s.paneTitle}>{group.name}</h3>
+    // A hidden page is marked whole: its heading and its rows share no element but this one.
+    <div className={[s.pane, className].filter(Boolean).join(' ')} ref={scrollRef} data-pref-into={path} data-pref-scroll="" {...hiddenAttrs(marked)}>
+      <div className={s.paneHead} {...selectionAttrs(path, { selected: ctx.selected })}>
+        <h3 className={s.paneTitle}>{group.name}{marked && <HiddenBadge />}</h3>
         {group.description !== undefined && (
           <p className={s.paneDesc}>{group.description}</p>
         )}
@@ -84,10 +88,12 @@ export function paneChildren(
       i--;
       out.push(<PaneTabs key={key} ctx={ctx} tabs={tabs} depth={depth} box={box} />);
     } else if (child.as === 'fragment') {
-      // No box of its own (`display: contents`): its rows take their places in the rows around them.
+      // No box of its own (`display: contents`): its rows take their places in the rows around them, and each
+      // carries the mark a hidden fragment has no box for.
+      const inner = marksHidden(ctx.hidden, p) ? { ...ctx, hidden: new Set([...ctx.hidden!].filter((at) => at !== p)) } : ctx;
       out.push(
-        <div key={key} className={s.fragment} {...selectionAttrs(p, ctx)}>
-          {paneChildren(ctx, Object.entries(child.children), p, depth, box)}
+        <div key={key} className={s.fragment} {...selectionAttrs(p, { selected: ctx.selected })}>
+          {paneChildren(inner, Object.entries(child.children), p, depth, box)}
         </div>,
       );
     } else if (child.as === 'bar') {
@@ -128,6 +134,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
     >
       <Heading className={depth === 0 ? s.sectionTitle : s.subsectionTitle} data-pref-sticky={depth === 0 ? '' : undefined}>
         {group.name}
+        {marksHidden(ctx.hidden, path) && <HiddenBadge />}
       </Heading>
       {group.description !== undefined && (
         <p className={s.paneDesc}>{group.description}</p>
@@ -180,9 +187,11 @@ function PanePanel({ ctx, group, path, depth }: {
   path: string;
   depth: number;
 }) {
+  const marked = marksHidden(ctx.hidden, path);
   return (
     <section className={s.panePanel} {...selectionAttrs(path, ctx)} aria-label={group.name}>
-      {group.name !== '' && <h5 className={s.panelTitle}>{group.name}</h5>}
+      {group.name !== '' && <h5 className={s.panelTitle}>{group.name}{marked && <HiddenBadge />}</h5>}
+      {group.name === '' && marked && <HiddenBadge lead />}
       {group.description !== undefined && <p className={s.paneDesc}>{group.description}</p>}
       <div className={s.rows}>{paneChildren(ctx, Object.entries(group.children), path, depth + 1)}</div>
     </section>
@@ -207,10 +216,11 @@ function PaneTabs({ ctx, tabs, depth, box }: {
         id: p,
         name: g.name,
         // The open tab's mark is its panel's, so a selection is drawn once.
-        attrs: selectionAttrs(p, p === open ? {} : ctx),
+        attrs: selectionAttrs(p, p === open ? { hidden: ctx.hidden } : ctx),
         panelAttrs: selectionAttrs(p, ctx),
         content: (
           <>
+            {marksHidden(ctx.hidden, p) && <HiddenBadge lead />}
             {g.description !== undefined && <p className={s.paneDesc}>{g.description}</p>}
             <div className={s.rows}>{paneChildren(ctx, Object.entries(g.children), p, depth + 1, box)}</div>
           </>

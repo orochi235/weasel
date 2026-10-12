@@ -19,8 +19,8 @@ export interface SampledTrack<T> {
   /** Sorted ascending by `t`. Of keys sharing a time, the last in the array is
    *  the value at exactly that time. */
   keys: Keyframe<T>[];
-  /** Required unless every key's value is a number, a number array or a plain
-   *  object of numbers, all of one shape; those are lerped field by field. */
+  /** Required unless the track has a `target`, or every key's value is a number, a number
+   *  array or a plain object of numbers, all of one shape; those are lerped field by field. */
   interpolate?: Interpolate<T>;
   /** Built once per segment and cached. Takes precedence over `interpolate`. */
   interpolator?: InterpolatorFactory<T>;
@@ -32,6 +32,10 @@ export interface SampledTrack<T> {
    * animations on the target add on top. Once the playhead is past the last key, or the
    * timeline finishes or is canceled, the target keeps the value it was showing; before the
    * first key the track leaves the target alone.
+   *
+   * With no `interpolate` or `interpolator`, the track is sampled in the target's axes: each
+   * axis lerps on its own, an angle axis the short way round from the key before, and every
+   * sample is a value the axes built, a key's own included.
    */
   target?: Target<T>;
   /** The track's share among the target's holds, as `HoldOptions.weight`. Default 1. */

@@ -26,8 +26,8 @@
     "lines": 582
   },
   "packages/core/src/animation/useAnimator.ts": {
-    "lines": 502,
-    "longestFunction": 460
+    "lines": 486,
+    "longestFunction": 443
   },
   "packages/core/src/canvas/Canvas.tsx": {
     "lines": 1347,
@@ -124,13 +124,13 @@
   "packages/core/src/features/selection/overlay.ts": {
     "lines": 796
   },
-  "packages/core/src/features/text/domRuns.ts": {
+  "packages/text-dom/src/domRuns.ts": {
     "lines": 498
   },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
     "longestFunction": 167
   },
-  "packages/core/src/features/text/useTextEdit.ts": {
+  "packages/text-dom/src/useTextEdit.ts": {
     "lines": 1332,
     "longestFunction": 482
   },

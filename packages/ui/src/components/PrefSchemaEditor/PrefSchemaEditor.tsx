@@ -10,6 +10,7 @@ import type { SubmitChanges } from './ExportPanel';
 import type { CustomKinds } from './kindSchemas';
 import { asWorkspace, oneAssetCodec, sameSchema, schemaOf } from './oneAsset';
 import { NO_TYPES, type PrefTypes } from './types';
+import type { SentAsset } from './useAssetChanges';
 
 /** Props for {@link PrefSchemaEditor}. */
 export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefGroup> {
@@ -76,9 +77,11 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * unrelated one without remounting keeps the selection, expansion and baseline; give the editor a `key` to start
  * fresh.
  */
-export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>({ schema, onChange, original, types = NO_TYPES, ...rest }: PrefSchemaEditorProps<S>) {
+export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>({ schema, onChange, original, onSubmit, types = NO_TYPES, ...rest }: PrefSchemaEditorProps<S>) {
   const codec = useMemo(() => oneAssetCodec<S>(types), [types]);
   const workspace = useMemo(() => asWorkspace(schema), [schema]);
   const base = useMemo(() => original && asWorkspace(original), [original]);
-  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} workspace={workspace} onChange={(next) => onChange(schemaOf<S>(next))} original={base} />;
+  // Its one asset is all a submission holds, and Submit is off until that asset has changed.
+  const submit = onSubmit && (([sent]: readonly SentAsset[]) => onSubmit(sent!.changes, sent!.literal));
+  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} workspace={workspace} onChange={(next) => onChange(schemaOf<S>(next))} original={base} onSubmit={submit} />;
 }

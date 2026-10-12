@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { isPrefLeaf, type PrefCondition, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
@@ -18,6 +18,7 @@ import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
+import { pointerAttributes } from './pointers';
 import s from './PrefSchemaEditor.module.css';
 
 /** Form paths for the rows that are not attributes: the key, the kind, and the kind's own panel. */
@@ -44,6 +45,11 @@ const AUTO_VALUE_KIND = 'schema-auto-value';
 const drawsMixed = (kind: string): boolean =>
   kind !== CONDITION_KIND && (kind in ATTR_RENDERERS ? MIXED_ATTR_KINDS.has(kind) : !WHOLE.has(kind));
 
+/** `children` with every control in it disabled while `locked`: the form has no read-only mode of its own. */
+function Lockable({ locked, children }: { locked: boolean; children: ReactElement }) {
+  return locked ? <fieldset className={s.lockedForm} disabled>{children}</fieldset> : children;
+}
+
 export interface AttributesPaneProps {
   schema: SchemaRoot;
   onChange(next: SchemaRoot): void;
@@ -63,10 +69,15 @@ export interface AttributesPaneProps {
   actions?: readonly EditorAction[];
   /** Renderers the consumer passes for its own kinds — a custom kind's `default` may need one. */
   renderers?: Record<string, PrefRenderer>;
+  /** The dialog a layout's pointers name settings in. Given, an alias is a pointer: its form offers only where it points, among that
+   *  dialog's settings. No leaf of a layout is offered another kind, which could make a setting of it. */
+  over?: SchemaRoot;
+  /** The schema takes no edit: the form shows what the nodes hold, with every control disabled. */
+  readOnly?: boolean;
   onNotice(text: string | null): void;
 }
 
-export function AttributesPane({ schema, onChange, paths, onRename, added = false, changed = NONE, kinds, custom, types, actions, renderers, onNotice }: AttributesPaneProps) {
+export function AttributesPane({ schema, onChange, paths, onRename, added = false, changed = NONE, kinds, custom, types, actions, renderers, over, readOnly: locked = false, onNotice }: AttributesPaneProps) {
   const targets: ReadonlyArray<string | null> = useMemo(() => (paths.length === 0 ? [null] : paths), [paths]);
   const several = targets.length > 1;
   // The key, a key that follows the name, and a list's entry belong to one node.
@@ -75,7 +86,12 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     () => targets.map((p) => nodeAt(schema, p)).filter((n): n is SchemaNode => n !== undefined),
     [schema, targets],
   );
-  const agg = useMemo(() => (nodes.length === 0 ? null : aggregateAttributes(nodes, custom, drawsMixed, actions)), [nodes, custom, actions]);
+  const pointers = over !== undefined && nodes.length > 0 && nodes.every((n) => isPrefLeaf(n) && n.kind === 'alias');
+  const agg = useMemo(() => {
+    if (nodes.length === 0) return null;
+    const all = aggregateAttributes(nodes, custom, drawsMixed, actions);
+    return pointers ? { ...all, schema: pointerAttributes(all.schema) } : all;
+  }, [nodes, custom, actions, pointers]);
   const mixedPaths = useMemo(
     () => new Set([...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`, `${AUTO}.${k}`])),
     [agg],
@@ -85,10 +101,10 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   const nameAtFocus = useRef('');
   // The edited schema's fields, by its own path rule: what a reference in it names.
   const fields = useMemo(() => {
-    const all = prefFieldChoices(schema);
+    const all = prefFieldChoices(over ?? schema);
     const aliases = nodes.filter((n): n is PrefLeaf => isPrefLeaf(n) && n.kind === 'alias');
-    return aliases.length > 0 && aliases.length === nodes.length ? aliasChoices(schema, aliases, all) : all;
-  }, [schema, nodes]);
+    return aliases.length > 0 && aliases.length === nodes.length ? aliasChoices(over ?? schema, aliases, all) : all;
+  }, [schema, over, nodes]);
   const [key, setKey] = useState(path === null ? '' : keyOf(path));
   const [keyError, setKeyError] = useState<string | null>(null);
   const [seen, setSeen] = useState(path);
@@ -100,8 +116,9 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   if (agg === null || nodes.length !== targets.length) return <section className={s.pane} aria-label="Attributes"><PaneHeader title="Attributes" /></section>;
 
   const node = nodes[0]!;
-  const leaf = agg.kind !== undefined;
-  const keyed = !several && path !== null;
+  // A pointer is what it points at: its key stores nothing.
+  const leaf = agg.kind !== undefined && over === undefined;
+  const keyed = !several && path !== null && !pointers;
   const { shared, own, auto, entry, readOnly } = agg.schema;
   const item = !several && isPrefLeaf(node) ? entryOf(node) : undefined;
   const held = agg.values;
@@ -151,9 +168,9 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
         </fieldset>
       </span>
     ), { group: true }),
-    [CONDITION_KIND]: Object.assign<PrefRenderer, { group: boolean }>(({ pref, value, setValue }) => (
+    [CONDITION_KIND]: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>(({ pref, value, setValue }) => (
       <PrefConditionEditor aria-label={pref.name} schema={schema} exclude={ownPaths} value={value as PrefCondition | undefined} onChange={setValue} />
-    ), { group: true }),
+    ), { group: true, wide: true }),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}
         onFocus={() => { nameAtFocus.current = node.name; }} onBlur={several ? undefined : followName} />
@@ -226,6 +243,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   return (
     <section className={s.pane} aria-label="Attributes">
       <PaneHeader title={several ? `${targets.length} selected` : 'Attributes'} />
+      <Lockable locked={locked}>
       <PrefsForm
         schema={{ name: 'Attributes', children }}
         layout="list"
@@ -246,6 +264,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
           writeAll(attr, normalizeAttr(attr, value, own[attr]));
         }}
       />
+      </Lockable>
       {readOnly.length + agg.apart.length > 0 && (
         <DetailList>
           {readOnly.map(([k, v]) => (

@@ -1,10 +1,9 @@
 // apps/site/demos/platformer/sceneWorld.ts
 import { asNodeId, solid } from '@weasel-js/core';
 import type {
-  FillStyle, NodeId, RectPose, Scene, TextStyle, TextVerticalAlign,
+  FillStyle, NodeId, Pose, RectPose, Scene, TextStyle, TextVerticalAlign,
 } from '@weasel-js/core';
 import { boneLocalPoses } from './boneRig';
-import { resolvePose } from './animState';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
 import { BALL_R, flagY, POLE_WIDTH, type Flagpole } from './flagpole';
 import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, type Level } from './level';
@@ -163,12 +162,12 @@ export function boneNodes(): WorldNodeSpec[] {
 const OFFSCREEN: RectPose = { x: -1e5, y: -1e5, width: 0, height: 0 };
 
 /**
- * Push one frame of simulation state onto the scene. Every write goes through
- * `setPose`/`update`, so this is the retained tree carrying a moving world —
- * the caller wraps it in `scene.untracked`, which applies it without recording
- * and notifies once.
+ * Push one frame of simulation state onto the scene, the player's bones at
+ * `pose`. Every write goes through `setPose`/`update`, so this is the retained
+ * tree carrying a moving world — the caller wraps it in `scene.untracked`,
+ * which applies it without recording and notifies once.
  */
-export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: GameRefs): void {
+export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: GameRefs, pose: Pose): void {
   // Coins spin by narrowing: the ellipse collapses to a line at the quarter
   // points, which is the same read as the immediate-mode version.
   const spin = Math.abs(Math.cos(((g.elapsed % 1.2) / 1.2) * Math.PI * 2));
@@ -205,7 +204,7 @@ export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: Game
   }
 
   const locals = boneLocalPoses(
-    resolvePose(g.anim),
+    pose,
     { x: g.player.body.x, y: g.player.body.y + g.player.body.h / 2 },
     g.player.body.facing,
   );

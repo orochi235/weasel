@@ -2,6 +2,7 @@ import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'rea
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { createLoop, createTweenLoop } from './loop';
 import { createCodec } from './engine/codec';
+import { createCompletions } from './engine/completions';
 import type { ActiveAnimation, AnimationContext, AnimationSeed } from './engine/context';
 import type { TargetState } from './target';
 import { decayAsPhysics } from './engine/decay';
@@ -17,7 +18,7 @@ import { createTimeline } from './timeline/createTimeline';
 import { stateOf } from './target';
 import { ColorOverrideRegistry } from './colorRegistry';
 import { AnimatorEventHub } from './observe';
-import { supervisors, type WatchCompletion } from './supervisor';
+import { supervisors } from './supervisor';
 import type {
   AnimationHandle,
   AnimationInfo,
@@ -117,37 +118,18 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     /** Supervisor frame callbacks due this frame, run once its ticks are done. */
     const afterTicks: (() => void)[] = [];
 
-    // Per-id one-shot completion listeners. Used by stagger to detect when
-    // each child has left the registry (natural completion OR cancel) so the
-    // supervising composite can retire itself when the last child finishes.
-    const completionListeners = new Map<number, (() => void)[]>();
-    const fireCompletion = (id: number): void => {
-      const ls = completionListeners.get(id);
-      if (!ls) return;
-      completionListeners.delete(id);
-      for (const cb of ls) cb();
-    };
-    const watchCompletion: WatchCompletion = (id, cb) => {
-      if (!animations.current.has(id)) {
-        cb();
-        return () => {};
-      }
-      const ls = completionListeners.get(id) ?? [];
-      ls.push(cb);
-      completionListeners.set(id, ls);
-      return () => {
-        const cur = completionListeners.get(id);
-        if (!cur) return;
-        const idx = cur.indexOf(cb);
-        if (idx >= 0) cur.splice(idx, 1);
-        if (cur.length === 0) completionListeners.delete(id);
-      };
-    };
+    const { fire: fireCompletion, watch: watchCompletion } = createCompletions((id) => animations.current.has(id));
 
     const hub = new AnimatorEventHub();
     const codec = createCodec();
-    const targets = createTargetBook((s) => {
-      for (const a of [...animations.current.values()]) if (a.target === s) retire(a.id);
+    const targets = createTargetBook({
+      stop: (s) => {
+        for (const a of [...animations.current.values()]) if (a.target === s) retire(a.id);
+      },
+      reread: (s) => {
+        codec.touch(s);
+        reread();
+      },
     });
     const infoOf = (a: ActiveAnimation): AnimationInfo => {
       if (!a.info) {
@@ -274,7 +256,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
 
     const ensureLoop = (): void => {
-      if (animations.current.size === 0) return;
+      // A frame in progress asks for the next one itself, after `onTick`: asked for from a tick,
+      // it would run ahead of a paint `onTick` requests, and the tick after would paint nothing.
+      if (animations.current.size === 0 || framing) return;
       frameLoopRef.current.request();
     };
 
@@ -344,7 +328,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         codec.touch(target);
         if (framing && !at) return;
         reread();
-        frameLoopRef.current.request();
+        if (!framing) frameLoopRef.current.request();
       },
       tripwire,
       interrupt: (key, by) => cancelByKey(key, by as ActiveAnimation),

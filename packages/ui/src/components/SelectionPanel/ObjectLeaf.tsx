@@ -5,6 +5,7 @@
 import { Fragment, useContext, type ReactNode } from 'react';
 import { isPrefLeaf, pairRowsOf, prefObjectBase, prefObjectWithField, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
+import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { objectRows, type ObjectLeafParts } from '../Prefs/objectRows';
 import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { Icon } from '../../icons/Icon';
@@ -29,6 +30,8 @@ interface ObjectRow {
   block: boolean;
   /** Every field in the row is disabled. */
   disabled: boolean;
+  /** Every field in the row is one a `showIf` hides. */
+  hidden: boolean;
   controls: ReactNode[];
 }
 
@@ -102,6 +105,8 @@ export function ObjectLeaf({
       setValue: (v) => update(() => v),
       disabled: ctx.disabled === true || ctx.disabledAt?.(childPath) === true,
       disabledAt: ctx.disabledAt,
+      hidden: ctx.hidden === true || ctx.hiddenAt?.(childPath) === true,
+      hiddenAt: ctx.hiddenAt,
     };
     const pair = pairs.get(childPath);
     return {
@@ -147,12 +152,13 @@ export function ObjectLeaf({
     // the cells it is handed.
     rows: (cells) => {
       const rows: ObjectRow[] = [];
-      for (const { key, leaf, block, disabled, content, pair } of renderCells(cells, renderers)) {
+      for (const { key, leaf, block, disabled, hidden, content, pair } of renderCells(cells, renderers)) {
         const prev = rows[rows.length - 1];
         if (pair !== undefined && prev?.pair === pair.key) {
           prev.controls.push(<Fragment key={key}>{content}</Fragment>);
           prev.block &&= block;
           prev.disabled &&= disabled;
+          prev.hidden &&= hidden;
           continue;
         }
         rows.push({
@@ -162,20 +168,24 @@ export function ObjectLeaf({
           title: leaf.description,
           block,
           disabled,
+          hidden,
           controls: [<Fragment key={key}>{content}</Fragment>],
         });
       }
       // A row several fields share stands for no one of them.
       const attrs = (entry: ObjectRow) =>
         cells.filter((cell) => cell.pair !== undefined && cell.pair.key === entry.pair).length > 1 ? {} : selectionAttrs(entry.key, marks, true);
+      // The leaf's own mark covers its fields; a row hidden on its own carries one.
+      const marked = (entry: ObjectRow): boolean => entry.hidden && ctx.hidden !== true;
       return rows.map((entry) =>
         entry.block ? (
-          <div key={entry.key} className={`${s.rowControls} ${s.blockRow}`} title={entry.title} {...attrs(entry)}>
+          <div key={entry.key} className={`${s.rowControls} ${s.blockRow}`} title={entry.title} {...attrs(entry)} {...hiddenAttrs(marked(entry))}>
+            {marked(entry) && <HiddenBadge lead />}
             {entry.controls}
           </div>
         ) : (
-          <div key={entry.key} className={s.row} {...attrs(entry)} {...(entry.disabled ? { 'data-disabled': '' } : {})}>
-            <span className={s.rowLabel} title={entry.title}>{entry.label}</span>
+          <div key={entry.key} className={s.row} {...attrs(entry)} {...hiddenAttrs(marked(entry))} {...(entry.disabled ? { 'data-disabled': '' } : {})}>
+            <span className={s.rowLabel} title={entry.title}>{entry.label}{marked(entry) && <HiddenBadge />}</span>
             <span className={s.rowControls}>{entry.controls}</span>
           </div>
         ),

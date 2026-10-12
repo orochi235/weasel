@@ -24,18 +24,23 @@ export function selectionJudge(schema: PrefSection, nodes: readonly AnyNode[]): 
  * {@link effectiveSections} with each kind's conditions applied against
  * `nodes`: the sections without what a `showIf` hides, and the key of every
  * leaf, and the path of every field of an object leaf, an `enableIf` disables.
+ * With `keepHidden` nothing a `showIf` hides is left out, and `hidden` names
+ * each such leaf and field the same way.
  */
 export function conditionedSections(
   kinds: readonly string[],
   entries: readonly NodePropertiesEntry[],
   nodes: readonly AnyNode[],
   rawAliases = false,
-): { sections: PanelSection[]; disabled: ReadonlySet<string> } {
+  keepHidden = false,
+): { sections: PanelSection[]; disabled: ReadonlySet<string>; hidden: ReadonlySet<string> } {
   const disabled = new Set<string>();
+  const hidden = new Set<string>();
   const sections = effectiveSections(kinds, entries, rawAliases, (schema) => {
-    const applied = applyPrefConditions(schema, selectionJudge(schema, nodes));
+    const applied = applyPrefConditions(schema, selectionJudge(schema, nodes), { keepHidden });
     for (const path of applied.disabled) disabled.add(path);
+    for (const path of applied.hidden) hidden.add(path);
     return applied.shown;
   });
-  return { sections, disabled };
+  return { sections, disabled, hidden };
 }

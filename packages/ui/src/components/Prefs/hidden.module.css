@@ -1,0 +1,15 @@
+/* A node a `showIf` hides, drawn because the surface was asked to: there to be picked, and plainly not what a
+   reader of the form would see. */
+[data-pref-hidden] {
+  opacity: 0.55;
+}
+
+.badge {
+  margin-inline-start: var(--wzl-space-2);
+}
+
+/* On a line of its own, over a control that brings its own chrome. */
+.lead {
+  margin-inline-start: 0;
+  margin-block-end: var(--wzl-space-1);
+}

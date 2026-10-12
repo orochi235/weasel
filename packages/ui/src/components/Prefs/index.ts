@@ -6,6 +6,7 @@ export {
   type PrefRenderContext,
 } from './PrefsForm';
 export type { PrefSelectHow } from './selection';
+export type { MarkHiddenProps } from './hidden';
 export { prefFieldProps, type PrefFieldState } from './prefField';
 export { PrefActionButton } from './PrefActionButton';
 export { PrefMixed } from './PrefMixed';

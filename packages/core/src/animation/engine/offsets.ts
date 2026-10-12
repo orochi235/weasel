@@ -1,4 +1,4 @@
-import { readTarget, type TargetAxes, type TargetState } from '../target';
+import { readTarget, type TargetAxes, type TargetOwner, type TargetState } from '../target';
 
 const TAU = Math.PI * 2;
 
@@ -56,8 +56,8 @@ export interface TargetBook {
   readonly resting: boolean;
 }
 
-export function createTargetBook(stop: (s: TargetState) => void): TargetBook {
-  const token = { stop };
+export function createTargetBook(owner: TargetOwner): TargetBook {
+  const token = owner;
   const live = new Set<TargetState>();
   const rested = new Set<TargetState>();
   const publishes = new Set<() => void>();

@@ -90,12 +90,30 @@ export interface PrefConditionsApplied<T> {
    * `'phases.*'`, and `'phases.*.hold'` for a field of it.
    */
   disabled: ReadonlySet<string>;
+  /**
+   * With `keepHidden`, the path of everything `shown` holds that is not
+   * shown, named as `disabled` names what is disabled. Empty without it,
+   * since `shown` then holds none.
+   */
+  hidden: ReadonlySet<string>;
+}
+
+/** How {@link applyPrefConditions} treats what it would leave out. */
+export interface PrefConditionsOptions {
+  /** Keep a group or a section that leaves with nothing to draw. */
+  keepEmpty?: boolean;
+  /**
+   * Keep every node whose `showIf` fails, and name it in `hidden`: for a
+   * surface that edits the schema, where a node not drawn cannot be picked.
+   */
+  keepHidden?: boolean;
 }
 
 /**
  * `schema` as it is drawn while `holds` says which conditions hold. A node
- * whose `showIf` fails is dropped with everything under it, and so is a group
- * or a section that leaves with nothing to draw, unless `keepEmpty`. A node
+ * whose `showIf` fails is dropped with everything under it, unless
+ * `keepHidden`, and so is a group or a section that leaves with nothing to
+ * draw, unless `keepEmpty`. A node
  * whose `enableIf` fails is disabled with everything under it. The item of
  * a `list` or a `map` is walked as its entries are drawn: its fields hide and
  * disable by their conditions, and its own `enableIf` disables every entry.
@@ -104,17 +122,19 @@ export interface PrefConditionsApplied<T> {
 export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   schema: T,
   holds: PrefConditionJudge,
-  keepEmpty = false,
+  { keepEmpty = false, keepHidden = false }: PrefConditionsOptions = {},
 ): PrefConditionsApplied<T> {
   const disabled = new Set<string>();
+  const hidden = new Set<string>();
 
   const leaf = (node: PrefLeaf, path: string, above: PrefScope): PrefLeaf | null => {
     const scope = prefScopeUnder(above, node, holds);
-    return scope.shown ? inside(node, path, scope) : null;
+    return scope.shown || keepHidden ? inside(node, path, scope) : null;
   };
 
   /** `node`, whose scope is `scope`, without what its own value hides: a field, or part of a list's or a map's item. */
   const inside = (node: PrefLeaf, path: string, scope: PrefScope): PrefLeaf => {
+    if (!scope.shown) hidden.add(path);
     if (!scope.enabled) disabled.add(path);
     if (node.kind === 'object') {
       const children = members((node as PrefObject).children, path, scope);
@@ -154,7 +174,7 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
 
   const section = (node: PrefSection, prefix: string, above: PrefScope): PrefSection | null => {
     const scope = prefScopeUnder(above, node, holds);
-    if (!scope.shown) return null;
+    if (!scope.shown && !keepHidden) return null;
     const kept = members(node.members, prefix, scope);
     if (kept === node.members) return node;
     return Object.keys(kept).length === 0 && !keepEmpty ? null : { ...node, members: kept };
@@ -162,7 +182,8 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
 
   const group = (node: PrefGroup, path: string, above: PrefScope): PrefGroup | null => {
     const scope = prefScopeUnder(above, node, holds);
-    if (!scope.shown) return null;
+    if (!scope.shown && !keepHidden) return null;
+    if (!scope.shown && path !== '') hidden.add(path);
     if (!scope.enabled && path !== '') disabled.add(path);
     let changed = false;
     const children: PrefGroup['children'] = {};
@@ -176,11 +197,11 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
     return Object.keys(children).length === 0 && !keepEmpty && path !== '' ? null : { ...node, children };
   };
 
-  if (!isPrefSection(schema)) return { shown: group(schema, '', PREF_SCOPE) as T | null, disabled };
+  if (!isPrefSection(schema)) return { shown: group(schema, '', PREF_SCOPE) as T | null, disabled, hidden };
   const scope = prefScopeUnder(PREF_SCOPE, schema, holds);
-  if (!scope.shown) return { shown: null, disabled };
+  if (!scope.shown && !keepHidden) return { shown: null, disabled, hidden };
   const kept = members(schema.members, '', scope);
-  return { shown: kept === schema.members ? schema : { ...schema, members: kept }, disabled };
+  return { shown: kept === schema.members ? schema : { ...schema, members: kept }, disabled, hidden };
 }
 
 /** The scope of the field at `rest` among an object leaf's children, or `undefined` when none is there. */

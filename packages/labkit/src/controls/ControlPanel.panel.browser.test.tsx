@@ -25,7 +25,10 @@ function fillOf(el: Element, stop: Element): string {
 }
 
 const schema = f.schema({
-  edge: f.group({ name: f.string('card').label('Name'), radius: f.number(4).label('Radius') }).as('panel').label('Edge'),
+  edge: f
+    .group({ name: f.string('card').label('Name'), radius: f.number(4).label('Radius') })
+    .as('panel')
+    .label('Edge'),
 });
 
 for (const mode of ['light', 'dark']) {
@@ -33,7 +36,11 @@ for (const mode of ['light', 'dark']) {
     document.documentElement.setAttribute('data-wzl-mode', mode);
     render(
       <div className="lk-root">
-        <ControlPanel schema={resolveConfigSchema(schema)} config={schema.defaults() as Record<string, unknown>} setConfig={() => {}} />
+        <ControlPanel
+          schema={resolveConfigSchema(schema)}
+          config={schema.defaults() as Record<string, unknown>}
+          setConfig={() => {}}
+        />
       </div>,
     );
     const panel = screen.getByRole('group', { name: 'Edge' });

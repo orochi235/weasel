@@ -1,8 +1,12 @@
 // apps/site/demos/__tests__/platformerClips.test.ts
 import { describe, it, expect } from 'vitest';
-import { resolveSkeleton } from '@weasel-js/core';
+import { createTarget, skeletonAxes, resolveSkeleton, sampleTrack } from '@weasel-js/core';
+import type { Pose } from '@weasel-js/core';
 import { BONE_LENGTH, JOINT_ORDER, PLAYER_SKELETON } from '../platformer/skeleton';
-import { CLIPS, poseInterpolate, samplePose } from '../platformer/clips';
+import { CLIPS, clipTrack, type Clip } from '../platformer/clips';
+
+const target = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(PLAYER_SKELETON) });
+const samplePose = (clip: Clip, t: number): Pose => sampleTrack(clipTrack(clip, target), t)!;
 
 describe('PLAYER_SKELETON', () => {
   it('has eleven joints in topological order', () => {
@@ -26,22 +30,7 @@ describe('PLAYER_SKELETON', () => {
   });
 });
 
-describe('poseInterpolate', () => {
-  it('returns the endpoints at u = 0 and u = 1', () => {
-    const a = { torso: { rotation: 0.5 } };
-    const b = { torso: { rotation: -0.5 } };
-    expect(poseInterpolate(a, b, 0).torso.rotation).toBeCloseTo(0.5, 6);
-    expect(poseInterpolate(a, b, 1).torso.rotation).toBeCloseTo(-0.5, 6);
-  });
-
-  it('blends halfway', () => {
-    const a = { torso: { rotation: 1 } };
-    const b = { torso: { rotation: 0 } };
-    expect(poseInterpolate(a, b, 0.5).torso.rotation).toBeCloseTo(0.5, 6);
-  });
-});
-
-describe('samplePose', () => {
+describe('a clip sampled on a pose target', () => {
   it('returns a pose at any t within every clip', () => {
     for (const [name, clip] of Object.entries(CLIPS)) {
       for (const u of [0, 0.13, 0.5, 0.87, 1]) {
@@ -49,6 +38,12 @@ describe('samplePose', () => {
         expect(Object.keys(pose).length, `${name} at u=${u}`).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('answers every joint of the skeleton, the ones a key leaves out at their bind', () => {
+    const pose = samplePose(CLIPS.run, 60);
+    expect(Object.keys(pose)).toEqual(JOINT_ORDER);
+    expect(pose.head).toEqual({ x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
   });
 
   it('clamps out-of-range t rather than returning undefined', () => {

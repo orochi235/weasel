@@ -173,7 +173,7 @@ export type {
   DefaultTextData,
   UseSceneTextEditReturn,
 } from '../features/text/useSceneTextEdit';
-export type { StyleToggle } from '../features/text/useTextEdit';
+export type { StyleToggle } from '@weasel-js/text-dom';
 export type { Vec2 } from '../core/geometry/vec2';
 export type { Rect } from '@weasel-js/geom';
 

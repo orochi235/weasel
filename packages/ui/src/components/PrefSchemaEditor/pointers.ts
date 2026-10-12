@@ -1,4 +1,5 @@
 import { isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefLeafAt, type PrefAlias, type PrefLeaf } from '@weasel-js/prefs';
+import type { AttributeSchema, KindAttrs } from './kindSchemas';
 import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /**
@@ -7,6 +8,12 @@ import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schema
  * `description`.
  */
 export const POINTER_ATTRS: readonly string[] = ['of'];
+
+/** A node's `attributes` less what a pointer's form does not offer. */
+export function pointerAttributes(attributes: AttributeSchema): AttributeSchema {
+  const offered = (part: KindAttrs): KindAttrs => Object.fromEntries(Object.entries(part).filter(([name]) => POINTER_ATTRS.includes(name)));
+  return { shared: offered(attributes.shared), own: offered(attributes.own), auto: {}, entry: {}, readOnly: [] };
+}
 
 /** The setting a pointer names in `over`, and the path its value lives at; `undefined` when it names none. */
 export function pointerTarget(over: SchemaRoot, pointer: PrefAlias): { path: string; leaf: PrefLeaf } | undefined {

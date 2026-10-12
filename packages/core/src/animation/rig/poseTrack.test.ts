@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { createTarget } from '../target';
 import { createTimeline, type TimelineRegister } from '../timeline/createTimeline';
 import type { SampledTrack } from '../timeline/types';
-import { blendPoses } from './blendPoses';
+import { skeletonAxes } from './skeletonAxes';
 import { resolveSkeleton } from './resolveSkeleton';
 import { IDENTITY_JOINT, type Pose, type Skeleton } from './types';
 
@@ -24,8 +25,12 @@ const skeleton: Skeleton = {
   ],
 };
 
+/** A pose target nothing reads: the track's own `onTick` is what these tests watch. */
+const target = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(skeleton) });
+const hold = () => ({ touch: () => {}, leave: () => {} });
+
 describe('animating a rig is an ordinary sampled track', () => {
-  it('interpolates poses with blendPoses as the track interpolator', () => {
+  it('interpolates poses in the target\'s axes, with no interpolate', () => {
     const h = harness();
     let latest: Pose = {};
     const track: SampledTrack<Pose> = {
@@ -35,10 +40,10 @@ describe('animating a rig is an ordinary sampled track', () => {
         { t: 0, value: { hip: { rotation: 0 } } },
         { t: 100, value: { hip: { rotation: 1 } } },
       ],
-      interpolate: (a, b, u) => blendPoses([a, b], [1 - u, u]),
+      target,
       onTick: (p) => { latest = p; },
     };
-    createTimeline(h.register, 1, { tracks: [track] });
+    createTimeline(h.register, 1, { tracks: [track] }, undefined, hold);
 
     h.advance(50);
     expect(latest.hip!.rotation).toBeCloseTo(0.5, 6);
@@ -53,10 +58,10 @@ describe('animating a rig is an ordinary sampled track', () => {
         { t: 0, value: { hip: { rotation: 0 } } },
         { t: 100, value: { hip: { rotation: Math.PI / 2 } } },
       ],
-      interpolate: (a, b, u) => blendPoses([a, b], [1 - u, u]),
+      target,
       onTick: (p) => { latest = p; },
     };
-    createTimeline(h.register, 1, { tracks: [track] });
+    createTimeline(h.register, 1, { tracks: [track] }, undefined, hold);
 
     h.advance(100);
     const world = resolveSkeleton(skeleton, latest);

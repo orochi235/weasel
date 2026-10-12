@@ -11,9 +11,9 @@ import { flushSync } from 'react-dom';
 import { registerFont, registerFontOutlines, loadFontOutlines } from '@weasel-js/font';
 import type { TextStyle } from '@weasel-js/text';
 import { useTextEdit, type TextEditScreenPose } from './useTextEdit';
-import metricsUrl from '../../../../../assets/fonts/inter/inter.json?url';
-import atlasUrl from '../../../../../assets/fonts/inter/inter.png?url';
-import ttfUrl from '../../../../../assets/fonts/inter/inter.ttf?url';
+import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
+import atlasUrl from '../../../assets/fonts/inter/inter.png?url';
+import ttfUrl from '../../../assets/fonts/inter/inter.ttf?url';
 
 const BOX = { x: 20, y: 20, width: 200, height: 200 };
 const TEXT = 'a well-known, hand-made, state-of-the-art text';

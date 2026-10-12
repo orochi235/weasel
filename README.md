@@ -190,6 +190,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `paint` | fills, strokes, gradients and dashes as plain data |
 | `stroke` | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |
 | `text` | styled runs, kerned layout, wrapping and measurement |
+| `text-dom` | in-place text editing: a contenteditable overlay that reads and writes styled runs |
 | `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |
 | `font` | MSDF atlases, glyph metrics and runtime glyph rasterization |
 | `quantity` | numbers with units and a display, as text, spoken text, HTML and MathML; no React, no DOM |

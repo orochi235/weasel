@@ -43,6 +43,7 @@ export {
   type PrefConditionField,
   type PrefConditionJudge,
   type PrefConditionsApplied,
+  type PrefConditionsOptions,
   type PrefScope,
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
