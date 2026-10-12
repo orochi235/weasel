@@ -357,6 +357,8 @@ Core five + Crop shipped. Remaining:
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
+- **(P2) A line drawn with the line tool is not counted as its stroke.** The Pathfinder actions pass `strokes: 'unfilled'`, which takes an operand as its stroke only when it has no fill, and `paletteInsertPaint` (`packages/core/src/canvas/deps/insert.ts`) gives a line and a pen path a fill beside the stroke. Seen in draw: Unite of a rect and a line across it returns the rect alone, where a rect with its fill set to None unites as its stroke's ring. Either an inserted line gets no fill, or `inkOf` (`booleans/operands.ts`) reads an open path, which a fill cannot show on, as unfilled.
+- **(P3) Outline Stroke and the Boolean operations drop draw's `data.label`.** `drawBooleansAdapter.createPathNode` (`apps/draw/src/booleansAdapter.ts`) builds a result from the path and its paint alone, so the starter rect's "Welcome" and its name in the layer list are gone after Outline Stroke. Undecided: which of an outline's two paths, or their group, keeps the label.
 - **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not.
 
 ---
@@ -1267,6 +1269,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   their tests fire a stubbed `matchMedia`, which jsdom lacks. Unverified: that the shared buffer and
   the layer canvases take the new backing size in a real browser when the ratio changes with no
   resize. Wants a browser test that emulates the change (`Emulation.setDeviceMetricsOverride`).
+
+- **(P2) labkit annotations: a target outside its stage is drawn, and takes input, over whatever
+  is beside it.** `AnnotationOverlay` (`packages/labkit/src/annotations/AnnotationOverlay.tsx`)
+  places its tile, its outline, and its input box at the target element's own rect, which the
+  stage's `overflow` does not clip. Seen in the `annotate-lab` example: mark the part, then press
+  Add trial, so the first trial narrows and its camera keeps the pan it had; the part is out of
+  its stage, and its marks, its blue outline, and a box that takes presses sit over the second
+  trial's sidebar. Wants the tile and the input box cut to the stage's visible rect, which makes
+  the scissor differ from the rect the marks are placed against.
 
 - **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
   them.** A trial builds its annotation store once from `record.annotations`

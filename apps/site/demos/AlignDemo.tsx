@@ -51,6 +51,7 @@ export function AlignDemo() {
       scene={SCENE}
       features={['pick', 'move', 'transform', 'arrange']}
       actions={ACTIONS}
+      claimKeys
       selectionOptions={{ mode: 'multi', initial: RECTS.map((r) => asNodeId(r.id)) }}
     />
   );

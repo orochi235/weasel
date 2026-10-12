@@ -12,4 +12,12 @@ describe('AlignDemo', () => {
     }
     expect(container.querySelector('canvas')).not.toBeNull();
   });
+
+  // Its rects start selected and its hint says to press a letter, so no press in the canvas comes first.
+  it('answers an align key before any press in the canvas', () => {
+    render(<AlignDemo />);
+    const key = new KeyboardEvent('keydown', { key: 'l', bubbles: true, cancelable: true });
+    act(() => { document.dispatchEvent(key); });
+    expect(key.defaultPrevented).toBe(true);
+  });
 });
