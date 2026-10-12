@@ -335,9 +335,6 @@
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439
   },
-  "packages/prefs/src/schema.ts": {
-    "lines": 413
-  },
   "packages/prefs/src/store.ts": {
     "longestFunction": 125
   },

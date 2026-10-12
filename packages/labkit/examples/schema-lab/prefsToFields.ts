@@ -1,5 +1,5 @@
 import { type ConfigField, withValueAtPath } from '@weasel-js/labkit';
-import { isBuiltinPref, type PrefLeaf, type PrefObject, type PrefSection, prefSectionLeaves } from '@weasel-js/prefs';
+import { isBuiltinPref, type PrefLeaf, type PrefNumberUnit, type PrefObject, type PrefSection, prefSectionLeaves, resolvePrefUnit } from '@weasel-js/prefs';
 
 /** A leaf of a node's property schema, paired with the dotted node path it
  *  edits (`pose.x`, `data.fill`): its own key, whatever sections it sits under. */
@@ -37,9 +37,9 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
         max?: number;
         step?: number;
         control?: string;
-        unit?: { toDisplay: (v: number) => number };
+        unit?: PrefNumberUnit;
       };
-      const toDisplay = n.unit?.toDisplay ?? ((v: number) => v);
+      const toDisplay = n.unit ? resolvePrefUnit(n.unit).toDisplay : (v: number) => v;
       const bounded = n.min !== undefined && n.max !== undefined;
       if (bounded && n.control !== 'input') {
         return {
@@ -129,8 +129,8 @@ export function decodePrefValue(leaf: PrefLeaf, value: unknown, siblings?: Recor
   if (isBuiltinPref(leaf) && leaf.kind === 'enum' && leaf.encoding && typeof value === 'string') {
     return leaf.encoding.write(value, siblings);
   }
-  const unit = (leaf as { unit?: { fromDisplay: (v: number) => number } }).unit;
-  return unit && typeof value === 'number' ? unit.fromDisplay(value) : value;
+  const unit = (leaf as { unit?: PrefNumberUnit }).unit;
+  return unit && typeof value === 'number' ? resolvePrefUnit(unit).fromDisplay(value) : value;
 }
 
 /** Write `value` at a dotted path inside `target`, cloning each level so the

@@ -3,7 +3,6 @@
 // compose those into one registry, which `PrefsForm` renders and `openPrefs`
 // stores.
 
-import { formatUnit, unitScale } from '@weasel-js/quantity';
 import type { PrefAction } from './action';
 import type { PrefAlias } from './alias';
 import type { PrefCondition } from './condition';
@@ -12,7 +11,8 @@ import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefUnion } from './union';
-import type { Display, InfinityText, Unit, UnitEntry, UnitScale, UnitSystem } from '@weasel-js/quantity';
+import type { PrefNumberUnit } from './unit';
+import type { Display, InfinityText } from '@weasel-js/quantity';
 
 /** The value types a built-in pref leaf can hold. */
 export type PrefKind =
@@ -95,68 +95,6 @@ export type PrefBooleanControl = 'checkbox' | 'switch' | 'toggle';
 export type PrefStringControl = 'input' | 'textarea';
 /** How a schema-driven UI should present an enum pref. */
 export type PrefEnumControl = 'select' | 'radio' | 'toggle' | 'menu';
-
-/** Display-unit conversion for number leaves whose stored value uses a
- *  canonical unit the user shouldn't see (e.g. radians stored, degrees
- *  shown). The stored value stays canonical; UIs convert at the edge. */
-export interface PrefNumberUnit {
-  toDisplay: (stored: number) => number;
-  fromDisplay: (display: number) => number;
-  /** Shown after the input, e.g. `'°'`. */
-  suffix?: string;
-  /** Suffixes a person may type, each mapped to the scale that turns a
-   *  number in that unit into a display number: `{ mm: 0.1, cm: 1 }` for a
-   *  field showing centimeters. A unit that disagrees with the display unit
-   *  about zero carries an `offset` as well. */
-  accepts?: Readonly<Record<string, UnitEntry>>;
-  /** The stored value as display text, suffix included. */
-  format?: (stored: number) => string;
-}
-
-/**
- * A display unit built from a {@link UnitSystem}: values are stored in the
- * system's base and shown in `display`, rounded to `precision` places when
- * given, and every unit in the system is accepted as typed text. `suffix`
- * defaults to the unit's name and is accepted too.
- */
-export function prefUnit(
-  system: UnitSystem,
-  display: Unit,
-  opts?: { precision?: number; suffix?: string },
-): PrefNumberUnit {
-  let self: Required<UnitScale>;
-  try {
-    self = unitScale(system, display);
-  } catch (e) {
-    throw new Error(`prefUnit: ${e instanceof Error ? e.message : String(e)}`);
-  }
-  const scale = opts?.precision === undefined ? undefined : 10 ** opts.precision;
-  const suffix = opts?.suffix ?? display;
-  const accepts: Record<string, UnitEntry> = { [suffix]: 1 };
-  for (const name of Object.keys(system.units)) {
-    const other = unitScale(system, name);
-    // A number typed in `name` reaches display units through base:
-    // `(n * factor + offset - self.offset) / self.factor`.
-    const factor = other.factor / self.factor;
-    const offset = (other.offset - self.offset) / self.factor;
-    accepts[name] = offset === 0 ? factor : { factor, offset };
-  }
-  const toDisplay = (stored: number) => {
-    const shown = (stored - self.offset) / self.factor;
-    return scale === undefined ? shown : Math.round(shown * scale) / scale;
-  };
-  return {
-    toDisplay,
-    fromDisplay: (shown) => shown * self.factor + self.offset,
-    suffix,
-    accepts,
-    format: (stored) =>
-      `${formatUnit(stored, display, system, {
-        precision: opts?.precision ?? 2,
-        suffix: false,
-      })}${suffix}`,
-  };
-}
 
 /** A numeric pref, optionally bounded and stepped, and optionally stored in a
  *  different unit from the one shown. */

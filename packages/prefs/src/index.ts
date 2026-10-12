@@ -61,12 +61,20 @@ export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export { repairPrefValue, type PrefValidator } from './repair';
 export type { PrefChange, PrefsStore } from './store';
+export {
+  isPrefLinearUnit,
+  prefUnit,
+  resolvePrefUnit,
+  type PrefFunctionUnit,
+  type PrefLinearUnit,
+  type PrefNumberUnit,
+  type ResolvedPrefUnit,
+} from './unit';
 export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
 export {
   isBuiltinPref,
   PREF_KINDS,
   pairRowsOf,
-  prefUnit,
   type BuiltinPref,
   type PrefBase,
   type PrefBoolean,
@@ -83,7 +91,6 @@ export {
   type PrefLeaf,
   type PrefNumber,
   type PrefNumberControl,
-  type PrefNumberUnit,
   type PrefObject,
   type PrefPaint,
   type PrefPair,

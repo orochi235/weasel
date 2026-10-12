@@ -1,6 +1,7 @@
 import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
 import type { PrefLeaf, PrefNumber, PrefObject } from './schema';
+import { resolvePrefUnit } from './unit';
 
 /**
  * A number leaf's bounds in the unit it is displayed in.
@@ -17,7 +18,7 @@ export function prefDisplayBounds(
   p: PrefNumber,
 ): { min?: number; max?: number; step: number } {
   if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1 };
-  const { toDisplay } = p.unit;
+  const { toDisplay } = resolvePrefUnit(p.unit);
   const lo = p.min === undefined ? undefined : toDisplay(p.min);
   const hi = p.max === undefined ? undefined : toDisplay(p.max);
   const flipped = lo !== undefined && hi !== undefined && lo > hi;

@@ -1,28 +1,16 @@
-import { useState } from 'react';
 import type { PrefPair } from '@weasel-js/prefs';
 import type { PrefRenderContext, PrefRenderer } from '../Prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Input } from '../Input';
 import { Select } from '../Select';
+import { NumberText } from './NumberText';
+import { UnitEditor } from './UnitAttr';
 import s from './PrefSchemaEditor.module.css';
 
 /** A number that may be unset: empty text clears it, and text that is not a number is left uncommitted. */
 function OptionalNumber({ ctx }: { ctx: PrefRenderContext }) {
-  const shown = ctx.mixed || ctx.value === undefined ? '' : String(ctx.value);
-  const [draft, setDraft] = useState(shown);
-  const [seen, setSeen] = useState(shown);
-  if (seen !== shown) {
-    setSeen(shown);
-    setDraft(shown);
-  }
-  const commit = () => {
-    const t = draft.trim();
-    if (t === '') ctx.setValue(undefined);
-    else if (Number.isFinite(Number(t))) ctx.setValue(Number(t));
-    else setDraft(shown);
-  };
-  return <Input className={s.number} aria-label={ctx.pref.name} placeholder={ctx.mixed ? MIXED_HINT : undefined} value={draft} onChange={setDraft} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />;
+  return <NumberText label={ctx.pref.name} value={ctx.mixed ? undefined : (ctx.value as number | undefined)} placeholder={ctx.mixed ? MIXED_HINT : undefined} onCommit={ctx.setValue} />;
 }
 
 /** What a text control shows in place of several values that disagree. */
@@ -98,7 +86,9 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
   );
 }
 
-export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' | 'symbol', PrefRenderer> = {
+export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' | 'symbol' | 'unit', PrefRenderer> = {
+  // Four fields across, which the control column has no room for.
+  unit: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => <UnitEditor ctx={ctx} />, { group: true, wide: true }),
   pair: Object.assign<PrefRenderer, { group: boolean }>((ctx) => <PairEditor ctx={ctx} />, { group: true }),
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
   'enum-options': Object.assign<PrefRenderer, { group: boolean }>((ctx) => <EnumOptions ctx={ctx} />, { group: true }),
