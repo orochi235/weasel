@@ -223,7 +223,7 @@ export function usePenTool(
       set.closed.splice(cont.sub, 1, addedClosed[0]);
       set.anchors.push(...added.slice(1));
       set.closed.push(...addedClosed.slice(1));
-      const next: PolygonPath = { ...anchorsToPath(set.anchors, set.closed), fillRule: cont.original.fillRule };
+      const next = anchorsToPath(set.anchors, set.closed, cont.original);
       if (samePath(next, cont.original)) return;
       edit.applyEdit(cont.id, next, 'Continue path');
       if (optsRef.current.autoSelect) deps.selection?.set([asNodeId(cont.id)]);
@@ -307,7 +307,7 @@ export function usePenTool(
         set.anchors.splice(hit.sub, 1);
         set.closed.splice(hit.sub, 1);
       }
-      const next: PolygonPath = { ...anchorsToPath(set.anchors, set.closed), fillRule: cont.original.fillRule };
+      const next = anchorsToPath(set.anchors, set.closed, cont.original);
       ops.push(...edit.editOps!(cont.id, next, label));
       keptId = cont.id;
     } else {

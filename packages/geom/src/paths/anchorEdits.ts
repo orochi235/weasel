@@ -112,7 +112,7 @@ export function editAnchorSet(
   const set = pathToAnchors(path) as AnchorSet;
   const changed = edit(set);
   if (changed === false) return null;
-  return anchorsToPath(set.anchors, set.closed);
+  return anchorsToPath(set.anchors, set.closed, path);
 }
 
 // ---------------------------------------------------------------------------

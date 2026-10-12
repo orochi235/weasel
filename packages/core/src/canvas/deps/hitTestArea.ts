@@ -29,7 +29,7 @@ import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 export { hiddenLayerIds } from 'canvas/pickWalk';
 import type { HitTestView } from 'interactions/actions/depSchema';
-import { findShapeSilhouette } from 'canvas/NodeShape';
+import { findShapeInk, findShapeSilhouette } from 'canvas/NodeShape';
 import {
   polygonRegion,
   poseOutline,
@@ -120,6 +120,13 @@ export function hitTestLassoPolygon(
   return region ? walkArea(scene, region, mode, opts, descriptor, query) : [];
 }
 
+/** `shape` as a region reads it: a polygon path's open subpaths enclose
+ *  nothing when the node's painter lays down no fill. */
+function asInked<T>(node: unknown, pose: unknown, shape: T): T {
+  if ((shape as { kind?: unknown } | null)?.kind !== 'polygon') return shape;
+  return findShapeInk(node as never, pose)?.filled === false ? { ...shape, openFill: 'none' } : shape;
+}
+
 /** The walk every region query shares: skip containers unless asked, gate on
  *  the clip, and let `regionTakes` decide each node. */
 function walkArea(
@@ -142,8 +149,8 @@ function walkArea(
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
       const b = regionBoundsOf(node as object, pose, g);
-      return regionTakes(r, mode, pose, b, () =>
-        findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b));
+      return regionTakes(r, mode, asInked(node, pose, pose), b, () =>
+        asInked(node, pose, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)));
     },
     inPlane: (m) => regionQuery(regionInPlane(r, m)),
   });

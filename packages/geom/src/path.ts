@@ -17,16 +17,23 @@
 /** Fill rule used by polygon path hit-testing and `ctx.fill()`. */
 export type PathFillRule = 'nonzero' | 'evenodd';
 
+/** Whether a fill closes an open subpath with a straight edge back to its
+ *  start, as SVG and canvas do (`'close'`), or leaves it unfilled (`'none'`). */
+export type PathOpenFill = 'close' | 'none';
+
 /**
  * Polygon path with arbitrary contours and optional bezier segments.
  * Multi-contour: each `M` opens a new subpath; `Z` closes the current one.
- * Open subpaths (no `Z`) render as polylines and don't contribute to fills.
+ * An open subpath (no `Z`) strokes as a polyline; `openFill` says whether it
+ * fills.
  */
 export interface PolygonPath {
   kind: 'polygon';
   commands: Uint8Array;
   coords: Float32Array;
   fillRule: PathFillRule;
+  /** Absent, the engine default: see `setDefaultOpenFill`. */
+  openFill?: PathOpenFill;
 }
 
 /**

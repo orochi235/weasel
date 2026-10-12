@@ -312,19 +312,28 @@ have shipped. What remains:
   - A world-unit pick tolerance is measured in the node's own frame (`poseContainsRotated`), so
     the transform stretches it with the node.
 
-- **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
-  100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)
-  triangulates the closed triangle and `pathSignedArea` (`paths/winding.ts`) counts it as closed
-  "the way a fill closes it", while `pointInPath` (`pathHitTest.ts`, `flatSubpaths`) files the run
-  under `open` and returns false, and `path.ts` documents that open subpaths "don't contribute to
-  fills". So the triangle paints and cannot be clicked. Ruled 2026-10-12: the path says which, in a
-  field beside `fillRule` that all three read (a fill closes every open subpath, as SVG and canvas
-  do, or an open subpath never fills), and an engine flag sets the answer for a path that carries
-  none. Still to settle while building: where that flag lives, since `@weasel-js/geom` has no
-  engine object, and which answer it starts at. Under the closing rule an unfilled open stroke is
-  picked across the area its ends enclose, because `containsInFrame`
-  (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls `pointInPath` without knowing
-  whether the node has a fill; a closed unfilled outline is already picked that way.
+- **(P3) Under `openFill: 'none'`, SVG import and export and the booleans still close an open subpath.** A path says
+  whether a fill closes its open subpaths (`PolygonPath.openFill`, or `setDefaultOpenFill` for a
+  path that names none), and `tessellate`, `pathSignedArea`, and the filled-region hit tests agree.
+  SVG always closes one, so two readers outside `@weasel-js/geom` disagree with a path that says
+  `'none'`: `packages/svg/src/lowerLeaf.ts` imports a filled `<polyline>` without stamping
+  `openFill: 'close'`, so it stops painting under a `'none'` default, and the SVG writer emits an
+  unfilled open subpath with its node's fill, which a browser then paints. The export half has to
+  split a path that mixes closed and open subpaths. The booleans close every open contour whatever
+  the path says (`packages/geom/src/booleans/contours.ts`, `implicitClose`). Also: a mesh the renderer cached keeps the rule
+  it was built under when the default changes (`packages/renderer/src/cache/cache.ts` keys on the
+  path), so the default has to be set before the first paint.
+
+- **(P3) A closed outline with no fill is selected from inside it.** A marquee or lasso in
+  `intersect` mode drawn wholly inside an unfilled closed shape takes it, though a click there
+  does not: `shapeCoversPoint` reads the painter's ink (`NodeInk.filled`) and `regionTakes`
+  (`packages/core/src/core/geometry/regionHit.ts`) is handed a path and tests its filled region.
+  `canvas/deps/hitTestArea.ts` passes the ink for open subpaths only (`asInked`), because a path
+  can say its open subpaths enclose nothing and cannot say that of a closed one. The same is true of
+  `containsInFrame` (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`), which calls
+  `pointInPath` on a path-shaped pose with no node in hand: wherever picking is not by shape, an
+  unfilled path is picked across what it encloses, open subpaths included now that a fill closes
+  them. Both want the region and frame tests to take "is this filled" beside the path.
 
 - **(P3) svg unpack: a clipped group arrives unclipped.** `parseSvg` puts a `<g clip-path>` on
   `SvgGroupNode.clip`, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) builds the container
@@ -1666,6 +1675,16 @@ only story runner in the repo.
   buttons call `scene.setPose` / `scene.add`, and per-node effects repaint through `redrawOn` /
   `requestRedraw`.
 
+- **(P3) draw warns of two route conflicts every time it loads.** Seen in the console of the dev
+  build, 2026-10-12, each "two bindings declare the same (phase, gesture, arg, target, modifiers)
+  tuple in the same scope, so declaration order alone decides which one fires":
+  `[*:*] drag ?shift ?alt — declared by slice, slice`, which is `useSliceTool`'s
+  `slice.dragPoint` binding (shift and alt optional) against its own plain `slice` drag
+  (`packages/core/src/tools/builtin/slice/useSliceTool.ts`), and
+  `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
+  mode.crop.commit`. Not looked into further: whether each is a real ambiguity, or bindings the
+  check cannot tell apart because a predicate or a mode keeps them from being live together.
+
 - **(P2) draw: the input recorder is reachable from nothing.** `recorder.ts`, `recordingIO.ts`, and
   `replay.ts` are complete and tested, and no control starts a recording or plays one. Wiring them
   needs a `Recorder` on the canvas's pointer and keyboard surface, which wants a
@@ -1785,7 +1804,10 @@ one dead `const` and four stale disable directives.
   glyphs") spent 7.8 s in `page.screenshot` waiting for the element to be stable. The first passes
   alone in 0.3 s. Two unrelated files failing the same way in one run reads as load, which nobody
   has confirmed; `AssetEditor.steps.test.tsx` has also timed out at 5 s under load and passed
-  alone.
+  alone. On teitou, 2026-10-12, while about twenty other runs shared the fleet, two more
+  did the same in separate runs and passed alone: `forge/src/vite/plugin.test.ts` ("serves the
+  component graph from source…", 15 s) and `forge/src/timeline/timeline.browser.test.tsx` ("plays
+  on real frames").
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
