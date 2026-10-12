@@ -25,7 +25,7 @@ export { useAnimator } from './useAnimator';
 export { createTarget, type Target, type TargetAxes, type TargetOptions } from './target';
 export {
   createPoseTarget, poseAxes, scenePoseTarget,
-  type PoseTargetOptions, type PoseTargetScene,
+  type PoseCascade, type PoseTargetOptions, type PoseTargetScene,
 } from './poseTarget';
 export { createWrittenPoseTarget, type WrittenPoseTargetOptions } from './writtenPoseTarget';
 export {

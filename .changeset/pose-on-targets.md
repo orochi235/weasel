@@ -16,7 +16,9 @@ Two moves on one node now combine. `tweenPose`, `springPose`, `animateOnSetPose`
 - Reflow glides: a timed retarget adds to the glide still running, and no longer restarts from the pose on screen. A `spring` retarget keeps the node's velocity.
 - `momentum` coasts on the node's pose target. The document still takes the flick as one transform when it comes to rest.
 
-An adapter without `poseTarget`, a pose with no axes (a path), and a container under `cascadeContainerPose` behave as before: `setPose` each frame, and a new move cancels the one running.
+An adapter without `poseTarget` and a pose with no axes (a path) behave as before: `setPose` each frame, and a new move cancels the one running.
+
+A container under `cascadeContainerPose` moves on its target too. Its descendants' poses are written with it as the move starts, and each is shown traveling beside it through an override of its own; `scenePoseTarget` takes a `cascade` (`PoseCascade`) that says how.
 
 New API:
 
