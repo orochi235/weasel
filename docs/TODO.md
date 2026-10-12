@@ -1601,7 +1601,8 @@ only story runner in the repo.
   twice the same evening on an assertion, and its wait was hardened in `de222e61f`; it then hit the
   15 s test timeout once on msb-uai at `076c8ab87`, the only failure of that run. Outside the
   `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
-  pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
+  pushes it again when a component file changes") failed once on studio at `bff047e78`, and again
+  there at `f1cd6a770` on 2026-10-12: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
   either side. A second test in that file ("titles a native story by its meta when forge's meta
   reaches it through a helper module, and re-decides when the helper changes") failed the same way
