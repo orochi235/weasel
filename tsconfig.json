@@ -41,11 +41,14 @@
       // (the package's `types` pointed at src, so node resolution found the
       // source anyway); now that they point at `dist`, a missing entry makes
       // `npm run typecheck` silently depend on a prior `npm run build`.
+      // scripts/vite-aliases.test.ts fails when an entry here and a package's
+      // `exports` disagree about which source file a specifier is.
       "@weasel-js/ui": ["./packages/ui/src/index.ts"],
       "@weasel-js/ui/components/*": ["./packages/ui/src/components/*/index.ts"],
       "@weasel-js/svg": ["./packages/svg/src/index.ts"],
       "@weasel-js/d3": ["./packages/d3/src/index.ts"],
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],
+      "@weasel-js/diagram/layout": ["./packages/diagram/src/layout.entry.ts"],
       "@weasel-js/guides": ["./packages/guides/src/index.ts"],
       "@weasel-js/guides/*": ["./packages/guides/src/*"],
       "@weasel-js/hud": ["./packages/hud/src/index.ts"],
@@ -103,6 +106,8 @@
       "@weasel-js/labkit/weasel-canvas": ["./packages/labkit/src/passthrough/weasel-canvas.ts"],
       "@weasel-js/labkit/*": ["./packages/labkit/src/*"],
       "@weasel-js/forge": ["./packages/forge/src/index.ts"],
+      "@weasel-js/forge/preview-api": ["./packages/forge/src/csf/shims/preview-api.ts"],
+      "@weasel-js/forge/play": ["./packages/forge/src/test/play.ts"],
       "@weasel-js/forge/*": ["./packages/forge/src/*"],
       "core/*": ["./packages/core/src/core/*"],
       "features/*": ["./packages/core/src/features/*"],

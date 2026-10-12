@@ -23,7 +23,7 @@ type Bezier = readonly [number, number, number, number];
 /** A gesture in flight. The committed keys hold still underneath it. */
 export type KeyframeDrag =
   | { kind: 'key'; index: number; t: number; value: number }
-  | { kind: 'handle'; segment: number; bezier: Bezier };
+  | { kind: 'handle'; segment: number; bezier: readonly [number, number, number, number] };
 
 /**
  * The state a keyframe layer owns, held by the consumer and round-tripped

@@ -10,6 +10,7 @@
  * `sampleCurve(...)` is the convenience alias for centripetal (α=0.5).
  */
 
+/** A point on a sampled curve, in the curve's own units. */
 export interface Point {
   x: number;
   y: number;

@@ -15,6 +15,7 @@
  * round-trips the (serializable) `src` string untouched.
  */
 
+import { createEmitter } from '@weasel-js/registry';
 import { imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from '../cache/GLImageCache';
 
 /** Public shape of an image node's `data`. `src` round-trips through
@@ -87,7 +88,7 @@ let budgetBytes = DEFAULT_BUDGET_BYTES;
 let reads = 0;
 /** `reads` as the last {@link enforceBudget} left it. */
 let readsAtLastPass = 0;
-const subscribers = new Set<() => void>();
+let ready = createEmitter();
 const decodedVectors = new Map<string, Promise<HTMLImageElement>>();
 
 /** True when `src` names SVG — a `data:image/svg+xml` URI, or a URL whose path
@@ -148,7 +149,7 @@ const defaultLoader: Loader = async (src, size) => {
 let loader: Loader = defaultLoader;
 
 function notify(): void {
-  for (const cb of subscribers) cb();
+  ready.emit();
 }
 
 const bytesOf = (bitmap: ImageBitmap | undefined): number =>
@@ -319,10 +320,7 @@ export function retryImage(src: string): void {
 /** Subscribe to load-resolution events (fires after any `src` resolves or
  *  errors). Returns an unsubscribe. */
 export function subscribeImageReady(cb: () => void): () => void {
-  subscribers.add(cb);
-  return () => {
-    subscribers.delete(cb);
-  };
+  return ready.subscribe(cb);
 }
 
 /** @internal test seam — override the async loader so unit tests don't need
@@ -335,7 +333,7 @@ export function __setImageLoaderForTests(fn: Loader): void {
  *  loader. Not part of the public barrel. */
 export function _resetImageCacheForTests(): void {
   cache.clear();
-  subscribers.clear();
+  ready = createEmitter();
   decodedVectors.clear();
   loader = defaultLoader;
   budgetBytes = DEFAULT_BUDGET_BYTES;

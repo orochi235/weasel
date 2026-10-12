@@ -53,7 +53,7 @@ export {
   DEFAULT_BAKE_BUDGET,
 } from './dynamic/dynamicAtlas';
 
-export type { CanvasFontEntry } from './dynamic/dynamicAtlas';
+export type { CanvasFontEntry, DynamicFace } from './dynamic/dynamicAtlas';
 
 export {
   registerFontOutlines,

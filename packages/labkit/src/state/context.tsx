@@ -3,11 +3,9 @@ import { useStore } from 'zustand/react';
 import type { LabStore } from './store';
 import type { LabStoreState } from './types';
 
-type LabStoreCtx = { store: LabStore } | null;
-
 /** Context carrying the lab store. Prefer `useLabStore`; this is exported for
  *  code that needs to read the context without subscribing. */
-export const LabStoreContext = createContext<LabStoreCtx>(null);
+export const LabStoreContext = createContext<{ store: LabStore } | null>(null);
 
 /** Provides a lab store to its subtree. */
 export function LabStoreProvider({

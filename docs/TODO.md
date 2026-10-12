@@ -1225,17 +1225,21 @@ only story runner in the repo.
   hand-written guides per package (only labkit has any, in its own VitePress site), and the
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
-- **(P2) The API reference build reports warnings in the packages it newly covers.**
-  `docs/conventions.md` says `npx typedoc` reports none; that held while it read only core.
-  Most are a documented export referencing a type its barrel does not export, each one a call
-  between exporting the type and listing it under `intentionallyNotExported` in that package's
-  `typedoc.config.mjs`. 91 warnings remain as of 2026-10-11: 87 of that kind, `{@link Field}`
-  in ui's `Input` and `ComboBox` props (unresolved only where labkit re-exports them), and
-  `{@link KEEP}` in `PrefSchemaEditor/schemaExport.ts`.
-- **(P3) A symbol core re-exports from a sibling is documented twice.** `ClaimableGesture` has a
-  page under `@weasel-js/core` and another under `@weasel-js/gestures`, with the same text.
-  TypeDoc's `packages` strategy converts each package on its own, so core's copy is a full
-  declaration, not a pointer. Type references do cross: core's pages link into the sibling's.
+- **(P2) The API reference build still reports 12 warnings.** `docs/conventions.md` says
+  `npx typedoc` reports none. Each is a documented export naming a type its barrel does not export:
+  - `Bivariant` (`core/scene/types.ts`), `OpsApplier` (`canvas/deps/slice.ts`), `XY` (geom's
+    `pathHitTest.ts`), and `OnTokenChange` (ui's `TokenPanel`): a one-line export each, in files
+    other branches were rewriting on 2026-10-12.
+  - `LabBaseProps` (labkit's `Lab.tsx`) and `CreateOptions` (storage's `records.ts`): an exported
+    type needs a doc line, and both files sit at their `check:size` cap, so each wants its split
+    first.
+  - `BadgePropsByShape` in ui: exporting it surfaces `BadgeBaseProps`, `BadgeShapeParams`, and
+    about thirty per-shape, per-base, and per-effect parameter types behind them.
+  - `Key` (`string | number`), declared three times in ui: `useAsyncOptions.ts`, `ComboBox.tsx`,
+    and `Select.tsx`. It wants one exported definition.
+  - `DepSchema` and `OverlaySchema` in routing, which its root does export. core merges into both
+    with `declare module`, and TypeDoc appears to file the merged interface under another symbol
+    than the one `DepName` and `KernelOverlay` reference (read from the warning, not traced).
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
@@ -1285,7 +1289,7 @@ From the WebGL transition spec — all deferred:
 
 A correctness baseline runs over `packages` and `apps` as of 2026-08-22, on
 top of the scoped `no-restricted-imports` blocks that were previously the whole
-config. Eleven rules, enumerated in `eslint.config.js` rather than spread from
+config. The rules are enumerated in `eslint.config.js` rather than spread from
 a plugin `recommended` so a dependency upgrade can't change what's enforced.
 `npm run lint` gates it in CI.
 
@@ -1299,17 +1303,24 @@ was hiding an assertion that read `.space` without narrowing.
 Deferred, with the rationale in `eslint.config.js` next to each:
 
 - **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
-  `static-components`, `use-memo`, `globals` (outside tests) and
-  `set-state-in-effect` are on; each effect that sets state legitimately says
-  why in its disable comment. The rest:
-  - `refs` — 387 reports; reading a ref during render is how a canvas library
-    reaches frame state, and there is no writes-only mode
+  Every compiler rule with no reports is on, as is `set-state-in-effect`, where
+  each effect that sets state legitimately says why in its disable comment.
+  Three are off, counted on 2026-10-12:
+  - `refs` — 408 reports in 83 files; reading a ref during render is how a
+    canvas library reaches frame state, and there is no writes-only mode
     (`weasel/no-render-ref-write` covers writes).
-  - `immutability` — 52 reports, none a defect: `useVisibleRaf` loops
-    re-requesting themselves, and writes to forwarded refs, DOM nodes and
-    mutable engine objects.
-  - `preserve-manual-memoization` — reports where React Compiler would bail,
-    and nothing here is compiled.
+  - `immutability` — 51 reports in 37 files, 26 of them in tests that assign to
+    a prop or an outer variable from inside a probe component. The rest are
+    `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
+    refs, DOM nodes, and mutable engine objects.
+  - `preserve-manual-memoization` — 16 reports in 9 files, of a `useMemo` or
+    `useCallback` whose listed dependencies differ from the ones the compiler
+    infers. Nothing here is compiled, but a mismatch is also where a stale
+    closure would hide, so each wants reading: `SceneCanvas.tsx` (4),
+    forge's `useStoryRegistry.ts` (3), `StoryTrial.tsx` (2), and `FrameView.tsx`,
+    labkit's `Trial.tsx` (2) and `useTiledSurface.ts`, core's
+    `GestureDispatcherMounter.tsx`, ui's `useOutsideDrop.ts`, and the
+    `ForceGraphDemo`.
 
 `eqeqeq`, `@typescript-eslint/no-unused-vars` and
 `reportUnusedDisableDirectives` are all on as of 2026-09-05. The counts that
@@ -1590,11 +1601,12 @@ one dead `const` and four stale disable directives.
   `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`. One GPU and backend
   only.
 - **(P3) The pull request benchmark job has never run.** `.github/workflows/perf-pr.yml` runs
-  `perf:bench` and `test:perf` on a pull request's base and head and posts the `perf:compare` table
-  as a comment, without gating. It was written on 2026-10-11 with no pull request open to try it on:
-  the comment and directory-compare scripts are tested, the workflow steps are not. Unmeasured: how
-  long two full runs take on the one self-hosted machine (the job allows 100 minutes), and whether
-  the base, measured first, reads differently from the head for that reason alone.
+  `perf:bench` and `test:perf` on a pull request's merge base and head and posts the `perf:compare`
+  table as a comment, without gating. No pull request has been open to try it on: the comment and
+  directory-compare scripts are tested, the workflow steps have only been read. `perf:bench` has
+  never run on the runner at all, since `perf.yml` runs `test:perf` alone. Unmeasured: how long two
+  full runs take on the one self-hosted machine (the job allows 100 minutes), and whether the base,
+  measured first, reads differently from the head for that reason alone.
 
 - **(P3) labkit inlines siblings that own module state.** `packages/labkit/tsup.config.ts` bundles
   every `@weasel-js/*` sibling except core and theme, and its own comment gives the reason those two
@@ -1606,27 +1618,29 @@ one dead `const` and four stale disable directives.
   installs one copy and runs another. In the repo, aliases resolve both to one source, so no test
   can see it.
 
-- **(P3) Dev aliases, tsconfig `paths`, and `exports` are three hand-kept maps that disagree.**
-  `scripts/vite-aliases.ts` sends `@weasel-js/<pkg>/<tail>` to `packages/<pkg>/src/<tail>` for any
-  tail. `@weasel-js/diagram/layout` is published from `src/layout.entry.ts` and the alias resolves
-  it to `src/layout.ts`, a different module with different exports; `@weasel-js/labkit/weasel-ui`
-  works only where a config overrides the alias by hand; and a subpath no `exports` map publishes
-  resolves in every dev server and test (`@weasel-js/labkit/styles.less` in seven app and demo
-  files, `@weasel-js/labkit/theme/interstellar` in `apps/forge/themes.ts`).
-  `packages/core/tsconfig.json` maps nine siblings to source and leaves `paint`, `text`, `font`,
-  `cursor`, `quantity`, and `prefs` to resolve to their built `dist`. Generate the aliases and the
-  `paths` from each package's `exports` and build entries, and reject a subpath that is not
-  exported.
+- **(P3) tsconfig `paths` is still kept by hand, and wider than `exports`.** The dev aliases and the
+  API reference are generated from each package's `exports` now (`scripts/lib/packageEntries.mjs`),
+  and `scripts/vite-aliases.test.ts` fails when the root `paths` sends an exported entry anywhere
+  else. Two things it does not cover. The root `paths` has wildcard keys (`@weasel-js/geom/*`,
+  `guides/*`, `renderer/*`, `labkit/*`, `forge/*`), so `tsc` resolves a subpath no `exports` map
+  publishes that vite now refuses. And `packages/core/tsconfig.json` maps nine siblings to source
+  and leaves `paint`, `text`, `font`, `cursor`, `quantity`, and `prefs` to resolve to their built
+  `dist`; `tsup` reads that file for core's build, so widening it wants a look at what the
+  declaration build then pulls in. Generate both blocks from the same module.
 
 - **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
   is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run), and the reflectable registry, modes' scoping layer
-  and decorations, and core's pose overrides, pose feed, reflow, parallax plane, and key state use
-  it. Still hand-rolled, each a `Set` and a loop: the scene (four loops in `core/scene/scene.ts`),
-  `PointerContext`, `useSliceTool`, history and its journal, `select/store.ts`, prefs' store,
-  storage's records, routing's `longPressState`, loupe's `canvasSource`, ui's `recentColors`,
-  labkit's `panelHost`, `clockRegistry`, and `cameraRegistry`, and seven in forge. history, select,
-  prefs, storage, routing, and loupe do not depend on registry yet.
+  and decorations, core's pose overrides, pose feed, reflow, parallax plane, and key state, prefs'
+  store, font's glyph-ready signal, and renderer's image cache use it. Still hand-rolled, each a
+  `Set` and a loop:
+  - in packages that already depend on registry: the scene (four loops in `core/scene/scene.ts`),
+    and core's `useSliceTool`, `viewRegistry.tsx`, `canvasRenderer.ts`, `rigEditState.ts`,
+    `useBoneTool.ts`, and `useWeightTool.ts`; animator's `engine/core.ts` and `engine/offsets.ts`.
+  - in packages that do not, where each move adds the dependency: routing's `PointerContext` and
+    `longPressState`, history and its journal, `select/store.ts`, storage's records, loupe's
+    `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
+    `cameraRegistry`, and seven in forge.
 
 - **(P3) Three drag-ghost implementations.** core's `pointerDrag` `defaultGhost` clones the source,
   ui's `DragGhost` portals to the themed host, and labkit's `dragdrop/DragGhost` is a third. They

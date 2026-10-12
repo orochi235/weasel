@@ -61,6 +61,25 @@ describe('imageCache', () => {
     expect(calls).toBe(1);
   });
 
+  it('runs the subscribers after one that throws', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const d = deferred<ImageBitmap>();
+    __setImageLoaderForTests(() => d.promise);
+    const later = vi.fn();
+    subscribeImageReady(() => {
+      throw new Error('boom');
+    });
+    subscribeImageReady(later);
+
+    getImageBitmap('a');
+    d.resolve(fakeBitmap());
+    await flush();
+
+    expect(later).toHaveBeenCalledTimes(1);
+    expect(imageStatus('a')).toBe('ready');
+    error.mockRestore();
+  });
+
   it('caches errors and does not retry', async () => {
     const d = deferred<ImageBitmap>();
     let calls = 0;

@@ -76,6 +76,7 @@ export type PrefRenderer = ((ctx: PrefRenderContext) => ReactNode) & {
   wide?: boolean;
 };
 
+/** What a prefs form hands every row it draws: the values, the callbacks, and how the form is set up. */
 export interface WalkCtx {
   values: unknown;
   onChange: (path: string, value: unknown) => void;

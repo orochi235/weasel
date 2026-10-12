@@ -1,6 +1,7 @@
-import { Comment, CommentTag, Converter, ReflectionKind } from 'typedoc';
+import { Application, Comment, CommentTag, Converter, ReflectionKind } from 'typedoc';
 import { categoryOf } from './categoryOf.mjs';
 import { specifierOf } from './packageOptions.mjs';
+import { pointAtOwners } from './pointers.mjs';
 
 /** The one package whose exports are sorted into navigation categories. */
 const CATEGORIZED = '@weasel-js/core';
@@ -17,6 +18,11 @@ export function load(app) {
     if (context.project.name !== CATEGORIZED) return;
     const owners = [context.project, ...modulesOf(context.project)];
     categorize(owners.flatMap((owner) => owner.children ?? []).filter((c) => c.kind !== ReflectionKind.Module));
+  });
+
+  app.on(Application.EVENT_PROJECT_REVIVE, (project) => {
+    const pointed = pointAtOwners(project);
+    app.logger.info(`${pointed} re-exported symbols point at the package that declares them`);
   });
 }
 

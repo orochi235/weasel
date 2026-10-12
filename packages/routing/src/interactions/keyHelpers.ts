@@ -73,11 +73,11 @@ export function matchesKeyBinding(e: KeyboardEvent, b: KeyBinding): boolean {
   return true;
 }
 
-type ModifierKeys = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>;
-
 /** Which history step `e` asks for: Mod+Z undoes, Shift+Mod+Z and Mod+Y redo. `null` for anything else. Takes a
  *  React keyboard event as readily as a DOM one. */
-export function historyKey(e: ModifierKeys): 'undo' | 'redo' | null {
+export function historyKey(
+  e: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>,
+): 'undo' | 'redo' | null {
   const ev = e as KeyboardEvent;
   if (matchesKeyBinding(ev, { key: 'z', mod: true })) return 'undo';
   if (matchesKeyBinding(ev, { key: 'z', mod: true, shift: true }) || matchesKeyBinding(ev, { key: 'y', mod: true }))

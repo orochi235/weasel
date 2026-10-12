@@ -16,6 +16,7 @@ import type { HudHitPayload } from './tool';
 import { resolveTheme, weaselTheme, type ColorSourceContext, type ResolvedTheme } from '@weasel-js/theme';
 import { hudColor } from './colors';
 
+/** Options for `attachHud`. */
 export interface AttachHudOptions {
   /** Resolved theme the widgets draw with. Defaults to the built-in theme's
    *  default mode; pass `useTheme().resolved` to follow a live theme. */

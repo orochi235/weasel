@@ -1,6 +1,5 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'node:path';
 import { playwright } from '@vitest/browser-playwright';
 import { weaselAliases } from './scripts/vite-aliases.ts';
 import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas.ts';
@@ -23,12 +22,7 @@ import { browserCommands } from './scripts/vitest-browser-commands.ts';
 // `test` keys from the top-level config when `projects` is set.
 const shared = {
   resolve: {
-    alias: weaselAliases(import.meta.dirname, [
-      {
-        find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(import.meta.dirname, 'packages/theme/src/generated/tokens.css'),
-      },
-    ]),
+    alias: weaselAliases(import.meta.dirname),
   },
   plugins: [react()],
 };

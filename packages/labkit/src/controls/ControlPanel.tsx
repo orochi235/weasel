@@ -21,6 +21,7 @@ import type { ConfigField } from './types';
 
 export type { ControlPack } from './controlPack';
 
+/** Props for {@link ControlPanel}. */
 export interface ControlPanelProps<TC extends Record<string, unknown>> extends StanceProps {
   /** The instrument's resolved config schema. */
   schema?: ResolvedConfig;

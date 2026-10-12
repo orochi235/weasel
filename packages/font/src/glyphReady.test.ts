@@ -35,4 +35,18 @@ describe('glyphGeneration', () => {
       unsubscribe();
     }
   });
+
+  it('runs the subscribers after one that throws, and does not throw into the notifier', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const later = vi.fn();
+    const stopFirst = subscribeGlyphReady(() => {
+      throw new Error('boom');
+    });
+    const stopLater = subscribeGlyphReady(later);
+    expect(() => notifyGlyphReady()).not.toThrow();
+    expect(later).toHaveBeenCalledTimes(1);
+    stopFirst();
+    stopLater();
+    error.mockRestore();
+  });
 });

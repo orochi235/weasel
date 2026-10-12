@@ -41,6 +41,7 @@ export function useCollapse({ collapsible, defaultCollapsed, collapsed, onCollap
   return { folds, folded, toggle, quiet: folds && !folded && twisty === 'folded' };
 }
 
+/** What `useCollapse` answers: whether the container folds, its state, and its toggle. */
 export interface Fold {
   folds: boolean;
   folded: boolean;

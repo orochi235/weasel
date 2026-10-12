@@ -28,6 +28,7 @@ export interface StoryRegistry {
   reload: (file: string) => void;
 }
 
+/** What `useStoryRegistry` loads stories from, and what it shows them with. */
 export interface StoryRegistryOptions {
   frameUrl: string;
   globals?: GlobalDeclarations;

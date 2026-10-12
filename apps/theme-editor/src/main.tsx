@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import '@weasel-js/labkit/styles.less';
+import '@weasel-js/labkit/styles.css';
 
 import { createRoot, type Root } from 'react-dom/client';
 import { StrictMode } from 'react';

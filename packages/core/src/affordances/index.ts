@@ -12,6 +12,7 @@ export {
   annulusSemiAxes,
   pointRegionFrame,
   type AffordanceRegionHit,
+  type TargetTransform,
 } from './hitAffordanceRegions';
 export {
   createCornerResizeAffordance,

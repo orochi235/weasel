@@ -33,6 +33,7 @@ import {
 export { MIXED };
 export type { Mixed };
 
+/** A scene node of any data, layer, and pose. */
 export type AnyNode = SceneNode<unknown, string, unknown>;
 
 /**

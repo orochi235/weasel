@@ -44,10 +44,11 @@ export interface ThemeApi {
   put(name: string, definition: ThemeDefinition, baseHash: string | null): Promise<PutResult>;
 }
 
-type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
-
 /** The dev server's theme store, addressed relative to the page so the app's base path carries over. */
-export function httpThemeApi(base: string = document.baseURI, fetchImpl: Fetch = (input, init) => fetch(input, init)): ThemeApi {
+export function httpThemeApi(
+  base: string = document.baseURI,
+  fetchImpl: (input: string, init?: RequestInit) => Promise<Response> = (input, init) => fetch(input, init),
+): ThemeApi {
   const url = (path: string) => new URL(`__theme/${path}`, base).toString();
   const read = async <T>(response: Response): Promise<T> => {
     if (!response.ok && response.status !== 409 && response.status !== 400) throw new Error(`${response.status} ${response.statusText}`);

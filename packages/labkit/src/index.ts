@@ -95,6 +95,7 @@ export type {
   AnnotationQuery,
   AnnotationSelectionMode,
   AnnotationStatus,
+  AnnotationStorage,
   AnnotationStoreOptions,
   AnnotationsApi,
   AnnotationsCapability,
@@ -107,7 +108,9 @@ export type {
   CaptureSource,
   FracPoint,
   FracRect,
+  MarkPose,
   MarkScene,
+  PaintedMark,
   SerializedAnnotations,
   WorldRect,
 } from './annotations';
@@ -258,7 +261,7 @@ export {
   type ControlMatrixProps,
   type ControlMatrixRow,
 } from './controls/ControlMatrix';
-export { ControlPanel } from './controls/ControlPanel';
+export { type ControlPack, ControlPanel, type ControlPanelProps } from './controls/ControlPanel';
 export { type InDialogOptions, inDialog, summarizeValue } from './controls/inDialog';
 export type {
   CheckboxField,
