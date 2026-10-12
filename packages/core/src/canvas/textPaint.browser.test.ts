@@ -15,7 +15,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
 import type { FillStyle } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
-import type { RectPose } from 'features/groups/composePose';
+import type { RectPose } from 'core/scene/composePose';
 import { resolveFillPattern } from 'features/patterns/resolveSpec';
 import { meshFromStops } from 'features/meshPaint/meshPaint';
 import 'features/meshPaint/register';

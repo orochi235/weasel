@@ -22,7 +22,7 @@ the offsets are wrong by exactly the parent's transform.
 
 | File | Role |
 | --- | --- |
-| `composePose.ts` | `composeWorldPose` (local chain → world), `rebaseLocalPose` / `decomposeRectPose` (world → local under a new parent), `worldPoseLookup`. |
+| `core/scene/composePose.ts` | `composeWorldPose` (local chain → world), `rebaseLocalPose` / `decomposeRectPose` (world → local under a new parent), `worldPoseLookup`. |
 | `children.ts` | `createChildrenLayer` — z-ordered child renderer. Replaces hand-rolled `for (id of getChildren())` loops with a `RenderLayer` over an `OrderedAdapter`. Index 0 draws first (bottom). No-ops silently when the adapter omits the optional `getChildren`, so z-order can be adopted incrementally. |
 | `nestedHit.ts` | `nestedHitTester` — hit-testing that descends through containers. |
 | `unionOfChildren.ts` | `unionOfChildrenVia` — a container's pose as the envelope of what it holds, read through a pose descriptor. Returns `null` for an emptied container. |

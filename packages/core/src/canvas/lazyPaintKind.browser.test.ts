@@ -10,7 +10,7 @@ import { createScene } from 'core/scene/scene';
 import {
   _resetPaintKindsForTests, getPaintKind, paintKindRegistry, warmPaintKinds,
 } from 'core/paintKinds';
-import type { RectPose } from 'features/groups/composePose';
+import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import type { DrawCommand } from '../renderer/DrawCommand';
 

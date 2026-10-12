@@ -14,11 +14,11 @@ import {
   makeFrameFixture,
   type FrameFixtureData,
   type FrameFixtureLayer,
-} from 'features/groups/frameFixture';
+} from 'core/scene/frameFixture';
 import {
   RIGID_POSE_COMPOSITION,
   RECT_POSE_COMPOSITION,
-} from 'features/groups/composePose';
+} from 'core/scene/composePose';
 import type { RectPose, Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';

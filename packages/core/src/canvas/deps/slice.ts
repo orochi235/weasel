@@ -19,7 +19,7 @@ import { pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-j
 import { poseLinearOf } from '@weasel-js/geom';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
-import type { PoseComposition } from 'features/groups/composePose';
+import type { PoseComposition } from 'core/scene/composePose';
 
 /** Publish how a slice (knife cut) is performed, so the `slice` action can
  *  run against the consumer's geometry. */

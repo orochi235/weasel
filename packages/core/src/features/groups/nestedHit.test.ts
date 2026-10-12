@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { nestedHitTester } from './nestedHit';
-import { composeRectPose } from 'features/groups/composePose';
+import { composeRectPose } from 'core/scene/composePose';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 interface Node {

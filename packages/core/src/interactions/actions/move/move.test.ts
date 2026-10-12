@@ -9,7 +9,7 @@ import { asNodeId } from 'core/scene/types';
 import type { NodeAtPointDep } from '../depSchema';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
-import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
+import { composeRectPose, decomposeRectPose } from 'core/scene/composePose';
 
 /** Local-pose composition strategy. The reparentOnDrop tests below assert
  *  LOCAL rebasing (world pose → local under the new parent), so they supply

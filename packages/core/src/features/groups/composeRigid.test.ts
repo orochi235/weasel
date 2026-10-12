@@ -7,7 +7,7 @@ import {
   composeWorldPose,
   decomposeRigidPose,
   type PoseAdapter,
-} from './composePose';
+} from 'core/scene/composePose';
 import type { RectPose } from 'core/scene/types';
 
 /** The four corners a pose occupies in the frame it is expressed in:

@@ -4,7 +4,7 @@ import { runLayoutPass, type ResolvedLayoutFrame } from 'core/scene/layoutPass';
 import type { NodeId, Scene, SceneArrivalHandler } from 'core/scene/types';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import type { LayoutStrategy } from './types';
 
 /** Where a container's layout comes from: a map by container id, or a

@@ -17,8 +17,8 @@ import { pickWalk, scenePickSource } from 'canvas/pickWalk';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../../renderer';
-import { RIGID_POSE_COMPOSITION } from './composePose';
-import { expectSamePose } from './frameFixture';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { expectSamePose } from 'core/scene/frameFixture';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 

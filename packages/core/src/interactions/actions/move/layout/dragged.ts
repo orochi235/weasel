@@ -1,8 +1,8 @@
 import type { NodeId } from 'core/scene/types';
 import { poseDescriptorForNode, translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { toPlane, type PlaneMap } from 'core/viewport/parallax';
-import { composeWorldPose } from 'features/groups/composePose';
-import { scenePoseAdapter } from 'features/groups/scenePoseAdapter';
+import { composeWorldPose } from 'core/scene/composePose';
+import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { LayoutDragged } from '../../../../layout/types';
 import { carryPose, invertPlane, planeOf } from '../../planeInput';
 import { grabbedPoseAdapter, planeDelta } from '../delta';

@@ -4,13 +4,13 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { flipAction } from './flip';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
   FRAME_FIXTURE_IDS,
   FRAME_FIXTURE_LOCAL,
-} from 'features/groups/frameFixture';
+} from 'core/scene/frameFixture';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { Mat3 } from '@weasel-js/geom';

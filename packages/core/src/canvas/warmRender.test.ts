@@ -6,7 +6,7 @@ import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetPaintKindsForTests, getPaintKind, registerPaintKindLoader } from '../core/paintKinds';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import type { RectPose } from 'features/groups/composePose';
+import type { RectPose } from 'core/scene/composePose';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import { warmRender } from './renderSceneToPixels';
 import { renderNeeds } from './renderNeeds';

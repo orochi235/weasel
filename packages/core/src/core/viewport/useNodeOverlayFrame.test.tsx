@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { useRef } from 'react';
 import { renderHook } from '@testing-library/react';
-import { createScene } from '../../core/scene';
-import { asNodeId, type NodeId, type RectPose } from '../../core/scene/types';
-import type { View } from '../../core/viewport/view';
+import { createScene } from '../scene';
+import { asNodeId, type NodeId, type RectPose } from '../scene/types';
+import type { View } from './view';
 import { useNodeOverlayFrame, type NodeOverlayFrame } from './useNodeOverlayFrame';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 

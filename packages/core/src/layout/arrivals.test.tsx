@@ -7,7 +7,7 @@ import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, renderHook, act } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import { composeRectPose, decomposeRectPose, IDENTITY_POSE_COMPOSITION } from 'features/groups/composePose';
+import { composeRectPose, decomposeRectPose, IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { layoutArrivalHandler, useLayoutArrivals } from './arrivals';
 import type { LayoutArrival, LayoutStrategy } from './types';

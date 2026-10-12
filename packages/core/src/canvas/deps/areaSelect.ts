@@ -16,7 +16,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { hitTestArea as hitTestAreaShared, regionPickOptions } from './hitTestArea';
-import type { PoseComposition } from 'features/groups/composePose';
+import type { PoseComposition } from 'core/scene/composePose';
 
 export function useAreaSelectDepSource(
   scene: Scene<unknown, string, unknown>,

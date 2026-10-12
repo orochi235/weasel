@@ -3,7 +3,7 @@ import { DRAG_THRESHOLD_PX, isAnchorOrControl, resolveParams } from '@weasel-js/
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { LayoutDep, NodeAtPointDep } from '../depSchema';

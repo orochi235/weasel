@@ -6,7 +6,7 @@
 import { describe, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import { expectSamePose } from 'features/groups/frameFixture';
+import { expectSamePose } from 'core/scene/frameFixture';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { resizeAction } from './resize';
 

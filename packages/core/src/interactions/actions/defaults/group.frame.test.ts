@@ -7,13 +7,13 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { groupAction, ungroupAction } from './group';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
   FRAME_FIXTURE_IDS,
   FRAME_FIXTURE_WORLD,
-} from 'features/groups/frameFixture';
+} from 'core/scene/frameFixture';
 import { scenePoseFrame } from '../poseFrame';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';

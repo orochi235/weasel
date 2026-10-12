@@ -1,4 +1,4 @@
-import { worldPoseLookup } from './composePose';
+import { worldPoseLookup } from 'core/scene/composePose';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 

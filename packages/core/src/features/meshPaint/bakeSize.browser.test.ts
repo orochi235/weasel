@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import type { FillStyle } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
-import type { RectPose } from 'features/groups/composePose';
+import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
 import type { DrawCommand } from '../../renderer/DrawCommand';
 import { meshFromStops } from './meshPaint';

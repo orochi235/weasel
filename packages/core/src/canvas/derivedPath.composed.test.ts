@@ -5,7 +5,7 @@ import { buildSceneViewCommands } from './sceneViewRender';
 import { scenePickSource } from './pickWalk';
 import { createScene } from 'core/scene/scene';
 import type { DerivedDep, Node, RectPose } from 'core/scene/types';
-import { RECT_POSE_COMPOSITION } from 'features/groups/composePose';
+import { RECT_POSE_COMPOSITION } from 'core/scene/composePose';
 import { type Path, linePath } from '@weasel-js/geom';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';

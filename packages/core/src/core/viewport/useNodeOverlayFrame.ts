@@ -16,10 +16,10 @@
  */
 import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
 import { applyToPoint, invert, multiply, type Mat3 } from '@weasel-js/geom';
-import type { Node, RectPose, Scene } from '../../core/scene/types';
-import { useCanvasSize } from '../../core/viewport/useCanvasSize';
-import type { View } from '../../core/viewport/view';
-import { composeRectPose, composeWorldPose } from '../groups/composePose';
+import type { Node, RectPose, Scene } from '../scene/types';
+import { useCanvasSize } from './useCanvasSize';
+import type { View } from './view';
+import { composeRectPose, composeWorldPose } from 'core/scene/composePose';
 import { effectivePose } from 'core/scene/effectivePose';
 import { poseRotationOf } from '@weasel-js/geom';
 

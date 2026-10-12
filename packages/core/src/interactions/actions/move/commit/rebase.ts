@@ -1,6 +1,6 @@
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
-import { rebaseLocalPose, type PoseAdapter, type PoseComposition } from 'features/groups/composePose';
+import { rebaseLocalPose, type PoseAdapter, type PoseComposition } from 'core/scene/composePose';
 
 /** A world-posed transform op as one in its node's stored frame: `from` under
  *  `fromParent`, `to` under `toParent`. Any other op is returned as it is. */

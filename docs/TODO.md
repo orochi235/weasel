@@ -323,9 +323,9 @@ have shipped. What remains:
     the transform, so the result is drawn stretched; these have to change together.
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
     resize gives a turned leaf rather than writing it to the leaf's `transform`.
-  - `useNodeOverlayFrame` (`features/overlays/`), which places DOM chrome over a node, the text
+  - `useNodeOverlayFrame` (`core/viewport/`), which places DOM chrome over a node, the text
     edit overlay and its carets included, applies the rotation alone. Needs a browser to verify.
-  - `composeRectPose` / `composeRigidPose` (`features/groups/composePose.ts`) keep a child's own
+  - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
   - `svgLeafFromKit` (`packages/svg/src/fromKit.ts`) writes it for text and image leaves and not
@@ -618,12 +618,13 @@ Core five + Crop shipped. Remaining:
      `useVisibleRaf`, `pxExtent`, `meanScale`, `MIXED`, the pose frame and rotation math, and
      with them the anchor edits, `pathInWorld`, and `textToPath`. Nothing is left here.
   2. *Dissolve and rehome.* Done for `focus`, `cursor`, the pointer store, `SelectionContext`,
-     text hit-testing and fitting, path anchors, and the run range-style algebra. Left:
-     `features/groups` folds into `core/scene` and `features/overlays` into `core/viewport`
-     after it (`core/` may not import `features/`, and `overlays` needs `composeRectPose` from
-     `groups`). The move action imports `features/groups/composePose` and `scenePoseAdapter`
-     from most of `interactions/actions/move/`. (`@weasel-js/simulation`, `@weasel-js/stroke`,
-     and `@weasel-js/text-dom` are out.)
+     text hit-testing and fitting, path anchors, the run range-style algebra, the pose
+     composition half of `features/groups` (now `core/scene/composePose.ts`), and
+     `useNodeOverlayFrame` (now in `core/viewport`). Left: the rest of `features/groups`.
+     `nestedHit.ts` and `unionOfChildren.ts` import `interactions/actions/resize/` for the pose
+     descriptor geometry, which has to come down into `core/geometry` first, and `children.ts`
+     types its layer with the renderer's `DrawCommand`, so it follows the renderer.
+     (`@weasel-js/simulation`, `@weasel-js/stroke`, and `@weasel-js/text-dom` are out.)
   3. *The renderer, under core.* It imports `core/paintKinds` as well as `@weasel-js/stroke`
      and `@weasel-js/paint`. Gather `paintKinds`, `fillInPoseFrame`, `features/patterns`,
      `images`, `meshPaint`, `text/textCommand.ts`, and `features/paths/markerCommands.ts` (marker

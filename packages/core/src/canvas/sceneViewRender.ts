@@ -17,7 +17,7 @@
 
 import type { WeaselRenderer } from '../renderer/WeaselRenderer';
 import { cachedCanvasRenderer, paintCanvas } from './canvasRenderer';
-import type { PoseComposition } from 'features/groups/composePose';
+import type { PoseComposition } from 'core/scene/composePose';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
