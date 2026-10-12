@@ -1415,8 +1415,13 @@ only story runner in the repo.
   `scripts/check-spacing.ts` skips `apps/site/CommandPalette/`, which now contains only
   `useCommandPaletteShortcut.ts`. Drop the exemption and the comment above it.
 
-- **(P3) `SceneCanvasInner` is one 1,204-line function.** It is most of the 1,395-line
-  `canvas/SceneCanvas.tsx`, and wants breaking into hooks by concern rather than moving.
+- **(P3) `SceneCanvasInner` is one 1,157-line function.** It is most of the 1,339-line
+  `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
+  owner; its dead-code pass landed 2026-10-12. Left open by that pass: `actionDefaults` is a public
+  prop nothing reads, kept only because `SceneCanvas.actions.test.tsx` passes it at 13 sites; and
+  `<DeviceProfileProvider>` resolves the profile a second time beside `SceneCanvasInner`'s own
+  `useDeviceProfile`, so the media-query listeners are doubled. The provider is public and its
+  `value` is a partial override, so taking a resolved profile needs a new prop.
 
 - **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
   together" and `<Canvas>` examples in concepts, and "Custom layers" in extending, pass `adapter` and
