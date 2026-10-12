@@ -46,9 +46,28 @@ export function pathExclude(...paths: Path[]): PolygonPath {
   return multiPolygonToPath(polygonClipping.xor(head, ...rest));
 }
 
+/** One path of a result that keeps its pieces apart, and the inputs it came
+ *  from: their indices in the call, ascending, so the last is the topmost of
+ *  inputs given back to front. */
+export interface BooleanPiece {
+  path: PolygonPath;
+  sources: number[];
+}
+
+/** {@link pathDividePieces} as bare paths. */
+export function pathDivide(...paths: Path[]): PolygonPath[] {
+  return pathDividePieces(...paths).map((p) => p.path);
+}
+
+/** {@link pathCropPieces} as bare paths. */
+export function pathCrop(...paths: Path[]): PolygonPath[] {
+  return pathCropPieces(...paths).map((p) => p.path);
+}
+
 /**
  * Fracture N paths along every intersection into the maximal set of
- * non-overlapping regions. Returns one polygon path per region.
+ * non-overlapping regions. Returns one piece per region, naming every input
+ * that covers it.
  *
  * Algorithm: for every non-empty subset S ⊆ {A1..AN}, emit the region
  * `(∩ S) − (∪ complement)` — points covered by exactly the members of S
@@ -60,14 +79,14 @@ export function pathExclude(...paths: Path[]): PolygonPath {
  * subset count limits this to small N in practice; passing more than ~8
  * inputs is a misuse — the polygon-clipping kernel dominates anyway.
  */
-export function pathDivide(...paths: Path[]): PolygonPath[] {
+export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
   if (paths.length === 0) return [];
   if (paths.length === 1) {
-    return [multiPolygonToPath(pathToMultiPolygon(paths[0]))];
+    return [{ path: multiPolygonToPath(pathToMultiPolygon(paths[0])), sources: [0] }];
   }
   const mps = paths.map((p) => pathToMultiPolygon(p));
   const n = mps.length;
-  const out: PolygonPath[] = [];
+  const out: BooleanPiece[] = [];
 
   // Iterate every non-empty subset via bitmask. Emit subsets in size-
   // ascending order so the output is stable and reads "exclusives first,
@@ -79,7 +98,9 @@ export function pathDivide(...paths: Path[]): PolygonPath[] {
   for (const mask of subsets) {
     const inside: typeof mps = [];
     const outside: typeof mps = [];
+    const sources: number[] = [];
     for (let i = 0; i < n; i++) {
+      if (mask & (1 << i)) sources.push(i);
       (mask & (1 << i) ? inside : outside).push(mps[i]);
     }
     const [insideHead, ...insideRest] = inside;
@@ -93,7 +114,7 @@ export function pathDivide(...paths: Path[]): PolygonPath[] {
       region = polygonClipping.difference(region, outsideUnion);
       if (region.length === 0) continue;
     }
-    out.push(multiPolygonToPath(region));
+    out.push({ path: multiPolygonToPath(region), sources });
   }
 
   return out;
@@ -107,20 +128,21 @@ function popcount(n: number): number {
 
 /**
  * Clip each non-topmost path to the topmost path (Illustrator "Crop").
- * Returns `N - 1` results, one per source-below-top, in input order.
+ * Returns up to `N - 1` pieces, one per source-below-top, in input order,
+ * each naming the one input it was clipped from.
  * Discards the topmost path itself — it acts purely as the clipping mask.
  *
  * Empty results (a source that lies entirely outside the mask) are
  * filtered. With `<2` inputs the result is empty.
  */
-export function pathCrop(...paths: Path[]): PolygonPath[] {
+export function pathCropPieces(...paths: Path[]): BooleanPiece[] {
   if (paths.length < 2) return [];
   const mps = paths.map((p) => pathToMultiPolygon(p));
   const mask = mps[mps.length - 1];
-  const out: PolygonPath[] = [];
+  const out: BooleanPiece[] = [];
   for (let i = 0; i < mps.length - 1; i++) {
     const clipped = polygonClipping.intersection(mps[i], mask);
-    if (clipped.length > 0) out.push(multiPolygonToPath(clipped));
+    if (clipped.length > 0) out.push({ path: multiPolygonToPath(clipped), sources: [i] });
   }
   return out;
 }

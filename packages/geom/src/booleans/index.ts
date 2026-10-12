@@ -3,7 +3,10 @@
  * splitting built on them. The only geom entry that needs `polygon-clipping`,
  * which geom takes as an optional peer so the root barrel stays `deps: {}`.
  */
-export { pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide, pathCrop } from './ops';
+export {
+  pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide, pathCrop,
+  pathDividePieces, pathCropPieces, type BooleanPiece,
+} from './ops';
 export { trianglesToPath } from './trianglesToPath';
 export { pathToMultiPolygon, multiPolygonToPath } from './adapter';
 export type { Pair, Ring, Polygon, MultiPolygon, PathToMultiPolygonOptions } from './adapter';
