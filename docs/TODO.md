@@ -1241,10 +1241,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `onSelect` cover single-leaf rows, object-leaf fields, and bar cells, and `PrefSchemaEditor`'s
   section preview selects with its tree through them. A `pair` row and a section heading, tab, or
   panel neither mark nor report, which with core's default node properties leaves Position, Size,
-  and the stroke's cap and join row dead in that preview. To decide: what a `pair` row stands for
-  (marked when any of its leaves is selected, and which leaf a press on its label reports; a mark
-  per control needs a wrapper that breaks the `.rowControls > *` sizing), and how a section is
-  named in `selected`, since its key is no part of any value path and can collide with a leaf's.
+  and the stroke's cap and join row dead in that preview. Ruled 2026-10-11: a `pair` row is marked
+  when any of its leaves is selected, and a press on it reports its first leaf, as a fused `Bar`
+  cell does; a section is named in `selected` by its own key, in the one list with leaf paths, and
+  `PrefSchemaEditor` refuses a section key that equals a leaf's path. Only a top-level section
+  draws a heading, so only those can be selected.
 
 - **(P3) Loose ends beside the selection mark, none checked further.** The fragment mark in
   `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
