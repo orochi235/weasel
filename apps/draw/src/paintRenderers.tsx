@@ -51,12 +51,6 @@ export function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; act
   );
 }
 
-/** Marks the tool options bar as the text editor's own chrome, so focus
- *  landing in it doesn't commit the edit those controls are there to style.
- *  A class rather than a ref because the check is a `closest()` from an
- *  arbitrary focus target, including one inside a portalled popover. */
-export const TEXT_CHROME_CLASS = 'wd-text-chrome';
-
 export const WD_RENDERERS: Record<string, PropertyRenderer> = {
   'data.fill': wdPaintRenderer('setFill'),
   // The stroke's paint row inside its object leaf; the other fields render

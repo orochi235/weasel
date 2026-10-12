@@ -1,11 +1,8 @@
-// A look at the character bar the text tool declares, without a running
-// document behind it. Delete if it stops earning its place.
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { MIXED } from '@weasel-js/core';
 import { CharacterOptions } from './CharacterOptions';
-import '../../app.css';
 
-const meta: Meta = { title: 'draw/CharacterOptions' };
+const meta: Meta = { title: 'ui/CharacterOptions' };
 export default meta;
 type Story = StoryObj;
 
@@ -18,6 +15,11 @@ export const Editing: Story = {
       />
     </div>
   ),
+};
+
+// No edit in progress: the row keeps its height and shows nothing.
+export const Idle: Story = {
+  render: () => <CharacterOptions onPatch={() => {}} />,
 };
 
 export const MixedRange: Story = {

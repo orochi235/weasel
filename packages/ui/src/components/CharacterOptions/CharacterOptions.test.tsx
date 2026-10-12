@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MIXED } from '@weasel-js/core';
-import { CharacterOptions } from './CharacterOptions';
+import { CharacterOptions, isCharacterChrome } from './CharacterOptions';
 
 function toggle(name: string): HTMLElement {
   return screen.getByRole('button', { name });
@@ -213,5 +213,28 @@ describe('CharacterOptions — fill', () => {
       <CharacterOptions style={{ fill: MIXED }} onPatch={vi.fn()} />,
     );
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
+  });
+});
+
+describe('CharacterOptions — idle', () => {
+  it('draws no controls for a null style, the value useTextEdit reports outside an edit', () => {
+    render(<CharacterOptions style={null} onPatch={vi.fn()} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByText('Text')).toBeNull();
+  });
+});
+
+describe('isCharacterChrome', () => {
+  it('claims a control in the bar and a kit popover, and nothing else', () => {
+    render(
+      <>
+        <CharacterOptions style={{ bold: false }} onPatch={vi.fn()} />
+        <div data-weasel-overlay=""><span data-testid="option" /></div>
+        <span data-testid="elsewhere" />
+      </>,
+    );
+    expect(isCharacterChrome(toggle('Bold'))).toBe(true);
+    expect(isCharacterChrome(screen.getByTestId('option'))).toBe(true);
+    expect(isCharacterChrome(screen.getByTestId('elsewhere'))).toBe(false);
   });
 });
