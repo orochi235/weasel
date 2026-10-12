@@ -1438,17 +1438,18 @@ only story runner in the repo.
   its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
   canvas's adapter, so the seat has to say where a scene-level write gets animated.
 
-- **(P3) draw: two owners for "which mode is the editor in".** The kit holds `textEdit.editingId`
-  and `editAnchors.editingId`; the app holds a second mode machine
-  (`apps/draw/src/modality/machine.ts`) whose `text-edit` and `path-edit` modes say the same thing.
-  Two effects with `prev` refs in `apps/draw/src/App.tsx` reconcile text editing in each direction,
-  and their comments record two shipped bugs from the split; path editing has no reconciling effect
-  at all, and the kit papers over it by reading the mode
-  (`packages/core/src/canvas/SceneCanvas.tsx`, the `effectivePathEditingId` block). A double-click
-  is acted on by both the kit's `enterPathEdit` binding and the app's `onDoubleClick` observer. One
-  owner: either the machine's `enterMode` / `exitMode` are the only callers of `startEdit` /
-  `setEditingId`, or the kit's edit state drives the mode registry and the machine keeps only
-  journals.
+- **(P3) draw: two owners for "is a text edit open".** The kit's `useSceneTextEdit` holds
+  `editingId`; the app's mode machine (`apps/draw/src/modality/machine.ts`) holds a `text-edit` mode
+  that says the same thing. Two effects with `prev` refs in `apps/draw/src/App.tsx` reconcile them in
+  each direction, and their comments record two shipped bugs from the split. Path editing has one
+  owner now: `<SceneCanvas pathEdit>` reads the open path from the machine's path-edit target
+  (`modality/pathEditHost.ts`). Text cannot take the same shape as it stands, because the session
+  is real state inside the hook (the overlay, the caret, the pending commit): the hook needs an
+  `onEnd` for the ends it decides itself (click-away, the node going away), and its `onDoubleClick`
+  has to hand the hit and the caret seed to the machine instead of starting the edit. A double-click
+  on a path is still acted on by both the kit's `enterPathEdit` binding and the app's
+  `onDoubleClick` observer; they now reach the same machine call and the second is a no-op. No
+  browser has driven the path-edit change: the tests are jsdom, which cannot hit-test a canvas.
 
 - **(P3) draw: `EditorWithSharedScene` in `apps/draw/src/App.tsx` is one 500-line component.** The
   file is split by job; this component is what is left to split.

@@ -5,10 +5,11 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useActionsRegistry, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
+import { modePathEdit } from './pathEditHost';
 import { modalityShortcuts } from './shortcuts';
 
 beforeAll(() => {
@@ -104,17 +105,16 @@ describe('entering path-edit from the keyboard', () => {
     scene: ReturnType<typeof createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>>;
     pathToEdit: () => string | null;
   }) {
-    const actions = useActionsRegistry();
     const deps = useDepRegistry();
     depsRef.current = deps;
     const keys = useMemo(() => modalityShortcuts(machine, {
       pathToEdit,
-      startPathEdit: () => { actions?.trigger('enterPathEdit'); },
       selection: () => scene.getSelection(),
-    }), [machine, pathToEdit, actions, scene]);
+    }), [machine, pathToEdit, scene]);
+    const pathEdit = useMemo(() => modePathEdit(machine, () => true), [machine]);
     return (
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
-        ambient={[keys]} modes={machine.registry} />
+        ambient={[keys]} modes={machine.registry} pathEdit={pathEdit} />
     );
   }
   const depsRef: { current: DepRegistry | null } = { current: null };
@@ -183,7 +183,6 @@ describe('entering path-edit from the keyboard', () => {
     t.key('c');
     t.key('t', { metaKey: true });
     expect(t.machine.registry.current().id).toBe('isolation');
-    // Enter used to make the anchors editable and then fail to enter the mode.
     expect(t.editingId() || null).toBeNull();
   });
 });

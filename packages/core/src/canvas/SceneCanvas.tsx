@@ -208,6 +208,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onClick,
     chromeVisibility,
     modes,
+    pathEdit,
     getFocused: getFocusedProp,
     device,
     ...rest
@@ -441,6 +442,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // `editAnchorsAction` — both gate on `editingId !== ''`.
   const [pathEditingId, setPathEditingId] = useState<string>('');
   const pathEditingIdRef = useLatest(pathEditingId);
+  const pathEditRef = useLatest(pathEdit);
   // `anchorEditingAllowed` is declared below (it needs `getActiveModeRef`);
   // hold it in a ref so `effectivePathEditingId` — used by consumers
   // declared both above and below that point — can read it lazily.
@@ -464,10 +466,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
    * state. Read-time masking cannot go stale.
    */
   const effectivePathEditingId = useCallback((): string => {
+    if (pathEditRef.current) return pathEditRef.current.editingId() ?? '';
     const allowed = anchorEditingAllowedRef.current;
     if (allowed && !allowed()) return '';
     return pathEditingIdRef.current;
-  }, [pathEditingIdRef]);
+  }, [pathEditingIdRef, pathEditRef]);
   // Anchor selection + in-flight marquee. Both are per-frame inputs to
   // the overlay's draw(), never to a React render, so they live in refs
   // and request a repaint directly. Holding them in state would re-render
@@ -476,7 +479,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const anchorMarqueeRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   const editAnchorsExternalState = useMemo(() => ({
     getEditingId: () => effectivePathEditingId(),
-    setEditingId: (id: string | null) => setPathEditingId(id ?? ''),
+    setEditingId: (id: string | null) => (pathEditRef.current ? pathEditRef.current.setEditingId(id) : setPathEditingId(id ?? '')),
     getSelectedAnchors: () => selectedAnchorsRef.current,
     setSelectedAnchors: (next: ReadonlySet<number>) => {
       selectedAnchorsRef.current = next;
@@ -487,7 +490,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       anchorMarqueeRef.current = rect;
       canvasApiRef.current?.requestRedraw?.();
     },
-  }), [effectivePathEditingId]);
+  }), [effectivePathEditingId, pathEditRef]);
 
   // Apply the handle-size fallback here so useSceneSelectTool always receives
   // a concrete radius even when the caller omits selectTool entirely.

@@ -9,6 +9,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, type Feature } from './SceneCanvas';
 import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
+import { polygonFromPoints } from '@weasel-js/geom';
 import type { Scene, NodeId } from 'core/scene/types';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
@@ -346,5 +347,44 @@ describe('<SceneCanvas insertPaint>', () => {
     });
     expect(scene.get(trail!)!.data.path.fillRule).toBe('evenodd');
     expect(scene.get(rect!)!.data.path).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+  });
+});
+
+describe('<SceneCanvas pathEdit>', () => {
+  it('leaves which path is being edited to the host', () => {
+    let actions!: { trigger(id: string): void };
+    let deps!: { get(key: string): unknown };
+    function Grab() {
+      actions = useActionsRegistry() as typeof actions;
+      deps = useDepRegistry() as typeof deps;
+      return null;
+    }
+    const editAnchors = () => deps.get('editAnchors') as { editingId: string; setEditingId(id: string | null): void };
+    const scene = createScene<Record<string, unknown>, L, P>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({
+      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10, rotation: 0 },
+      data: { path: polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]) },
+    });
+    scene.setSelection([id]);
+    let editing: string | null = null;
+    const host = { editingId: () => editing, setEditingId: vi.fn((next: string | null) => { editing = next; }) };
+    render(
+      <SceneCanvas features={['draw']} scene={scene} width={200} height={200} pathEdit={host}>
+        <Grab />
+      </SceneCanvas>,
+    );
+
+    act(() => actions.trigger('enterPathEdit'));
+    expect(host.setEditingId).toHaveBeenLastCalledWith(id);
+    expect(editAnchors().editingId).toBe(id);
+
+    // The host ends the edit without telling the canvas.
+    editing = null;
+    expect(editAnchors().editingId).toBe('');
+
+    editing = id;
+    act(() => editAnchors().setEditingId(null));
+    expect(host.setEditingId).toHaveBeenLastCalledWith(null);
+    expect(editAnchors().editingId).toBe('');
   });
 });

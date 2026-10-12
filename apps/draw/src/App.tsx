@@ -79,7 +79,7 @@ import { loadDoc, PAPER_PRESETS, saveDoc } from './docPersistence';
 import { reportSessionSave } from './fileNotices';
 import { showFirstRunNotice } from './firstRunNotice';
 import { disableMachineFontOutlines, enableMachineFontOutlines } from './fonts';
-import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
+import { dispatchDoubleClickEntry, modalityShortcuts, modePathEdit } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { useModality } from './modality/useModality';
 import { OpacityHud } from './opacityScrub/OpacityHud';
@@ -345,14 +345,18 @@ function EditorWithSharedScene({
       if (id === undefined || rest.length > 0) return null;
       return (scene.get(id)?.data as { path?: unknown } | undefined)?.path != null ? id : null;
     },
-    startPathEdit: (): void => { actionsReg?.trigger('enterPathEdit'); },
     selection: (): readonly string[] => selection.get(),
   });
   const modalityKeys = useMemo(() => modalityShortcuts(modality.machine, {
     pathToEdit: () => pathEditEntry.current.pathToEdit(),
-    startPathEdit: () => pathEditEntry.current.startPathEdit(),
     selection: () => pathEditEntry.current.selection(),
   }), [modality.machine, pathEditEntry]);
+
+  // The path being anchor-edited is the path-edit mode's target, read from the machine.
+  const pathEdit = useMemo(() => modePathEdit(
+    modality.machine,
+    (id) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
+  ), [modality.machine, scene]);
 
   // ── Modality SceneCanvas callbacks ────────────────────────────────────────
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
@@ -649,6 +653,7 @@ function EditorWithSharedScene({
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
             onDoubleClick={onDoubleClick}
             modes={modality.machine.registry}
+            pathEdit={pathEdit}
             geometryProjection={{
               transform: (node, m) => {
                 const data = node.data as WeaselDrawData;
