@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  colorLiteralToCss,
   colorLiteralToHex,
+  cssColorLiteral,
   hexToColorLiteral,
   resolvePaletteColor,
   resolvePaletteColors,
@@ -195,5 +197,29 @@ describe('hexToColorLiteral', () => {
 
   it('returns null for anything else', () => {
     for (const bad of ['red', '#fff', '#12345', '#gg0000']) expect(hexToColorLiteral(bad)).toBeNull();
+  });
+});
+
+describe('cssColorLiteral', () => {
+  it('reads any color parseColor reads as an srgb literal', () => {
+    expect(cssColorLiteral('#f00')).toEqual({ space: 'srgb', coords: [1, 0, 0] });
+    expect(cssColorLiteral('rebeccapurple')).toEqual({ space: 'srgb', coords: [0.4, 0.2, 0.6] });
+    expect(cssColorLiteral('rgba(0, 0, 255, 0.5)')).toEqual({ space: 'srgb', coords: [0, 0, 1], alpha: 0.5 });
+  });
+
+  it('throws on a string that is not a color it can read', () => {
+    expect(() => cssColorLiteral('var(--x)')).toThrow();
+  });
+});
+
+describe('colorLiteralToCss', () => {
+  it('writes a space the kit converts as hex', () => {
+    expect(colorLiteralToCss({ space: 'srgb', coords: [1, 0, 0], alpha: 0.5 })).toBe('#ff000080');
+    expect(colorLiteralToCss({ space: 'oklch', coords: [1, 0, 0] })).toBe('#ffffff');
+  });
+
+  it('writes any other space as a color() function', () => {
+    expect(colorLiteralToCss({ space: 'display-p3', coords: [1, 0, 0] })).toBe('color(display-p3 1 0 0)');
+    expect(colorLiteralToCss({ space: 'display-p3', coords: [1, 0, 0], alpha: 0.25 })).toBe('color(display-p3 1 0 0 / 0.25)');
   });
 });

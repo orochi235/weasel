@@ -77,7 +77,9 @@ export {
 export {
   resolvePaletteColor,
   resolvePaletteColors,
+  colorLiteralToCss,
   colorLiteralToHex,
+  cssColorLiteral,
   hexToColorLiteral,
   type ColorLiteral,
   type ColorRef,
