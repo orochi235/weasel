@@ -54,6 +54,8 @@ export interface Target<T> {
 export interface TargetOwner {
   /** Cancels every animation on `s`. */
   stop(s: TargetState): void;
+  /** Reads `s`'s voices again now, where what they read from outside has changed. */
+  reread(s: TargetState): void;
 }
 
 /** What an animator keeps on a target it is moving. */
@@ -67,6 +69,9 @@ export interface TargetState<T = unknown> {
   owner: TargetOwner | null;
   /** True while its animations are being stopped without committing where they were. */
   discard: boolean;
+  /** The committed value's axes as its holds last read them; null while it has none. A hold
+   *  answers how far its value is from the committed one, so it is stale once that moves. */
+  heldAt: number[] | null;
   /** How many animations are moving it. */
   live: number;
   /** The sum of their offsets as the last frame read it. */
@@ -82,6 +87,7 @@ export function readTarget<T>(s: TargetState<T>): T {
   const committed = s.get();
   if (s.live === 0) return committed;
   const a = s.axes.to(committed);
+  if (s.heldAt && a.some((x, i) => x !== s.heldAt![i])) s.owner?.reread(s as unknown as TargetState);
   const slot = s.slot;
   for (let i = 0; i < a.length; i++) a[i] = a[i]! + (slot ? slot.cols[slot.at + i]! : 0) + s.adjust[i]!;
   return s.axes.from(a);
@@ -108,6 +114,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     axes,
     owner: null,
     discard: false,
+    heldAt: null,
     live: 0,
     slot: null,
     adjust: new Array<number>(axes.count).fill(0),

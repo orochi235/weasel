@@ -76,8 +76,17 @@ describe('a hold on a target', () => {
     act(() => { animator.hold({ target: b.target, value: 70 }); });
     step(16);
     b.committed = 500;
+    // A hold of plain values asks for no frames, so the reader has to see the change itself.
+    expect(b.target.read()).toBeCloseTo(70, 9);
+  });
+
+  it('shows a committed value that changed under a hold at a weight below 1', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70, weight: 0.5 }); });
     step(16);
-    expect(b.shown.at(-1)).toBeCloseTo(70, 9);
+    b.committed = 110;
+    expect(b.target.read()).toBeCloseTo(90, 9);
   });
 
   it('shows the lerp of two holds at weights w and 1 - w', () => {

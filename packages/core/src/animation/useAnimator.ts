@@ -146,8 +146,14 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const hub = new AnimatorEventHub();
     const codec = createCodec();
-    const targets = createTargetBook((s) => {
-      for (const a of [...animations.current.values()]) if (a.target === s) retire(a.id);
+    const targets = createTargetBook({
+      stop: (s) => {
+        for (const a of [...animations.current.values()]) if (a.target === s) retire(a.id);
+      },
+      reread: (s) => {
+        codec.touch(s);
+        reread();
+      },
     });
     const infoOf = (a: ActiveAnimation): AnimationInfo => {
       if (!a.info) {
