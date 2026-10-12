@@ -134,10 +134,16 @@ export interface BehaviorResult<TPose> {
   transform?: GroupTransform;
   /** @deprecated Return `transform` instead. Legacy primary-only pose override; supported via internal shim. */
   pose?: TPose;
-  /** Preview poses for individual dragged ids, each replacing the group
-   *  transform for that id this frame. For a behavior that will commit its
-   *  nodes where one translation cannot put them, such as a slot each. */
+  /** Preview poses for individual ids, each in its node's stored frame. For
+   *  a dragged id the pose replaces the group transform this frame: a
+   *  behavior that will commit its nodes where one translation cannot put
+   *  them, such as a slot each. Any other id is shown there for this frame
+   *  only, and committing it is the behavior's job. A later behavior's pose
+   *  for an id replaces an earlier one's. */
   poses?: ReadonlyMap<string, TPose>;
+  /** Ids whose preview paints at full opacity this frame rather than as a
+   *  ghost, added to those of the other behaviors. */
+  opaque?: Iterable<string>;
   snap?: SnapTarget<TPose> | null;
 }
 

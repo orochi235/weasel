@@ -299,6 +299,11 @@ Each action pins the proposed/result shape; pick the matching alias
 - `onMove` returns a partial result (`{ pose: refined }` for move) to
   refine the proposed pose; `void` leaves it alone. Behaviors run in
   array order — later behaviors see your refinement.
+- A move behavior's result can also carry `poses`, a preview pose per id in
+  that node's stored frame. For a dragged id it replaces the group transform
+  this frame; any other id is shown there for this frame only, and
+  committing it is the behavior's job. `opaque` names the ids whose preview
+  paints at full opacity rather than as a ghost.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
   or the action's default ops (move emits one `createTransformOp` per id).

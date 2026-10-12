@@ -93,7 +93,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const { session, readers } = begun;
       const publish: PreviewOverrideState = { scene: session.scene, previews: new Map(), overrideEntries: new Map() };
       const gliding = new Set<NodeId>();
-      let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: publish.previews };
+      let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: publish.previews, opaque: new Set() };
       let drop: DropPass | null = null;
       let lastWorld: { x: number; y: number } | null = null;
       let engaged = false;
@@ -160,7 +160,11 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         },
         previewIds: () => publish.previews.keys(),
         previewPose: (id: string) => publish.previews.get(id as NodeId) ?? null,
-        previewOpaqueIds: () => drop?.pass?.reflowIds ?? null,
+        previewOpaqueIds: () => {
+          const reflowed = drop?.pass?.reflowIds;
+          if (frame.opaque.size === 0) return reflowed ?? null;
+          return reflowed ? new Set([...frame.opaque, ...reflowed]) : frame.opaque;
+        },
       };
     },
   },

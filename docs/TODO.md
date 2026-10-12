@@ -961,8 +961,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P2) A layout drop is not a move behavior.** `actions/move/` is split by phase, with the layout
   pass and reparent-on-drop as commit paths inside it.
-  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md` is unbuilt: three
-  additions to the behavior contract, then both paths lifted out as `MoveBehavior`s.
+  The behavior contract now has what a layout drop needs (`MoveEnd.translateOps`, `onSettled`,
+  previews for any id). What is left, in
+  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md`, is lifting both paths
+  out as `MoveBehavior`s.
 
 - **(P2) `resize.ts` (698) and `rotate.ts` (353) are built like `move.ts` was.** Each is a scratch
   interface every helper takes whole and a `commitX` closure inside `start()`. They take the split
