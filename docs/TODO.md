@@ -1662,7 +1662,13 @@ only story runner in the repo.
   either side. A second test in that file ("titles a native story by its meta when forge's meta
   reaches it through a helper module, and re-decides when the helper changes") failed the same way
   on teitou at `8f86cc034`, the only failure of that run: the index had not followed the rewritten
-  helper inside its poll. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
+  helper inside its poll. On 2026-10-12 the file failed on the fleet at `af9f3db6b` and then alone on
+  orochi, where it is not load from the suite: 2 of 3 runs failed at `af9f3db6b`, up to five tests
+  each, and 1 of 2 at `29dfa85eb`, every failure a test that writes a file and waits 15 to 20 s for
+  the server to follow it. A site dev server on orochi that evening also served a file as it was
+  before an edit, and a `touch` did not wake it, so there the watcher missed the write. `browser`
+  timeouts on the same fleet runs added `SelectionPanel/SelectionPanel.selection.browser.test.tsx`
+  and `PrefSchemaEditor/PrefSchemaEditor.types.browser.test.tsx` to the list above. The suite runs the `browser` project beside eight
   others on one node. Since 2026-10-11 the `browser` project polls for 5 s, not the default 1 s, which
   three of these failures had outlasted (`PrefsRail.marks` twice, `compoundRows`); a 15 s test
   timeout or a stalled Playwright action is untouched by that. Not measured: whether the timeouts follow the node's load, and whether
