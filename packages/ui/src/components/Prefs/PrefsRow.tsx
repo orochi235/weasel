@@ -13,7 +13,7 @@ import {
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton } from './PrefActionButton';
 import { PrefMixed } from './PrefMixed';
-import { prefDrawsNoControl, PrefWords } from './PrefWords';
+import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';
 import { rowWidthOf } from './compound';
 import { entryConditions, type EntryAt } from './entry';
 import { ListLeaf } from './ListLeaf';
@@ -26,6 +26,7 @@ import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
+import { withCommitPolicy } from './commitPolicy';
 import { selectionAttrs } from './selection';
 import s from './Prefs.module.css';
 
@@ -123,7 +124,7 @@ export function PrefRow({ ctx, path, pref, at }: { ctx: WalkCtx; path: string; p
     <div className={s.rowSlot} {...selectionAttrs(path, ctx, true)}>
       <PropertyRow label={prefAliasName(alias)} description={alias.description} className={s.row}
         hint={marksHidden(ctx.hidden, path) ? <HiddenBadge /> : undefined}>
-        <span className={s.unrenderable}>(alias: no pref at {alias.of === '' ? 'an empty path' : alias.of})</span>
+        <span className={s.unrenderable}>{aliasOfNothing(alias)}</span>
       </PropertyRow>
     </div>
   );
@@ -325,14 +326,8 @@ function rowIsGroup(
   return field !== null && controlIsGroup(field);
 }
 
-/**
- * A leaf as one control's props, writing the way a form stores: what was
- * settled on, a number once it is entered and a color once its gesture ends.
- * Null for a leaf that is not one control.
- */
+/** A leaf as one control's props, writing when a form writes. Null for a leaf that is not one control. */
 function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined): PropertyControlProps | null {
   const field = prefFieldProps(ctx.pref, { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled });
-  return field?.kind === 'number' || field?.kind === 'color' ? { ...field, onInput: settledOnly } : field;
+  return field && withCommitPolicy(field, 'form');
 }
-
-const settledOnly = (): void => {};

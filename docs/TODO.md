@@ -896,12 +896,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   default should stand in there is not decided. (2) `PrefSchemaEditor`'s preview of a properties
   layout seeds its one node from the layout's own leaves and writes only under `pose` and
   `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
-  Its drag ghost draws a pointer with no `over`, as an alias of nothing. (3) labkit's
-  `ControlMatrix` takes no `over`, so a cell's popover finds an alias's leaf in the matrix's own
-  schema, and a lab resolves its instrument's config schema with none (`useConfigSchema`), so
-  that schema cannot hold a condition on another's setting. (4) An alias of nothing in a bar
-  inside a `PrefsForm` draws no cell on a horizontal bar, where a `Bar` draws
-  `(alias: no pref at …)`.
+  Its drag ghost draws a pointer with no `over`, as an alias of nothing. (3) A lab
+  resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
+  cannot hold a condition on another's setting. labkit's `ControlMatrix` takes `over` for its
+  conditions and for the popover an alias's cell opens, but the cell itself summarizes the
+  alias's own path, which holds nothing.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -910,11 +909,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
 
-- **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
-  drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
-  drag, and a tree row onto the Unplaced list as far as the hold. Not covered: that drop, a
-  palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
-  500 ms `RAIL_OPEN_MS` timer).
 
 - **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
   at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
@@ -923,34 +917,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   section in view should unfold is open; it would move the rail under a reader who is scrolling.
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
-- **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
-  is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the
-  scrollport's edge (measured: the heading's top at 10px with 10px of padding), where the
-  comment on the rule says the offset is measured from the edge. Whether rows scrolling under it
-  show in that strip has not been looked at. The `scroll-margin-top` on what a section holds
-  adds the padding for the same reason, and estimates the heading's line as `1lh` of the element
-  scrolled to, which leaves a few pixels of gap under the heading.
-
-- **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
-  selection there; a range has no clear meaning across pages, and what it should take is not decided.
-
-- **(P3) What `SelectionPanel`'s `selected` still does not reach.** A `pair` row and a top-level
-  section under a heading, in a tab, or in a panel mark and report now. Left: a cell a bar fuses
-  from a run of flags is marked only for its first leaf, so a later flag in `selected` marks
-  nothing (seen in a browser, in a section `as: 'bar'`); doing it needs the panel's `renderers`
-  where the marks are worked out, since a renderer decides whether flags fuse. A top-level
-  section drawn `as: 'bar'` or `as: 'fragment'`, or with no name, draws no heading, tab, or panel,
-  and its key marks and reports nothing, which is ruled to stay so (2026-10-11). Cmd or Ctrl on a press of
-  a tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
-  so the press arrives as the focus it causes, which carries no modifier.
-
-- **(P3) Loose ends beside the selection mark, none checked further.** The fragment mark in
-  `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
-  `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
-  react-aria tab also carries. That is a drawn bug too: `PrefsForm` puts `data-pref-path` on each
-  tab, so the open tab of a run always wears the selection mark, with nothing selected (seen in a
-  browser: `outline-style: solid`). `SelectionPanel` names its tab with `data-pref-rail` instead
-  and marks the tab's panel.
+- **(P3) What `SelectionPanel`'s `selected` still does not reach.** A `pair` row, a cell a bar fuses
+  from a run of flags, and a top-level section under a heading, in a tab, or in a panel mark and
+  report now. Left: a top-level section drawn `as: 'bar'` or `as: 'fragment'`, or with no name,
+  draws no heading, tab, or panel, and its key marks and reports nothing, which is ruled to stay
+  so (2026-10-11). Cmd or Ctrl on a press of a tab does not toggle, in the panel or in
+  `PrefsForm`: a react-aria tab keeps its pointer events, so the press arrives as the focus it
+  causes, which carries no modifier.
 
 - **(P3) Loose ends beside a number's unit as data.** A unit is data (`PrefLinearUnit`) or code,
   read through `resolvePrefUnit`. `PrefSchemaEditor` edits a number's default, and its auto value,
@@ -960,11 +933,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   whose accepted suffix is all digits moves to the front of the list, as an object's integer keys
   do.
 
-- **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
-  and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
-  is to be a pure macro, `prefRailItems` and `RailLayout`'s `ownOf` would treat its children as its parent's.
-  Its element has no box (`display: contents`), so a drag in `PrefSchemaEditor`'s preview cannot land beside or
-  into the group itself, only beside the rows inside it; the structure tree takes both.
+- **(P3) A fragment has no box for a preview drag to land on.** Its element is `display: contents`, so a drag in
+  `PrefSchemaEditor`'s preview cannot land beside or into an `as: 'fragment'` group itself, only beside the rows
+  inside it; the structure tree takes both.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the
@@ -1075,22 +1046,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   enum's `radio` is segments in labkit and `menu` is a select; `font-family` and `font-weight` get
   "no control for" in labkit because `labField` gates on `isBuiltinPref` before `prefFieldProps` can
   answer; a stored value that is absent is the default in the form, unset in the panel, and `??
-  default` in labkit, where `null` also reads as absent. The icon lookup against `ICON_PATHS` is
-  written four times (`Prefs/prefField.tsx`, `Bar/renderBarLeaf.tsx`, `useLeafAction.tsx`,
-  `SelectionPanel/renderLeaf.tsx`). Home: a `surface` argument on `prefFieldProps` (`'form' |
-  'panel' | 'lab'`) carrying these defaults in one table. labkit's "radio means segments" and "a
-  slider needs bounds" are the two to decide on purpose.
+  default` in labkit, where `null` also reads as absent. Home: a `surface` argument on
+  `prefFieldProps` (`'form' | 'panel' | 'lab'`) carrying these defaults in one table. labkit's
+  "radio means segments" and "a slider needs bounds" are the two to decide on purpose.
 
-- **(P3) When an edit is written differs by params surface, with no one place saying so.** A typed
-  number writes on blur, Enter, or step in `PrefsForm` and `SelectionPanel`, and on every keystroke
-  in labkit's `ControlPanel`; a slider writes on release in the form and on every move in the other
-  two; text writes per keystroke in the form, on blur or Enter in the panel, and debounced 150 ms in
-  labkit; a color writes once per gesture in the form and panel and on every move in labkit. Each is
-  a no-op `onInput` passed or withheld, and `settledOnly` is declared twice (`Prefs/PrefsRow.tsx`,
-  `SelectionPanel/renderLeaf.tsx`). The panel's comment gives undo steps as the reason text and
-  color settle, yet a slider there writes per move; whether `scene.batch` coalesces those into one
-  undo step is unverified. Home: the same `surface` argument on `prefFieldProps`, returning props
-  with the commit policy applied.
+- **(P3) Two things the params commit table does not settle.** `PARAMS_SETTLES` in
+  `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
+  a lab, and `withCommitPolicy` applies it for all three. (1) labkit's `ControlPanel` debounces
+  text by 150 ms in its own row (`useDebouncedText`), which the table has no word for: it reads
+  as "writes as it changes". (2) The panel's reason for settling text and color is that every
+  write is an undo step, yet a slider there writes per move; whether `scene.batch` coalesces
+  those into one undo step is unverified.
 
 - **(P3) Collecting a run of `tab` groups, and what each other `as` draws, is written five times.**
   `Prefs/PrefsPane.tsx`, `Prefs/ObjectLeaf.tsx`, `SelectionPanel/SelectionPanel.tsx` (`drawn`),
@@ -1104,52 +1070,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   labkit, and `PrefsPane` has no emptiness check. Home: a pure "children as runs" helper in
   `@weasel-js/prefs` (leaf, tab run, or group with its resolved `as`) that all five walk.
 
-- **(P3) Merging `pair`ed leaves into one row is written three times.** `pairRows` in
-  `SelectionPanel/model.ts`, `rowsOf` in `SelectionPanel/renderLeaf.tsx`, and `rowsFor` in labkit's
-  `ControlPanel.tsx`. `pairRows` drops `pair` from a row left with one leaf; the other two keep it,
-  so a lone paired leaf is labeled by the pair and loses its own name. `effectiveSections` filters
-  leaves after pairing and does not re-run that drop, so a multi-kind selection whose intersection
-  keeps half of a pair draws a row labeled for the pair holding one field, and a lone `toggle`
-  boolean there becomes a one-segment flag bar. Home: `pairRowsOf` in `@weasel-js/prefs` returning
-  the rows, not only the lookup map.
-
-- **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns, and gets a unit's
-  step wrong.** `packages/labkit/examples/schema-lab/prefsToFields.ts` converts `min` and `max` with
-  the unit's `toDisplay` and passes `step` through unconverted, so a leaf stored in radians and
-  shown in degrees with `step: 0.01` steps by 0.01 degrees; a decreasing conversion yields `min >
-  max`. `prefDisplayBounds` converts the step as a distance and swaps flipped ends.
-  `decodePrefValue` there applies an enum `encoding` and not a boolean one, and a `field` leaf
-  becomes free text. Not hit today, since the lab's schema is the rect's. The example exists to show
+- **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns.**
+  `packages/labkit/examples/schema-lab/prefsToFields.ts` turns each leaf of a property schema into
+  a `ConfigField` by hand, and a `field` leaf becomes free text there. The example exists to show
   the API, and `ControlPanel`'s `fields` prop is marked deprecated in favor of `schema`: pass the
   schema, which goes through `prefFieldProps`, and delete the file. Not a drop-in today: an
   instrument's `config` takes labkit's own `ConfigSchema` (`packages/labkit/src/config/types.ts`),
   and nothing turns a `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the
   example first needs a way for an instrument to declare its config as a pref schema.
 
-- **(P3) Three params files hold several owners each.**
-  `packages/labkit/src/controls/ControlPanel.tsx` (about 810 lines: panel, auto state, reset, row
-  dispatch, paired rows, debounced text row),
-  `packages/ui/src/components/Properties/PropertyField.tsx` (about 740: the row component and every
-  kind's control), `packages/ui/src/components/SelectionPanel/renderLeaf.tsx` (about 690: cells,
-  flag bar, built-in dispatch, object leaf), and `Properties.module.css` (about 1,575). Split:
-  `ControlRow`, `LeafRow`, and `PairedRow` into their own file, which `ControlMatrix` already
-  imports from the panel; one file per control kind under `Properties/`, each with its CSS;
-  `ObjectLeaf` out of `renderLeaf`.
-
 - **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed object or union attribute read-only.**
   `aggregateAttributes` drops an object, list, map, or union attribute from the form when the
   selected nodes disagree on it. `PrefsForm` now draws a mixed field and writes it at its own path,
   so the pane could show such an attribute field by field; its `onChange` would then have to take
   a field path, where `attrOf` reads `default.width` as an attribute name.
-
-- **(P3) `PrefsForm` rail layout: the pane draws a group's leaves before its groups, where columns
-  and list keep schema order.** `PrefsPane` (`packages/ui/src/components/Prefs/PrefsPane.tsx`)
-  filters leaves and fragments out ahead of the groups, so children `{ light: tab, note: leaf, dark:
-  tab }` draw as the row and then one `Light | Dark` strip in the rail, and as a `Light` strip, the
-  row, and a `Dark` strip elsewhere; a drop placeholder between two sections is drawn up among the
-  leaves. `paneChildren`'s doc says "in schema order", which the pane's own call does not honor. One
-  walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
-  changes what existing rail forms look like, which is why it is a decision.
 
 
 - **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On

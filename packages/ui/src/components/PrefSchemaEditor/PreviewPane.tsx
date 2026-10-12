@@ -62,6 +62,11 @@ export function PreviewPane({ schema, renderers, propertyRenderers, selected, on
 }
 
 /** A root drawn as a bar: the toolbar itself on a stage, run either way. */
+/** `how` with its range named as the editor names nodes, less any path that names none. */
+function rangeIn(how: PrefSelectHow, treePath: (path: string) => string | null | undefined): PrefSelectHow {
+  return how.range ? { ...how, range: how.range.flatMap((path) => treePath(path) ?? []) } : how;
+}
+
 function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, over }: GroupPreviewProps) {
   const [vertical, setVertical] = useState(false);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
@@ -74,7 +79,7 @@ function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRe
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown}>
         <PrefsForm className={s.previewBar} schema={schema} values={NO_VALUES} renderers={renderers} orientation={vertical ? 'vertical' : 'horizontal'}
           showHidden showEmpty markHidden drop={drop} selected={marked} over={over}
-          onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
+          onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
           onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
         <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
       </div>
@@ -124,7 +129,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         showEmpty markHidden drop={drop}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
         selected={marked}
-        onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
+        onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle {...size} min={360} max={900} ariaLabel="Resize preview" />
       <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
@@ -187,7 +192,7 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, ove
           renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden over={over}
           onSelect={onSelect && ((path, how) => {
             const at = treePathOfPanel(schema, path);
-            if (at !== null) onSelect(at, how);
+            if (at !== null) onSelect(at, rangeIn(how, (row) => treePathOfPanel(schema, row)));
           })} />
       </div>
     </section>

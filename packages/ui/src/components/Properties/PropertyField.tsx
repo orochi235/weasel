@@ -1,5 +1,6 @@
 import { type ReactNode, useId } from 'react';
-import { ControlBody, nameOf } from './fieldControls';
+import { ControlBody } from './fieldControls';
+import { nameOf } from './nameOf';
 import type { PropertyControlProps } from './fieldTypes';
 import { PropertyRow, type PropertyRowLayout, type PropertyRowVariant } from './PropertyRow';
 import { type PropertyMetricProps } from './metrics';

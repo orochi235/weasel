@@ -438,9 +438,6 @@
   "packages/ui/src/components/Properties/CurveField.tsx": {
     "longestFunction": 150
   },
-  "packages/ui/src/components/Properties/fieldControls.tsx": {
-    "lines": 414
-  },
   "packages/ui/src/components/Select/Select.tsx": {
     "lines": 496,
     "longestFunction": 127
