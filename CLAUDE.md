@@ -185,6 +185,25 @@ and the demo's own blurb says so. Anything else gets rebuilt on the system.
 
 Demos under `apps/site/demos/` are **terse and single-purpose** — each one exists to show a specific kit feature in the smallest plausible form. If a demo accumulates code that isn't directly pertinent to the feature it's demonstrating (custom hit-testers when defaults exist, hand-rolled adapter wiring, per-consumer index inversions), treat that as a signal that the kit's defaults / helpers should absorb the boilerplate. Being able to trim a demo or a simple consumer use-case is a legitimate driver for kit changes — there's limited value in showing consumers how to reimplement parts of the kit they could just find in source.
 
+## Worktrees and the fleet
+
+**Work that takes more than one commit, and anything handed to agents, happens in a worktree of
+its own and merges to `main` when its fleet run is green.** The main checkout's working tree
+stays clean. A one-commit side request can still go straight to `main`, committed by path. On
+2026-10-11 several sessions made 729 commits to `main` from the one checkout, each having run
+only its own test files; nothing checked the combination, and a fleet run of `main` failed on
+another session's uncommitted stylesheet.
+
+**A fleet run tests a commit: `npm run test:fleet`, never a bare `onto test`.** `onto test` ships
+the working tree, so from a checkout someone else is editing it tests their half-finished files
+and blames the commit. `test:fleet` checks the commit out into a throwaway worktree first. Run
+it on the branch before merging and on `main` after.
+
+**The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
+read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
+this is what says a commit would fail there. `npm run test:gate` runs it here, in about two
+minutes; run it before merging a branch.
+
 ## Test and typecheck commands
 
 Core's tests run under the root vitest config, not the package: `npx vitest run --project=core`.
