@@ -56,7 +56,104 @@ describe('a hold on a target', () => {
     expect(b.committed).toBe(10);
   });
 
-  it('carries an offset tween on top of it', () => {
+  it('covers the move a tween makes in the committed value', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70 }); });
+    step(0);
+    act(() => { animator.tween({ target: b.target, to: 50, ms: 1000, easing: linear }); });
+    expect(b.committed).toBe(50);
+    expect(b.target.read()).toBeCloseTo(70, 9);
+    step(0);
+    step(500);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 6);
+    step(500);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 6);
+  });
+
+  it('shows the share of a tween its weight leaves, with no jump as the tween starts', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70, weight: 0.5 }); });
+    step(0);
+    expect(b.target.read()).toBeCloseTo(40, 9);
+    act(() => { animator.tween({ target: b.target, to: 50, ms: 1000, easing: linear }); });
+    expect(b.target.read()).toBeCloseTo(40, 9);
+    step(0);
+    step(500);
+    expect(b.shown.at(-1)).toBeCloseTo(50, 6);
+    const out = [0];
+    b.target.readInto(out);
+    expect(out[0]).toBeCloseTo(50, 6);
+    step(500);
+    expect(b.shown.at(-1)).toBeCloseTo(60, 6);
+  });
+
+  it('covers a spring toward a destination, and carries one pushed where it stands', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    const c = box(10);
+    act(() => {
+      animator.hold({ target: b.target, value: 70 });
+      animator.hold({ target: c.target, value: 70 });
+    });
+    step(0);
+    act(() => {
+      animator.spring({ target: b.target, to: 50 });
+      animator.spring({ target: c.target, to: 10, velocity: 500 });
+    });
+    expect(b.target.read()).toBeCloseTo(70, 9);
+    step(0);
+    step(100);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 6);
+    expect(c.shown.at(-1)).toBeGreaterThan(75);
+  });
+
+  it('does not move the value on screen as a spring under it loses its destination', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70, weight: 0.5 }); });
+    step(0);
+    let spring!: ReturnType<typeof animator.physics<number>>;
+    act(() => { spring = animator.physics({ target: b.target, to: 50 }); });
+    step(0);
+    step(100);
+    const was = b.target.read();
+    expect(was).toBeGreaterThan(41);
+    act(() => { spring.setTarget(null); });
+    expect(b.target.read()).toBeCloseTo(was, 6);
+    // The committed value stopped where the spring had brought it, which the hold shows half of.
+    expect(b.committed).toBeCloseTo(2 * was - 70, 6);
+    step(16);
+    expect(Math.abs(b.shown.at(-1)! - was)).toBeLessThan(5);
+  });
+
+  it('carries a coast, which has no destination, on top of it', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    act(() => { animator.hold({ target: b.target, value: 70 }); });
+    step(0);
+    act(() => { animator.decay({ target: b.target, velocity: 1000, friction: 0.001 }); });
+    step(0);
+    step(100);
+    expect(b.shown.at(-1)).toBeGreaterThan(75);
+    expect(b.committed).toBe(10);
+  });
+
+  it('covers a tween only on the axes it holds', () => {
+    const { animator, step } = setup();
+    let committed = [10, 10];
+    const target = createTarget<number[]>({ get: () => committed, set: (v) => { committed = v; } });
+    act(() => { animator.hold({ target, value: [70, 70], axes: [0] }); });
+    step(0);
+    act(() => { animator.tween({ target, to: [50, 50], ms: 1000, easing: linear }); });
+    step(0);
+    step(500);
+    expect(target.read()[0]).toBeCloseTo(70, 6);
+    expect(target.read()[1]).toBeCloseTo(30, 6);
+  });
+
+  it('carries a tween from a value away from the committed one on top of it', () => {
     const { animator, step } = setup();
     const b = box(10);
     act(() => { animator.hold({ target: b.target, value: 70 }); });
@@ -235,6 +332,95 @@ describe('a hold on a target', () => {
     expect(b.committed).toBeCloseTo(70, 6);
   });
 
+  it('takes the share of a tween it covered with it when it is released', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    const c = box(10);
+    let hb!: ReturnType<typeof animator.hold>;
+    let hc!: ReturnType<typeof animator.hold>;
+    act(() => {
+      hb = animator.hold({ target: b.target, value: 70 });
+      hc = animator.hold({ target: c.target, value: 70, weight: 0.5 });
+    });
+    step(0);
+    act(() => {
+      animator.tween({ target: b.target, to: 50, ms: 1000, easing: linear });
+      animator.tween({ target: c.target, to: 50, ms: 1000, easing: linear });
+    });
+    step(0);
+    step(500);
+    act(() => { hb.release(); hc.release(); });
+    // The full hold showed none of the tween, so none of it is left; the half hold showed half.
+    expect(b.target.read()).toBeCloseTo(70, 6);
+    expect(c.target.read()).toBeCloseTo(50, 6);
+    step(250);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 6);
+    expect(c.shown.at(-1)).toBeCloseTo(55, 6);
+    step(250);
+    step(16);
+    expect(b.shown.at(-1)).toBeCloseTo(70, 6);
+    expect(c.shown.at(-1)).toBeCloseTo(60, 6);
+    expect(b.committed).toBeCloseTo(70, 6);
+    expect(c.committed).toBeCloseTo(60, 6);
+  });
+
+  it('commits a tween canceled after such a release where it was showing', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    let h!: ReturnType<typeof animator.hold>;
+    act(() => { h = animator.hold({ target: b.target, value: 70, weight: 0.5 }); });
+    step(0);
+    let tw!: ReturnType<typeof animator.tween>;
+    act(() => { tw = animator.tween({ target: b.target, to: 50, ms: 1000, easing: linear }); });
+    step(0);
+    step(500);
+    act(() => { h.release(); });
+    step(250);
+    act(() => { tw.cancel(); });
+    expect(b.committed).toBeCloseTo(55, 6);
+    expect(b.target.read()).toBeCloseTo(55, 6);
+    expect(b.target.active).toBe(false);
+  });
+
+  it('shows a tween where it is when released without committing', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    let h!: ReturnType<typeof animator.hold>;
+    act(() => { h = animator.hold({ target: b.target, value: 70 }); });
+    step(0);
+    act(() => { animator.tween({ target: b.target, to: 50, ms: 1000, easing: linear }); });
+    step(0);
+    step(500);
+    act(() => { h.release({ commit: false }); });
+    expect(b.target.read()).toBeCloseTo(30, 6);
+    step(500);
+    expect(b.shown.at(-1)).toBeCloseTo(50, 6);
+  });
+
+  it('commits a tween canceled under it where the tween was, behind the hold', () => {
+    const { animator, step } = setup();
+    const b = box(10);
+    const c = box(10);
+    act(() => {
+      animator.hold({ target: b.target, value: 70 });
+      animator.hold({ target: c.target, value: 70, weight: 0.5 });
+    });
+    step(0);
+    let tb!: ReturnType<typeof animator.tween>;
+    let tc!: ReturnType<typeof animator.tween>;
+    act(() => {
+      tb = animator.tween({ target: b.target, to: 50, ms: 1000, easing: linear });
+      tc = animator.tween({ target: c.target, to: 50, ms: 1000, easing: linear });
+    });
+    step(0);
+    step(500);
+    act(() => { tb.cancel(); tc.cancel(); });
+    expect(b.committed).toBeCloseTo(30, 6);
+    expect(b.target.read()).toBeCloseTo(70, 6);
+    expect(c.committed).toBeCloseTo(30, 6);
+    expect(c.target.read()).toBeCloseTo(50, 6);
+  });
+
   it('reads right between frames as animations on the target start and stop around a touch', () => {
     const { animator, step } = setup();
     const b = box(0);
@@ -305,10 +491,13 @@ describe('a hold on a target', () => {
   it('hands what a canceled offset left under it to the next animation with a destination', () => {
     const { b, h, animator, step } = canceledUnderHold();
     act(() => { animator.tween({ target: b.target, to: 50, ms: 1000, easing: linear }); });
-    // It travels from 20, the committed 10 and the 10 left beside it, to 50.
-    expect(b.target.read()).toBeCloseTo(40, 6);
+    // It travels from 20, the committed 10 and the 10 left beside it, to 50. The hold covers
+    // the move from 10 to 50, and the 10 stays on top until the tween has brought it in.
+    expect(b.target.read()).toBeCloseTo(80, 6);
     step(0);
-    step(1000);
+    step(500);
+    expect(b.shown.at(-1)).toBeCloseTo(75, 6);
+    step(500);
     step(16);
     expect(b.shown.at(-1)).toBeCloseTo(70, 6);
     act(() => { h.release({ commit: false }); });

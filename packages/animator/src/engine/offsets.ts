@@ -1,4 +1,4 @@
-import { readTarget, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
+import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
 
 const TAU = Math.PI * 2;
 
@@ -42,8 +42,53 @@ export function absorb<T>(s: TargetState<T>, delta: readonly number[]): void {
   s.set(s.axes.from(plus(s.axes.to(s.get()), delta)));
 }
 
-/** Leaves `delta`, what a stopping animation had left to travel, where the target keeps showing
- *  it: in the committed value, or beside it while a hold stands in front of that. */
+/**
+ * How much of an animation's offset is the move its destination made in the committed value,
+ * per axis: that move, from `committed` to `to`, over the whole offset, `start`. The rest is a
+ * `from` away from the committed value, or a push, which shows on top of a hold.
+ */
+export function shareBehind<T>(
+  axes: TargetAxes<T>, committed: readonly number[], to: readonly number[], start: readonly number[],
+): number[] {
+  return travel(axes, committed, to).map((m, i) => (start[i] === 0 ? 0 : m / start[i]!));
+}
+
+/** As `shareBehind` for a spring, whose offset does not shrink in proportion: all of it on an
+ *  axis where its destination moves the committed value by `move`, and else what it was. */
+export const wholeWhere = (move: readonly number[], was: readonly number[]): number[] =>
+  move.map((m, i) => (m === 0 ? was[i]! : 1));
+
+export const times = (a: readonly number[], b: readonly number[]): number[] => a.map((x, i) => x * b[i]!);
+
+/** Puts an animation behind `s`'s holds. `left` answers what is left of its move. */
+export function goBehind<T>(s: TargetState<T>, left: () => readonly number[]): Behind {
+  const b: Behind = { left, kept: null };
+  s.behind.add(b);
+  return b;
+}
+
+/** Takes `b` out from behind `s`'s holds, and answers how much of `left` was still to show. */
+export function comeOut<T>(s: TargetState<T>, b: Behind, left: readonly number[]): number[] {
+  s.behind.delete(b);
+  if (b.kept) {
+    s.dimmed = false;
+    for (const other of s.behind) if (other.kept) s.dimmed = true;
+  }
+  return b.kept ? times(left, b.kept) : left.slice();
+}
+
+/** Commits an animation where it stopped: `left` of its move into the committed value, and
+ *  the rest of its offset, `own`, where `keep` leaves it. */
+export function commitOffset<T>(s: TargetState<T>, own: readonly number[], left: readonly number[], shown: readonly number[]): void {
+  const top = minus(own, left);
+  if (s.held === 0) { keep(s, plus(shown, top)); return; }
+  if (shown.some((x) => x !== 0)) absorb(s, shown);
+  if (top.some((x) => x !== 0)) keep(s, top);
+}
+
+/** Leaves `delta`, what a stopping animation was showing on top of the committed value's own
+ *  move, where the target keeps showing it: in the committed value, or beside it while a hold
+ *  stands in front of that. */
 export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
   if (s.discard) return;
   if (s.held === 0) absorb(s, delta);
@@ -117,6 +162,8 @@ export function createTargetBook(owner: TargetOwner): TargetBook {
       s.owner = null;
       s.slot = null;
       s.beside = null;
+      s.behind.clear();
+      s.dimmed = false;
       s.adjust.fill(0);
       live.delete(s);
       if (s.show) rested.add(s);

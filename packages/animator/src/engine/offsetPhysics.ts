@@ -1,7 +1,7 @@
 import { stateOf } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { axesFor, bump, keep, minus, norm, plus, takeUp, travel } from './offsets';
+import { absorb, axesFor, bump, comeOut, commitOffset, goBehind, minus, norm, plus, takeUp, times, travel, wholeWhere } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
 
 /**
@@ -37,8 +37,10 @@ export function startOffsetPhysics<T>(
     velocity ??= ctx.velocityUnder(o.cancelKey, s as never);
     ctx.interrupt(o.cancelKey, seed);
   }
-  const committed = dest ? takeUp(s) : ax.to(s.get());
+  const before = ax.to(s.get());
+  const committed = dest ? takeUp(s) : before;
   const start = travel(ax, given ?? committed, dest ?? committed);
+  let share = dest ? wholeWhere(travel(ax, before, dest), zeros()) : zeros();
 
   ctx.targets.attach(s as never);
   if (o.to != null) s.set(o.to);
@@ -49,14 +51,17 @@ export function startOffsetPhysics<T>(
     stiffness, damping, mass,
   });
   bump(s as never, start, 1);
+  const behind = goBehind(s, () => times(codec.own(id)!.value, share));
 
   let left = false;
   const leave = (commit: boolean): void => {
     if (left) return;
     left = true;
     const own = codec.own(id);
+    const moved = own ? behind.left() : [];
+    const shown = comeOut(s, behind, moved);
     if (own) {
-      if (commit) keep(s, own.value);
+      if (commit) commitOffset(s, own.value, moved, shown);
       bump(s as never, own.value, -1);
     }
     codec.stop(id);
@@ -97,14 +102,21 @@ export function startOffsetPhysics<T>(
       const own = codec.own(id)!;
       if (next == null) {
         if (dest == null) return;
+        // The committed value stops where the spring had brought it; the coast carries the rest.
+        const moved = behind.left();
+        absorb(s, behind.kept ? times(moved, behind.kept) : moved);
         dest = null;
-        codec.recue(id, own.value, own.velocity, null);
+        share = zeros();
+        codec.recue(id, minus(own.value, moved), own.velocity, null);
+        bump(s as never, moved, -1);
         return;
       }
       const to = axesFor(ax, next, 'setTarget');
       if (!(stiffness > 0)) throw new Error(`${kind}: setTarget needs a positive stiffness`);
       // The committed value moves under the voice, which shifts by as much the other way.
-      const shifted = plus(own.value, travel(ax, ax.to(s.get()), to));
+      const move = travel(ax, ax.to(s.get()), to);
+      const shifted = plus(own.value, move);
+      share = wholeWhere(move, share);
       s.set(next);
       dest = to;
       codec.recue(id, shifted, own.velocity, zeros());

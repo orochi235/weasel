@@ -272,15 +272,24 @@ Two on one target combine, by two rules:
 - **A hold stands in.** `animator.hold({ target, value, weight })` shows a value
   in place of the committed one: a drag preview, a timeline's sampled track, a
   rig clip. Several holds on a target are alternatives, mixed by weight; weights
-  short of 1 leave the rest to the committed value; offsets add on top. On an
+  short of 1 leave the rest to the committed value. On an
   angle axis the holds meet at their average direction by weight, so two turn the
   short way toward each other. A hold given `axes` holds only those, so an arm
   solved by IK sits beside the clips holding the rest of a rig
   (`jointAxes(skeleton, names)`).
+- **A hold covers the committed value on its way too.** The move a destination
+  makes in the committed value is behind the hold, by the hold's weight on each
+  axis: `tween({ target, to })` under a full hold shows nothing, and under one at
+  0.5 shows half its travel, with no jump as it starts. What an animation shows
+  apart from that move rides on top of the hold at full: a coast, a spring pushed
+  where it stands, and a `from` away from the committed value, such as a recoil
+  over a rig clip.
 
 Leaving never moves the value on screen: a canceled animation commits where it
-was, and so does a released hold unless told not to. One canceled under a hold,
-which stands in front of the committed value, keeps what it had left on screen
+was, and so does a released hold unless told not to. A hold released that way
+takes with it the share it covered of each move behind it, so a tween under a
+full hold stays where the hold put the value and does not then play out. What
+was riding on top of a hold when its animation stopped stays on screen
 beside the hold; it is committed when the target's last hold goes, or taken up by
 the next animation given a destination. Under one `cancelKey` a new
 animation still interrupts the old, and a spring starts at the velocity of what

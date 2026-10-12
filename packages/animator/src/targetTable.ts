@@ -78,7 +78,7 @@ export function createTargetTable(opts: TargetTableOptions): TargetTable {
       flush();
       for (const row of marks) {
         const s = states[row];
-        if (!s || s.live === 0 || (s.held === 0 && !s.beside)) marks.delete(row);
+        if (!s || s.live === 0 || (s.held === 0 && !s.beside && !s.dimmed)) marks.delete(row);
       }
     },
     fill(columns: LaneColumns | null) {
