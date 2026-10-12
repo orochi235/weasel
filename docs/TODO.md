@@ -1416,14 +1416,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   a column or a `rowLabel` prop has to supply one) and a button style that fits the 14px handle
   column, checked in a browser.
 
-- **(P3) Callout: re-anchoring dispatches a fake `resize` on `window`.** A callout tracking a scene
-  node through a pan dispatches `new Event('resize')` on every `anchorRect` change
-  (`packages/ui/src/components/Callout/Callout.tsx`), so every resize listener on the page runs once
-  per pan frame while the callout is open (a callout held shut with `isOpen={false}` no longer
-  dispatches). The comment says it is deliberate for want of a public `updatePosition` on React
-  Aria's Popover. Left: changing the anchor span's size by a sub-pixel instead, which trips React
-  Aria's own `ResizeObserver` without touching `window`; whether that repositions needs a browser.
-
 - **(P3) ui/routing: "is this key press aimed at a text field" is answered twice.** `isTextEntry`
   (`packages/ui/src/components/BandEditor/track.ts`) says yes for input, textarea, select, and
   `isContentEditable`; `isEditableTarget` (`packages/routing/src/interactions/keyHelpers.ts`,

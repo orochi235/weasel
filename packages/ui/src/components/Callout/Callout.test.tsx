@@ -89,57 +89,40 @@ describe('Callout', () => {
     expect(anchor.style.height).toBe('20px');
   });
 
-  it('moves its anchor and asks RAC to reposition when anchorRect changes', () => {
-    // A consumer tracking a scene node recomputes the rect on pan/zoom. RAC
-    // recomputes overlay position on window resize, so the re-anchor rides on
-    // that; without the nudge a pure translation leaves the popover behind
-    // (the anchor's ResizeObserver only fires when its *size* changes).
+  it('moves its anchor, and changes its width by under a pixel so RAC repositions, when anchorRect moves', () => {
+    // RAC's ResizeObserver on the anchor is what repositions the popover, and jsdom has none: the width change
+    // is a proxy for it here, and Callout.reanchor.browser.test.tsx watches the popover follow.
     const onResize = vi.fn();
     window.addEventListener('resize', onResize);
-    const { rerender } = render(
-      <Callout isOpen anchorRect={{ x: 10, y: 10, width: 40, height: 20 }} title="Here">
-        Anchored
-      </Callout>,
+    const at = (x: number, y: number) => (
+      <Callout isOpen anchorRect={{ x, y, width: 40, height: 20 }} title="Here">Anchored</Callout>
     );
-    onResize.mockClear();
-
-    rerender(
-      <Callout isOpen anchorRect={{ x: 90, y: 60, width: 40, height: 20 }} title="Here">
-        Anchored
-      </Callout>,
-    );
-
+    const { rerender } = render(at(10, 10));
     const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
+    const widths = [anchor.style.width];
+    rerender(at(90, 60));
     expect(anchor.style.left).toBe('90px');
     expect(anchor.style.top).toBe('60px');
-    expect(onResize).toHaveBeenCalled();
+    widths.push(anchor.style.width);
+    rerender(at(120, 60));
+    widths.push(anchor.style.width);
+    expect(widths[1]).not.toBe(widths[0]);
+    expect(widths[2]).not.toBe(widths[1]);
+    for (const w of widths) expect(Math.abs(parseFloat(w) - 40)).toBeLessThan(0.1);
+    expect(onResize).not.toHaveBeenCalled();
     window.removeEventListener('resize', onResize);
   });
 
-  it('does not nudge when the anchor rect is unchanged', () => {
+  it('leaves the anchor as it is when the anchor rect is unchanged', () => {
     const rect = { x: 10, y: 10, width: 40, height: 20 };
-    const onResize = vi.fn();
-    window.addEventListener('resize', onResize);
     const { rerender } = render(
       <Callout isOpen anchorRect={rect} title="Here">Anchored</Callout>,
     );
-    onResize.mockClear();
-    // New object, same numbers — the effect keys on the values, not identity.
+    const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
+    const before = anchor.style.width;
+    // New object, same numbers: the nudge keys on the values, not identity.
     rerender(<Callout isOpen anchorRect={{ ...rect }} title="Here">Anchored</Callout>);
-    expect(onResize).not.toHaveBeenCalled();
-    window.removeEventListener('resize', onResize);
-  });
-
-  it('does not nudge for a re-anchor while it is closed', () => {
-    const onResize = vi.fn();
-    window.addEventListener('resize', onResize);
-    const { rerender } = render(
-      <Callout isOpen={false} anchorRect={{ x: 10, y: 10, width: 40, height: 20 }} title="Here">Anchored</Callout>,
-    );
-    onResize.mockClear();
-    rerender(<Callout isOpen={false} anchorRect={{ x: 90, y: 60, width: 40, height: 20 }} title="Here">Anchored</Callout>);
-    expect(onResize).not.toHaveBeenCalled();
-    window.removeEventListener('resize', onResize);
+    expect(anchor.style.width).toBe(before);
   });
 
   it('carries a tone beside the popover’s own positioning', () => {
