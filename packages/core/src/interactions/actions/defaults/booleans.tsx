@@ -41,7 +41,7 @@ const ICON_FOR: Record<BooleanOp, ReactNode> = {
 };
 
 /** What a stroked operand gives the built-in Pathfinder actions. */
-const PATHFINDER_STROKES: BooleanStrokes = 'ignore';
+const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
 
 // ---------------------------------------------------------------------------
 // Static descriptors

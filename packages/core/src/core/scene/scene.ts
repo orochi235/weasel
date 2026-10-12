@@ -2,7 +2,8 @@ import { createHistory, type HistorySelection, type Journal, type SerializedHist
 import type { Op } from 'core/ops/types';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { createArrangeOp, type ArrangeArgs } from 'core/ops/arrange';
-import { dwarn } from 'debug/flag';
+import { bindOpToAdapter, bindOpToHistoryAdapter } from './boundOps';
+import { CARRY_OP, createCarriedPoses, type CarryArgs } from './carriedPoses';
 import { sameDependsOn } from './dependents';
 import { withKitRegistry } from './kitRegistry';
 import {
@@ -135,38 +136,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   // Accessor for the adapter restored external ops apply against.
   let historyAdapterAccessor: (() => unknown) | null = null;
 
-  /** Wrap a globally-rebuilt external op so apply resolves the history
-   *  adapter lazily — wiring order vs restoreHistory doesn't matter. An
-   *  unset accessor makes the op a debug-warned no-op, and an apply that
-   *  throws (e.g. the wired adapter lacks a method the op calls) degrades
-   *  the same way — never throws mid-undo, matching the placeholder
-   *  degradation policy. (The engine pops entries before applying, so an
-   *  uncaught throw would corrupt the stacks.) See `bindOpToAdapter` for
-   *  the live `applyBatch` path (fixed call-site adapter). */
-  function bindOpToHistoryAdapter(op: Op): Op {
-    return {
-      name: op.name,
-      args: op.args,
-      label: op.label,
-      get coalesceKey() { return op.coalesceKey; },
-      elideNoop: op.elideNoop,
-      apply: () => {
-        const get = historyAdapterAccessor;
-        if (!get) {
-          dwarn('scene', `restored op "${op.name ?? '?'}" has no history adapter — skipping (setHistoryAdapter was not wired)`);
-          return 'noop';
-        }
-        try {
-          return op.apply(get());
-        } catch (err) {
-          dwarn('scene', `restored op "${op.name ?? '?'}" failed against the history adapter — skipping: ${String(err)}`);
-          return 'noop';
-        }
-      },
-      invert: () => bindOpToHistoryAdapter(op.invert()),
-    };
-  }
-
   // The scene's undo/redo engine. Recorded ops are `makeOp` wrappers over
   // `registered` handlers, so the engine's adapter argument is unused (the
   /** The transient set of active ids. Deliberately not part of `state`:
@@ -198,14 +167,21 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     // then places its no-op placeholder. (The engine's own global-registry
     // fallback never fires for scene histories: this hook already
     // consulted it.)
-    rebuildOp: (name, args) => {
-      if (registered.has(name)) return makeOp(name, args);
-      // Its writes are the scene's own, so it replays without an adapter.
-      if (name === 'arrange') return createArrangeOp(args as ArrangeArgs, undefined, writePose);
-      const rebuilt = rebuildGlobalOp(name, args);
-      return rebuilt === null ? null : bindOpToHistoryAdapter(rebuilt);
-    },
+    rebuildOp,
   });
+
+  function rebuildOp(name: string, args: unknown): Op | null {
+    if (registered.has(name)) return makeOp(name, args);
+    // Its writes are the scene's own, so it replays without an adapter.
+    if (name === 'arrange') return createArrangeOp(args as ArrangeArgs, undefined, writePose);
+    if (name === CARRY_OP) {
+      const { op, poses } = args as CarryArgs<TPose>;
+      const inner = rebuildOp(op.name, op.args);
+      return inner === null ? null : carried.rebuilt(inner, poses);
+    }
+    const rebuilt = rebuildGlobalOp(name, args);
+    return rebuilt === null ? null : bindOpToHistoryAdapter(rebuilt, () => historyAdapterAccessor);
+  }
 
   let version = 0;
   // Keyed by node object: every entry into `state.nodes` is a fresh object and
@@ -254,6 +230,11 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   function writePose(id: string, pose: unknown): void {
     scene.setPose(asNodeId(id), pose as TPose);
   }
+
+  const carried = createCarriedPoses<TPose>(
+    (id) => state.nodes.has(id),
+    (id, pose) => scene.setPose(id, pose),
+  );
 
   function refuseUntracked(verb: string): void {
     if (untrackedDepth > 0) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
@@ -319,25 +300,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         if (suppressRecording) logApplied(kind, payload, dir === 'rev');
       },
       invert: () => makeOp(kind, payload, dir === 'fwd' ? 'rev' : 'fwd'),
-    };
-  }
-
-  /** Rebind an external op to the adapter supplied at the `applyBatch` call
-   *  site — the scene's engine was constructed without an adapter, so ops
-   *  it stores and later replays must close over the right one. Forwards
-   *  the apply return value (no-op detection) and preserves
-   *  `coalesceKey`/`name`/`args`/`label` for coalescing and eviction. See
-   *  `bindOpToHistoryAdapter` for RESTORED entries (lazy accessor). */
-  function bindOpToAdapter(op: Op, adapter: unknown): Op {
-    return {
-      name: op.name,
-      args: op.args,
-      label: op.label,
-      // Read when asked: an arrange op has no key until it has applied.
-      get coalesceKey() { return op.coalesceKey; },
-      elideNoop: op.elideNoop,
-      apply: () => op.apply(adapter),
-      invert: () => bindOpToAdapter(op.invert(), adapter),
     };
   }
 
@@ -445,7 +407,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         // Either engine stores the ops and replays them later, so they are
         // rebound to this call's adapter: the scene's own engine, and any
         // journal opened on it, was built without one.
-        const bound = ops.map((op) => bindOpToAdapter(op, adapter));
+        const bound = ops.map((op) => carried.recording(bindOpToAdapter(op, adapter)));
         if (journal) journal.applyBatch(bound, label);
         // Native path: one engine entry, coalescible across applyBatch
         // calls via the ops' own coalesceKeys.
@@ -604,7 +566,12 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         }
         noteChange(id);
       }
+      carried.wrote(id, node.pose, pose);
       executeAndLog('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
+    },
+
+    carry(id, pose) {
+      if (carried.carries()) scene.setPose(id, pose);
     },
 
     setLayer(id, layer) {
