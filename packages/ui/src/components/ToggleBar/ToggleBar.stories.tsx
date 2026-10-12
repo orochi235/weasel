@@ -18,28 +18,34 @@ const alignItems = [
 ];
 
 export const Single: Story = {
-  render: () => {
+  args: { ariaLabel: 'Text alignment' },
+  render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
-    return <ToggleBar items={alignItems} value={v} onChange={setV} ariaLabel="Text alignment" />;
+    return <ToggleBar items={alignItems} value={v} onChange={setV} ariaLabel={ariaLabel} height={height} size={size} variant={variant} />;
   },
 };
 
 export const Boolean2Segment: Story = {
-  render: () => {
+  args: { ariaLabel: 'Power' },
+  render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('on');
     return (
       <ToggleBar
         items={[{ value: 'off', label: 'Off' }, { value: 'on', label: 'On' }]}
         value={v}
         onChange={setV}
-        ariaLabel="Power"
+        ariaLabel={ariaLabel}
+        height={height}
+        size={size}
+        variant={variant}
       />
     );
   },
 };
 
 export const Multiple: Story = {
-  render: () => {
+  args: { ariaLabel: 'Text style' },
+  render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string[]>(['b']);
     return (
       <ToggleBar
@@ -51,7 +57,10 @@ export const Multiple: Story = {
         ]}
         value={v}
         onChange={setV}
-        ariaLabel="Text style"
+        ariaLabel={ariaLabel}
+        height={height}
+        size={size}
+        variant={variant}
       />
     );
   },
@@ -87,7 +96,7 @@ export const MultipleWithMixed: Story = {
 };
 
 export const Disabled: Story = {
-  render: () => {
+  render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('a');
     return (
       <ToggleBar
@@ -98,22 +107,28 @@ export const Disabled: Story = {
         ]}
         value={v}
         onChange={setV}
+        ariaLabel={ariaLabel}
+        height={height}
+        size={size}
+        variant={variant}
       />
     );
   },
 };
 
 export const Tall: Story = {
-  render: () => {
+  args: { height: 32 },
+  render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
-    return <ToggleBar items={alignItems} value={v} onChange={setV} height={32} />;
+    return <ToggleBar items={alignItems} value={v} onChange={setV} ariaLabel={ariaLabel} height={height} size={size} variant={variant} />;
   },
 };
 
 export const Minimal: Story = {
-  render: () => {
+  args: { variant: 'minimal' },
+  render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
-    return <ToggleBar items={alignItems} value={v} onChange={setV} variant="minimal" />;
+    return <ToggleBar items={alignItems} value={v} onChange={setV} ariaLabel={ariaLabel} height={height} size={size} variant={variant} />;
   },
 };
 
