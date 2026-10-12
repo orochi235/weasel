@@ -14,7 +14,10 @@ export type { PaperSizeKey };
 export interface CommandBarProps {
   // File I/O — SVG round-trip via @weasel-js/svg.
   onSaveSvg(): void;
+  /** Replace the document with a picked file. */
   onOpenSvg(): void;
+  /** Add a picked file to the document. */
+  onImportSvg(): void;
   /** Start a fresh document at the picked paper size. Removing the old nodes
    *  is one undoable entry; the view refits only when the paper size changes. */
   onNew(size: PaperSizeKey): void;
@@ -46,6 +49,7 @@ export function CommandBar(p: CommandBarProps) {
           variant="minimal"
           items={[
             { value: 'open', label: 'Open', onAction: p.onOpenSvg, tooltip: 'Open SVG…' },
+            { value: 'import', label: 'Import', onAction: p.onImportSvg, tooltip: 'Add an SVG to this document…' },
             { value: 'save', label: 'Save', onAction: p.onSaveSvg, tooltip: 'Save as SVG' },
           ]}
         />

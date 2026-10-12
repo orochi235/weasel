@@ -5,8 +5,6 @@ import type { ModeMachine } from './machine';
 export interface ModeEntry {
   /** The path the selection offers to edit, or null when it offers none. */
   pathToEdit(): string | null;
-  /** Make that path's anchors editable on the canvas. */
-  startPathEdit(): void;
   /** The ids selected now. */
   selection(): readonly string[];
 }
@@ -38,10 +36,7 @@ export function modalityShortcuts(machine: ModeMachine, entry?: ModeEntry): Cont
       canEnter: (id: string) => target(id) !== undefined,
       enter: (id: string) => {
         const targetId = target(id);
-        if (targetId === undefined) return;
-        // The order a double-click takes: the canvas first, then the mode.
-        if (id === 'path-edit') entry.startPathEdit();
-        machine.enterMode(id, { targetId });
+        if (targetId !== undefined) machine.enterMode(id, { targetId });
       },
     } : {}),
     exit: () => machine.exitMode(),

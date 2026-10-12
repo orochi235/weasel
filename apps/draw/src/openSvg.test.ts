@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { asNodeId, createScene } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { openSvgText } from './openSvg';
+import { importSvgText, openSvgFile, openSvgText } from './openSvg';
 import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
 
 function sceneWithOneShape() {
@@ -52,6 +52,37 @@ describe('openSvgText', () => {
   });
 });
 
+describe('a clipped group', () => {
+  const CLIPPED = '<clipPath id="c"><rect x="10" y="10" width="20" height="40"/></clipPath>'
+    + '<g clip-path="url(#c)"><rect width="100" height="100" fill="#ff0000"/></g>';
+  const clip = { path: { kind: 'rect', x: 10, y: 10, width: 20, height: 40 }, fill: null };
+
+  it('opens as a container holding its clip', () => {
+    const scene = sceneWithOneShape();
+    openSvgText(scene, svg(CLIPPED), 'a.svg');
+    expect(scene.get(scene.roots[0])).toMatchObject({ kind: 'container', data: clip });
+  });
+
+  it('imports as a container holding its clip', () => {
+    const scene = sceneWithOneShape();
+    importSvgText(scene, svg(CLIPPED));
+    expect(scene.get(scene.roots[1])).toMatchObject({ kind: 'container', data: clip });
+  });
+});
+
+describe('importSvgText', () => {
+  it('adds the file to the document, as one undo entry labeled Import SVG', () => {
+    const scene = sceneWithOneShape();
+    importSvgText(scene, svg(TWO));
+    expect(scene.roots).toHaveLength(3);
+    expect(scene.roots[0]).toBe(asNodeId('old'));
+    expect(scene.historyEntries().at(-1)!.label).toBe('Import SVG');
+
+    scene.undo();
+    expect(scene.roots).toEqual([asNodeId('old')]);
+  });
+});
+
 describe('pickSvgFileNamed', () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -61,5 +92,51 @@ describe('pickSvgFileNamed', () => {
       this.dispatchEvent(new Event('change'));
     });
     expect(await pickSvgFileNamed()).toEqual({ name: 'art.svg', text: '<svg/>' });
+  });
+});
+
+describe('openSvgFile', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const pick = (file: File | null): void => {
+    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (this: HTMLInputElement) {
+      Object.defineProperty(this, 'files', { value: file ? [file] : [] });
+      this.dispatchEvent(new Event(file ? 'change' : 'cancel'));
+    });
+  };
+  const target = (scene = sceneWithOneShape()) => ({
+    scene,
+    setFilename: vi.fn(),
+    setPaperSize: vi.fn(),
+    setBackgroundColor: vi.fn(),
+    onClearJournalCache: vi.fn(),
+  });
+
+  it('replaces the document with the picked file and names it after the file', async () => {
+    pick(new File([svg(TWO, 'wd:paperSize="a4"')], 'art.svg', { type: 'image/svg+xml' }));
+    const t = target();
+    await openSvgFile(t);
+    expect(t.scene.get(asNodeId('old'))).toBeUndefined();
+    expect(t.scene.roots).toHaveLength(2);
+    expect(t.setFilename).toHaveBeenCalledWith('art.svg');
+    expect(t.setPaperSize).toHaveBeenCalledWith('a4');
+    expect(t.setBackgroundColor).toHaveBeenCalledWith('#ffffff');
+    expect(t.onClearJournalCache).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the paper size when the file declares none', async () => {
+    pick(new File([svg(TWO)], 'art.svg'));
+    const t = target();
+    await openSvgFile(t);
+    expect(t.setPaperSize).not.toHaveBeenCalled();
+  });
+
+  it('leaves the document alone when the picker is canceled', async () => {
+    pick(null);
+    const t = target();
+    await openSvgFile(t);
+    expect(t.scene.roots).toEqual([asNodeId('old')]);
+    expect(t.setFilename).not.toHaveBeenCalled();
+    expect(t.onClearJournalCache).not.toHaveBeenCalled();
   });
 });

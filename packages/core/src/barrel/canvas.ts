@@ -10,6 +10,7 @@ export { SceneCanvas, DEFAULT_HANDLE_SIZE } from '../canvas/SceneCanvas';
 export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
 export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
+export type { PathEditHost } from '../canvas/SceneCanvas/pathEditHost';
 export { hostAnchorRect, hostAnchorCss } from '../canvas/hostAnchor';
 export type { HostAnchorInput, HostAnchorAlign, HostAnchorOffset } from '../canvas/hostAnchor';
 export { useHostAnchor } from '../canvas/useHostAnchor';

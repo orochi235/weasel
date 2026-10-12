@@ -6,6 +6,7 @@ function props(over: Partial<CommandBarProps> = {}): CommandBarProps {
   return {
     onSaveSvg: vi.fn(),
     onOpenSvg: vi.fn(),
+    onImportSvg: vi.fn(),
     onNew: vi.fn(),
     ...over,
   };
@@ -26,6 +27,14 @@ describe('CommandBar', () => {
     openMenu(/New/);
     fireEvent.click(screen.getByRole('menuitem', { name: 'A4' }));
     expect(p.onNew).toHaveBeenCalledWith('a4');
+  });
+
+  it('imports from its own button, beside Open', () => {
+    const p = props();
+    render(<CommandBar {...p} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    expect(p.onImportSvg).toHaveBeenCalledTimes(1);
+    expect(p.onOpenSvg).not.toHaveBeenCalled();
   });
 
   it('opens a debug surface in a new tab', () => {

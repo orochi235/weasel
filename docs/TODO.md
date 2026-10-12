@@ -248,12 +248,11 @@ have shipped. What remains:
   (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls `pointInPath` without knowing
   whether the node has a fill; a closed unfilled outline is already picked that way.
 
-- **(P3) WeaselDraw: an imported clipped group is clipped to the clip's box, not its outline.**
-  `svgNodesToKitDrafts` now gives a `<g clip-path>` container the clip as its `data`, an unpainted
-  path the scene clips to, and `unpackSvgFiles` and `svgNodesFromKit` carry it both ways.
-  `svgNodesToSceneDrafts` (`apps/draw/src/svgInterop.ts`) passes that `data` on, but the import in
-  `apps/draw/src/Toolbar.tsx` still adds every container with `data: {}`; it has to add
-  `draft.data`. Nothing has drawn a clipped import in a browser yet.
+- **(P3) WeaselDraw: no browser has drawn an imported clipped group.** A `<g clip-path>` reaches
+  the scene as a container whose `data` is the clip, an unpainted path the scene clips to, by Open,
+  Import, and a dropped file alike, and the unit tests stop at that data. What is left is a
+  `*.browser.test` that opens one and reads a pixel inside the group's box and outside the clip's
+  outline.
 
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** A `<tspan>` with its own `x` and
   a `dy` or new `y` starts a line (`packages/svg/src/tspanLines.ts`), and the pitch the lines state
@@ -1239,15 +1238,6 @@ only story runner in the repo.
   declaration, not a pointer. Type references do cross: core's pages link into the sibling's.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
-- **(P2) draw: Open adds the file to the current document instead of replacing it, and keeps the old
-  filename.** The replace is built and tested and not yet called: `openSvgText` in
-  `apps/draw/src/openSvg.ts` clears the scene and adds the file's nodes in one "Open" undo entry,
-  and returns the picked file's name, its paper size, and its background (white when it names
-  none); `pickSvgFileNamed` in `svgInterop.ts` returns the name beside the text. What is left is the
-  call: `onOpenSvg` in `apps/draw/src/Toolbar.tsx` still holds the appending loop under "Import SVG",
-  and `Toolbar` has no `setFilename` prop to give the name to. With that wired, `pickSvgFile` has no
-  caller and goes. A separate Import that appends is not built.
-
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
   selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the
@@ -1259,37 +1249,21 @@ only story runner in the repo.
   its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
   canvas's adapter, so the seat has to say where a scene-level write gets animated.
 
-- **(P3) draw: no toast host and no first-run notice.** Save failures and SVG import warnings go
-  to `console.warn` (`onWarn` in `apps/draw/src/App.tsx`) where a toast should carry them. The
-  command palette opens on Cmd+K and has no button in the command bar: `app.commands` has no
-  icon, so it sits in no bar group. (Moved from the deleted `apps/draw/TODO.md`.)
-
-- **(P3) draw: two owners for "which mode is the editor in".** The kit holds `textEdit.editingId`
-  and `editAnchors.editingId`; the app holds a second mode machine
-  (`apps/draw/src/modality/machine.ts`) whose `text-edit` and `path-edit` modes say the same thing.
-  Two effects with `prev` refs in `apps/draw/src/App.tsx` reconcile text editing in each direction,
-  and their comments record two shipped bugs from the split; path editing has no reconciling effect
-  at all, and the kit papers over it by reading the mode
-  (`packages/core/src/canvas/SceneCanvas.tsx`, the `effectivePathEditingId` block). A double-click
-  is acted on by both the kit's `enterPathEdit` binding and the app's `onDoubleClick` observer. One
-  owner: either the machine's `enterMode` / `exitMode` are the only callers of `startEdit` /
-  `setEditingId`, or the kit's edit state drives the mode registry and the machine keeps only
-  journals.
+- **(P3) draw: two owners for "is a text edit open".** The kit's `useSceneTextEdit` holds
+  `editingId`; the app's mode machine (`apps/draw/src/modality/machine.ts`) holds a `text-edit` mode
+  that says the same thing. Two effects with `prev` refs in `apps/draw/src/App.tsx` reconcile them in
+  each direction, and their comments record two shipped bugs from the split. Path editing has one
+  owner now: `<SceneCanvas pathEdit>` reads the open path from the machine's path-edit target
+  (`modality/pathEditHost.ts`). Text cannot take the same shape as it stands, because the session
+  is real state inside the hook (the overlay, the caret, the pending commit): the hook needs an
+  `onEnd` for the ends it decides itself (click-away, the node going away), and its `onDoubleClick`
+  has to hand the hit and the caret seed to the machine instead of starting the edit. A double-click
+  on a path is still acted on by both the kit's `enterPathEdit` binding and the app's
+  `onDoubleClick` observer; they now reach the same machine call and the second is a no-op. No
+  browser has driven the path-edit change: the tests are jsdom, which cannot hit-test a canvas.
 
 - **(P3) draw: `EditorWithSharedScene` in `apps/draw/src/App.tsx` is one 500-line component.** The
   file is split by job; this component is what is left to split.
-
-- **(P3) draw: four preferences change nothing.** `view.gridVisible`, `view.snapToGrid`, and
-  `view.gridDensity` are in the Preferences dialog, and the grid reads none of them: `App.tsx` holds
-  `gridVisible` and `snapToGrid` in `useState(false)` and draws at a constant `GRID_SPACING` of 20,
-  where the prefs default to shown and 72. `drawing.pathFillRule` has no reader either. Wiring them
-  changes what a first run looks like (grid on, at 72), so the defaults are a call to make first;
-  not done in the 2026-10-12 pass because the grid state sits in the `appCommands` block another
-  branch was rewriting.
-
-- **(P3) draw: "no paint" is defined more than once.** `{ kind: 'none' }` in the color context's
-  `ActivePaint`, `null` in node data, with `toFillStyle` in `ActiveSwatches.tsx` translating;
-  `ActivePaint` could be `FillStyle | null` and the translation would go.
 
 ---
 

@@ -19,6 +19,7 @@ import {
   PropertyList,
   SelectionPanel,
   SidebarPanel,
+  solidColorOf,
   SwatchStrip,
   useSceneLayerList
 } from '@weasel-js/ui';
@@ -248,7 +249,7 @@ export function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
   // A click paints the focused slot, a shift- or right-click the other one;
   // each lands on the active paint and on the selection.
   const apply = (slot: 'fill' | 'stroke', v: string | null): void => {
-    const paint: ActivePaint = v === null ? { kind: 'none' } : { kind: 'solid', color: v };
+    const paint: ActivePaint = v === null ? null : { fill: 'solid', color: v };
     if (slot === 'fill') colors.setFill(paint);
     else colors.setStroke(paint);
     edits[slot].commit(v === null ? { paint: null } : { color: v });
@@ -263,7 +264,7 @@ export function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
     >
       <SwatchStrip
         aria-label="Palette"
-        value={focusedPaint.kind === 'solid' ? focusedPaint.color : focusedPaint.kind === 'none' ? null : undefined}
+        value={focusedPaint === null ? null : solidColorOf(focusedPaint)}
         columns={10}
         onChange={(v) => apply(colors.focused, v)}
         onAltChange={(v) => apply(other, v)}
