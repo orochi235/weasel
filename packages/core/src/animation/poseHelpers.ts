@@ -4,7 +4,7 @@ import type { Op } from 'core/ops/types';
 import type {
   AnimationHandle, Animator, EasingSpec, SpringPresetName, StaggerDelay, StaggerOptions,
 } from './types';
-import { stateOf, type Target } from './target';
+import type { Target } from './target';
 
 /** The part of an adapter `tweenPose` and `springPose` use. Any `SceneAdapter` is one, and so is
  *  the adapter `sceneToAdapter` and `useSceneAdapter` build. */
@@ -91,7 +91,7 @@ export function tweenPose<TPose>(
   const cancelKey = poseKey(opts.id);
   const target = adapter.poseTarget?.(opts.id, opts.geometry);
   if (target) {
-    const committed = stateOf(target).get();
+    const committed = target.committed();
     if (recordOp) recordTransformOp(adapter, opts.id, committed, opts.to, label);
     const lerp = opts.geometry?.lerp;
     return animator.tween<TPose>({
@@ -144,7 +144,7 @@ export function springPose<TPose>(
     // Read ahead of the op: the spring starts from the pose on screen, wherever that commit
     // and the interrupted moves leave the committed one.
     const shown = target.read();
-    if (recordOp) recordTransformOp(adapter, opts.id, stateOf(target).get(), opts.to, label);
+    if (recordOp) recordTransformOp(adapter, opts.id, target.committed(), opts.to, label);
     return animator.spring<TPose>({
       target,
       from: shown,

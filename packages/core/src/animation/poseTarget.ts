@@ -2,7 +2,7 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/pose
 import { documentPose, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
 import { axesOf } from './engine/axes';
-import { createTarget, stateOf, type Target, type TargetAxes } from './target';
+import { createTarget, type Target, type TargetAxes } from './target';
 
 /** What {@link createPoseTarget} takes. */
 export interface PoseTargetOptions<TPose> {
@@ -211,7 +211,7 @@ export function scenePoseTarget<TPose>(
   const held = made.get(id) as Target<TPose> | undefined;
   // A pose that has changed shape at rest, a polygon given more points, needs axes made for it.
   const fits = !held || held.active || !node
-    || poseAxes(by, documentPose(scene, node))?.count === stateOf(held).axes.count;
+    || poseAxes(by, documentPose(scene, node))?.count === held.axisCount;
   if (held && fits) return held;
   if (!node) return undefined;
   // A node removed mid-flight keeps answering with the last pose it had.

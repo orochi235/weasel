@@ -57,6 +57,12 @@ export interface Target<T> {
   readInto(out: AxisBuffer, at?: number): void;
   /** How many axes `readInto` writes. */
   readonly axisCount: number;
+  /** How its value maps to numbers. */
+  readonly axes: TargetAxes<T>;
+  /** The committed value: what shows once nothing is moving it. */
+  committed(): T;
+  /** Writes the committed value. Animations moving the target go on adding to the new one. */
+  commit(value: T): void;
   /** Whether any animation is moving it. */
   readonly active: boolean;
   /**
@@ -204,6 +210,9 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     read: () => readTarget(s),
     readInto: (out, at = 0) => readTargetInto(s, out, at),
     axisCount: axes.count,
+    axes,
+    committed: opts.get,
+    commit: opts.set,
     get active() { return s.live > 0; },
     stop(o) {
       const owner = s.owner;

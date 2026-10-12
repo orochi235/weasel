@@ -1,7 +1,7 @@
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { stateOf, type Target, type TargetAxes, type TargetState } from '../target';
+import type { Target, TargetAxes } from '../target';
 import type { AnimationHandle } from '../types';
 import { poseKey } from '../poseHelpers';
 import { clampCorner, coastKey, sameBounds, type Coast, type CoastArgs } from './coast';
@@ -9,7 +9,6 @@ import { clampCorner, coastKey, sameBounds, type Coast, type CoastArgs } from '.
 interface Rider<TPose> {
   id: string;
   target: Target<TPose>;
-  state: TargetState<TPose>;
   /** The committed pose as the coast last left it. Anything else there is another writer's. */
   seen: TPose;
   /** Null once this node has stopped. */
@@ -50,11 +49,11 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
   const riders = new Map<string, Rider<TPose>>();
 
   const ours = (r: Rider<TPose>): boolean =>
-    adapter.getNode(r.id) !== undefined && sameBounds(d.getBounds(r.state.get()), d.getBounds(r.seen));
+    adapter.getNode(r.id) !== undefined && sameBounds(d.getBounds(r.target.committed()), d.getBounds(r.seen));
 
   const launch = (r: Rider<TPose>, from: TPose | undefined, vx: number, vy: number): void => {
-    const at = from ?? r.state.get();
-    const velocity = poseVelocity(r.state.axes, d, at, vx, vy);
+    const at = from ?? r.target.committed();
+    const velocity = poseVelocity(r.target.axes, d, at, vx, vy);
     const corner = d.getBounds(at);
     r.startX = corner.x;
     r.startY = corner.y;
@@ -74,7 +73,7 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
 
   const halted = (r: Rider<TPose>): void => {
     r.handle = null;
-    r.seen = r.state.get();
+    r.seen = r.target.committed();
     for (const other of riders.values()) if (other.handle) return;
     commitFlick();
   };
@@ -85,10 +84,10 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
    * `own`: a spring carries that to nothing from the coast's speed, joining the node's moves.
    */
   const drop = (r: Rider<TPose>, own: TPose): void => {
-    const left = r.state.get();
+    const left = r.target.committed();
     riders.delete(r.id);
     r.handle?.cancel();
-    r.state.set(left);
+    r.target.commit(left);
     if (r.target.active && adapter.getNode(r.id) !== undefined) {
       const moved = d.getBounds(left);
       const was = d.getBounds(r.seen);
@@ -99,7 +98,7 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
         target: r.target,
         from: own,
         to: left,
-        velocity: poseVelocity(r.state.axes, d, own, vx, vy),
+        velocity: poseVelocity(r.target.axes, d, own, vx, vy),
         cancelKey: poseKey(r.id),
         interrupt: false,
       });
@@ -116,8 +115,8 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
     const vy = hitY ? 0 : r.vy - drag * (corner.y - r.startY);
     // Canceled, it commits the pose it reached; the edge is where it belongs.
     r.handle?.cancel();
-    r.state.set(translatePoseViaDescriptor(r.state.get(), nx - corner.x, ny - corner.y, d));
-    r.seen = r.state.get();
+    r.target.commit(translatePoseViaDescriptor(r.target.committed(), nx - corner.x, ny - corner.y, d));
+    r.seen = r.target.committed();
     if (a.boundary === 'continue' && Math.hypot(vx, vy) > 0) launch(r, undefined, vx, vy);
     else halted(r);
   }
@@ -133,7 +132,7 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
       for (const r of riders.values()) {
         r.handle?.cancel();
         r.handle = null;
-        r.seen = r.state.get();
+        r.seen = r.target.committed();
       }
       commitFlick();
     },
@@ -146,15 +145,14 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
     for (const r of riders.values()) {
       if (!ours(r)) continue;
       const from = ctx.origin.get(r.id) ?? r.seen;
-      ops.push(createTransformOp<TPose>({ id: r.id, from, to: r.state.get(), label: 'flick' }));
+      ops.push(createTransformOp<TPose>({ id: r.id, from, to: r.target.committed(), label: 'flick' }));
     }
     // The document already holds each pose; this is what makes the flick one undoable step.
     if (ops.length > 0) adapter.applyOps?.(ops, 'flick');
   }
 
   for (const [id, target] of targets) {
-    const state = stateOf(target);
-    riders.set(id, { id, target, state, seen: state.get(), handle: null, startX: 0, startY: 0, vx: 0, vy: 0 });
+    riders.set(id, { id, target, seen: target.committed(), handle: null, startX: 0, startY: 0, vx: 0, vy: 0 });
   }
   // Each starts from its release pose, which the document does not hold: the drag was a preview.
   for (const r of [...riders.values()]) launch(r, ctx.current.get(r.id), a.vx, a.vy);
