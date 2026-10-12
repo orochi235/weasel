@@ -1579,12 +1579,14 @@ only story runner in the repo.
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. By a grep of `render: () =>`, that is about 265 of the 508
-  stories, and 54 story files have no story that takes args. A story drawing one
+  would read them. By a grep of `render: () =>`, that is about 230 of the 508
+  stories, and 39 story files have no story that takes args. A story drawing one
   instance in a plain configuration is the kind to rewrite around `args`, the way
   `Tooltip`'s `Basic` is; a matrix or a hand-built composition stays as it is.
-  `ToggleBar`'s stories pass four named args and not the whole set, because its
-  props are a union on `mode`.
+  Where a component's props are a union or generic, as `ToggleBar`'s and
+  `PropertyField`'s are, its stories pass a few named args and the other controls
+  do nothing. Where a story holds a value in state, as `Timeline`'s playhead and
+  `Jog`'s index are, the control only sets where it starts.
 
 - **(P3) A control read from a string-union prop lists its options in the compiler's order.**
   `controlFor` (`packages/forge/src/vite/propTypes.ts`) takes a union's members as the checker
