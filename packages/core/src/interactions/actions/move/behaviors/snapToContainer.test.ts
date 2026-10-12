@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { snapToContainer } from './snapToContainer';
 import type { GestureContext, GroupTransform } from '../../../gestures/types';
 import { moveEnd } from '../../testUtils';
+import { createTransformOp } from 'core/ops/transform';
 
 const tt = (dx: number, dy: number): GroupTransform => ({ kind: 'translate', dx, dy });
 import type { SnapTarget } from 'core/adapters/types';
@@ -21,6 +22,12 @@ function makeCtx(): GestureContext<Pose> {
     scratch: {},
   };
 }
+
+/** A `MoveEnd` whose translate is the action's for a plain pose: from where
+ *  each node started to where the drag put it. */
+const translating = (ctx: GestureContext<Pose>) =>
+  moveEnd((ids) => [...ids].map((id) =>
+    createTransformOp<Pose>({ id, from: ctx.origin.get(id)!, to: ctx.current.get(id)!, label: 'Move' })));
 
 describe('snapToContainer', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -104,7 +111,7 @@ describe('snapToContainer', () => {
     ctx.current.set('p2', { x: 21, y: 1 }).set('p3', { x: 41, y: 1 });
     ctx.adapter = { getParent: (id: string) => (id === 'p2' ? 'box' : 'oldParent') } as any;
     b.onMove!(ctx, tt(1, 1));
-    const ops = b.onEnd!(ctx, moveEnd()) as any[];
+    const ops = b.onEnd!(ctx, translating(ctx)) as any[];
     const moves = ops.filter((op) => op.name === 'transform').map((op) => [op.args.id, op.args.to]);
     // p3 has no slot of its own, so it lands where the preview showed it.
     expect(moves).toEqual([['p1', { x: 2, y: 3 }], ['p2', { x: 12, y: 3 }], ['p3', { x: 41, y: 1 }]]);
