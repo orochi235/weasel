@@ -8,14 +8,13 @@ import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
-import { ActionList } from './ActionList';
 import type { EditorAction } from './editorActions';
 import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
 import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
-import { SettingsTree } from './SettingsTree';
+import { ShelfLists } from './Shelf';
 import { StoredArea } from './StoredArea';
 import { UnplacedTree } from './UnplacedTree';
 import { toTreeNodes } from './structureRows';
@@ -51,9 +50,11 @@ export interface StructurePaneProps {
   onExpandedChange: Dispatch<SetStateAction<Set<string>>>;
   /** Where in the editor's bar the pane draws the tools that add and remove nodes; `null` until the bar is up. */
   toolSlot: HTMLElement | null;
+  /** Where in the editor's shelf the pane draws the lists dragged from into the tree; `null` until the shelf is up. */
+  shelfSlot: HTMLElement | null;
   /** Nodes the schema does not hold yet, listed under the tree with what it holds on no page, to be dragged into it. */
   unplaced?: PrefGroup;
-  /** The actions the host has, listed under the tree to be dragged into it as prefs that fire them. */
+  /** The actions the host has, listed in the shelf to be dragged into the tree as prefs that fire them. */
   actions?: readonly EditorAction[];
   /** Somewhere else a drag from this pane may end: the live preview. */
   outside?: DropOutside;
@@ -65,7 +66,7 @@ export interface StructurePaneProps {
   readOnly?: boolean;
   /** The dialog a layout's pointers name settings in. Given, the schema is a layout: what sits directly under its
    *  root is a row of it and not unplaced, a pointer's row is named as its setting, and nothing adds a pref or a page.
-   *  Its settings are listed under the tree, to be dragged into it as pointers. */
+   *  Its settings are listed in the shelf, to be dragged into the tree as pointers. */
   over?: SchemaRoot;
   /** What a host draws on a node's row before its kind, by the node's path in this tree. */
   rowMark?: (path: string) => ReactNode;
@@ -114,7 +115,7 @@ function aliasTargetOf(schema: SchemaRoot, selected: readonly string[], lead: st
   return { parentPath: parent, index: sibs.indexOf(keyOf(lead)) + 1 };
 }
 
-export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, shelfSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
   const pageless = over !== undefined;
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
@@ -299,16 +300,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
             selected={selected} onPick={onPick} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
         </StoredArea>
       )}
-      {over !== undefined && !readOnly && (
-        <StoredArea title="Settings" size="settingsHeight">
-          <SettingsTree over={over} layout={schema} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-        </StoredArea>
-      )}
-      {actions !== undefined && actions.length > 0 && (
-        <StoredArea title="Actions" size="actionsHeight">
-          <ActionList actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-        </StoredArea>
-      )}
+      <ShelfLists slot={shelfSlot} over={readOnly ? undefined : over} layout={schema} actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
     </section>
   );
 }
