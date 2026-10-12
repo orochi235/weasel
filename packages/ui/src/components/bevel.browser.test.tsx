@@ -36,7 +36,7 @@ describe('with no hook set', () => {
     );
     const button = css(screen.getByRole('button', { name: 'Go' }));
     expect(button.backgroundImage).toMatch(/^linear-gradient/);
-    expect(button.boxShadow.split('rgb').length - 1).toBe(5);
+    expect(button.boxShadow.split('rgb').length - 1).toBe(6);
     expect(css(screen.getByRole('button', { name: 'Go' }), '::before').opacity).toBe('1');
     const frame = css(screen.getByRole('textbox', { name: 'Name' }).parentElement!);
     expect(frame.boxShadow).toBe('none');
