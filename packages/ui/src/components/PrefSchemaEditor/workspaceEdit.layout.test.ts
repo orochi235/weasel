@@ -3,7 +3,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { addNode, setAttribute } from './schemaEdit';
 import { assetOf, type Workspace } from './workspace';
 import { CODE, pointer, WORKSPACE } from './workspace.fixtures';
-import { editAsset, NO_MOVES } from './workspaceEdit';
+import { editAsset, moveInAsset, NO_MOVES, renameInAsset } from './workspaceEdit';
 
 const flag: PrefLeaf = { kind: 'boolean', name: 'Wrap', description: '', default: false };
 const codeOf = (workspace: Workspace) => assetOf(workspace, 'code')!.root as PrefGroup;
@@ -41,5 +41,37 @@ describe('editAsset on a layout', () => {
   it('takes a setting in a dialog as before', () => {
     const next = editAsset(WORKSPACE, 'settings', addNode(WORKSPACE.assets[0]!.root, 'view', 'wrap', flag), NO_MOVES);
     expect(next).not.toBe(WORKSPACE);
+  });
+});
+
+describe('a layout that already holds a setting, inside a section', () => {
+  const root: PrefGroup = { name: 'Code', children: { grid: pointer('view.grid'), rows: { name: 'Rows', as: 'section', children: { wrap: flag } } } };
+  const held: Workspace = { assets: WORKSPACE.assets.map((a) => (a.id === 'code' ? { ...a, root } : a)) };
+  const rowsOf = (workspace: Workspace, key = 'rows') => (codeOf(workspace).children[key] as PrefGroup).children;
+
+  it('takes a new key for the section over it', () => {
+    const next = renameInAsset(held, 'code', 'rows', 'main');
+    expect(Object.keys(codeOf(next).children)).toEqual(['grid', 'main']);
+    expect(rowsOf(next, 'main').wrap).toBe(flag);
+  });
+
+  it('moves it to the root', () => {
+    const next = moveInAsset(held, 'code', ['rows/wrap'], { parentPath: null, index: 0 }).workspace;
+    expect(Object.keys(codeOf(next).children)).toEqual(['wrap', 'grid', 'rows']);
+  });
+
+  it('still takes no second setting, beside it or anywhere else', () => {
+    expect(edit(held, addNode(root, 'rows', 'more', { ...flag }))).toBe(held);
+    expect(edit(held, addNode(root, null, 'more', { ...flag }))).toBe(held);
+  });
+
+  it('still refuses a pointer turned into a setting where it sits', () => {
+    expect(edit(held, { ...root, children: { ...root.children, grid: flag } })).toBe(held);
+    expect(edit(held, { ...root, children: { ...root.children, grid: { ...flag, name: 'Grid' } } })).toBe(held);
+  });
+
+  it('still edits the setting where it sits', () => {
+    const next = edit(held, setAttribute(root, 'rows/wrap', 'name', 'Wrap lines'));
+    expect(rowsOf(next).wrap).toMatchObject({ name: 'Wrap lines' });
   });
 });
