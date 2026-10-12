@@ -30,9 +30,12 @@ export {
   PIXELS,
   parseUnitExpr,
   resolveUnitExpr,
+  axisUnits,
+  formatAxes,
+  resolveAxes,
 } from '@weasel-js/quantity';
 export type { Unit, UnitEntry, UnitScale, UnitSystem, UnitValue } from '@weasel-js/quantity';
-export type { UnitExpr, UnitExprContext } from '@weasel-js/quantity';
+export type { PerAxis, PlaneUnits, PlaneValue, UnitExpr, UnitExprContext } from '@weasel-js/quantity';
 
 // ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
 export {

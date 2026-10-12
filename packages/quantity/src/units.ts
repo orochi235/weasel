@@ -10,8 +10,9 @@ import type { Quantity } from './quantity';
  * `UnitSystem` at the API boundary. Internals never see units.
  *
  * An entry is affine — `base = value * factor + offset` — so a scale that
- * puts zero somewhere else (degC against K) is expressible. No per-axis
- * units. Arithmetic across units is `resolveUnitExpr`.
+ * puts zero somewhere else (degC against K) is expressible. Arithmetic
+ * across units is `resolveUnitExpr`; a plane whose axes measure different
+ * things resolves through `resolveAxes`.
  */
 
 /** A unit name (e.g. `'in'`, `'ft'`, `'mm'`). Looked up in a `UnitSystem`. */
@@ -100,6 +101,49 @@ export function formatUnit(
     s = s.replace(/0+$/, '').replace(/\.$/, '');
   }
   return suffix ? `${s}${displayUnit}` : s;
+}
+
+/** One of something for each axis of a plane. */
+export interface PerAxis<T> {
+  x: T;
+  y: T;
+}
+
+/** A plane's units: one system for both axes, or one each — a chart whose x
+ *  is time and whose y is a value. */
+export type PlaneUnits = UnitSystem | PerAxis<UnitSystem>;
+
+/** A measure on a plane: one value for both axes, or one each. */
+export type PlaneValue = UnitValue | Quantity | PerAxis<UnitValue | Quantity>;
+
+/** The unit system `units` gives one axis. */
+export function axisUnits(units: PlaneUnits | undefined, axis: 'x' | 'y'): UnitSystem | undefined {
+  return units === undefined || 'base' in units ? units : units[axis];
+}
+
+/** `v` in base units on each axis, every axis resolved against its own system. */
+export function resolveAxes(v: PlaneValue, units?: PlaneUnits): PerAxis<number> {
+  const perAxis = typeof v === 'object' && 'x' in v;
+  const on = (axis: 'x' | 'y'): number => {
+    try {
+      return resolveUnit(perAxis ? v[axis] : v, axisUnits(units, axis));
+    } catch (e) {
+      throw new Error(`${axis} axis: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+  return { x: on('x'), y: on('y') };
+}
+
+/** A base-unit point as text, each axis in its own display unit. */
+export function formatAxes(
+  base: PerAxis<number>,
+  display: Unit | PerAxis<Unit>,
+  units: PlaneUnits,
+  opts?: { precision?: number; suffix?: boolean },
+): PerAxis<string> {
+  const on = (axis: 'x' | 'y'): string =>
+    formatUnit(base[axis], typeof display === 'string' ? display : display[axis], axisUnits(units, axis)!, opts);
+  return { x: on('x'), y: on('y') };
 }
 
 /** `unitScale`, with the caller's name in front of the message. */

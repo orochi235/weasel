@@ -137,3 +137,25 @@ describe('gridSnapStrategy + pathOriginProjection', () => {
     expect(b.height).toBe(10);
   });
 });
+
+describe('per-axis grid', () => {
+  const SECONDS = { base: 'ms', units: { ms: 1, s: 1000 } };
+  const VOLTS = { base: 'V', units: { V: 1, dV: 0.1 } };
+
+  it('snaps each axis to its own spacing', () => {
+    const s = gridSnapStrategy<Pose>({ x: 10, y: 4 });
+    expect(s.snap({ x: 17, y: 5 }, ctx)).toEqual({ x: 20, y: 4 });
+  });
+
+  it('resolves each axis against its own unit system', () => {
+    const s = gridSnapStrategy<Pose>(
+      { x: { value: 1, unit: 's' }, y: { value: 5, unit: 'dV' } },
+      { x: SECONDS, y: VOLTS },
+    );
+    expect(s.snap({ x: 1400, y: 0.8 }, ctx)).toEqual({ x: 1000, y: 1 });
+  });
+
+  it('finds a cell on a grid with different pitches', () => {
+    expect(pointToGridCell({ x: 25, y: 25 }, { x: 10, y: 4 })).toEqual({ col: 2, row: 6 });
+  });
+});

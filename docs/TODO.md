@@ -747,7 +747,6 @@ intercepting the press that drags the body.
 ### Units
 
 - **(P3) Per-subobject scale.** Today the unit system is global per consumer. Real apps want a child object (a sub-assembly in a CAD scene) to declare its own unit/scale, with conversion at the parent boundary. Likely lives on the parent/group node.
-- **(P3) Per-axis units** — x and y carrying different units (timeline charts where x is time and y is value).
 
 ---
 

@@ -1,58 +1,61 @@
 import {
   AUTO_ORIGIN_PROJECTION,
-  resolveUnit,
+  resolveAxes,
   type DebugSink,
   type OriginProjection,
   type SnapStrategy,
-  type UnitSystem,
-  type UnitValue,
+  type PlaneUnits,
+  type PlaneValue,
 } from '@weasel-js/core';
 import { roundToGridOn } from './onPlane';
 
 /** Snap-strategy that rounds the pose's origin to the nearest multiple of
- *  `spacing` (resolved through `unitSystem`). For non-rect TPose pass an
- *  `OriginProjection` so the strategy knows how to read/write the origin. */
+ *  `spacing` (resolved through `unitSystem`). Either may be per axis —
+ *  `{ x, y }` — for a grid whose axes have different pitches or units. For
+ *  non-rect TPose pass an `OriginProjection` so the strategy knows how to
+ *  read/write the origin. */
 export function gridSnapStrategy<TPose>(
-  spacing: UnitValue,
-  unitSystem?: UnitSystem,
+  spacing: PlaneValue,
+  unitSystem?: PlaneUnits,
 ): SnapStrategy<TPose>;
 /** As above, additionally reporting each candidate to a debug sink. */
 export function gridSnapStrategy<TPose>(
-  spacing: UnitValue,
-  opts: { unitSystem?: UnitSystem; debug?: DebugSink },
+  spacing: PlaneValue,
+  opts: { unitSystem?: PlaneUnits; debug?: DebugSink },
 ): SnapStrategy<TPose>;
 /** As above, for a `TPose` that is not a rect: `origin` tells the strategy how
  *  to read and write the pose's origin. */
 export function gridSnapStrategy<TPose>(
-  spacing: UnitValue,
-  opts: { unitSystem?: UnitSystem; origin: OriginProjection<TPose>; debug?: DebugSink },
+  spacing: PlaneValue,
+  opts: { unitSystem?: PlaneUnits; origin: OriginProjection<TPose>; debug?: DebugSink },
 ): SnapStrategy<TPose>;
 /** Snap-strategy that rounds the pose's origin to the nearest multiple of
  *  `spacing` (resolved through `unitSystem`). For non-rect TPose pass an
  *  `OriginProjection` so the strategy knows how to read/write the origin. */
 export function gridSnapStrategy<TPose>(
-  spacing: UnitValue,
-  arg?: UnitSystem | { unitSystem?: UnitSystem; origin?: OriginProjection<TPose>; debug?: DebugSink },
+  spacing: PlaneValue,
+  arg?: PlaneUnits | { unitSystem?: PlaneUnits; origin?: OriginProjection<TPose>; debug?: DebugSink },
 ): SnapStrategy<TPose> {
   const isOpts =
     typeof arg === 'object' &&
     arg !== null &&
     ('origin' in arg || 'debug' in arg || 'unitSystem' in arg) &&
-    !('base' in arg);
+    !('base' in arg) &&
+    !('x' in arg);
   const optsArg = isOpts
-    ? (arg as { unitSystem?: UnitSystem; origin?: OriginProjection<TPose>; debug?: DebugSink })
+    ? (arg as { unitSystem?: PlaneUnits; origin?: OriginProjection<TPose>; debug?: DebugSink })
     : null;
-  const unitSystem = optsArg ? optsArg.unitSystem : (arg as UnitSystem | undefined);
+  const unitSystem = optsArg ? optsArg.unitSystem : (arg as PlaneUnits | undefined);
   const proj: OriginProjection<TPose> = optsArg && optsArg.origin
     ? optsArg.origin
     : (AUTO_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
   const debug: DebugSink | undefined = optsArg ? optsArg.debug : undefined;
-  const c = resolveUnit(spacing, unitSystem);
+  const c = resolveAxes(spacing, unitSystem);
   return {
     snap(pose, ctx) {
       const o = proj.getOrigin(pose);
-      const sx = roundToGridOn(o.x, 'x', c, ctx?.plane);
-      const sy = roundToGridOn(o.y, 'y', c, ctx?.plane);
+      const sx = roundToGridOn(o.x, 'x', c.x, ctx?.plane);
+      const sy = roundToGridOn(o.y, 'y', c.y, ctx?.plane);
       debug?.recordSnapCandidate({ x: sx, y: sy }, true);
       return proj.translate(pose, sx - o.x, sy - o.y);
     },
@@ -78,13 +81,13 @@ export function gridSnapStrategy<TPose>(
  */
 export function pointToGridCell(
   point: { x: number; y: number },
-  spacing: UnitValue,
-  unitSystem?: UnitSystem,
+  spacing: PlaneValue,
+  unitSystem?: PlaneUnits,
   origin: { x: number; y: number } = { x: 0, y: 0 },
 ): { col: number; row: number } {
-  const s = resolveUnit(spacing, unitSystem);
+  const s = resolveAxes(spacing, unitSystem);
   return {
-    col: Math.floor((point.x - origin.x) / s),
-    row: Math.floor((point.y - origin.y) / s),
+    col: Math.floor((point.x - origin.x) / s.x),
+    row: Math.floor((point.y - origin.y) / s.y),
   };
 }
