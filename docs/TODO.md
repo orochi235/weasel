@@ -579,15 +579,6 @@ Core five + Crop shipped. Remaining:
   before glyph lookup and a color (RGBA) atlas page drawn untinted for clusters with emoji
   presentation. `LaidOutCell.clusterEnd` already marks where each cluster closes.
 
-- **(P3) Outline fonts: a `.ttc` member that does not match by PostScript name is used silently.**
-  `sfntFromCollection` (`packages/font/src/outline/sfnt.ts`) falls back to the collection's first
-  member and returns `matched: false`, on purpose and with a test; `createOpenTypeParser`
-  (`opentypeParser.ts`) drops the flag. When `queryLocalFonts` reports a name the `name` table
-  spells differently, bold text tessellates the first member (usually Regular) above the outline
-  threshold while the canvas tier draws real bold below it, so the text gets lighter as you zoom in.
-  Options: reject on a mismatch so the registry leaves the run on the SDF tier with its usual
-  warning, or keep the fallback and warn once naming both spellings.
-
 - **(P3) Text layout: the canvas-2D label paths read a tab as one space.** `layoutRuns` runs a tab
   to the next stop (`TextStyle.tabSize`, default 8 spaces). `measureText` and `layoutMarkdown`
   measure with `ctx.measureText` and paint with `fillText`, which draws a tab as a single space, so
