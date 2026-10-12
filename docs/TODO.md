@@ -1718,13 +1718,6 @@ only story runner in the repo.
   buttons call `scene.setPose` / `scene.add`, and per-node effects repaint through `redrawOn` /
   `requestRedraw`.
 
-- **(P2) draw: the input recorder is reachable from nothing.** `recorder.ts`, `recordingIO.ts`, and
-  `replay.ts` are complete and tested, and no control starts a recording or plays one. Wiring them
-  needs a `Recorder` on the canvas's pointer and keyboard surface, which wants a
-  `SurfaceContribution` with `attach` rather than a capture-phase listener in the app. The command
-  bar's Record button, profile select, and Play button went with the no-op handlers behind them;
-  `git log -S'Record input' -- apps/draw/src/CommandBar.tsx` has them.
-
 - **(P3) draw: no command palette, no toast host, and no first-run notice.** The actions registry
   lists every action by stable id, so a palette is a port of `apps/site/CommandPalette`; save
   failures and SVG import warnings currently go to `console.warn` (`onWarn` in

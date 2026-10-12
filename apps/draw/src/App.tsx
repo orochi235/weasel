@@ -86,6 +86,7 @@ import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { clipboardJsonReviver, serializeReplacer } from './persistence';
 import { PREFS, usePref } from './prefs';
+import { useRecording } from './recording/useRecording';
 import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 import { writeSession } from './sessionStore';
 import { colorContribution, useColorContext } from './tools/colorContext';
@@ -435,9 +436,10 @@ function EditorWithSharedScene({
   };
   const appCommandsRef = useLatest(appCommands);
   const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
+  const recordingKeys = useRecording({ scene, view: () => view, setView });
   const ambient = useMemo(
-    () => [hudTool, modalityKeys, colorKeys, appKeys],
-    [hudTool, modalityKeys, colorKeys, appKeys],
+    () => [hudTool, modalityKeys, colorKeys, appKeys, recordingKeys],
+    [hudTool, modalityKeys, colorKeys, appKeys, recordingKeys],
   );
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect

@@ -32,6 +32,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
+import { downloadBlob, pickFile } from './fileIO';
 import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 
@@ -348,59 +349,18 @@ const DEFAULT_IMPORT_FILL: FillStyle = { color: '#000000' };
 
 /** Trigger a browser download of `svg` as a file named `filename`. */
 export function downloadSvg(svg: string, filename: string): void {
-  const blob = new Blob([svg], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // Defer revoke so the click has time to start the download.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), filename);
 }
 
-/**
- * Pop a hidden file input; resolve with the chosen file's name and text (or
- * null if the user cancelled). Single-shot — the input is created and removed
- * per invocation so there's no accumulated DOM cruft.
- */
-export function pickSvgFileNamed(): Promise<{ name: string; text: string } | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.svg,image/svg+xml';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-    let resolved = false;
-    const cleanup = (): void => {
-      if (input.parentNode) input.parentNode.removeChild(input);
-    };
-    input.addEventListener('change', () => {
-      const file = input.files?.[0];
-      if (!file) {
-        if (!resolved) { resolved = true; resolve(null); }
-        cleanup();
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (!resolved) { resolved = true; resolve({ name: file.name, text: String(reader.result ?? '') }); }
-        cleanup();
-      };
-      reader.onerror = () => {
-        if (!resolved) { resolved = true; resolve(null); }
-        cleanup();
-      };
-      reader.readAsText(file);
-    });
-    // Fallback: if the picker is dismissed without firing change, give up.
-    input.addEventListener('cancel', () => {
-      if (!resolved) { resolved = true; resolve(null); }
-      cleanup();
-    });
-    input.click();
-  });
+/** Pick an SVG file; resolve with its name and text, or null if the user cancelled. */
+export async function pickSvgFileNamed(): Promise<{ name: string; text: string } | null> {
+  const file = await pickFile('.svg,image/svg+xml');
+  if (!file) return null;
+  try {
+    return { name: file.name, text: await file.text() };
+  } catch {
+    return null;
+  }
 }
 
 /** {@link pickSvgFileNamed}, text only. */

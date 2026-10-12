@@ -153,6 +153,23 @@ export const PREFS = {
         },
       },
     },
+    recording: {
+      name: 'Input recording',
+      description: 'The recorder behind Record and Play in the command bar.',
+      children: {
+        profile: {
+          kind: 'enum',
+          name: 'Pointer movement kept',
+          description: 'Which pointer moves a recording keeps. Presses, releases, wheel, and keys are always kept.',
+          default: 'gesture-only',
+          options: [
+            { value: 'gesture-only', label: 'During a gesture' },
+            { value: 'full', label: 'All of it' },
+            { value: 'events-only', label: 'None' },
+          ],
+        },
+      },
+    },
     tools: {
       name: 'Tools',
       description: 'Tool memory and per-tool settings.',
