@@ -97,6 +97,15 @@ describe('Scene — what subscribers hear', () => {
     expect(heard(scene, () => scene.jumpToHistoryIndex(0))).toEqual({ calls: 1, version: 4 });
   });
 
+  it('an engine step leaves nothing pending for the next edit to flush', () => {
+    const scene = makeScene();
+    scene.setPose(A, at(1));
+    scene.undo();
+    scene.history.applyOps([poseOp(scene, [[A, 0, 1]])], 'move');
+    expect(heard(scene, () => scene.batch('nothing', () => {}))).toEqual({ calls: 0, version: 0 });
+    expect(heard(scene, () => scene.untracked(() => {}))).toEqual({ calls: 0, version: 0 });
+  });
+
   it('an undo with nothing to undo calls nobody', () => {
     const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
     expect(heard(scene, () => scene.undo())).toEqual({ calls: 0, version: 0 });

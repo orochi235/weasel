@@ -19,6 +19,8 @@ import { createLockGuard } from './lockGuard';
 import { createArrivalWindow } from './arrivalWindow';
 import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
+import { createNotifier } from './notifier';
+import { createEditMode } from './editMode';
 import { createAppliedLog } from './appliedLog';
 import { createStaleReplay, SceneMembershipError } from './staleReplay';
 import { statedFields } from './statedFields';
@@ -71,7 +73,10 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     layerIndex: new Map(),
   };
   const order = createRenderOrder(state);
-  const stale = createStaleReplay(state.nodes, () => version);
+  const notifier = createNotifier();
+  const { notify } = notifier;
+  const mode = createEditMode();
+  const stale = createStaleReplay(state.nodes, notifier.version);
   const {
     isLocked: isLockedInternal, refuse: refuseLocked, refuseLayer: refuseLockedLayer, reachable,
     lifted: withLocksLifted,
@@ -117,7 +122,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
   const generateId = options.generateId ?? defaultGenerateId;
 
-  const listeners = new Set<() => void>();
   const registered = new Map<string, RegisteredOp<unknown>>();
 
   // Accessor for the adapter restored external ops apply against.
@@ -163,34 +167,19 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     return rebuilt === null ? null : bindOpToHistoryAdapter(rebuilt, () => historyAdapterAccessor);
   }
 
-  let version = 0;
   // Keyed by node object: every entry into `state.nodes` is a fresh object and
   // every edit mutates it in place, which is exactly an incarnation's lifetime.
   const incarnations = new WeakMap<object, number>();
   let nextIncarnation = 1;
-  let batchDepth = 0;
   let currentBatch: { label: string; ops: Op[]; selectionBefore: readonly NodeId[] } | null = null;
-  /** True while the history engine drives mutations (undo/redo/goto, journal
-   *  routing) — suppresses scene-side history recording so engine-applied
-   *  ops that re-enter scene mutation methods don't record twice. */
-  let suppressRecording = false;
-  /** Above zero inside `scene.untracked`, where the APIs that exist to
-   *  record refuse rather than record. */
-  let untrackedDepth = 0;
-
-  // ── Helpers ────────────────────────────────────────────────────────────
-  // When `batchDepth > 0` the per-op `notify()` still bumps the version, but
-  // listener dispatch is deferred until the outermost batch closes.
-  let batchDirty = false;
-  // Seeded from options and swappable via `scene.setActiveJournalAccessor(fn)`,
-  // so mode machines that depend on `scene.history` can wire it after construction.
+  // Seeded from options and swappable via `scene.setActiveJournalAccessor(fn)`.
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
 
   const arrivalWindow = createArrivalWindow<TData, TLayer, TPose>({
     nodes: state.nodes,
     declared: () => (hasLayouts ? declaredLayouts : null),
-    recordsBareEdits: () => batchDepth === 0 && !suppressRecording,
+    recordsBareEdits: () => !mode.open(),
     writePose,
   });
   const {
@@ -213,7 +202,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   );
 
   function refuseUntracked(verb: string): void {
-    if (untrackedDepth > 0) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
+    if (mode.untracked()) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
   }
 
   const { atomically, logApplied } = createAppliedLog({
@@ -223,15 +212,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     setSelection: (ids) => { selection = ids; },
     notify,
   });
-
-  function notify(): void {
-    version++;
-    if (batchDepth > 0) {
-      batchDirty = true;
-      return;
-    }
-    for (const listener of listeners) listener();
-  }
 
   const { layoutRefs } = registerKitOps<TData, TLayer, TPose>({
     state,
@@ -272,7 +252,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         (dir === 'fwd' ? handler.apply : handler.revert)(payload);
         // Only a replay logs here: a first apply is recorded by the entry it
         // creates, and reverting it would leave that entry describing nothing.
-        if (suppressRecording) logApplied(kind, payload, dir === 'rev');
+        if (!mode.records()) logApplied(kind, payload, dir === 'rev');
         return undefined;
       },
       invert: () => makeOp(kind, payload, dir === 'fwd' ? 'rev' : 'fwd'),
@@ -297,33 +277,22 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     return token === undefined ? undefined : `${kind}:${token}`;
   }
 
-  /** Run `fn` with scene-side recording suppressed and per-op notifies
-   *  batched. Used whenever the engine drives mutations (undo/redo/goto):
-   *  engine-applied ops may re-enter scene mutation methods, which must
-   *  apply but not record. The caller fires exactly one `notify()` after. */
-  function withRecordingSuppressed<T>(fn: () => T): T {
-    const prevSuppress = suppressRecording;
-    suppressRecording = true;
-    batchDepth++;
-    const prevDirty = batchDirty;
-    try {
-      return fn();
-    } finally {
-      batchDepth--;
-      suppressRecording = prevSuppress;
-      batchDirty = prevDirty;
-    }
+  /** Run `fn` as a history engine's step: the ops it applies may re-enter
+   *  scene mutation methods, which apply but do not record. The caller
+   *  notifies once after. */
+  function engineDriven<T>(fn: () => T): T {
+    return mode.during('engine', () => notifier.muted(fn));
   }
 
   /** Run an engine step that replays recorded ops — undo, redo, goto, a
    *  journal stepping. The engine inverts whole ops when one throws; this
    *  also reverts the scene writes of the op that threw partway. */
   function replay(step: () => void): void {
-    atomically(() => withLocksLifted(() => stale.during(() => withRecordingSuppressed(step))), () => true);
+    atomically(() => withLocksLifted(() => stale.during(() => engineDriven(step))), () => true);
   }
 
   function executeAndLog(kind: string, payload: unknown, label: string): void {
-    if (suppressRecording) {
+    if (!mode.records()) {
       runOp(kind, payload);
       logApplied(kind, payload);
       notify();
@@ -353,7 +322,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
   const { history: sceneHistory, methods: historyMethods } = createSceneHistory({
     engine: history,
-    applying: (step) => atomically(() => withRecordingSuppressed(step), () => true),
+    applying: (step) => atomically(() => engineDriven(step), () => true),
     tolerant: stale.tolerant,
     replay,
     notify,
@@ -363,37 +332,17 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
   function applyBatchNow(ops: Op[], label: string, adapter: unknown): void {
     const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
-    // Either route drives mutations from a history engine, so scene-side
-    // recording is suppressed: op applies that re-enter scene mutation
-    // methods via the adapter must mutate without re-recording. batchDepth
-    // coalesces the per-op notify() calls into one dispatch at the end.
-    const prevSuppress = suppressRecording;
-    const prevDirty = batchDirty;
-    suppressRecording = true;
-    batchDepth++;
-    batchDirty = false;
-    try {
-      atomically(() => {
-        // Either engine stores the ops and replays them later, so they are
-        // rebound to this call's adapter: the scene's own engine, and any
-        // journal opened on it, was built without one.
-        const bound = ops.map((op) => carried.recording(stale.tolerant(bindOpToAdapter(op, adapter))));
-        if (journal) journal.applyBatch(bound, label);
-        else history.applyOps(bound, label);
-      }, () => true);
-    } finally {
-      batchDepth--;
-      suppressRecording = prevSuppress;
-      // Re-merge any outer batch's pending dirt so a nested call can't
-      // swallow it; at true top level prevDirty is always false.
-      batchDirty = batchDirty || prevDirty;
-      // Flush inside finally so a throwing op can't strand subscribers
-      // after earlier ops in the batch already mutated state.
-      if (batchDepth === 0 && batchDirty) {
-        batchDirty = false;
-        for (const listener of listeners) listener();
-      }
-    }
+    // Either route drives mutations from a history engine. Deferred rather
+    // than muted, so a throwing op cannot strand subscribers after earlier
+    // ops in the batch already mutated state.
+    notifier.deferred(() => mode.during('engine', () => atomically(() => {
+      // Either engine stores the ops and replays them later, so they are
+      // rebound to this call's adapter: the scene's own engine, and any
+      // journal opened on it, was built without one.
+      const bound = ops.map((op) => carried.recording(stale.tolerant(bindOpToAdapter(op, adapter))));
+      if (journal) journal.applyBatch(bound, label);
+      else history.applyOps(bound, label);
+    }, () => true)));
   }
 
   const layerEdits = createLayerEdits<TData, TLayer, TPose>({
@@ -725,11 +674,10 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     batch(label, fn) {
       // Captured at open, not at recordEntry: by the time the batch closes
       // the selection has already moved to wherever the batch put it.
-      const outermost = batchDepth === 0;
+      const outermost = !mode.open();
       if (outermost) currentBatch = { label, ops: [], selectionBefore: selection };
       const ownsArrivals = outermost && openArrivals(true);
-      batchDepth++;
-      try {
+      return notifier.deferred(() => mode.during('batch', () => {
         if (!outermost) return fn();
         try {
           const result = atomically(() => {
@@ -744,35 +692,23 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
           currentBatch = null;
           throw err;
         }
-      } finally {
-        batchDepth--;
+      }), () => {
         if (ownsArrivals) arrivalWindow.abandon();
-        if (batchDepth === 0) {
-          if (currentBatch) {
-            const finished = currentBatch;
-            currentBatch = null;
-            // Ops were applied live as they were issued (state stays
-            // readable mid-batch); recordEntry pushes without re-applying.
-            if (finished.ops.length > 0) {
-              history.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
-            }
-          }
-          if (batchDirty) {
-            batchDirty = false;
-            for (const listener of listeners) listener();
-          }
+        if (!outermost || !currentBatch) return;
+        const finished = currentBatch;
+        currentBatch = null;
+        // Ops were applied live as they were issued (state stays readable
+        // mid-batch); recordEntry pushes without re-applying.
+        if (finished.ops.length > 0) {
+          history.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
         }
-      }
+      });
     },
 
     untracked(fn) {
-      const prevSuppress = suppressRecording;
-      const versionBefore = version;
-      suppressRecording = true;
-      untrackedDepth++;
+      const versionBefore = notifier.version();
       const ownsArrivals = openArrivals(true);
-      batchDepth++;
-      try {
+      return notifier.deferred(() => mode.during('untracked', () => {
         const result = atomically(() => {
           const r = fn();
           if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
@@ -780,17 +716,10 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         }, () => false);
         if (ownsArrivals) emitReflow();
         return result;
-      } finally {
-        batchDepth--;
+      }), () => {
         if (ownsArrivals) arrivalWindow.abandon();
-        untrackedDepth--;
-        suppressRecording = prevSuppress;
-        if (version !== versionBefore) history.seal();
-        if (batchDepth === 0 && batchDirty) {
-          batchDirty = false;
-          for (const listener of listeners) listener();
-        }
-      }
+        if (notifier.version() !== versionBefore) history.seal();
+      });
     },
 
     toJSON: () => serializeScene(state, fnFields),
@@ -799,8 +728,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       // Validate + map up front (throws before we touch live state on a bad
       // version or unknown registry key).
       const specs = specsFromSerialized(json, registry);
-      if (batchDepth > 0) {
-        throw new Error('Scene: cannot loadState inside batch() or untracked() — it replaces the state they would revert to');
+      if (mode.open()) {
+        throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
       // Ephemeral, and every id is a new node after this.
       overrides.clearAll();
@@ -827,12 +756,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       notify();
     },
 
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-
-    getVersion: () => version,
+    subscribe: notifier.subscribe,
+    getVersion: notifier.version,
   };
 
   /** Insert nodes without writing to the undo log — used by construction
