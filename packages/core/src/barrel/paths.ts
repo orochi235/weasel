@@ -121,6 +121,8 @@ export type {
   BooleanOp,
   BooleansAdapter,
   BooleanOpResult,
+  BooleanOpOptions,
+  BooleanStrokes,
   UseBooleansOptions,
   UseBooleansReturn,
 } from '../interactions/actions/booleans';

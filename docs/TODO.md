@@ -366,12 +366,14 @@ have shipped. What remains:
 
 Core five + Crop shipped. Remaining:
 
-- **(P3) Outline.** `strokeToPath` (`packages/stroke/src/strokeToPath.ts`) now gives a stroke's silhouette as a fillable path, with joins, caps, dashes, alignment, and marker heads. What is left is the action that applies it to a selection: it has to read a node's stroke and decide the result's paint, and `BooleansAdapter` sees paths only, the same style-awareness gap Trim and Merge wait on. `textToPath` still refuses synthetic-bold text (`reason: 'synthetic-bold'`): emboldening it is now a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
-- **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion — need per-path style awareness, which the kit deliberately doesn't have since `data` is opaque. Wait on a compound-path-with-styles model.
+- **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
+- **(P3) Outline Stroke passes over text.** `applyOutlineStroke` reads path nodes only, so stroked text has to go through Create Outlines first. `textToPathsByPaint` already gives each paint's glyphs with their stroke.
+- **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion. The adapter now answers each operand's paint (`BooleansAdapter.getPaint`) and takes the paint a result must wear (`createPathNode`'s `paint`); what is left is the operations themselves, which give each result its own source's paint where `applyBooleanOp` passes one for all of them.
+- **(P3) Divide and Crop paint every piece like the topmost source.** `applyBooleanOp` hands `createPathNode` one `sourceId`, the topmost, for every result, so a Crop's pieces take the mask's paint and its parent, not their own source's. Needs `pathDivide` and `pathCrop` to say which source each piece came from.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
-- **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. `strokeToPath` supplies the region; what is left is the same adapter gap as Outline above (`applyBooleanOp` cannot read an operand's stroke) and whether a stroked operand contributes its fill, its stroke, or both.
+- **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not.
 
 ---
 
