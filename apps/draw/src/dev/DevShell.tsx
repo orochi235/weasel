@@ -1,4 +1,4 @@
-import '@weasel-js/labkit/styles.less';
+import '@weasel-js/labkit/styles.css';
 import type { ReactNode } from 'react';
 import { LabShell, type LabPage } from '@weasel-js/labkit';
 

@@ -2128,17 +2128,15 @@ one dead `const` and four stale disable directives.
   installs one copy and runs another. In the repo, aliases resolve both to one source, so no test
   can see it.
 
-- **(P3) Dev aliases, tsconfig `paths`, and `exports` are three hand-kept maps that disagree.**
-  `scripts/vite-aliases.ts` sends `@weasel-js/<pkg>/<tail>` to `packages/<pkg>/src/<tail>` for any
-  tail. `@weasel-js/diagram/layout` is published from `src/layout.entry.ts` and the alias resolves
-  it to `src/layout.ts`, a different module with different exports; `@weasel-js/labkit/weasel-ui`
-  works only where a config overrides the alias by hand; and a subpath no `exports` map publishes
-  resolves in every dev server and test (`@weasel-js/labkit/styles.less` in seven app and demo
-  files, `@weasel-js/labkit/theme/interstellar` in `apps/forge/themes.ts`).
-  `packages/core/tsconfig.json` maps nine siblings to source and leaves `paint`, `text`, `font`,
-  `cursor`, `quantity`, and `prefs` to resolve to their built `dist`. Generate the aliases and the
-  `paths` from each package's `exports` and build entries, and reject a subpath that is not
-  exported.
+- **(P3) tsconfig `paths` is still kept by hand, and wider than `exports`.** The dev aliases and the
+  API reference are generated from each package's `exports` now (`scripts/lib/packageEntries.mjs`),
+  and `scripts/vite-aliases.test.ts` fails when the root `paths` sends an exported entry anywhere
+  else. Two things it does not cover. The root `paths` has wildcard keys (`@weasel-js/geom/*`,
+  `guides/*`, `renderer/*`, `labkit/*`, `forge/*`), so `tsc` resolves a subpath no `exports` map
+  publishes that vite now refuses. And `packages/core/tsconfig.json` maps nine siblings to source
+  and leaves `paint`, `text`, `font`, `cursor`, `quantity`, and `prefs` to resolve to their built
+  `dist`; `tsup` reads that file for core's build, so widening it wants a look at what the
+  declaration build then pulls in. Generate both blocks from the same module.
 
 - **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
   is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a

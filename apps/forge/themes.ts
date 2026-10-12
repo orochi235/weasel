@@ -1,6 +1,6 @@
 import type { GlobalDeclaration, StoryContext } from '@weasel-js/forge';
 // The theme module alone: labkit's barrel is most of what a frame would otherwise load.
-import { interstellarTheme } from '@weasel-js/labkit/theme/interstellar';
+import { interstellarTheme } from '../../packages/labkit/src/theme/interstellar';
 import { applyTheme, defineTheme, type Theme, weaselTheme } from '@weasel-js/theme';
 
 /** The themes a trial can take, by name; the first is the default. */

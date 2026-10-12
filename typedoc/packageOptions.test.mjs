@@ -50,18 +50,17 @@ describe('publicEntries', () => {
     expect(publicEntries(dir).map((e) => e.specifier)).toEqual(['@weasel-js/demo']);
   });
 
-  it('asks sourceOf first, for an export built from somewhere else', () => {
+  it('takes an entry file over the module that shares its name', () => {
     const dir = pkg(
-      { '.': types('./dist/index.d.ts'), './math': types('./dist/math.d.ts') },
-      ['src/index.ts', 'src/shims/math.ts'],
+      { '.': types('./dist/index.d.ts'), './layout': types('./dist/layout.d.ts') },
+      ['src/index.ts', 'src/layout.ts', 'src/layout.entry.ts'],
     );
-    const sourceOf = (key) => (key === './math' ? 'src/shims/math.ts' : undefined);
-    expect(publicEntries(dir, sourceOf).map((e) => e.source)).toEqual(['src/index.ts', 'src/shims/math.ts']);
+    expect(publicEntries(dir).map((e) => e.source)).toEqual(['src/index.ts', 'src/layout.entry.ts']);
   });
 
   it('throws on an export with no source, naming it', () => {
     const dir = pkg({ './math': types('./dist/math.d.ts') }, []);
-    expect(() => publicEntries(dir)).toThrow(/@weasel-js\/demo: export "\.\/math" has no source at src\/math\.ts/);
+    expect(() => publicEntries(dir)).toThrow(/@weasel-js\/demo: export "\.\/math" has no source under src\//);
   });
 });
 

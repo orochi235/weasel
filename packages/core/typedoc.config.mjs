@@ -1,8 +1,6 @@
 import { packageOptions } from '../../typedoc/packageOptions.mjs';
 
 export default packageOptions(import.meta.dirname, {
-  // Every subpath is built from a shim; see `entries.ts`.
-  sourceOf: (key) => (key === '.' ? undefined : `src/import-shims/${key.slice(2)}.ts`),
   // Types deliberately kept off the public doc surface. Adapter contracts
   // (HitAdapter, ReorderAdapter, CanvasAdapter) are internal composition
   // details — consumers reach them through SceneCanvas, which synthesizes the

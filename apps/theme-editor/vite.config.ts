@@ -18,12 +18,7 @@ export default defineConfig({
   // servers then clobber each other's optimized-dep metadata and every page 504s.
   cacheDir: resolve(repoRoot, 'node_modules/.vite-theme-editor'),
   resolve: {
-    alias: weaselAliases(repoRoot, [
-      {
-        find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
-      },
-    ]),
+    alias: weaselAliases(repoRoot),
   },
   plugins: [
     react(),
