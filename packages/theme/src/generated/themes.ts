@@ -180,8 +180,12 @@ export type TokenName =
   | '--wzl-warning-base'
   | '--wzl-workspace-line'
   | '--wzl-workspace-surface'
+  | '--wzl-z-drag'
+  | '--wzl-z-hud'
   | '--wzl-z-modal'
   | '--wzl-z-overlay'
+  | '--wzl-z-popover'
+  | '--wzl-z-toast'
   | '--wzl-z-toolbar';
 
 /** A built-in theme with its aliases already collapsed: every selection
@@ -356,7 +360,11 @@ export const THEMES = {
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -534,7 +542,11 @@ export const THEMES = {
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -712,7 +724,11 @@ export const THEMES = {
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -890,7 +906,11 @@ export const THEMES = {
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -1068,7 +1088,11 @@ export const THEMES = {
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -1246,7 +1270,11 @@ export const THEMES = {
         '--wzl-tracking-wider': "0.08em",
         '--wzl-z-toolbar': "10",
         '--wzl-z-overlay': "20",
-        '--wzl-z-modal': "30",
+        '--wzl-z-hud': "900",
+        '--wzl-z-modal': "1000",
+        '--wzl-z-toast': "1100",
+        '--wzl-z-popover': "1200",
+        '--wzl-z-drag': "10000",
         '--wzl-leading-tight': "1",
         '--wzl-leading-snug': "1.2",
         '--wzl-leading': "1.4",
@@ -2304,15 +2332,38 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       },
       "z-toolbar": {
         "value": 10,
-        "type": "number"
+        "type": "number",
+        "description": "Chrome pinned over a workspace."
       },
       "z-overlay": {
         "value": 20,
-        "type": "number"
+        "type": "number",
+        "description": "A panel or readout floating over the chrome."
+      },
+      "z-hud": {
+        "value": 900,
+        "type": "number",
+        "description": "Debug readouts, over the app and under anything modal."
       },
       "z-modal": {
-        "value": 30,
-        "type": "number"
+        "value": 1000,
+        "type": "number",
+        "description": "A dialog or lightbox and its scrim."
+      },
+      "z-toast": {
+        "value": 1100,
+        "type": "number",
+        "description": "Toasts, which stay readable over a dialog."
+      },
+      "z-popover": {
+        "value": 1200,
+        "type": "number",
+        "description": "Tooltips and callouts, which a dialog or a toast can open."
+      },
+      "z-drag": {
+        "value": 10000,
+        "type": "number",
+        "description": "A drag ghost, over everything it can be dragged across."
       },
       "leading-tight": {
         "value": 1,
@@ -3523,15 +3574,38 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       },
       "z-toolbar": {
         "type": "number",
-        "value": 10
+        "value": 10,
+        "description": "Chrome pinned over a workspace."
       },
       "z-overlay": {
         "type": "number",
-        "value": 20
+        "value": 20,
+        "description": "A panel or readout floating over the chrome."
+      },
+      "z-hud": {
+        "type": "number",
+        "value": 900,
+        "description": "Debug readouts, over the app and under anything modal."
       },
       "z-modal": {
         "type": "number",
-        "value": 30
+        "value": 1000,
+        "description": "A dialog or lightbox and its scrim."
+      },
+      "z-toast": {
+        "type": "number",
+        "value": 1100,
+        "description": "Toasts, which stay readable over a dialog."
+      },
+      "z-popover": {
+        "type": "number",
+        "value": 1200,
+        "description": "Tooltips and callouts, which a dialog or a toast can open."
+      },
+      "z-drag": {
+        "type": "number",
+        "value": 10000,
+        "description": "A drag ghost, over everything it can be dragged across."
       },
       "leading-tight": {
         "type": "number",

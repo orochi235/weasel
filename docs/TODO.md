@@ -2096,16 +2096,6 @@ one dead `const` and four stale disable directives.
   long two full runs take on the one self-hosted machine (the job allows 100 minutes), and whether
   the base, measured first, reads differently from the head for that reason alone.
 
-- **(P3) Overlays sit on two unrelated z-index scales.** The theme defines `--wzl-z-toolbar`,
-  `--wzl-z-overlay`, and `--wzl-z-modal` as 10, 20, and 30. `Dialog` (1000), `Toast` (1100),
-  `Tooltip` and `Callout` (1200), core's debug HUDs (900), labkit's `DragGhost` (9999), and
-  `pointerDrag`'s cloned ghost (10000, set in script) are literals; ui's `DragGhost`, labkit's
-  `Lightbox`, `ViewportRegion`, `LabSwitcher`, and `LabShell`, and draw's HUDs read the tokens. So
-  the token named "modal" is below every real modal, a consumer retuning `--wzl-z-modal` moves the
-  lightbox and none of the dialogs, and ui's `DragGhost` (20) dragged out of a list inside a
-  `Dialog` (1000) can draw behind it. Extend the ladder to the layers that exist (hud, modal, toast,
-  popover, drag) and have every site read a token.
-
 - **(P3) labkit inlines siblings that own module state.** `packages/labkit/tsup.config.ts` bundles
   every `@weasel-js/*` sibling except core and theme, and its own comment gives the reason those two
   are external: a module-global registry inlined twice is two registries. The same holds for

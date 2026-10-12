@@ -4,8 +4,8 @@
 }
 
 .popover {
-  /* Above Dialog overlay (1000) and ToastRegion (1100) — RAC sets no z-index. */
-  z-index: 1200;
+  /* RAC sets no z-index. */
+  z-index: var(--wzl-z-popover);
   background: var(--_s-fill);
   border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
   border-radius: var(--_s-radius);

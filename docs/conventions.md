@@ -197,6 +197,26 @@ a checkmark, a switch track), slider tracks and thumbs, and handles — those ha
 their own tokens or are artwork. Scaling them with the type ramp makes them
 blurry rather than bigger.
 
+### Layers
+
+Anything that draws over the page takes its `z-index` from the `--wzl-z-*`
+ladder, so a consumer who retunes a rung moves every layer on it:
+
+| Rung | Value | Holds |
+|---|---|---|
+| `--wzl-z-toolbar` | 10 | chrome pinned over a workspace |
+| `--wzl-z-overlay` | 20 | a panel or readout floating over the chrome |
+| `--wzl-z-hud` | 900 | core's debug HUDs |
+| `--wzl-z-modal` | 1000 | `Dialog`, labkit's lightbox |
+| `--wzl-z-toast` | 1100 | toasts |
+| `--wzl-z-popover` | 1200 | `Tooltip`, `Callout` |
+| `--wzl-z-drag` | 10000 | drag ghosts |
+
+Core reads its rungs with a fallback (`var(--wzl-z-hud, 900)`), since it draws
+without a theme. A small literal that orders siblings inside one stacking
+context is fine. `npm run check:layers` fails on a `z-index` literal, in a
+stylesheet or in script, at or above the lowest rung.
+
 ### Panel labels
 
 Labels on the params surfaces — `PropertyPanel`, `Prefs` and labkit's

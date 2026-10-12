@@ -48,7 +48,7 @@ function defaultGhost(source: HTMLElement, payload: DragPayload): HTMLElement {
   clone.style.margin = '0';
   clone.style.pointerEvents = 'none';
   clone.style.opacity = '0.85';
-  clone.style.zIndex = '10000';
+  clone.style.zIndex = 'var(--wzl-z-drag, 10000)';
   clone.style.transition = 'none';
   clone.style.transformOrigin = 'center center';
   if (payload.ids.length > 1) {

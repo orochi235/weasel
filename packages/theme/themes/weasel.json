@@ -1028,15 +1028,38 @@
     },
     "z-toolbar": {
       "value": 10,
-      "type": "number"
+      "type": "number",
+      "description": "Chrome pinned over a workspace."
     },
     "z-overlay": {
       "value": 20,
-      "type": "number"
+      "type": "number",
+      "description": "A panel or readout floating over the chrome."
+    },
+    "z-hud": {
+      "value": 900,
+      "type": "number",
+      "description": "Debug readouts, over the app and under anything modal."
     },
     "z-modal": {
-      "value": 30,
-      "type": "number"
+      "value": 1000,
+      "type": "number",
+      "description": "A dialog or lightbox and its scrim."
+    },
+    "z-toast": {
+      "value": 1100,
+      "type": "number",
+      "description": "Toasts, which stay readable over a dialog."
+    },
+    "z-popover": {
+      "value": 1200,
+      "type": "number",
+      "description": "Tooltips and callouts, which a dialog or a toast can open."
+    },
+    "z-drag": {
+      "value": 10000,
+      "type": "number",
+      "description": "A drag ghost, over everything it can be dragged across."
     },
     "leading-tight": {
       "value": 1,

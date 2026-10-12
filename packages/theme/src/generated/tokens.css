@@ -217,9 +217,20 @@
   --wzl-tracking-wide: 0.06em;
   /* Uppercase at 11px and below. */
   --wzl-tracking-wider: 0.08em;
+  /* Chrome pinned over a workspace. */
   --wzl-z-toolbar: 10;
+  /* A panel or readout floating over the chrome. */
   --wzl-z-overlay: 20;
-  --wzl-z-modal: 30;
+  /* Debug readouts, over the app and under anything modal. */
+  --wzl-z-hud: 900;
+  /* A dialog or lightbox and its scrim. */
+  --wzl-z-modal: 1000;
+  /* Toasts, which stay readable over a dialog. */
+  --wzl-z-toast: 1100;
+  /* Tooltips and callouts, which a dialog or a toast can open. */
+  --wzl-z-popover: 1200;
+  /* A drag ghost, over everything it can be dragged across. */
+  --wzl-z-drag: 10000;
   /* Single-line controls; the box sets the height. */
   --wzl-leading-tight: 1;
   /* Headings and two-line labels. */

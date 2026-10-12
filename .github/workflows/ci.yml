@@ -63,12 +63,13 @@ jobs:
       # Text on an accent fill redirects muted and subtle to their on-accent pair,
       # or they fall below 4.5:1 there.
       - run: npm run check:on-accent
-      # The three stylesheet rules docs/conventions.md states: a spacing literal
-      # that has a rung, a control height frozen in px, a label restating the
-      # panel-label recipe.
+      # The stylesheet rules docs/conventions.md states: a spacing literal that
+      # has a rung, a control height frozen in px, a label restating the
+      # panel-label recipe, a z-index off the layer ladder.
       - run: npm run check:spacing
       - run: npm run check:controls
       - run: npm run check:labels
+      - run: npm run check:layers
       # Every public export carries a JSDoc block, and none is @internal
       # (docs/conventions.md). The report alone exits 0 whatever it finds.
       - run: npm run audit:jsdoc -- --quiet --check

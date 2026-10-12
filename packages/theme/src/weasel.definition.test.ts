@@ -24,7 +24,7 @@ const EXPECTED_NAMES = [
   'space-1', 'space-2', 'space-3', 'space-4', 'space-5', 'space-6', 'space-7', 'space-8',
   'space-xs', 'space-sm', 'space-md', 'space-lg',
   'tracking-none', 'tracking-wide', 'tracking-wider',
-  'z-toolbar', 'z-overlay', 'z-modal',
+  'z-toolbar', 'z-overlay', 'z-hud', 'z-modal', 'z-toast', 'z-popover', 'z-drag',
   'leading-tight', 'leading-snug', 'leading',
   'backdrop',
   'motion-fast', 'motion-medium',
