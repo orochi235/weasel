@@ -119,4 +119,5 @@ export type {
   CreateOutlinesResult,
   OutlinePathSpec,
   OutlineStrokeResult,
+  StrokeRegionOptions,
 } from '../interactions/actions/outlines';

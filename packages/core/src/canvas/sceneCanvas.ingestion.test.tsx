@@ -440,10 +440,10 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     expect(scene.roots).toHaveLength(0);
   });
 
-  function dragOver(canvas: Element): Event {
+  function dragOver(canvas: Element, type = 'image/png'): Event {
     const ev = new Event('dragover', { bubbles: true, cancelable: true });
     Object.assign(ev, {
-      dataTransfer: { items: [{ kind: 'file', type: 'image/png' }], files: [], types: ['Files'], dropEffect: 'none' },
+      dataTransfer: { items: [{ kind: 'file', type }], files: [], types: ['Files'], dropEffect: 'none' },
       clientX: 50, clientY: 60,
       altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
     });
@@ -463,6 +463,39 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     const ev = dragOver(canvas);
     expect(ev.defaultPrevented).toBe(true);
     expect(canvas.classList.contains('weasel-dropover')).toBe(true);
+  });
+
+  it('ingest refuses a drag no content handler would claim', () => {
+    const { canvas } = mount(['ingest']);
+    const ev = dragOver(canvas, 'application/pdf');
+    expect(ev.defaultPrevented).toBe(false);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(false);
+  });
+
+  it('ingest accepts that drag once a handler for it is registered', () => {
+    const scene = makeScene();
+    const { container } = render(
+      <SceneCanvas features={['ingest']} scene={scene} layers={{}} width={64} height={64}
+        ingestion={{ handlers: [{ id: 'app:pdf', match: 'application/pdf', handle: () => {} }] }} />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    expect(dragOver(canvas, 'application/pdf').defaultPrevented).toBe(true);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(true);
+  });
+
+  it('ingest leaves a paste no content handler claims to the page', async () => {
+    const { scene } = mount(['ingest']);
+    const ev = paste({ text: 'just words' });
+    await settle();
+    expect(scene.roots).toHaveLength(0);
+    expect(ev.defaultPrevented).toBe(false);
+  });
+
+  it('edit alone leaves pasted text that is no copied node to the page', async () => {
+    mount(['edit']);
+    const ev = paste({ text: 'just words' });
+    await settle();
+    expect(ev.defaultPrevented).toBe(false);
   });
 
   it('SceneCanvasApi.ingest reports whether the canvas had an ingest action to run', async () => {

@@ -10,6 +10,7 @@ import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
 import type { BindingSource } from './binding';
 import type { DepName } from '../../index';
+import type { IngestItem } from '@weasel-js/gestures';
 
 /**
  * @experimental
@@ -128,8 +129,18 @@ export interface ActionDispatch extends BindingSource {
    * falls through to the next binding and hover prediction shows the
    * action's `cursor` only where it would act. Palettes and keystrokes
    * pass no point; treat absent as "anywhere".
+   *
+   * `carried` is what a drop or a paste being routed brings: its items. For
+   * a drag still in flight they hold a MIME and nothing else, since a
+   * browser withholds contents until the drop. An action that takes only
+   * some content refuses the rest here, so a drag it would not take is not
+   * accepted and a paste it would not take stays the page's.
    */
-  enabled?: (deps?: ActionDeps, at?: { x: number; y: number }) => true | ActionDisabledReason;
+  enabled?: (
+    deps?: ActionDeps,
+    at?: { x: number; y: number },
+    carried?: { items: readonly IngestItem[] },
+  ) => true | ActionDisabledReason;
   /**
    * @experimental
    * Whether the action reads as held down right now: bold on the selected

@@ -1,4 +1,5 @@
 import type { InvocationCtx } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import type { NodeId } from 'core/scene/types';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
@@ -56,7 +57,7 @@ function shapeDelta(
   raw: number,
 ): number {
   gctx.modifiers = { ...moveCtx.modifiers };
-  gctx.pointer = { worldX: moveCtx.world.x, worldY: moveCtx.world.y, clientX: 0, clientY: 0 };
+  gctx.pointer = pointerStateOf(moveCtx.world, moveCtx);
   gctx.view = readers.view();
   gctx.plane = readers.plane();
   const primary = turn.origins.keys().next().value as NodeId;

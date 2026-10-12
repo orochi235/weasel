@@ -103,6 +103,7 @@ export const kitSvgHandler: ContentHandlerEntry = {
   match: (item) =>
     isSvgFileItem(item)
     || (item.kind === 'string' && item.mime === 'text/plain' && sniffSvgText(item.text)),
+  types: [SVG_MIME, 'application/octet-stream', 'text/plain'],
   priority: -90,
   handle(items, ctx: IngestCtx) {
     const files = items.flatMap((it) => (it.kind === 'file' ? [it.file] : []));

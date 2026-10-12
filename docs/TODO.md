@@ -35,11 +35,12 @@ Priority tags:
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
-  (a) drag-over feedback. A canvas now accepts a drag only when a `drop` binding would take what
-  it carries, and shows `weasel-dropover` then. Still missing: asking the content handlers, so a
-  drag no handler would claim is refused, and an insertion ghost under the pointer. Both belong in
-  the `ingest` action (`interactions/actions/defaults/ingest.ts`), which gives prediction nothing
-  to ask yet.
+  (a) an insertion ghost under the pointer during a drag. A canvas accepts a drag only when a
+  `drop` binding would take it and a content handler could claim it, and shows `weasel-dropover`
+  then. A ghost needs two things nothing has yet: somewhere for an action to draw while it is only
+  being predicted (`ingest` is an immediate action, and a dragover never invokes it), and what to
+  draw, since a browser withholds a dragged file's contents, its size included, until the drop.
+  It also needs a real OS drag to check, which no test here can start.
   (b) `kitTextHandler` turns pasted or dropped plain text into a text node sized to the string,
   and is exported but registered nowhere: a canvas opts in with `ingestion={{ handlers:
   [kitTextHandler] }}`. Whether `ingest` canvases should take text by default, and whether
@@ -110,15 +111,6 @@ Priority tags:
   is closed: `forNode` hands it the node, and `remapBounds`/`fromBounds` resolve
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
-
-- **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
-  ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
-  gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
-  `cloneAction` the way move, rotate, and insert do, or remove the behavior and the type.
-
-- **(P3) `GestureContext.pointer.clientX` / `clientY` are always 0.** Every default action fills
-  them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
-  from `PointerState`, or carry the client point through `InvocationCtx`.
 
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` now treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -267,13 +259,9 @@ have shipped. What remains:
 Core five + Crop shipped. Remaining:
 
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
-- **(P3) Outline Stroke passes over text.** `applyOutlineStroke` reads path nodes only, so stroked text has to go through Create Outlines first. `textToPathsByPaint` already gives each paint's glyphs with their stroke.
-- **(P3) Trim and Merge are not Boolean operations yet.** The geometry exists: `pathTrim` and `pathMerge` (`@weasel-js/geom/booleans`) return each piece with the inputs it came from, and Merge takes the key that says which inputs wear the same paint. The adapter answers each operand's paint (`BooleansAdapter.getPaint`) and takes the paint a result must wear (`createPathNode`'s `paint`). What is left is `'trim'` and `'merge'` in `BooleanOp` and `applyBooleanOp`, which give each result its own source's paint where it passes one for all of them, and their actions and menu entries.
-- **(P3) Divide and Crop paint every piece like the topmost source.** `applyBooleanOp` hands `createPathNode` one `sourceId`, the topmost, for every result, so a Crop's pieces take the mask's paint and its parent, not their own source's. `pathDividePieces` and `pathCropPieces` (`@weasel-js/geom/booleans`) now say which inputs each piece came from; `applyBooleanOp` still calls `pathDivide` and `pathCrop` and has to pass each piece's last source instead.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
-- **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
-- **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not. `strokeToPath` now takes the `frame` a stroke is drawn in and stretches the outline with it; what is left is the two callers passing the node's `poseFrameOf`, or the screen's frame for a `{ px }` width, which `BooleansAdapter` and `CreateOutlinesAdapter` have no way to hand them yet.
+- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
 
 ---
 
@@ -676,11 +664,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
-
-- **(P3) A consumer's behavior cannot do frame math.** `GestureContext` carries no pose
-  composition and no per-layer plane map, so `ctx.current` is a stored pose shifted by a plane
-  delta and a behavior outside core cannot compose it to world. Move's own behaviors close over the
-  session instead.
 
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (move, resize, rotate, flip, align, distribute, clone, clipboard,

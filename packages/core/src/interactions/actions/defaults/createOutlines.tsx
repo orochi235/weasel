@@ -1,29 +1,44 @@
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-import { loadTextOutlines, type TextNodeSource } from '@weasel-js/text';
+import { loadTextOutlines, type TextNodeSource, type TextOutlinesError } from '@weasel-js/text';
 import {
   applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult,
 } from '../outlines/createOutlines';
 import { CreateOutlinesIcon } from './icons/outlineIcons';
 
+/** What an outline conversion answers when a text face had no outlines. */
+type OutlinesFailure = { kind: 'failed'; error: TextOutlinesError };
+
 /**
- * {@link applyCreateOutlines}, waiting first for any face whose outlines are
- * registered but not yet loaded — a face is parsed on first use, so the first
- * conversion in a session would otherwise fail. Warns with the reason when
- * the selection still cannot be converted.
+ * Run `apply`, an outline conversion of `adapter`'s selection, waiting first
+ * for any face whose outlines are registered but not yet loaded — a face is
+ * parsed on first use, so the first conversion in a session would otherwise
+ * fail. Warns under `tag` with the reason when the selection still cannot be
+ * converted.
  */
-export async function runCreateOutlines(adapter: CreateOutlinesAdapter): Promise<CreateOutlinesResult> {
-  let result = applyCreateOutlines(adapter);
-  if (result.kind === 'failed' && result.error.reason === 'outlines-loading') {
+export async function withTextOutlines<R extends { kind: string } | OutlinesFailure>(
+  adapter: CreateOutlinesAdapter,
+  apply: () => R,
+  tag: string,
+): Promise<R> {
+  const failure = (r: R): TextOutlinesError | null => (r.kind === 'failed' ? (r as OutlinesFailure).error : null);
+  let result = apply();
+  if (failure(result)?.reason === 'outlines-loading') {
     const texts = [...adapter.getSelection()]
       .map((id) => adapter.getTextSource(id as NodeId))
       .filter((t): t is TextNodeSource => t !== undefined);
     await Promise.all(texts.map((t) => loadTextOutlines(t.data)));
-    result = applyCreateOutlines(adapter);
+    result = apply();
   }
-  if (result.kind === 'failed') console.warn(`[createOutlines] ${result.error.message}`);
+  const error = failure(result);
+  if (error) console.warn(`[${tag}] ${error.message}`);
   return result;
+}
+
+/** {@link applyCreateOutlines} through {@link withTextOutlines}. */
+export function runCreateOutlines(adapter: CreateOutlinesAdapter): Promise<CreateOutlinesResult> {
+  return withTextOutlines(adapter, () => applyCreateOutlines(adapter), 'createOutlines');
 }
 
 /**

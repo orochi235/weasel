@@ -33,6 +33,12 @@ Registration order matters: the kit's JSON handler is what makes an internal
 copy/paste preserve everything rather than degrading to an image, so it must get
 first refusal on clipboard content that also carries an image flavor.
 
+A drag still in flight shows its MIMEs and no contents, so the canvas cannot put
+it to a predicate `match`. It asks `couldClaim` instead, which reads globs and a
+predicate handler's declared `types`, and refuses the drag when no handler could
+take it. A predicate handler with no `types` might take anything, so while one is
+registered no drag is refused.
+
 `registerContentHandler` is the extension point — register your own to handle a
 domain format (a `.dxf`, a CSV that becomes a table) before the kit's fallbacks.
 

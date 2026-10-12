@@ -62,15 +62,9 @@ export function drawBooleansAdapter(
       // Booleans, slice (sliceCommit.ts), and release-compound (onReleaseCompound)
       // all follow this same convention — the data payload that varies per site
       // is too context-specific (style inheritance source) to share a helper.
-      // Inherit the topmost selected leaf's paint so the result reads as a
-      // continuation of the source style. Falls back to a neutral fill if
-      // no leaf is selected (shouldn't happen — `enabled` gates the op).
-      const sel = a.getSelection();
-      let template: WeaselDrawData | undefined;
-      for (let i = sel.length - 1; i >= 0; i--) {
-        const n = scene.get(asNodeId(sel[i]));
-        if (n && n.kind === 'leaf') { template = n.data; break; }
-      }
+      // The result wears the paint of the source it stands in for.
+      const source = scene.get(sourceId);
+      const template = source?.kind === 'leaf' ? source.data : undefined;
       const b = boundsOfPath(path);
       // Ids restart with the session, and a reloaded document keeps the last
       // session's.

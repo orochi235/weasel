@@ -1,7 +1,6 @@
 import type { Op } from 'core/ops/types';
 import { commitGestureOps, reduceBehaviorEnd } from '../../gestureLifecycle';
-import { translatePoseViaDescriptor } from '../../resize/geometry';
-import { planeDelta } from '../delta';
+import { draggedStoredPose } from '../delta';
 import { landedDescendantOps } from '../landedDescendants';
 import type { MoveSession } from '../session';
 import { rootTranslateOps, translateOps } from '../translate';
@@ -23,8 +22,7 @@ function endBehaviors(
   const { dx, dy } = delta;
   const gctx = session.gestureCtx;
   for (const [id, ori] of session.startPoses) {
-    const own = planeDelta(session, id, dx, dy);
-    gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, session.descriptorOf(id)));
+    gctx.current.set(id as string, draggedStoredPose(session, id, ori, dx, dy));
   }
   return reduceBehaviorEnd(session.behaviors, gctx, {
     translateOps: (ids) => rootTranslateOps(session, ids, delta),

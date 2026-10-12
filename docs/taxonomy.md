@@ -820,7 +820,8 @@ Two distinct context shapes that appear at different layers:
 
 - **`GestureContext<TPose>`** — the per-frame context passed to
   [Behavior](#behavior) methods. Carries `draggedIds`, `origin`, `current` (live
-  pose map), `snap`, `modifiers`, `pointer`, `adapter` (typed as `MoveAdapter`),
+  pose map), `snap`, `modifiers`, `pointer`, `frames` (stored pose to world and back),
+  `adapter` (typed as `MoveAdapter`),
   and `scratch` (per-gesture key/value store). More gesture-specific than
   `ToolCtx`. See `packages/core/src/interactions/gestures/types.ts:26`.
 
