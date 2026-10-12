@@ -7,7 +7,7 @@
  */
 import type { PoseDescriptor } from '../resize/geometry';
 import type { SpatialReference } from '../spatialReference';
-import { poseLinearOf } from 'core/geometry/poseFrame';
+import { poseLinearOf } from '@weasel-js/geom';
 
 /** Axis for flip. `'x'` mirrors horizontally (left↔right); `'y'` mirrors vertically (top↔bottom). */
 export type FlipAxis = 'x' | 'y';

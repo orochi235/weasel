@@ -1,6 +1,6 @@
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId, PoseOverride, PoseOverrides } from '../../core/scene/types';
-import { AUTO_POSE_DESCRIPTOR } from '../../interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { createTarget, type Target } from '../target';
 import { skeletonAxes } from './skeletonAxes';

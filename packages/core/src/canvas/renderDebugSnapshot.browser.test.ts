@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import type { RectPose } from 'features/groups/composePose';
+import type { RectPose } from 'core/scene/composePose';
 import { renderDebugSnapshot } from './renderDebugSnapshot';
 import { rasterToPng } from './rasterToPng';
 import { createDebugSink } from '../debug/createDebugSink';

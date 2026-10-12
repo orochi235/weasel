@@ -5,8 +5,8 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
-import { makeFrameFixture, expectSamePose, FRAME_FIXTURE_IDS, FRAME_FIXTURE_LOCAL } from 'features/groups/frameFixture';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { makeFrameFixture, expectSamePose, FRAME_FIXTURE_IDS, FRAME_FIXTURE_LOCAL } from 'core/scene/frameFixture';
 import { nudgeRightAction } from './nudge';
 
 const G = asNodeId('g');

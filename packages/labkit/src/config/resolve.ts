@@ -97,6 +97,8 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
       }
       if (section.layout !== undefined && spec.layout === undefined) spec.layout = section.layout;
       if (section.pack !== undefined && spec.pack === undefined) spec.pack = section.pack;
+      if (section.className !== undefined && spec.className === undefined)
+        spec.className = section.className;
     }
     if (predicate) sink.showIf.set(path, predicate);
     if (enableIf) sink.enableIf.set(path, enableIf);

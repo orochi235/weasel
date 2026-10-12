@@ -1,7 +1,7 @@
 import type { NodeId } from 'core/scene/types';
 import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { toPlane } from 'core/viewport/parallax';
-import { composeWorldPose, type PoseAdapter } from 'features/groups/composePose';
+import { composeWorldPose, type PoseAdapter } from 'core/scene/composePose';
 import { planeOf } from '../planeInput';
 import type { MoveSession } from './session';
 

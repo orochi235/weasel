@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { scenePoseFrame } from './poseFrame';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
   FRAME_FIXTURE_IDS,
   FRAME_FIXTURE_WORLD,
   FRAME_FIXTURE_LOCAL,
-} from 'features/groups/frameFixture';
+} from 'core/scene/frameFixture';
 import type { RectPose } from 'core/scene/types';
 
 function fixtureFrame() {

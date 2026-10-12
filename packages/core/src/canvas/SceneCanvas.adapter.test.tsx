@@ -11,7 +11,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { useOptionalViewInputs } from './viewInputs';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
-import { RECT_POSE_COMPOSITION } from 'features/groups/composePose';
+import { RECT_POSE_COMPOSITION } from 'core/scene/composePose';
 
 type D = { kind: 'rect' };
 type L = 'main';

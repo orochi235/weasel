@@ -9,7 +9,7 @@ import type { GlMat3 } from '@weasel-js/geom';
 import { quantizeStrokeScale } from './cache/strokeMeshCache';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
-import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
+import { SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 
 /**
  * Merge a group's glyphs into one world-space mesh, or `null` when nothing in

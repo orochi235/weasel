@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { registerFont, subscribeGlyphReady } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { createScene } from 'core/scene/scene';
-import type { RectPose } from 'features/groups/composePose';
+import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';

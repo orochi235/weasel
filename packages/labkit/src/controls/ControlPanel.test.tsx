@@ -521,7 +521,7 @@ describe('<ControlPanel> section layout', () => {
           { value: 'b', label: 'B' },
         ])
         .label('Mode')
-        .section('Globals', { layout: 'inline', pack: 'one-up' }),
+        .section('Globals', { layout: 'inline', pack: 'one-up', className: 'pins' }),
       font: f
         .enum('x', [{ value: 'x', label: 'X' }])
         .label('Font')
@@ -548,6 +548,11 @@ describe('<ControlPanel> section layout', () => {
     expect(schema.sections.find((section) => section.label === 'Advanced')).not.toHaveProperty(
       'layout',
     );
+  });
+  it('puts a section’s class on that section’s frame alone', () => {
+    render(<ControlPanel schema={schema} config={config} setConfig={vi.fn()} />);
+    expect(screen.getByRole('group', { name: 'Globals' }).className).toMatch(/(^| )pins( |$)/);
+    expect(screen.getByRole('group', { name: 'Advanced' }).className).not.toMatch(/(^| )pins( |$)/);
   });
 });
 

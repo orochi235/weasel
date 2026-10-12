@@ -12,7 +12,7 @@ import { asNodeId } from 'core/scene/types';
 import { pickWalk, scenePickSource, hiddenLayerIds, type ScenePickSourceOptions } from './pickWalk';
 import { hitTestArea } from './deps/hitTestArea';
 import { sceneToAdapter } from './sceneAdapter';
-import type { RectPose } from 'features/groups/composePose';
+import type { RectPose } from 'core/scene/composePose';
 import type { Path } from '@weasel-js/geom';
 
 function rectScene() {

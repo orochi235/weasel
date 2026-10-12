@@ -16,4 +16,4 @@ export {
 } from './cornerHandles';
 export * from './behaviors';
 
-export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from './autoPoseDescriptor';
+export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';

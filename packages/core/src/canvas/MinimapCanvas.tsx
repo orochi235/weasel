@@ -51,7 +51,7 @@ import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
 import type { Animator } from '../animation/types';
-import { AUTO_POSE_DESCRIPTOR } from '../interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { accentColorOf } from './accentColor';
 
 /** Props for `<MinimapCanvas>`. */

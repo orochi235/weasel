@@ -7,8 +7,8 @@ import {
   composeWorldPose,
   frameAtOrAbove,
   type PoseComposition,
-} from 'features/groups/composePose';
-import { scenePoseAdapter } from 'features/groups/scenePoseAdapter';
+} from 'core/scene/composePose';
+import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
 import { invertPlane, planeOf } from '../planeInput';

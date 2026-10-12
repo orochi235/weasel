@@ -8,5 +8,5 @@
  * application finds by autocomplete.
  */
 
-export { _resetPaintKindsForTests } from '../core/paintKinds';
+export { _resetPaintKindsForTests } from 'renderer/paintKinds';
 export { _resetMarkersForTests } from '@weasel-js/stroke/test-seams';

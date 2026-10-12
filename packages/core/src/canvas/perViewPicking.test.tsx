@@ -11,7 +11,7 @@ import { useSceneAdapter } from 'canvas/sceneAdapter';
 import { CanvasView } from './CanvasView';
 import { ViewInputsProvider } from './viewInputs';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { View } from 'core/viewport/view';
 import { useEffect } from 'react';
 

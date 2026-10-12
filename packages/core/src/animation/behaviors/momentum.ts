@@ -2,7 +2,7 @@ import type { Op } from 'core/ops/types';
 import type { MoveBehavior, GestureContext } from 'interactions/gestures/types';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { Target } from '../target';
 import type { Animator } from '../types';
 import type { Coast, CoastArgs } from './coast';

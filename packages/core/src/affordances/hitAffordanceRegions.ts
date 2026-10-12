@@ -18,7 +18,7 @@
 import type { View } from 'core/viewport/view';
 import { pxExtent, scaleDelta, screenAngleOf, standoff } from '@weasel-js/geom';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import { poseRotationOf } from 'core/geometry/poseRotation';
+import { poseRotationOf } from '@weasel-js/geom';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 
 /** What the walk found: the region, plus the ids needed to describe it. */

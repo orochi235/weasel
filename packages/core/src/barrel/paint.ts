@@ -1,15 +1,15 @@
 /** Part of the `@weasel-js/core` barrel. Fills, strokes, paint kinds, and color. */
 
 // ─── Tile / pattern fills ───────────────────────────────────────────────────
-export { createTilePattern } from '../features/patterns';
-export type { TilePatternOpts } from '../features/patterns';
+export { createTilePattern } from 'renderer/patterns';
+export type { TilePatternOpts } from 'renderer/patterns';
 
 // Mesh gradients live on `@weasel-js/core/mesh`, off the root barrel.
 export {
   resolvePatternSpec,
   resolveFillPattern,
   isPatternSpec,
-} from '../features/patterns/resolveSpec';
+} from 'renderer/patterns/resolveSpec';
 
 // ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
 export {
@@ -56,10 +56,10 @@ export {
   gradientGeometry,
   gradientForBounds,
 } from '@weasel-js/paint';
-export { fillInPoseFrame, fillToBoundsFrame } from '../core/fillInPoseFrame';
-export type { FillPoseBox } from '../core/fillInPoseFrame';
+export { fillInPoseFrame, fillToBoundsFrame } from 'renderer/fillInPoseFrame';
+export type { FillPoseBox } from 'renderer/fillInPoseFrame';
 // A node's paint resolved into what a draw command takes.
-export { commandFill, commandStroke } from '../features/patterns/commandPaint';
+export { commandFill, commandStroke } from 'renderer/patterns/commandPaint';
 
 // ─── Utility: hex8 color helpers ────────────────────────────────────────────
 export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '../util/color';
@@ -79,7 +79,7 @@ export {
   paintKindOf,
   switchGradientKind,
   paintKindRegistry,
-} from '../core/paintKinds';
+} from 'renderer/paintKinds';
 export { usePaintKinds, useGradientKinds, usePaintKind } from '../core/usePaintKinds';
 export type {
   PaintKind,
@@ -89,7 +89,7 @@ export type {
   PaintBindContext,
   PaintProgram,
   PaintResources,
-} from '../core/paintKinds';
+} from 'renderer/paintKinds';
 export type { ProgramSource } from '../renderer/shaders/registerProgram';
 export type { ShaderProgram } from '../renderer/shaders/ShaderProgram';
 

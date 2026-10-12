@@ -3,7 +3,7 @@ import type { History, SerializedHistory } from '@weasel-js/history';
 import type { ParallaxOpts } from '../viewport/parallax';
 import type { ContainerBounds, LayoutStrategy } from '../../layout/types';
 import type { PoseComposition } from './composeFrame';
-import type { PoseLinear } from '../geometry/poseFrame';
+import type { PoseLinear } from '@weasel-js/geom';
 
 /**
  * Axis-aligned rectangle pose with optional rotation. The canonical pose

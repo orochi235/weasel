@@ -20,7 +20,7 @@ import { pickTopMostHit } from '../pickTopMostHit';
 import { onEmptyCanvas } from './selectionContributions';
 import { hitPredicate } from '@weasel-js/gestures';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };

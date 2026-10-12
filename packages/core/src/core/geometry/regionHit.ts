@@ -19,7 +19,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { LassoHitMode } from 'core/adapters/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { Vec2 } from './vec2';
-import { pathThroughPoseFrame, poseFrameOf } from './poseFrame';
+import { pathThroughPoseFrame, poseFrameOf } from '@weasel-js/geom';
 import { visualBoundsViaDescriptor, type PoseDescriptor } from './poseDescriptor';
 
 /** A closed selection area: a marquee rect or a lasso polygon. */

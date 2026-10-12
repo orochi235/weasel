@@ -5,7 +5,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
-import { textCommandFromRuns } from 'features/text/textCommand';
+import { textCommandFromRuns } from 'renderer/textCommand';
 import type {
   DebugConfig,
   DebugSnapshot,

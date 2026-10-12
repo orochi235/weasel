@@ -7,7 +7,7 @@ import { boundsOfPath } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { RectPose } from 'core/scene/types';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { visualBoundsViaDescriptor } from 'core/geometry/poseDescriptor';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { poseOutline } from 'core/geometry/regionHit';

@@ -1,0 +1,138 @@
+/**
+ * A panel's sections, drawn: a `bar` as one line, a run of `tab` sections as
+ * one strip, a `panel` in a box, and the rest as rows under their headings.
+ */
+import { Fragment, type ReactNode } from 'react';
+import { BarLayout } from '../Bar/BarLayout';
+import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
+import { prefDrawsNoControl } from '../Prefs/PrefWords';
+import { pathWithin, selectionAttrs } from '../Prefs/selection';
+import type { RenderedCell } from './cells';
+import { panelLeafKey, type PanelRow, type PanelSection } from './model';
+import { rowCells, type PanelCellScope } from './panelCells';
+import { PanelTabs, type PanelMarks } from './selection';
+import s from './SelectionPanel.module.css';
+
+/** A section with what it draws, before it is placed among its neighbors. */
+interface DrawnSection {
+  section: PanelSection;
+  content: ReactNode;
+  /** Every row of the section is one a `showIf` hides, and its heading says so. */
+  hidden?: boolean;
+}
+
+/** One line of bar forms, with no heading and no row labels. */
+function barSection(section: PanelSection, scope: PanelCellScope, marks: PanelMarks): DrawnSection[] {
+  const cells = section.rows.flatMap((row) => rowCells(row, scope, 'bar'));
+  if (cells.length === 0) return [];
+  const bar = (
+    <BarLayout
+      framed
+      label={section.name === '' ? undefined : section.name}
+      nodes={cells.map((cell) => ({ kind: 'cell', path: cell.key, content: cell.content }))}
+      cells={() => []}
+      row={() => null}
+      attrs={(at, leaf) => selectionAttrs(at, marks, leaf)}
+    />
+  );
+  return [{ section, content: bar }];
+}
+
+/**
+ * A `block` leaf brings its own chrome — it spans the section instead of
+ * sitting in a labeled row's control cell. Under a headless section nothing
+ * else names it, so it heads itself; an object leaf already renders its own
+ * heading.
+ */
+function blockRow(row: PanelRow, control: RenderedCell, headless: boolean, marks: PanelMarks, marked: boolean): ReactNode {
+  const [only] = row.leaves;
+  return (
+    // An object leaf ends in rows of its own, each with the gap a row leaves under it.
+    <div key={panelLeafKey(only)} className={only.leaf.kind === 'object' ? undefined : s.blockRow}
+      {...selectionAttrs(panelLeafKey(only), marks, true)}>
+      {marked && <HiddenBadge lead />}
+      {headless && only.leaf.kind !== 'object' && !prefDrawsNoControl(only.leaf) && (
+        <h4 className={s.sectionTitle} title={only.leaf.description}>
+          {only.leaf.name}
+        </h4>
+      )}
+      {control.content}
+    </div>
+  );
+}
+
+function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: PanelMarks, marked: boolean): ReactNode {
+  const [first] = row.leaves;
+  return (
+    // A row several leaves share stands for no one of them.
+    <div key={panelLeafKey(first)} className={s.row} {...(controls.every((cell) => cell.disabled) ? { 'data-disabled': '' } : {})}
+      {...(row.leaves.length === 1 ? selectionAttrs(panelLeafKey(first), marks, true) : hiddenAttrs(marked))}>
+      <span className={s.rowLabel} title={first.leaf.description}>
+        {row.label}
+        {marked && <HiddenBadge />}
+      </span>
+      <span className={s.rowControls}>
+        {controls.map(({ key, content }) => (
+          <Fragment key={key}>{content}</Fragment>
+        ))}
+      </span>
+    </div>
+  );
+}
+
+/** A section's rows under its heading, or nothing when no row draws a control. */
+function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelMarks): DrawnSection[] {
+  // Render controls before emitting row chrome so a null-rendering
+  // leaf (custom renderer opting out) collapses its cell — and the
+  // whole row / section when nothing survives. PrefsForm precedent.
+  const rows = section.rows
+    .map((row) => ({ row, controls: rowCells(row, scope) }))
+    .filter(({ controls }) => controls.length > 0);
+  if (rows.length === 0) return [];
+  const headed = section.name !== '' && section.as !== 'tab' && section.as !== 'fragment';
+  // A section hidden whole carries one mark, on its heading; with no heading each of its rows does.
+  const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden));
+  const rowMarks: PanelMarks = whole ? { ...marks, hidden: undefined } : marks;
+  const marked = (controls: readonly RenderedCell[]): boolean => !whole && controls.every((cell) => cell.hidden);
+  const content = (
+    <>
+      {headed && <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>}
+      {rows.map(({ row, controls }) =>
+        row.leaves.length === 1 && controls[0].block
+          ? blockRow(row, controls[0], section.name === '', rowMarks, marked(controls))
+          : labeledRow(row, controls, rowMarks, marked(controls)),
+      )}
+    </>
+  );
+  return [{ section, content, hidden: whole }];
+}
+
+/** The sections in order: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
+function placed(sections: readonly DrawnSection[], lead: string | null | undefined): ReactNode[] {
+  const out: ReactNode[] = [];
+  for (let i = 0; i < sections.length; i++) {
+    const { section, content } = sections[i]!;
+    if (section.as !== 'tab') {
+      const cls = section.as === 'panel' ? `${s.section} ${s.sectionPanel}` : s.section;
+      out.push(<section key={section.key} className={cls} {...hiddenAttrs(sections[i]!.hidden === true)}>{content}</section>);
+      continue;
+    }
+    const run = [];
+    for (; i < sections.length && sections[i]!.section.as === 'tab'; i++) {
+      const at = sections[i]!.section;
+      const holds = at.rows.some((row) => row.leaves.some((item) => pathWithin(panelLeafKey(item), lead)));
+      run.push({ id: at.key, name: at.name, content: sections[i]!.content, holds });
+    }
+    i--;
+    out.push(<PanelTabs key={section.key} className={s.section} tabs={run} lead={lead} />);
+  }
+  return out;
+}
+
+/** Every section of a panel that has something to draw, in order. */
+export function panelSections(sections: readonly PanelSection[], scope: PanelCellScope, marks: PanelMarks): ReactNode[] {
+  const drawn = sections.flatMap((section) =>
+    section.as === 'bar' ? barSection(section, scope, marks) : rowsSection(section, scope, marks),
+  );
+  return placed(drawn, marks.lead);
+}

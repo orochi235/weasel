@@ -26,7 +26,7 @@ import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf } from './derivedPath';
-import type { PoseComposition } from 'features/groups/composePose';
+import type { PoseComposition } from 'core/scene/composePose';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { clipCarrier } from './planeClips';

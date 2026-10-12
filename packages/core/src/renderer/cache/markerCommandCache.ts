@@ -15,7 +15,7 @@
 import type { Path } from '@weasel-js/geom';
 import type { CommandFill, MarkerRef, CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
-import { headCommands } from 'features/paths/markerCommands';
+import { headCommands } from 'renderer/markerCommands';
 import { markerHeads, markerReadsKey, type MarkerHead } from '@weasel-js/stroke';
 import { getMarker, markerGeneration } from '@weasel-js/stroke';
 import { markerKeyOf } from '@weasel-js/stroke';

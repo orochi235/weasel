@@ -1,4 +1,4 @@
-import { isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
+import { isPathLike } from 'core/geometry/autoPoseDescriptor';
 import { boundsOfPath, translatePath, type Path } from '@weasel-js/geom';
 
 /**

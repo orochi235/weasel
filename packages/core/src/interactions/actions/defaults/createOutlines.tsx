@@ -1,7 +1,7 @@
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-import { loadTextOutlines, type TextNodeSource } from 'features/text/textToPath';
+import { loadTextOutlines, type TextNodeSource } from '@weasel-js/text';
 import {
   applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult,
 } from '../outlines/createOutlines';

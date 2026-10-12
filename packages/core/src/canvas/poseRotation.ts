@@ -13,7 +13,7 @@
  * preview), so every code path produces rotated geometry uniformly.
  */
 import type { DrawCommand } from '../renderer';
-import { poseFrameOf } from 'core/geometry/poseFrame';
+import { poseFrameOf } from '@weasel-js/geom';
 import { rotateAboutPoint, mat3, type GlMat3 } from '@weasel-js/geom';
 
 /** Rotation by `rotation` about `(cx, cy)` as the render-tree's column-major

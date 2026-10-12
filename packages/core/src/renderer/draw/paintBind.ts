@@ -1,5 +1,5 @@
 import type { FillStyle } from '@weasel-js/paint';
-import type { PaintBindContext, PaintResources } from 'core/paintKinds';
+import type { PaintBindContext, PaintResources } from 'renderer/paintKinds';
 import { createPaintResources } from '../paintResources';
 import { getTexture, type TextureHandle } from '../textures/registerTexture';
 import type { ShaderProgram } from '../shaders/ShaderProgram';

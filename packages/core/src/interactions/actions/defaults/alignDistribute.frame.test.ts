@@ -8,14 +8,14 @@
 import { describe, it, expect } from 'vitest';
 import { alignLeftAction } from './align';
 import { distributeHorizontalAction } from './distribute';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
   FRAME_FIXTURE_IDS,
   type FrameFixtureData,
   type FrameFixtureLayer,
-} from 'features/groups/frameFixture';
+} from 'core/scene/frameFixture';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 

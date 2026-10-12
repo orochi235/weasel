@@ -1,1 +1,1 @@
-export * from 'features/patterns/patterns-builtin';
+export * from 'renderer/patterns/patterns-builtin';

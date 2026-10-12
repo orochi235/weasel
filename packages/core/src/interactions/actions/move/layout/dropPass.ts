@@ -1,7 +1,7 @@
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
-import { composeWorldPose, rebaseLocalPose } from 'features/groups/composePose';
-import { scenePoseAdapter } from 'features/groups/scenePoseAdapter';
+import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
+import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { LayoutChild, LayoutContainer } from '../../../../layout/types';
 import type { MoveSession } from '../session';
 import { pickContainer, type Candidate } from './container';

@@ -56,16 +56,18 @@ tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 > data via `pathFromD` — the kit does not define a bespoke path DSL. Builders
 > are a co-equal choice, not a lesser one. See `docs/conventions.md`.
 
-**Here** — the pose-rotation convention is in `core/geometry/poseRotation.ts`,
-because `core/adapters/arrayAdapter.ts` needs it and core may not import from
-here.
+**Here** — the pose-rotation convention (`poseRotationOf`) and the pose frame
+(`poseFrameOf`) are in `@weasel-js/geom`.
 
-**Transform** — `pathInWorld.ts`, `poseDescriptor.ts`, `originProjection.ts`
+**Transform** — `poseDescriptor.ts`, `originProjection.ts`; `pathInWorld` and
+`worldEditToStorage` are in `@weasel-js/geom`.
 
-**Editing** — `anchorEdits.ts` (the anchor-set mutations: translate,
-handle-drag with smooth mirroring, insert-on-segment, delete-with-refit,
-scissors, rect select). The anchor model itself (`pathToAnchors` /
-`anchorsToPath`, `PenAnchor`, `nearestSegmentT`) is in `@weasel-js/geom`.
+**Editing** — in `@weasel-js/geom`: `paths/anchorEdits.ts` (the anchor-set
+mutations: translate, handle-drag with smooth mirroring, insert-on-segment,
+delete-with-refit, scissors, rect select) and the anchor model itself
+(`pathToAnchors` / `anchorsToPath`, `PenAnchor`, `nearestSegmentT`). Its
+invariant test, `anchorEdits.test.ts`, stays here because it reads an action's
+anchor walker.
 
 **Rendering** — `pathLayer.ts`, `markerCommands.ts` (marker heads as draw
 commands; the ribbon, the marker registry and `strokeToPath` are in

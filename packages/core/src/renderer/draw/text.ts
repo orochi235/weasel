@@ -22,7 +22,7 @@ import {
 } from '@weasel-js/font';
 import { outlineGroupMesh, outlineGroupStrokeMesh } from '../glyphOutlineMesh';
 import type { ClipRect } from '../batchClip';
-import { SYNTHETIC_ITALIC_RADIANS } from '../syntheticItalic';
+import { SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { DrawContext, GlyphPaintKind } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { applyClipTest } from './stencil';

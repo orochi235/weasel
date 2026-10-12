@@ -17,9 +17,9 @@
   "sideEffects": [
     "*.css",
     "./src/import-shims/mesh.ts",
-    "./src/features/meshPaint/register.ts",
+    "./src/renderer/meshPaint/register.ts",
     "./dist/mesh.js",
-    "./dist/features/meshPaint/register.js"
+    "./dist/renderer/meshPaint/register.js"
   ],
   "engines": {
     "node": ">=22"

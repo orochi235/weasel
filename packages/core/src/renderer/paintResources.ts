@@ -1,4 +1,4 @@
-import type { PaintResources } from 'core/paintKinds';
+import type { PaintResources } from 'renderer/paintKinds';
 
 /** A {@link PaintResources} with the end of its lifetime in the owner's hands. */
 export interface OwnedPaintResources extends PaintResources {

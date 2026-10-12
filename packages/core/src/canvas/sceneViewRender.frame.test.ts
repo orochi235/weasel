@@ -20,8 +20,8 @@ import {
   makeFrameFixture,
   type FrameFixtureData,
   type FrameFixtureLayer,
-} from 'features/groups/frameFixture';
-import { RIGID_POSE_COMPOSITION } from 'features/groups/composePose';
+} from 'core/scene/frameFixture';
+import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { RectPose } from 'core/scene/types';
 import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
