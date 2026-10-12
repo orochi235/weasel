@@ -863,7 +863,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'prefs',
     title: 'Preferences store',
     package: 'prefs',
-    description: 'A `PrefGroup` schema opened with `openPrefsSync` over `localStorageAdapter`, so values survive a reload. `usePrefsValues` hands `PrefsForm` its `values` and `onChange`, and the table sets `store.values()` beside `store.stored()`: a leaf with no record follows its default and reads as unset. An `enableIf` and a `showIf` on the schema disable or hide rows while the grid is off.',
+    description: 'A `PrefGroup` schema whose store `usePrefsStore` opens over `localStorageAdapter` for as long as the demo is mounted, so values survive a reload. `usePrefsValues` hands `PrefsForm` its `values` and `onChange`, and the table sets `store.values()` beside `store.stored()`: a leaf with no record follows its default and reads as unset. An `enableIf` and a `showIf` on the schema disable or hide rows while the grid is off.',
     hint: 'Press "Store size 500": the record keeps 500, and the value reads 64, the leaf\'s max. Reload to see it persist.',
     load: () => import('./demos/PrefsDemo').then((m) => m.PrefsDemo),
     path: 'apps/site/demos/PrefsDemo.tsx',

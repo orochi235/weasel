@@ -1,5 +1,5 @@
-import { openPrefsSync, prefLeaves, prefValueAtPath, type PrefGroup, type PrefsStore } from '@weasel-js/prefs';
-import { usePref, usePrefsValues } from '@weasel-js/prefs/react';
+import { prefLeaves, prefValueAtPath, type PrefGroup } from '@weasel-js/prefs';
+import { usePref, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { Button, PrefsForm } from '@weasel-js/ui';
 import s from './PrefsDemo.module.css';
@@ -46,16 +46,8 @@ const PATHS = [...prefLeaves(SCHEMA).keys()];
 
 const show = (value: unknown) => (value === undefined ? '—' : JSON.stringify(value));
 
-type Store = PrefsStore<typeof SCHEMA>;
-let opened: Store | null = null;
-
-// Opened on first render and kept for the page's life: one store per prefix,
-// so a revisit reuses it where a second open would be a second writer.
-const prefs = (): Store =>
-  (opened ??= openPrefsSync(SCHEMA, { storage: localStorageAdapter, prefix: 'weasel-demo-prefs.' }));
-
 export function PrefsDemo() {
-  const store = prefs();
+  const store = usePrefsStore(SCHEMA, { storage: localStorageAdapter, prefix: 'weasel-demo-prefs.' });
   const { values, set, unset, stored, reset } = usePrefsValues(store);
   const [, setSize] = usePref(store, 'grid.size');
 
