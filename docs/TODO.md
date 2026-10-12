@@ -855,11 +855,12 @@ built 2026-10-11. What that left:
   `useAnimator.hold.test.tsx` ("hands what a canceled offset left under it to the next
   animation"), not fixed: whether an offset under a hold should show at all is a call on the
   model, since a hold at a weight below 1 shows part of the committed value.
-- **(P3) core pins `@msb235/blits` at 0.8.1, and blits was at 0.10.0 on 2026-10-11** — its log
-  since includes "play a voice once unless it is told to loop", and the codec cues its hold
-  with `loop: true` and its paths with `loop: false`. Raising the pin means reading blits'
-  changelog against `engine/blitsContract.test.ts`. Ruled 2026-10-11: blits stays in its own
-  repo and does not become a `@weasel-js` package.
+- **(P3) A negative time scale throws from the animator's next frame** — `setTimeScale(-1)`
+  with a target tween 300 ms in ends the frame with `RangeError: blits: sync went back from 300
+  to 100`, seen 2026-10-11 on blits 0.10.0. Nothing refuses the scale and `setTimeScale`'s doc
+  does not say what below 0 means. Either refuse it where it is set, or play backward: the
+  animator's clock would have to keep going forward and hand each voice a rate below 0, which
+  blits 0.9.0 ends where the voice started.
 
 ### Earlier deferrals
 
