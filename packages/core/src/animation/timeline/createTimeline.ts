@@ -45,6 +45,12 @@ function tracksEnd(tracks: Track[], explicit?: number): number {
   return max;
 }
 
+function notify(set: Set<() => void>): void {
+  for (const cb of set) {
+    try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
+  }
+}
+
 /**
  * Create a timeline as a registered animator animation.
  *
@@ -84,11 +90,6 @@ export function createTimeline(
 
   const subscribers = new Set<() => void>();
   const playbackSubscribers = new Set<() => void>();
-  const notify = (set: Set<() => void>): void => {
-    for (const cb of set) {
-      try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
-    }
-  };
   const playbackChanged = (): void => notify(playbackSubscribers);
 
   const loopOpt = opts.loop ?? false;
@@ -175,8 +176,7 @@ export function createTimeline(
     if (first) playbackChanged();
   };
 
-  const progress = (): number => (duration > 0 ? playhead / duration : 1);
-  const seed = { id, cancelKey: opts.cancelKey, tick, onCancel, kind: 'timeline' as const, label: opts.label, progress };
+  const seed = { id, cancelKey: opts.cancelKey, tick, onCancel, kind: 'timeline' as const, label: opts.label, progress: () => (duration > 0 ? playhead / duration : 1) };
   const base = register(seed);
 
   // A paused entry's scale is zero, so `virtualNow` never advances and the
@@ -198,6 +198,10 @@ export function createTimeline(
     base.setTimeScale(wantScale);
   };
 
+  // Not left to the next frame: whoever seeks or edits and then reads a target sees it.
+  const sampleNow = (): void => {
+    if (live && playhead >= 0 && playhead < duration) sampler.apply(opts.tracks, playhead);
+  };
   return {
     ...base,
     // Not just `onCancel`: cancelling a finished timeline never reaches the
@@ -218,8 +222,7 @@ export function createTimeline(
       prevOpen = true;
       booker?.seek();
       rearm();
-      // Sampled now, not at the next frame: whoever seeks and then reads a target sees the seek.
-      if (live && t >= 0 && t < duration) sampler.apply(opts.tracks, t);
+      sampleNow();
       playbackChanged();
     },
     time: () => playhead,
@@ -237,6 +240,7 @@ export function createTimeline(
       duration = tracksEnd(opts.tracks, opts.duration);
       booker?.retract();
       rearm();
+      sampleNow();
       notify(subscribers);
     },
     subscribe(cb) {

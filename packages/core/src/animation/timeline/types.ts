@@ -153,7 +153,8 @@ export interface TimelineHandle extends AnimationHandle {
   time(): number;
   duration(): number;
   tracks(): readonly Track[];
-  /** Run `fn`, then recompute duration, drop cached interpolators, and notify.
+  /** Run `fn`, then recompute duration, drop cached interpolators, sample the
+   *  tracks again where the playhead stands, and notify.
    *  Every mutation must go through this — an edited keyframe otherwise keeps
    *  interpolating toward its old value with no visible error. */
   edit(fn: () => void): void;

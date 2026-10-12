@@ -109,7 +109,7 @@ describe('a sampled track on a target', () => {
     expect(b.shown.at(-1)).toBeCloseTo(35, 9);
   });
 
-  it('shows an edit while paused at the next frame', () => {
+  it('shows an edit while paused at once on its target, and at the next frame', () => {
     const { animator, frame } = setup();
     const b = box(0);
     const track = ramp(b.target);
@@ -119,6 +119,7 @@ describe('a sampled track on a target', () => {
     frame(50);
     act(() => { tl.pause(); });
     act(() => { tl.edit(() => { track.keys[1].value = 200; }); });
+    expect(b.target.read()).toBeCloseTo(100, 9);
     frame(70);
     expect(b.shown.at(-1)).toBeCloseTo(100, 9);
   });
