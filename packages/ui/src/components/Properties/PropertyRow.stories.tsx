@@ -27,11 +27,14 @@ export const BothLayouts: Story = {
 };
 
 export const WithReadout: Story = {
-  render: () => (
+  args: {
+    label: 'Tempo',
+    readout: '120 bpm',
+    children: <button type="button">Tap</button>,
+  },
+  render: (args) => (
     <div style={{ width: 280 }}>
-      <PropertyRow label="Tempo" readout="120 bpm">
-        <button type="button">Tap</button>
-      </PropertyRow>
+      <PropertyRow {...args} />
     </div>
   ),
 };
