@@ -25,6 +25,15 @@ describe('image widget', () => {
     expect(i.hitTest(0, 0)).toBe(false);
   });
 
+  it('claims nothing until setClaims gives it something to consume', () => {
+    const i = createImage({ id: 'i', x: 0, y: 0, w: 10, h: 10, image: {} as ImageBitmap });
+    expect(i.claims).toEqual([]);
+    i.setClaims(['pointer']);
+    expect(i.claims).toEqual(['pointer']);
+    expect(createImage({ id: 'j', x: 0, y: 0, w: 10, h: 10, image: {} as ImageBitmap, claims: ['wheel'] }).claims)
+      .toEqual(['wheel']);
+  });
+
   it('forwards sampling to the image draw command', () => {
     const bmp = { width: 4, height: 4, close: () => {} } as unknown as ImageBitmap;
     const w = createImage({ id: 'i', x: 0, y: 0, w: 40, h: 40, image: bmp, sampling: 'nearest' });

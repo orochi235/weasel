@@ -172,7 +172,8 @@ export interface Widget {
   /** Which gestures this widget consumes. Absent means
    *  {@link DEFAULT_WIDGET_CLAIMS}; `[]` is decoration, and the hit-test walk
    *  descends past it to whatever lies beneath. Anything not listed falls
-   *  through to the scene. */
+   *  through to the scene. Read at every hit-test, so a getter may answer
+   *  differently from one press to the next. */
   readonly claims?: readonly ClaimableGesture[];
   /** CSS cursor for a point inside this widget, in screen space. Resolved per
    *  point rather than read off hover state, because the layer's `hitTest`

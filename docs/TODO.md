@@ -35,13 +35,6 @@ Priority tags:
   `SceneCanvasApi.ingest()` is a silent no-op without the `ingest` preset, because it triggers an
   action that was never registered.
 
-- **(P3) `Widget.claims` is static.** A widget that is decoration in one mode
-  and interactive in another can't change what it consumes without being
-  swapped out. `claimsPointer` folded into `claims` on 2026-08-12, so this is
-  one field rather than two, but it is still a declaration read at hit-test
-  time. Fine while `rect` / `text` / `image` are unconditionally decorative;
-  revisit when a stateful-claims widget appears.
-
 - **(P3) apps/draw enters most modes by double-click only.** Path-edit's `Enter` is bound
   (`apps/draw/src/modality/shortcuts.ts`); the other modes with an `entry` shortcut, free-transform
   and crop, are not, since nothing says what target each would take from the selection. Draw also

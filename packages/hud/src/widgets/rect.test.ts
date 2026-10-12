@@ -38,6 +38,15 @@ describe('rect widget', () => {
     expect(r.claims).toEqual([]);
   });
 
+  it('claims what it is created with, and what setClaims gives it after', () => {
+    const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#fff', claims: ['pointer'] });
+    expect(r.claims).toEqual(['pointer']);
+    r.setClaims([]);
+    expect(r.claims).toEqual([]);
+    r.dispose();
+    expect(() => r.setClaims(['pointer'])).toThrow();
+  });
+
   it('onChange fires when state mutates', () => {
     const onChange = vi.fn();
     const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#fff', onChange });
