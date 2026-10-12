@@ -72,8 +72,9 @@ const SCHEMA: PrefGroup = {
 };
 
 /** A deeper schema than `SCHEMA`: enough top-level groups to overflow the
- *  columns layout, a section inside a section, and a nested group that opens
- *  a page of its own, so one rail holds both kinds of entry. */
+ *  columns layout, a section inside a section, which the rail leaves out, and
+ *  a nested group that opens a page of its own, so one rail holds both kinds
+ *  of entry. */
 const DEEP_SCHEMA: PrefGroup = {
   name: 'Preferences',
   children: {
@@ -93,7 +94,7 @@ const DEEP_SCHEMA: PrefGroup = {
             shiftStep: { kind: 'number', name: 'Shift step', description: 'Distance with shift held.', default: 10, min: 1, max: 100 },
             wrap: {
               name: 'Wrapping',
-              description: 'Third level: a section of a section, indented in the pane.',
+              description: 'Third level: a section of a section, indented in the pane, with no rail entry.',
               children: {
                 atEdge: { kind: 'boolean', name: 'Wrap at edge', description: 'Continue from the opposite side.', default: false },
               },

@@ -1217,22 +1217,22 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
   effect, a render behind, and its docstring says so. Whether it should go is not decided.
 
-- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists every
-  nested group, a section of its page unless it is `as: 'page'`. (1) A foldable rail unfolds an
-  entry only while the open page is it or under it, so a section with sections of its own stays
-  shut while the reader scrolls through them, and its entry carries the current mark for them.
-  Whether the section in view should unfold the entries above it is open; it would move the rail
-  under a reader who is scrolling. (2) A top-level group that is not a page (`as: 'section'`
-  beside the root's loose leaves) is drawn on the root's own page and gets no entry, where the
-  same group one level down gets one. (3) A section's rail entry and a nested page's look the
-  same until one is chosen.
+- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists a page
+  at any depth, and a section only when it sits directly on a page. (1) A foldable rail unfolds an
+  entry only while the open page is it or under it, so a section holding pages of its own keeps
+  their entries shut while the reader scrolls through it. Whether the section in view should
+  unfold is open; it would move the rail under a reader who is scrolling. (2) A top-level group
+  that is not a page (`as: 'section'` beside the root's loose leaves) sits directly on the root's
+  own page and gets no entry, where a section directly on any other page gets one. (3) A
+  section's rail entry and a nested page's look the same until one is chosen.
 
 - **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
   is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the
   scrollport's edge (measured: the heading's top at 10px with 10px of padding), where the
   comment on the rule says the offset is measured from the edge. Whether rows scrolling under it
-  show in that strip has not been looked at. `RailLayout`'s `stuckAbove` adds the padding for the
-  same reason.
+  show in that strip has not been looked at. The `scroll-margin-top` on what a section holds
+  adds the padding for the same reason, and estimates the heading's line as `1lh` of the element
+  scrolled to, which leaves a few pixels of gap under the heading.
 
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
