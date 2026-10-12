@@ -42,6 +42,19 @@ describe('staggerSpringPose', () => {
     expect(animator().isActive('pose:b')).toBe(true);
   });
 
+  it('names the stagger by its label and reaches it by its cancel key', () => {
+    const { adapter, animator, geometry } = setup(['a']);
+    const kinds: string[] = [];
+    animator().watch((e) => { kinds.push(`${e.type}:${e.animation.kind}:${e.animation.label ?? ''}`); });
+    act(() => {
+      staggerSpringPose(animator(), adapter, {
+        items: ['a'], delay: 0, to: () => ({ x: 1 }), geometry, label: 'sp', cancelKey: 'fan',
+      });
+    });
+    expect(kinds).toContain('start:stagger:sp');
+    expect(animator().isActive('fan')).toBe(true);
+  });
+
   it('refuses an item that names no node', () => {
     const { adapter, animator, geometry } = setup([]);
     expect(() => staggerSpringPose(animator(), adapter, {

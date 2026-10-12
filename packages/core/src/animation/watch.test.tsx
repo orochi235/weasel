@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { useAnimator } from './useAnimator';
-import { staggerSpringPose } from './poseHelpers';
 import { AnimatorEventHub } from './observe';
 import type { AnimatorEvent, Animator } from './types';
 import type { EventTrack } from './timeline/types';
@@ -132,18 +131,15 @@ describe('animator.watch', () => {
     expect(r.lines()).toEqual(['start:stagger:fan', 'start:tween:child', 'end:tween:child', 'end:stagger:fan']);
   });
 
-  it('labels a fluent stagger run by each of its forms', () => {
+  it('labels a fluent stagger run by either of its forms', () => {
     const { animator } = setup();
     const r = record(animator());
-    const id = { id: 'n' };
-    const adapter = { getPose: () => ({ x: 0 }), setPose: () => {} } as never;
     act(() => {
       animator().stagger([0], 0).each(() => tween(animator(), 'c1', { ms: 10 }), { label: 'each' });
       animator().stagger([0], 0).tween<number>({ from: 0, to: 1, ms: 10, easing: linear, onTick: () => {}, label: 'tw' });
-      staggerSpringPose(animator(), adapter, { items: [id], delay: 0, to: () => ({ x: 0 }), label: 'sp' });
     });
     const stagger = r.lines().filter((l) => l.includes(':stagger:'));
-    expect(stagger.slice(0, 3)).toEqual(['start:stagger:each', 'start:stagger:tw', 'start:stagger:sp']);
+    expect(stagger.slice(0, 2)).toEqual(['start:stagger:each', 'start:stagger:tw']);
   });
 
   it('lets a fluent stagger claim a cancelKey, interrupting the run before it', () => {
