@@ -161,11 +161,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<Node<TData, TLayer, TPose>, TPose>,
     | 'adapter'
-    | 'moveOptions' | 'resizeOptions' | 'rotateOptions'
-    | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
-    | 'selection' | 'selectionOptions' | 'tools'
+    | 'pickEvery' | 'boundsOf'
+    | 'selection' | 'tools'
     | 'layers'          // stripped so we can re-add as optional below
-    | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
     | 'contentVersion'  // SceneCanvas wires this to the scene's own version
     | 'layerVisibility' | 'layerOrder' // re-declared below: they gate picking here too
@@ -287,14 +285,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
        *  alt-cycling through an overlapping stack. Default: top-most hit
        *  (alt ignored). */
       pickBest?: (worldX: number, worldY: number, alt: boolean, sel: readonly string[]) => string | null;
-    };
-
-    // --- Insert tool: when `create` is supplied, the synthesized adapter
-    //     exposes `commitInsert` and inserted objects are added as leaves on
-    //     `layer` (default `'default'`). ---
-    insertTool?: {
-      create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
-      layer?: TLayer;
     };
 
     /** Consumer node factories for the `insert` action, keyed by tool `kind`.

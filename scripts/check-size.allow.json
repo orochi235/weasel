@@ -31,20 +31,20 @@
     "longestFunction": 286
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 1395,
-    "longestFunction": 1204
+    "lines": 1339,
+    "longestFunction": 1157
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 276
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 224
+    "longestFunction": 223
   },
   "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
     "longestFunction": 134
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 697
+    "lines": 687
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 198
