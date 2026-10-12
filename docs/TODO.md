@@ -1644,7 +1644,8 @@ only story runner in the repo.
   ("an expanded trial keeps its marks over it and takes new ones") hit the 15 s test timeout on
   teitou in two of four full runs on 2026-10-11, at `68e9d70bb` and `de222e61f`, and passed in
   the two between; alone on this machine at `de222e61f` it passed 3 of 3. `compoundRows` failed
-  twice the same evening on an assertion, and its wait was hardened in `de222e61f`. Outside the
+  twice the same evening on an assertion, and its wait was hardened in `de222e61f`; it then hit the
+  15 s test timeout once on msb-uai at `076c8ab87`, the only failure of that run. Outside the
   `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
   pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
