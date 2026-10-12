@@ -797,15 +797,14 @@ skin", "Animation target") describes them. What is left:
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P3) What `createTargetTable` leaves** — the table is built (2026-10-11;
-  `docs/concepts.md`, "Animation target"), vertex colors are on one, and a row with a hold is
-  shown by its pass. Left:
-  - A row is still read by itself, at a single target's cost, while a tween or spring with a
-    destination runs under a hold on it, and while something a stopped animation left waits
-    beside a hold. What a hold hides of such a move is worked out per animation
-    (`hidden` in `packages/animator/src/target.ts`), which the pass has no column for.
-  - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
-    frame is the caller's until the table can be asked for one.
+- **(P3) A target table row is read by itself while an animation is behind a hold on it** —
+  a row is shown by the table's pass over its columns (`fill` in
+  `packages/animator/src/targetTable.ts`) except while a tween or spring with a destination
+  runs under a hold on it, and while something a stopped animation left waits beside a hold:
+  then it is read at a single target's cost. What a hold hides of such a move is worked out
+  per animation and per axis (`hidden` in `packages/animator/src/target.ts`), which the pass
+  has no column for, and blits weighs a voice whole, so the hidden share cannot ride on the
+  animation's own voice.
 - **(P3) A hold whose value is a function costs 0.3 to 0.7 µs a frame, where a tween costs
   under 0.1** — `node tests/perf/target-reads/run.mjs table 10000 heldfn`. A timeline track, a
   rig clip, and any `animator.hold` given a function are such holds. A hold of plain values no

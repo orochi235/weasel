@@ -331,7 +331,8 @@ upload(dots.shown);
 
 A row is a target like any other. Its committed value lives in `table.committed`,
 and the animator fills `table.shown` for every moving row in one pass over flat
-arrays, about 3 ns a row.
+arrays, about 3 ns a row. `shown` is a `Float64Array` unless the table is made with
+`shown: Float32Array`, for a painter that uploads it as it stands.
 
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that
