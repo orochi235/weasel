@@ -48,7 +48,7 @@ import {
 } from './defaults/booleans';
 import { createOutlinesAction } from './defaults/createOutlines';
 import { moveAction } from './move/action';
-import { resizeAction } from './defaults/resize';
+import { resizeAction } from './resize/action';
 import { rotateAction } from './rotate/action';
 import { areaSelectAction } from './defaults/areaSelect';
 import { insertAction, insertRotateAction } from './defaults/insert';

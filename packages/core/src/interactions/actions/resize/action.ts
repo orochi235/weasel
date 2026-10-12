@@ -43,22 +43,20 @@ import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId, PoseHold } from 'core/scene/types';
 import type {
   GestureContext,
-  ModifierState,
   PointSnapBehavior,
-  PointSnapContext,
-  PointSnapResult,
   ResizeAnchor,
   BoundsConstraint,
   RotatedPose,
 } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ResizePolicy } from '../depSchema';
-import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
-import { remapRotatedLeaf, translatePoseViaDescriptor, visualBoundsViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import { DEFAULT_RESIZE_BEHAVIORS } from './behaviors';
+import { remapRotatedLeaf, translatePoseViaDescriptor, visualBoundsViaDescriptor, type PoseDescriptor } from './geometry';
 import { poseRotationOf } from '@weasel-js/geom';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
-import { isRectPose } from 'core/geometry/autoPoseDescriptor';
-import { fixedCornerOf } from '../resize/cornerHandles';
+import { fixedCornerOf } from './cornerHandles';
+import { snapPose } from './pointSnap';
+import { boundsForRules } from './ruleBounds';
 import { rotatePoint } from '../rotate/geometry';
 import type { Op } from 'core/ops/types';
 import { type Mat3, boxToBox } from '@weasel-js/geom';
@@ -70,7 +68,6 @@ import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { closeGesture, commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { shapeSources } from '../selectionSubtree';
-import { fromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent.
@@ -106,117 +103,6 @@ function resolveDeps(ctx: InvocationCtx): {
     geometry,
     policy: dep,
   };
-}
-
-/** `pose` as the bounds a constraint or a point snap reads. A pose that is
- *  already a box goes through whole, so a `rotation` on it rides along. */
-function boundsForRules(geometry: PoseDescriptor<unknown>, pose: unknown): Bounds {
-  return isRectPose(pose) ? pose : geometry.getBounds(pose);
-}
-
-// ---------------------------------------------------------------------------
-// Point-snap math.
-// ---------------------------------------------------------------------------
-
-function buildPointSnapContext<TPose extends Bounds>(
-  pose: TPose,
-  rotation: number,
-  anchor: ResizeAnchor,
-  modifiers: ModifierState,
-): PointSnapContext<TPose> {
-  const cx = pose.x + pose.width / 2;
-  const cy = pose.y + pose.height / 2;
-
-  const tl = rotatePoint(pose.x, pose.y, cx, cy, rotation);
-  const tr = rotatePoint(pose.x + pose.width, pose.y, cx, cy, rotation);
-  const br = rotatePoint(pose.x + pose.width, pose.y + pose.height, cx, cy, rotation);
-  const bl = rotatePoint(pose.x, pose.y + pose.height, cx, cy, rotation);
-
-  let draggedCorner: { worldX: number; worldY: number } | null = null;
-  let fixedCorner: { worldX: number; worldY: number } | null = null;
-
-  if (anchor.x !== 'free' && anchor.y !== 'free') {
-    const fixedPt =
-      anchor.x === 'min' && anchor.y === 'min' ? tl :
-      anchor.x === 'max' && anchor.y === 'min' ? tr :
-      anchor.x === 'max' && anchor.y === 'max' ? br : bl;
-    const draggedPt =
-      anchor.x === 'min' && anchor.y === 'min' ? br :
-      anchor.x === 'max' && anchor.y === 'min' ? bl :
-      anchor.x === 'max' && anchor.y === 'max' ? tl : tr;
-    fixedCorner = { worldX: fixedPt.x, worldY: fixedPt.y };
-    draggedCorner = { worldX: draggedPt.x, worldY: draggedPt.y };
-  }
-
-  return {
-    draggedCorner,
-    fixedCorner,
-    center: { worldX: cx, worldY: cy },
-    origin: { worldX: tl.x, worldY: tl.y },
-    rotation,
-    anchor,
-    proposed: pose,
-    modifiers,
-  };
-}
-
-function applyPointSnap<TPose extends Bounds>(
-  pose: TPose,
-  rotation: number,
-  result: PointSnapResult,
-  ctx: PointSnapContext<TPose>,
-): TPose {
-  if (result.frame === 'center') {
-    const dx = result.worldX - ctx.center.worldX;
-    const dy = result.worldY - ctx.center.worldY;
-    return { ...pose, x: pose.x + dx, y: pose.y + dy };
-  }
-  if (result.frame === 'origin') {
-    const dx = result.worldX - ctx.origin.worldX;
-    const dy = result.worldY - ctx.origin.worldY;
-    return { ...pose, x: pose.x + dx, y: pose.y + dy };
-  }
-  const pin = result.frame === 'dragged-corner' ? ctx.fixedCorner : ctx.draggedCorner;
-  if (!pin) return pose;
-  const Dx = result.worldX - pin.worldX;
-  const Dy = result.worldY - pin.worldY;
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const localW = Dx * cos + Dy * sin;
-  const localH = -Dx * sin + Dy * cos;
-  const newWidth = Math.abs(localW);
-  const newHeight = Math.abs(localH);
-  const newCx = (pin.worldX + result.worldX) / 2;
-  const newCy = (pin.worldY + result.worldY) / 2;
-  return { ...pose, x: newCx - newWidth / 2, y: newCy - newHeight / 2, width: newWidth, height: newHeight };
-}
-
-/** `ctx`'s points in the camera's world, for a snap rule written against it. */
-function pointSnapToCamera<TPose extends Bounds>(
-  ctx: PointSnapContext<TPose>,
-  m: PlaneMap,
-): PointSnapContext<TPose> {
-  const cam = (p: { worldX: number; worldY: number }) => {
-    const w = fromPlane(m, { x: p.worldX, y: p.worldY });
-    return { worldX: w.x, worldY: w.y };
-  };
-  return {
-    ...ctx,
-    draggedCorner: ctx.draggedCorner && cam(ctx.draggedCorner),
-    fixedCorner: ctx.fixedCorner && cam(ctx.fixedCorner),
-    center: cam(ctx.center),
-    origin: cam(ctx.origin),
-  };
-}
-
-/** A snap rule's answer, back in the plane the resize works in. */
-function pointSnapFromPlane(
-  r: PointSnapResult | null | undefined,
-  m: PlaneMap,
-): PointSnapResult | null | undefined {
-  if (!r) return r;
-  const p = toPlane(m, { x: r.worldX, y: r.worldY });
-  return { ...r, worldX: p.x, worldY: p.y };
 }
 
 // ---------------------------------------------------------------------------
@@ -619,32 +505,15 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
               proposedPose = translatePoseViaDescriptor(proposedPose, correctionX, correctionY, g);
             }
 
-            if (scratch.pointSnap.length > 0) {
-              const rotation = scratch.originRotation;
-              const unsnapped = proposedPose;
-              const poseAsRect = boundsForRules(g, unsnapped);
-              const psCtx = buildPointSnapContext(
-                poseAsRect,
-                rotation,
-                scratch.anchor,
-                scratch.gestureCtx.modifiers,
-              );
-              // Point snaps are the surface's rules over the camera's world, so
-              // on a plane their points cross at this boundary.
-              const plane = scratch.gestureCtx.plane ?? null;
-              for (const beh of scratch.pointSnap) {
-                const result = plane
-                  ? pointSnapFromPlane(beh.onMove(pointSnapToCamera(psCtx, plane)), plane)
-                  : beh.onMove(psCtx);
-                if (result) {
-                  const snapped = applyPointSnap(poseAsRect, rotation, result, psCtx);
-                  proposedPose = isRectPose(unsnapped)
-                    ? snapped
-                    : g.remapBounds(unsnapped, poseAsRect, snapped);
-                  break;
-                }
-              }
-            }
+            proposedPose = snapPose(
+              scratch.pointSnap,
+              g,
+              proposedPose,
+              scratch.originRotation,
+              scratch.anchor,
+              scratch.gestureCtx.modifiers,
+              scratch.gestureCtx.plane ?? null,
+            );
 
             scratch.previews.set(id, stored(id, proposedPose));
             scratch.gestureCtx.current = new Map<string, unknown>([

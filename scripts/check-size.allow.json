@@ -118,15 +118,15 @@
     "lines": 579,
     "longestFunction": 132
   },
-  "packages/core/src/interactions/actions/defaults/resize.ts": {
-    "lines": 692,
-    "longestFunction": 351
-  },
   "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
     "longestFunction": 129
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 716
+  },
+  "packages/core/src/interactions/actions/resize/action.ts": {
+    "lines": 561,
+    "longestFunction": 334
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 749,

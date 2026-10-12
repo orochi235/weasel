@@ -34,7 +34,7 @@ export {
   type ToolActivateBindingSpec,
 } from './toolActivate';
 export { moveAction } from '../move/action';
-export { resizeAction } from './resize';
+export { resizeAction } from '../resize/action';
 export { rotateAction } from '../rotate/action';
 export { areaSelectAction } from './areaSelect';
 export { insertAction } from './insert';

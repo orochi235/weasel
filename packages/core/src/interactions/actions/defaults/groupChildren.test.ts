@@ -10,7 +10,7 @@ import type { NodeId, RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { unionOfChildren } from 'core/scene/kitRegistry';
 import { shapeSources } from '../selectionSubtree';
-import { resizeAction } from './resize';
+import { resizeAction } from '../resize/action';
 import { rotateAction } from '../rotate/action';
 import { flipAction } from './flip';
 import { alignRightAction } from './align';

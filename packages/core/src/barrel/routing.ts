@@ -16,7 +16,7 @@ export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionShortcuts, keySpecShortcut } from '../interactions/actions/actionShortcuts';
 export type { ActionShortcut } from '../interactions/actions/actionShortcuts';
 export { moveAction } from '../interactions/actions/move/action';
-export { resizeAction } from '../interactions/actions/defaults/resize';
+export { resizeAction } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/defaults/insert';
