@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
+import { fixedSeat, type FixedSeat } from '@weasel-js/gestures';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/routing';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
@@ -18,7 +19,7 @@ interface DropZone {
 }
 
 const dropZones = new Set<DropZone>();
-let activeDrag: { payload: DragPayload; ghost: HTMLElement; lastZone: DropZone | null } | null = null;
+let activeDrag: { payload: DragPayload; ghost: HTMLElement; seat: FixedSeat; lastZone: DropZone | null } | null = null;
 
 function registerDropZone(zone: DropZone): () => void {
   dropZones.add(zone);
@@ -51,6 +52,7 @@ function defaultGhost(source: HTMLElement, payload: DragPayload): HTMLElement {
   clone.style.zIndex = 'var(--wzl-z-drag, 10000)';
   clone.style.transition = 'none';
   clone.style.transformOrigin = 'center center';
+  clone.style.fontFamily = getComputedStyle(source).fontFamily;
   if (payload.ids.length > 1) {
     const badge = document.createElement('div');
     badge.textContent = String(payload.ids.length);
@@ -69,8 +71,8 @@ function defaultGhost(source: HTMLElement, payload: DragPayload): HTMLElement {
   return clone;
 }
 
-function positionGhost(el: HTMLElement, x: number, y: number) {
-  el.style.transform = `translate(${x - el.offsetWidth / 2}px, ${y - el.offsetHeight / 2}px) scale(0.92)`;
+function positionGhost(el: HTMLElement, seat: FixedSeat, x: number, y: number) {
+  el.style.transform = `translate(${x - seat.left - el.offsetWidth / 2}px, ${y - seat.top - el.offsetHeight / 2}px) scale(0.92)`;
 }
 
 /** The ghost-and-zones half of a drag, driven by whoever owns the pointer. */
@@ -89,9 +91,10 @@ function beginPointerDrag(
 ): GhostDrag | null {
   if (activeDrag) return null;
   const ghost = ghostFn(source, payload);
-  document.body.appendChild(ghost);
-  positionGhost(ghost, startX, startY);
-  activeDrag = { payload, ghost, lastZone: null };
+  const seat = fixedSeat(source);
+  seat.host.appendChild(ghost);
+  positionGhost(ghost, seat, startX, startY);
+  activeDrag = { payload, ghost, seat, lastZone: null };
 
   const teardown = () => {
     activeDrag?.ghost.remove();
@@ -101,7 +104,7 @@ function beginPointerDrag(
   return {
     move(e) {
       if (!activeDrag) return;
-      positionGhost(activeDrag.ghost, e.clientX, e.clientY);
+      positionGhost(activeDrag.ghost, activeDrag.seat, e.clientX, e.clientY);
       const zone = findZone(e.clientX, e.clientY, payload.kind);
       if (zone !== activeDrag.lastZone) {
         activeDrag.lastZone?.onOver?.(false);

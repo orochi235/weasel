@@ -110,6 +110,8 @@ export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, parseTarg
 export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
 export { isApplePlatform } from './ui/platform';
+export { fixedSeat, nearestPortalHost } from './ui/fixedSeat';
+export type { FixedSeat } from './ui/fixedSeat';
 
 // Binding precedence
 export { specificity } from './ui/specificity';

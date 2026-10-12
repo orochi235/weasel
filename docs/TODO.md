@@ -1574,12 +1574,6 @@ one dead `const` and four stale disable directives.
     `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
     `cameraRegistry`, and seven in forge.
 
-- **(P3) Three drag-ghost implementations.** core's `pointerDrag` `defaultGhost` clones the source,
-  ui's `DragGhost` portals to the themed host, and labkit's `dragdrop/DragGhost` is a third. They
-  sit at three stacking levels, and only ui's corrects for a transformed containing block, so
-  labkit's and core's `position: fixed` ghosts are offset inside a transformed ancestor (read from
-  the CSS and the clone code, not rendered). labkit's should render ui's.
-
 - **(P3) `check:spacing` leaves out `apps/site/CommandPalette/`.** Every other package and app
   stylesheet is on the space ladder and under the check. `CommandPalette.module.css` still holds 8
   spacing literals that have a rung, left because another branch was editing that directory;
