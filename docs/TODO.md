@@ -1275,6 +1275,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the layer canvases take the new backing size in a real browser when the ratio changes with no
   resize. Wants a browser test that emulates the change (`Emulation.setDeviceMetricsOverride`).
 
+- **(P3) labkit trial: "Add trial" leaves the first trial's part outside its own stage.** In the
+  `annotate-lab` example, adding a trial narrows the first trial's stage, and its camera keeps the
+  pan it had, so the part sits past the stage's edge. A mark on it is cut at the stage now, so the
+  part and its marks are simply out of sight until the trial is panned back. Seen in headless
+  Chromium on 2026-10-12; whether a stage that narrows should re-fit or keep its pan is not decided.
+
 - **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
   them.** A trial builds its annotation store once from `record.annotations`
   (`packages/labkit/src/trial/Trial.tsx`, "One store for the trial's lifetime") and never reads the
