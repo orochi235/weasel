@@ -22,6 +22,7 @@ import { handleMoveKey } from './treeKeyboardMove';
 import { nodeById } from './treeMoves';
 import { modsOf, textOf, useControlledSet } from './treeUtils';
 import { useRowTip } from './useRowTip';
+import type { TreeDropHandle } from './useOutsideDrop';
 import { useTreeDrag, type TreeDragEffect } from './useTreeDrag';
 
 /** One node. A node with `children` is a branch, even when the array is empty. */
@@ -118,10 +119,13 @@ export interface TreeProps {
   /**
    * A drag begun outside the tree, at this client point. The tree marks where
    * it would land — asking `canDrop` with no ids — and reports the target
-   * through `onExternalTarget`, `null` while the point is off its rows.
+   * through `onExternalTarget`, `null` while the point is off its rows. Both
+   * follow the pointer a render behind it: ask `dropRef` where a release lands.
    */
   externalDrag?: { x: number; y: number } | null;
   onExternalTarget?(target: TreeDropTarget | null): void;
+  /** Filled with the tree's answer to where a drop from outside lands at a point, for the moment of the drop. */
+  dropRef?: Ref<TreeDropHandle>;
 }
 
 interface Visible {
@@ -168,7 +172,7 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', guides = false,
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, onExternalTarget,
+    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, onExternalTarget, dropRef,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -253,7 +257,7 @@ export const Tree = forwardRef(function Tree(
   useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
   const drag = useTreeDrag({
     enabled: !!onMove,
-    onDragOutside, onDropOutside, externalDrag, onExternalTarget,
+    onDragOutside, onDropOutside, externalDrag, onExternalTarget, dropRef,
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
     rowEl: (id) => items.current.get(id)?.firstElementChild as HTMLElement | undefined,
@@ -459,44 +463,3 @@ export const Tree = forwardRef(function Tree(
     </>
   );
 });
-
-/**
- * `nodes` narrowed to those `match` accepts, plus their ancestors. A matching
- * node keeps its whole subtree; a branch with no match inside it is dropped.
- * Returns `nodes` itself when nothing is dropped.
- */
-export function filterTree(
-  nodes: readonly TreeNode[],
-  match: (node: TreeNode) => boolean,
-): readonly TreeNode[] {
-  let changed = false;
-  const out: TreeNode[] = [];
-  for (const node of nodes) {
-    if (match(node)) {
-      out.push(node);
-      continue;
-    }
-    const kids = node.children ? filterTree(node.children, match) : [];
-    if (kids.length === 0) {
-      changed = true;
-      continue;
-    }
-    if (kids !== node.children) changed = true;
-    out.push(kids === node.children ? node : { ...node, children: kids });
-  }
-  return changed ? out : nodes;
-}
-
-/** Every branch id in `nodes`, depth first — `expandedIds` for a tree with everything open. */
-export function treeBranchIds(nodes: readonly TreeNode[]): string[] {
-  const out: string[] = [];
-  const walk = (list: readonly TreeNode[]) => {
-    for (const node of list) {
-      if (!node.children) continue;
-      out.push(node.id);
-      walk(node.children);
-    }
-  };
-  walk(nodes);
-  return out;
-}

@@ -72,8 +72,10 @@ export class NumberNode extends BaseNode<number> {
   /**
    * Store the value in one unit and edit it in another — radians stored,
    * degrees typed. `min`, `max` and `step` are declared in the stored unit
-   * alongside the value, and convert with it. `prefUnit` builds one from a
-   * `UnitSystem`.
+   * alongside the value, and convert with it. A unit is data where the
+   * conversion is linear, `{ suffix: '°', scale: Math.PI / 180 }`, which
+   * `prefUnit` builds from a `UnitSystem`, and a pair of functions where it
+   * is not.
    */
   unit(unit: PrefNumberUnit): this {
     return this.ann({ unit });

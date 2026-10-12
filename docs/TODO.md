@@ -1211,12 +1211,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
   500 ms `RAIL_OPEN_MS` timer).
 
-- **(P3) `Tree` reports an outside drag's target only from an effect.** `useTreeDrag.ts` writes the
-  target in a passive effect, a render behind the pointer, so a release in the same task as the
-  last move read the previous row's target or none. `PrefSchemaEditor`'s `onPaletteDrop` gets
-  around it with `flushSync`; any other caller dropping onto a `Tree` from outside has the same
-  race. Ruled 2026-10-11: `Tree` resolves the target from the pointer's position at the drop, and
-  the editor's `flushSync` comes out.
+- **(P3) `Tree` keeps `onExternalTarget` beside `dropRef`.** `TreeDropHandle.targetAt(point)`
+  answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
+  effect, a render behind, and its docstring says so. Whether it should go is not decided.
 
 - **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists every
   nested group, a section of its page unless it is `as: 'page'`. (1) A foldable rail unfolds an
@@ -1256,13 +1253,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   browser: `outline-style: solid`). `SelectionPanel` names its tab with `data-pref-rail` instead
   and marks the tab's panel.
 
-- **(P1.5) A number's `unit` can only be code.** It is an object of `toDisplay`/`fromDisplay`
-  functions, so it cannot be written to JSON, set in `PrefSchemaEditor`, or kept in a draft (a
-  draft holds code as a pointer into the source schema, which a new leaf has none of). Ruled
-  2026-10-11: a unit may also be data with a linear conversion, `{ suffix, scale, offset, accepts }`,
-  where identity is `scale: 1`; that covers every unit astv writes, degrees over radians, and
-  every unit a `UnitSystem` builds, and is the shape an `accepts` entry already has. The function
-  form stays for what is not linear.
+- **(P3) Loose ends beside a number's unit as data.** A unit is data (`PrefLinearUnit`) or code,
+  read through `resolvePrefUnit`. `PrefSchemaEditor` edits a number's default, and its auto value,
+  in the stored unit and not the one the leaf shows. The text tool's percent unit
+  (`useTextTool.ts`) is still code, for the rounding it does on the way back to the stored value,
+  so the run properties do not export as a literal. Nothing reads a unit's `format` yet. A unit
+  whose accepted suffix is all digits moves to the front of the list, as an object's integer keys
+  do.
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment

@@ -20,7 +20,7 @@ const SCHEMA: PrefGroup = {
       name: 'Canvas',
       description: 'Drawing surface behavior.',
       children: {
-        zoomStep: { kind: 'number', name: 'Zoom step', description: 'Wheel zoom increment (%).', default: 10, min: 1, max: 50 },
+        zoomStep: { kind: 'number', name: 'Zoom step', description: 'Wheel zoom increment.', default: 0.1, min: 0.01, max: 0.5, step: 0.01, unit: { suffix: '%', scale: 0.01, precision: 0 } },
         showGrid: { kind: 'boolean', name: 'Show grid', description: 'Draw the alignment grid.', default: true },
         author: { kind: 'string', name: 'Author', description: 'Embedded in exported metadata.', default: '' },
         units: {
