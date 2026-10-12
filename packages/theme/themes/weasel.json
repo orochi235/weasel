@@ -1018,6 +1018,11 @@
       "type": "dimension",
       "description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default."
     },
+    "gloss": {
+      "value": 0,
+      "type": "number",
+      "description": "How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow."
+    },
     "glass-blur": {
       "value": "3px",
       "type": "dimension",

@@ -1097,15 +1097,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
-- **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a color of its own.** Asked for:
-  move the default treatment off "the aqua" and save it for a theme that wants it. There is no
-  ToggleBar color to move — every surface in the ramp is `var(--wzl-accent)`, which seventeen
-  components read, and `Button.variant_primary` is the same drawing. The panel's bars already sit
-  outside it via the `flat` variant. Ruled 2026-10-11: the default theme draws selected and primary
-  controls flat everywhere, `Button`'s primary included, and the glass becomes something a theme
-  opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
-  theme that turns the glass on.
-
 - **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
   compares stored values, where every other reader decodes. A rail entry for a group drawn under
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a

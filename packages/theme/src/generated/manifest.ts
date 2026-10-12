@@ -168,6 +168,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-workspace-surface', type: "color", group: "workspace", defaultValue: "#0e0f12", description: "Ground of a canvas app's workspace — the area around the document page.", hook: false },
   { name: '--wzl-workspace-line', type: "color", group: "workspace", defaultValue: "rgba(230, 231, 233, 0.1)", description: "Marks drawn over workspace-surface, such as its diagonal stripes, so the page reads as the thing on top.", hook: false },
   { name: '--wzl-field-pad-x', type: "dimension", group: "field", defaultValue: "8px", description: "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default.", hook: false },
+  { name: '--wzl-gloss', type: "number", group: "gloss", defaultValue: "0", description: "How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow.", hook: false },
   { name: '--wzl-glass-blur', type: "dimension", group: "glass", defaultValue: "3px", description: "Backdrop blur radius for frosted surfaces. Pairs with glass-tint.", hook: false },
   { name: '--wzl-font-size', type: "dimension", group: "font", defaultValue: "15px", description: "Controls and body text.", hook: false },
   { name: '--wzl-tracking-none', type: "dimension", group: "tracking", defaultValue: "0", description: "", hook: false },

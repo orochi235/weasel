@@ -16,7 +16,7 @@ const EXPECTED_NAMES = [
   'secondary-soft', 'secondary-base', 'secondary-strong',
   'danger-base', 'warning-base', 'success-base',
   'radius-sm', 'radius-md', 'radius-lg', 'radius-pill', 'border-w', 'line-width', 'curve-width',
-  'tb-height', 'control-h-xs', 'control-h-sm', 'control-h', 'icon-button-size', 'glass-blur',
+  'tb-height', 'control-h-xs', 'control-h-sm', 'control-h', 'icon-button-size', 'gloss', 'glass-blur',
   'slider-track-h', 'slider-thumb-size', 'slider-track-slop', 'slider-thumb-slop', 'slider-track-mix', 'slider-thumb-mix', 'field-pad-x',
   'handle-size', 'handle-size-sm', 'handle-size-lg', 'handle-dot-size', 'handle-dot-size-sm',
   'checker-a', 'checker-b', 'checker-size', 'workspace-surface', 'workspace-line',

@@ -214,6 +214,8 @@
   --wzl-workspace-line: var(--wzl-line-subtle);
   /* Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default. */
   --wzl-field-pad-x: 8px;
+  /* How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow. */
+  --wzl-gloss: 0;
   /* Backdrop blur radius for frosted surfaces. Pairs with glass-tint. */
   --wzl-glass-blur: 3px;
   /* Controls and body text. */

@@ -65,6 +65,7 @@ export type TokenName =
   | '--wzl-font-weight-normal'
   | '--wzl-glass-blur'
   | '--wzl-glass-tint'
+  | '--wzl-gloss'
   | '--wzl-gray-100'
   | '--wzl-gray-200'
   | '--wzl-gray-300'
@@ -360,6 +361,7 @@ export const THEMES = {
         '--wzl-workspace-surface': "#0e0f12",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "13px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
@@ -545,6 +547,7 @@ export const THEMES = {
         '--wzl-workspace-surface': "#0e0f12",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "15px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
@@ -730,6 +733,7 @@ export const THEMES = {
         '--wzl-workspace-surface': "#0e0f12",
         '--wzl-workspace-line': "rgba(230, 231, 233, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "18px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
@@ -915,6 +919,7 @@ export const THEMES = {
         '--wzl-workspace-surface': "#c9cbcf",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "13px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
@@ -1100,6 +1105,7 @@ export const THEMES = {
         '--wzl-workspace-surface': "#c9cbcf",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "15px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
@@ -1285,6 +1291,7 @@ export const THEMES = {
         '--wzl-workspace-surface': "#c9cbcf",
         '--wzl-workspace-line': "rgba(14, 15, 18, 0.1)",
         '--wzl-field-pad-x': "8px",
+        '--wzl-gloss': "0",
         '--wzl-font-size': "18px",
         '--wzl-tracking-none': "0",
         '--wzl-tracking-wide': "0.06em",
@@ -2342,6 +2349,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "value": "8px",
         "type": "dimension",
         "description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default."
+      },
+      "gloss": {
+        "value": 0,
+        "type": "number",
+        "description": "How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow."
       },
       "glass-blur": {
         "value": "3px",
@@ -3600,6 +3612,11 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "dimension",
         "value": "8px",
         "description": "Horizontal padding inside a boxed field. Pairs with --wzl-field-h, which is a container override and has no :root default."
+      },
+      "gloss": {
+        "type": "number",
+        "value": 0,
+        "description": "How much glass a boxed button and a selected segment wear, from 0 to 1: at 0 a flat fill, at 1 the full ramp, specular gloss, rim, and drop shadow."
       },
       "glass-blur": {
         "type": "dimension",
