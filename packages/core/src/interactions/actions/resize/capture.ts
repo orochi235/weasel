@@ -1,5 +1,6 @@
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
+import { sceneGestureFrames } from '../gestureFrames';
 import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -151,6 +152,9 @@ export function buildGestureContext(
     pointer: pointerStateOf(startWorld, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    ...(ctx.deps.scene
+      ? { frames: sceneGestureFrames(ctx.deps.scene, ctx.deps.view) as GestureContext<Bounds>['frames'] }
+      : {}),
     // `adapter` is unused by the kit's behaviors; cast to satisfy the type.
     adapter: undefined as unknown as GestureContext<Bounds>['adapter'],
     scratch: {},

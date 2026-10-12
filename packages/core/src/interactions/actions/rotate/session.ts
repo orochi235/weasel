@@ -1,5 +1,6 @@
 import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
+import { sceneGestureFrames } from '../gestureFrames';
 import { resolveParams } from '@weasel-js/routing';
 import { unionAABB } from 'core/geometry/unionBounds';
 import type { Op } from 'core/ops/types';
@@ -111,6 +112,7 @@ function buildGestureContext(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    frames: sceneGestureFrames(scene, ctx.deps.view),
     adapter: moveGestureAdapter(scene, undefined, selectionMethods) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

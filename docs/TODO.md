@@ -748,11 +748,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P3) A consumer's behavior cannot do frame math.** `GestureContext` carries no pose
-  composition and no per-layer plane map, so `ctx.current` is a stored pose shifted by a plane
-  delta and a behavior outside core cannot compose it to world. Move's own behaviors close over the
-  session instead.
-
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (move, resize, rotate, flip, align, distribute, clone, clipboard,
   booleans, outlines, edit-anchors, lasso-select) holds its options, geometry, and gesture

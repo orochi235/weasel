@@ -9,6 +9,7 @@ import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
 import { invertPlane, planeOf } from '../planeInput';
+import { sceneGestureFrames } from '../gestureFrames';
 import { scenePoseFrame } from '../poseFrame';
 import { translateTargets } from '../selectionSubtree';
 import type { MoveGestureAdapter } from './gestureAdapter';
@@ -115,6 +116,7 @@ export function capturePlaneRefs(
 
 export function buildGestureContext(
   ctx: InvocationCtx,
+  scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
   startPoses: ReadonlyMap<NodeId, unknown>,
   adapter: MoveGestureAdapter<unknown>,
@@ -131,6 +133,7 @@ export function buildGestureContext(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    frames: sceneGestureFrames(scene, ctx.deps.view),
     adapter: adapter as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

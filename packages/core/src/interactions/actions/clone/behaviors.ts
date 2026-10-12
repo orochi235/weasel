@@ -4,6 +4,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { CloneBehavior, GestureContext, GroupTransform } from '../../gestures/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { sceneGestureFrames } from '../gestureFrames';
 import { reduceBehaviorEnd } from '../gestureLifecycle';
 import { pointerStateOf } from '../pointerState';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
@@ -44,6 +45,7 @@ export function startCloneBehaviors(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    frames: sceneGestureFrames(scene, ctx.deps.view),
     adapter: defaultCommitAdapter(scene, ctx.deps.selection?.adapterMethods) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

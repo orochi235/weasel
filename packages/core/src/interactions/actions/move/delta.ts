@@ -27,6 +27,14 @@ export function localDelta(
   return { dx: to.x - from.x, dy: to.y - from.y };
 }
 
+/** The pose `id` stores once dragged by `(dx, dy)` from `start`, its stored
+ *  pose at press. Unmoved when its frame is what moves. */
+export function draggedStoredPose(session: MoveSession, id: NodeId, start: unknown, dx: number, dy: number): unknown {
+  if (session.carried.has(id)) return start;
+  const l = localDelta(session, id, dx, dy);
+  return translatePoseViaDescriptor(start, l.dx, l.dy, session.descriptorOf(id));
+}
+
 /** The drag `(dx, dy)`, measured in the edited plane, as the drag of `id` in
  *  the world its own layer stores it in. */
 export function planeDelta(
