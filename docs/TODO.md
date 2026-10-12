@@ -610,8 +610,9 @@ Core five + Crop shipped. Remaining:
 
 ## Scene, adapters & layout
 
-- **(P2) Pull the standalone parts of core into their own packages.** Ruled 2026-10-11: whatever
-  makes sense as a package gets extracted, whatever its size. Read from the source, not from a
+- **(P2) Pull the standalone parts of core into their own packages.** Ruled 2026-10-11: a package
+  either needs none of the rest of weasel or is an obviously well-defined functional area,
+  whatever its size (CLAUDE.md, "What gets its own package"). Read from the source, not from a
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
   for relative imports undercounts who uses what. Left:
   1. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
@@ -619,17 +620,16 @@ Core five + Crop shipped. Remaining:
      `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
      `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
      and stay.
-  2. *`poseRun`, over core.* It publishes through `scene.overrides.hold()` now and reaches
-     nothing in core that is not public, so the move is mechanical. The package has no name yet.
-  3. *The image and SVG drop handlers, over core* (see the entry under Tools & gestures). Not
-     ruled on: the package's name (`images` was floated 2026-10-11), and whether a bare
-     `<SceneCanvas>` may ignore a file drop until a consumer installs the handlers.
+  2. *The image and SVG drop handlers, over core* (see the entry under Tools & gestures). The
+     name is `images` for now (2026-10-11). Not ruled on: whether a bare `<SceneCanvas>` may
+     ignore a file drop until a consumer installs the handlers.
 
   A new package has to be seeded on npm by hand before a release, since the release job cannot
   create one: `npm run check:first-publish` names any that are missing. `@weasel-js/renderer`,
   `@weasel-js/parallax`, and `@weasel-js/minimap` were added 2026-10-11 and are not seeded.
 
-  Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
+  Staying in core: `features/poseRun` (it needs the scene and is no functional area of its own),
+  `features/viewports` (`CanvasView` is built on it), `chrome-caps`
   (`SceneCanvas` runs it), `modes`, `longPress`, `selection/overlay.ts`, the parallax math
   (`core/viewport/parallax`, which a scene layer's own `parallax` uses), and the scene-bound text
   and path layers.

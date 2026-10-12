@@ -26,6 +26,13 @@ demand.
 When a feature does go in, design it as engine surface — general and composable
 on its own terms — not as the minimum some demo happened to need.
 
+## What gets its own package
+
+A package either exports functionality that does not need the rest of weasel
+(`geom`, `paint`, `stroke`, `renderer`), or is an obviously well-defined
+functional area (`minimap`, `diagram`). Code that needs core and is neither
+stays in core: `usePoseRun` was kept there on 2026-10-11 for this reason.
+
 ## Todo list
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
