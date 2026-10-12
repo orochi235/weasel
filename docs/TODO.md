@@ -396,8 +396,6 @@ Core five + Crop shipped. Remaining:
   `docs/proposals/2026-09-17-paint-kinds-beyond-svg.md` for what a richer kind
   writes inside that envelope.
 
-- **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three uses now exercise it (plasma / ripple / voronoi panels), which is enough to have validated the surface. Array uniforms take one flat value (`u_ripples: [x, y, t, …]`), and a re-registered source recompiles on each renderer's next frame. Left before stabilization: how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
-
 - **(P3) No marker icons.** `defaultNodeProperties`'s `markerStart` /
   `markerMid` / `markerEnd` leaves use a labelled `select`, where the sibling
   stroke enums (`cap`, `join`, `align`, `dash`) are icon toggles — authoring

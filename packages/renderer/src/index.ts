@@ -1,7 +1,7 @@
 /**
  * Renderer barrel. WeaselRenderer + DrawCommand types for
  * solid/pattern/gradient-fill paths, groups (with optional color matrix
- * and per-vertex color), strokes, MSDF text, images, plus an experimental
+ * and per-vertex color), strokes, MSDF text, images, plus a
  * custom shader API (registerProgram, registerTexture, kind:'shader'), and
  * full-screen effect passes (registerEffect, blur/vignette, group `effects`).
  */

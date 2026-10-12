@@ -337,12 +337,11 @@ export class WeaselRenderer {
   /**
    * Compile a consumer-registered shader program against this renderer's GL context.
    *
-   * Call once per renderer after the module-level `registerProgram()`.
-   * Throws `ShaderCompileError` if compilation fails.
+   * Optional: a program compiles on the first frame that draws with it. Call
+   * this after the module-level `registerProgram()` to pay for the compile
+   * before that frame, or to catch the `ShaderCompileError` it throws.
    *
    * In dev mode, calling again with the same handle replaces the compiled program.
-   *
-   * @experimental
    */
   registerProgram(handle: ShaderProgramHandle): void {
     // A disposed renderer must not compile programs into the cleared registry.

@@ -214,7 +214,9 @@ export interface SpritesDrawCommand {
  * The kit automatically sets `u_bounds`, `u_view`, and `u_proj` — do not
  * declare those in `uniforms`.
  *
- * @experimental API may change before v2.
+ * `program` is the handle the module-level `registerProgram()` returned. Each
+ * renderer compiles it the first time it draws one, so a layer emits this
+ * command with nothing set up on the canvas or the renderer beforehand.
  */
 export interface ShaderDrawCommand {
   kind: 'shader';

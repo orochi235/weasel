@@ -299,7 +299,7 @@
     "longestFunction": 125
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 745
+    "lines": 744
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 663
