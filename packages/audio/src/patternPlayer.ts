@@ -118,6 +118,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   setEvents(opts.events ?? [], opts.length);
 
   let running = false;
+  let inStep = false;
   /** Steps booked since `start`, not wrapped. */
   let count = 0;
   let lastAt: number | null = null;
@@ -157,7 +158,13 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
         voices.add(engine.playNote({ ...note, detune, when: at, duration: steps * stepMs() }));
       }
     }
-    opts.onStep?.(step, when);
+    inStep = true;
+    try {
+      opts.onStep?.(step, when);
+    } finally {
+      inStep = false;
+    }
+    if (!running) return;
     count += 1;
     lastAt = when;
     nextAt = when + stepMs();
@@ -185,7 +192,9 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     setTempo(next) {
       checkTempo(next);
       bpm = next;
-      if (!running || lastAt === null) return;
+      // From inside `onStep` the step after this one is not booked yet, and
+      // is about to be, at the new tempo.
+      if (!running || lastAt === null || inStep) return;
       engine.stopKey(key);
       nextAt = Math.max(lastAt + stepMs(), engine.now());
       book();

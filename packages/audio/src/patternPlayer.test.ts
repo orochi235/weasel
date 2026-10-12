@@ -78,6 +78,42 @@ describe('createPatternPlayer', () => {
     expect(player.tempo()).toBe(60);
   });
 
+  it('books one next step when the tempo is set from inside onStep', async () => {
+    const { engine, run } = await harness();
+    const seen: number[] = [];
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 16,
+      onStep: (step, when) => {
+        seen.push(when);
+        if (step === 1) player.setTempo(60);
+      },
+    });
+    player.start(0);
+    await run(700);
+    expect(seen).toEqual([0, 125, 375, 625]);
+  });
+
+  it('books nothing further when stopped from inside onStep', async () => {
+    const { engine, run } = await harness();
+    const seen: number[] = [];
+    let stopped = false;
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 16,
+      onStep: (step, when) => {
+        seen.push(when);
+        if (step === 1 && !stopped) {
+          stopped = true;
+          player.stop();
+        }
+      },
+    });
+    player.start(0);
+    await run(100);
+    player.start(1000);
+    await run(900);
+    expect(seen).toEqual([0, 125, 1000]);
+  });
+
   it('reports the step within the pattern, wrapping at its length', async () => {
     const { engine, run } = await harness();
     const steps: number[] = [];
