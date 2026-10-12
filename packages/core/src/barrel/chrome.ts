@@ -33,9 +33,15 @@ export {
   axisUnits,
   formatAxes,
   resolveAxes,
+  formatScoped,
+  fromRoot,
+  resolveScoped,
+  scopesOf,
+  toRoot,
 } from '@weasel-js/quantity';
 export type { Unit, UnitEntry, UnitScale, UnitSystem, UnitValue } from '@weasel-js/quantity';
 export type { PerAxis, PlaneUnits, PlaneValue, UnitExpr, UnitExprContext } from '@weasel-js/quantity';
+export type { ScopeTree, UnitScope } from '@weasel-js/quantity';
 
 // ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
 export {

@@ -123,3 +123,12 @@ export {
   type UnitExpr,
   type UnitExprContext,
 } from './unitExpr';
+export {
+  formatScoped,
+  fromRoot,
+  resolveScoped,
+  scopesOf,
+  toRoot,
+  type ScopeTree,
+  type UnitScope,
+} from './scope';

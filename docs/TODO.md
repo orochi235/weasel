@@ -746,7 +746,7 @@ intercepting the press that drags the body.
 
 ### Units
 
-- **(P3) Per-subobject scale.** Today the unit system is global per consumer. Real apps want a child object (a sub-assembly in a CAD scene) to declare its own unit/scale, with conversion at the parent boundary. Likely lives on the parent/group node.
+- **(P3) Per-subobject scale: a container cannot declare its unit scope.** `@weasel-js/quantity` has the conversion (`UnitScope`, `resolveScoped`, `scopesOf`), but a scope is still something the consumer keeps beside the scene and hands to `scopesOf` through `scopeOf`. What is left is a `ContainerNode` field holding the scope, which belongs in `packages/core/src/core/scene/types.ts`, and the readers that would take it from there: the grid strategies and the property fields resolve against one `unitSystem` option today.
 
 ---
 
