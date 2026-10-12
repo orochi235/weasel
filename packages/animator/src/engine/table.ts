@@ -5,13 +5,17 @@ import type { AnimationHandle, AnimationInfo } from '../types';
 import type { Codec } from './codec';
 import { createCompletions } from './completions';
 import type { ActiveAnimation, AnimationSeed } from './context';
+import { createRoster } from './roster';
 
 /** What {@link createTable} needs of the animator around it. */
 export interface TableHost {
   codec: Pick<Codec, 'stop' | 'has' | 'rate'>;
   hub: AnimatorEventHub;
-  /** The time a new animation's clock starts at: the running frame's, else now. */
-  startTime(): number;
+  /** The animator's clock: the virtual ms its frames have advanced it by. */
+  elapsed(): number;
+  /** Starts the frame clock where it stands idle, so a new animation is charged the wait for
+   *  its first frame. */
+  seedClock(): void;
   /** Shows a target as an animation starts on it. */
   showNow(target: TargetState): void;
   /** Whether a target came to rest and is owed one more show. */
@@ -33,8 +37,16 @@ export interface Table {
    *  claiming its key; given `error`, the caller reports it. */
   retire(id: number, by?: ActiveAnimation, error?: true): void;
   cancelByKey(key: string, by?: ActiveAnimation): void;
-  /** Gives a codec subject the rate its own pause and time scale now ask for. */
-  rateOf(a: ActiveAnimation): void;
+  /** Sets `a`'s pause and time scale, and gives its codec subject the rate they ask for. */
+  pace(a: ActiveAnimation, paused: boolean, timeScale: number): void;
+  /** `a`'s own clock now, in virtual ms. */
+  clockOf(a: ActiveAnimation): number;
+  /** The animations to tick this frame, in the order they registered. */
+  ticks(): ActiveAnimation[];
+  /** Whether any animation changes from one frame to the next. */
+  readonly awake: boolean;
+  /** How many animations no frame ticks until they are due. */
+  readonly waiting: number;
   register(seed: AnimationSeed): AnimationHandle;
   /** Takes `id` off the table as finished. */
   finish(id: number): void;
@@ -55,7 +67,8 @@ export function timeScaleOf(scale: number): number {
 
 export function createTable(host: TableHost): Table {
   const { codec, hub } = host;
-  const animations = new Map<number, ActiveAnimation>();
+  const roster = createRoster(host.elapsed);
+  const { animations, schedule, remove } = roster;
   const { fire: fireCompletion, watch: watchCompletion } = createCompletions((id) => animations.has(id));
 
   const infoOf = (a: ActiveAnimation): AnimationInfo => {
@@ -80,7 +93,7 @@ export function createTable(host: TableHost): Table {
     if (!a) return;
     a.onCancel?.();
     codec.stop(id);
-    animations.delete(id);
+    remove(a);
     // A target that came to rest is owed one more show, and no frame may be coming.
     if (host.resting()) host.requestFrame();
     fireCompletion(id);
@@ -98,9 +111,10 @@ export function createTable(host: TableHost): Table {
     for (const id of ids) retire(id, by);
   };
 
-  const rateOf = (a: ActiveAnimation): void => {
-    if (codec.has(a.id)) codec.rate(a.id, a.paused ? 0 : a.timeScale);
-    a.onRate?.(a.paused, a.timeScale);
+  const pace = (a: ActiveAnimation, paused: boolean, timeScale: number): void => {
+    schedule.pace(a, paused, timeScale);
+    if (codec.has(a.id)) codec.rate(a.id, paused ? 0 : timeScale);
+    a.onRate?.(paused, timeScale);
   };
 
   const register = (seed: AnimationSeed): AnimationHandle => {
@@ -108,12 +122,11 @@ export function createTable(host: TableHost): Table {
     if (seed.cancelKey != null && !seed.keepExisting) cancelByKey(seed.cancelKey, anim);
     anim.paused = false;
     anim.timeScale = 1;
-    anim.virtualNow = 0;
-    // Seeded from the frame clock where it is running, as a voice cued now is: both then
-    // advance by the whole of their first frame. Idle, the first frame's realDt is the gap
-    // between register() and the first RAF callback.
-    anim.lastRealNow = host.startTime();
-    animations.set(anim.id, anim);
+    // Its clock starts with the frame clock, as a voice cued now does: both then advance by
+    // the whole of their first frame. Idle, that frame is the wait since the first of the
+    // animations it finds was registered.
+    host.seedClock();
+    roster.add(anim);
     if (anim.target) host.showNow(anim.target);
     if (hub.watched) hub.emit({ type: 'start', animation: infoOf(anim) });
     // A frame in progress asks for the next one itself, after `onTick`: asked for from a tick,
@@ -123,9 +136,9 @@ export function createTable(host: TableHost): Table {
     return {
       id: anim.id,
       cancel: () => retire(anim.id),
-      pause: () => { const a = live(); if (a) { a.paused = true; rateOf(a); } },
-      resume: () => { const a = live(); if (a) { a.paused = false; rateOf(a); } },
-      setTimeScale: (s) => { const a = live(); if (a) { a.timeScale = timeScaleOf(s); rateOf(a); } },
+      pause: () => { const a = live(); if (a) pace(a, true, a.timeScale); },
+      resume: () => { const a = live(); if (a) pace(a, false, a.timeScale); },
+      setTimeScale: (s) => { const a = live(); if (a) pace(a, a.paused, timeScaleOf(s)); },
       timeScale: () => live()?.timeScale ?? 1,
       isPaused: () => live()?.paused ?? false,
     };
@@ -137,16 +150,21 @@ export function createTable(host: TableHost): Table {
     reportEnd,
     retire,
     cancelByKey,
-    rateOf,
+    pace,
+    clockOf: schedule.clockOf,
+    ticks: schedule.ticks,
+    get awake() { return schedule.awake; },
+    get waiting() { return schedule.waiting; },
     register,
     finish(id) {
-      if (!animations.has(id)) return;
+      const a = animations.get(id);
+      if (!a) return;
       reportEnd(id);
-      animations.delete(id);
+      remove(a);
       fireCompletion(id);
     },
     drop(a) {
-      animations.delete(a.id);
+      remove(a);
       fireCompletion(a.id);
     },
     cancelAll(cleared) {
@@ -157,7 +175,7 @@ export function createTable(host: TableHost): Table {
         codec.stop(a.id);
         retired.push(a);
       }
-      animations.clear();
+      roster.clear();
       cleared();
       for (const a of retired) fireCompletion(a.id);
       if (hub.watched) for (const a of retired) hub.emit({ type: 'cancel', animation: infoOf(a) });

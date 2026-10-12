@@ -2,9 +2,10 @@ import type { AnimationHandle, AnimationInfo, AnimationKind } from '../types';
 import type { TargetState } from '../target';
 import type { Codec } from './codec';
 import type { TargetBook } from './offsets';
+import type { Waiting } from './wakes';
 
 /** One row of the animator's table. */
-export interface ActiveAnimation {
+export interface ActiveAnimation extends Waiting {
   id: number;
   kind: AnimationKind;
   cancelKey?: string;
@@ -22,11 +23,19 @@ export interface ActiveAnimation {
   idle?: boolean;
   paused: boolean;
   timeScale: number;
-  virtualNow: number;
-  lastRealNow: number | null;
+  /** Its own clock, in virtual ms, as it stood when the animator's clock read `anchor`. Between
+   *  the two it runs at its own rate, so no frame has to advance it. */
+  base: number;
+  anchor: number;
+  /** Counts registrations: a frame ticks in this order. */
+  seq: number;
   /** Returns true when finished. Called once per frame with the current
    *  virtual-ms timestamp and the effective scale it advanced at this frame. */
   tick(virtualNow: number, scale: number): boolean;
+  /** Where it has nothing to do each frame: the time on its own clock, in virtual ms, that
+   *  `tick` is first called at. It is called every frame from then until it finishes.
+   *  `Infinity` for one that never needs a tick. */
+  due?: number;
   /** Called when the animation is canceled. Skips onDone. */
   onCancel?(): void;
   /** Called when its pause state or time scale is set, by handle or by key. */
@@ -36,7 +45,7 @@ export interface ActiveAnimation {
 }
 
 export type AnimationSeed =
-  Omit<ActiveAnimation, 'paused' | 'timeScale' | 'virtualNow' | 'lastRealNow'>
+  Omit<ActiveAnimation, 'paused' | 'timeScale' | 'base' | 'anchor' | 'seq' | keyof Waiting>
   & {
     /** Registers under an existing `cancelKey` without canceling whoever
      *  holds it. For an animation re-registering itself — a revived

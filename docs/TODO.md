@@ -817,14 +817,14 @@ built 2026-10-11. What that left:
   value, that value, and the committed value. The design left would move it and is not
   started: holds on a target table's rows could keep their values and weights as rows of the
   table's own arrays, which adds public API to the table whose shape is not ruled on.
-- **(P2) A frame of the animator costs about 75 ns an animation at 10k, read or not, and a
-  fifth of it is ticking each animation as an object** — `node
-  tests/perf/target-reads/run.mjs table 10000 idle` (orochi, plain Node 26; five runs read 0.73
-  to 0.93 ms a frame). In a CPU profile of 10k tweens `tickEach` is 22%: every animation is an
-  object whose `tick` runs each frame, to advance its own clock and answer whether it is done,
-  though a tween with no `onTick` has nothing to do until it ends. The rest is blits' pull.
-  Ticking only the animations that have something to do each frame needs each one's clock
-  kept some way other than a sum a frame; not designed.
+- **(P3) A spring or a coast on a target is ticked every frame, to ask whether it has come to
+  rest** — a tween on a target with no `onTick`, and a hold, are ticked only once they have
+  something to do (`due` on an animation's row, `packages/animator/src/engine/schedule.ts`),
+  and a frame of 10,000 such tweens went from 1.25 ms to 0.28 (`node
+  tests/perf/target-reads/run.mjs table 10000 idle`). A spring has no time it is known to
+  rest by, so it still costs a call a frame as an object, as anything with an `onTick` must.
+  A bound on when a spring can first be at rest, from its damping, would give it a `due`;
+  retargeting and pushing it would move the bound. The rest of a frame is blits' pull.
 - **(P2) Stopping and starting an animation costs more as more are running, and most of it is
   in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the parts (orochi,
   plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs with 1,000

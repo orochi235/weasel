@@ -39,12 +39,12 @@ export interface ApiHost {
   halt(): void;
 }
 
-/** Sets `set` on every animation holding `key`, then gives each the rate it now asks for. */
-function eachUnder(table: Table, key: string, set: (a: ActiveAnimation) => void): void {
+/** Gives every animation holding `key` the pause and time scale `pace` answers for it. */
+function eachUnder(
+  table: Table, key: string, pace: (a: ActiveAnimation) => [paused: boolean, timeScale: number],
+): void {
   for (const a of table.animations.values()) {
-    if (a.cancelKey !== key) continue;
-    set(a);
-    table.rateOf(a);
+    if (a.cancelKey === key) table.pace(a, ...pace(a));
   }
 }
 
@@ -55,8 +55,8 @@ function liveRows(table: Table): LiveAnimation[] {
       ...table.infoOf(a),
       paused: a.paused,
       timeScale: a.timeScale,
-      elapsed: a.virtualNow,
-      ...(a.progress ? { progress: a.progress(a.virtualNow) } : {}),
+      elapsed: table.clockOf(a),
+      ...(a.progress ? { progress: a.progress(table.clockOf(a)) } : {}),
     });
   }
   return rows;
@@ -130,11 +130,11 @@ export function createAnimatorApi(host: ApiHost): Animator {
     isPaused: () => clock.paused,
     setTimeScale: (s) => { clock.timeScale = timeScaleOf(s); },
     timeScale: () => clock.timeScale,
-    pauseKey: (key) => eachUnder(table, key, (a) => { a.paused = true; }),
-    resumeKey: (key) => eachUnder(table, key, (a) => { a.paused = false; }),
+    pauseKey: (key) => eachUnder(table, key, (a) => [true, a.timeScale]),
+    resumeKey: (key) => eachUnder(table, key, (a) => [false, a.timeScale]),
     setTimeScaleByKey: (key, s) => {
       const scale = timeScaleOf(s);
-      eachUnder(table, key, (a) => { a.timeScale = scale; });
+      eachUnder(table, key, (a) => [a.paused, scale]);
     },
     loop: (factory, loopOpts) => createLoop(createSupervisor, factory, loopOpts),
     tweenLoop: (tweenLoopOpts) => createTweenLoop(api, createSupervisor, tweenLoopOpts),
