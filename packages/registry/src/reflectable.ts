@@ -9,6 +9,10 @@ export interface Registrant<V> {
 /** One key as a reflection reports it. */
 export interface ReflectedEntry<V, K = string> extends Registrant<V> {
   readonly key: K;
+  /** The registrant whose `value` and `source` this entry carries. The same
+   *  object across snapshots, and the one `shadowed` lists once it is
+   *  displaced, so it identifies the registrant to {@link Reflectable.release}. */
+  readonly live: Registrant<V>;
   /** The registrants this one displaced, oldest first. Non-empty means two
    *  registrants claimed one key — a conflict, resolved newest-wins. */
   readonly shadowed: readonly Registrant<V>[];
@@ -53,6 +57,11 @@ export interface Reflectable<V, K = string> extends Reflection<V, K> {
    *  registries where a second registration means "newer version", not
    *  "override". Records no conflict. */
   set(key: K, value: V, options?: RegisterOptions): void;
+  /** Remove exactly `registrant` — one a reflection reported under `key`, live
+   *  or shadowed, written by `push` or by `set`. Removing the live one uncovers
+   *  the one beneath. Returns whether it was there; the release `push` returned
+   *  for it does nothing afterward, and the reverse. */
+  release(key: K, registrant: Registrant<V>): boolean;
   /** Drop every registrant of `key`. Returns whether there was one. */
   delete(key: K): boolean;
   clear(): void;
@@ -88,7 +97,7 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
       for (const [key, stack] of stacks) {
         const live = stack.at(-1)!;
         entries.push(Object.freeze({
-          key, value: live.value, source: live.source, shadowed: Object.freeze(stack.slice(0, -1)),
+          key, live, value: live.value, source: live.source, shadowed: Object.freeze(stack.slice(0, -1)),
         }));
       }
       snapshot = { version, entries: Object.freeze(entries) };
@@ -98,25 +107,28 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
     getVersion: () => version,
   };
 
+  function release(key: K, registrant: Registrant<V>): boolean {
+    const stack = stacks.get(key);
+    const i = stack ? stack.lastIndexOf(registrant) : -1;
+    if (i === -1) return false;
+    stack!.splice(i, 1);
+    if (stack!.length === 0) stacks.delete(key);
+    changed();
+    return true;
+  }
+
   return {
     ...reflection,
     reflection,
+    release,
     push(key, value, options) {
       const registrant: Registrant<V> = Object.freeze({ value, source: options?.source });
       const stack = stacks.get(key);
       if (stack) stack.push(registrant);
       else stacks.set(key, [registrant]);
       changed();
-      let released = false;
       return () => {
-        if (released) return;
-        released = true;
-        const cur = stacks.get(key);
-        const i = cur ? cur.lastIndexOf(registrant) : -1;
-        if (i === -1) return;
-        cur!.splice(i, 1);
-        if (cur!.length === 0) stacks.delete(key);
-        changed();
+        release(key, registrant);
       };
     },
     set(key, value, options) {

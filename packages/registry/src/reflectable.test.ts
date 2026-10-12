@@ -65,6 +65,74 @@ describe('createReflectable', () => {
     expect(r.get('k')).toBe('replaced');
   });
 
+  it('reports the live registrant by identity, the same object it shows as shadowed once displaced', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'first', { source: 'kit' });
+    const { live } = r.entries()[0]!;
+    expect(live).toEqual({ value: 'first', source: 'kit' });
+    expect(Object.isFrozen(live)).toBe(true);
+    r.bump();
+    expect(r.entries()[0]!.live).toBe(live);
+    r.push('k', 'second');
+    expect(r.entries()[0]!.shadowed[0]).toBe(live);
+  });
+
+  it('release removes exactly the registrant it is handed, live or shadowed', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'a');
+    r.push('k', 'b');
+    r.push('k', 'c');
+    const [entry] = r.entries();
+    expect(r.release('k', entry!.shadowed[0]!)).toBe(true);
+    expect(r.entries()[0]!.shadowed.map((s) => s.value)).toEqual(['b']);
+    expect(r.release('k', entry!.live)).toBe(true);
+    expect(r.get('k')).toBe('b');
+    expect(r.release('k', r.entries()[0]!.live)).toBe(true);
+    expect(r.has('k')).toBe(false);
+  });
+
+  it('release takes a registrant written by set', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'pushed');
+    r.push('k', 'over');
+    r.set('k', 'replaced');
+    expect(r.release('k', r.entries()[0]!.live)).toBe(true);
+    expect(r.get('k')).toBe('pushed');
+  });
+
+  it('release and the closure push returned agree: either one makes the other a no-op', () => {
+    const r = createReflectable<string>();
+    const listener = vi.fn();
+    const releaseA = r.push('k', 'a');
+    const releaseB = r.push('k', 'b');
+    const { live, shadowed } = r.entries()[0]!;
+    r.subscribe(listener);
+    expect(r.release('k', live)).toBe(true);
+    releaseB();
+    releaseA();
+    expect(r.release('k', shadowed[0]!)).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(r.has('k')).toBe(false);
+  });
+
+  it('release refuses a registrant that is not under that key, and notifies nobody', () => {
+    const r = createReflectable<string>();
+    r.push('a', 'same', { source: 'kit' });
+    r.push('b', 'same', { source: 'kit' });
+    const [a] = r.entries();
+    const listener = vi.fn();
+    r.subscribe(listener);
+    expect(r.release('b', a!.live)).toBe(false);
+    expect(r.release('missing', a!.live)).toBe(false);
+    expect(r.release('a', { value: 'same', source: 'kit' })).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+    expect(r.has('a') && r.has('b')).toBe(true);
+  });
+
+  it('keeps release off the read-only view', () => {
+    expect('release' in createReflectable<number>().reflection).toBe(false);
+  });
+
   it('delete drops every registrant of a key; clear drops every key', () => {
     const r = createReflectable<number>();
     r.push('a', 1);
