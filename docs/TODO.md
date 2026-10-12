@@ -648,13 +648,6 @@ Core five + Crop shipped. Remaining:
   and `version`. Splitting them means putting those in one record the pieces close over, then
   cutting the methods by what they edit: nodes, layers, selection, and history and batches.
 
-- **(P2) Clipboard: draw says nothing when a paste leaves an edge out.** A paste now drops a node
-  that derives from nodes that were not copied with it, and reports each one with a reason
-  (`PasteOmission`) to `useClipboardOps({ onPasteOmitted })` and
-  `<SceneCanvas ingestion={{ clipboard: { onOmitted } }}>`. `apps/draw` passes neither. Ruled
-  2026-10-11: draw shows a toast. Draw mounts no toast region today, so this needs one and a look at
-  it in a browser.
-
 - **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
   the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
   copied node's `dependsOn` id list at the copies only when every node in it was copied too. With

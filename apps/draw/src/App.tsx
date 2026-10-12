@@ -58,6 +58,7 @@ import {
   ResizeHandle,
   SceneGradientHandles,
   Sidebar,
+  ToastRegion,
   ToolPalette
 } from '@weasel-js/ui';
 import {
@@ -102,6 +103,7 @@ import { Toolbar } from './Toolbar';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import './app.css';
 import { DRAW_POSE_COMPOSITION, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { reportPasteOmissions } from './pasteOmissions';
 import { HISTORY_KEY, loadHistory, loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
@@ -120,7 +122,10 @@ const RECENT_COLORS_KEY = 'weaseldraw:recent-colors';
 // persistence uses (the walker itself is NOT `(key, value)`-shaped; see
 // persistence.ts). Module const: SceneCanvas keys its dep wiring off the
 // prop identity.
-const DRAW_INGESTION = { svg: { unpack: unpackSvgFiles }, clipboard: { reviver: clipboardJsonReviver } };
+const DRAW_INGESTION = {
+  svg: { unpack: unpackSvgFiles },
+  clipboard: { reviver: clipboardJsonReviver, onOmitted: reportPasteOmissions },
+};
 /** Seed fill for a fresh document. Intentionally a friendly blue rather than
  *  the kit's white `DEFAULT_FILL_COLOR` — a new shape lands visible against
  *  the white page instead of disappearing into it. Keep distinct from the
@@ -664,6 +669,8 @@ function EditorWithSharedScene({
             <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
           )}
+          {/* In the workspace, not the viewport: a fixed region sits outside the theme and over the status bar. */}
+          {hostRef.current && <ToastRegion portalContainer={hostRef.current} />}
           <SceneGradientHandles
             scene={scene}
             containerRef={hostRef}

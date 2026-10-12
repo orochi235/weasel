@@ -21,6 +21,7 @@ import {
 import { CommandBar, type PaperSizeKey } from './CommandBar';
 import { DEFAULT_FILENAME, PAPER_PRESETS } from './docPersistence';
 import { DRAW_POSE_COMPOSITION, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { reportPasteOmissions } from './pasteOmissions';
 import { serializeReplacer } from './persistence';
 import { clipboardSnapshotRootIds, sceneToSvgString, selectionToClipboardSvgString } from './svgExport';
 import { leafOfObj } from './svgImport';
@@ -80,6 +81,7 @@ export function Toolbar({
   const clipboard = useClipboardOps(adapter, {
     getSelection: () => selection.current as NodeId[],
     onPaste: (ids) => selection.set(ids.map(asNodeId)),
+    onPasteOmitted: reportPasteOmissions,
     produceFlavors,
     jsonReplacer: serializeReplacer,
   });
