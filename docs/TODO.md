@@ -936,11 +936,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   booleans, outlines, edit-anchors, lasso-select) holds its options, geometry, and gesture
   adapter. One directory per action would hold both. `move` is done; the rest follow it.
 
-- **(P3) Range selection on the canvas.** `@weasel-js/select` ranges over an `order` the caller
-  supplies, and a canvas has none of its own, so core's `useSelection` never ranges and keeps no
-  anchor. The order could be z-order, tree order, or a layer panel's row order handed across;
-  which one is the open question, not the plumbing.
-
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
