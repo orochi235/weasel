@@ -22,6 +22,7 @@ export function startHold<T>(ctx: AnimationContext, o: HoldOptions<T>): HoldHand
     target,
     value: isFn(value) ? (value as () => T) : () => value,
     weight: isFn(weight) ? weight : () => weight,
+    axes: o.axes,
   });
   seed.onCancel = () => held.leave(true);
   seed.tick = () => {

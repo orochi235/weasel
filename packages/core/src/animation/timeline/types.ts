@@ -40,6 +40,8 @@ export interface SampledTrack<T> {
   target?: Target<T>;
   /** The track's share among the target's holds, as `HoldOptions.weight`. Default 1. */
   weight?: number | (() => number);
+  /** The axes of the target the track holds, as `HoldOptions.axes`. Default: every axis. */
+  axes?: readonly number[];
 }
 
 /** A clock that events are booked against, reading in ms. An `AudioEngine`
@@ -134,8 +136,9 @@ export interface TimelineOptions extends NestedTimeline {
 
 /** What `animator.timeline` returns: playback control plus live editing. */
 export interface TimelineHandle extends AnimationHandle {
-  /** Move the playhead. Fires nothing itself, at any depth; an event exactly
-   *  at `t` fires when playback next advances. */
+  /** Move the playhead. Fires no event itself, at any depth; an event exactly
+   *  at `t` fires when playback next advances. Sampled tracks are sampled at
+   *  `t` at once, so a target they hold reads the new value before the next frame. */
   seek(t: number): void;
   /** Change the loop policy. `true` loops forever, `n` allows n more laps,
    *  `false` stops at `duration`. Sets policy only — a timeline already parked

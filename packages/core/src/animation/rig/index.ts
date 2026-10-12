@@ -1,5 +1,5 @@
 export { mirrorPose } from './mirrorPose';
-export { skeletonAxes } from './skeletonAxes';
+export { jointAxes, skeletonAxes } from './skeletonAxes';
 export { bindRig, rigidRigApply } from './bindRig';
 export type { BindRigOptions, Rig, RigApply, RigApplyContext, RigScene } from './bindRig';
 export { resolveSkeleton } from './resolveSkeleton';

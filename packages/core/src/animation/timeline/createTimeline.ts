@@ -1,5 +1,6 @@
 import type { AnimationHandle } from '../types';
-import { createBooker, firstAfter, firstAtOrAfter } from './booking';
+import { createBooker } from './booking';
+import { createEventFirer } from './fireEvents';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
@@ -103,38 +104,9 @@ export function createTimeline(
       playhead: () => playhead,
     })
     : null;
-  let warnedUnbooked = false;
-
   const sampler = createTrackSampler(hold);
 
-  // Track indexes from the root down to the track being fired, for `report`.
-  const path: number[] = [];
-  const fireEvents = (tracks: Track[], from: number, to: number, fromOpen: boolean): void => {
-    for (let k = 0; k < tracks.length; k += 1) {
-      const track = tracks[k];
-      if (track.kind === 'event') {
-        const end = firstAfter(track.events, to);
-        const first = (fromOpen ? firstAtOrAfter : firstAfter)(track.events, from);
-        for (let i = first; i < end; i += 1) {
-          const ev = track.events[i];
-          ev.fire?.(to - ev.t);
-          if (report?.watched) {
-            path.push(k);
-            report.fire(track, path, ev, to - ev.t);
-            path.pop();
-          }
-          if (ev.book && !booker && !warnedUnbooked) {
-            warnedUnbooked = true;
-            console.warn('timeline: an event has `book` but the timeline has no `booking` clock; it never books.');
-          }
-        }
-      } else if (track.kind === 'timeline') {
-        path.push(k);
-        fireEvents(track.timeline.tracks, from - track.at, to - track.at, fromOpen);
-        path.pop();
-      }
-    }
-  };
+  const fireEvents = createEventFirer(report, booker !== null);
 
   // Flush the outgoing pass's tail before re-arming, or an event between the
   // last tick and `duration` is dropped whenever a frame straddles the seam.
@@ -246,6 +218,8 @@ export function createTimeline(
       prevOpen = true;
       booker?.seek();
       rearm();
+      // Sampled now, not at the next frame: whoever seeks and then reads a target sees the seek.
+      if (live && t >= 0 && t < duration) sampler.apply(opts.tracks, t);
       playbackChanged();
     },
     time: () => playhead,

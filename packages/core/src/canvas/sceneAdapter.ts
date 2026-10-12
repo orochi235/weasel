@@ -46,6 +46,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { composeWorldPose, frameAtOrAbove, type PoseComposition } from 'core/scene/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
+import { containerCascade, descendantsOf } from './poseCascade';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -252,20 +253,13 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           const dx = after.x - before.x;
           const dy = after.y - before.y;
           if (dx !== 0 || dy !== 0) {
-            const descIds: string[] = [];
-            const collect = (rootId: string): void => {
-              for (const cid of scene.childrenOf(asNodeId(rootId))) {
-                descIds.push(cid);
-                collect(cid);
-              }
-            };
-            collect(id);
+            const descIds = descendantsOf(scene, asNodeId(id));
             scene.batch('move container', () => {
               scene.setPose(asNodeId(id), pose);
               for (const cid of descIds) {
-                const cn = scene.get(asNodeId(cid));
+                const cn = scene.get(cid);
                 if (!cn) continue;
-                scene.setPose(asNodeId(cid), translate(cn.pose, dx, dy, cn));
+                scene.setPose(cid, translate(cn.pose, dx, dy, cn));
               }
             });
             return;
@@ -275,9 +269,12 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       scene.setPose(asNodeId(id), pose);
     },
     poseTarget(id, descriptor) {
-      // The cascade happens in `setPose`, so a cascading container stays on the write a frame.
-      if (options.cascadeContainerPose && scene.get(asNodeId(id))?.kind === 'container') return undefined;
-      return scenePoseTarget(scene, id, descriptor ?? d);
+      if (!options.cascadeContainerPose || scene.get(asNodeId(id))?.kind !== 'container') {
+        return scenePoseTarget(scene, id, descriptor ?? d);
+      }
+      // Its descendants hold poses of their own: a commit moves them, and they are shown beside it.
+      const cascade = containerCascade(scene, asNodeId(id), d, (pose) => adapter.setPose(id, pose));
+      return scenePoseTarget(scene, id, descriptor ?? d, cascade);
     },
     setParent(id, parentId) {
       scene.move(asNodeId(id), parentId === null ? null : asNodeId(parentId));

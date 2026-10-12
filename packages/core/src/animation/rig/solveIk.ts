@@ -71,7 +71,8 @@ const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay *
  * ordinary {@link Pose} — so it keys a `SampledTrack<Pose>`, drives a rig through
  * `Rig.pose`, and is held on a rig like any other. Weighting the IK against an
  * animated pose is `animator.hold({ target: rig.target, value: solved, weight: w })`
- * beside the clip at weight `1 - w`.
+ * beside the clip at weight `1 - w`; with `axes: jointAxes(skeleton, joints)` on both, the
+ * rest of the body is left to whatever else holds it.
  *
  * The solver is cyclic coordinate descent: each step turns one joint so the
  * tip lies on the ray from that joint to the target. A joint's rotation is the

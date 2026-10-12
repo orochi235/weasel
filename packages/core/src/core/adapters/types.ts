@@ -99,7 +99,7 @@ export interface SceneAdapter<TNode extends { id: string }, TPose> {
    *  every call, so everything animating the node adds; `descriptor` supplies
    *  its axes the first time. `tweenPose`, `springPose`, and `momentum` move
    *  it where it is there, and write `setPose` each frame where it is not or
-   *  it answers `undefined`. A scene-backed adapter provides it. */
+   *  it answers `undefined`. A scene-backed adapter and `arrayAdapter` provide it. */
   poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
 }
 

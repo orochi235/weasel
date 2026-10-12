@@ -29,12 +29,10 @@ export interface PathStart {
 }
 export interface HoldStart {
   id: number; axes: number;
-  /** The subject it stands in for. Every hold on one subject is an alternative to the others. */
+  /** The subject it reaches. */
   on: unknown;
   /** The voice's axes now. Asked every frame, and again after a `touch`. */
   at(): number[];
-  /** Its share among the subject's holds, 0 to 1. Asked as `at` is. */
-  weight(): number;
 }
 /** A voice's own value and velocity, apart from any other voice on its subject. */
 export interface Own { value: number[]; velocity: number[] }
@@ -69,9 +67,6 @@ export interface Codec {
   /** How many voices the codec is running; for tests and diagnostics. */
   voiceCount(): number;
 }
-
-/** The one locus every hold is cued into, so holds on a subject fold through the channel's lerp. */
-const HOLD = 'hold';
 
 /** What the codec calls on a motion patch: a tween has no `push`, a glide no `to`. */
 interface Moves {
@@ -223,7 +218,7 @@ export function createCodec(): Codec {
         },
         { writes: ['v'] },
       );
-      v.handle = slot.lane.mix.cue({ patch, subjects: [slot.key], loop: true, locus: HOLD, weight: () => s.weight() });
+      v.handle = slot.lane.mix.cue({ patch, subjects: [slot.key], loop: true });
       voices.set(s.id, v);
       holds.add(v);
       return slot;

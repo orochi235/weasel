@@ -20,10 +20,10 @@
     "longestFunction": 135
   },
   "packages/core/src/animation/timeline/createTimeline.ts": {
-    "longestFunction": 216
+    "longestFunction": 189
   },
   "packages/core/src/animation/types.ts": {
-    "lines": 582
+    "lines": 491
   },
   "packages/core/src/animation/useAnimator.ts": {
     "lines": 486,
@@ -44,8 +44,8 @@
     "lines": 471
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 1556,
-    "longestFunction": 1354
+    "lines": 1552,
+    "longestFunction": 1351
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 276
@@ -75,14 +75,11 @@
     "lines": 422
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "lines": 457,
-    "longestFunction": 279
+    "lines": 454,
+    "longestFunction": 275
   },
   "packages/core/src/canvas/useViewHelpers.ts": {
     "longestFunction": 154
-  },
-  "packages/core/src/core/adapters/arrayAdapter.ts": {
-    "longestFunction": 151
   },
   "packages/core/src/core/layers/render.ts": {
     "lines": 541

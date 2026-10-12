@@ -272,10 +272,17 @@ Two on one target combine, by two rules:
 - **A hold stands in.** `animator.hold({ target, value, weight })` shows a value
   in place of the committed one: a drag preview, a timeline's sampled track, a
   rig clip. Several holds on a target are alternatives, mixed by weight; weights
-  short of 1 leave the rest to the committed value; offsets add on top.
+  short of 1 leave the rest to the committed value; offsets add on top. On an
+  angle axis the holds meet at their average direction by weight, so two turn the
+  short way toward each other. A hold given `axes` holds only those, so an arm
+  solved by IK sits beside the clips holding the rest of a rig
+  (`jointAxes(skeleton, names)`).
 
 Leaving never moves the value on screen: a canceled animation commits where it
-was, and so does a released hold unless told not to. Under one `cancelKey` a new
+was, and so does a released hold unless told not to. One canceled under a hold,
+which stands in front of the committed value, keeps what it had left on screen
+beside the hold; it is committed when the target's last hold goes, or taken up by
+the next animation given a destination. Under one `cancelKey` a new
 animation still interrupts the old, and a spring starts at the velocity of what
 it interrupts; `interrupt: false` shares the key and adds. When something else
 writes the committed value mid-flight, call `target.stop({ commit: false })` so
@@ -285,16 +292,20 @@ What is built on it:
 
 | Value | Its target | Moved by |
 |---|---|---|
-| A node's pose | `scenePoseTarget(scene, id)`, through `adapter.poseTarget` | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
-| The camera | `ViewAnimationApi.viewTarget` | `useViewAnimation`; add a shake on the same animator |
+| A node's pose | `adapter.poseTarget(id)`: `scenePoseTarget(scene, id)` over a scene, `createWrittenPoseTarget` over an `arrayAdapter` | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
+| The camera | `ViewAnimationApi.viewTarget`; on a `<SceneCanvas>` ref, `camera.target` | `useViewAnimation`, `animateView`; add a shake on the same animator, which the ref hands out as `camera.animator` |
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
 | Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |
 
-A pose animation therefore writes the document once, at its start, and shows its
-travel through a pose override. The values are computed by blits
+A pose animation over a scene therefore writes the document once, at its start,
+and shows its travel through a pose override. An `arrayAdapter` has no overrides,
+so its array is written the pose on screen each frame while the target keeps the
+committed pose. The values are computed by blits
 (`@msb235/blits`), behind `packages/core/src/animation/engine/`; no blits type is
-public. A target is moved by one animator at a time.
+public. blits clocks the voices and sums them; how a target's holds share it is
+folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
+cover some axes and turn an angle. A target is moved by one animator at a time.
 
 ## Descriptor
 

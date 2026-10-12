@@ -1,4 +1,5 @@
-import { arrayAdapter, type ArrayAdapter, type ArrayAdapterConfig } from './arrayAdapter';
+import { useState } from 'react';
+import { arrayAdapter, type ArrayPoseTargets, type ArrayAdapter, type ArrayAdapterConfig } from './arrayAdapter';
 
 /** Options for `useArrayAdapter` — same shape as `ArrayAdapterConfig` minus the
  *  `ref` field, which the hook manages internally from `items`. */
@@ -17,5 +18,6 @@ export function useArrayAdapter<TNode extends { id: string }, TPose>(
   options: UseArrayAdapterOptions<TNode, TPose>,
 ): ArrayAdapter<TNode, TPose> {
   const { items, ...rest } = options;
-  return arrayAdapter<TNode, TPose>({ ref: { current: items }, ...rest });
+  const [poseTargets] = useState<ArrayPoseTargets<TPose>>(() => new Map());
+  return arrayAdapter<TNode, TPose>({ ref: { current: items }, poseTargets, ...rest });
 }

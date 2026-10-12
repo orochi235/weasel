@@ -96,12 +96,22 @@ describe('poses held on a target', () => {
     expect(out.hip!.rotation).toBeCloseTo(0.2 * 0.2 + 0.3 * -0.4 + 0.5 * 1, 9);
   });
 
-  it('measures each held rotation the short way from the committed pose, not from the other holds', () => {
-    // 3 and -3 are 0.28 apart through PI, where the old blend met. Held over a bind pose at 0
-    // they are 3 to either side of it, and meet at 0.
+  it('turns two held rotations the short way toward each other, wherever the committed pose is', () => {
+    // 3 and -3 are 0.28 apart through PI, and 6 apart through the bind pose's 0.
     const poses: Pose[] = [{ hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
-    expect(held(poses, [0.5, 0.5]).hip!.rotation).toBeCloseTo(0, 6);
-    // Over a committed pose near them, both are the short way from it and they meet at PI.
+    expect(Math.cos(held(poses, [0.5, 0.5]).hip!.rotation!)).toBeCloseTo(-1, 6);
     expect(Math.cos(held(poses, [0.5, 0.5], { hip: { rotation: Math.PI } }).hip!.rotation!)).toBeCloseTo(-1, 6);
+    expect(Math.cos(held(poses, [0.5, 0.5], { hip: { rotation: 1 } }).hip!.rotation!)).toBeCloseTo(-1, 6);
+  });
+
+  it('does not let a hold at almost no weight decide which way the others turn', () => {
+    const poses: Pose[] = [{ hip: { rotation: 0 } }, { hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
+    expect(Math.cos(held(poses, [0.001, 0.4995, 0.4995]).hip!.rotation!)).toBeCloseTo(-1, 4);
+  });
+
+  it('turns the short way from the committed pose toward where the holds meet, at weights short of 1', () => {
+    const poses: Pose[] = [{ hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
+    // They meet at PI, which is PI - 3 past a committed 3; half of that shows.
+    expect(held(poses, [0.25, 0.25], { hip: { rotation: 3 } }).hip!.rotation).toBeCloseTo(3 + (Math.PI - 3) / 2, 6);
   });
 });
