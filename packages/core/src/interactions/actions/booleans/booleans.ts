@@ -6,7 +6,7 @@
  * The hook (`useBooleans`) wraps this with React glue; testing here is
  * trivial because the function takes a plain adapter.
  */
-import type { Path } from '@weasel-js/geom';
+import type { Mat3, Path } from '@weasel-js/geom';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { createSetSelectionOp } from 'core/ops/select';
@@ -51,6 +51,13 @@ export interface BooleansAdapter {
    * path alone.
    */
   getPaint?(id: NodeId): PathPaint | undefined;
+  /**
+   * Optional: the frame the node behind `id` draws its stroke in, as the
+   * matrix taking that frame to world (`poseFrameOf`); null or absent for a
+   * node drawn straight. A counted world-width stroke is skewed and stretched
+   * with it. Without it every stroke is outlined in world.
+   */
+  getStrokeFrame?(id: NodeId): Mat3 | null | undefined;
   compareZ(a: NodeId, b: NodeId): number;
   /**
    * Mint a new node from a boolean-op result `Path`. `producedBy` names the

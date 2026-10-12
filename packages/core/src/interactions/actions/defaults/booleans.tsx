@@ -71,10 +71,7 @@ function makePathfinderAction(op: BooleanOp): Action {
         const adapter = deps.booleansAdapter;
         if (!adapter) return;
         const scale = deps.view?.get().scale;
-        const result = applyBooleanOp(adapter, op, {
-          strokes: PATHFINDER_STROKES,
-          ...(scale ? { scale: Math.sqrt(Math.abs(scale.x * scale.y)) } : {}),
-        });
+        const result = applyBooleanOp(adapter, op, { strokes: PATHFINDER_STROKES, ...(scale ? { scale } : {}) });
         if (result.kind === 'failed') console.warn(`[pathfinder] ${result.error.message}`);
       },
     } satisfies ImmediateInvoker,

@@ -22,7 +22,7 @@ export const outlineStrokeAction: Action = {
       const adapter = deps.createOutlinesAdapter;
       if (!adapter) return;
       const scale = deps.view?.get().scale;
-      applyOutlineStroke(adapter, scale ? { scale: Math.sqrt(Math.abs(scale.x * scale.y)) } : {});
+      applyOutlineStroke(adapter, scale ? { scale } : {});
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
