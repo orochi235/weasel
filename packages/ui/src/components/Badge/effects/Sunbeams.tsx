@@ -1,3 +1,5 @@
+import { cssColorLiteral, type ColorSource } from '@weasel-js/paint';
+import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
@@ -13,7 +15,7 @@ export interface SunbeamsEffectParams {
   /** 0..1 lightness opacity. */
   opacity?: number;
   /** Beam color. Defaults to white. */
-  color?: string;
+  color?: ColorSource;
   /** Drift the beam pattern left/right by N CSS px (lets you slide the "window" over the body). */
   offset?: number;
   /** 0..1 perturbs each beam's width, opacity, and angle slightly with a deterministic
@@ -33,7 +35,7 @@ const DEFAULTS: Required<SunbeamsEffectParams> = {
   gap: 8,
   angle: 28,
   opacity: 0.18,
-  color: '#ffffff',
+  color: cssColorLiteral('#ffffff'),
   offset: 0,
   irregularity: 0,
   gradientAngle: 90,
@@ -44,6 +46,7 @@ const DEFAULTS: Required<SunbeamsEffectParams> = {
 const Sunbeams: EffectModule<SunbeamsEffectParams> = {
   Component: ({ sampler, boxW, boxH, params }) => {
     const cfg = { ...DEFAULTS, ...params };
+    const css = useColorCss();
     const clipId = useId();
     const maskId = useId();
     const gradId = useId();
@@ -132,7 +135,7 @@ const Sunbeams: EffectModule<SunbeamsEffectParams> = {
         </defs>
         <g clipPath={`url(#${clipId})`} mask={`url(#${maskId})`}>
           {beams.map((b, i) => (
-            <polygon key={i} points={b.points} fill={cfg.color} opacity={b.opacity} />
+            <polygon key={i} points={b.points} fill={css(cfg.color)} opacity={b.opacity} />
           ))}
         </g>
       </>
