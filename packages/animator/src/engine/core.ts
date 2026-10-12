@@ -85,7 +85,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       let sum: number[] | null = null;
       for (const a of table.animations.values()) {
         if (a.cancelKey !== key || a.target !== target) continue;
-        const v = codec.own(a.id)?.velocity;
+        const v = a.velocity?.() ?? codec.own(a.id)?.velocity;
         if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
       }
       return sum;

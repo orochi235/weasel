@@ -31,6 +31,8 @@ export interface ActiveAnimation {
   onCancel?(): void;
   /** Called when its pause state or time scale is set, by handle or by key. */
   onRate?(paused: boolean, timeScale: number): void;
+  /** Its velocity, where that is not its one voice's: a spring on a target runs up to two. */
+  velocity?(): number[];
 }
 
 export type AnimationSeed =
