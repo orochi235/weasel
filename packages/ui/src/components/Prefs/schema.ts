@@ -152,14 +152,15 @@ export function prefRailItems(root: PrefGroup): PrefRailItem[] {
 /**
  * A form's root narrowed to what a filter query leaves, or null when that is nothing. The root's own name is not
  * matched, where a group's is: it is the form's title, and a query that happened to lie in it would filter nothing.
+ * An alias is matched as the leaf of `over` it shows.
  */
 export function filterPrefRoot(
-  root: PrefGroup, query: string, leafAt: (path: string) => PrefLeaf | undefined,
+  root: PrefGroup, query: string, over: PrefGroup | PrefSection,
 ): PrefGroup | null {
   if (query.trim() === '') return root;
   const children: PrefGroup['children'] = {};
   for (const [key, child] of Object.entries(root.children)) {
-    const kept = filterPrefSubtree(child, query, key, leafAt);
+    const kept = filterPrefSubtree(child, query, key, over);
     if (kept) children[key] = kept;
   }
   return Object.keys(children).length === 0 ? null : { ...root, children };

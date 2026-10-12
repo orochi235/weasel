@@ -51,6 +51,8 @@ export interface PrefConditionsOptions {
   keepHidden?: boolean;
   /** The schema an alias's `of` names a leaf of. Default: the schema walked. */
   aliasOver?: PrefGroup | PrefSection;
+  /** Says which conditions of `aliasOver` hold, where its values are not the ones `holds` reads. Default: `holds`. */
+  aliasHolds?: PrefConditionJudge;
 }
 
 interface WalkOptions {
@@ -59,16 +61,17 @@ interface WalkOptions {
   /** Asked inside the item of a list or a map met on the way, whose entries the walk does not have. */
   inItem: PrefConditionJudge;
   aliasOver?: PrefGroup | PrefSection;
+  aliasHolds?: PrefConditionJudge;
 }
 
 /** The walk over leaves and what is inside them, which the schema's pass and an entry's share. */
-function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver }: WalkOptions) {
+function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: WalkOptions) {
   const disabled = new Set<string>();
   const hidden = new Set<string>();
 
   const leaf = (node: PrefLeaf, path: string, above: PrefScope, holds: PrefConditionJudge): PrefLeaf | null => {
     const own = prefScopeUnder(above, node, holds);
-    const scope = node.kind === 'alias' && aliasOver ? prefAliasScope(own, node as PrefAlias, aliasOver, holds) : own;
+    const scope = node.kind === 'alias' && aliasOver ? prefAliasScope(own, node as PrefAlias, aliasOver, aliasHolds ?? holds) : own;
     return scope.shown || keepHidden ? inside(node, path, scope, holds) : null;
   };
 
@@ -135,15 +138,16 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver }: WalkOptions) {
  * for every entry and is left holding: {@link applyPrefEntryConditions}
  * answers it for each.
  * An alias is shown only while it and the leaf it shows both are, and enabled
- * only while both are, with everything above that leaf counted.
+ * only while both are, with everything above that leaf counted. That leaf is
+ * looked for in `aliasOver`, and its side is asked of `aliasHolds`.
  * Parts with nothing dropped come back as the objects they were.
  */
 export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   schema: T,
   holds: PrefConditionJudge,
-  { keepEmpty = false, keepHidden = false, aliasOver }: PrefConditionsOptions = {},
+  { keepEmpty = false, keepHidden = false, aliasOver, aliasHolds }: PrefConditionsOptions = {},
 ): PrefConditionsApplied<T> {
-  const walk = leafWalk({ keepEmpty, keepHidden, inItem: deferEntryConditions(holds), aliasOver: aliasOver ?? schema });
+  const walk = leafWalk({ keepEmpty, keepHidden, inItem: deferEntryConditions(holds), aliasOver: aliasOver ?? schema, aliasHolds });
   const { disabled, hidden } = walk;
 
   const group = (node: PrefGroup, path: string, above: PrefScope): PrefGroup | null => {

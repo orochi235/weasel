@@ -1178,12 +1178,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
   `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the leaves its
-  aliases show as a function (`leafAt`), so an alias into another schema, as a layout over a dialog
-  has them, is hidden and disabled by its own conditions alone; `applyPrefConditions` takes that
-  schema as `aliasOver` once the form is given it. An alias of an `object` leaf draws a field
-  whose `showIf` hides it in the leaf's own row: `PrefsForm` resolves the alias against the
-  schema before its conditions are applied. `PrefSchemaEditor` edits an entry's own `enableIf` and
+  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the schema its
+  aliases point into as `over`; `SelectionPanel`, `Bar`, and labkit's `ControlPanel` take none
+  and find an alias's leaf in their own schema, so a layout whose root is a `PrefSection` has no
+  surface that draws its aliases into a dialog. A condition on a node of the form's own schema
+  reads `values` with that schema's leaves and defaults, so one that names a setting of `over`
+  compares the stored value and finds no default. A vertical bar inside a
+  `PrefsForm` names the popover of an alias left unnamed with the empty string, where `Bar`
+  names it for the leaf it shows. `PrefSchemaEditor` edits an entry's own `enableIf` and
   nothing inside an object entry, whose fields it draws no rows for, so a field's
   `{ from: 'item' }` condition is written in code. A list of plain text entries is one
   `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the

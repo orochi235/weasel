@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { applyPrefConditions, isPrefLeaf, prefJudge, prefValueAtPath, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { applyPrefConditions, isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefJudge, prefLeafAt, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
@@ -8,7 +8,7 @@ import { pairRows } from '../SelectionPanel/model';
 import { renderCells, type LeafCell } from '../SelectionPanel/cells';
 import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/renderContext';
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
-import { BarLayout, groupBarNodes, type BarCell, type BarLeafNode, type BarOrientation } from './BarLayout';
+import { BarLayout, groupBarNodes, type BarCell, type BarLeafNode, type BarNode, type BarOrientation } from './BarLayout';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
 import s from './Bar.module.css';
 
@@ -50,10 +50,11 @@ export function Bar(props: BarProps) {
   const read = (path: string): unknown => valueAt(values, path);
   const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, read));
   const entryAt = entryApplier((entry) => prefJudge(schema, read, entry));
-  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt };
+  const leafAt = (path: string): PrefLeaf | undefined => (shown === null ? undefined : prefLeafAt(shown, path));
+  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, leafAt };
   return (
     <BarLayout
-      nodes={shown === null ? [] : groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />)}
+      nodes={shown === null ? [] : shownNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />), draw)}
       orientation={orientation}
       label={label}
       framed={framed}
@@ -74,6 +75,23 @@ interface Draw {
   disabled: ReadonlySet<string>;
   /** Answers the conditions that read an entry of a list or a map, for that entry. */
   entryAt: EntryAt;
+  /** The leaf at a path of the schema as its conditions leave it: what an alias is drawn as. */
+  leafAt: (path: string) => PrefLeaf | undefined;
+}
+
+/** `node` as the bar draws it: an alias as the leaf it shows, unless a renderer of the kind draws aliases itself. */
+function shownNode(node: BarLeafNode, draw: Draw): BarLeafNode {
+  if (node.leaf.kind !== 'alias' || draw.renderers?.alias) return node;
+  const alias = node.leaf as PrefAlias;
+  const target = prefAliasTarget(alias, draw.leafAt);
+  return target ? { path: node.path, at: target.path, leaf: prefAliasedLeaf(alias, target.leaf) } : node;
+}
+
+function shownNodes(nodes: readonly BarNode[], draw: Draw): BarNode[] {
+  return nodes.map((node) => {
+    if (node.kind === 'leaf') return { kind: 'leaf', ...shownNode(node, draw) };
+    return node.kind === 'run' ? { ...node, nodes: shownNodes(node.nodes, draw) } : node;
+  });
 }
 
 /** The value a condition reads at `path`: the entry there, else the part of an entry above it that the rest of the path names. */
@@ -99,8 +117,9 @@ function barCells(leaves: readonly BarLeafNode[], draw: Draw): BarCell[] {
   });
 }
 
-function leafCell({ path, leaf }: BarLeafNode, surface: LeafSurface, draw: Draw): LeafCell {
+function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, draw: Draw): LeafCell {
   const { values, mixed, renderers, onChange, fields } = draw;
+  const path = at ?? own;
   const isMixed = mixed?.has(path) === true;
   const ctx: PropertyRenderContext = {
     path,
@@ -114,18 +133,18 @@ function leafCell({ path, leaf }: BarLeafNode, surface: LeafSurface, draw: Draw)
     update: (fn) => onChange?.(path, fn(isMixed ? undefined : values?.[path])),
     valueAt: (p) => ({ value: values?.[p], mixed: mixed?.has(p) === true }),
     fields,
-    disabled: draw.disabled.has(path),
-    disabledAt: (at) => draw.disabled.has(at),
+    disabled: draw.disabled.has(own),
+    disabledAt: (under) => draw.disabled.has(under),
     entryAt: draw.entryAt,
   };
   return {
-    key: path,
+    key: own,
     leaf,
     ctx,
     ariaLabel: leaf.name,
     render: () => {
-      const custom = renderers?.[path] ?? renderers?.[leaf.kind];
-      if (!custom) return renderBuiltin(ctx, leaf.name, renderers, { selectionKey: path, surface });
+      const custom = renderers?.[own] ?? renderers?.[leaf.kind];
+      if (!custom) return renderBuiltin(ctx, leaf.name, renderers, { selectionKey: own, surface });
       return surface === 'bar' ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
     },
   };
@@ -150,7 +169,7 @@ function GroupRows({ draw, group, path }: { draw: Draw; group: PrefGroup; path: 
   for (const [key, child] of Object.entries(group.children)) {
     const at = `${path}.${key}`;
     if (isPrefLeaf(child)) {
-      if (child.hidden !== true) rows.push(leafRow({ path: at, leaf: child as PrefLeaf }, draw));
+      if (child.hidden !== true) rows.push(leafRow(shownNode({ path: at, leaf: child as PrefLeaf }, draw), draw));
     } else {
       rows.push(
         <div key={at} className={s.opened}>
