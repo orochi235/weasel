@@ -960,11 +960,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ToggleBar` overrides through descendant selectors, which `composes` handles
   badly, so decide the component question first.
 
-- **(P3) `@weasel-js/quantity` has no composites and no styling.** A value is one number, so a
-  range (`1/64–1/2`, which `BandEditor`'s bands would want to report) or a vector readout has no
-  display of its own yet; `Slider`'s thumbs still take bare numbers where `BandEditor`'s bands take
-  tagged ones; and nothing styles the `data-part` spans the HTML form emits, so `PropertyField`
-  still draws its suffix from its own `unit` prop.
+- **(P3) Nothing in `@weasel-js/ui` shows a quantity's composites or styles its parts.**
+  `presentRange` and `presentVector` exist, but no component calls them: `BandEditor` does not
+  report a band as a range. `Slider`'s thumbs still take bare numbers where `BandEditor`'s bands
+  take tagged ones; and nothing styles the `data-part` or `data-composite` spans the HTML form
+  emits, so `PropertyField` still draws its suffix from its own `unit` prop.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The

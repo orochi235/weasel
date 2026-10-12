@@ -132,3 +132,11 @@ export {
   type ScopeTree,
   type UnitScope,
 } from './scope';
+export {
+  presentRange,
+  presentVector,
+  rangeParts,
+  vectorParts,
+  type RangeOptions,
+  type VectorOptions,
+} from './composite';
