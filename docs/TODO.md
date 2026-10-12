@@ -1048,13 +1048,28 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
-  system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
-  titled groups want a titlebar frame motif (a solid title strip across the top), which was left
-  out of the first set of frame motifs for this theme to bring.
+- **(P3) The desktop themes bevel four things and have never been looked at.** `win9xTheme` and
+  `platinumTheme` (`@weasel-js/theme/themes/*`) and the `titlebar` frame motif exist, and browser
+  tests pin their computed colors, shadows, and sizes, but only `Button`, the field frame,
+  `PropertyPanel`, and a `titlebar` frame read the `--wzl-bevel-*` hooks. Checkbox, radio, switch, tabs, sliders,
+  `ToggleBar` and the segmented control, menus and popovers, `Dialog`, toolbars, and the tooltip
+  take each theme's colors and corners and draw no bevel, so a screen of them reads as flat
+  gray. Each wants the matching hook read as a `var()` fallback, as `field.module.css` does. The
+  systems' own faces are named in the font stacks and not bundled; a bundled lookalike needs a
+  face whose license allows it. And nobody has seen either theme: the first screenshot will find
+  what computed values cannot.
 
-- **(P3) A classic Mac OS theme.** Which era it follows, System 7's one-bit look or Mac OS 8–9's
-  Platinum, is the first decision.
+- **(P2) The built-in theme's status colors fall short of 4.5:1 where they are painted as text.**
+  `--wzl-danger` is a field's error text (`field.module.css`) and, with `--wzl-warning` and
+  `--wzl-success`, a link `Button`'s status color. Computed from the resolved tokens, in light
+  mode danger reads at 3.85:1 on `surface` and 2.58:1 on `surface-sunken`, warning at 2.23:1 and
+  1.50:1, and success at 2.11:1 and 1.42:1; in dark mode danger reads at 4.15:1 on `surface` and
+  3.56:1 on `surface-raised`. The light code colors fall short on `surface-sunken` too (3.09:1 to
+  4.37:1), and `--wzl-fg-on-accent` on `--wzl-accent-hover` reads at 2.54:1 dark and 4.10:1
+  light. `gateFailures(theme, definition, lookup, TEXT_PAIRINGS)` in
+  `packages/theme/src/testing/themeGate.ts` lists every one; the built-in theme is held only to
+  `BUILT_IN_PAIRINGS`, which it passes. Not fixed where it was found because the fix repaints
+  the default theme, which every visual baseline records.
 
 - **(P2) A `ColorList` still holds CSS strings, not `ColorSource`s.** Every color a `@weasel-js/ui`
   component or a hud window takes is a `ColorSource` now, resolved by `colorSourceCss` /

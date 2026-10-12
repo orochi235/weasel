@@ -1,8 +1,8 @@
 import { cssColorLiteral } from '@weasel-js/paint';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { MotifFrame } from './MotifFrame';
-import { notch, plaque, rule, stereo, tab } from './motifs';
+import { DefaultMotif, MotifFrame } from './MotifFrame';
+import { notch, plaque, rule, stereo, tab, titlebar } from './motifs';
 import type { Motif } from './types';
 
 const MOTIFS: readonly [string, () => Motif][] = [
@@ -11,6 +11,7 @@ const MOTIFS: readonly [string, () => Motif][] = [
   ['notch', notch],
   ['tab', tab],
   ['plaque', plaque],
+  ['titlebar', titlebar],
 ];
 
 describe('MotifFrame', () => {
@@ -30,6 +31,19 @@ describe('MotifFrame', () => {
   it('draws the rule motif when given none', () => {
     render(<MotifFrame title="Bevel">x</MotifFrame>);
     expect(screen.getByRole('group', { name: 'Bevel' })).toHaveAttribute('data-motif', 'rule');
+  });
+
+  it('draws the motif a DefaultMotif above it names, and its own over that', () => {
+    render(
+      <DefaultMotif motif={titlebar()}>
+        <MotifFrame title="Bevel">x</MotifFrame>
+        <MotifFrame title="Glow" motif={tab()}>
+          x
+        </MotifFrame>
+      </DefaultMotif>,
+    );
+    expect(screen.getByRole('group', { name: 'Bevel' })).toHaveAttribute('data-motif', 'titlebar');
+    expect(screen.getByRole('group', { name: 'Glow' })).toHaveAttribute('data-motif', 'tab');
   });
 
   it('cuts the notch title into a fieldset legend', () => {

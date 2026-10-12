@@ -1,0 +1,774 @@
+{
+  "name": "win9x",
+  "extends": "weasel",
+  "description": "Windows 95 and 98: gray faces edged in two-pixel bevels, square corners, a navy-to-blue title strip, and the system's sans at its small sizes. Dark mode is this theme's own; the system never had one.",
+  "axes": {
+    "mode": {
+      "default": "light",
+      "values": {
+        "light": {
+          "scheme": "light"
+        },
+        "dark": {
+          "scheme": "dark"
+        }
+      }
+    }
+  },
+  "pins": {
+    "surface": {
+      "by": "mode",
+      "light": {
+        "value": "#c0c0c0",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#2a2a2a",
+        "type": "color"
+      }
+    },
+    "surface-raised": {
+      "by": "mode",
+      "light": {
+        "value": "#c0c0c0",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#2a2a2a",
+        "type": "color"
+      }
+    },
+    "surface-popover": {
+      "by": "mode",
+      "light": {
+        "value": "#c0c0c0",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#2a2a2a",
+        "type": "color"
+      }
+    },
+    "surface-sunken": {
+      "by": "mode",
+      "light": {
+        "value": "#ffffff",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#141414",
+        "type": "color"
+      }
+    },
+    "fg": {
+      "by": "mode",
+      "light": {
+        "value": "#000000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#f0f0f0",
+        "type": "color"
+      }
+    },
+    "fg-on-accent": {
+      "value": "#ffffff",
+      "type": "color"
+    },
+    "fg-inverse": {
+      "by": "mode",
+      "light": {
+        "value": "#ffffff",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#000000",
+        "type": "color"
+      }
+    },
+    "border": {
+      "by": "mode",
+      "light": {
+        "value": "#808080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#5a5a5a",
+        "type": "color"
+      }
+    },
+    "border-strong": {
+      "by": "mode",
+      "light": {
+        "value": "#404040",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#808080",
+        "type": "color"
+      }
+    },
+    "accent-soft": {
+      "by": "mode",
+      "light": {
+        "value": "#000060",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#083868",
+        "type": "color"
+      }
+    },
+    "accent-base": {
+      "by": "mode",
+      "light": {
+        "value": "#000080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#1070c8",
+        "type": "color"
+      }
+    },
+    "accent-strong": {
+      "by": "mode",
+      "light": {
+        "value": "#1084d0",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#58a8f0",
+        "type": "color"
+      }
+    },
+    "accent-hover": {
+      "by": "mode",
+      "light": {
+        "value": "#0000a8",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#1070c8",
+        "type": "color"
+      }
+    },
+    "accent-fg": {
+      "by": "mode",
+      "light": {
+        "value": "#000080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#58a8f0",
+        "type": "color"
+      }
+    },
+    "focus-ring": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "secondary-soft": {
+      "by": "mode",
+      "light": {
+        "value": "#004040",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#006868",
+        "type": "color"
+      }
+    },
+    "secondary-base": {
+      "by": "mode",
+      "light": {
+        "value": "#008080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#40c0c0",
+        "type": "color"
+      }
+    },
+    "secondary-strong": {
+      "by": "mode",
+      "light": {
+        "value": "#40c0c0",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#80e0e0",
+        "type": "color"
+      }
+    },
+    "secondary-fg": {
+      "by": "mode",
+      "light": {
+        "value": "#004848",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#40c0c0",
+        "type": "color"
+      }
+    },
+    "danger-base": {
+      "by": "mode",
+      "light": {
+        "value": "#800000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#ff8080",
+        "type": "color"
+      }
+    },
+    "warning-base": {
+      "by": "mode",
+      "light": {
+        "value": "#5c4400",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#ffd040",
+        "type": "color"
+      }
+    },
+    "success-base": {
+      "by": "mode",
+      "light": {
+        "value": "#005000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#60d060",
+        "type": "color"
+      }
+    },
+    "shadow": {
+      "by": "mode",
+      "light": {
+        "value": "rgba(0, 0, 0, 0.5)",
+        "type": "color"
+      },
+      "dark": {
+        "value": "rgba(0, 0, 0, 0.7)",
+        "type": "color"
+      }
+    },
+    "backdrop": {
+      "by": "mode",
+      "light": {
+        "value": "#008080",
+        "type": "gradient"
+      },
+      "dark": {
+        "value": "#003c3c",
+        "type": "gradient"
+      }
+    },
+    "workspace-surface": {
+      "by": "mode",
+      "light": {
+        "value": "#808080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#1c1c1c",
+        "type": "color"
+      }
+    },
+    "code-keyword": {
+      "by": "mode",
+      "light": {
+        "value": "#000080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#58a8f0",
+        "type": "color"
+      }
+    },
+    "code-string": {
+      "by": "mode",
+      "light": {
+        "value": "#800000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#ff8080",
+        "type": "color"
+      }
+    },
+    "code-number": {
+      "by": "mode",
+      "light": {
+        "value": "#005050",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#40c0c0",
+        "type": "color"
+      }
+    },
+    "code-constant": {
+      "by": "mode",
+      "light": {
+        "value": "#800080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#e080e0",
+        "type": "color"
+      }
+    },
+    "code-property": {
+      "by": "mode",
+      "light": {
+        "value": "#005000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#60d060",
+        "type": "color"
+      }
+    },
+    "code-name": {
+      "by": "mode",
+      "light": {
+        "value": "#5c4400",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#ffd040",
+        "type": "color"
+      }
+    },
+    "radius-sm": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "radius-md": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "radius-lg": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "radius-pill": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "field-pad-x": {
+      "value": "5px",
+      "type": "dimension"
+    },
+    "motion-fast": {
+      "value": "0ms",
+      "type": "duration"
+    },
+    "motion-medium": {
+      "value": "0ms",
+      "type": "duration"
+    },
+    "font-ui": {
+      "value": [
+        "MS Sans Serif",
+        "Microsoft Sans Serif",
+        "Tahoma",
+        "Geneva",
+        "Verdana",
+        "sans-serif"
+      ],
+      "type": "fontFamily"
+    },
+    "font-display": {
+      "value": [
+        "MS Sans Serif",
+        "Microsoft Sans Serif",
+        "Tahoma",
+        "Geneva",
+        "Verdana",
+        "sans-serif"
+      ],
+      "type": "fontFamily"
+    },
+    "font-body": {
+      "value": [
+        "MS Sans Serif",
+        "Microsoft Sans Serif",
+        "Tahoma",
+        "Geneva",
+        "Verdana",
+        "sans-serif"
+      ],
+      "type": "fontFamily"
+    },
+    "font-mono": {
+      "value": [
+        "Fixedsys",
+        "Lucida Console",
+        "Courier New",
+        "monospace"
+      ],
+      "type": "fontFamily"
+    },
+    "font-size-2xs": {
+      "by": "density",
+      "compact": {
+        "value": "8px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "9px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "10px",
+        "type": "dimension"
+      }
+    },
+    "font-size-xs": {
+      "by": "density",
+      "compact": {
+        "value": "9px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "10px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "11px",
+        "type": "dimension"
+      }
+    },
+    "font-size-sm": {
+      "by": "density",
+      "compact": {
+        "value": "10px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "11px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "12px",
+        "type": "dimension"
+      }
+    },
+    "font-size-md": {
+      "by": "density",
+      "compact": {
+        "value": "11px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "12px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "14px",
+        "type": "dimension"
+      }
+    },
+    "font-size-lg": {
+      "by": "density",
+      "compact": {
+        "value": "13px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "15px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "17px",
+        "type": "dimension"
+      }
+    },
+    "font-size-xl": {
+      "by": "density",
+      "compact": {
+        "value": "16px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "18px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "22px",
+        "type": "dimension"
+      }
+    },
+    "control-h-xs": {
+      "by": "density",
+      "compact": {
+        "value": "16px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "18px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "20px",
+        "type": "dimension"
+      }
+    },
+    "control-h-sm": {
+      "by": "density",
+      "compact": {
+        "value": "18px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "20px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "24px",
+        "type": "dimension"
+      }
+    },
+    "control-h": {
+      "by": "density",
+      "compact": {
+        "value": "21px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "23px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "28px",
+        "type": "dimension"
+      }
+    },
+    "tb-height": {
+      "by": "density",
+      "compact": {
+        "value": "26px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "28px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "34px",
+        "type": "dimension"
+      }
+    },
+    "icon-button-size": {
+      "by": "density",
+      "compact": {
+        "value": "20px",
+        "type": "dimension"
+      },
+      "comfortable": {
+        "value": "22px",
+        "type": "dimension"
+      },
+      "roomy": {
+        "value": "26px",
+        "type": "dimension"
+      }
+    },
+    "glass-blur": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "button-gloss": {
+      "value": "0",
+      "type": "number"
+    },
+    "button-text-shadow": {
+      "value": "none",
+      "type": "shadow"
+    },
+    "button-surface": {
+      "value": "{surface}",
+      "type": "color"
+    },
+    "button-primary-surface": {
+      "value": "{surface}",
+      "type": "color"
+    },
+    "button-primary-fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "field-border": {
+      "value": "0 solid transparent",
+      "type": "border"
+    },
+    "titlebar-border": {
+      "value": "0 solid transparent",
+      "type": "border"
+    },
+    "titlebar-inset": {
+      "value": "3px",
+      "type": "dimension"
+    },
+    "titlebar-weight": {
+      "value": "{font-weight-bold}",
+      "type": "fontWeight"
+    },
+    "params-label-case": {
+      "value": "none",
+      "type": "string"
+    },
+    "params-label-tracking": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "tracking-wide": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "tracking-wider": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "font-numeric": {
+      "value": "var(--wzl-font-ui)",
+      "type": "fontFamily"
+    },
+    "font-weight-light": {
+      "value": 400,
+      "type": "fontWeight"
+    },
+    "font-weight-normal": {
+      "value": 400,
+      "type": "fontWeight"
+    },
+    "font-weight-medium": {
+      "value": 400,
+      "type": "fontWeight"
+    },
+    "font-weight-bold": {
+      "value": 700,
+      "type": "fontWeight"
+    },
+    "panel-surface": {
+      "value": "{surface}",
+      "type": "color"
+    },
+    "panel-border-width": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "panel-pad": {
+      "value": "10px 12px",
+      "type": "dimension"
+    },
+    "panel-title-weight": {
+      "value": "{font-weight-bold}",
+      "type": "fontWeight"
+    },
+    "panel-title-size": {
+      "value": "{font-size-md}",
+      "type": "dimension"
+    },
+    "panel-title-tracking": {
+      "value": "0",
+      "type": "dimension"
+    },
+    "stance-scope-radius": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "stance-scope-nested-radius": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "bevel-light": {
+      "by": "mode",
+      "light": {
+        "value": "#ffffff",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#5a5a5a",
+        "type": "color"
+      }
+    },
+    "bevel-face-light": {
+      "by": "mode",
+      "light": {
+        "value": "#dfdfdf",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#3c3c3c",
+        "type": "color"
+      }
+    },
+    "bevel-shade": {
+      "by": "mode",
+      "light": {
+        "value": "#808080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#141414",
+        "type": "color"
+      }
+    },
+    "bevel-dark": {
+      "by": "mode",
+      "light": {
+        "value": "#000000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#000000",
+        "type": "color"
+      }
+    },
+    "bevel-raised": {
+      "value": "inset -1px -1px 0 var(--wzl-bevel-dark), inset 1px 1px 0 var(--wzl-bevel-light), inset -2px -2px 0 var(--wzl-bevel-shade), inset 2px 2px 0 var(--wzl-bevel-face-light)",
+      "type": "shadow"
+    },
+    "bevel-sunken": {
+      "value": "inset -1px -1px 0 var(--wzl-bevel-light), inset 1px 1px 0 var(--wzl-bevel-shade), inset -2px -2px 0 var(--wzl-bevel-face-light), inset 2px 2px 0 var(--wzl-bevel-dark)",
+      "type": "shadow"
+    },
+    "bevel-pressed": {
+      "value": "inset -1px -1px 0 var(--wzl-bevel-light), inset 1px 1px 0 var(--wzl-bevel-dark), inset -2px -2px 0 var(--wzl-bevel-face-light), inset 2px 2px 0 var(--wzl-bevel-shade)",
+      "type": "shadow"
+    },
+    "field-focus-shadow": {
+      "value": "0 0 0 1px var(--wzl-focus-ring), inset -1px -1px 0 var(--wzl-bevel-light), inset 1px 1px 0 var(--wzl-bevel-shade), inset -2px -2px 0 var(--wzl-bevel-face-light), inset 2px 2px 0 var(--wzl-bevel-dark)",
+      "type": "shadow"
+    },
+    "button-radius": {
+      "value": "0px",
+      "type": "dimension"
+    },
+    "button-pressed-surface": {
+      "value": "{surface}",
+      "type": "color"
+    },
+    "button-primary-pressed-surface": {
+      "value": "{surface}",
+      "type": "color"
+    },
+    "button-primary-bevel": {
+      "value": "inset 0 0 0 1px var(--wzl-bevel-dark), inset -2px -2px 0 var(--wzl-bevel-dark), inset 2px 2px 0 var(--wzl-bevel-light), inset -3px -3px 0 var(--wzl-bevel-shade), inset 3px 3px 0 var(--wzl-bevel-face-light)",
+      "type": "shadow"
+    },
+    "titlebar-surface": {
+      "value": "linear-gradient(90deg, #000080, #1084d0)",
+      "type": "gradient"
+    },
+    "titlebar-fg": {
+      "value": "#ffffff",
+      "type": "color"
+    }
+  }
+}

@@ -6,7 +6,7 @@
      realistic button shape). Using calc against --btn-height keeps the
      corners circular rather than elliptical, which a % value would
      otherwise produce on a wide-but-short pill. */
-  --btn-radius:       calc(var(--btn-height) * 0.1);
+  --btn-radius:       var(--wzl-button-radius, calc(var(--btn-height) * 0.1));
   --btn-fontweight:   var(--wzl-font-weight-medium);
   --btn-fontsize:     var(--wzl-font-size);
   --btn-height:       var(--wzl-control-h);
@@ -85,6 +85,7 @@
     rgba(255, 255, 255, var(--btn-gloss-mid)) 60%,
     rgba(255, 255, 255, 0) 100%
   );
+  opacity: var(--wzl-button-gloss, 1);
   pointer-events: none;
   z-index: 1;
   transition: opacity var(--wzl-motion-fast);
@@ -119,7 +120,10 @@
    / lower stops are positioned around --btn-equator so dragging the equator
    shifts the entire transition zone as one block. */
 .variant_primary {
-  background: linear-gradient(
+  background: var(--wzl-button-primary-surface, var(--btn-glass));
+  text-shadow: var(--wzl-button-text-shadow, var(--btn-engraving));
+  box-shadow: var(--wzl-button-primary-bevel, var(--wzl-bevel-raised, var(--btn-relief)));
+  --btn-glass: linear-gradient(
     180deg,
     color-mix(in srgb, var(--wzl-accent) var(--btn-top-alpha), transparent) 0%,
     color-mix(in srgb, var(--wzl-accent) var(--btn-upper-alpha), transparent) calc(var(--btn-equator) - var(--btn-equator-spread)),
@@ -129,18 +133,18 @@
   );
   backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
   -webkit-backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
-  color: var(--wzl-fg-on-accent);
+  color: var(--wzl-button-primary-fg, var(--wzl-fg-on-accent));
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
   /* Main shadow below for legibility, then a second engraving shadow at a
      configurable angle (defaults below) — a near-black, lower-alpha stamp
      that sits underneath the glyphs and reads as recessed type. */
-  text-shadow:
+  --btn-engraving:
     0 1px 0 light-dark(rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.4)), rgba(0, 0, 0, var(--btn-text-shadow))),
     var(--btn-text-inset-x) var(--btn-text-inset-y) 0
       light-dark(transparent, rgba(0, 0, 0, var(--btn-text-inset))),
     0 0 6px light-dark(transparent, rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.5)));
-  box-shadow:
+  --btn-relief:
     inset 0 1px 0 rgba(255, 255, 255, var(--btn-inset-hi)),
     inset 0 -1px 2px rgba(0, 0, 0, var(--btn-inset-lo)),
     0 0 0 1px rgba(0, 0, 0, var(--btn-rim)),
@@ -153,13 +157,15 @@
 }
 
 .variant_primary:active:not(:disabled) {
-  background: linear-gradient(
+  background: var(--wzl-button-primary-pressed-surface, var(--btn-glass-pressed));
+  box-shadow: var(--wzl-bevel-pressed, var(--btn-relief-pressed));
+  --btn-glass-pressed: linear-gradient(
     180deg,
     color-mix(in srgb, var(--wzl-accent) 80%, black) 0%,
     color-mix(in srgb, var(--wzl-accent) 95%, black) 50%,
     color-mix(in srgb, var(--wzl-accent) 60%, white) 100%
   );
-  box-shadow:
+  --btn-relief-pressed:
     inset 0 2px 4px rgba(0, 0, 0, 0.35),
     inset 0 -1px 0 rgba(255, 255, 255, 0.25),
     0 0 0 1px rgba(0, 0, 0, calc(var(--btn-rim) + 0.06));
@@ -169,7 +175,10 @@
 
 /* Secondary: neutral glass — drained of color. */
 .variant_secondary {
-  background: linear-gradient(
+  background: var(--wzl-button-surface, var(--btn-glass));
+  text-shadow: var(--wzl-button-text-shadow, var(--btn-engraving));
+  box-shadow: var(--wzl-bevel-raised, var(--btn-relief));
+  --btn-glass: linear-gradient(
     180deg,
     color-mix(in srgb, var(--wzl-fg) 25%, transparent) 0%,
     color-mix(in srgb, var(--wzl-fg) 10%, transparent) calc(var(--btn-equator) - var(--btn-equator-spread)),
@@ -182,11 +191,11 @@
   color: var(--wzl-fg);
   /* Dark type on a light body: a dark stamp under it reads as a smear of the
      glyph rather than depth, so light mode drops it. */
-  text-shadow:
+  --btn-engraving:
     0 1px 0 light-dark(transparent, rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.7))),
     var(--btn-text-inset-x) var(--btn-text-inset-y) 0
       light-dark(transparent, rgba(0, 0, 0, calc(var(--btn-text-inset) * 0.7)));
-  box-shadow:
+  --btn-relief:
     inset 0 1px 0 rgba(255, 255, 255, calc(var(--btn-inset-hi) * 0.5)),
     inset 0 -1px 2px rgba(0, 0, 0, calc(var(--btn-inset-lo) * 0.83)),
     0 0 0 1px rgba(0, 0, 0, calc(var(--btn-rim) + 0.03)),
@@ -197,8 +206,10 @@
 .variant_secondary:hover:not(:disabled) { filter: brightness(1.1); }
 
 .variant_secondary:active:not(:disabled) {
-  background: linear-gradient(180deg, var(--wzl-surface-sunken) 0%, var(--wzl-surface-raised) 100%);
-  box-shadow:
+  background: var(--wzl-button-pressed-surface, var(--btn-glass-pressed));
+  box-shadow: var(--wzl-bevel-pressed, var(--btn-relief-pressed));
+  --btn-glass-pressed: linear-gradient(180deg, var(--wzl-surface-sunken) 0%, var(--wzl-surface-raised) 100%);
+  --btn-relief-pressed:
     inset 0 2px 4px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(0, 0, 0, 0.3);
   transform: translateY(0.5px);
@@ -258,7 +269,7 @@
 .pressed:not(:disabled) {
   background: var(--wzl-surface-pressed);
   color: var(--wzl-fg);
-  box-shadow: inset 0 1px 2px rgb(0 0 0 / 18%);
+  box-shadow: var(--wzl-bevel-pressed, inset 0 1px 2px rgb(0 0 0 / 18%));
 }
 
 .variant_primary.pressed:not(:disabled) { filter: brightness(0.92); }

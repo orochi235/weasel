@@ -295,9 +295,16 @@ borrowed from something real. It's neither a stance (what a surface holds) nor a
 theme (token values). `<MotifFrame motif>` and `<PropertyGroup motif>` take one
 from a factory: `rule()` (a title between two rules, the default), `stereo()` (a
 label bar along one edge, as on the back of an A/V receiver), `notch()` (the
-title cut into the border), `tab()` and `plaque()` (the tone fills the frame).
+title cut into the border), `tab()`, `plaque()` (the tone fills the frame) and
+`titlebar()` (a solid strip across the top, as a desktop window is titled).
 The root barrel has them as `motifs.stereo()`; `@weasel-js/ui/components/MotifFrame`
-exports the bare names.
+exports the bare names. `<DefaultMotif motif>` changes the default for every
+frame below it, which is how an app pairs a theme with the motif it wants.
+
+`titlebar` is the one motif a theme repaints: its strip, its title's color and
+alignment, and the frame's border and inset are the `--wzl-titlebar-*` hooks,
+and its edge takes `--wzl-bevel-raised`. A frame that names a tone paints the
+tone over the theme's strip.
 
 A motif renders the frame's root element itself, so it picks the element as well
 as the layout: `notch` must be a `<fieldset>`, because a `<legend>` cuts the
