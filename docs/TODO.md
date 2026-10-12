@@ -804,15 +804,17 @@ built 2026-10-11. What that left:
     (`hidden` in `packages/animator/src/target.ts`), which the pass has no column for.
   - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
     frame is the caller's until the table can be asked for one.
-- **(P2) A hold costs 1 to 2 µs a frame, whatever reads it** — `node
+- **(P2) A hold costs about 1 µs a frame, whatever reads it** — `node
   tests/perf/target-reads/run.mjs table 10000 held`: 10,000 table rows with one hold each and
-  nothing else took 11.7 to 26 ms a frame over six runs on orochi while other work ran, where
-  10,000 tweens take under 1. In the CPU profile: `fold` in
-  `packages/animator/src/engine/holds.ts` 20%, which builds two arrays and an object a member
-  every frame; the row's `get` and its axes' `to` 12% each, two copies of the committed value
-  for the hold to measure from; the hold voice's `at` 10%, which builds `cover` and `heldAt`
-  again; and collecting what those leave, 7%. A rig of 50 joints under clips pays about 0.1 ms
-  a frame for it. Folding into arrays the group keeps would take most of it.
+  nothing else took 10 to 12 ms a frame in the best runs on orochi (2026-10-11, other work
+  running), where 10,000 tweens take under 1. A rig of 50 joints under clips pays about 0.05 ms
+  a frame for it. In the CPU profile `fold` in `packages/animator/src/engine/holds.ts` is 20%,
+  about 240 ns a hold for two axes and one member, and the row's `get` and its axes' `to`
+  another 15 to 25% between them. Folding into arrays the group keeps, so a frame builds
+  none, was tried and read the same within noise, so the time is not the arrays: each hold is
+  a group, a set, a member, and three closures of its own, reached one after another. Holds
+  kept as rows of flat arrays, the way a target table keeps values, is the design that would
+  move it; not started.
 - **(P2) A frame of the animator costs about 75 ns an animation at 10k, read or not, and a
   fifth of it is ticking each animation as an object** — `node
   tests/perf/target-reads/run.mjs table 10000 idle` (orochi, plain Node 26; five runs read 0.73
