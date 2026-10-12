@@ -101,8 +101,9 @@ Priority tags:
   no kernel path needs; the registry, the `ingest` action, the `ingestion` dep
   and the weasel-JSON handler stay, since Cmd+V of the canvas's own content runs
   through them. Moving them makes a file drop do nothing on a bare
-  `<SceneCanvas>` until the consumer installs the handlers. No name is settled:
-  `ingest` was turned down, and `images` was floated 2026-10-11.
+  `<SceneCanvas>` until the consumer installs the handlers. Left in place for now
+  (ruled 2026-10-11). If they do move, the package is `images`; `ingest` was
+  turned down.
 
 - **(P3) The action pipeline's coordinates are 2D, so another kernel can't
   reuse it.** World points arrive as `{x, y}` or flat scalars in
@@ -614,21 +615,17 @@ Core five + Crop shipped. Remaining:
   either needs none of the rest of weasel or is an obviously well-defined functional area,
   whatever its size (CLAUDE.md, "What gets its own package"). Read from the source, not from a
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
-  for relative imports undercounts who uses what. Left:
-  1. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
-     `useAnimator`, so it cannot sit over core. It reaches the scene through `stagger.ts`'s
-     `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
-     `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
-     and stay.
-  2. *The image and SVG drop handlers, over core* (see the entry under Tools & gestures). The
-     name is `images` for now (2026-10-11). Not ruled on: whether a bare `<SceneCanvas>` may
-     ignore a file drop until a consumer installs the handlers.
+  for relative imports undercounts who uses what. Left: *the animator, under core.*
+  `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call `useAnimator`, so it cannot sit over
+  core. It reaches the scene through `stagger.ts`'s `.springPose`, which has to be cut first.
+  `poseHelpers.ts`, `wrappers/`, `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and
+  `rig/useRig.ts` are scene-bound and stay.
 
   A new package has to be seeded on npm by hand before a release, since the release job cannot
-  create one: `npm run check:first-publish` names any that are missing. `@weasel-js/renderer`,
-  `@weasel-js/parallax`, and `@weasel-js/minimap` were added 2026-10-11 and are not seeded.
+  create one: `npm run check:first-publish` names any that are missing.
 
   Staying in core: `features/poseRun` (it needs the scene and is no functional area of its own),
+  the image and SVG drop handlers (see the entry under Tools & gestures),
   `features/viewports` (`CanvasView` is built on it), `chrome-caps`
   (`SceneCanvas` runs it), `modes`, `longPress`, `selection/overlay.ts`, the parallax math
   (`core/viewport/parallax`, which a scene layer's own `parallax` uses), and the scene-bound text
