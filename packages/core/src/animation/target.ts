@@ -9,7 +9,16 @@ export interface TargetAxes<T> {
   /** Indexes of axes that are angles in radians. An animation starting from one takes the short
    *  way round to its destination. */
   angles?: readonly number[];
+  /** Optional. `value` with `delta` added axis by axis: what `from` answers for `to(value)`
+   *  plus `delta`, built with no array between. A read of a moving target goes through it. */
+  add?(value: T, delta: ArrayLike<number>): T;
+  /** Optional. Puts `value`'s axes into `out` from `at`: what `to` answers, with no array
+   *  built. `readInto` goes through it. */
+  write?(value: T, out: AxisBuffer, at: number): void;
 }
+
+/** Somewhere a target's axes are written as numbers. */
+export type AxisBuffer = Float64Array | Float32Array | number[];
 
 /** What {@link createTarget} takes. */
 export interface TargetOptions<T> {
@@ -40,6 +49,14 @@ export interface TargetOptions<T> {
 export interface Target<T> {
   /** The value to show: the committed value plus what every running animation has left to travel. */
   read(): T;
+  /**
+   * As `read`, as numbers: writes the value's `axisCount` axes into `out` from `at` (default 0),
+   * in the order the target's `axes.to` answers them. For a reader of many targets that wants
+   * the numbers and no value built for each.
+   */
+  readInto(out: AxisBuffer, at?: number): void;
+  /** How many axes `readInto` writes. */
+  readonly axisCount: number;
   /** Whether any animation is moving it. */
   readonly active: boolean;
   /**
@@ -88,17 +105,55 @@ export interface TargetState<T = unknown> {
 
 const states = new WeakMap<object, TargetState>();
 
+/** Where a read gathers what a target's animations add, on the way to `axes.add`. */
+let scratch = new Float64Array(16);
+
+/** `committed`'s axes, with `s`'s holds read again where it has moved under them. */
+function heldAxes<T>(s: TargetState<T>, committed: T): number[] {
+  const a = s.axes.to(committed);
+  if (s.heldAt && a.some((x, i) => x !== s.heldAt![i])) s.owner?.reread(s as unknown as TargetState);
+  return a;
+}
+
+// Each read below keeps a loop of its own over one kind of array: one loop shared between a
+// plain array and a typed one measured slower than building the array it was there to save.
+
 /** The value `s` shows now. */
 export function readTarget<T>(s: TargetState<T>): T {
   const committed = s.get();
   if (s.live === 0) return committed;
-  const a = s.axes.to(committed);
-  if (s.heldAt && a.some((x, i) => x !== s.heldAt![i])) s.owner?.reread(s as unknown as TargetState);
-  const { slot, beside } = s;
-  for (let i = 0; i < a.length; i++) {
-    a[i] = a[i]! + (slot ? slot.cols[slot.at + i]! : 0) + s.adjust[i]! + (beside ? beside[i]! : 0);
+  const { axes, slot, beside, adjust } = s;
+  // A hold answers how far it is from the committed value, which takes that value's axes to check.
+  if (!axes.add || s.heldAt) {
+    const a = heldAxes(s, committed);
+    for (let i = 0; i < a.length; i++) {
+      a[i] = a[i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0);
+    }
+    return axes.from(a);
   }
-  return s.axes.from(a);
+  const n = axes.count;
+  if (scratch.length < n) scratch = new Float64Array(n);
+  const d = scratch;
+  for (let i = 0; i < n; i++) {
+    d[i] = (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0);
+  }
+  return axes.add(committed, d);
+}
+
+/** The value `s` shows now, as its axes, in `out` from `at`. */
+export function readTargetInto<T>(s: TargetState<T>, out: AxisBuffer, at: number): void {
+  const committed = s.get();
+  const { axes, slot, beside, adjust } = s;
+  const moving = s.live > 0;
+  if (axes.write && !(moving && s.heldAt)) axes.write(committed, out, at);
+  else {
+    const a = moving ? heldAxes(s, committed) : axes.to(committed);
+    for (let i = 0; i < a.length; i++) out[at + i] = a[i]!;
+  }
+  if (!moving) return;
+  for (let i = 0; i < axes.count; i++) {
+    out[at + i] = out[at + i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0);
+  }
 }
 
 /** The state behind a target `createTarget` made. */
@@ -131,6 +186,8 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
   };
   const target: Target<T> = {
     read: () => readTarget(s),
+    readInto: (out, at = 0) => readTargetInto(s, out, at),
+    axisCount: axes.count,
     get active() { return s.live > 0; },
     stop(o) {
       const owner = s.owner;

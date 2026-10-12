@@ -69,7 +69,22 @@ export function liveAxes<TPose>(
     }
     return axes!;
   };
-  return { count, angles, to: (p) => current().to(p), from: (a) => current().from(a) };
+  return {
+    count,
+    angles,
+    to: (p) => current().to(p),
+    from: (a) => current().from(a),
+    add: axes.add && ((p, d) => {
+      const now = current();
+      if (now.add) return now.add(p, d);
+      return now.from(now.to(p).map((n, i) => n + d[i]!));
+    }),
+    write: axes.write && ((p, out, at) => {
+      const now = current();
+      if (now.write) now.write(p, out, at);
+      else now.to(p).forEach((n, i) => { out[at + i] = n; });
+    }),
+  };
 }
 
 /** How a container's pose target carries its descendants, for {@link scenePoseTarget}. */

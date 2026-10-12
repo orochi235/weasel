@@ -101,8 +101,9 @@ Priority tags:
   no kernel path needs; the registry, the `ingest` action, the `ingestion` dep
   and the weasel-JSON handler stay, since Cmd+V of the canvas's own content runs
   through them. Moving them makes a file drop do nothing on a bare
-  `<SceneCanvas>` until the consumer installs the handlers. No name is settled:
-  `ingest` was turned down, and `images` was floated 2026-10-11.
+  `<SceneCanvas>` until the consumer installs the handlers. Left in place for now
+  (ruled 2026-10-11). If they do move, the package is `images`; `ingest` was
+  turned down.
 
 - **(P3) The action pipeline's coordinates are 2D, so another kernel can't
   reuse it.** World points arrive as `{x, y}` or flat scalars in
@@ -614,21 +615,17 @@ Core five + Crop shipped. Remaining:
   either needs none of the rest of weasel or is an obviously well-defined functional area,
   whatever its size (CLAUDE.md, "What gets its own package"). Read from the source, not from a
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
-  for relative imports undercounts who uses what. Left:
-  1. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
-     `useAnimator`, so it cannot sit over core. It reaches the scene through `stagger.ts`'s
-     `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
-     `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
-     and stay.
-  2. *The image and SVG drop handlers, over core* (see the entry under Tools & gestures). The
-     name is `images` for now (2026-10-11). Not ruled on: whether a bare `<SceneCanvas>` may
-     ignore a file drop until a consumer installs the handlers.
+  for relative imports undercounts who uses what. Left: *the animator, under core.*
+  `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call `useAnimator`, so it cannot sit over
+  core. It reaches the scene through `stagger.ts`'s `.springPose`, which has to be cut first.
+  `poseHelpers.ts`, `wrappers/`, `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and
+  `rig/useRig.ts` are scene-bound and stay.
 
   A new package has to be seeded on npm by hand before a release, since the release job cannot
-  create one: `npm run check:first-publish` names any that are missing. `@weasel-js/renderer`,
-  `@weasel-js/parallax`, and `@weasel-js/minimap` were added 2026-10-11 and are not seeded.
+  create one: `npm run check:first-publish` names any that are missing.
 
   Staying in core: `features/poseRun` (it needs the scene and is no functional area of its own),
+  the image and SVG drop handlers (see the entry under Tools & gestures),
   `features/viewports` (`CanvasView` is built on it), `chrome-caps`
   (`SceneCanvas` runs it), `modes`, `longPress`, `selection/overlay.ts`, the parallax math
   (`core/viewport/parallax`, which a scene layer's own `parallax` uses), and the scene-bound text
@@ -844,18 +841,34 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P3) Reading 10k targets costs about 3× the `onTick` path, all of it in `target.read()`** —
-  one pass of `tests/perf/bench/animator-on-blits.bench.ts` on teitou, 2026-10-11: 0.53 ms a
-  frame for 10k tweens storing through `onTick`, 1.50 ms on 10k targets read after the frame.
-  A probe under vitest on orochi the same day split it: the frame costs the same either way
-  (0.79 ms against 0.86 ms), and 10k reads cost 1.2 ms, about 120 ns each. Hand-written `axes`
-  in place of the ones `createTarget` works out for an object of numbers bring the reads to
-  0.88 ms. What is left is the array `axes.to` builds and the value `axes.from` builds on every
-  read; building the value from a copy of a sample object was tried and was slower. A fix is a
-  read that fills the caller's buffer, or axes that map without the array between. The earlier
-  costs of moving the values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling)
-  were accepted on 2026-10-04 and 2026-10-08; their tables are in
-  `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`. This one has not been.
+- **(P2) A target table: many like values as rows of flat arrays, read in one pass** — measured
+  2026-10-11, not built. A read of one moving target is bound by memory past a few thousand:
+  it reaches the target's state, slot, `adjust` array, axes, its owner's `get` closure, and the
+  committed value. A table keeps the committed values, where each row's offsets are, and its
+  adjustments in flat arrays, and fills every row's value on screen in one pass.
+  `node tests/perf/target-reads/run.mjs table 1000 10000 100000` on orochi, plain Node 26, ns a
+  row with every row moving:
+
+  | Rows | `readInto` per target | table reaching each state | table, flat |
+  |---:|---:|---:|---:|
+  |   1,000 |  44 | 8.8 | 5.6 |
+  |  10,000 |  90 | 9.7 | 5.5 |
+  | 100,000 | 233 | 66  | 5.7 |
+
+  So the table has to be flat all the way: one that still reaches each row's state falls back
+  to cache misses at 100k. The flat column is a ceiling. The script reads each row's place in
+  the codec's columns off its state once, where the engine would have to keep that current as
+  rows start and stop and as a lane compacts, and it takes adjustments as zero.
+  Shape, as put to Mike, who said to try it: `createTargetTable({ axes })`, `table.add(value)`
+  answering a row, `table.target(row)` for the animator, and `table.committed` and
+  `table.shown` as arrays. Single targets and scene poses stay as they are. Holds on rows need
+  the per-axis fold of `engine/holds.ts` to write into the same pass. Vertex colors are the
+  first candidate in the kit. Of a single `readInto`, about 37 ns is work
+  (`run.mjs read 10000 parts`: the owner's `get` 6.5 ns, `axes.write` 12, the slot 3, `adjust`
+  3; `axes.add` for `read()` 31) and the rest is misses; in a CPU profile 47% of its ticks sit
+  on the line that first loads `slot.cols` and `adjust`. For scale, 10k tweens storing through
+  `onTick` cost 0.53 ms a frame on teitou against 1.50 ms for 10k targets read after the frame
+  (`tests/perf/bench/animator-on-blits.bench.ts`, before `axes.add` and `readInto`).
 - **(P3) A tween or spring started on a target under a full-weight hold shows its whole travel
   on top of the hold** — it commits its destination, which the hold stands in front of, and its
   offset is added over the hold, so the value on screen jumps by the travel and settles back.
@@ -1224,7 +1237,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   nothing (seen in a browser, in a section `as: 'bar'`); doing it needs the panel's `renderers`
   where the marks are worked out, since a renderer decides whether flags fuse. A top-level
   section drawn `as: 'bar'` or `as: 'fragment'`, or with no name, draws no heading, tab, or panel,
-  and its key marks and reports nothing: whether it should is not ruled. Cmd or Ctrl on a press of
+  and its key marks and reports nothing, which is ruled to stay so (2026-10-11). Cmd or Ctrl on a press of
   a tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
   so the press arrives as the focus it causes, which carries no modifier.
 

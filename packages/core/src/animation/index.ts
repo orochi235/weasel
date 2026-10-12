@@ -22,7 +22,7 @@ export {
 } from '@weasel-js/geom';
 export type { BezierEasing, EasingSpec } from '@weasel-js/geom';
 export { useAnimator } from './useAnimator';
-export { createTarget, type Target, type TargetAxes, type TargetOptions } from './target';
+export { createTarget, type AxisBuffer, type Target, type TargetAxes, type TargetOptions } from './target';
 export {
   createPoseTarget, poseAxes, scenePoseTarget,
   type PoseCascade, type PoseTargetOptions, type PoseTargetScene,
