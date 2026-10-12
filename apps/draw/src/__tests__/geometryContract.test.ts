@@ -37,6 +37,7 @@ import {
   pathIntersect,
   pathSubtract,
   splitPathBySegment,
+  createPoseOverrides,
 } from '@weasel-js/core';
 import type {
   Path, ResizeAnchor, InvocationCtx, OngoingInvoker, Action, Op, PoseOverrides,
@@ -95,20 +96,7 @@ interface StubScene {
  *  throws mid-drag. Nothing in this file reads it back — it exists so the
  *  stub honors the contract. */
 function stubOverrides(): PoseOverrides<unknown> {
-  const entries = new Map<string, { pose?: unknown; alpha?: number }>();
-  let generation = 0;
-  return {
-    set: (id, entry) => { entries.set(id as string, entry); generation++; },
-    get: (id) => entries.get(id as string),
-    read: (id) => entries.get(id as string),
-    has: (id) => entries.has(id as string),
-    ids: () => [...entries.keys()] as never,
-    clear: (id) => { entries.delete(id as string); generation++; },
-    clearAll: () => { entries.clear(); generation++; },
-    commit: () => { generation++; },
-    subscribe: () => () => {},
-    getGeneration: () => generation,
-  } as PoseOverrides<unknown>;
+  return createPoseOverrides<unknown>(() => undefined);
 }
 
 function makeStubScene(node: DrawNode): StubScene {

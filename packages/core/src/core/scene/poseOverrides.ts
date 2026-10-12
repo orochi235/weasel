@@ -1,6 +1,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import { kit, last, mix, mul, patch } from '@msb235/blits';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
+import { createPoseHold } from './poseHold';
 import type { NodeId, PoseOverride, PoseOverrides } from './types';
 
 /** What the table's voice says about a node it holds no entry for. */
@@ -62,7 +63,7 @@ export function createPoseOverrides<TPose>(
     folded.drop(id);
   }
 
-  return {
+  const table: PoseOverrides<TPose> = {
     set(id, entry) {
       entries.set(id, entry);
       invalidate(id);
@@ -113,5 +114,7 @@ export function createPoseOverrides<TPose>(
     getGeneration() {
       return generation;
     },
+    hold: () => createPoseHold(table),
   };
+  return table;
 }

@@ -16,6 +16,7 @@ export type {
   Node,
   NodeId,
   PoseOverride,
+  PoseHold,
   PoseOverrides,
   RegisteredOp,
   Scene,

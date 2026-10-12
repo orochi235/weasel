@@ -618,11 +618,8 @@ Core five + Crop shipped. Remaining:
      `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
      `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
      and stay.
-  2. *`poseRun`, over core.* It publishes preview poses through
-     `interactions/actions/previewOverrides.ts`, which is in no barrel and whose callers set up a
-     three-field bag themselves. Proposed 2026-10-11 and not ruled on: the scene's override table
-     hands out a holder (`scene.overrides.hold()` with `set(poses)`, `others()`, and `drop()`),
-     move, rotate, resize, and `usePoseRun` switch to it, and `previewOverrides.ts` is deleted.
+  2. *`poseRun`, over core.* It publishes through `scene.overrides.hold()` now and reaches
+     nothing in core that is not public, so the move is mechanical. The package has no name yet.
   3. *The image and SVG drop handlers, over core* (see the entry under Tools & gestures). Not
      ruled on: the package's name (`images` was floated 2026-10-11), and whether a bare
      `<SceneCanvas>` may ignore a file drop until a consumer installs the handlers.

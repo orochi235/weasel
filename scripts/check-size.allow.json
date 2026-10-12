@@ -33,9 +33,6 @@
     "lines": 424,
     "longestFunction": 286
   },
-  "packages/minimap/src/MinimapCanvas.tsx": {
-    "longestFunction": 155
-  },
   "packages/core/src/canvas/NodeShape.ts": {
     "lines": 471
   },
@@ -94,7 +91,7 @@
     "longestFunction": 1033
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 831
+    "lines": 778
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -104,9 +101,6 @@
   },
   "packages/core/src/features/paths/penPreviewLayer.ts": {
     "longestFunction": 140
-  },
-  "packages/core/src/features/poseRun/usePoseRun.ts": {
-    "longestFunction": 129
   },
   "packages/core/src/features/selection/overlay.ts": {
     "lines": 796
@@ -125,7 +119,7 @@
     "longestFunction": 132
   },
   "packages/core/src/interactions/actions/defaults/resize.ts": {
-    "lines": 693,
+    "lines": 692,
     "longestFunction": 351
   },
   "packages/core/src/interactions/actions/defaults/rotate.ts": {
@@ -136,15 +130,6 @@
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 716
-  },
-  "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 745
-  },
-  "packages/renderer/src/drawBatch.ts": {
-    "lines": 663
-  },
-  "packages/renderer/src/shaders/extractUniformNames.ts": {
-    "longestFunction": 144
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 749,
@@ -319,11 +304,23 @@
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 246
   },
+  "packages/minimap/src/MinimapCanvas.tsx": {
+    "longestFunction": 155
+  },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439
   },
   "packages/prefs/src/store.ts": {
     "longestFunction": 125
+  },
+  "packages/renderer/src/WeaselRenderer.ts": {
+    "lines": 745
+  },
+  "packages/renderer/src/drawBatch.ts": {
+    "lines": 663
+  },
+  "packages/renderer/src/shaders/extractUniformNames.ts": {
+    "longestFunction": 144
   },
   "packages/routing/src/interactions/actions/invoker.ts": {
     "lines": 452

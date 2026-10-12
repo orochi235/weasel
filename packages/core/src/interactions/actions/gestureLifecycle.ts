@@ -10,7 +10,7 @@ import type { Op } from 'core/ops/types';
 import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Scene } from 'core/scene/types';
 import type { BehaviorEnd } from 'interactions/gestures/types';
-import { dropPreviewOverrides, type PreviewOverrideState } from './previewOverrides';
+import type { NodeId, PoseHold } from 'core/scene/types';
 
 /** The lifecycle options, as a binding's params or the resize policy carry
  *  them. */
@@ -178,7 +178,9 @@ export function runBehaviorSettled<TCtx>(
 
 /** What {@link closeGesture} closes. */
 export interface ClosingGesture<TCtx> {
-  publish: PreviewOverrideState;
+  hold: PoseHold<unknown>;
+  /** The action's own buffer of this frame's poses, emptied at the close. */
+  previews: Map<NodeId, unknown>;
   behaviors: readonly { onSettled?(ctx: TCtx, committed: boolean): void }[];
   ctx: TCtx;
   lifecycle: GestureLifecycle;
@@ -191,8 +193,8 @@ export interface ClosingGesture<TCtx> {
  * rethrown.
  */
 export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean): void {
-  dropPreviewOverrides(gesture.publish);
-  gesture.publish.previews.clear();
+  gesture.hold.drop();
+  gesture.previews.clear();
   runEvery([
     () => runBehaviorSettled(gesture.behaviors, gesture.ctx, committed),
     () => gesture.lifecycle.end(committed),
