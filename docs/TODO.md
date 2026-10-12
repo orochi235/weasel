@@ -1428,15 +1428,6 @@ only story runner in the repo.
   declaration, not a pointer. Type references do cross: core's pages link into the sibling's.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
-- **(P2) draw: Open adds the file to the current document instead of replacing it, and keeps the old
-  filename.** The replace is built and tested and not yet called: `openSvgText` in
-  `apps/draw/src/openSvg.ts` clears the scene and adds the file's nodes in one "Open" undo entry,
-  and returns the picked file's name, its paper size, and its background (white when it names
-  none); `pickSvgFileNamed` in `svgInterop.ts` returns the name beside the text. What is left is the
-  call: `onOpenSvg` in `apps/draw/src/Toolbar.tsx` still holds the appending loop under "Import SVG",
-  and `Toolbar` has no `setFilename` prop to give the name to. With that wired, `pickSvgFile` has no
-  caller and goes. A separate Import that appends is not built.
-
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
   selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the

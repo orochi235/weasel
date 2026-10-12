@@ -572,6 +572,7 @@ function EditorWithSharedScene({
         paperSize={paperSize}
         setPaperSize={setPaperSize}
         filename={filename}
+        setFilename={setFilename}
         backgroundColor={backgroundColor}
         setBackgroundColor={setBackgroundColor}
         onClearJournalCache={() => modality.machine.clearJournalCache()}

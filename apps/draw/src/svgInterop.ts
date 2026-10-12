@@ -364,8 +364,3 @@ export async function pickSvgFileNamed(): Promise<{ name: string; text: string }
     return null;
   }
 }
-
-/** {@link pickSvgFileNamed}, text only. */
-export async function pickSvgFile(): Promise<string | null> {
-  return (await pickSvgFileNamed())?.text ?? null;
-}
