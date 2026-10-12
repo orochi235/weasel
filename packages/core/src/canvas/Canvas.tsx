@@ -48,7 +48,7 @@ import type { View } from 'core/viewport/view';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
   drawLayers, isLayerPainted,
-  type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
+  type Dims, type LayerCommandCache, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
 import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore, useRedrawOnShaderSource } from './useCanvasRenderer';
@@ -69,10 +69,7 @@ import {
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { CanvasDebugSink, DebugConfig } from '../debug/types';
-import { parseDebugFlags } from '../debug/parseDebugFlags';
-import { createDebugSink } from '../debug/createDebugSink';
-import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
-import { frameStatsOf } from '../debug/frameStats';
+import { beginDebugFrame, useDebugSink } from '../debug/useDebugSink';
 
 const alwaysVisible = (_id: string): boolean => true;
 import { resolveCursorTier } from '@weasel-js/cursor';
@@ -506,23 +503,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     layerGroups,
   } = props;
 
-  // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
-  // `false` forces off. Keyed on content, so a config written inline does not
-  // rebuild the sink, and lose what it has recorded, on every render.
-  const debugKey = debugProp === undefined ? undefined : JSON.stringify(debugProp);
-  const resolvedDebugConfig = useMemo<DebugConfig | null>(() => {
-    if (debugKey !== undefined) return (JSON.parse(debugKey) as DebugConfig | false) || null;
-    if (typeof window === 'undefined') return null;
-    return parseDebugFlags(window.location.search);
-  }, [debugKey]);
-
-  // Lazily build one sink per Canvas mount (per resolved config).
-  const debugSink = useMemo<CanvasDebugSink | null>(() => {
-    if (resolvedDebugConfig === null) return null;
-    return createDebugSink(resolvedDebugConfig);
-  }, [resolvedDebugConfig]);
-  const committedDebugSinkRef = useLatest(debugSink);
-  const getDebug = useCallback(() => committedDebugSinkRef.current, [committedDebugSinkRef]);
+  const { sink: debugSink, overlay: debugOverlay, frameStats, getDebug } = useDebugSink(debugProp);
 
   // The element input comes from and every client→world conversion measures: the `<canvas>`
   // this component renders, or under `paintInto` the caller's `inputElement`.
@@ -925,16 +906,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const withViews = viewRegistry
       ? [...layers, ...viewRegistry.list().filter((r) => r.paint).map((r) => r.layer as RenderLayer<unknown>)]
       : layers;
-    const base = debugSink && resolvedDebugConfig
-      ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
-      : withViews;
+    const base = debugOverlay ? [...withViews, debugOverlay] : withViews;
     // The cursor goes last: it is the one thing that is always in front of
     // everything, including a consumer's own registered layers.
     return [...base, ...extrasRef.current, paintedCursorLayer];
     // extrasVersion drives re-reads of extrasRef when layers are registered/detached;
     // viewRegistryVersion does the same for registered views.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, debugSink, resolvedDebugConfig, extrasVersion, viewRegistry, viewRegistryVersion,
+  }, [layers, debugOverlay, extrasVersion, viewRegistry, viewRegistryVersion,
       paintedCursorLayer]);
 
   useEffect(() => {
@@ -953,8 +932,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // renders only, ahead of every layout effect in the commit, any of which may
   // ask for a sync paint.
   const paintInputs = {
-    layers: layersWithDebug, width, height, debugSink,
-    frameStats: resolvedDebugConfig?.fps === true,
+    layers: layersWithDebug, width, height, debugSink, frameStats,
     dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
     flattenTolerance,
   };
@@ -974,21 +952,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (!c) return false;
     const rect = paintRectRef.current;
     const {
-      layers: paintLayers, width: w, height: h, debugSink: sink, frameStats,
+      layers: paintLayers, width: w, height: h, debugSink: sink, frameStats: timed,
       dpr: dprIn, layerVisibility: vis, layerOrder: order,
       flattenTolerance: paintFlattenTolerance,
       layerGroups: groups, shaders: paintShaders,
     } = paintInputsRef.current;
 
-    // Clear sink at the top of every paint so per-frame records don't leak.
-    sink?.beginFrame();
-    if (sink) {
-      for (let i = 0; i < paintLayers.length; i++) {
-        const layer = paintLayers[i];
-        if (layer.id === 'debug-overlay') continue;
-        sink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
-      }
-    }
+    const debugFrame = beginDebugFrame(sink, timed, paintLayers);
 
     const renderer = lease.bind(c, { width: w, height: h, dpr: dprIn }, {
       tile: rect,
@@ -999,8 +969,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (!renderer) return false;
 
     const view = viewRef.current;
-    const spans: LayerDrawSpan[] | undefined = sink && frameStats ? [] : undefined;
-    const paintT0 = spans ? performance.now() : 0;
+    const spans = debugFrame?.time();
     const commands = drawLayers(
       paintLayers,
       helpersForLayersRef.current,
@@ -1014,7 +983,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       spans,
     );
     renderer.render(commands, viewToMat3(view), spans ? { spans } : undefined);
-    if (sink && spans) sink.recordFrame(frameStatsOf(spans, renderer.lastFrameStats(), performance.now() - paintT0));
+    debugFrame?.end(renderer.lastFrameStats());
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
   }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef, viewRef]);

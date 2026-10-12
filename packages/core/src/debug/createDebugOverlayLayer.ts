@@ -23,6 +23,9 @@ export interface CreateDebugOverlayLayerOpts {
   config: DebugConfig;
 }
 
+/** The overlay layer's id. It never appears in the sink's own layer records. */
+export const DEBUG_OVERLAY_ID = 'debug-overlay';
+
 const FPS_WINDOW = 60;
 
 /**
@@ -35,11 +38,10 @@ export function createDebugOverlayLayer({
   sink,
   config,
 }: CreateDebugOverlayLayerOpts): RenderLayer<unknown> {
-  // Timestamps of the last FPS_WINDOW draws; survives across draws within
-  // one Canvas mount.
+  // Timestamps of the last FPS_WINDOW draws, kept for the life of the layer.
   const fpsHistory: number[] = [];
   return {
-    id: 'debug-overlay',
+    id: DEBUG_OVERLAY_ID,
     label: 'Debug overlay',
     space: 'screen',
     alwaysOn: true,
