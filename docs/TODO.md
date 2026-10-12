@@ -404,13 +404,6 @@ Core five + Crop shipped. Remaining:
   eight glyphs to this repo's icon standard is its own piece of work and was
   deferred out of the stroke-markers arc.
 
-- **(P3) Images: nothing calls `releaseImage`.**
-  `packages/renderer/src/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
-  `src` (a multi-megabyte `data:` URI for a pasted image) until `releaseImage(src)` is called, and
-  the kit never calls it. It needs an owner: the scene when the last node using a `src` passes the
-  undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
-  scene showing more than the bound would otherwise evict and reload on every paint.
-
 - **(P2) Renderer: a translucent `ImageBitmap` is multiplied by its alpha twice.** A
   half-transparent white bitmap drawn with an image command onto a cleared canvas reads back as
   `(64, 64, 64, 128)` in headless Chromium where `(128, 128, 128, 128)` is correct, whether the

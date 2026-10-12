@@ -37,6 +37,12 @@ export function releaseImageSource(key: object): void {
   for (const cache of live) cache.release(key);
 }
 
+/** Whether any live renderer drew `key` in the latest frame it rendered. */
+export function imageSourceInLatestFrame(key: object): boolean {
+  for (const cache of live) if (cache.drewInLatestFrame(key)) return true;
+  return false;
+}
+
 /** The largest texture side every live renderer can hold: the smallest
  *  `MAX_TEXTURE_SIZE` among them, or a conservative default when none is live. */
 export function maxImageTextureSide(): number {
@@ -72,6 +78,8 @@ export class GLImageCache {
   private readonly magFilters = new WeakMap<object, number>();
   private readonly finalizer: FinalizationRegistry<WebGLTexture>;
   private readonly pendingDeletes: WebGLTexture[] = [];
+  private frame = 0;
+  private readonly lastDrawn = new WeakMap<object, number>();
 
   /** `minification` selects the MIN_FILTER strategy for uploaded textures.
    *  `'linear'` (default) is the screen path's existing behavior. `'mipmap'`
@@ -93,8 +101,19 @@ export class GLImageCache {
     live.add(this);
   }
 
-  /** Delete the textures of sources collected since the last call. The
-   *  renderer calls this at the top of each `render()`. */
+  /** Open a frame: what {@link drewInLatestFrame} answers about from here on.
+   *  The renderer calls this at the top of each `render()`. */
+  beginFrame(): void {
+    this.frame++;
+    this.drainPendingDeletes();
+  }
+
+  /** Whether `key` was uploaded or bound since the last {@link beginFrame}. */
+  drewInLatestFrame(key: object): boolean {
+    return this.lastDrawn.get(key) === this.frame;
+  }
+
+  /** Delete the textures of sources collected since the last call. */
   drainPendingDeletes(): void {
     if (this.pendingDeletes.length === 0) return;
     for (const tex of this.pendingDeletes) this.gl.deleteTexture(tex);
@@ -110,6 +129,7 @@ export class GLImageCache {
     this.finalizer.unregister(key);
     this.map.delete(key);
     this.magFilters.delete(key);
+    this.lastDrawn.delete(key);
   }
 
   /** Delete every texture this cache uploaded and stop answering
@@ -133,6 +153,7 @@ export class GLImageCache {
     source: TexSource,
     repetition?: PatternRepetition,
   ): WebGLTexture {
+    this.lastDrawn.set(key, this.frame);
     const existing = this.map.get(key);
     if (existing) return existing;
 
@@ -165,6 +186,7 @@ export class GLImageCache {
   bind(key: object, unit: number): void {
     const tex = this.map.get(key);
     if (!tex) throw new Error('GLImageCache: image not uploaded; call upload() first');
+    this.lastDrawn.set(key, this.frame);
     const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, tex);

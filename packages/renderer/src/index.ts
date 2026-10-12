@@ -93,6 +93,7 @@ export {
   imageStatus,
   isVectorImageSrc,
   releaseImage,
+  setImageCacheBudget,
   retryImage,
   subscribeImageReady,
   type ImageNodeData,

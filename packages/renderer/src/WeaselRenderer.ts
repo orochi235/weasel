@@ -598,7 +598,7 @@ export class WeaselRenderer {
     // no VAO bound, no draw in flight. Deleting from the FinalizationRegistry
     // callback directly was racy and caused mid-draw crashes.
     this.meshCache.drainPendingDeletes();
-    this.imageCache.drainPendingDeletes();
+    this.imageCache.beginFrame();
     this.textureCache.sweep(textureRegistry);
     this.refreshPrograms();
     // New frame: refill the dynamic-glyph synchronous bake budget.
