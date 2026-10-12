@@ -1748,13 +1748,6 @@ only story runner in the repo.
   ledger chrome and the resize math variants are separable. draw's `App.tsx` had the same shape and
   is split by job now; what is left in it is `EditorWithSharedScene`, one 500-line component.
 
-- **(P3) draw: dead surface left in the tree.** `modality/backgroundClickPolicy.ts` has no caller
-  outside its test, and a TODO in `App.tsx` says it waits on a hook into the dispatcher for
-  background clicks outside normal mode. `PreferencesModal`'s `registryEnumSources` prop is never
-  passed, so the one `registry-enum` pref (`LAST_TOOL` in `prefs.ts`, source `tools`) renders as
-  free text through `RegistrySelect`'s fallback; a `tools` resolver needs the tool list, which the
-  canvas holds and `App.tsx` does not.
-
 - **(P3) draw: paper sizes and "no paint" are each defined more than once.** Paper sizes:
   `PaperSizeKey` (`CommandBar.tsx`), `WeaselDrawPaperSize` (`svgInterop.ts`), `PAPER_PRESETS`
   (`docPersistence.ts`), and two label lists that disagree: the New menu says "US Letter"

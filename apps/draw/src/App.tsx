@@ -89,6 +89,8 @@ import { writeSession } from './sessionStore';
 import { colorContribution, useColorContext } from './tools/colorContext';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { TextEditDepPublisher } from './TextEditDepPublisher';
+import { toolEnumSources } from './registry/toolEnumSource';
+import { useLastTool } from './useLastTool';
 
 // Bounds for the sidebar drag come from the pref that stores the result, so
 // the handle and the Preferences number field can't drift apart. app.css
@@ -243,6 +245,8 @@ function EditorWithSharedScene({
   modality: ReturnType<typeof useModality>;
 }): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  useLastTool(tools);
+  const prefSources = useMemo(() => toolEnumSources(tools), [tools]);
   const actionsReg = useActionsRegistry();
   const colors = useColorContext();
   // On-canvas gradient handles edit one node's one paint; which paint is the
@@ -344,15 +348,6 @@ function EditorWithSharedScene({
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
-
-  // TODO(modality): wire non-normal-mode background-click composition
-  // (text-edit commit, isolation scoped-clear) through `handleBackgroundClick`
-  // from `./modality` once we have a non-leaky hook into the dispatcher.
-  // SceneCanvas's `onBackgroundClick` prop is intentionally omitted because
-  // it would race with the gesture-dispatcher channel (marquee, lasso). For
-  // normal mode the select tool's `clearSelection` action already handles
-  // background clicks; soft modes exit via Esc and strict modes via the
-  // breadcrumb's commit/cancel buttons in the interim.
 
   const paper = PAPER_PRESETS[paperSize];
 
@@ -565,7 +560,7 @@ function EditorWithSharedScene({
         setBackgroundColor={setBackgroundColor}
         onClearJournalCache={() => modality.machine.clearJournalCache()}
       />
-      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
       {/* Permanently reserved, never mounted on demand: the canvas is sized
           to the workspace, so appearing mid-edit would resize it under the
           caret. Empty until a text edit is in progress. */}
