@@ -179,16 +179,14 @@ export interface ClosingGesture<TCtx> {
 
 /**
  * The close a transform action runs from its `finally`, commit or cancel:
- * drop the preview overrides, run `settle` (whatever of the action's own has
- * to follow the commit), tell the behaviors, then fire `onGestureEnd`. The
- * last three each run even when one before throws; the first error is
+ * drop the preview overrides, tell the behaviors, then fire `onGestureEnd`,
+ * which fires even when a behavior's `onSettled` throws; the first error is
  * rethrown.
  */
-export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean, settle?: () => void): void {
+export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean): void {
   dropPreviewOverrides(gesture.publish);
   gesture.publish.previews.clear();
   runEvery([
-    () => settle?.(),
     () => runBehaviorSettled(gesture.behaviors, gesture.ctx, committed),
     () => gesture.lifecycle.end(committed),
   ], (step) => step());

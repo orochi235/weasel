@@ -115,14 +115,6 @@ describe('closeGesture', () => {
     };
   }
 
-  it('still tells the behaviors and fires onGestureEnd when the settle callback throws', () => {
-    const onSettled = vi.fn();
-    const onGestureEnd = vi.fn();
-    expect(() => closeGesture(closing(onSettled, onGestureEnd), true, refuse)).toThrow('refused');
-    expect(onSettled).toHaveBeenCalledWith('ctx', true);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
-  });
-
   it('still fires onGestureEnd when a behavior\'s onSettled throws', () => {
     const onGestureEnd = vi.fn();
     expect(() => closeGesture(closing(refuse, onGestureEnd), false)).toThrow('refused');

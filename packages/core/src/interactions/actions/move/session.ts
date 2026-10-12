@@ -12,6 +12,7 @@ import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '.
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { moveSources } from '../selectionSubtree';
 import { layoutDrop } from './behaviors/layoutDrop';
+import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
 
@@ -44,6 +45,8 @@ export interface MoveSession {
   readonly projection: PoseDescriptor<unknown>;
   readonly descriptorOf: (id: NodeId | string) => PoseDescriptor<unknown>;
   readonly pc: PoseComposition<unknown>;
+  /** The binding's behaviors, then the ones the action adds: a layout drop
+   *  when the `layout` dep is present, and reparent-on-drop. */
   readonly behaviors: readonly MoveBehavior<unknown>[];
   /** Reused across the drag; behaviors mutate its `scratch`. */
   readonly gestureCtx: GestureContext<unknown>;
@@ -119,11 +122,13 @@ export function beginMove(
   const { carried, frames } = captureFrames(scene, startPoses, pc);
 
   // Everything a move does beyond translating is a behavior: the binding's
-  // own, then the layout drop, so a behavior that claims the commit preempts it.
+  // own, then the layout drop, then reparent-on-drop. On release the first to
+  // answer owns the commit, so each preempts the ones after it.
   const gesture: MoveGesture = { session: () => session, frame };
   const behaviors: MoveBehavior<unknown>[] = [
     ...((opts?.behaviors ?? []) as MoveBehavior<unknown>[]),
     ...(layout ? [layoutDrop(gesture)] : []),
+    reparentOnDrop(gesture),
   ];
   const dragThresholdPx = (params?.['dragThresholdPx'] as number | undefined)
     ?? DRAG_THRESHOLD_PX;

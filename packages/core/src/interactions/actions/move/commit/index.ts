@@ -5,7 +5,6 @@ import { planeDelta } from '../delta';
 import { landedDescendantOps } from '../landedDescendants';
 import type { MoveSession } from '../session';
 import { rootTranslateOps, translateOps } from '../translate';
-import { reparentOps, resolveDropTarget } from './reparent';
 
 export interface CommitInput {
   session: MoveSession;
@@ -62,30 +61,16 @@ export function commitMove(input: CommitInput): boolean {
   // No-op if no movement (sub-threshold drag or zero delta).
   if (dx === 0 && dy === 0) return false;
 
-  // Reparent-on-drop, when opted in via `opts.params.reparentOnDrop`.
-  // Resolves the drop target via the `nodeAtPoint` dep (sourced by
-  // `<SceneCanvas>`) and reparents each moved root under it, then
-  // writes the translated pose in the new parent's frame so the
-  // visual position is preserved across the parent swap.
-  // An end with no drag carries no pointer: the dispatcher's `cancelAll`
-  // reports the world origin.
-  const mode = session.reparentOnDrop();
-  const dropTarget = mode !== 'off'
-    ? resolveDropTarget(session, at)
-    : null;
-  if (dropTarget) return commitOps(reparentOps(session, dropTarget, mode, { dx, dy }));
-  {
-    // No reparent — translate-only commit, emitted as transform ops so
-    // it routes through the consumer `applyOps` hook (consumer history)
-    // when present, else the scene's own history. Under scene v1's
-    // absolute-pose semantics every node stores world coords
-    // independently, so a container drag must explicitly re-stamp every
-    // cascaded descendant by the same dx/dy — otherwise children stay at
-    // their old absolute positions (visually they snap to the
-    // container's former location).
-    // Translate the data-held geometry by the same (dx,dy). Opt-in via
-    // the geometryProjection seam; a no-op when the dep is absent.
-    const ops = translateOps(session, [...session.ids, ...session.cascadeIds], { dx, dy });
-    return ops.length > 0 && commitOps(ops);
-  }
+  // No behavior claimed it — translate-only commit, emitted as transform ops
+  // so it routes through the consumer `applyOps` hook (consumer history)
+  // when present, else the scene's own history. Under scene v1's
+  // absolute-pose semantics every node stores world coords
+  // independently, so a container drag must explicitly re-stamp every
+  // cascaded descendant by the same dx/dy — otherwise children stay at
+  // their old absolute positions (visually they snap to the
+  // container's former location).
+  // Translate the data-held geometry by the same (dx,dy). Opt-in via
+  // the geometryProjection seam; a no-op when the dep is absent.
+  const ops = translateOps(session, [...session.ids, ...session.cascadeIds], { dx, dy });
+  return ops.length > 0 && commitOps(ops);
 }
