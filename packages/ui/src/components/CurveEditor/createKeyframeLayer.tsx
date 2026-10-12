@@ -64,7 +64,7 @@ const KEY_HIT_PX = 8;
 const HANDLE_HIT_PX = 8;
 const CURVE_HIT_PX = 6;
 const KEY_HALF = handleHalf('--wzl-handle-size');
-const HANDLE_RADIUS = 3.5;
+const HANDLE_RADIUS = handleHalf('--wzl-handle-dot-size-sm');
 const SHIFT_MULTIPLIER = 10;
 const HANDLE_STEP = 0.01;
 

@@ -74,6 +74,8 @@ export type TokenName =
   | '--wzl-gray-700'
   | '--wzl-gray-800'
   | '--wzl-gray-900'
+  | '--wzl-handle-dot-size'
+  | '--wzl-handle-dot-size-sm'
   | '--wzl-handle-size'
   | '--wzl-handle-size-lg'
   | '--wzl-handle-size-sm'
@@ -348,6 +350,8 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
@@ -530,6 +534,8 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
@@ -712,6 +718,8 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#25272c",
         '--wzl-checker-b': "#181a1e",
         '--wzl-checker-size': "8px",
@@ -894,6 +902,8 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
@@ -1076,6 +1086,8 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
@@ -1258,6 +1270,8 @@ export const THEMES = {
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
+        '--wzl-handle-dot-size': "8px",
+        '--wzl-handle-dot-size-sm': "7px",
         '--wzl-checker-a': "#c9cbcf",
         '--wzl-checker-b': "#f5f5f6",
         '--wzl-checker-size': "8px",
@@ -2275,6 +2289,16 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "value": "10px",
         "type": "dimension",
         "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
+      },
+      "handle-dot-size": {
+        "value": "8px",
+        "type": "dimension",
+        "description": "Diameter of a round handle — a plain anchor on a curve. Its own rank beside handle-size, because a circle and a diamond of one edge do not read as one size."
+      },
+      "handle-dot-size-sm": {
+        "value": "7px",
+        "type": "dimension",
+        "description": "A round handle that belongs to another point — a bezier control handle at the end of its stem."
       },
       "checker-a": {
         "value": "{border}",
@@ -3517,6 +3541,16 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "type": "dimension",
         "value": "10px",
         "description": "A handle that is a category of its own rather than one of a row — a curve's endpoint. Larger so it separates from the handles it sits in line with."
+      },
+      "handle-dot-size": {
+        "type": "dimension",
+        "value": "8px",
+        "description": "Diameter of a round handle — a plain anchor on a curve. Its own rank beside handle-size, because a circle and a diamond of one edge do not read as one size."
+      },
+      "handle-dot-size-sm": {
+        "type": "dimension",
+        "value": "7px",
+        "description": "A round handle that belongs to another point — a bezier control handle at the end of its stem."
       },
       "checker-a": {
         "type": "color",

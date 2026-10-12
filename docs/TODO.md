@@ -1103,15 +1103,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
-- **(P3) Two CurveEditor handles are still literals.** The `--wzl-handle-size`
-  family covers the 45°-rotated squares; the round ranks did not fold into it,
-  because a radius is not a diamond edge. The plain anchor circle (`r={4}` in
-  `createFunctionLayer`) and the bezier control handle (`HANDLE_RADIUS = 3.5` in
-  `createKeyframeLayer`) are the two left. Either add `--wzl-handle-dot-size`
-  for the round ranks or restate the family in terms of diameter — it is a
-  visual call that wants a browser.
-
-
 - **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a color of its own.** Asked for:
   move the default treatment off "the aqua" and save it for a theme that wants it. There is no
   ToggleBar color to move — every surface in the ramp is `var(--wzl-accent)`, which seventeen
