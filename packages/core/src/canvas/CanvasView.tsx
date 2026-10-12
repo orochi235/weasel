@@ -29,7 +29,7 @@ import {
   createDispatcherPreviewSources,
 } from './SceneCanvas/dispatcherGestureBounds';
 import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
-import { createSceneLayerGate, paintedLayers } from './sceneLayerPaint';
+import { createSceneLayerGate, viewPaintedLayers } from './sceneLayerPaint';
 import {
   useOptionalViewRegistry,
   IDENTITY_VIEW,
@@ -195,7 +195,7 @@ export function CanvasView(props: CanvasViewProps): null {
 
   /** The surface's layers this view draws, in the order it draws them. */
   const drawnLayers = useCallback((): readonly RenderLayer<unknown>[] => (
-    paintedLayers(registry?.surface()?.layers() ?? [], live.current)
+    viewPaintedLayers(registry?.surface()?.layers() ?? [], live.current)
   ), [registry, live]);
 
   const [sceneLayerGate] = useState(createSceneLayerGate);
