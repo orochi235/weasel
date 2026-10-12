@@ -28,5 +28,6 @@ export type { GuideSnapOptions } from './strategies/guides';
 
 // ─── Layout strategies, and the drop-target pickers they are built from ─────
 export * from './layout/snaps';
+export * from './layout/perContainer';
 export * from './layout/strategies';
 export type { SnapPattern } from './layout/strategies/snapPoint';
