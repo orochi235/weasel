@@ -9,11 +9,11 @@ import {
   useActionsRegistry,
   type Action,
   type Paint,
-  type GradientFill,
+  type GradientPaint,
   type RectPose,
   type Stroke,
 } from '@weasel-js/core';
-import { seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
+import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { SceneGradientHandles } from './SceneGradientHandles';
 
 const STOPS = [
@@ -22,7 +22,7 @@ const STOPS = [
 ];
 
 /** A left-to-right ramp across the node's box, in the frame the node stores. */
-const BOUNDS_RAMP: GradientFill = {
+const BOUNDS_RAMP: GradientPaint = {
   kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 0 },
@@ -212,7 +212,7 @@ describe('SceneGradientHandles', () => {
     render(<Overlay scene={scene} slot="fill" seen={seen} />);
     drag('Patch 1 corner 3', { x: 100, y: 50 });
 
-    const last = seen.at(-1) as { action: string; paint: MeshGradientFill };
+    const last = seen.at(-1) as { action: string; paint: MeshGradientPaint };
     expect(last.action).toBe('setFill');
     expect(last.paint.kind).toBe('mesh-gradient');
     expect(last.paint.units).toBe('bounds');

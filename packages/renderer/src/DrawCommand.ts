@@ -1,23 +1,10 @@
 import type { Path, GlMat3 } from '@weasel-js/geom';
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
+import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import type { TextAlign, TextDirection, TextStyle } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 import type { Effect } from './effects/types';
-
-/**
- * Solid-fill paint variant (subset of the full `Paint` union from
- * `@weasel-js/paint`). Kept for back-compat with step-1/2 consumers and
- * because some code reads `fill.color` directly. Through step 4, fills can
- * be any `Paint` variant — solid, pattern, or gradient.
- */
-export interface SolidPaint {
-  kind?: 'solid';
-  /** Any CSS color string accepted by `parseColor`: hex, `rgb()`/`rgba()`, `hsl()`/`hsla()`, named, or `transparent`. */
-  color: string;
-  opacity?: number;
-}
 
 /** DrawCommand variants implemented through step 6. */
 export type DrawCommand =
@@ -34,8 +21,8 @@ export interface PathDrawCommand {
   kind: 'path';
   path: Path;
   /** Solid, pattern, or gradient (linear/radial/conic), resolved for the
-   *  renderer: `commandFill` makes one from a node's `Paint`. */
-  fill?: CommandFill;
+   *  renderer: `commandPaint` makes one from a node's `Paint`. */
+  fill?: CommandPaint;
   /** Stroke spec. Its `paint` takes what `fill` does. */
   stroke?: CommandStroke;
   /**

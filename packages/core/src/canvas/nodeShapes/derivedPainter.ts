@@ -3,7 +3,7 @@ import {
 } from '@weasel-js/geom';
 import type { Paint, Stroke } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
-import { commandFill, commandStroke } from '@weasel-js/renderer';
+import { commandPaint, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { derivesPath } from './memo';
@@ -42,7 +42,7 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     const d = node.data as { fill?: Paint | null; stroke?: Stroke | null; vertexColors?: number[] } | null;
     const strokeSpec = resolveNodeStroke(d?.stroke);
     const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
-    const fill = declared && commandFill(declared, box);
+    const fill = declared && commandPaint(declared, box);
     const stroke = strokeSpec && commandStroke(strokeSpec, box);
     const cmd: DrawCommand = {
       kind: 'path',

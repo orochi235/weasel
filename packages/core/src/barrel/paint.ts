@@ -26,14 +26,14 @@ export {
 export { resolveStrokeWidth } from '@weasel-js/stroke';
 export type {
   ColorSpace,
-  CommandFill,
+  CommandPaint,
   CommandPaintUnits,
   CommandStroke,
   Paint,
-  PosedFill,
-  SolidFill,
+  PosedPaint,
+  SolidPaint,
   GradStop,
-  GradientFill,
+  GradientPaint,
   GradientKind,
   PaintUnits,
   PatternPaint,
@@ -61,7 +61,7 @@ export {
   isTilePaint,
   patternPlacementOf,
   tileSpecOf,
-  isGradientFill,
+  isGradientPaint,
   sampleGradientStops,
   withGradientKind,
   gradientGeometry,
@@ -70,7 +70,7 @@ export {
 export { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 export type { FillPoseBox } from '@weasel-js/renderer';
 // A node's paint resolved into what a draw command takes.
-export { commandFill, commandStroke } from '@weasel-js/renderer';
+export { commandPaint, commandStroke } from '@weasel-js/renderer';
 
 // ─── Utility: hex8 color helpers ────────────────────────────────────────────
 export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '../util/color';

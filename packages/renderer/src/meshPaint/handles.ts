@@ -7,7 +7,7 @@
  * (`fillInPoseFrame`) and normalizes the result back (`fillToBoundsFrame`).
  */
 
-import type { MeshGradientFill } from './meshPaint';
+import type { MeshGradientPaint } from './meshPaint';
 import { isTensorPatch, isValidPatch, type MeshPatch, type MeshPoint } from './surface';
 
 /** What a handle moves: a patch corner, one of the two controls of an edge,
@@ -59,7 +59,7 @@ function same(a: MeshPoint, b: MeshPoint): boolean {
  * edge controls, then a tensor patch's interior. Coincident points of one
  * kind merge into one handle. A patch that cannot be evaluated has none.
  */
-export function meshHandles(mesh: MeshGradientFill): MeshHandle[] {
+export function meshHandles(mesh: MeshGradientPaint): MeshHandle[] {
   const handles: { id: string; kind: MeshHandleKind; at: MeshPoint; refs: MeshPointRef[] }[] = [];
   mesh.patches.forEach((patch, p) => {
     if (!isValidPatch(patch)) return;
@@ -89,8 +89,8 @@ function carriedBy(patch: MeshPatch, corner: number): number[] {
  * Returns a new paint; `mesh` is not modified.
  */
 export function moveMeshHandle(
-  mesh: MeshGradientFill, handle: MeshHandle, to: MeshPoint,
-): MeshGradientFill {
+  mesh: MeshGradientPaint, handle: MeshHandle, to: MeshPoint,
+): MeshGradientPaint {
   const dx = to.x - handle.at.x;
   const dy = to.y - handle.at.y;
   const placed = new Map<string, MeshPoint>();
@@ -126,7 +126,7 @@ export interface MeshGuides {
 }
 
 /** The guides for `mesh`'s valid patches. Shared edges appear once per patch. */
-export function meshGuides(mesh: MeshGradientFill): MeshGuides {
+export function meshGuides(mesh: MeshGradientPaint): MeshGuides {
   const edges: MeshGuides['edges'] = [];
   const arms: MeshGuides['arms'] = [];
   for (const patch of mesh.patches) {

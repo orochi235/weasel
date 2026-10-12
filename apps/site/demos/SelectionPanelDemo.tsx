@@ -9,7 +9,7 @@ import {
   PATH_Z,
   solid,
   strokeOf,
-  commandFill,
+  commandPaint,
   commandStroke,
 } from '@weasel-js/core';
 import type { Paint, PolygonPath, Stroke } from '@weasel-js/core';
@@ -64,7 +64,7 @@ export function SelectionPanelDemo() {
             // 'ellipse'-kind node paints as a 32-gon polygon approximation
             // (see `ellipse` above) inscribed in its pose box.
             drawOne: (n, p): DrawCommand[] => {
-              const fill = commandFill(n.data.fill, p);
+              const fill = commandPaint(n.data.fill, p);
               const stroke = n.data.stroke && commandStroke(n.data.stroke, p);
               return [{
                 kind: 'path',

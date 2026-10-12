@@ -13,7 +13,7 @@
  */
 
 import type { Path } from '@weasel-js/geom';
-import type { CommandFill, MarkerRef, CommandStroke } from '@weasel-js/paint';
+import type { CommandPaint, MarkerRef, CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
 import { headCommands } from '../markerCommands';
 import { markerHeads, markerReadsKey, type MarkerHead } from '@weasel-js/stroke';
@@ -24,7 +24,7 @@ import { screenSpaceKey, type StrokeSpaces } from '@weasel-js/stroke';
 
 interface Entry {
   readonly heads: MarkerHead[];
-  paint: CommandFill | undefined;
+  paint: CommandPaint | undefined;
   cmds: PathDrawCommand[];
 }
 

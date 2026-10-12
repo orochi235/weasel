@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
-import type { Paint, GradientFill, PatternPaint, TilePaint, TilePatternSpec } from '@weasel-js/paint';
+import type { Paint, GradientPaint, PatternPaint, TilePaint, TilePatternSpec } from '@weasel-js/paint';
 
 const STOPS = [
   { offset: 0, color: '#000000' },
@@ -8,7 +8,7 @@ const STOPS = [
 ];
 
 /** Left-to-right across the whole box. */
-const LINEAR: GradientFill = {
+const LINEAR: GradientPaint = {
   kind: 'linear-gradient',
   from: { x: 0, y: 0.5 },
   to: { x: 1, y: 0.5 },
@@ -46,7 +46,7 @@ describe('fillInPoseFrame', () => {
   });
 
   it('scales a radius by the box diagonal, which is the width for a square', () => {
-    const radial: GradientFill = {
+    const radial: GradientPaint = {
       kind: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5, stops: STOPS, units: 'bounds',
     };
     const out = fillInPoseFrame(radial, { x: 0, y: 0, width: 200, height: 200 });
@@ -54,7 +54,7 @@ describe('fillInPoseFrame', () => {
   });
 
   it('moves a conic center but leaves its angle alone', () => {
-    const conic: GradientFill = {
+    const conic: GradientPaint = {
       kind: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 1.2, stops: STOPS, units: 'bounds',
     };
     const out = fillInPoseFrame(conic, { x: 10, y: 20, width: 100, height: 60 });
@@ -86,7 +86,7 @@ describe('fillToBoundsFrame', () => {
   });
 
   it('round-trips a radial radius', () => {
-    const radial: GradientFill = {
+    const radial: GradientPaint = {
       kind: 'radial-gradient', center: { x: 0.25, y: 0.75 }, radius: 0.4, stops: STOPS, units: 'bounds',
     };
     const box = { x: 5, y: 5, width: 300, height: 160 };
@@ -98,7 +98,7 @@ describe('fillToBoundsFrame', () => {
   });
 
   it('normalizes page-space coordinates, as an SVG import supplies them', () => {
-    const userSpace: GradientFill = {
+    const userSpace: GradientPaint = {
       kind: 'linear-gradient', from: { x: 100, y: 100 }, to: { x: 300, y: 100 }, stops: STOPS,
     };
     const back = fillToBoundsFrame(userSpace, { x: 100, y: 50, width: 200, height: 100 });

@@ -1,7 +1,7 @@
 import type { ChromeState } from 'core/selection/chromeState';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
+import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ClaimableGesture } from '@weasel-js/gestures';
 
@@ -116,8 +116,8 @@ export interface AffordanceRegion<TScratch = unknown> {
    *    cutout.
    *  - `custom` — emit arbitrary draw commands; receives a {@link CustomPaintContext}. */
   paint?:
-    | { kind: 'square';   sizePx: number;  fill?: CommandFill; stroke?: CommandStroke }
-    | { kind: 'annulus';  fill?: CommandFill; stroke?: CommandStroke; insetPx?: number }
+    | { kind: 'square';   sizePx: number;  fill?: CommandPaint; stroke?: CommandStroke }
+    | { kind: 'annulus';  fill?: CommandPaint; stroke?: CommandStroke; insetPx?: number }
     | { kind: 'custom';   draw: (ctx: CustomPaintContext) => DrawCommand[] };
 
   /** Discriminator a press on this region reports as `AffordanceHit.kind` —

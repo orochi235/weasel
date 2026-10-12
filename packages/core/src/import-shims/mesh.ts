@@ -10,7 +10,7 @@ export {
   bakeMesh,
   cornerWeights,
   evalPatch,
-  isMeshGradientFill,
+  isMeshGradientPaint,
   isTensorPatch,
   isValidPatch,
   meshBakeSize,
@@ -28,7 +28,7 @@ export {
 export type {
   BakedMesh,
   MeshBox,
-  MeshGradientFill,
+  MeshGradientPaint,
   MeshGuides,
   MeshHandle,
   MeshHandleKind,

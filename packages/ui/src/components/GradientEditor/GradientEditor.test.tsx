@@ -5,12 +5,12 @@ import {
   registerPaintKind,
   type Paint,
   type GradStop,
-  type GradientFill,
+  type GradientPaint,
 } from '@weasel-js/core';
-import { seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
+import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { GradientEditor } from './GradientEditor';
 
-const LINEAR: GradientFill = {
+const LINEAR: GradientPaint = {
   kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 100, y: 0 },
@@ -81,7 +81,7 @@ describe('GradientEditor', () => {
 
   it('numbers swatches along the gradient and recolors the stop each one stands for', () => {
     const onChange = vi.fn();
-    const unordered: GradientFill = {
+    const unordered: GradientPaint = {
       ...LINEAR,
       stops: [
         { offset: 1, color: '#0000ffff' },
@@ -183,7 +183,7 @@ describe('GradientEditor', () => {
       const onChange = vi.fn();
       render(<GradientEditor value={LINEAR} onChange={onChange} />);
       fireEvent.click(screen.getByRole('radio', { name: 'Mesh' }));
-      const next = onChange.mock.calls[0][0] as MeshGradientFill;
+      const next = onChange.mock.calls[0][0] as MeshGradientPaint;
       expect(next.kind).toBe('mesh-gradient');
       expect(next.patches[0].colors).toEqual(['#ff0000ff', '#0000ffff', '#0000ffff', '#ff0000ff']);
     });
@@ -218,7 +218,7 @@ describe('GradientEditor', () => {
     });
 
     it('still shows the kind and space a value already has, so it can be switched off them', () => {
-      const conic: GradientFill = { kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: LINEAR.stops, interpolate: 'oklch' };
+      const conic: GradientPaint = { kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: LINEAR.stops, interpolate: 'oklch' };
       render(<GradientEditor value={conic} svg onChange={() => {}} />);
       expect(radios('Gradient kind')).toEqual(['Linear', 'Radial', 'Conic']);
       expect(radios('Blend space')).toEqual(['sRGB', 'OKLCh']);

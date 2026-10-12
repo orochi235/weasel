@@ -6,7 +6,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { pxExtent } from '@weasel-js/geom';
 import type { DebugSink } from '../debug/types';
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
+import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
 import {
   angleOf,
@@ -264,7 +264,7 @@ function annulusCommand(
   insetLocal: { x: number; y: number },
   xf: TargetTransform,
   viewT: ReturnType<typeof viewToTransform>,
-  fill: CommandFill | undefined,
+  fill: CommandPaint | undefined,
   stroke: CommandStroke | undefined,
 ): DrawCommand | null {
   const rx = semiAxes.rx - insetLocal.x;

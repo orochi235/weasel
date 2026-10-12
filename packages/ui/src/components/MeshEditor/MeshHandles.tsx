@@ -4,7 +4,7 @@ import {
   meshGuides,
   meshHandles,
   moveMeshHandle,
-  type MeshGradientFill,
+  type MeshGradientPaint,
   type MeshHandle,
 } from '@weasel-js/core/mesh';
 import { handleHalf } from '../../handles';
@@ -24,7 +24,7 @@ export interface MeshHandlesProps {
    *  maps from. A `units: 'bounds'` mesh is resolved first with
    *  `fillInPoseFrame(fill, box)`, and edits converted back with
    *  `fillToBoundsFrame(next, box)`. */
-  value: MeshGradientFill;
+  value: MeshGradientPaint;
   /** Mesh space → overlay pixels. */
   toScreen: (p: Point) => Point;
   /** Overlay pixels → mesh space. Must invert `toScreen`. */

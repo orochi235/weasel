@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { GradientFill } from '@weasel-js/core';
+import type { GradientPaint } from '@weasel-js/core';
 import { GradientHandles } from './GradientHandles';
 
 const STOPS = [
@@ -31,7 +31,7 @@ function drag(label: string, to: { x: number; y: number }): void {
 }
 
 describe('GradientHandles', () => {
-  const linear: GradientFill = {
+  const linear: GradientPaint = {
     kind: 'linear-gradient',
     from: { x: 0, y: 0 },
     to: { x: 50, y: 0 },
@@ -135,7 +135,7 @@ describe('GradientHandles', () => {
     expect(onChange.mock.calls[0][0]).toMatchObject({ from: { x: 20, y: 20 } });
   });
 
-  const radial: GradientFill = {
+  const radial: GradientPaint = {
     kind: 'radial-gradient', center: { x: 50, y: 50 }, radius: 25, stops: STOPS,
   };
 
@@ -155,7 +155,7 @@ describe('GradientHandles', () => {
     expect(onChange.mock.calls[0][0].radius).toBeGreaterThan(0);
   });
 
-  const conic: GradientFill = {
+  const conic: GradientPaint = {
     kind: 'conic-gradient', center: { x: 50, y: 50 }, angle: 0, stops: STOPS,
   };
 

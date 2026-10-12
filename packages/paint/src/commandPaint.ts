@@ -18,20 +18,20 @@ type InCommandUnits<F> = F extends { units?: PaintUnits }
 
 /** A `Paint` placed in a frame a command can name. Its pattern may still
  *  be a tile kind. */
-export type PosedFill = InCommandUnits<Paint>;
+export type PosedPaint = InCommandUnits<Paint>;
 
 /** A `Paint` a renderer can draw as it stands: no paint is in `'bounds'`
  *  units, and a pattern is a registered `texture` rather than a tile kind. */
-export type CommandFill = Exclude<PosedFill, { kind: TileKind }>;
+export type CommandPaint = Exclude<PosedPaint, { kind: TileKind }>;
 
 /** The solid member of `Paint`: a color and an opacity. */
-export type SolidFill = Extract<Paint, { kind?: 'solid' }>;
+export type SolidPaint = Extract<Paint, { kind?: 'solid' }>;
 
 /** Whether a paint is the solid member. A tile paint carries a `color` too, so
  *  the presence of one does not answer this. */
-export function isSolidPaint(paint: Paint | null | undefined): paint is SolidFill {
+export function isSolidPaint(paint: Paint | null | undefined): paint is SolidPaint {
   return paint != null && (paint.kind === undefined || paint.kind === 'solid');
 }
 
-/** A `Stroke` whose paint is a {@link CommandFill}. */
-export type CommandStroke = Omit<Stroke, 'paint'> & { paint?: CommandFill };
+/** A `Stroke` whose paint is a {@link CommandPaint}. */
+export type CommandStroke = Omit<Stroke, 'paint'> & { paint?: CommandPaint };

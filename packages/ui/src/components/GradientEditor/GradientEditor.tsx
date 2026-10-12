@@ -1,6 +1,6 @@
 import { type ReactElement, type ReactNode } from 'react';
 import {
-  isGradientFill,
+  isGradientPaint,
   sampleGradientStops,
   switchGradientKind,
   useGradientKinds,
@@ -8,7 +8,7 @@ import {
   type ColorSpace,
   type Paint,
   type GradStop,
-  type GradientFill,
+  type GradientPaint,
   type PaintKind,
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
@@ -129,7 +129,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
       const Editor = entry.Editor;
       return <><Editor value={value} onInput={onInput} onChange={onChange} />{spaceBar}</>;
     }
-    if (isGradientFill(value)) {
+    if (isGradientPaint(value)) {
       return <StopsBody value={value} spaceBar={spaceBar} onInput={onInput} onChange={onChange} />;
     }
     if (isMeshPaint(value)) {
@@ -141,7 +141,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
 
 /** The stop slider and swatch row of a linear, radial or conic gradient. */
 function StopsBody(props: {
-  value: GradientFill;
+  value: GradientPaint;
   spaceBar: ReactNode;
   onInput?: (next: Paint) => void;
   onChange: (next: Paint) => void;
@@ -150,7 +150,7 @@ function StopsBody(props: {
   const stops = value.stops;
   const space = value.interpolate ?? 'rgb';
 
-  const withStops = (next: GradStop[]): GradientFill => ({ ...value, stops: next });
+  const withStops = (next: GradStop[]): GradientPaint => ({ ...value, stops: next });
 
   const thumbs: StopThumb[] = stops.map((stop) => ({ value: stop.offset, color: stop.color }));
 

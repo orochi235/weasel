@@ -7,21 +7,21 @@
  * them in would drag the whole marker vocabulary into the ribbon cache key.
  */
 
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
+import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
 import { markerHeads, type MarkerHead, type MarkerPaint } from '@weasel-js/stroke';
 import type { PathDrawCommand } from './DrawCommand';
-import { commandFill } from './patterns/commandPaint';
+import { commandPaint } from './patterns/commandPaint';
 
 /** A marker's own paint is resolved against its head's box, as a node's is
  *  against the node's. */
 function resolvePaint(
   p: MarkerPaint | undefined, stroke: CommandStroke, fallback: MarkerPaint, head: PolygonPath,
-): CommandFill | undefined {
+): CommandPaint | undefined {
   const v = p ?? fallback;
   if (v === 'none') return undefined;
   if (v === 'line') return stroke.paint;
-  return commandFill(v, boundsOfPath(head)) ?? undefined;
+  return commandPaint(v, boundsOfPath(head)) ?? undefined;
 }
 
 /** `heads` as draw commands in `stroke`'s paint. A head whose fill and outline

@@ -4,7 +4,7 @@ import type { PathDrawCommand } from '../DrawCommand';
 import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './test-utils/fakeOffscreenCanvas';
 import { _resetPatternSpecCacheForTests } from './resolveSpec';
 import { _resetTextureRegistryForTests } from '../textures/registerTexture';
-import { commandFill, commandStroke } from './commandPaint';
+import { commandPaint, commandStroke } from './commandPaint';
 
 const BOX = { x: 10, y: 20, width: 100, height: 50 };
 const RECT = { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } as const;
@@ -16,7 +16,7 @@ const BOUNDS_GRADIENT: Paint = {
 };
 const HATCH: Paint = { kind: 'hatch', color: '#000', units: 'bounds' };
 
-describe('commandFill', () => {
+describe('commandPaint', () => {
   beforeEach(() => {
     installFakeOffscreenCanvas();
     _resetPatternSpecCacheForTests();
@@ -25,13 +25,13 @@ describe('commandFill', () => {
   afterEach(uninstallFakeOffscreenCanvas);
 
   it('maps a bounds gradient onto the box', () => {
-    expect(commandFill(BOUNDS_GRADIENT, BOX)).toMatchObject({
+    expect(commandPaint(BOUNDS_GRADIENT, BOX)).toMatchObject({
       units: 'local', from: { x: 10, y: 20 }, to: { x: 110, y: 70 },
     });
   });
 
   it('swaps a tile paint for its texture and anchors it to the box', () => {
-    const fill = commandFill(HATCH, BOX);
+    const fill = commandPaint(HATCH, BOX);
     expect(fill).toMatchObject({
       kind: 'texture', texture: { id: expect.any(String) }, units: 'local', origin: { x: 10, y: 20 },
     });
@@ -39,7 +39,7 @@ describe('commandFill', () => {
 
   it('answers null for a spec that cannot rasterize', () => {
     uninstallFakeOffscreenCanvas();
-    expect(commandFill(HATCH, BOX)).toBeNull();
+    expect(commandPaint(HATCH, BOX)).toBeNull();
   });
 });
 

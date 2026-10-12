@@ -25,7 +25,7 @@ import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign, ResolvedRun } from '@weasel-js/text';
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import type { FillPoseBox } from './fillInPoseFrame';
-import { commandFill } from './patterns/commandPaint';
+import { commandPaint } from './patterns/commandPaint';
 
 /** Build a draw command from styled runs, for text with no pose. `style`
  *  supplies the defaults each run inherits; the rest match `textCommand`. */
@@ -109,8 +109,8 @@ export function textCommandFromPose(pose: TextPose, scale = 1): TextDrawCommand 
 function runsInPoseFrame(runs: ResolvedRun[], box: FillPoseBox): ResolvedRun[] {
   if (runs.every((r) => isSolid(r.fill) && isSolid(r.stroke?.paint))) return runs;
   return runs.map((r) => {
-    const fill = r.fill && commandFill(r.fill, box);
-    const paint = r.stroke?.paint && commandFill(r.stroke.paint, box);
+    const fill = r.fill && commandPaint(r.fill, box);
+    const paint = r.stroke?.paint && commandPaint(r.stroke.paint, box);
     return { ...r, fill, stroke: r.stroke && { ...r.stroke, paint: paint || undefined } };
   });
 }

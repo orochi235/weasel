@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { meshGuides, meshHandles, moveMeshHandle, type MeshHandle } from './handles';
-import { meshFromStops, seedMeshPatch, type MeshGradientFill } from './meshPaint';
+import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from './meshPaint';
 import { evalPatch, type MeshPatch, type MeshPoint } from './surface';
 
 /** A straight-edged square patch over `[x0, x0+1] × [0, 1]`, controls at the thirds. */
@@ -33,7 +33,7 @@ function tensor(): MeshPatch {
   };
 }
 
-function mesh(...patches: MeshPatch[]): MeshGradientFill {
+function mesh(...patches: MeshPatch[]): MeshGradientPaint {
   return { kind: 'mesh-gradient', patches, units: 'local' };
 }
 
@@ -133,7 +133,7 @@ describe('moveMeshHandle', () => {
   });
 
   it('leaves the input untouched and keeps colors, units and space', () => {
-    const m: MeshGradientFill = { ...meshFromStops([
+    const m: MeshGradientPaint = { ...meshFromStops([
       { offset: 0, color: '#000' }, { offset: 1, color: '#fff' },
     ]), interpolate: 'oklch' };
     const snapshot = JSON.stringify(m);

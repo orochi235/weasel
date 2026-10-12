@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react';
 import { asPaint, type ColorSpace, type Paint } from '@weasel-js/core';
-import { isMeshGradientFill, type MeshGradientFill } from '@weasel-js/core/mesh';
+import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { ColorField } from '../ColorField';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import { paintPreviewCss } from '../../paintPreview';
@@ -15,7 +15,7 @@ const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
 /** Props for {@link MeshEditor}. `onInput` fires throughout a gesture and
  *  `onChange` once at its end. */
 export interface MeshEditorProps {
-  value: MeshGradientFill;
+  value: MeshGradientPaint;
   /** Emitted as a `Paint`, which is what every paint control passes
    *  around — `Paint`'s discriminant stays closed over the built-in
    *  members, so a registered kind's own shape only travels through it. */
@@ -94,13 +94,13 @@ export function MeshEditor(props: MeshEditorProps): ReactElement {
 
 /** One patch as a swatch: the paint with the other patches taken out, so a
  *  multi-patch mesh shows which row belongs to which part of it. */
-function previewOf(value: MeshGradientFill, patchIndex: number): string | undefined {
+function previewOf(value: MeshGradientPaint, patchIndex: number): string | undefined {
   return paintPreviewCss(
     { ...value, patches: [value.patches[patchIndex]] } as unknown as Paint,
   );
 }
 
 /** Narrowing for a consumer rendering this behind a kind switch. */
-export function isMeshPaint(fill: Paint | null | undefined): fill is Paint & MeshGradientFill {
-  return isMeshGradientFill(fill);
+export function isMeshPaint(fill: Paint | null | undefined): fill is Paint & MeshGradientPaint {
+  return isMeshGradientPaint(fill);
 }

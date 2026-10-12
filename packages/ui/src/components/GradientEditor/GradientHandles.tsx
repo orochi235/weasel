@@ -1,5 +1,5 @@
 import { type ReactElement, type ReactNode } from 'react';
-import { gradientGeometry, type GradientFill } from '@weasel-js/core';
+import { gradientGeometry, type GradientPaint } from '@weasel-js/core';
 import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
 import s from './handleOverlay.module.css';
 
@@ -19,7 +19,7 @@ export interface GradientHandlesProps {
    * `fillInPoseFrame(fill, box)` and convert edits back with
    * `fillToBoundsFrame(next, box)`.
    */
-  value: GradientFill;
+  value: GradientPaint;
   /**
    * Gradient space → overlay pixels. For a `units: 'local'` gradient this
    * is the node's local-to-screen transform; for `'world'`, the view.
@@ -28,9 +28,9 @@ export interface GradientHandlesProps {
   /** Overlay pixels → gradient space. Must invert `toScreen`. */
   toLocal: (p: Point) => Point;
   /** Live during a drag — wire for preview, do not write to history. */
-  onInput?: (next: GradientFill) => void;
+  onInput?: (next: GradientPaint) => void;
   /** Committed at drag end: one call per gesture. */
-  onChange: (next: GradientFill) => void;
+  onChange: (next: GradientPaint) => void;
   /** A drag was abandoned (the pointer was canceled). Its last `onInput` put
    *  the value back where the drag began; an owner that opened an edit on
    *  `onInput` ends it here without keeping it. */
@@ -64,13 +64,13 @@ export function GradientHandles(props: GradientHandlesProps): ReactElement {
 }
 
 function renderForKind(
-  value: GradientFill,
+  value: GradientPaint,
   toScreen: (p: Point) => Point,
   toLocal: (p: Point) => Point,
-  onInput: ((next: GradientFill) => void) | undefined,
-  onChange: (next: GradientFill) => void,
+  onInput: ((next: GradientPaint) => void) | undefined,
+  onChange: (next: GradientPaint) => void,
 ): ReactNode {
-  const emit = (next: GradientFill, phase: EditPhase): void => {
+  const emit = (next: GradientPaint, phase: EditPhase): void => {
     if (phase === 'input') onInput?.(next);
     else onChange(next);
   };

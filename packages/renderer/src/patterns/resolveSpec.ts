@@ -11,7 +11,7 @@
 
 import {
   isTileKind, isTilePaint, patternPlacementOf, tileSpecOf,
-  type CommandFill, type Paint, type PosedFill, type TilePaint, type TilePatternSpec,
+  type CommandPaint, type Paint, type PosedPaint, type TilePaint, type TilePatternSpec,
 } from '@weasel-js/paint';
 import {
   ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
@@ -109,7 +109,7 @@ ownTextureIds(ID_PREFIX, { revive, touched: markUsed });
  *
  * A tile that can't rasterize drops the fill rather than painting garbage.
  */
-export function resolveFillPattern(fill: PosedFill): CommandFill | null;
+export function resolveFillPattern(fill: PosedPaint): CommandPaint | null;
 export function resolveFillPattern(fill: Paint): Paint | null;
 export function resolveFillPattern(fill: Paint): Paint | null {
   if (!isTilePaint(fill)) return fill;

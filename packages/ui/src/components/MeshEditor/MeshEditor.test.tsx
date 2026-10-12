@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { Paint } from '@weasel-js/core';
-import { seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
+import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { MeshEditor } from './MeshEditor';
 import { PaintInput } from '../PaintInput';
 
-const MESH = seedMeshPatch('#ff0000ff') as MeshGradientFill;
+const MESH = seedMeshPatch('#ff0000ff') as MeshGradientPaint;
 
 describe('MeshEditor', () => {
   it('renders one swatch per corner, numbered in the patch walk order', () => {
@@ -23,7 +23,7 @@ describe('MeshEditor', () => {
     fireEvent.blur(swatch);
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    const next = onChange.mock.calls[0][0] as MeshGradientFill;
+    const next = onChange.mock.calls[0][0] as MeshGradientPaint;
     expect(next.patches[0].colors[1]).toBe('#00ff00ff');
     expect(next.patches[0].colors[0]).toBe(MESH.patches[0].colors[0]);
     expect(next.patches[0].points).toEqual(MESH.patches[0].points);
@@ -37,7 +37,7 @@ describe('MeshEditor', () => {
   });
 
   it('numbers the patches when there is more than one', () => {
-    const two: MeshGradientFill = { ...MESH, patches: [MESH.patches[0], MESH.patches[0]] };
+    const two: MeshGradientPaint = { ...MESH, patches: [MESH.patches[0], MESH.patches[0]] };
     render(<MeshEditor value={two} onChange={() => {}} />);
     expect(screen.getByLabelText('Patch 2 corner 1')).toBeInTheDocument();
   });

@@ -12,7 +12,7 @@
  * editing, selection and styling work on them without a special case.
  */
 import {
-  commandFill,
+  commandPaint,
   commandStroke,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
@@ -56,7 +56,7 @@ export function diagramShape<TPose>(
       const box = geometry.getBounds(pose);
       const declaredFill = d.fill === undefined ? opts.defaultFill : d.fill;
       const declaredStroke = d.stroke === undefined ? opts.defaultStroke : d.stroke;
-      const fill = declaredFill && commandFill(declaredFill, box);
+      const fill = declaredFill && commandPaint(declaredFill, box);
       const stroke = declaredStroke && commandStroke(declaredStroke, box);
       return [{
         kind: 'path',

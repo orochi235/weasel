@@ -73,13 +73,13 @@ export interface GradStop {
 
 /** The gradient members of `Paint`, as one type. What a gradient editor
  *  edits, and what the gradient-specific helpers accept. */
-export type GradientFill = Extract<
+export type GradientPaint = Extract<
   Paint,
   { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }
 >;
 
-/** `GradientFill['kind']` — the three gradient discriminants on their own. */
-export type GradientKind = GradientFill['kind'];
+/** `GradientPaint['kind']` — the three gradient discriminants on their own. */
+export type GradientKind = GradientPaint['kind'];
 
 /**
  * Where a stroke sits relative to the geometric edge it strokes.

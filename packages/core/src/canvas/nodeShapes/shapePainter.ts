@@ -8,7 +8,7 @@ import type { Paint, Stroke } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
-import { commandFill, commandStroke } from '@weasel-js/renderer';
+import { commandPaint, commandStroke } from '@weasel-js/renderer';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { PAINT_SLOT } from './memo';
 import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';
@@ -33,7 +33,7 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const d = node.data as { shape: string; fill?: Paint | null; stroke?: Stroke | null; sides?: number; points?: number };
     const path = pathForShape(d, pose);
     const declaredFill = resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL);
-    const shapeFill = declaredFill && commandFill(declaredFill, pose);
+    const shapeFill = declaredFill && commandPaint(declaredFill, pose);
     const strokeSpec = resolveNodeStroke(d.stroke);
     const stroke = strokeSpec && commandStroke(strokeSpec, pose);
     return [{

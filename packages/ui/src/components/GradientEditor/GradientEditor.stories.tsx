@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { Paint, GradientFill } from '@weasel-js/core';
+import type { Paint, GradientPaint } from '@weasel-js/core';
 import { seedMeshPatch } from '@weasel-js/core/mesh';
 import { GradientEditor } from './GradientEditor';
 
@@ -29,8 +29,8 @@ function Live({ initial, ...args }: LiveArgs & { initial: Paint }) {
   return <GradientEditor {...args} value={value} onInput={setValue} onChange={setValue} />;
 }
 
-const linear = (stops: GradientFill['stops']): GradientFill =>
-  ({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops }) as GradientFill;
+const linear = (stops: GradientPaint['stops']): GradientPaint =>
+  ({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops }) as GradientPaint;
 
 /** Stops at 0 and 1 sit flush with the ends of the track, and every stop sits
  *  over its own offset in the painted ramp — the 30% stop over the ramp's 30%

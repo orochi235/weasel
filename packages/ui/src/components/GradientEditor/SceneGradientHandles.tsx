@@ -2,17 +2,17 @@ import { type ReactElement, type RefObject } from 'react';
 import {
   fillInPoseFrame,
   fillToBoundsFrame,
-  isGradientFill,
+  isGradientPaint,
   useNodeOverlayFrame,
   useOngoingAction,
   type Paint,
-  type GradientFill,
+  type GradientPaint,
   type RectPose,
   type Scene,
   type Stroke,
   type View,
 } from '@weasel-js/core';
-import { isMeshGradientFill, type MeshGradientFill } from '@weasel-js/core/mesh';
+import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { MeshHandles } from '../MeshEditor/MeshHandles';
 import { GradientHandles } from './GradientHandles';
 
@@ -90,11 +90,11 @@ export function SceneGradientHandles<
     onCancel: () => edit.cancel(),
   };
 
-  if (isGradientFill(paint)) {
-    return <GradientHandles value={fillInPoseFrame(paint, frame.box) as GradientFill} {...common} />;
+  if (isGradientPaint(paint)) {
+    return <GradientHandles value={fillInPoseFrame(paint, frame.box) as GradientPaint} {...common} />;
   }
-  if (isMeshGradientFill(paint)) {
-    const resolved = fillInPoseFrame(paint, frame.box) as unknown as MeshGradientFill;
+  if (isMeshGradientPaint(paint)) {
+    const resolved = fillInPoseFrame(paint, frame.box) as unknown as MeshGradientPaint;
     // Still in the bounds frame means the mesh kind has not loaded, and
     // handles drawn now would sit in fractions of the box.
     if (resolved.units === 'bounds') return null;

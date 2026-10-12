@@ -9,7 +9,7 @@
 
 import { resolveColor, rgbaToHex } from './color';
 import { lerpColorArray, type ColorSpace } from './colorSpaces';
-import type { Paint, GradStop, GradientFill, GradientKind } from './paint';
+import type { Paint, GradStop, GradientPaint, GradientKind } from './paint';
 
 /** A stop with its color already parsed to 0..1 RGBA. */
 export interface ResolvedGradientStop {
@@ -18,9 +18,9 @@ export interface ResolvedGradientStop {
 }
 
 /** Narrow a paint to the gradient members of `Paint`. The three
- *  discriminants are the union's own definition of `GradientFill`, so every
+ *  discriminants are the union's own definition of `GradientPaint`, so every
  *  consumer that reaches for gradient geometry starts here. */
-export function isGradientFill(fill: Paint | null | undefined): fill is GradientFill {
+export function isGradientPaint(fill: Paint | null | undefined): fill is GradientPaint {
   if (fill == null) return false;
   return fill.kind === 'linear-gradient'
     || fill.kind === 'radial-gradient'
@@ -109,7 +109,7 @@ export function sampleGradientStops(
  * resets the segment's length. An editor that wants a kind switch to be
  * undoable should keep the original paint rather than converting back.
  */
-export function withGradientKind(fill: GradientFill, kind: GradientKind): GradientFill {
+export function withGradientKind(fill: GradientPaint, kind: GradientKind): GradientPaint {
   if (fill.kind === kind) return fill;
   const common = {
     stops: fill.stops, units: fill.units,
@@ -141,7 +141,7 @@ export function withGradientKind(fill: GradientFill, kind: GradientKind): Gradie
  * For a linear gradient the center is the segment midpoint, the radius is
  * half its length, and the angle is its direction.
  */
-export function gradientGeometry(fill: GradientFill): {
+export function gradientGeometry(fill: GradientPaint): {
   center: { x: number; y: number };
   radius: number;
   angle: number;
@@ -169,7 +169,7 @@ export function gradientGeometry(fill: GradientFill): {
  * across the box, so a pixel-flavored default there does not mean "a bit under
  * half the box", it means fifty times it.
  */
-function conicArmRadius(units: GradientFill['units']): number {
+function conicArmRadius(units: GradientPaint['units']): number {
   return units === 'bounds' ? 0.5 : 50;
 }
 
@@ -183,8 +183,8 @@ export function gradientForBounds(
   kind: GradientKind,
   bounds: { x: number; y: number; width: number; height: number },
   stops: GradStop[],
-  units?: GradientFill['units'],
-): GradientFill {
+  units?: GradientPaint['units'],
+): GradientPaint {
   const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
   if (kind === 'linear-gradient') {
     return {

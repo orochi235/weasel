@@ -9,7 +9,7 @@
  * the renderer in one frame.
  */
 
-import { isPatternPaint, type GradientFill, type Paint, type PatternPaint, type PosedFill } from '@weasel-js/paint';
+import { isPatternPaint, type GradientPaint, type Paint, type PatternPaint, type PosedPaint } from '@weasel-js/paint';
 import { getPaintDrawKind } from './paintKinds';
 
 /** The box a `'bounds'` gradient's normalized geometry is mapped onto —
@@ -32,15 +32,15 @@ export interface FillPoseBox {
  * so a non-square box cannot make it the ellipse SVG would — this keeps the
  * radius proportionate instead.
  */
-export function fillInPoseFrame(fill: Paint, box: FillPoseBox): PosedFill {
+export function fillInPoseFrame(fill: Paint, box: FillPoseBox): PosedPaint {
   if (!isBuiltinKind(fill)) {
-    return (getPaintDrawKind(fill.kind)?.inPoseFrame?.(fill, box) ?? fill) as PosedFill;
+    return (getPaintDrawKind(fill.kind)?.inPoseFrame?.(fill, box) ?? fill) as PosedPaint;
   }
   if (isBoundsPattern(fill)) {
     const o = fill.origin ?? { x: 0, y: 0 };
     return { ...fill, origin: { x: box.x + o.x, y: box.y + o.y }, units: 'local' as const };
   }
-  if (!isBoundsGradient(fill)) return fill as PosedFill;
+  if (!isBoundsGradient(fill)) return fill as PosedPaint;
 
   const toBox = (p: { x: number; y: number }): { x: number; y: number } => ({
     x: box.x + p.x * box.width,
@@ -108,7 +108,7 @@ function isBoundsPattern(
 }
 
 /** True when this fill is a gradient declaring box-relative geometry. */
-function isBoundsGradient(fill: Paint | undefined): fill is GradientFill {
+function isBoundsGradient(fill: Paint | undefined): fill is GradientPaint {
   if (fill === undefined) return false;
   const kind = fill.kind;
   if (kind !== 'linear-gradient' && kind !== 'radial-gradient' && kind !== 'conic-gradient') {

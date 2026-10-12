@@ -42,7 +42,7 @@ export type { MeshPatch, MeshPoint } from './surface';
  * directions at once, so an sRGB blend's muddy middle covers area rather than
  * a line.
  */
-export interface MeshGradientFill {
+export interface MeshGradientPaint {
   kind: 'mesh-gradient';
   patches: MeshPatch[];
   units?: PaintUnits;
@@ -54,19 +54,19 @@ export interface MeshGradientFill {
 export const MESH_GRADIENT_KIND = 'mesh-gradient';
 
 /** A mesh paint, narrowed. */
-export function isMeshGradientFill(fill: Paint | null | undefined): fill is Paint & MeshGradientFill {
+export function isMeshGradientPaint(fill: Paint | null | undefined): fill is Paint & MeshGradientPaint {
   // `Paint`'s discriminant stays closed over the built-in kinds — see
   // `asPaint` — so a registered kind reads it widened.
   return fill != null && (fill.kind as string | undefined) === MESH_GRADIENT_KIND;
 }
 
-function asMesh(fill: Paint): MeshGradientFill {
-  return fill as unknown as MeshGradientFill;
+function asMesh(fill: Paint): MeshGradientPaint {
+  return fill as unknown as MeshGradientPaint;
 }
 
 // `asPaint`'s cast, kept local: this module must import nothing from the
 // registry, whose state the lazy kind's self-contained copy would duplicate.
-function asFill(mesh: MeshGradientFill): Paint {
+function asFill(mesh: MeshGradientPaint): Paint {
   return mesh as unknown as Paint;
 }
 
@@ -91,7 +91,7 @@ function shifted(color: string, dL: number, cScale: number, dHueDeg: number): st
 /** A one-patch square covering the unit box, its four corners four readings of
  *  `color` — a mesh seeded from a solid has to show *something* curved, or
  *  switching kind looks like nothing happened. */
-export function seedMeshPatch(color: string): MeshGradientFill {
+export function seedMeshPatch(color: string): MeshGradientPaint {
   const corners: MeshPoint[] = [
     { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 },
   ];
@@ -142,7 +142,7 @@ function bandPatch(x0: number, x1: number, left: string, right: string): MeshPat
  * does, so a horizontal gradient survives the switch unchanged. A zero-width
  * gap is a hard break and gets no band.
  */
-export function meshFromStops(stops: readonly GradStop[]): MeshGradientFill {
+export function meshFromStops(stops: readonly GradStop[]): MeshGradientPaint {
   const sorted = [...stops].sort((a, b) => a.offset - b.offset);
   if (sorted.length === 1) sorted.push({ offset: 1, color: sorted[0].color });
   if (sorted.length === 0) return seedMeshPatch('#000000ff');
@@ -160,7 +160,7 @@ export function meshFromStops(stops: readonly GradStop[]): MeshGradientFill {
  * placed by its `x` across the mesh's horizontal extent. The inverse of
  * `meshFromStops`, and for any other mesh the ramp across its top.
  */
-export function meshStops(mesh: MeshGradientFill): GradStop[] {
+export function meshStops(mesh: MeshGradientPaint): GradStop[] {
   const valid = mesh.patches.filter(isValidPatch);
   if (valid.length === 0) return [];
   const xs = valid.flatMap((p) => [p.points[0].x, p.points[3].x]);
@@ -178,7 +178,7 @@ export function meshStops(mesh: MeshGradientFill): GradStop[] {
 }
 
 /** Every patch mapped through `move`. */
-function mapPatches(mesh: MeshGradientFill, move: (p: MeshPoint) => MeshPoint): MeshPatch[] {
+function mapPatches(mesh: MeshGradientPaint, move: (p: MeshPoint) => MeshPoint): MeshPatch[] {
   return mesh.patches.map((patch) => ({ ...patch, points: patch.points.map(move) }));
 }
 
@@ -217,13 +217,13 @@ function cacheFor(ctx: PaintBindContext): MeshBakeCache<WebGLTexture> {
 }
 
 /** Device pixels the larger side of `box` covers when drawn in `units`. */
-function devicePixelsOf(ctx: PaintBindContext, mesh: MeshGradientFill, box: MeshBox): number {
+function devicePixelsOf(ctx: PaintBindContext, mesh: MeshGradientPaint, box: MeshBox): number {
   const m = ctx.spaceToDevice(mesh.units);
   if (!m) return Number.NaN;
   return Math.max(box.width * Math.hypot(m[0], m[1]), box.height * Math.hypot(m[3], m[4]));
 }
 
-function bakeFor(ctx: PaintBindContext, mesh: MeshGradientFill): CachedBake | null {
+function bakeFor(ctx: PaintBindContext, mesh: MeshGradientPaint): CachedBake | null {
   const box = meshBounds(mesh.patches);
   if (!box) return null;
   const size = meshBakeSize(devicePixelsOf(ctx, mesh, box), ctx.maxTextureSize);
@@ -329,7 +329,7 @@ export const meshDrawKind: PaintDrawKind = {
  * `@weasel-js/svg` puts the paint fallback color beside the reference, so a
  * foreign renderer paints flat instead of nothing.
  */
-export function meshGradientXml(id: string, mesh: MeshGradientFill): string {
+export function meshGradientXml(id: string, mesh: MeshGradientPaint): string {
   const P = 'wzl';
   const units = mesh.units === 'bounds' ? 'objectBoundingBox' : 'userSpaceOnUse';
   const space = mesh.interpolate && mesh.interpolate !== 'rgb'

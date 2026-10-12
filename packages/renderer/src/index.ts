@@ -19,9 +19,8 @@ export type {
   ImageDrawCommand,
   SpritesDrawCommand,
   ShaderDrawCommand,
-  SolidPaint,
 } from './DrawCommand';
-export type { CommandFill, CommandStroke, CommandPaintUnits, PosedFill, SolidFill } from '@weasel-js/paint';
+export type { CommandPaint, CommandStroke, CommandPaintUnits, PosedPaint, SolidPaint } from '@weasel-js/paint';
 export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, viewToMat3, type GlMat3, type View as ViewLike } from '@weasel-js/geom';
@@ -83,7 +82,7 @@ export {
   type PaintResources,
 } from './paintKinds';
 export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
-export { commandFill, commandStroke } from './patterns/commandPaint';
+export { commandPaint, commandStroke } from './patterns/commandPaint';
 export { createTilePattern, type TilePatternOpts } from './patterns';
 export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns } from './textCommand';

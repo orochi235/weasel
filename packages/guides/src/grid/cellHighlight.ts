@@ -7,7 +7,7 @@
 import {
   type DrawCommand,
   type RenderLayer,
-  type CommandFill,
+  type CommandPaint,
   resolveUnit,
   type UnitSystem,
   type UnitValue,
@@ -24,10 +24,10 @@ export interface CellHighlightLayerOpts {
   /** Cell to highlight, or `null` to skip drawing. */
   getCell: () => { col: number; row: number } | null;
   /** Paint strategy for the filled cell. Defaults to a soft green. */
-  fill?: CommandFill;
+  fill?: CommandPaint;
 }
 
-const DEFAULT_FILL: CommandFill = { kind: 'solid', color: 'rgba(127,176,105,0.15)' };
+const DEFAULT_FILL: CommandPaint = { kind: 'solid', color: 'rgba(127,176,105,0.15)' };
 
 /** Build a `RenderLayer` that fills a single grid cell — typically a snap-target preview. */
 export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLayer<unknown> {

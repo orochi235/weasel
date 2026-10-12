@@ -3,7 +3,7 @@ import {
   getAlpha01,
   inferredNodeProperties,
   inferredNodeRouting,
-  isGradientFill,
+  isGradientPaint,
   resolveTextStyle,
   isSolidPaint,
   isTilePaint,
@@ -79,7 +79,7 @@ export function layerSwatch(data: WeaselDrawData): string | undefined {
  *  whole ramp than either end does, and a tile pattern shows the color it
  *  draws with. A `texture` paint has no color to report. */
 export function paintChipColor(fill: Paint): string | undefined {
-  if (isGradientFill(fill)) return sampleGradientStops(fill.stops, 0.5);
+  if (isGradientPaint(fill)) return sampleGradientStops(fill.stops, 0.5);
   if (fill.kind === undefined || fill.kind === 'solid') return fill.color;
   if (isTilePaint(fill)) return fill.color;
   return undefined;

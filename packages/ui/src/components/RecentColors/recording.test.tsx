@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ReactNode } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { GradientFill } from '@weasel-js/core';
+import type { GradientPaint } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
 import { FillStrokeSwatch } from '../FillStrokeSwatch';
 import { GradientEditor } from '../GradientEditor';
@@ -22,7 +22,7 @@ function pick(label: string, value: string): void {
   fireEvent.blur(input);
 }
 
-const LINEAR: GradientFill = {
+const LINEAR: GradientPaint = {
   kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 100, y: 0 },

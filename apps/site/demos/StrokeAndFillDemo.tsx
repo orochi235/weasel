@@ -17,7 +17,7 @@ import {
   useSelection,
   type DragSample,
   type Paint,
-  type GradientFill,
+  type GradientPaint,
   type Path,
   type Scene,
   type Stroke,
@@ -54,7 +54,7 @@ const RIBBON = asNodeId('ribbon');
 /** `units: 'bounds'` stores the geometry as fractions of the node's own box,
  *  so the paint survives pan, zoom and resize — and is the frame
  *  `SceneGradientHandles` resolves against. */
-const GRADIENT: GradientFill = {
+const GRADIENT: GradientPaint = {
   kind: 'linear-gradient',
   from: { x: 0.1, y: 0.1 },
   to: { x: 0.9, y: 0.9 },

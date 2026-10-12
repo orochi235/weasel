@@ -5,12 +5,12 @@
 
 export {
   MESH_GRADIENT_KIND,
-  isMeshGradientFill,
+  isMeshGradientPaint,
   meshFromStops,
   meshGradientXml,
   meshStops,
   seedMeshPatch,
-  type MeshGradientFill,
+  type MeshGradientPaint,
 } from './meshPaint';
 export {
   evalPatch,

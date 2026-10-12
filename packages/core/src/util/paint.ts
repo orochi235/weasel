@@ -16,7 +16,7 @@ import {
   type CommandStroke,
   type Paint,
   type Palette,
-  type SolidFill,
+  type SolidPaint,
   type Stroke,
 } from '@weasel-js/paint';
 import { getAlpha01 } from './color';
@@ -64,7 +64,7 @@ export const GHOST_STROKE: string = cycleFill(0);
  * paint kind carries its alpha; leaving it in the hex too would multiply the
  * two in the renderer.
  */
-export function solid(color: string): SolidFill {
+export function solid(color: string): SolidPaint {
   const a = getAlpha01(color);
   const rgb = color.length === 9 && color.startsWith('#') ? color.slice(0, 7) : color;
   return a === 1 ? { color: rgb } : { color: rgb, opacity: a };
@@ -72,7 +72,7 @@ export function solid(color: string): SolidFill {
 
 /** A solid stroke of `color` at `width` world units. Authoring shorthand for
  *  `{ paint: solid(color), width }`. */
-export function strokeOf(color: string, width = 1): CommandStroke & { paint: SolidFill } {
+export function strokeOf(color: string, width = 1): CommandStroke & { paint: SolidPaint } {
   return { paint: solid(color), width };
 }
 

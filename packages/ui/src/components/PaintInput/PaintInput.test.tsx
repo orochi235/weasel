@@ -5,12 +5,12 @@ import {
   asPaint,
   registerPaintKind,
   type Paint,
-  type GradientFill,
+  type GradientPaint,
 } from '@weasel-js/core';
 import { seedMeshPatch } from '@weasel-js/core/mesh';
 import { PaintInput } from './PaintInput';
 
-const LINEAR: GradientFill = {
+const LINEAR: GradientPaint = {
   kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 0 },
@@ -93,7 +93,7 @@ describe('PaintInput', () => {
     rerender(<PaintInput subject="b" value={SOLID} onChange={onChange} />);
 
     clickKind('Linear');
-    const next = onChange.mock.calls.at(-1)?.[0] as GradientFill;
+    const next = onChange.mock.calls.at(-1)?.[0] as GradientPaint;
     expect(next.kind).toBe('linear-gradient');
     expect(next.stops[0].color).toBe('#336699ff');
   });
@@ -139,7 +139,7 @@ describe('PaintInput', () => {
     render(<Host initial={LINEAR} onCommit={onCommit} />);
 
     clickKind('Radial');
-    const next = onCommit.mock.calls.at(-1)?.[0] as GradientFill;
+    const next = onCommit.mock.calls.at(-1)?.[0] as GradientPaint;
     expect(next.kind).toBe('radial-gradient');
     expect(next.stops).toEqual(LINEAR.stops);
   });
@@ -157,7 +157,7 @@ describe('PaintInput', () => {
   it('prefers the memory over a gradient-to-gradient conversion', () => {
     // Radial carries no angle, so conic -> radial -> conic is the round trip
     // a conversion cannot survive. The memory is what restores the angle.
-    const CONIC: GradientFill = {
+    const CONIC: GradientPaint = {
       kind: 'conic-gradient',
       center: { x: 0.5, y: 0.5 },
       angle: 1.2,
@@ -169,10 +169,10 @@ describe('PaintInput', () => {
 
     clickKind('Radial');
     clickKind('Conic');
-    const back = onCommit.mock.calls.at(-1)?.[0] as GradientFill;
+    const back = onCommit.mock.calls.at(-1)?.[0] as GradientPaint;
     expect(back.kind).toBe('conic-gradient');
     // Converting radial -> conic would have flattened this to 0.
-    expect((back as Extract<GradientFill, { kind: 'conic-gradient' }>).angle).toBe(1.2);
+    expect((back as Extract<GradientPaint, { kind: 'conic-gradient' }>).angle).toBe(1.2);
   });
 
   it('offers None, and switching to it commits no paint at all', () => {
@@ -253,7 +253,7 @@ describe('PaintInput — a registered kind', () => {
       id: 'linear-gradient',
       label: 'Linear',
       seed: () => LINEAR,
-      colorOf: (paint) => (paint as GradientFill).stops?.[0]?.color,
+      colorOf: (paint) => (paint as GradientPaint).stops?.[0]?.color,
       Editor: () => <div data-testid="custom-linear" />,
     }));
 

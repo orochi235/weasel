@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath, type Path } from '@weasel-js/geom';
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
+import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import { ColorOverrideRegistry } from '@weasel-js/animator';
 
 // createPathLayer emits raw world-space PathDrawCommands. The viewToMat3
@@ -11,7 +11,7 @@ import { ColorOverrideRegistry } from '@weasel-js/animator';
 describe('createPathLayer', () => {
   it('emits one path command per visible node', () => {
     const path: Path = rectPath(0, 0, 10, 10);
-    const fill: CommandFill = { kind: 'solid', color: '#fff' };
+    const fill: CommandPaint = { kind: 'solid', color: '#fff' };
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
       getPath: () => path,

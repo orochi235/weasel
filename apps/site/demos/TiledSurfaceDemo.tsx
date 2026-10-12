@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
-  PathBuilder, SceneCanvas, WeaselProvider, commandFill, sceneFromJSON, useSelection,
+  PathBuilder, SceneCanvas, WeaselProvider, commandPaint, sceneFromJSON, useSelection,
 } from '@weasel-js/core';
 import type { Paint, Path, SceneCanvasApi, SerializedScene, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -125,7 +125,7 @@ function Pane({
                 // even-odd compound path that no pose shape can express.
                 drawOne: (node): DrawCommand[] => {
                   const pose = node.pose as Pose;
-                  const fill = commandFill(node.data.fill, pose);
+                  const fill = commandPaint(node.data.fill, pose);
                   return [{
                     kind: 'path',
                     path: node.data.ring

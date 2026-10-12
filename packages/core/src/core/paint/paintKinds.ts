@@ -12,9 +12,9 @@
  */
 
 import type {
-  ColorSpace, Paint, GradientFill, GradientKind, GradStop, TileKind, TilePaint,
+  ColorSpace, Paint, GradientPaint, GradientKind, GradStop, TileKind, TilePaint,
 } from '@weasel-js/paint';
-import { gradientForBounds, isGradientFill, isTilePaint, withGradientKind } from '@weasel-js/paint';
+import { gradientForBounds, isGradientPaint, isTilePaint, withGradientKind } from '@weasel-js/paint';
 import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
 import { _resetPaintDrawKindsForTests } from '@weasel-js/renderer/test-seams';
@@ -78,8 +78,8 @@ function gradientKind(id: GradientKind, label: string, icon: string): PaintKindE
     icon,
     // `bounds` units make the seed independent of the node's actual size.
     seed: (color) => gradientForBounds(id, UNIT_BOX, twoStopRamp(color), 'bounds'),
-    colorOf: (paint) => (paint as Partial<GradientFill>).stops?.[0]?.color,
-    stopsOf: (paint) => (paint as GradientFill).stops,
+    colorOf: (paint) => (paint as Partial<GradientPaint>).stops?.[0]?.color,
+    stopsOf: (paint) => (paint as GradientPaint).stops,
     fromStops: (stops) => gradientForBounds(id, UNIT_BOX, stops, 'bounds'),
   };
 }
@@ -217,7 +217,7 @@ export function switchGradientKind(paint: Paint, kind: PaintKind): Paint | undef
   const to = getPaintKind(kind);
   if (!from?.stopsOf || !to?.fromStops) return undefined;
   if (from.id === to.id) return paint;
-  if (isGradientFill(paint) && isGradientFill({ kind } as Paint)) {
+  if (isGradientPaint(paint) && isGradientPaint({ kind } as Paint)) {
     return withGradientKind(paint, kind as GradientKind);
   }
   const { interpolate, opacity } = paint as { interpolate?: ColorSpace; opacity?: number };

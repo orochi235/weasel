@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  isGradientFill,
+  isGradientPaint,
   sampleGradientStops,
   withGradientKind,
   gradientGeometry,
@@ -8,7 +8,7 @@ import {
 } from './gradient';
 import { srgbU8ToOklab, oklabToOklch } from './colorSpaces';
 import { resolveColor } from './color';
-import type { GradStop, GradientFill } from './paint';
+import type { GradStop, GradientPaint } from './paint';
 
 const BW: GradStop[] = [
   { offset: 0, color: '#000000' },
@@ -85,7 +85,7 @@ describe('gradientGeometry', () => {
 });
 
 describe('withGradientKind', () => {
-  const linear: GradientFill = {
+  const linear: GradientPaint = {
     kind: 'linear-gradient',
     from: { x: 0, y: 0 },
     to: { x: 100, y: 0 },
@@ -116,7 +116,7 @@ describe('withGradientKind', () => {
   });
 
   it('loses segment direction through radial, which stores no angle, but keeps center and length', () => {
-    const vertical: GradientFill = {
+    const vertical: GradientPaint = {
       kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 80 }, stops: BW,
     };
     const back = withGradientKind(withGradientKind(vertical, 'radial-gradient'), 'linear-gradient');
@@ -125,7 +125,7 @@ describe('withGradientKind', () => {
   });
 
   it('preserves direction and center through conic, which stores an angle but no length', () => {
-    const vertical: GradientFill = {
+    const vertical: GradientPaint = {
       kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 80 }, stops: BW,
     };
     const back = withGradientKind(withGradientKind(vertical, 'conic-gradient'), 'linear-gradient');
@@ -142,7 +142,7 @@ describe('withGradientKind', () => {
   });
 
   it('gives a conic gradient a usable arm, so conic → linear is not degenerate', () => {
-    const conic: GradientFill = {
+    const conic: GradientPaint = {
       kind: 'conic-gradient', center: { x: 10, y: 10 }, angle: 0, stops: BW,
     };
     const asLinear = withGradientKind(conic, 'linear-gradient');
@@ -181,7 +181,7 @@ describe('gradientForBounds', () => {
 });
 
 describe('conic conversions respect the unit system', () => {
-  const conicIn = (units: GradientFill['units']): GradientFill => ({
+  const conicIn = (units: GradientPaint['units']): GradientPaint => ({
     kind: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0, stops: BW, units,
   });
 
@@ -209,19 +209,19 @@ describe('conic conversions respect the unit system', () => {
   });
 });
 
-describe('isGradientFill', () => {
+describe('isGradientPaint', () => {
   const stops = [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }];
 
   it('accepts all three gradient kinds', () => {
-    expect(isGradientFill({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops })).toBe(true);
-    expect(isGradientFill({ kind: 'radial-gradient', center: { x: 0, y: 0 }, radius: 1, stops })).toBe(true);
-    expect(isGradientFill({ kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops })).toBe(true);
+    expect(isGradientPaint({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops })).toBe(true);
+    expect(isGradientPaint({ kind: 'radial-gradient', center: { x: 0, y: 0 }, radius: 1, stops })).toBe(true);
+    expect(isGradientPaint({ kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops })).toBe(true);
   });
 
   it('rejects everything else, absence included', () => {
-    expect(isGradientFill({ kind: 'solid', color: '#f00' })).toBe(false);
-    expect(isGradientFill(null)).toBe(false);
-    expect(isGradientFill(undefined)).toBe(false);
+    expect(isGradientPaint({ kind: 'solid', color: '#f00' })).toBe(false);
+    expect(isGradientPaint(null)).toBe(false);
+    expect(isGradientPaint(undefined)).toBe(false);
   });
 });
 
@@ -266,7 +266,7 @@ describe('interpolation space', () => {
   });
 
   it('survives a kind switch, which rebuilds the paint field by field', () => {
-    const linear: GradientFill = {
+    const linear: GradientPaint = {
       kind: 'linear-gradient',
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: RB, units: 'bounds', interpolate: 'oklch',

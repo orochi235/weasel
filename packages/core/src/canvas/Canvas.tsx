@@ -86,7 +86,7 @@ import type { ResolvedCursor } from '@weasel-js/cursor';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
-import { commandFill } from '@weasel-js/renderer';
+import { commandPaint } from '@weasel-js/renderer';
 
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { CursorCoordsHud } from './CursorCoordsHud';
@@ -937,7 +937,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       space: 'screen',
       draw: (_data, _view, dims) => {
         const rect = { x: 0, y: 0, width: dims.width, height: dims.height };
-        const fill = commandFill(backgroundFill, rect);
+        const fill = commandPaint(backgroundFill, rect);
         return fill ? [{ kind: 'path', path: { kind: 'rect', ...rect }, fill }] : [];
       },
     };

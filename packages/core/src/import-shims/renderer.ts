@@ -41,7 +41,7 @@ export {
   vignette,
 } from '@weasel-js/renderer';
 export type {
-  CommandFill,
+  CommandPaint,
   CommandPaintUnits,
   CommandStroke,
   CullRect,
@@ -53,7 +53,7 @@ export type {
   ImageMinification,
   Mesh,
   PathDrawCommand,
-  PosedFill,
+  PosedPaint,
   ProgramSource,
   RegisterFontOptions,
   RenderOptions,
@@ -64,7 +64,6 @@ export type {
   ShaderDrawCommand,
   ShaderProgramHandle,
   ShaderUniform,
-  SolidFill,
   SolidPaint,
   SpriteSheet,
   SpritesDrawCommand,

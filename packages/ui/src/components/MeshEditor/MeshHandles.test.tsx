@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { meshFromStops, seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
+import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { handleHalf } from '../../handles';
 import { MeshHandles } from './MeshHandles';
 
@@ -17,7 +17,7 @@ beforeAll(() => {
 });
 
 /** The seed patch scaled onto a 100-unit square, in a local frame. */
-function local(mesh: MeshGradientFill, size = 100): MeshGradientFill {
+function local(mesh: MeshGradientPaint, size = 100): MeshGradientPaint {
   return {
     ...mesh,
     units: 'local',
@@ -33,7 +33,7 @@ function drag(label: string, to: { x: number; y: number }): void {
   fireEvent.pointerUp(handle, { clientX: to.x, clientY: to.y, pointerId: 1 });
 }
 
-function mount(value: MeshGradientFill, onChange = vi.fn(), onInput = vi.fn()) {
+function mount(value: MeshGradientPaint, onChange = vi.fn(), onInput = vi.fn()) {
   render(
     <MeshHandles value={value} toScreen={toScreen} toLocal={toLocal}
       onInput={onInput} onChange={onChange} width={400} height={300} />,
@@ -72,7 +72,7 @@ describe('MeshHandles', () => {
 
     expect(onInput).toHaveBeenCalled();
     expect(onChange).toHaveBeenCalledTimes(1);
-    const next = onChange.mock.calls[0][0] as unknown as MeshGradientFill;
+    const next = onChange.mock.calls[0][0] as unknown as MeshGradientPaint;
     expect(next.kind).toBe('mesh-gradient');
     expect(next.patches[0].points[6]).toEqual({ x: 120, y: 120 });
   });
@@ -88,7 +88,7 @@ describe('MeshHandles', () => {
   it('nudges a handle with the arrow keys', () => {
     const { onChange } = mount(local(seedMeshPatch('#3366ccff')));
     fireEvent.keyDown(screen.getByLabelText('Patch 1 corner 1'), { key: 'ArrowRight', shiftKey: true });
-    const next = onChange.mock.calls[0][0] as unknown as MeshGradientFill;
+    const next = onChange.mock.calls[0][0] as unknown as MeshGradientPaint;
     // Ten overlay pixels at 2× is five mesh units.
     expect(next.patches[0].points[0]).toEqual({ x: 5, y: 0 });
   });

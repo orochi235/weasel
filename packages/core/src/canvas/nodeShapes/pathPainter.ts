@@ -6,7 +6,7 @@ import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { pathInPoseFrame } from '@weasel-js/geom';
-import { commandFill, commandStroke } from '@weasel-js/renderer';
+import { commandPaint, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
@@ -39,7 +39,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     // The pose is baked into `projected` rather than emitted as a transform,
     // so a box-relative gradient has to be baked onto the same box here or
     // it would arrive in the renderer referring to a frame that never exists.
-    const fill = declared && commandFill(declared, pose);
+    const fill = declared && commandPaint(declared, pose);
     const stroke = strokeSpec && commandStroke(strokeSpec, pose);
     const cmd: DrawCommand = {
       kind: 'path',

@@ -23,7 +23,7 @@ import type {
   Affordance,
   AffordanceRegion,
   ChromeState,
-  CommandFill,
+  CommandPaint,
   CommandStroke,
   CursorSpec,
   PoseDescriptor,
@@ -79,7 +79,7 @@ export interface PortAffordanceOptions<TPose> {
   /** Screen-pixel side of the painted square. Default 7. Omit `paint` entirely
    *  by passing 0 — a port the consumer draws itself is still hittable. */
   sizePx?: number;
-  fill?: CommandFill;
+  fill?: CommandPaint;
   stroke?: CommandStroke;
   cursor?: CursorSpec;
   /** Default `'exclusive'` on pointer gestures: a drag from a port is a

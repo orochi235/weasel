@@ -1,12 +1,12 @@
 /** @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer. */
 export type { TextureHandle } from './texture';
-export type { CommandFill, CommandPaintUnits, CommandStroke, PosedFill, SolidFill } from './commandPaint';
+export type { CommandPaint, CommandPaintUnits, CommandStroke, PosedPaint, SolidPaint } from './commandPaint';
 export { isSolidPaint } from './commandPaint';
 export type {
   Paint,
   PaintUnits,
   GradStop,
-  GradientFill,
+  GradientPaint,
   GradientKind,
   StrokeAlign,
   KitMarkerKey,
@@ -79,7 +79,7 @@ export {
   rgbaToHex,
 } from './color';
 export {
-  isGradientFill,
+  isGradientPaint,
   resolveGradientStops,
   sampleResolvedStops,
   sampleGradientStops,
