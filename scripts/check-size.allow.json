@@ -217,7 +217,7 @@
     "longestFunction": 165
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
-    "longestFunction": 182
+    "longestFunction": 178
   },
   "packages/labkit/src/annotations/ExportMenu.tsx": {
     "longestFunction": 126
@@ -277,7 +277,7 @@
     "longestFunction": 237
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
-    "longestFunction": 263
+    "longestFunction": 260
   },
   "packages/labkit/src/trial/Trial.tsx": {
     "lines": 669,
