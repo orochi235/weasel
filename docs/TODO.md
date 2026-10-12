@@ -874,7 +874,6 @@ built 2026-10-11. What that left:
 - **(P3) A hold over some of a rig's joints** — a hold covers every joint, so an arm solved by
   IK at full strength cannot sit beside clips holding the body; the rig demo samples the body
   from a track to work around it.
-- **(P3) A coast that a `tweenPose` interrupts drops out with a visible jump.**
 - **(P3) An offset canceled under a full-weight hold loses what it had left on screen** — it
   commits its remaining travel, but the hold stands in front of the committed value.
 - **(P3) `<SceneCanvas>` does not expose the camera's `viewTarget`** — its camera animator is

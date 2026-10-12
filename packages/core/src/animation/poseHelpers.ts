@@ -47,7 +47,8 @@ export interface SpringPoseOptions<TPose> {
   onDone?: () => void;
 }
 
-const cancelKeyFor = (id: string): string => `pose:${id}`;
+/** The cancel key every move of node `id`'s pose shares. */
+export const poseKey = (id: string): string => `pose:${id}`;
 
 function recordTransformOp<TPose>(
   adapter: PoseAnimationAdapter<TPose>,
@@ -84,7 +85,7 @@ export function tweenPose<TPose>(
 ): AnimationHandle {
   const recordOp = opts.recordOp ?? true;
   const label = opts.opLabel ?? 'animate';
-  const cancelKey = cancelKeyFor(opts.id);
+  const cancelKey = poseKey(opts.id);
   const target = adapter.poseTarget?.(opts.id, opts.geometry);
   if (target) {
     const committed = stateOf(target).get();
@@ -134,7 +135,7 @@ export function springPose<TPose>(
 ): AnimationHandle {
   const recordOp = opts.recordOp ?? true;
   const label = opts.opLabel ?? 'animate';
-  const cancelKey = cancelKeyFor(opts.id);
+  const cancelKey = poseKey(opts.id);
   const target = adapter.poseTarget?.(opts.id, opts.geometry);
   if (target) {
     // Read ahead of the op: the spring starts from the pose on screen, wherever that commit

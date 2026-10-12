@@ -64,7 +64,9 @@ const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
  * has, each node coasts on its own pose target, so anything else animating it
  * adds; over one without, the coast is shown through `previewPoses`, or
  * written through `setPose` each frame. Dragging a node
- * again while it coasts stops the coast and records it where it stands. A node
+ * again while it coasts stops the coast and records it where it stands. A
+ * `tweenPose` or `springPose` of a coasting node ends its coast, and what the
+ * coast had traveled springs to nothing under the new move. A node
  * something else moves or deletes mid-coast, an undo included, drops out of
  * the coast where that left it, and nothing is recorded for it.
  */
