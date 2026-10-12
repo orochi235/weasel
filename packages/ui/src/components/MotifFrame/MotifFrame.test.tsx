@@ -1,3 +1,4 @@
+import { cssColorLiteral } from '@weasel-js/paint';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MotifFrame } from './MotifFrame';
@@ -40,7 +41,7 @@ describe('MotifFrame', () => {
 
   it('carries stance and tone on the root, as every stanced surface does', () => {
     render(
-      <MotifFrame title="Zone" motif={stereo()} stance="scope" tone="#2b6cb0">
+      <MotifFrame title="Zone" motif={stereo()} stance="scope" tone={cssColorLiteral('#2b6cb0')}>
         x
       </MotifFrame>,
     );
@@ -51,7 +52,7 @@ describe('MotifFrame', () => {
 
   it("writes a plaque's mix on its root, beside the tone", () => {
     render(
-      <MotifFrame title="View" motif={plaque({ mix: 40 })} tone="#c53030">
+      <MotifFrame title="View" motif={plaque({ mix: 40 })} tone={cssColorLiteral('#c53030')}>
         x
       </MotifFrame>,
     );
