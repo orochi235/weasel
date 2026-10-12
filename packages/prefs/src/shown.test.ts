@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkPrefCondition } from './condition';
+import { checkPrefCondition } from './conditionCheck';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf } from './schema';
