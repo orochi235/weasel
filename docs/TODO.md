@@ -1247,6 +1247,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   face whose license allows it. And nobody has seen either theme: the first screenshot will find
   what computed values cannot.
 
+- **(P2) The built-in theme's status colors fall short of 4.5:1 where they are painted as text.**
+  `--wzl-danger` is a field's error text (`field.module.css`) and, with `--wzl-warning` and
+  `--wzl-success`, a link `Button`'s status color. Computed from the resolved tokens, in light
+  mode danger reads at 3.85:1 on `surface` and 2.58:1 on `surface-sunken`, warning at 2.23:1 and
+  1.50:1, and success at 2.11:1 and 1.42:1; in dark mode danger reads at 4.15:1 on `surface` and
+  3.56:1 on `surface-raised`. The light code colors fall short on `surface-sunken` too (3.09:1 to
+  4.37:1), and `--wzl-fg-on-accent` on `--wzl-accent-hover` reads at 2.54:1 dark and 4.10:1
+  light. `gateFailures(theme, definition, lookup, TEXT_PAIRINGS)` in
+  `packages/theme/src/testing/themeGate.ts` lists every one; the built-in theme is held only to
+  `BUILT_IN_PAIRINGS`, which it passes. Not fixed where it was found because the fix repaints
+  the default theme, which every visual baseline records.
+
 - **(P1.5) `@weasel-js/ui` names colors as raw CSS strings, not `ColorSource`.** `@weasel-js/paint`'s
   `ColorSource` (a literal, a `ColorRef` like `{ ref: 'accent' }`, or a function, resolved by
   `resolvePaletteColor`) is the kit's color type, but only core's renderer uses it. In the ui package
