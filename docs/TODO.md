@@ -1657,7 +1657,9 @@ only story runner in the repo.
   pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
   either side. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
-  others on one node. Not measured: whether the timeouts follow the node's load, and whether
+  others on one node. Since 2026-10-11 the `browser` project polls for 5 s, not the default 1 s, which
+  three of these failures had outlasted (`PrefsRail.marks` twice, `compoundRows`); a 15 s test
+  timeout or a stalled Playwright action is untouched by that. Not measured: whether the timeouts follow the node's load, and whether
   running `browser` on its own, or with fewer workers, ends them.
 
 - **(P2) A docs minisite per package: overview, guides, and demos.** The API reference half is
