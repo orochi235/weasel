@@ -406,13 +406,6 @@
   display: contents;
 }
 
-/* It has no box to mark, so a selected one marks its rows. */
-.fragment[data-selected] > [data-pref-path] {
-  background: color-mix(in oklab, var(--wzl-secondary) 12%, transparent);
-  outline: 1px solid var(--wzl-secondary);
-  outline-offset: 3px;
-}
-
 /* `as: 'panel'`: the one group in a pane that draws its own box. */
 .panePanel {
   display: flex;

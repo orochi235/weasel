@@ -1202,14 +1202,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   a tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
   so the press arrives as the focus it causes, which carries no modifier.
 
-- **(P3) Loose ends beside the selection mark, none checked further.** The fragment mark in
-  `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
-  `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
-  react-aria tab also carries. That is a drawn bug too: `PrefsForm` puts `data-pref-path` on each
-  tab, so the open tab of a run always wears the selection mark, with nothing selected (seen in a
-  browser: `outline-style: solid`). `SelectionPanel` names its tab with `data-pref-rail` instead
-  and marks the tab's panel.
-
 - **(P3) Loose ends beside a number's unit as data.** A unit is data (`PrefLinearUnit`) or code,
   read through `resolvePrefUnit`. `PrefSchemaEditor` edits a number's default, and its auto value,
   in the stored unit and not the one the leaf shows. The text tool's percent unit

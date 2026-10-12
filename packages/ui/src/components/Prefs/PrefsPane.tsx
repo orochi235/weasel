@@ -4,7 +4,7 @@ import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
-import { pathWithin, selectionAttrs, useHeldTab } from './selection';
+import { pathWithin, selectionAttrs, tabAttrs, useHeldTab } from './selection';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsPane}. */
@@ -92,7 +92,7 @@ export function paneChildren(
       // carries the mark a hidden fragment has no box for.
       const inner = marksHidden(ctx.hidden, p) ? { ...ctx, hidden: new Set([...ctx.hidden!].filter((at) => at !== p)) } : ctx;
       out.push(
-        <div key={key} className={s.fragment} {...selectionAttrs(p, { selected: ctx.selected })}>
+        <div key={key} className={s.fragment} data-pref-fragment="" {...selectionAttrs(p, { selected: ctx.selected })}>
           {paneChildren(inner, Object.entries(child.children), p, depth, box)}
         </div>,
       );
@@ -217,8 +217,7 @@ function PaneTabs({ ctx, tabs, depth, box }: {
       tabs={tabs.map(([p, g]) => ({
         id: p,
         name: g.name,
-        // The open tab's mark is its panel's, so a selection is drawn once.
-        attrs: selectionAttrs(p, p === open ? { hidden: ctx.hidden } : ctx),
+        attrs: tabAttrs(p, ctx, p === open),
         panelAttrs: selectionAttrs(p, ctx),
         content: (
           <>
