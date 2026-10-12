@@ -11,27 +11,39 @@ export interface LayerStackState<TLayer extends string> {
   layerIndex: Map<TLayer, number>;
 }
 
-/** Fill `state` with the declared system layers, and answer with the reads
- *  and the rebuild the rest of the scene uses. Throws on a duplicate id. */
+/** A declared system layer as the stack holds it. */
+export function systemLayerRecord<TLayer extends string>(
+  spec: UseSceneOptions<unknown, TLayer, unknown>['systemLayers'][number],
+): LayerRecord<TLayer> {
+  return {
+    kind: 'system',
+    id: spec.id,
+    visible: spec.visible ?? true,
+    locked: spec.locked ?? false,
+    ...(spec.parallax ? { parallax: spec.parallax } : {}),
+  };
+}
+
+/** The reads over `state`'s layers the rest of the scene uses, and the two
+ *  ways the stack is rebuilt. It starts empty; `reset` fills it. */
 export function createLayerStack<TLayer extends string>(
   state: LayerStackState<TLayer>,
   /** Called whenever the layer order changes. */
   invalidateOrder: () => void,
-  systemLayers: UseSceneOptions<unknown, TLayer, unknown>['systemLayers'],
 ) {
-  for (let i = 0; i < systemLayers.length; i++) {
-    const spec = systemLayers[i];
-    if (state.layerIndex.has(spec.id)) {
-      throw new Error(`useScene: duplicate system layer id "${spec.id}"`);
+  /** Replace the whole stack with `records`, in order. Throws on a duplicate
+   *  id, leaving the stack holding the records before it. */
+  function reset(records: readonly LayerRecord<TLayer>[]): void {
+    state.layers.length = 0;
+    state.layerIndex.clear();
+    invalidateOrder();
+    for (const record of records) {
+      if (state.layerIndex.has(record.id)) {
+        throw new Error(`Scene: duplicate ${record.kind} layer id "${record.id}"`);
+      }
+      state.layerIndex.set(record.id, state.layers.length);
+      state.layers.push(record);
     }
-    state.layers.push({
-      kind: 'system',
-      id: spec.id,
-      visible: spec.visible ?? true,
-      locked: spec.locked ?? false,
-      ...(spec.parallax ? { parallax: spec.parallax } : {}),
-    });
-    state.layerIndex.set(spec.id, i);
   }
 
   function requireLayerIndex(layer: TLayer): number {
@@ -75,7 +87,7 @@ export function createLayerStack<TLayer extends string>(
     }
   }
 
-  return { requireLayerIndex, rebuildLayerIndex, assertSubtreeLayer };
+  return { reset, requireLayerIndex, rebuildLayerIndex, assertSubtreeLayer };
 }
 
 /** What the layer edits read of the scene, and what they record through. */

@@ -74,8 +74,8 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/scene.ts": {
-    "lines": 738,
-    "longestFunction": 647
+    "lines": 719,
+    "longestFunction": 622
   },
   "packages/core/src/core/scene/types.ts": {
     "lines": 670

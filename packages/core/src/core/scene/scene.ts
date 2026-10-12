@@ -26,7 +26,7 @@ import { createSceneSelection } from './sceneSelection';
 import { createAppliedLog } from './appliedLog';
 import { createStaleReplay, SceneMembershipError } from './staleReplay';
 import { statedFields } from './statedFields';
-import { createLayerEdits, createLayerStack } from './layerStack';
+import { createLayerEdits, createLayerStack, systemLayerRecord } from './layerStack';
 import { registerKitOps, type RemoveSnapshot, type SetLayoutPayload } from './kitOps';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
@@ -63,9 +63,20 @@ const defaultGenerateId = (): NodeId =>
 export function createScene<TData, TLayer extends string, TPose = import('./composePose').RectPose>(
   options: UseSceneOptions<TData, TLayer, TPose>,
 ): Scene<TData, TLayer, TPose> {
-  if (!options.systemLayers || options.systemLayers.length === 0) {
-    throw new Error('useScene: systemLayers must declare at least one layer');
-  }
+  return buildScene(options, (options.systemLayers ?? []).map(systemLayerRecord), () => options.initial);
+}
+
+type SceneConfig<TData, TLayer extends string, TPose> =
+  Omit<UseSceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial'>;
+
+/** A scene holding `layers`, and the nodes `initialNodes` answers with once
+ *  it is handed the registry their functions resolve against. */
+function buildScene<TData, TLayer extends string, TPose>(
+  options: SceneConfig<TData, TLayer, TPose>,
+  layers: readonly LayerRecord<TLayer>[],
+  initialNodes: (registry: SceneRegistry<TPose, TData, TLayer>) => readonly AddNodeSpec<TData, TLayer, TPose>[] | undefined,
+): Scene<TData, TLayer, TPose> {
+  if (layers.length === 0) throw new Error('Scene: systemLayers must declare at least one layer');
 
   // ── State ──────────────────────────────────────────────────────────────
   const state: SceneState<TData, TLayer, TPose> = {
@@ -119,8 +130,9 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     patchNodeFunctions,
   } = store;
 
-  const { requireLayerIndex, rebuildLayerIndex, assertSubtreeLayer } =
-    createLayerStack(state, invalidateOrder, options.systemLayers);
+  const layerStack = createLayerStack(state, invalidateOrder);
+  layerStack.reset(layers);
+  const { requireLayerIndex, rebuildLayerIndex, assertSubtreeLayer } = layerStack;
 
   const generateId = options.generateId ?? defaultGenerateId;
 
@@ -322,6 +334,46 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     }, () => true)));
   }
 
+  /** Check that `spec` can be placed, and answer with the `kit:add` payload
+   *  that places it. Throws on an id collision, an unknown or locked layer,
+   *  a parent that is not a container or is locked, and a layer below the
+   *  parent's. */
+  function addPayload(spec: AddNodeSpec<TData, TLayer, TPose>) {
+    const id = spec.id ?? generateId();
+    if (state.nodes.has(id)) throw new SceneMembershipError(`Scene: id collision on "${id}"`);
+    requireLayerIndex(spec.layer);
+    refuseLockedLayer(spec.layer, 'add to');
+    const parent = spec.parent ?? null;
+    if (parent !== null) {
+      const p = requireNode(parent);
+      if (p.kind !== 'container') {
+        throw new Error(`Scene: parent "${parent}" is not a container`);
+      }
+      assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
+      refuseLocked(parent, 'add under');
+    }
+    return {
+      id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
+      parent, index: spec.index ?? siblingsOf(parent).length,
+      ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
+      ...statedFields(spec),
+      ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
+    };
+  }
+
+  /** Place nodes as the document a scene starts from, or is loaded with:
+   *  nothing is recorded, and no lock refuses. Specs list parents before
+   *  children, the order `toJSON()` emits. */
+  function construct(specs: readonly AddNodeSpec<TData, TLayer, TPose>[]): void {
+    withLocksLifted(() => {
+      for (const spec of specs) {
+        const payload = addPayload(spec);
+        runOp('kit:add', payload);
+        patchNodeFunctions(spec, payload.id, null);
+      }
+    });
+  }
+
   const layerEdits = createLayerEdits<TData, TLayer, TPose>({
     layers: state.layers,
     layerIndex: state.layerIndex,
@@ -374,32 +426,13 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     composition: options.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
 
     add(spec) {
-      const id = spec.id ?? generateId();
-      if (state.nodes.has(id)) throw new SceneMembershipError(`Scene: id collision on "${id}"`);
-      requireLayerIndex(spec.layer);
-      refuseLockedLayer(spec.layer, 'add to');
-      const parent = spec.parent ?? null;
-      if (parent !== null) {
-        const p = requireNode(parent);
-        if (p.kind !== 'container') {
-          throw new Error(`Scene: parent "${parent}" is not a container`);
-        }
-        assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
-        refuseLocked(parent, 'add under');
-      }
-      return edit(`add ${spec.kind}`, parent !== null, () => {
-        const index = spec.index ?? siblingsOf(parent).length;
-        noteArrival(id, parent, null);
-        const payload = {
-          id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
-          parent, index,
-          ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-          ...statedFields(spec),
-          ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
-        };
-        record('kit:add', payload, `add ${spec.kind}`);
-        patchNodeFunctions(spec, id, payload);
-        return id;
+      const payload = addPayload(spec);
+      const label = `add ${spec.kind}`;
+      return edit(label, payload.parent !== null, () => {
+        noteArrival(payload.id, payload.parent, null);
+        record('kit:add', payload, label);
+        patchNodeFunctions(spec, payload.id, payload);
+        return payload.id;
       });
     },
 
@@ -637,25 +670,13 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       }
       // Ephemeral, and every id is a new node after this.
       overrides.clearAll();
-      // Reset node + layer state.
       dependents.clear();
       childDerived.clear();
       state.nodes.clear();
       state.roots.length = 0;
-      state.layers.length = 0;
-      state.layerIndex.clear();
-      invalidateOrder();
-      for (let i = 0; i < json.systemLayers.length; i++) {
-        const spec = json.systemLayers[i];
-        if (state.layerIndex.has(spec.id)) {
-          throw new Error(`Scene.loadState: duplicate system layer id "${spec.id}"`);
-        }
-        state.layers.push(layerFromSerialized(spec));
-        state.layerIndex.set(spec.id, i);
-      }
+      layerStack.reset(json.systemLayers.map(layerFromSerialized));
       history.clear();
-      // Rebuild nodes (bypass the log, exactly like construction).
-      applyConstructionSpecs(specs);
+      construct(specs);
       selection.replace(selection.get().filter((id) => state.nodes.has(id)));
       notify();
     },
@@ -664,44 +685,9 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     getVersion: notifier.version,
   };
 
-  /** Insert nodes without writing to the undo log — used by construction
-   *  (`options.initial`) and by `loadState`. Specs must list parents before
-   *  children (the order `toJSON()` emits). Throws on id collision, unknown
-   *  layer, non-container parent, or cross-layer subtree. */
-  function applyConstructionSpecs(specs: readonly AddNodeSpec<TData, TLayer, TPose>[]): void {
-    for (const spec of specs) {
-      // Bypass the log: we want construction to start with empty history.
-      const id = spec.id ?? generateId();
-      if (state.nodes.has(id)) {
-        throw new Error(`Scene: id collision on "${id}"`);
-      }
-      requireLayerIndex(spec.layer);
-      const parent = spec.parent ?? null;
-      if (parent !== null) {
-        const p = requireNode(parent);
-        if (p.kind !== 'container') {
-          throw new Error(`Scene: parent "${parent}" is not a container`);
-        }
-        assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
-      }
-      const sibs = siblingsOf(parent);
-      const index = spec.index ?? sibs.length;
-      runOp('kit:add', {
-        id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
-        parent, index,
-        ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-        ...statedFields(spec),
-      });
-      // No `kit:add` reaches history here, so nothing replays one. A restore
-      // after `remove` comes from `kit:remove`'s revert, which clones the
-      // whole node and carries every field along.
-      patchNodeFunctions(spec, id, null);
-    }
-  }
-
-  // Apply initial nodes (not undoable — they're part of the construction).
-  if (options.initial) {
-    applyConstructionSpecs(options.initial);
+  const initial = initialNodes(registry);
+  if (initial) {
+    construct(initial);
     notify();
   }
 
@@ -712,7 +698,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
  *  Function fields (e.g., `clipFromPose`) are resolved by string key via the
  *  registry passed in `options`. Throws on unknown version, unknown registry
  *  keys, or invalid scene shape (cross-layer subtrees, unknown layer ids).
- *  Loaded scenes start with empty history — undo/redo is NOT serialized. */
+ *  The scene starts with empty history. */
 export function sceneFromJSON<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
   options: {
@@ -725,14 +711,9 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     layoutFrame?: UseSceneOptions<TData, TLayer, TPose>['layoutFrame'];
   } = {},
 ): Scene<TData, TLayer, TPose> {
-  const registry = options.registry ?? {};
-  // Built empty and then loaded, so the snapshot's layer stack is rebuilt by
-  // the one reader that knows how — `createScene` mints system layers only.
-  const scene = createScene<TData, TLayer, TPose>({
-    ...options,
-    systemLayers: json.systemLayers.map((l) => ({ id: l.id })),
-    registry,
-  });
-  scene.loadState(json);
-  return scene;
+  return buildScene(
+    options,
+    json.systemLayers.map(layerFromSerialized),
+    (registry) => specsFromSerialized(json, registry),
+  );
 }
