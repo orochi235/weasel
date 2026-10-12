@@ -59,9 +59,10 @@ export type InsertNodeFactory = (
  * The paint a kit-built shape is inserted with. `kind` is the shape being
  * built and `seq` counts this canvas's inserts from 1. A key left out stays
  * off the node, so its painter's default applies; `null` is "none". A pencil
- * trail too short to fit is built as a rect and asks as one. `fillRule` is
- * the rule a path that carries one is built with, where the kit's own is
- * nonzero; a rect or an ellipse has none to set.
+ * trail too short to fit is built as a rect and asks as one. A line and an
+ * open pen path are inserted unfilled: a fill given to either is dropped.
+ * `fillRule` is the rule a path that carries one is built with, where the
+ * kit's own is nonzero; a rect or an ellipse has none to set.
  *
  * It paints only the shapes the kit builds: an `InsertNodeFactory` owns its
  * node's whole `data`. See `SceneCanvas`'s `insertPaint` prop.
@@ -83,12 +84,12 @@ function withFillRule(data: unknown, rule: PathFillRule | undefined): unknown {
 }
 
 /** The default {@link InsertPaint}: the next color of the kit palette, as a
- *  fill on a closed shape, a fill and a stroke on a line or a pen path, and a
- *  stroke alone on a pencil trail. */
+ *  fill on a closed shape, a fill and a stroke on a pen path, and a stroke
+ *  alone on a line or a pencil trail. */
 export const paletteInsertPaint: InsertPaint = (kind, seq) => {
   const color = cycleFill(seq);
-  if (kind === 'pencil') return { stroke: strokeOf(color, 2) };
-  if (kind === 'line' || kind === 'path') return { fill: solid(color), stroke: strokeOf(color, 2) };
+  if (kind === 'line' || kind === 'pencil') return { stroke: strokeOf(color, 2) };
+  if (kind === 'path') return { fill: solid(color), stroke: strokeOf(color, 2) };
   return { fill: solid(color) };
 };
 
@@ -144,7 +145,7 @@ export function useInsertDepSource(
 
         switch (geom.kind) {
           case 'line':
-            data = { path: linePath(geom.a, geom.b), ...painted() };
+            data = { path: linePath(geom.a, geom.b), ...painted(), fill: null };
             break;
           case 'polygon':
             data = {

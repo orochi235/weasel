@@ -68,7 +68,9 @@ export interface BooleansAdapter {
    * node that source's parent, or the kit's reorder cannot find it there.
    * `paint` is passed when that source's stroke went into the geometry, and
    * the node must wear it as given: wearing the source's stroke again would
-   * draw it twice. Without `paint`, give it that source's paint.
+   * draw it twice. Without `paint`, give it that source's paint. The kit never
+   * reads a node's `data`: anything else the result should keep of its source,
+   * a name say, is the adapter's to copy from `sourceId`.
    */
   createPathNode(path: Path, producedBy: BooleanOp, sourceId: NodeId, paint?: PathPaint): { id: string };
   /**

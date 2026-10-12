@@ -13,7 +13,7 @@ import {
   type SelectionApi,
   type TextNodeSource,
 } from '@weasel-js/core';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { carriedData, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 
 export type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 
@@ -59,12 +59,10 @@ export function drawBooleansAdapter(
     },
     createPathNode: (path, _op, sourceId, paint) => {
       // Mint convention: pose = boundsOfPath(path); geometry lives in data.path.
-      // Booleans, slice (sliceCommit.ts), and release-compound (onReleaseCompound)
-      // all follow this same convention — the data payload that varies per site
-      // is too context-specific (style inheritance source) to share a helper.
-      // The result wears the paint of the source it stands in for.
+      // The result continues the source it stands in for: that node's paint, and
+      // whatever else it carried.
       const source = scene.get(sourceId);
-      const template = source?.kind === 'leaf' ? source.data : undefined;
+      const template = source?.data;
       const b = boundsOfPath(path);
       // Ids restart with the session, and a reloaded document keeps the last
       // session's.
@@ -75,12 +73,15 @@ export function drawBooleansAdapter(
         kind: 'leaf',
         layer: 'default',
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-        data: paint ? { path, ...paint } : {
+        data: {
+          ...carriedData(template),
           path,
-          fill: template?.fill !== undefined ? template.fill : DEFAULT_SHAPE_FILL,
-          ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
+          ...(paint ?? {
+            fill: template?.fill !== undefined ? template.fill : DEFAULT_SHAPE_FILL,
+            ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
+          }),
         },
-        parent: scene.get(sourceId)?.parent ?? null,
+        parent: source?.parent ?? null,
       };
       return node;
     },

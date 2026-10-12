@@ -1,6 +1,6 @@
 import { useLatest, useVisibleRaf, watchDevicePixelRatio } from '@weasel-js/core';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { composeRects, rectsEqual } from './composeRects';
+import { measureTiles, sameRects } from './measureTiles';
 import type { Box, Rect } from './rect';
 
 /** What a surface owner is handed once per animation frame. `rects` carries every
@@ -12,6 +12,10 @@ import type { Box, Rect } from './rect';
 export interface SurfaceFrame {
   dirty: ReadonlySet<string>;
   rects: ReadonlyMap<string, Rect>;
+  /** The part of each tile's rect its clipping ancestors leave showing: the
+   *  rect a tile confines its drawing and its input to, where `rects` is the
+   *  one it places them against. Zero-sized for a tile wholly out of sight. */
+  visible: ReadonlyMap<string, Rect>;
   dpr: number;
   size: { width: number; height: number };
   /** The tile geometry changed this frame — a tile moved, resized, appeared or
@@ -60,7 +64,7 @@ export interface SurfaceHandle {
 }
 
 /** What a tile's painter is handed: where it sits on the surface now, and the
- *  frame that dirtied it. */
+ *  frame that dirtied it, whose `visible` says how much of that shows. */
 export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void;
 
 /** Erase the whole shared buffer. Device pixels, because that is what a GL
@@ -84,6 +88,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const container = useRef<HTMLElement | null>(null);
   const tiles = useRef(new Map<string, HTMLElement>());
   const rects = useRef(new Map<string, Rect>());
+  const visible = useRef(new Map<string, Rect>());
   const dirty = useRef(new Set<string>());
   const painters = useRef(new Map<string, TilePainter>());
   const clears = useRef(new Map<string, SurfaceClear>());
@@ -101,17 +106,11 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const measure = useCallback((): boolean => {
     const el = container.current;
     if (!el) return false;
-    const boxes = new Map<string, Box>();
-    for (const [id, tile] of tiles.current) {
-      if (scopeEl.current && !scopeEl.current.contains(tile)) continue;
-      boxes.set(id, tile.getBoundingClientRect());
-    }
-    const next = composeRects(el.getBoundingClientRect(), boxes);
-    let changed = next.size !== rects.current.size;
-    for (const [id, rect] of next) {
-      if (!rectsEqual(rects.current.get(id), rect)) changed = true;
-    }
-    rects.current = next;
+    const next = measureTiles(el, tiles.current, scopeEl.current);
+    const changed =
+      !sameRects(rects.current, next.rects) || !sameRects(visible.current, next.visible);
+    rects.current = next.rects;
+    visible.current = next.visible;
     return changed;
   }, []);
 
@@ -153,6 +152,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       const frame: SurfaceFrame = {
         dirty: new Set(dirty.current),
         rects: new Map(rects.current),
+        visible: new Map(visible.current),
         dpr,
         size: { width: box.width, height: box.height },
         retiled,
@@ -235,6 +235,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
         tiles.current.delete(id);
         // Its rect goes now, so the next measurement cannot see that it left.
         if (rects.current.delete(id)) tileLeft.current = true;
+        visible.current.delete(id);
         dirty.current.delete(id);
       }
       needsMeasure.current = true;

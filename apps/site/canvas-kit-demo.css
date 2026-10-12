@@ -677,18 +677,8 @@ a:hover { text-decoration: underline; }
 /* Version badge. The 54px wordmark already fills the sidebar, so this sits on
    its own line beneath it rather than riding the baseline. */
 .ckd-sidebar-version {
-  display: block;
-  width: fit-content;
   margin: -2px 0 0 auto;
   transform: translate(-1px, -8px);
-  font-size: var(--wzl-font-size-md);
-  font-weight: 400;
-  letter-spacing: 0;
-  color: #fff;
-  background: #0a44e6;
-  border-radius: var(--wzl-radius-pill);
-  padding: 1px var(--wzl-space-4);
-  cursor: default;
 }
 
 /* ── Releases ─────────────────────────────────────────────────────── */

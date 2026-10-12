@@ -17,9 +17,19 @@
   padding: var(--wzl-space-lg);
 }
 
+.masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 .title {
   margin: 0;
   font-size: 72px;
+}
+
+.version {
+  margin-top: -4px;
 }
 
 .tagline {
