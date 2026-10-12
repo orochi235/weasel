@@ -12,7 +12,7 @@
  *   npm run test:fleet -- HEAD --node studio    # the rest goes to `onto test`
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,6 +25,7 @@ const commit = git('rev-parse', '--verify', `${named ? first : 'HEAD'}^{commit}`
 const ontoArgs = named ? rest : process.argv.slice(2);
 
 const main = git('worktree', 'list', '--porcelain').split('\n')[0].replace(/^worktree /, '');
+mkdirSync(join(main, '.worktrees'), { recursive: true });
 const tree = mkdtempSync(join(main, '.worktrees', 'fleet-'));
 git('worktree', 'add', '--detach', '--force', tree, commit);
 
