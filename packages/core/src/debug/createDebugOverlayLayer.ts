@@ -23,9 +23,7 @@ export interface CreateDebugOverlayLayerOpts {
   config: DebugConfig;
 }
 
-/** The overlay layer's id. It never appears in the sink's own layer records. */
 export const DEBUG_OVERLAY_ID = 'debug-overlay';
-
 const FPS_WINDOW = 60;
 
 /**
