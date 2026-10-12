@@ -1,3 +1,4 @@
+/** Options for {@link openFilePicker}. */
 export interface OpenFilePickerOptions {
   /** `<input accept>` filter, e.g. `'image/*'` or `'.csv,text/csv'`. */
   accept?: string;

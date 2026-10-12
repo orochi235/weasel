@@ -49,6 +49,7 @@ export type Matrix = Mat3;
 /** Core's type, re-exported. */
 export type { ScreenLength };
 
+/** The identity matrix. */
 export const IDENTITY_MATRIX: Matrix = identity();
 
 /**
@@ -244,6 +245,7 @@ export interface SvgImageNode {
   meta?: NamespaceMeta;
 }
 
+/** Any node of a parsed SVG tree. */
 export type SvgNode = SvgPathNode | SvgGroupNode | SvgTextNode | SvgImageNode;
 
 /** Options for {@link parseSvg}. */
