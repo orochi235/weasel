@@ -20,6 +20,10 @@ export interface ClockCapability {
   /** `false` for an instrument whose state is built up by running, so time can
    *  only move by running: no seek and no negative rate. Default `true`. */
   seekable?: boolean;
+  /** ms a frame when labkit runs the clock forward with nothing shown, which
+   *  is how a still of a clock that is not seekable reaches its time. Omitted,
+   *  such a still stays where the clock opens. */
+  step?: number;
   /** Makes the trial's blits mix, which then plays on this clock: its mix
    *  time is kept at `elapsed`, synced forward and sought back, so scrubbing
    *  and reverse reach it. Give it `history` with a `tape` reaching back over
@@ -96,6 +100,8 @@ export interface TrialClockHandle {
   clock: TrialClock;
   /** The mix `ClockCapability.mix` made, playing on `clock`. */
   mix: ClockedMix | null;
+  /** `ClockCapability.step`. */
+  step?: number | undefined;
   /** Back to where it opened, at the declared rate — the trial's Reset,
    *  allowed on a clock that is not seekable. */
   reset(): void;
@@ -138,6 +144,13 @@ const checkDuration = (duration: number): void => {
     throw new RangeError(`labkit: a clock's duration is positive, not ${duration}`);
 };
 
+const ratesOf = (spec: ClockCapability): number[] => {
+  const rates = [...(spec.rates ?? TRANSPORT_RATES)].sort((a, b) => a - b);
+  if (rates.length === 0 || rates.some((r) => !(r > 0) || !Number.isFinite(r)))
+    throw new RangeError('labkit: a clock offers at least one rate, each finite and positive');
+  return rates;
+};
+
 const checkRate = (rate: number, seekable: boolean): void => {
   if (!Number.isFinite(rate)) throw new RangeError(`labkit: a clock's rate is finite, not ${rate}`);
   if (rate < 0 && !seekable)
@@ -152,9 +165,7 @@ export function createTrialClock(spec: ClockCapability, start?: ClockPosition): 
   const seekable = spec.seekable ?? true;
   const openRate = spec.rate ?? 0;
   checkRate(openRate, seekable);
-  const rates = [...(spec.rates ?? TRANSPORT_RATES)].sort((a, b) => a - b);
-  if (rates.length === 0 || rates.some((r) => !(r > 0) || !Number.isFinite(r)))
-    throw new RangeError('labkit: a clock offers at least one rate, each finite and positive');
+  const rates = ratesOf(spec);
 
   let loop = spec.loop ?? false;
   let span = duration * passesOf(loop);
@@ -347,6 +358,7 @@ export function createTrialClock(spec: ClockCapability, start?: ClockPosition): 
   return {
     clock,
     mix,
+    step: spec.step,
     reset() {
       elapsed = opening();
       edge = false;

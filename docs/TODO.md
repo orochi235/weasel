@@ -866,11 +866,6 @@ is left:
   that release before it can merge. agnew still plays from its own transport, because its
   three.js view advances the pen itself and holds a finished curve before redrawing it;
   moving it onto a lab clock is an agnew library change, and the owner's call.
-- **(P3) A still of a clock that is not seekable is taken where the clock
-  opens.** `<Lab still={1200}>` warns and leaves it there, because such an
-  instrument's state is built by running. Holding it at a time means running
-  it forward off screen, at a step the instrument would have to name.
-
 ### labkit's deprecated snapshot undo
 
 - **(P3) Delete `packages/labkit/src/undo/undoStack.ts` and its exports**

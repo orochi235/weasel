@@ -236,7 +236,7 @@
     "longestFunction": 223
   },
   "packages/labkit/src/clock/trialClock.ts": {
-    "longestFunction": 217
+    "longestFunction": 216
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
     "longestFunction": 207
