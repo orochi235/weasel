@@ -1,4 +1,5 @@
 import type { BindingOpts, DragSample, InvocationCtx } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -90,7 +91,7 @@ export function beginInsert(
     current: new Map<string, unknown>([[GESTURE_KEY, origin]]),
     snap: null,
     modifiers: { ...ctx.modifiers },
-    pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+    pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
     // No node exists to adapt until commit; insert behaviors read points.

@@ -271,6 +271,19 @@ export interface ContextMenuEvent extends EventModifiers {
   bodyKind?: BodyKind;
 }
 
+/** A move of a pointer with no button pressed. Matched by `hover` specs. */
+export interface HoverEvent extends EventModifiers {
+  kind: 'hover';
+  /** World-space position of the pointer. */
+  x: number;
+  y: number;
+  clientX?: number;
+  clientY?: number;
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
+}
+
 /** A press held past the long-press threshold without moving. */
 export interface LongPressEvent extends EventModifiers {
   kind: 'longpress';
@@ -368,6 +381,7 @@ export type InputEvent =
   | PinchEvent
   | PointerDownEvent
   | PointerMoveEvent
+  | HoverEvent
   | PointerUpEvent
   | PointerCancelEvent
   | ClickEvent

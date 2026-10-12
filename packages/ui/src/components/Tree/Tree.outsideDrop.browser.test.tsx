@@ -15,7 +15,6 @@ const NODES: TreeNode[] = [
 
 interface Seen {
   dropped: (TreeDropTarget | null)[];
-  reported: TreeDropTarget | null;
 }
 
 /** A tree something outside it is dragged over: the pointer anywhere in the document is the drag. */
@@ -37,7 +36,7 @@ function Outside({ seen, refuse }: { seen: Seen; refuse?: boolean }) {
   }, [seen]);
   return (
     <Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} externalDrag={at} dropRef={drop}
-      canDrop={() => !refuse} onExternalTarget={(t) => { seen.reported = t; }} />
+      canDrop={() => !refuse} />
   );
 }
 
@@ -48,7 +47,7 @@ const middleOf = (name: string) => {
 };
 const send = (type: 'pointermove' | 'pointerup', at: { clientX: number; clientY: number }) =>
   document.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, ...at }));
-const fresh = (): Seen => ({ dropped: [], reported: null });
+const fresh = (): Seen => ({ dropped: [] });
 
 test('let go in the same task as the last move, an outside drag lands where the pointer is', () => {
   const seen = fresh();
@@ -71,16 +70,15 @@ test('let go a row on from the one the tree marked, an outside drag lands on the
   expect(seen.dropped).toEqual([{ parentId: null, index: 2 }]);
 });
 
-test('what the tree marks and reports for a point is what a drop at that point is told', () => {
+test('what the tree marks for a point is what a drop at that point is told', () => {
   const seen = fresh();
   render(<Outside seen={seen} />);
   const ex = rowOf('Ex').getBoundingClientRect();
   const high = { clientX: ex.left + 30, clientY: ex.top + 2 };
   act(() => { send('pointermove', high); });
   expect(screen.getByRole('treeitem', { name: 'Ex' })).toHaveAttribute('data-drop', 'before');
-  expect(seen.reported).toEqual({ parentId: 'g', index: 0 });
   send('pointerup', high);
-  expect(seen.dropped).toEqual([seen.reported]);
+  expect(seen.dropped).toEqual([{ parentId: 'g', index: 0 }]);
 });
 
 test('off the tree, or where canDrop refuses, a drop has no target', () => {

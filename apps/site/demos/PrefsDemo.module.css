@@ -9,7 +9,7 @@
 .side {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
 }
 
 .table {
@@ -21,23 +21,23 @@
 .table th {
   text-align: start;
   font-weight: 500;
-  color: var(--ckd-muted);
-  padding: 4px 8px;
+  color: var(--wzl-fg-muted);
+  padding: var(--wzl-space-2) var(--wzl-space-4);
 }
 
 .table td {
-  padding: 3px 8px;
+  padding: 3px var(--wzl-space-4);
 }
 
 .path {
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .unset {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }

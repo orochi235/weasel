@@ -1,41 +1,41 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   width: 860px;
 }
 
 .top {
   display: flex;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: flex-start;
 }
 
 .source {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   flex: 1;
   min-width: 0;
 }
 
 .presets {
   display: flex;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   flex-wrap: wrap;
 }
 
 .code {
   margin: 0;
-  padding: 8px;
+  padding: var(--wzl-space-4);
   box-sizing: border-box;
   width: 100%;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 11px;
   line-height: 1.45;
-  color: var(--ckd-text);
-  background: var(--ckd-surface);
-  border: 1px solid var(--ckd-border);
+  color: var(--wzl-fg);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border-strong);
   border-radius: 4px;
   white-space: pre;
   overflow: auto;
@@ -55,18 +55,18 @@ pre.code {
 .output {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .heading {
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .warnings {
   margin: 0;
   padding-inline-start: 18px;
   font-size: 12px;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }

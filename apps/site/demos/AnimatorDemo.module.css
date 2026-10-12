@@ -1,7 +1,7 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   width: 562px;
 }
 
@@ -14,11 +14,11 @@
 
 .kind {
   display: flex;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .kind dt {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .count {

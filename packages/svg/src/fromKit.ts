@@ -9,6 +9,9 @@ import {
   DEFAULT_SHAPE_FILL,
   fillInPoseFrame,
   pathInPoseFrame,
+  pathThroughPoseFrame,
+  poseFrameOf,
+  poseLinearOf,
   type FillStyle,
   type ImageNodeData,
   type Path,
@@ -21,6 +24,7 @@ import {
 import type {
   SvgGroupNode, SvgImageNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
+import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 
 /** A leaf's box: where it is drawn, and the frame its box-relative paints
  *  resolve against. */
@@ -30,7 +34,8 @@ export interface SvgKitPose {
   width: number;
   height: number;
   rotation?: number;
-  /** Read for text and image leaves only; a path leaf's is not written. */
+  /** Carried onto a text or image node. A path node has nowhere to hold it,
+   *  so a path leaf's is baked into its geometry with its rotation. */
   transform?: PoseLinear;
 }
 
@@ -117,7 +122,9 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
  * draws.
  *
  * A path with no `fill` takes `kit:path`'s fallback: the default shape fill
- * when it has no stroke, and no fill when it has one.
+ * when it has no stroke, and no fill when it has one. Under a pose `transform`
+ * its stroke width takes the uniform part of the stretch, as `parseSvg` reads
+ * a stroke under a skewed element.
  */
 export function svgLeafFromKit(
   data: SvgKitLeafData,
@@ -146,7 +153,12 @@ export function svgLeafFromKit(
     fill: svgPaintFromKit(fill, pose),
   };
   if (stroke) node.stroke = stroke;
-  if (pose.rotation) node.rotation = pose.rotation;
+  const frame = poseLinearOf(pose) && poseFrameOf(pose);
+  if (frame) {
+    node.path = pathThroughPoseFrame(node.path, pose);
+    node.fill = paintThroughMatrix(node.fill, frame);
+    if (stroke) node.stroke = strokeThroughMatrix(stroke, frame);
+  } else if (pose.rotation) node.rotation = pose.rotation;
   return node;
 }
 
@@ -199,6 +211,9 @@ export function svgNodesFromKit<TId extends string>(
         if (child) children.push(child);
       }
       const g: SvgGroupNode = { kind: 'group', children };
+      // What a container draws is what it clips to; see `SvgSceneDraft`.
+      const clip = (node.data as SvgKitLeafData | null)?.path;
+      if (clip) g.clip = pathThroughPoseFrame(pathInPoseFrame(clip, node.pose), node.pose);
       return group ? group(id, g) : g;
     }
     return leaf ? leaf(id, node) : svgLeafFromKit(node.data as SvgKitLeafData, node.pose);

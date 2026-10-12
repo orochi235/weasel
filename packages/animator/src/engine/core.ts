@@ -30,7 +30,7 @@ export interface AnimatorCore {
 }
 
 export function createAnimatorCore(host: CoreHost): AnimatorCore {
-  const clock: AnimatorClock = { frameT: null, timeScale: 1, paused: false };
+  const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false };
   const hub = new AnimatorEventHub();
   const codec = createCodec((on) => {
     const { row } = on as TargetState;
@@ -39,12 +39,14 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const afterTicks: (() => void)[] = [];
   const subscribers = new Set<() => void>();
   let nextId = 1;
+  const seedClock = (): void => { if (clock.frameT == null) clock.frameT = host.now(); };
 
   const reread = (): void => codec.refresh((on, queued) => targets.reread(on as TargetState, queued));
   const table = createTable({
     codec,
     hub,
-    startTime: () => clock.frameT ?? host.now(),
+    elapsed: () => clock.elapsed,
+    seedClock,
     showNow: (target) => targets.showNow(target),
     resting: () => targets.resting,
     framing: () => frame.framing(),
@@ -52,7 +54,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   });
   const targets = createTargetBook({
     stop: (s) => {
-      for (const a of [...table.animations.values()]) if (a.target === s) table.retire(a.id);
+      for (const a of [...table.on(s)]) table.retire(a.id);
     },
     reread: (s) => {
       codec.touch(s);
@@ -61,14 +63,15 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     columns: (table) => codec.columns(table),
   });
   const frame = createFrame({
-    clock, table, codec, targets, hub, afterTicks, subscribers, reread, requestFrame: host.requestFrame,
+    clock, table, codec, targets, hub, afterTicks, subscribers, reread,
+    requestFrame: host.requestFrame, tripwire: host.tripwire,
   });
 
   const ctx: AnimationContext = {
     codec,
     targets,
     nextId: () => nextId++,
-    seedClock: () => { if (clock.frameT == null) clock.frameT = host.now(); },
+    seedClock,
     register: table.register,
     has: (id) => table.animations.has(id),
     reportEnd: table.reportEnd,
@@ -83,8 +86,8 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     interrupt: (key, by) => table.cancelByKey(key, by as ActiveAnimation),
     velocityUnder: (key, target) => {
       let sum: number[] | null = null;
-      for (const a of table.animations.values()) {
-        if (a.cancelKey !== key || a.target !== target) continue;
+      for (const a of table.under(key)) {
+        if (a.target !== target) continue;
         const v = a.velocity?.() ?? codec.own(a.id)?.velocity;
         if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
       }
@@ -108,9 +111,8 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     api,
     tick: frame.tick,
     resumed() {
-      // An hour spent hidden is not an hour the animation ran: dropping each
-      // animation's last timestamp makes the resuming frame's `realDt` zero.
-      for (const anim of table.animations.values()) anim.lastRealNow = null;
+      // An hour spent hidden is not an hour the animation ran: dropping the last frame's
+      // timestamp makes the resuming frame advance the clock by nothing.
       clock.frameT = null;
     },
   };

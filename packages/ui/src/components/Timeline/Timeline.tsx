@@ -1,12 +1,12 @@
 import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import type { EasingSpec } from '@weasel-js/core';
+import { isEditableTarget } from '@weasel-js/gestures';
 import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
 import s from './Timeline.module.css';
 import { EasingPicker } from './EasingPicker';
 import { Lane } from './Lane';
 import { Ruler } from './Ruler';
-import { Transport, type TransportProps } from './Transport';
-import { isTextEntry } from '../BandEditor/track';
+import { PlayheadReadout, Transport, type TransportProps } from './Transport';
 import { buildLanes, trackAtPath } from './lanes';
 import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
@@ -44,7 +44,8 @@ export interface TimelineProps {
   onChange: (next: Track[]) => void;
   onScrub: (t: number) => void;
 
-  /** `false` hides the transport. */
+  /** The playback controls. Omitted, the row holds the time readout and the
+   *  Graph switch alone; `false` hides the row. */
   transport?: Omit<TransportProps, 'playhead' | 'duration'> | false;
   selection?: KeySelection | null;
   onSelect?: (sel: KeySelection | null) => void;
@@ -114,7 +115,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   const selectedTrack = selection ? trackAtPath(tracks, selection.trackPath) : undefined;
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    if (e.defaultPrevented || isTextEntry(e.target)) return;
+    if (e.defaultPrevented || isEditableTarget(e.target)) return;
     if (e.key === 'Escape' && segmentSelection) {
       e.preventDefault();
       setSegmentSelection(null);
@@ -148,15 +149,13 @@ export function Timeline(props: TimelineProps): ReactElement {
 
       {props.transport === false ? null : (
         <div className={s.transportRow}>
-          <Transport
-            {...(props.transport ?? {
-              paused: true, loop: false, rate: 1,
-              onPlay: () => {}, onPause: () => {},
-              onLoopChange: () => {}, onRateChange: () => {},
-            })}
-            playhead={playhead}
-            duration={duration}
-          />
+          {props.transport ? (
+            <Transport {...props.transport} playhead={playhead} duration={duration} />
+          ) : (
+            <div className={s.transport}>
+              <PlayheadReadout playhead={playhead} duration={duration} />
+            </div>
+          )}
           <button
             type="button"
             role="switch"

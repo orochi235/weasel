@@ -10,9 +10,8 @@ import {
   type LayoutSnap,
   type LayoutStrategy,
 } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import { cellAt } from '../snaps';
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 interface TileMeta {
   col: number;

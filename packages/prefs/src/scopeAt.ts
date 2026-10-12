@@ -24,10 +24,12 @@ export const PREF_ENTRY = '*';
 /** The scope a schema's root sits in. */
 export const PREF_SCOPE: PrefScope = Object.freeze({ shown: true, enabled: true });
 
-type Conditioned = { showIf?: PrefCondition; enableIf?: PrefCondition };
-
 /** The scope of `node`, which sits directly under something whose scope is `above`. */
-export function prefScopeUnder(above: PrefScope, node: Conditioned, holds: PrefConditionJudge): PrefScope {
+export function prefScopeUnder(
+  above: PrefScope,
+  node: { showIf?: PrefCondition; enableIf?: PrefCondition },
+  holds: PrefConditionJudge,
+): PrefScope {
   const shown = above.shown && (node.showIf === undefined || holds(node.showIf, 'showIf'));
   const enabled = above.enabled && (node.enableIf === undefined || holds(node.enableIf, 'enableIf'));
   return shown === above.shown && enabled === above.enabled ? above : { shown, enabled };

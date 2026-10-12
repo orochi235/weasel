@@ -1,3 +1,5 @@
+import { cssColorLiteral, type ColorSource } from '@weasel-js/paint';
+import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
@@ -18,7 +20,7 @@ import type { EffectModule } from '../bases/types';
  */
 export interface MetalEffectParams {
   /** Base metal color. Defaults to a neutral steel; pass e.g. `'#c8a657'` for brass. */
-  accent?: string;
+  accent?: ColorSource;
   /** 0 = matte, 1 = mirror. Multiplies the brightness of the equator, gloss,
    *  bezel, and rim simultaneously. */
   specularity?: number;
@@ -40,7 +42,7 @@ export interface MetalEffectParams {
 }
 
 const DEFAULTS: Required<MetalEffectParams> = {
-  accent: '#aab3bd',     // neutral steel
+  accent: cssColorLiteral('#aab3bd'), // neutral steel
   specularity: 0.6,
   equator: 50,
   equatorSpread: 8,
@@ -61,8 +63,10 @@ const Metal: EffectModule<MetalEffectParams> = {
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
+    const css = useColorCss();
     if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
     const cfg = { ...DEFAULTS, ...params };
+    const accent = css(cfg.accent);
     const spec = Math.max(0, Math.min(cfg.specularity, 1));
 
     // --- Bezel sample walk (same as Aqua: runs where ny < 0). ---
@@ -101,9 +105,7 @@ const Metal: EffectModule<MetalEffectParams> = {
       bezelPaths.push(d);
     }
 
-    const sx = 100 / boxW;
-    const sy = 100 / boxH;
-    const widthScale = Math.max(sx, sy);
+    const widthScale = Math.max(100 / boxW, 100 / boxH);
     const bezelWidthVb = cfg.bezelWidth * widthScale;
     const rimWidthVb = cfg.rimWidth * widthScale;
 
@@ -115,15 +117,15 @@ const Metal: EffectModule<MetalEffectParams> = {
     const equatorHi = Math.min(100, cfg.equator + cfg.equatorSpread);
     // At spec=0 the equator is just the accent; at spec=1 it's almost white.
     const equatorWhiteMix = 100 - Math.round(spec * 85);
-    const equatorColor = `color-mix(in srgb, ${cfg.accent} ${equatorWhiteMix}%, white)`;
-    const topDarkColor = `color-mix(in srgb, ${cfg.accent} ${cfg.topDarkness}%, black)`;
-    const baseDarkColor = `color-mix(in srgb, ${cfg.accent} ${cfg.baseDarkness}%, black)`;
+    const equatorColor = `color-mix(in srgb, ${accent} ${equatorWhiteMix}%, white)`;
+    const topDarkColor = `color-mix(in srgb, ${accent} ${cfg.topDarkness}%, black)`;
+    const baseDarkColor = `color-mix(in srgb, ${accent} ${cfg.baseDarkness}%, black)`;
     // Bright stops on either side of the peak collapse toward the peak as
     // specularity rises, sharpening the highlight.
     const upperBrightMix = 100 - Math.round(spec * 50);
     const lowerBrightMix = 100 - Math.round(spec * 30);
-    const upperBrightColor = `color-mix(in srgb, ${cfg.accent} ${upperBrightMix}%, white)`;
-    const lowerBrightColor = `color-mix(in srgb, ${cfg.accent} ${lowerBrightMix}%, white)`;
+    const upperBrightColor = `color-mix(in srgb, ${accent} ${upperBrightMix}%, white)`;
+    const lowerBrightColor = `color-mix(in srgb, ${accent} ${lowerBrightMix}%, white)`;
 
     const glossAlpha = cfg.glossAlphaTop * spec;
     const bezelAlpha = cfg.bezelAlpha * (0.4 + 0.6 * spec);

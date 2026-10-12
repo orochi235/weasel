@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { colorAt } from './colorList';
-import { ThemeProvider, useTheme, useTones } from './react';
+import { ThemeProvider, useColorCss, useTheme, useTones } from './react';
 import { defineTheme } from './theme';
 
 function Probe(): React.ReactElement {
@@ -81,5 +81,21 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
     expect(screen.getByTestId('t').textContent).toBe('#fff');
+  });
+
+  it('resolves a color source against the theme, the tones, and a palette prop', () => {
+    function Colors(): React.ReactElement {
+      const css = useColorCss();
+      const all = [css({ ref: 'accent' }), css({ ref: 'tone', index: 1 }), css({ ref: 'brand' }), css(undefined)];
+      return <span data-testid="c">{all.map(String).join(' ')}</span>;
+    }
+    const { rerender } = render(<Colors />);
+    expect(screen.getByTestId('c').textContent).toBe('var(--wzl-accent) var(--wzl-swatch-green) undefined undefined');
+    rerender(
+      <ThemeProvider tones={['#000', '#fff']} palette={{ entries: [{ name: 'brand', color: { space: 'srgb', coords: [1, 0, 0] } }] }}>
+        <Colors />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId('c').textContent).toBe('var(--wzl-accent) #fff #ff0000 undefined');
   });
 });

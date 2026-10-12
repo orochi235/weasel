@@ -158,11 +158,9 @@ function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): Ar
  * Standalone font bytes for one member of a collection or a `.dfont`.
  *
  * `postScriptName` selects the member; when it is absent or matches nothing,
- * the first member is returned. Falling back rather than failing is
- * deliberate — the name comes from `FontData.postscriptName`, and a browser
- * that reports it differently from the `name` table should degrade to "some
- * weight of the right family", not to no text at all. The caller sees which
- * it got via the returned `matched` flag.
+ * the first member is returned, `matched` says which happened, and `names`
+ * lists every member's PostScript name. A caller that needs the named face and
+ * no other, as `createOpenTypeParser` does, rejects on `matched: false`.
  *
  * Passing a single font through is a no-op, so this is safe to call on any
  * bytes.
@@ -170,34 +168,39 @@ function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): Ar
 export function sfntFromCollection(
   bytes: ArrayBuffer,
   postScriptName?: string,
-): { bytes: ArrayBuffer; matched: boolean } {
+): { bytes: ArrayBuffer; matched: boolean; names: readonly (string | null)[] } {
+  const members = membersOf(bytes);
+  if (!members) return { bytes, matched: true, names: [] };
+  const names = members.map((m) => m.name);
+  const at = postScriptName ? names.indexOf(postScriptName) : 0;
+  return { bytes: members[Math.max(at, 0)].bytes(), matched: at >= 0, names };
+}
+
+interface Member { name: string | null; bytes: () => ArrayBuffer }
+
+/** The fonts a container holds, or `null` when `bytes` is a single font. */
+function membersOf(bytes: ArrayBuffer): Member[] | null {
   if (isDataForkFont(bytes)) {
     const fonts = sfntResources(bytes);
     if (fonts.length === 0) throw new Error('Datafork TrueType (.dfont) holds no sfnt resource.');
-    const named = postScriptName
-      ? fonts.find((font) => {
-        const view = new DataView(font);
-        return postScriptNameAt(view, readTableDirectory(view, 0)) === postScriptName;
-      })
-      : undefined;
-    return { bytes: named ?? fonts[0], matched: named !== undefined || !postScriptName };
+    return fonts.map((font) => {
+      const view = new DataView(font);
+      return { name: postScriptNameAt(view, readTableDirectory(view, 0)), bytes: () => font };
+    });
   }
-  if (!isFontCollection(bytes)) return { bytes, matched: true };
+  if (!isFontCollection(bytes)) return null;
 
   const view = new DataView(bytes);
   const numFonts = view.getUint32(8);
   if (numFonts === 0) throw new Error('font collection contains no fonts');
 
-  const offsets: number[] = [];
-  for (let i = 0; i < numFonts; i++) offsets.push(view.getUint32(12 + i * 4));
-
-  if (postScriptName) {
-    for (const dirOffset of offsets) {
-      const records = readTableDirectory(view, dirOffset);
-      if (postScriptNameAt(view, records) === postScriptName) {
-        return { bytes: extractFont(bytes, view, dirOffset), matched: true };
-      }
-    }
+  const members: Member[] = [];
+  for (let i = 0; i < numFonts; i++) {
+    const dirOffset = view.getUint32(12 + i * 4);
+    members.push({
+      name: postScriptNameAt(view, readTableDirectory(view, dirOffset)),
+      bytes: () => extractFont(bytes, view, dirOffset),
+    });
   }
-  return { bytes: extractFont(bytes, view, offsets[0]), matched: !postScriptName };
+  return members;
 }

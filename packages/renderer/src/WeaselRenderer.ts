@@ -127,10 +127,10 @@ export interface WeaselRendererOptions {
   height: number;
   /** Device pixels per CSS pixel. */
   dpr: number;
-  /** MIN_FILTER strategy for image/pattern textures (`GLImageCache`).
-   *  Default `'linear'` — the existing screen behavior. The headless
-   *  `renderSceneToPixels` path passes `'mipmap'` for print-quality
-   *  minification. Explicitly passing `'linear'` is always valid. */
+  /** MIN_FILTER strategy for image textures (`GLImageCache`). Default
+   *  `'linear'`. `'mipmap'` builds mipmaps for every image at upload, as
+   *  the headless `renderSceneToPixels` path does; `'auto'` builds them
+   *  for an image the first time a frame draws it at half size or smaller. */
   imageMinification?: ImageMinification;
   /** Flatness tolerance for curve tessellation, in WORLD units (see
    *  `TessellateOptions.flattenTolerance`). When set, path fills are
@@ -337,12 +337,11 @@ export class WeaselRenderer {
   /**
    * Compile a consumer-registered shader program against this renderer's GL context.
    *
-   * Call once per renderer after the module-level `registerProgram()`.
-   * Throws `ShaderCompileError` if compilation fails.
+   * Optional: a program compiles on the first frame that draws with it. Call
+   * this after the module-level `registerProgram()` to pay for the compile
+   * before that frame, or to catch the `ShaderCompileError` it throws.
    *
    * In dev mode, calling again with the same handle replaces the compiled program.
-   *
-   * @experimental
    */
   registerProgram(handle: ShaderProgramHandle): void {
     // A disposed renderer must not compile programs into the cleared registry.
@@ -598,7 +597,7 @@ export class WeaselRenderer {
     // no VAO bound, no draw in flight. Deleting from the FinalizationRegistry
     // callback directly was racy and caused mid-draw crashes.
     this.meshCache.drainPendingDeletes();
-    this.imageCache.drainPendingDeletes();
+    this.imageCache.beginFrame();
     this.textureCache.sweep(textureRegistry);
     this.refreshPrograms();
     // New frame: refill the dynamic-glyph synchronous bake budget.

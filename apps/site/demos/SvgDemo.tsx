@@ -84,7 +84,7 @@ function sceneFromSvg(source: string) {
         kind: d.kind,
         layer: 'default' as const,
         pose: d.pose,
-        data: (d.kind === 'leaf' ? d.data : {}) as SvgKitLeafData,
+        data: d.data as SvgKitLeafData,
         ...(d.parentId ? { parent: d.parentId } : {}),
       })),
     },

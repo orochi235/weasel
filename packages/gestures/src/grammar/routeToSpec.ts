@@ -56,6 +56,7 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
       return fail(`${parsed.gesture} has no GestureSpec kind`);
     case 'click':
     case 'pointerDown':
+    case 'hover':
     case 'doubleClick':
     case 'drag':
     case 'contextMenu':

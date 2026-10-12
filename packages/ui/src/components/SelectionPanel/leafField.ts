@@ -1,3 +1,4 @@
+import { withCommitPolicy } from '../Prefs/commitPolicy';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import type { PropertyRenderContext } from './renderContext';
@@ -27,30 +28,13 @@ export function leafField(ctx: PropertyRenderContext, nested: boolean): Property
     },
     fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
   });
-  switch (field?.kind) {
-    case 'number':
-      // A typed number writes once it is entered, as text does; a slider
-      // writes as it moves.
-      return field.control === 'slider' ? field : { ...field, onInput: settledOnly };
-    case 'string':
-      // Settled values only: a live write per keystroke would be one undo
-      // step per character.
-      return { ...field, onInput: settledOnly };
-    case 'color':
-      // One write per gesture, not one per step of the picker.
-      return { ...field, onInput: settledOnly };
-    case 'paint':
-      // A nested paint writes one field of its parent, and no kit paint
-      // field is optional — `Stroke.paint` is required. Removing the
-      // whole parent is a different edit than repainting it, so the
-      // control must not offer one as the other.
-      return { ...field, allowNone: !nested };
-    default:
-      return field;
-  }
+  // A nested paint writes one field of its parent, and no kit paint field is
+  // optional — `Stroke.paint` is required. Removing the whole parent is a
+  // different edit than repainting it, so the control must not offer one as
+  // the other.
+  if (field?.kind === 'paint') return { ...field, allowNone: !nested };
+  return field && withCommitPolicy(field, 'panel');
 }
-
-const settledOnly = (): void => {};
 
 /** The dotted path of the leaf `key` beside the one at `path`. */
 function siblingPath(path: string, key: string): string {

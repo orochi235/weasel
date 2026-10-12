@@ -12,11 +12,13 @@ import type { TextureHandle } from './texture';
  *  a node's box, and a command has no node. */
 export type CommandPaintUnits = Exclude<GradientUnits, 'bounds'>;
 
-type InCommandUnits<F> = F extends { units?: GradientUnits }
+/** `F` with `'bounds'` units ruled out, where `F` is a paint that has units. */
+export type InCommandUnits<F> = F extends { units?: GradientUnits }
   ? Omit<F, 'units'> & { units?: CommandPaintUnits }
   : F;
 
-type WithPatternHandle<F> = F extends { fill: 'pattern' }
+/** `F` with its pattern a registered texture, where `F` is a pattern fill. */
+export type WithPatternHandle<F> = F extends { fill: 'pattern' }
   ? Omit<F, 'pattern'> & { pattern: TextureHandle }
   : F;
 

@@ -1,17 +1,15 @@
 import {
-  createHistory,
   createPointerStore,
   type History,
   PointerContextProvider,
-  useLatest,
   WeaselProvider,
 } from '@weasel-js/core';
 import {
+  memo,
   type ReactNode,
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -20,8 +18,6 @@ import {
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationTargets } from '../annotations/AnnotationTargets';
-import { annotationsFromJSON } from '../annotations/store';
-import type { AnnotationsApi, AnnotationTargetInfo } from '../annotations/types';
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
@@ -45,7 +41,7 @@ import type {
   RenderContext,
 } from '../instrument/types';
 import { useJob } from '../job/useJob';
-import { useLabContext } from '../lab/LabContext';
+import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
 import { useIsPresented } from '../lab/presentation';
 import { LayerList, type LayerListItem, moveLayers } from '../passthrough/weasel-ui';
@@ -54,11 +50,12 @@ import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
-import { stateOp } from '../undo/stateOp';
 import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 import { useKeptMarks } from './useKeptMarks';
+import { useTrialMarks } from './useTrialMarks';
+import { useTrialWrites } from './useTrialWrites';
 import { useViewPlacement } from './useViewPlacement';
 
 /** Props for `<Trial>`. */
@@ -73,8 +70,8 @@ export interface TrialProps {
 
 /** Renders one trial from the lab store: looks up its record and
  *  instrument, and mounts the instrument inside the trial chrome. */
-export function Trial({ id, chrome, suppress }: TrialProps) {
-  const lab = useLabContext();
+export const Trial = memo(function Trial({ id, chrome, suppress }: TrialProps) {
+  const lab = useLabCommands();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
   const instruments = useStore(storeCtx.store, (s) => s.instruments) ?? lab.instruments;
@@ -97,12 +94,11 @@ export function Trial({ id, chrome, suppress }: TrialProps) {
       instrument={instrument}
       instruments={instruments}
       store={storeCtx.store}
-      isLast={lab.trials.length <= 1}
       chrome={chrome}
       suppress={suppress}
     />
   );
-}
+});
 
 interface TrialRuntimeProps {
   /** The marks an instrument's own `AnnotationStorage` loaded. */
@@ -112,7 +108,6 @@ interface TrialRuntimeProps {
   /** The lab's instruments as the store holds them now. */
   instruments: InstrumentList;
   store: LabStore;
-  isLast: boolean;
   chrome?: readonly TrialContribution[];
   suppress?: readonly string[];
 }
@@ -123,13 +118,13 @@ function TrialRuntime({
   instrument,
   instruments,
   store,
-  isLast,
   chrome,
   suppress,
 }: TrialRuntimeProps) {
   const wheelSlot = useRef<CameraWheelSlot['current']>(null);
   const cameras = useContext(CameraRegistryContext);
   const trialId = record.id;
+  const isLast = useStore(store, (s) => s.trials.length <= 1);
   const publishCamera = useMemo(
     () => (cameras ? (camera: CameraView) => cameras.register(trialId, camera) : null),
     [cameras, trialId],
@@ -137,9 +132,7 @@ function TrialRuntime({
   const [pointer] = useState(createPointerStore);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
-  const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
-  const setTrialHistory = useStore(store, (s) => s.setTrialHistory);
   const updateTrialClock = useStore(store, (s) => s.updateTrialClock);
   const updateTrialAnnotations = useStore(store, (s) => s.updateTrialAnnotations);
   const labToolId = useStore(store, (s) => s.activeToolId);
@@ -199,25 +192,12 @@ function TrialRuntime({
   );
 
   const undoCap = instrument.undo;
-  const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? ['state.change']), [undoCap]);
-  const maxDepth = undoCap?.maxDepth ?? 50;
-
-  const snapshotIfNeeded = useCallback(
-    (event: string): void => {
-      if (!undoCap || !undoEvents.has(event)) return;
-      const current = store.getState().trials.find((w) => w.id === record.id);
-      if (!current) return;
-      let history = current.history;
-      if (!history) {
-        history = createHistory(null, { historyLimit: maxDepth });
-        setTrialHistory(record.id, history);
-      }
-      const read = () => store.getState().trials.find((w) => w.id === record.id)?.state;
-      const write = (state: unknown) => updateTrialState(record.id, state as never);
-      history.recordEntry([stateOp(structuredClone(current.state), read, write)], event);
-    },
-    [undoCap, undoEvents, maxDepth, store, record.id, setTrialHistory, updateTrialState],
-  );
+  const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
+    store,
+    trialId: record.id,
+    instrument,
+    schema,
+  });
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
@@ -234,110 +214,18 @@ function TrialRuntime({
     viewport: instrument.canvas ? canvasContainerRef : stageHostRef,
   });
 
-  // The capability's own `targets` thunk, re-read on every call: a target
-  // resizing or gaining a dependency must not need the store rebuilt. Held in
-  // a ref because the store is built once and closes over it.
   const annotationsCap = instrument.annotations;
-  const targetsRef = useLatest((): readonly AnnotationTargetInfo[] =>
-    annotationsCap
-      ? annotationsCap.targets(record.state, config, { id: record.id, view: record.view })
-      : [],
-  );
-
-  // One store for the trial's lifetime.
-  const annotationsRef = useRef<ReturnType<typeof annotationsFromJSON> | null>(null);
-  // Read through refs for the same reason `targets` is: the store is built
-  // once, and an export must draw against the config the trial holds now.
-  const configRef = useLatest(config);
-  // The instrument can be swapped under a live trial, so the capability is read at use too.
-  const capRef = useLatest(annotationsCap);
-  if (annotationsRef.current === null) {
-    // Seeded from wherever the marks were kept: the instrument's own store if
-    // it declared one, else this trial's slot.
-    annotationsRef.current = annotationsFromJSON(
-      annotationsCap?.storage ? keptMarks : record.annotations,
-      () => targetsRef.current(),
-      {
-        meaning: () => capRef.current?.meaning,
-        config: () => configRef.current,
-        onCapture: (result) => capRef.current?.onCapture?.(result),
-        selection: () => capRef.current?.selection,
-      },
-    );
-  }
-  const annotations = annotationsRef.current;
-
-  // Chrome reads the store while it renders — a mark list, the export menu,
-  // the overview — and the store reads the refs above, which hold the last
-  // commit. So once a change to them commits, those readers are told to read
-  // again. Through the context's `subscribe` alone: the store's own would have
-  // the debounce below save marks that did not change.
-  const inputsCommitted = useRef(new Set<() => void>());
-  // biome-ignore lint/correctness/useExhaustiveDependencies: these are what `targets` and `config` answer from — the signal, not values this reads
-  useLayoutEffect(() => {
-    for (const fn of inputsCommitted.current) fn();
-  }, [record.state, record.view, config, annotationsCap]);
-  const provided = useMemo<AnnotationsApi>(
-    () => ({
-      ...annotations,
-      subscribe: (fn) => {
-        const off = annotations.subscribe(fn);
-        inputsCommitted.current.add(fn);
-        return () => {
-          off();
-          inputsCommitted.current.delete(fn);
-        };
-      },
-    }),
-    [annotations],
-  );
-
-  // Written on a trailing debounce rather than per notification: a scene
-  // mutates every frame of a drag, and a zustand write per frame re-renders
-  // every trial in the lab. The unmount flush is not an optimization — the
-  // last mark before a trial closes is otherwise lost.
-  const saveCap = annotationsCap?.storage;
-  const saveRef = useLatest((doc: unknown): void => {
-    if (saveCap) saveCap.save(doc as never);
-    else updateTrialAnnotations(record.id, doc);
+  const {
+    annotations,
+    provided,
+    moves: markMoves,
+  } = useTrialMarks({
+    record,
+    config,
+    capability: annotationsCap,
+    keptMarks,
+    save: updateTrialAnnotations,
   });
-  // Only when the pair flips, which is rare: bumping React state on every
-  // scene notification would re-render the trial on every frame of a drag,
-  // which is the thing the debounce below exists to avoid.
-  const [markMoves, setMarkMoves] = useState({ undo: false, redo: false });
-  useEffect(() => {
-    if (!annotationsCap) return;
-    const read = (): void => {
-      const next = { undo: annotations.canUndo(), redo: annotations.canRedo() };
-      setMarkMoves((prev) => (prev.undo === next.undo && prev.redo === next.redo ? prev : next));
-    };
-    read();
-    return annotations.subscribe(read);
-  }, [annotations, annotationsCap]);
-
-  useEffect(() => {
-    if (!annotationsCap) return;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let dirty = false;
-    const flush = (): void => {
-      if (!dirty) return;
-      dirty = false;
-      saveRef.current(annotations.toJSON());
-    };
-    const off = annotations.subscribe(() => {
-      dirty = true;
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        timer = null;
-        flush();
-      }, 250);
-    });
-    return () => {
-      off();
-      if (timer) clearTimeout(timer);
-      flush();
-    };
-  }, [annotations, annotationsCap, saveRef]);
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
   // reads the lab's. Which slot a change writes follows from the same thing.
@@ -375,12 +263,7 @@ function TrialRuntime({
       snapshotIfNeeded('state.change');
       updateTrialState(record.id, next);
     },
-    setConfig: (path, value) => {
-      const evt = `config.change:${path}`;
-      snapshotIfNeeded('config.change');
-      snapshotIfNeeded(evt);
-      updateTrialConfig(record.id, path, value);
-    },
+    setConfig,
     trial: {
       id: record.id,
       view: record.view,
@@ -643,6 +526,7 @@ function TrialRuntime({
               instrument={instrument}
               isLastTrial={isLast}
               undoBindings={undoBindings}
+              setConfig={setConfig}
               trialChrome={extraChrome}
               chrome={chrome}
               suppress={suppress}

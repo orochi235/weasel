@@ -1,0 +1,5 @@
+---
+'@weasel-js/core': patch
+---
+
+A node that derives its path is drawn and picked where the path is on a canvas with no scene behind it. `dependsOn` and `derivePath` used to resolve only where a `Scene` was in scope, so through a bare adapter such a node answered from its own placeholder pose: `drawOne` got no `derivedPath`, a derived container imposed no clip, and `useSelectTool`'s default `pickEvery` tested a zero-sized box. Deriving reads a dependency's node and where it is drawn, which every adapter already answers through `getNode` and `getPose` (`getWorldPose` and `getChildren` where it has them), so the scene layer and `adapterPickSource` now resolve the path from those. Nothing pushes an invalidation on that path: the memo re-checks what the adapter answers each time it is read. The default pick tests a derived leaf against the box of its path, grown by `pickTolerance`, and against its ink under `leafPicking: 'silhouette'`. A `drawOne` on a bare `<Canvas>` now receives a fourth `ctx` argument for a derived node.

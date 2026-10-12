@@ -2,38 +2,38 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
 }
 
 .note {
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
   max-width: 980px;
 }
 
 .grid {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) minmax(220px, 1fr) auto;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: start;
 }
 
 .panel {
-  background: var(--ckd-surface);
-  border: 1px solid var(--ckd-border);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border-strong);
   border-radius: 4px;
-  padding: 10px 12px;
+  padding: var(--wzl-space-5) var(--wzl-space-6);
   min-height: 320px;
   min-width: 0;
   overflow-x: auto;
 }
 
 .panelTitle {
-  margin: 0 0 8px;
+  margin: 0 0 var(--wzl-space-4);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .registry {
@@ -46,24 +46,24 @@
 .registry th,
 .registry td {
   text-align: left;
-  padding: 3px 6px;
-  border-bottom: 1px solid var(--ckd-border-2);
+  padding: 3px var(--wzl-space-3);
+  border-bottom: 1px solid var(--wzl-border);
 }
 
 .registry th {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
   font-weight: 600;
   font-size: var(--wzl-font-size-xs);
   text-transform: uppercase;
 }
 
 .registry tbody tr:hover {
-  background: var(--ckd-surface-2);
+  background: var(--wzl-surface-sunken);
 }
 
 .conflictsEmpty {
   font-size: calc(var(--wzl-font-size-sm) + 1px);
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
   margin: 0;
 }
 
@@ -73,12 +73,12 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
 
 .conflicts code {
-  background: var(--ckd-surface-2);
+  background: var(--wzl-surface-sunken);
   padding: 1px 5px;
   border-radius: 2px;
 }
@@ -86,5 +86,5 @@
 .canvasPanel {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }

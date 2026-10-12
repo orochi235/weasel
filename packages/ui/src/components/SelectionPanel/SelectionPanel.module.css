@@ -33,7 +33,7 @@
 .objectPanel {
   margin-block: var(--wzl-space-3);
   padding: var(--wzl-space-3) var(--wzl-space-4);
-  border: 1px solid var(--wzl-border);
+  border: 1px solid var(--wzl-border-on-sunken);
   border-radius: var(--wzl-radius-md);
   background: var(--wzl-surface-sunken);
   --wzl-input-surface: var(--wzl-surface);

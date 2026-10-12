@@ -51,12 +51,12 @@ function pointer(el: Element, type: string, x: number, y: number) {
   }));
 }
 
-function mount() {
+function mount(fit?: 'live') {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
   scene.add({ kind: 'leaf', layer: 'main', pose: { x: 990, y: 790, width: 10, height: 10 }, data: { kind: 'rect' } });
   const onViewChange = vi.fn();
-  const minimap = createMinimapContribution({ rect: RECT });
+  const minimap = createMinimapContribution({ rect: RECT, ...(fit ? { fit } : {}) });
   const r = render(
     <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ambient={[minimap]} />,
   );
@@ -75,6 +75,18 @@ describe('input in the minimap', () => {
     });
     expect(last(h.onViewChange).x).toBeCloseTo(-200);
     expect(last(h.onViewChange).y).toBeCloseTo(-150);
+  });
+
+  it('reframes on a pose override under fit: "live"', () => {
+    const h = mount('live');
+    // The far corner moves in, so the scene spans half the width it did and
+    // minimap (10, 8) is no longer the scene's origin.
+    act(() => {
+      h.scene.overrides.set(h.scene.roots[1], { pose: { x: 490, y: 790, width: 10, height: 10 } });
+      pointer(h.canvas, 'pointerdown', 10, 8);
+      pointer(h.canvas, 'pointerup', 10, 8);
+    });
+    expect(last(h.onViewChange).x).not.toBeCloseTo(-200);
   });
 
   it('centers the main camera on the pressed world point', () => {

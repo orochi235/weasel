@@ -55,8 +55,17 @@ export interface AnnotationOverlayProps {
   meaning?: AnnotationMeaning;
 }
 
-const sameRect = (a: Rect | null, b: Rect): boolean =>
-  a !== null && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+/** Where a target is on the surface, and the part of that which shows. */
+interface Placement {
+  rect: Rect;
+  visible: Rect;
+}
+
+const sameRect = (a: Rect, b: Rect): boolean =>
+  a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+
+const samePlacement = (a: Placement | null, b: Placement): boolean =>
+  a !== null && sameRect(a.rect, b.rect) && sameRect(a.visible, b.visible);
 
 /** Pushes the trial's tool into the weasel scope this pane owns. Its own
  *  component because the context only exists below `<WeaselProvider>`. */
@@ -95,10 +104,35 @@ export function insertedGeometry(
   };
 }
 
+/** One factory per weasel tool, each making the mark the rail's tool means. */
+function insertFactories(
+  target: AnnotationTarget,
+  toolRef: { readonly current: string | null },
+  configRef: { readonly current: unknown },
+): Record<string, InsertNodeFactory> {
+  const id = target.id;
+  const factories: Record<string, InsertNodeFactory> = {};
+  for (const weaselTool of ANNOTATION_WEASEL_TOOLS) {
+    factories[weaselTool] = (_bounds, extras) => {
+      const info = annotationToolInfo(toolRef.current);
+      const kind: AnnotationKind | undefined = info?.kind;
+      if (!kind) return null;
+      const seen = seenFrom(configRef.current, target.positionDependsOn ?? []);
+      const geometry = insertedGeometry(extras as unknown as Record<string, unknown>);
+      if (!geometry) return { data: { target: id, kind, seen } satisfies AnnotationData };
+      const data: AnnotationData = { target: id, kind, shape: geometry.shape, seen };
+      return { data, pose: geometry.pose };
+    };
+  }
+  return factories;
+}
+
 /**
- * One target's drawing surface: a transparent box over the target's element
- * taking the input, and a `<SceneCanvas>` painting into the lab's shared
- * buffer at that box's rect.
+ * One target's drawing surface: a transparent box over the part of the
+ * target's element that shows, taking the input, and a `<SceneCanvas>`
+ * painting into the lab's shared buffer at that box's rect. Marks are placed
+ * against the whole element, so one that runs past a clipping ancestor is cut
+ * there, and a target wholly out of sight draws nothing and takes no press.
  *
  * The box is portalled into the surface container because that is what tile
  * rects are measured against; positioning it among the instrument's own DOM
@@ -113,7 +147,7 @@ export function AnnotationOverlay({
 }: AnnotationOverlayProps) {
   const surface = useSurfaceOptional();
   const canvas = useSurfaceCanvas();
-  const [rect, setRect] = useState<Rect | null>(null);
+  const [placement, setPlacement] = useState<Placement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
   const sceneCanvas = useRef<SceneCanvasApi | null>(null);
   useEffect(() => registerNodeShape(POINT_MARK_SHAPE, { priority: 'high' }), []);
@@ -200,11 +234,12 @@ export function AnnotationOverlay({
 
   useEffect(
     () =>
-      surface?.registerPainter(tileId, (next) => {
+      surface?.registerPainter(tileId, (rect, frame) => {
+        const next: Placement = { rect, visible: frame.visible.get(tileId) ?? rect };
         // Committed before the redraw is asked for: the renderer reads its
         // position from the last render, so a redraw landing first repaints the
         // tile where it was — after this frame's clear, which leaves a ghost.
-        flushSync(() => setRect((prev) => (sameRect(prev, next) ? prev : next)));
+        flushSync(() => setPlacement((prev) => (samePlacement(prev, next) ? prev : next)));
         // The shared buffer was cleared if it resized this frame; this pane's
         // own loop has no way to know that.
         sceneCanvas.current?.requestRedraw();
@@ -213,9 +248,16 @@ export function AnnotationOverlay({
   );
 
   const container = surface?.getContainer() ?? null;
-  if (!container || !rect) return null;
+  if (!container || !placement) return null;
+  const { rect, visible } = placement;
 
-  const view: View = toWeaselView(target.view ?? fitView(target.content, { w: rect.w, h: rect.h }));
+  // The camera is the whole target's; the canvas starts at the visible part.
+  const whole = toWeaselView(target.view ?? fitView(target.content, { w: rect.w, h: rect.h }));
+  const view: View = {
+    ...whole,
+    x: whole.x - (visible.x - rect.x),
+    y: whole.y - (visible.y - rect.y),
+  };
 
   const drawOne = createMarkDrawOne({
     content: target.content,
@@ -224,27 +266,15 @@ export function AnnotationOverlay({
     meaning,
   });
 
-  const factories: Record<string, InsertNodeFactory> = {};
-  for (const weaselTool of ANNOTATION_WEASEL_TOOLS) {
-    factories[weaselTool] = (_bounds, extras) => {
-      const info = annotationToolInfo(toolRef.current);
-      const kind: AnnotationKind | undefined = info?.kind;
-      if (!kind) return null;
-      const seen = seenFrom(configRef.current, target.positionDependsOn ?? []);
-      const geometry = insertedGeometry(extras as unknown as Record<string, unknown>);
-      if (!geometry) return { data: { target: id, kind, seen } satisfies AnnotationData };
-      const data: AnnotationData = { target: id, kind, shape: geometry.shape, seen };
-      return { data, pose: geometry.pose };
-    };
-  }
+  const factories = insertFactories(target, toolRef, configRef);
 
   // A measured rect has nowhere to live but the element's own style. Set as
   // custom properties, which the stylesheet reads — the sanctioned use.
   const box = {
-    ['--lk-anno-x' as string]: `${rect.x}px`,
-    ['--lk-anno-y' as string]: `${rect.y}px`,
-    ['--lk-anno-w' as string]: `${rect.w}px`,
-    ['--lk-anno-h' as string]: `${rect.h}px`,
+    ['--lk-anno-x' as string]: `${visible.x}px`,
+    ['--lk-anno-y' as string]: `${visible.y}px`,
+    ['--lk-anno-w' as string]: `${visible.w}px`,
+    ['--lk-anno-h' as string]: `${visible.h}px`,
   } as CSSProperties;
 
   return createPortal(
@@ -256,7 +286,7 @@ export function AnnotationOverlay({
         // Pass-through while the rail holds a tool that makes no marks, so the
         // instrument under the overlay stays clickable.
         data-idle={annotationToolInfo(activeToolId) ? undefined : ''}
-        hidden={!inScope}
+        hidden={!inScope || !(visible.w > 0 && visible.h > 0)}
         role="application"
         aria-label={`Annotations on ${id}`}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: role="application" IS the interactive case — a region with its own keymap. The rule's allowed-role list stops at the native widget roles and does not include it, and the gesture dispatcher listens on this element, so without focus no tool's keyboard binding ever fires.
@@ -271,10 +301,10 @@ export function AnnotationOverlay({
             features={['pick', 'move', 'transform', 'edit']}
             ref={attachSceneCanvas}
             scene={scene}
-            width={rect.w}
-            height={rect.h}
+            width={visible.w}
+            height={visible.h}
             view={view}
-            paintInto={{ canvas, x: rect.x, y: rect.y }}
+            paintInto={{ canvas, x: visible.x, y: visible.y }}
             inputElement={input}
             defaultTools={ANNOTATION_WEASEL_TOOLS}
             insertNodeFactories={factories}

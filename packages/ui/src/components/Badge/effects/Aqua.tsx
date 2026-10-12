@@ -1,3 +1,5 @@
+import type { ColorSource } from '@weasel-js/paint';
+import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
@@ -23,7 +25,7 @@ import type { EffectModule } from '../bases/types';
  */
 export interface AquaEffectParams {
   /** Body tint. Defaults to `var(--badge-edge)` so the badge's color drives it. */
-  accent?: string;
+  accent?: ColorSource;
   /** Stop opacities along the body gradient (0..1). */
   topAlpha?: number;
   upperAlpha?: number;
@@ -48,7 +50,7 @@ export interface AquaEffectParams {
 }
 
 const DEFAULTS: Required<AquaEffectParams> = {
-  accent: 'var(--badge-edge)',
+  accent: { ref: '--badge-edge' },
   topAlpha: 0.45,
   upperAlpha: 0.7,
   equator: 52,
@@ -71,8 +73,10 @@ const Aqua: EffectModule<AquaEffectParams> = {
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
+    const css = useColorCss();
     if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
     const cfg = { ...DEFAULTS, ...params };
+    const accent = css(cfg.accent);
 
     // Walk the perimeter and collect contiguous runs where the outward normal
     // points up (ny < 0) — those segments will get the bezel highlight.
@@ -116,25 +120,23 @@ const Aqua: EffectModule<AquaEffectParams> = {
     // Stroke widths in CSS px → viewBox units. The badge SVG is 100×100 with
     // preserveAspectRatio="none", so use the larger inverse-scale to keep
     // the stroke from getting too thin in either axis.
-    const sx = 100 / boxW;
-    const sy = 100 / boxH;
-    const widthScale = Math.max(sx, sy);
+    const widthScale = Math.max(100 / boxW, 100 / boxH);
     const bezelWidthVb = cfg.bezelWidth * widthScale;
     const rimWidthVb = cfg.rimWidth * widthScale;
 
     const equatorLo = Math.max(0, cfg.equator - cfg.equatorSpread);
     const equatorHi = Math.min(100, cfg.equator + cfg.equatorSpread * 1.6);
-    const equatorBrightColor = `color-mix(in srgb, ${cfg.accent} ${cfg.equatorTint}%, white)`;
-    const baseColor = `color-mix(in srgb, ${cfg.accent} ${cfg.baseTint}%, black)`;
+    const equatorBrightColor = `color-mix(in srgb, ${accent} ${cfg.equatorTint}%, white)`;
+    const baseColor = `color-mix(in srgb, ${accent} ${cfg.baseTint}%, black)`;
 
     return (
       <>
         <defs>
           <linearGradient id={bodyGradId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: cfg.accent, stopOpacity: cfg.topAlpha }} />
-            <stop offset={`${equatorLo}%`} style={{ stopColor: cfg.accent, stopOpacity: cfg.upperAlpha }} />
+            <stop offset="0%" style={{ stopColor: accent, stopOpacity: cfg.topAlpha }} />
+            <stop offset={`${equatorLo}%`} style={{ stopColor: accent, stopOpacity: cfg.upperAlpha }} />
             <stop offset={`${cfg.equator}%`} style={{ stopColor: equatorBrightColor, stopOpacity: 1 }} />
-            <stop offset={`${equatorHi}%`} style={{ stopColor: cfg.accent, stopOpacity: 1 }} />
+            <stop offset={`${equatorHi}%`} style={{ stopColor: accent, stopOpacity: 1 }} />
             <stop offset="100%" style={{ stopColor: baseColor, stopOpacity: 1 }} />
           </linearGradient>
           <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2={`${cfg.glossExtent}%`}>

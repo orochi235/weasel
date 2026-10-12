@@ -11,7 +11,7 @@ describe('CustomShaderDemo', () => {
     expect(container.querySelectorAll('canvas').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('commits once per animation frame', () => {
+  it('animates without a React commit per frame', () => {
     const queued = new Map<number, FrameRequestCallback>();
     let nextId = 1;
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
@@ -37,6 +37,8 @@ describe('CustomShaderDemo', () => {
     step(32);
     step(48);
     step(64);
-    expect(commits - before).toBe(3);
+    expect(commits - before).toBe(0);
+    // A loop that stopped would also commit nothing: a frame is still owed.
+    expect(queued.size).toBeGreaterThan(0);
   });
 });

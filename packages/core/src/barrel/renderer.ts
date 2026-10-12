@@ -14,6 +14,9 @@ export type {
   ShaderProgramHandle,
   ShaderUniform,
   Effect,
+  CompositeOp,
+  BlendFactor,
+  BlendFactors,
   GlMat3,
   ImageMinification,
   SpriteSheet,
@@ -56,6 +59,7 @@ export {
   registerCanvasFont,
   isCanvasFont,
   unregisterCanvasFont,
+  refreshCanvasFont,
   subscribeGlyphReady,
 } from '@weasel-js/font';
 

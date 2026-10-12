@@ -48,8 +48,27 @@ describe('Timeline', () => {
     expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(2);
   });
 
-  it('renders the transport by default', () => {
-    render(<Timeline {...base} tracks={tracks()} />);
+  it('draws the time readout and the Graph switch, and no playback controls, with no transport', () => {
+    render(<Timeline {...base} tracks={tracks()} playhead={250} />);
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('0.25s / 1.00s');
+    expect(screen.getByRole('switch', { name: 'Graph mode' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Play' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: 'Loop' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Rate' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Rate')).not.toBeInTheDocument();
+  });
+
+  it('draws the playback controls of a transport it is given', () => {
+    const onPlay = vi.fn();
+    render(
+      <Timeline
+        {...base}
+        tracks={tracks()}
+        transport={{ paused: true, loop: false, rate: 1, onPlay, onPause: () => {}, onLoopChange: () => {}, onRateChange: () => {} }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    expect(onPlay).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('timeline-time')).toBeInTheDocument();
   });
 

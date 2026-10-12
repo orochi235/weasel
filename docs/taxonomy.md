@@ -290,6 +290,14 @@ input like any other. Their default routing targets the ambient `ingest` action,
 which fans out to the content-handler registry. See
 `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`.
 
+The pointer moving with nothing pressed is a gesture too, `hover` (`HoverSpec`).
+It is the one gesture that claims nothing. It has no press to own, so it binds
+only an immediate action, never an ongoing one; every live `hover` binding that
+matches a move runs, where every other gesture has one winner; and the move goes
+on to the hover-cursor pump as if no binding had been there. A held pointer's
+moves belong to its drag and are not hovers. It reports motion only: nothing
+says when the pointer leaves the surface or passes from one target to another.
+
 Gestures are orthogonal to [Actions](#action) in this taxonomy. A gesture is *how*
 input arrives; an action is *what to do* with it. The same gesture (a rectangular
 drag) can power different actions (insert a rect, marquee-select, area-erase); the
@@ -472,7 +480,9 @@ writes in the same undo entry as the change.
 siblings live on drag and calls `commitDrop` on release. The contract is
 in `packages/core/src/layout/types.ts`; the strategies are in `@weasel-js/guides`:
 `freeform` (absolute positioning), `tileGrid` (row/column grid), `snapPoint`
-(named anchor positions), under `packages/guides/src/layout/strategies/`.
+(named anchor positions), `slots` (a sequence along a row, grid, or ring),
+`pack` (shelves of mixed sizes), and `quadtree` (cells quartered to fit),
+under `packages/guides/src/layout/strategies/`.
 
 ### Selection
 
@@ -810,7 +820,8 @@ Two distinct context shapes that appear at different layers:
 
 - **`GestureContext<TPose>`** — the per-frame context passed to
   [Behavior](#behavior) methods. Carries `draggedIds`, `origin`, `current` (live
-  pose map), `snap`, `modifiers`, `pointer`, `adapter` (typed as `MoveAdapter`),
+  pose map), `snap`, `modifiers`, `pointer`, `frames` (stored pose to world and back),
+  `adapter` (typed as `MoveAdapter`),
   and `scratch` (per-gesture key/value store). More gesture-specific than
   `ToolCtx`. See `packages/core/src/interactions/gestures/types.ts:26`.
 

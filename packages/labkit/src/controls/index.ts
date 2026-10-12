@@ -4,7 +4,7 @@ export {
   type ControlMatrixProps,
   type ControlMatrixRow,
 } from './ControlMatrix';
-export { ControlPanel } from './ControlPanel';
+export { type ControlPack, ControlPanel, type ControlPanelProps } from './ControlPanel';
 export { type InDialogOptions, inDialog, summarizeValue } from './inDialog';
 export type {
   CheckboxField,

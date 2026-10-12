@@ -6,8 +6,8 @@ import { ButtonBar } from './ButtonBar/ButtonBar';
 import { OptionsBar } from './OptionsBar/OptionsBar';
 import { ToggleBar } from './ToggleBar/ToggleBar';
 
-// ButtonBar and OptionsBar share segmentedControl.module.css; ToggleBar has its
-// own copy, with the same checks in ToggleBar.browser.test.tsx.
+// All three bars draw from segmentedControl.module.css; ToggleBar's own states
+// and its flat cells are measured in ToggleBar.browser.test.tsx.
 
 afterEach(cleanup);
 
@@ -23,7 +23,7 @@ function Glyph() {
 
 type Bar = 'ButtonBar' | 'OptionsBar';
 type Seg = { label: ReactNode; ariaLabel?: string; tooltip?: string };
-type Opts = { variant?: 'default' | 'minimal'; height?: number };
+type Opts = { variant?: 'default' | 'minimal' | 'flat'; height?: number };
 
 function Bar({ bar, segs, variant, height }: { bar: Bar; segs: readonly Seg[] } & Opts) {
   if (bar === 'ButtonBar') {
@@ -57,7 +57,7 @@ const TEXT = LABELS.map((l) => ({ label: l }));
 describe.each(['ButtonBar', 'OptionsBar'] as const)('%s', (bar) => {
   // A bar beside a greedy sibling in a narrow flex row must keep its labels
   // whole: the row takes width from the sibling, never from the segments.
-  test.each(['default', 'minimal'] as const)('a squeezed %s bar keeps its text segments whole', (variant) => {
+  test.each(['default', 'minimal', 'flat'] as const)('a squeezed %s bar keeps its text segments whole', (variant) => {
     render(
       <div style={{ display: 'flex', width: 120 }}>
         <input style={{ flex: 1 }} />

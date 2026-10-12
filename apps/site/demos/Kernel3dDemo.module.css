@@ -1,18 +1,18 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   width: 620px;
 }
 
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--wzl-space-8);
 }
 
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   white-space: pre;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }

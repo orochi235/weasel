@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  createScene, DEFAULT_SHAPE_FILL, getMarker, pathFromD, registerMarker, solid,
+  boundsOfPath as boundsOf, createScene, DEFAULT_SHAPE_FILL, getMarker, pathFromD, registerMarker, solid,
   type FillStyle, type Path, type PolygonPath, type Stroke,
 } from '@weasel-js/core';
 import {
@@ -246,6 +246,25 @@ describe('svgImageFromKit', () => {
     if (image.kind !== 'leaf' || text.kind !== 'leaf') throw new Error('expected leaves');
     expect(svgLeafFromKit(image.data, image.pose)).toEqual(original[0]);
     expect(svgLeafFromKit(text.data, text.pose)).toEqual(original[1]);
+  });
+
+  it('bakes the pose transform of a path leaf into its geometry, paint, and stroke width', () => {
+    const node = svgLeafFromKit(
+      { path: rect, fill: linear, stroke: { paint: solid('#000'), width: 2 } },
+      { ...BOX, rotation: Math.PI / 2, transform: [4, 0, 0, 1] },
+    ) as SvgPathNode;
+    expect(node.rotation).toBeUndefined();
+    // Stretched to 400 wide about the center (60, 45), then turned a quarter.
+    const b = boundsOf(node.path);
+    expect(b.x).toBeCloseTo(35);
+    expect(b.y).toBeCloseTo(-155);
+    expect(b.width).toBeCloseTo(50);
+    expect(b.height).toBeCloseTo(400);
+    const paint = (node.fill as { paint: { from: { x: number; y: number }; to: { x: number; y: number } } }).paint;
+    expect(paint.from.x).toBeCloseTo(85);
+    expect(paint.from.y).toBeCloseTo(-155);
+    expect(paint.to.y).toBeCloseTo(245);
+    expect(node.stroke?.width).toBeCloseTo(4);
   });
 
   it('writes a plain image without source, flips, opacity or rotation', () => {

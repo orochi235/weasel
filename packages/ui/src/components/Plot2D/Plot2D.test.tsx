@@ -17,6 +17,14 @@ describe('Plot2D — rendering', () => {
     expect(container.querySelectorAll('[data-plot-element="grid"]').length).toBe(6);
   });
 
+  it('strokes the grid and the axes in the color source each is given', () => {
+    const { container } = render(
+      <Plot2D width={200} height={100} grid={{ color: { ref: 'accent' } }} axes={{ color: { space: 'srgb', coords: [1, 0, 0] } }} />,
+    );
+    expect(container.querySelector('[data-plot-element="grid"]')!.getAttribute('stroke')).toBe('var(--wzl-accent)');
+    expect(container.querySelector('[data-plot-element="axis"]')!.getAttribute('stroke')).toBe('#ff0000');
+  });
+
   it('honors grid.divisions', () => {
     const { container } = render(
       <Plot2D width={200} height={100} grid={{ divisions: 5 }} />,

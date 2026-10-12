@@ -18,7 +18,7 @@ export type OptionsBarItem<V extends string | number = string> = {
 /** Segment height and type scale for an {@link OptionsBar}. */
 export type OptionsBarSize = 'sm' | 'md';
 /** Visual treatment of an {@link OptionsBar}. */
-export type OptionsBarVariant = 'default' | 'minimal';
+export type OptionsBarVariant = 'default' | 'minimal' | 'flat';
 
 /** Props for {@link OptionsBar}. */
 export type OptionsBarProps<V extends string | number = string> = {

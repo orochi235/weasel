@@ -4,6 +4,7 @@ import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf, type DemoEntry, type
 import { sessionStore } from './chunkReload';
 import { PageBoundary } from './PageBoundary';
 import { TAGLINE } from './FrontPage/tagline';
+import { VersionPill } from './FrontPage/VersionPill';
 import { Wordmark } from './FrontPage/Wordmark';
 import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
 
@@ -32,8 +33,6 @@ import { InlineMarkdown } from './InlineMarkdown';
 import { CommandPalette } from '@weasel-js/ui';
 import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';
-import { VERSION } from '@weasel-js/core';
-import { buildTitle } from '../shared/buildInfo';
 
 function readHash(): string {
   if (window.location.hash === `#${DEMOS_ID}`) return DEMOS[0].id;
@@ -82,7 +81,7 @@ export function WeaselDemos() {
               aria-label="weasel home"
               onClick={(e) => { e.preventDefault(); goFront(); }}
             ><Wordmark /></a>
-            <span className="ckd-sidebar-version" title={buildTitle()}>v{VERSION}</span>
+            <VersionPill className="ckd-sidebar-version" />
           </h1>
           <p>{TAGLINE}</p>
           <p><a href="./api/">API reference →</a></p>

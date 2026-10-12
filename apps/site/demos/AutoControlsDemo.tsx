@@ -1,7 +1,5 @@
 import { auto, defineInstrument, f, Lab } from '@weasel-js/labkit';
-// In-repo, so the source stylesheet: a consumer imports the built
-// `@weasel-js/labkit/styles.css` instead.
-import '@weasel-js/labkit/styles.less';
+import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)));

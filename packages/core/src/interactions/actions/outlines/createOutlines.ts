@@ -5,7 +5,7 @@
  * undoable batch; the replacement takes the text node's slot, so stacking
  * order is unchanged.
  */
-import type { Path, Rect } from '@weasel-js/geom';
+import type { Mat3, Path, Rect } from '@weasel-js/geom';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
@@ -33,11 +33,21 @@ export interface CreateOutlinesAdapter {
   getWorldPath?(id: NodeId): Path | undefined;
   getPaint?(id: NodeId): PathPaint | undefined;
   /**
+   * Optional: the frame the node behind `id` draws its stroke in, as the
+   * matrix taking that frame to world (`poseFrameOf`); null or absent for a
+   * node drawn straight. Outline Stroke skews and stretches a world-width
+   * stroke with it. Without it every stroke is outlined in world.
+   */
+  getStrokeFrame?(id: NodeId): Mat3 | null | undefined;
+  /**
    * Mint one path node of node `sourceId`'s outlines. `path` is in world
    * space. The node must wear `spec`'s fill and stroke — a text whose runs
    * differ in paint gets one path per paint, and a filled node whose stroke
    * is outlined gets one for the fill and one for the stroke — and sit under
-   * `spec.parent`. The kit places it; only the consumer knows its data shape.
+   * `spec.parent`. The kit places it; only the consumer knows its data shape,
+   * so anything else of the source's `data` worth keeping is the adapter's to
+   * copy: onto this path when it stands alone in the source's slot, onto the
+   * container when `createContainerNode` minted one.
    */
   createPathNode(path: Path, sourceId: NodeId, spec: OutlinePathSpec): { id: string };
   /**

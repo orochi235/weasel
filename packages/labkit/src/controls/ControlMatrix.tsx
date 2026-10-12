@@ -1,4 +1,4 @@
-import { isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import {
   Button,
   type CollapseProps,
@@ -50,6 +50,10 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
   /** The whole resolved schema. A cell's leaf is looked up at
    *  `${column.key}.${row.key}`; a cell with none draws a dash. */
   schema: ResolvedConfig;
+  /** The schema the matrix's aliases point into, and its conditions may read, when that is not `schema`
+   *  itself: a matrix drawn from a layout over a dialog's settings. Its values are read from `config` at
+   *  their own paths. */
+  over?: PrefGroup | PrefSection;
   /** The scopes. The first is the fallback the others inherit from: its cells
    *  never inherit, and its header is emphasized. */
   columns: readonly ControlMatrixColumn[];
@@ -71,6 +75,11 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
 
 const nameOf = (column: ControlMatrixColumn): string => column.title ?? column.label;
 
+function leafOf(schema: ResolvedConfig, path: string): PrefLeaf | undefined {
+  const node = schemaNodeAtPath(schema.group, path);
+  return node && isPrefLeaf(node) ? node : undefined;
+}
+
 /**
  * One setting across several config groups of the same shape: settings down
  * the side, scopes across the top, a compact read-only cell at each crossing.
@@ -84,6 +93,7 @@ export function ControlMatrix({
   stance,
   tone,
   schema,
+  over,
   columns,
   rows,
   config,
@@ -106,13 +116,10 @@ export function ControlMatrix({
   const triggerRef = useRef<HTMLElement | null>(null);
   const { anchor, portalProps, ready } = useOverlayPortal();
 
-  const leafAt = (path: string): PrefLeaf | undefined => {
-    const node = schemaNodeAtPath(schema.group, path);
-    return node && isPrefLeaf(node) ? node : undefined;
-  };
+  const leafAt = (path: string): PrefLeaf | undefined => leafOf(schema, path);
 
   // A row is named in `rows`, so a leaf's static `hidden` does not drop it; a `showIf` does.
-  const visible = (path: string): boolean => isLeafVisible(schema, path, config, true);
+  const visible = (path: string): boolean => isLeafVisible(schema, path, config, true, over);
   const rowSpecs = rows
     .map((row) => {
       const leaves = columns.map((column) => leafAt(`${column.key}.${row.key}`));
@@ -195,7 +202,7 @@ export function ControlMatrix({
                       name={`${nameOf(column)} ${label}`}
                       hint={inherited ? hintFor(column) : undefined}
                       canUnpin={!first && !inherited}
-                      disabled={!isLeafEnabled(schema, path, config)}
+                      disabled={!isLeafEnabled(schema, path, config, over)}
                       setConfig={setConfig}
                       onOpen={(el) => {
                         triggerRef.current = el;
@@ -230,6 +237,7 @@ export function ControlMatrix({
                 <MatrixEditor
                   open={open}
                   schema={schema}
+                  over={over}
                   config={config}
                   setConfig={setConfig}
                   close={() => setOpen(null)}

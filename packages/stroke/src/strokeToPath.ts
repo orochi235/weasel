@@ -6,7 +6,7 @@
  * self-overlap resolved, so the outline and the drawn stroke cannot disagree.
  */
 import type { Stroke } from '@weasel-js/paint';
-import type { Path, PolygonPath } from '@weasel-js/geom';
+import { invert, transformPath, type Mat3, type Path, type PolygonPath } from '@weasel-js/geom';
 import { pathIntersect, pathSubtract, pathUnion, trianglesToPath } from '@weasel-js/geom/booleans';
 import { strokeInsets } from './markerInset';
 import { resolveStrokeWidth, tessellateStroke } from './tessellate/stroke';
@@ -19,6 +19,14 @@ export interface StrokeToPathOptions {
   scale?: number;
   /** Flatness tolerance for curves, in the path's units. */
   flattenTolerance?: number;
+  /**
+   * The frame the stroke is drawn in, as the matrix taking that frame to the
+   * path's coordinates: a node's `poseFrameOf`. A frame that skews or
+   * stretches does the same to the stroke, as it does on the canvas. For a
+   * `{ px }` width under a view that scales each axis apart, the frame is the
+   * screen: the inverse of the view's scale, with `scale` left at 1.
+   */
+  frame?: Mat3;
 }
 
 const EMPTY: PolygonPath = {
@@ -29,9 +37,18 @@ const EMPTY: PolygonPath = {
  * The region `stroke` covers when drawn along `path`, as a path to fill:
  * width, cap, join, miter limit, dash, alignment, per-vertex widths, and
  * marker heads all included. Curves are flattened, so the result holds only
- * M/L/Z. A stroke with no width answers an empty path.
+ * M/L/Z. A stroke with no width answers an empty path, and so does one drawn
+ * in a `frame` that flattens it.
  */
 export function strokeToPath(path: Path, stroke: Stroke, opts: StrokeToPathOptions = {}): PolygonPath {
+  const { frame, ...drawn } = opts;
+  if (!frame) return outlineOf(path, stroke, drawn);
+  const back = invert(frame);
+  if (!back) return EMPTY;
+  return transformPath(outlineOf(transformPath(path, back), stroke, drawn), frame) as PolygonPath;
+}
+
+function outlineOf(path: Path, stroke: Stroke, opts: StrokeToPathOptions): PolygonPath {
   const width = resolveStrokeWidth(stroke.width ?? 1, opts.scale ?? 1);
   if (!(width > 0)) return EMPTY;
   const tolerance = opts.flattenTolerance;

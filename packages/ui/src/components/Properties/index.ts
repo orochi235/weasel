@@ -1,4 +1,4 @@
-export type { CollapseProps } from './collapse';
+export type { CollapseProps, Fold } from './collapse';
 export { useCollapse } from './collapse';
 export type { CurveFieldProps, CurveMark } from './CurveField';
 export { CurveField } from './CurveField';
@@ -11,6 +11,7 @@ export type {
   PropertyColorFieldProps,
   PropertyControlProps,
   PropertyEnumFieldProps,
+  DistributiveOmit,
   PropertyFieldKind,
   PropertyFieldProps,
   PropertyFieldRowProps,

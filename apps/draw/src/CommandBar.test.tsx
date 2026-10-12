@@ -6,6 +6,7 @@ function props(over: Partial<CommandBarProps> = {}): CommandBarProps {
   return {
     onSaveSvg: vi.fn(),
     onOpenSvg: vi.fn(),
+    onImportSvg: vi.fn(),
     onNew: vi.fn(),
     ...over,
   };
@@ -28,18 +29,19 @@ describe('CommandBar', () => {
     expect(p.onNew).toHaveBeenCalledWith('a4');
   });
 
+  it('imports from its own button, beside Open', () => {
+    const p = props();
+    render(<CommandBar {...p} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    expect(p.onImportSvg).toHaveBeenCalledTimes(1);
+    expect(p.onOpenSvg).not.toHaveBeenCalled();
+  });
+
   it('opens a debug surface in a new tab', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     render(<CommandBar {...props()} />);
     openMenu(/Debug/);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Bundle Inspector' }));
     expect(open).toHaveBeenCalledWith(expect.stringMatching(/#\/dev\/registry$/), '_blank', 'noopener');
-  });
-
-  it('offers no control for recording or replay, which nothing drives yet', () => {
-    render(<CommandBar {...props()} />);
-    for (const name of [/Record input/, /Recording profile/, /Play recording/]) {
-      expect(screen.queryByRole('button', { name })).toBeNull();
-    }
   });
 });

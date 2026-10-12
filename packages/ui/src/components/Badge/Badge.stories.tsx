@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { historyKey } from '@weasel-js/core';
 import { applyToPoint, invert } from '@weasel-js/geom';
+import { cssColorLiteral } from '@weasel-js/paint';
 import { Badge } from './Badge';
 import { CloseButton } from '../CloseButton';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
@@ -762,6 +763,10 @@ function defaultsFor(controls: LabControl[]): Record<string, number | string> {
 
 interface LabEffect { id: number; type: BadgeEffect; params: Record<string, number | string> }
 
+/** A lab color control holds a hex string; the effect it feeds takes a color source. */
+const isColorParam = (type: BadgeEffect, key: string): boolean =>
+  EFFECT_LAB_CONTROLS[type].some((c) => c.key === key && c.kind === 'color');
+
 interface LabPreset {
   name: string;
   base: BadgeBase;
@@ -1180,7 +1185,12 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
   const [dragId, setDragId] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  const effectsForBadge: EffectSpec[] = labEffects.map((e) => ({ type: e.type, params: e.params as never }));
+  const effectsForBadge: EffectSpec[] = labEffects.map((e) => ({
+    type: e.type,
+    params: Object.fromEntries(
+      Object.entries(e.params).map(([k, v]) => [k, isColorParam(e.type, k) ? cssColorLiteral(String(v)) : v]),
+    ) as never,
+  }));
 
   const buildExportText = () => {
     const lines: string[] = [];
@@ -1193,7 +1203,9 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
     if (labEffects.length > 0) {
       lines.push('  effects={[');
       for (const eff of labEffects) {
-        const paramStr = Object.entries(eff.params).map(([k, v]) => `${k}: ${typeof v === 'string' ? JSON.stringify(v) : v}`).join(', ');
+        const paramStr = Object.entries(eff.params)
+          .map(([k, v]) => `${k}: ${isColorParam(eff.type, k) ? `cssColorLiteral(${JSON.stringify(v)})` : typeof v === 'string' ? JSON.stringify(v) : v}`)
+          .join(', ');
         lines.push(`    { type: ${JSON.stringify(eff.type)}, params: { ${paramStr} } },`);
       }
       lines.push('  ]}');

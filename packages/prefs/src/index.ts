@@ -81,6 +81,7 @@ export {
   type PrefNumberUnit,
   type ResolvedPrefUnit,
 } from './unit';
+export { pairRuns, type PairRun } from './pair';
 export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
 export {
   isBuiltinPref,

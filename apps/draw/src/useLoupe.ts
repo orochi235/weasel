@@ -61,6 +61,7 @@ export function useLoupe(
       ...(api.element ? { input: api.element } : {}),
       source: stableSource,
       requestRedraw: () => api.requestRedraw(),
+      contentVersion: () => api.getPaintedVersion(),
       onColorChange: setColor,
       onPick: (hex) => onPickRef.current?.(hex),
       onClose: () => { handle.current?.window.setHidden(true); setVisible(false); },

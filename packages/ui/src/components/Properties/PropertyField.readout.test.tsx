@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readModuleCss } from '../../testing/readModuleCss';
 import { PropertyField } from './PropertyField';
 
 /**
@@ -17,7 +17,7 @@ import { PropertyField } from './PropertyField';
  */
 describe('slider field auto readout', () => {
   // Comments stripped first: they talk about height, and a declaration regex cannot tell.
-  const sheet = readFileSync(resolve(__dirname, 'Properties.module.css'), 'utf8').replace(
+  const sheet = readModuleCss(resolve(__dirname, 'Properties.module.css')).replace(
     /\/\*[\s\S]*?\*\//g,
     '',
   );

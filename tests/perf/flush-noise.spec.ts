@@ -122,6 +122,12 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     const { WeaselRenderer } = await import(
       /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
     );
+    // A solid's color matrix is mapped on the CPU and no longer breaks its
+    // run; `rect-cmbreak` times the break, so this turns that off.
+    const { colorFolding } = await import(
+      /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/draw.ts`
+    );
+    colorFolding.enabled = false;
     const W = 800; const H = 600;
     const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
     const canvas = document.createElement('canvas');

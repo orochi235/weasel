@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import s from './ToggleBar.module.css';
+import s from '../segmentedControl.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -17,7 +17,8 @@ export type ToggleBarSize = 'sm' | 'md';
 /** Visual treatment of a {@link ToggleBar}. */
 export type ToggleBarVariant = 'default' | 'minimal' | 'flat';
 
-type CommonProps = {
+/** What a {@link ToggleBar} takes whichever selection mode it is in. */
+export type ToggleBarCommonProps = {
   ariaLabel?: string;
   className?: string;
   height?: number;
@@ -35,14 +36,14 @@ type CommonProps = {
  * accepts `mixedValues`.
  */
 export type ToggleBarProps<V extends string | number = string> =
-  | (CommonProps & {
+  | (ToggleBarCommonProps & {
       mode?: 'single';
       items: readonly ToggleBarItem<V>[];
       value: V | null;
       onChange: (next: V | null) => void;
       allowDeselect?: boolean;
     })
-  | (CommonProps & {
+  | (ToggleBarCommonProps & {
       mode: 'multiple';
       items: readonly ToggleBarItem<V>[];
       value: readonly V[];
@@ -142,6 +143,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     s.root,
     size && s[`size_${size}`],
     variant && s[`variant_${variant}`],
+    variant === 'minimal' && s.minimalBoxed,
     className,
   ].filter(Boolean).join(' ');
 

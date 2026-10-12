@@ -367,6 +367,18 @@ describe('keyboard', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('leaves a select in a band its type-ahead, and still merges on Delete', () => {
+    const { container, onChange } = setup({
+      selectedIndex: 2,
+      renderBand: (band: Band<string>) => <select defaultValue={band.data}><option>{band.data}</option></select>,
+    });
+    const select = container.querySelectorAll('select')[2];
+    fireEvent.keyDown(select, { key: 'x' });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(select, { key: 'Delete' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves Cmd/Ctrl+X alone so cut still reaches the platform', () => {
     const { bodies, onChange } = setup({ selectedIndex: 2 });
     fireEvent.keyDown(bodies()[2], { key: 'x', metaKey: true });
@@ -380,6 +392,42 @@ describe('keyboard', () => {
     expect(froms(onChange.mock.calls[0][0])).toEqual([0, 60, 60]);
     fireEvent.keyDown(seams()[1], { key: 'Home' });
     expect(froms(onChange.mock.calls[1][0])).toEqual([0, 20, 20]);
+  });
+
+  it('splits the selected band at its midpoint on s, keeping the selection on its left half', () => {
+    const { bodies, onChange, onSelect } = setup({ selectedIndex: 1 });
+    fireEvent.keyDown(bodies()[1], { key: 's' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(froms(onChange.mock.calls[0][0])).toEqual([0, 20, 40, 60]);
+    expect(onChange.mock.calls[0][0].map((b: Band<string>) => b.data)).toEqual(['a', 'b', 'b', 'c']);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('puts a keyboard split at the middle of the band on the track, which a log scale makes its geometric mean', () => {
+    const { bodies, onChange } = setup({
+      scale: 'log', min: 1, max: 100, selectedIndex: 0,
+      value: [{ from: 1, data: 'a' }, { from: 16, data: 'b' }],
+    });
+    fireEvent.keyDown(bodies()[0], { key: 's' });
+    expect(froms(onChange.mock.calls[0][0])).toEqual([1, 4, 16]);
+  });
+
+  it('mints a keyboard split payload through splitBand', () => {
+    const { bodies, onChange } = setup({ selectedIndex: 2, splitBand: (at, from) => `${from}${at}` });
+    fireEvent.keyDown(bodies()[2], { key: 's' });
+    expect(onChange.mock.calls[0][0].map((b: Band<string>) => b.data)).toEqual(['a', 'b', 'c', 'c80']);
+  });
+
+  it('leaves s alone with a modifier, in a text field, and for a band with no width to split', () => {
+    const save = setup({ selectedIndex: 1 });
+    fireEvent.keyDown(save.bodies()[1], { key: 's', metaKey: true });
+    expect(save.onChange).not.toHaveBeenCalled();
+    const typed = setup({ selectedIndex: 1, renderBand: () => <input aria-label="name" /> });
+    fireEvent.keyDown(typed.container.querySelectorAll('input')[1]!, { key: 's' });
+    expect(typed.onChange).not.toHaveBeenCalled();
+    const flat = setup({ selectedIndex: 1, value: [{ from: 0, data: 'a' }, { from: 20, data: 'b' }, { from: 20, data: 'c' }] });
+    fireEvent.keyDown(flat.bodies()[1], { key: 's' });
+    expect(flat.onChange).not.toHaveBeenCalled();
   });
 
   it('refuses to merge the first band away', () => {

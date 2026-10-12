@@ -928,6 +928,39 @@ describe('layoutRuns — outline tier', () => {
     expect(out.groups[0].glyphs[0].scale).toBe(32);
   });
 
+  it('draws a character an outline-only face lacks from the dynamic tier, as an atlas run does', async () => {
+    _resetDynamicFontsForTests();
+    _resetFallbackForTests();
+    _resetMissingGlyphWarningsForTests();
+    resetBakeBudget();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255),
+        left: -8, top: 26, advance: 24,
+      }),
+    });
+    registerFontOutlines('solo', { weight: 400, style: 'normal' }, new ArrayBuffer(4), {
+      parser: () => ({
+        unitsPerEm: 1000, ascender: 0.8, kernOf: () => 0,
+        advanceOf: (cp: number) => (cp === 65 ? 0.6 : null),
+        glyphD: (cp: number) => (cp === 65 ? OUTLINE_D : null),
+      }),
+    });
+    glyphOutline('solo', 400, 'normal', 65);
+    await new Promise<void>((r) => setTimeout(r, 0));
+
+    const out = layoutRuns([{ ...RUN_PLAIN('A\u2014'), fontFamily: 'solo' }], OPTS_OUT);
+    expect(out.groups.map((g) => [g.source, g.glyphs.length, g.quads.length]))
+      .toEqual([['outline', 1, 0], ['canvas', 0, 1]]);
+    const [a, dash] = out.lines[0].cells;
+    // Baked at 48px and set at 32.
+    expect(dash.advance).toBeCloseTo(24 * (32 / 48), 10);
+    expect(dash.x).toBeCloseTo(a.x + a.advance, 10);
+    const quad = out.groups[1].quads[0];
+    expect(quad.baselineY - quad.y0).toBeCloseTo(26 * (32 / 48), 10);
+  });
+
   it('stays on the SDF tier below the threshold', async () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');

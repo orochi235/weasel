@@ -216,6 +216,39 @@ describe('CharacterOptions — fill', () => {
   });
 });
 
+describe('CharacterOptions — no fill', () => {
+  it('lights the chip for a range with no fill, and for an unfilled node', () => {
+    const { rerender, container } = render(<CharacterOptions style={{ fill: null }} onPatch={vi.fn()} />);
+    expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'true');
+    expect(container.querySelector('[data-mixed]')).toBeNull();
+    // `effectiveRangeStyle` leaves `fill` off an unfilled node's range.
+    rerender(<CharacterOptions style={{ bold: false }} onPatch={vi.fn()} />);
+    expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('leaves it unlit over a filled range, a mixed one included', () => {
+    const { rerender } = render(<CharacterOptions style={{ fill: { color: '#ff0000ff' } }} onPatch={vi.fn()} />);
+    expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'false');
+    rerender(<CharacterOptions style={{ fill: MIXED }} onPatch={vi.fn()} />);
+    expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('unfills the range', () => {
+    const onPatch = vi.fn();
+    render(<CharacterOptions style={{ fill: { color: '#ff0000ff' } }} onPatch={onPatch} />);
+    fireEvent.click(toggle('No fill'));
+    expect(onPatch).toHaveBeenCalledWith({ fill: null });
+  });
+
+  it('fills an unfilled range with the color the field shows', () => {
+    const onPatch = vi.fn();
+    render(<CharacterOptions style={{ fill: null }} onPatch={onPatch} />);
+    expect(screen.getByLabelText('Color')).toHaveValue('#000000');
+    fireEvent.click(toggle('No fill'));
+    expect(onPatch).toHaveBeenCalledWith({ fill: { color: '#000000' } });
+  });
+});
+
 describe('CharacterOptions — idle', () => {
   it('draws no controls for a null style, the value useTextEdit reports outside an edit', () => {
     render(<CharacterOptions style={null} onPatch={vi.fn()} />);

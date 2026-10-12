@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { readModuleCss } from '../../testing/readModuleCss';
 import { PropertyPanel } from './PropertyPanel';
 
 const panelOf = (el: HTMLElement) => el.firstElementChild as HTMLElement;
@@ -52,7 +52,7 @@ describe('PropertyPanel selectability', () => {
   // jsdom computes no user-select, so this reads the stylesheet: a proxy for
   // the rule existing and reaching the family's own `none` declarations.
   it('has a rule that lets text select through the whole family', () => {
-    const css = readFileSync(resolve(__dirname, 'Properties.module.css'), 'utf8');
+    const css = readModuleCss(resolve(__dirname, 'Properties.module.css'));
     const rule = /\.panel\[data-selectable='true'\],\s*\.panel\[data-selectable='true'\] :is\(\.panel, \.list, \.row, \.group, \.subpanel, \.card, \.cardList\)\s*\{\s*-webkit-user-select: text;\s*user-select: text;/;
     expect(css).toMatch(rule);
   });

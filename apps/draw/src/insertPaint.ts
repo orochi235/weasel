@@ -1,5 +1,5 @@
-import { strokeWith, type InsertPaint } from '@weasel-js/core';
-import { type ActivePaint, toFillStyle } from './ActiveSwatches';
+import { strokeWith, type InsertPaint, type PathFillRule } from '@weasel-js/core';
+import type { ActivePaint } from './ActiveSwatches';
 
 const NEW_STROKE_WIDTH = 2;
 
@@ -7,16 +7,19 @@ const NEW_STROKE_WIDTH = 2;
 const STROKE_ONLY = new Set(['line', 'pencil']);
 
 /**
- * The paint of a newly drawn shape: the swatches' active fill and stroke, read
- * when the shape is inserted.
+ * The paint of a newly drawn shape: the swatches' active fill and stroke, and
+ * the fill rule Preferences names, each read when the shape is inserted.
  */
-export function activeInsertPaint(active: () => { fill: ActivePaint; stroke: ActivePaint }): InsertPaint {
+export function activeInsertPaint(
+  active: () => { fill: ActivePaint; stroke: ActivePaint },
+  fillRule: () => PathFillRule,
+): InsertPaint {
   return (kind) => {
     const { fill, stroke } = active();
-    const paint = toFillStyle(stroke);
     return {
-      fill: STROKE_ONLY.has(kind) ? null : toFillStyle(fill),
-      stroke: paint === null ? null : strokeWith(paint, NEW_STROKE_WIDTH),
+      fill: STROKE_ONLY.has(kind) ? null : fill,
+      stroke: stroke === null ? null : strokeWith(stroke, NEW_STROKE_WIDTH),
+      fillRule: fillRule(),
     };
   };
 }

@@ -1,5 +1,5 @@
 export { createHud, type Hud, type HudFocusOptions } from './hud';
-export { attachHud } from './attach';
+export { attachHud, type AttachHudOptions } from './attach';
 export { createHudContribution, HUD_AFFORDANCE_KIND, type HudHitPayload } from './tool';
 export type {
   Widget,
@@ -14,7 +14,7 @@ export { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaul
 export type { FontAtlasUrls } from './fonts/registerDefaultFont';
 export type { RectOptions, RectWidget } from './widgets/rect';
 export type { TextOptions, TextWidget } from './widgets/text';
-export type { ImageOptions, ImageWidget } from './widgets/image';
+export type { ImageOptions, ImageWidget, SourceRect } from './widgets/image';
 export type { LabelOptions, LabelWidget } from './widgets/label';
 export type { ButtonOptions, ButtonWidget, ButtonEvent, ButtonHandler } from './widgets/button';
 export type { WindowOptions, WindowWidget } from './widgets/window/window';
@@ -23,6 +23,6 @@ export {
   type WindowZone, type WindowMetrics,
 } from './widgets/window/zones';
 export type { HudContentCtx } from './widget';
-export { createLoupe, type LoupeOptions, type LoupeHandle, type LoupeMode } from './loupe/createLoupe';
+export { createLoupe, type LoupeOptions, type LoupeBaseOptions, type LoupeHandle, type LoupeMode } from './loupe/createLoupe';
 export { loupeInnerView } from '@weasel-js/loupe';
 export type { ResolvedTheme } from '@weasel-js/theme';

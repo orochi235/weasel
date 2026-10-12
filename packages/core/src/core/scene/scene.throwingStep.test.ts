@@ -14,103 +14,106 @@ function makeScene() {
     scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: { ...POSE }, data: { label: id } });
   const adapter = { setPose: (id: string, pose: unknown) => { scene.setPose(asNodeId(id), pose as typeof POSE); } };
   const depths = () => [scene.history.undoDepth(), scene.history.redoDepth()];
-  return { scene, add, adapter, depths };
+  // What throws: a kit op and an external op that each refuse once armed.
+  const armed = { on: false };
+  const refuse = (): void => { if (armed.on) throw new Error('refused'); };
+  scene.registerOp('refusing', { apply: refuse, revert: refuse });
+  const refusing = (): Op => ({ apply: refuse, invert: refusing });
+  return { scene, add, adapter, depths, armed, refusing };
 }
 
 describe('Scene — a history step that throws', () => {
-  it('undo of an edit to a node removed untracked keeps the entry and the state', () => {
-    const { scene, add, depths } = makeScene();
+  it('undo keeps the entry and the state', () => {
+    const { scene, add, depths, armed } = makeScene();
     add('a');
-    scene.setPose(A, { ...POSE, x: 5 });
-    scene.untracked(() => scene.remove(A));
+    scene.batch('move', () => {
+      scene.setPose(A, { ...POSE, x: 5 });
+      scene.recordOp({ kind: 'refusing', payload: null });
+    });
+    armed.on = true;
     const before = scene.toJSON();
 
-    expect(() => scene.undo()).toThrow('unknown node id "a"');
+    expect(() => scene.undo()).toThrow('refused');
     expect(depths()).toEqual([2, 0]);
     expect(scene.toJSON()).toEqual(before);
   });
 
   it('undo reverts the ops of the entry that ran before the one that threw', () => {
-    const { scene, add, depths } = makeScene();
-    add('a');
+    const { scene, add, depths, armed } = makeScene();
     add('b');
-    scene.batch('move both', () => {
-      scene.setPose(A, { ...POSE, x: 5 });
+    scene.batch('move', () => {
+      scene.recordOp({ kind: 'refusing', payload: null });
       scene.setPose(B, { ...POSE, x: 7 });
     });
-    scene.untracked(() => scene.remove(A));
+    armed.on = true;
 
-    // Undo reverts b's pose, then a's, which is gone.
-    expect(() => scene.undo()).toThrow('unknown node id "a"');
+    // Undo reverts b's pose, then the op that refuses.
+    expect(() => scene.undo()).toThrow('refused');
     expect(scene.get(B)!.pose.x).toBe(7);
-    expect(depths()).toEqual([3, 0]);
+    expect(depths()).toEqual([2, 0]);
   });
 
   it('undo of an applyBatch entry reverts the scene writes of its ops that ran', () => {
-    const { scene, add, adapter, depths } = makeScene();
-    add('a');
+    const { scene, add, adapter, depths, armed, refusing } = makeScene();
     add('b');
     scene.applyBatch([
-      createTransformOp({ id: A, from: { ...POSE }, to: { ...POSE, x: 5 } }),
+      refusing(),
       createTransformOp({ id: B, from: { ...POSE }, to: { ...POSE, x: 7 } }),
-    ], 'move both', adapter);
-    scene.untracked(() => scene.remove(A));
+    ], 'move', adapter);
+    armed.on = true;
     const versionBefore = scene.getVersion();
 
-    expect(() => scene.undo()).toThrow('unknown node id "a"');
+    expect(() => scene.undo()).toThrow('refused');
     expect(scene.get(B)!.pose.x).toBe(7);
-    expect(depths()).toEqual([3, 0]);
+    expect(depths()).toEqual([2, 0]);
     expect(scene.getVersion()).toBeGreaterThan(versionBefore);
   });
 
   it('undo reverts the scene writes of an op that threw partway through its own', () => {
-    const { scene, add, depths } = makeScene();
-    add('a');
+    const { scene, add, depths, armed } = makeScene();
     add('b');
-    const moveBoth = (to: number, from: number): Op => ({
+    const move = (to: number, from: number): Op => ({
       apply: () => {
         scene.setPose(B, { ...POSE, x: to });
-        scene.setPose(A, { ...POSE, x: to });
+        if (armed.on) throw new Error('refused');
       },
-      invert: () => moveBoth(from, to),
+      invert: () => move(from, to),
     });
     scene.setSelection([B]);
-    scene.applyBatch([moveBoth(9, 0)], 'move both', undefined);
+    scene.applyBatch([move(9, 0)], 'move', undefined);
     scene.setSelection([]);
-    scene.untracked(() => scene.remove(A));
+    armed.on = true;
 
-    expect(() => scene.undo()).toThrow('unknown node id "a"');
+    expect(() => scene.undo()).toThrow('refused');
     expect(scene.get(B)!.pose.x).toBe(9);
     expect(scene.getSelection()).toEqual([]);
-    expect(depths()).toEqual([3, 0]);
+    expect(depths()).toEqual([2, 0]);
   });
 
   it('redo keeps the entry and the state when it throws', () => {
-    const { scene, add, depths } = makeScene();
-    add('a');
+    const { scene, add, depths, armed } = makeScene();
     add('b');
-    scene.batch('move both', () => {
+    scene.batch('move', () => {
       scene.setPose(B, { ...POSE, x: 7 });
-      scene.setPose(A, { ...POSE, x: 5 });
+      scene.recordOp({ kind: 'refusing', payload: null });
     });
     scene.undo();
-    scene.untracked(() => scene.remove(A));
+    armed.on = true;
 
-    expect(() => scene.redo()).toThrow('unknown node id "a"');
+    expect(() => scene.redo()).toThrow('refused');
     expect(scene.get(B)!.pose.x).toBe(0);
-    expect(depths()).toEqual([2, 1]);
+    expect(depths()).toEqual([1, 1]);
   });
 
   it('a jump through history that throws partway returns to where it started', () => {
-    const { scene, add, depths } = makeScene();
+    const { scene, add, depths, armed } = makeScene();
     add('b');
-    add('a');
-    scene.setPose(A, { ...POSE, x: 5 });
+    scene.recordOp({ kind: 'refusing', payload: null });
     scene.setPose(B, { ...POSE, x: 7 });
-    scene.untracked(() => scene.remove(A));
+    armed.on = true;
 
-    expect(() => scene.jumpToHistoryIndex(0)).toThrow('unknown node id "a"');
+    expect(() => scene.jumpToHistoryIndex(0)).toThrow('refused');
     expect(scene.get(B)!.pose.x).toBe(7);
-    expect(depths()).toEqual([4, 0]);
+    expect(depths()).toEqual([3, 0]);
   });
 });

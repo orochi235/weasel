@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, use, useContext } from 'react';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { LabMode, SavedSnapshot, TrialRecord } from '../state/types';
@@ -41,6 +41,33 @@ export interface LabContextValue {
 
 /** Context carrying the surrounding lab. Prefer `useLabContext`. */
 export const LabContext = createContext<LabContextValue | null>(null);
+
+/** A lab without its `trials`: its commands, and what changes far less often
+ *  than a trial's record does. */
+export type LabCommands = Omit<LabContextValue, 'trials'>;
+
+/** Context carrying {@link LabCommands}. Prefer `useLabCommands`. */
+export const LabCommandsContext = createContext<LabCommands | null>(null);
+
+/** The surrounding lab's commands, or null outside one. Under a bare
+ *  `LabContext.Provider` it reads that, and re-renders with it. */
+export function useLabCommandsOptional(): LabCommands | null {
+  return use(LabCommandsContext) ?? use(LabContext);
+}
+
+/**
+ * The surrounding lab without its `trials`, for a component that must not
+ * re-render each time any trial's record changes — a pan frame, a job item,
+ * a clock write. Read a trial through the store instead. Throws outside a
+ * `<Lab>`.
+ */
+export function useLabCommands(): LabCommands {
+  const ctx = useLabCommandsOptional();
+  if (ctx === null) {
+    throw new Error('useLabCommands must be used inside <Lab>');
+  }
+  return ctx;
+}
 
 /** The surrounding lab. Throws outside a `<Lab>`. */
 export function useLabContext(): LabContextValue {

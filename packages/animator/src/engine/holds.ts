@@ -12,6 +12,9 @@ export interface HoldSource<T> {
   weight(): number;
   /** The axes it holds, by index or by the target's names for them. Default: all of them. */
   axes?: readonly (number | string)[];
+  /** True where `value` and `weight` answer the same until `touch` says otherwise. A target
+   *  whose holds are all so is read again only when touched, or when its committed value moves. */
+  fixed?: boolean;
 }
 
 /** A hold on its target, apart from any row on the animator's table. */
@@ -29,6 +32,7 @@ interface Member {
   weight(): number;
   /** Nonzero at each axis it holds; null where it holds them all. */
   covers: Uint8Array | null;
+  fixed: boolean;
   /** Its weight and value as the fold now running read them. */
   w: number;
   v: number[];
@@ -157,6 +161,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
       : () => ax.to(o.value()),
     weight: () => (gone ? 0 : share(o.weight())),
     covers: coverOf(o.axes, ax),
+    fixed: o.fixed === true,
     w: 0,
     v: buffer,
   };
@@ -175,6 +180,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
       id: made.voice,
       on: s,
       axes: ax.count,
+      still: member.fixed,
       at: () => {
         // One array each for as long as the holds stand: a frame of many holds builds none.
         const committed = (s.heldAt ??= new Array<number>(ax.count).fill(0));
@@ -190,6 +196,8 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   }
   const { members, voice } = group;
   members.push(member);
+  const still = (): void => ctx.codec.still(voice, members.every((m) => m.fixed));
+  still();
   ctx.touch(state, true);
 
   return {
@@ -214,7 +222,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
         const beside = s.beside;
         s.beside = null;
         if (beside) absorb(s, beside);
-      }
+      } else still();
       ctx.targets.detach(state);
       ctx.touch(state, true);
     },

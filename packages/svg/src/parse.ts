@@ -77,7 +77,7 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   for (const [id, paint] of collectPatterns(root, onWarn)) gradients.set(id, paint);
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
   const clips = collectClipPaths(root, onWarn);
-  const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, gradients, clips, onWarn, uriToPrefix);
+  const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, gradients, clips, onWarn, uriToPrefix, opts.keepHidden === true);
   const markers = ingestMarkers(root, nodes, gradients, onWarn);
 
   const result: ParseResult = { nodes, warnings };
@@ -226,6 +226,7 @@ function parseChildren(
   clips: ClipTable,
   onWarn: (m: string) => void,
   uriToPrefix: Map<string, string>,
+  keepHidden: boolean,
 ): SvgNode[] {
   const out: SvgNode[] = [];
   for (let i = 0; i < parent.children.length; i++) {
@@ -234,11 +235,13 @@ function parseChildren(
     // (DOM gives SVG-native elements `http://www.w3.org/2000/svg`.)
     const ns = el.namespaceURI;
     if (ns && ns !== 'http://www.w3.org/2000/svg') continue;
-    const node = parseElement(el, ctm, style, gradients, clips, onWarn, uriToPrefix);
-    if (node) {
-      if (Array.isArray(node)) out.push(...node);
-      else out.push(node);
-    }
+    const hidden = isHiddenElement(el, style);
+    if (hidden && !keepHidden) continue;
+    const node = parseElement(el, ctm, style, gradients, clips, onWarn, uriToPrefix, keepHidden);
+    if (!node) continue;
+    const parsed = Array.isArray(node) ? node : [node];
+    if (hidden) for (const n of parsed) n.hidden = true;
+    out.push(...parsed);
   }
   return out;
 }
@@ -251,14 +254,10 @@ function parseElement(
   clips: ClipTable,
   onWarn: (m: string) => void,
   uriToPrefix: Map<string, string>,
+  keepHidden: boolean,
 ): SvgNode | SvgNode[] | null {
   const tag = el.tagName.toLowerCase();
   if (IGNORED_TAGS.has(tag)) return null;
-  if (ownValue(el, 'display') === 'none') return null;
-  // Inherited, and a descendant may turn itself back on, so only a leaf can
-  // answer it: a hidden `<g>` still has to be walked.
-  const containers = tag === 'g' || SUPPORTED_GROUP_TAGS.has(tag);
-  if (!containers && isHidden(deriveStyle(style, el))) return null;
   if (tag === 'g' && el.hasAttribute('data-weasel-image')) {
     const image = parseCroppedImage(el, ctm, onWarn);
     if (image) {
@@ -275,7 +274,7 @@ function parseElement(
     const local = parseTransform(el.getAttribute('transform'), onWarn);
     const childCtm = multiply(ctm, local);
     const childStyle = deriveStyle(style, el);
-    const children = parseChildren(el, childCtm, childStyle, gradients, clips, onWarn, uriToPrefix);
+    const children = parseChildren(el, childCtm, childStyle, gradients, clips, onWarn, uriToPrefix, keepHidden);
     const opacity = ownValue(el, 'opacity');
     const group: SvgNode = { kind: 'group', children };
     const clip = clipFor(el, childCtm, clips, onWarn);
@@ -295,7 +294,7 @@ function parseElement(
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
-    return parseChildren(el, multiply(ctm, offset), childStyle, gradients, clips, onWarn, uriToPrefix);
+    return parseChildren(el, multiply(ctm, offset), childStyle, gradients, clips, onWarn, uriToPrefix, keepHidden);
   }
   if (tag === 'text') {
     const textNode = parseTextElement(el, ctm, style, gradients, onWarn);
@@ -377,7 +376,14 @@ function parseElement(
   return node;
 }
 
-function isHidden(style: StyleContext): boolean {
-  const v = styleValue(style, 'visibility');
+/** Whether SVG leaves `el` undrawn: `display="none"` on it, or a leaf whose
+ *  `visibility` resolves hidden. That one is inherited and a descendant may
+ *  turn itself back on, so a `<g>` cannot answer it and is still walked. */
+function isHiddenElement(el: Element, style: StyleContext): boolean {
+  const tag = el.tagName.toLowerCase();
+  if (IGNORED_TAGS.has(tag)) return false;
+  if (ownValue(el, 'display') === 'none') return true;
+  if (SUPPORTED_GROUP_TAGS.has(tag)) return false;
+  const v = styleValue(deriveStyle(style, el), 'visibility');
   return v === 'hidden' || v === 'collapse';
 }

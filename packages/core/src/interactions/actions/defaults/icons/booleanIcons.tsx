@@ -131,3 +131,31 @@ export function CropIcon() {
     </svg>
   );
 }
+
+/**
+ * Icon for the trim operation: the back circle cut back to what the front one
+ * leaves showing, the front one whole.
+ *
+ * @experimental
+ */
+export function TrimIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M 10 6 A 5 5 0 1 0 10 14 A 5 5 0 0 0 10 6 Z" strokeLinejoin="round" />
+      <circle cx="13" cy="10" r="5" fill="currentColor" />
+    </svg>
+  );
+}
+
+/**
+ * Icon for the merge operation: two circles as the one outline they share.
+ *
+ * @experimental
+ */
+export function MergeIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M 10 6 A 5 5 0 1 0 10 14 A 5 5 0 1 0 10 6 Z" strokeLinejoin="round" />
+    </svg>
+  );
+}

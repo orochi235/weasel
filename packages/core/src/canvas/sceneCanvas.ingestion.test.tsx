@@ -32,6 +32,7 @@ import {
   __setSvgMeasureForTests,
   _resetSvgHandlerSeamsForTests,
 } from 'features/ingestion/svgHandler';
+import { createTextHandler } from 'features/ingestion/textHandler';
 import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
 
 type D = { image?: { src: string } };
@@ -97,6 +98,11 @@ function pngFile(name = 'pic.png'): File {
 const RESOLVE_SRC_INGESTION = { resolveSrc: async () => 'https://cdn/x.png' };
 const UNPACK_INGESTION = { svg: { unpack: unpackSvgFiles } };
 const CLIPBOARD_DISABLED_INGESTION = { clipboard: { enabled: false } };
+const TEXT_INGESTION = {
+  handlers: [createTextHandler({
+    measure: (t) => ({ width: Math.max(...t.split('\n').map((l) => l.length)) * 10, height: t.split('\n').length * 20 }),
+  })],
+};
 
 describe('SceneCanvas ingestion — handler registration lifecycle', () => {
   it('two mounted canvases share one refcounted kit:image handler', () => {
@@ -434,6 +440,79 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     expect(scene.roots).toHaveLength(0);
   });
 
+  function dragOver(canvas: Element, type = 'image/png'): Event {
+    const ev = new Event('dragover', { bubbles: true, cancelable: true });
+    Object.assign(ev, {
+      dataTransfer: { items: [{ kind: 'file', type }], files: [], types: ['Files'], dropEffect: 'none' },
+      clientX: 50, clientY: 60,
+      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    });
+    act(() => { canvas.dispatchEvent(ev); });
+    return ev;
+  }
+
+  it('edit alone is no drop target for an OS drag', () => {
+    const { canvas } = mount(['edit']);
+    const ev = dragOver(canvas);
+    expect(ev.defaultPrevented).toBe(false);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(false);
+  });
+
+  it('ingest makes the canvas a drop target', () => {
+    const { canvas } = mount(['ingest']);
+    const ev = dragOver(canvas);
+    expect(ev.defaultPrevented).toBe(true);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(true);
+  });
+
+  it('ingest refuses a drag no content handler would claim', () => {
+    const { canvas } = mount(['ingest']);
+    const ev = dragOver(canvas, 'application/pdf');
+    expect(ev.defaultPrevented).toBe(false);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(false);
+  });
+
+  it('ingest accepts that drag once a handler for it is registered', () => {
+    const scene = makeScene();
+    const { container } = render(
+      <SceneCanvas features={['ingest']} scene={scene} layers={{}} width={64} height={64}
+        ingestion={{ handlers: [{ id: 'app:pdf', match: 'application/pdf', handle: () => {} }] }} />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    expect(dragOver(canvas, 'application/pdf').defaultPrevented).toBe(true);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(true);
+  });
+
+  it('ingest leaves a paste no content handler claims to the page', async () => {
+    const { scene } = mount(['ingest']);
+    const ev = paste({ text: 'just words' });
+    await settle();
+    expect(scene.roots).toHaveLength(0);
+    expect(ev.defaultPrevented).toBe(false);
+  });
+
+  it('edit alone leaves pasted text that is no copied node to the page', async () => {
+    mount(['edit']);
+    const ev = paste({ text: 'just words' });
+    await settle();
+    expect(ev.defaultPrevented).toBe(false);
+  });
+
+  it('SceneCanvasApi.ingest reports whether the canvas had an ingest action to run', async () => {
+    const ref = createRef<SceneCanvasApi>();
+    const scene = makeScene();
+    const { rerender } = render(
+      <SceneCanvas features={['edit']} scene={scene} layers={{}} width={64} height={64} ref={ref} />,
+    );
+    let took = true;
+    act(() => { took = ref.current!.ingest([pngFile()]); });
+    expect(took).toBe(false);
+    rerender(<SceneCanvas features={['edit', 'ingest']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    act(() => { took = ref.current!.ingest([pngFile()]); });
+    expect(took).toBe(true);
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+  });
+
   it('edit alone runs no handler another canvas registered', async () => {
     const handle = vi.fn();
     // A bare canvas registers its `ingestion.handlers` and binds no paste, so
@@ -473,6 +552,35 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     await vi.waitFor(() => expect(scene.roots).toHaveLength(3));
     dropFile(canvas, pngFile());
     await vi.waitFor(() => expect(scene.roots).toHaveLength(4));
+  });
+
+  it('the text handler turns pasted plain text into a text node, and leaves node payloads and SVG alone', async () => {
+    const scene = makeScene();
+    render(
+      <SceneCanvas features={['ingest']} scene={scene} layers={{}} width={64} height={64}
+        ingestion={TEXT_INGESTION} />,
+    );
+    const textNodes = () => scene.roots.map((id) => scene.get(id)!)
+      .filter((n) => typeof (n.data as { text?: string }).text === 'string');
+
+    paste({ text: 'hello\nworld' });
+    await vi.waitFor(() => expect(textNodes()).toHaveLength(1));
+    expect((textNodes()[0].data as { text: string }).text).toBe('hello\nworld');
+    expect(textNodes()[0].pose).toMatchObject({ width: 50, height: 40 });
+
+    paste({ text: NODE_TEXT });
+    paste({ text: SVG_TEXT });
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(3));
+    await settle();
+    expect(textNodes()).toHaveLength(1);
+    expect(scene.roots).toHaveLength(3);
+  });
+
+  it('without the text handler, pasted plain text inserts nothing', async () => {
+    const { scene } = mount(['ingest']);
+    paste({ text: 'hello' });
+    await settle();
+    expect(scene.roots).toHaveLength(0);
   });
 
   it('ingest alone runs a registered consumer handler on a paste', async () => {

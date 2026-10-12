@@ -95,6 +95,12 @@ describe('draw app commands', () => {
     expect(release.disabled || release.getAttribute('aria-disabled') === 'true').toBe(true);
   });
 
+  it('offers the command palette as a button', () => {
+    const t = setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Commands' }));
+    expect(t.commands.openPalette).toHaveBeenCalledOnce();
+  });
+
   it('offers Preferences as a button', () => {
     const t = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));

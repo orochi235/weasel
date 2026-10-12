@@ -1,10 +1,14 @@
-import type { PrefLeaf } from '@weasel-js/prefs';
+import type { PrefAlias, PrefLeaf } from '@weasel-js/prefs';
 import s from './PrefWords.module.css';
 
 /** Whether a leaf is a `label` or a `separator`: drawn across the rows with no label column, and holding no value. */
 export function prefDrawsNoControl(leaf: PrefLeaf): boolean {
   return leaf.kind === 'label' || leaf.kind === 'separator';
 }
+
+/** What every params surface says in place of an alias that points at nothing. */
+export const aliasOfNothing = (alias: PrefAlias): string =>
+  `(alias: no pref at ${alias.of === '' ? 'an empty path' : alias.of})`;
 
 /** A `label` leaf as every params surface draws it: its name as a line of text, and its description as the note under it. */
 export function PrefLabelLine({ pref }: { pref: PrefLeaf }) {

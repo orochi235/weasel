@@ -72,7 +72,7 @@ function surfaceFor(clears: SurfaceClear[]): SurfaceHandle {
       return () => {};
     },
     registerPainter: (_id, paint: TilePainter) => {
-      paint({ x: 0, y: 0, w: 100, h: 50 }, {} as never);
+      paint({ x: 0, y: 0, w: 100, h: 50 }, { visible: new Map() } as never);
       return () => {};
     },
     containerRef: () => {},

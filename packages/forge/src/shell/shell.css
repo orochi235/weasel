@@ -51,7 +51,7 @@
 }
 
 .fg-story[data-fg-layout='padded'] {
-  padding: 16px;
+  padding: var(--wzl-space-8);
 }
 
 .fg-story[data-fg-layout='fullscreen'] {

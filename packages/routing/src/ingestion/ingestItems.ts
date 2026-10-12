@@ -16,7 +16,7 @@
  * For paste (`itemsFromClipboardData`) string flavors are emitted in
  * `INGEST_STRING_MIMES` order: text/plain, text/html, text/uri-list.
  */
-import type { IngestItem } from '@weasel-js/gestures';
+import { UNKNOWN_MIME, type IngestItem } from '@weasel-js/gestures';
 
 export type { IngestItem };
 
@@ -79,6 +79,24 @@ export function itemsFromDataTransfer(dt: DataTransfer): Promise<IngestItem[]> {
   }
 
   return Promise.all(reads).then(() => [...files, ...strings]);
+}
+
+/**
+ * What a drag still in flight says it carries: one item per flavor, MIME
+ * only. A browser withholds contents until the drop, so nothing may read
+ * `file` or `text` off these; they exist to ask which bindings would match.
+ * A file the browser does not name yet (Firefox reports
+ * `application/x-moz-file`, others only a `Files` type) is `UNKNOWN_MIME`.
+ */
+export function itemTypesFromDataTransfer(dt: DataTransfer): readonly IngestItem[] {
+  const mimes: string[] = [];
+  for (const item of Array.from(dt.items ?? [])) {
+    const mime = item.type ? normalizeMime(item.type) : '';
+    if (item.kind === 'file') mimes.push(mime && mime !== 'application/x-moz-file' ? mime : UNKNOWN_MIME);
+    else if (INGEST_STRING_MIMES.has(mime)) mimes.push(mime);
+  }
+  if (mimes.length === 0 && Array.from(dt.types ?? []).includes('Files')) mimes.push(UNKNOWN_MIME);
+  return mimes.map((mime) => ({ mime })) as unknown as IngestItem[];
 }
 
 /** Materialize a paste's `clipboardData`. Fully synchronous. */

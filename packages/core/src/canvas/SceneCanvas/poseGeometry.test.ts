@@ -117,6 +117,37 @@ describe('poseContainsRotated', () => {
     expect(poseContainsRotated(r, 11, 5)).toBe(false);
   });
 
+  describe('under a pose transform', () => {
+    // Drawn four times as wide about its center: x from -15 to 25.
+    const wide = { x: 0, y: 0, width: 10, height: 10, transform: [4, 0, 0, 1] as const };
+    const widePath = { kind: 'rect', ...wide };
+    const onScreen = { px: 2, scale: { x: 1, y: 1 } };
+
+    it.each([
+      ['a world tolerance on a box', wide, 2],
+      ['a world tolerance on a path', widePath, 2],
+      ['a screen slop on a box', wide, onScreen],
+      ['a screen slop on a path', widePath, onScreen],
+    ])('measures %s in world, not stretched with the node', (_name, pose, tolerance) => {
+      expect(poseContainsRotated(pose as never, 26.5, 5, tolerance)).toBe(true);
+      expect(poseContainsRotated(pose as never, 5, 11.5, tolerance)).toBe(true);
+      // 7 world units past the right edge, which is 1.75 in the node's own frame.
+      expect(poseContainsRotated(pose as never, 32, 5, tolerance)).toBe(false);
+      expect(poseContainsRotated(pose as never, 5, 13, tolerance)).toBe(false);
+    });
+
+    it('keeps a stroke reach in the node frame, where the stroke is drawn', () => {
+      const reach = { px: 0, scale: { x: 1, y: 1 }, reach: 2 };
+      expect(poseContainsRotated(wide as never, 32, 5, reach)).toBe(true);
+      expect(poseContainsRotated(wide as never, 34, 5, reach)).toBe(false);
+    });
+
+    it('measures the default path slop in world', () => {
+      expect(poseContainsRotated(widePath as never, 28, 5)).toBe(true);
+      expect(poseContainsRotated(widePath as never, 32, 5)).toBe(false);
+    });
+  });
+
   it('path-shaped pose without AABB/rotation uses path containment', () => {
     // A bare polygon pose carries no AABB/rotation, so poseRotationOf returns
     // null and it keeps using its path test.

@@ -1,0 +1,424 @@
+{
+  "name": "platinum",
+  "extends": "mac-classic",
+  "description": "Mac OS 8 and 9's Platinum appearance: light gray faces with a black outline and a soft two-tone edge, white fields, and pinstriped window titles. Dark mode is this theme's own; the system never had one.",
+  "pins": {
+    "surface": {
+      "by": "mode",
+      "light": {
+        "value": "#dddddd",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#2c2c2c",
+        "type": "color"
+      }
+    },
+    "surface-raised": {
+      "by": "mode",
+      "light": {
+        "value": "#dddddd",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#2c2c2c",
+        "type": "color"
+      }
+    },
+    "surface-popover": {
+      "by": "mode",
+      "light": {
+        "value": "#dddddd",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#2c2c2c",
+        "type": "color"
+      }
+    },
+    "surface-sunken": {
+      "by": "mode",
+      "light": {
+        "value": "#ffffff",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#161616",
+        "type": "color"
+      }
+    },
+    "fg": {
+      "by": "mode",
+      "light": {
+        "value": "#000000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#f0f0f0",
+        "type": "color"
+      }
+    },
+    "fg-on-accent": {
+      "value": "#ffffff",
+      "type": "color"
+    },
+    "fg-inverse": {
+      "by": "mode",
+      "light": {
+        "value": "#ffffff",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#000000",
+        "type": "color"
+      }
+    },
+    "border": {
+      "by": "mode",
+      "light": {
+        "value": "#999999",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#5a5a5a",
+        "type": "color"
+      }
+    },
+    "border-strong": {
+      "by": "mode",
+      "light": {
+        "value": "#555555",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#888888",
+        "type": "color"
+      }
+    },
+    "accent-soft": {
+      "by": "mode",
+      "light": {
+        "value": "#1f1f6b",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#26266e",
+        "type": "color"
+      }
+    },
+    "accent-base": {
+      "by": "mode",
+      "light": {
+        "value": "#333399",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#5050c0",
+        "type": "color"
+      }
+    },
+    "accent-strong": {
+      "by": "mode",
+      "light": {
+        "value": "#6666cc",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#9a9af0",
+        "type": "color"
+      }
+    },
+    "accent-hover": {
+      "by": "mode",
+      "light": {
+        "value": "#4040b0",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#5050c0",
+        "type": "color"
+      }
+    },
+    "accent-fg": {
+      "by": "mode",
+      "light": {
+        "value": "#333399",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#9a9af0",
+        "type": "color"
+      }
+    },
+    "secondary-soft": {
+      "by": "mode",
+      "light": {
+        "value": "#003c3c",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#006666",
+        "type": "color"
+      }
+    },
+    "secondary-base": {
+      "by": "mode",
+      "light": {
+        "value": "#006666",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#44bbbb",
+        "type": "color"
+      }
+    },
+    "secondary-strong": {
+      "by": "mode",
+      "light": {
+        "value": "#44bbbb",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#88dddd",
+        "type": "color"
+      }
+    },
+    "secondary-fg": {
+      "by": "mode",
+      "light": {
+        "value": "#005555",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#44bbbb",
+        "type": "color"
+      }
+    },
+    "danger-base": {
+      "by": "mode",
+      "light": {
+        "value": "#990000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#ff8080",
+        "type": "color"
+      }
+    },
+    "warning-base": {
+      "by": "mode",
+      "light": {
+        "value": "#6b4a00",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#ffd040",
+        "type": "color"
+      }
+    },
+    "success-base": {
+      "by": "mode",
+      "light": {
+        "value": "#006000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#60d060",
+        "type": "color"
+      }
+    },
+    "shadow": {
+      "by": "mode",
+      "light": {
+        "value": "rgba(0, 0, 0, 0.4)",
+        "type": "color"
+      },
+      "dark": {
+        "value": "rgba(0, 0, 0, 0.7)",
+        "type": "color"
+      }
+    },
+    "backdrop": {
+      "by": "mode",
+      "light": {
+        "value": "#666699",
+        "type": "gradient"
+      },
+      "dark": {
+        "value": "#26263a",
+        "type": "gradient"
+      }
+    },
+    "workspace-surface": {
+      "by": "mode",
+      "light": {
+        "value": "#bbbbbb",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#1c1c1c",
+        "type": "color"
+      }
+    },
+    "code-keyword": {
+      "by": "mode",
+      "light": {
+        "value": "#333399",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#9a9af0",
+        "type": "color"
+      }
+    },
+    "code-string": {
+      "by": "mode",
+      "light": {
+        "value": "#990000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#ff8080",
+        "type": "color"
+      }
+    },
+    "code-number": {
+      "by": "mode",
+      "light": {
+        "value": "#005555",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#44bbbb",
+        "type": "color"
+      }
+    },
+    "code-constant": {
+      "by": "mode",
+      "light": {
+        "value": "#800080",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#e080e0",
+        "type": "color"
+      }
+    },
+    "code-property": {
+      "by": "mode",
+      "light": {
+        "value": "#006000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#60d060",
+        "type": "color"
+      }
+    },
+    "code-name": {
+      "by": "mode",
+      "light": {
+        "value": "#6b4a00",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#ffd040",
+        "type": "color"
+      }
+    },
+    "bevel-light": {
+      "by": "mode",
+      "light": {
+        "value": "#ffffff",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#5a5a5a",
+        "type": "color"
+      }
+    },
+    "bevel-shade": {
+      "by": "mode",
+      "light": {
+        "value": "#888888",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#161616",
+        "type": "color"
+      }
+    },
+    "bevel-dark": {
+      "by": "mode",
+      "light": {
+        "value": "#000000",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#000000",
+        "type": "color"
+      }
+    },
+    "bevel-raised": {
+      "value": "inset 0 0 0 1px var(--wzl-bevel-dark), inset -2px -2px 0 var(--wzl-bevel-shade), inset 2px 2px 0 var(--wzl-bevel-light)",
+      "type": "shadow"
+    },
+    "bevel-sunken": {
+      "value": "inset 1px 1px 0 var(--wzl-bevel-shade), inset -1px -1px 0 var(--wzl-bevel-light), inset 0 0 0 2px var(--wzl-bevel-dark)",
+      "type": "shadow"
+    },
+    "bevel-pressed": {
+      "value": "inset 0 0 0 1px var(--wzl-bevel-dark), inset 2px 2px 0 var(--wzl-bevel-shade)",
+      "type": "shadow"
+    },
+    "field-focus-shadow": {
+      "value": "0 0 0 2px var(--wzl-focus-ring), inset 1px 1px 0 var(--wzl-bevel-shade), inset -1px -1px 0 var(--wzl-bevel-light), inset 0 0 0 2px var(--wzl-bevel-dark)",
+      "type": "shadow"
+    },
+    "button-pressed-surface": {
+      "by": "mode",
+      "light": {
+        "value": "#aaaaaa",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#444444",
+        "type": "color"
+      }
+    },
+    "button-primary-pressed-surface": {
+      "by": "mode",
+      "light": {
+        "value": "#aaaaaa",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#444444",
+        "type": "color"
+      }
+    },
+    "button-primary-bevel": {
+      "value": "0 0 0 2px var(--wzl-bevel-dark), inset 0 0 0 1px var(--wzl-bevel-dark), inset -2px -2px 0 var(--wzl-bevel-shade), inset 2px 2px 0 var(--wzl-bevel-light)",
+      "type": "shadow"
+    },
+    "titlebar-surface": {
+      "by": "mode",
+      "light": {
+        "value": "linear-gradient(#dddddd, #dddddd) top / 100% 3px no-repeat, linear-gradient(#dddddd, #dddddd) bottom / 100% 3px no-repeat, repeating-linear-gradient(180deg, #ffffff 0 1px, #999999 1px 2px)",
+        "type": "gradient"
+      },
+      "dark": {
+        "value": "linear-gradient(#2c2c2c, #2c2c2c) top / 100% 3px no-repeat, linear-gradient(#2c2c2c, #2c2c2c) bottom / 100% 3px no-repeat, repeating-linear-gradient(180deg, #5a5a5a 0 1px, #161616 1px 2px)",
+        "type": "gradient"
+      }
+    },
+    "titlebar-fg": {
+      "value": "{fg}",
+      "type": "color"
+    },
+    "titlebar-label-surface": {
+      "value": "{surface}",
+      "type": "color"
+    }
+  }
+}

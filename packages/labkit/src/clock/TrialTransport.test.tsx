@@ -109,6 +109,24 @@ describe('<TrialTransport>', () => {
     expect(c().elapsed).toBe(2000);
   });
 
+  it('holds End, and a scrub to the far right, at the end of the current pass of a loop', async () => {
+    await mount({ duration: 1000, loop: 3 });
+    const slider = () => screen.getByRole('slider', { name: 'Position' });
+    act(() => c().seek(1300));
+    for (let i = 0; i < 3; i++) {
+      act(() => {
+        fireEvent.keyDown(slider(), { key: 'End' });
+      });
+      expect(c().elapsed).toBe(2000);
+      expect(c().pass).toBe(1);
+      expect(slider()).toHaveAttribute('aria-valuenow', '1000');
+    }
+    act(() => {
+      fireEvent.keyDown(slider(), { key: 'Home' });
+    });
+    expect(c().elapsed).toBe(1000);
+  });
+
   it('plays a finished run again from the start', async () => {
     await mount({ duration: 1000 });
     act(() => c().seek(1000));

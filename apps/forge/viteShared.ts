@@ -13,28 +13,12 @@ export const frameConfig = 'apps/forge/forge.frame.tsx';
 export const shellConfig = 'apps/forge/forge.shell.tsx';
 export const frameStyles = ['apps/forge/frame.css'];
 
-/** The repo's package aliases, plus the stylesheet entries that only a built package has. */
+/** The repo's package aliases, with labkit's stylesheet as its build assembles it. */
 export function forgeAliases(repoRoot: string): ViteAlias[] {
   return weaselAliases(repoRoot, [
     {
-      find: '@weasel-js/theme/tokens.css',
-      replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
-    },
-    {
-      find: '@weasel-js/theme/fonts.css',
-      replacement: resolve(repoRoot, 'packages/theme/src/fonts.css'),
-    },
-    {
       find: '@weasel-js/labkit/styles.css',
       replacement: resolve(repoRoot, 'apps/forge/labkitStyles.ts'),
-    },
-    {
-      find: '@weasel-js/forge/shell.css',
-      replacement: resolve(repoRoot, 'packages/forge/src/shell/shell.css'),
-    },
-    {
-      find: '@weasel-js/forge/frame.css',
-      replacement: resolve(repoRoot, 'packages/forge/src/frame/frame.css'),
     },
   ]);
 }

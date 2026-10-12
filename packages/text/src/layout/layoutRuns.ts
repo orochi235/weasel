@@ -511,13 +511,13 @@ interface GlyphHit {
  */
 function resolveGlyph(
   run: ResolvedRun,
-  font: BmFont,
+  font: BmFont | null,
   resolved: ResolveResult,
   cp: number,
   warn = true,
 ): GlyphHit | null {
-  const direct = font.charMap.get(cp);
-  if (direct) return { glyph: direct, font, resolved };
+  const direct = font?.charMap.get(cp);
+  if (font && direct) return { glyph: direct, font, resolved };
 
   const fallback = resolveGlyphFallback(run.fontFamily, run.fontWeight, run.fontStyle);
   const face = fallback?.dynamicFace;
@@ -791,21 +791,11 @@ export function layoutRuns(
         continue;
       }
 
-      // The outline tier has no atlas to miss in and no tier below it to
-      // escalate to: the face either has the glyph or the run does not
-      // contain it. Its advance is the only thing needed to place it.
-      if (outlineFace) {
-        const adv = metrics.advanceOf(cp);
-        if (adv === null) {
-          entries.push({
-            run, font: null, metrics, glyph: null, cp,
-            advance: 0, tracking: 0, kerningBefore: 0, isSpace, isNewline: false,
-            drawsInk: false,
-            resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
-          });
-          prevCp = cp; prevMetrics = metrics; prevFontSize = fontSize;
-          continue;
-        }
+      // An outline-only face has no atlas to miss in, and its advance is the
+      // only thing needed to place a glyph it has. One it lacks escalates
+      // below, as an atlas miss does.
+      const adv = outlineFace ? metrics.advanceOf(cp) : null;
+      if (adv !== null) {
         let kerningBefore = 0;
         if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
           kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
@@ -822,7 +812,7 @@ export function layoutRuns(
 
       const hit = resolved.dynamicFace
         ? { glyph: resolved.dynamicFace.requestGlyph(cp), font: font!, resolved }
-        : resolveGlyph(run, font!, resolved, cp);
+        : resolveGlyph(run, font, resolved, cp);
       if (!hit) {
         entries.push({
           run, font: null, metrics, glyph: null, cp,

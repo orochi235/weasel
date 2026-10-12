@@ -11,6 +11,7 @@ import { EditorBar } from './EditorBar';
 import { EditorPrefsButton, EditorPrefsProvider, useEditorPrefs, useEditorSize } from './editorPrefs';
 import type { DocumentCodec } from './document';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
+import { Shelf } from './Shelf';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import type { PrefSchemaEditorProps } from './PrefSchemaEditor';
@@ -58,6 +59,9 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   list?: boolean;
   /** Assets another editor holds, listed after this one's under the same headings. */
   elsewhere?: readonly ListedAsset[];
+  /** Asset ids in the order the list shows them under each heading, this editor's and `elsewhere`'s alike, so two
+   *  editors that list each other's show one order. Left out, this editor's come first. */
+  order?: readonly string[];
   /** The reader picked one of `elsewhere`; the host shows it, in whatever holds it. */
   onElsewhere?(id: string): void;
   /** The asset shown when the editor mounts. Default: the first. */
@@ -76,7 +80,7 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
  * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
  */
 export function AssetEditor(
-  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, onElsewhere, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
   const [first] = useState(workspace);
   const base = original ?? first;
@@ -90,6 +94,7 @@ export function AssetEditor(
   const pageless = asset.kind === 'layout';
   const over = overOf(workspace, asset);
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
+  const [shelfSlot, setShelfSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ workspace, schema, paths: selection.paths });
   const { stage, drop, outside, dropping, beforeOpening } = usePreviewDropZone({
@@ -123,9 +128,7 @@ export function AssetEditor(
   const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
   const actionList = useEditorActions(actions);
   const treeMark = useRowMarks({ schema, over, changes, actions: actionList, rowMark });
-  // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
-  const custom = kinds;
-  const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
+  const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(kinds)], [kinds]);
   const editorPrefs = useEditorPrefs(prefs);
   const structureSize = useEditorSize('structureWidth', editorPrefs);
   const attributesSize = useEditorSize('attributesWidth', editorPrefs);
@@ -230,9 +233,9 @@ export function AssetEditor(
     }}>
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={doc.canUndo} canRedo={doc.canRedo} onStep={step}
         draftSavedAt={doc.draftSavedAt} onDiscard={() => { doc.commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
-      <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={custom} renderers={renderers} types={types}
+      <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={kinds} renderers={renderers} types={types}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={over ? undefined : unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
-        toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} over={over} />
+        toolSlot={toolSlot} shelfSlot={shelfSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} over={over} />
       <ResizeHandle className={s.structureHandle} {...structureSize} min={180} max={640} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
@@ -247,21 +250,21 @@ export function AssetEditor(
           onChange={(next) => commit(next, attrKey)}
           added={selection.paths.length === 1 && changes.some((c) => c.op === 'add' && c.path === selection.lead)}
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
-          kinds={kindList} custom={custom} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly} onNotice={setNotice} />
+          kinds={kindList} custom={kinds} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly} onNotice={setNotice} />
       </div>
       <ResizeHandle {...attributesSize} min={220} max={720} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
         onSelect={(path, how) => {
           // The root's own entry names no node to add to a selection.
           if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
-          else reveal(path === null ? [] : [path]);
+          else reveal(how.range ?? (path === null ? [] : [path]));
         }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} hosted={preview?.(asset, over)} />
-      <ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} />
+      <Shelf slot={setShelfSlot}><ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} /></Shelf>
       {list && (
         <>
           <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
           <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar">
-            <AssetList assets={workspace.assets} elsewhere={elsewhere} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
+            <AssetList assets={workspace.assets} elsewhere={elsewhere} order={order} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
           </aside>
         </>
       )}

@@ -467,7 +467,7 @@ describe('StoryTree', () => {
         />
       );
     }
-    const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui', tone: 'var(--wzl-swatch-amber)' }]);
+    const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui', tone: { ref: 'swatch-amber' } }]);
     render(
       <LibrariesContext.Provider value={libraries}>
         <Tagged />
@@ -477,7 +477,7 @@ describe('StoryTree', () => {
     const tags = Array.from(packages.querySelectorAll<HTMLElement>('.fg-tree__tag'));
     const tag = (label: string) => tags.find((t) => t.textContent === label) as HTMLElement;
     const [ui, kit] = [tag('ui'), tag('Kit')];
-    expect(ui.style.getPropertyValue('--wzl-tone')).toContain('var(--wzl-swatch-amber)');
+    expect(ui.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-amber)');
     expect(kit.hasAttribute('data-tone')).toBe(false);
     expect(kit.dataset.status).toBe('muted');
   });

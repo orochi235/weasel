@@ -1,7 +1,8 @@
 // A frame of N moving [x, y] values, read every frame: as targets read one at a time, and as
 // rows of a target table. Steady, then with rows stopping and starting every frame.
-// Run through `node tests/perf/target-reads/run.mjs table <N>... <idle | targets | table | held>`.
-// `held` is N table rows with a hold each and no animation.
+// Run through `node tests/perf/target-reads/run.mjs table <N>... <idle | targets | table | held | heldfn>`.
+// `held` is N table rows with a hold each and no animation; `heldfn` gives each hold its value
+// as a function, which is asked every frame.
 // `idle` is the frame with nothing read, to take off the other two.
 import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
 import { createTarget, stateOf, type Target } from '../../../packages/animator/src/target';
@@ -126,25 +127,26 @@ const idleCase = (): Case => {
 };
 
 /** N rows of a table with a hold on each and nothing else moving them. */
-function heldCase(): void {
+function heldCase(asked: boolean): void {
   const m = mount();
   const table = createTargetTable({ axes: AXES });
   for (let row = 0; row < N; row++) {
     table.add([0, 0]);
-    m.api.hold({ target: table.target(row), value: [row, 100], weight: 0.5 });
+    const value = [row, 100];
+    m.api.hold({ target: table.target(row), value: asked ? () => value : value, weight: 0.5 });
   }
   for (let f = 0; f < 5; f++) m.frame();
-  time('held, steady', () => { m.frame(); void table.shown; });
+  time(asked ? 'held by a function, steady' : 'held, steady', () => { m.frame(); void table.shown; });
   const row = N >> 1;
   const want = table.target(row).read();
   if (table.shown[row * AXES] !== want[0] || want[0] !== row / 2) throw new Error(`held: row ${row} shows ${table.shown[row * AXES]}`);
 }
 
-// One case a process (argv[2]: idle | targets | table | held): three sets of targets alive together
+// One case a process (argv[2]: idle | targets | table | held | heldfn): three sets of targets alive together
 // push each other out of cache, and a frame at 100k rows is bound by memory.
 const which = process.argv[2] ?? 'table';
-if (which === 'held') {
-  heldCase();
+if (which === 'held' || which === 'heldfn') {
+  heldCase(which === 'heldfn');
   process.exit(0);
 }
 const c = which === 'idle' ? idleCase() : which === 'targets' ? targetsCase() : tableCase();

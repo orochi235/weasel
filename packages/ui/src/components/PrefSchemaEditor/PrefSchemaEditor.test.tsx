@@ -184,7 +184,10 @@ describe('PrefSchemaEditor', () => {
       const [schema, setSchema] = useState(renamed);
       return <PrefSchemaEditor schema={schema} onChange={setSchema} original={original} taken={taken} onSubmit={async () => {}} />;
     }
-    const changes = () => screen.getByRole('region', { name: 'Changes' });
+    const changes = () => {
+      fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
+      return screen.getByRole('region', { name: 'Export' });
+    };
     const { rerender } = render(<Host original={START} taken={false} />);
     expect(within(changes()).queryByText('No changes.')).toBeNull();
     await act(async () => { fireEvent.click(within(changes()).getByRole('button', { name: 'Submit' })); });
@@ -429,7 +432,8 @@ describe('PrefSchemaEditor', () => {
       expect(within(structure()).queryByText('(snap)')).toBeNull();
       expect(within(structure()).getByText('Grid lines')).toBeInTheDocument();
       expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
-      expect(within(screen.getByRole('region', { name: 'Changes' })).queryByText(/grid/)).toBeNull();
+      fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
+      expect(within(screen.getByRole('tabpanel', { name: 'Changes' })).queryByText(/grid/)).toBeNull();
       expect(screen.getByRole('status')).toHaveTextContent('The source changed since this draft was saved.');
       // And the step that made the edit still goes back, to the new source.
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
@@ -473,10 +477,13 @@ describe('PrefSchemaEditor', () => {
     expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('author');
   });
 
-  it('shows the literal and the change list side by side', () => {
+  it('shows the literal and the change list a tab each, the literal first', () => {
     render(<Live />);
-    expect(screen.getByRole('region', { name: 'Literal' })).toBeInTheDocument();
-    expect(within(screen.getByRole('region', { name: 'Changes' })).getByText('No changes.')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Literal' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel', { name: 'Literal' })).toContainElement(screen.getByTestId('schema-literal'));
+    fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
+    expect(screen.getByRole('tab', { name: 'Changes' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(screen.getByRole('tabpanel', { name: 'Changes' })).getByText('No changes.')).toBeInTheDocument();
   });
 
   it('pairs a leaf with another by picking it from the schema\'s fields', () => {
@@ -569,6 +576,22 @@ describe('PrefSchemaEditor', () => {
     expect(screen.getByRole('status')).toHaveTextContent('');
   });
 
+  it('copies the text of the tab shown', () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    try {
+      render(<Live />);
+      const copy = () => fireEvent.click(within(screen.getByRole('region', { name: 'Export' })).getByRole('button', { name: 'Copy' }));
+      copy();
+      expect(writeText).toHaveBeenLastCalledWith(expect.stringContaining("name: 'Prefs',"));
+      fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
+      copy();
+      expect(writeText).toHaveBeenLastCalledWith('No changes.');
+    } finally {
+      Reflect.deleteProperty(navigator, 'clipboard');
+    }
+  });
+
   it('swallows a refused clipboard write', async () => {
     // vitest does not report this realm's unhandled rejections, so assert a handler was attached (a proxy).
     const refused = Promise.reject(new Error('denied'));
@@ -577,7 +600,7 @@ describe('PrefSchemaEditor', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     try {
       render(<Live />);
-      fireEvent.click(within(screen.getByRole('region', { name: 'Literal' })).getByRole('button', { name: 'Copy' }));
+      fireEvent.click(within(screen.getByRole('region', { name: 'Export' })).getByRole('button', { name: 'Copy' }));
       await new Promise((r) => setTimeout(r, 0));
       expect(writeText).toHaveBeenCalled();
       expect(then).toHaveBeenCalledWith(undefined, expect.any(Function));

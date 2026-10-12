@@ -50,6 +50,37 @@ describe('lines of text written as positioned tspans', () => {
     expect((parseSvg(serializeSvg([node])).nodes[0] as SvgTextNode).text).toBe('One\nTwo');
   });
 
+  it('reads the pitch the lines state as the line height', () => {
+    const byDy = text('<text x="10" y="20" font-size="10"><tspan x="10" dy="0">A</tspan><tspan x="10" dy="2em">B</tspan><tspan x="10" dy="20">C</tspan></text>');
+    expect(byDy.warnings).toEqual([]);
+    expect(byDy.node.style?.lineHeight).toBeCloseTo(2);
+    expect(byDy.node.height).toBeCloseTo(60);
+    const byY = text('<text font-size="10"><tspan x="10" y="20">A</tspan><tspan x="10" y="35">B</tspan></text>');
+    expect(byY.node.style?.lineHeight).toBeCloseTo(1.5);
+    expect(byY.node.height).toBeCloseTo(30);
+  });
+
+  it('reads the pitch of a line that follows bare text', () => {
+    const { node } = text('<text x="0" y="20" font-size="10">A<tspan x="0" dy="30">B</tspan></text>');
+    expect(node.style?.lineHeight).toBeCloseTo(3);
+  });
+
+  it('leaves the default line height unstated', () => {
+    const { node } = text('<text x="10" y="20"><tspan x="10" dy="0">A</tspan><tspan x="10" dy="1.2em">B</tspan></text>');
+    expect(node.style?.lineHeight).toBeUndefined();
+  });
+
+  it('takes the mean of uneven pitches, and says so', () => {
+    const { node, warnings } = text('<text font-size="10"><tspan x="0" y="10">A</tspan><tspan x="0" y="20">B</tspan><tspan x="0" y="40">C</tspan></text>');
+    expect(node.style?.lineHeight).toBeCloseTo(1.5);
+    expect(warnings).toEqual([expect.stringMatching(/uneven/)]);
+  });
+
+  it('leaves a tspan that moves up out of the pitch', () => {
+    const { node } = text('<text font-size="10"><tspan x="0" y="10">A</tspan><tspan x="0" y="25">B</tspan><tspan x="0" y="-5">C</tspan></text>');
+    expect(node.style?.lineHeight).toBeCloseTo(1.5);
+  });
+
   it('reports per-glyph positions it reads only the first of', () => {
     const { node, warnings } = text('<text x="10 20 30" y="5">abc</text>');
     expect(node.text).toBe('abc');

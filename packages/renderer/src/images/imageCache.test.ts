@@ -7,6 +7,7 @@ import {
   releaseImage,
   retryImage,
   __setImageLoaderForTests,
+  setImageCacheBudget,
   _resetImageCacheForTests,
 } from './imageCache';
 import { GLImageCache } from '../cache/GLImageCache';
@@ -58,6 +59,25 @@ describe('imageCache', () => {
     getImageBitmap('x');
     getImageBitmap('x');
     expect(calls).toBe(1);
+  });
+
+  it('runs the subscribers after one that throws', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const d = deferred<ImageBitmap>();
+    __setImageLoaderForTests(() => d.promise);
+    const later = vi.fn();
+    subscribeImageReady(() => {
+      throw new Error('boom');
+    });
+    subscribeImageReady(later);
+
+    getImageBitmap('a');
+    d.resolve(fakeBitmap());
+    await flush();
+
+    expect(later).toHaveBeenCalledTimes(1);
+    expect(imageStatus('a')).toBe('ready');
+    error.mockRestore();
   });
 
   it('caches errors and does not retry', async () => {
@@ -398,5 +418,78 @@ describe('imageCache — release and retry', () => {
     retryImage('a');
     expect(imageStatus('a')).toBe('ready');
     expect(calls).toBe(1);
+  });
+});
+
+describe('the image cache byte budget', () => {
+  beforeEach(() => _resetImageCacheForTests());
+
+  // A 2x2 bitmap decodes to 16 bytes of RGBA.
+  const BUDGET_FOR_ONE = 20;
+
+  async function load(src: string): Promise<ImageBitmap> {
+    const bmp = fakeBitmap();
+    __setImageLoaderForTests(async () => bmp);
+    getImageBitmap(src);
+    await flush();
+    return bmp;
+  }
+
+  it('drops the least recently read image once a load takes the cache past it', async () => {
+    setImageCacheBudget(BUDGET_FOR_ONE);
+    await load('a');
+    await load('b');
+    expect(imageStatus('a')).toBe('idle');
+    expect(imageStatus('b')).toBe('ready');
+  });
+
+  it('keeps everything under the default budget', async () => {
+    await load('a');
+    await load('b');
+    expect(imageStatus('a')).toBe('ready');
+  });
+
+  it('spares an image a live renderer drew in its latest frame', async () => {
+    setImageCacheBudget(BUDGET_FOR_ONE);
+    const gl = makeGLRecorder().gl;
+    const textures = new GLImageCache(gl);
+    const a = await load('a');
+    textures.beginFrame();
+    textures.upload(a, a);
+    await load('b');
+    expect(imageStatus('a')).toBe('ready');
+
+    // A frame that leaves it out is what releases it.
+    textures.beginFrame();
+    await load('c');
+    expect(imageStatus('a')).toBe('idle');
+    textures.dispose();
+  });
+
+  it('spares an image read since the last load landed, drawn through GL or not', async () => {
+    setImageCacheBudget(BUDGET_FOR_ONE);
+    await load('a');
+    const d = deferred<ImageBitmap>();
+    __setImageLoaderForTests(() => d.promise);
+    getImageBitmap('b');
+    getImageBitmap('a');
+    d.resolve(fakeBitmap());
+    await flush();
+    expect(imageStatus('a')).toBe('ready');
+    expect(imageStatus('b')).toBe('ready');
+  });
+
+  it('frees the texture of an image it drops', async () => {
+    setImageCacheBudget(BUDGET_FOR_ONE);
+    const recorder = makeGLRecorder();
+    const textures = new GLImageCache(recorder.gl);
+    const a = await load('a');
+    textures.beginFrame();
+    textures.upload(a, a);
+    textures.beginFrame();
+    recorder.reset();
+    await load('b');
+    expect(recorder.calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(1);
+    textures.dispose();
   });
 });

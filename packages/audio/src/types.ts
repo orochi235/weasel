@@ -197,6 +197,10 @@ export interface AudioEngineOptions {
    *  replaces the default, and the missing half falls back to `setTimeout`'s. */
   setTimer?: (cb: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
+  /** A voice or an `engine.schedule` callback came due `lateMs` after its
+   *  time `when`, both in engine ms: the main thread stalled for longer than
+   *  the lookahead covers, and the voice sounded late by that much. */
+  onLate?: (lateMs: number, when: number) => void;
   /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. */
   insertFadeMs?: number;
   /** Uniform in [0, 1), for where in its loop a noise voice starts. Default `Math.random`. */

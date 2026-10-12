@@ -36,6 +36,8 @@ export {
   ExcludeIcon,
   DivideIcon,
   CropIcon,
+  TrimIcon,
+  MergeIcon,
 } from '../interactions/actions/defaults/icons/booleanIcons';
 export { CreateOutlinesIcon, OutlineStrokeIcon } from '../interactions/actions/defaults/icons/outlineIcons';
 

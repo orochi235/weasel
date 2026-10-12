@@ -1,0 +1,85 @@
+/**
+ * `imageMinification: 'auto'`: mipmaps are built for the images a frame draws
+ * small, and for no others. The recorder shows when `generateMipmap` runs;
+ * `imageMinification.browser.test.ts` shows what it does to the pixels.
+ */
+import { describe, it, expect } from 'vitest';
+import { makeGLRecorder } from './testing/glRecorder';
+import { WeaselRenderer } from './WeaselRenderer';
+import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
+
+const bitmap = (side: number): ImageBitmap =>
+  ({ width: side, height: side, close: () => {} }) as unknown as ImageBitmap;
+
+function setup(dpr = 1) {
+  const recorder = makeGLRecorder();
+  const renderer = new WeaselRenderer({
+    gl: recorder.gl, width: 200, height: 200, dpr, imageMinification: 'auto',
+  });
+  const mipmaps = (): number => recorder.calls.filter((c) => c.name === 'generateMipmap').length;
+  return { recorder, renderer, mipmaps };
+}
+
+const image = (img: ImageBitmap, side: number): DrawCommand =>
+  ({ kind: 'image', image: img, x: 0, y: 0, w: side, h: side });
+
+describe("imageMinification: 'auto'", () => {
+  it('builds no mipmaps for an image drawn at its own size or larger', () => {
+    const { renderer, mipmaps } = setup();
+    renderer.render([image(bitmap(64), 64), image(bitmap(64), 128)]);
+    expect(mipmaps()).toBe(0);
+  });
+
+  it('builds them once for an image drawn at half size or smaller', () => {
+    const { recorder, renderer, mipmaps } = setup();
+    const img = bitmap(64);
+    renderer.render([image(img, 32)]);
+    expect(mipmaps()).toBe(1);
+    const gl = recorder.gl;
+    expect(recorder.calls.some((c) => c.name === 'texParameteri'
+      && c.args[1] === gl.TEXTURE_MIN_FILTER && c.args[2] === gl.LINEAR_MIPMAP_LINEAR)).toBe(true);
+    renderer.render([image(img, 32)]);
+    expect(mipmaps()).toBe(1);
+  });
+
+  it('counts device pixels, so a 2x display halves how small an image is drawn', () => {
+    const { renderer, mipmaps } = setup(2);
+    renderer.render([image(bitmap(64), 32)]);
+    expect(mipmaps()).toBe(0);
+  });
+
+  it('counts the group transform', () => {
+    const { renderer, mipmaps } = setup();
+    renderer.render([{
+      kind: 'group',
+      transform: new Float32Array([0.25, 0, 0, 0, 0.25, 0, 0, 0, 1]),
+      children: [image(bitmap(64), 64)],
+    }]);
+    expect(mipmaps()).toBe(1);
+  });
+
+  it('measures a source rect against the part of the bitmap it shows', () => {
+    const { renderer, mipmaps } = setup();
+    const cmd: DrawCommand = {
+      kind: 'image', image: bitmap(64), x: 0, y: 0, w: 16, h: 16, source: { x: 0, y: 0, w: 16, h: 16 },
+    };
+    renderer.render([cmd]);
+    expect(mipmaps()).toBe(0);
+  });
+
+  it('builds them for a sprite run with one sprite drawn small', () => {
+    const { renderer, mipmaps } = setup();
+    const sprites = new Float32Array(2 * SPRITE_STRIDE);
+    sprites.set([0, 0, 16, 16, 0, 0, 16, 16, 1], 0);
+    sprites.set([20, 0, 4, 4, 0, 0, 16, 16, 1], SPRITE_STRIDE);
+    renderer.render([{ kind: 'sprites', image: bitmap(64), sprites }]);
+    expect(mipmaps()).toBe(1);
+  });
+
+  it("builds none under the default 'linear'", () => {
+    const recorder = makeGLRecorder();
+    const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1 });
+    renderer.render([image(bitmap(64), 8)]);
+    expect(recorder.calls.map((c) => c.name)).not.toContain('generateMipmap');
+  });
+});

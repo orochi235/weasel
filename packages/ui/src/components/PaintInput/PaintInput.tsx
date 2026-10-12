@@ -14,7 +14,7 @@ import {
   type PaintKind,
 } from '@weasel-js/core';
 import { Icon } from '../../icons/Icon';
-import { ICON_PATHS, type IconName } from '../../icons/paths';
+import { isIconName } from '../../icons/namedGlyph';
 import { ColorField } from '../ColorField';
 import { OpacityRange } from '../ColorField/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
@@ -125,12 +125,12 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     (entry) => kinds === undefined || kinds.includes(entry.id),
   );
   const segment = (id: string, label: string, icon: string | undefined): ToggleBarItem<PaintKind> =>
-    icon && icon in ICON_PATHS
+    isIconName(icon)
       // Icon-only: six labelled segments do not fit a property row, and the
       // full label stays the accessible name.
       // 14 to match the panel's other glyph segments. A `sm` bar is 17px tall
       // over 1px of padding, so 15 fills the segment box edge to edge.
-      ? { value: id, label: <Icon name={icon as IconName} size={14} />, ariaLabel: label }
+      ? { value: id, label: <Icon name={icon} size={14} />, ariaLabel: label }
       : { value: id, label };
 
   const items: readonly ToggleBarItem<PaintKind>[] = [

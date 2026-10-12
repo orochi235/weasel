@@ -1,3 +1,4 @@
+import type { Rect } from '@weasel-js/geom';
 import type { View } from './view';
 
 /** One value for both axes, or a separate value per axis. */
@@ -74,8 +75,6 @@ export function toPlane(m: PlaneMap, p: { x: number; y: number }): { x: number; 
 export function fromPlane(m: PlaneMap, p: { x: number; y: number }): { x: number; y: number } {
   return { x: (p.x - m.offset.x) / m.scale.x, y: (p.y - m.offset.y) / m.scale.y };
 }
-
-interface Rect { x: number; y: number; width: number; height: number }
 
 function mapRect(r: Rect, map: (p: { x: number; y: number }) => { x: number; y: number }): Rect {
   const a = map({ x: r.x, y: r.y });

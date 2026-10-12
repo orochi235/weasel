@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useHandleDrag, useLatest, useScene, useVisibleRaf } from '@weasel-js/core';
-import type { Action, RenderLayer } from '@weasel-js/core';
+import { useEffect, useMemo, useState } from 'react';
+import { SceneCanvas, useFrameClock, useHandleDrag, useLatest, useScene } from '@weasel-js/core';
+import type { Action, FrameClock, RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
@@ -86,6 +86,11 @@ interface Ripple { x: number; y: number; t: number; }
 
 function clamp01(n: number): number { return Math.max(0, Math.min(1, n)); }
 
+/** The ripples still spreading at `time`, newest last; the shader takes eight. */
+function liveRipples(ripples: Ripple[], time: number): Ripple[] {
+  return ripples.filter((r) => time - r.t < RIPPLE_SECONDS).slice(-8);
+}
+
 // ---------------------------------------------------------------------------
 // Texture: load once, cache at module scope
 // ---------------------------------------------------------------------------
@@ -115,6 +120,7 @@ type ShaderUniforms = Record<string, ShaderUniform>;
 function Panel({
   title,
   program,
+  clock,
   uniforms,
   onPointerMove,
   onPress,
@@ -123,7 +129,9 @@ function Panel({
 }: {
   title: string;
   program: ShaderProgramHandle;
-  uniforms: ShaderUniforms;
+  clock: FrameClock;
+  /** Read at each paint, so a uniform that follows the clock costs no render. */
+  uniforms: (seconds: number) => ShaderUniforms;
   onPointerMove?: (x: number, y: number) => void;
   onPress?: (x: number, y: number) => void;
   overlay?: React.ReactNode;
@@ -134,13 +142,14 @@ function Panel({
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: `shader-${title.toLowerCase()}`,
     label: title,
+    subscribe: clock.subscribe,
     draw: (): DrawCommand[] => disabled ? [] : [{
       kind: 'shader',
       program,
       bounds: { x: 0, y: 0, w: PANEL_W, h: PANEL_H },
-      uniforms: uniformsRef.current,
+      uniforms: uniformsRef.current(clock.seconds()),
     }],
-  }), [program, disabled, title, uniformsRef]);
+  }), [program, disabled, title, uniformsRef, clock]);
 
   // Press routes through an ambient binding: a bare canvas has no active tool
   // ahead of it to claim the press. Hover has no gesture yet, so the move
@@ -269,7 +278,9 @@ function readFrozenTime(): number | null {
 
 export function CustomShaderDemo() {
   const frozen = useMemo(() => readFrozenTime(), []);
-  const [time, setTime] = useState(frozen ?? 0);
+  // The shaders read the clock at paint; nothing here renders per frame.
+  // `?frozenTime=N` holds it at N so a visual spec captures one known frame.
+  const clock = useFrameClock({ paused: frozen !== null, start: frozen ?? 0 });
   const [mouse, setMouse] = useState<[number, number]>([0.5, 0.5]);
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [mutableSeeds, setMutableSeeds] = useState<{ x: number; y: number }[]>(() =>
@@ -279,81 +290,49 @@ export function CustomShaderDemo() {
     })));
   const tex = useWeaselMarkTexture();
 
-  // Animation loop — skipped when `?frozenTime=N` is present so visual specs
-  // can capture a deterministic frame.
-  // `time` accumulates only the frames that ran, so a spell in a background tab
-  // resumes the shader where it stopped instead of jumping an hour forward.
-  const elapsedRef = useRef(0);
-  const lastFrameRef = useRef<number | null>(null);
-  const loop = useVisibleRaf(
-    (now) => {
-      const last = lastFrameRef.current;
-      lastFrameRef.current = now;
-      if (last !== null) elapsedRef.current += (now - last) / 1000;
-      setTime(elapsedRef.current);
-      loop.request();
-    },
-    { onResume: () => { lastFrameRef.current = null; } },
-  );
-
-  useEffect(() => {
-    if (frozen !== null) return;
-    lastFrameRef.current = null;
-    loop.request();
-    return () => loop.cancel();
-  }, [frozen, loop]);
-
-  const liveRipples = useMemo(
-    () => ripples.filter((x) => time - x.t < RIPPLE_SECONDS).slice(-8),
-    [ripples, time],
-  );
-
-  const plasmaUniforms: ShaderUniforms = useMemo(() => ({
-    u_time: time,
-    u_mouse: mouse,
-  }), [time, mouse]);
-
-  const rippleUniforms_ = useMemo((): ShaderUniforms => ({
-    u_time: time,
-    ...(tex ? { u_image: tex } : {}),
-    u_ripples: liveRipples.flatMap((r) => [r.x, r.y, r.t]),
-    u_rippleCount: liveRipples.length,
-  }), [time, tex, liveRipples]);
-
-  const voronoiUniforms = useMemo((): ShaderUniforms => ({
-    u_time: time,
-    u_seeds: mutableSeeds.flatMap((s) => [s.x, s.y]),
-    u_seedCount: mutableSeeds.length,
-  }), [time, mutableSeeds]);
-
   return (
     <div className="ckd-stack">
       <div style={{ display: 'flex', gap: 8 }}>
         <Panel
           title="Plasma"
           program={PLASMA_PROGRAM}
-          uniforms={plasmaUniforms}
+          clock={clock}
+          uniforms={(time) => ({ u_time: time, u_mouse: mouse })}
           onPointerMove={(x, y) => setMouse([x, y])}
         />
         <Panel
           title="Ripple"
           program={RIPPLE_PROGRAM}
-          uniforms={rippleUniforms_}
-          onPress={(x, y) => setRipples((r) => [...r.filter((p) => time - p.t < RIPPLE_SECONDS), { x, y, t: time }].slice(-8))}
+          clock={clock}
+          uniforms={(time) => {
+            const live = liveRipples(ripples, time);
+            return {
+              u_time: time,
+              ...(tex ? { u_image: tex } : {}),
+              u_ripples: live.flatMap((r) => [r.x, r.y, r.t]),
+              u_rippleCount: live.length,
+            };
+          }}
+          onPress={(x, y) => {
+            const t = clock.seconds();
+            setRipples((r) => [...liveRipples(r, t), { x, y, t }].slice(-8));
+          }}
           disabled={!tex}
         />
         <Panel
           title="Voronoi"
           program={VORONOI_PROGRAM}
-          uniforms={voronoiUniforms}
+          clock={clock}
+          uniforms={(time) => ({
+            u_time: time,
+            u_seeds: mutableSeeds.flatMap((s) => [s.x, s.y]),
+            u_seedCount: mutableSeeds.length,
+          })}
           overlay={
             <SeedHandles seeds={mutableSeeds} setSeeds={setMutableSeeds} width={PANEL_W} height={PANEL_H} />
           }
         />
       </div>
-      <small style={{ color: '#888' }}>
-        Custom shader API is <code>@experimental</code> — surface may shift before v1 stabilizes.
-      </small>
     </div>
   );
 }

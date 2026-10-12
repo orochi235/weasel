@@ -1,21 +1,7 @@
 import { createContext, useContext, useState, type ReactElement, type ReactNode } from 'react';
+import { nearestPortalHost } from '@weasel-js/gestures';
 
-/**
- * Elements an overlay may portal into: anything a theme has been stamped on
- * (`applyTheme` / `<ThemeProvider>` write both attributes), plus anything
- * opting in with `data-wzl-portal-host`. The opt-in exists for a styling root
- * that sits *below* the themed element — labkit's `.lk-root` carries element
- * defaults the themed wrapper does not.
- */
-const HOST_SELECTOR = '[data-wzl-portal-host],[data-wzl-theme],[data-wzl-mode]';
-
-/**
- * The nearest element `from` sits inside that can host a portalled overlay,
- * or `null` when there is none and the body is the only answer.
- */
-export function nearestPortalHost(from: Element | null | undefined): HTMLElement | null {
-  return (from?.closest(HOST_SELECTOR) as HTMLElement | null) ?? null;
-}
+export { nearestPortalHost };
 
 /** `undefined` distinguishes "no provider" from a provider saying `null`. */
 const OverlayPortalContext = createContext<Element | null | undefined>(undefined);

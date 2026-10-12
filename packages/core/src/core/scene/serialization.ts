@@ -53,6 +53,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     if (n.dependsOn === 'children') out.dependsOn = 'children';
     else if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = n.dependsOn;
     if (n.pickable === false) out.pickable = false;
+    if (n.kind === 'container' && n.units !== undefined) out.units = n.units;
     Object.assign(
       out,
       fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
@@ -99,6 +100,7 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
     };
     if (n.parent !== undefined) spec.parent = n.parent as NodeId;
     if (n.pickable !== undefined) spec.pickable = n.pickable;
+    if (n.units !== undefined) spec.units = n.units;
     if (n.dependsOn !== undefined) {
       spec.dependsOn = n.dependsOn === 'children'
         ? 'children'

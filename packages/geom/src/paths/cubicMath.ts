@@ -1,4 +1,5 @@
 import { cubicEvalAt, splitCubicAt, type CubicCoords } from '../curve';
+import type { PenAnchor } from './anchors';
 
 /** A 2D point, the shape the point-taking path helpers read and return. */
 export interface Point { x: number; y: number; }
@@ -8,12 +9,6 @@ export interface Point { x: number; y: number; }
 export function cubicPointAt(p0: Point, p1: Point, p2: Point, p3: Point, t: number): Point {
   const [x, y] = cubicEvalAt(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, t);
   return { x, y };
-}
-
-interface AnchorRef {
-  x: number; y: number;
-  inHandle?: Point;
-  outHandle?: Point;
 }
 
 /** De Casteljau subdivision of a cubic at parameter t. The point-shaped face
@@ -40,8 +35,8 @@ export function splitCubicAtT(
  * original two-segment path. Acceptable per spec.
  */
 export function fitCubicThroughDeletion(
-  prev: AnchorRef,
-  next: AnchorRef,
+  prev: PenAnchor,
+  next: PenAnchor,
 ): { c1: Point; c2: Point } {
   const dx = next.x - prev.x;
   const dy = next.y - prev.y;
@@ -58,7 +53,7 @@ export function fitCubicThroughDeletion(
 }
 
 function controlOnSide(
-  anchor: AnchorRef,
+  anchor: PenAnchor,
   dirX: number,
   dirY: number,
   dist: number,

@@ -10,12 +10,19 @@ export interface SchedulerOptions {
   lookahead?: number;
   /** Time between passes, in ms. Default 25. */
   interval?: number;
+  /** An event fired `lateMs` after its time `when`: the passes that should
+   *  have reached it inside the lookahead stalled, and whatever it starts will
+   *  sound late by that much. Never called for an event booked inside the
+   *  lookahead or for a time already past, which no pass was meant to catch. */
+  onLate?: (lateMs: number, when: number) => void;
 }
 
 interface Entry {
   when: number;
   fire: (when: number) => void;
   key?: string;
+  /** Booked for a time past the lookahead, so a pass has to reach it. */
+  waited: boolean;
 }
 
 /** A queue of callbacks keyed to engine time. See `createScheduler`. */
@@ -61,13 +68,15 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
   let flushQueued = false;
 
   const fireDue = (): void => {
-    const horizon = opts.now() + lookahead;
+    const now = opts.now();
+    const horizon = now + lookahead;
     const due: Entry[] = [];
     const rest: Entry[] = [];
     for (const entry of queue) (entry.when <= horizon ? due : rest).push(entry);
     queue = rest;
     due.sort((a, b) => a.when - b.when);
     for (const entry of due) {
+      if (entry.waited && entry.when < now) opts.onLate?.(now - entry.when, entry.when);
       try {
         entry.fire(entry.when);
       } catch (err) {
@@ -101,8 +110,9 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
       handle = null;
     },
     schedule(when, fire, key) {
-      queue.push({ when, fire, key });
-      if (running && !flushQueued && when <= opts.now() + lookahead) {
+      const waited = when > opts.now() + lookahead;
+      queue.push({ when, fire, key, waited });
+      if (running && !flushQueued && !waited) {
         flushQueued = true;
         queueMicrotask(flush);
       }

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Button } from '../Button';
 import { PropertyField, PropertyGroup, PropertyList } from '../Properties';
 import { MotifFrame } from './MotifFrame';
-import { notch, plaque, rule, stereo, tab } from './motifs';
+import { notch, plaque, rule, stereo, tab, titlebar } from './motifs';
 import s from './MotifFrame.stories.module.css';
 
 const meta: Meta<typeof MotifFrame> = {
@@ -45,6 +45,9 @@ export const Motifs: Story = {
       <MotifFrame title="Plaque" motif={plaque()} tone={4}>
         <Jacks names={VIDEO} />
       </MotifFrame>
+      <MotifFrame title="Titlebar" motif={titlebar()}>
+        <Jacks names={VIDEO} />
+      </MotifFrame>
     </div>
   ),
 };
@@ -70,7 +73,7 @@ export const StereoSides: Story = {
 export const HeadingParts: Story = {
   render: () => (
     <div className={s.wall}>
-      {[rule(), stereo({ side: 'top' }), notch(), tab(), plaque()].map((motif, i) => (
+      {[rule(), stereo({ side: 'top' }), notch(), tab(), plaque(), titlebar()].map((motif, i) => (
         <MotifFrame
           key={motif.id}
           title={motif.id}

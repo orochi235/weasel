@@ -117,7 +117,12 @@ function leafProblems(test: PrefTest, schema: Schema, site: PrefConditionSite, o
  * `schema` is drawn over: a path no leaf of `schema` holds is held to it,
  * and is a problem only where it holds none either.
  */
-export function checkPrefCondition(condition: unknown, schema: Schema, site: PrefConditionSite = {}, over?: Schema): PrefConditionProblem[] {
+export function checkPrefCondition(
+  condition: unknown,
+  schema: PrefGroup | PrefSection,
+  site: PrefConditionSite = {},
+  over?: PrefGroup | PrefSection,
+): PrefConditionProblem[] {
   if (site.itemShowIf && site.within) {
     const { kind } = site.within;
     const problem = `a ${kind}'s item is drawn with each entry and is never hidden: put the condition on the entry's fields, or on the ${kind}`;
@@ -135,7 +140,10 @@ export function checkPrefCondition(condition: unknown, schema: Schema, site: Pre
 type Conditioned = { showIf?: unknown; enableIf?: unknown };
 
 /** {@link checkPrefCondition} over every `showIf` and `enableIf` in `schema`, in schema order, each held to `over` as well. */
-export function checkPrefConditions(schema: Schema, over?: Schema): PrefSchemaConditionProblem[] {
+export function checkPrefConditions(
+  schema: PrefGroup | PrefSection,
+  over?: PrefGroup | PrefSection,
+): PrefSchemaConditionProblem[] {
   const out: PrefSchemaConditionProblem[] = [];
   const own = (node: Conditioned, at: string, within: PrefList | PrefMap | undefined, isItem = false): void => {
     for (const field of ['showIf', 'enableIf'] as const) {

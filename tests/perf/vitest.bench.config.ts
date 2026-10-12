@@ -12,12 +12,7 @@ const repoRoot = resolve(__dirname, '../..');
 export default defineConfig({
   root: repoRoot,
   resolve: {
-    alias: weaselAliases(repoRoot, [
-      {
-        find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
-      },
-    ]),
+    alias: weaselAliases(repoRoot),
   },
   plugins: [react()],
   test: {

@@ -261,7 +261,7 @@ export type InferConfig<S> = { [K in keyof S]: EntryValue<S[K]> };
 
 /** Whether a config value has children a path can descend into. Arrays and
  *  functions are values, not branches. */
-type Branching<V> = V extends readonly unknown[]
+export type Branching<V> = V extends readonly unknown[]
   ? false
   : V extends (...args: never[]) => unknown
     ? false

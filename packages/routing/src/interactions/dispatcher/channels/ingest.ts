@@ -3,7 +3,7 @@
  * Items are materialized during the event, since a DataTransfer is only live
  * on the event stack; dispatch happens when materialization resolves.
  */
-import { itemsFromClipboardData, itemsFromDataTransfer } from '../../../ingestion/ingestItems';
+import { itemsFromClipboardData, itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
 import { isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
 
@@ -22,11 +22,21 @@ export function ingestInput(core: DispatchCore): {
   // guarantees the element stays the active drop target and shows the copy
   // cursor on entry rather than waiting for the first dragover tick.
   const onDragOver = (e: DragEvent) => {
-    if (!e.dataTransfer) return;
-    // preventDefault is what makes the canvas a valid drop target.
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    routeAt(null, e.clientX, e.clientY);
+    const w = toWorld(e.clientX, e.clientY);
+    const wanted = core.dispatcherNow().resolveOnly({
+      kind: 'drop', items: itemTypesFromDataTransfer(dt),
+      x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY,
+      altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+    }, core.ctxNow()) !== null;
+    canvas?.classList.toggle(DROPOVER_CLASS, wanted);
+    // Left alone, a drag no binding would take stays the page's: no copy
+    // cursor, and no `drop` event here to swallow.
+    if (!wanted) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    canvas?.classList.add(DROPOVER_CLASS);
+    dt.dropEffect = 'copy';
   };
 
   const onDragLeave = () => {

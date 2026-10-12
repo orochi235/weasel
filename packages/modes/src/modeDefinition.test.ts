@@ -11,7 +11,7 @@ const PATH_EDIT: ModeDefinition = {
 };
 
 describe('eligibleForMode', () => {
-  it('allows tools with any of the mode\'s declared tags', () => {
+  it('allows a tool carrying one of the mode\'s declared tags', () => {
     expect(eligibleForMode(PATH_EDIT, ['edits-anchors'])).toBe(true);
   });
 
@@ -23,12 +23,14 @@ describe('eligibleForMode', () => {
     expect(eligibleForMode(PATH_EDIT, ['creates-paths'])).toBe(false);
   });
 
-  it('a tool with multiple tags is eligible if any tag is allowed', () => {
-    expect(eligibleForMode(PATH_EDIT, ['edits-anchors', 'creates-paths'])).toBe(true);
+  it('a tool with several tags is eligible only when every one is allowed', () => {
+    expect(eligibleForMode(PATH_EDIT, ['edits-anchors', 'navigation'])).toBe(true);
+    expect(eligibleForMode(PATH_EDIT, ['edits-anchors', 'creates-paths'])).toBe(false);
+    expect(eligibleForMode(PATH_EDIT, ['navigation', 'creates-paths'])).toBe(false);
   });
 
-  it('a tool with no tags is not eligible', () => {
-    expect(eligibleForMode(PATH_EDIT, [])).toBe(false);
+  it('a tool with no tags asks for nothing, so every mode allows it', () => {
+    expect(eligibleForMode(PATH_EDIT, [])).toBe(true);
   });
 });
 

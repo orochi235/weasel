@@ -1,18 +1,18 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wzl-space-5);
   width: 520px;
 }
 
 .controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .label {
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .readout {
@@ -22,16 +22,16 @@
 
 .readout th,
 .readout td {
-  padding: 3px 8px;
-  border-bottom: 1px solid var(--ckd-border-2);
+  padding: 3px var(--wzl-space-4);
+  border-bottom: 1px solid var(--wzl-border);
   text-align: left;
 }
 
 .readout th {
   font-weight: 500;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .swap {
-  color: var(--ckd-accent);
+  color: var(--wzl-accent-fg);
 }

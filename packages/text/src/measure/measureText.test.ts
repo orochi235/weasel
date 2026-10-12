@@ -30,6 +30,29 @@ describe('measureText', () => {
     expect(r.lines).toEqual(['the quick', 'brown']);
   });
 
+  it('runs a tab to the next stop, eight spaces apart by default', () => {
+    const r = measureText(makeCtx(), 'ab\tcd\n\tef\n\ngh', 1000, DEFAULT_TEXT_STYLE);
+    expect(r.spans).toEqual([
+      [{ text: 'ab', x: 0 }, { text: 'cd', x: 80 }],
+      [{ text: 'ef', x: 80 }],
+      [],
+      [{ text: 'gh', x: 0 }],
+    ]);
+  });
+
+  it('takes its stops from the style\'s tab size, tracked spaces wide', () => {
+    const style = { ...DEFAULT_TEXT_STYLE, tabSize: 4, letterSpacing: 2 };
+    expect(measureText(makeCtx(), 'ab\tcd', 1000, style).spans[0]).toEqual([
+      { text: 'ab', x: 0 }, { text: 'cd', x: 48 },
+    ]);
+  });
+
+  it('wraps by the width a tab takes on its line', () => {
+    // Read as one space the line is 90 wide and fits; set to its stop, `gh` ends at 100.
+    expect(measureText(makeCtx(), 'abcdef\tgh', 95, DEFAULT_TEXT_STYLE).lines).toEqual(['abcdef', 'gh']);
+    expect(measureText(makeCtx(), 'abcdef\tgh', 100, DEFAULT_TEXT_STYLE).lines).toEqual(['abcdef\tgh']);
+  });
+
   it('preserves explicit newlines as line breaks', () => {
     const ctx = makeCtx();
     const r = measureText(ctx, 'a\nb\nc', 1000, DEFAULT_TEXT_STYLE);

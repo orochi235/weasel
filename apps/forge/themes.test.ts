@@ -9,11 +9,13 @@ function applied(globals: Record<string, unknown>, mode: 'light' | 'dark' = 'lig
 
 describe('the Theme global', () => {
   it('lists every registered theme, weasel first as the default', () => {
-    expect(Object.keys(THEMES)).toEqual(['weasel', 'interstellar']);
+    expect(Object.keys(THEMES)).toEqual(['weasel', 'interstellar', 'win9x', 'platinum']);
     expect(THEME_GLOBAL.default).toBe('weasel');
     expect(THEME_GLOBAL.options).toEqual([
       { value: 'weasel', label: 'Weasel' },
       { value: 'interstellar', label: 'Interstellar' },
+      { value: 'win9x', label: 'Win9x' },
+      { value: 'platinum', label: 'Platinum' },
     ]);
   });
 

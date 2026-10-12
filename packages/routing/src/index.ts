@@ -155,15 +155,15 @@ export { isTool } from './tools/types';
 
 // ─── route grammar reflection ─────────────────────────────────────────────
 export * from './tools/routing';
-export { reportRouteConflicts } from './tools/routing/reflection/conflicts';
+export { reportRouteConflicts, type ToolScopes } from './tools/routing/reflection/conflicts';
 
 // ─── input plumbing ───────────────────────────────────────────────────────
-export { activatesFocusedControl, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
+export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 export type { KeyBinding } from './interactions/keyHelpers';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
-  INGEST_STRING_MIMES, itemsFromFiles, itemsFromDataTransfer, itemsFromClipboardData,
+  INGEST_STRING_MIMES, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';

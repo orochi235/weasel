@@ -51,6 +51,8 @@ export interface RegistryEntry {
   /** The binding's `opts.views`: the views it is live in. Absent when it is
    *  live in every view. */
   views?: readonly (string | null)[];
+  /** The binding's `opts.params`, as declared: a thunk is not called. */
+  params?: unknown;
 }
 
 /**
@@ -83,8 +85,8 @@ export function buildRouteRegistry(
     for (const binding of owner.bindings ?? []) {
       const row = entryFor(owner.id, binding.spec, binding.actionId);
       if (!row) continue;
-      const views = binding.opts?.views;
-      out.push(views === undefined ? row : { ...row, views });
+      const { views, params } = binding.opts ?? {};
+      out.push({ ...row, ...(views === undefined ? {} : { views }), ...(params === undefined ? {} : { params }) });
     }
   }
   return out;

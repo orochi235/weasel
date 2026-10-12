@@ -1,21 +1,21 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   width: 640px;
 }
 
 .controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
   flex-wrap: wrap;
 }
 
 .version {
   margin-inline-start: auto;
   font-size: 12px;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .count {
@@ -23,7 +23,7 @@
   display: inline-block;
   min-width: 3ch;
   text-align: end;
-  color: var(--ckd-text);
+  color: var(--wzl-fg);
 }
 
 .table {
@@ -34,9 +34,9 @@
 
 .table th,
 .table td {
-  padding: 4px 8px;
+  padding: var(--wzl-space-2) var(--wzl-space-4);
   text-align: start;
-  border-block-end: 1px solid var(--ckd-border-2);
+  border-block-end: 1px solid var(--wzl-border);
 }
 
 .table thead th {
@@ -44,26 +44,26 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .registrant {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .source {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
 }
 
 .stack {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
+  gap: var(--wzl-space-2) var(--wzl-space-8);
 }
 
 .table .empty {
-  color: var(--ckd-faint);
+  color: var(--wzl-fg-subtle);
   font-style: italic;
 }

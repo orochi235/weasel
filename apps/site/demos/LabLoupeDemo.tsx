@@ -2,9 +2,7 @@ import { useVisibleRaf } from '@weasel-js/core';
 import { defineInstrument, f, Lab, type ViewTransform } from '@weasel-js/labkit';
 import { type CanvasSource, createCanvasSource, TrialLoupe } from '@weasel-js/labkit/loupe';
 import { useEffect, useRef, useState } from 'react';
-// In-repo, so the source stylesheet: a consumer imports the built
-// `@weasel-js/labkit/styles.css` instead.
-import '@weasel-js/labkit/styles.less';
+import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
 const RAMP = ['#e5484d', '#f5a524', '#46a758', '#0091ff', '#8e4ec6'];

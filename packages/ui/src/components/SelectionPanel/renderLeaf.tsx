@@ -10,7 +10,7 @@ import { entryConditions } from '../Prefs/entry';
 import { MapEditor } from '../Prefs/MapEditor';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { PrefMixed } from '../Prefs/PrefMixed';
-import { prefDrawsNoControl, PrefWords } from '../Prefs/PrefWords';
+import { aliasOfNothing, prefDrawsNoControl, PrefWords } from '../Prefs/PrefWords';
 import { UnionPicker } from '../Prefs/UnionPicker';
 import { renderBarLeaf, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyControl } from '../Properties/PropertyField';
@@ -134,8 +134,7 @@ export function renderBuiltin(
   if (prefDrawsNoControl(pref)) return <PrefWords pref={pref} />;
   if (pref.kind === 'alias') {
     // The panel draws a resolved alias as its target, so one that reaches here points at nothing.
-    const of = (pref as PrefAlias).of;
-    return <span className={s.unrenderable}>(alias: no pref at {of === '' ? 'an empty path' : of})</span>;
+    return <span className={s.unrenderable}>{aliasOfNothing(pref as PrefAlias)}</span>;
   }
   const field = leafField(ctx, nested);
   if (field === null) {

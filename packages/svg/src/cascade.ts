@@ -9,8 +9,10 @@
  */
 
 import {
-  parenEnd, parseDeclarations, skipBlock, skipString, splitTopLevel, stripComments, type Declaration,
+  parseDeclarations, skipBlock, skipString, splitTopLevel, stripComments, type Declaration,
 } from './cssScan';
+import { containerQueryHolds, queryContainerOf } from './container';
+import { compareSpecificity, specificity, type Specificity } from './specificity';
 import {
   DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
 } from './media';
@@ -20,7 +22,7 @@ import {
 import { evaluateSupports } from './supports';
 import { computeFontRelative, fontSizeOf } from './fontSize';
 
-export { parseDeclarations, type Declaration };
+export { parseDeclarations, specificity, type Declaration, type Specificity };
 
 /**
  * Raw resolved value of each inheritable presentation property in effect at a
@@ -44,82 +46,8 @@ export interface StyleRule {
   readonly order: number;
   /** The cascade layer's full dotted name; `''` is unlayered. An anonymous layer's segment starts with U+0000. */
   readonly layer: string;
-}
-
-export type Specificity = readonly [number, number, number];
-
-/** Read an identifier (with escapes) starting at `i`; returns its end index. */
-function identEnd(s: string, i: number): number {
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '\\') i += 2;
-    else if (/[\w-]/.test(ch) || ch.charCodeAt(0) > 0x7f) i++;
-    else break;
-  }
-  return i;
-}
-
-const LEGACY_PSEUDO_ELEMENTS = new Set(['before', 'after', 'first-line', 'first-letter']);
-const MAX_ARG_PSEUDOS = new Set(['not', 'is', 'matches', '-webkit-any', 'has']);
-
-function compareSpecificity(a: Specificity, b: Specificity): number {
-  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
-}
-
-function maxSpecificity(list: string): Specificity {
-  let best: Specificity = [0, 0, 0];
-  for (const sel of splitTopLevel(list, ',')) {
-    const s = specificity(sel);
-    if (compareSpecificity(s, best) > 0) best = s;
-  }
-  return best;
-}
-
-/** CSS Selectors 4 specificity of one complex selector (no comma list). */
-export function specificity(selector: string): Specificity {
-  let a = 0, b = 0, c = 0;
-  const s = selector;
-  let i = 0;
-  while (i < s.length) {
-    const ch = s[i];
-    if (ch === '#') {
-      a++;
-      i = identEnd(s, i + 1);
-    } else if (ch === '.') {
-      b++;
-      i = identEnd(s, i + 1);
-    } else if (ch === '[') {
-      b++;
-      while (i < s.length && s[i] !== ']') {
-        i = s[i] === '"' || s[i] === "'" ? skipString(s, i) : i + 1;
-      }
-      i++;
-    } else if (ch === ':') {
-      const element = s[i + 1] === ':';
-      const nameStart = i + (element ? 2 : 1);
-      const nameEnd = identEnd(s, nameStart);
-      const name = s.slice(nameStart, nameEnd).toLowerCase();
-      let arg: string | null = null;
-      i = nameEnd;
-      if (s[i] === '(') {
-        const end = parenEnd(s, i);
-        arg = s.slice(i + 1, end - 1);
-        i = end;
-      }
-      if (element || LEGACY_PSEUDO_ELEMENTS.has(name)) c++;
-      else if (name === 'where') { /* contributes nothing */ }
-      else if (MAX_ARG_PSEUDOS.has(name) && arg != null) {
-        const m = maxSpecificity(arg);
-        a += m[0]; b += m[1]; c += m[2];
-      } else b++;
-    } else if (/[a-zA-Z_\\-]/.test(ch) || ch.charCodeAt(0) > 0x7f) {
-      c++;
-      i = identEnd(s, i);
-    } else {
-      i++;
-    }
-  }
-  return [a, b, c];
+  /** The prelude of each `@container` block around the rule, outermost first. */
+  readonly containers?: readonly string[];
 }
 
 /** What a stylesheet's conditional at-rules are evaluated against. */
@@ -181,8 +109,9 @@ export class CascadeLayers {
  * Parse stylesheet text into rules. `@media` and `@supports` blocks
  * contribute their rules when their condition holds against `ctx`, nested to
  * any depth, and `@layer` blocks contribute theirs tagged with the layer,
- * which is declared into `layers`. `@import` is reported and not fetched;
- * every other at-rule (`@font-face`, `@container`, `@keyframes`, …) is
+ * which is declared into `layers`. `@container` blocks contribute theirs
+ * tagged with the query, which is answered per element. `@import` is reported
+ * and not fetched; every other at-rule (`@font-face`, `@keyframes`, …) is
  * skipped whole, as are nested blocks inside a rule body. `order` continues
  * from `firstOrder` so several sheets share one source order.
  */
@@ -212,6 +141,8 @@ interface ListState {
   /** `@import` is valid only at the top of a sheet, ahead of every rule but `@charset` and `@layer`. */
   importsAllowed: boolean;
   readonly layers: CascadeLayers;
+  /** The `@container` preludes around the rules being read. */
+  containers?: readonly string[];
 }
 
 function parseRuleList(
@@ -248,6 +179,11 @@ function parseRuleList(
       if (names && names.length <= 1) {
         const inner = names.length ? state.layers.declare(layer, names[0]) : state.layers.declareAnonymous(layer);
         parseRuleList(src, i + 1, end - 1, inner, ctx, rules, state);
+      } else if (name === 'container') {
+        const outer = state.containers;
+        state.containers = [...(outer ?? []), at[2]];
+        parseRuleList(src, i + 1, end - 1, layer, ctx, rules, state);
+        state.containers = outer;
       } else if (conditionHolds(name, at[2], ctx)) {
         parseRuleList(src, i + 1, end - 1, layer, ctx, rules, state);
       }
@@ -256,7 +192,11 @@ function parseRuleList(
       for (const raw of splitTopLevel(prelude, ',')) {
         const selector = raw.trim();
         if (selector) {
-          rules.push({ selector, declarations, specificity: specificity(selector), order: state.order++, layer });
+          const { containers } = state;
+          rules.push({
+            selector, declarations, specificity: specificity(selector), order: state.order++, layer,
+            ...(containers ? { containers } : {}),
+          });
         }
       }
     }
@@ -282,8 +222,14 @@ interface RankedRule extends StyleRule {
   readonly rank: number;
 }
 
-/** Rules sorted ascending by (layer rank, specificity, source order): the cascade's order for normal declarations. */
-const sheetCache = new WeakMap<Document, readonly RankedRule[]>();
+/** A document's rules, sorted ascending by (layer rank, specificity, source order): the cascade's order for normal
+ *  declarations. `media` is what they were evaluated against, and sizes the root as a query container. */
+interface BoundSheet {
+  readonly rules: readonly RankedRule[];
+  readonly media: SvgMediaEnvironment;
+}
+
+const sheetCache = new WeakMap<Document, BoundSheet>();
 
 /**
  * Evaluate `doc`'s stylesheets against `media` now, reporting to `onWarn`.
@@ -293,16 +239,30 @@ const sheetCache = new WeakMap<Document, readonly RankedRule[]>();
 export function bindStylesheets(
   doc: Document, media: SvgMediaEnvironment, onWarn?: (message: string) => void,
 ): void {
-  sheetCache.set(doc, collectRules(doc, media, onWarn));
+  sheetCache.set(doc, { rules: collectRules(doc, media, onWarn), media });
 }
 
-function documentRules(doc: Document): readonly RankedRule[] {
+function documentSheet(doc: Document): BoundSheet {
   const cached = sheetCache.get(doc);
   if (cached) return cached;
   const root = doc.documentElement;
-  const rules = collectRules(doc, root ? mediaEnvironmentFor(root) : DEFAULT_MEDIA_ENVIRONMENT);
-  sheetCache.set(doc, rules);
-  return rules;
+  const media = root ? mediaEnvironmentFor(root) : DEFAULT_MEDIA_ENVIRONMENT;
+  const sheet = { rules: collectRules(doc, media), media };
+  sheetCache.set(doc, sheet);
+  return sheet;
+}
+
+/**
+ * Whether every `@container` query around a rule holds for `el`. Only the
+ * root `<svg>` has a box a static parse knows the size of, so it is the one
+ * query container, and the root itself has none above it to be queried.
+ */
+function containersHold(el: Element, containers: readonly string[], media: SvgMediaEnvironment): boolean {
+  const root = el.ownerDocument?.documentElement;
+  if (!root || el === root) return false;
+  const declared = authorDeclarations(root);
+  const container = queryContainerOf((prop) => declared.get(prop), media);
+  return containers.every((prelude) => containerQueryHolds(prelude, container));
 }
 
 function collectRules(
@@ -357,8 +317,9 @@ const elementCache = new WeakMap<Element, ReadonlyMap<string, string>>();
 function authorDeclarations(el: Element): ReadonlyMap<string, string> {
   const cached = elementCache.get(el);
   if (cached) return cached;
-  const rules = el.ownerDocument ? documentRules(el.ownerDocument) : [];
-  const matched = rules.filter((r) => matches(el, r.selector));
+  const sheet = el.ownerDocument && documentSheet(el.ownerDocument);
+  const matched = (sheet ? sheet.rules : []).filter((r) => matches(el, r.selector)
+    && (!r.containers || containersHold(el, r.containers, sheet!.media)));
   const inline = parseDeclarations(el.getAttribute('style') ?? '');
   const out = new Map<string, string>();
   const importantOrder = [...matched].sort((x, y) => y.rank - x.rank || compareCascade(x, y));

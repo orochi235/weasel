@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useClockFrame } from '../clock/hooks';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
 import { labPrefix } from '../state/labRecords';
@@ -72,6 +73,57 @@ describe('<Lab still>', () => {
     expect(c().rate).toBe(0);
     expect(c().elapsed).toBe(0);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('not seekable'));
+  });
+
+  describe('of a clock that is not seekable and names a step', () => {
+    let frames: number[] = [];
+    function Counter() {
+      useClockFrame((elapsed) => frames.push(elapsed));
+      return null;
+    }
+    const running = (spec: ClockCapability | 'lab'): Instrument => ({
+      ...timed(spec),
+      render: (ctx) => {
+        clock = ctx.trial.clock ?? null;
+        return <Counter />;
+      },
+    });
+    const mountRunning = (spec: ClockCapability | 'lab', props: Partial<LabProps>) => {
+      frames = [];
+      const lab = { instruments: [running(spec)], defaultInstrument: 'Timed', ...props };
+      return renderSettled(<Lab {...(lab as LabProps)} />);
+    };
+    // A real frame can repeat the time the run starts or stops at.
+    const distinct = () => frames.filter((e, i) => e !== frames[i - 1]);
+    const upTo950 = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+
+    it('runs it forward to the time, a step a frame, and holds it there', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await mountRunning({ rate: 1, seekable: false, step: 100 }, { still: 950 });
+      expect(distinct()).toEqual(upTo950);
+      expect(c().elapsed).toBe(950);
+      expect(c().rate).toBe(0);
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("runs the lab's clock forward once its trial is listening", async () => {
+      const lab = { rate: 1, seekable: false, step: 100 };
+      await mountRunning('lab', { still: 950, clock: lab });
+      expect(distinct()).toEqual(upTo950);
+    });
+
+    it('stops where a finite run ends', async () => {
+      await mountRunning({ duration: 300, seekable: false, step: 100 }, { still: 950 });
+      expect(c().elapsed).toBe(300);
+      expect(c().rate).toBe(0);
+    });
+
+    it('does not charge the frames it never showed to the next real one', async () => {
+      await mountRunning({ rate: 1, seekable: false, step: 100 }, { still: 950 });
+      c().rate = 1;
+      c().sync(5_000_000);
+      expect(c().elapsed).toBe(950);
+    });
   });
 
   it('shows no play controls', async () => {

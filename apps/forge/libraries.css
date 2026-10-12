@@ -1,0 +1,23 @@
+/*
+ * Each library's swatch mixed toward the foreground, further in light mode: a bright swatch needs more of the dark
+ * foreground to hold 4.5:1 as small text on its own tint, and a dark swatch less of the light one. Declared wherever
+ * a theme axis is set, because a var() in a custom property is substituted where the property is declared.
+ */
+:is(:root, [data-wzl-theme], [data-wzl-mode], [data-wzl-density]) {
+  --forge-library-amber: light-dark(
+    color-mix(in oklab, var(--wzl-swatch-amber), var(--wzl-fg) 55%),
+    color-mix(in oklab, var(--wzl-swatch-amber), var(--wzl-fg) 40%)
+  );
+  --forge-library-teal: light-dark(
+    color-mix(in oklab, var(--wzl-swatch-teal), var(--wzl-fg) 55%),
+    color-mix(in oklab, var(--wzl-swatch-teal), var(--wzl-fg) 45%)
+  );
+  --forge-library-blue: light-dark(
+    color-mix(in oklab, var(--wzl-swatch-blue), var(--wzl-fg) 55%),
+    color-mix(in oklab, var(--wzl-swatch-blue), var(--wzl-fg) 35%)
+  );
+  --forge-library-rose: light-dark(
+    color-mix(in oklab, var(--wzl-swatch-rose), var(--wzl-fg) 55%),
+    color-mix(in oklab, var(--wzl-swatch-rose), var(--wzl-fg) 35%)
+  );
+}

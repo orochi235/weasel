@@ -21,6 +21,7 @@ export {
   UnionNode,
   ValueNode,
 } from './builder';
+export type { Fields, FieldValues, Variants, VariantValues } from './compound';
 export { fromConfigFields } from './fromConfigField';
 export {
   fillConfigDefaults,
@@ -35,6 +36,7 @@ export { type SectionTree, sectionTree } from './sectionTree';
 export type {
   Annotations,
   BranchAnnotations,
+  Branching,
   BranchOptions,
   ConfigBranch,
   ConfigEntry,

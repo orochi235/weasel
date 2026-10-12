@@ -116,11 +116,14 @@ export {
   useBooleans,
   useBooleansAdapter,
   applyBooleanOp,
+  previewBooleanOp,
 } from '../interactions/actions/booleans';
 export type {
   BooleanOp,
   BooleansAdapter,
+  BooleanOpPreview,
   BooleanOpResult,
+  BooleanPreviewPiece,
   BooleanOpOptions,
   BooleanStrokes,
   UseBooleansOptions,
