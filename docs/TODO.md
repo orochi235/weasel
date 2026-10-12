@@ -1163,12 +1163,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   because light mode sets `--wzl-border` and `--wzl-surface-sunken` to the same gray; `MotifFrame`
   got around the same collision by mixing its edge from its own surface (`25b22ee40`).
 
-- **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
-  drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
-  drag, and a tree row onto the Unplaced list as far as the hold. Not covered: that drop, a
-  palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
-  500 ms `RAIL_OPEN_MS` timer).
-
 - **(P3) `Tree` keeps `onExternalTarget` beside `dropRef`.** `TreeDropHandle.targetAt(point)`
   answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
   effect, a render behind, and its docstring says so. Whether it should go is not decided.
