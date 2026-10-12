@@ -41,6 +41,7 @@ function harness(opts: {
   const holds: (HeldPress | null)[] = [];
   const recognizer = createPointerRecognizer({
     clock,
+    toWorld: (x, y) => ({ x: x + 100, y: y + 100 }),
     sink: {
       dispatch: (ev) => {
         events.push(ev);
@@ -58,10 +59,10 @@ function harness(opts: {
     ...opts.more,
   });
   const at = (pointerId: number, x: number, y = 0): PointerSample => (
-    { pointerId, clientX: x, clientY: y, x: x + 100, y: y + 100, ...MODS }
+    { pointerId, clientX: x, clientY: y, ...MODS }
   );
   const down = (pointerId: number, x: number, more: Partial<PressSample> = {}): void => {
-    recognizer.press({ ...at(pointerId, x), pointerType: 'mouse', ...more });
+    recognizer.press({ ...at(pointerId, x), x: x + 100, y: 100, pointerType: 'mouse', ...more });
   };
   const click = (x = 0): ReturnType<typeof recognizer.release> => {
     down(1, x);
@@ -331,6 +332,28 @@ describe('two fingers', () => {
     h.recognizer.move(h.at(2, 80));
     expect(h.kinds().slice(2)).toEqual(['multitouch', 'pointermove']);
     expect(h.events[2]).toEqual({ kind: 'multitouch', fingers: 2, centroid: { x: 40, y: 0 }, spread: 80, ...MODS });
+  });
+
+  it('place the move where the pump left the view, not where it was before', () => {
+    let offset = 0;
+    const events: InputEvent[] = [];
+    const recognizer = createPointerRecognizer({
+      clock: fakeClock(),
+      toWorld: (x, y) => ({ x: x + offset, y }),
+      sink: {
+        dispatch: (ev) => {
+          events.push(ev);
+          if (ev.kind === 'multitouch' && ev.centroid && events.length > 2) offset = 1000;
+          return 'unhandled';
+        },
+        multiTouchInFlight: () => true,
+      },
+    });
+    const sample = (pointerId: number, x: number) => ({ pointerId, clientX: x, clientY: 0, ...MODS });
+    recognizer.press({ ...sample(1, 0), x: 0, y: 0, pointerType: 'touch' });
+    recognizer.press({ ...sample(2, 40), x: 40, y: 0, pointerType: 'touch' });
+    recognizer.move(sample(2, 80));
+    expect(events.at(-1)).toMatchObject({ kind: 'pointermove', clientX: 80, x: 1080 });
   });
 
   it('pump nothing while the sink has no such gesture in flight', () => {

@@ -6,22 +6,23 @@ import type {
   BodyKind, BodyTarget, EventModifiers, InputEvent, PointerDownEvent, PointerSampleStylus,
 } from '../ui/inputEvent';
 import { stylusOf } from '../ui/stylus';
+import type { Point } from './multiTouch';
 import { pressedOn, type PressFacts } from './pressFacts';
 
-/** One pointer event, already resolved to both spaces. */
+/** One pointer event, in client space. */
 export interface PointerSample extends EventModifiers, PointerSampleStylus {
   pointerId: number;
   clientX: number;
   clientY: number;
-  /** The same point in world space. */
-  x: number;
-  y: number;
   /** What the originating event was aimed at. */
   target?: unknown;
 }
 
-/** A pointer going down, with what it landed on. */
+/** A pointer going down, with what the host found under it. */
 export interface PressSample extends PointerSample {
+  /** The world point the host hit-tested at. */
+  x: number;
+  y: number;
   /** `PointerEvent.pointerType`. Only `'touch'` and `'pen'` arm a long-press. */
   pointerType: string;
   affordance?: unknown;
@@ -45,18 +46,18 @@ export function pressFactsOf(s: PressSample): PressFacts {
   };
 }
 
-const at = (s: PointerSample) => ({
-  pointerId: s.pointerId, x: s.x, y: s.y, clientX: s.clientX, clientY: s.clientY, ...modifiersOf(s),
+const at = (s: PointerSample, world: Point) => ({
+  pointerId: s.pointerId, x: world.x, y: world.y, clientX: s.clientX, clientY: s.clientY, ...modifiersOf(s),
 });
 
 export function pointerDownEvent(s: PressSample): PointerDownEvent {
-  return { kind: 'pointerdown', target: s.target, ...at(s), ...stylusOf(s), ...pressedOn(s) };
+  return { kind: 'pointerdown', target: s.target, ...at(s, s), ...stylusOf(s), ...pressedOn(s) };
 }
 
-export function pointerMoveEvent(s: PointerSample): InputEvent {
-  return { kind: 'pointermove', ...at(s), ...stylusOf(s) };
+export function pointerMoveEvent(s: PointerSample, world: Point): InputEvent {
+  return { kind: 'pointermove', ...at(s, world), ...stylusOf(s) };
 }
 
-export function pointerUpEvent(s: PointerSample): InputEvent {
-  return { kind: 'pointerup', ...at(s) };
+export function pointerUpEvent(s: PointerSample, world: Point): InputEvent {
+  return { kind: 'pointerup', ...at(s, world) };
 }

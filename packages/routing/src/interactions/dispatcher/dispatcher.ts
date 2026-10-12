@@ -75,6 +75,11 @@ export function pointerGestureId(pointerId: number | undefined): string {
   return `pointer-${pointerId ?? 'mouse'}`;
 }
 
+/** The in-flight handle slot a multitouch gesture of `fingers` fingers keys into. */
+export function multiTouchGestureId(fingers: number): string {
+  return `multitouch-${fingers}`;
+}
+
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
 
 /** Build a dispatcher. `getAction` overrides how action ids are resolved;
@@ -272,7 +277,7 @@ export function createDispatcher(opts?: {
       return pointerGestureId(event.pointerId);
     }
     if (event.kind === 'multitouch') {
-      return `multitouch-${event.fingers}`;
+      return multiTouchGestureId(event.fingers);
     }
     return `ongoing-${event.kind}`;
   }

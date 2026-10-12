@@ -35,6 +35,12 @@ export interface RecognizerObserver extends ClickObserver {
 export interface PointerRecognizerOptions {
   sink: RecognizerSink;
   clock: RecognizerClock;
+  /**
+   * Client point to world point; the identity by default. Asked as each event
+   * is built rather than once per sample: an event dispatched earlier in the
+   * same sample, a pinch step say, may have moved the view.
+   */
+  toWorld?: (clientX: number, clientY: number) => Point;
   /** Client point to the space a multitouch centroid is reported in. The identity by default. */
   toSurface?: (client: Point) => Point;
   /** Long-press hold time in ms, read at each press. Default `LONG_PRESS_MS`. */
@@ -81,30 +87,40 @@ function multiTouchEvent(
   return { kind: 'multitouch', fingers, ...modifiersOf(mods), ...more };
 }
 
+const positionsOf = (held: ReadonlyMap<number, Held>): Map<number, Point> =>
+  new Map([...held].map(([id, p]) => [id, p.pos]));
+
+/** The held pointers' geometry, plus `extra` points, with the centroid in surface space. */
+function heldGeometry(
+  held: ReadonlyMap<number, Held>,
+  toSurface: (client: Point) => Point,
+  extra: Point[],
+): { centroid: Point; spread: number } {
+  const g = multiTouchGeometry([...positionsOf(held).values(), ...extra]);
+  return { centroid: toSurface(g.centroid), spread: g.spread };
+}
+
+/** A hold that lasted: a long-press, or the contextmenu it falls back to. */
+function fireLongPress(rec: Held | undefined, sink: RecognizerSink, observer: RecognizerObserver): void {
+  if (!rec) return;
+  const evs = longPressEvents(rec.down);
+  let result = sink.dispatch(evs.longpress);
+  if (result === 'unhandled') result = sink.dispatch(evs.contextmenu);
+  if (result === 'unhandled') return;
+  // The press is spent: its release must not click, nor a later move open a drag.
+  rec.buffered = null;
+  if (rec.holdType) observer.longPress?.(rec.holdType);
+}
+
 export function createPointerRecognizer(opts: PointerRecognizerOptions): PointerRecognizer {
   const { sink, clock, observer = {}, toSurface = (p) => p } = opts;
+  const world = (s: PointerSample): Point => opts.toWorld?.(s.clientX, s.clientY) ?? { x: s.clientX, y: s.clientY };
   const clicks = opts.clicks ?? { last: null };
   const held = new Map<number, Held>();
   const touches = createMultiTouchEpisode();
   const hold = createLongPressHold(clock, (pending) => { observer.holdChanged?.(pending); });
   const longPressMs = (): number => opts.longPressMs?.() ?? LONG_PRESS_MS;
-  const positions = (): Map<number, Point> => new Map([...held].map(([id, p]) => [id, p.pos]));
-  const geometry = (extra: Point[] = []): { centroid: Point; spread: number } => {
-    const g = multiTouchGeometry([...positions().values(), ...extra]);
-    return { centroid: toSurface(g.centroid), spread: g.spread };
-  };
-
-  const fireLongPress = (pointerId: number): void => {
-    const rec = held.get(pointerId);
-    if (!rec) return;
-    const evs = longPressEvents(rec.down);
-    let result = sink.dispatch(evs.longpress);
-    if (result === 'unhandled') result = sink.dispatch(evs.contextmenu);
-    if (result === 'unhandled') return;
-    // The press is spent: its release must not click, nor a later move open a drag.
-    rec.buffered = null;
-    if (rec.holdType) observer.longPress?.(rec.holdType);
-  };
+  const geometry = (extra: Point[] = []) => heldGeometry(held, toSurface, extra);
 
   // MULTI-POINTER POLICY: multitouch takes every pointer that has not already
   // committed to a gesture, by clearing its buffered press. One that already
@@ -114,7 +130,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
     hold.cancel();
     for (const p of held.values()) p.buffered = null;
     const g = geometry();
-    touches.join(positions(), g.centroid, clock.now());
+    touches.join(positionsOf(held), g.centroid, clock.now());
     sink.dispatch(multiTouchEvent(held.size, mods, g));
   };
 
@@ -131,7 +147,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
         rec.holdType = s.pointerType;
         hold.arm(
           { pointerId: s.pointerId, pointerType: s.pointerType, press: rec.down, startedAt: clock.now(), duration: longPressMs() },
-          () => { fireLongPress(s.pointerId); },
+          () => { fireLongPress(held.get(s.pointerId), sink, observer); },
         );
       }
       if (held.size >= 2) claimForMultiTouch(s);
@@ -152,7 +168,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       if (held.size >= 2 && sink.multiTouchInFlight(held.size)) {
         sink.dispatch(multiTouchEvent(held.size, s, geometry()));
       }
-      sink.dispatch(pointerMoveEvent(s));
+      sink.dispatch(pointerMoveEvent(s, world(s)));
     },
 
     release(s) {
@@ -169,13 +185,14 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
         );
         if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
       }
-      sink.dispatch(pointerUpEvent(s));
+      sink.dispatch(pointerUpEvent(s, world(s)));
       // A press still buffered never crossed the drag threshold, and nothing
       // else spent it. Without this, a tool binding `click` but not `drag`
       // would click on the release of a drag clear across the canvas.
       if (!rec?.buffered) return {};
+      const at = world(s);
       const up = {
-        target: s.target, clientX: s.clientX, clientY: s.clientY, worldX: s.x, worldY: s.y, ...modifiersOf(s),
+        target: s.target, clientX: s.clientX, clientY: s.clientY, worldX: at.x, worldY: at.y, ...modifiersOf(s),
       };
       return composeClick(rec.down, up, clicks, () => clock.now(), (ev) => sink.dispatch(ev), observer);
     },
@@ -199,7 +216,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
         holding = true;
         if (!hold.pendingFor(id)) continue;
         hold.cancel(id);
-        fireLongPress(id);
+        fireLongPress(rec, sink, observer);
       }
       return holding;
     },
