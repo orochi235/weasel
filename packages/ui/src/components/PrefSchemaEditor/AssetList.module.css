@@ -1,0 +1,15 @@
+/* The rows of every sidebar list, so this one lines up with a layer list set beside it. */
+.list { composes: list from '../ItemList/ItemList.module.css'; }
+.row { composes: row from '../ItemList/ItemList.module.css'; }
+.selected { composes: selected from '../ItemList/ItemList.module.css'; }
+.label { composes: label from '../ItemList/ItemList.module.css'; }
+.changed { composes: changed from './PrefSchemaEditor.module.css'; }
+.group { display: flex; flex-direction: column; gap: 1px; }
+.group + .group { margin-block-start: var(--wzl-space-3); }
+.heading {
+  padding: var(--wzl-space-1) var(--wzl-space-4);
+  font-size: var(--wzl-font-size-xs);
+  font-weight: var(--wzl-font-weight-medium);
+  color: var(--wzl-fg-subtle);
+}
+.lock { flex: none; color: var(--wzl-fg-muted); }

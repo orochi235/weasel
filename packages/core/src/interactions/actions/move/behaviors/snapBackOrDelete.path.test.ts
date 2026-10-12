@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { snapBackOrDelete } from './snapBackOrDelete';
 import { polygonFromPoints, pathOriginProjection, type Path } from 'features/paths';
 import type { GestureContext } from '../../../gestures/types';
+import { moveEnd } from '../../testUtils';
 
 function ctx(originPose: Path, currentPose: Path): GestureContext<Path> {
   return {
@@ -33,7 +34,7 @@ describe('snapBackOrDelete + pathOriginProjection', () => {
       origin: pathOriginProjection,
     });
     const moved = pathOriginProjection.translate(TRI, 1, 2); // delta (1,2), |d|≈2.24
-    expect(b.onEnd!(ctx(TRI, moved), { answered: false })).toBeNull();
+    expect(b.onEnd!(ctx(TRI, moved), moveEnd())).toBeNull();
   });
 
   it('emits a delete op when the Path bounds origin moved beyond radius and policy is delete', () => {
@@ -43,7 +44,7 @@ describe('snapBackOrDelete + pathOriginProjection', () => {
       origin: pathOriginProjection,
     });
     const moved = pathOriginProjection.translate(TRI, 50, 50);
-    const ops = b.onEnd!(ctx(TRI, moved), { answered: false });
+    const ops = b.onEnd!(ctx(TRI, moved), moveEnd());
     expect(Array.isArray(ops)).toBe(true);
     expect((ops as any[])[0].label).toMatch(/delete/i);
   });

@@ -432,9 +432,10 @@ HUD. The one listener ahead of the widget is a dispatcher mounted with
 
 A pluggable extension to a drag-based [Action](#action)'s per-frame proposed-pose
 shaping and commit logic. Implements `ActionBehavior<TPose, TProposed, TMoveResult>`
-with optional `onStart`, `onMove`, and `onEnd` hooks. Behaviors run in array order;
-each `onMove` may refine the proposed pose; the first `onEnd` returning a
-non-`undefined` value wins (ops to commit, or `null` to abort). Type aliases pin
+with optional `onStart`, `onMove`, `onEnd`, `onCancel`, and `onSettled` hooks.
+Behaviors run in array order; each `onMove` may refine the proposed pose; the first
+`onEnd` returning a non-`undefined` value wins (ops to commit, or `null` to abort);
+`onSettled` runs once the commit has landed or the cancel has run. Type aliases pin
 the shapes per action: `MoveBehavior`, `ResizeBehavior`, `RotateBehavior`,
 `InsertBehavior`, `AreaSelectBehavior`, `CloneBehavior`.
 

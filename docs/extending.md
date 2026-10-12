@@ -280,11 +280,13 @@ on the binding that reaches it, or via the options `<SceneCanvas>` forwards
 (`selectTool.move.behaviors`, `selectTool.snap`, …):
 
 ```ts
-interface ActionBehavior<TPose, TProposed, TMoveResult> {
+interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd = BehaviorEnd> {
   defaultTransient?: boolean;
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
-  onEnd?(ctx: GestureContext<TPose>): Op[] | null | void;
+  onEnd?(ctx: GestureContext<TPose>, end: TEnd): Op[] | null | void;
+  onCancel?(ctx: GestureContext<TPose>): void;
+  onSettled?(ctx: GestureContext<TPose>, committed: boolean): void;
 }
 ```
 
@@ -297,9 +299,29 @@ Each action pins the proposed/result shape; pick the matching alias
 - `onMove` returns a partial result (`{ pose: refined }` for move) to
   refine the proposed pose; `void` leaves it alone. Behaviors run in
   array order — later behaviors see your refinement.
+- A move behavior's result can also carry `poses`, a preview pose per id in
+  that node's stored frame. For a dragged id it replaces the group transform
+  this frame, unless a moving frame carries that node; any other id is shown
+  there for this frame only, and committing it is the behavior's job.
+  `opaque` names the ids whose preview
+  paints at full opacity rather than as a ghost.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
   or the action's default ops (move emits one `createTransformOp` per id).
+- A move behavior that claims the commit but places only some of the
+  dragged nodes returns `end.translateOps(ids)` beside its own ops: the
+  action's default translate for those dragged roots and the descendants
+  that follow them.
+- `onCancel` runs in place of `onEnd` when the gesture is canceled (Esc,
+  pointercancel). Release anything held outside the gesture in both.
+- `onSettled` runs once per gesture, after the commit's ops have applied (or
+  the cancel has run) and the preview overrides are gone — the place to act
+  on the pose the document now holds. `committed` is false when the gesture
+  was canceled, aborted by a behavior, or released with nothing to commit,
+  and true otherwise: the action or a behavior made the commit, a behavior
+  claiming it with no ops included. For move, resize, and rotate it is the
+  value `onGestureEnd` receives. Move, resize, rotate, insert, and
+  lasso-select call it, and every behavior's runs even if another's throws.
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:
   `ctx.scratch['snapToContainer']`.

@@ -107,17 +107,13 @@ export function snapToContainer<TPose>(args: {
 
     onCancel(ctx) { clearTimer(getState<TPose>(ctx)); },
 
-    onEnd(ctx) {
+    onEnd(ctx, end) {
       const s = getState<TPose>(ctx);
       clearTimer(s);
       const snap = s.committedSnap ?? ctx.snap;
       if (!snap) return;
       const ops: Op[] = [];
-      const slots = slotsFor(ctx, snap);
-      // A node with no slot of its own lands where the preview drew it.
-      for (const id of ctx.draggedIds) if (!slots.has(id)) slots.set(id, ctx.current.get(id)!);
-      for (const [id, to] of slots) {
-        ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
+      const reparent = (id: string): void => {
         const oldParent = ctx.adapter.getParent?.(id) ?? null;
         if (oldParent !== snap.parentId) {
           ops.push(createReparentOp({
@@ -127,7 +123,16 @@ export function snapToContainer<TPose>(args: {
             label: reparentLabel,
           }));
         }
+      };
+      const slots = slotsFor(ctx, snap);
+      for (const [id, to] of slots) {
+        ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
+        reparent(id);
       }
+      // A node with no slot of its own lands where the preview drew it.
+      const rest = ctx.draggedIds.filter((id) => !slots.has(id));
+      ops.push(...end.translateOps(rest));
+      for (const id of rest) reparent(id);
       return ops;
     },
   };

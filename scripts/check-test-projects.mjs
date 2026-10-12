@@ -99,7 +99,10 @@ if (notInCi.length > 0) {
   process.exit(1);
 }
 const byFile = claimed(projects);
-const tracked = git('ls-files').split('\n').filter(isVitestFile);
+// A file deleted and not yet committed is still in the index, and so is every file a fleet node's
+// tree lost since its base commit; neither is a test nobody runs.
+const gone = new Set(git('ls-files', '--deleted').split('\n'));
+const tracked = git('ls-files').split('\n').filter((f) => isVitestFile(f) && !gone.has(f));
 
 const orphans = tracked.filter((f) => !byFile.has(f));
 if (orphans.length > 0) {

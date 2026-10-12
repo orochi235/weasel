@@ -11,11 +11,12 @@ function foldBehaviors(
   moveCtx: InvocationCtx,
   dx0: number,
   dy0: number,
-): { dx: number; dy: number; posed: Map<NodeId, unknown> } {
+): { dx: number; dy: number; posed: Map<NodeId, unknown>; opaque: Set<NodeId> } {
   let dx = dx0;
   let dy = dy0;
 
   const posed = new Map<NodeId, unknown>();
+  const opaque = new Set<NodeId>();
   if (session.behaviors.length > 0) {
     const gctx = session.gestureCtx;
     gctx.modifiers = { ...moveCtx.modifiers };
@@ -38,6 +39,7 @@ function foldBehaviors(
       const r: BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
       if (!r) continue;
       if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
+      if (r.opaque) for (const id of r.opaque) opaque.add(id as NodeId);
       if (r.transform && r.transform.kind === 'translate') {
         transform = r.transform;
       } else if (r.pose !== undefined && primary !== undefined) {
@@ -52,13 +54,14 @@ function foldBehaviors(
     }
     if (transform.kind === 'translate') { dx = transform.dx; dy = transform.dy; }
   }
-  return { dx, dy, posed };
+  return { dx, dy, posed, opaque };
 }
 
 /** One move's delta and previews: the pointer's delta as the behaviors shaped
- *  it, and every displaced id's stored pose under it. */
+ *  it, every displaced id's stored pose under it, and whatever else the
+ *  behaviors posed. */
 export function nextFrame(session: MoveSession, readers: MoveReaders, moveCtx: InvocationCtx): MoveFrame {
-  const { dx, dy, posed } = foldBehaviors(session, readers, moveCtx, moveCtx.drag!.delta.x, moveCtx.drag!.delta.y);
+  const { dx, dy, posed, opaque } = foldBehaviors(session, readers, moveCtx, moveCtx.drag!.delta.x, moveCtx.drag!.delta.y);
 
   // The delta stays in the frame — no scene writes, no history entries.
   const delta = { dx, dy };
@@ -73,5 +76,6 @@ export function nextFrame(session: MoveSession, readers: MoveReaders, moveCtx: I
     const l = localDelta(session, id, dx, dy);
     previews.set(id, posed.get(id) ?? translatePoseViaDescriptor(ori, l.dx, l.dy, session.descriptorOf(id)));
   }
-  return { delta, previews };
+  for (const [id, pose] of posed) if (!session.startPoses.has(id)) previews.set(id, pose);
+  return { delta, previews, opaque };
 }

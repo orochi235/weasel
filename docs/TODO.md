@@ -965,8 +965,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P2) A layout drop is not a move behavior.** `actions/move/` is split by phase, with the layout
   pass and reparent-on-drop as commit paths inside it.
-  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md` is unbuilt: three
-  additions to the behavior contract, then both paths lifted out as `MoveBehavior`s.
+  The behavior contract now has what a layout drop needs (`MoveEnd.translateOps`, `onSettled`,
+  previews for any id). What is left, in
+  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md`, is lifting both paths
+  out as `MoveBehavior`s.
 
 - **(P2) `resize.ts` (698) and `rotate.ts` (353) are built like `move.ts` was.** Each is a scratch
   interface every helper takes whole and a `commitX` closure inside `start()`. They take the split
@@ -1171,21 +1173,26 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
   theme that turns the glass on.
 
-- **(P2) Disable a pref by the values of others.** A condition is a structure over other leaves'
-  paths (`PrefCondition` in `packages/prefs/src/condition.ts`; ruled 2026-10-11 over an expression
-  string). A leaf, group, or section holds one as `showIf` or `enableIf`; `packages/prefs/src/scope.ts`
-  applies them for `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, and
-  `PrefSchemaEditor` edits both. Left: labkit's `ControlMatrix` reads neither; a condition on a
-  list's or a map's `item` is not applied; the schema editor's live preview drops a node whose
-  `showIf` fails, so it cannot be picked there; a boolean with an `encoding` is compared as
-  stored, not as shown. Undecided: whether a bad condition throws or warns (the prefs store and
-  `resolveConfigSchema` warn, where labkit's other schema mistakes throw); a path relative to a
-  list item, since every path is from the schema root and a field cannot name its sibling in the
-  same item; whether an alias row uses its own conditions or its target's (built: its own; labkit's
-  `AliasNode` says its own `.showIf` places it, and `prefAliasedLeaf` spreads the target); a form
-  for "this list is not empty", since a bare `{ path }` holds for an empty list; and what a
-  condition reads when the selected nodes in a `SelectionPanel` disagree (built, provisionally:
-  shown if it holds for any node, enabled only if it holds for all).
+- **(P3) What conditions on a pref leave undecided.** A leaf, group, or section holds a
+  `PrefCondition` (`packages/prefs/src/condition.ts`) as `showIf` or `enableIf`;
+  `packages/prefs/src/scope.ts` applies them in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's
+  `ControlPanel` and `ControlMatrix`, and `PrefSchemaEditor` edits both. Undecided, with what is
+  built today: whether a bad condition throws or warns (warns; labkit's other schema mistakes
+  throw); a path relative to a list item (none: every path is from the schema root, so a field
+  cannot name its sibling in the same item); what an item's own `showIf` means, since it cannot
+  hide one entry (unasked; its `enableIf` and its fields' conditions apply); whether an alias row
+  uses its own conditions or its target's (its own); a form for "this list is not empty" (none: a
+  bare `{ path }` holds for an empty list); what a condition reads when the selected nodes in a
+  `SelectionPanel` disagree (shown if it holds for any, enabled only if for all); and whether a
+  number with a display unit is compared as stored or as shown (stored; only an `encoding` is
+  decoded).
+
+- **(P3) Loose ends of the condition work.** labkit's `isEntryShown` has no resolved schema and
+  compares stored values, where every other reader decodes. A rail entry for a group drawn under
+  `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
+  `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
+  `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
+  own. `Properties.module.css` is one 1,597-line sheet.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -1560,6 +1567,14 @@ in the workshop page as a lab trial with controls. A story that sets `isolate`
 renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
+
+- **(P2) A story gets controls only for the args it spells out.** `argsToSchema`
+  (`packages/forge/src/csf/argsToSchema.ts`) reads `args` and `argTypes` and
+  nothing else, so a story that names a `component` and declares neither shows
+  Settings with the Globals section alone. Storybook fills that gap by reading
+  the component's prop types at build time; forge has no such step. The vite
+  plugin would derive an `argTypes` table per `component` from its TypeScript
+  props, and the story's own `args` and `argTypes` would refine it.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show

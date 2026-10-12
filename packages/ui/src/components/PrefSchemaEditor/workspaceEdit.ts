@@ -1,8 +1,7 @@
-import { prefLeafAt } from '@weasel-js/prefs';
-import { moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
+import { gainsSetting, moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
 import { pointersIn } from './pointers';
 import {
-  joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMove,
+  heldValuePaths, joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMove,
   type SchemaRoot, type SchemaTarget, type ValueMove,
 } from './schemaEdit';
 import { assetOf, type Asset, type Workspace } from './workspace';
@@ -11,22 +10,24 @@ import { assetOf, type Asset, type Workspace } from './workspace';
 export const NO_MOVES: readonly ValueMove[] = [];
 
 /**
- * `layout` after its dialog went from `before` to `after`: its pointers follow `moves`, and one whose setting went
- * goes too. A pointer a move rewrote stays whatever it names now, as an alias in the dialog does.
+ * `layout` after its dialog went from `before` to `after`: its pointers follow `moves`, and one goes when the node its
+ * path named went, a field inside an `object` leaf as much as a setting. A pointer a move rewrote stays whatever it
+ * names now, as an alias in the dialog does, and one whose path named nothing before is left as it was.
  */
 function following(layout: SchemaRoot, before: SchemaRoot, after: SchemaRoot, moves: readonly ValueMove[]): SchemaRoot {
   const followed = rebaseValuePaths(layout, moves);
   const now = pointersIn(followed);
+  const [held, holds] = [heldValuePaths(before), heldValuePaths(after)];
   const lost = pointersIn(layout)
-    .filter(([, was], i) => now[i]![1].of === was.of && prefLeafAt(before, was.of) !== undefined && prefLeafAt(after, was.of) === undefined)
+    .filter(([, was], i) => now[i]![1].of === was.of && held.has(was.of) && !holds.has(was.of))
     .map(([path]) => path);
   // Not `removeNodes`: it takes a removed node's tree path for a value path, and would drop a pointer naming a live setting there.
   return lost.reduce((root, path) => removeNode(root, path), followed);
 }
 
 /**
- * `workspace` with the asset `id` holding `next`; `workspace` itself when that asset is read-only. Every layout over
- * an edited dialog follows, read-only ones included.
+ * `workspace` with the asset `id` holding `next`; `workspace` itself when that asset is read-only, or is a layout and
+ * `next` would give it a setting of its own. Every layout over an edited dialog follows, read-only ones included.
  *
  * A `next` in which a setting was renamed or moved must come with `moves`, each from the value path it had to the
  * one it has, a `null` for a node that has none. Nothing is worked out from the two roots, so a pointer to a setting
@@ -36,6 +37,7 @@ function following(layout: SchemaRoot, before: SchemaRoot, after: SchemaRoot, mo
 export function editAsset(workspace: Workspace, id: string, next: SchemaRoot, moves: ReadonlyArray<ValueMove | null>): Workspace {
   const asset = assetOf(workspace, id);
   if (!asset || asset.readOnly || asset.root === next) return workspace;
+  if (asset.kind === 'layout' && gainsSetting(asset.root, next)) return workspace;
   // The first move to match a path is the one it follows, and a setting's own outranks that of a group above it.
   const ordered = moves.filter((m) => m !== null).sort((a, b) => b[0].length - a[0].length);
   return {

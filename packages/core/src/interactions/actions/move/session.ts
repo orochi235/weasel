@@ -60,9 +60,12 @@ export interface MoveSession {
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
 export interface MoveFrame {
   readonly delta: { dx: number; dy: number };
-  /** Stored-frame pose of every displaced id, roots and descendants. The
-   *  layout pass adds the siblings it displaced. */
+  /** Stored-frame pose of every displaced id, roots and descendants, and of
+   *  any other id a behavior posed. The layout pass adds the siblings it
+   *  displaced. */
   readonly previews: Map<NodeId, unknown>;
+  /** Ids the behaviors asked to have painted at full opacity. */
+  readonly opaque: ReadonlySet<NodeId>;
 }
 
 export interface MoveReaders {

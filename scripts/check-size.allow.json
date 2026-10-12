@@ -26,8 +26,8 @@
     "lines": 582
   },
   "packages/core/src/animation/useAnimator.ts": {
-    "lines": 502,
-    "longestFunction": 460
+    "lines": 486,
+    "longestFunction": 443
   },
   "packages/core/src/canvas/Canvas.tsx": {
     "lines": 1347,
@@ -141,15 +141,15 @@
     "longestFunction": 134
   },
   "packages/core/src/interactions/actions/defaults/insert.ts": {
-    "lines": 621,
-    "longestFunction": 194
+    "lines": 581,
+    "longestFunction": 132
   },
   "packages/core/src/interactions/actions/defaults/resize.ts": {
-    "lines": 697,
-    "longestFunction": 355
+    "lines": 695,
+    "longestFunction": 353
   },
   "packages/core/src/interactions/actions/defaults/rotate.ts": {
-    "longestFunction": 212
+    "longestFunction": 210
   },
   "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
     "longestFunction": 129

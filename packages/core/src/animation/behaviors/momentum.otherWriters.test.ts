@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useAnimator } from '../useAnimator';
 import { momentum } from './momentum';
 import type { GestureContext } from 'interactions/gestures/types';
+import { moveEnd } from 'interactions/actions/testUtils';
 import type { Op } from 'core/ops/types';
 
 interface RectPose { x: number; y: number; width: number; height: number }
@@ -55,7 +56,7 @@ function flick(ids: string[]) {
     poses.set(id, { x: 20, y: 0, width: 10, height: 10 });
     ctx.current.set(id, poses.get(id)!);
   }
-  beh.onEnd?.(ctx, { answered: false });
+  beh.onEnd?.(ctx, moveEnd());
   clock.advance(16);
   clock.advance(16);
   const settle = (): void => {

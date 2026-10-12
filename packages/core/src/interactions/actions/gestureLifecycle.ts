@@ -9,6 +9,7 @@
 import type { Op } from 'core/ops/types';
 import type { Scene } from 'core/scene/types';
 import type { BehaviorEnd } from 'interactions/gestures/types';
+import { dropPreviewOverrides, type PreviewOverrideState } from './previewOverrides';
 
 /** The lifecycle options, as a binding's params or the resize policy carry
  *  them. */
@@ -98,26 +99,86 @@ export function commitGestureOps(
   else target.scene.applyBatch(ops, label, target.adapter);
 }
 
+/** The trailing argument of {@link reduceBehaviorEnd}: what `TEnd` adds to
+ *  `BehaviorEnd`, required exactly when it adds something. */
+type OwnEndFields<TEnd extends BehaviorEnd> = keyof Omit<TEnd, keyof BehaviorEnd> extends never
+  ? [own?: Omit<TEnd, keyof BehaviorEnd>]
+  : [own: Omit<TEnd, keyof BehaviorEnd>];
+
 /** Runs every behavior's `onEnd` in order; the first that answers decides the
  *  commit and later answers are ignored. `null` aborts, `Op[]` claims it (an
  *  empty array included), and `undefined` means every behavior deferred to the
- *  action's own commit. */
-export function reduceBehaviorEnd<TCtx>(
-  behaviors: readonly { onEnd?(ctx: TCtx, end: BehaviorEnd): Op[] | null | void }[],
+ *  action's own commit. An action whose behaviors take more than a plain
+ *  `BehaviorEnd` passes the rest as `own`; each `onEnd` gets it beside
+ *  `answered`. */
+export function reduceBehaviorEnd<TCtx, TEnd extends BehaviorEnd = BehaviorEnd>(
+  behaviors: readonly { onEnd?(ctx: TCtx, end: TEnd): Op[] | null | void }[],
   ctx: TCtx,
+  ...[own]: OwnEndFields<TEnd>
 ): Op[] | null | undefined {
   let answer: Op[] | null | undefined;
   for (const b of behaviors) {
-    const r = b.onEnd?.(ctx, { answered: answer !== undefined });
+    const r = b.onEnd?.(ctx, { ...own, answered: answer !== undefined } as TEnd);
     if (answer === undefined && r !== undefined) answer = r;
   }
   return answer;
 }
 
-/** Runs every behavior's `onCancel`, for a gesture closing without a commit. */
+/** Runs `step` for every item, a throwing one included, then rethrows the
+ *  first error. For steps that each release something of their own. */
+function runEvery<T>(items: readonly T[], step: (item: T) => void): void {
+  const errors: unknown[] = [];
+  for (const item of items) {
+    try {
+      step(item);
+    } catch (err) {
+      errors.push(err);
+    }
+  }
+  if (errors.length > 0) throw errors[0];
+}
+
+/** Runs every behavior's `onCancel`, for a gesture closing without a commit.
+ *  One that throws does not stop the rest; its error is rethrown after. */
 export function runBehaviorCancel<TCtx>(
   behaviors: readonly { onCancel?(ctx: TCtx): void }[],
   ctx: TCtx,
 ): void {
-  for (const b of behaviors) b.onCancel?.(ctx);
+  runEvery(behaviors, (b) => b.onCancel?.(ctx));
+}
+
+/** Runs every behavior's `onSettled`, once the gesture's commit has landed or
+ *  its cancel has run. One that throws does not stop the rest; its error is
+ *  rethrown after. */
+export function runBehaviorSettled<TCtx>(
+  behaviors: readonly { onSettled?(ctx: TCtx, committed: boolean): void }[],
+  ctx: TCtx,
+  committed: boolean,
+): void {
+  runEvery(behaviors, (b) => b.onSettled?.(ctx, committed));
+}
+
+/** What {@link closeGesture} closes. */
+export interface ClosingGesture<TCtx> {
+  publish: PreviewOverrideState;
+  behaviors: readonly { onSettled?(ctx: TCtx, committed: boolean): void }[];
+  ctx: TCtx;
+  lifecycle: GestureLifecycle;
+}
+
+/**
+ * The close a transform action runs from its `finally`, commit or cancel:
+ * drop the preview overrides, run `settle` (whatever of the action's own has
+ * to follow the commit), tell the behaviors, then fire `onGestureEnd`. The
+ * last three each run even when one before throws; the first error is
+ * rethrown.
+ */
+export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean, settle?: () => void): void {
+  dropPreviewOverrides(gesture.publish);
+  gesture.publish.previews.clear();
+  runEvery([
+    () => settle?.(),
+    () => runBehaviorSettled(gesture.behaviors, gesture.ctx, committed),
+    () => gesture.lifecycle.end(committed),
+  ], (step) => step());
 }

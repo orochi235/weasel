@@ -24,6 +24,23 @@ export function valuePathsAt(root: SchemaRoot, path: string | null, node: Schema
   return Object.entries(childrenOf(node) ?? {}).flatMap(([key, kid]) => valuePathsAt(root, joinPath(path, key), kid));
 }
 
+/**
+ * Every value path a node of `root` holds: a leaf's, a group's, and a field's inside an `object` leaf, which no
+ * alias can show and a path can still name.
+ */
+export function heldValuePaths(root: SchemaRoot): Set<string> {
+  const out = new Set<string>();
+  const walk = (node: SchemaNode, path: string | null): void => {
+    for (const [key, kid] of Object.entries(childrenOf(node) ?? {})) {
+      const at = joinPath(path, key);
+      if (!isPrefSection(kid)) out.add(valuePathOf(root, at));
+      walk(kid, at);
+    }
+  };
+  walk(root, null);
+  return out;
+}
+
 export type ValueMove = readonly [from: string, to: string];
 
 /** The value paths a node going from tree path `from` to `to` takes along; `null` for a section, whose key is no part of one. */
