@@ -2,7 +2,7 @@ import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing'
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
-import type { CloneBehavior, GestureContext, GroupTransform } from '../../gestures/types';
+import type { CloneBehavior, CloneBehaviorResult, GestureContext, GroupTransform } from '../../gestures/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { sceneGestureFrames } from '../gestureFrames';
 import { reduceBehaviorEnd } from '../gestureLifecycle';
@@ -67,7 +67,7 @@ export function startCloneBehaviors(
       place(raw);
       let transform: GroupTransform = { kind: 'translate', ...raw };
       for (const b of list) {
-        const r = b.onMove?.(gctx, transform);
+        const r: CloneBehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
         if (!r) continue;
         if (r.transform?.kind === 'translate') transform = r.transform;
         if (r.snap !== undefined) gctx.snap = r.snap;
