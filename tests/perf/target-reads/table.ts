@@ -132,3 +132,5 @@ if (which !== 'idle') check(which, c);
 time(`${which}, steady`, c.frame);
 if (which === 'table') passAlone();
 time(`${which}, ${CHURN} rows restarted a frame`, () => { c.churn(); c.frame(); });
+// Whether the frame gets its steady cost back once nothing restarts.
+time(`${which}, steady again`, c.frame);
