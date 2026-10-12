@@ -26,7 +26,7 @@ const css = (el: Element, pseudo?: string) => getComputedStyle(el, pseudo);
 const panel = () => screen.getByText('x').closest(`.${p.panel}`)!;
 
 describe('with no hook set', () => {
-  test('a button keeps its glass face, a field its plain frame, and a panel no shadow', () => {
+  test('a button keeps its own face, a field its plain frame, and a panel no shadow', () => {
     render(
       <Scope>
         <Button>Go</Button>
@@ -37,7 +37,7 @@ describe('with no hook set', () => {
     const button = css(screen.getByRole('button', { name: 'Go' }));
     expect(button.backgroundImage).toMatch(/^linear-gradient/);
     expect(button.boxShadow.split('rgb').length - 1).toBe(6);
-    expect(css(screen.getByRole('button', { name: 'Go' }), '::before').opacity).toBe('1');
+    expect(css(screen.getByRole('button', { name: 'Go' }), '::before').opacity).toBe(css(document.documentElement).getPropertyValue('--wzl-gloss').trim());
     const frame = css(screen.getByRole('textbox', { name: 'Name' }).parentElement!);
     expect(frame.boxShadow).toBe('none');
     expect(frame.borderTopWidth).toBe('1px');

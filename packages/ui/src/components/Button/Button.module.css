@@ -89,10 +89,9 @@
     rgba(255, 255, 255, var(--btn-gloss-mid)) 60%,
     rgba(255, 255, 255, 0) 100%
   );
-  opacity: var(--wzl-button-gloss, 1);
   pointer-events: none;
   z-index: 1;
-  opacity: var(--wzl-gloss);
+  opacity: calc(var(--wzl-button-gloss, 1) * var(--wzl-gloss));
   transition: opacity var(--wzl-motion-fast);
 }
 
