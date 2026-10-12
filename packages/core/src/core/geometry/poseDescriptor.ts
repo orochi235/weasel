@@ -108,6 +108,7 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
     if (!flat.every((n) => typeof n === 'number')) return null;
     return {
       count: 5,
+      names: ['x', 'y', 'width', 'height', 'rotation'],
       angles: [4],
       to: (p) => [p.x, p.y, p.width, p.height, p.rotation ?? 0],
       from: (a) => {

@@ -1144,6 +1144,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   because light mode sets `--wzl-border` and `--wzl-surface-sunken` to the same gray; `MotifFrame`
   got around the same collision by mixing its edge from its own surface (`25b22ee40`).
 
+- **(P3) A closed `PrefsStore` takes writes and drops them.** Nothing on `PrefsStore` says it is
+  closed, and `set` on a closed one updates memory and never persists, with no warning. Two
+  mounted `usePrefsStore` callers naming one `storage` and `prefix` with different schemas hit
+  it: the later render takes the prefix and the other is left holding the closed store.
+  `apps/draw/src/dev/PrefSchemaPage.tsx` still opens through a module singleton and could move
+  to the hook.
+
 - **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
   drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
   drag, and a tree row onto the Unplaced list as far as the hold. Not covered: that drop, a

@@ -49,6 +49,7 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
     if (like.kind === 'rect') {
       return {
         count: 4,
+        names: ['x', 'y', 'width', 'height'],
         to: (p) => (p.kind === 'rect' ? [p.x, p.y, p.width, p.height] : []),
         from: (a) => ({ kind: 'rect', x: a[0]!, y: a[1]!, width: a[2]!, height: a[3]! }),
         add: (p, d) => (p.kind !== 'rect' ? p : {

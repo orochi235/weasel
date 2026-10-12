@@ -7,6 +7,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { createTarget } from '@weasel-js/animator';
+import { polygonFromPoints } from '@weasel-js/geom';
+import { viewAxes } from '../viewport/useViewAnimation';
+import { pathPoseDescriptor } from './pathPoseDescriptor';
 import { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseDescriptor } from './poseDescriptor';
 
 const DESCRIPTORS: Array<[string, PoseDescriptor<never>]> = [
@@ -27,5 +31,25 @@ describe.each(DESCRIPTORS)('%s', (_name, descriptor) => {
 describe('RECT_POSE_DESCRIPTOR', () => {
   it('reports 0 for a pose that carries no rotation field', () => {
     expect(RECT_POSE_DESCRIPTOR.getRotation!({ x: 0, y: 0, width: 1, height: 1 })).toBe(0);
+  });
+});
+
+describe('axis names', () => {
+  it('names a rect pose\'s axes by its fields', () => {
+    const axes = RECT_POSE_DESCRIPTOR.axes!({ x: 0, y: 0, width: 1, height: 1 })!;
+    expect(axes.names).toEqual(['x', 'y', 'width', 'height', 'rotation']);
+  });
+
+  it('names a rect path pose\'s axes by its fields, and leaves a polygon\'s to indexes', () => {
+    const rect = pathPoseDescriptor.axes!({ kind: 'rect', x: 0, y: 0, width: 1, height: 1 })!;
+    expect(rect.names).toEqual(['x', 'y', 'width', 'height']);
+    const polygon = pathPoseDescriptor.axes!(polygonFromPoints([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }]))!;
+    expect(polygon.names).toBeUndefined();
+  });
+
+  it('resolves a named axis on a target built from the view\'s axes', () => {
+    let view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const target = createTarget({ axes: viewAxes, get: () => view, set: (v) => { view = v; } });
+    expect(target.axisIndexes(['y', 'scale'])).toEqual([1, 2, 3]);
   });
 });
