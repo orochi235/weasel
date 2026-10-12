@@ -1744,9 +1744,8 @@ only story runner in the repo.
   `setEditingId`, or the kit's edit state drives the mode registry and the machine keeps only
   journals.
 
-- **(P3) `apps/site/demos/RotatedResizeMathDemo.tsx` is 713 lines holding two jobs.** The four-panel
-  ledger chrome and the resize math variants are separable. draw's `App.tsx` had the same shape and
-  is split by job now; what is left in it is `EditorWithSharedScene`, one 500-line component.
+- **(P3) draw: `EditorWithSharedScene` in `apps/draw/src/App.tsx` is one 500-line component.** The
+  file is split by job; this component is what is left to split.
 
 - **(P3) draw: "no paint" is defined more than once.** `{ kind: 'none' }` in the color context's
   `ActivePaint`, `null` in node data, with `toFillStyle` in `ActiveSwatches.tsx` translating;
