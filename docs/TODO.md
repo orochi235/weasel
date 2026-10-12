@@ -332,13 +332,12 @@ have shipped. What remains:
   node has a fill, so every unfilled open stroke would become pickable across the area its ends
   enclose.
 
-- **(P3) svg unpack: a clipped group arrives unclipped.** `parseSvg` puts a `<g clip-path>` on
-  `SvgGroupNode.clip`, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) builds the container
-  draft without it and has no warning channel to say so, so a dropped file shows the whole group.
-  Either the container draft carries the clip into whatever the scene's containers use for clipping,
-  or `svgNodesToKitDrafts` gains a way to report what it dropped. A container's clip is
-  `clipFromPose`, a function stored by registry key, so a fixed clip path has no serializable form
-  to be carried in yet.
+- **(P3) WeaselDraw: an imported clipped group is clipped to the clip's box, not its outline.**
+  `svgNodesToKitDrafts` now gives a `<g clip-path>` container the clip as its `data`, an unpainted
+  path the scene clips to, and `unpackSvgFiles` and `svgNodesFromKit` carry it both ways.
+  `svgNodesToSceneDrafts` (`apps/draw/src/svgInterop.ts`) passes that `data` on, but the import in
+  `apps/draw/src/Toolbar.tsx` still adds every container with `data: {}`; it has to add
+  `draft.data`. Nothing has drawn a clipped import in a browser yet.
 
 - **(P3) svg import: `<tspan>` positioning beyond line breaks is not read.** A `<tspan>` with its
   own `x` and a `dy` or new `y` now starts a line (`packages/svg/src/tspanLines.ts`), but the line

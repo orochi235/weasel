@@ -211,6 +211,9 @@ export function svgNodesFromKit<TId extends string>(
         if (child) children.push(child);
       }
       const g: SvgGroupNode = { kind: 'group', children };
+      // What a container draws is what it clips to; see `SvgSceneDraft`.
+      const clip = (node.data as SvgKitLeafData | null)?.path;
+      if (clip) g.clip = pathThroughPoseFrame(pathInPoseFrame(clip, node.pose), node.pose);
       return group ? group(id, g) : g;
     }
     return leaf ? leaf(id, node) : svgLeafFromKit(node.data as SvgKitLeafData, node.pose);

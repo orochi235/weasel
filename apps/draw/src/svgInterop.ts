@@ -228,14 +228,16 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  *                 `{pose, data}` shape exactly as it does for root leaves.
  *   - `container` — an SVG `<g>`. Carries the union-AABB of its leaf
  *                 descendants as `pose` so resize handles land sensibly,
- *                 mirroring the kit `group` action's container pose.
+ *                 mirroring the kit `group` action's container pose. A
+ *                 clipped `<g>` carries its clip in `data`, for the caller
+ *                 to add the container with, and the clip's box as `pose`.
  *
  * `id` is the draft's stable identity (from `wd:group-id` for containers,
  * or the leaf `Obj.id`); the caller maps it to the minted `NodeId`.
  */
 export type SceneDraft =
   | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj }
-  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds };
+  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData };
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
@@ -301,7 +303,7 @@ export function svgNodesToSceneDrafts(
     { leaf: kitLeafToObj },
   );
   return drafts.map((d): SceneDraft => (d.kind === 'container'
-    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose }
+    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose, data: d.data }
     : { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data }));
 }
 

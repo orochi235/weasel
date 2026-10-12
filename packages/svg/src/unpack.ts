@@ -26,6 +26,7 @@ import { parseSvg } from './parse';
 import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgStroke } from './types';
 import type { SvgKitLeafData } from './fromKit';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
+import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
 import {
   boundsOfPath,
   createInsertOp,
@@ -40,6 +41,7 @@ import {
   type ImageNodeData,
   type IngestCtx,
   type Op,
+  type Path,
   type PoseLinear,
   type Stroke,
   type StyledRun,
@@ -65,9 +67,14 @@ type DraftPose = SvgDraftBounds & { rotation?: number; transform?: PoseLinear };
  * order (a draft's `parentId` always names an earlier draft, or `null` for
  * roots). Leaf `data` is kit-painter-native (see module doc). `hidden` is the
  * source node's, for the caller to map onto whatever it hides a node with.
+ *
+ * A container's `data` is empty unless its `<g>` is clipped. A scene container
+ * clips to what its painter draws, so a clipped one holds the clip as an
+ * unpainted path, `{ path, fill: null }`, and its `pose` is the clip's box
+ * rather than its children's.
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
-  | { kind: 'container'; id: string; parentId: string | null; pose: DraftPose; hidden?: true }
+  | { kind: 'container'; id: string; parentId: string | null; pose: DraftPose; data: SvgKitLeafData; hidden?: true }
   | { kind: 'leaf'; id: string; parentId: string | null; pose: DraftPose; data: TData; hidden?: true };
 
 /** A leaf `SvgNode`: everything but a group. */
@@ -113,25 +120,6 @@ export function fillDataFromSvg(
   return fillInBoxFrame(paint.paint, box);
 }
 
-/** Scale a paint's opacity by `k` — how an element or group `opacity` reaches
- *  leaves whose data has no opacity of its own. Where a fill and a stroke
- *  overlap this is not SVG's group compositing, which flattens first. */
-function fadeFill(fill: FillStyle, k: number): FillStyle {
-  return k === 1 ? fill : { ...fill, opacity: (fill.opacity ?? 1) * k };
-}
-
-function fadeStroke(stroke: Stroke, k: number): Stroke {
-  return k === 1 || !stroke.paint ? stroke : { ...stroke, paint: fadeFill(stroke.paint, k) };
-}
-
-function fadeRun(run: StyledRun, k: number): StyledRun {
-  if (k === 1 || (!run.fill && !run.stroke)) return run;
-  return {
-    ...run,
-    ...(run.fill ? { fill: fadeFill(run.fill, k) } : {}),
-    ...(run.stroke ? { stroke: fadeStroke(run.stroke, k) } : {}),
-  };
-}
 
 /** Lower an `SvgStroke` onto the leaf's `data.stroke`.
  *
@@ -231,6 +219,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         id: nextId(n),
         parentId,
         pose: { x: 0, y: 0, width: 0, height: 0 },
+        data: n.clip ? { path: n.clip, fill: null } : {},
         ...(n.hidden ? { hidden: true } : {}),
       };
       drafts.push(draft);
@@ -239,7 +228,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         drafts.splice(drafts.indexOf(draft), 1);
         return null;
       }
-      draft.pose = acc;
+      draft.pose = n.clip ? boxOfPath(n.clip) : acc;
       return draft.pose;
     }
 
@@ -286,9 +275,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
 
     // Path leaf. Bounds come from the geometry; `pathInPoseFrame` rebases
     // the stored path onto whatever pose box placement settles on.
-    const b = n.path.kind === 'rect'
-      ? { x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height }
-      : boundsOfPath(n.path);
+    const b = boxOfPath(n.path);
     const pose: DraftPose = { x: b.x, y: b.y, width: b.width, height: b.height };
     if (n.rotation) pose.rotation = n.rotation;
     const fill = fillDataFromSvg(n.fill, b);
@@ -302,6 +289,11 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
 
   for (const n of nodes) visit(n, null, 1);
   return drafts;
+}
+
+function boxOfPath(path: Path): SvgDraftBounds {
+  const b = boundsOfPath(path);
+  return { x: b.x, y: b.y, width: b.width, height: b.height };
 }
 
 function isNodeList(input: ParseResult | readonly SvgNode[]): input is readonly SvgNode[] {
@@ -358,7 +350,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         const wrapperId = ctx.scene.mintId();
         const union = unionAABB(roots.map((d) => d.pose))!;
         drafts = [
-          { kind: 'container', id: wrapperId, parentId: null, pose: union },
+          { kind: 'container' as const, id: wrapperId, parentId: null, pose: union, data: {} },
           ...drafts.map((d) => (d.parentId === null ? { ...d, parentId: wrapperId } : d)),
         ];
       }
@@ -394,7 +386,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
             kind: d.kind,
             layer,
             pose: place(d.pose),
-            data: d.kind === 'leaf' ? scaleLeafData(d.data, scale) : {},
+            data: d.kind === 'leaf' ? scaleLeafData(d.data, scale) : d.data,
             parent: d.parentId,
           } as unknown as { id: string },
           label: 'Insert SVG',
