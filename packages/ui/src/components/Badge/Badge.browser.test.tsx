@@ -1,6 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
+import { userEvent } from 'vitest/browser';
+import { painted } from '../../testing/paintedContrast';
 import { GestureRoute } from '../GestureRoute/GestureRoute';
 import { Badge } from './Badge';
 import type { BadgeStatus } from './types';
@@ -112,4 +114,22 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
       expect(contrast(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
     });
   }
+
+  test('a hovered button badge lightens its edge instead of losing it', async () => {
+    const { container } = render(
+      <Surface mode={mode}>
+        <Badge shape="pill" status="danger" variant="outline" onClick={() => {}}>
+          label
+        </Badge>
+      </Surface>,
+    );
+    const badge = container.querySelector<HTMLElement>('[data-status]')!;
+    // The mix serializes as oklab(), so a canvas reads the channels.
+    const edge = (): Rgba => [...painted(getComputedStyle(badge).borderTopColor, '#000'), 1];
+    const rest = edge();
+    await userEvent.hover(badge);
+    const hovered = edge();
+    expect(luminance(hovered)).toBeGreaterThan(luminance(rest));
+    expect(hovered[0] - hovered[2], 'still a red').toBeGreaterThan(80);
+  });
 });

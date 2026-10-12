@@ -19,7 +19,10 @@ export interface Pairing {
 
 const ON_SURFACES = ['surface', 'surface-raised', 'surface-sunken', 'surface-popover'];
 
-/** What the built-in theme's text and lines are already held to, by its own rules and its browser tests. */
+/**
+ * What the built-in theme's text and lines are held to, and all it is held to: its colors are a
+ * design decision, not to be changed to clear a ratio in {@link TEXT_PAIRINGS}.
+ */
 export const BUILT_IN_PAIRINGS: readonly Pairing[] = [
   { text: 'fg', on: ON_SURFACES, min: 4.5, steps: ['fg-muted', 'fg-subtle'] },
   { text: 'fg-on-accent', on: ['accent'], min: 4.5, steps: ['fg-muted-on-accent', 'fg-subtle-on-accent'] },

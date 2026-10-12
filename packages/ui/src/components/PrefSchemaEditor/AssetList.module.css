@@ -1,15 +1,18 @@
-/* The rows of every sidebar list, so this one lines up with a layer list set beside it. */
-.list { composes: list from '../ItemList/ItemList.module.css'; }
-.row { composes: row from '../ItemList/ItemList.module.css'; }
-.selected { composes: selected from '../ItemList/ItemList.module.css'; }
-.label { composes: label from '../ItemList/ItemList.module.css'; }
+/* Set as the prefs dialog's own list of pages is: a heading, and its assets a step in under it. */
+.list { composes: railList from '../Prefs/Prefs.module.css'; user-select: none; -webkit-user-select: none; }
+.row {
+  composes: railItem from '../Prefs/Prefs.module.css';
+  margin-inline-start: calc(var(--wzl-space-7) - var(--wzl-space-3));
+  font-weight: var(--wzl-font-weight-light);
+}
+.label { composes: label from '../ItemList/ItemList.module.css'; min-width: 0; white-space: nowrap; }
 .changed { composes: changed from './PrefSchemaEditor.module.css'; }
+.row[data-rail-mark='current'] .changed { color: var(--wzl-secondary-strong); }
 .group { display: flex; flex-direction: column; gap: 1px; }
 .group + .group { margin-block-start: var(--wzl-space-3); }
 .heading {
-  padding: var(--wzl-space-1) var(--wzl-space-4);
-  font-size: var(--wzl-font-size-xs);
-  font-weight: var(--wzl-font-weight-medium);
-  color: var(--wzl-fg-subtle);
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  font-size: var(--wzl-font-size);
+  color: var(--wzl-fg);
 }
-.lock { flex: none; color: var(--wzl-fg-muted); }
+.dynamic { flex: none; color: var(--wzl-fg-muted); }

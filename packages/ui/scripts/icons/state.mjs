@@ -160,6 +160,8 @@ const STATE = {
   unlock: `
     <rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/>
     <path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0"/>`,
+  bolt: `
+    <path d="M11.4 2.8 4.8 11.2h4.6l-.8 6 6.6-8.4h-4.6z"/>`,
   visible: `
     <path d="M2.6 10C4.6 6.6 7.1 5 10 5s5.4 1.6 7.4 5c-2 3.4-4.5 5-7.4 5s-5.4-1.6-7.4-5z"/>
     <circle cx="10" cy="10" r="2.2"/>`,
@@ -240,7 +242,7 @@ const STATE = {
 const SPLIT = {
   playback: ['play', 'pause', 'stop', 'stepBack', 'stepForward'],
   status: [
-    'lock', 'unlock', 'visible', 'hidden', 'pin', 'bookmark',
+    'lock', 'unlock', 'bolt', 'visible', 'hidden', 'pin', 'bookmark',
     'info', 'warning', 'error', 'busy', 'check',
     'mode-light', 'mode-dark', 'mode-auto',
   ],
