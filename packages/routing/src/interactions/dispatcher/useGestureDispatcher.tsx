@@ -150,11 +150,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // channel is on: a press with any button makes this the scope chrome and
     // keys reach.
     listeners.on(canvas, 'pointerdown', () => { registryRef.current.activate(); });
-    // Separate from the key channel's listeners, so the cursor also tracks
-    // modifiers when `keyboard: false` turns gesture key dispatch off.
-    listeners.on(window, 'keydown', hover.onKey);
-    listeners.on(window, 'keyup', hover.onKey);
     if (pointerChannel) {
+      // Separate from the key channel's listeners, so the cursor also tracks
+      // modifiers when `keyboard: false` turns gesture key dispatch off.
+      listeners.on(window, 'keydown', hover.onKey);
+      listeners.on(window, 'keyup', hover.onKey);
       listeners.on(canvas, 'pointerleave', hover.onLeave);
       listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
       listeners.on(canvas, 'pointermove', pointer.onHoverMove);
