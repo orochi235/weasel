@@ -134,4 +134,15 @@ describe('Scene — selection', () => {
     scene.redo();
     expect(scene.getSelection()).toEqual(ids(['b']));
   });
+
+  it('a removal that takes nothing selected leaves the selection array as it was', () => {
+    const { scene, add } = makeScene();
+    add('a');
+    add('b');
+    scene.setSelection(ids(['a']));
+    const before = scene.getSelection();
+
+    scene.remove(asNodeId('b'));
+    expect(scene.getSelection()).toBe(before);
+  });
 });
