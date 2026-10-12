@@ -430,7 +430,7 @@
     "longestFunction": 190
   },
   "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
-    "longestFunction": 205
+    "longestFunction": 198
   },
   "packages/ui/src/components/Prefs/RailLayout.tsx": {
     "longestFunction": 131
