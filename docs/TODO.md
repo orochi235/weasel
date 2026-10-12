@@ -1403,15 +1403,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   version from `CanvasExtensionApi.getPaintedVersion`, compared before and after the loupe's own
   request, is one candidate), or a public `refresh()` on the handle that the consumer calls.
 
-- **(P2) LayerList: rows under a card are `role="row"` with no `treegrid` ancestor.** When a level
-  holds any item with a body, `Level` in `packages/ui/src/components/LayerList/LayerList.tsx`
-  renders it as a `PropertyList` with no role, and a nested level's container is `role="none"`, so
-  the body-less rows in a mixed level and the child rows under a card carry `role="row"` and
-  `aria-level` with no grid above them. Flat lists are fine (each row now owns a `gridcell`). Ruled
-  2026-10-11: each level of plain rows under a card or among cards becomes its own `treegrid`, named
-  for its card, with `aria-level` restarting there. That leaves that markup in `Level`, and what a
-  lone row among cards belongs to, since it has no card to be named for.
-
 - **(P3) SceneGradientHandles: unmounting mid-drag commits the half-finished drag.** Deselect the
   node (or anything else that unmounts the overlay) while a handle is held: the parent's
   `useOngoingAction` cleanup runs first and commits the value under the pointer, then `DragPoint`'s

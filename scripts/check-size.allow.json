@@ -408,7 +408,7 @@
     "longestFunction": 229
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
-    "lines": 650,
+    "lines": 546,
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
