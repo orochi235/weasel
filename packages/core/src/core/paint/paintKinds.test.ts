@@ -9,16 +9,17 @@ import type { FillStyle, PolygonPath } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';
 import type { SvgNode } from '@weasel-js/svg';
 import {
-  registerPaintKind, asPaint, _resetPaintKindsForTests, listPaintKinds, getPaintKind, paintKindRegistry,
-  registerPaintKindLoader, warmPaintKinds,
+  registerPaintKind, _resetPaintKindsForTests, listPaintKinds, getPaintKind, paintKindRegistry,
+  registerPaintKindLoader,
 } from './paintKinds';
-import type { PaintKindEntry } from './paintKinds';
-import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
-import { findNodeShape } from '../canvas/NodeShape';
-import { getProgramSource, registerProgram } from './shaders/registerProgram';
-import { makeGLRecorder } from './test-utils/glRecorder';
-import { WeaselRenderer } from './WeaselRenderer';
-import type { DrawCommand } from './DrawCommand';
+import { asPaint, type PaintKindEntry } from './paintKindEntry';
+import { warmPaintKinds } from 'renderer/paintKinds';
+import { fillInPoseFrame, fillToBoundsFrame } from 'renderer/fillInPoseFrame';
+import { findNodeShape } from 'canvas/NodeShape';
+import { getProgramSource, registerProgram } from 'renderer/shaders/registerProgram';
+import { makeGLRecorder } from 'renderer/test-utils/glRecorder';
+import { WeaselRenderer } from 'renderer/WeaselRenderer';
+import type { DrawCommand } from 'renderer/DrawCommand';
 
 const M = 0, L = 1;
 

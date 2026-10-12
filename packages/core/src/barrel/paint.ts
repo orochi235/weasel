@@ -70,22 +70,20 @@ export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '../util/col
 export {
   registerPaintKind,
   registerPaintKindLoader,
-  warmPaintKinds,
-  isPaintKindKnown,
-  asPaint,
   getPaintKind,
   listGradientKinds,
   listPaintKinds,
   paintKindOf,
   switchGradientKind,
   paintKindRegistry,
-} from 'renderer/paintKinds';
+} from 'core/paint/paintKinds';
+export { asPaint } from 'core/paint/paintKindEntry';
+export { warmPaintKinds, isPaintKindKnown } from 'renderer/paintKinds';
 export { usePaintKinds, useGradientKinds, usePaintKind } from '../core/usePaintKinds';
+export type { PaintKindLoader } from 'core/paint/paintKinds';
+export type { PaintKind, PaintKindEntry, PaintKindEditorProps } from 'core/paint/paintKindEntry';
 export type {
-  PaintKind,
-  PaintKindEntry,
-  PaintKindEditorProps,
-  PaintKindLoader,
+  PaintDrawKind,
   PaintBindContext,
   PaintProgram,
   PaintResources,

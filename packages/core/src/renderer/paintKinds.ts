@@ -1,25 +1,16 @@
 /**
- * The paint-kind registry — what makes `FillStyle` open.
+ * The renderer's half of a paint kind: what it takes to draw one.
  *
- * A consumer registers a sixth kind and it renders, converts between the
- * bounds and pose frames, and serializes, with no kit edits. The five built-in
- * kinds are registered here at module load so an editor's kind bar can
- * enumerate every kind through one list.
- *
- * Each kit layer consults this registry for a kind it does not recognize and
- * otherwise runs its own built-in branch. That split is not laziness: a built-in
- * kind's render slot lives in the GL renderer, its serialize slot lives in
- * `@weasel-js/svg`, and neither can be imported from here without inverting a
- * package dependency.
+ * Solids, patterns and the three gradients are branches inside the GL
+ * renderer and never come through here. A kind beyond those registers its
+ * bind slot, its frame conversions and its shaders, and the renderer consults
+ * this registry for any kind it does not recognize. What an editor or a
+ * serializer needs of a kind is not the renderer's to know; whoever owns
+ * those registers it beside this.
  */
 
-import type {
-  ColorSpace, FillStyle, GradientFill, GradientKind, GradientUnits, GradStop, TilePatternSpec,
-} from '@weasel-js/paint';
-import { gradientForBounds, isGradientFill, withGradientKind } from '@weasel-js/paint';
-import { bumpNodeMemoGeneration } from '../core/scene/nodeMemo';
-import type { ComponentType } from 'react';
-import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
+import type { ColorSpace, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
@@ -28,20 +19,6 @@ import { getProgramSource, registerProgram, type ProgramSource } from './shaders
 /** A compiled GL program. A paint kind gets one from
  *  {@link PaintBindContext.program} and hands it back from `bind`. */
 export type PaintProgram = ShaderProgram;
-
-/**
- * `FillStyle`'s discriminant, open on the string the way `ChromeId` is: the
- * five kinds the kit ships, plus whatever a consumer registers.
- */
-export type PaintKind = 'solid' | 'linear-gradient' | 'radial-gradient' | 'conic-gradient' | 'pattern' | (string & {});
-
-/** What a registered kind's editor renders. `PaintInput` in `@weasel-js/ui`
- *  is the control that mounts it. */
-export interface PaintKindEditorProps {
-  value: FillStyle;
-  onInput?(next: FillStyle): void;
-  onChange(next: FillStyle): void;
-}
 
 /**
  * The lifetime a paint kind's GPU state belongs to: one renderer on one live
@@ -109,37 +86,13 @@ export interface PaintBindContext {
 }
 
 /**
- * One paint kind.
- *
- * `seed`, `label` and `colorOf` are the editor's slots and every kind has
- * them. The rest are optional because a kind may not need them — but
+ * What the renderer needs of one paint kind. Every slot is optional, but
  * `inPoseFrame` and `toBoundsFrame` come as a pair or not at all: a kind that
  * converts one direction and not the other paints correctly once and then
  * drifts on the next resize.
  */
-export interface PaintKindEntry {
+export interface PaintDrawKind {
   id: string;
-  label: string;
-  /** Glyph naming this kind in an editor's kind bar, as an icon name the UI
-   *  layer resolves — the same indirection `PrefBase.icon` uses. A kind
-   *  without one is named by its `label`. */
-  icon?: string;
-  /** A paint of this kind seeded from a color — what an editor writes when a
-   *  consumer switches a solid to this kind. */
-  seed(fromColor: string): FillStyle;
-  /** The single color this paint shows, or `undefined` when it has none. */
-  colorOf(paint: FillStyle): string | undefined;
-  /** Editor slot. */
-  Editor?: ComponentType<PaintKindEditorProps>;
-  /**
-   * The stop list this paint reads as. With `fromStops`, it is what makes a
-   * kind a gradient: `listGradientKinds` returns the kinds carrying both, and
-   * `switchGradientKind` converts between any two of them through the list.
-   */
-  stopsOf?(paint: FillStyle): GradStop[];
-  /** A paint of this kind built from a stop list, in `bounds` units. The
-   *  converse of `stopsOf`; supply both or neither. */
-  fromStops?(stops: GradStop[]): FillStyle;
   /**
    * Render slot: bind program, uniforms and textures for `fill` and return the
    * bound program; `null` declines the paint.
@@ -161,110 +114,23 @@ export interface PaintKindEntry {
   /** The inverse. Required whenever `inPoseFrame` is supplied. */
   toBoundsFrame?(fill: FillStyle, box: FillPoseBox): FillStyle;
   /**
-   * The `<defs>` entry backing a `url(#id)` reference.
-   *
-   * SVG has paint servers for two gradients and a pattern and nothing else, so
-   * a kind beyond those has no element to target: write a foreign-namespaced
-   * one under the `wzl:` prefix `@weasel-js/svg` declares on the root whenever
-   * a document holds such a paint. That package emits the fallback color
-   * beside the reference on its own, from `colorOf`.
-   */
-  toSvg?(id: string, fill: FillStyle): string;
-  /**
    * Shader programs `bind` looks up through `ctx.program`, keyed by program
    * id; registering the kind registers them. Declaring them here rather than
    * calling `registerProgram` at import keeps a kind loaded by
-   * {@link registerPaintKindLoader} free of core's registries.
+   * {@link registerPaintDrawKindLoader} free of the shader registry.
    */
   programs?: Readonly<Record<string, ProgramSource>>;
 }
 
-const BUILTINS: readonly PaintKindEntry[] = [
-  {
-    id: 'solid',
-    label: 'Solid',
-    icon: 'paintSolid',
-    seed: (color) => ({ color }),
-    colorOf: (paint) => ((paint.fill ?? 'solid') === 'solid'
-      ? (paint as { color: string }).color
-      : undefined),
-  },
-  gradientKind('linear-gradient', 'Linear', 'paintLinear'),
-  gradientKind('radial-gradient', 'Radial', 'paintRadial'),
-  gradientKind('conic-gradient', 'Conic', 'paintConic'),
-  {
-    id: 'pattern',
-    label: 'Pattern',
-    icon: 'paintPattern',
-    seed: (color) => ({
-      fill: 'pattern',
-      pattern: { tile: 'hatch', color },
-      units: 'bounds',
-    }),
-    colorOf: (paint) => (paint.fill === 'pattern'
-      ? (paint.pattern as Partial<TilePatternSpec>).color
-      : undefined),
-  },
-];
+const KINDS = createReflectable<PaintDrawKind>();
 
-function gradientKind(id: GradientKind, label: string, icon: string): PaintKindEntry {
-  return {
-    id,
-    label,
-    icon,
-    // `bounds` units make the seed independent of the node's actual size.
-    seed: (color) => gradientForBounds(id, UNIT_BOX, twoStopRamp(color), 'bounds'),
-    colorOf: (paint) => (paint as Partial<GradientFill>).stops?.[0]?.color,
-    stopsOf: (paint) => (paint as GradientFill).stops,
-    fromStops: (stops) => gradientForBounds(id, UNIT_BOX, stops, 'bounds'),
-  };
-}
+/** Every registered draw kind, with the overrides each displaced. */
+export const paintDrawKindRegistry: Reflection<PaintDrawKind> = KINDS.reflection;
 
-const UNIT_BOX = { x: 0, y: 0, width: 1, height: 1 };
-
-/** `color` to a contrasting end — white reads against any hue; against white
- *  itself, black does. */
-function twoStopRamp(color: string): GradStop[] {
-  const isWhite = color.slice(0, 7).toLowerCase() === '#ffffff';
-  return [{ offset: 0, color }, { offset: 1, color: isWhite ? '#000000ff' : '#ffffffff' }];
-}
-
-const KINDS = createReflectable<PaintKindEntry>();
-
-function seedBuiltins(): void {
-  for (const entry of BUILTINS) KINDS.push(entry.id, entry, { source: 'kit' });
-}
-seedBuiltins();
-// `NodeShape`'s paint slot memoizes per node and resolves a fill's frame
-// inside it, so the kind set is ambient state that memo cannot see change.
-KINDS.subscribe(bumpNodeMemoGeneration);
-
-/** Every registered paint kind, with the overrides each displaced. */
-export const paintKindRegistry: Reflection<PaintKindEntry> = KINDS.reflection;
-
-/**
- * A consumer's own paint, typed as a `FillStyle`.
- *
- * `FillStyle` stays a closed union: opening its discriminant would widen every
- * built-in member and break the narrowing the kit's own branches depend on.
- * A registered kind declares its own interface instead and passes it through
- * here — the kit reads only `fill` and hands the whole object back to that
- * kind's slots.
- */
-export function asPaint<T extends { fill: string }>(paint: T): FillStyle {
-  return paint as unknown as FillStyle;
-}
-
-/** Register a paint kind. Returns a disposer that removes it. Re-registering an
- *  existing id is an override; disposing it uncovers whatever it displaced. */
-export function registerPaintKind(entry: PaintKindEntry): () => void {
-  if ((entry.stopsOf === undefined) !== (entry.fromStops === undefined)) {
-    const missing = entry.stopsOf === undefined ? 'stopsOf' : 'fromStops';
-    throw new Error(
-      `weasel registerPaintKind: kind "${entry.id}" is missing ${missing}. A ` +
-      'gradient kind reads as a stop list and builds from one; supply both or neither.',
-    );
-  }
+/** Register a kind's draw half. Returns a disposer that removes it.
+ *  Re-registering an existing id is an override; disposing it uncovers
+ *  whatever it displaced. */
+export function registerPaintDrawKind(entry: PaintDrawKind): () => void {
   if ((entry.inPoseFrame === undefined) !== (entry.toBoundsFrame === undefined)) {
     const missing = entry.inPoseFrame === undefined ? 'inPoseFrame' : 'toBoundsFrame';
     throw new Error(
@@ -277,57 +143,40 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
     const have = getProgramSource(id);
     if (!have || have.vert !== src.vert || have.frag !== src.frag) registerProgram(id, src.vert, src.frag);
   }
-  // Re-registering a built-in id is how a consumer closes a gap the kit leaves,
-  // so disposing that override puts the built-in back rather than deleting the
-  // kind.
   return KINDS.push(entry.id, entry);
 }
 
-/** The entry for `kind`, or `undefined`. A lookup that misses on a kind with
- *  a loader starts that load; see {@link registerPaintKindLoader}. */
-export function getPaintKind(kind: string | undefined): PaintKindEntry | undefined {
+/** The draw half for `kind`, or `undefined`. A lookup that misses on a kind
+ *  with a loader starts that load; see {@link registerPaintDrawKindLoader}. */
+export function getPaintDrawKind(kind: string | undefined): PaintDrawKind | undefined {
   const id = kind ?? 'solid';
   const entry = KINDS.get(id);
   if (!entry && LOADERS.has(id)) void startLoad(id).catch(() => {});
   return entry;
 }
 
-/** Resolves with the entry for a kind that is loaded on first use. */
-export type PaintKindLoader = () => Promise<PaintKindEntry>;
+/** Resolves with the draw half of a kind that is loaded on first use. */
+export type PaintDrawKindLoader = () => Promise<PaintDrawKind>;
 
-const LOADERS = new Map<string, PaintKindLoader>();
+const LOADERS = new Map<string, PaintDrawKindLoader>();
 
 /** One load per kind, kept after it settles: a failed load is not retried on
  *  every frame that meets the kind. */
 const LOADS = new Map<string, Promise<void>>();
-
-// A built-in kind heavy enough to keep off a consumer's bundle until a paint
-// of it turns up. Importing the module statically still registers it at once.
-const LAZY_BUILTINS: ReadonlyArray<readonly [string, PaintKindLoader]> = [
-  ['mesh-gradient', async () => (await import('./meshPaint/lazyKind')).meshGradientKind],
-];
-
-function seedLoaders(): void {
-  LOADERS.clear();
-  LOADS.clear();
-  for (const [id, load] of LAZY_BUILTINS) LOADERS.set(id, load);
-}
-seedLoaders();
 
 /**
  * Declare a paint kind that is loaded the first time something looks it up,
  * so its code stays out of the bundle until a paint of it appears — typically
  * `() => import('./myKind').then((m) => m.myKindEntry)`.
  *
- * Until it lands the kind is unregistered: the renderer draws nothing for its
- * paints, and every other reader treats it as unknown. Registering it fires
- * `paintKindRegistry`'s subscribers, which is what `<SceneCanvas>` repaints
- * on. Call {@link warmPaintKinds} to load ahead of the first frame instead.
+ * Until it lands the kind is unregistered and the renderer draws nothing for
+ * its paints. Call {@link warmPaintKinds} to load ahead of the first frame
+ * instead.
  *
  * A kind that is already registered never calls its loader. Returns a
  * disposer that removes the loader.
  */
-export function registerPaintKindLoader(id: string, load: PaintKindLoader): () => void {
+export function registerPaintDrawKindLoader(id: string, load: PaintDrawKindLoader): () => void {
   LOADERS.set(id, load);
   return () => {
     if (LOADERS.get(id) === load) LOADERS.delete(id);
@@ -343,7 +192,7 @@ function startLoad(id: string): Promise<void> {
       if (entry.id !== id) {
         throw new Error(`weasel: the loader for paint kind "${id}" resolved to "${entry.id}".`);
       }
-      if (!KINDS.has(id)) registerPaintKind(entry);
+      if (!KINDS.has(id)) registerPaintDrawKind(entry);
     },
   ).catch((err: unknown) => {
     console.error(`weasel: paint kind "${id}" failed to load:`, err);
@@ -361,8 +210,7 @@ export function isPaintKindKnown(id: string): boolean {
 /**
  * Load paint kinds ahead of their first use, so the first frame that meets
  * one draws it rather than a blank. With no list, loads every kind that has a
- * loader — the kit's lazily loaded built-ins (`mesh-gradient`) plus any a
- * consumer declared with {@link registerPaintKindLoader}.
+ * loader.
  *
  * Resolves once every kind is registered; a kind already registered counts
  * as loaded. Rejects when a load fails, or for a kind that is neither
@@ -383,74 +231,9 @@ export function warmPaintKinds(kinds?: readonly string[]): Promise<void> {
   return Promise.all(loads).then(() => undefined);
 }
 
-/** A list derived from the registry, recomputed only when it changes — so
- *  its identity is a `useSyncExternalStore` snapshot. */
-function derivedList(
-  derive: (all: readonly ReflectedEntry<PaintKindEntry>[]) => readonly PaintKindEntry[],
-): () => readonly PaintKindEntry[] {
-  let from: readonly ReflectedEntry<PaintKindEntry>[] | undefined;
-  let list: readonly PaintKindEntry[] = [];
-  return () => {
-    const entries = KINDS.entries();
-    if (entries !== from) {
-      from = entries;
-      list = Object.freeze(derive(entries));
-    }
-    return list;
-  };
-}
-
-/** Every registered kind, built-ins first, in registration order. The same
- *  array until the registry changes. */
-export function listPaintKinds(): readonly PaintKindEntry[] {
-  return allKinds();
-}
-const allKinds = derivedList((all) => all.map((e) => e.value));
-
-/** Every registered gradient kind — the ones that read as and build from a
- *  stop list — in registration order. The same array until the registry
- *  changes. */
-export function listGradientKinds(): readonly PaintKindEntry[] {
-  return gradientKinds();
-}
-const gradientKinds = derivedList(
-  (all) => all.map((e) => e.value).filter((entry) => entry.stopsOf && entry.fromStops),
-);
-
-/**
- * `paint` retargeted to gradient kind `kind`, or `undefined` when either side
- * is not a gradient kind.
- *
- * Between two of the stop gradients this is `withGradientKind`, which carries
- * the geometry. Any other pair goes through the stop list — `stopsOf` on the
- * way out, `fromStops` on the way in — keeping `interpolate` and `opacity`.
- * Lossy wherever the kinds hold different information; an editor that wants a
- * switch to be undoable should keep the original paint.
- */
-export function switchGradientKind(paint: FillStyle, kind: PaintKind): FillStyle | undefined {
-  const from = paintKindOf(paint);
-  const to = getPaintKind(kind);
-  if (!from?.stopsOf || !to?.fromStops) return undefined;
-  if (from.id === to.id) return paint;
-  if (isGradientFill(paint) && isGradientFill({ fill: kind } as FillStyle)) {
-    return withGradientKind(paint, kind as GradientKind);
-  }
-  const { interpolate, opacity } = paint as { interpolate?: ColorSpace; opacity?: number };
-  return {
-    ...to.fromStops(from.stopsOf(paint)),
-    ...(interpolate !== undefined ? { interpolate } : {}),
-    ...(opacity !== undefined ? { opacity } : {}),
-  } as FillStyle;
-}
-
-/** The registry entry for a paint, or `undefined` when its kind is unknown. */
-export function paintKindOf(fill: FillStyle): PaintKindEntry | undefined {
-  return getPaintKind(fill.fill ?? 'solid');
-}
-
 /** @internal Test helper — do not call from product code. */
-export function _resetPaintKindsForTests(): void {
+export function _resetPaintDrawKindsForTests(): void {
   KINDS.clear();
-  seedBuiltins();
-  seedLoaders();
+  LOADERS.clear();
+  LOADS.clear();
 }

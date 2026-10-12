@@ -17,7 +17,7 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
-import type { PaintBindContext, PaintKindEntry, PaintProgram, PaintResources } from 'renderer/paintKinds';
+import type { PaintBindContext, PaintDrawKind, PaintProgram, PaintResources } from 'renderer/paintKinds';
 import { resolveColor, rgbaToHex } from '@weasel-js/paint';
 import { mat3 } from '@weasel-js/geom';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
@@ -65,7 +65,7 @@ function asMesh(fill: FillStyle): MeshGradientFill {
 }
 
 // `asPaint`'s cast, kept local: this module must import nothing from the
-// registry, whose state `lazyKind`'s self-contained copy would duplicate.
+// registry, whose state the lazy kind's self-contained copy would duplicate.
 function asFill(mesh: MeshGradientFill): FillStyle {
   return mesh as unknown as FillStyle;
 }
@@ -285,19 +285,11 @@ function bindMesh(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null {
   return program;
 }
 
-/** The kind's registry entry, shader program included. `./register` registers
- *  it; core's paint-kind registry loads it on demand otherwise. */
-export const meshGradientKind: PaintKindEntry = {
+/** The kind's draw half, shader program included. Core adds the editor's
+ *  slots and registers the whole entry. */
+export const meshDrawKind: PaintDrawKind = {
   id: MESH_GRADIENT_KIND,
   programs: { [MESH_PROGRAM_ID]: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC } },
-  label: 'Mesh',
-  icon: 'paintMesh',
-  seed: (color) => asFill(seedMeshPatch(color)),
-  // The first corner of the first patch: a mesh has no single color, and this
-  // is the one a fallback swatch and an SVG paint fallback both read.
-  colorOf: (paint) => asMesh(paint).patches?.[0]?.colors?.[0],
-  stopsOf: (paint) => meshStops(asMesh(paint)),
-  fromStops: (stops) => asFill(meshFromStops(stops)),
   bind: bindMesh,
   inPoseFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);
@@ -325,7 +317,6 @@ export const meshGradientKind: PaintKindEntry = {
       units: 'bounds' as const,
     });
   },
-  toSvg: (id, fill) => meshGradientXml(id, asMesh(fill)),
 };
 
 /**

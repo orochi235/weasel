@@ -4,6 +4,12 @@ import { countPathAnchors } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import type { DrawCommand, PathDrawCommand } from '../../renderer';
+import { paintDrawKindRegistry } from 'renderer/paintKinds';
+import { bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
+
+// The painters memoize a node's paint and resolve a fill's frame inside the
+// memo, so the kind set is ambient state that memo cannot see change.
+paintDrawKindRegistry.subscribe(bumpNodeMemoGeneration);
 
 /**
  * What a node's `data.fill` means to the built-in painters.

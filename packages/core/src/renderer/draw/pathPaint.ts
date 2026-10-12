@@ -1,5 +1,5 @@
 import type { Stroke, FillStyle } from '@weasel-js/paint';
-import { getPaintKind } from 'renderer/paintKinds';
+import { getPaintDrawKind } from 'renderer/paintKinds';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
@@ -148,7 +148,7 @@ function bindPathFillByKind(ctx: DrawContext, fill: FillStyle): ShaderProgram | 
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
     return bindPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
   }
-  const bind = getPaintKind(kind)?.bind;
+  const bind = getPaintDrawKind(kind)?.bind;
   return bind ? bind(paintBindContext(ctx), fill) : null;
 }
 

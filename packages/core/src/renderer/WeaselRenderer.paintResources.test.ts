@@ -2,7 +2,8 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from '@weasel-js/geom';
-import { asPaint, registerPaintKind, type PaintBindContext } from 'renderer/paintKinds';
+import type { FillStyle } from '@weasel-js/paint';
+import { registerPaintDrawKind, type PaintBindContext } from 'renderer/paintKinds';
 import type { DrawCommand } from './DrawCommand';
 
 // A kind that binds nothing and only records what the renderer handed it.
@@ -10,11 +11,8 @@ const seen: PaintBindContext[] = [];
 let unregister: (() => void) | null = null;
 
 function register(): void {
-  unregister = registerPaintKind({
+  unregister = registerPaintDrawKind({
     id: 'probe-kind',
-    label: 'Probe',
-    seed: () => asPaint({ fill: 'probe-kind' }),
-    colorOf: () => undefined,
     bind: (ctx) => { seen.push(ctx); return null; },
   });
 }
@@ -28,7 +26,7 @@ afterEach(() => {
 const frame: DrawCommand[] = [{
   kind: 'path',
   path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-  fill: asPaint({ fill: 'probe-kind' }),
+  fill: { fill: 'probe-kind' } as unknown as FillStyle,
 } as DrawCommand];
 
 function fakeCanvas(gl: WebGL2RenderingContext) {

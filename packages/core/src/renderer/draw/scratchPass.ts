@@ -1,5 +1,5 @@
 import type { FillStyle } from '@weasel-js/paint';
-import { getPaintKind, type PaintBindContext } from 'renderer/paintKinds';
+import { getPaintDrawKind, type PaintBindContext } from 'renderer/paintKinds';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { Mesh } from '@weasel-js/geom/tessellate';
@@ -42,7 +42,7 @@ interface ScratchPaint {
  */
 export function renderPaintToScratch(ctx: DrawContext, fill: FillStyle, rect: ScreenRect): ScratchPaint | null {
   const scratch = ctx.paintScratch;
-  const bind = getPaintKind(fill.fill)?.bind;
+  const bind = getPaintDrawKind(fill.fill)?.bind;
   if (!scratch || !bind) return null;
   const ratio = ctx.deviceWidth && ctx.widthCss > 0 ? ctx.deviceWidth / ctx.widthCss : 1;
   const deviceW = ctx.deviceWidth ?? Math.round(ctx.widthCss);

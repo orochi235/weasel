@@ -10,7 +10,7 @@
  */
 
 import type { FillStyle, GradientFill, PosedFill } from '@weasel-js/paint';
-import { getPaintKind } from './paintKinds';
+import { getPaintDrawKind } from './paintKinds';
 
 /** The box a `'bounds'` gradient's normalized geometry is mapped onto —
  *  usually a node's bounds. */
@@ -34,7 +34,7 @@ export interface FillPoseBox {
  */
 export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): PosedFill {
   if (!isBuiltinKind(fill)) {
-    return (getPaintKind(fill.fill)?.inPoseFrame?.(fill, box) ?? fill) as PosedFill;
+    return (getPaintDrawKind(fill.fill)?.inPoseFrame?.(fill, box) ?? fill) as PosedFill;
   }
   if (isBoundsPattern(fill)) {
     const o = fill.origin ?? { x: 0, y: 0 };
@@ -71,7 +71,7 @@ export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): PosedFill {
  */
 export function fillToBoundsFrame(fill: FillStyle, box: FillPoseBox): FillStyle {
   if (!isBuiltinKind(fill)) {
-    return getPaintKind(fill.fill)?.toBoundsFrame?.(fill, box) ?? fill;
+    return getPaintDrawKind(fill.fill)?.toBoundsFrame?.(fill, box) ?? fill;
   }
   if (fill.fill === 'pattern') {
     const o = fill.origin ?? { x: 0, y: 0 };

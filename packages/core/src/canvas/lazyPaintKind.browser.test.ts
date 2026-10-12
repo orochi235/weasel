@@ -8,8 +8,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { FillStyle } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import {
-  _resetPaintKindsForTests, getPaintKind, paintKindRegistry, warmPaintKinds,
-} from 'renderer/paintKinds';
+  _resetPaintKindsForTests, getPaintKind, paintKindRegistry,
+} from 'core/paint/paintKinds';
+import { warmPaintKinds } from 'renderer/paintKinds';
 import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import type { DrawCommand } from '../renderer/DrawCommand';

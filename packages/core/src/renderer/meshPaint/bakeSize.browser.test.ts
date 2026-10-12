@@ -10,7 +10,7 @@ import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
 import type { DrawCommand } from '../DrawCommand';
 import { meshFromStops } from './meshPaint';
-import './register';
+import 'core/paint/registerMesh';
 
 const W = 64;
 const H = 4;
