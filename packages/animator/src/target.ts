@@ -112,6 +112,9 @@ export interface TargetState<T = unknown> {
   readonly show: ((value: T) => void) | undefined;
   readonly publish: (() => void) | undefined;
   readonly axes: TargetAxes<T>;
+  /** Writes the committed value's axes into `out` from `at` with no value built, for a target
+   *  that keeps them as numbers already; null where `get` and `axes` are the way. */
+  write: ((out: AxisBuffer, at: number) => void) | null;
   /** The animator moving it, by its own token; null while none is. */
   owner: TargetOwner | null;
   /** True while its animations are being stopped without committing where they were. */
@@ -163,6 +166,16 @@ function hidden<T>(s: TargetState<T>): number[] | null {
     }
   }
   return out;
+}
+
+/** Puts `s`'s committed value's axes into `out` from `at`. */
+export function committedInto<T>(s: TargetState<T>, out: AxisBuffer, at: number): void {
+  if (s.write) s.write(out, at);
+  else if (s.axes.write) s.axes.write(s.get(), out, at);
+  else {
+    const a = s.axes.to(s.get());
+    for (let i = 0; i < a.length; i++) out[at + i] = a[i]!;
+  }
 }
 
 /** `committed`'s axes, with `s`'s holds read again where it has moved under them. */
@@ -236,6 +249,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     show: opts.show,
     publish: opts.publish,
     axes,
+    write: null,
     owner: null,
     discard: false,
     heldAt: null,

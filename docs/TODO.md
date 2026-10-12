@@ -814,17 +814,17 @@ built 2026-10-11. What that left:
     (`hidden` in `packages/animator/src/target.ts`), which the pass has no column for.
   - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
     frame is the caller's until the table can be asked for one.
-- **(P2) A hold costs about 1 µs a frame, whatever reads it** — `node
+- **(P3) A hold costs 0.3 to 0.7 µs a frame, where a tween costs under 0.1** — `node
   tests/perf/target-reads/run.mjs table 10000 held`: 10,000 table rows with one hold each and
-  nothing else took 10 to 12 ms a frame in the best runs on orochi (2026-10-11, other work
-  running), where 10,000 tweens take under 1. A rig of 50 joints under clips pays about 0.05 ms
-  a frame for it. In the CPU profile `fold` in `packages/animator/src/engine/holds.ts` is 20%,
-  about 240 ns a hold for two axes and one member, and the row's `get` and its axes' `to`
-  another 15 to 25% between them. Folding into arrays the group keeps, so a frame builds
-  none, was tried and read the same within noise, so the time is not the arrays: each hold is
-  a group, a set, a member, and three closures of its own, reached one after another. Holds
-  kept as rows of flat arrays, the way a target table keeps values, is the design that would
-  move it; not started.
+  nothing else take 6.8 to 7.4 ms a frame, and 1,000 take 0.29 to 0.30 (orochi, 2026-10-12,
+  plain Node 26). That is after a hold stopped building arrays every frame, which took a third
+  off. What is left, from the CPU profile at 10,000: a quarter is blits running a voice that
+  answers through a function (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap` read per
+  voice); the rest is the hold's own voice reaching, one after another, the group, each
+  member, the function that gives its value, that value, and the committed value. Two designs
+  would move it and neither is started: a hold whose `value` and `weight` are not functions
+  need not be read again until its target's committed value changes, and holds on a target
+  table's rows could keep their values and weights as rows of the table's own arrays.
 - **(P2) A frame of the animator costs about 75 ns an animation at 10k, read or not, and a
   fifth of it is ticking each animation as an object** — `node
   tests/perf/target-reads/run.mjs table 10000 idle` (orochi, plain Node 26; five runs read 0.73

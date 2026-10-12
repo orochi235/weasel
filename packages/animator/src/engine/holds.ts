@@ -1,4 +1,4 @@
-import type { TargetState } from '../target';
+import { committedInto, type TargetState } from '../target';
 import type { AnimationContext } from './context';
 import { absorb, axesFor, shortWay } from './offsets';
 
@@ -23,16 +23,19 @@ export interface OpenHold {
 }
 
 interface Member {
-  /** Its value's axes. */
+  /** Its value's axes, in an array of its own that the next call writes over. */
   value(): number[];
   weight(): number;
   /** Nonzero at each axis it holds; null where it holds them all. */
   covers: Uint8Array | null;
+  /** Its weight and value as the fold now running read them. */
+  w: number;
+  v: number[];
 }
 
 /** A target's holds, which reach it as one voice. */
 interface Group {
-  members: Set<Member>;
+  members: Member[];
   /** The voice's id in the codec. */
   voice: number;
   /** Nonzero at each angle axis. */
@@ -56,49 +59,53 @@ interface Folded {
  * of 1 is the committed value's. An angle goes by way of the direction the holds average to,
  * so two holds turn the short way toward each other.
  */
-function fold(group: Group, committed: readonly number[], skip?: Member): Folded {
+function fold(group: Group, committed: readonly number[], skip?: Member, into?: Folded): Folded {
   const n = committed.length;
-  const delta = new Array<number>(n).fill(0);
-  const total = new Array<number>(n).fill(0);
-  const live: { v: number[]; w: number; covers: Uint8Array | null }[] = [];
-  for (const m of group.members) {
-    if (m === skip) continue;
-    const w = m.weight();
-    if (w > 0) live.push({ v: m.value(), w, covers: m.covers });
+  const delta = into ? into.delta : new Array<number>(n);
+  const total = into ? into.total : new Array<number>(n);
+  const { members, angle } = group;
+  // Each member is asked once, whatever the axes: its weight and value are the caller's functions.
+  for (let h = 0; h < members.length; h++) {
+    const m = members[h]!;
+    m.w = m === skip ? 0 : m.weight();
+    if (m.w > 0) m.v = m.value();
   }
-  for (let a = 0; a < n && live.length > 0; a++) {
+  for (let a = 0; a < n; a++) {
     const c = committed[a]!;
+    let held = 0;
     let sum = 0;
     let sin = 0;
     let cos = 0;
-    for (const h of live) {
-      if (h.covers && !h.covers[a]) continue;
-      total[a] = total[a]! + h.w;
-      if (!group.angle[a]) sum += h.w * (h.v[a]! - c);
+    for (let h = 0; h < members.length; h++) {
+      const m = members[h]!;
+      if (m === skip || !(m.w > 0) || (m.covers && !m.covers[a])) continue;
+      held += m.w;
+      if (!angle[a]) sum += m.w * (m.v[a]! - c);
       else {
-        sin += h.w * Math.sin(h.v[a]!);
-        cos += h.w * Math.cos(h.v[a]!);
+        sin += m.w * Math.sin(m.v[a]!);
+        cos += m.w * Math.cos(m.v[a]!);
       }
     }
-    if (total[a] === 0) continue;
-    if (group.angle[a]) {
+    total[a] = held;
+    if (held > 0 && angle[a]) {
       // Where the directions cancel out there is no way round between them: each from committed.
       const mean = Math.hypot(sin, cos) < 1e-9 ? null : Math.atan2(sin, cos);
-      for (const h of live) {
-        if (h.covers && !h.covers[a]) continue;
-        sum += h.w * (mean === null ? shortWay(h.v[a]! - c) : shortWay(mean - c) + shortWay(h.v[a]! - mean));
+      for (let h = 0; h < members.length; h++) {
+        const m = members[h]!;
+        if (m === skip || !(m.w > 0) || (m.covers && !m.covers[a])) continue;
+        sum += m.w * (mean === null ? shortWay(m.v[a]! - c) : shortWay(mean - c) + shortWay(m.v[a]! - mean));
       }
     }
-    delta[a] = sum / Math.max(1, total[a]!);
+    delta[a] = held > 0 ? sum / Math.max(1, held) : 0;
   }
-  return { delta, total };
+  return into ?? { delta, total };
 }
 
 /** How far the committed value moves as `leaving` goes, so the target shows what it did. */
 function settle(group: Group, leaving: Member, committed: readonly number[]): number[] {
   const all = fold(group, committed);
   const rest = fold(group, committed, leaving);
-  const own = leaving.value();
+  const own = leaving.value().slice();
   return committed.map((c, a) => {
     if (leaving.covers && !leaving.covers[a]) return 0;
     // Holds that cover the committed value outright leave it nothing to show: it takes this one's.
@@ -144,10 +151,18 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   const state = s as unknown as TargetState;
   axesFor(ax, o.value(), 'value');
   let gone = false;
+  const buffer = new Array<number>(ax.count).fill(0);
   const member: Member = {
-    value: () => ax.to(o.value()),
+    value: ax.write
+      ? () => {
+        ax.write!(o.value(), buffer, 0);
+        return buffer;
+      }
+      : () => ax.to(o.value()),
     weight: () => (gone ? 0 : share(o.weight())),
     covers: coverOf(o.axes, ax.count),
+    w: 0,
+    v: buffer,
   };
 
   ctx.targets.attach(state);
@@ -156,7 +171,8 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   if (!group) {
     const angle = new Uint8Array(ax.count);
     for (const a of ax.angles ?? []) angle[a] = 1;
-    const made: Group = { members: new Set(), voice: ctx.nextId(), angle };
+    const made: Group = { members: [], voice: ctx.nextId(), angle };
+    const folded: Folded = { delta: [], total: new Array<number>(ax.count).fill(0) };
     groups.set(state, group = made);
     ctx.seedClock();
     s.slot = ctx.codec.hold({
@@ -164,16 +180,20 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
       on: s,
       axes: ax.count,
       at: () => {
-        const committed = ax.to(s.get());
-        const { delta, total } = fold(made, committed);
-        s.heldAt = committed;
-        s.cover = total.map((t) => Math.min(t, 1));
+        // One array each for as long as the holds stand: a frame of many holds builds none.
+        const committed = (s.heldAt ??= new Array<number>(ax.count).fill(0));
+        committedInto(s, committed, 0);
+        // The codec keeps what this answers as the voice's own value, so that one is new.
+        folded.delta = new Array<number>(ax.count);
+        const { delta, total } = fold(made, committed, undefined, folded);
+        const cover = (s.cover ??= new Array<number>(ax.count).fill(0));
+        for (let a = 0; a < cover.length; a++) cover[a] = Math.min(total[a]!, 1);
         return delta;
       },
     });
   }
   const { members, voice } = group;
-  members.add(member);
+  members.push(member);
   ctx.touch(state, true);
 
   return {
@@ -187,7 +207,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
         dim(state, fold(group, committed).total, fold(group, committed, member).total);
       }
       gone = true;
-      members.delete(member);
+      members.splice(members.indexOf(member), 1);
       s.held -= 1;
       if (s.held === 0) {
         s.heldAt = null;

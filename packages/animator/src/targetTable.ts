@@ -159,6 +159,10 @@ export function createTargetTable(opts: TargetTableOptions): TargetTable {
       });
       const state = stateOf(target);
       state.row = { table: rows, index: row };
+      state.write = (out, at) => {
+        mine();
+        for (let k = 0; k < n; k++) out[at + k] = committed[row * n + k]!;
+      };
       targets[row] = target;
       states[row] = state;
       return target;
