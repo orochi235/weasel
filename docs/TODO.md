@@ -1147,14 +1147,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   inside `PrefSchemaEditor`, whose `.editor` sets its own face, a dragged row draws in whatever the
   page uses; in the browser tests, with no themed ancestor, that is the default serif.
 
-- **(P3) Disabled and panel-box rough edges seen in headless Chromium, 2026-10-11.** A disabled
-  `Bar` action button draws at 0.4 where every other disabled cell draws at 0.5. A disabled text
-  area in a `Bar` keeps a full-strength, working "Notes" button that opens to a disabled text
-  area. labkit's "Pin" button on a disabled `ControlPanel` row still works. In light mode a panel
-  box's own 1px `--wzl-border` is invisible on its sunken fill in `PrefsForm` and `SelectionPanel`,
-  because light mode sets `--wzl-border` and `--wzl-surface-sunken` to the same gray; `MotifFrame`
-  got around the same collision by mixing its edge from its own surface (`25b22ee40`).
-
 - **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
   drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
   drag, and a tree row onto the Unplaced list as far as the hold. Not covered: that drop, a

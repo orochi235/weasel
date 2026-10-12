@@ -41,7 +41,7 @@ export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
     case 'string':
       if (p.control === 'textarea') {
         return (
-          <BarPopover label={p.name ?? ''} icon={icon}>
+          <BarPopover label={p.name ?? ''} icon={icon} isDisabled={p.disabled}>
             <PropertyControl {...p} />
           </BarPopover>
         );

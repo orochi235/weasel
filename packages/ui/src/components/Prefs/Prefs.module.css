@@ -26,7 +26,7 @@
   gap: var(--wzl-space-4);
   padding: var(--wzl-space-5);
   background: var(--wzl-surface-sunken);
-  border: 1px solid var(--wzl-border);
+  border: 1px solid var(--wzl-border-on-sunken);
   border-radius: var(--wzl-radius-sm);
   --wzl-input-surface: var(--wzl-surface);
 }
@@ -38,7 +38,7 @@
   margin-top: var(--wzl-space-3);
   padding: var(--wzl-space-4) var(--subpanel-inset-end) var(--wzl-space-4) var(--subpanel-inset-start);
   background: var(--wzl-surface-sunken);
-  border-left: var(--subpanel-rule) solid var(--wzl-border);
+  border-left: var(--subpanel-rule) solid var(--wzl-border-on-sunken);
   border-radius: var(--wzl-radius-sm);
   --wzl-input-surface: var(--wzl-surface);
 }
@@ -420,7 +420,7 @@
   gap: var(--wzl-space-3);
   margin-top: var(--wzl-space-4);
   padding: var(--wzl-space-4);
-  border: 1px solid var(--wzl-border);
+  border: 1px solid var(--wzl-border-on-sunken);
   border-radius: var(--wzl-radius-md);
   background: var(--wzl-surface-sunken);
   --wzl-input-surface: var(--wzl-surface);

@@ -15,6 +15,7 @@ export type TokenName =
   | '--wzl-accent-strong'
   | '--wzl-backdrop'
   | '--wzl-border'
+  | '--wzl-border-on-sunken'
   | '--wzl-border-strong'
   | '--wzl-border-w'
   | '--wzl-checker-a'
@@ -321,6 +322,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
+        '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
@@ -505,6 +507,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
+        '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
@@ -689,6 +692,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(230, 231, 233, 0.2)",
         '--wzl-line-strong': "rgba(230, 231, 233, 0.4)",
+        '--wzl-border-on-sunken': "rgba(230, 231, 233, 0.12)",
         '--wzl-curve-color': "#8c94ee",
         '--wzl-accent-hover': "#8c94ee",
         '--wzl-secondary': "#dc9d15",
@@ -873,6 +877,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
+        '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
@@ -1057,6 +1062,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
+        '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
@@ -1241,6 +1247,7 @@ export const THEMES = {
         '--wzl-fg-on-accent': "#f5f5f6",
         '--wzl-line': "rgba(14, 15, 18, 0.2)",
         '--wzl-line-strong': "rgba(14, 15, 18, 0.4)",
+        '--wzl-border-on-sunken': "rgba(14, 15, 18, 0.12)",
         '--wzl-curve-color': "#6366f1",
         '--wzl-accent-hover': "#6366f1",
         '--wzl-secondary': "#3ee1cb",
@@ -2015,6 +2022,12 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "type": "color",
         "alpha": 0.4,
         "description": "Axes and emphasized dividers."
+      },
+      "border-on-sunken": {
+        "value": "{fg}",
+        "type": "color",
+        "alpha": 0.12,
+        "description": "The edge of a box filled with surface-sunken. Stepped from the text color, because light mode's border is the sunken fill's own gray."
       },
       "curve-color": {
         "value": "{accent-strong}",
@@ -3308,6 +3321,12 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "value": "{fg}",
         "alpha": 0.4,
         "description": "Axes and emphasized dividers."
+      },
+      "border-on-sunken": {
+        "type": "color",
+        "value": "{fg}",
+        "alpha": 0.12,
+        "description": "The edge of a box filled with surface-sunken. Stepped from the text color, because light mode's border is the sunken fill's own gray."
       },
       "curve-color": {
         "type": "color",

@@ -698,6 +698,12 @@
       "alpha": 0.4,
       "description": "Axes and emphasized dividers."
     },
+    "border-on-sunken": {
+      "value": "{fg}",
+      "type": "color",
+      "alpha": 0.12,
+      "description": "The edge of a box filled with surface-sunken. Stepped from the text color, because light mode's border is the sunken fill's own gray."
+    },
     "curve-color": {
       "value": "{accent-strong}",
       "type": "color",

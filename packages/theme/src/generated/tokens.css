@@ -142,6 +142,8 @@
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   /* Axes and emphasized dividers. */
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  /* The edge of a box filled with surface-sunken. Stepped from the text color, because light mode's border is the sunken fill's own gray. */
+  --wzl-border-on-sunken: color-mix(in srgb, var(--wzl-fg) 12%, transparent);
   /* Drawn data curves. Routes through the bright accent because accent-base is too dim on sunken surfaces. */
   --wzl-curve-color: var(--wzl-accent-strong);
   --wzl-accent: var(--wzl-accent-base);
@@ -317,6 +319,7 @@
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-border-on-sunken: color-mix(in srgb, var(--wzl-fg) 12%, transparent);
   --wzl-curve-color: var(--wzl-accent-strong);
   --wzl-accent: var(--wzl-accent-base);
   --wzl-accent-hover: var(--wzl-accent-strong);
@@ -376,6 +379,7 @@
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  --wzl-border-on-sunken: color-mix(in srgb, var(--wzl-fg) 12%, transparent);
   --wzl-curve-color: var(--wzl-accent-strong);
   --wzl-accent: var(--wzl-accent-base);
   --wzl-accent-hover: var(--wzl-accent-strong);

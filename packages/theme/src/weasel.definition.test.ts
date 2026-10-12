@@ -36,7 +36,7 @@ const EXPECTED_NAMES = [
   'font-weight-light', 'font-weight-normal', 'font-weight-medium', 'font-weight-bold',
   'surface', 'surface-raised', 'surface-sunken', 'surface-popover',
   'fg', 'fg-muted', 'fg-subtle', 'fg-on-accent', 'fg-muted-on-accent', 'fg-subtle-on-accent',
-  'border', 'border-strong',
+  'border', 'border-strong', 'border-on-sunken',
   'code-keyword', 'code-string', 'code-number', 'code-constant', 'code-property', 'code-name',
   'accent', 'accent-fg', 'accent-hover',
   'secondary', 'secondary-fg',

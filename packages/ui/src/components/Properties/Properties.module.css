@@ -767,6 +767,11 @@
   outline-offset: 2px;
 }
 
+.autoToggle[aria-disabled='true'] {
+  cursor: default;
+  text-decoration: none;
+}
+
 /* Single always-rendered <input> styled to read as a text label until focused. */
 .readoutInput {
   composes: numeric from '@weasel-js/theme/numeric.module.css';

@@ -127,6 +127,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-line-subtle', type: "color", group: "line", defaultValue: "rgba(230, 231, 233, 0.1)", description: "Barely-there separators (table rows).", hook: false },
   { name: '--wzl-line', type: "color", group: "line", defaultValue: "rgba(230, 231, 233, 0.2)", description: "Primary gridlines on sunken surfaces.", hook: false },
   { name: '--wzl-line-strong', type: "color", group: "line", defaultValue: "rgba(230, 231, 233, 0.4)", description: "Axes and emphasized dividers.", hook: false },
+  { name: '--wzl-border-on-sunken', type: "color", group: "border", defaultValue: "rgba(230, 231, 233, 0.12)", description: "The edge of a box filled with surface-sunken. Stepped from the text color, because light mode's border is the sunken fill's own gray.", hook: false },
   { name: '--wzl-curve-color', type: "color", group: "curve", defaultValue: "#8c94ee", description: "Drawn data curves. Routes through the bright accent because accent-base is too dim on sunken surfaces.", hook: false },
   { name: '--wzl-accent', type: "color", group: "accent", defaultValue: "#5b63c9", description: "", hook: false },
   { name: '--wzl-accent-hover', type: "color", group: "accent", defaultValue: "#8c94ee", description: "", hook: false },
