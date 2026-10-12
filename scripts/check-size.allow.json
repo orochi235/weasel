@@ -95,11 +95,11 @@
     "lines": 580
   },
   "packages/core/src/interactions/actions/edit-anchors/action.ts": {
-    "longestFunction": 133
+    "longestFunction": 131
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
-    "lines": 684,
-    "longestFunction": 456
+    "lines": 683,
+    "longestFunction": 455
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
     "longestFunction": 124
@@ -167,7 +167,7 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 698,
+    "lines": 697,
     "longestFunction": 448
   },
   "packages/hud/src/attach.ts": {

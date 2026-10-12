@@ -9,7 +9,7 @@ import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
 import { PenIcon } from '../../../icons';
-import { boundsOfPath, type PolygonPath, anchorsToPath, pathToAnchors } from '@weasel-js/geom';
+import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors } from '@weasel-js/geom';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
@@ -184,14 +184,14 @@ export function usePenTool(
       if (!edit || drawn.length === 0) return;
       const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath(drawn, null));
       if (cont.reversed) added[0] = reverseAnchors(added[0]);
-      const set = pathToAnchors(cont.original);
-      set.anchors.splice(cont.sub, 1, added[0]);
-      set.closed.splice(cont.sub, 1, addedClosed[0]);
-      set.anchors.push(...added.slice(1));
-      set.closed.push(...addedClosed.slice(1));
-      const next = anchorsToPath(set.anchors, set.closed, cont.original);
-      if (samePath(next, cont.original)) return;
-      edit.applyEdit(cont.id, next, 'Continue path');
+      const next = editAnchorSetTracked(cont.original, (set) => {
+        set.anchors.splice(cont.sub, 1, added[0]);
+        set.closed.splice(cont.sub, 1, addedClosed[0]);
+        set.anchors.push(...added.slice(1));
+        set.closed.push(...addedClosed.slice(1));
+      })!;
+      if (samePath(next.path, cont.original)) return;
+      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins);
       if (optsRef.current.autoSelect) deps.selection?.set([asNodeId(cont.id)]);
     },
     [optsRef],
@@ -264,17 +264,16 @@ export function usePenTool(
     let keptId: string;
     if (cont) {
       if (cont.reversed) added[0] = reverseAnchors(added[0]);
-      const set = pathToAnchors(cont.original);
-      set.anchors.splice(cont.sub, 1, added[0]);
-      set.closed.splice(cont.sub, 1, addedClosed[0]);
-      set.anchors.push(...added.slice(1), ...rest.anchors);
-      set.closed.push(...addedClosed.slice(1), ...rest.closed);
-      if (sameNode) {
+      const next = editAnchorSetTracked(cont.original, (set) => {
+        set.anchors.splice(cont.sub, 1, added[0]);
+        set.closed.splice(cont.sub, 1, addedClosed[0]);
+        set.anchors.push(...added.slice(1), ...rest.anchors);
+        set.closed.push(...addedClosed.slice(1), ...rest.closed);
+        if (!sameNode) return;
         set.anchors.splice(hit.sub, 1);
         set.closed.splice(hit.sub, 1);
-      }
-      const next = anchorsToPath(set.anchors, set.closed, cont.original);
-      ops.push(...edit.editOps!(cont.id, next, label));
+      })!;
+      ops.push(...edit.editOps!(cont.id, next.path, label, next.origins));
       keptId = cont.id;
     } else {
       const path = anchorsToPath([...added, ...rest.anchors], [...addedClosed, ...rest.closed]);

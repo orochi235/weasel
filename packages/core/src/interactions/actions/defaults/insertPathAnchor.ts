@@ -19,7 +19,7 @@ import type { CursorSpec } from '@weasel-js/cursor';
 import type { EditAnchorsDep } from '../depSchema';
 import { type PolygonPath, pathToAnchors } from '@weasel-js/geom';
 import {
-  editAnchorSet,
+  editAnchorSetTracked,
   insertAnchorOnSegment,
   segmentAt,
   type AnchorSet,
@@ -69,12 +69,12 @@ export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
       const { dep, hit } = under;
       const path = dep.getEditablePath(dep.editingId) as PolygonPath;
       let inserted = -1;
-      const next = editAnchorSet(path, (set) => {
+      const next = editAnchorSetTracked(path, (set) => {
         inserted = insertAnchorOnSegment(set, hit);
         return inserted !== -1;
       });
       if (!next) return;
-      dep.applyEdit(dep.editingId, next, 'Insert anchor');
+      dep.applyEdit(dep.editingId, next.path, 'Insert anchor', next.origins);
       dep.setSelectedAnchors([inserted]);
     },
   } as ImmediateInvoker,

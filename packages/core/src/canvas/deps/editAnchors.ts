@@ -5,7 +5,8 @@
  * (`pose.kind === 'polygon'`), or `data.path` with a rect pose, stored pose-local.
  * `getEditablePath` returns it in **world coords** either way, and `applyEdit` commits in the
  * correct storage shape as one undoable batch, preserving the render invariant
- * `pathInWorld(stored, pose) === world`. Live previews ride the standard
+ * `pathInWorld(stored, pose) === world`. A node with a `data.skin` has it renumbered in that
+ * batch when the caller says where the points came from. Live previews ride the standard
  * `OngoingHandle.previewIds/Pose/Data` triple — this dep doesn't own preview state.
  */
 import { useState } from 'react';
@@ -14,7 +15,9 @@ import { useLatest } from '@weasel-js/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { PolygonPath } from '@weasel-js/geom';
+import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
+import type { Skin } from '@weasel-js/animator';
+import { remapSkin } from '../../animation/rig/skinBinding';
 import { worldEditToStorage } from '@weasel-js/geom';
 import { classifyPathStorage, resolveEditablePathOf } from 'features/paths/editablePath';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
@@ -59,19 +62,25 @@ export function useEditAnchorsDepSource(
     // hand them out alongside an empty id.
     const selectedAnchors = effectiveId ? state.getSelectedAnchors() : EMPTY_ANCHOR_SELECTION;
     const marquee = effectiveId ? state.getMarquee() : null;
-    const editOps = (id: string, worldPath: unknown, label: string): Op[] => {
+    const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
       const wp = worldPath as PolygonPath;
       const node = sc.get(id as NodeId);
       if (!node) return [];
       const storage = classifyPathStorage(node as { pose: unknown; data: unknown });
       if (!storage) return [];
-      if (storage.kind === 'pose') return [createTransformOp({ id, from: node.pose, to: wp, label })];
+      const skin = (node.data as { skin?: Skin } | null)?.skin;
+      const reskinned = skin && origins ? { skin: remapSkin(skin, origins) } : null;
+      if (storage.kind === 'pose') {
+        const reshape = createTransformOp({ id, from: node.pose, to: wp, label });
+        if (!reskinned) return [reshape];
+        return [reshape, createSetDataOp({ id, from: node.data, to: { ...(node.data as object), ...reskinned }, label })];
+      }
       // The edited path arrives in world coords; invert it back to the unrotated stored
       // shape so `pose.rotation` is preserved and edits round-trip.
       const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
       return [
         createTransformOp({ id, from: node.pose, to: newPose, label }),
-        createSetDataOp({ id, from: node.data, to: { ...(node.data as object), path: aligned }, label }),
+        createSetDataOp({ id, from: node.data, to: { ...(node.data as object), path: aligned, ...reskinned }, label }),
       ];
     };
     return {
@@ -115,8 +124,8 @@ export function useEditAnchorsDepSource(
         if (!node) return null;
         return { pose: node.pose, data: node.data };
       },
-      applyEdit(id: string, worldPath: unknown, label: string) {
-        const ops = editOps(id, worldPath, label);
+      applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]) {
+        const ops = editOps(id, worldPath, label, origins);
         if (ops.length > 0) ad.applyOps(ops, label);
       },
       editOps,

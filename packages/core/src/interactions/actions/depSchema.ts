@@ -124,17 +124,17 @@ export interface EditAnchorsDep {
    *  `previewPose` / `previewData` during `onMove`. Returns null when the
    *  node is gone. */
   getNodeShape(id: string): { pose: unknown; data: unknown } | null;
-  /** Commit `worldPath` as the new value for `id`. Implementation routes
-   *  to setPose (when pose IS the polygon) or batched setPose+update
-   *  (when the polygon lives on data.path). Records one history entry
-   *  labelled `label`. */
-  applyEdit(id: string, worldPath: unknown, label: string): void;
+  /** Commit `worldPath` as the new value for `id`, as one history entry
+   *  labeled `label`: a setPose when the pose IS the polygon, a batched
+   *  setPose+update when it lives on data.path. Given `origins` (from
+   *  `editAnchorSetTracked`), a `data.skin` is renumbered in that entry. */
+  applyEdit(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): void;
   /** The ops `applyEdit` would commit for the same arguments, unapplied, so
    *  a caller can make the edit part of a larger batch — the pen joining
    *  two paths edits one node and deletes the other in one undo step.
    *  Optional; a caller that needs it declines the composite edit without
    *  it. Returns `[]` when `id` has no editable polygon. */
-  editOps?(id: string, worldPath: unknown, label: string): Op[];
+  editOps?(id: string, worldPath: unknown, label: string, origins?: readonly (import('@weasel-js/geom').PointOrigin | null)[]): Op[];
 
   /**
    * Anchors currently selected within the edited path, as **flat anchor

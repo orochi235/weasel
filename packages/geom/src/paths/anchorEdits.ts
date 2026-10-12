@@ -19,14 +19,13 @@
 import type { PolygonPath } from '../path';
 import { withinPxRadius, type Scale2 } from '../pxExtent';
 import {
-  pathToAnchors,
-  anchorsToPath,
   isAnchorSmooth,
   isStraightSegment,
   nearestSegmentT,
   segmentEnds,
   type PenAnchor,
 } from './anchors';
+import { editAnchorSetTracked } from './anchorOrigins';
 import { cubicPointAt, fitCubicThroughDeletion, splitCubicAtT } from './cubicMath';
 
 /** Subpath-major anchor model — the decoded form of a `PolygonPath`. */
@@ -90,10 +89,7 @@ export function editAnchorSet(
   path: PolygonPath,
   edit: (set: AnchorSet) => boolean | void,
 ): PolygonPath | null {
-  const set = pathToAnchors(path) as AnchorSet;
-  const changed = edit(set);
-  if (changed === false) return null;
-  return anchorsToPath(set.anchors, set.closed, path);
+  return editAnchorSetTracked(path, edit)?.path ?? null;
 }
 
 /** Translate an anchor and both of its handles by `(dx, dy)`. */

@@ -296,7 +296,7 @@ const DEMO_META: DemoMeta[] = [
     title: 'Rig tools',
     category: 'Animation',
     description: "A rig kept in the scene and edited on the canvas. The skeleton is `data.skeleton` on a container node and the weights are `data.skin` on the path under it, so undo, save, and paste treat a rig like any other node data, and `useRigNode` binds a rig from them again after each edit. `useBoneTool` draws, moves, and removes joints; `useWeightTool` paints how much the active joint weighs each point, shown as a dot per point colored by that joint's share. The two share one `createRigEditState()`, so a joint picked in one is the active joint in the other. Every edit is one scene op.",
-    hint: '<kbd>J</kbd>: bone tool, drag a joint or draw a bone · <kbd>W</kbd>: weight tool, click a joint and brush the dots, <kbd>Alt</kbd> to erase · bend to see the result · "weigh from bones" runs autoSkin again.',
+    hint: '<kbd>J</kbd>: bone tool, drag a joint or draw a bone · <kbd>W</kbd>: weight tool, click a joint and brush the dots, <kbd>Alt</kbd> to erase · bend to see the result · "weigh from bones" runs autoSkin again · <kbd>V</kbd>, then double-click the sleeve to edit its points.',
     load: () => import('./demos/RigToolsDemo').then((m) => m.RigToolsDemo),
     path: 'apps/site/demos/RigToolsDemo.tsx',
   },

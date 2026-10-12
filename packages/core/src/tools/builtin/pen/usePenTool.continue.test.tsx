@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { type PolygonPath, pathFromD } from '@weasel-js/geom';
-import { pathToAnchors } from '@weasel-js/geom';
+import { pathToAnchors, remapPointValues } from '@weasel-js/geom';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { resolveEditablePathOf } from 'canvas/deps/editAnchors';
 import type { Scene } from 'core/scene/types';
@@ -44,6 +44,9 @@ describe('usePenTool', () => {
       // The curve survives both reversals unchanged.
       expect(anchors[0][1].outHandle).toEqual({ x: 30, y: 0 });
       expect(anchors[0][2].inHandle).toEqual({ x: 70, y: 0 });
+      // The edit says where each point came from, for arrays kept per point: the new end
+      // takes after the end it was drawn from.
+      expect(remapPointValues([0, 1, 2, 3, 4], (p.applyEdit.mock.calls[0] as unknown[])[3] as never)).toEqual([0, 0, 1, 2, 3, 4]);
     });
 
     it('clicking the far end closes the continued path onto itself', () => {

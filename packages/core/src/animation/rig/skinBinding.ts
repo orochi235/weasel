@@ -1,4 +1,7 @@
-import { boundsOfPath, pathInWorld, type GlMat3, type Path, type PathInWorldPose } from '@weasel-js/geom';
+import {
+  boundsOfPath, pathInWorld, remapPointValues,
+  type GlMat3, type Path, type PathInWorldPose, type PointOrigin,
+} from '@weasel-js/geom';
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId, PoseOverride, PoseOverrides } from '../../core/scene/types';
 import { skinPath, type Skin } from '@weasel-js/animator';
@@ -18,6 +21,21 @@ export type RestPath<TPose> = (node: { pose: TPose; data?: unknown }) => Path | 
 export function dataRestPath<TPose>(node: { pose: TPose; data?: unknown }): Path | null {
   const path = (node.data as { path?: Path } | null | undefined)?.path;
   return path ? pathInWorld(path, node.pose as PathInWorldPose) : null;
+}
+
+/**
+ * `skin` after an edit to the points of the path it weighs: `origins` says where each point
+ * of the new path came from, as `editAnchorSetTracked` answers. A point the edit made takes
+ * weights between those of the points it lies between, and a joint left weighing nothing is
+ * dropped.
+ */
+export function remapSkin(skin: Skin, origins: readonly (PointOrigin | null)[]): Skin {
+  const next: Record<string, number[]> = {};
+  for (const joint in skin) {
+    const weights = remapPointValues(skin[joint], origins);
+    if (weights.some((w) => w > 0)) next[joint] = weights;
+  }
+  return next;
 }
 
 interface Skinned<TPose> {

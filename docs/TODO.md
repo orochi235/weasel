@@ -457,10 +457,6 @@ Priority tags:
   index signature, which an interface such as `RectPose` does not satisfy, so
   `{ t: 0, value: pose }` is a type error for a `pose: RectPose` and fine for the same object
   written inline.
-- **(P3) Editing a skinned path's points leaves its weights misaligned** — inserting or deleting
-  a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
-  actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or
-  the skin would be weighed again with `autoSkin`.
 - **(P3) A skinned path is seen at rest by a view with its own `toPose` and by a node that
   derives from it** — an override's `path` is in the scene's frame, so `sceneDerivedPathOf`
   leaves it out for a `toPose` reader, and `DerivedDep.path` answers a derived path only.

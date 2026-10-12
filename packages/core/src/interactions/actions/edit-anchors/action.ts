@@ -28,10 +28,11 @@ import type { EditAnchorsDep } from '../depSchema';
 import { isAnchorOrControl } from '@weasel-js/routing';
 import {
   anchorAt,
-  editAnchorSet,
+  editAnchorSetTracked,
   moveHandleTo,
   translateAnchorBy,
   type AnchorSet,
+  type PointOrigin,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { worldEditToStorage } from '@weasel-js/geom';
@@ -92,10 +93,18 @@ interface EditAnchorsScratch {
   anchorOrigin: { x: number; y: number };
   originPose: PolygonPath;
   currentPose: PolygonPath;
+  /** Where each point of `currentPose` came from in `originPose`. */
+  origins?: readonly (PointOrigin | null)[];
   /** Where the polygon lives on the node — drives which preview-ghost
    *  axes the handle populates (`previewPose` only for pose-as-polygon,
    *  `previewPose` + `previewData` for data.path). */
   storageKind: 'pose' | 'data';
+}
+
+function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
+  if (!next) return;
+  scratch.currentPose = next.path;
+  scratch.origins = next.origins;
 }
 
 /** Static descriptor for the `editAnchors` Action. */
@@ -194,13 +203,12 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
             if (scratch.dragging.length === 0) return;
             const dx = moveCtx.world.x - scratch.anchorOrigin.x;
             const dy = moveCtx.world.y - scratch.anchorOrigin.y;
-            const next = editAnchorSet(scratch.originPose, (set) => {
+            track(scratch, editAnchorSetTracked(scratch.originPose, (set) => {
               for (const flat of scratch.dragging) translateAnchorBy(set, flat, dx, dy);
-            });
-            if (next) scratch.currentPose = next;
+            }));
           } else {
             const side = scratch.part === 'controlIn' ? 'in' : 'out';
-            const next = editAnchorSet(scratch.originPose, (set) =>
+            track(scratch, editAnchorSetTracked(scratch.originPose, (set) =>
               moveHandleTo(
                 set,
                 scratch.anchorIndex,
@@ -211,8 +219,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
                 // the user can press or release Alt mid-drag.
                 moveCtx.modifiers.alt,
               ),
-            );
-            if (next) scratch.currentPose = next;
+            ));
           }
           active = true;
         },
@@ -220,7 +227,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
           active = false;
           if (reason === 'cancel') return;
           if (scratch.originPose === scratch.currentPose) return;
-          scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors');
+          scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors', scratch.origins);
         },
         previewIds: () => (active ? [scratch.id] : null),
         previewPose: (id: string): unknown | null => {

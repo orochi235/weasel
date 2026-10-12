@@ -89,15 +89,18 @@ export {
   anchorsInRect,
   deleteAnchorsAt,
   editAnchorSet,
+  editAnchorSetTracked,
   flatAnchorIndex,
   insertAnchorOnSegment,
   locateAnchor,
   moveHandleTo,
   openSubpathAt,
+  remapPointValues,
   segmentAt,
   translateAnchorBy,
   type AnchorRect,
   type AnchorSet,
+  type PointOrigin,
   type SegmentHit,
 } from '@weasel-js/geom';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';

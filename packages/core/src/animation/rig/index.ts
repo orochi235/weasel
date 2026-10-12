@@ -3,5 +3,5 @@ export type { BindRigOptions, Rig, RigApply, RigApplyContext, RigScene } from '.
 export { useRig } from './useRig';
 export { placeSkeleton, rigFromNode, unplaceSkeleton, useRigNode } from './rigNode';
 export type { PaintedSkins, RigNodeData, RigNodeParts, RigNodeSource, UseRigNodeOptions } from './rigNode';
-export { dataRestPath } from './skinBinding';
+export { dataRestPath, remapSkin } from './skinBinding';
 export type { RestPath } from './skinBinding';

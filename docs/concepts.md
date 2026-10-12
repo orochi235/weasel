@@ -397,7 +397,11 @@ Before relying on it:
   rests.
 - A container clips its children to its box unless `clipFromPose` says otherwise,
   so a rig node whose paths bend past its box sets `clipFromPose: () => null`.
-- Inserting or deleting a point on a skinned path does not renumber its weights.
+- Editing a skinned path's points keeps its weights with them: the anchor edit actions and
+  the pen write `data.skin` in the same undo entry as the path. A new point takes weights
+  between those of the anchors either side of it, by its distance to each, and a point drawn
+  past an end takes the end's. `editAnchorSetTracked` answers where each point of an edited
+  path came from and `remapSkin` applies that to a skin, for an edit made some other way.
 
 ## Descriptor
 

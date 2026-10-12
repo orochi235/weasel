@@ -94,7 +94,7 @@ export function RigToolsDemo() {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        features={['pick']}
+        features={['pick', 'paths']}
         tools={tools}
         claimKeys
       />
@@ -106,7 +106,9 @@ export function RigToolsDemo() {
         <kbd>Delete</kbd> to remove it. Press <kbd>W</kbd> for the weight tool: click a joint,
         then brush over the dots to make them follow it, with <kbd>Alt</kbd> to make them let
         go. Both tools edit the arm as it rests, so set bend to 0 to see what you are editing,
-        then bend it to see the result. <kbd>V</kbd> goes back to selecting.
+        then bend it to see the result. <kbd>V</kbd> goes back to selecting, and there a
+        double-click on the sleeve edits its points: <kbd>Alt</kbd>-click an edge to add one and
+        <kbd>Delete</kbd> to remove the selected ones, and the weights stay with their points.
       </div>
     </div>
   );

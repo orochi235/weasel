@@ -31,7 +31,7 @@ import type { EditAnchorsDep } from '../depSchema';
 import {
   anchorsInRect,
   deleteAnchorsAt,
-  editAnchorSet,
+  editAnchorSetTracked,
   openSubpathAt,
   translateAnchorBy,
   type AnchorSet,
@@ -75,13 +75,13 @@ function worldPathOf(dep: EditAnchorsDep): PolygonPath | null {
 function commitAnchorEdit(
   dep: EditAnchorsDep,
   label: string,
-  edit: (set: Parameters<Parameters<typeof editAnchorSet>[1]>[0]) => boolean | void,
+  edit: (set: AnchorSet) => boolean | void,
 ): boolean {
   const worldPath = worldPathOf(dep);
   if (!worldPath) return false;
-  const next = editAnchorSet(worldPath, edit);
+  const next = editAnchorSetTracked(worldPath, edit);
   if (!next) return false;
-  dep.applyEdit(dep.editingId, next, label);
+  dep.applyEdit(dep.editingId, next.path, label, next.origins);
   return true;
 }
 
