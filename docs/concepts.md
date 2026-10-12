@@ -226,7 +226,7 @@ pose a frame, so rotating it rotates its contents. See
 
 A node's **pose** is document state: undoable, serialized, the answer to "where
 is this". A pose **override** is the same value for one frame — `scene.overrides`
-holds a per-node `{ pose?, alpha? }` that the render and hit-test paths read
+holds a per-node `{ pose?, alpha?, path? }` that the render and hit-test paths read
 through, and that history and `toJSON()` never see. A 60 Hz camera, a drag
 preview, a physics settle and an animation tween all want this: motion that is
 not an edit.
@@ -337,6 +337,49 @@ A reader of many targets that wants numbers calls `target.readInto(out, at)`, wh
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that
 define `add` and `write` let a read skip the array of axes as well; the ones the
 kit supplies all do.
+
+## Rig and skin
+
+A **rig** is a `Skeleton`, joints in a parent chain, bound to scene nodes by
+`bindRig` or `useRig`. Its pose is one animation target, `rig.target`, and each
+frame it writes what that target shows through pose overrides. It moves nodes in
+two ways:
+
+| Option | What follows a joint | What the rig writes |
+|---|---|---|
+| `bindings` | A whole node, rigidly | The override's `pose` |
+| `skins` | Each point of a path, by weight | The override's `path`, and its `pose` as that path's bounds |
+
+A **skin** is one weight array per joint name, indexed by point: every coordinate
+pair of the path's `coords`, curve handles included. Each point goes where each of
+its joints' motions since the bind pose would carry it, averaged by weight
+(`skinPath`, in `@weasel-js/animator` with the rest of the scene-free rig code), so one outline flexes at a joint where bound nodes hinge. The fill,
+the stroke, picking, and the selection box all read the bent path. `autoSkin`
+makes a skin from each point's distance to the bones; a joint with no child gets
+no weight, so a limb needs an end joint.
+
+A rig can also live in the scene. A node holds the skeleton in `data.skeleton`,
+its joints relative to that node's box, and the nodes under it hold `data.skin`
+or name a `data.joint` to ride whole. `useRigNode` binds from those and binds
+again when they change, and `useBoneTool` and `useWeightTool` edit them on the
+canvas, one scene op per edit.
+
+The blend runs on the CPU over the path's own points, and the renderer is handed a
+new path each frame the rig moves. It is not done on the tessellated mesh or in a
+vertex shader, because a stroke is a ribbon rebuilt from the path and picking reads
+a path, so this is the route where everything a node shows agrees. Chosen
+2026-10-11. The blend itself is about 1% of the cost and tessellation is the rest:
+measured that day in Node on a closed loop of cubic segments with a 3px round-joined
+stroke, 24 anchors cost 0.13 µs to blend, 7.9 µs to tessellate the fill, and 18.1 µs
+to rebuild the stroke, and 200 anchors cost 1.03, 71.0, and 72.2.
+
+Three things to know before relying on it:
+
+- The rest path is read when the rig is bound, and the tools edit the rig as it
+  rests.
+- A container clips its children to its box unless `clipFromPose` says otherwise,
+  so a rig node whose paths bend past its box sets `clipFromPose: () => null`.
+- Inserting or deleting a point on a skinned path does not renumber its weights.
 
 ## Descriptor
 

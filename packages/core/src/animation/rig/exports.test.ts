@@ -7,6 +7,9 @@ describe('rig public surface', () => {
     expect(typeof kit.bindRig).toBe('function');
     expect(typeof kit.useRig).toBe('function');
     expect(typeof kit.rigidRigApply).toBe('function');
+    for (const name of ['dataRestPath', 'placeSkeleton', 'rigFromNode', 'unplaceSkeleton', 'useRigNode'] as const) {
+      expect(typeof kit[name]).toBe('function');
+    }
   });
 
   it('exports the mat3 namespace, so a resolved joint can be read without indexing it', () => {

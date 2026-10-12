@@ -25,7 +25,7 @@ import type { Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf } from './derivedPath';
+import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
 import type { PoseComposition } from 'core/scene/composePose';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
@@ -340,8 +340,8 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   const sceneDerivedPath = getPose ? null : sceneDerivedPathOf(scene, undefined, composition);
   const derivedPathOf = (node: PickCandidate<TPose>): Path | null => {
     const n = node as unknown as Node<TData, TLayer, TPose>;
-    if (n.dependsOn === undefined) return null;
-    return sceneDerivedPath ? sceneDerivedPath(n) : resolveDerivedPath(n, depOf, childrenOf);
+    if (!sceneDerivedPath) return n.dependsOn === undefined ? null : resolveDerivedPath(n, depOf, childrenOf);
+    return showsComputedPath(scene, n) ? sceneDerivedPath(n) : null;
   };
 
   const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;

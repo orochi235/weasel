@@ -30,6 +30,13 @@ export {
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { useHandTool, dragPanContribution, DRAG_PAN_ID } from './hand';
 export { useTextTool } from './text';
+export {
+  useBoneTool, createRigEditState, createBoneOverlay, placedRig,
+  type UseBoneToolOptions, type RigEditState, type PlacedRig,
+} from './bone';
+export {
+  useWeightTool, createWeightOverlay, weighedPaths, type UseWeightToolOptions, type WeighedPath,
+} from './weight';
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.
 // Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan
 // action descriptors registered via useStandardActions + useGestureDispatcher.

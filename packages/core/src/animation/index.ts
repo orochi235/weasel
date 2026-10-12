@@ -46,5 +46,10 @@ export {
   srgbToHsl, hslToSrgb, interpolateSrgb,
   type ColorSpace, type OklchDeg, type ColorInterpolationSpace, type HueInterpolation,
 } from '@weasel-js/paint';
-export { bindRig, rigidRigApply, useRig } from './rig';
-export type { BindRigOptions, Rig, RigApply, RigApplyContext, RigScene } from './rig';
+export {
+  bindRig, dataRestPath, placeSkeleton, rigFromNode, rigidRigApply, unplaceSkeleton, useRig, useRigNode,
+} from './rig';
+export type {
+  BindRigOptions, RestPath, Rig, RigApply, RigApplyContext, RigNodeData, RigNodeParts, RigNodeSource, RigScene,
+  UseRigNodeOptions,
+} from './rig';

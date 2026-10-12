@@ -8,6 +8,12 @@ describe('animator public surface', () => {
     expect(typeof animator.mirrorPose).toBe('function');
     expect(typeof animator.resolveSkeleton).toBe('function');
     expect(typeof animator.solveIk).toBe('function');
+    for (const name of [
+      'addJoint', 'autoSkin', 'brushWeights', 'dropSkinJoints', 'jointAt', 'jointPositions', 'motionsFromRest',
+      'moveJoint', 'removeJoint', 'setWeights', 'skinnable', 'skinPath',
+    ] as const) {
+      expect(typeof animator[name]).toBe('function');
+    }
     expect(animator.IDENTITY_JOINT).toEqual({ x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
   });
 

@@ -770,25 +770,27 @@ intercepting the press that drags the body.
 
 ### Timelines and rigging
 
-Design: `docs/superpowers/specs/2026-08-22-animation-timeline-rig-design.md`.
-Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decomposition.md`.
+The timeline, the rig, and skinning are built; `docs/concepts.md` ("Rig and skin", "Animation
+target") describes them. What is left:
 
-- [x] **Timeline primitive and hierarchical rig — landed 2026-08-22.**
-  `animator.timeline(opts)` (`packages/animator/src/timeline/`) registers
-  in the animator's table, with sampled / event / nested tracks. The rig
-  ships `blendPoses`, `resolveSkeleton`, and `IDENTITY_JOINT` from
-  `packages/animator/src/rig/`, and `useRig` / `bindRig` from
-  `packages/core/src/animation/rig/`, which drive bound scene nodes
-  through pose overrides; animating one is a `SampledTrack<Pose>`. Demos:
-  `apps/site/demos/TimelineDemo.tsx`, `RigDemo.tsx`.
-
-  The follow-ups below are what is left.
-
-- **(P3) Skinning** — per-vertex bone weights deforming path geometry. The
-  renderer flattens paths to meshes, so weights must reach the vertex shader or
-  be applied on the CPU per frame. Needs the hierarchical rig first.
-- **(P3) Serializable clips** — follows from tracks being typed callbacks rather
-  than data. Revisit with the editor's experience in hand.
+- **(P3) Serializable clips** — a track is `keys` plus functions (`onTick`, `interpolate`, a
+  function easing) and a live `target`, so a timeline cannot be saved or loaded. Not designed.
+  What is already plain data: keys, named and bezier easings, a `Pose`. What needs a name to
+  resolve at load: a track's target, a custom `interpolate`, and an event's `fire` or `book`.
+- **(P3) Editing a skinned path's points leaves its weights misaligned** — inserting or deleting
+  a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
+  actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or
+  the skin would be weighed again with `autoSkin`.
+- **(P3) A stroke of the weight tool bends the path when it ends, not while it is painted** —
+  the rig in view is bound from the document, and a stroke is written at its end. Showing it
+  live needs the bound rig to read the tool's in-flight weights.
+- **(P3) A skinned path is seen at rest by a view with its own `toPose` and by a node that
+  derives from it** — an override's `path` is in the scene's frame, so `sceneDerivedPathOf`
+  leaves it out for a `toPose` reader, and `DerivedDep.path` answers a derived path only.
+- **(P3) `useRigNode` drops a running animation when it binds again** — a change to the rig
+  node or anything under it makes a new rig with a new `target`.
+- **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
+  mounted as `tools={{ bone, weight }}`, as slice is.
 
 ### Combining animations
 
