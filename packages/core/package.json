@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/core",
   "version": "1.9.4",
-  "description": "Domain-agnostic 2D scene graph primitives for React: viewport math, drag/resize/insert/clone interactions, layered canvas rendering.",
+  "description": "A 2D scene-graph engine for React, rendered on WebGL2: the scene tree, viewport math, pointer and keyboard input, layered rendering, and op-based undo.",
   "license": "MIT",
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
