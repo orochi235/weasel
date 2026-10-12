@@ -4,6 +4,7 @@ import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';
+import { HiddenBadge, marksHidden, type MarkHiddenProps } from './hidden';
 import { NoMatches } from './NoMatches';
 import { filterPrefRoot, prefFieldChoices, type PrefFieldChoice } from './schema';
 import type { PrefRenderer, WalkCtx } from './PrefsRow';
@@ -20,7 +21,7 @@ export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
 export type PrefsLayout = 'columns' | 'rail' | 'list';
 
 /** Props for {@link PrefsForm}. */
-export interface PrefsFormProps {
+export interface PrefsFormProps extends MarkHiddenProps {
   /** Root of the schema tree. A root drawn `as: 'bar'` is the form: one bar,
    *  whatever `layout` says. */
   schema: PrefGroup;
@@ -153,6 +154,7 @@ export function PrefsForm(props: PrefsFormProps) {
     onAutoChange,
     canInherit,
     inheritHint,
+    markHidden = false,
     className,
   } = props;
   const [query, setQuery] = useState('');
@@ -161,8 +163,9 @@ export function PrefsForm(props: PrefsFormProps) {
   const applied = useMemo(() => {
     const keepEmpty = props.showEmpty === true;
     const visible = visiblePrefSubtree(schema, showHidden, keepEmpty);
-    return visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), keepEmpty);
-  }, [schema, showHidden, props.showEmpty, values]);
+    if (visible === null) return null;
+    return applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden });
+  }, [schema, showHidden, props.showEmpty, values, markHidden]);
   const conditioned = applied?.shown ?? null;
   const root = useMemo(
     () => (conditioned === null ? null : filterPrefRoot(conditioned, query, leafAt)),
@@ -179,7 +182,7 @@ export function PrefsForm(props: PrefsFormProps) {
   );
   const lead = shown.at(-1) ?? null;
   const selection = useSelectedRow(selected, lead, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead, disabled: applied?.disabled };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead, disabled: applied?.disabled, hidden: markHidden ? applied?.hidden : undefined };
   const field = filterable ? (
     <div className={s.filter}>
       <Input
@@ -260,14 +263,16 @@ function GroupBody({ ctx, group, path, depth }: {
   path: string;
   depth: number;
 }) {
+  const marked = marksHidden(ctx.hidden, path);
   return (
     <div className={depth === 0 ? s.panel : s.subpanel} {...selectionAttrs(path, ctx)}>
       {(group.name !== '' || group.description) && (
         <div className={s.groupHeader}>
-          {group.name !== '' && <h3 className={s.groupTitle}>{group.name}</h3>}
+          {group.name !== '' && <h3 className={s.groupTitle}>{group.name}{marked && <HiddenBadge />}</h3>}
           {group.description && <p className={s.groupDesc}>{group.description}</p>}
         </div>
       )}
+      {group.name === '' && marked && <HiddenBadge lead />}
       <div className={s.rows}>
         {paneChildren(ctx, Object.entries(group.children), path, depth + 1, (key, child, childPath) => (
           <GroupBody key={key} ctx={ctx} group={child} path={childPath} depth={depth + 1} />

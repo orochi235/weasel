@@ -3,6 +3,7 @@ import { prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyRow } from '../Properties/PropertyRow';
 import { drawsRows } from './compound';
+import { HiddenBadge, hiddenAttrs } from './hidden';
 import { objectRows, type ObjectLeafParts } from './objectRows';
 import type { PrefRenderContext } from './PrefsRow';
 import s from './Prefs.module.css';
@@ -48,6 +49,8 @@ export function ObjectLeaf({
       ...(ctx.fields ? { fields: ctx.fields } : {}),
       disabled: ctx.disabled === true || ctx.disabledAt?.(path) === true,
       disabledAt: ctx.disabledAt,
+      hidden: ctx.hidden === true || ctx.hiddenAt?.(path) === true,
+      hiddenAt: ctx.hiddenAt,
     };
   };
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: PrefRenderContext }> = {
@@ -55,7 +58,9 @@ export function ObjectLeaf({
     cell: (key, child) => ({ key, child, field: fieldCtx(key, child) }),
     rows: (cells) => cells.map(({ key, child, field }) => {
       const stacked = drawsRows(child);
-      return (
+      // The leaf's own mark covers its fields; a field hidden on its own carries one.
+      const marked = field.hidden === true && ctx.hidden !== true;
+      const row = (
         <PropertyRow
           key={key}
           label={child.name}
@@ -63,6 +68,7 @@ export function ObjectLeaf({
           layout={stacked ? 'block' : 'inline'}
           group={isGroup(field, held)}
           disabled={field.disabled}
+          hint={marked ? <HiddenBadge /> : undefined}
           className={stacked ? undefined : s.objectRow}
         >
           <span className={s.rowControl}>
@@ -70,6 +76,7 @@ export function ObjectLeaf({
           </span>
         </PropertyRow>
       );
+      return marked ? <div key={key} {...hiddenAttrs(true)}>{row}</div> : row;
     }),
     barCells: (cells) => cells.flatMap(({ key, field }) => {
       const content = renderField(field, held, 'bar');

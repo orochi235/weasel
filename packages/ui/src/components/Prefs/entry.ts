@@ -4,6 +4,8 @@ import { PREF_ENTRY } from '@weasel-js/prefs';
 interface Conditions {
   disabled?: boolean;
   disabledAt?: (path: string) => boolean;
+  hidden?: boolean;
+  hiddenAt?: (path: string) => boolean;
 }
 
 /**
@@ -12,12 +14,14 @@ interface Conditions {
  * for the entry's step, so a question about this entry is asked there.
  */
 export function entryConditions(ctx: Conditions & { path: string }, entryPath: string): Conditions {
-  const { disabledAt } = ctx;
-  if (disabledAt === undefined) return { disabled: ctx.disabled };
+  const { disabledAt, hiddenAt } = ctx;
   const item = `${ctx.path}.${PREF_ENTRY}`;
+  const asked = (at: string): string => (at === entryPath || at.startsWith(`${entryPath}.`) ? item + at.slice(entryPath.length) : at);
   return {
-    disabled: ctx.disabled === true || disabledAt(item),
-    disabledAt: (at) => disabledAt(at === entryPath || at.startsWith(`${entryPath}.`) ? item + at.slice(entryPath.length) : at),
+    disabled: ctx.disabled === true || disabledAt?.(item) === true,
+    ...(disabledAt ? { disabledAt: (at: string) => disabledAt(asked(at)) } : {}),
+    hidden: ctx.hidden,
+    ...(hiddenAt ? { hiddenAt: (at: string) => hiddenAt(asked(at)) } : {}),
   };
 }
 

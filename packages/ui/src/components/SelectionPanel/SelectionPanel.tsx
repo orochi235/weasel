@@ -23,6 +23,7 @@ import {
   type PanelSection,
 } from './model';
 import { conditionedSections } from './conditions';
+import { HiddenBadge, hiddenAttrs, type MarkHiddenProps } from '../Prefs/hidden';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { pathWithin, selectionAttrs, useSelectedRow, type PrefSelectHow } from '../Prefs/selection';
@@ -34,7 +35,7 @@ import s from './SelectionPanel.module.css';
 export type { PropertyRenderContext, PropertyRenderer } from './renderContext';
 
 /** Props for {@link SelectionPanel}. */
-export interface SelectionPanelProps<TData, TLayer extends string, TPose> {
+export interface SelectionPanelProps<TData, TLayer extends string, TPose> extends MarkHiddenProps {
   /** The scene handle (`useScene`). The panel subscribes itself, so it
    *  re-renders on scene mutations regardless of parent renders. */
   scene: Scene<TData, TLayer, TPose>;
@@ -103,7 +104,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
 
   const kinds = nodes.map((n) => classifyKind(n, routing));
   const selectionKey = nodes.map((n) => n.id).join(',');
-  const { sections, disabled } = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined);
+  const scope = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined, props.markHidden === true);
+  const { sections } = scope;
   const leaves = new Map(
     sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const))),
   );
@@ -115,7 +117,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   };
   const drawnRows = sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const)));
   const shown = (props.selected ?? NO_MARKS).map((path) => panelShownPath(drawnRows, path)).filter((path): path is string => path !== null);
-  const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null };
+  const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
   const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
 
   if (nodes.length === 0) {
@@ -166,7 +168,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           const cells = section.rows.flatMap((row) =>
             renderCells(
               row.leaves.map((panelLeaf) => ({
-                ...leafCell(panelLeaf, panelLeaf.leaf.name, nodes, renderers, commit, selectionKey, fields, absentAt, disabled, 'bar'),
+                ...leafCell(panelLeaf, panelLeaf.leaf.name, nodes, renderers, commit, selectionKey, fields, absentAt, scope, 'bar'),
                 ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
               })),
               renderers,
@@ -203,7 +205,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   selectionKey,
                   fields,
                   absentAt,
-                  disabled,
+                  scope,
                 ),
                 ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
               })),
@@ -214,9 +216,14 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           .filter(({ controls }) => controls.length > 0);
         if (rows.length === 0) return [];
         const tab = section.as === 'tab';
+        const headed = section.name !== '' && !tab && section.as !== 'fragment';
+        // A section hidden whole carries one mark, on its heading; with no heading each of its rows does.
+        const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden));
+        const rowMarks: PanelMarks = whole ? { ...marks, hidden: undefined } : marks;
+        const marked = (controls: readonly { hidden: boolean }[]): boolean => !whole && controls.every((cell) => cell.hidden);
         const content = (
           <>
-            {section.name !== '' && !tab && section.as !== 'fragment' && <h3 className={s.sectionTitle}>{section.name}</h3>}
+            {headed && <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>}
             {rows.map(({ row, controls }) => (
               // A `block` leaf brings its own chrome — it spans the section
               // instead of sitting in a labeled row's control cell. Under a
@@ -225,7 +232,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
               row.leaves.length === 1 && controls[0].block ? (
                 // An object leaf ends in rows of its own, each with the gap a row leaves under it.
                 <div key={panelLeafKey(row.leaves[0])} className={row.leaves[0].leaf.kind === 'object' ? undefined : s.blockRow}
-                  {...selectionAttrs(panelLeafKey(row.leaves[0]), marks, true)}>
+                  {...selectionAttrs(panelLeafKey(row.leaves[0]), rowMarks, true)}>
+                  {marked(controls) && <HiddenBadge lead />}
                   {section.name === '' && row.leaves[0].leaf.kind !== 'object' && !prefDrawsNoControl(row.leaves[0].leaf) && (
                     <h4 className={s.sectionTitle} title={row.leaves[0].leaf.description}>
                       {row.leaves[0].leaf.name}
@@ -236,9 +244,10 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
               ) : (
               // A row several leaves share stands for no one of them.
               <div key={panelLeafKey(row.leaves[0])} className={s.row} {...(controls.every((cell) => cell.disabled) ? { 'data-disabled': '' } : {})}
-                {...(row.leaves.length === 1 ? selectionAttrs(panelLeafKey(row.leaves[0]), marks, true) : {})}>
+                {...(row.leaves.length === 1 ? selectionAttrs(panelLeafKey(row.leaves[0]), rowMarks, true) : hiddenAttrs(marked(controls)))}>
                 <span className={s.rowLabel} title={row.leaves[0].leaf.description}>
                   {row.label}
+                  {marked(controls) && <HiddenBadge />}
                 </span>
                 <span className={s.rowControls}>
                   {controls.map(({ key, content }) => (
@@ -250,7 +259,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
             ))}
           </>
         );
-        return [{ section, content }];
+        return [{ section, content, hidden: whole }];
       }), marks.lead)}
     </div>
     </PanelMarksContext.Provider>
@@ -258,13 +267,13 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
 }
 
 /** The sections in order: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
-function drawn(sections: ReadonlyArray<{ section: PanelSection; content: ReactNode }>, lead: string | null | undefined): ReactNode[] {
+function drawn(sections: ReadonlyArray<{ section: PanelSection; content: ReactNode; hidden?: boolean }>, lead: string | null | undefined): ReactNode[] {
   const out: ReactNode[] = [];
   for (let i = 0; i < sections.length; i++) {
     const { section, content } = sections[i]!;
     if (section.as !== 'tab') {
       const cls = section.as === 'panel' ? `${s.section} ${s.sectionPanel}` : s.section;
-      out.push(<section key={section.key} className={cls}>{content}</section>);
+      out.push(<section key={section.key} className={cls} {...hiddenAttrs(sections[i]!.hidden === true)}>{content}</section>);
       continue;
     }
     const run = [];
@@ -288,7 +297,7 @@ function leafCell(
   selectionKey: string,
   fields: readonly PrefFieldChoice[],
   absentAt: (path: string) => unknown,
-  disabled: ReadonlySet<string>,
+  { disabled, hidden }: { disabled: ReadonlySet<string>; hidden: ReadonlySet<string> },
   surface: LeafSurface = 'row',
 ): LeafCell {
   const { path, leaf } = panelLeaf;
@@ -317,6 +326,8 @@ function leafCell(
     fields,
     disabled: disabled.has(panelLeafKey(panelLeaf)),
     disabledAt: (at) => disabled.has(at),
+    hidden: hidden.has(panelLeafKey(panelLeaf)),
+    hiddenAt: (at) => hidden.has(at),
   };
 
   return {

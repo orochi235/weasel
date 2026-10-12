@@ -59,7 +59,7 @@ function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRe
       </PaneHeader>
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown}>
         <PrefsForm className={s.previewBar} schema={schema} values={NO_VALUES} renderers={renderers} orientation={vertical ? 'vertical' : 'horizontal'}
-          showHidden showEmpty drop={drop} selected={marked}
+          showHidden showEmpty markHidden drop={drop} selected={marked}
           onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
           onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
         <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
@@ -105,7 +105,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
       <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" subPages rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
         schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden}
         // An empty group is drawn too: it is somewhere to drop into.
-        showEmpty drop={drop}
+        showEmpty markHidden drop={drop}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
         selected={marked}
         onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
@@ -167,7 +167,7 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults }: {
       <PaneHeader title="Live preview" />
       <div className={s.previewPanel}>
         <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
-          renderers={renderers} kindLabel={() => schema.name} selected={marked}
+          renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden
           onSelect={onSelect && ((path, how) => {
             const at = treePathOfPanel(schema, path);
             if (at !== null) onSelect(at, how);

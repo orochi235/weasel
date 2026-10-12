@@ -81,7 +81,7 @@ describe('applyPrefConditions', () => {
   it('drops a group left with nothing to draw, and keeps it when asked', () => {
     const only: PrefGroup = { name: '', children: { a: { name: 'A', children: { x: bool('X', { showIf: on }) } }, b: bool('B') } };
     expect(Object.keys(applyPrefConditions(only, over({})).shown!.children)).toEqual(['b']);
-    expect(Object.keys(applyPrefConditions(only, over({}), true).shown!.children)).toEqual(['a', 'b']);
+    expect(Object.keys(applyPrefConditions(only, over({}), { keepEmpty: true }).shown!.children)).toEqual(['a', 'b']);
   });
 
   it('is null for a root that is not shown', () => {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FocusEvent, type MouseEvent, type Poi
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { prefersReducedMotion } from '../../reducedMotion';
 import { dropSlot, isDropPath } from './drop';
+import { hiddenAttrs, marksHidden } from './hidden';
 import './selection.css';
 
 /** On the element a form draws for a leaf or a group, its dotted path. */
@@ -10,9 +11,10 @@ export const PATH_ATTR = 'data-pref-path';
 /** On a rail entry, the dotted path of the group it opens; empty on the entry for the root's own leaves. */
 export const RAIL_ATTR = 'data-pref-rail';
 
-/** What a form marks while it draws: the selection. */
+/** What a form marks while it draws: the selection, and the nodes a `showIf` hides where it draws those. */
 export interface PrefMarks {
   selected?: readonly string[];
+  hidden?: ReadonlySet<string>;
 }
 
 /** How a row was picked. */
@@ -29,6 +31,7 @@ export function selectionAttrs(path: string, marks: PrefMarks, leaf = false): Re
     [PATH_ATTR]: path === '' ? undefined : path,
     'data-pref-leaf': leaf ? '' : undefined,
     'data-selected': path !== '' && marks.selected?.includes(path) ? '' : undefined,
+    ...hiddenAttrs(marksHidden(marks.hidden, path)),
   };
 }
 

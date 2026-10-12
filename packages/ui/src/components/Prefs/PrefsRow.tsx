@@ -25,6 +25,7 @@ import { PropertyRow } from '../Properties/PropertyRow';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
+import { HiddenBadge, marksHidden } from './hidden';
 import { selectionAttrs } from './selection';
 import s from './Prefs.module.css';
 
@@ -54,6 +55,10 @@ export interface PrefRenderContext {
   disabled?: boolean;
   /** Whether the field at a path under this leaf's is disabled by a condition of its own. */
   disabledAt?: (path: string) => boolean;
+  /** The leaf is one a `showIf` hides, drawn because the form was given `markHidden`. */
+  hidden?: boolean;
+  /** Whether the field at a path under this leaf's is one a `showIf` hides, in a form given `markHidden`. */
+  hiddenAt?: (path: string) => boolean;
 }
 
 /**
@@ -87,6 +92,8 @@ export interface WalkCtx {
   drop?: PrefDrop | null;
   /** Paths of the leaves, fields, and groups a failed `enableIf` disables. */
   disabled?: ReadonlySet<string>;
+  /** Paths of the leaves, fields, and groups a failed `showIf` hides, in a form that draws them marked. */
+  hidden?: ReadonlySet<string>;
 }
 
 /**
@@ -107,7 +114,8 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   // An alias of nothing is a wiring fault, shown where it sits and not dropped from the form.
   return (
     <div className={s.rowSlot} {...selectionAttrs(path, ctx, true)}>
-      <PropertyRow label={alias.name === '' ? 'Alias' : alias.name} description={alias.description} className={s.row}>
+      <PropertyRow label={alias.name === '' ? 'Alias' : alias.name} description={alias.description} className={s.row}
+        hint={marksHidden(ctx.hidden, path) ? <HiddenBadge /> : undefined}>
         <span className={s.unrenderable}>(alias: no pref at {alias.of === '' ? 'an empty path' : alias.of})</span>
       </PropertyRow>
     </div>
@@ -143,6 +151,7 @@ export function prefRenderContext(
     ...(ctx.fields ? { fields: ctx.fields } : {}),
     disabled: ctx.disabled?.has(own) ?? false,
     disabledAt: (at) => ctx.disabled?.has(at) ?? false,
+    ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: (at: string) => ctx.hidden!.has(at) } : {}),
   };
   return { renderCtx, toggles };
 }
@@ -160,10 +169,12 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   const { renderCtx, toggles } = prefRenderContext(ctx, own, pref, at);
   const { path, auto: inherited, setAuto } = renderCtx;
 
+  const marked = marksHidden(ctx.hidden, own);
   const custom = ctx.renderers?.[pref.kind];
   if (prefDrawsNoControl(pref) && !custom) {
     return (
       <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
+        {marked && <HiddenBadge lead />}
         <PrefWords pref={pref} />
       </div>
     );
@@ -175,7 +186,15 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
 
   // `block` leaves own their chrome (embedded editors with their own
   // header) — no label/tooltip row.
-  if (pref.block) return <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>{control}</div>;
+  if (pref.block) {
+    return (
+      <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
+        {marked && <HiddenBadge lead />}
+        {control}
+      </div>
+    );
+  }
+  const inheritHint = inherited ? ctx.inheritHint?.(path) : undefined;
 
   return (
     <div className={s.rowSlot} data-wide={pref.kind === 'object' || stacked || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(own, ctx, true)}>
@@ -191,7 +210,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       auto={inherited}
       autoControl="dimmed"
       onAutoChange={toggles ? setAuto : undefined}
-      hint={inherited ? ctx.inheritHint?.(path) : undefined}
+      hint={marked ? <><HiddenBadge />{inheritHint}</> : inheritHint}
       disabled={renderCtx.disabled}
     >
       <span className={s.rowControl}>{control}</span>
