@@ -200,9 +200,7 @@ is where it will show up first.
 
 - **Inverse kinematics.** Landed as `solveIk` (`packages/core/src/animation/rig/solveIk.ts`):
   a solver that writes poses, composing with everything here and changing none of it.
-- **Skinning.** Per-vertex bone weights deforming path geometry. The renderer
-  flattens paths to meshes, so weights have to reach the vertex shader or be
-  applied on the CPU every frame. Much the largest of the three, and it needs the
-  hierarchical rig to exist first.
+- **Skinning.** Landed 2026-10-11 as `skins` on `bindRig`: bone weights bend a
+  path's own points on the CPU. `docs/concepts.md` ("Rig and skin") describes it.
 - **Serializable clips.** Follows from typed-callback tracks. Revisit only with
   the editor's experience in hand.
