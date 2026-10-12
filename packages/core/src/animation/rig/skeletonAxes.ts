@@ -38,6 +38,27 @@ export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
       }
       return out;
     },
+    add(pose, delta) {
+      const out: Pose = {};
+      for (let j = 0; j < names.length; j++) {
+        const joint = pose[names[j]!];
+        const at = j * n;
+        out[names[j]!] = {
+          x: (joint?.x ?? IDENTITY_JOINT.x) + delta[at]!,
+          y: (joint?.y ?? IDENTITY_JOINT.y) + delta[at + 1]!,
+          rotation: (joint?.rotation ?? IDENTITY_JOINT.rotation) + delta[at + 2]!,
+          scaleX: (joint?.scaleX ?? IDENTITY_JOINT.scaleX) + delta[at + 3]!,
+          scaleY: (joint?.scaleY ?? IDENTITY_JOINT.scaleY) + delta[at + 4]!,
+        };
+      }
+      return out;
+    },
+    write(pose, out, at) {
+      for (let j = 0; j < names.length; j++) {
+        const joint = pose[names[j]!];
+        for (let f = 0; f < n; f++) out[at + j * n + f] = joint?.[FIELDS[f]!] ?? IDENTITY_JOINT[FIELDS[f]!];
+      }
+    },
     from(axes) {
       const pose: Pose = {};
       for (let j = 0; j < names.length; j++) {

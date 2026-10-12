@@ -68,6 +68,13 @@ export const viewAxes: TargetAxes<View> = {
   count: 4,
   to: (v) => [v.x, v.y, v.scale.x, v.scale.y],
   from: (a) => ({ x: a[0]!, y: a[1]!, scale: { x: a[2]!, y: a[3]! } }),
+  add: (v, d) => ({ x: v.x + d[0]!, y: v.y + d[1]!, scale: { x: v.scale.x + d[2]!, y: v.scale.y + d[3]! } }),
+  write: (v, out, at) => {
+    out[at] = v.x;
+    out[at + 1] = v.y;
+    out[at + 2] = v.scale.x;
+    out[at + 3] = v.scale.y;
+  },
 };
 
 /**
