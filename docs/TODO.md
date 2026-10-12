@@ -1752,14 +1752,6 @@ only story runner in the repo.
   `ActivePaint`, `null` in node data, with `toFillStyle` in `ActiveSwatches.tsx` translating;
   `ActivePaint` could be `FillStyle | null` and the translation would go.
 
-- **(P3) CustomShaderDemo: every frame re-renders React to move one uniform.**
-  `apps/site/demos/CustomShaderDemo.tsx` calls `setTime` from its `useVisibleRaf` loop, rebuilding
-  three uniform objects and re-rendering three `<SceneCanvas>` trees for a number only the shader
-  reads (a test pins this at one commit per frame, down from more). The demo should keep `time` in a
-  ref and ask for a repaint, which needs `<SceneCanvas>` to expose `requestRedraw` (or accept a
-  `redrawOn` source) to a custom layer's owner without the demo reaching for the canvas ref in three
-  places; a `useFrameUniforms(ref)` helper on the shader layer would absorb it.
-
 ---
 
 ## Backends (WebGL future)
