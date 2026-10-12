@@ -6,19 +6,18 @@ import { Input } from '../Input';
 import { PrefConditionEditor } from '../PrefConditionEditor';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
-import { prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
-import { aliasChoices } from './aliasChoices';
 import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, valuePathsAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
 import { pointerAttributes } from './pointers';
+import { useSelectedNodes } from './useSelectedNodes';
 import s from './PrefSchemaEditor.module.css';
 
 /** Form paths for the rows that are not attributes: the key, the kind, and the kind's own panel. */
@@ -82,10 +81,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   const several = targets.length > 1;
   // The key, a key that follows the name, and a list's entry belong to one node.
   const path = several ? null : targets[0]!;
-  const nodes = useMemo(
-    () => targets.map((p) => nodeAt(schema, p)).filter((n): n is SchemaNode => n !== undefined),
-    [schema, targets],
-  );
+  const { nodes, ownPaths, fields } = useSelectedNodes(schema, targets, over);
   const pointers = over !== undefined && nodes.length > 0 && nodes.every((n) => isPrefLeaf(n) && n.kind === 'alias');
   const agg = useMemo(() => {
     if (nodes.length === 0) return null;
@@ -96,15 +92,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     () => new Set([...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`, `${AUTO}.${k}`])),
     [agg],
   );
-  // What the selected nodes hold themselves, which none of them is shown or enabled by.
-  const ownPaths = useMemo(() => targets.flatMap((p, i) => (nodes[i] ? valuePathsAt(schema, p, nodes[i]) : [])), [schema, targets, nodes]);
   const nameAtFocus = useRef('');
-  // The edited schema's fields, by its own path rule: what a reference in it names.
-  const fields = useMemo(() => {
-    const all = prefFieldChoices(over ?? schema);
-    const aliases = nodes.filter((n): n is PrefLeaf => isPrefLeaf(n) && n.kind === 'alias');
-    return aliases.length > 0 && aliases.length === nodes.length ? aliasChoices(over ?? schema, aliases, all) : all;
-  }, [schema, over, nodes]);
   const [key, setKey] = useState(path === null ? '' : keyOf(path));
   const [keyError, setKeyError] = useState<string | null>(null);
   const [seen, setSeen] = useState(path);

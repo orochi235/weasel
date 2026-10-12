@@ -92,6 +92,16 @@ export interface DropOutside {
 const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
+/** Where an add lands: inside the lead if it holds children, else after it. */
+function addTargetOf(schema: SchemaRoot, lead: string | null): { parent: string | null; index?: number } {
+  const node = lead === null ? undefined : nodeAt(schema, lead);
+  if (lead === null || !node) return { parent: null };
+  if (childrenOf(node)) return { parent: lead };
+  const parent = parentPath(lead);
+  const sibs = Object.keys(childrenOf(nodeAt(schema, parent)!) ?? {});
+  return { parent, index: sibs.indexOf(keyOf(lead)) + 1 };
+}
+
 export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
   const pageless = over !== undefined;
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
@@ -126,15 +136,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   };
   const waiting = useMemo(() => (unplaced ? stillUnplaced(unplaced, schema) : null), [unplaced, schema]);
 
-  /** Where an add lands: inside the lead if it holds children, else after it. */
-  const addTarget = (): { parent: string | null; index?: number } => {
-    const node = lead === null ? undefined : nodeAt(schema, lead);
-    if (lead === null || !node) return { parent: null };
-    if (childrenOf(node)) return { parent: lead };
-    const parent = parentPath(lead);
-    const sibs = Object.keys(childrenOf(nodeAt(schema, parent)!) ?? {});
-    return { parent, index: sibs.indexOf(keyOf(lead)) + 1 };
-  };
+  const addTarget = () => addTargetOf(schema, lead);
   /** What a new node joins. */
   const host = nodeAt(schema, addTarget().parent) ?? schema;
   const branch = branchUnder(host ?? schema);

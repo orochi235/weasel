@@ -65,18 +65,31 @@ export interface SnapStrategy<TPose> {
  * earlier behavior decides. `end.answered` says one did: a behavior that acts
  * on the scene itself from onEnd (starts an animation, applies ops) only
  * cleans up then. A canceled gesture (Esc, pointercancel) runs every
- * behavior's `onCancel` instead, which releases the same state.
+ * behavior's `onCancel` instead, which releases the same state. `TEnd` is
+ * what `onEnd` is told; an action with more to offer than `BehaviorEnd`
+ * extends it (`MoveEnd`).
  *
  * `defaultTransient`: when one behavior of a move, resize or rotate sets it
  * and the binding leaves `transient` unset, the gesture commits through
  * `scene.untracked` (no history entry). An explicit `transient` wins.
  */
-export interface ActionBehavior<TPose, TProposed, TMoveResult> {
+export interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd = BehaviorEnd> {
   defaultTransient?: boolean;
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
-  onEnd?(ctx: GestureContext<TPose>, end: BehaviorEnd): Op[] | null | void;
+  onEnd?(ctx: GestureContext<TPose>, end: TEnd): Op[] | null | void;
   onCancel?(ctx: GestureContext<TPose>): void;
+  /**
+   * Called once per gesture, for every behavior whose `onStart` ran, after
+   * the commit's ops have applied (or the cancel has run) and after the
+   * gesture's preview overrides are dropped. `committed` is false when the
+   * gesture was canceled, aborted by a behavior (`onEnd` returned `null`),
+   * or released with nothing to commit, and true otherwise: the action or
+   * a behavior made the commit, a behavior claiming it with no ops
+   * included. For move, resize, and rotate it is the value `onGestureEnd`
+   * receives.
+   */
+  onSettled?(ctx: GestureContext<TPose>, committed: boolean): void;
 }
 
 /** What a behavior's `onEnd` is told about the commit, beside the gesture. */
@@ -123,21 +136,40 @@ export interface BehaviorResult<TPose> {
   transform?: GroupTransform;
   /** @deprecated Return `transform` instead. Legacy primary-only pose override; supported via internal shim. */
   pose?: TPose;
-  /** Preview poses for individual dragged ids, each replacing the group
-   *  transform for that id this frame. For a behavior that will commit its
-   *  nodes where one translation cannot put them, such as a slot each. */
+  /** Preview poses for individual ids, each in its node's stored frame. For
+   *  a dragged id the pose replaces the group transform this frame: a
+   *  behavior that will commit its nodes where one translation cannot put
+   *  them, such as a slot each — except a descendant a moving frame
+   *  carries, which rides its frame whatever is posed for it. Any other id
+   *  is shown there for this frame only, and committing it is the
+   *  behavior's job; where a layout drop reflows the same id with no reflow
+   *  transition, the layout's pose wins. A later behavior's pose for an id
+   *  replaces an earlier one's. */
   poses?: ReadonlyMap<string, TPose>;
+  /** Ids whose preview paints at full opacity this frame rather than as a
+   *  ghost, added to those of the other behaviors. */
+  opaque?: Iterable<string>;
   snap?: SnapTarget<TPose> | null;
 }
 
 /** @deprecated Renamed to `BehaviorResult`. Kept as an alias for one release cycle. */
 export type BehaviorMoveResult<TPose> = BehaviorResult<TPose>;
 
+/** What a move behavior's `onEnd` is told. */
+export interface MoveEnd extends BehaviorEnd {
+  /** The action's default translate commit for the dragged roots in `ids`
+   *  and the descendants that follow them, by the drag as the behaviors
+   *  shaped it. For a behavior that claims the commit but places only some of
+   *  the nodes: it returns these beside its own ops. An id that is not a
+   *  dragged root is ignored. */
+  translateOps(ids: Iterable<string>): Op[];
+}
+
 /** A behavior plugged into `useMove` — shapes the proposed transform during a drag.
  *  Behaviors receive a `GroupTransform` (currently always `'translate'` for
  *  `useMove`) and return a `BehaviorResult` shaping it (or, legacy, an
  *  override pose run through the back-compat shim). */
-export type MoveBehavior<TPose> = ActionBehavior<TPose, GroupTransform, BehaviorResult<TPose>>;
+export type MoveBehavior<TPose> = ActionBehavior<TPose, GroupTransform, BehaviorResult<TPose>, MoveEnd>;
 
 // ----- resize -----
 

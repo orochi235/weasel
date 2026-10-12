@@ -41,7 +41,7 @@ import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/scr
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
-import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
+import { syncPreviewOverrides } from '../previewOverrides';
 import type {
   GestureContext,
   ModifierState,
@@ -68,7 +68,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
+import { closeGesture, commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { shapeSources } from '../selectionSubtree';
 import { fromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
@@ -671,9 +671,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
             if (reason === 'commit') committed = commitResize();
             else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx as unknown as GestureContext<Bounds>);
           } finally {
-            dropPreviewOverrides(scratch);
-            scratch.previews.clear();
-            lifecycle.end(committed);
+            closeGesture({ publish: scratch, behaviors: scratch.behaviors, ctx: ctxAsRect, lifecycle }, committed);
           }
         },
         previewIds: () => scratch.previews.keys(),

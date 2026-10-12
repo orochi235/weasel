@@ -63,7 +63,8 @@ import type { Scene } from 'core/scene/types';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
 import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { View } from 'core/viewport/view';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
+import { computeBounds, effectiveOriginMode, snapTo15Degrees } from '../insert/geometry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { TextEditDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -137,59 +138,6 @@ interface InsertScratch {
    *  (Shift+wheel during engaged phase). Only consulted for kinds that
    *  carry a `rotation` field on their extras (star / polygon today). */
   userRotation: number;
-}
-
-/** Resolve the effective origin mode from the binding's nominal opt
- *  and live Alt state. Alt inverts: `corner` ⇄ `center`. Applies to
- *  every shape kind — radial shapes (polygon/star) included; the
- *  overlay paints an `anchorPoint` dot at the click so corner mode
- *  reads as anchored even though no polygon vertex sits there.
- */
-function effectiveOriginMode(
-  paramsOrigin: unknown,
-  altHeld: boolean,
-): 'corner' | 'center' {
-  const nominal: 'corner' | 'center' = paramsOrigin === 'center' ? 'center' : 'corner';
-  if (!altHeld) return nominal;
-  return nominal === 'center' ? 'corner' : 'center';
-}
-
-/** Compute the insert AABB from drag endpoints.
- *  - `'corner'` (default): bounds = drag rect (top-left → bottom-right of cursor sweep).
- *  - `'center'`: bounds = symmetric AABB anchored on the start point.
- *    Used when the tool's Alt-modifier binding passes
- *    `originMode: 'center'` (Illustrator/Figma convention). */
-function computeBounds(
-  startX: number, startY: number,
-  currentX: number, currentY: number,
-  originMode: 'corner' | 'center',
-): { x: number; y: number; width: number; height: number } {
-  if (originMode === 'center') {
-    const dx = Math.abs(currentX - startX);
-    const dy = Math.abs(currentY - startY);
-    return { x: startX - dx, y: startY - dy, width: dx * 2, height: dy * 2 };
-  }
-  return {
-    x: Math.min(startX, currentX),
-    y: Math.min(startY, currentY),
-    width: Math.abs(currentX - startX),
-    height: Math.abs(currentY - startY),
-  };
-}
-
-/** Constrain `end` to the nearest 15° increment around `start`, preserving
- *  the drag length. The line tool's documented Shift behavior. */
-function snapTo15Degrees(
-  start: { x: number; y: number },
-  end: { x: number; y: number },
-): { x: number; y: number } {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const len = Math.hypot(dx, dy);
-  if (len === 0) return end;
-  const step = Math.PI / 12; // 15°
-  const snapped = Math.round(Math.atan2(dy, dx) / step) * step;
-  return { x: start.x + len * Math.cos(snapped), y: start.y + len * Math.sin(snapped) };
 }
 
 /** The key an insert's single gesture point rides under in the behaviors'
@@ -487,73 +435,11 @@ export const insertAction: Action & { requires: string[] } = inPlane({
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           scratch.open = false;
           if (live?.gesture === scratch) live.gesture = null;
-          if (reason === 'cancel') {
-            runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
-            if (scratch.priorSelection.length > 0) scratch.selection?.set(scratch.priorSelection);
-            return;
-          }
-
-          const { dep: d, opts: o } = scratch;
-          const points = endCtx.drag?.points ?? scratch.points;
-
-          // Resolve params at commit time so thunked params (polygon
-          // `sides` adjusted mid-drag, etc.) see the latest tool state.
-          const resolved = resolveParams(o?.params);
-
-          if (scratch.behaviors.length > 0) {
-            const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx);
-            if (r === null) return;
-            if (r !== undefined) {
-              if (scratch.scene) {
-                commitGestureOps(
-                  {
-                    scene: scratch.scene,
-                    applyOps: scratch.applyOps,
-                    adapter: defaultCommitAdapter(scratch.scene, scratch.selection?.adapterMethods),
-                  },
-                  readGestureLifecycle(resolved, 'Insert', scratch.behaviors),
-                  r,
-                );
-              }
-              return;
-            }
-          }
-
-          const kind = (resolved?.['kind'] as string | undefined) ?? 'rect';
-          const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
-          const { startX, startY, currentX, currentY } = resolveEndpoints(scratch, kind, mode);
-          const bounds = computeBounds(startX, startY, currentX, currentY, mode);
-          const extras = buildExtras(
-            { ...(resolved ?? {}), originMode: mode },
-            startX, startY, currentX, currentY, points,
-          );
-          applyUserRotation(extras, scratch.userRotation);
-
-          // Sub-threshold drag — no insert. The test is kind-aware because
-          // "zero size" isn't one shape:
-          //  - pencil: a sample trail can be meaningful even when start ≈ end
-          //    (a closed loop), so no guard at all.
-          //  - line: has no area by construction. An axis-aligned line has a
-          //    zero-height (or zero-width) AABB and is perfectly valid — only
-          //    a zero-LENGTH drag is degenerate. (Shift-constrain makes
-          //    axis-aligned the common case, which is how this surfaced.)
-          //  - everything else: a zero extent in either axis is degenerate.
-          if (!isCommittableExtent(bounds, extras.kind)) return;
-
-          const id = d.commit(bounds, extras);
-
-          // A freshly dragged text box is empty, so it draws nothing and the
-          // tool's own `click on selected body → enterTextEdit` binding has
-          // nothing visible to click. Drop straight into the caret instead —
-          // which is also what every other editor does with a text tool.
-          // `textEdit` is optional: without it the box is still committed,
-          // exactly as before.
-          //
-          // Read from the scratch, not `endCtx.deps`: the dispatcher builds
-          // the deps bag once, at `start`, and passes `deps: {}` on every
-          // later pump event. Same reason the insert dep itself is stashed.
-          if (id !== null && extras.kind === 'text') {
-            scratch.textEdit?.startEdit(String(id), { caret: 0 });
+          let committed = false;
+          try {
+            committed = endInsert(scratch, endCtx, reason);
+          } finally {
+            runBehaviorSettled(scratch.behaviors, scratch.gestureCtx, committed);
           }
         },
       };
@@ -569,8 +455,82 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   enabled: () => true as const,
 }, insertLayer);
 
+/** Cancel the insert, or commit it. Returns whether it committed: a
+ *  behavior's ops reached the scene, or the `insert` dep minted a node. */
+function endInsert(scratch: InsertScratch, endCtx: InvocationCtx, reason: 'commit' | 'cancel'): boolean {
+  if (reason === 'cancel') {
+    runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
+    if (scratch.priorSelection.length > 0) scratch.selection?.set(scratch.priorSelection);
+    return false;
+  }
+
+  const { dep: d, opts: o } = scratch;
+  const points = endCtx.drag?.points ?? scratch.points;
+
+  // Resolve params at commit time so thunked params (polygon
+  // `sides` adjusted mid-drag, etc.) see the latest tool state.
+  const resolved = resolveParams(o?.params);
+
+  if (scratch.behaviors.length > 0) {
+    const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx);
+    if (r === null) return false;
+    if (r !== undefined) {
+      if (scratch.scene) {
+        commitGestureOps(
+          {
+            scene: scratch.scene,
+            applyOps: scratch.applyOps,
+            adapter: defaultCommitAdapter(scratch.scene, scratch.selection?.adapterMethods),
+          },
+          readGestureLifecycle(resolved, 'Insert', scratch.behaviors),
+          r,
+        );
+      }
+      return scratch.scene !== undefined;
+    }
+  }
+
+  const kind = (resolved?.['kind'] as string | undefined) ?? 'rect';
+  const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
+  const { startX, startY, currentX, currentY } = resolveEndpoints(scratch, kind, mode);
+  const bounds = computeBounds(startX, startY, currentX, currentY, mode);
+  const extras = buildExtras(
+    { ...(resolved ?? {}), originMode: mode },
+    startX, startY, currentX, currentY, points,
+  );
+  applyUserRotation(extras, scratch.userRotation);
+
+  // Sub-threshold drag — no insert. The test is kind-aware because
+  // "zero size" isn't one shape:
+  //  - pencil: a sample trail can be meaningful even when start ≈ end
+  //    (a closed loop), so no guard at all.
+  //  - line: has no area by construction. An axis-aligned line has a
+  //    zero-height (or zero-width) AABB and is perfectly valid — only
+  //    a zero-LENGTH drag is degenerate. (Shift-constrain makes
+  //    axis-aligned the common case, which is how this surfaced.)
+  //  - everything else: a zero extent in either axis is degenerate.
+  if (!isCommittableExtent(bounds, extras.kind)) return false;
+
+  const id = d.commit(bounds, extras);
+
+  // A freshly dragged text box is empty, so it draws nothing and the
+  // tool's own `click on selected body → enterTextEdit` binding has
+  // nothing visible to click. Drop straight into the caret instead —
+  // which is also what every other editor does with a text tool.
+  // `textEdit` is optional: without it the box is still committed,
+  // exactly as before.
+  //
+  // Read from the scratch, not `endCtx.deps`: the dispatcher builds
+  // the deps bag once, at `start`, and passes `deps: {}` on every
+  // later pump event. Same reason the insert dep itself is stashed.
+  if (id !== null && extras.kind === 'text') {
+    scratch.textEdit?.startEdit(String(id), { caret: 0 });
+  }
+  return id !== null;
+}
+
 /** Whether a drag produced enough extent to be worth committing, per kind.
- *  See the call site in `onEnd` for why this isn't one uniform test. */
+ *  See the call site in `endInsert` for why this isn't one uniform test. */
 function isCommittableExtent(
   bounds: { width: number; height: number },
   kind: string,

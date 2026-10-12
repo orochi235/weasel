@@ -43,8 +43,8 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { pastDragThreshold } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-import { syncPreviewOverrides, dropPreviewOverrides, type PreviewOverrideState } from '../previewOverrides';
-import { runBehaviorCancel } from '../gestureLifecycle';
+import { syncPreviewOverrides, type PreviewOverrideState } from '../previewOverrides';
+import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
 import { runDropPass } from './layout/dropPass';
@@ -93,7 +93,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const { session, readers } = begun;
       const publish: PreviewOverrideState = { scene: session.scene, previews: new Map(), overrideEntries: new Map() };
       const gliding = new Set<NodeId>();
-      let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: publish.previews };
+      let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: publish.previews, opaque: new Set() };
       let drop: DropPass | null = null;
       let lastWorld: { x: number; y: number } | null = null;
       let engaged = false;
@@ -146,22 +146,25 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           } finally {
             // After the commit, so no frame can paint the pre-drag pose between
             // the override going away and the document catching up.
-            dropPreviewOverrides(publish);
-            publish.previews.clear();
-            // Also after the commit: each glide settles onto the pose the
-            // document now holds, or back home on a cancel — the dragged ids
-            // from where they were let go.
-            if (reflow && released) {
-              for (const id of gliding) reflow.settle(id as string);
-              landReleased(session, reflow, released);
-            }
-            gliding.clear();
-            session.lifecycle.end(committed);
+            closeGesture({ publish, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed, () => {
+              // Also after the commit: each glide settles onto the pose the
+              // document now holds, or back home on a cancel — the dragged ids
+              // from where they were let go.
+              if (reflow && released) {
+                for (const id of gliding) reflow.settle(id as string);
+                landReleased(session, reflow, released);
+              }
+              gliding.clear();
+            });
           }
         },
         previewIds: () => publish.previews.keys(),
         previewPose: (id: string) => publish.previews.get(id as NodeId) ?? null,
-        previewOpaqueIds: () => drop?.pass?.reflowIds ?? null,
+        previewOpaqueIds: () => {
+          const reflowed = drop?.pass?.reflowIds;
+          if (frame.opaque.size === 0) return reflowed ?? null;
+          return reflowed ? new Set([...frame.opaque, ...reflowed]) : frame.opaque;
+        },
       };
     },
   },
