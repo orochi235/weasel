@@ -17,12 +17,12 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
-import type { PaintBindContext, PaintKindEntry, PaintProgram, PaintResources } from '../../core/paintKinds';
+import type { PaintBindContext, PaintKindEntry, PaintProgram, PaintResources } from 'renderer/paintKinds';
 import { resolveColor, rgbaToHex } from '@weasel-js/paint';
 import { mat3 } from '@weasel-js/geom';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
-import type { FillPoseBox } from '../../core/fillInPoseFrame';
+import type { FillPoseBox } from 'renderer/fillInPoseFrame';
 import { bakeMesh, meshBounds, type MeshBox } from './bake';
 import { MeshBakeCache, meshBakeSize } from './bakeCache';
 import { isValidPatch, type MeshPatch, type MeshPoint } from './surface';

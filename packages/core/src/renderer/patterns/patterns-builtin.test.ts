@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { hatch, crosshatch, dots, chunks } from './patterns-builtin';
-import { _resetTextureRegistryForTests } from '../../renderer/textures/registerTexture';
+import { _resetTextureRegistryForTests } from '../textures/registerTexture';
 
 interface OffCall { fn: string; args: unknown[] }
 

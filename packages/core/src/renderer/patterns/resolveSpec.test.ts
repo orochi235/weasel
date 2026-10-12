@@ -4,7 +4,7 @@ import {
   resolvePatternSpec, resolveFillPattern, isPatternSpec, _resetPatternSpecCacheForTests,
   PATTERN_TILE_CACHE_LIMIT,
 } from './resolveSpec';
-import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../../renderer/textures/registerTexture';
+import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../textures/registerTexture';
 import type { FillStyle, TilePatternSpec } from '@weasel-js/paint';
 
 const HATCH: TilePatternSpec = { tile: 'hatch', color: '#0fb5a8' };

@@ -52,7 +52,7 @@ import { buildSceneViewCommands, type SceneViewDrawOne } from './sceneViewRender
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import { defaultDrawOne } from './defaultDrawOne';
 import { warmFonts, type FontRequest } from '@weasel-js/font';
-import { isPaintKindKnown, warmPaintKinds } from '../core/paintKinds';
+import { isPaintKindKnown, warmPaintKinds } from 'renderer/paintKinds';
 import { renderNeeds } from './renderNeeds';
 
 /** Plain RGBA raster — structurally `ImageData`-compatible ({ width, height,

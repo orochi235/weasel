@@ -23,7 +23,7 @@ import type { DrawCommand, TextDrawCommand } from '../../renderer/DrawCommand';
 import type { Node } from 'core/scene/types';
 import { findNodeShape } from '../../canvas/NodeShape';
 import { createTextLayer } from './textLayer';
-import { textCommandFromRuns } from './textCommand';
+import { textCommandFromRuns } from 'renderer/textCommand';
 
 const SIZE = 32;
 const STYLE = { fontFamily: 'inter', fontSize: SIZE };

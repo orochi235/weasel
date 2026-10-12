@@ -8,7 +8,7 @@ import type { FillStyle, PatternTransform } from '@weasel-js/paint';
 import { composePatternTransform } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
-import { resolveFillPattern } from 'features/patterns/resolveSpec';
+import { resolveFillPattern } from 'renderer/patterns/resolveSpec';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import type { DrawCommand } from '../renderer/DrawCommand';
 

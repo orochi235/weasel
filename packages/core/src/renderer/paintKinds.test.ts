@@ -15,10 +15,10 @@ import {
 import type { PaintKindEntry } from './paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
 import { findNodeShape } from '../canvas/NodeShape';
-import { getProgramSource, registerProgram } from '../renderer/shaders/registerProgram';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
-import { WeaselRenderer } from '../renderer/WeaselRenderer';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import { getProgramSource, registerProgram } from './shaders/registerProgram';
+import { makeGLRecorder } from './test-utils/glRecorder';
+import { WeaselRenderer } from './WeaselRenderer';
+import type { DrawCommand } from './DrawCommand';
 
 const M = 0, L = 1;
 

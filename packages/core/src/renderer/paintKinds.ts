@@ -17,13 +17,13 @@ import type {
   ColorSpace, FillStyle, GradientFill, GradientKind, GradientUnits, GradStop, TilePatternSpec,
 } from '@weasel-js/paint';
 import { gradientForBounds, isGradientFill, withGradientKind } from '@weasel-js/paint';
-import { bumpNodeMemoGeneration } from './scene/nodeMemo';
+import { bumpNodeMemoGeneration } from '../core/scene/nodeMemo';
 import type { ComponentType } from 'react';
 import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
-import type { ShaderProgram } from '../renderer/shaders/ShaderProgram';
-import { getProgramSource, registerProgram, type ProgramSource } from '../renderer/shaders/registerProgram';
+import type { ShaderProgram } from './shaders/ShaderProgram';
+import { getProgramSource, registerProgram, type ProgramSource } from './shaders/registerProgram';
 
 /** A compiled GL program. A paint kind gets one from
  *  {@link PaintBindContext.program} and hands it back from `bind`. */
@@ -304,7 +304,7 @@ const LOADS = new Map<string, Promise<void>>();
 // A built-in kind heavy enough to keep off a consumer's bundle until a paint
 // of it turns up. Importing the module statically still registers it at once.
 const LAZY_BUILTINS: ReadonlyArray<readonly [string, PaintKindLoader]> = [
-  ['mesh-gradient', async () => (await import('../features/meshPaint/lazyKind')).meshGradientKind],
+  ['mesh-gradient', async () => (await import('./meshPaint/lazyKind')).meshGradientKind],
 ];
 
 function seedLoaders(): void {

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
-import type { PathDrawCommand } from '../../renderer/DrawCommand';
+import type { PathDrawCommand } from '../DrawCommand';
 import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './test-utils/fakeOffscreenCanvas';
 import { _resetPatternSpecCacheForTests } from './resolveSpec';
-import { _resetTextureRegistryForTests } from '../../renderer/textures/registerTexture';
+import { _resetTextureRegistryForTests } from '../textures/registerTexture';
 import { commandFill, commandStroke } from './commandPaint';
 
 const BOX = { x: 10, y: 20, width: 100, height: 50 };

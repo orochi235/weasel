@@ -26,7 +26,7 @@
 import type { Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../renderer';
-import { textCommandFromRuns } from 'features/text/textCommand';
+import { textCommandFromRuns } from 'renderer/textCommand';
 import { findNodeShape, findShapeBounds, type NodePaintCtx } from './NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 

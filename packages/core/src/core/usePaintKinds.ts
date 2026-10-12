@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import {
   getPaintKind, listGradientKinds, listPaintKinds, paintKindRegistry, type PaintKindEntry,
-} from './paintKinds';
+} from 'renderer/paintKinds';
 
 /** Every registered paint kind, as {@link listPaintKinds} returns it,
  *  re-rendering the caller whenever a kind is registered or removed. */

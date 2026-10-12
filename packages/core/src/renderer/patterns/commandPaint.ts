@@ -4,7 +4,7 @@
  */
 
 import type { CommandFill, CommandStroke, FillStyle, Stroke } from '@weasel-js/paint';
-import { fillInPoseFrame, type FillPoseBox } from '../../core/fillInPoseFrame';
+import { fillInPoseFrame, type FillPoseBox } from 'renderer/fillInPoseFrame';
 import { resolveFillPattern } from './resolveSpec';
 
 /**

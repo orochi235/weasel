@@ -22,7 +22,7 @@ export type { TileShape, TileGeometry } from './tileGeometry';
 import { createTilePattern } from '.';
 import { tileGeometry, drawTileShapes, tileSize } from './tileGeometry';
 import type { TilePatternSpec } from '@weasel-js/paint';
-import type { TextureHandle } from '../../renderer/textures/registerTexture';
+import type { TextureHandle } from '../textures/registerTexture';
 
 function build(spec: TilePatternSpec): TextureHandle | null {
   const geometry = tileGeometry(spec);

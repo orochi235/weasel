@@ -6,7 +6,7 @@ import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { pathInPoseFrame } from '@weasel-js/geom';
-import { commandFill, commandStroke } from '../../features/patterns/commandPaint';
+import { commandFill, commandStroke } from 'renderer/patterns/commandPaint';
 import type { DrawCommand } from '../../renderer';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { PAINT_SLOT } from './memo';

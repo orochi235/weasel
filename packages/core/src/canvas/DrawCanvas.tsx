@@ -9,7 +9,7 @@
  * inline style, so `className` positions the element and cannot resize it.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { commandFill } from '../features/patterns/commandPaint';
+import { commandFill } from 'renderer/patterns/commandPaint';
 import type { Ref } from 'react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { FillStyle } from '@weasel-js/paint';

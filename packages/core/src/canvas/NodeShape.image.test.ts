@@ -5,9 +5,9 @@ import {
   __setImageLoaderForTests,
   _resetImageCacheForTests,
   getImageBitmap,
-} from 'features/images/imageCache';
+} from 'renderer/images/imageCache';
 import type { Node } from 'core/scene/types';
-import type { ImageNodeData, ImageRasterSize } from 'features/images/imageCache';
+import type { ImageNodeData, ImageRasterSize } from 'renderer/images/imageCache';
 import { makeGLRecorder } from 'renderer/test-utils/glRecorder';
 import { WeaselRenderer } from 'renderer/WeaselRenderer';
 import { FLOATS_PER_VERTEX } from 'renderer/drawBatch';

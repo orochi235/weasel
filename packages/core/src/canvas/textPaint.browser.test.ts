@@ -16,10 +16,10 @@ import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/fo
 import type { FillStyle } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
-import { resolveFillPattern } from 'features/patterns/resolveSpec';
-import { meshFromStops } from 'features/meshPaint/meshPaint';
-import 'features/meshPaint/register';
-import { asPaint, registerPaintKind, type PaintKindEntry } from 'core/paintKinds';
+import { resolveFillPattern } from 'renderer/patterns/resolveSpec';
+import { meshFromStops } from 'renderer/meshPaint/meshPaint';
+import 'renderer/meshPaint/register';
+import { asPaint, registerPaintKind, type PaintKindEntry } from 'renderer/paintKinds';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import { defaultDrawOne } from './defaultDrawOne';
 import { registerEffect } from '../renderer/effects/types';

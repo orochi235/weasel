@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import {
   _resetPaintKindsForTests, asPaint, registerPaintKind, registerPaintKindLoader, type PaintKindEntry,
-} from './paintKinds';
+} from 'renderer/paintKinds';
 import { useGradientKinds, usePaintKind, usePaintKinds } from './usePaintKinds';
 
 const noise = (): PaintKindEntry => ({

@@ -3,7 +3,7 @@ import { createTilePattern } from '.';
 import {
   getTexture,
   _resetTextureRegistryForTests,
-} from '../../renderer/textures/registerTexture';
+} from '../textures/registerTexture';
 
 interface OffCall { fn: string; args: unknown[] }
 

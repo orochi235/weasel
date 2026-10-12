@@ -12,8 +12,8 @@
  * see the `@weasel-js/core/patterns-builtin` subpath.
  */
 
-import { registerTexture } from '../../renderer/textures/registerTexture';
-import type { TextureHandle } from '../../renderer/textures/registerTexture';
+import { registerTexture } from '../textures/registerTexture';
+import type { TextureHandle } from '../textures/registerTexture';
 import { rasterizeTile } from './rasterizeTile';
 
 /** Options for `createTilePattern`. */

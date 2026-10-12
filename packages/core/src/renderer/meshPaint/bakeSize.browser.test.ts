@@ -8,7 +8,7 @@ import type { FillStyle } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
-import type { DrawCommand } from '../../renderer/DrawCommand';
+import type { DrawCommand } from '../DrawCommand';
 import { meshFromStops } from './meshPaint';
 import './register';
 

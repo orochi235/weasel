@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
-import { makeGLRecorder } from '../../renderer/test-utils/glRecorder';
-import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from '../../core/paintKinds';
-import { fillInPoseFrame, fillToBoundsFrame } from '../../core/fillInPoseFrame';
+import { makeGLRecorder } from '../test-utils/glRecorder';
+import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from 'renderer/paintKinds';
+import { fillInPoseFrame, fillToBoundsFrame } from 'renderer/fillInPoseFrame';
 import { seedMeshPatch, isMeshGradientFill, meshGradientXml, MESH_GRADIENT_KIND } from './meshPaint';
 import type { MeshGradientFill } from './meshPaint';
 import { MESH_BAKE_SIZE } from './bake';
 import './register';
 import type { FillStyle } from '@weasel-js/paint';
-import type { PaintBindContext, PaintProgram } from '../../core/paintKinds';
+import type { PaintBindContext, PaintProgram } from 'renderer/paintKinds';
 
 const BOX = { x: 10, y: 20, width: 200, height: 100 };
 

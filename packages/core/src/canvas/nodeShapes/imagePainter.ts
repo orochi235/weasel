@@ -6,7 +6,7 @@ import type { NodeShapeEntry } from 'canvas/NodeShape';
 import type { Node, RectPose } from 'core/scene/types';
 import {
   getImageBitmap, imageStatus, type ImageNodeData, type ImageRasterSize,
-} from 'features/images/imageCache';
+} from 'renderer/images/imageCache';
 import type { DrawCommand } from '../../renderer';
 import { paintsPose, poseBoxBounds } from './poseBox';
 

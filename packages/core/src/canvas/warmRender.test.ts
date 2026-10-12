@@ -3,7 +3,7 @@ import type { CommandFill } from '@weasel-js/paint';
 import type { ResolvedRun } from '@weasel-js/text';
 import { FIXTURE_FONT, registerFont } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { _resetPaintKindsForTests, getPaintKind, registerPaintKindLoader } from '../core/paintKinds';
+import { _resetPaintKindsForTests, getPaintKind, registerPaintKindLoader } from 'renderer/paintKinds';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { RectPose } from 'core/scene/composePose';

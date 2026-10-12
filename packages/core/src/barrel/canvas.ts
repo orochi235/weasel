@@ -44,8 +44,8 @@ export {
   isVectorImageSrc,
   releaseImage,
   retryImage,
-} from '../features/images/imageCache';
-export type { ImageNodeData, ImageRasterSize, ImageStatus } from '../features/images/imageCache';
+} from 'renderer/images/imageCache';
+export type { ImageNodeData, ImageRasterSize, ImageStatus } from 'renderer/images/imageCache';
 export { sceneToAdapter, useSceneAdapter } from '../canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from '../canvas/sceneAdapter';
 export {

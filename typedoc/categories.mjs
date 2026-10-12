@@ -11,7 +11,7 @@ export const RULES = [
 
   ['packages/core/src/features/paths', 'Paths & geometry'],
   ['packages/core/src/features/text', 'Text'],
-  ['packages/core/src/features/patterns', 'Paint & fills'],
+  ['packages/core/src/renderer/patterns', 'Paint & fills'],
   ['packages/core/src/features/selection', 'Selection & actions'],
   ['packages/core/src/features/ingestion', 'Extension points'],
 

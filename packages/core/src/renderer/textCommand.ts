@@ -17,15 +17,15 @@
  * screen-pixel size moves the glyph advances and so the wrap points.
  */
 
-import type { DrawCommand, TextDrawCommand } from '../../renderer';
+import type { DrawCommand, TextDrawCommand } from './index';
 import type { TextPaint, TextPose, TextStyle } from '@weasel-js/text';
 import { resolveTextStyle, textPoseLayoutInput } from '@weasel-js/text';
 import { resolveRuns } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign, ResolvedRun } from '@weasel-js/text';
 import type { FillStyle } from '@weasel-js/paint';
-import type { FillPoseBox } from '../../core/fillInPoseFrame';
-import { commandFill } from '../patterns/commandPaint';
+import type { FillPoseBox } from './fillInPoseFrame';
+import { commandFill } from './patterns/commandPaint';
 
 /** Build a draw command from styled runs, for text with no pose. `style`
  *  supplies the defaults each run inherits; the rest match `textCommand`. */

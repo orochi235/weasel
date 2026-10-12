@@ -66,7 +66,7 @@ Priority tags:
   container, pose-only fit-clamp + drop-point placement, one undoable
   batch per file). weaseldraw runs with `unpack` on, and its file-menu import
   and export carry `<image>` as an image object. An embedded SVG
-  re-rasterizes at its drawn size (see `features/images/README.md`).
+  re-rasterizes at its drawn size (see `renderer/images/README.md`).
   Remaining: check in a browser that it actually looks sharp at zoom — so far
   only jsdom has.
 
@@ -424,7 +424,7 @@ Core five + Crop shipped. Remaining:
   deferred out of the stroke-markers arc.
 
 - **(P3) Images: nothing calls `releaseImage`.**
-  `packages/core/src/features/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
+  `packages/core/src/renderer/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
   `src` (a multi-megabyte `data:` URI for a pasted image) until `releaseImage(src)` is called, and
   the kit never calls it. It needs an owner: the scene when the last node using a `src` passes the
   undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
@@ -439,7 +439,7 @@ Core five + Crop shipped. Remaining:
   (`packages/core/src/renderer/shaders/batchFill.ts`, `vec4(mapped.rgb * a, a)`) assume straight
   texels. A pattern texture registered from an `ImageBitmap` goes through `GLTextureCache` the same
   way, and an `HTMLImageElement` source uploads straight, so the two source types disagree. Two ways
-  out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`features/images/imageCache.ts`,
+  out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`renderer/images/imageCache.ts`,
   `features/ingestion/imageHandler.ts`, the loupe) and document that requirement on
   `ImageDrawCommand.image`, which leaves a consumer's default bitmap wrong; or make image textures
   premultiplied by convention, set `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for the non-bitmap sources, and
@@ -617,13 +617,13 @@ Core five + Crop shipped. Remaining:
   registry, `features/groups`, `overlays`, `focus`, and `cursor` are dissolved, and
   `@weasel-js/simulation`, `@weasel-js/stroke`, and `@weasel-js/text-dom` are out. Left, in
   dependency order:
-  1. *The renderer, under core.* It imports `core/paintKinds` as well as `@weasel-js/stroke`
-     and `@weasel-js/paint`. Gather `paintKinds`, `fillInPoseFrame`, `features/patterns`,
-     `images`, `meshPaint`, `text/textCommand.ts`, and `features/paths/markerCommands.ts` (marker
-     heads as draw commands, the half of the marker code that needs `PathDrawCommand`) under
-     `renderer/` first. `paintKinds.ts` subscribes a scene-memo bump and types an `Editor` slot
-     with React; `import-shims/renderer.ts` is a star export; `glRecorder` needs a testing
-     subpath.
+  1. *The renderer, under core.* Everything it draws with is gathered under `renderer/` now:
+     `paintKinds`, `fillInPoseFrame`, `patterns`, `images`, `meshPaint`, `textCommand.ts`, and
+     `markerCommands.ts`. What still ties it to core: `paintKinds.ts` bumps the scene's node
+     memo (`core/scene/nodeMemo`) and types an `Editor` slot with React; eight of its test files
+     build a scene or call `canvas/renderSceneToPixels`, `canvas/NodeShape`, or
+     `core/layers/render`, and would stay behind in core; `import-shims/renderer.ts` is a star
+     export; `glRecorder` needs a testing subpath.
   2. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
      `useAnimator`, so it cannot sit over core. It reaches the scene through `stagger.ts`'s
      `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,

@@ -14,7 +14,7 @@ import { type DrawCommand } from '../../renderer';
 import type { TextPose } from '@weasel-js/text';
 
 import type { RenderLayer } from 'core/layers/render';
-import { textCommandFromPose } from './textCommand';
+import { textCommandFromPose } from 'renderer/textCommand';
 import { runsToPlainText } from '@weasel-js/text';
 
 

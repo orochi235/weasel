@@ -13,7 +13,7 @@ import type { CommandFill, FillStyle, PosedFill, TilePatternSpec } from '@weasel
 import {
   ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
   type TextureHandle,
-} from '../../renderer/textures/registerTexture';
+} from '../textures/registerTexture';
 import { rasterizeTile } from './rasterizeTile';
 import { drawTileShapes, tileGeometry, tileSize } from './tileGeometry';
 
