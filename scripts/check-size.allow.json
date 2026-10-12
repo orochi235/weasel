@@ -11,7 +11,7 @@
     "longestFunction": 169
   },
   "packages/core/src/animation/engine/codec.ts": {
-    "longestFunction": 185
+    "longestFunction": 184
   },
   "packages/core/src/animation/reflow.ts": {
     "longestFunction": 165
