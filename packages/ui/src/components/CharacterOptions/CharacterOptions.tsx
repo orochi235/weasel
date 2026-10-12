@@ -22,6 +22,7 @@ import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
 import { ToolOptionsBar } from '../ToolOptionsBar';
 import type { ReactNode } from 'react';
 
+/** Props for {@link CharacterOptions}. */
 export interface CharacterOptionsProps {
   /** Styling to display. `MIXED` at a key means the sources disagree there.
    *  Absent or `null` leaves the bar empty — the row is permanent chrome. */
@@ -48,6 +49,12 @@ export function isCharacterChrome(el: Element): boolean {
 /** The keys the schema draws, in the order it declares them. */
 type StyleKey = keyof typeof useTextTool.options.children;
 
+/**
+ * The strip of character controls for a text edit in progress. Wire it to
+ * `useTextEdit`: `style` takes `effectiveStyle`, `onPatch` takes
+ * `applyStyleToSelection`, and {@link isCharacterChrome} goes in as
+ * `isEditorChrome`.
+ */
 export function CharacterOptions({ style, onPatch, children, className }: CharacterOptionsProps) {
   const editing = style != null;
   return (
