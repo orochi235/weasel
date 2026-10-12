@@ -1244,15 +1244,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) A classic Mac OS theme.** Which era it follows, System 7's one-bit look or Mac OS 8–9's
   Platinum, is the first decision.
 
-- **(P1.5) `@weasel-js/ui` names colors as raw CSS strings, not `ColorSource`.** `@weasel-js/paint`'s
-  `ColorSource` (a literal, a `ColorRef` like `{ ref: 'accent' }`, or a function, resolved by
-  `resolvePaletteColor`) is the kit's color type, but only core's renderer uses it. In the ui package
-  every color prop is a string passed through as CSS: `StanceProps.tone` (`number | string`, the
-  number indexing the theme's tone list), `Plot2D`'s series colors, `CurveField`'s band and line
-  colors, `createFunctionLayer`'s `color`, `Badge`'s effect colors. So a palette name has no way into
-  any of them, and the UI and the renderer name colors two ways. Adopting it means giving the theme
-  context a `Palette` (or an `ExternalColors` resolver onto its ramps; `ThemeProvider` hands out tones
-  only as a `ColorList` today) and resolving every one of those props through it.
+- **(P2) A `ColorList` still holds CSS strings, not `ColorSource`s.** Every color a `@weasel-js/ui`
+  component or a hud window takes is a `ColorSource` now, resolved by `colorSourceCss` /
+  `colorSourceLiteral` (`packages/theme/src/colorSource.ts`). The tone list they index is not: a
+  `ColorList` (`packages/theme/src/colorList.ts`) is literal strings, a ramp, a generator, or
+  `(i) => string`, read with `colorAt` / `colorCssAt`, so a theme's `tones` cannot name a palette
+  entry, and labkit's `Lab` and `nebula` and two site demos read lists as strings. Wanted: a list
+  whose items are `ColorSource`s, read through the same two functions. Two smaller gaps beside it:
+  a palette entry or a function source is written to CSS as the literal it resolves to in the
+  provider's selection, so with no `<ThemeProvider>` it does not follow a mode change the way a
+  theme ref does; and a custom `CurveLayer` has no resolver on its `LayerRenderCtx`, so one that
+  wants a color has to render a component that calls `useColorCss`, as `CurveFill` does.
 
 - **(P3) labkit stored lab: a trial that fails to hydrate is left out with only a console warning.**
   `hydrateTrials` and `hydrateSnapshots` (`packages/labkit/src/state/store.ts`) now skip a trial or
