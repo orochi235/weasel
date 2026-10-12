@@ -27,6 +27,17 @@ describe('reduceBehaviorEnd', () => {
     reduceBehaviorEnd(behaviors, null, { tag: 'mine' });
     expect(seen).toEqual([{ tag: 'mine', answered: false }, { tag: 'mine', answered: true }]);
   });
+
+  it('runs the behaviors after one that throws, telling them the commit is decided, then rethrows the first error', () => {
+    const later = vi.fn((_ctx: string, _end: BehaviorEnd) => []);
+    const behaviors = [
+      { onEnd: refuse },
+      { onEnd: later },
+      { onEnd: () => { throw new Error('second'); } },
+    ];
+    expect(() => reduceBehaviorEnd(behaviors, 'ctx')).toThrow('refused');
+    expect(later).toHaveBeenCalledWith('ctx', { answered: true });
+  });
 });
 
 describe('commitGestureOps — whether the commit landed', () => {

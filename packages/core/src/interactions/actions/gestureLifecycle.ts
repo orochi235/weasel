@@ -121,17 +121,24 @@ type OwnEndFields<TEnd extends BehaviorEnd> = keyof Omit<TEnd, keyof BehaviorEnd
  *  empty array included), and `undefined` means every behavior deferred to the
  *  action's own commit. An action whose behaviors take more than a plain
  *  `BehaviorEnd` passes the rest as `own`; each `onEnd` gets it beside
- *  `answered`. */
+ *  `answered`. One that throws does not stop the rest, which are told the
+ *  commit is decided; its error is rethrown after, so nothing commits. */
 export function reduceBehaviorEnd<TCtx, TEnd extends BehaviorEnd = BehaviorEnd>(
   behaviors: readonly { onEnd?(ctx: TCtx, end: TEnd): Op[] | null | void }[],
   ctx: TCtx,
   ...[own]: OwnEndFields<TEnd>
 ): Op[] | null | undefined {
   let answer: Op[] | null | undefined;
-  for (const b of behaviors) {
-    const r = b.onEnd?.(ctx, { ...own, answered: answer !== undefined } as TEnd);
-    if (answer === undefined && r !== undefined) answer = r;
-  }
+  let threw = false;
+  runEvery(behaviors, (b) => {
+    try {
+      const r = b.onEnd?.(ctx, { ...own, answered: threw || answer !== undefined } as TEnd);
+      if (answer === undefined && r !== undefined) answer = r;
+    } catch (err) {
+      threw = true;
+      throw err;
+    }
+  });
   return answer;
 }
 

@@ -89,6 +89,19 @@ describe('moveAction — a layout drop behind the binding\'s behaviors', () => {
     expect(calls.slice(1)).toEqual(['settle:sib', 'settle:kid:from150']);
   });
 
+  it('still glides the dragged node home from where it was let go when a binding behavior\'s onEnd throws', () => {
+    const commitDrop = vi.fn((): Op[] => []);
+    const { calls, reflow } = recorder();
+    const throws: MoveBehavior<unknown> = { onEnd: () => { throw new Error('behavior failed'); } };
+    const { scene, handle, dragTo, onGestureEnd } = fixture({ commitDrop }, { behaviors: [throws], reflow });
+    handle.onMove!(dragTo(155, 155));
+    expect(() => handle.onEnd!(dragTo(155, 155), 'commit')).toThrow('behavior failed');
+    expect(calls.slice(1)).toEqual(['settle:sib', 'settle:kid:from150']);
+    expect(commitDrop).not.toHaveBeenCalled();
+    expect(scene.get(KID)!.pose).toEqual(HOME);
+    expect(onGestureEnd).toHaveBeenCalledWith(false);
+  });
+
   it('asks no source layout to release when a binding behavior answers at end', () => {
     const releaseDrop = vi.fn((): Op[] | null => []);
     const claims: MoveBehavior<unknown> = { onEnd: () => [] };

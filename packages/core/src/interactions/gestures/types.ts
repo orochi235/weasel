@@ -62,9 +62,10 @@ export interface SnapStrategy<TPose> {
  * non-undefined return wins (Op[] = commit those, null = abort, undefined =
  * defer); later answers are ignored. So a behavior holding state outside the
  * gesture (published guides, a timer) releases it in onEnd even when an
- * earlier behavior decides. `end.answered` says one did: a behavior that acts
- * on the scene itself from onEnd (starts an animation, applies ops) only
- * cleans up then. A canceled gesture (Esc, pointercancel) runs every
+ * earlier behavior decides, or throws: every onEnd still runs, the first
+ * error is rethrown after, and nothing commits. `end.answered` says one did
+ * either: a behavior that acts on the scene itself from onEnd (starts an
+ * animation, applies ops) only cleans up then. A canceled gesture (Esc, pointercancel) runs every
  * behavior's `onCancel` instead, which releases the same state. `TEnd` is
  * what `onEnd` is told; an action with more to offer than `BehaviorEnd`
  * extends it (`MoveEnd`).
