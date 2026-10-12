@@ -22,7 +22,7 @@ import { createNodeStore } from './nodeStore';
 import { createAppliedLog } from './appliedLog';
 import { createStaleReplay, SceneMembershipError } from './staleReplay';
 import { statedFields } from './statedFields';
-import { createLayerStack } from './layerStack';
+import { createLayerEdits, createLayerStack } from './layerStack';
 import { registerKitOps, type RemoveSnapshot, type SetLayoutPayload } from './kitOps';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
@@ -40,7 +40,6 @@ import {
   type SceneRegistry,
   type SerializedScene,
   type UseSceneOptions,
-  type UserLayerRecord,
 } from './types';
 
 interface SceneState<TData, TLayer extends string, TPose> {
@@ -397,6 +396,17 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     }
   }
 
+  const layerEdits = createLayerEdits<TData, TLayer, TPose>({
+    layers: state.layers,
+    layerIndex: state.layerIndex,
+    nodes: state.nodes,
+    requireLayerIndex,
+    record: executeAndLog,
+    lifted: withLocksLifted,
+    batch: (label, fn) => scene.batch(label, fn),
+    removeMany: (ids) => scene.removeMany(ids),
+  });
+
   const scene: Scene<TData, TLayer, TPose> = {
     get nodes() { return state.nodes; },
     get roots() { return state.roots; },
@@ -656,96 +666,11 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       }, 'reorder');
     },
 
-    setLayerVisible(layer, visible) {
-      const i = requireLayerIndex(layer);
-      executeAndLog('kit:setLayerVisible', { layer, from: state.layers[i].visible, to: visible }, 'setLayerVisible');
-    },
-
-    setLayerLocked(layer, locked) {
-      const i = requireLayerIndex(layer);
-      executeAndLog('kit:setLayerLocked', { layer, from: state.layers[i].locked, to: locked }, 'setLayerLocked');
-    },
-
-    setLayerParallax(layer, parallax) {
-      const i = requireLayerIndex(layer);
-      executeAndLog(
-        'kit:setLayerParallax',
-        { layer, from: state.layers[i].parallax, to: parallax },
-        'setLayerParallax',
-      );
-    },
+    ...layerEdits,
 
     isLocked: (id) => isLockedInternal(id),
 
     unlocked: (fn) => withLocksLifted(fn),
-
-    addLayer(spec) {
-      if (state.layerIndex.has(spec.id)) {
-        throw new Error(`Scene: duplicate layer id "${spec.id}"`);
-      }
-      const index = spec.index ?? state.layers.length;
-      const clamped = Math.max(0, Math.min(index, state.layers.length));
-      const record: UserLayerRecord<TLayer> = {
-        kind: 'user',
-        id: spec.id,
-        name: spec.name,
-        visible: spec.visible ?? true,
-        locked: spec.locked ?? false,
-        ...(spec.parallax ? { parallax: spec.parallax } : {}),
-      };
-      executeAndLog('kit:addLayer', { record, index: clamped }, 'addLayer');
-    },
-
-    removeLayer(layer) {
-      const index = requireLayerIndex(layer);
-      const rec = state.layers[index];
-      if (rec.kind !== 'user') {
-        throw new Error(`Scene: cannot remove system layer "${layer}"`);
-      }
-      // A layer operation, like the lock toggle: taking a locked layer away
-      // takes its nodes with it.
-      withLocksLifted(() => scene.batch('removeLayer', () => {
-        const tagged: NodeId[] = [];
-        for (const [id, node] of state.nodes) {
-          if (node.layer === layer) tagged.push(id);
-        }
-        scene.removeMany(tagged);
-        const finalIndex = requireLayerIndex(layer);
-        executeAndLog('kit:removeLayer', { record: rec, index: finalIndex }, 'removeLayer');
-      }));
-    },
-
-    renameLayer(layer, name) {
-      const rec = state.layers[requireLayerIndex(layer)];
-      if (rec.kind !== 'user') {
-        throw new Error(`Scene: cannot rename system layer "${layer}"`);
-      }
-      executeAndLog('kit:renameLayer', { layer, from: rec.name, to: name }, 'renameLayer');
-    },
-
-    moveLayer(layer, index) {
-      const from = requireLayerIndex(layer);
-      const to = Math.max(0, Math.min(index, state.layers.length - 1));
-      if (from === to) return;
-      // Build the proposed order and a temp index map, then verify the
-      // child-below-parent invariant holds for every node before mutating.
-      const proposed = [...state.layers];
-      const [rec] = proposed.splice(from, 1);
-      proposed.splice(to, 0, rec);
-      const tempIndex = new Map<TLayer, number>();
-      for (let i = 0; i < proposed.length; i++) tempIndex.set(proposed[i].id, i);
-      for (const node of state.nodes.values()) {
-        if (node.parent === null) continue;
-        const parent = state.nodes.get(node.parent);
-        if (!parent) continue;
-        if (tempIndex.get(node.layer)! < tempIndex.get(parent.layer)!) {
-          throw new Error(
-            `Scene: moveLayer("${layer}", ${index}) — a child may not render below its parent's layer`,
-          );
-        }
-      }
-      executeAndLog('kit:moveLayer', { layer, from, to }, 'moveLayer');
-    },
 
     registerOp(kind, handler) {
       if (kind.startsWith('kit:')) {
