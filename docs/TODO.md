@@ -1264,16 +1264,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   reader. `LabContextValue.trials` is public, so splitting it out (a separate context, or a selector
   hook over the store, with the commands in a value that does not change) is an API decision.
 
-- **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
-  them.** A trial builds its annotation store once from `record.annotations`
-  (`packages/labkit/src/trial/Trial.tsx`, "One store for the trial's lifetime") and never reads the
-  record again. When another tab's write replaces the record (`bindLabStore` in
-  `packages/labkit/src/state/openLabStore.ts`), this tab's state and config update on screen and its
-  marks do not; its next mark then saves `annotations.toJSON()` over the other tab's. Options:
-  rebuild the store when the record is replaced by a remote write (losing this tab's mark undo
-  history, as the remote path already does for state history), remount the trial on a remote
-  replacement, or merge mark by mark, which needs an answer for a mark both tabs edited.
-
 - **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
   the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,
   `SelectionPanel/renderLeaf.tsx` (`renderBuiltin`), labkit's `controls/fields.tsx` (`labField`) and
