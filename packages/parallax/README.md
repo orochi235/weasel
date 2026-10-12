@@ -1,10 +1,21 @@
-# parallax
+# @weasel-js/parallax
 
 Multi-plane parallax: render the same layers through *derived* views so
 background planes move less than the camera and foreground planes move more.
 
-The math is pure and lives in `core/viewport/parallax.ts`; this folder holds
-the layer wrapper and the live plane.
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
+scene-graph canvas kit for React. See the
+[API reference](https://orochi235.github.io/weasel/api/).
+
+```sh
+npm install @weasel-js/parallax
+```
+
+The math is pure and is exported by `@weasel-js/core` (`deriveParallaxView`,
+`planeMap`, and the rest), since a scene layer's own `parallax` uses it. This
+package holds the layer wrapper (`createParallaxLayer`), the live plane
+(`createParallaxPlane`), and a layer that repeats its sources across a period
+(`createTiledLayer`, `tiledProject`).
 
 ## `deriveParallaxView(outer, opts)`
 

@@ -1,6 +1,6 @@
-import { drawOneLayer, subscribeToSources, type RenderLayer } from '../../core/layers/render';
-import type { View } from '../../core/viewport/view';
-import { deriveParallaxView, type ParallaxOpts } from '../../core/viewport/parallax';
+import { drawOneLayer, subscribeToSources, type RenderLayer } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import { deriveParallaxView, type ParallaxOpts } from '@weasel-js/core';
 import { isParallaxSource, type ParallaxSource } from './createParallaxPlane';
 
 /** Options for `createParallaxLayer`. */

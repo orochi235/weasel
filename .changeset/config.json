@@ -35,6 +35,7 @@
       "@weasel-js/audio",
       "@weasel-js/cursor",
       "@weasel-js/kernel3d",
+      "@weasel-js/parallax",
       "@weasel-js/forge",
       "@weasel-js/routing"
     ]

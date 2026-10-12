@@ -203,6 +203,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `diagram` | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
 | `guides` | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
 | `hud` | WebGL-rendered widgets composited into a canvas |
+| `parallax` | parallax planes and tiled surfaces: layers that draw other layers through a derived view |
 | `kernel3d` | poses, an orbit camera, ray picking and screen-projected chrome over core's scene graph; hosts a renderer |
 | `cursor` | tool cursors as authored glyphs, baked to CSS or painted when too large |
 | `loupe` | a magnifier model: where it's aimed, how far it magnifies, what's under it |

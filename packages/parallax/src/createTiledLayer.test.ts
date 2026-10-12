@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createTiledLayer } from './createTiledLayer';
-import { createParallaxLayer } from '../parallax/createParallaxLayer';
-import type { DrawCommand } from '@weasel-js/renderer';
-import type { RenderLayer } from '../../core/layers/render';
-import type { View } from '../../core/viewport/view';
+import { createParallaxLayer } from './createParallaxLayer';
+import type { DrawCommand } from '@weasel-js/core';
+import type { RenderLayer } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
 
 const dims = { width: 400, height: 300 };
 const unit = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } } as DrawCommand;

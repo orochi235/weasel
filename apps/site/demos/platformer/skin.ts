@@ -1,5 +1,6 @@
 // apps/site/demos/platformer/skin.ts
-import { createTiledLayer, polygonFromPoints, rectPath, textCommandFromRuns } from '@weasel-js/core';
+import { polygonFromPoints, rectPath, textCommandFromRuns } from '@weasel-js/core';
+import { createTiledLayer } from '@weasel-js/parallax';
 import type { Dims, DrawCommand, RenderLayer, View } from '@weasel-js/core';
 import { calloutAge, calloutScreenPos, type Callout } from './callouts';
 

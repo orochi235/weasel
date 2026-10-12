@@ -4,7 +4,6 @@ import {
   SceneCanvas,
   WeaselProvider,
   blur,
-  createParallaxLayer,
   createSlew,
   defaultDrawOne,
   rectPath,
@@ -12,6 +11,7 @@ import {
   useAnimator,
   useScene,
 } from '@weasel-js/core';
+import { createParallaxLayer } from '@weasel-js/parallax';
 import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';

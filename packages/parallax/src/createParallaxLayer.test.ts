@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createParallaxLayer } from './createParallaxLayer';
 import { createParallaxPlane } from './createParallaxPlane';
-import type { RenderLayer } from '../../core/layers/render';
-import type { View } from '../../core/viewport/view';
+import type { RenderLayer } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
 
 const outer: View = { x: 100, y: 50, scale: { x: 2, y: 2 } };
 const dims = { width: 400, height: 300 };

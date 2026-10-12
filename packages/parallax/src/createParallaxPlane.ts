@@ -1,6 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
-import type { RedrawSource } from '../../core/layers/render';
-import type { ParallaxOpts } from '../../core/viewport/parallax';
+import type { RedrawSource } from '@weasel-js/core';
+import type { ParallaxOpts } from '@weasel-js/core';
 
 /** Parallax opts that can change after a layer is built. `get` is read on
  *  every draw, and a notification repaints whatever draws through it. */

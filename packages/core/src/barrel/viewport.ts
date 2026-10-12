@@ -5,8 +5,10 @@ export { VERSION } from '../version';
 
 // ─── Features: multi-viewport composition ───────────────────────────────────
 export * from '../features/viewports';
-export * from '../features/parallax';
-export * from '../features/tiling';
+export {
+  deriveParallaxView, planeMap, toPlane, fromPlane, rectToPlane, rectFromPlane, planeToPlane, planeMatrix,
+} from '../core/viewport/parallax';
+export type { ParallaxOpts, ScalarOrXY, PlaneMap } from '../core/viewport/parallax';
 export {
   createSimulation,
   DEFAULT_ALPHA_DECAY,

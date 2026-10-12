@@ -1,6 +1,6 @@
-import type { DrawCommand } from '@weasel-js/renderer';
-import { subscribeToSources, type Dims, type RenderLayer } from '../../core/layers/render';
-import type { View } from '../../core/viewport/view';
+import type { DrawCommand } from '@weasel-js/core';
+import { subscribeToSources, type Dims, type RenderLayer } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
 import { tiledProject } from './tiledProject';
 
 /**
