@@ -1,6 +1,5 @@
 // apps/site/demos/platformer/animState.ts
-import { CLIPS, poseInterpolate, samplePose, type ClipName } from './clips';
-import type { Pose } from '@weasel-js/core';
+import { CLIPS, type ClipName } from './clips';
 import { JUMP_SPEED, MAX_FALL, MOVE_SPEED } from './physics';
 
 /** Cross-fade duration between clips, in milliseconds. */
@@ -8,9 +7,10 @@ export const FADE_MS = 120;
 
 export interface AnimState {
   current: ClipName;
-  /** The pose on screen at the moment of the last switch, frozen while it fades out. */
-  outgoing: Pose | null;
-  /** 0 → all outgoing, 1 → all current. */
+  /** How many times the clip has changed, so a change away and back between two reads shows. */
+  switches: number;
+  /** `current`'s weight over what was on screen when it took over: 0 at the switch, 1 once
+   *  faded in. */
   fade: number;
   /** Playhead into `current`, in milliseconds. */
   phase: number;
@@ -25,12 +25,7 @@ export interface AnimCtx {
   onPole?: boolean;
 }
 
-export const createAnimState = (): AnimState => ({
-  current: 'idle',
-  outgoing: null,
-  fade: 1,
-  phase: 0,
-});
+export const createAnimState = (): AnimState => ({ current: 'idle', switches: 0, fade: 1, phase: 0 });
 
 function pick(ctx: AnimCtx): ClipName {
   if (ctx.onPole) return 'pole';
@@ -60,35 +55,15 @@ function advance(name: ClipName, prevPhase: number, ctx: AnimCtx, dt: number): n
   return name === 'run' || name === 'idle' ? next % clip.duration : Math.min(next, clip.duration);
 }
 
-/**
- * A switch snapshots `resolvePose(s)` — the mixture actually on screen, however
- * many prior clips contributed to it — rather than remembering a second clip
- * identity. That is what keeps a second switch mid-fade from popping: the
- * frozen snapshot already carries whatever the eye was seeing.
- */
+/** One step of the state machine. What the fade blends from is not kept here: it is whatever
+ *  pose is on screen at the switch, which the pose target holds (`playerPose.ts`). */
 export function nextAnimState(s: AnimState, ctx: AnimCtx, dt: number): AnimState {
-  const want = pick(ctx);
-  const switching = want !== s.current;
-
-  const current = want;
-  const outgoing = switching ? resolvePose(s) : s.fade < 1 ? s.outgoing : null;
-  const phase = advance(current, switching ? 0 : s.phase, ctx, dt);
-
-  const fade = outgoing === null
-    ? 1
-    : Math.min((switching ? 0 : s.fade) + (dt * 1000) / FADE_MS, 1);
-
+  const current = pick(ctx);
+  const switching = current !== s.current;
   return {
     current,
-    outgoing: fade >= 1 ? null : outgoing,
-    fade,
-    phase,
+    switches: s.switches + (switching ? 1 : 0),
+    fade: Math.min((switching ? 0 : s.fade) + (dt * 1000) / FADE_MS, 1),
+    phase: advance(current, switching ? 0 : s.phase, ctx, dt),
   };
-}
-
-/** The pose the rig is drawn at: the outgoing snapshot blended into the current clip. */
-export function resolvePose(s: AnimState): Pose {
-  const now = samplePose(CLIPS[s.current], s.phase);
-  if (s.outgoing === null || s.fade >= 1) return now;
-  return poseInterpolate(s.outgoing, now, s.fade);
 }

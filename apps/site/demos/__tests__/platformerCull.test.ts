@@ -26,7 +26,7 @@ function demoWorld() {
   for (const spec of [
     ...tileNodes(WORLD), ...entityNodes(game.coins, game.enemies), ...flagpoleNodes(POLE), ...boneNodes(),
   ]) scene.add(spec);
-  syncScene(scene, game);
+  syncScene(scene, game, {});
   return { game, scene };
 }
 

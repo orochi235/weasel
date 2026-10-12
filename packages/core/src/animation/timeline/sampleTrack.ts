@@ -1,6 +1,7 @@
 import { keys as keysPatch, type Patch, type Setting } from '@msb235/blits';
 import { resolveEasing } from '@weasel-js/geom';
 import { axesOf } from '../engine/axes';
+import { targetStops } from './targetStops';
 import type { SampledTrack } from './types';
 
 type Out = { v: unknown };
@@ -20,7 +21,7 @@ interface Built {
    *  time, and the key's own value where blits would reach it as `a + (b - a) * ease(1)`. */
   exact: Map<number, unknown>;
   /** For a track that makes its own values, each interior key's time to a fresh value there, so
-   *  a caller changing its sample leaves the key alone. */
+   *  a caller changing its sample leaves the key alone; for a track on a target, every key's. */
   fresh: Map<number, () => unknown> | null;
   first: unknown;
   last: unknown;
@@ -44,10 +45,27 @@ function build<T>(track: SampledTrack<T>, cache: Map<number, (u: number) => T> |
   }
   const span = t1 - t0;
   const out: Built = { track, keys, patch: null, t0, span, exact, fresh: null, first: keys[0].value, last: keys[keys.length - 1].value, read: (v) => v };
+  const { interpolator, interpolate } = track;
+  const onTarget = track.target && !interpolator && !interpolate ? targetStops(track) : null;
+  if (onTarget) {
+    // A key answers as a sample between keys does: built from its axes, turns carried over.
+    const { axes, stops } = onTarget;
+    out.fresh = new Map(keys.map((k, i) => [k.t, () => axes.from(stops[i])]));
+    out.first = axes.from(stops[0]);
+    out.last = axes.from(stops[stops.length - 1]);
+  }
   if (span <= 0) return out;
 
   const ease = (k: (typeof keys)[number]) => (k.easing ? resolveEasing(k.easing) : undefined);
-  const { interpolator, interpolate } = track;
+  if (onTarget) {
+    const { axes, stops } = onTarget;
+    out.patch = keysPatch<number, Out>(
+      1,
+      keys.map((k, i) => ({ at: (k.t - t0) / span, delta: { v: stops[i] }, ease: ease(k) })),
+    );
+    out.read = (v) => axes.from(v as number[]);
+    return out;
+  }
   if (interpolator || interpolate) {
     const boxes: Box[] = keys.map((k, i) => ({ i, value: k.value }));
     const lerp = (a: Box, b: Box, u: number): Box => {

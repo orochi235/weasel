@@ -18,6 +18,7 @@ import { WORLD } from './platformer/worldLevel';
 import { backdropBand, COLORS, drawCallouts, drawEnding, drawSky } from './platformer/skin';
 import { createEnemies, ENEMY_H, ENEMY_W } from './platformer/entities';
 import { BODY_H, BODY_W } from './platformer/physics';
+import { createPlayerPose } from './platformer/playerPose';
 import { usePlatformerAudio } from './platformer/usePlatformerAudio';
 import { usePlatformerInput } from './platformer/useInput';
 import {
@@ -128,6 +129,9 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
   useEffect(() => animator.keepAlive(), [animator]);
 
+  const player = useMemo(() => createPlayerPose(animator), [animator]);
+  useEffect(() => () => player.dispose(), [player]);
+
   useEffect(() => {
     let last = performance.now();
     return animator.onTick(() => {
@@ -150,7 +154,8 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
       // A simulation step is not an edit, so it records nothing: one notify
       // and one repaint per frame, however many nodes moved.
-      scene.untracked(() => syncScene(scene, g));
+      player.sync(g.anim);
+      scene.untracked(() => syncScene(scene, g, player.read()));
       writes.current++;
 
       // The camera is the canvas view, so scene nodes and the parallax bands
@@ -166,7 +171,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
           }
         : v);
     });
-  }, [animator, running, input, scene, hooks, beginFrame, endFrame, impact, blurRadius]);
+  }, [animator, running, input, scene, player, hooks, beginFrame, endFrame, impact, blurRadius]);
 
   const layers = useMemo(() => {
     const sky: RenderLayer<unknown> = {
