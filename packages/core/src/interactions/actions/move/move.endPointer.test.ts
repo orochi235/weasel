@@ -8,8 +8,6 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { MoveBehavior, MoveEnd } from '../../gestures/types';
 import { moveAction } from './action';
-import { commitMove } from './commit';
-import { beginMove } from './session';
 
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
@@ -44,13 +42,5 @@ describe('MoveEnd.pointer', () => {
     handle.onMove!(at(10, 4, 10));
     handle.onEnd!(press, 'commit');
     expect(seen).toEqual([{ x: 10, y: 4 }]);
-  });
-
-  it('is null when the commit is handed no point', () => {
-    const { press, opts, seen } = fixture();
-    const frame = { delta: { dx: 5, dy: 0 }, previews: new Map(), opaque: new Set<never>() };
-    const begun = beginMove(press, opts, () => frame)!;
-    commitMove({ session: begun.session, delta: frame.delta, at: null });
-    expect(seen).toEqual([null]);
   });
 });

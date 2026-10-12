@@ -9,8 +9,8 @@ import { rootTranslateOps, translateOps } from '../translate';
 export interface CommitInput {
   session: MoveSession;
   delta: { dx: number; dy: number };
-  /** Where the pointer was let go; null when the end carried none and no move was seen. */
-  at: { x: number; y: number } | null;
+  /** Where the pointer was let go, or the last move's point when the end carried none. */
+  at: { x: number; y: number };
 }
 
 /** What the behaviors answer for the commit: ops, `null` to abort, or
@@ -18,7 +18,7 @@ export interface CommitInput {
 function endBehaviors(
   session: MoveSession,
   delta: { dx: number; dy: number },
-  at: { x: number; y: number } | null,
+  at: { x: number; y: number },
 ): Op[] | null | undefined {
   const { dx, dy } = delta;
   const gctx = session.gestureCtx;

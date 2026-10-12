@@ -6,7 +6,7 @@ A layout drop and reparent-on-drop are now move behaviors. The move action build
 
 What a consumer can observe:
 
-- `MoveEnd` gains `pointer`: where the pointer was let go, in world coordinates, or `null`. Code that calls a `MoveBehavior`'s `onEnd` directly, such as a consumer's own test, must now pass it: `{ answered, translateOps, pointer }`. `ctx.pointer` still holds the last move's point.
+- `MoveEnd` gains `pointer`: where the pointer was let go, in world coordinates, or the last move's point when the release carries none. Code that calls a `MoveBehavior`'s `onEnd` directly, such as a consumer's own test, must now pass it: `{ answered, translateOps, pointer }`. `ctx.pointer` still holds the last move's point.
 - A layout strategy that throws mid-drag drops that frame, the way a throwing binding behavior does. The release then commits the last frame that held, as a plain move. It used to commit the throwing frame's position.
 - With a reflow transition, a binding behavior's `onSettled` now runs before the layout drop settles its glides, where it ran after.
 

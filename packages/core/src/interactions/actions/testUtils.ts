@@ -13,11 +13,11 @@ export function stubDeps(deps: Record<string, unknown>): ActionDeps {
 
 /**
  * What a move behavior's `onEnd` is told, for a test calling it directly:
- * unanswered and with no release point, with a `translateOps` that emits
- * nothing unless one is given.
+ * unanswered and released at the world origin, with a `translateOps` that
+ * emits nothing unless one is given.
  */
 export function moveEnd(translateOps: MoveEnd['translateOps'] = () => []): MoveEnd {
-  return { answered: false, translateOps, pointer: null };
+  return { answered: false, translateOps, pointer: { x: 0, y: 0 } };
 }
 
 /**

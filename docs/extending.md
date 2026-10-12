@@ -376,8 +376,8 @@ binding's param. They use the same hooks as any other behavior:
 | `onEnd` | Returns the drop's ops, or the release and exit ops with the default translate for what no container claimed; aborts the commit when a drop or release it took has nothing to write | Returns reparent, layer, and transform ops for the node under `end.pointer` |
 | `onSettled` | Settles each glide onto the pose the document now holds | — |
 
-`end.pointer` is where the pointer was let go, in world coordinates; it is
-`null` when the gesture ended without one and no move was seen.
+`end.pointer` is where the pointer was let go, in world coordinates; without one
+on the release, it is the last move's.
 
 ## Non-rect poses
 

@@ -164,10 +164,9 @@ export interface MoveEnd extends BehaviorEnd {
    *  the nodes: it returns these beside its own ops. An id that is not a
    *  dragged root is ignored. */
   translateOps(ids: Iterable<string>): Op[];
-  /** Where the pointer was let go, in world coordinates; `null` when the
-   *  gesture ended without one and no move was seen. `ctx.pointer` holds the
-   *  last move's point instead. */
-  pointer: { x: number; y: number } | null;
+  /** Where the pointer was let go, in world coordinates; without one on the
+   *  release, the last move's. `ctx.pointer` always holds the last move's. */
+  pointer: { x: number; y: number };
 }
 
 /** A behavior plugged into `useMove` — shapes the proposed transform during a drag.

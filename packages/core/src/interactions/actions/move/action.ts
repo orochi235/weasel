@@ -92,19 +92,19 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       if (!begun) return {};
       const { session, readers } = begun;
       const publish: PreviewOverrideState = { scene: session.scene, previews: frame.previews, overrideEntries: new Map() };
-      let lastWorld: { x: number; y: number } | null = null;
-      let engaged = false;
+      // Where the last move put the pointer, once the drag has passed its
+      // threshold; null until then.
+      let engaged: { x: number; y: number } | null = null;
       return {
         kind: 'move',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
-          lastWorld = moveCtx.world;
           if (!engaged) {
             const s = moveCtx.drag.screenDelta;
             if (s && !pastDragThreshold({ clientX: 0, clientY: 0 }, { clientX: s.x, clientY: s.y }, session.dragThresholdPx)) return;
-            engaged = true;
             session.lifecycle.start(session.ids as unknown as string[]);
           }
+          engaged = moveCtx.world;
           frame = nextFrame(session, readers, moveCtx);
           publish.previews = frame.previews;
           syncPreviewOverrides(publish);
@@ -120,7 +120,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               committed = commitMove({
                 session,
                 delta: frame.delta,
-                at: endCtx.drag ? endCtx.world : lastWorld,
+                at: endCtx.drag ? endCtx.world : engaged,
               });
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
