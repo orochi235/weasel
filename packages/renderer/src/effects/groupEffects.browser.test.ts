@@ -131,3 +131,23 @@ void main() { outColor = texture(u_source, v_uv) * texture(u_tint, vec2(0.5)); }
     expect(at(4, 4)).toEqual([255, 0, 0, 255]);
   });
 });
+
+describe('an isolated group, in a real context', () => {
+  const BLUE: DrawCommand = { ...RED, fill: { color: '#0000ff' } };
+
+  it('fades overlapping children as one surface', () => {
+    const at = paint([{ kind: 'group', isolate: true, alpha: 0.5, children: [RED, BLUE] }]);
+    const [r, , b, a] = at(4, 4);
+    // Blue covers red inside the buffer, so no red reaches the composite.
+    expect(r).toBe(0);
+    expect(b).toBeGreaterThan(120);
+    expect(b).toBeLessThan(136);
+    expect(a).toBeGreaterThan(120);
+    expect(a).toBeLessThan(136);
+  });
+
+  it('lets the red through without it — the difference isolation makes', () => {
+    const at = paint([{ kind: 'group', alpha: 0.5, children: [RED, BLUE] }]);
+    expect(at(4, 4)[0]).toBeGreaterThan(50);
+  });
+});

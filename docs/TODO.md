@@ -439,13 +439,6 @@ Core five + Crop shipped. Remaining:
   has no `u_origin` to rebase against. The first needs a per-path origin in `@weasel-js/geom`'s
   tessellation, the second the same rebase applied to the paint matrix.
 
-- **(P3) Layers: `LayerGroup.alpha` without `effects` fades each member, not the group.** Its doc
-  (`packages/core/src/core/layers/render.ts`) says the opacity applies "to the group's composited
-  result, not to each member", but `wrapGroup` emits a plain group command, whose alpha multiplies
-  into every child, so overlapping members show through each other. With `effects` set the group is
-  composited as one surface. Either route an alpha-only group through an isolated buffer or correct
-  the doc.
-
 ---
 
 ## Text

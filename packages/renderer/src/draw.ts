@@ -85,7 +85,7 @@ function drawGroupWithEffects(
   // clip leaves the test on, and no pass target has that clip's bits.
   gl.disable(gl.BLEND);
   gl.disable(gl.STENCIL_TEST);
-  for (const effect of cmd.effects!) {
+  for (const effect of cmd.effects ?? []) {
     const program = ctx.ensureProgram?.(effect.program.id) ?? null;
     if (!program) {
       warnOnceUniform(effect.program.id, '(program)');
@@ -121,13 +121,17 @@ function drawGroupWithEffects(
   targets.release(front);
 }
 
+/** Whether `cmd` draws into a buffer of its own before joining its parent. */
+function ownsSurface(cmd: GroupDrawCommand): boolean {
+  return cmd.isolate === true || (cmd.effects !== undefined && cmd.effects.length > 0);
+}
+
 export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
-  // A group with effects is a render-target boundary rather than another
-  // accumulating frame. Without a renderer's buffer pool behind the context
+  // A group with effects, or an isolated one, is a render-target boundary
+  // rather than another accumulating frame. Without a renderer's buffer pool behind the context
   // there is nowhere to draw, so the effects are skipped and the children
   // paint straight through — a frame missing its blur, not a frame missing.
-  if (cmd.effects && cmd.effects.length > 0 && ctx.effectTargets
-      && ctx.deviceWidth && ctx.deviceHeight) {
+  if (ownsSurface(cmd) && ctx.effectTargets && ctx.deviceWidth && ctx.deviceHeight) {
     // The clip cuts the composite, so it goes on the parent's buffer, in the
     // group's own space.
     if (cmd.clip) {

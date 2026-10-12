@@ -87,6 +87,14 @@ export interface GroupDrawCommand {
    * group asks for one.
    */
   effects?: readonly Effect[];
+  /**
+   * Draw the children into a buffer of their own and composite it once, the
+   * render-target boundary `effects` makes, with no pass run over it. `alpha`
+   * and `colorMatrix` then apply to the finished surface, so overlapping
+   * children do not show through each other as they do when each is faded on
+   * its own. Costs a device-resolution buffer and a full-screen composite.
+   */
+  isolate?: boolean;
   children: DrawCommand[];
 }
 
