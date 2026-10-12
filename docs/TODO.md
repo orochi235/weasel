@@ -859,12 +859,18 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P3) Reading 10k targets costs about 3× the `onTick` path** — one pass of
-  `tests/perf/bench/animator-on-blits.bench.ts` on teitou, 2026-10-11: 0.53 ms a frame for 10k
-  tweens storing through `onTick`, 1.50 ms on 10k targets read after the frame. Not profiled;
-  `read` builds an axes array and a value object per call. The earlier costs of moving the
-  values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling) were accepted on
-  2026-10-04 and 2026-10-08; their tables are in `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`.
+- **(P3) Reading 10k targets costs about 3× the `onTick` path, all of it in `target.read()`** —
+  one pass of `tests/perf/bench/animator-on-blits.bench.ts` on teitou, 2026-10-11: 0.53 ms a
+  frame for 10k tweens storing through `onTick`, 1.50 ms on 10k targets read after the frame.
+  A probe under vitest on orochi the same day split it: the frame costs the same either way
+  (0.79 ms against 0.86 ms), and 10k reads cost 1.2 ms, about 120 ns each. Hand-written `axes`
+  in place of the ones `createTarget` works out for an object of numbers bring the reads to
+  0.88 ms. What is left is the array `axes.to` builds and the value `axes.from` builds on every
+  read; building the value from a copy of a sample object was tried and was slower. A fix is a
+  read that fills the caller's buffer, or axes that map without the array between. The earlier
+  costs of moving the values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling)
+  were accepted on 2026-10-04 and 2026-10-08; their tables are in
+  `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`. This one has not been.
 - **(P3) Whether blits moves into the monorepo as its own `@weasel-js` package** — open since
   2026-09-30. `@weasel-js/core` depends on `@msb235/blits` pinned exactly.
 
