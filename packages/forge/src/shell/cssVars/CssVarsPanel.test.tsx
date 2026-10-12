@@ -238,7 +238,7 @@ describe('CssVarsPanel', () => {
     fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
     await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved to themes/weasel.json.'));
     const body = JSON.parse(String(calls.find((c) => c.init?.method === 'PUT')?.init?.body));
-    expect(body.definition.pins['gray-50']).toEqual({ ...weasel.pins?.['gray-50'], value: '#123456' });
+    expect(body.definition.pins['gray-50']).toEqual({ ...(weasel.pins?.['gray-50'] as object), value: '#123456' });
     expect(body.definition.semantics['surface-sunken']).toEqual(weasel.semantics?.['surface-sunken']);
 
     await flush();
