@@ -116,6 +116,8 @@ export {
   paintWithAlpha,
   paintWithColor,
 } from '../util/paint';
+export { pathPaintOf } from '../canvas/nodeShapes/nodePaint';
+export type { PathPaint } from '../canvas/nodeShapes/nodePaint';
 
 // ─── Color helpers (parse / normalize / convert) ────────────────────────────
 export {

@@ -10,6 +10,8 @@ export type BarOrientation = 'horizontal' | 'vertical';
 export interface BarLeafNode {
   path: string;
   leaf: PrefLeaf;
+  /** Where the leaf's value lives when that is not `path`: the leaf is the one an alias at `path` shows. */
+  at?: string;
 }
 
 /**

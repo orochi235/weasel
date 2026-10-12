@@ -27,6 +27,7 @@ import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
 import { selectionAttrs } from './selection';
+import type { AliasTargets } from './targets';
 import s from './Prefs.module.css';
 
 /** What a {@link PrefRenderer} is given for the leaf it is rendering. */
@@ -85,8 +86,8 @@ export interface WalkCtx {
   inheritHint?: (path: string) => string | undefined;
   canInherit?: (path: string) => boolean;
   fields?: readonly PrefFieldChoice[];
-  /** The leaf whose value lives at a path, anywhere in the form's schema: what an alias is resolved against. */
-  leafAt?: (path: string) => PrefLeaf | undefined;
+  /** The schema the form's aliases point into, as its conditions leave it: what an alias row is drawn from. */
+  targets?: AliasTargets;
   /** Paths of the rows whose labels are drawn as changed. */
   changed?: ReadonlySet<string>;
   /** Paths of the rows and groups the form marks as selected. */
@@ -110,7 +111,7 @@ export interface WalkCtx {
 export function shownLeaf(ctx: WalkCtx, pref: PrefLeaf): { pref: PrefLeaf; at?: string } | null {
   if (pref.kind !== 'alias' || ctx.renderers?.alias) return { pref };
   const alias = pref as PrefAlias;
-  const target = prefAliasTarget(alias, ctx.leafAt ?? (() => undefined));
+  const target = prefAliasTarget(alias, ctx.targets?.leafAt ?? (() => undefined));
   return target ? { pref: prefAliasedLeaf(alias, target.leaf), at: target.path } : null;
 }
 
@@ -142,6 +143,8 @@ export function prefRenderContext(
   const stored = prefValueAtPath(ctx.values, from);
   const mixed = ctx.mixed?.has(from) ?? false;
   const { onAutoChange } = ctx;
+  const inside = at === undefined ? undefined : ctx.targets;
+  const entryAt = inside?.entryAt ?? ctx.entryAt;
   const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
   const renderCtx: PrefRenderContext = {
     path,
@@ -157,9 +160,10 @@ export function prefRenderContext(
     },
     ...(ctx.fields ? { fields: ctx.fields } : {}),
     disabled: ctx.disabled?.has(own) ?? false,
-    disabledAt: (at) => ctx.disabled?.has(at) ?? false,
-    ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: (at: string) => ctx.hidden!.has(at) } : {}),
-    ...(ctx.entryAt ? { entryAt: ctx.entryAt } : {}),
+    // The row answers by the form's own schema, at its own path; what is inside an alias's by its target's.
+    disabledAt: inside?.disabledAt ?? ((at) => ctx.disabled?.has(at) ?? false),
+    ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: inside?.hiddenAt ?? ((at: string) => ctx.hidden!.has(at)) } : {}),
+    ...(entryAt ? { entryAt } : {}),
   };
   return { renderCtx, toggles };
 }

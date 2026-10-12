@@ -366,12 +366,14 @@ have shipped. What remains:
 
 Core five + Crop shipped. Remaining:
 
-- **(P3) Outline.** `strokeToPath` (`packages/stroke/src/strokeToPath.ts`) now gives a stroke's silhouette as a fillable path, with joins, caps, dashes, alignment, and marker heads. What is left is the action that applies it to a selection: it has to read a node's stroke and decide the result's paint, and `BooleansAdapter` sees paths only, the same style-awareness gap Trim and Merge wait on. `textToPath` still refuses synthetic-bold text (`reason: 'synthetic-bold'`): emboldening it is now a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
-- **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion — need per-path style awareness, which the kit deliberately doesn't have since `data` is opaque. Wait on a compound-path-with-styles model.
+- **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
+- **(P3) Outline Stroke passes over text.** `applyOutlineStroke` reads path nodes only, so stroked text has to go through Create Outlines first. `textToPathsByPaint` already gives each paint's glyphs with their stroke.
+- **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion. The adapter now answers each operand's paint (`BooleansAdapter.getPaint`) and takes the paint a result must wear (`createPathNode`'s `paint`); what is left is the operations themselves, which give each result its own source's paint where `applyBooleanOp` passes one for all of them.
+- **(P3) Divide and Crop paint every piece like the topmost source.** `applyBooleanOp` hands `createPathNode` one `sourceId`, the topmost, for every result, so a Crop's pieces take the mask's paint and its parent, not their own source's. Needs `pathDivide` and `pathCrop` to say which source each piece came from.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
-- **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. `strokeToPath` supplies the region; what is left is the same adapter gap as Outline above (`applyBooleanOp` cannot read an operand's stroke) and whether a stroked operand contributes its fill, its stroke, or both.
+- **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not.
 
 ---
 
@@ -812,34 +814,29 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P2) A target table: many like values as rows of flat arrays, read in one pass** — measured
-  2026-10-11, not built. A read of one moving target is bound by memory past a few thousand:
-  it reaches the target's state, slot, `adjust` array, axes, its owner's `get` closure, and the
-  committed value. A table keeps the committed values, where each row's offsets are, and its
-  adjustments in flat arrays, and fills every row's value on screen in one pass.
-  `node tests/perf/target-reads/run.mjs table 1000 10000 100000` on orochi, plain Node 26, ns a
-  row with every row moving:
-
-  | Rows | `readInto` per target | table reaching each state | table, flat |
-  |---:|---:|---:|---:|
-  |   1,000 |  44 | 8.8 | 5.6 |
-  |  10,000 |  90 | 9.7 | 5.5 |
-  | 100,000 | 233 | 66  | 5.7 |
-
-  So the table has to be flat all the way: one that still reaches each row's state falls back
-  to cache misses at 100k. The flat column is a ceiling. The script reads each row's place in
-  the codec's columns off its state once, where the engine would have to keep that current as
-  rows start and stop and as a lane compacts, and it takes adjustments as zero.
-  Shape, as put to Mike, who said to try it: `createTargetTable({ axes })`, `table.add(value)`
-  answering a row, `table.target(row)` for the animator, and `table.committed` and
-  `table.shown` as arrays. Single targets and scene poses stay as they are. Holds on rows need
-  the per-axis fold of `engine/holds.ts` to write into the same pass. Vertex colors are the
-  first candidate in the kit. Of a single `readInto`, about 37 ns is work
-  (`run.mjs read 10000 parts`: the owner's `get` 6.5 ns, `axes.write` 12, the slot 3, `adjust`
-  3; `axes.add` for `read()` 31) and the rest is misses; in a CPU profile 47% of its ticks sit
-  on the line that first loads `slot.cols` and `adjust`. For scale, 10k tweens storing through
-  `onTick` cost 0.53 ms a frame on teitou against 1.50 ms for 10k targets read after the frame
-  (`tests/perf/bench/animator-on-blits.bench.ts`, before `axes.add` and `readInto`).
+- **(P3) What `createTargetTable` leaves** — the table is built (2026-10-11;
+  `docs/concepts.md`, "Animation target"). Its pass over a table's rows costs 3 to 4 ns a row
+  at 10k and at 100k, where `readInto` on a target apiece costs about 140 and 230
+  (`node tests/perf/target-reads/run.mjs table 10000 table`, one case a process; orochi, plain
+  Node 26). Left:
+  - Nothing in the kit is on one. Vertex colors (`colorOverrides.target`) are the first
+    candidate: arrays of numbers a registry already holds.
+  - A row with a hold, or with an offset canceled under one, is read by itself each frame at
+    a single target's cost. Putting it in the pass needs `engine/holds.ts` to fold into the
+    table's arrays.
+  - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
+    frame is the caller's until the table can be asked for one.
+- **(P2) A frame of the animator costs about 90 ns an animation at 10k and 290 at 100k, read or
+  not** — the same script's `idle` case. With reads off the table's pass, this is what is
+  left of a frame of many values. In a CPU profile of 10k tweens: `tickEach` 15%, the target
+  book's `settle` 12 to 13%, which zeroes an `adjust` array per moving target every frame, and
+  the rest in blits' pull. Not investigated further.
+- **(P2) Stopping and starting an animation costs about 50 µs at 10k animations, and more as
+  there are more** — the same script's "rows restarted a frame" rows: 100 restarted a frame took
+  a 10k frame from about 1 ms to 6 to 8 ms, and 1,000 took a 100k frame from 29 ms to about
+  200, on a table or on targets alike. The profile under churn shows blits' `forget`,
+  `unindex`, and `prune`. `~/src/blits/NOTES-FROM-WEASEL.md` ("Churn, what is left") has the
+  earlier reading of the same cost, at one restart a frame.
 - **(P3) A tween or spring started on a target under a full-weight hold shows its whole travel
   on top of the hold** — it commits its destination, which the hold stands in front of, and its
   offset is added over the hold, so the value on screen jumps by the travel and settles back.
@@ -847,11 +844,12 @@ built 2026-10-11. What that left:
   `useAnimator.hold.test.tsx` ("hands what a canceled offset left under it to the next
   animation"), not fixed: whether an offset under a hold should show at all is a call on the
   model, since a hold at a weight below 1 shows part of the committed value.
-- **(P3) core pins `@msb235/blits` at 0.8.1, and blits was at 0.10.0 on 2026-10-11** — its log
-  since includes "play a voice once unless it is told to loop", and the codec cues its hold
-  with `loop: true` and its paths with `loop: false`. Raising the pin means reading blits'
-  changelog against `engine/blitsContract.test.ts`. Ruled 2026-10-11: blits stays in its own
-  repo and does not become a `@weasel-js` package.
+- **(P3) A negative time scale throws from the animator's next frame** — `setTimeScale(-1)`
+  with a target tween 300 ms in ends the frame with `RangeError: blits: sync went back from 300
+  to 100`, seen 2026-10-11 on blits 0.10.0. Nothing refuses the scale and `setTimeScale`'s doc
+  does not say what below 0 means. Either refuse it where it is set, or play backward: the
+  animator's clock would have to keep going forward and hand each voice a rate below 0, which
+  blits 0.9.0 ends where the voice started.
 
 ### Earlier deferrals
 
@@ -1136,12 +1134,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
   `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the leaves its
-  aliases show as a function (`leafAt`), so an alias into another schema, as a layout over a dialog
-  has them, is hidden and disabled by its own conditions alone; `applyPrefConditions` takes that
-  schema as `aliasOver` once the form is given it. An alias of an `object` leaf draws a field
-  whose `showIf` hides it in the leaf's own row: `PrefsForm` resolves the alias against the
-  schema before its conditions are applied. `PrefSchemaEditor` edits an entry's own `enableIf` and
+  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the schema its
+  aliases point into as `over`; `SelectionPanel`, `Bar`, and labkit's `ControlPanel` take none
+  and find an alias's leaf in their own schema, so a layout whose root is a `PrefSection` has no
+  surface that draws its aliases into a dialog. A condition on a node of the form's own schema
+  reads `values` with that schema's leaves and defaults, so one that names a setting of `over`
+  compares the stored value and finds no default. A vertical bar inside a
+  `PrefsForm` names the popover of an alias left unnamed with the empty string, where `Bar`
+  names it for the leaf it shows. `PrefSchemaEditor` edits an entry's own `enableIf` and
   nothing inside an object entry, whose fields it draws no rows for, so a field's
   `{ from: 'item' }` condition is written in code. A list of plain text entries is one
   `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
@@ -1175,22 +1175,22 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
   effect, a render behind, and its docstring says so. Whether it should go is not decided.
 
-- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists every
-  nested group, a section of its page unless it is `as: 'page'`. (1) A foldable rail unfolds an
-  entry only while the open page is it or under it, so a section with sections of its own stays
-  shut while the reader scrolls through them, and its entry carries the current mark for them.
-  Whether the section in view should unfold the entries above it is open; it would move the rail
-  under a reader who is scrolling. (2) A top-level group that is not a page (`as: 'section'`
-  beside the root's loose leaves) is drawn on the root's own page and gets no entry, where the
-  same group one level down gets one. (3) A section's rail entry and a nested page's look the
-  same until one is chosen.
+- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists a page
+  at any depth, and a section only when it sits directly on a page. (1) A foldable rail unfolds an
+  entry only while the open page is it or under it, so a section holding pages of its own keeps
+  their entries shut while the reader scrolls through it. Whether the section in view should
+  unfold is open; it would move the rail under a reader who is scrolling. (2) A top-level group
+  that is not a page (`as: 'section'` beside the root's loose leaves) sits directly on the root's
+  own page and gets no entry, where a section directly on any other page gets one. (3) A
+  section's rail entry and a nested page's look the same until one is chosen.
 
 - **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
   is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the
   scrollport's edge (measured: the heading's top at 10px with 10px of padding), where the
   comment on the rule says the offset is measured from the edge. Whether rows scrolling under it
-  show in that strip has not been looked at. `RailLayout`'s `stuckAbove` adds the padding for the
-  same reason.
+  show in that strip has not been looked at. The `scroll-margin-top` on what a section holds
+  adds the padding for the same reason, and estimates the heading's line as `1lh` of the element
+  scrolled to, which leaves a few pixels of gap under the heading.
 
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
@@ -1646,7 +1646,9 @@ only story runner in the repo.
   pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
   either side. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
-  others on one node. Not measured: whether the timeouts follow the node's load, and whether
+  others on one node. Since 2026-10-11 the `browser` project polls for 5 s, not the default 1 s, which
+  three of these failures had outlasted (`PrefsRail.marks` twice, `compoundRows`); a 15 s test
+  timeout or a stalled Playwright action is untouched by that. Not measured: whether the timeouts follow the node's load, and whether
   running `browser` on its own, or with fewer workers, ends them.
 
 - **(P2) A docs minisite per package: overview, guides, and demos.** The API reference half is

@@ -119,6 +119,30 @@ describe('blits behaviors the animator codec relies on', () => {
     expect(tw.read(1)!.velocity).toBeCloseTo(100, 9);
   });
 
+  it('a tween voice cued with no loop still answers its end long past its ms', () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const tw = tween<number, U>('u', { from: 0, to: 0, ms: 1000, ease: linear });
+    const h = m.cue({ patch: tw, subjects: [1] });
+    tw.to(1, 1, 0);
+    m.sync(5000);
+    const cols = { u: new Float64Array(1) };
+    m.pull([1], cols);
+    expect(cols.u[0]).toBe(1);
+    expect(h.weightOf(1)).toBe(1);
+  });
+
+  it('a patch with a duration answers past it only when told to loop', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    m.cue({ patch: patch<object, P>(1, () => ({ p: [3, 0] }), { writes: ['p'] }), subjects: [subject], loop: true });
+    m.sync(5000);
+    const cols = { p: new Float64Array(2) };
+    m.pull([subject], cols);
+    expect(cols.p[0]).toBe(3);
+  });
+
   /** A voice answering whatever `read` returns now, the way a hold answers its value. */
   const live = (read: () => number[]) =>
     patch<object, P>(1, () => ({ p: read() }), { writes: ['p'] });

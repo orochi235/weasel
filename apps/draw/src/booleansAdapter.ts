@@ -5,7 +5,10 @@ import {
   DEFAULT_SHAPE_FILL,
   defaultCommitAdapter,
   type NodeId,
+  type Path,
   pathInWorld,
+  type PathPaint,
+  pathPaintOf,
   type Scene,
   type SelectionApi,
   type TextNodeSource,
@@ -23,6 +26,20 @@ export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | und
   return { data: { text, runs, style, verticalAlign, fill, stroke }, pose: node.pose };
 }
 
+/** A path leaf's geometry in world space. */
+export function worldPathOf(scene: DrawScene, id: string): Path | undefined {
+  const node = scene.get(asNodeId(id));
+  if (!node || node.kind !== 'leaf' || !node.data.path) return undefined;
+  return pathInWorld(node.data.path, node.pose);
+}
+
+/** The paint a path leaf wears. */
+export function pathPaintAt(scene: DrawScene, id: string): PathPaint | undefined {
+  const node = scene.get(asNodeId(id));
+  if (!node || node.kind !== 'leaf' || !node.data.path) return undefined;
+  return pathPaintOf(node.data);
+}
+
 /** The adapter the kit's Pathfinder actions run WeaselDraw's boolean ops
  *  through. The scene-backed commit adapter supplies the reorder contract, so
  *  the kit places each result in its topmost source's slot. */
@@ -33,19 +50,14 @@ export function drawBooleansAdapter(
   let idCounter = 0;
   const a: BooleansAdapter = {
     ...defaultCommitAdapter(scene, selection),
-    getWorldPath: (id) => {
-      const node = scene.get(asNodeId(id));
-      if (!node || node.kind !== 'leaf') return undefined;
-      const data = node.data;
-      if (!data.path) return undefined;
-      return pathInWorld(data.path, node.pose);
-    },
+    getWorldPath: (id) => worldPathOf(scene, id),
+    getPaint: (id) => pathPaintAt(scene, id),
     getTextSource: (id) => textSourceOf(scene, id),
     compareZ: (x, y) => {
       const order = [...scene.renderOrder()];
       return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));
     },
-    createPathNode: (path, _op, sourceId) => {
+    createPathNode: (path, _op, sourceId, paint) => {
       // Mint convention: pose = boundsOfPath(path); geometry lives in data.path.
       // Booleans, slice (sliceCommit.ts), and release-compound (onReleaseCompound)
       // all follow this same convention — the data payload that varies per site
@@ -69,7 +81,7 @@ export function drawBooleansAdapter(
         kind: 'leaf',
         layer: 'default',
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-        data: {
+        data: paint ? { path, ...paint } : {
           path,
           fill: template?.fill !== undefined ? template.fill : DEFAULT_SHAPE_FILL,
           ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),

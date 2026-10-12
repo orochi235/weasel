@@ -82,7 +82,7 @@ function scopeAt(schema: PrefGroup | PrefSection, path: string, holds: PrefCondi
   return scope;
 }
 
-/** `own`, an alias's scope by its own conditions, narrowed by that of the leaf it shows in `over`. */
+/** `own`, an alias's scope by its own conditions, narrowed by that of the leaf it shows in `over`, as `holds` judges `over`. */
 export function prefAliasScope(own: PrefScope, alias: PrefAlias, over: PrefGroup | PrefSection, holds: PrefConditionJudge): PrefScope {
   const target = prefAliasTarget(alias, (path) => prefLeafAt(over, path));
   if (target === undefined) return own;
@@ -96,6 +96,8 @@ export function prefAliasScope(own: PrefScope, alias: PrefAlias, over: PrefGroup
 export interface PrefScopeAtOptions {
   /** The schema an alias's `of` names a leaf of. Default: the schema asked. */
   aliasOver?: PrefGroup | PrefSection;
+  /** Says which conditions of `aliasOver` hold, where its values are not the ones `holds` reads. Default: `holds`. */
+  aliasHolds?: PrefConditionJudge;
 }
 
 /**
@@ -109,9 +111,9 @@ export interface PrefScopeAtOptions {
  * entry here to read: `applyPrefEntryConditions` answers it.
  */
 export function prefScopeAt(
-  schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge, { aliasOver }: PrefScopeAtOptions = {},
+  schema: PrefGroup | PrefSection, path: string, holds: PrefConditionJudge, { aliasOver, aliasHolds }: PrefScopeAtOptions = {},
 ): PrefScope {
   const own = scopeAt(schema, path, holds);
   const leaf = prefLeafAt(schema, path);
-  return leaf?.kind === 'alias' ? prefAliasScope(own, leaf as PrefAlias, aliasOver ?? schema, holds) : own;
+  return leaf?.kind === 'alias' ? prefAliasScope(own, leaf as PrefAlias, aliasOver ?? schema, aliasHolds ?? holds) : own;
 }
