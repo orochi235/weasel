@@ -402,13 +402,13 @@
     "longestFunction": 296
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {
-    "longestFunction": 168
+    "longestFunction": 167
   },
   "packages/ui/src/components/ItemList/ItemList.tsx": {
     "longestFunction": 229
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
-    "lines": 650,
+    "lines": 546,
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {

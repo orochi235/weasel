@@ -58,6 +58,7 @@ import {
   ResizeHandle,
   SceneGradientHandles,
   Sidebar,
+  ToastRegion,
   ToolPalette
 } from '@weasel-js/ui';
 import {
@@ -102,6 +103,8 @@ import { Toolbar } from './Toolbar';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import './app.css';
 import { type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { activeInsertPaint } from './insertPaint';
+import { reportPasteOmissions } from './pasteOmissions';
 import { HISTORY_KEY, loadHistory, loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
@@ -120,7 +123,10 @@ const RECENT_COLORS_KEY = 'weaseldraw:recent-colors';
 // persistence uses (the walker itself is NOT `(key, value)`-shaped; see
 // persistence.ts). Module const: SceneCanvas keys its dep wiring off the
 // prop identity.
-const DRAW_INGESTION = { svg: { unpack: unpackSvgFiles }, clipboard: { reviver: clipboardJsonReviver } };
+const DRAW_INGESTION = {
+  svg: { unpack: unpackSvgFiles },
+  clipboard: { reviver: clipboardJsonReviver, onOmitted: reportPasteOmissions },
+};
 /** Seed fill for a fresh document. Intentionally a friendly blue rather than
  *  the kit's white `DEFAULT_FILL_COLOR` — a new shape lands visible against
  *  the white page instead of disappearing into it. Keep distinct from the
@@ -424,6 +430,7 @@ function EditorWithSharedScene({
   const hudTool = useHudContribution();
   const colorsRef = useLatest(colors);
   const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
+  const insertPaint = useMemo(() => activeInsertPaint(() => colorsRef.current), [colorsRef]);
   const appCommands: AppCommands = {
     gridVisible,
     toggleGrid: () => setGridVisible(!gridVisible),
@@ -622,6 +629,7 @@ function EditorWithSharedScene({
             defaultTools={BUILTIN_TOOL_IDS}
             tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
             ingestion={DRAW_INGESTION}
+            insertPaint={insertPaint}
             // Pick on the drawn shape, not the bounding box. In a drawing app
             // the pose rect is an implementation detail: clicking the blank
             // right half of a text box, or the notch of a star, should reach
@@ -663,6 +671,8 @@ function EditorWithSharedScene({
             <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
           )}
+          {/* In the workspace, not the viewport: a fixed region sits outside the theme and over the status bar. */}
+          {hostRef.current && <ToastRegion portalContainer={hostRef.current} />}
           <SceneGradientHandles
             scene={scene}
             containerRef={hostRef}

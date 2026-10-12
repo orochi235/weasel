@@ -25,7 +25,8 @@ export type ActivePaint =
 export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: DEFAULT_FILL_COLOR };
 export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR };
 
-function toFillStyle(p: ActivePaint): FillStyle | null {
+/** An active paint as a node's fill or a stroke's paint; `null` is none. */
+export function toFillStyle(p: ActivePaint): FillStyle | null {
   if (p.kind === 'none') return null;
   return { fill: 'solid', color: p.kind === 'solid' ? p.color : '#00000000' };
 }

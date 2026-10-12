@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { CloseButton } from '../CloseButton';
@@ -25,7 +25,7 @@ import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
 import { useAssetChanges, type SubmitAssets } from './useAssetChanges';
 import { useAssetView } from './useAssetView';
-import { assetOf, overOf, sameRoots, withRoots, type Workspace } from './workspace';
+import { assetOf, overOf, sameRoots, withRoots, type Asset, type ListedAsset, type Workspace } from './workspace';
 import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './workspaceEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -56,6 +56,15 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   same?: (a: Workspace, b: Workspace) => boolean;
   /** List the assets in a pane at the editor's far edge, to pick the one shown. Left out, the editor shows the first. */
   list?: boolean;
+  /** Assets another editor holds, listed after this one's under the same headings. */
+  elsewhere?: readonly ListedAsset[];
+  /** The reader picked one of `elsewhere`; the host shows it, in whatever holds it. */
+  onElsewhere?(id: string): void;
+  /** The asset shown when the editor mounts. Default: the first. */
+  startOn?: string;
+  /** Draws the preview of an asset in place of the editor's own: a panel as the host's own panel, a toolbar as its
+   *  bar. `over` is the dialog a layout's pointers name settings in. Nothing returned leaves the editor's preview. */
+  preview?(asset: Asset, over: SchemaRoot | undefined): ReactNode;
   /** Somewhere to send the changes: given, the Changes pane draws a Submit button that hands over every changed asset. */
   onSubmit?: SubmitAssets;
 }
@@ -67,13 +76,13 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
  * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
  */
 export function AssetEditor(
-  { workspace, onChange, original, codec, same = sameRoots, list = false, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, onElsewhere, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
   const [first] = useState(workspace);
   const base = original ?? first;
   const [opened] = useState(() => (draftKey === undefined ? null : codec.openDraft(draftKey, base, draftStorage)));
   const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
-  const view = useAssetView(workspace, opened?.value, draftKey);
+  const view = useAssetView(workspace, opened?.value, draftKey, startOn);
   const { asset, expanded, setExpanded, selection } = view;
   const assetId = asset.id;
   const schema = asset.root;
@@ -246,13 +255,13 @@ export function AssetEditor(
           // The root's own entry names no node to add to a selection.
           if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
           else reveal(path === null ? [] : [path]);
-        }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} />
+        }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} over={over} hosted={preview?.(asset, over)} />
       <ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} />
       {list && (
         <>
           <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
           <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar">
-            <AssetList assets={workspace.assets} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
+            <AssetList assets={workspace.assets} elsewhere={elsewhere} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
           </aside>
         </>
       )}

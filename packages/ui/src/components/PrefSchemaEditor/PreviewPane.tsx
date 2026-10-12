@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type RefObject } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { DragGhost } from '../DragGhost';
@@ -39,13 +39,23 @@ export interface PreviewPaneProps {
   pageless?: boolean;
   /** The schema an alias is of a leaf in, where that is not `schema`: a layout's pointers name settings in its dialog. */
   over?: SchemaRoot;
+  /** The host's own drawing of the schema, shown in place of the editor's. It takes no drop and marks no selection. */
+  hosted?: ReactNode;
 }
 
 /**
  * The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section,
  * and a toolbar for a group drawn as a bar.
  */
-export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless, over }: PreviewPaneProps) {
+export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless, over, hosted }: PreviewPaneProps) {
+  if (hosted !== undefined && hosted !== null && hosted !== false) {
+    return (
+      <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
+        <PaneHeader title="Live preview" />
+        <div className={s.previewHosted}>{hosted}</div>
+      </section>
+    );
+  }
   if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} over={over} />;
   if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} over={over} />;
   return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} over={over} />;

@@ -196,14 +196,6 @@ Priority tags:
   a consumer tool hits it. Decide any-versus-every and the empty case once, as one predicate over
   `(allowedCapabilities, tags)` in `@weasel-js/modes`, and have all three call it.
 
-- **(P3) `ActionsRegistry.trigger` does not ask `enabled`.** `trigger('delete')` runs while
-  `delete.enabled()` reports a disabled reason, which the dispatcher honors for the same action on
-  a key (`packages/routing/src/interactions/actions/ActionsProvider.tsx`). Whether a palette or
-  toolbar is expected to gate before calling is the design call: either `trigger` gates on
-  `evaluateEnabled`, or its contract says the caller gates. `trigger` has no event, so it cannot
-  pass `enabled` the `at` point the dispatcher does, and an action that only applies at a point
-  would refuse every `trigger`.
-
 - **(P3) A key typed with AltGr cannot match a binding.** A layout that types `[` with AltGr
   reports `ctrlKey` and `altKey`, which the strict modifier match in
   `packages/gestures/src/ui/match.ts` rejects. Dropping both flags while
@@ -647,13 +639,6 @@ Core five + Crop shipped. Remaining:
   `batchDepth`, `batchDirty`, `currentBatch`, `suppressRecording`, `untrackedDepth`, `selection`,
   and `version`. Splitting them means putting those in one record the pieces close over, then
   cutting the methods by what they edit: nodes, layers, selection, and history and batches.
-
-- **(P2) Clipboard: draw says nothing when a paste leaves an edge out.** A paste now drops a node
-  that derives from nodes that were not copied with it, and reports each one with a reason
-  (`PasteOmission`) to `useClipboardOps({ onPasteOmitted })` and
-  `<SceneCanvas ingestion={{ clipboard: { onOmitted } }}>`. `apps/draw` passes neither. Ruled
-  2026-10-11: draw shows a toast. Draw mounts no toast region today, so this needs one and a look at
-  it in a browser.
 
 - **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
   the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
@@ -1413,15 +1398,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   version from `CanvasExtensionApi.getPaintedVersion`, compared before and after the loupe's own
   request, is one candidate), or a public `refresh()` on the handle that the consumer calls.
 
-- **(P2) LayerList: rows under a card are `role="row"` with no `treegrid` ancestor.** When a level
-  holds any item with a body, `Level` in `packages/ui/src/components/LayerList/LayerList.tsx`
-  renders it as a `PropertyList` with no role, and a nested level's container is `role="none"`, so
-  the body-less rows in a mixed level and the child rows under a card carry `role="row"` and
-  `aria-level` with no grid above them. Flat lists are fine (each row now owns a `gridcell`). Ruled
-  2026-10-11: each level of plain rows under a card or among cards becomes its own `treegrid`, named
-  for its card, with `aria-level` restarting there. That leaves that markup in `Level`, and what a
-  lone row among cards belongs to, since it has no card to be named for.
-
 - **(P3) SceneGradientHandles: unmounting mid-drag commits the half-finished drag.** Deselect the
   node (or anything else that unmounts the overlay) while a handle is held: the parent's
   `useOngoingAction` cleanup runs first and commits the value under the pointer, then `DragPoint`'s
@@ -1431,15 +1407,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   documents the commit on unmount as "what the user was looking at", which fits a slider left
   mid-edit; whether a pointer drag cut short by an unmount should commit or cancel is the call. To
   cancel, the overlay has to learn a drag is live before the parent's cleanup runs.
-
-- **(P2) DataGrid: rows can be reordered by pointer only, and the handler sits on the `<td>`.** With
-  `onReorder`, the handle in `packages/ui/src/components/DataGrid/DataGrid.tsx` is a `<td>` holding
-  an `aria-hidden` glyph with `onPointerDown` on the cell: not focusable, and no key moves a row.
-  `useReorderDragList` already returns `nudge`, which `LayerList` and `ItemList` bind to
-  Alt+ArrowUp/Down. The fix is a `<button>` filling the cell that takes the pointer handler and an
-  Alt+Arrow `onKeyDown` calling `drag.nudge`; it needs a name for each row (rows carry no label, so
-  a column or a `rowLabel` prop has to supply one) and a button style that fits the 14px handle
-  column, checked in a browser.
 
 - **(P3) Callout: re-anchoring dispatches a fake `resize` on `window`.** A callout tracking a scene
   node through a pan dispatches `new Event('resize')` on every `anchorRect` change
@@ -1699,14 +1666,6 @@ only story runner in the repo.
   TypeDoc's `packages` strategy converts each package on its own, so core's copy is a full
   declaration, not a pointer. Type references do cross: core's pages link into the sibling's.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
-
-- **(P2) draw: the swatches' active fill and stroke never reach a newly drawn shape.** With nothing
-  selected, pick red in the fill swatch and drag out a rectangle: it takes the kit's next palette
-  color, and `INITIAL_FILL_COLOR` in `apps/draw/src/App.tsx` reaches no shape either. The seam is
-  there: `<SceneCanvas insertPaint>` takes `(kind, seq) => { fill?, stroke? }` and the kit keeps the
-  geometry. Draw has to feed it from `useColorContext()`, mapping `{ kind: 'none' }` to `null`, and
-  that needs two answers the color context does not hold: the width of a new stroke (the kit's
-  line and pencil use 2), and whether a line or a pencil trail takes the active fill.
 
 - **(P2) draw: Open adds the file to the current document instead of replacing it, and keeps the old
   filename.** Open an SVG into a non-empty document and both sets of shapes are on the page; the
