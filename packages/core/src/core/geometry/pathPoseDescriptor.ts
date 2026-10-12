@@ -51,6 +51,16 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
         count: 4,
         to: (p) => (p.kind === 'rect' ? [p.x, p.y, p.width, p.height] : []),
         from: (a) => ({ kind: 'rect', x: a[0]!, y: a[1]!, width: a[2]!, height: a[3]! }),
+        add: (p, d) => (p.kind !== 'rect' ? p : {
+          kind: 'rect', x: p.x + d[0]!, y: p.y + d[1]!, width: p.width + d[2]!, height: p.height + d[3]!,
+        }),
+        write: (p, out, at) => {
+          if (p.kind !== 'rect') return;
+          out[at] = p.x;
+          out[at + 1] = p.y;
+          out[at + 2] = p.width;
+          out[at + 3] = p.height;
+        },
       };
     }
     const { commands, fillRule } = like;
@@ -58,6 +68,16 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
       count: like.coords.length,
       to: (p) => (p.kind === 'polygon' ? Array.from(p.coords) : []),
       from: (a) => ({ kind: 'polygon', commands, coords: Float32Array.from(a as ArrayLike<number>), fillRule }),
+      add: (p, d) => {
+        if (p.kind !== 'polygon') return p;
+        const coords = new Float32Array(p.coords.length);
+        for (let i = 0; i < coords.length; i++) coords[i] = p.coords[i]! + d[i]!;
+        return { kind: 'polygon', commands, coords, fillRule };
+      },
+      write: (p, out, at) => {
+        if (p.kind !== 'polygon') return;
+        for (let i = 0; i < p.coords.length; i++) out[at + i] = p.coords[i]!;
+      },
     };
   },
   // Path poses carry no x/y/width/height/rotation fields — the kit's

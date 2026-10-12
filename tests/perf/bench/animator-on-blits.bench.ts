@@ -352,6 +352,12 @@ for (const n of [1000, 10000]) {
           onTargets.frame();
           for (let i = 0; i < n; i++) oc.sink[i] = targets[i]!.read();
         });
+        // The same targets read as numbers into one buffer, with no value built for each.
+        const flat = new Float64Array(n * targets[0]!.axisCount);
+        bench('on targets, readInto', () => {
+          onTargets.frame();
+          for (let i = 0; i < n; i++) targets[i]!.readInto(flat, i * targets[i]!.axisCount);
+        });
       }
 
       for (const how of ['target', 'subjects'] as const) {

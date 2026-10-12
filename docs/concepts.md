@@ -307,6 +307,11 @@ public. blits clocks the voices and sums them; how a target's holds share it is
 folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
 cover some axes and turn an angle. A target is moved by one animator at a time.
 
+A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
+writes the value's `axisCount` axes into a buffer and builds no value. Axes that
+define `add` and `write` let a read skip the array of axes as well; the ones the
+kit supplies all do.
+
 ## Descriptor
 
 `PoseDescriptor<TPose>` projects an arbitrary `TPose` onto the kit's

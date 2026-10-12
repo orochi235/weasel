@@ -115,6 +115,19 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
         if (like.rotation !== undefined || a[4] !== 0) pose.rotation = a[4]!;
         return pose;
       },
+      add: (p, d) => {
+        const pose = { ...p, x: p.x + d[0]!, y: p.y + d[1]!, width: p.width + d[2]!, height: p.height + d[3]! };
+        const rotation = (p.rotation ?? 0) + d[4]!;
+        if (p.rotation !== undefined || rotation !== 0) pose.rotation = rotation;
+        return pose;
+      },
+      write: (p, out, at) => {
+        out[at] = p.x;
+        out[at + 1] = p.y;
+        out[at + 2] = p.width;
+        out[at + 3] = p.height;
+        out[at + 4] = p.rotation ?? 0;
+      },
     };
   },
   // `Bounds` carries an optional `rotation`, and `withRotation` writes into
