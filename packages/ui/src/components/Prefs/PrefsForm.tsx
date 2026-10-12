@@ -44,8 +44,10 @@ export interface PrefsFormProps extends MarkHiddenProps {
   showHidden?: boolean;
   /**
    * `'columns'` (the default) wraps each top-level group into its own panel
-   * column. `'rail'` puts a two-level navigation rail beside one group's
-   * settings at a time — what a dialog-sized surface wants, since columns
+   * column. `'rail'` puts a navigation rail beside one page of settings at a
+   * time: each top-level group is a page, a group nested in one is a section
+   * its rail entry scrolls the page to, and a nested group set `as: 'page'`
+   * opens a page of its own — what a dialog-sized surface wants, since columns
    * overflow sideways once there are more than two. `'list'` sets the root's
    * children down one column with no panel around them, nested groups as
    * sub-panels — for a form that is already the whole of a pane.
@@ -62,20 +64,13 @@ export interface PrefsFormProps extends MarkHiddenProps {
    *  rail wider or narrower. The width is the form's own and starts at the
    *  default, 176px. */
   resizableRail?: boolean;
-  /** Rail layout: path of the open top-level group. Controlled. */
+  /** Rail layout: path of the open page, a top-level group's or that of a group nested as `as: 'page'`.
+   *  Controlled. */
   section?: string;
-  /** Rail layout: path of the group open before the reader picks one.
+  /** Rail layout: path of the page open before the reader picks one.
    *  Defaults to the first in the schema. */
   defaultSection?: string;
   onSectionChange?: (path: string) => void;
-  /**
-   * Rail layout: every nested group gets an entry, at any depth, and opens a
-   * page of its own instead of scrolling the open one to it. A page holds its
-   * group's own leaves, tabs, and panels, and a group with none of those opens
-   * its first nested entry. For a group whose subgroups are long enough that
-   * one page of all of them reads as a wall. Default false.
-   */
-  subPages?: boolean;
   /**
    * Rail layout: each entry folds its nested entries away, shut until the
    * open group is it or one under it. Default false.

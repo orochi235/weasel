@@ -10,14 +10,14 @@ import type { PrefsFormProps } from './PrefsForm';
 import { PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
 import type { WalkCtx } from './PrefsRow';
-import { looseEntryName, prefGroupNests, prefRailItems, prefRailParent } from './schema';
+import { looseEntryName, prefGroupNests, prefGroupOpensPage, prefRailItems, prefRailParent } from './schema';
 import { pathWithin, type SelectionRoot } from './selection';
 import s from './Prefs.module.css';
 
 /** The rail's width before a drag; the stylesheet's fallback for `--wzl-prefs-rail-width`. */
 const RAIL_WIDTH = 176;
 
-/** The rail layout's own state: which group is open, and where the pane is
+/** The rail layout's own state: which page is open, and where the pane is
  *  scrolled to within it. Split out so the columns layout runs none of it. */
 export function RailLayout(props: PrefsFormProps & {
   root: PrefGroup | null;
@@ -29,8 +29,7 @@ export function RailLayout(props: PrefsFormProps & {
   onClearFilter: () => void;
 }) {
   const { schema, root, query, selection, filterField, onClearFilter, className } = props;
-  const subPages = props.subPages === true;
-  const items = useMemo(() => (root === null ? [] : prefRailItems(root, subPages)), [root, subPages]);
+  const items = useMemo(() => (root === null ? [] : prefRailItems(root)), [root]);
   const [uncontrolled, setUncontrolled] = useState(
     () => props.defaultSection ?? '',
   );
@@ -39,28 +38,25 @@ export function RailLayout(props: PrefsFormProps & {
   // A filter can take the open group out of the rail entirely, and a section
   // the schema never had can arrive from a consumer's stale state. Either way
   // the first surviving entry is what the reader should be looking at.
-  const opens = (path: string): boolean => items.some((i) => i.path === path && (i.depth === 0 || subPages));
-  // An entry that went while it was open, its group now drawn on the page above, leaves that page open.
+  const opens = (path: string): boolean => items.some((i) => i.path === path && i.page === path);
+  // A page that went while it was open, its group now a section of the page above, leaves that page open.
   let above: string | null = requested;
   while (above !== null && above !== '' && !opens(above)) above = prefRailParent(above);
   let open = above !== null && opens(above) ? above : (items.find((i) => i.depth === 0)?.path ?? '');
   // A page with nothing of its own opens the first entry under it.
-  while (subPages && root !== null && open !== '' && !hasOwn(paneGroup(root, open, schema.name))) {
+  while (root !== null && open !== '' && !hasOwn(paneGroup(root, open, schema.name))) {
     const under = open;
-    const first = items.find((i) => i.depth > 0 && prefRailParent(i.path) === under);
+    const first = items.find((i) => prefRailParent(i.path) === under);
     if (first === undefined) break;
     open = first.path;
   }
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const sectionIds = useMemo(
-    () =>
-      subPages
-        ? []
-        : items.filter((i) => i.depth === 1 && i.section === open).map((i) => i.path),
-    [items, open, subPages],
+    () => items.filter((i) => i.page === open && i.path !== open).map((i) => i.path),
+    [items, open],
   );
-  const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds });
+  const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds, covered: stuckAbove });
 
   const show = (path: string): void => {
     if (props.section === undefined) setUncontrolled(path);
@@ -79,10 +75,10 @@ export function RailLayout(props: PrefsFormProps & {
   // The pane's scrolling box outlives the page in it, and a page opens at its top however it came to open.
   useLayoutEffect(toTop, [open]);
 
-  // A nested entry chosen on a page that is not open: scrolled to once its page has drawn.
+  // A section's entry chosen on a page that is not open: scrolled to once its page has drawn.
   const awaited = useRef<string | null>(null);
   const reach = (path: string): void => {
-    const home = items.find((i) => i.path === path)?.section ?? open;
+    const home = items.find((i) => i.path === path)?.page ?? open;
     if (home === open) {
       spy.scrollTo(path);
       return;
@@ -98,31 +94,32 @@ export function RailLayout(props: PrefsFormProps & {
     if (path !== null && path.startsWith(`${open}.`)) arrive.current(path);
   }, [open]);
 
-  // The page holding the selection: the deepest rail entry it is or lies under, else the loose leaves.
+  // The page holding the selection: the deepest page it is or lies under, else the loose leaves.
   const selected = props.ctx.lead ?? null;
   const home = selected === null ? null : items
-    .filter((i) => (i.depth === 0 || subPages) && pathWithin(i.path, selected))
+    .filter((i) => i.page === i.path && pathWithin(i.path, selected))
     .reduce((best, i) => (i.path.length > best.length ? i.path : best), '');
   const latest = useRef({ home, open, show });
   useEffect(() => { latest.current = { home, open, show }; });
+  // Opened when the selection moves, and when its page does under it: a selected group made a page of its own.
   useEffect(() => {
     const now = latest.current;
     if (now.home !== null && now.home !== now.open) now.show(now.home);
-  }, [selected]);
+  }, [selected, home]);
 
   // The form as the drop would leave it. `open` and `items` above are the form's own, which the drop leaves alone.
   const drop = useDropFrame(selection.ref, props.drop, root, open);
   useDropMotion(selection.ref, props.drop !== undefined, drop, root, open);
   const drawn = useMemo(() => (root !== null && drop ? withDrop(root, drop) : root), [root, drop]);
   const drawnItems = useMemo(
-    () => (drawn === root || drawn === null ? items : prefRailItems(drawn, subPages)),
-    [drawn, root, items, subPages],
+    () => (drawn === root || drawn === null ? items : prefRailItems(drawn)),
+    [drawn, root, items],
   );
   const ctx: WalkCtx = { ...props.ctx, drop };
   // A page being dragged stays the open one, drawn where it would land.
   const page = dropDrawnPath(drop, open);
   const whole = drawn === null ? null : paneGroup(drawn, page, schema.name);
-  const group = subPages && page !== '' && whole !== null ? ownOf(whole) : whole;
+  const group = useMemo(() => (page !== '' && whole !== null ? ownOf(whole) : whole), [page, whole]);
 
   return (
     <div className={[s.railLayout, className].filter(Boolean).join(' ')} data-across={props.rowsAcross === 2 ? 2 : undefined} {...formAttrs(drop)}
@@ -130,9 +127,9 @@ export function RailLayout(props: PrefsFormProps & {
       <PrefsRail
         items={drawnItems}
         section={page}
-        current={subPages ? null : spy.active}
+        current={spy.active}
         onOpen={setOpen}
-        onScrollTo={subPages ? setOpen : reach}
+        onScrollTo={reach}
         ariaLabel={schema.name}
         header={filterField}
         showCounts={query.trim() !== ''}
@@ -152,6 +149,18 @@ export function RailLayout(props: PrefsFormProps & {
       )}
     </div>
   );
+}
+
+/** How far below the pane's top the heading stuck there ends while a section inside another is at it: the heading
+ *  of the section it lies in, which sticks inside the pane's padding. */
+function stuckAbove(section: HTMLElement): number {
+  for (let at = section.parentElement; at !== null; at = at.parentElement) {
+    const title = at.querySelector(':scope > [data-pref-sticky]');
+    if (title === null) continue;
+    const pane = at.closest('[data-pref-scroll]');
+    return title.getBoundingClientRect().height + (pane === null ? 0 : parseFloat(getComputedStyle(pane).paddingTop) || 0);
+  }
+  return 0;
 }
 
 /**
@@ -179,14 +188,26 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
   return node ?? null;
 }
 
-const isOwn = (child: PrefLeaf | PrefGroup): boolean => isPrefLeaf(child) || !prefGroupNests(child, true);
+const isOwn = (child: PrefLeaf | PrefGroup): boolean => isPrefLeaf(child) || !prefGroupOpensPage(child);
 
-/** Whether a group has anything a page of its own would draw: a leaf, or a group the rail gives no entry. */
+/** Whether a group has anything a page of its own would draw: a leaf, or a group that opens no page itself. */
 function hasOwn(group: PrefGroup | null): boolean {
   return group !== null && Object.values(group.children).some(isOwn);
 }
 
-/** A group cut down to what its own page draws, the groups nested in it each having a page of their own. */
+/** A group cut down to what its own page draws: itself and its sections, less each group in them that opens a page
+ *  of its own. The group itself when that is all of it. */
 function ownOf(group: PrefGroup): PrefGroup {
-  return { ...group, children: Object.fromEntries(Object.entries(group.children).filter(([, child]) => isOwn(child))) };
+  let cut = false;
+  const children: PrefGroup['children'] = {};
+  for (const [key, child] of Object.entries(group.children)) {
+    if (!isOwn(child)) {
+      cut = true;
+      continue;
+    }
+    const own = isPrefLeaf(child) || !prefGroupNests(child) ? child : ownOf(child);
+    if (own !== child) cut = true;
+    children[key] = own;
+  }
+  return cut ? { ...group, children } : group;
 }

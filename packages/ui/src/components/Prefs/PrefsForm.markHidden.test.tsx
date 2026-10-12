@@ -39,7 +39,7 @@ const at = (container: HTMLElement, path: string): HTMLElement => {
 
 describe.each(['columns', 'list', 'rail'] as const)('PrefsForm markHidden in the %s layout', (layout) => {
   const form = (values: unknown, extra: Extra = {}) => (
-    <PrefsForm layout={layout} subPages schema={schema} values={values} onChange={() => {}} markHidden {...extra} />
+    <PrefsForm layout={layout} schema={schema} values={values} onChange={() => {}} markHidden {...extra} />
   );
 
   it('draws a leaf whose showIf fails, marked as hidden and badged, where it is otherwise left out', () => {
