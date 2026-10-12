@@ -342,6 +342,17 @@ Priority tags:
   Splitting them means putting those in one record the pieces close over, then cutting the methods
   by what they edit: nodes, layers, selection, and history and batches.
 
+- **(P2) One recorded form for a scene edit.** Decided 2026-10-12: `scene.applyBatch` becomes a
+  `scene.batch` that applies its ops and records the `kit:*` ops they caused, so the undo stack holds
+  one kind of entry. Today it holds two: `scene.setPose` and its siblings record `kit:*` ops, and
+  `applyBatch` records the outer `Op` with the kit handlers' recording switched off. `suppressRecording`,
+  adapter binding (`setHistoryAdapter`), `scene.carry` and `carriedPoses.ts`, the two stale-replay
+  mechanisms, and the rollback nested inside `atomically` exist to keep the two in step. Needed first:
+  the history engine recording already-applied ops in a way that still coalesces, and a home for ops
+  that write non-scene state (`setSelection`, `setPath`, `setText`). `core/ops` stays for adapters that
+  are not a scene. Serialized histories change shape, so draw's persisted undo history needs a break
+  or a migration. Do it after the entry above.
+
 - **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
   the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
   copied node's `dependsOn` id list at the copies only when every node in it was copied too. With
