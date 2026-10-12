@@ -493,15 +493,6 @@ Core five + Crop shipped. Remaining:
   not at all — WebKit picks a pixel either way. Measured 2026-10-07 on macOS
   (Playwright WebKit).
 
-- **(P3) The character strip has no "no fill" chip.** WeaselDraw's text objects carry `fill: null`
-  through its SVG export and import, and the sidebar's Fill leaf already offers None for a text
-  node. What is missing is a None chip beside the strip's Color field. Ruled 2026-10-11: a run can
-  carry no fill, so the chip unfills only the selected range. A run now holds `fill: null` through
-  `resolveRuns`, the range algebra, the edit overlay, and SVG, so the chip is all that is left: a
-  control that sends `{ fill: null }` through `CharacterOptions`' `onPatch`, and a reading of a
-  `null` range fill (and of an unfilled node, which `effectiveRangeStyle` reports as an absent
-  `fill`) that lights it. It wants looking at on screen.
-
 - **(P3) At 12px with a script, the atlas tier's ink still sits ~0.55px off
   the overlay's at DPR 1, and the sign follows the sub-pixel phase.** `dx` is
   −0.5 at `x` 20 and +0.5 at 20.5 in every engine; DPR 2 agrees within 0.06.
