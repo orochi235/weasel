@@ -23,7 +23,7 @@
     "longestFunction": 216
   },
   "packages/core/src/animation/types.ts": {
-    "lines": 582
+    "lines": 491
   },
   "packages/core/src/animation/useAnimator.ts": {
     "lines": 486,
@@ -80,9 +80,6 @@
   },
   "packages/core/src/canvas/useViewHelpers.ts": {
     "longestFunction": 154
-  },
-  "packages/core/src/core/adapters/arrayAdapter.ts": {
-    "longestFunction": 151
   },
   "packages/core/src/core/layers/render.ts": {
     "lines": 541

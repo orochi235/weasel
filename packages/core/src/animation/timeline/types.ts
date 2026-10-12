@@ -40,6 +40,8 @@ export interface SampledTrack<T> {
   target?: Target<T>;
   /** The track's share among the target's holds, as `HoldOptions.weight`. Default 1. */
   weight?: number | (() => number);
+  /** The axes of the target the track holds, as `HoldOptions.axes`. Default: every axis. */
+  axes?: readonly number[];
 }
 
 /** A clock that events are booked against, reading in ms. An `AudioEngine`

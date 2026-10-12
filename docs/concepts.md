@@ -274,7 +274,9 @@ Two on one target combine, by two rules:
   rig clip. Several holds on a target are alternatives, mixed by weight; weights
   short of 1 leave the rest to the committed value; offsets add on top. On an
   angle axis the holds meet at their average direction by weight, so two turn the
-  short way toward each other.
+  short way toward each other. A hold given `axes` holds only those, so an arm
+  solved by IK sits beside the clips holding the rest of a rig
+  (`jointAxes(skeleton, names)`).
 
 Leaving never moves the value on screen: a canceled animation commits where it
 was, and so does a released hold unless told not to. One canceled under a hold,
@@ -301,7 +303,9 @@ and shows its travel through a pose override. An `arrayAdapter` has no overrides
 so its array is written the pose on screen each frame while the target keeps the
 committed pose. The values are computed by blits
 (`@msb235/blits`), behind `packages/core/src/animation/engine/`; no blits type is
-public. A target is moved by one animator at a time.
+public. blits clocks the voices and sums them; how a target's holds share it is
+folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
+cover some axes and turn an angle. A target is moved by one animator at a time.
 
 ## Descriptor
 

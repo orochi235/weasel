@@ -128,75 +128,12 @@ describe('blits behaviors the animator codec relies on', () => {
     return [...cols.p];
   };
 
-  it('a locus of two voices at weights w and 1 - w reads as their lerp', () => {
-    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
-    m.sync(0);
-    const subject = {};
-    m.cue({ patch: live(() => [100, 10]), subjects: [subject], loop: true, locus: 'hold', weight: 0.25 });
-    m.cue({ patch: live(() => [200, 50]), subjects: [subject], loop: true, locus: 'hold', weight: 0.75 });
-    m.sync(16);
-    const got = pulled(m, subject);
-    expect(got[0]).toBeCloseTo(175, 9);
-    expect(got[1]).toBeCloseTo(40, 9);
-  });
-
-  it('a locus voice beside a voice with no locus reads as the lerp, then the sum', () => {
-    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
-    m.sync(0);
-    const subject = {};
-    m.cue({ patch: live(() => [100, 10]), subjects: [subject], loop: true, locus: 'hold', weight: 0.5 });
-    m.cue({ patch: live(() => [200, 50]), subjects: [subject], loop: true, locus: 'hold', weight: 0.5 });
-    m.cue({ patch: live(() => [7, 3]), subjects: [subject], loop: true });
-    m.sync(16);
-    const got = pulled(m, subject);
-    expect(got[0]).toBeCloseTo(157, 9);
-    expect(got[1]).toBeCloseTo(33, 9);
-  });
-
-  it('a locus whose weights total less than 1 is scaled toward rest', () => {
-    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
-    m.sync(0);
-    const subject = {};
-    m.cue({ patch: live(() => [100, 10]), subjects: [subject], loop: true, locus: 'hold', weight: 0.25 });
-    m.cue({ patch: live(() => [200, 50]), subjects: [subject], loop: true, locus: 'hold', weight: 0.25 });
-    m.sync(16);
-    const got = pulled(m, subject);
-    expect(got[0]).toBeCloseTo(75, 9);
-    expect(got[1]).toBeCloseTo(15, 9);
-  });
-
-  it('a weight signal is asked again each frame', () => {
-    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
-    m.sync(0);
-    const subject = {};
-    let w = 1;
-    m.cue({ patch: live(() => [100, 10]), subjects: [subject], loop: true, locus: 'hold', weight: () => w });
-    m.sync(16);
-    expect(pulled(m, subject)[0]).toBeCloseTo(100, 9);
-    w = 0.5;
-    m.sync(32);
-    expect(pulled(m, subject)[0]).toBeCloseTo(50, 9);
-  });
-
-  it('a locus whose weights total more than 1 reads as their weighted average, each weight capped at 1', () => {
-    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
-    m.sync(0);
-    const subject = {};
-    m.cue({ patch: live(() => [8, 0]), subjects: [subject], loop: true, locus: 'hold', weight: 1 });
-    const b = m.cue({ patch: live(() => [16, 0]), subjects: [subject], loop: true, locus: 'hold', weight: 0.5 });
-    m.sync(16);
-    expect(pulled(m, subject)[0]).toBeCloseTo(32 / 3, 9);
-    b.fade({ over: 0 });
-    m.cue({ patch: live(() => [16, 0]), subjects: [subject], loop: true, locus: 'hold', weight: 3 });
-    expect(pulled(m, subject)[0]).toBeCloseTo(12, 9);
-  });
-
   it('a patch reading an outside value keeps its answer while the clock stands still, until touch', () => {
     const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
     m.sync(0);
     const subject = {};
     let x = 1;
-    m.cue({ patch: live(() => [x, 0]), subjects: [subject], loop: true, locus: 'hold' });
+    m.cue({ patch: live(() => [x, 0]), subjects: [subject], loop: true });
     m.sync(16);
     expect(pulled(m, subject)[0]).toBe(1);
     x = 2;

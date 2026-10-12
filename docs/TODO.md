@@ -865,9 +865,6 @@ built 2026-10-11. What that left:
   `read` builds an axes array and a value object per call. The earlier costs of moving the
   values onto blits (about 3× a tween frame, 2.5–3.5× keyframe sampling) were accepted on
   2026-10-04 and 2026-10-08; their tables are in `git show f188ed94e:docs/proposals/2026-09-30-animator-on-blits.md`.
-- **(P3) A hold over some of a rig's joints** — a hold covers every joint, so an arm solved by
-  IK at full strength cannot sit beside clips holding the body; the rig demo samples the body
-  from a track to work around it.
 - **(P3) Whether blits moves into the monorepo as its own `@weasel-js` package** — open since
   2026-09-30. `@weasel-js/core` depends on `@msb235/blits` pinned exactly.
 

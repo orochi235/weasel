@@ -420,8 +420,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           const a = animations.current.get(id);
           return a && infoOf(a);
         };
-        const hold: OpenTrackHold = (target, value, weight) =>
-          openHold(ctx, { target: stateOf(target), value, weight });
+        const hold: OpenTrackHold = (target, value, weight, axes) =>
+          openHold(ctx, { target: stateOf(target), value, weight, axes });
         return createTimeline(register, id, o, {
           get watched() { return hub.watched; },
           fire: (track, path, event, lateBy) => {
