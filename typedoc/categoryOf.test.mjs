@@ -45,6 +45,15 @@ describe('categoryOf', () => {
     expect(categoryOf(abs('packages/routing/src/index.ts'), 'DepSchema')).toBe('Selection & actions');
   });
 
+  it("files routing's ambient contexts where core's feature directories had them", () => {
+    expect(categoryOf(abs('packages/routing/src/ambient/PointerContext.tsx'), 'usePointerPosition')).toBe(
+      'Extension points',
+    );
+    expect(
+      categoryOf(abs('packages/routing/src/ambient/SelectionContext.tsx'), 'useSelectionContext'),
+    ).toBe('Selection & actions');
+  });
+
   it("files routing's shared vocabulary by each type's subject", () => {
     const vocabulary = abs('packages/routing/src/vocabulary.ts');
     expect(categoryOf(vocabulary, 'ModifierState')).toBe('Tools & gestures');
