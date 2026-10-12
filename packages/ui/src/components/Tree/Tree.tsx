@@ -14,6 +14,7 @@ import {
 import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
 import type { TreeDropTarget } from '../../dropTarget';
 import { LIST_KEYS, selectModifiers, type PressModifiers } from '../../useReorderDragList';
+import { useRemovedRowFocus } from '../../useRemovedRowFocus';
 import { DisclosureMark } from '../Disclosure';
 import { TreeDragGhost, type TreeGhost, type TreeGhostWhere } from './TreeGhost';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
@@ -193,7 +194,6 @@ export const Tree = forwardRef(function Tree(
   }, [nodes, expanded]);
   const indexOf = useMemo(() => new Map(visible.map((v, i) => [v.node.id, i])), [visible]);
 
-  const items = useRef(new Map<string, HTMLLIElement>());
   const [focusId, setFocusId] = useState<string | null>(null);
   const anchor = useRef<string | null>(null);
   const typed = useRef({ text: '', at: 0 });
@@ -210,6 +210,10 @@ export const Tree = forwardRef(function Tree(
     ? focusId
     : (visible.find((v) => selectable && selected.has(v.node.id)) ?? visible[0])?.node.id;
 
+  const { els: items, rowRef: itemRef } = useRemovedRowFocus<HTMLLIElement>(
+    useMemo(() => visible.map((v) => ({ id: v.node.id, parentId: v.parentId })), [visible]),
+    (id, els) => els.get(id)?.focus(),
+  );
   const focus = (id: string | undefined) => { if (id != null) items.current.get(id)?.focus(); };
 
   const toggle = (node: TreeNode) => {
@@ -360,11 +364,6 @@ export const Tree = forwardRef(function Tree(
   const onTwistyClick = (node: TreeNode) => (e: MouseEvent<HTMLSpanElement>) => {
     e.stopPropagation();
     toggle(node);
-  };
-
-  const itemRef = (id: string) => (el: HTMLLIElement | null) => {
-    if (el) items.current.set(id, el);
-    else items.current.delete(id);
   };
 
   let seq = 0;

@@ -1461,13 +1461,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   passes the source of a change to `onInput`/`onChange`; or `Scale` owns the arrow keys for its
   thumbs and `commit` never nudges.
 
-- **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
-  handler removes the focused row: the tab stop recomputes to the first selected or first row, but
-  DOM focus falls to `<body>` and the next arrow key goes nowhere (`stopId` in
-  `packages/ui/src/components/Tree/Tree.tsx`; only `pendingFocus`, set by keyboard moves, ever calls
-  `.focus()` after a render). When `focusId` leaves the tree while focus was inside it, focus should
-  move to a row; which one (the next sibling, the previous row, the parent) is the decision.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Multi-page documents.**
