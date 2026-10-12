@@ -36,8 +36,8 @@ const FORM: PrefGroup = {
   children: {
     intro: { kind: 'label', name: 'Sizes are in world units.', description: 'Zoom does not change them.', default: undefined },
     width: { kind: 'number', name: 'Width', description: 'Of a new shape.', default: 120, min: 1, max: 999 },
-    rule: { kind: 'separator', name: '', default: undefined },
-    angles: { kind: 'label', name: 'Angles are in degrees.', default: undefined },
+    rule: { kind: 'separator', name: '', description: '', default: undefined },
+    angles: { kind: 'label', name: 'Angles are in degrees.', description: '', default: undefined },
     turn: { kind: 'number', name: 'Turn', description: 'Of a new shape.', default: 0, min: -180, max: 180 },
   },
 };
