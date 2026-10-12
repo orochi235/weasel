@@ -20,7 +20,7 @@ import { openHold } from './holds';
 import { startOffsetPhysics } from './offsetPhysics';
 import { startOffsetTween } from './offsetTween';
 import { startPhysics } from './physicsAnimation';
-import type { Table } from './table';
+import { timeScaleOf, type Table } from './table';
 import { startTween } from './tweenAnimation';
 
 /** What {@link createAnimatorApi} needs of the animator around it. */
@@ -128,11 +128,14 @@ export function createAnimatorApi(host: ApiHost): Animator {
     pause: () => { clock.paused = true; },
     resume: () => { clock.paused = false; },
     isPaused: () => clock.paused,
-    setTimeScale: (s) => { clock.timeScale = s; },
+    setTimeScale: (s) => { clock.timeScale = timeScaleOf(s); },
     timeScale: () => clock.timeScale,
     pauseKey: (key) => eachUnder(table, key, (a) => { a.paused = true; }),
     resumeKey: (key) => eachUnder(table, key, (a) => { a.paused = false; }),
-    setTimeScaleByKey: (key, s) => eachUnder(table, key, (a) => { a.timeScale = s; }),
+    setTimeScaleByKey: (key, s) => {
+      const scale = timeScaleOf(s);
+      eachUnder(table, key, (a) => { a.timeScale = scale; });
+    },
     loop: (factory, loopOpts) => createLoop(createSupervisor, factory, loopOpts),
     tweenLoop: (tweenLoopOpts) => createTweenLoop(api, createSupervisor, tweenLoopOpts),
     stagger: ((items, delay, factory, staggerOpts) =>

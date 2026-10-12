@@ -819,12 +819,11 @@ built 2026-10-11. What that left:
   code is under 4% of the profile. `~/src/blits/NOTES-FROM-WEASEL.md` ("Stopping a subject's
   voice") has the lines and a fix. What is the animator's is the entry above: its two walks
   over every animation and every moving target read slower in a frame that follows restarts.
-- **(P3) A negative time scale throws from the animator's next frame** — `setTimeScale(-1)`
-  with a target tween 300 ms in ends the frame with `RangeError: blits: sync went back from 300
-  to 100`, seen 2026-10-11 on blits 0.10.0. Nothing refuses the scale and `setTimeScale`'s doc
-  does not say what below 0 means. Either refuse it where it is set, or play backward: the
-  animator's clock would have to keep going forward and hand each voice a rate below 0, which
-  blits 0.9.0 ends where the voice started.
+- **(P3) Playing an animation backward** — a time scale below 0 is refused where it is set
+  (`timeScaleOf`, `engine/table.ts`). Playing backward needs the animator's clock to keep going
+  forward and hand each voice a rate below 0, which blits 0.9.0 ends where the voice started,
+  and an answer for what a tween run back to its start does: a blits voice past its start
+  reads 0, which for a tween on a target is its destination.
 
 ### Earlier deferrals
 

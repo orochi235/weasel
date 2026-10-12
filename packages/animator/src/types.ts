@@ -33,7 +33,7 @@ export interface AnimationHandle {
   pause(): void;
   /** Resume this animation's virtual clock. Idempotent. */
   resume(): void;
-  /** Multiply this animation's virtual-clock rate by `scale`. 1 = normal. */
+  /** Multiply this animation's virtual-clock rate by `scale`, 0 or above. 1 = normal. */
   setTimeScale(scale: number): void;
   /** This animation's own time scale. 1 once it has finished, since the
    *  animator no longer holds an entry to read. */
@@ -217,7 +217,7 @@ export interface Animator {
   resume(): void;
   /** True iff the animator is currently globally paused. */
   isPaused(): boolean;
-  /** Multiply every animation's virtual-clock rate by `scale`. 1 = normal. */
+  /** Multiply every animation's virtual-clock rate by `scale`, 0 or above. 1 = normal. */
   setTimeScale(scale: number): void;
   /** The global time scale. Per-animation scales multiply on top of it. */
   timeScale(): number;
