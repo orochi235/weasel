@@ -1,13 +1,12 @@
 /**
- * What the dispatcher remembers of a press, and the events a hold on it
- * synthesizes.
+ * What the recognizer remembers of a press, and the events a release or a
+ * hold on it synthesizes.
  */
-import type { BodyTarget, EventModifiers } from '@weasel-js/gestures';
-import type { InputEvent } from './matcher';
+import type { BodyKind, BodyTarget, EventModifiers, InputEvent } from '../ui/inputEvent';
 
 /** Press-time state replayed onto a synthesized click, long-press or
  *  contextmenu, whose matchers resolve targets against it. */
-export interface PressFacts {
+export interface PressFacts extends EventModifiers {
   target: unknown;
   clientX: number;
   clientY: number;
@@ -17,11 +16,7 @@ export interface PressFacts {
   worldY: number;
   affordance?: unknown;
   bodyTarget?: BodyTarget;
-  bodyKind?: string;
-  altKey: boolean;
-  ctrlKey: boolean;
-  metaKey: boolean;
-  shiftKey: boolean;
+  bodyKind?: BodyKind;
 }
 
 /** Where and how a press was released, for the click it turned out to be. */
@@ -33,8 +28,10 @@ export interface ReleaseFacts extends EventModifiers {
   worldY: number;
 }
 
-/** What the press was on, replayed onto an event synthesized from it. */
-function pressedOn(down: PressFacts): Pick<PressFacts, 'affordance' | 'bodyTarget' | 'bodyKind'> {
+/** What a press landed on, as a spread-able partial with no `undefined`-valued keys. */
+export function pressedOn(
+  down: Pick<PressFacts, 'affordance' | 'bodyTarget' | 'bodyKind'>,
+): Pick<PressFacts, 'affordance' | 'bodyTarget' | 'bodyKind'> {
   return {
     ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
     ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),

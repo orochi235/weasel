@@ -13,11 +13,10 @@ import {
 } from './dispatcher';
 import { isApplePlatform, isInControlWithin, pastDragThreshold, stylusOf } from '@weasel-js/gestures';
 import { openPointerSession, type PointerSession } from '../pointerSession';
-import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import type { InputEvent } from './matcher';
 import { LONG_PRESS_MS } from './longPressState';
 import { underPointer, type UnderPointer } from './underPointer';
-import { clickEvents, longPressEvents, type PressFacts } from './pressFacts';
+import { clickEvents, longPressEvents, type PressFacts } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { resolveCursorTier } from '@weasel-js/cursor';
 import { createDispatchCore } from './dispatchCore';
@@ -208,12 +207,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const held = new Map<number, HeldPointer>();
     // Pinch anchors land in `zoomAt`, which measures from the canvas top-left:
     // client coords would drift the zoom by the canvas's offset from the viewport.
-    const toCanvasLocal = (p: { x: number; y: number }): { x: number; y: number } => {
-      const rect = canvas?.getBoundingClientRect();
-      if (!rect) return p;
-      const [x, y] = clientToCanvasRect(rect, p.x, p.y);
-      return { x, y };
-    };
+    const toCanvasLocal = (p: { x: number; y: number }): { x: number; y: number } =>
+      core.toCanvasLocal(p.x, p.y);
     const heldGeometry = () => {
       const { centroid, spread } = computeMultiTouchGeometry(
         [...held.values()].map((p) => p.pos),
@@ -600,8 +595,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     function pushPaintedPointer(): void {
       const painted = paintedCursorRef.current?.();
       if (!painted?.active() || !canvas || !lastHover) return;
-      const r = canvas.getBoundingClientRect();
-      painted.setPointer(lastHover.clientX - r.left, lastHover.clientY - r.top);
+      const local = core.toCanvasLocal(lastHover.clientX, lastHover.clientY);
+      painted.setPointer(local.x, local.y);
     }
 
     function refreshHoverCursor(): void {
