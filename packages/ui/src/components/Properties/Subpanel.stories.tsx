@@ -13,12 +13,13 @@ type Story = StoryObj<typeof Subpanel>;
 
 /** A titled divider over the rows that belong to one part of a panel. */
 export const Basic: Story = {
-  render: () => (
+  args: { title: 'Bubbles' },
+  render: (args) => (
     <div style={{ width: 320 }}>
       <PropertyPanel title="Tail">
         <PropertyList>
           <PropertyField kind="number" control="slider" label="Length" value={60} min={8} max={220} unit="px" onChange={() => {}} />
-          <Subpanel title="Bubbles">
+          <Subpanel {...args}>
             <PropertyField kind="number" control="slider" label="Size" value={30} min={8} max={120} unit="px" onChange={() => {}} />
             <PropertyField kind="number" control="slider" label="Count" value={3} min={1} max={8} onChange={() => {}} />
           </Subpanel>
@@ -30,13 +31,14 @@ export const Basic: Story = {
 
 /** In a paired list the subpanel spans both columns, and its own rows pair up. */
 export const InPairs: Story = {
-  render: () => (
+  args: { title: 'Bubbles' },
+  render: (args) => (
     <div style={{ width: 320 }}>
       <PropertyPanel title="Tail">
         <PropertyList pack="pairs">
           <PropertyField kind="number" control="slider" label="Angle" value={115} min={0} max={359} unit="°" onChange={() => {}} />
           <PropertyField kind="number" control="slider" label="Bend" value={0} min={-1} max={1} step={0.02} onChange={() => {}} />
-          <Subpanel title="Bubbles">
+          <Subpanel {...args}>
             <PropertyField kind="number" control="slider" label="Size" value={30} min={8} max={120} unit="px" onChange={() => {}} />
             <PropertyField kind="number" control="slider" label="Count" value={3} min={1} max={8} onChange={() => {}} />
           </Subpanel>
@@ -67,13 +69,14 @@ export const Toned: Story = {
 /** Two toned panels that fold from the twisty before their titles, the second
  *  starting folded, and a subpanel inside the first that folds on its own. */
 export const Collapsible: Story = {
-  render: () => (
+  args: { title: 'Bubbles', collapsible: true },
+  render: (args) => (
     <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <PropertyPanel title="Tail" stance="scope" tone={0} collapsible>
         <PropertyList pack="pairs">
           <PropertyField kind="number" control="slider" label="Angle" value={115} min={0} max={359} unit="°" onChange={() => {}} />
           <PropertyField kind="number" control="slider" label="Bend" value={0} min={-1} max={1} step={0.02} onChange={() => {}} />
-          <Subpanel title="Bubbles" collapsible>
+          <Subpanel {...args}>
             <PropertyField kind="number" control="slider" label="Size" value={30} min={8} max={120} unit="px" onChange={() => {}} />
             <PropertyField kind="number" control="slider" label="Count" value={3} min={1} max={8} onChange={() => {}} />
           </Subpanel>
