@@ -4,6 +4,7 @@
  * `dispatch` that requests a redraw around a gesture.
  */
 import type { DepName, DepSchema } from '../../index';
+import { clientToCanvas } from '../../viewport/clientToCanvas';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { ActionsRegistry } from '../actions/registry';
 import type { Dispatcher, DispatcherContext } from './dispatcherApi';
@@ -27,6 +28,9 @@ export interface DispatchCore {
   ctxNow(): DispatcherContext;
   /** Client point to the routed view's world point. */
   toWorld(clientX: number, clientY: number): { x: number; y: number };
+  /** Client point to CSS pixels from the canvas's top-left, the space `zoomAt`
+   *  anchors in and a `space: 'screen'` layer draws in. Unchanged with no canvas. */
+  toCanvasLocal(clientX: number, clientY: number): { x: number; y: number };
   /** Dispatch on the routed view's dispatcher, or on `on` for an event that
    *  belongs to the one an earlier event ran on. */
   dispatch(ev: InputEvent, on?: Dispatcher): 'handled' | 'unhandled';
@@ -98,6 +102,11 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
     toWorld: (cx, cy) => {
       const fn = target().clientToWorld;
       return fn ? fn(cx, cy) : { x: cx, y: cy };
+    },
+    toCanvasLocal: (cx, cy) => {
+      if (!canvas) return { x: cx, y: cy };
+      const [x, y] = clientToCanvas(canvas, cx, cy);
+      return { x, y };
     },
     // Redraws the host canvas when any handle was in flight before or after
     // the event: dispatcher-only overlays (marquee, lasso) repaint on nothing

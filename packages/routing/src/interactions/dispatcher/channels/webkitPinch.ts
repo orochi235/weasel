@@ -1,5 +1,4 @@
 /** The WebKit trackpad pinch channel: `gesturestart` / `gesturechange` / `gestureend` as `pinch` steps. */
-import { clientToCanvasRect } from '../../../viewport/clientToCanvas';
 import type { DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { underPointer } from '../underPointer';
@@ -32,13 +31,14 @@ export function webkitPinchInput(core: DispatchCore): {
       clientX?: number; clientY?: number;
       altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean;
     };
-    const rect = canvas?.getBoundingClientRect();
     // A focal point is part of the WebKit shape; the canvas center stands
     // in for an embedder that leaves it off.
+    const rect = typeof g.clientX === 'number' && typeof g.clientY === 'number'
+      ? undefined : canvas?.getBoundingClientRect();
     const cx = typeof g.clientX === 'number' ? g.clientX : (rect ? rect.left + rect.width / 2 : 0);
     const cy = typeof g.clientY === 'number' ? g.clientY : (rect ? rect.top + rect.height / 2 : 0);
     routeAt(null, cx, cy);
-    const [localX, localY] = rect ? clientToCanvasRect(rect, cx, cy) : [cx, cy];
+    const local = core.toCanvasLocal(cx, cy);
     const hitPoint = toWorld(cx, cy);
     const mods = {
       altKey: g.altKey === true, ctrlKey: g.ctrlKey === true,
@@ -48,8 +48,8 @@ export function webkitPinchInput(core: DispatchCore): {
       kind: 'pinch',
       scale,
       rotation,
-      clientX: localX,
-      clientY: localY,
+      clientX: local.x,
+      clientY: local.y,
       ...underPointer(target(), mods, hitPoint),
     };
   };

@@ -1,11 +1,10 @@
 /** The wheel channel. */
-import { clientToCanvasRect } from '../../../viewport/clientToCanvas';
 import type { DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { underPointer } from '../underPointer';
 
 export function wheelInput(core: DispatchCore, pinchLive: () => boolean): (e: WheelEvent) => void {
-  const { canvas, routeAt, toWorld, target, dispatch } = core;
+  const { routeAt, toWorld, target, dispatch } = core;
 
   const onWheel = (e: WheelEvent) => {
     core.activate();
@@ -17,21 +16,16 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): (e: Wh
       return;
     }
     routeAt(null, e.clientX, e.clientY);
-    // Convert client-space cursor to canvas-local: zoomAt() (and any other
-    // wheel consumer of clientX/Y) anchors in canvas-top-left coords, not
-    // viewport coords. Without this, anchored-wheel zoom drifts by the
-    // canvas's offset from the viewport top-left.
-    const rect = canvas?.getBoundingClientRect();
-    const [localX, localY] = rect
-      ? clientToCanvasRect(rect, e.clientX, e.clientY)
-      : [e.clientX, e.clientY];
+    // Canvas-local, not client: an anchored wheel zoom would otherwise drift
+    // by the canvas's offset from the viewport's top-left.
+    const local = core.toCanvasLocal(e.clientX, e.clientY);
     const hitPoint = toWorld(e.clientX, e.clientY);
     const ev: InputEvent = {
       kind: 'wheel',
       deltaX: e.deltaX,
       deltaY: e.deltaY,
-      clientX: localX,
-      clientY: localY,
+      clientX: local.x,
+      clientY: local.y,
       ...underPointer(target(), e, hitPoint),
     };
     const result = dispatch(ev);
