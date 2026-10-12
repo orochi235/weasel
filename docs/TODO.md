@@ -264,8 +264,6 @@ have shipped. What remains:
 
 ## Paths & booleans
 
-- **(P3) `@container` in `@weasel-js/svg` stylesheets.** `packages/svg/src/cascade.ts` evaluates `@media`, `@supports` and `@layer`, but skips a `@container` block whole, so its rules never apply. That is deliberate for now: a static parse lays nothing out, so no element is a size container and no query can hold. Applying them needs container sizes from somewhere — the root's viewport as the one container, or boxes supplied by the caller.
-
 - **(P3) a pose's `transform` is drawn, picked, and edited as a path, and the selection chrome and
   the resize and rotate handles do not read it.** A box pose may carry a `transform` (`PoseLinear`,
   `packages/geom/src/poseFrame.ts`): the skew or per-axis scale its box and rotation
@@ -289,11 +287,7 @@ have shipped. What remains:
   - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
-  - `svgLeafFromKit` (`packages/svg/src/fromKit.ts`) writes it for text and image leaves and not
-    for a path leaf.
   - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
-  - A world-unit pick tolerance is measured in the node's own frame (`poseContainsRotated`), so
-    the transform stretches it with the node.
 
 - **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
   100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)
@@ -309,25 +303,27 @@ have shipped. What remains:
   node has a fill, so every unfilled open stroke would become pickable across the area its ends
   enclose.
 
-- **(P3) svg unpack: a clipped group arrives unclipped.** `parseSvg` puts a `<g clip-path>` on
-  `SvgGroupNode.clip`, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) builds the container
-  draft without it and has no warning channel to say so, so a dropped file shows the whole group.
-  Either the container draft carries the clip into whatever the scene's containers use for clipping,
-  or `svgNodesToKitDrafts` gains a way to report what it dropped. A container's clip is
-  `clipFromPose`, a function stored by registry key, so a fixed clip path has no serializable form
-  to be carried in yet.
+- **(P3) WeaselDraw: an imported clipped group is clipped to the clip's box, not its outline.**
+  `svgNodesToKitDrafts` now gives a `<g clip-path>` container the clip as its `data`, an unpainted
+  path the scene clips to, and `unpackSvgFiles` and `svgNodesFromKit` carry it both ways.
+  `svgNodesToSceneDrafts` (`apps/draw/src/svgInterop.ts`) passes that `data` on, but the import in
+  `apps/draw/src/Toolbar.tsx` still adds every container with `data: {}`; it has to add
+  `draft.data`. Nothing has drawn a clipped import in a browser yet.
 
-- **(P3) svg import: `<tspan>` positioning beyond line breaks is not read.** A `<tspan>` with its
-  own `x` and a `dy` or new `y` now starts a line (`packages/svg/src/tspanLines.ts`), but the line
-  pitch the `dy` states is discarded in favor of the default 1.2 line height, and `dx`, `rotate`,
-  and list-valued per-glyph `x` / `y` are not applied; each now warns, on `<text>` and `<tspan>`
-  alike. Kerned text exported as one `<tspan>` per glyph run imports with the glyphs run together.
+- **(P3) svg import: `<tspan>` glyph positioning is not read.** A `<tspan>` with its own `x` and
+  a `dy` or new `y` starts a line (`packages/svg/src/tspanLines.ts`), and the pitch the lines state
+  is read as the node's `lineHeight`. `dx`, `rotate`, and list-valued per-glyph `x` / `y` are not
+  applied; each warns, on `<text>` and `<tspan>` alike. Kerned text exported as one `<tspan>` per
+  glyph run imports with the glyphs run together: turning a positioned run into a letter spacing or
+  a space needs the advance of the glyphs before it, which a parse with no face loaded cannot
+  measure. `serializeSvg` writes no line height either, so a pitch read on import is dropped on
+  export unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
-- **(P3) svg import: hidden content is dropped, not imported hidden.** `display="none"` and
-  `visibility="hidden"` content is now left out of `parseSvg`'s result, matching what a renderer
-  shows and what `svgFromKit` does with a hidden node on export. A file's hidden layers are
-  therefore lost on import. Keeping them needs a `hidden` flag on `SvgNode` that `unpack` maps to
-  the scene's own hidden state.
+- **(P3) svg import: a dropped file's hidden content is still left out.** `parseSvg(svg, {
+  keepHidden: true })` keeps `display="none"` and `visibility="hidden"` content, each node marked
+  `hidden`, and `svgNodesToKitDrafts` carries the flag onto its drafts. `unpackSvgFiles` does not
+  ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
+  `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -335,12 +331,12 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
 - **(P3) Outline Stroke passes over text.** `applyOutlineStroke` reads path nodes only, so stroked text has to go through Create Outlines first. `textToPathsByPaint` already gives each paint's glyphs with their stroke.
-- **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion. The adapter now answers each operand's paint (`BooleansAdapter.getPaint`) and takes the paint a result must wear (`createPathNode`'s `paint`); what is left is the operations themselves, which give each result its own source's paint where `applyBooleanOp` passes one for all of them.
-- **(P3) Divide and Crop paint every piece like the topmost source.** `applyBooleanOp` hands `createPathNode` one `sourceId`, the topmost, for every result, so a Crop's pieces take the mask's paint and its parent, not their own source's. Needs `pathDivide` and `pathCrop` to say which source each piece came from.
+- **(P3) Trim and Merge are not Boolean operations yet.** The geometry exists: `pathTrim` and `pathMerge` (`@weasel-js/geom/booleans`) return each piece with the inputs it came from, and Merge takes the key that says which inputs wear the same paint. The adapter answers each operand's paint (`BooleansAdapter.getPaint`) and takes the paint a result must wear (`createPathNode`'s `paint`). What is left is `'trim'` and `'merge'` in `BooleanOp` and `applyBooleanOp`, which give each result its own source's paint where it passes one for all of them, and their actions and menu entries.
+- **(P3) Divide and Crop paint every piece like the topmost source.** `applyBooleanOp` hands `createPathNode` one `sourceId`, the topmost, for every result, so a Crop's pieces take the mask's paint and its parent, not their own source's. `pathDividePieces` and `pathCropPieces` (`@weasel-js/geom/booleans`) now say which inputs each piece came from; `applyBooleanOp` still calls `pathDivide` and `pathCrop` and has to pass each piece's last source instead.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
-- **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not.
+- **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not. `strokeToPath` now takes the `frame` a stroke is drawn in and stretches the outline with it; what is left is the two callers passing the node's `poseFrameOf`, or the screen's frame for a `{ px }` width, which `BooleansAdapter` and `CreateOutlinesAdapter` have no way to hand them yet.
 
 ---
 
