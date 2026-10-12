@@ -29,6 +29,12 @@ describe('AssetEditor asset list headings', () => {
     expect(asset('Reader prefs')).toHaveAttribute('aria-selected', 'false');
   });
 
+  it('lists its own and another editor\'s in the order the host gives', () => {
+    render(<Live elsewhere={[{ id: 'reader', label: 'Reader prefs', under: 'Dialogs' }]} order={['reader', 'settings']} />);
+    const dialogs = within(within(assets()).getByRole('group', { name: 'Dialogs' })).getAllByRole('option').map((o) => o.textContent);
+    expect(dialogs).toEqual(['Reader prefs', 'Settings']);
+  });
+
   it('starts on the asset it is told to, and on the first for one it does not hold', () => {
     const { unmount } = render(<Live startOn="code" />);
     expect(asset('Code')).toHaveAttribute('aria-selected', 'true');

@@ -58,6 +58,9 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   list?: boolean;
   /** Assets another editor holds, listed after this one's under the same headings. */
   elsewhere?: readonly ListedAsset[];
+  /** Asset ids in the order the list shows them under each heading, this editor's and `elsewhere`'s alike, so two
+   *  editors that list each other's show one order. Left out, this editor's come first. */
+  order?: readonly string[];
   /** The reader picked one of `elsewhere`; the host shows it, in whatever holds it. */
   onElsewhere?(id: string): void;
   /** The asset shown when the editor mounts. Default: the first. */
@@ -76,7 +79,7 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
  * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
  */
 export function AssetEditor(
-  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, onElsewhere, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
   const [first] = useState(workspace);
   const base = original ?? first;
@@ -261,7 +264,7 @@ export function AssetEditor(
         <>
           <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
           <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar">
-            <AssetList assets={workspace.assets} elsewhere={elsewhere} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
+            <AssetList assets={workspace.assets} elsewhere={elsewhere} order={order} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
           </aside>
         </>
       )}
