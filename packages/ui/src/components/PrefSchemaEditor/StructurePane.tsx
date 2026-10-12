@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
@@ -8,9 +8,7 @@ import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
-import { ResizeHandle } from '../ResizeHandle';
 import { ActionList } from './ActionList';
-import { useEditorSize } from './editorPrefs';
 import type { EditorAction } from './editorActions';
 import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
@@ -18,6 +16,7 @@ import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
 import { SettingsTree } from './SettingsTree';
+import { StoredArea } from './StoredArea';
 import { UnplacedTree } from './UnplacedTree';
 import { toTreeNodes } from './structureRows';
 import { stillUnplaced } from './unplaced';
@@ -130,9 +129,6 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     [nodes, sought],
   );
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
-  const unplacedSize = useEditorSize('unplacedHeight');
-  const settingsSize = useEditorSize('settingsHeight');
-  const actionsSize = useEditorSize('actionsHeight');
   const treeArea = useRef<HTMLDivElement | null>(null);
   const unplacedArea = useRef<HTMLDivElement | null>(null);
   const [unplacing, setUnplacing] = useState(false);
@@ -298,35 +294,20 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       />
       </div>
       {(unplaced !== undefined || holdsPages(schema, pageless)) && (
-        <>
-          <ResizeHandle orientation="horizontal" invert {...unplacedSize} min={60} max={600}
-            ariaLabel="Resize unplaced" />
-          <div className={s.storedArea} ref={unplacedArea} data-drop={unplacing || undefined} style={{ '--stored-h': `${unplacedSize.value}px` } as CSSProperties}>
-            <PaneHeader title="Unplaced" />
-            <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
-              selected={selected} onPick={onPick} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-          </div>
-        </>
+        <StoredArea title="Unplaced" size="unplacedHeight" areaRef={unplacedArea} dropping={unplacing}>
+          <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
+            selected={selected} onPick={onPick} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+        </StoredArea>
       )}
       {over !== undefined && !readOnly && (
-        <>
-          <ResizeHandle orientation="horizontal" invert {...settingsSize} min={60} max={600}
-            ariaLabel="Resize settings" />
-          <div className={s.storedArea} style={{ '--stored-h': `${settingsSize.value}px` } as CSSProperties}>
-            <PaneHeader title="Settings" />
-            <SettingsTree over={over} layout={schema} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-          </div>
-        </>
+        <StoredArea title="Settings" size="settingsHeight">
+          <SettingsTree over={over} layout={schema} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+        </StoredArea>
       )}
       {actions !== undefined && actions.length > 0 && (
-        <>
-          <ResizeHandle orientation="horizontal" invert {...actionsSize} min={60} max={600}
-            ariaLabel="Resize actions" />
-          <div className={s.storedArea} style={{ '--stored-h': `${actionsSize.value}px` } as CSSProperties}>
-            <PaneHeader title="Actions" />
-            <ActionList actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-          </div>
-        </>
+        <StoredArea title="Actions" size="actionsHeight">
+          <ActionList actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+        </StoredArea>
       )}
     </section>
   );
