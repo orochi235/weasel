@@ -48,8 +48,9 @@ export interface KitOpsEnv<TData, TLayer extends string, TPose> {
   rebuildLayerIndex(): void;
   invalidateOrder(): void;
   fnFields: readonly NodeFnField[];
-  /** Drop from the selection whatever a layer lock just put out of reach. */
-  narrowSelection(): void;
+  /** Drop from the selection whatever a layer lock just put out of reach, and
+   *  the ids in `gone`. */
+  narrowSelection(gone?: ReadonlySet<NodeId>): void;
 }
 
 function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | undefined): void {
@@ -131,6 +132,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       // A `dependsOn: 'children'` container the removal did not take is now
       // hugging a smaller set.
       for (const d of p.detached) invalidateChildDerivedFrom(d.parent);
+      env.narrowSelection(new Set(p.nodes.map((n) => n.id)));
     },
     revert: (p) => {
       const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
@@ -280,12 +282,8 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   });
 
   registerKitOp<{ layer: TLayer; from: string; to: string }>('kit:renameLayer', {
-    apply: (p) => {
-      (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.to;
-    },
-    revert: (p) => {
-      (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.from;
-    },
+    apply: (p) => { (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.to; },
+    revert: (p) => { (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.from; },
   });
 
   /** Finds the layer by id, not by where the payload last left it: moves of

@@ -68,4 +68,12 @@ describe('reconcileSpecs', () => {
     const { id: _, ...anon } = box('a', 0);
     expect(() => reconcileSpecs(scene, [], [anon as Spec])).toThrow(/needs an id/);
   });
+
+  it('keeps a replaced node selected, and deselects one it drops', () => {
+    const prev: Spec[] = [box('a', 0), box('b', 0), box('c', 0)];
+    const scene = sceneOf(prev);
+    scene.setSelection([id('c'), id('a'), id('b')]);
+    reconcileSpecs(scene, prev, [box('a', 0, { kind: 'container' }), box('c', 0)]);
+    expect(scene.getSelection()).toEqual([id('c'), id('a')]);
+  });
 });

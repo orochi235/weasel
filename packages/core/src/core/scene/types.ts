@@ -628,7 +628,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  (see `CanvasView.selection`). Not document content: it never appears
    *  in `toJSON`. It does ride on history entries, so undo and redo put
    *  back the selection an edit was made under; changing it is never an
-   *  undo step of its own. */
+   *  undo step of its own. Removing a node deselects it. */
   getSelection(): readonly NodeId[];
   setSelection(ids: readonly NodeId[]): void;
 

@@ -119,4 +119,19 @@ describe('Scene — selection', () => {
     scene.jumpToHistoryIndex(1);
     expect(scene.getSelection()).toEqual(ids(['first']));
   });
+
+  it('a removal takes its ids out of the selection, and undo puts them back', () => {
+    const { scene, add } = makeScene();
+    add('a');
+    add('b');
+    scene.setSelection(ids(['a', 'b']));
+
+    scene.remove(asNodeId('a'));
+    expect(scene.getSelection()).toEqual(ids(['b']));
+
+    scene.undo();
+    expect(scene.getSelection()).toEqual(ids(['a', 'b']));
+    scene.redo();
+    expect(scene.getSelection()).toEqual(ids(['b']));
+  });
 });

@@ -265,7 +265,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     rebuildLayerIndex,
     invalidateOrder,
     fnFields,
-    narrowSelection: () => { selection = reachable(selection); },
+    narrowSelection: (gone) => { selection = reachable(gone ? selection.filter((id) => !gone.has(id)) : selection); },
   });
 
   // ── Op execution (used by both kit mutations and consumer recordOp) ────

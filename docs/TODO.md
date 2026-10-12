@@ -446,16 +446,6 @@ Core five + Crop shipped. Remaining:
   run). Nor does it cover the reverse case, an id that an untracked edit re-added: undoing an older
   `kit:remove` of that id overwrites the live node and attaches it a second time.
 
-- **(P3) Scene: the selection keeps ids of nodes a removal took.** After `scene.setSelection([z])`
-  and `scene.remove(z)`, `scene.getSelection()` still returns `['z']`, so every reader guards
-  `scene.get(id)`. `kit:remove`'s apply in `packages/core/src/core/scene/scene.ts` could filter the
-  selection the way `kit:setLayerLocked` does, but `reconcileSpecs` replaces a node by removing and
-  re-adding its id, and filtering there would deselect a node the user sees as unchanged. The call
-  is whether selection is a set of ids (stale ids are the reader's problem) or a set of live nodes
-  (then a replace has to carry the selection across). `loadState` already drops ids the snapshot
-  does not hold, but `setSelection` keeps an id no node has (`reachable` filters on locks only, and
-  `scene.selection.test.ts` selects ids it never added), so today it is a set of ids.
-
 - **(P3) `packages/core/src/core/scene/scene.ts` is still 1,100 lines.** The jobs that closed over
   their own state are out, each in a module beside it: `nodeStore`, `kitOps`, `layerStack`,
   `arrivalWindow`, `lockGuard`, `appliedLog`, `historyFacade`, `renderOrder`, and `serialization`.

@@ -13,7 +13,7 @@ import type { AddNodeSpec, NodeId, Scene } from './types';
  * Every spec needs an `id`, and `next` must be in an order `createScene` would
  * accept — parents and dependencies before what names them. A node whose
  * `kind` or derive functions change is removed and added again, along with
- * everything its removal takes with it.
+ * everything its removal takes with it, and stays selected if it was.
  */
 export function reconcileSpecs<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -30,6 +30,9 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
   const removing = scene.removalClosure(gone.filter((id) => scene.get(id) !== undefined));
   const removed = new Set(removing);
 
+  // A replaced node is the same node to whoever selected it.
+  const selected = scene.getSelection();
+
   scene.untracked(() => {
     scene.removeMany(removing);
     for (const spec of next) {
@@ -45,6 +48,9 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       if (!same(spec.data, before.data)) scene.update(id, { data: spec.data });
       if (!same(spec.dependsOn, before.dependsOn)) scene.setDependsOn(id, spec.dependsOn);
       if (!same(spec.pose, before.pose)) scene.setPose(id, spec.pose);
+    }
+    if (selected.some((id) => removed.has(id))) {
+      scene.setSelection(selected.filter((id) => scene.get(id) !== undefined));
     }
   });
 }
