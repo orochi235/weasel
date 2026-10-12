@@ -1,0 +1,119 @@
+/**
+ * How a scene mutation becomes an undo entry: recorded on its own, collected
+ * into the batch it runs in, or left to the engine or the untracked run that
+ * is driving it.
+ */
+import type { History } from '@weasel-js/history';
+import type { Op } from 'core/ops/types';
+import type { AppliedLog } from './appliedLog';
+import type { ArrivalWindow } from './arrivalWindow';
+import type { EditMode } from './editMode';
+import type { Notifier } from './notifier';
+import type { NodeId } from './types';
+
+/** What the recorder needs from the scene it records for. */
+export interface RecorderEnv {
+  notifier: Notifier;
+  mode: EditMode;
+  /** The scene's own undo/redo engine. */
+  engine: History;
+  /** Apply a registered op's forward half. */
+  runOp(kind: string, payload: unknown): void;
+  /** A registered op as the engine holds it. */
+  makeOp(kind: string, payload: unknown): Op;
+  log: AppliedLog;
+  arrivals: Pick<ArrivalWindow<unknown>, 'bareLayoutEdit' | 'open' | 'settle' | 'emitReflow' | 'abandon'>;
+  selection(): readonly NodeId[];
+  /** Write one pose an arrival settle decided. */
+  writePose(id: string, pose: unknown): void;
+}
+
+export interface Recorder {
+  /** Apply a registered op as part of whatever edit is running. */
+  record(kind: string, payload: unknown, label: string): void;
+  /** Run the recording half of a mutation. One that touches a laid-out
+   *  container, called bare, runs as a batch of its own: that is what puts
+   *  the arrangement it triggers in the same undo step. */
+  edit<T>(label: string, touchesLayout: boolean, fn: () => T): T;
+  batch<T>(label: string, fn: () => T): T;
+  untracked<T>(fn: () => T): T;
+  /** Run `fn` as a history engine's step: the ops it applies may re-enter
+   *  scene mutation methods, which apply but do not record. The caller
+   *  notifies once after. */
+  engineDriven<T>(fn: () => T): T;
+}
+
+export function createRecorder(env: RecorderEnv): Recorder {
+  const { notifier, mode, engine, log, arrivals } = env;
+  /** The outermost open batch, while it is recording. */
+  let collecting: { label: string; ops: Op[]; selectionBefore: readonly NodeId[] } | null = null;
+
+  /** `fn`, then the poses its arrivals settle to when this edit owns them. */
+  function withArrivalsSettled<T>(fn: () => T, owns: boolean): T {
+    const result = fn();
+    if (owns) for (const p of arrivals.settle()) env.writePose(p.id, p.to);
+    return result;
+  }
+
+  function batch<T>(label: string, fn: () => T): T {
+    const outermost = !mode.open();
+    // Captured at open, not at recordEntry: by the time the batch closes
+    // the selection has already moved to wherever the batch put it.
+    if (outermost) collecting = { label, ops: [], selectionBefore: env.selection() };
+    const ownsArrivals = outermost && arrivals.open(true);
+    return notifier.deferred(() => mode.during('batch', () => {
+      if (!outermost) return fn();
+      try {
+        const result = log.atomically(
+          () => withArrivalsSettled(fn, ownsArrivals),
+          () => (collecting?.ops.length ?? 0) > 0,
+        );
+        if (ownsArrivals) arrivals.emitReflow();
+        return result;
+      } catch (err) {
+        // Reverted already; the half-built entry must not reach history.
+        collecting = null;
+        throw err;
+      }
+    }), () => {
+      if (ownsArrivals) arrivals.abandon();
+      if (!outermost || !collecting) return;
+      const finished = collecting;
+      collecting = null;
+      // The ops were applied as they were issued, so the entry is pushed
+      // without re-applying.
+      if (finished.ops.length > 0) {
+        engine.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
+      }
+    });
+  }
+
+  return {
+    record(kind, payload, label) {
+      if (mode.records() && !collecting) {
+        // The engine applies the op itself, which is what lets it coalesce.
+        engine.applyOps([env.makeOp(kind, payload)], label);
+      } else {
+        env.runOp(kind, payload);
+        log.logApplied(kind, payload);
+        if (mode.records()) collecting!.ops.push(env.makeOp(kind, payload));
+      }
+      notifier.notify();
+    },
+    edit: (label, touchesLayout, fn) => (touchesLayout && arrivals.bareLayoutEdit() ? batch(label, fn) : fn()),
+    batch,
+    untracked(fn) {
+      const versionBefore = notifier.version();
+      const ownsArrivals = arrivals.open(true);
+      return notifier.deferred(() => mode.during('untracked', () => {
+        const result = log.atomically(() => withArrivalsSettled(fn, ownsArrivals), () => false);
+        if (ownsArrivals) arrivals.emitReflow();
+        return result;
+      }), () => {
+        if (ownsArrivals) arrivals.abandon();
+        if (notifier.version() !== versionBefore) engine.seal();
+      });
+    },
+    engineDriven: (fn) => mode.during('engine', () => notifier.muted(fn)),
+  };
+}

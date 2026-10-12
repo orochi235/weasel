@@ -20,6 +20,7 @@ import { createArrivalWindow } from './arrivalWindow';
 import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
 import { createNotifier } from './notifier';
+import { createRecorder } from './recorder';
 import { createEditMode } from './editMode';
 import { createSceneSelection } from './sceneSelection';
 import { createAppliedLog } from './appliedLog';
@@ -167,7 +168,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   // every edit mutates it in place, which is exactly an incarnation's lifetime.
   const incarnations = new WeakMap<object, number>();
   let nextIncarnation = 1;
-  let currentBatch: { label: string; ops: Op[]; selectionBefore: readonly NodeId[] } | null = null;
   // Seeded from options and swappable via `scene.setActiveJournalAccessor(fn)`.
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
@@ -178,10 +178,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     recordsBareEdits: () => !mode.open(),
     writePose,
   });
-  const {
-    noteArrival, noteDeparture, noteChange, bareLayoutEdit, open: openArrivals, emitReflow,
-    settle: settleArrivals, runEdit: runArrivalEdit,
-  } = arrivalWindow;
+  const { noteArrival, noteDeparture, noteChange, runEdit: runArrivalEdit } = arrivalWindow;
 
   /** The pass a scene runs over its declared layouts when nothing else is
    *  installed. */
@@ -201,13 +198,14 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     if (mode.untracked()) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
   }
 
-  const { atomically, logApplied } = createAppliedLog({
+  const appliedLog = createAppliedLog({
     registered,
     lifted: withLocksLifted,
     getSelection: selection.get,
     setSelection: selection.replace,
     notify,
   });
+  const { atomically, logApplied } = appliedLog;
 
   const { layoutRefs } = registerKitOps<TData, TLayer, TPose>({
     state,
@@ -272,12 +270,18 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     return token === undefined ? undefined : `${kind}:${token}`;
   }
 
-  /** Run `fn` as a history engine's step: the ops it applies may re-enter
-   *  scene mutation methods, which apply but do not record. The caller
-   *  notifies once after. */
-  function engineDriven<T>(fn: () => T): T {
-    return mode.during('engine', () => notifier.muted(fn));
-  }
+  const recorder = createRecorder({
+    notifier,
+    mode,
+    engine: history,
+    runOp,
+    makeOp,
+    log: appliedLog,
+    arrivals: arrivalWindow,
+    selection: selection.get,
+    writePose,
+  });
+  const { record, edit, engineDriven } = recorder;
 
   /** Run an engine step that replays recorded ops — undo, redo, goto, a
    *  journal stepping. The engine inverts whole ops when one throws; this
@@ -285,28 +289,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   function replay(step: () => void): void {
     atomically(() => withLocksLifted(() => stale.during(() => engineDriven(step))), () => true);
   }
-
-  function executeAndLog(kind: string, payload: unknown, label: string): void {
-    if (!mode.records()) {
-      runOp(kind, payload);
-      logApplied(kind, payload);
-      notify();
-      return;
-    }
-    if (currentBatch) {
-      runOp(kind, payload);
-      logApplied(kind, payload);
-      currentBatch.ops.push(makeOp(kind, payload));
-      notify();
-      return;
-    }
-    // The engine applies the op itself (inside applyOps) — no separate
-    // runOp call, or the mutation would run twice.
-    history.applyOps([makeOp(kind, payload)], label);
-    notify();
-  }
-
-  // ── Public Scene object ────────────────────────────────────────────────
 
   // Register consumer-supplied ops up front.
   if (options.ops) {
@@ -345,7 +327,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     layerIndex: state.layerIndex,
     nodes: state.nodes,
     requireLayerIndex,
-    record: executeAndLog,
+    record,
     lifted: withLocksLifted,
     batch: (label, fn) => scene.batch(label, fn),
     removeMany: (ids) => scene.removeMany(ids),
@@ -405,25 +387,20 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
         refuseLocked(parent, 'add under');
       }
-      if (parent !== null && bareLayoutEdit()) {
-        // A bare add under a container is an edit of its own, so it settles
-        // its arrival like one — as a batch, which is what makes the
-        // arrangement part of the same undo step.
-        return scene.batch(`add ${spec.kind}`, () => scene.add(spec));
-      }
-      const sibs = siblingsOf(parent);
-      const index = spec.index ?? sibs.length;
-      noteArrival(id, parent, null);
-      const payload = {
-        id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
-        parent, index,
-        ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-        ...statedFields(spec),
-        ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
-      };
-      executeAndLog('kit:add', payload, `add ${spec.kind}`);
-      patchNodeFunctions(spec, id, payload);
-      return id;
+      return edit(`add ${spec.kind}`, parent !== null, () => {
+        const index = spec.index ?? siblingsOf(parent).length;
+        noteArrival(id, parent, null);
+        const payload = {
+          id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
+          parent, index,
+          ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
+          ...statedFields(spec),
+          ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
+        };
+        record('kit:add', payload, `add ${spec.kind}`);
+        patchNodeFunctions(spec, id, payload);
+        return id;
+      });
     },
 
     remove: (id) => scene.removeMany([id]),
@@ -460,32 +437,27 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         nodes: snapshot, detached,
         ...(fnKeys.length > 0 ? { fnKeys } : {}),
       };
-      if (detached.some((d) => d.parent !== null) && bareLayoutEdit()) {
-        scene.batch('remove', () => scene.removeMany(rootIds));
-        return;
-      }
-      for (const d of detached) noteDeparture(d.id, d.parent, null);
-      executeAndLog('kit:remove', payload, 'remove');
+      edit('remove', detached.some((d) => d.parent !== null), () => {
+        for (const d of detached) noteDeparture(d.id, d.parent, null);
+        record('kit:remove', payload, 'remove');
+      });
     },
 
     update(id, patch) {
       const node = requireNode(id);
       refuseLocked(id, 'update');
-      executeAndLog('kit:setData', { id, from: node.data, to: patch.data }, 'update');
+      record('kit:setData', { id, from: node.data, to: patch.data }, 'update');
     },
 
     setPose(id, pose) {
       const node = requireNode(id);
       refuseLocked(id, 'set the pose of');
-      if (node.kind === 'container' && resized(layoutFrame, id, node.pose, pose)) {
-        if (bareLayoutEdit()) {
-          scene.batch('setPose', () => scene.setPose(id, pose));
-          return;
-        }
-        noteChange(id);
-      }
-      carried.wrote(id, node.pose, pose);
-      executeAndLog('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
+      const resizes = node.kind === 'container' && resized(layoutFrame, id, node.pose, pose);
+      edit('setPose', resizes, () => {
+        if (resizes) noteChange(id);
+        carried.wrote(id, node.pose, pose);
+        record('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
+      });
     },
 
     carry(id, pose) {
@@ -507,13 +479,13 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       for (const sid of subtree) refuseLocked(sid, 'relayer');
       if (subtree.length === 1) {
         // Fast path: single node, no batch needed.
-        executeAndLog('kit:setLayer', { id, from: node.layer, to: layer }, 'setLayer');
+        record('kit:setLayer', { id, from: node.layer, to: layer }, 'setLayer');
       } else {
         scene.batch('setLayer', () => {
           for (const sid of subtree) {
             const cur = requireNode(sid);
             if (cur.layer === layer) continue;
-            executeAndLog('kit:setLayer', { id: sid, from: cur.layer, to: layer }, 'setLayer');
+            record('kit:setLayer', { id: sid, from: cur.layer, to: layer }, 'setLayer');
           }
         });
       }
@@ -523,7 +495,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       const node = requireNode(id);
       refuseLocked(id, 'retarget');
       if (sameDependsOn(node.dependsOn, dependsOn)) return;
-      executeAndLog(
+      record(
         'kit:setDependsOn',
         { id, from: node.dependsOn, to: dependsOn },
         'setDependsOn',
@@ -545,11 +517,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       const from = node.layout ?? null;
       if (from === to) return;
       if (to !== null) hasLayouts = true;
-      if (bareLayoutEdit()) {
-        scene.batch('setLayout', () => scene.setLayout(id, to));
-        return;
-      }
-      noteChange(id);
       const fromKey = from === null ? undefined : field.keyOf(from);
       const toKey = to === null ? undefined : field.keyOf(to);
       const payload: SetLayoutPayload = {
@@ -558,7 +525,10 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         ...(toKey !== undefined ? { toKey } : {}),
       };
       layoutRefs.set(payload, { from, to });
-      executeAndLog('kit:setLayout', payload, 'setLayout');
+      edit('setLayout', true, () => {
+        noteChange(id);
+        record('kit:setLayout', payload, 'setLayout');
+      });
     },
 
     move(id, parent, index) {
@@ -579,35 +549,26 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
           throw new Error('Scene: cannot parent a node to its own descendant');
         }
       }
-      if ((parent !== null || node.parent !== null) && bareLayoutEdit()) {
-        scene.batch('move', () => scene.move(id, parent, index));
-        return;
-      }
-      const fromSibs = siblingsOf(node.parent);
-      const fromIndex = fromSibs.indexOf(id);
-      const toSibs = parent === node.parent ? fromSibs : siblingsOf(parent);
-      const toIndex = index ?? toSibs.length;
-      noteArrival(id, parent, node.parent);
-      noteDeparture(id, node.parent, parent);
-      noteChange(node.parent);
-      executeAndLog('kit:move', {
-        id, fromParent: node.parent, fromIndex, toParent: parent, toIndex,
-      }, 'move');
+      const fromParent = node.parent;
+      edit('move', parent !== null || fromParent !== null, () => {
+        const fromIndex = siblingsOf(fromParent).indexOf(id);
+        const toIndex = index ?? siblingsOf(parent).length;
+        noteArrival(id, parent, fromParent);
+        noteDeparture(id, fromParent, parent);
+        noteChange(fromParent);
+        record('kit:move', { id, fromParent, fromIndex, toParent: parent, toIndex }, 'move');
+      });
     },
 
     reorder(id, index) {
       const node = requireNode(id);
       refuseLocked(id, 'reorder');
-      if (node.parent !== null && bareLayoutEdit()) {
-        scene.batch('reorder', () => scene.reorder(id, index));
-        return;
-      }
-      noteChange(node.parent);
-      const sibs = siblingsOf(node.parent);
-      const fromIndex = sibs.indexOf(id);
-      executeAndLog('kit:move', {
-        id, fromParent: node.parent, fromIndex, toParent: node.parent, toIndex: index,
-      }, 'reorder');
+      const parent = node.parent;
+      edit('reorder', parent !== null, () => {
+        noteChange(parent);
+        const fromIndex = siblingsOf(parent).indexOf(id);
+        record('kit:move', { id, fromParent: parent, fromIndex, toParent: parent, toIndex: index }, 'reorder');
+      });
     },
 
     ...layerEdits,
@@ -624,7 +585,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     },
 
     recordOp(op) {
-      executeAndLog(op.kind, op.payload, op.kind);
+      record(op.kind, op.payload, op.kind);
     },
 
     setActiveJournalAccessor(fn) {
@@ -644,7 +605,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       const node = requireNode(id);
       if (node.kind !== 'container') throw new Error(`Scene: "${id}" is not a container`);
       refuseLocked(id, 'set the units of');
-      executeAndLog('kit:setUnits', { id, from: node.units, to: units ?? undefined }, 'setUnits');
+      record('kit:setUnits', { id, from: node.units, to: units ?? undefined }, 'setUnits');
     },
 
     onReflow: arrivalWindow.onReflow,
@@ -662,56 +623,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       historyAdapterAccessor = fn;
     },
 
-    batch(label, fn) {
-      // Captured at open, not at recordEntry: by the time the batch closes
-      // the selection has already moved to wherever the batch put it.
-      const outermost = !mode.open();
-      if (outermost) currentBatch = { label, ops: [], selectionBefore: selection.get() };
-      const ownsArrivals = outermost && openArrivals(true);
-      return notifier.deferred(() => mode.during('batch', () => {
-        if (!outermost) return fn();
-        try {
-          const result = atomically(() => {
-            const r = fn();
-            if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
-            return r;
-          }, () => (currentBatch?.ops.length ?? 0) > 0);
-          if (ownsArrivals) emitReflow();
-          return result;
-        } catch (err) {
-          // Reverted already; the half-built entry must not reach history.
-          currentBatch = null;
-          throw err;
-        }
-      }), () => {
-        if (ownsArrivals) arrivalWindow.abandon();
-        if (!outermost || !currentBatch) return;
-        const finished = currentBatch;
-        currentBatch = null;
-        // Ops were applied live as they were issued (state stays readable
-        // mid-batch); recordEntry pushes without re-applying.
-        if (finished.ops.length > 0) {
-          history.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
-        }
-      });
-    },
-
-    untracked(fn) {
-      const versionBefore = notifier.version();
-      const ownsArrivals = openArrivals(true);
-      return notifier.deferred(() => mode.during('untracked', () => {
-        const result = atomically(() => {
-          const r = fn();
-          if (ownsArrivals) for (const p of settleArrivals()) scene.setPose(asNodeId(p.id), p.to as TPose);
-          return r;
-        }, () => false);
-        if (ownsArrivals) emitReflow();
-        return result;
-      }), () => {
-        if (ownsArrivals) arrivalWindow.abandon();
-        if (notifier.version() !== versionBefore) history.seal();
-      });
-    },
+    batch: recorder.batch,
+    untracked: recorder.untracked,
 
     toJSON: () => serializeScene(state, fnFields),
 
