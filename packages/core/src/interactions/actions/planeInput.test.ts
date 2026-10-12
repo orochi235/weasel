@@ -16,7 +16,7 @@ import { moveAction } from './move/action';
 import { resizeAction } from './resize/action';
 import { rotateAction } from './rotate/action';
 import { cloneAction } from './defaults/clone';
-import { insertAction } from './defaults/insert';
+import { insertAction } from './insert/action';
 import { nudgeRightAction } from './defaults/nudge';
 import { editAnchorsAction } from './defaults/editAnchors';
 import { selectAnchorAction, marqueeAnchorsAction } from './defaults/anchorEditing';

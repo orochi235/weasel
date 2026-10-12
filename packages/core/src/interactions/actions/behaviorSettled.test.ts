@@ -11,7 +11,7 @@ import type { NodeId } from 'core/scene/types';
 import { moveAction } from './move/action';
 import { resizeAction } from './resize/action';
 import { rotateAction } from './rotate/action';
-import { insertAction } from './defaults/insert';
+import { insertAction } from './insert/action';
 import { lassoSelectAction } from './defaults/lassoSelect';
 import type { InsertDep, LassoSelectDep } from './depSchema';
 import { runBehaviorSettled } from './gestureLifecycle';

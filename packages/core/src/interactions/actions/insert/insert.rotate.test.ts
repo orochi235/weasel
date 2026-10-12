@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { insertAction, insertRotateAction } from './insert';
+import { insertAction } from './action';
+import { insertRotateAction } from './rotateAction';
 import type { InsertDep, InsertExtras, InsertLive } from '../depSchema';
 import type { NodeId } from 'core/scene/types';
 
