@@ -1181,14 +1181,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   section in view should unfold is open; it would move the rail under a reader who is scrolling.
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
-- **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
-  is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the
-  scrollport's edge (measured: the heading's top at 10px with 10px of padding), where the
-  comment on the rule says the offset is measured from the edge. Whether rows scrolling under it
-  show in that strip has not been looked at. The `scroll-margin-top` on what a section holds
-  adds the padding for the same reason, and estimates the heading's line as `1lh` of the element
-  scrolled to, which leaves a few pixels of gap under the heading.
-
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
 
