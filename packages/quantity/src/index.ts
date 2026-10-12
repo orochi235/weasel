@@ -111,3 +111,9 @@ export {
   type UnitSystem,
   type UnitValue,
 } from './units';
+export {
+  parseUnitExpr,
+  resolveUnitExpr,
+  type UnitExpr,
+  type UnitExprContext,
+} from './unitExpr';

@@ -11,7 +11,7 @@ import type { Quantity } from './quantity';
  *
  * An entry is affine — `base = value * factor + offset` — so a scale that
  * puts zero somewhere else (degC against K) is expressible. No per-axis
- * units. No mixed-unit arithmetic.
+ * units. Arithmetic across units is `resolveUnitExpr`.
  */
 
 /** A unit name (e.g. `'in'`, `'ft'`, `'mm'`). Looked up in a `UnitSystem`. */

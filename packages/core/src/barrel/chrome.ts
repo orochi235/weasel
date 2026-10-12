@@ -28,8 +28,11 @@ export {
   IMPERIAL_INCHES,
   METRIC_MM,
   PIXELS,
+  parseUnitExpr,
+  resolveUnitExpr,
 } from '@weasel-js/quantity';
 export type { Unit, UnitEntry, UnitScale, UnitSystem, UnitValue } from '@weasel-js/quantity';
+export type { UnitExpr, UnitExprContext } from '@weasel-js/quantity';
 
 // ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
 export {
