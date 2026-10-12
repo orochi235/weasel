@@ -1686,6 +1686,16 @@ only story runner in the repo.
   buttons call `scene.setPose` / `scene.add`, and per-node effects repaint through `redrawOn` /
   `requestRedraw`.
 
+- **(P3) draw warns of two route conflicts every time it loads.** Seen in the console of the dev
+  build, 2026-10-12, each "two bindings declare the same (phase, gesture, arg, target, modifiers)
+  tuple in the same scope, so declaration order alone decides which one fires":
+  `[*:*] drag ?shift ?alt — declared by slice, slice`, which is `useSliceTool`'s
+  `slice.dragPoint` binding (shift and alt optional) against its own plain `slice` drag
+  (`packages/core/src/tools/builtin/slice/useSliceTool.ts`), and
+  `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
+  mode.crop.commit`. Not looked into further: whether each is a real ambiguity, or bindings the
+  check cannot tell apart because a predicate or a mode keeps them from being live together.
+
 - **(P2) draw: the input recorder is reachable from nothing.** `recorder.ts`, `recordingIO.ts`, and
   `replay.ts` are complete and tested, and no control starts a recording or plays one. Wiring them
   needs a `Recorder` on the canvas's pointer and keyboard surface, which wants a
