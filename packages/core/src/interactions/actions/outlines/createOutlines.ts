@@ -37,7 +37,10 @@ export interface CreateOutlinesAdapter {
    * space. The node must wear `spec`'s fill and stroke — a text whose runs
    * differ in paint gets one path per paint, and a filled node whose stroke
    * is outlined gets one for the fill and one for the stroke — and sit under
-   * `spec.parent`. The kit places it; only the consumer knows its data shape.
+   * `spec.parent`. The kit places it; only the consumer knows its data shape,
+   * so anything else of the source's `data` worth keeping is the adapter's to
+   * copy: onto this path when it stands alone in the source's slot, onto the
+   * container when `createContainerNode` minted one.
    */
   createPathNode(path: Path, sourceId: NodeId, spec: OutlinePathSpec): { id: string };
   /**

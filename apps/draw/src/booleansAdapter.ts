@@ -13,7 +13,7 @@ import {
   type SelectionApi,
   type TextNodeSource,
 } from '@weasel-js/core';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { carriedData, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 
 export type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 
@@ -59,18 +59,10 @@ export function drawBooleansAdapter(
     },
     createPathNode: (path, _op, sourceId, paint) => {
       // Mint convention: pose = boundsOfPath(path); geometry lives in data.path.
-      // Booleans, slice (sliceCommit.ts), and release-compound (onReleaseCompound)
-      // all follow this same convention — the data payload that varies per site
-      // is too context-specific (style inheritance source) to share a helper.
-      // Inherit the topmost selected leaf's paint so the result reads as a
-      // continuation of the source style. Falls back to a neutral fill if
-      // no leaf is selected (shouldn't happen — `enabled` gates the op).
-      const sel = a.getSelection();
-      let template: WeaselDrawData | undefined;
-      for (let i = sel.length - 1; i >= 0; i--) {
-        const n = scene.get(asNodeId(sel[i]));
-        if (n && n.kind === 'leaf') { template = n.data; break; }
-      }
+      // The result continues its topmost source: that node's paint, and
+      // whatever else it carried.
+      const source = scene.get(sourceId);
+      const template = source?.data;
       const b = boundsOfPath(path);
       // Ids restart with the session, and a reloaded document keeps the last
       // session's.
@@ -81,12 +73,15 @@ export function drawBooleansAdapter(
         kind: 'leaf',
         layer: 'default',
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-        data: paint ? { path, ...paint } : {
+        data: {
+          ...carriedData(template),
           path,
-          fill: template?.fill !== undefined ? template.fill : DEFAULT_SHAPE_FILL,
-          ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
+          ...(paint ?? {
+            fill: template?.fill !== undefined ? template.fill : DEFAULT_SHAPE_FILL,
+            ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
+          }),
         },
-        parent: scene.get(sourceId)?.parent ?? null,
+        parent: source?.parent ?? null,
       };
       return node;
     },

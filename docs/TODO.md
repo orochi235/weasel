@@ -357,7 +357,7 @@ Core five + Crop shipped. Remaining:
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
-- **(P3) Outline Stroke and the Boolean operations drop draw's `data.label`.** `drawBooleansAdapter.createPathNode` (`apps/draw/src/booleansAdapter.ts`) builds a result from the path and its paint alone, so the starter rect's "Welcome" and its name in the layer list are gone after Outline Stroke. Undecided: which of an outline's two paths, or their group, keeps the label.
+- **(P3) A group's `data.label` is not drawn on the canvas.** Outline Stroke on draw's starter rect makes a group that takes the rect's data (`drawOutlinesAdapter`, `apps/draw/src/outlinesAdapter.ts`), so the layer list still reads "Welcome", but the word the rect wore on the canvas is gone: seen in draw, where `defaultDrawOne` draws a leaf's label and nothing draws a container's.
 - **(P3) Booleans measure a `{ px }` stroke at the view's mean scale, and ignore a skewed pose.** `resolveOperand` and `applyOutlineStroke` call `strokeToPath` on the world path with one `scale`, so a stroke drawn under `RectPose.transform` or a non-uniform view is outlined as though it were not.
 
 ---
