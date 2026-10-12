@@ -9,7 +9,6 @@
  * inline style, so `className` positions the element and cannot resize it.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { commandPaint } from '@weasel-js/renderer';
 import type { Ref } from 'react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Paint } from '@weasel-js/paint';
@@ -20,6 +19,7 @@ import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from 
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RedrawSource } from '../core/layers/render';
+import { backgroundFillCommands } from '../core/layers/backgroundFill';
 import { normalizeView, type View } from '../core/viewport/view';
 
 /** What a `<DrawCanvas>` paints: a command list, or a function returning one
@@ -78,9 +78,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
     const el = canvasElRef.current;
     if (!el) return false;
     const content = typeof draw === 'function' ? draw({ width, height }) : draw;
-    const commands: DrawCommand[] = [];
-    const fill = background && commandPaint(background, { x: 0, y: 0, width, height });
-    if (fill) commands.push({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width, height }, fill: { paint: fill } });
+    const commands: DrawCommand[] = background ? backgroundFillCommands(background, { width, height }) : [];
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
     return lease.paint(el, commands, view, { width, height, dpr });
   };

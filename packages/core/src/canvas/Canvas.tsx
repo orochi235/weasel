@@ -51,6 +51,7 @@ import {
   type Dims, type LayerCommandCache, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
 import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
+import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
 import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore, useRedrawOnShaderSource } from './useCanvasRenderer';
 import { shaderKeyOf } from './canvasRenderer';
 import { useSceneLayerList } from './useSceneLayerList';
@@ -77,7 +78,6 @@ import type { ResolvedCursor } from '@weasel-js/cursor';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
-import { commandPaint } from '@weasel-js/renderer';
 
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { CursorCoordsHud } from './CursorCoordsHud';
@@ -334,8 +334,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   gestureSource?: GestureSource;
 
   /**
-   * Fill for the full canvas surface behind the scene, drawn as a screen-space layer slotted
-   * before `'scene'` — independent of pan / zoom.
+   * Fill for the full canvas surface, drawn as a screen-space layer beneath every other
+   * layer, the grid and anything anchored before it included — independent of pan / zoom.
    */
   backgroundFill?: Paint;
 
@@ -360,9 +360,11 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
 
 
   /**
-   * Mode-owned decoration layer, inserted between the scene-render slot and the tool-overlay
-   * slot so decoration draw commands (e.g. path-edit anchor dots) paint above scene content
-   * but below tool overlays.
+   * Mode-owned decoration layer (e.g. path-edit anchor dots). Composed as a `decorationLayer`
+   * entry in `layers` with no anchor, which this prop replaces: it paints above every slot
+   * and every other custom layer, and beneath a tool's `'top'` overlays. A tool's
+   * selection-anchored overlays sit beneath it too while there is selection chrome to anchor
+   * them; with that slot empty they fall to the tail and paint above it.
    */
   decorationLayer?: RenderLayer<unknown>;
 
@@ -783,21 +785,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // belongs to `useGestureDispatcher`, which attaches its own listeners to this same element.
   const pointerDownRef = useRef(false);
 
-  // Screen-space, so independent of pan / zoom: backgrounds are canvas chrome, not world
-  // content.
-  const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
-    if (!backgroundFill) return null;
-    return {
-      id: 'scene-background-fill',
-      label: 'Background fill',
-      space: 'screen',
-      draw: (_data, _view, dims) => {
-        const rect = { x: 0, y: 0, width: dims.width, height: dims.height };
-        const fill = commandPaint(backgroundFill, rect);
-        return fill ? [{ kind: 'path', path: { kind: 'rect', ...rect }, fill: { paint: fill } }] : [];
-      },
-    };
-  }, [backgroundFill]);
+  const backgroundLayer = useMemo(
+    () => (backgroundFill ? createBackgroundFillLayer(backgroundFill) : undefined),
+    [backgroundFill],
+  );
 
   const sceneLayersKey = useSceneLayerList(adapter);
   const layers = useMemo<RenderLayer<unknown>[]>(() => {
@@ -855,10 +846,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     }
 
     const out: RenderLayer<unknown>[] = composeOrderedLayers(
-      layersMap, standardLayers, sceneLayers, backgroundLayer ?? undefined,
+      decorationLayer ? { ...layersMap, decorationLayer: { layer: decorationLayer } } : layersMap,
+      standardLayers, sceneLayers, backgroundLayer,
     );
-    // Decoration layer: above scene, below tool overlay (per slot ordering doc).
-    if (decorationLayer) out.push(decorationLayer);
     if (tools) {
       placeToolOverlays(out, standardLayers.selectionOverlay, tools.getActiveOverlays);
     }
