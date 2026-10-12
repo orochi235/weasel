@@ -160,12 +160,14 @@ export function PrefsForm(props: PrefsFormProps) {
   const [query, setQuery] = useState('');
   // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
   const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
-  const applied = useMemo(() => {
-    const keepEmpty = props.showEmpty === true;
-    const visible = visiblePrefSubtree(schema, showHidden, keepEmpty);
-    if (visible === null) return null;
-    return applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden });
-  }, [schema, showHidden, props.showEmpty, values, markHidden]);
+  const keepEmpty = props.showEmpty === true;
+  // Apart from the conditions, which a new `values` object asks again: what they hand back is this tree itself
+  // while they drop nothing, and a drop in flight restarts whenever the tree it is drawn in is a new one.
+  const visible = useMemo(() => visiblePrefSubtree(schema, showHidden, keepEmpty), [schema, showHidden, keepEmpty]);
+  const applied = useMemo(
+    () => (visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), { keepEmpty, keepHidden: markHidden })),
+    [visible, schema, values, keepEmpty, markHidden],
+  );
   const conditioned = applied?.shown ?? null;
   const root = useMemo(
     () => (conditioned === null ? null : filterPrefRoot(conditioned, query, leafAt)),
