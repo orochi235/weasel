@@ -60,7 +60,7 @@
  * so it is a real LRU with a hard entry count.
  */
 
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Paint, Stroke } from '@weasel-js/paint';
 import { glyphGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { layoutRuns, type LaidOutRuns, type LayoutRunsOpts } from './layoutRuns';
@@ -119,7 +119,7 @@ function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string 
  * per-object id, because they have no cheap structural equality and a false
  * positive would hand back groups carrying the wrong paint.
  */
-function paintKey(p: FillStyle | null): string {
+function paintKey(p: Paint | null): string {
   if (p === null) return 'none';
   return 'color' in p ? `s${p.color}:${p.opacity ?? 1}` : `#${refId(p)}`;
 }

@@ -2,12 +2,12 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import {
   PathBuilder, SceneCanvas, WeaselProvider, commandFill, sceneFromJSON, useSelection,
 } from '@weasel-js/core';
-import type { FillStyle, Path, SceneCanvasApi, SerializedScene, View } from '@weasel-js/core';
+import type { Paint, Path, SceneCanvasApi, SerializedScene, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { createLoupe } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 
-interface NodeData { fill: FillStyle; ring?: boolean }
+interface NodeData { fill: Paint; ring?: boolean }
 interface Pose { x: number; y: number; width: number; height: number }
 
 const SURFACE_W = 820;

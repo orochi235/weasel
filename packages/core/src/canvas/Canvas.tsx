@@ -21,7 +21,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
 import { buildSceneLayers, type CanvasAdapter, type SceneSlotConfig } from './buildSceneLayer';
 
@@ -399,8 +399,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   gestureSource?: GestureSource;
 
   /**
-   * FillStyle applied to the full canvas surface behind the scene. Accepts the
-   * kit's `FillStyle` union (solid / pattern / linear-gradient / radial-gradient /
+   * Paint applied to the full canvas surface behind the scene. Accepts the
+   * kit's `Paint` union (solid / pattern / linear-gradient / radial-gradient /
    * conic-gradient) so consumers don't have to author a background node just to
    * colorize the canvas.
    *
@@ -408,7 +408,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * pan / zoom. Canvas owns this layer; `<SceneCanvas>` forwards its own
    * `backgroundFill` prop verbatim so consumer apps see no breaking change.
    */
-  backgroundFill?: FillStyle;
+  backgroundFill?: Paint;
 
   /**
    * Dev HUD: when true, mounts a fixed-position widget showing live cursor
@@ -927,7 +927,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const pointerDownRef = useRef(false);
 
   // Background-fill layer: screen-space, emits a single full-canvas rect with
-  // the configured FillStyle. Drawn beneath every other layer.
+  // the configured Paint. Drawn beneath every other layer.
   // Independent of pan / zoom — backgrounds are canvas chrome, not world content.
   const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
     if (!backgroundFill) return null;

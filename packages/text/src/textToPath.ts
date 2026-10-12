@@ -10,7 +10,7 @@
  * `textToPathsByPaint` is the same walk, split by the paint each glyph wears.
  */
 
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Paint, Stroke } from '@weasel-js/paint';
 
 import {
   loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle,
@@ -36,7 +36,7 @@ export interface TextOutlineSource {
   style?: TextStyle;
   verticalAlign?: TextVerticalAlign;
   /** The node's `data.fill`: `null` is no fill, absent the default black. */
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   /** The node's `data.stroke`: absent or `null` is no stroke. */
   stroke?: Stroke | null;
 }
@@ -45,7 +45,7 @@ export interface TextOutlineSource {
 export interface TextPaintPath {
   /** The resolved fill these glyphs wear: the run's own, else the node's.
    *  `null` for unfilled text, painted by its stroke alone. */
-  fill: FillStyle | null;
+  fill: Paint | null;
   /** The resolved stroke — the run's own, else the node's — or absent. */
   stroke?: Stroke;
   /** World-space outlines, as {@link textToPath} builds them. */
@@ -191,7 +191,7 @@ function ruleContour(x0: number, y0: number, x1: number, y1: number): PolygonPat
 
 /** Paint identity for grouping. Paint is plain data, so structural equality
  *  is exact — a gradient set on two runs separately is still one paint. */
-function paintKey(fill: FillStyle | null, stroke: Stroke | undefined): string {
+function paintKey(fill: Paint | null, stroke: Stroke | undefined): string {
   return JSON.stringify([fill, stroke ?? null]);
 }
 
@@ -206,7 +206,7 @@ function walkOutlines(
   data: TextOutlineSource,
   pose: PathInWorldPose,
   opts: TextToPathOptions,
-): { paints: { fill: FillStyle | null; stroke?: Stroke }[]; paths: PolygonPath[] } {
+): { paints: { fill: Paint | null; stroke?: Stroke }[]; paths: PolygonPath[] } {
   const textPose: TextPose = {
     x: pose.x, y: pose.y, width: pose.width, height: pose.height,
     text: data.text,
@@ -219,7 +219,7 @@ function walkOutlines(
   const { runs: resolved, opts: layoutOpts } = textPoseLayoutInput(textPose, opts.scale ?? 1);
   for (const run of resolved) assertOutlinable(run);
 
-  const paints: { fill: FillStyle | null; stroke?: Stroke }[] = [];
+  const paints: { fill: Paint | null; stroke?: Stroke }[] = [];
   const indexOf = new Map<string, number>();
   const runs = resolved.map((run): ResolvedRun => {
     const key = paintKey(run.fill, run.stroke);
@@ -232,7 +232,7 @@ function walkOutlines(
     const { stroke: _stroke, ...rest } = run;
     return { ...rest, fill: { fill: 'solid', color: `#${i.toString(16).padStart(6, '0')}` } };
   });
-  const groupOf = (fill: FillStyle | null): number =>
+  const groupOf = (fill: Paint | null): number =>
     fill !== null && 'color' in fill ? parseInt(fill.color.slice(1), 16) : 0;
 
   const laid = layoutRuns(runs, { ...layoutOpts, outlineMinSize: 0 });

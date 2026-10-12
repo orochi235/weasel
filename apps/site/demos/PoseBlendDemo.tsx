@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, springPose, tweenPose, useScene, useSceneAdapter } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 
-interface Block { id: string; x: number; y: number; width: number; height: number; fill: FillStyle }
+interface Block { id: string; x: number; y: number; width: number; height: number; fill: Paint }
 
 const W = 400, H = 300, SIZE = 40, INSET = 30;
 const ID = asNodeId('block');

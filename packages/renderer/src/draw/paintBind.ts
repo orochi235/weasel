@@ -1,4 +1,4 @@
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import type { PaintBindContext, PaintResources } from '../paintKinds';
 import { createPaintResources } from '../paintResources';
 import { getTexture, type TextureHandle } from '../textures/registerTexture';
@@ -51,7 +51,7 @@ function unownedPaintResources(gl: WebGL2RenderingContext): PaintResources {
 export function bindPattern(
   ctx: DrawContext,
   prog: ShaderProgram,
-  fill: Extract<FillStyle, { fill: 'pattern' }>,
+  fill: Extract<Paint, { fill: 'pattern' }>,
   model: GlMat3,
 ): ShaderProgram | null {
   const tex = fill.pattern as TextureHandle;
@@ -97,7 +97,7 @@ function textureSize(source: HTMLImageElement | ImageBitmap): [number, number] {
 export function bindGradient(
   ctx: DrawContext,
   prog: ShaderProgram,
-  fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
+  fill: Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
   model: GlMat3,
 ): ShaderProgram | null {
   const inverse = gradientSpaceInverse(ctx, fill.units);

@@ -10,7 +10,7 @@ import {
   useRig,
   useScene,
 } from '@weasel-js/core';
-import type { FillStyle, NodeId, Path, RectPose, Stroke } from '@weasel-js/core';
+import type { Paint, NodeId, Path, RectPose, Stroke } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 300;
@@ -27,7 +27,7 @@ const armAt = (x: number): Skeleton => ({
 const RIGID = armAt(40);
 const SKINNED = armAt(340);
 
-type Data = { shape: 'rect'; fill: FillStyle; stroke: Stroke } | { path: Path; fill: FillStyle; stroke: Stroke };
+type Data = { shape: 'rect'; fill: Paint; stroke: Stroke } | { path: Path; fill: Paint; stroke: Stroke };
 interface NodeSpec { id: NodeId; kind: 'leaf'; layer: 'main'; pose: RectPose; data: Data }
 
 const INK: Stroke = { paint: { color: '#2b2118' }, width: 3, join: 'round' };

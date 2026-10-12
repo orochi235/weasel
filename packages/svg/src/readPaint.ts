@@ -1,7 +1,7 @@
 /** Reading an element's fill and stroke off the cascade. */
 
 import type { SvgPaint, SvgStroke } from './types';
-import type { FillStyle, Stroke } from '@weasel-js/core';
+import type { Paint, Stroke } from '@weasel-js/core';
 import type { GradientTable } from './gradients';
 import { ownProp, ownValue, resolveCurrentColor, styleValue, type StyleContext } from './cascade';
 import { readProperty, type InheritedPropertyName } from './properties';
@@ -122,12 +122,12 @@ export function ownStrokeStyle(el: Element, computed: StyleContext): StyleContex
 
 /**
  * Lower an {@link SvgStroke} to the kit's `Stroke`, whose paint is a
- * `FillStyle` rather than an `SvgPaint`. Returns `undefined` for a stroke
+ * `Paint` rather than an `SvgPaint`. Returns `undefined` for a stroke
  * that paints nothing, so callers can leave the field absent.
  */
 export function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
   if (!stroke) return undefined;
-  let paint: FillStyle;
+  let paint: Paint;
   if (stroke.paint.kind === 'gradient') {
     paint = stroke.paint.paint;
   } else if (stroke.paint.kind === 'solid') {

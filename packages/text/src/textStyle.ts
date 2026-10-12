@@ -10,7 +10,7 @@
  * `StyledRun.fill` / `.stroke` override them per range.
  */
 
-import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
+import type { Paint, ScreenLength, Stroke } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { cssFamilyName } from '@weasel-js/font';
 import type { TextTransform } from './runs/textTransform';
@@ -131,7 +131,7 @@ export interface ResolvedTextStyle {
   wrap: boolean;
   /** `null` is an explicit no-fill, the way it is on every other node kind:
    *  outline-only text, painted by its stroke alone. */
-  fill: FillStyle | null;
+  fill: Paint | null;
   caretColor: string;
   selectionBackground: string | null;
   selectionColor: string | null;
@@ -148,9 +148,9 @@ export interface ResolvedTextStyle {
   stroke?: Stroke;
 }
 
-const DEFAULT_FILL: FillStyle = { fill: 'solid', color: '#000' };
+const DEFAULT_FILL: Paint = { fill: 'solid', color: '#000' };
 
-function paintColor(p: FillStyle | null): string {
+function paintColor(p: Paint | null): string {
   return p !== null && 'color' in p ? p.color : '#000';
 }
 
@@ -194,7 +194,7 @@ export interface TextPaint {
   /** `null` is an explicit no-fill and absent takes the default black — the
    *  reading every other node kind gives `data.fill`. Unfilled text paints
    *  through its stroke and nothing else, so it needs one to be visible. */
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   /**
    * Outline painted over the glyph fill. Absent means no outline — there is
    * no such thing as a default text stroke.

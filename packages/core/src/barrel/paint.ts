@@ -11,7 +11,7 @@ export {
   isPatternSpec,
 } from '@weasel-js/renderer';
 
-// ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
+// ─── Paint types: Paint, Stroke, gradients ──────────────────────────────
 export {
   alignedStrokeRect,
   composePatternTransform,
@@ -30,13 +30,13 @@ export type {
   CommandFill,
   CommandPaintUnits,
   CommandStroke,
-  FillStyle,
+  Paint,
   PosedFill,
   SolidFill,
   GradStop,
   GradientFill,
   GradientKind,
-  GradientUnits,
+  PaintUnits,
   TilePatternSpec,
   PatternTransform,
   PatternTransformParts,
@@ -66,7 +66,7 @@ export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '../util/col
 
 // ─── Default paint constants (fill/stroke/palette/ghost) ────────────────────
 
-// ─── Paint kinds: the registry that makes FillStyle open ────────────────────
+// ─── Paint kinds: the registry that makes Paint open ────────────────────
 export {
   registerPaintKind,
   registerPaintKindLoader,

@@ -3,7 +3,7 @@
  * the two resolutions so every painter and layer applies both.
  */
 
-import type { CommandFill, CommandStroke, FillStyle, Stroke } from '@weasel-js/paint';
+import type { CommandFill, CommandStroke, Paint, Stroke } from '@weasel-js/paint';
 import { fillInPoseFrame, type FillPoseBox } from '../fillInPoseFrame';
 import { resolveFillPattern } from './resolveSpec';
 
@@ -11,7 +11,7 @@ import { resolveFillPattern } from './resolveSpec';
  * `fill` as a draw command's fill: `'bounds'` units mapped onto `box`, and a
  * tile spec swapped for its texture. `null` when a spec cannot rasterize.
  */
-export function commandFill(fill: FillStyle, box: FillPoseBox): CommandFill | null {
+export function commandFill(fill: Paint, box: FillPoseBox): CommandFill | null {
   return resolveFillPattern(fillInPoseFrame(fill, box));
 }
 

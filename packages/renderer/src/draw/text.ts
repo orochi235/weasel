@@ -1,4 +1,4 @@
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import {
   resolveTextStyle,
   type LaidOutGroup,
@@ -145,7 +145,7 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
  * stages. An outline that painted itself while glyphs sat staged behind it
  * would come out under them.
  */
-function drawOutlineMesh(ctx: DrawContext, fill: FillStyle, mesh: Mesh): void {
+function drawOutlineMesh(ctx: DrawContext, fill: Paint, mesh: Mesh): void {
   const paint = batchPaint(ctx, fill, false);
   if (paint === null) return;
   if (tryStageFill(ctx, mesh, paint)) return;
@@ -272,7 +272,7 @@ function drawTextGroup(
 
 /** Which glyph-paint program `fill` needs, or `null` for a paint the batch
  *  draws as one color. */
-function glyphPaintKindOf(fill: FillStyle | null): GlyphPaintKind | null {
+function glyphPaintKindOf(fill: Paint | null): GlyphPaintKind | null {
   const kind = fill?.fill ?? 'solid';
   if (kind === 'pattern') return 'pattern';
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
@@ -307,9 +307,9 @@ function drawPaintedGlyphs(
   const m = ctx.state.transform;
   let bound: ShaderProgram | null;
   if (kind === 'pattern') {
-    bound = bindPattern(ctx, prog, fill as Extract<FillStyle, { fill: 'pattern' }>, BATCH_MODEL);
+    bound = bindPattern(ctx, prog, fill as Extract<Paint, { fill: 'pattern' }>, BATCH_MODEL);
   } else if (kind === 'gradient') {
-    bound = bindGradient(ctx, prog, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, BATCH_MODEL);
+    bound = bindGradient(ctx, prog, fill as Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, BATCH_MODEL);
   } else {
     const painted = renderPaintToScratch(ctx, fill, glyphScreenBounds(group, dx, dy, tanItalic, m));
     bound = painted && bindScratchPaint(ctx, prog, painted);

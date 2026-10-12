@@ -5,7 +5,7 @@ import {
   isGradientFill,
   useNodeOverlayFrame,
   useOngoingAction,
-  type FillStyle,
+  type Paint,
   type GradientFill,
   type RectPose,
   type Scene,
@@ -23,7 +23,7 @@ export type PaintSlot = 'fill' | 'stroke';
 /** What `SceneGradientHandles` reads off a node. Every field is optional, so
  *  any richer app data shape satisfies it. */
 export interface PaintedNodeData {
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   stroke?: Stroke | null;
 }
 
@@ -74,7 +74,7 @@ export function SceneGradientHandles<
   const paint = frame ? paintOf(scene, nodeId, slot) : null;
   if (!frame || !paint) return null;
 
-  const dispatch = (next: FillStyle, phase: 'input' | 'commit'): void => {
+  const dispatch = (next: Paint, phase: 'input' | 'commit'): void => {
     const normalized = fillToBoundsFrame(next, frame.box);
     if (phase === 'commit') edit.commit({ paint: normalized });
     else edit.input({ paint: normalized });
@@ -85,8 +85,8 @@ export function SceneGradientHandles<
     width: frame.width,
     height: frame.height,
     className,
-    onInput: (next: FillStyle) => dispatch(next, 'input'),
-    onChange: (next: FillStyle) => dispatch(next, 'commit'),
+    onInput: (next: Paint) => dispatch(next, 'input'),
+    onChange: (next: Paint) => dispatch(next, 'commit'),
     onCancel: () => edit.cancel(),
   };
 
@@ -107,7 +107,7 @@ function paintOf<TData extends PaintedNodeData, TLayer extends string, TPose ext
   scene: Scene<TData, TLayer, TPose>,
   nodeId: string | null | undefined,
   slot: PaintSlot,
-): FillStyle | null | undefined {
+): Paint | null | undefined {
   if (nodeId == null) return undefined;
   const data = (scene.nodes as ReadonlyMap<string, { data: TData }>).get(nodeId)?.data;
   if (!data) return undefined;

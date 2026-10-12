@@ -1,10 +1,10 @@
 /**
- * FillStyle and Stroke types — the unified shape for "what color or texture
+ * Paint and Stroke types — the unified shape for "what color or texture
  * paints these pixels," modeled on SVG's paint-server concept.
  *
- * - `FillStyle` is a tagged union: solid color, pattern, or gradient. Used
+ * - `Paint` is a tagged union: solid color, pattern, or gradient. Used
  *   wherever a kit option previously took `fillStyle: string`.
- * - `Stroke` pairs a `FillStyle` with structural stroke parameters (width, dash,
+ * - `Stroke` pairs a `Paint` with structural stroke parameters (width, dash,
  *   line cap/join, alignment).
  * - These types are consumed by the GL renderer's DrawCommand path fills
  *   and strokes.
@@ -48,12 +48,12 @@ import type { PatternTransform } from './patternTransform';
  * `transform` on a pattern rotates, scales or skews the tile about `origin`
  * (SVG's `patternTransform`, less its translation). See `PatternTransform`.
  */
-export type FillStyle =
+export type Paint =
   | { fill?: 'solid'; color: string; opacity?: number }
-  | { fill: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: GradientUnits; origin?: { x: number; y: number }; transform?: PatternTransform; opacity?: number }
-  | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number }
-  | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number }
-  | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: GradientUnits; interpolate?: ColorSpace; opacity?: number };
+  | { fill: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: PaintUnits; origin?: { x: number; y: number }; transform?: PatternTransform; opacity?: number }
+  | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
+  | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
+  | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number };
 
 /**
  * Which coordinate space a gradient's geometry (`from`/`to`, `center`,
@@ -77,7 +77,7 @@ export type FillStyle =
  * Defaults to `'screen'`, which is the behavior every gradient had before
  * this field existed.
  */
-export type GradientUnits = 'bounds' | 'local' | 'world' | 'screen';
+export type PaintUnits = 'bounds' | 'local' | 'world' | 'screen';
 
 /**
  * A built-in tile, described as plain data. The serializable half of the
@@ -110,10 +110,10 @@ export interface GradStop {
   color: string;
 }
 
-/** The gradient members of `FillStyle`, as one type. What a gradient editor
+/** The gradient members of `Paint`, as one type. What a gradient editor
  *  edits, and what the gradient-specific helpers accept. */
 export type GradientFill = Extract<
-  FillStyle,
+  Paint,
   { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }
 >;
 
@@ -178,7 +178,7 @@ export function resolveScreenLength(value: ScreenLength, scale: number): number 
   return value.px / scale;
 }
 
-/** Stroke style: a FillStyle plus structural line parameters. */
+/** Stroke style: a Paint plus structural line parameters. */
 export interface Stroke {
   /**
    * Omitted, the stroke paints nothing — the same "no paint" a `fill: null`
@@ -186,7 +186,7 @@ export interface Stroke {
    * stroke whose other fields were seeded without one, and the type is
    * optional so every reader has to answer for that rather than throw on it.
    */
-  paint?: FillStyle;
+  paint?: Paint;
   /** World units, or `{ px }` for screen pixels — resolved against the
    *  accumulated transform at draw time, so it holds its on-screen thickness
    *  as the view zooms, in every direction even when one axis is zoomed more

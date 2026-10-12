@@ -4,7 +4,7 @@ import { setFillAction } from './setFill';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { DEFAULT_FILL_COLOR, solid } from '../../../util/paint';
 import { makeScene, makeSelection, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
@@ -62,8 +62,8 @@ describe('setFillAction', () => {
     h.onEnd?.(ctx, 'commit');
     expect(scene.batches).toEqual(['Set fill']);
     expect(scene.updates).toHaveLength(2);
-    expect((scene.updates[0].data as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
-    expect((scene.updates[1].data as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
+    expect((scene.updates[0].data as { fill: Paint }).fill).toEqual({ color: '#00ff00' });
+    expect((scene.updates[1].data as { fill: Paint }).fill).toEqual({ color: '#00ff00' });
   });
 
   it('seeds from the default fill color when started with no color or paint', () => {
@@ -88,7 +88,7 @@ describe('setFillAction', () => {
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
     h.onEnd?.(ctx, 'commit');
-    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+    expect((scene.updates[0].data as { fill: Paint }).fill)
       .toEqual({ color: '#ff0000', opacity: solid('#11223380').opacity });
   });
 
@@ -97,7 +97,7 @@ describe('setFillAction', () => {
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff000040' } });
     const h = getInvoker().start(ctx, { params: { color: '#ff000040' } });
     h.onEnd?.(ctx, 'commit');
-    expect((scene.updates[0].data as { fill: FillStyle }).fill).toEqual(solid('#ff000040'));
+    expect((scene.updates[0].data as { fill: Paint }).fill).toEqual(solid('#ff000040'));
   });
 
   // -------------------------------------------------------------------------
@@ -121,15 +121,15 @@ describe('setFillAction', () => {
     expect(label).toBe('Set fill');
     expect(ops).toHaveLength(2);
     for (const op of ops) expect(op.name).toBe('setData');
-    const args0 = ops[0].args as { id: string; from: { fill?: FillStyle }; to: { fill?: FillStyle } };
-    const args1 = ops[1].args as { id: string; from: { fill?: FillStyle }; to: { fill?: FillStyle } };
+    const args0 = ops[0].args as { id: string; from: { fill?: Paint }; to: { fill?: Paint } };
+    const args1 = ops[1].args as { id: string; from: { fill?: Paint }; to: { fill?: Paint } };
     expect(args0.id).toBe('a');
     expect(args1.id).toBe('b');
     // `from` is the pre-commit data; `to` carries the recolored final fill.
     expect(args0.from.fill).toEqual({ color: '#ffffff' });
-    expect((args0.to as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
+    expect((args0.to as { fill: Paint }).fill).toEqual({ color: '#00ff00' });
     expect(args1.from.fill).toEqual({ color: '#000000' });
-    expect((args1.to as { fill: FillStyle }).fill).toEqual({ color: '#00ff00' });
+    expect((args1.to as { fill: Paint }).fill).toEqual({ color: '#00ff00' });
   });
 
   it('with no applyOps, falls back to one scene.applyBatch labeled "Set fill"', () => {
@@ -140,7 +140,7 @@ describe('setFillAction', () => {
     expect(scene.applyBatch).toHaveBeenCalledOnce();
     expect(scene.batches).toEqual(['Set fill']);
     // The default adapter's setData routed back through scene.update.
-    expect((scene.updates[0].data as { fill: FillStyle }).fill).toEqual({ color: '#ff0000' });
+    expect((scene.updates[0].data as { fill: Paint }).fill).toEqual({ color: '#ff0000' });
   });
 });
 

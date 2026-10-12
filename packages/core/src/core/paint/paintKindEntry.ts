@@ -1,9 +1,9 @@
 import type { ComponentType } from 'react';
-import type { FillStyle, GradStop } from '@weasel-js/paint';
+import type { Paint, GradStop } from '@weasel-js/paint';
 import type { PaintDrawKind } from '@weasel-js/renderer';
 
 /**
- * `FillStyle`'s discriminant, open on the string the way `ChromeId` is: the
+ * `Paint`'s discriminant, open on the string the way `ChromeId` is: the
  * five kinds the kit ships, plus whatever a consumer registers.
  */
 export type PaintKind = 'solid' | 'linear-gradient' | 'radial-gradient' | 'conic-gradient' | 'pattern' | (string & {});
@@ -11,9 +11,9 @@ export type PaintKind = 'solid' | 'linear-gradient' | 'radial-gradient' | 'conic
 /** What a registered kind's editor renders. `PaintInput` in `@weasel-js/ui`
  *  is the control that mounts it. */
 export interface PaintKindEditorProps {
-  value: FillStyle;
-  onInput?(next: FillStyle): void;
-  onChange(next: FillStyle): void;
+  value: Paint;
+  onInput?(next: Paint): void;
+  onChange(next: Paint): void;
 }
 
 /**
@@ -31,9 +31,9 @@ export interface PaintKindEntry extends PaintDrawKind {
   icon?: string;
   /** A paint of this kind seeded from a color — what an editor writes when a
    *  consumer switches a solid to this kind. */
-  seed(fromColor: string): FillStyle;
+  seed(fromColor: string): Paint;
   /** The single color this paint shows, or `undefined` when it has none. */
-  colorOf(paint: FillStyle): string | undefined;
+  colorOf(paint: Paint): string | undefined;
   /** Editor slot. */
   Editor?: ComponentType<PaintKindEditorProps>;
   /**
@@ -41,10 +41,10 @@ export interface PaintKindEntry extends PaintDrawKind {
    * kind a gradient: `listGradientKinds` returns the kinds carrying both, and
    * `switchGradientKind` converts between any two of them through the list.
    */
-  stopsOf?(paint: FillStyle): GradStop[];
+  stopsOf?(paint: Paint): GradStop[];
   /** A paint of this kind built from a stop list, in `bounds` units. The
    *  converse of `stopsOf`; supply both or neither. */
-  fromStops?(stops: GradStop[]): FillStyle;
+  fromStops?(stops: GradStop[]): Paint;
   /**
    * The `<defs>` entry backing a `url(#id)` reference.
    *
@@ -54,18 +54,18 @@ export interface PaintKindEntry extends PaintDrawKind {
    * a document holds such a paint. That package emits the fallback color
    * beside the reference on its own, from `colorOf`.
    */
-  toSvg?(id: string, fill: FillStyle): string;
+  toSvg?(id: string, fill: Paint): string;
 }
 
 /**
- * A consumer's own paint, typed as a `FillStyle`.
+ * A consumer's own paint, typed as a `Paint`.
  *
- * `FillStyle` stays a closed union: opening its discriminant would widen every
+ * `Paint` stays a closed union: opening its discriminant would widen every
  * built-in member and break the narrowing the kit's own branches depend on.
  * A registered kind declares its own interface instead and passes it through
  * here — the kit reads only `fill` and hands the whole object back to that
  * kind's slots.
  */
-export function asPaint<T extends { fill: string }>(paint: T): FillStyle {
-  return paint as unknown as FillStyle;
+export function asPaint<T extends { fill: string }>(paint: T): Paint {
+  return paint as unknown as Paint;
 }

@@ -1,5 +1,5 @@
 import { createScene, defaultNodeProperties, solid, strokeOf } from '@weasel-js/core';
-import type { FillStyle, RectPose, Scene, Stroke } from '@weasel-js/core';
+import type { Paint, RectPose, Scene, Stroke } from '@weasel-js/core';
 import { defineInstrument, hasConfigPath, type RenderContext, valueAtPath, withValueAtPath } from '@weasel-js/labkit';
 import type { PrefSection } from '@weasel-js/prefs';
 import { useEffect, useRef } from 'react';
@@ -12,7 +12,7 @@ const RECT_SCHEMA: PrefSection = defaultNodeProperties.find((e) => e.name === 'r
 
 interface ShapeData {
   shape: 'rect';
-  fill: FillStyle;
+  fill: Paint;
   stroke: Stroke;
 }
 type Config = Record<string, unknown>;

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import { seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
 import { MeshEditor } from './MeshEditor';
 import { PaintInput } from '../PaintInput';
@@ -46,7 +46,7 @@ describe('MeshEditor', () => {
 describe('PaintInput holding a mesh', () => {
   it('edits it as a mesh rather than flattening it to a solid', () => {
     const onChange = vi.fn();
-    render(<PaintInput value={MESH as unknown as FillStyle} onChange={onChange} aria-label="Fill" />);
+    render(<PaintInput value={MESH as unknown as Paint} onChange={onChange} aria-label="Fill" />);
     const swatch = screen.getByLabelText('Patch 1 corner 1');
     fireEvent.input(swatch, { target: { value: '#0000ff' } });
     fireEvent.blur(swatch);
@@ -56,7 +56,7 @@ describe('PaintInput holding a mesh', () => {
   });
 
   it('lights the mesh segment in the kind bar', () => {
-    render(<PaintInput value={MESH as unknown as FillStyle} onChange={() => {}} aria-label="Fill" />);
+    render(<PaintInput value={MESH as unknown as Paint} onChange={() => {}} aria-label="Fill" />);
     expect(screen.getByRole('radio', { name: 'Mesh' })).toBeChecked();
   });
 });

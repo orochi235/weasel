@@ -1,7 +1,7 @@
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 
-interface Rect { id: string; x: number; y: number; width: number; height: number; fill: FillStyle }
+interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Paint }
 
 const W = 400, H = 300;
 

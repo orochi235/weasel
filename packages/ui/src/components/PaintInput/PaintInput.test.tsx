@@ -4,7 +4,7 @@ import { act, cleanup, render, screen, fireEvent } from '@testing-library/react'
 import {
   asPaint,
   registerPaintKind,
-  type FillStyle,
+  type Paint,
   type GradientFill,
 } from '@weasel-js/core';
 import { seedMeshPatch } from '@weasel-js/core/mesh';
@@ -21,12 +21,12 @@ const LINEAR: GradientFill = {
   units: 'bounds',
 };
 
-const SOLID: FillStyle = { fill: 'solid', color: '#336699ff' };
+const SOLID: Paint = { fill: 'solid', color: '#336699ff' };
 
 /** A controlled host, so a kind switch feeds its own next render the way a
  *  panel does — the switch memory is only reachable across renders. */
-function Host(props: { initial: FillStyle; onCommit?: (next: FillStyle | null) => void }) {
-  const [value, setValue] = useState<FillStyle | null>(props.initial);
+function Host(props: { initial: Paint; onCommit?: (next: Paint | null) => void }) {
+  const [value, setValue] = useState<Paint | null>(props.initial);
   return (
     <PaintInput
       value={value}
@@ -112,7 +112,7 @@ describe('PaintInput', () => {
     render(<Host initial={SOLID} onCommit={onCommit} />);
 
     clickKind('Pattern');
-    const next = onCommit.mock.calls.at(-1)?.[0] as FillStyle;
+    const next = onCommit.mock.calls.at(-1)?.[0] as Paint;
     expect(next.fill).toBe('pattern');
     expect(next).toMatchObject({ pattern: { color: '#336699ff' } });
   });
@@ -300,12 +300,12 @@ describe('PaintInput — solid opacity', () => {
 });
 
 describe('PaintInput — opacity of a paint with no single color', () => {
-  const PATTERN: FillStyle = {
+  const PATTERN: Paint = {
     fill: 'pattern',
     pattern: { tile: 'hatch', color: '#336699', size: 8 },
     units: 'bounds',
   };
-  const MESH: FillStyle = asPaint(seedMeshPatch('#ff0000ff'));
+  const MESH: Paint = asPaint(seedMeshPatch('#ff0000ff'));
 
   // Exact name: a gradient's stop swatches carry opacity sliders of their own.
   const opacitySlider = (): HTMLInputElement =>

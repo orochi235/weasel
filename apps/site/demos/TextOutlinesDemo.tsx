@@ -4,7 +4,7 @@ import {
   registerCanvasFont, registerFontOutlines, unregisterFontOutlines, outlineStatus,
 } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
-import type { FillStyle, SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle } from '@weasel-js/core';
+import type { Paint, SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle } from '@weasel-js/core';
 
 const W = 600, H = 300;
 
@@ -35,7 +35,7 @@ function loadDemoFace(): Promise<void> {
   return facePromise;
 }
 
-interface NodeData { text: string; style: TextStyle; fill: FillStyle }
+interface NodeData { text: string; style: TextStyle; fill: Paint }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 

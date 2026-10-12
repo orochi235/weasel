@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
-import { asPaint, registerPaintKind, type FillStyle } from '@weasel-js/core';
+import { asPaint, registerPaintKind, type Paint } from '@weasel-js/core';
 import { PaintField } from './PaintField';
 
-const GRADIENT: FillStyle = {
+const GRADIENT: Paint = {
   fill: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 0 },

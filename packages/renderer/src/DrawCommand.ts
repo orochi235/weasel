@@ -7,10 +7,10 @@ import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgr
 import type { Effect } from './effects/types';
 
 /**
- * Solid-fill paint variant (subset of the full `FillStyle` union from
+ * Solid-fill paint variant (subset of the full `Paint` union from
  * `@weasel-js/paint`). Kept for back-compat with step-1/2 consumers and
  * because some code reads `fill.color` directly. Through step 4, fills can
- * be any `FillStyle` variant — solid, pattern, or gradient.
+ * be any `Paint` variant — solid, pattern, or gradient.
  */
 export interface SolidPaint {
   fill?: 'solid';
@@ -34,7 +34,7 @@ export interface PathDrawCommand {
   kind: 'path';
   path: Path;
   /** Solid, pattern, or gradient (linear/radial/conic), resolved for the
-   *  renderer: `commandFill` makes one from a node's `FillStyle`. */
+   *  renderer: `commandFill` makes one from a node's `Paint`. */
   fill?: CommandFill;
   /** Stroke spec. Its `paint` takes what `fill` does. */
   stroke?: CommandStroke;
@@ -126,7 +126,7 @@ export interface TextDrawCommand {
 
 /**
  * Image draw command — renders `image` at screen-space rect (x, y, w, h).
- * The image is stretched to fit; no tiling. Use a pattern FillStyle on a path
+ * The image is stretched to fit; no tiling. Use a pattern Paint on a path
  * for tiling.
  */
 export interface ImageDrawCommand {

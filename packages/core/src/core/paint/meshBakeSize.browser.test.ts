@@ -4,7 +4,7 @@
  * width of its blur in output pixels is the texel size the bake was drawn at.
  */
 import { describe, it, expect } from 'vitest';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from '../../canvas/renderSceneToPixels';
@@ -17,7 +17,7 @@ const H = 4;
 
 /** Red on the left half and blue on the right, meeting at a hard break: two
  *  bands with no gradient between them, over the whole `W × H` world box. */
-function hardBreak(): FillStyle {
+function hardBreak(): Paint {
   const mesh = meshFromStops([
     { offset: 0, color: '#ff0000ff' },
     { offset: 0.5, color: '#ff0000ff' },
@@ -28,7 +28,7 @@ function hardBreak(): FillStyle {
     ...patch,
     points: patch.points.map((p) => ({ x: p.x * W, y: p.y * H })),
   }));
-  return { ...mesh, patches, units: 'world' } as unknown as FillStyle;
+  return { ...mesh, patches, units: 'world' } as unknown as Paint;
 }
 
 const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [{

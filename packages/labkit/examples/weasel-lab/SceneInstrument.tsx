@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/core';
 import type {
   AddNodeSpec,
-  FillStyle,
+  Paint,
   RectPose,
   Scene,
   SerializedScene,
@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { type ConfigOf, defineInstrument, f, type RenderContext } from '@weasel-js/labkit';
 
 interface NodeData {
-  fill: FillStyle;
+  fill: Paint;
 }
 type Pose = RectPose;
 type LayerId = 'default';

@@ -2,8 +2,8 @@
 export type { TextureHandle } from './texture';
 export type { CommandFill, CommandPaintUnits, CommandStroke, PosedFill, SolidFill } from './commandPaint';
 export type {
-  FillStyle,
-  GradientUnits,
+  Paint,
+  PaintUnits,
   TilePatternSpec,
   GradStop,
   GradientFill,

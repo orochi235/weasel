@@ -1,4 +1,4 @@
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import type { FontRequest } from '@weasel-js/font';
 import type { DrawCommand } from '@weasel-js/renderer';
 
@@ -23,7 +23,7 @@ export interface RenderNeeds {
 export function renderNeeds(commands: readonly DrawCommand[]): RenderNeeds {
   const fonts = new Map<string, FontRequest>();
   const kinds = new Set<string>();
-  const paint = (p: FillStyle | null | undefined) => {
+  const paint = (p: Paint | null | undefined) => {
     if (p) kinds.add(p.fill ?? 'solid');
   };
   const walk = (list: readonly DrawCommand[]) => {

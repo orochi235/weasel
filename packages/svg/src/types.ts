@@ -1,7 +1,7 @@
 /**
  * Public types for `@weasel-js/svg`. The package exposes a flat,
  * discriminated-union node model (`SvgNode`) that mirrors the SVG element
- * tree but uses weasel-native leaf data (`Path`, `FillStyle`) for geometry and
+ * tree but uses weasel-native leaf data (`Path`, `Paint`) for geometry and
  * paint.
  *
  * Parsing collapses every `transform="..."` onto its descendants' geometry,
@@ -14,7 +14,7 @@
 import { identity, type Mat3 } from '@weasel-js/geom';
 import type { SvgMediaEnvironment } from './media';
 import type {
-  Path, FillStyle, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
+  Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
 } from '@weasel-js/core';
 
@@ -71,15 +71,15 @@ export type { ScreenLength };
 export const IDENTITY_MATRIX: Matrix = identity();
 
 /**
- * FillStyle description in the SVG sense — either explicit `none`, a solid
- * color, or a reference to a weasel-native gradient `FillStyle`. Solid colors
+ * Paint description in the SVG sense — either explicit `none`, a solid
+ * color, or a reference to a weasel-native gradient `Paint`. Solid colors
  * are normalized to `#rrggbb` strings; opacity is carried separately so
  * `fill-opacity` and `stroke-opacity` round-trip cleanly.
  */
 export type SvgPaint =
   | { kind: 'none' }
   | { kind: 'solid'; color: string; opacity?: number }
-  | { kind: 'gradient'; paint: FillStyle };
+  | { kind: 'gradient'; paint: Paint };
 
 /** Stroke description: a paint plus structural line parameters. */
 export interface SvgStroke {
@@ -189,7 +189,7 @@ export interface SvgTextNode {
    *  `data-weasel-vertical-align` and other readers draw the text top-aligned. */
   verticalAlign?: TextVerticalAlign;
   /**
-   * Node-wide glyph paint, the `FillStyle` / `Stroke` a kit text node holds
+   * Node-wide glyph paint, the `Paint` / `Stroke` a kit text node holds
    * in `data.fill` / `data.stroke`. Not `SvgPaint`, which is the path
    * nodes' shape — a text paint reaches the renderer through the runs, and
    * `StyledRun.fill` / `.stroke` override these per range.
@@ -197,7 +197,7 @@ export interface SvgTextNode {
    * `null` is SVG's `fill="none"`: outline-only text, painted by its stroke
    * alone. Absent takes the default black.
    */
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   stroke?: Stroke;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;

@@ -12,7 +12,7 @@ import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInter
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import { asPaint, registerPaintKindLoader, solid, strokeOf } from '@weasel-js/core';
-import type { FillStyle, Stroke, StyledRun } from '@weasel-js/core';
+import type { Paint, Stroke, StyledRun } from '@weasel-js/core';
 import {
   sceneToSvgString,
   selectionToSvgString,
@@ -28,7 +28,7 @@ function fakeScene(nodes: Record<string, {
   kind: 'leaf' | 'container';
   pose: { x: number; y: number; width: number; height: number; rotation?: number };
   data?: {
-    path?: unknown; fill?: FillStyle | null; text?: string; style?: unknown;
+    path?: unknown; fill?: Paint | null; text?: string; style?: unknown;
     runs?: StyledRun[]; stroke?: Stroke | null; image?: unknown;
   };
   children?: string[];
@@ -111,7 +111,7 @@ describe('text export', () => {
     const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
     const leaf = drafts.find(
       (d) => 'obj' in d && (d as { obj?: { tool?: string } }).obj?.tool === 'text',
-    ) as { obj: { fill?: FillStyle | null } };
+    ) as { obj: { fill?: Paint | null } };
     expect(leaf.obj.fill).toBeNull();
   });
 

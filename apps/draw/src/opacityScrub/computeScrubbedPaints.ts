@@ -1,9 +1,9 @@
 import { paintAlpha, paintWithAlpha } from '@weasel-js/core';
-import type { FillStyle, Stroke } from '@weasel-js/core';
+import type { Paint, Stroke } from '@weasel-js/core';
 
 /** A node's paints as stored: `null` is an explicit none, absent is unset. */
 export interface PaintSnapshot {
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   stroke?: Stroke | null;
 }
 

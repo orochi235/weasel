@@ -5,7 +5,7 @@
  * fall off the end of a switch.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { FillStyle, PolygonPath } from '@weasel-js/core';
+import type { Paint, PolygonPath } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';
 import type { SvgNode } from '@weasel-js/svg';
 import {
@@ -56,7 +56,7 @@ out vec4 outColor;
 void main() { outColor = vec4(u_washColor.rgb * u_washColor.a, u_washColor.a); }
 `;
 
-const WASH: FillStyle = asPaint<WashFill>({
+const WASH: Paint = asPaint<WashFill>({
   fill: 'test-wash',
   origin: { x: 0.25, y: 0.5 },
   color: '#ff00ff',

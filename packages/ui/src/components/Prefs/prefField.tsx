@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { numericWeight, type FillStyle } from '@weasel-js/core';
+import { numericWeight, type Paint } from '@weasel-js/core';
 import { endless as withInfinity } from '@weasel-js/quantity';
 import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefLeaf } from '@weasel-js/prefs';
 import { endlessAllows } from '../../endless';
@@ -196,7 +196,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
                 : null;
       return {
         kind: 'paint',
-        value: paint as FillStyle | null | undefined,
+        value: paint as Paint | null | undefined,
         mixed,
         unset,
         onChange: setValue,

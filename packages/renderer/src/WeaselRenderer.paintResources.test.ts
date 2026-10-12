@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from '@weasel-js/geom';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { registerPaintDrawKind, type PaintBindContext } from './paintKinds';
 import type { DrawCommand } from './DrawCommand';
 
@@ -26,7 +26,7 @@ afterEach(() => {
 const frame: DrawCommand[] = [{
   kind: 'path',
   path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-  fill: { fill: 'probe-kind' } as unknown as FillStyle,
+  fill: { fill: 'probe-kind' } as unknown as Paint,
 } as DrawCommand];
 
 function fakeCanvas(gl: WebGL2RenderingContext) {

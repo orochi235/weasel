@@ -72,7 +72,7 @@ export function CharacterOptions({ style, onPatch, children, className }: Charac
 }
 
 /** One control's edit as a run patch. Only `fill` needs shaping: the schema
- *  draws a color, and a run's fill is a `FillStyle` object. */
+ *  draws a color, and a run's fill is a `Paint` object. */
 function characterPatch(path: string, value: unknown): RunStylePatch {
   if (path === 'fill') return { fill: { color: value as string } satisfies StyledRun['fill'] };
   return { [path]: value } as RunStylePatch;

@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene } from '@weasel-js/core';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import type { TextStyle } from '@weasel-js/text';
 import {
   getFontFallbackPolicy, setFontFallbackPolicy,
@@ -34,7 +34,7 @@ const POLICIES: { value: FontFallbackPolicy; label: string }[] = [
   { value: 'none', label: 'none' },
 ];
 
-interface NodeData { text: string; style: TextStyle; fill: FillStyle }
+interface NodeData { text: string; style: TextStyle; fill: Paint }
 
 const NODES = ROWS.map((r, i) => ({
   kind: 'leaf' as const,

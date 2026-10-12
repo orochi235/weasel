@@ -10,7 +10,7 @@ import {
   usePaintKind,
   usePaintKinds,
   withAlpha01,
-  type FillStyle,
+  type Paint,
   type PaintKind,
 } from '@weasel-js/core';
 import { Icon } from '../../icons/Icon';
@@ -33,27 +33,27 @@ const NONE = 'none';
 /** A solid paint as the one `#rrggbbaa` a color field edits. Its alpha lives
  *  in `opacity`; a hex alpha left in `color` multiplies with it when painted,
  *  so both fold in. */
-function solidHex8(paint: FillStyle): string {
+function solidHex8(paint: Paint): string {
   const hex8 = toHex8((paint as { color: string }).color);
   return withAlpha01(hex8.slice(0, 7), getAlpha01(hex8) * paintAlpha(paint));
 }
 
 /** `solid(color)` at the slider's own 1% resolution: the alpha arrives
  *  through a hex channel, which would turn 70% into 0.70196. */
-function solidFromField(color: string): FillStyle {
+function solidFromField(color: string): Paint {
   const paint = solid(color);
   return paint.opacity === undefined
     ? paint
     : { ...paint, opacity: Math.round(paint.opacity * 100) / 100 };
 }
 
-function isPattern(paint: FillStyle | undefined): paint is PatternFill {
+function isPattern(paint: Paint | undefined): paint is PatternFill {
   return paint?.fill === 'pattern';
 }
 
 /** A paint's own discriminant. The solid member leaves `fill` off, and an
  *  explicit `null` is the absence of paint rather than an unknown one. */
-function kindOf(paint: FillStyle | null | undefined): PaintKind | null {
+function kindOf(paint: Paint | null | undefined): PaintKind | null {
   if (paint === null) return NONE;
   if (paint === undefined) return null;
   return paint.fill ?? 'solid';
@@ -64,7 +64,7 @@ function kindOf(paint: FillStyle | null | undefined): PaintKind | null {
 export interface PaintInputProps {
   /** The paint being edited. `null` is an explicit "no paint"; `undefined`
    *  is no value to show. */
-  value: FillStyle | null | undefined;
+  value: Paint | null | undefined;
   /** Indeterminate presentation: no kind lit, and the body withheld because
    *  there is no single paint to show. */
   mixed?: boolean;
@@ -81,8 +81,8 @@ export interface PaintInputProps {
    *  dropped when this changes, so one subject is never offered another's
    *  paints. Leave it off for a control that only ever edits one thing. */
   subject?: string | number;
-  onInput?: (next: FillStyle | null) => void;
-  onChange: (next: FillStyle | null) => void;
+  onInput?: (next: Paint | null) => void;
+  onChange: (next: Paint | null) => void;
   /** Names the paint this control edits — `Fill`, `Color`. Carried by the
    *  solid body's swatch, which is the part with a value to announce. */
   'aria-label'?: string;
@@ -90,7 +90,7 @@ export interface PaintInputProps {
 }
 
 /**
- * Editor for a whole `FillStyle` — a kind bar over whichever body that kind
+ * Editor for a whole `Paint` — a kind bar over whichever body that kind
  * wants.
  *
  * The bar is driven by the paint-kind registry rather than a fixed list, so a
@@ -109,7 +109,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   const ariaLabel = props['aria-label'];
 
   // Per-kind memory, so linear → solid → linear comes back with its stops.
-  const [held, setHeld] = useState(() => ({ subject, kinds: new Map<PaintKind, FillStyle>() }));
+  const [held, setHeld] = useState(() => ({ subject, kinds: new Map<PaintKind, Paint>() }));
   let memory = held;
   if (held.subject !== subject) {
     memory = { subject, kinds: new Map() };
@@ -182,7 +182,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
 
   /** A solid's alpha rides its swatch; every other kind has no one color to
    *  carry it, so its `opacity` gets the same slider under the body. */
-  function withOpacity(paint: FillStyle, body: ReactElement): ReactElement {
+  function withOpacity(paint: Paint, body: ReactElement): ReactElement {
     return (
       <>
         {body}

@@ -5,7 +5,7 @@ import {
   DialogTrigger,
   Popover as RACPopover,
 } from 'react-aria-components';
-import { usePaintKind, type FillStyle, type PaintKind } from '@weasel-js/core';
+import { usePaintKind, type Paint, type PaintKind } from '@weasel-js/core';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { paintPreviewCss } from '../../paintPreview';
 import { PaintInput } from '../PaintInput';
@@ -17,7 +17,7 @@ import s from './PaintField.module.css';
 export interface PaintFieldProps extends OverlayPortalProps {
   /** The paint being edited. `null` is an explicit "no paint"; `undefined` is
    *  no value to show. */
-  value: FillStyle | null | undefined;
+  value: Paint | null | undefined;
   /** Indeterminate presentation: the trigger says "Mixed" and the editor
    *  lights no kind. */
   mixed?: boolean;
@@ -29,15 +29,15 @@ export interface PaintFieldProps extends OverlayPortalProps {
   allowNone?: boolean;
   /** The trigger shows the paint and opens nothing. */
   disabled?: boolean;
-  onInput?: (next: FillStyle | null) => void;
-  onChange: (next: FillStyle | null) => void;
+  onInput?: (next: Paint | null) => void;
+  onChange: (next: Paint | null) => void;
   /** Names the paint this field edits — `Fill`, `Color`. */
   'aria-label'?: string;
   className?: string;
 }
 
 /** What the trigger says it is holding. */
-function kindLabel(paint: FillStyle | null | undefined, mixed: boolean, label: string | undefined): string {
+function kindLabel(paint: Paint | null | undefined, mixed: boolean, label: string | undefined): string {
   if (mixed) return 'Mixed';
   if (paint === null) return 'None';
   if (paint === undefined) return '—';
@@ -45,7 +45,7 @@ function kindLabel(paint: FillStyle | null | undefined, mixed: boolean, label: s
 }
 
 /**
- * A whole `FillStyle` in one control slot: a swatch that says which kind it
+ * A whole `Paint` in one control slot: a swatch that says which kind it
  * holds, and a popover holding {@link PaintInput}.
  *
  * `PaintInput` itself is a kind bar over a body — six segments and a stop

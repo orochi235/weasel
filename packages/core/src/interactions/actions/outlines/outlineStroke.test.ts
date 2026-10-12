@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { boundsOfPath, pathFromD, pointInPath, type Path, type Rect } from '@weasel-js/geom';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Paint, Stroke } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { pathPaintOf } from 'canvas/nodeShapes/nodePaint';
@@ -12,11 +12,11 @@ import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter'
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { applyOutlineStroke } from './outlineStroke';
 
-interface Data { path?: Path; fill?: FillStyle | null; stroke?: Stroke }
+interface Data { path?: Path; fill?: Paint | null; stroke?: Stroke }
 type Pose = { x: number; y: number; width: number; height: number };
 
-const RED: FillStyle = { color: '#f00' };
-const BLUE: FillStyle = { color: '#00f' };
+const RED: Paint = { color: '#f00' };
+const BLUE: Paint = { color: '#00f' };
 const LINE: Path = pathFromD('M0 50 L100 50');
 const BOX: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
 

@@ -15,7 +15,7 @@
  * only — `domToRuns` reads straight through them.
  */
 
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import {
   DEFAULT_TEXT_STYLE, isHardLineBreak, numericWeight, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
@@ -26,7 +26,7 @@ import { BLOCK_TAGS } from './domOffsets';
 
 export { charOffsetToDomPosition, domPositionToCharOffset } from './domOffsets';
 
-function solidColor(p: FillStyle | null | undefined): string | null {
+function solidColor(p: Paint | null | undefined): string | null {
   if (!p) return null;
   if ('color' in p) return p.color;
   return null;
@@ -219,7 +219,7 @@ function toRun(text: string, style: StyleState): StyledRun {
   if (style.fontWeight != null) run.fontWeight = style.fontWeight;
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
-  if (style.fillJson !== undefined) run.fill = JSON.parse(style.fillJson) as FillStyle | null;
+  if (style.fillJson !== undefined) run.fill = JSON.parse(style.fillJson) as Paint | null;
   else if (style.color != null) run.fill = { fill: 'solid', color: style.color };
   // `letterSpacing: 0` is a meaningful override (it cancels node-level
   // tracking for this run), so test for presence, not truthiness.

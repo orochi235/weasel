@@ -145,7 +145,7 @@ export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintS
       registerMarkers(n.stroke, registry);
     } else if (n.kind === 'text') {
       // Text paints flow through `style` / `runs` rather than a top-level
-      // SvgPaint, so register direct FillStyle references when present. This
+      // SvgPaint, so register direct Paint references when present. This
       // pre-pass is load-bearing: `<defs>` is emitted before the body, so a
       // paint first seen while writing an element would be referenced by an
       // id that no definition backs.
@@ -162,7 +162,7 @@ export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintS
 
 /** Register one text paint if it is a paint server rather than a colour. */
 function registerTextPaint(
-  paint: import('@weasel-js/core').FillStyle | null | undefined,
+  paint: import('@weasel-js/core').Paint | null | undefined,
   registry: PaintServerRegistry,
 ): void {
   if (paint && !('color' in paint)) registry.register(paint);
@@ -324,7 +324,7 @@ function opacityAttr(name: string, v: number | undefined): string[] {
 
 /**
  * Attributes for a kit `Stroke` — the shape text carries, whose `paint` is a
- * `FillStyle` rather than an `SvgPaint`. Text strokes ride inside
+ * `Paint` rather than an `SvgPaint`. Text strokes ride inside
  * `TextStyle` / `StyledRun` rather than as a node-level `SvgStroke`, because
  * that is where the kit's text model puts them.
  *

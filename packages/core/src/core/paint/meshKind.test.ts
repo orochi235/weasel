@@ -6,7 +6,7 @@ import { seedMeshPatch, isMeshGradientFill, meshGradientXml, MESH_GRADIENT_KIND 
 import type { MeshGradientFill } from '@weasel-js/renderer/mesh';
 import { MESH_BAKE_SIZE } from '@weasel-js/renderer/mesh';
 import 'core/paint/registerMesh';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import type { PaintBindContext, PaintProgram } from '@weasel-js/renderer';
 
 const BOX = { x: 10, y: 20, width: 200, height: 100 };
@@ -64,7 +64,7 @@ describe('the mesh-gradient kind', () => {
 
   it('seeds a patch from a color rather than a rectangle', () => {
     const seeded = entry().seed('#3fb08cff') as unknown as MeshGradientFill;
-    expect(isMeshGradientFill(seeded as unknown as FillStyle)).toBe(true);
+    expect(isMeshGradientFill(seeded as unknown as Paint)).toBe(true);
     expect(seeded.patches).toHaveLength(1);
     expect(seeded.patches[0].points).toHaveLength(12);
     expect(seeded.units).toBe('bounds');
@@ -74,16 +74,16 @@ describe('the mesh-gradient kind', () => {
   });
 
   it('shows the first corner color, which is what a fallback swatch reads', () => {
-    expect(entry().colorOf(seedMeshPatch('#123456ff') as unknown as FillStyle)).toBe('#123456ff');
+    expect(entry().colorOf(seedMeshPatch('#123456ff') as unknown as Paint)).toBe('#123456ff');
   });
 
   it('round-trips through the pose frame and back', () => {
-    const mesh = seedMeshPatch('#ff0000ff') as unknown as FillStyle;
+    const mesh = seedMeshPatch('#ff0000ff') as unknown as Paint;
     const posed = fillInPoseFrame(mesh, BOX) as unknown as MeshGradientFill;
     expect(posed.units).toBe('local');
     expect(posed.patches[0].points[0]).toEqual({ x: 10, y: 20 });
 
-    const back = fillToBoundsFrame(posed as unknown as FillStyle, BOX) as unknown as MeshGradientFill;
+    const back = fillToBoundsFrame(posed as unknown as Paint, BOX) as unknown as MeshGradientFill;
     expect(back.units).toBe('bounds');
     const before = (mesh as unknown as MeshGradientFill).patches[0].points;
     back.patches[0].points.forEach((p, i) => {
@@ -129,7 +129,7 @@ describe('the mesh-gradient kind', () => {
 describe('binding a mesh paint', () => {
   it('uploads the bake once and reuses it for the same paint', () => {
     const { ctx, calls } = bindContext();
-    const mesh = seedMeshPatch('#ff0000ff') as unknown as FillStyle;
+    const mesh = seedMeshPatch('#ff0000ff') as unknown as Paint;
 
     expect(entry().bind!(ctx, mesh)).not.toBeNull();
     const first = calls().filter((n) => n === 'texImage2D').length;
@@ -139,7 +139,7 @@ describe('binding a mesh paint', () => {
     expect(calls().filter((n) => n === 'texImage2D').length).toBe(1);
   });
 
-  const posedMesh = () => fillInPoseFrame(seedMeshPatch('#ff0000ff') as unknown as FillStyle, BOX);
+  const posedMesh = () => fillInPoseFrame(seedMeshPatch('#ff0000ff') as unknown as Paint, BOX);
   const uploadedSides = (argsOf: (name: string) => readonly unknown[][]) =>
     argsOf('texImage2D').map((args) => args[3]);
 
@@ -156,7 +156,7 @@ describe('binding a mesh paint', () => {
 
   it('reuses one bake while the node carrying a bounds-relative mesh moves', () => {
     const { ctx, argsOf, program } = bindContext();
-    const source = seedMeshPatch('#ff0000ff') as unknown as FillStyle;
+    const source = seedMeshPatch('#ff0000ff') as unknown as Paint;
     const originOf = () => argsOf('uniform2f')
       .filter((args) => args[0] === program.uniform('u_meshOrigin')).at(-1)!.slice(1);
 
@@ -207,7 +207,7 @@ describe('binding a mesh paint', () => {
 
   it('clamps the bake, since a mesh is not a tile', () => {
     const { ctx, gl, argsOf } = bindContext();
-    entry().bind!(ctx, seedMeshPatch('#ff0000ff') as unknown as FillStyle);
+    entry().bind!(ctx, seedMeshPatch('#ff0000ff') as unknown as Paint);
     const wraps = argsOf('texParameteri').filter(
       ([, name]) => name === gl.TEXTURE_WRAP_S || name === gl.TEXTURE_WRAP_T,
     );
@@ -217,14 +217,14 @@ describe('binding a mesh paint', () => {
 
   it('declines a mesh with no drawable patch rather than painting a blank', () => {
     const { ctx } = bindContext();
-    const empty = { fill: MESH_GRADIENT_KIND, patches: [] } as unknown as FillStyle;
+    const empty = { fill: MESH_GRADIENT_KIND, patches: [] } as unknown as Paint;
     expect(entry().bind!(ctx, empty)).toBeNull();
   });
 
   it('declines when the paint space has no inverse', () => {
     const { ctx } = bindContext();
     const flattened: PaintBindContext = { ...ctx, spaceInverse: () => null };
-    expect(entry().bind!(flattened, seedMeshPatch('#ff0000ff') as unknown as FillStyle)).toBeNull();
+    expect(entry().bind!(flattened, seedMeshPatch('#ff0000ff') as unknown as Paint)).toBeNull();
   });
 });
 
@@ -234,7 +234,7 @@ describe('the mesh as a gradient kind', () => {
     { offset: 0.3, color: '#ffff00ff' },
     { offset: 1, color: '#0000ffff' },
   ];
-  const LINEAR: FillStyle = {
+  const LINEAR: Paint = {
     fill: 'linear-gradient',
     from: { x: 0, y: 0.5 },
     to: { x: 1, y: 0.5 },
@@ -274,7 +274,7 @@ describe('the mesh as a gradient kind', () => {
 
   it('reads a seeded mesh as its top edge, left to right', () => {
     const seed = seedMeshPatch('#ff0000ff');
-    const back = switchGradientKind(seed as unknown as FillStyle, 'radial-gradient') as { fill: string; stops: unknown };
+    const back = switchGradientKind(seed as unknown as Paint, 'radial-gradient') as { fill: string; stops: unknown };
     expect(back.fill).toBe('radial-gradient');
     expect(back.stops).toEqual([
       { offset: 0, color: seed.patches[0].colors[0] },

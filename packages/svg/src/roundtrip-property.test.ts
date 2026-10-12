@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { PathBuilder, type FillStyle } from '@weasel-js/core';
+import { PathBuilder, type Paint } from '@weasel-js/core';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import type { SvgNode, SvgPaint, SvgStroke } from './types';
@@ -31,7 +31,7 @@ function makeTree(seed: number): SvgNode[] {
   const pick = <T,>(xs: readonly T[]): T => xs[Math.floor(r() * xs.length)];
   const coord = (): number => Math.round(r() * 4000 - 2000) / 10;
 
-  const gradient = (): FillStyle => (r() < 0.5
+  const gradient = (): Paint => (r() < 0.5
     ? {
       fill: 'linear-gradient',
       from: { x: coord(), y: coord() },
@@ -120,7 +120,7 @@ function makeTree(seed: number): SvgNode[] {
         fontFamily: pick(['Inter', 'Helvetica Neue', 'Times New Roman']),
         ...(r() < 0.5 ? { align: pick(['left', 'center', 'right'] as const) } : {}),
         ...(r() < 0.5 ? { underline: true } : {}),
-        ...(r() < 0.4 ? { fill: { fill: 'solid', color: pick(COLORS) } as FillStyle } : {}),
+        ...(r() < 0.4 ? { fill: { fill: 'solid', color: pick(COLORS) } as Paint } : {}),
       };
     }
     if (r() < 0.3) node.rotation = Math.round(r() * 6000) / 1000;

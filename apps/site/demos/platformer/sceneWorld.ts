@@ -1,7 +1,7 @@
 // apps/site/demos/platformer/sceneWorld.ts
 import { asNodeId, solid } from '@weasel-js/core';
 import type {
-  FillStyle,
+  Paint,
   NodeId,
   RectPose,
   Scene,
@@ -20,9 +20,9 @@ import { POLE, type GameRefs } from './world';
 /** The node payloads this demo uses, all of them shapes the kit's built-in
  *  painters already know how to draw. */
 export type WorldData =
-  | { shape: 'rect' | 'ellipse'; fill: FillStyle }
-  | { shape: 'polygon'; fill: FillStyle; sides: number }
-  | { text: string; style: TextStyle; fill: FillStyle; verticalAlign?: TextVerticalAlign };
+  | { shape: 'rect' | 'ellipse'; fill: Paint }
+  | { shape: 'polygon'; fill: Paint; sides: number }
+  | { text: string; style: TextStyle; fill: Paint; verticalAlign?: TextVerticalAlign };
 
 export type WorldLayer = 'tiles' | 'entities' | 'player';
 

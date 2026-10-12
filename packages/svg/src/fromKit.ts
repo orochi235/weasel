@@ -9,7 +9,7 @@ import {
   DEFAULT_SHAPE_FILL,
   fillInPoseFrame,
   pathInPoseFrame,
-  type FillStyle,
+  type Paint,
   type ImageNodeData,
   type Path,
   type PoseLinear,
@@ -38,7 +38,7 @@ export interface SvgKitPose {
  *  `svgNodesToKitDrafts` writes. */
 export interface SvgKitLeafData {
   path?: Path;
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   stroke?: Stroke | null;
   text?: string;
   style?: TextStyle;
@@ -50,7 +50,7 @@ export interface SvgKitLeafData {
 /** A kit paint as an `SvgPaint`. `null` is `fill="none"`; a box-relative
  *  gradient or pattern is resolved into `box`, since the geometry it paints
  *  is written already placed there. */
-export function svgPaintFromKit(fill: FillStyle | null, box: SvgKitPose): SvgPaint {
+export function svgPaintFromKit(fill: Paint | null, box: SvgKitPose): SvgPaint {
   if (fill === null) return { kind: 'none' };
   if (fill.fill === undefined || fill.fill === 'solid') {
     return { kind: 'solid', color: fill.color, ...(fill.opacity != null ? { opacity: fill.opacity } : {}) };

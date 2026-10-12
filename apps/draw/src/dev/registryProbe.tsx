@@ -12,7 +12,7 @@ import {
   type NodeRoutingEntry,
   type ToolDef,
   type ToolsApi,
-  type FillStyle,
+  type Paint,
   BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
@@ -31,7 +31,7 @@ interface ProbeProps {
   onSnapshot(s: RegistrySnapshot): void;
 }
 
-interface ShapeData { fill: FillStyle }
+interface ShapeData { fill: Paint }
 interface ShapePose { x: number; y: number; width: number; height: number }
 
 /** Mounts a hidden SceneCanvas with the exhaustive tool bundle and lets the

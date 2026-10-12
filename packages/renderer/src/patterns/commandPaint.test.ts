@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Paint, Stroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
 import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './test-utils/fakeOffscreenCanvas';
 import { _resetPatternSpecCacheForTests } from './resolveSpec';
@@ -8,13 +8,13 @@ import { commandFill, commandStroke } from './commandPaint';
 
 const BOX = { x: 10, y: 20, width: 100, height: 50 };
 const RECT = { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } as const;
-const BOUNDS_GRADIENT: FillStyle = {
+const BOUNDS_GRADIENT: Paint = {
   fill: 'linear-gradient',
   from: { x: 0, y: 0 }, to: { x: 1, y: 1 },
   stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
   units: 'bounds',
 };
-const HATCH: FillStyle = { fill: 'pattern', pattern: { tile: 'hatch', color: '#000' }, units: 'bounds' };
+const HATCH: Paint = { fill: 'pattern', pattern: { tile: 'hatch', color: '#000' }, units: 'bounds' };
 
 describe('commandFill', () => {
   beforeEach(() => {

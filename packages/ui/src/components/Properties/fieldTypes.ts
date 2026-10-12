@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { FillStyle, PaintKind } from '@weasel-js/core';
+import type { Paint, PaintKind } from '@weasel-js/core';
 import type { Display, UnitTable } from '@weasel-js/quantity';
 import type { Endless } from '../../endless';
 
@@ -179,9 +179,9 @@ export interface PropertyPaintFieldProps extends FieldBase {
    *  `inline` draws the kind bar and its editor in place. */
   control?: 'swatch' | 'inline';
   /** `null` is an explicit "no paint"; `undefined` is nothing to show. */
-  value: FillStyle | null | undefined;
-  onChange: (next: FillStyle | null) => void;
-  onInput?: (next: FillStyle | null) => void;
+  value: Paint | null | undefined;
+  onChange: (next: Paint | null) => void;
+  onInput?: (next: Paint | null) => void;
   /** Offer "None". Default `true`. */
   allowNone?: boolean;
   /** Restrict the kinds offered. Default: every registered kind. */

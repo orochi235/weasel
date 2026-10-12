@@ -14,7 +14,7 @@ import {
   resolvePaletteColor,
   type ColorLiteral,
   type CommandStroke,
-  type FillStyle,
+  type Paint,
   type Palette,
   type SolidFill,
   type Stroke,
@@ -78,12 +78,12 @@ export function strokeOf(color: string, width = 1): CommandStroke & { paint: Sol
 
 /** A stroke painted with `paint` at `width` world units — `strokeOf`'s sibling
  *  for a gradient or pattern, which has no color to pass. */
-export function strokeWith(paint: FillStyle, width = 1): Stroke {
+export function strokeWith(paint: Paint, width = 1): Stroke {
   return { paint, width };
 }
 
 /** The kit's default node paint — what a shape with no declared fill paints. */
-export const DEFAULT_SHAPE_FILL: FillStyle = { color: '#888' };
+export const DEFAULT_SHAPE_FILL: Paint = { color: '#888' };
 
 /**
  * The 0..1 alpha a paint paints at.
@@ -91,12 +91,12 @@ export const DEFAULT_SHAPE_FILL: FillStyle = { color: '#888' };
  * Every paint kind carries its alpha in `opacity` — that is the one slot a
  * gradient or a pattern has, so it is the slot all of them use.
  */
-export function paintAlpha(paint: FillStyle | undefined): number {
+export function paintAlpha(paint: Paint | undefined): number {
   return paint?.opacity ?? 1;
 }
 
 /** `paint` painting at `alpha01` (clamped to 0..1). */
-export function paintWithAlpha(paint: FillStyle, alpha01: number): FillStyle {
+export function paintWithAlpha(paint: Paint, alpha01: number): Paint {
   return { ...paint, opacity: Math.max(0, Math.min(1, alpha01)) };
 }
 
@@ -108,7 +108,7 @@ export function paintWithAlpha(paint: FillStyle, alpha01: number): FillStyle {
  * a swatch means "paint this color". An alpha channel in `color` wins;
  * without one, the paint's existing opacity carries over.
  */
-export function paintWithColor(paint: FillStyle | undefined, color: string): FillStyle {
+export function paintWithColor(paint: Paint | undefined, color: string): Paint {
   const next = solid(color);
   const explicitAlpha = color.length === 9 && color.startsWith('#');
   if (explicitAlpha || paint === undefined) return next;

@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import { paintPreviewCss } from '../../paintPreview';
 import { solidColorOf } from '../paintValue';
 import { Button } from '../Button';
@@ -11,8 +11,8 @@ import s from './FillStrokeSwatch.module.css';
 /** Props for {@link FillStrokeSwatch}. */
 export interface FillStrokeSwatchProps {
   /** `null` is an explicit "no paint". */
-  fill: FillStyle | null | undefined;
-  stroke: FillStyle | null | undefined;
+  fill: Paint | null | undefined;
+  stroke: Paint | null | undefined;
   /** The slot that edits aimed at "the current paint" land on — the None
    *  button, a palette click, a keyboard shortcut the app binds. */
   focused: PaintSlot;
@@ -42,7 +42,7 @@ const PICKER_FALLBACK: Record<PaintSlot, string> = { fill: '#ffffff', stroke: '#
 
 function Chip(props: {
   slot: PaintSlot;
-  paint: FillStyle | null | undefined;
+  paint: Paint | null | undefined;
   focused: boolean;
   onFocusChange: (slot: PaintSlot) => void;
   onInput?: (slot: PaintSlot, color: string) => void;

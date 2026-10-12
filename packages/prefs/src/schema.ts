@@ -214,7 +214,7 @@ export interface PrefColor extends PrefBase<'color', string> {
 export type PrefCustom = PrefBase<string, unknown>;
 
 /**
- * A whole `FillStyle`, not a color inside one. Use it wherever the value is
+ * A whole `Paint`, not a color inside one. Use it wherever the value is
  * the tagged paint union — a solid color, a pattern, a gradient — rather
  * than a hex string.
  *

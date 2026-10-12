@@ -55,7 +55,7 @@
  * pen deltas, never an absolute coordinate, so the translation is exact.
  */
 
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Paint, Stroke } from '@weasel-js/paint';
 import {
   resolveFontVariant, resolveGlyphFallback, glyphOutline, fontPending, faceMetricsOf,
   type ResolveResult, type BmFontChar, type BmFont, type FontStyle, type FaceMetrics,
@@ -127,7 +127,7 @@ export interface LaidOutGroup {
   /** `null` for an unfilled run: the group's glyphs are painted by `stroke`
    *  alone. Only ever null on an `'outline'` group carrying a stroke, since
    *  nothing else can put ink down without a fill. */
-  fill: FillStyle | null;
+  fill: Paint | null;
   /** Outline painted over the glyphs, or absent for none. Only ever set on
    *  an `'outline'` group — the SDF tiers have no geometry to stroke, which
    *  is why a stroke pulls its run onto the outline tier at any size. A run
@@ -150,7 +150,7 @@ export interface LaidOutGroup {
 export interface LaidOutDecoration {
   kind: DecorationKind;
   x0: number; y0: number; x1: number; y1: number;
-  fill: FillStyle;
+  fill: Paint;
 }
 
 /**
@@ -369,7 +369,7 @@ interface LayoutContext {
   groups: Map<string, LaidOutGroup>;
 }
 
-function fillKey(p: FillStyle | null): string {
+function fillKey(p: Paint | null): string {
   if (p === null) return 'none';
   if ('color' in p) return `s:${p.color}:${p.opacity ?? 1}`;
   return `nx:${refId(p)}`;
@@ -382,7 +382,7 @@ function fillKey(p: FillStyle | null): string {
  * gradient/pattern has no cheap structural equality and a false positive
  * would paint one run's rule with another's paint.
  */
-function sameFill(a: FillStyle | null, b: FillStyle | null): boolean {
+function sameFill(a: Paint | null, b: Paint | null): boolean {
   if (a === b) return true;
   if (a !== null && b !== null && 'color' in a && 'color' in b) {
     return a.color === b.color && (a.opacity ?? 1) === (b.opacity ?? 1);
@@ -394,7 +394,7 @@ function sameFill(a: FillStyle | null, b: FillStyle | null): boolean {
  *  does not, and must not pull a run onto the outline tier for nothing. A
  *  screen-pixel width is positive on the same terms; what it resolves to in
  *  world units depends on a scale this layer does not have and does not need. */
-function strokePaints(s: Stroke | undefined): s is Stroke & { paint: FillStyle } {
+function strokePaints(s: Stroke | undefined): s is Stroke & { paint: Paint } {
   if (s?.paint === undefined) return false;
   const w = s.width ?? 1;
   return (typeof w === 'number' ? w : w.px) > 0;
@@ -422,7 +422,7 @@ function groupKey(
   weight: number,
   style: FontStyle,
   synthetic: { bold: boolean; italic: boolean },
-  fill: FillStyle | null,
+  fill: Paint | null,
   stroke: Stroke | undefined,
   source: 'atlas' | 'canvas' | 'outline',
   page: number,
@@ -972,7 +972,7 @@ export function layoutRuns(
     underline: boolean;
     strikethrough: boolean;
     overline: boolean;
-    fill: FillStyle;
+    fill: Paint;
     fontSize: number;
     face: FaceMetrics | undefined;
     baselineY: number;

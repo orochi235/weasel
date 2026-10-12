@@ -12,9 +12,9 @@ import {
 import { useAnimator } from '@weasel-js/animator';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { FillStyle, ParallaxOpts, Path, View, RenderLayer } from '@weasel-js/core';
+import type { Paint, ParallaxOpts, Path, View, RenderLayer } from '@weasel-js/core';
 
-type NodeData = { path: Path; fill: FillStyle } | { fill: null };
+type NodeData = { path: Path; fill: Paint } | { fill: null };
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;

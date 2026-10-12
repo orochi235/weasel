@@ -12,7 +12,7 @@
 import type { ReactElement } from 'react';
 import {
   DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, mergeAlphaFromPrev, useOngoingAction,
-  type FillStyle,
+  type Paint,
 } from '@weasel-js/core';
 import { FillStrokeSwatch } from '@weasel-js/ui';
 import { useColorContext } from './tools/colorContext';
@@ -26,7 +26,7 @@ export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: DEFAULT_FILL_CO
 export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR };
 
 /** An active paint as a node's fill or a stroke's paint; `null` is none. */
-export function toFillStyle(p: ActivePaint): FillStyle | null {
+export function toPaint(p: ActivePaint): Paint | null {
   if (p.kind === 'none') return null;
   return { fill: 'solid', color: p.kind === 'solid' ? p.color : '#00000000' };
 }
@@ -52,8 +52,8 @@ export function ActiveSwatches(): ReactElement {
   return (
     <FillStrokeSwatch
       className="wd-active-swatches"
-      fill={toFillStyle(colors.fill)}
-      stroke={toFillStyle(colors.stroke)}
+      fill={toPaint(colors.fill)}
+      stroke={toPaint(colors.stroke)}
       focused={colors.focused}
       onFocusChange={colors.setFocus}
       onInput={(slot, color) => edits[slot].input({ color: pick(slot, color) })}

@@ -36,7 +36,7 @@ import {
   type ToolDef,
   type ToolsApi,
   solid,
-  type FillStyle,
+  type Paint,
 } from '@weasel-js/core';
 import {
   buildRouteRegistry,
@@ -103,7 +103,7 @@ function writeBundle(b: ToolBundle): void {
 // to act on (select / resize / rotate need targets, etc.).
 // ─────────────────────────────────────────────────────────────────────────
 
-interface ShapeData { fill: FillStyle }
+interface ShapeData { fill: Paint }
 interface ShapePose { x: number; y: number; width: number; height: number }
 
 const INITIAL_NODES = [

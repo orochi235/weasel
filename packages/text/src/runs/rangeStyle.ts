@@ -93,7 +93,7 @@ const FLAG_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>([
 
 /**
  * Structural equality over the JSON-ish values a run can hold. This assumes
- * `FillStyle` stays acyclic and plain — every member of the union is data
+ * `Paint` stays acyclic and plain — every member of the union is data
  * (`TextureHandle` is `{ id }`, so patterns compare by id, which is right).
  * A fill that grew a cyclic field would recurse forever.
  */

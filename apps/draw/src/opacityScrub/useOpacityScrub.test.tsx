@@ -8,13 +8,13 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   ActionsProvider, SceneCanvas, asNodeId, inferredNodeProperties,
   paintAlpha, solid, useScene, useSelection,
-  type FillStyle, type View,
+  type Paint, type View,
 } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import { WD_RENDERERS } from '../paintRenderers';
 import { useOpacityScrub } from './useOpacityScrub';
 
-type D = { fill?: FillStyle | null; text?: string };
+type D = { fill?: Paint | null; text?: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 

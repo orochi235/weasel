@@ -2,7 +2,7 @@
 
 import type { Matrix, SvgNode, SvgTextNode } from './types';
 import {
-  type StyledRun, type TextStyle, type TextPaint, type FillStyle, layoutRuns, resolveRuns,
+  type StyledRun, type TextStyle, type TextPaint, type Paint, layoutRuns, resolveRuns,
   resolveScreenLength, resolveTextStyle,
 } from '@weasel-js/core';
 import { multiply, parseTransform, isIdentity } from './transform';
@@ -364,12 +364,12 @@ function readTextPaint(
   if (fillRaw) {
     const parsed = readProperty('fill', fillRaw);
     if (parsed?.kind === 'solid') {
-      out.fill = { fill: 'solid', color: parsed.color } as FillStyle;
+      out.fill = { fill: 'solid', color: parsed.color } as Paint;
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
       if (paint) out.fill = paint;
       else if (parsed.fallback) {
-        out.fill = { fill: 'solid', color: parsed.fallback.color } as FillStyle;
+        out.fill = { fill: 'solid', color: parsed.fallback.color } as Paint;
       }
     } else if (parsed?.kind === 'none') {
       out.fill = null;

@@ -2,7 +2,7 @@
  * Take a paint or stroke that SVG states in user space through the matrix its
  * element's geometry was baked with, so the two stay registered.
  */
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import type { Matrix, SvgPaint, SvgStroke } from './types';
 import { applyMatrix } from './transform';
 import { scaleStroke } from './metricScale';
@@ -24,7 +24,7 @@ export function isNonUniform(m: Matrix): boolean {
 
 /** A `units: 'world'` gradient with its geometry mapped through `m`. A
  *  `'bounds'` one follows the box by itself and passes through. */
-export function fillThroughMatrix(fill: FillStyle, m: Matrix): FillStyle {
+export function fillThroughMatrix(fill: Paint, m: Matrix): Paint {
   if (!('units' in fill) || fill.units !== 'world') return fill;
   const at = (p: { x: number; y: number }): { x: number; y: number } => applyMatrix(m, p.x, p.y);
   if (fill.fill === 'linear-gradient') return { ...fill, from: at(fill.from), to: at(fill.to) };

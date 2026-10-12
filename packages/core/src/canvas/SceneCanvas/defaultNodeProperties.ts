@@ -144,7 +144,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
         name: '',
         members: {
           // A `paint` leaf, not a `color` one: `data.fill` is the tagged
-          // `FillStyle` union, so a color control pointed at it would read
+          // `Paint` union, so a color control pointed at it would read
           // `undefined` off a gradient and write a bare string over it.
           // `block` for the same reason every stroke field is: the kind bar
           // and the per-kind editor want the width a 64px label column takes.

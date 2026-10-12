@@ -4,7 +4,7 @@ import {
   registerCanvasFont, warmRender,
   solid,
 } from '@weasel-js/core';
-import type { FillStyle, TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
+import type { Paint, TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
 
 const W = 480, H = 340;
 
@@ -25,7 +25,7 @@ registerCanvasFont('Arial');
 // via the public `textCommand()` to exercise the renderer's box vertical
 // alignment (`TextDrawCommand.height`/`verticalAlign`) end-to-end.
 interface NodeData {
-  fill?: FillStyle;
+  fill?: Paint;
   text?: string;
   style?: TextStyle;
   verticalAlign?: TextVerticalAlign;

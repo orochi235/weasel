@@ -382,7 +382,7 @@ describe('SelectionPanel', () => {
 });
 
 /**
- * The `paint` leaf addresses a whole `FillStyle`. The `color` leaf can't:
+ * The `paint` leaf addresses a whole `Paint`. The `color` leaf can't:
  * pointed at `…fill.color` it reads `undefined` off a gradient, shows its
  * own default, and writes a hybrid `{ fill: 'gradient', stops, color }` that
  * the renderer's structural `'color' in paint` checks paint flat solid.

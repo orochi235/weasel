@@ -1,5 +1,5 @@
 /**
- * Map between SVG `<pattern>` elements and weasel's `pattern` `FillStyle`.
+ * Map between SVG `<pattern>` elements and weasel's `pattern` `Paint`.
  * The counterpart to `gradients.ts` for the other paint-server kind.
  *
  * The tile's shapes come from `tileGeometry` in core, so the vector form a
@@ -17,14 +17,14 @@
 
 import { escapeAttr } from './xmlEscape';
 import { tileGeometry, type TileShape } from '@weasel-js/core/patterns-builtin';
-import type { FillStyle, TilePatternSpec } from '@weasel-js/core';
+import type { Paint, TilePatternSpec } from '@weasel-js/core';
 import { collectElementsByTag } from './elements';
 import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } from './transform';
 
-type PatternFill = Extract<FillStyle, { fill: 'pattern' }>;
+type PatternFill = Extract<Paint, { fill: 'pattern' }>;
 
 /** Collected pattern definitions, keyed by element id. */
-export type PatternTable = Map<string, FillStyle>;
+export type PatternTable = Map<string, Paint>;
 
 /** Whether a pattern paint carries a serializable spec. */
 export function patternSpecOf(paint: PatternFill): TilePatternSpec | null {
@@ -119,7 +119,7 @@ export function collectPatterns(svg: Element, onWarn?: (m: string) => void): Pat
 
 const PATTERN_TAGS = new Set(['pattern']);
 
-function readPattern(el: Element, onWarn?: (m: string) => void): FillStyle | null {
+function readPattern(el: Element, onWarn?: (m: string) => void): Paint | null {
   const raw = el.getAttribute('data-weasel-tile');
   if (!raw) {
     // A hand-authored pattern (Illustrator, Inkscape) holds arbitrary

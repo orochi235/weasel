@@ -1,4 +1,4 @@
-// A `FillStyle` as one CSS background string, for the swatches and chips that
+// A `Paint` as one CSS background string, for the swatches and chips that
 // stand in for a paint in a panel.
 //
 // The gradient kinds are sampled rather than translated stop for stop: CSS
@@ -7,7 +7,7 @@
 // `sampleGradientStops` in the paint's own space puts the curve into the
 // stops themselves, and the browser only interpolates the short hops between.
 
-import { sampleGradientStops, type FillStyle } from '@weasel-js/core';
+import { sampleGradientStops, type Paint } from '@weasel-js/core';
 
 /** Sample count along a previewed gradient. Enough that a hue arc reads as a
  *  curve at chip size; a straight sRGB ramp would need a fraction of it. */
@@ -39,7 +39,7 @@ function meshPreview(paint: { patches?: { colors: string[] }[] }): string | unde
 }
 
 /** CSS color stops across the whole ramp, in the gradient's own blend space. */
-function sampledStops(paint: Extract<FillStyle, { stops: unknown }>): string {
+function sampledStops(paint: Extract<Paint, { stops: unknown }>): string {
   const space = paint.interpolate ?? 'rgb';
   const out: string[] = [];
   for (let i = 0; i <= SAMPLES; i++) {
@@ -67,7 +67,7 @@ function pct(v: number): string {
  * or `'local'` units is measured in the scene rather than in the chip, so its
  * preview shows the ramp and not the placement.
  */
-export function paintPreviewCss(paint: FillStyle | null | undefined): string | undefined {
+export function paintPreviewCss(paint: Paint | null | undefined): string | undefined {
   if (paint == null) return undefined;
   const kind = paint.fill ?? 'solid';
   if (kind === 'solid') return (paint as { color: string }).color;

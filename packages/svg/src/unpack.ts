@@ -37,7 +37,7 @@ import {
   registerMarker,
   solid,
   unionAABB,
-  type FillStyle,
+  type Paint,
   type ImageNodeData,
   type IngestCtx,
   type Op,
@@ -93,18 +93,18 @@ function readFileText(file: File): Promise<string> {
 }
 
 /** Lower an `SvgPaint` onto the `kit:path` painter's `data.fill` — a
- *  `FillStyle`, or `null` for SVG's `fill="none"` (the painter skips the
+ *  `Paint`, or `null` for SVG's `fill="none"` (the painter skips the
  *  fill rather than falling back to its default). A solid paint keeps its
  *  `fill-opacity`.
  *
- *  A gradient rides through as the `FillStyle` it already is, normalized to
+ *  A gradient rides through as the `Paint` it already is, normalized to
  *  the leaf's own box: `objectBoundingBox` gradients already are, and a
  *  `userSpaceOnUse` one is rebased so it survives the fit-clamp and the
  *  drop-point placement that move the geometry out from under it. */
 export function fillDataFromSvg(
   paint: SvgPaint | undefined,
   box: SvgDraftBounds,
-): FillStyle | null | undefined {
+): Paint | null | undefined {
   if (!paint) return undefined;
   if (paint.kind === 'none') return null;
   if (paint.kind === 'solid') {
@@ -116,7 +116,7 @@ export function fillDataFromSvg(
 /** Scale a paint's opacity by `k` — how an element or group `opacity` reaches
  *  leaves whose data has no opacity of its own. Where a fill and a stroke
  *  overlap this is not SVG's group compositing, which flattens first. */
-function fadeFill(fill: FillStyle, k: number): FillStyle {
+function fadeFill(fill: Paint, k: number): Paint {
   return k === 1 ? fill : { ...fill, opacity: (fill.opacity ?? 1) * k };
 }
 
@@ -160,11 +160,11 @@ export function strokeDataFromSvg(
   };
 }
 
-/** A text node's paint arrives already lowered to a kit `FillStyle`, not as
+/** A text node's paint arrives already lowered to a kit `Paint`, not as
  *  the `SvgPaint` a path carries, so it skips `fillDataFromSvg` — but a
  *  `userSpaceOnUse` gradient still needs the same rebase onto the leaf's own
  *  box, or it survives neither the fit-clamp nor the drop-point placement. */
-function fillInBoxFrame(fill: FillStyle, box: SvgDraftBounds): FillStyle {
+function fillInBoxFrame(fill: Paint, box: SvgDraftBounds): Paint {
   const units = 'units' in fill ? fill.units : undefined;
   return units === 'world' ? fillToBoundsFrame(fill, box) : fill;
 }

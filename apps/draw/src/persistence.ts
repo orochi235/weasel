@@ -55,7 +55,7 @@ export function reviveTypedArrays<T>(node: T): T {
   return node;
 }
 
-/** The `FillStyle` discriminant values. A paint in the current shape carries
+/** The `Paint` discriminant values. A paint in the current shape carries
  *  one of these under `fill`, so "a string under `fill`" is not on its own a
  *  legacy color — it is the tag. */
 const FILL_KINDS = new Set(['solid', 'pattern', 'linear-gradient', 'radial-gradient', 'conic-gradient']);
@@ -69,7 +69,7 @@ function paintFromLegacy(color: string): { color: string; opacity?: number } | n
 
 /**
  * Rewrite the pre-2026-08-26 string paint forms — `fill: '#abc'`,
- * `stroke: '#abc'` with a sibling `strokeWidth` — into the `FillStyle` and
+ * `stroke: '#abc'` with a sibling `strokeWidth` — into the `Paint` and
  * `Stroke` objects every reader now expects. Walks in place and returns the
  * same node, like `reviveTypedArrays`.
  *

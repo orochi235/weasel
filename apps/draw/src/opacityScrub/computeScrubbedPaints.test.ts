@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { solid, strokeOf } from '@weasel-js/core';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import { computeScrubbedPaints } from './computeScrubbedPaints';
 
 /** Opacity of the scrubbed fill / stroke paint, rounded to 3 places so the
@@ -57,7 +57,7 @@ describe('computeScrubbedPaints', () => {
   it('scrubs a gradient fill, which the old hex-splicing form could not', () => {
     // The whole reason opacity lives on the paint: a gradient has no hex to
     // splice an alpha into, and used to pass through untouched.
-    const gradient: FillStyle = {
+    const gradient: Paint = {
       fill: 'linear-gradient',
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],

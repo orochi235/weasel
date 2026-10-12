@@ -16,7 +16,7 @@ import {
   commandStroke,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
-  type FillStyle,
+  type Paint,
   type NodeShapeEntry,
   type PoseDescriptor,
   type Stroke,
@@ -34,7 +34,7 @@ export interface DiagramShapeOptions<TPose> {
   /** Reads the box the outline is built in. Default `RECT_POSE_DESCRIPTOR`. */
   geometry?: PoseDescriptor<TPose>;
   /** Painted when the node's data declares neither. */
-  defaultFill?: FillStyle | null;
+  defaultFill?: Paint | null;
   defaultStroke?: Stroke | null;
 }
 
@@ -52,7 +52,7 @@ export function diagramShape<TPose>(
     paint: (node, pose) => {
       const outline = outlineOf(node);
       if (outline === undefined) return [];
-      const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null };
+      const d = node.data as { fill?: Paint | null; stroke?: Stroke | null };
       const box = geometry.getBounds(pose);
       const declaredFill = d.fill === undefined ? opts.defaultFill : d.fill;
       const declaredStroke = d.stroke === undefined ? opts.defaultStroke : d.stroke;

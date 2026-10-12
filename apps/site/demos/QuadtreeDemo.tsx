@@ -1,10 +1,10 @@
 import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
-import type { FillStyle, RenderLayer, CanvasHelpers } from '@weasel-js/core';
+import type { Paint, RenderLayer, CanvasHelpers } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
-interface Rect { id: string; x: number; y: number; width: number; height: number; fill: FillStyle }
+interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Paint }
 
 const W = 480, H = 360;
 const GRID_LAYER = createGridLayer({

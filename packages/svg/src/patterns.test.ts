@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { serializeSvg } from './serialize';
 import { parseSvg } from './parse';
 import type { SvgNode } from './types';
-import { composePatternTransform, type FillStyle, type TilePatternSpec } from '@weasel-js/core';
+import { composePatternTransform, type Paint, type TilePatternSpec } from '@weasel-js/core';
 import { trimNumber } from './transform';
 
-function patternedRect(pattern: FillStyle): SvgNode[] {
+function patternedRect(pattern: Paint): SvgNode[] {
   return [{
     kind: 'path',
     path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
@@ -13,7 +13,7 @@ function patternedRect(pattern: FillStyle): SvgNode[] {
   }];
 }
 
-function firstFill(nodes: SvgNode[]): FillStyle | undefined {
+function firstFill(nodes: SvgNode[]): Paint | undefined {
   const n = nodes[0];
   if (n?.kind !== 'path') return undefined;
   return n.fill.kind === 'gradient' ? n.fill.paint : undefined;
@@ -56,20 +56,20 @@ describe('pattern serialization', () => {
   });
 
   it('carries the tile origin through x/y', () => {
-    const paint: FillStyle = {
+    const paint: Paint = {
       fill: 'pattern', pattern: TILES[0], origin: { x: 12, y: -4 },
     };
     const svg = serializeSvg(patternedRect(paint));
     expect(svg).toContain('x="12"');
     expect(svg).toContain('y="-4"');
 
-    const back = firstFill(parseSvg(svg).nodes) as Extract<FillStyle, { fill: 'pattern' }>;
+    const back = firstFill(parseSvg(svg).nodes) as Extract<Paint, { fill: 'pattern' }>;
     expect(back.origin).toEqual({ x: 12, y: -4 });
   });
 
   it('writes a transform as patternTransform, folding the origin into it', () => {
     const transform = composePatternTransform({ rotation: Math.PI / 6, scaleX: 2, skewX: 0.25 });
-    const paint: FillStyle = {
+    const paint: Paint = {
       fill: 'pattern', pattern: TILES[0], origin: { x: 12, y: -4 }, transform,
     };
     const svg = serializeSvg(patternedRect(paint));
@@ -77,7 +77,7 @@ describe('pattern serialization', () => {
     expect(svg).toContain(`patternTransform="matrix(${a} ${b} ${c} ${d} 12 -4)"`);
     expect(svg).not.toMatch(/<pattern [^>]*\sx="/);
 
-    const back = firstFill(parseSvg(svg).nodes) as Extract<FillStyle, { fill: 'pattern' }>;
+    const back = firstFill(parseSvg(svg).nodes) as Extract<Paint, { fill: 'pattern' }>;
     expect(back.origin!.x).toBeCloseTo(12, 5);
     expect(back.origin!.y).toBeCloseTo(-4, 5);
     back.transform!.forEach((v, i) => expect(v).toBeCloseTo(transform[i], 5));
@@ -96,7 +96,7 @@ describe('pattern serialization', () => {
       + '<pattern id="p" patternUnits="userSpaceOnUse" width="5" height="5" x="2" y="0" '
       + `patternTransform="translate(10 20) rotate(90) skewX(45)" data-weasel-tile="${spec}"/>`
       + '</defs><rect x="0" y="0" width="100" height="100" fill="url(#p)"/></svg>';
-    const back = firstFill(parseSvg(doc).nodes) as Extract<FillStyle, { fill: 'pattern' }>;
+    const back = firstFill(parseSvg(doc).nodes) as Extract<Paint, { fill: 'pattern' }>;
     // M = T(10, 20) · R(90°) · K(45°); the tile starts at M · (2, 0) = (10, 22).
     expect(back.origin!.x).toBeCloseTo(10, 5);
     expect(back.origin!.y).toBeCloseTo(22, 5);

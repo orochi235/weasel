@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import { paintWithColor, DEFAULT_FILL_COLOR } from '../../../util/paint';
 
@@ -10,13 +10,13 @@ interface SetFillState {
   color: string;
   /** `null` is an explicit no-fill, distinct from `undefined`, which means
    *  this gesture carries no paint and the color applies. */
-  paint?: FillStyle | null;
+  paint?: Paint | null;
 }
 
 /**
  * Static descriptor for the `setFill` Action.
  *
- * Takes either `color` (a hex string) or `paint` (a whole `FillStyle`, for
+ * Takes either `color` (a hex string) or `paint` (a whole `Paint`, for
  * gradients and patterns). `paint` wins when both are present.
  *
  * Alpha semantics: alpha lives on the paint's `opacity`. A 6-char (no-alpha)
@@ -25,7 +25,7 @@ interface SetFillState {
  */
 export const setFillAction: Action & { requires: string[] } = createPaintAction<
   SetFillState,
-  FillStyle,
+  Paint,
   'fill'
 >({
   id: 'setFill',
@@ -33,11 +33,11 @@ export const setFillAction: Action & { requires: string[] } = createPaintAction<
   dataKey: 'fill',
   initialState: (pick) => ({
     color: pick<string>('color') ?? DEFAULT_FILL_COLOR,
-    paint: pick<FillStyle | null>('paint'),
+    paint: pick<Paint | null>('paint'),
   }),
   readParams: (prev, params) => {
     const color = params?.color as string | undefined;
-    const paint = params?.paint as FillStyle | null | undefined;
+    const paint = params?.paint as Paint | null | undefined;
     if (color === undefined && paint === undefined) return null;
     if (color === undefined) return { ...prev, paint };
     // An explicit color supersedes a paint from an earlier tick; otherwise a

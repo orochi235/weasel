@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
 import { DEFAULT_TEXT_STYLE, smallCapsScaleFor } from '@weasel-js/text';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
@@ -8,7 +8,7 @@ import type { StyledRun, TextStyle } from '@weasel-js/text';
 const W = 520;
 const H = 230;
 
-interface NodeData { text: string; runs?: StyledRun[]; style: TextStyle; fill: FillStyle }
+interface NodeData { text: string; runs?: StyledRun[]; style: TextStyle; fill: Paint }
 
 const INK = solid('#1c1c1c');
 

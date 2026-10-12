@@ -23,7 +23,7 @@ export interface CellHighlightLayerOpts {
   origin?: () => { x: number; y: number };
   /** Cell to highlight, or `null` to skip drawing. */
   getCell: () => { col: number; row: number } | null;
-  /** FillStyle strategy for the filled cell. Defaults to a soft green. */
+  /** Paint strategy for the filled cell. Defaults to a soft green. */
   fill?: CommandFill;
 }
 

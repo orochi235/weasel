@@ -1,5 +1,5 @@
 import { type ReactElement } from 'react';
-import { asPaint, type FillStyle } from '@weasel-js/core';
+import { asPaint, type Paint } from '@weasel-js/core';
 import {
   meshGuides,
   meshHandles,
@@ -30,10 +30,10 @@ export interface MeshHandlesProps {
   /** Overlay pixels → mesh space. Must invert `toScreen`. */
   toLocal: (p: Point) => Point;
   /** Live during a drag — wire for preview, do not write to history. Emitted
-   *  as a `FillStyle`, which is what every paint control passes around. */
-  onInput?: (next: FillStyle) => void;
+   *  as a `Paint`, which is what every paint control passes around. */
+  onInput?: (next: Paint) => void;
   /** Committed at drag end: one call per gesture. */
-  onChange: (next: FillStyle) => void;
+  onChange: (next: Paint) => void;
   /** A drag was abandoned (the pointer was canceled). Its last `onInput` put
    *  the value back where the drag began; an owner that opened an edit on
    *  `onInput` ends it here without keeping it. */

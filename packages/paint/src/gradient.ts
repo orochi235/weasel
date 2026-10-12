@@ -9,7 +9,7 @@
 
 import { resolveColor, rgbaToHex } from './color';
 import { lerpColorArray, type ColorSpace } from './colorSpaces';
-import type { FillStyle, GradStop, GradientFill, GradientKind } from './paint';
+import type { Paint, GradStop, GradientFill, GradientKind } from './paint';
 
 /** A stop with its color already parsed to 0..1 RGBA. */
 export interface ResolvedGradientStop {
@@ -17,10 +17,10 @@ export interface ResolvedGradientStop {
   rgba: readonly [number, number, number, number];
 }
 
-/** Narrow a paint to the gradient members of `FillStyle`. The three
+/** Narrow a paint to the gradient members of `Paint`. The three
  *  discriminants are the union's own definition of `GradientFill`, so every
  *  consumer that reaches for gradient geometry starts here. */
-export function isGradientFill(fill: FillStyle | null | undefined): fill is GradientFill {
+export function isGradientFill(fill: Paint | null | undefined): fill is GradientFill {
   if (fill == null) return false;
   return fill.fill === 'linear-gradient'
     || fill.fill === 'radial-gradient'

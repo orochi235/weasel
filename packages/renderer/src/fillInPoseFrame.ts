@@ -9,7 +9,7 @@
  * the renderer in one frame.
  */
 
-import type { FillStyle, GradientFill, PosedFill } from '@weasel-js/paint';
+import type { Paint, GradientFill, PosedFill } from '@weasel-js/paint';
 import { getPaintDrawKind } from './paintKinds';
 
 /** The box a `'bounds'` gradient's normalized geometry is mapped onto —
@@ -32,7 +32,7 @@ export interface FillPoseBox {
  * so a non-square box cannot make it the ellipse SVG would — this keeps the
  * radius proportionate instead.
  */
-export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): PosedFill {
+export function fillInPoseFrame(fill: Paint, box: FillPoseBox): PosedFill {
   if (!isBuiltinKind(fill)) {
     return (getPaintDrawKind(fill.fill)?.inPoseFrame?.(fill, box) ?? fill) as PosedFill;
   }
@@ -69,7 +69,7 @@ export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): PosedFill {
  * A zero-width or zero-height box has no frame to normalize against; the
  * fill is returned untouched rather than divided by zero.
  */
-export function fillToBoundsFrame(fill: FillStyle, box: FillPoseBox): FillStyle {
+export function fillToBoundsFrame(fill: Paint, box: FillPoseBox): Paint {
   if (!isBuiltinKind(fill)) {
     return getPaintDrawKind(fill.fill)?.toBoundsFrame?.(fill, box) ?? fill;
   }
@@ -102,13 +102,13 @@ export function fillToBoundsFrame(fill: FillStyle, box: FillPoseBox): FillStyle 
  *  Rebasing it is a translation only — a resize must reveal more tiles, not
  *  stretch them, which is the whole reason patterns get their own branch. */
 function isBoundsPattern(
-  fill: FillStyle,
-): fill is Extract<FillStyle, { fill: 'pattern' }> {
+  fill: Paint,
+): fill is Extract<Paint, { fill: 'pattern' }> {
   return fill.fill === 'pattern' && fill.units === 'bounds';
 }
 
 /** True when this fill is a gradient declaring box-relative geometry. */
-function isBoundsGradient(fill: FillStyle | undefined): fill is GradientFill {
+function isBoundsGradient(fill: Paint | undefined): fill is GradientFill {
   if (fill === undefined) return false;
   const kind = fill.fill;
   if (kind !== 'linear-gradient' && kind !== 'radial-gradient' && kind !== 'conic-gradient') {
@@ -119,7 +119,7 @@ function isBoundsGradient(fill: FillStyle | undefined): fill is GradientFill {
 
 /** The five kinds whose frame conversion is written above. Anything else is a
  *  registered kind and converts through its own entry. */
-function isBuiltinKind(fill: FillStyle): boolean {
+function isBuiltinKind(fill: Paint): boolean {
   const kind = fill.fill ?? 'solid';
   return kind === 'solid' || kind === 'pattern'
     || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient';

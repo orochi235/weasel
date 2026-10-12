@@ -12,7 +12,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { commandFill } from '@weasel-js/renderer';
 import type { Ref } from 'react';
 import { assignRef, useLatest } from '@weasel-js/react';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
 import { useRedrawOn } from './useRedrawOn';
@@ -43,7 +43,7 @@ export interface DrawCanvasProps {
   view?: View;
   /** Fills the whole surface beneath `draw`, in screen space. The canvas is
    *  transparent without it. */
-  background?: FillStyle;
+  background?: Paint;
   /** External state a `draw` function reads. Each source is subscribed while
    *  mounted and repaints the canvas when it notifies. */
   redrawOn?: readonly RedrawSource[];

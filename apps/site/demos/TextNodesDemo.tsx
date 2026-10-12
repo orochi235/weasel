@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui';
 
@@ -11,7 +11,7 @@ interface NodeData {
   text?: string;
   runs?: StyledRun[];
   style?: TextStyle;
-  fill?: FillStyle;
+  fill?: Paint;
   verticalAlign?: TextVerticalAlign;
   shape?: 'rect';
 }

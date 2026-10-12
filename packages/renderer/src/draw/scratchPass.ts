@@ -1,4 +1,4 @@
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { getPaintDrawKind, type PaintBindContext } from '../paintKinds';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GlMat3 } from '@weasel-js/geom';
@@ -40,7 +40,7 @@ interface ScratchPaint {
  * declines the paint — and the glyphs then draw nothing, as the outline tier
  * does for a paint no kind binds.
  */
-export function renderPaintToScratch(ctx: DrawContext, fill: FillStyle, rect: ScreenRect): ScratchPaint | null {
+export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: ScreenRect): ScratchPaint | null {
   const scratch = ctx.paintScratch;
   const bind = getPaintDrawKind(fill.fill)?.bind;
   if (!scratch || !bind) return null;

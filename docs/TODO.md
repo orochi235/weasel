@@ -1725,8 +1725,8 @@ only story runner in the repo.
   (`docPersistence.ts`), and two label lists that disagree: the New menu says "US Letter"
   (`PAPER_ITEMS`), the document properties say "Letter" (`PAPER_SIZE_OPTIONS`). One table of `{ key,
   label, width, height }` should feed all four; which label wins is a wording call. No paint: `{
-  kind: 'none' }` in the color context's `ActivePaint`, `null` in node data, with `toFillStyle` in
-  `ActiveSwatches.tsx` translating; `ActivePaint` could be `FillStyle | null` and the translation
+  kind: 'none' }` in the color context's `ActivePaint`, `null` in node data, with `toPaint` in
+  `ActiveSwatches.tsx` translating; `ActivePaint` could be `Paint | null` and the translation
   would go.
 
 - **(P3) CustomShaderDemo: every frame re-renders React to move one uniform.**

@@ -14,7 +14,7 @@ import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js
 import { parseSvg, serializeSvg } from '@weasel-js/svg';
 import { getMarker, solid, strokeOf } from '@weasel-js/core';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
-import type { FillStyle, Stroke } from '@weasel-js/core';
+import type { Paint, Stroke } from '@weasel-js/core';
 import {
   objToSvgNode,
   svgNodesToSceneDrafts,
@@ -29,14 +29,14 @@ import {
 interface RectObjT {
   id: string; tool: 'rect'; x: number; y: number; width: number; height: number;
   path: { kind: 'rect'; x: number; y: number; width: number; height: number };
-  fill: FillStyle | null; stroke: Stroke | null;
+  fill: Paint | null; stroke: Stroke | null;
 }
 interface TextObjT { id: string; tool: 'text'; x: number; y: number; width: number; height: number; text: string }
 interface PathObjT {
   id: string; tool: 'pen' | 'pencil' | 'imported' | 'ellipse' | 'polygon' | 'star' | 'line';
   x: number; y: number; width: number; height: number;
   path: { kind: 'polygon'; commands: Uint8Array; coords: Float32Array; fillRule: 'nonzero' };
-  fill: FillStyle | null; stroke: Stroke | null;
+  fill: Paint | null; stroke: Stroke | null;
 }
 
 // `sceneToSvgNodes` reads only a node's kind; the leaf itself comes from `objOf`.
@@ -482,7 +482,7 @@ describe('objToSvgNode — coverage gaps', () => {
     const node = objToSvgNode(original as never);
     expect(node.kind).toBe('path');
     const out = leavesOf([node], ids());
-    const back = out[0] as unknown as { tool: string; fill: FillStyle | null; stroke: Stroke };
+    const back = out[0] as unknown as { tool: string; fill: Paint | null; stroke: Stroke };
     expect(back.tool).toBe('pen');
     expect(back.fill).toBeNull();
     expect(back.stroke).toMatchObject({ paint: { color: '#000' }, width: 2 });
@@ -640,7 +640,7 @@ describe('svgNodesToSceneDrafts — what the kit import gives it', () => {
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
       + '<g opacity="0.5"><rect x="0" y="0" width="10" height="10" fill="#ff0000" opacity="0.5"/></g></svg>';
     const [obj] = leavesOf(parseSvg(svg).nodes, ids());
-    expect((obj as { fill: FillStyle }).fill).toEqual({ ...solid('#ff0000'), opacity: 0.25 });
+    expect((obj as { fill: Paint }).fill).toEqual({ ...solid('#ff0000'), opacity: 0.25 });
   });
 
   it("registers a ParseResult's document markers, under the key its stroke names", () => {

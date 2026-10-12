@@ -9,7 +9,7 @@
  * numeric weight `bold` is a preset over.
  */
 
-import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
+import type { Paint, ScreenLength, Stroke } from '@weasel-js/paint';
 import type { TextTransform } from './runs/textTransform';
 import type { FontVariantCaps } from './runs/smallCaps';
 
@@ -30,7 +30,7 @@ export interface StyledRun {
   fontSize?: ScreenLength;
   /** This run's ink. `null` is no fill at all, leaving the glyphs to `stroke`
    *  alone; absent inherits the node's. */
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   /** Outline over this run's glyphs. Overrides the node's own `data.stroke`;
    *  absent inherits it. Only painted on the outline tier. */
   stroke?: Stroke;

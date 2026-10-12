@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createScene, DEFAULT_SHAPE_FILL, getMarker, pathFromD, registerMarker, solid,
-  type FillStyle, type Path, type PolygonPath, type Stroke,
+  type Paint, type Path, type PolygonPath, type Stroke,
 } from '@weasel-js/core';
 import {
   svgImageFromKit, svgLeafFromKit, svgNodesFromKit, svgPaintFromKit, svgStrokeFromKit, type SvgKitTree,
@@ -13,7 +13,7 @@ import type { SvgGroupNode, SvgPathNode, SvgTextNode } from './types';
 
 const BOX = { x: 10, y: 20, width: 100, height: 50 };
 const rect: Path = { kind: 'rect', x: 10, y: 20, width: 100, height: 50 };
-const linear: FillStyle = {
+const linear: Paint = {
   fill: 'linear-gradient', units: 'bounds',
   from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
   stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],

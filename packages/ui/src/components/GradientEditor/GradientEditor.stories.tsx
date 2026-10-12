@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { FillStyle, GradientFill } from '@weasel-js/core';
+import type { Paint, GradientFill } from '@weasel-js/core';
 import { seedMeshPatch } from '@weasel-js/core/mesh';
 import { GradientEditor } from './GradientEditor';
 
@@ -24,7 +24,7 @@ type Story = StoryObj<typeof GradientEditor>;
 
 type LiveArgs = Omit<Parameters<typeof GradientEditor>[0], 'value' | 'onChange' | 'onInput'>;
 
-function Live({ initial, ...args }: LiveArgs & { initial: FillStyle }) {
+function Live({ initial, ...args }: LiveArgs & { initial: Paint }) {
   const [value, setValue] = useState(initial);
   return <GradientEditor {...args} value={value} onInput={setValue} onChange={setValue} />;
 }
@@ -52,7 +52,7 @@ export const StopsAtTheEnds: Story = {
  *  carries the colors: a stop list becomes one mesh band per gap, and a mesh
  *  reads back as the ramp across its top edge. */
 export const Mesh: Story = {
-  render: (args) => <Live {...args} initial={seedMeshPatch('#3a7bd5ff') as unknown as FillStyle} />,
+  render: (args) => <Live {...args} initial={seedMeshPatch('#3a7bd5ff') as unknown as Paint} />,
 };
 
 /** `svg` keeps to what an SVG file carries natively: linear and radial,

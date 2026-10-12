@@ -32,7 +32,7 @@ that can share a draw call are merged into one.
 
 ## Paint
 
-- `commandFill` and `commandStroke` resolve a `FillStyle` or `Stroke` against a
+- `commandFill` and `commandStroke` resolve a `Paint` or `Stroke` against a
   pose box into what a command carries.
 - `createTilePattern` builds a repeating tile; `resolvePatternSpec` builds one
   from a serializable `TilePatternSpec`. The named tiles (`hatch`, `crosshatch`,

@@ -1,5 +1,5 @@
 import {
-  type FillStyle,
+  type Paint,
   useOngoingAction
 } from '@weasel-js/core';
 import {
@@ -8,11 +8,11 @@ import {
   type PropertyRenderer
 } from '@weasel-js/ui';
 
-/** Every `FillStyle` variant, not just the gradients. Keyed on the union's
+/** Every `Paint` variant, not just the gradients. Keyed on the union's
  *  own discriminant, so a variant added later needs no change here — the
  *  earlier `'stops' in raw` test silently downgraded patterns to the
  *  fallback color. */
-export function isFillStyleObject(raw: unknown): raw is FillStyle {
+export function isPaintObject(raw: unknown): raw is Paint {
   if (raw === null || typeof raw !== 'object') return false;
   return 'fill' in raw || 'stops' in raw || 'color' in raw;
 }
@@ -33,9 +33,9 @@ export function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; act
   const raw = ctx.value;
   // `null` is an explicit "no paint" and must not fall through to the schema
   // default, or the None segment unlights itself on the next render.
-  const value: FillStyle | null | undefined = raw === null ? null
-    : isFillStyleObject(raw) ? raw
-    : isFillStyleObject(fallback) ? fallback
+  const value: Paint | null | undefined = raw === null ? null
+    : isPaintObject(raw) ? raw
+    : isPaintObject(fallback) ? fallback
     : undefined;
 
   return (

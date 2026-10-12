@@ -8,12 +8,12 @@ import {
 } from '@weasel-js/core';
 import { alignInsertBehavior, alignMoveBehavior, createGuidesLayer, deriveAlignmentGuides } from '@weasel-js/guides';
 import type { Guide, SpacingGap } from '@weasel-js/guides';
-import type { FillStyle, NodeId, Path, ToolsApi } from '@weasel-js/core';
+import type { Paint, NodeId, Path, ToolsApi } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
 
 // The same `{ path, fill }` shape the rect tool's insert dep mints, so the
 // kit's path painter draws both without a custom drawOne.
-interface NodeData { path: Path; fill: FillStyle }
+interface NodeData { path: Path; fill: Paint }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 

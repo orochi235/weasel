@@ -21,7 +21,7 @@ import type { PaintBindContext, PaintDrawKind, PaintProgram, PaintResources } fr
 import { resolveColor, rgbaToHex } from '@weasel-js/paint';
 import { mat3 } from '@weasel-js/geom';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
-import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
+import type { ColorSpace, Paint, PaintUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../fillInPoseFrame';
 import { bakeMesh, meshBounds, type MeshBox } from './bake';
 import { MeshBakeCache, meshBakeSize } from './bakeCache';
@@ -45,29 +45,29 @@ export type { MeshPatch, MeshPoint } from './surface';
 export interface MeshGradientFill {
   fill: 'mesh-gradient';
   patches: MeshPatch[];
-  units?: GradientUnits;
+  units?: PaintUnits;
   interpolate?: ColorSpace;
   opacity?: number;
 }
 
-/** The kind's id, as `FillStyle['fill']` carries it. */
+/** The kind's id, as `Paint['fill']` carries it. */
 export const MESH_GRADIENT_KIND = 'mesh-gradient';
 
 /** A mesh paint, narrowed. */
-export function isMeshGradientFill(fill: FillStyle | null | undefined): fill is FillStyle & MeshGradientFill {
-  // `FillStyle`'s discriminant stays closed over the built-in kinds — see
+export function isMeshGradientFill(fill: Paint | null | undefined): fill is Paint & MeshGradientFill {
+  // `Paint`'s discriminant stays closed over the built-in kinds — see
   // `asPaint` — so a registered kind reads it widened.
   return fill != null && (fill.fill as string | undefined) === MESH_GRADIENT_KIND;
 }
 
-function asMesh(fill: FillStyle): MeshGradientFill {
+function asMesh(fill: Paint): MeshGradientFill {
   return fill as unknown as MeshGradientFill;
 }
 
 // `asPaint`'s cast, kept local: this module must import nothing from the
 // registry, whose state the lazy kind's self-contained copy would duplicate.
-function asFill(mesh: MeshGradientFill): FillStyle {
-  return mesh as unknown as FillStyle;
+function asFill(mesh: MeshGradientFill): Paint {
+  return mesh as unknown as Paint;
 }
 
 /**
@@ -255,7 +255,7 @@ function bakeFor(ctx: PaintBindContext, mesh: MeshGradientFill): CachedBake | nu
   return { texture, box };
 }
 
-function bindMesh(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null {
+function bindMesh(ctx: PaintBindContext, fill: Paint): PaintProgram | null {
   const mesh = asMesh(fill);
   if (!mesh.patches.some(isValidPatch)) return null;
 

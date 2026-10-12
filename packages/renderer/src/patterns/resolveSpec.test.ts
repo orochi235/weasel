@@ -5,7 +5,7 @@ import {
   PATTERN_TILE_CACHE_LIMIT,
 } from './resolveSpec';
 import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../textures/registerTexture';
-import type { FillStyle, TilePatternSpec } from '@weasel-js/paint';
+import type { Paint, TilePatternSpec } from '@weasel-js/paint';
 
 const HATCH: TilePatternSpec = { tile: 'hatch', color: '#0fb5a8' };
 
@@ -101,7 +101,7 @@ describe('resolveFillPattern', () => {
   it('swaps a spec payload for a handle', () => {
     const out = resolveFillPattern({ fill: 'pattern', pattern: HATCH });
     expect(out).not.toBeNull();
-    const payload = (out as Extract<FillStyle, { fill: 'pattern' }>).pattern;
+    const payload = (out as Extract<Paint, { fill: 'pattern' }>).pattern;
     expect(isPatternSpec(payload)).toBe(false);
     expect(payload).toHaveProperty('id');
   });
@@ -109,17 +109,17 @@ describe('resolveFillPattern', () => {
   it('preserves the paint\'s other fields', () => {
     const out = resolveFillPattern({
       fill: 'pattern', pattern: HATCH, units: 'local', origin: { x: 3, y: 4 }, opacity: 0.5,
-    }) as Extract<FillStyle, { fill: 'pattern' }>;
+    }) as Extract<Paint, { fill: 'pattern' }>;
     expect(out.units).toBe('local');
     expect(out.origin).toEqual({ x: 3, y: 4 });
     expect(out.opacity).toBe(0.5);
   });
 
   it('leaves a handle payload and non-pattern fills alone', () => {
-    const handlePaint: FillStyle = { fill: 'pattern', pattern: { id: 'tex_9' } };
+    const handlePaint: Paint = { fill: 'pattern', pattern: { id: 'tex_9' } };
     expect(resolveFillPattern(handlePaint)).toBe(handlePaint);
 
-    const solid: FillStyle = { color: '#123456' };
+    const solid: Paint = { color: '#123456' };
     expect(resolveFillPattern(solid)).toBe(solid);
   });
 });

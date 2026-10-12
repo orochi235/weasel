@@ -13,7 +13,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import { resolveFillPattern } from '@weasel-js/renderer';
@@ -41,9 +41,9 @@ const SOURCE = { x: 0, y: 0, width: 112, height: 52 };
 const SDF_SCALE = (OUTLINE_MIN_SCREEN_PX / FONT_SIZE) * 0.92;
 const OUTLINE_SCALE = (OUTLINE_MIN_SCREEN_PX / FONT_SIZE) * 1.08;
 
-interface TextData { text: string; style: object; fill: FillStyle }
+interface TextData { text: string; style: object; fill: Paint }
 
-function renderNode(fill: FillStyle, scale: number): RasterImage {
+function renderNode(fill: Paint, scale: number): RasterImage {
   const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
     kind: 'leaf', layer: 'main', pose: POSE,
@@ -92,7 +92,7 @@ function rgbDistance(p: number[], q: number[]): number {
 
 /** Red on the left of the box, blue on the right, in the box's own units —
  *  what the paint panel writes. */
-const GRADIENT: FillStyle = {
+const GRADIENT: Paint = {
   fill: 'linear-gradient',
   from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
   stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1, color: '#0000ffff' }],
@@ -100,7 +100,7 @@ const GRADIENT: FillStyle = {
 };
 
 /** Wide white stripes on a transparent ground, in the box's units. */
-const PATTERN: FillStyle = {
+const PATTERN: Paint = {
   fill: 'pattern',
   pattern: { tile: 'hatch', color: '#ffffff', size: 16, lineWidth: 6 },
   units: 'bounds',
@@ -197,7 +197,7 @@ describe('a pattern on text', () => {
 });
 
 describe('texture-painted atlas text in a batched frame', () => {
-  const run = (text: string, fill: FillStyle) => ({
+  const run = (text: string, fill: Paint) => ({
     text, fontFamily: FAMILY, fontSize: FONT_SIZE, fontWeight: 400, fontStyle: 'normal',
     fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
@@ -313,7 +313,7 @@ describe('a registered paint kind on text', () => {
   beforeAll(() => registerPaintKind(SPLIT_KIND));
 
   /** Solid ink in the left and right fifths of the text, at `scale`. */
-  function sides(fill: FillStyle, scale: number, floor?: number): { left: number[][]; right: number[][] } {
+  function sides(fill: Paint, scale: number, floor?: number): { left: number[][]; right: number[][] } {
     const img = renderNode(fill, scale);
     const mask = renderNode({ fill: 'solid', color: '#ffffff' }, scale);
     const ink = sharedInk(mask, scale, mask, scale, floor);
@@ -375,11 +375,11 @@ describe('a registered paint kind on text', () => {
   });
 
   it('draws in painter order between staged solids and under a clip, leaving solid text beside it solid', () => {
-    const run = (text: string, fill: FillStyle) => ({
+    const run = (text: string, fill: Paint) => ({
       text, fontFamily: FAMILY, fontSize: FONT_SIZE, fontWeight: 400, fontStyle: 'normal',
       fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
     });
-    const text = (a: FillStyle, b: FillStyle) => ({
+    const text = (a: Paint, b: Paint) => ({
       kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
       runs: [run('HH', a), run('HH', b)],
     }) as DrawCommand;

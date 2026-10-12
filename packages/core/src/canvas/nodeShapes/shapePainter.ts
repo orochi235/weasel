@@ -4,7 +4,7 @@ import {
   starPath,
   type Path
 } from '@weasel-js/geom';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Paint, Stroke } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
@@ -30,7 +30,7 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
   // See PAINT_SLOT.
   paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as { shape: string; fill?: FillStyle | null; stroke?: Stroke | null; sides?: number; points?: number };
+    const d = node.data as { shape: string; fill?: Paint | null; stroke?: Stroke | null; sides?: number; points?: number };
     const path = pathForShape(d, pose);
     const declaredFill = resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL);
     const shapeFill = declaredFill && commandFill(declaredFill, pose);
@@ -51,7 +51,7 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // is filled unless it declares `fill: null` — unlike `kit:path`, it has no
   // implicit stroke-only form.
   ink: (node, _pose, ctx) => {
-    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null };
+    const d = node.data as { fill?: Paint | null; stroke?: Stroke | null };
     return {
       filled: resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL) !== null,
       ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale),

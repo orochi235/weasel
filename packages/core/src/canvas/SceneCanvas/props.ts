@@ -1,5 +1,5 @@
 import type { ModeRegistry } from '@weasel-js/modes';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import type { ActionsProp } from '@weasel-js/routing';
 import { Yoke } from '@weasel-js/routing/react';
 import type { PasteOmission } from 'core/adapters/types';
@@ -740,13 +740,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     flattenTolerance?: number;
 
     /**
-     * FillStyle applied to the full canvas behind the scene. Accepts the kit's
-     * `FillStyle` union (solid / pattern / linear-gradient / radial-gradient /
+     * Paint applied to the full canvas behind the scene. Accepts the kit's
+     * `Paint` union (solid / pattern / linear-gradient / radial-gradient /
      * conic-gradient) so consumers don't have to author a background node
      * just to colorize the canvas. Rendered as a screen-space layer slotted
      * before `'scene'` — independent of pan / zoom.
      */
-    backgroundFill?: FillStyle;
+    backgroundFill?: Paint;
     /**
      * Dev HUD: when true, mounts a fixed-position widget in the top-left
      * of the viewport showing live cursor coords in both viewport

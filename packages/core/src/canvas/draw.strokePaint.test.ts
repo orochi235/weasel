@@ -1,10 +1,10 @@
 /**
- * A stroke's paint, and an even-odd fill, are both full `FillStyle`s. SVG
+ * A stroke's paint, and an even-odd fill, are both full `Paint`s. SVG
  * import puts gradients in either deliberately, so the renderer has to paint
  * one rather than refuse it.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { PolygonPath, Stroke, FillStyle } from '@weasel-js/core';
+import type { PolygonPath, Stroke, Paint } from '@weasel-js/core';
 import { parseSvg, svgNodesToKitDrafts } from '@weasel-js/svg';
 import type { Node } from 'core/scene/types';
 import { findNodeShape } from './NodeShape';
@@ -26,7 +26,7 @@ function horizontalLine(): PolygonPath {
 
 const STOPS = [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }];
 
-const GRADIENT: FillStyle = {
+const GRADIENT: Paint = {
   fill: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 200, y: 0 },
@@ -136,7 +136,7 @@ describe('renderer — non-solid even-odd fill', () => {
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   });
 
-  const renderFill = (fillRule: 'nonzero' | 'evenodd', fill: FillStyle): void => {
+  const renderFill = (fillRule: 'nonzero' | 'evenodd', fill: Paint): void => {
     recorder.reset();
     r.render([{ kind: 'path', path: square(fillRule), fill } as DrawCommand]);
   };

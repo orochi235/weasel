@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { findNodeShape, findShapeInk } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import type { PathDrawCommand } from '@weasel-js/renderer';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { solid, strokeOf } from '../util/paint';
 
 const POSE = { x: 0, y: 0, width: 100, height: 50 };
 const RECT_PATH = { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 };
 
-const GRADIENT: FillStyle = {
+const GRADIENT: Paint = {
   fill: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 100, y: 0 },
@@ -30,13 +30,13 @@ function inkOf(data: Record<string, unknown>) {
   return findShapeInk(node(data), POSE);
 }
 
-describe('kit:path accepts a FillStyle in data.fill', () => {
+describe('kit:path accepts a Paint in data.fill', () => {
   it('passes a gradient straight through to the draw command', () => {
     expect(paintOf({ path: RECT_PATH, fill: GRADIENT }).fill).toEqual(GRADIENT);
   });
 
   it('passes a pattern through', () => {
-    const pattern: FillStyle = { fill: 'pattern', pattern: { id: 'checker' } as never };
+    const pattern: Paint = { fill: 'pattern', pattern: { id: 'checker' } as never };
     expect(paintOf({ path: RECT_PATH, fill: pattern }).fill).toEqual(pattern);
   });
 
@@ -63,7 +63,7 @@ describe('kit:path accepts a FillStyle in data.fill', () => {
   });
 });
 
-describe('ink() agrees with paint() about a FillStyle', () => {
+describe('ink() agrees with paint() about a Paint', () => {
   it('reports filled for a gradient, with or without a stroke', () => {
     expect(inkOf({ path: RECT_PATH, fill: GRADIENT })?.filled).toBe(true);
     expect(inkOf({ path: RECT_PATH, fill: GRADIENT, stroke: strokeOf('#000', 2) })?.filled).toBe(true);
@@ -81,7 +81,7 @@ describe('ink() agrees with paint() about a FillStyle', () => {
   });
 });
 
-describe('kit:shape accepts a FillStyle too', () => {
+describe('kit:shape accepts a Paint too', () => {
   it('passes a gradient through', () => {
     expect(paintOf({ shape: 'ellipse', fill: GRADIENT }).fill).toEqual(GRADIENT);
   });

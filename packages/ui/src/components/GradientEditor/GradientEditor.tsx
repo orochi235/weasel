@@ -6,7 +6,7 @@ import {
   useGradientKinds,
   usePaintKind,
   type ColorSpace,
-  type FillStyle,
+  type Paint,
   type GradStop,
   type GradientFill,
   type PaintKind,
@@ -35,16 +35,16 @@ const MIN_STOPS = 2;
 export interface GradientEditorProps {
   /** The gradient being edited: a paint of any gradient kind — one that
    *  `listGradientKinds` returns. */
-  value: FillStyle;
+  value: Paint;
   /**
    * Live value during a gesture — a stop drag, a color-picker scrub. Wire
    * it for preview; it fires many times per gesture and must not be
    * written to history.
    */
-  onInput?: (next: FillStyle) => void;
+  onInput?: (next: Paint) => void;
   /** Committed value: one call per completed gesture. Pair with an
    *  undoable write. */
-  onChange: (next: FillStyle) => void;
+  onChange: (next: Paint) => void;
   /** Show the kind switch — every registered gradient kind. Default true;
    *  turn it off when the surrounding UI already owns the kind. */
   kindSwitch?: boolean;
@@ -121,7 +121,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         value={space}
         size="sm"
         ariaLabel="Blend space"
-        onChange={(next) => next && onChange({ ...value, interpolate: next } as FillStyle)}
+        onChange={(next) => next && onChange({ ...value, interpolate: next } as Paint)}
       />
     );
     // A registered `Editor` wins even for a built-in id, as it does in `PaintInput`.
@@ -143,8 +143,8 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
 function StopsBody(props: {
   value: GradientFill;
   spaceBar: ReactNode;
-  onInput?: (next: FillStyle) => void;
-  onChange: (next: FillStyle) => void;
+  onInput?: (next: Paint) => void;
+  onChange: (next: Paint) => void;
 }): ReactElement {
   const { value, spaceBar, onInput, onChange } = props;
   const stops = value.stops;

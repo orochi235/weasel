@@ -1,4 +1,4 @@
-import type { Stroke, FillStyle } from '@weasel-js/paint';
+import type { Stroke, Paint } from '@weasel-js/paint';
 import { getPaintDrawKind } from '../paintKinds';
 import type { PathDrawCommand } from '../DrawCommand';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
@@ -141,18 +141,18 @@ function drawPathFillVColor(
  * doubled ribbon to one side of the silhouette, and `applyClipTest` at depth 0
  * disables the stencil test outright.
  */
-function bindPathFillByKind(ctx: DrawContext, fill: FillStyle): ShaderProgram | null {
+function bindPathFillByKind(ctx: DrawContext, fill: Paint): ShaderProgram | null {
   const kind = fill.fill ?? 'solid';
   if (kind === 'solid') return bindPathFillSolid(ctx, fill as { color: string; opacity?: number });
-  if (kind === 'pattern') return bindPathFillPattern(ctx, fill as Extract<FillStyle, { fill: 'pattern' }>);
+  if (kind === 'pattern') return bindPathFillPattern(ctx, fill as Extract<Paint, { fill: 'pattern' }>);
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
-    return bindPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
+    return bindPathFillGradient(ctx, fill as Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>);
   }
   const bind = getPaintDrawKind(kind)?.bind;
   return bind ? bind(paintBindContext(ctx), fill) : null;
 }
 
-export function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
+export function drawPathFillByKind(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
   const prog = bindPathFillByKind(ctx, fill);
   if (!prog) return;
   const gl = ctx.gl;
@@ -176,19 +176,19 @@ function bindPathFillSolid(
 
 function bindPathFillPattern(
   ctx: DrawContext,
-  fill: Extract<FillStyle, { fill: 'pattern' }>,
+  fill: Extract<Paint, { fill: 'pattern' }>,
 ): ShaderProgram | null {
   return bindPattern(ctx, ctx.patternFill, fill, ctx.state.transform);
 }
 
 function bindPathFillGradient(
   ctx: DrawContext,
-  fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
+  fill: Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
 ): ShaderProgram | null {
   return bindGradient(ctx, ctx.gradFill, fill, ctx.state.transform);
 }
 
-function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
+function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
   const gl = ctx.gl;
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);

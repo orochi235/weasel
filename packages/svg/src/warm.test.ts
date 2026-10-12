@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { asPaint, getPaintKind, registerFont, registerPaintKindLoader, type FillStyle } from '@weasel-js/core';
+import { asPaint, getPaintKind, registerFont, registerPaintKindLoader, type Paint } from '@weasel-js/core';
 import type { SvgNode } from './types';
 import { svgNeeds, warmSvg } from './warm';
 
@@ -11,10 +11,10 @@ const linear = asPaint({
   fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 },
   stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
 });
-const mesh = { fill: 'mesh-gradient', patches: [] } as unknown as FillStyle;
-const late = (id: string) => ({ fill: id }) as unknown as FillStyle;
+const mesh = { fill: 'mesh-gradient', patches: [] } as unknown as Paint;
+const late = (id: string) => ({ fill: id }) as unknown as Paint;
 
-function box(paint: FillStyle): SvgNode {
+function box(paint: Paint): SvgNode {
   return { kind: 'path', path: RECT, fill: { kind: 'gradient', paint } };
 }
 

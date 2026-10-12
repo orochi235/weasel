@@ -41,7 +41,7 @@ describe('createCellHighlightLayer', () => {
     });
   });
 
-  it('honors a custom solid FillStyle fill', () => {
+  it('honors a custom solid Paint fill', () => {
     const layer = createCellHighlightLayer({
       spacing: 10,
       getCell: () => ({ col: 0, row: 0 }),

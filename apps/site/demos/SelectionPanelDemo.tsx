@@ -12,11 +12,11 @@ import {
   commandFill,
   commandStroke,
 } from '@weasel-js/core';
-import type { FillStyle, PolygonPath, Stroke } from '@weasel-js/core';
+import type { Paint, PolygonPath, Stroke } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
-interface NodeData { kind: string; fill: FillStyle; stroke?: Stroke }
+interface NodeData { kind: string; fill: Paint; stroke?: Stroke }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 

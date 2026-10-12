@@ -1,10 +1,10 @@
-import type { ColorSpace, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
+import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { GradientUV } from '../drawBatch';
 import { PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
 
-/** A paint a run can express, resolved from a `FillStyle` by `batchPaint`. */
+/** A paint a run can express, resolved from a `Paint` by `batchPaint`. */
 export type BatchPaint =
   | { kind: 'solid'; color: string; opacity?: number }
   | {
@@ -29,7 +29,7 @@ export type BatchPaint =
  * gradient-space point and the shader takes a `length` or an `atan` of it.
  */
 export function batchPaint(
-  ctx: DrawContext, fill: FillStyle, hasVColors: boolean,
+  ctx: DrawContext, fill: Paint, hasVColors: boolean,
 ): BatchPaint | undefined | null {
   if (hasVColors) return undefined;
   const kind = fill.fill ?? 'solid';
@@ -40,7 +40,7 @@ export function batchPaint(
   if (kind !== 'linear-gradient' && kind !== 'radial-gradient' && kind !== 'conic-gradient') {
     return undefined;
   }
-  const grad = fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>;
+  const grad = fill as Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>;
   const g = gradientMap(ctx, grad.units);
   if (!g) return null;
   if (grad.fill === 'linear-gradient') return ramp(grad, PAINT_MODE_PLAIN, linearRampUV(g, grad));
@@ -68,7 +68,7 @@ function ramp(
  * steps, and the pair have to agree: a radial gradient goes through that one
  * and a linear one through this.
  */
-function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): GlMat3 | null {
+function gradientMap(ctx: DrawContext, units: PaintUnits | undefined): GlMat3 | null {
   const inverse = gradientSpaceInverse(ctx, units);
   return inverse && mat3.multiply(inverse, ctx.state.transform);
 }
@@ -78,7 +78,7 @@ function gradientMap(ctx: DrawContext, units: GradientUnits | undefined): GlMat3
  * left for the atlas row `stageRamps` fills in.
  */
 function linearRampUV(
-  g: GlMat3, fill: Extract<FillStyle, { fill: 'linear-gradient' }>,
+  g: GlMat3, fill: Extract<Paint, { fill: 'linear-gradient' }>,
 ): GradientUV {
   const dx = fill.to.x - fill.from.x;
   const dy = fill.to.y - fill.from.y;
@@ -96,7 +96,7 @@ function linearRampUV(
 /** The gradient-space point scaled so its distance from the center *is* the
  *  ramp position, which is what makes the shader's half a `length`. */
 function radialRampUV(
-  g: GlMat3, fill: Extract<FillStyle, { fill: 'radial-gradient' }>,
+  g: GlMat3, fill: Extract<Paint, { fill: 'radial-gradient' }>,
 ): GradientUV {
   // The floor is `gradFill`'s own `max(u_gradRadius, 0.0001)`.
   const k = 1 / Math.max(fill.radius, 1e-4);
@@ -115,7 +115,7 @@ function radialRampUV(
  * `fract` that follows takes care of the wrap either way.
  */
 function conicRampUV(
-  g: GlMat3, fill: Extract<FillStyle, { fill: 'conic-gradient' }>,
+  g: GlMat3, fill: Extract<Paint, { fill: 'conic-gradient' }>,
 ): GradientUV {
   const cos = Math.cos(fill.angle);
   const sin = Math.sin(fill.angle);
@@ -158,7 +158,7 @@ export function rampVertices(
  * a missing view is not worth a thrown frame. `null` when the space has no
  * inverse; a paint measured in it draws nothing.
  */
-export function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined): GlMat3 | null {
+export function gradientSpaceInverse(ctx: DrawContext, units: PaintUnits | undefined): GlMat3 | null {
   if (units === 'local') return mat3.invert(ctx.state.transform);
   if (units === 'world' && ctx.viewMatrix) return mat3.invert(ctx.viewMatrix);
   return mat3.identity();
@@ -166,7 +166,7 @@ export function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | un
 
 /** The paint space `units` names → device pixels: the forward transform
  *  `gradientSpaceInverse` undoes, scaled by the target's pixel ratio. */
-export function spaceToDevice(ctx: DrawContext, units: GradientUnits | undefined): GlMat3 | null {
+export function spaceToDevice(ctx: DrawContext, units: PaintUnits | undefined): GlMat3 | null {
   const inverse = gradientSpaceInverse(ctx, units);
   const toScreen = inverse && mat3.invert(inverse);
   if (!toScreen) return null;

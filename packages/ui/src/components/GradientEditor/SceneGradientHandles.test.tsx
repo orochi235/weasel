@@ -8,7 +8,7 @@ import {
   asNodeId,
   useActionsRegistry,
   type Action,
-  type FillStyle,
+  type Paint,
   type GradientFill,
   type RectPose,
   type Stroke,
@@ -46,7 +46,7 @@ beforeAll(() => {
   };
 });
 
-interface Data { fill?: FillStyle | null; stroke?: Stroke | null }
+interface Data { fill?: Paint | null; stroke?: Stroke | null }
 type Layer = 'main';
 
 function sceneWith(pose: RectPose, data: Data): ReturnType<typeof createScene<Data, Layer>> {
@@ -200,7 +200,7 @@ describe('SceneGradientHandles', () => {
   });
 
   it('puts mesh handles on the node box for a mesh fill', () => {
-    const scene = sceneWith(BOX, { fill: seedMeshPatch('#3366ccff') as unknown as FillStyle });
+    const scene = sceneWith(BOX, { fill: seedMeshPatch('#3366ccff') as unknown as Paint });
     render(<Overlay scene={scene} slot="fill" seen={[]} />);
     expectAt('Patch 1 corner 3', 200, 100);
     expect(screen.queryByLabelText('Gradient start')).toBeNull();
@@ -208,7 +208,7 @@ describe('SceneGradientHandles', () => {
 
   it('commits a dragged mesh corner through setFill in the bounds frame', () => {
     const seen: Record<string, unknown>[] = [];
-    const scene = sceneWith(BOX, { fill: seedMeshPatch('#3366ccff') as unknown as FillStyle });
+    const scene = sceneWith(BOX, { fill: seedMeshPatch('#3366ccff') as unknown as Paint });
     render(<Overlay scene={scene} slot="fill" seen={seen} />);
     drag('Patch 1 corner 3', { x: 100, y: 50 });
 

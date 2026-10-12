@@ -1,5 +1,5 @@
 /**
- * The paint-kind registry — what makes `FillStyle` open.
+ * The paint-kind registry — what makes `Paint` open.
  *
  * A consumer registers a sixth kind and it renders, converts between the
  * bounds and pose frames, and serializes, with no kit edits. The five built-in
@@ -12,7 +12,7 @@
  */
 
 import type {
-  ColorSpace, FillStyle, GradientFill, GradientKind, GradStop, TilePatternSpec,
+  ColorSpace, Paint, GradientFill, GradientKind, GradStop, TilePatternSpec,
 } from '@weasel-js/paint';
 import { gradientForBounds, isGradientFill, withGradientKind } from '@weasel-js/paint';
 import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
@@ -189,12 +189,12 @@ const gradientKinds = derivedList(
  * Lossy wherever the kinds hold different information; an editor that wants a
  * switch to be undoable should keep the original paint.
  */
-export function switchGradientKind(paint: FillStyle, kind: PaintKind): FillStyle | undefined {
+export function switchGradientKind(paint: Paint, kind: PaintKind): Paint | undefined {
   const from = paintKindOf(paint);
   const to = getPaintKind(kind);
   if (!from?.stopsOf || !to?.fromStops) return undefined;
   if (from.id === to.id) return paint;
-  if (isGradientFill(paint) && isGradientFill({ fill: kind } as FillStyle)) {
+  if (isGradientFill(paint) && isGradientFill({ fill: kind } as Paint)) {
     return withGradientKind(paint, kind as GradientKind);
   }
   const { interpolate, opacity } = paint as { interpolate?: ColorSpace; opacity?: number };
@@ -202,11 +202,11 @@ export function switchGradientKind(paint: FillStyle, kind: PaintKind): FillStyle
     ...to.fromStops(from.stopsOf(paint)),
     ...(interpolate !== undefined ? { interpolate } : {}),
     ...(opacity !== undefined ? { opacity } : {}),
-  } as FillStyle;
+  } as Paint;
 }
 
 /** The registry entry for a paint, or `undefined` when its kind is unknown. */
-export function paintKindOf(fill: FillStyle): PaintKindEntry | undefined {
+export function paintKindOf(fill: Paint): PaintKindEntry | undefined {
   return getPaintKind(fill.fill ?? 'solid');
 }
 

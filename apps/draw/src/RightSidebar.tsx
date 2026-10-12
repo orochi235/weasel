@@ -1,5 +1,5 @@
 import {
-  type FillStyle,
+  type Paint,
   getAlpha01,
   inferredNodeProperties,
   inferredNodeRouting,
@@ -72,12 +72,12 @@ export function layerSwatch(data: WeaselDrawData): string | undefined {
   return fill !== null && 'color' in fill ? fill.color : undefined;
 }
 
-/** One representative color for a `FillStyle`, for a chip too small to draw
+/** One representative color for a `Paint`, for a chip too small to draw
  *  the real paint: a gradient shows its midpoint, which reads closer to the
  *  whole ramp than either end does, and a tile pattern shows the color it
  *  draws with. A pattern built from a raw `TextureHandle` has no color to
  *  report. */
-export function paintChipColor(fill: FillStyle): string | undefined {
+export function paintChipColor(fill: Paint): string | undefined {
   if (isGradientFill(fill)) return sampleGradientStops(fill.stops, 0.5);
   if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
   if (fill.fill === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;

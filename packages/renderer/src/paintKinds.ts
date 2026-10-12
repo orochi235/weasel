@@ -9,7 +9,7 @@
  * those registers it beside this.
  */
 
-import type { ColorSpace, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
+import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
@@ -59,14 +59,14 @@ export interface PaintBindContext {
    * an axis. Nothing the paint draws there means anything, so `bind` should
    * return `null` and draw nothing.
    */
-  spaceInverse(units: GradientUnits | undefined): GlMat3 | null;
+  spaceInverse(units: PaintUnits | undefined): GlMat3 | null;
   /**
    * The transform from the space `units` names to device pixels of the target
    * this draw lands in — screen pixels times the pixel ratio on screen, output
    * pixels in a headless render. It is what a paint baking a texture measures
    * its resolution against. `null` where `spaceInverse` is.
    */
-  spaceToDevice(units: GradientUnits | undefined): GlMat3 | null;
+  spaceToDevice(units: PaintUnits | undefined): GlMat3 | null;
   /** The largest texture side this context accepts, `MAX_TEXTURE_SIZE`. */
   readonly maxTextureSize: number;
   /** The lifetime GPU state made for this draw belongs to. Stable across the
@@ -108,11 +108,11 @@ export interface PaintDrawKind {
    * `v_world` through `spaceInverse`, not from where `a_position` happens to
    * lie.
    */
-  bind?(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null;
+  bind?(ctx: PaintBindContext, fill: Paint): PaintProgram | null;
   /** Bounds frame → the frame the node is painted in. */
-  inPoseFrame?(fill: FillStyle, box: FillPoseBox): FillStyle;
+  inPoseFrame?(fill: Paint, box: FillPoseBox): Paint;
   /** The inverse. Required whenever `inPoseFrame` is supplied. */
-  toBoundsFrame?(fill: FillStyle, box: FillPoseBox): FillStyle;
+  toBoundsFrame?(fill: Paint, box: FillPoseBox): Paint;
   /**
    * Shader programs `bind` looks up through `ctx.program`, keyed by program
    * id; registering the kind registers them. Declaring them here rather than

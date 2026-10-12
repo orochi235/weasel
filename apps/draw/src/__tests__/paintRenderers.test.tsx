@@ -6,7 +6,7 @@ import type { PropertyRenderContext } from '@weasel-js/ui';
 import { WD_RENDERERS } from '../paintRenderers';
 
 /** The schema's own `data.stroke.paint` leaf: a `paint` leaf, so its default
- *  is a whole `FillStyle` and not a color string. */
+ *  is a whole `Paint` and not a color string. */
 const STROKE_PAINT_LEAF = {
   kind: 'paint',
   name: 'Color',
@@ -44,7 +44,7 @@ function colorInputValue(value: unknown): string | undefined {
 
 describe("WeaselDraw's data.stroke.paint renderer", () => {
   // A node with no stroke at all leaves the leaf with no value. Falling back
-  // to the schema default — a whole `FillStyle` — handed the old color input
+  // to the schema default — a whole `Paint` — handed the old color input
   // an object and threw the panel away.
   it.each([
     ['no stroke', undefined, '#000000'],

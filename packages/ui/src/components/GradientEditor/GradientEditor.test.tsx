@@ -3,7 +3,7 @@ import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
-  type FillStyle,
+  type Paint,
   type GradStop,
   type GradientFill,
 } from '@weasel-js/core';
@@ -190,7 +190,7 @@ describe('GradientEditor', () => {
 
     it('edits a mesh by its corners, and switches it back to a stop gradient', () => {
       const onChange = vi.fn();
-      const mesh = seedMeshPatch('#ff0000ff') as unknown as FillStyle;
+      const mesh = seedMeshPatch('#ff0000ff') as unknown as Paint;
       render(<GradientEditor value={mesh} onChange={onChange} />);
       expect(screen.getByLabelText('Patch 1 corner 1')).toBeInTheDocument();
       expect(screen.queryByRole('slider', { name: /Gradient stops/ })).toBeNull();

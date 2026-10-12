@@ -19,7 +19,7 @@ import {
   useAnimator,
 } from '@weasel-js/animator';
 import type {
-  FillStyle,
+  Paint,
   NodeId,
   RectPose,
   RigApply,
@@ -75,7 +75,7 @@ const POSE_B: Pose = {
 };
 
 type Layer = 'bones' | 'joints' | 'labels' | 'target';
-type Data = { shape: 'rect'; fill: FillStyle } | { text: string; style: TextStyle; fill: FillStyle };
+type Data = { shape: 'rect'; fill: Paint } | { text: string; style: TextStyle; fill: Paint };
 interface NodeSpec { id: NodeId; kind: 'leaf'; layer: Layer; pose: RectPose; data: Data }
 
 const LABEL_STYLE: TextStyle = { fontFamily: 'sans-serif', fontSize: 10 };

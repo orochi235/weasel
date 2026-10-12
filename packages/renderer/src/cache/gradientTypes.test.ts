@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import type { FillStyle, GradStop } from '@weasel-js/paint';
+import type { Paint, GradStop } from '@weasel-js/paint';
 
-describe('FillStyle gradient types (compile-time + runtime shape)', () => {
+describe('Paint gradient types (compile-time + runtime shape)', () => {
   it('GradStop has offset and color fields', () => {
     const stop: GradStop = { offset: 0.5, color: '#ff0000' };
     expect(stop.offset).toBe(0.5);
     expect(stop.color).toBe('#ff0000');
   });
 
-  it('linear-gradient FillStyle discriminates on fill', () => {
-    const p: FillStyle = {
+  it('linear-gradient Paint discriminates on fill', () => {
+    const p: Paint = {
       fill: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 100, y: 0 },
@@ -18,8 +18,8 @@ describe('FillStyle gradient types (compile-time + runtime shape)', () => {
     expect(p.fill).toBe('linear-gradient');
   });
 
-  it('radial-gradient FillStyle discriminates on fill', () => {
-    const p: FillStyle = {
+  it('radial-gradient Paint discriminates on fill', () => {
+    const p: Paint = {
       fill: 'radial-gradient',
       center: { x: 50, y: 50 },
       radius: 50,
@@ -28,8 +28,8 @@ describe('FillStyle gradient types (compile-time + runtime shape)', () => {
     expect(p.fill).toBe('radial-gradient');
   });
 
-  it('conic-gradient FillStyle discriminates on fill', () => {
-    const p: FillStyle = {
+  it('conic-gradient Paint discriminates on fill', () => {
+    const p: Paint = {
       fill: 'conic-gradient',
       center: { x: 50, y: 50 },
       angle: 0,
@@ -38,8 +38,8 @@ describe('FillStyle gradient types (compile-time + runtime shape)', () => {
     expect(p.fill).toBe('conic-gradient');
   });
 
-  it('pattern FillStyle discriminates on fill', () => {
-    const p: FillStyle = {
+  it('pattern Paint discriminates on fill', () => {
+    const p: Paint = {
       fill: 'pattern',
       pattern: { id: 'test-tex' },
     };

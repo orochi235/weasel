@@ -1,5 +1,5 @@
 import type {
-  FillStyle,
+  Paint,
   ImageNodeData,
   Path,
   Stroke,
@@ -37,7 +37,7 @@ export interface WeaselDrawData {
   verticalAlign?: TextVerticalAlign;
   /** The node's paint — solid, gradient or pattern. `null` is an explicit
    *  "no fill"; absent takes the painter's default. */
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   /** The whole stroke — paint, width, dash, cap, join, align. */
   stroke?: Stroke | null;
   /** A dropped bitmap, a dropped SVG kept whole, or an imported `<image>` —

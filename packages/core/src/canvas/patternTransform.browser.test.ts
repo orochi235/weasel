@@ -4,7 +4,7 @@
  * of the output is one value along x. Unturned, no row is.
  */
 import { describe, it, expect } from 'vitest';
-import type { FillStyle, PatternTransform } from '@weasel-js/paint';
+import type { Paint, PatternTransform } from '@weasel-js/paint';
 import { composePatternTransform } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
@@ -16,7 +16,7 @@ const W = 64;
 const H = 48;
 
 function render(transform: PatternTransform | undefined): RasterImage {
-  const paint: FillStyle = {
+  const paint: Paint = {
     fill: 'pattern',
     pattern: { tile: 'hatch', color: '#ffffff', size: 8, lineWidth: 2 },
     units: 'world',

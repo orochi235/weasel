@@ -10,7 +10,7 @@ import { planPixelRender } from './renderSceneToPixels';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type DerivedDep, type Node, type NodeId, type RectPose } from 'core/scene/types';
 import { type Path, linePath } from '@weasel-js/geom';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '@weasel-js/renderer';
 
@@ -39,7 +39,7 @@ const dep = (p: RectPose | undefined): DerivedDep<RectPose> | undefined => {
 };
 
 type Data = { label?: string };
-type GradientData = { fill: FillStyle };
+type GradientData = { fill: Paint };
 
 function makeNode(derivePath: DerivePath): Node<Data, 'main', RectPose> {
   return {
@@ -305,7 +305,7 @@ describe('kit:derived painter', () => {
     };
     const path = linePath({ x: 20, y: 0 }, { x: 120, y: 0 });
     const cmds = defaultDrawOne(node, node.pose, VIEW, { derivedPath: path });
-    const fill = (cmds[0] as { fill: Extract<FillStyle, { fill: 'linear-gradient' }> }).fill;
+    const fill = (cmds[0] as { fill: Extract<Paint, { fill: 'linear-gradient' }> }).fill;
     expect(fill.from).toEqual({ x: 20, y: 0 });
     expect(fill.to).toEqual({ x: 120, y: 0 });
   });

@@ -2,7 +2,7 @@ import { useId, type CSSProperties, type ReactElement } from 'react';
 import {
   composePatternTransform,
   decomposePatternTransform,
-  type FillStyle,
+  type Paint,
   type TilePatternSpec,
 } from '@weasel-js/core';
 import { unit } from '@weasel-js/quantity';
@@ -13,7 +13,7 @@ import f from '../field.module.css';
 import s from './PatternPicker.module.css';
 
 /** The `pattern` member of the paint union. */
-export type PatternFill = Extract<FillStyle, { fill: 'pattern' }>;
+export type PatternFill = Extract<Paint, { fill: 'pattern' }>;
 
 const TILES: readonly TilePatternSpec['tile'][] = ['hatch', 'crosshatch', 'dots', 'chunks'];
 

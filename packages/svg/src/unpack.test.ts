@@ -188,7 +188,7 @@ describe('svgNodesToKitDrafts', () => {
     expect(drafts.indexOf(g)).toBeLessThan(drafts.indexOf(a));
   });
 
-  it('carries a bounds-relative gradient fill through as a FillStyle', () => {
+  it('carries a bounds-relative gradient fill through as a Paint', () => {
     const paint = {
       fill: 'linear-gradient', units: 'bounds',
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },

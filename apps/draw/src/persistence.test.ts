@@ -179,7 +179,7 @@ describe('persistence — scene snapshot → node specs', () => {
 
 // `collapse WeaselDraw's own fill and stroke onto the kit shapes` (7af35c53,
 // 2026-08-26) dropped `WeaselDrawData`'s `fill?: string` / `stroke?: string` /
-// `strokeWidth?: number` in favor of the kit's `FillStyle` and `Stroke`
+// `strokeWidth?: number` in favor of the kit's `Paint` and `Stroke`
 // objects, and took every reader's tolerance for the string forms with them.
 // Nothing converted the documents already in localStorage, so a scene saved
 // before that date reached the renderer with `fill: '#7ab8d4'` and threw
@@ -197,7 +197,7 @@ describe('persistence — legacy string paint migration', () => {
   });
   const dataOf = (data: Data): Data => nodeSpecsFromSnapshot(sceneOf(data))[0].data as Data;
 
-  it('turns a string fill into a solid FillStyle', () => {
+  it('turns a string fill into a solid Paint', () => {
     expect(dataOf({ fill: '#7ab8d4' }).fill).toEqual({ color: '#7ab8d4' });
   });
 
@@ -219,7 +219,7 @@ describe('persistence — legacy string paint migration', () => {
     expect(dataOf({ fill: 'none', stroke: 'none' })).toMatchObject({ fill: null, stroke: null });
   });
 
-  // The trap: `FillStyle` discriminates on a `fill` key whose value is the
+  // The trap: `Paint` discriminates on a `fill` key whose value is the
   // string `'solid'` / `'linear-gradient'` / …, so "a string under `fill`"
   // alone would mangle every current paint into `{ color: 'solid' }`.
   it('leaves a current object paint alone, discriminant and all', () => {

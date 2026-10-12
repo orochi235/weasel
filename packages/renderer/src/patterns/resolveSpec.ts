@@ -9,7 +9,7 @@
  * the spec, and the texture registry asks this module to rebuild it.
  */
 
-import type { CommandFill, FillStyle, PosedFill, TilePatternSpec } from '@weasel-js/paint';
+import type { CommandFill, Paint, PosedFill, TilePatternSpec } from '@weasel-js/paint';
 import {
   ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
   type TextureHandle,
@@ -115,8 +115,8 @@ export function isPatternSpec(
  * A spec that can't rasterize drops the fill rather than painting garbage.
  */
 export function resolveFillPattern(fill: PosedFill): CommandFill | null;
-export function resolveFillPattern(fill: FillStyle): FillStyle | null;
-export function resolveFillPattern(fill: FillStyle): FillStyle | null {
+export function resolveFillPattern(fill: Paint): Paint | null;
+export function resolveFillPattern(fill: Paint): Paint | null {
   if (fill.fill !== 'pattern') return fill;
   if (!isPatternSpec(fill.pattern)) return fill;
   const handle = resolvePatternSpec(fill.pattern);

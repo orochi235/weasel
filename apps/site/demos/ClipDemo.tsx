@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { bindClip, toClip, useAnimator } from '@weasel-js/animator';
 import type { Clip, TimelineHandle } from '@weasel-js/animator';
 import { asNodeId, SceneCanvas, sceneClipTargets, solid, useScene } from '@weasel-js/core';
-import type { FillStyle, RectPose } from '@weasel-js/core';
+import type { Paint, RectPose } from '@weasel-js/core';
 import { AnimatedTimeline } from '@weasel-js/ui/components/Timeline';
 import s from './ClipDemo.module.css';
 
@@ -28,7 +28,7 @@ const CLIP: Clip = {
 };
 
 export function ClipDemo() {
-  const scene = useScene<{ shape: 'rect'; fill: FillStyle }, 'main', RectPose>({
+  const scene = useScene<{ shape: 'rect'; fill: Paint }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: useMemo(() => [
       { id: BOX, kind: 'leaf' as const, layer: 'main' as const, pose: at(30, 30), data: { shape: 'rect' as const, fill: solid('#7fb069') } },

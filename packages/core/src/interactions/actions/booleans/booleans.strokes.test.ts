@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { boundsOfPath, pathFromD, pointInPath, type Path } from '@weasel-js/geom';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { NodeId } from 'core/scene/types';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
 
-const RED: FillStyle = { color: '#f00' };
-const BLUE: FillStyle = { color: '#00f' };
+const RED: Paint = { color: '#f00' };
+const BLUE: Paint = { color: '#00f' };
 const BOX: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
 /** A horizontal line through the box's middle, overhanging both sides. */
 const LINE = pathFromD('M-20 50 L120 50');

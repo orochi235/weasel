@@ -1,9 +1,9 @@
 import { useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, sceneFromJSON, useSelection } from '@weasel-js/core';
-import type { FillStyle, SerializedScene } from '@weasel-js/core';
+import type { Paint, SerializedScene } from '@weasel-js/core';
 import sceneJson from './data/scene.scene.json';
 
-interface NodeData { fill: FillStyle; label?: string }
+interface NodeData { fill: Paint; label?: string }
 interface Pose { x: number; y: number; width: number; height: number }
 
 export function SceneDemo() {

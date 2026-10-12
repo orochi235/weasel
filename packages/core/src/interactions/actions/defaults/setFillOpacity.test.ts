@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { setFillOpacityAction } from './setFillOpacity';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { solid } from '../../../util/paint';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
@@ -15,7 +15,7 @@ describe('setFillOpacityAction', () => {
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'commit');
     expect(scene.batches).toEqual(['Set fill opacity']);
-    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+    expect((scene.updates[0].data as { fill: Paint }).fill)
       .toEqual({ color: '#aabbcc', opacity: 0.5 });
   });
 
@@ -24,7 +24,7 @@ describe('setFillOpacityAction', () => {
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 2 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 2 } });
     h.onEnd?.(ctx, 'commit');
-    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+    expect((scene.updates[0].data as { fill: Paint }).fill)
       .toEqual({ color: '#aabbcc', opacity: 1 });
   });
 
@@ -39,7 +39,7 @@ describe('setFillOpacityAction', () => {
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 1 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 1 } });
     h.onMove?.({ ...ctx, params: { alpha01: 0.25 } });
-    expect((h.previewData?.('a' as unknown as NodeId) as { fill: FillStyle }).fill)
+    expect((h.previewData?.('a' as unknown as NodeId) as { fill: Paint }).fill)
       .toEqual({ color: '#aabbcc', opacity: 0.25 });
   });
 
@@ -56,7 +56,7 @@ describe('setFillOpacityAction', () => {
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { alpha01: 0.5 } });
     const h = getInvoker().start(ctx, { params: { alpha01: 0.5 } });
     h.onEnd?.(ctx, 'commit');
-    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+    expect((scene.updates[0].data as { fill: Paint }).fill)
       .toEqual({ color: '#ffffff', opacity: 0.5 });
   });
 
@@ -81,15 +81,15 @@ describe('setFillOpacityAction', () => {
     expect(label).toBe('Set fill opacity');
     expect(ops).toHaveLength(2);
     for (const op of ops) expect(op.name).toBe('setData');
-    const args0 = ops[0].args as { id: string; from: { fill?: FillStyle }; to: { fill?: FillStyle } };
-    const args1 = ops[1].args as { id: string; from: { fill?: FillStyle }; to: { fill?: FillStyle } };
+    const args0 = ops[0].args as { id: string; from: { fill?: Paint }; to: { fill?: Paint } };
+    const args1 = ops[1].args as { id: string; from: { fill?: Paint }; to: { fill?: Paint } };
     expect(args0.id).toBe('a');
     expect(args1.id).toBe('b');
     // `from` is the pre-commit data; `to` carries the opacity-replaced fill.
     expect(args0.from.fill).toEqual({ color: '#aabbcc' });
-    expect((args0.to as { fill: FillStyle }).fill).toEqual({ color: '#aabbcc', opacity: 0.5 });
+    expect((args0.to as { fill: Paint }).fill).toEqual({ color: '#aabbcc', opacity: 0.5 });
     expect(args1.from.fill).toEqual(solid('#11223344'));
-    expect((args1.to as { fill: FillStyle }).fill).toEqual({ color: '#112233', opacity: 0.5 });
+    expect((args1.to as { fill: Paint }).fill).toEqual({ color: '#112233', opacity: 0.5 });
   });
 
   it('with no applyOps, falls back to one scene.applyBatch labeled "Set fill opacity"', () => {
@@ -100,7 +100,7 @@ describe('setFillOpacityAction', () => {
     expect(scene.applyBatch).toHaveBeenCalledOnce();
     expect(scene.batches).toEqual(['Set fill opacity']);
     // The default adapter's setData routed back through scene.update.
-    expect((scene.updates[0].data as { fill: FillStyle }).fill)
+    expect((scene.updates[0].data as { fill: Paint }).fill)
       .toEqual({ color: '#aabbcc', opacity: 0.5 });
   });
 });

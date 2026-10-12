@@ -1,4 +1,4 @@
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import {
   meshDrawKind, meshFromStops, meshGradientXml, meshStops, seedMeshPatch, type MeshGradientFill,
 } from '@weasel-js/renderer/mesh';
@@ -6,8 +6,8 @@ import type { PaintKindEntry } from './paintKindEntry';
 
 // `asPaint`'s cast both ways, kept local: this module must import nothing
 // stateful, or `meshKindLazy`'s self-contained copy would duplicate it.
-const asMesh = (fill: FillStyle): MeshGradientFill => fill as unknown as MeshGradientFill;
-const asFill = (mesh: MeshGradientFill): FillStyle => mesh as unknown as FillStyle;
+const asMesh = (fill: Paint): MeshGradientFill => fill as unknown as MeshGradientFill;
+const asFill = (mesh: MeshGradientFill): Paint => mesh as unknown as Paint;
 
 /** The `mesh-gradient` kind's registry entry. `./registerMesh` registers it;
  *  the paint-kind registry loads it on demand otherwise. */

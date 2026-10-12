@@ -1,6 +1,6 @@
 # patterns
 
-Repeating texture tiles for `FillStyle`.
+Repeating texture tiles for `Paint`.
 
 ## How a pattern becomes a fill
 
@@ -11,7 +11,7 @@ Repeating texture tiles for `FillStyle`.
 2. It's converted to an `ImageBitmap`.
 3. That's registered via `registerTexture()`.
 
-The returned `TextureHandle` is what `FillStyle.pattern` accepts — so a
+The returned `TextureHandle` is what `Paint.pattern` accepts — so a
 patterned fill is `{ fill: 'pattern', pattern: handle }`. See
 `@weasel-js/paint`.
 

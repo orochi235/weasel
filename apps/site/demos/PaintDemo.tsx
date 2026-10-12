@@ -4,7 +4,7 @@ import {
   contrastLineColor,
   dashForStrokeStyle,
   oklchDegToHex,
-  type FillStyle,
+  type Paint,
   type Stroke,
 } from '@weasel-js/paint';
 import styles from './PaintDemo.module.css';
@@ -16,9 +16,9 @@ const TEAL = oklchDegToHex(0.7, 0.12, 190);
 const PLUM = oklchDegToHex(0.55, 0.18, 330);
 const SAND = oklchDegToHex(0.86, 0.08, 85);
 
-interface Paint { fill?: FillStyle; stroke?: Stroke }
+interface SwatchPaint { fill?: Paint; stroke?: Stroke }
 
-const SWATCHES: { id: string; label: string; path: Path; paint: Paint }[] = [
+const SWATCHES: { id: string; label: string; path: Path; paint: SwatchPaint }[] = [
   { id: 'solid', label: 'solid, color from oklchDegToHex', path: BOX, paint: {
     fill: { color: TEAL },
   } },
@@ -64,15 +64,15 @@ const SWATCHES: { id: string; label: string; path: Path; paint: Paint }[] = [
  * Each canvas is handed a JSON round-trip of its paint, not the object
  * itself — so what renders is exactly the text printed beside it.
  */
-function Swatch({ path, paint }: { path: Path; paint: Paint }) {
-  const scene = useScene<Paint & { path: Path }, 'default'>({
+function Swatch({ path, paint }: { path: Path; paint: SwatchPaint }) {
+  const scene = useScene<SwatchPaint & { path: Path }, 'default'>({
     systemLayers: [{ id: 'default' }],
     initial: [{
       kind: 'leaf',
       layer: 'default',
       id: asNodeId('swatch'),
       pose: { x: 14, y: 14, width: 112, height: 72 },
-      data: { path, ...(JSON.parse(JSON.stringify(paint)) as Paint) },
+      data: { path, ...(JSON.parse(JSON.stringify(paint)) as SwatchPaint) },
     }],
   });
   return (

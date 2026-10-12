@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { paintPreviewCss } from './paintPreview';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 
 const STOPS = [
   { offset: 0, color: '#ff0000ff' },
@@ -18,7 +18,7 @@ describe('paintPreviewCss', () => {
     expect(paintPreviewCss(undefined)).toBeUndefined();
     expect(paintPreviewCss({
       fill: 'pattern', pattern: { tile: 'checker', size: 8, color: '#000' },
-    } as unknown as FillStyle)).toBeUndefined();
+    } as unknown as Paint)).toBeUndefined();
   });
 
   it('reads a left-to-right gradient as CSS 90deg', () => {

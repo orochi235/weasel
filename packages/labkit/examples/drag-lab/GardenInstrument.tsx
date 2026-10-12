@@ -10,7 +10,7 @@ import {
 } from '@weasel-js/core';
 import type {
   AddNodeSpec,
-  FillStyle,
+  Paint,
   RectPose,
   Scene,
   SerializedScene,
@@ -25,7 +25,7 @@ type Kind = 'tree' | 'shrub' | 'flower';
 
 interface NodeData {
   kind: Kind;
-  fill: FillStyle;
+  fill: Paint;
 }
 type Pose = RectPose;
 type LayerId = 'default';
@@ -41,7 +41,7 @@ interface GardenConfig {
 const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 const SYSTEM_LAYERS = [{ id: 'default' as const }];
 
-const KIND_FILLS: Record<Kind, FillStyle> = {
+const KIND_FILLS: Record<Kind, Paint> = {
   tree: solid('#2d6a4f'),
   shrub: solid('#74c69d'),
   flower: solid('#e07a5f'),

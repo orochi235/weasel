@@ -14,14 +14,14 @@ import {
   useScene,
   useWeightTool,
 } from '@weasel-js/core';
-import type { FillStyle, NodeId, Path, RectPose, Stroke } from '@weasel-js/core';
+import type { Paint, NodeId, Path, RectPose, Stroke } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 320;
 const BOX: RectPose = { x: 80, y: 180, width: 440, height: 100 };
 const BONE = 180, HALF = 18, MID = 50;
 
-type Data = { skeleton?: Skeleton; skin?: Skin; path?: Path; fill?: FillStyle | null; stroke?: Stroke };
+type Data = { skeleton?: Skeleton; skin?: Skin; path?: Path; fill?: Paint | null; stroke?: Stroke };
 interface NodeSpec {
   id: NodeId; kind: 'leaf' | 'container'; layer: 'main'; parent?: NodeId; pose: RectPose; data: Data;
   clipFromPose?: () => null;

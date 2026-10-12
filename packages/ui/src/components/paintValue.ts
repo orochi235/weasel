@@ -1,11 +1,11 @@
 // Reading and writing the paint objects a property control may be pointed at.
 //
-// `data.fill` is a `FillStyle` and `data.stroke` a `Stroke`, so a control that
+// `data.fill` is a `Paint` and `data.stroke` a `Stroke`, so a control that
 // assumes either is a hex string reads `undefined` off it and writes a bare
 // string back over it. These helpers are what keep a control honest about the
 // shape it is holding.
 
-/** Whether a value is a `FillStyle` at all: an object naming a kind, or one
+/** Whether a value is a `Paint` at all: an object naming a kind, or one
  *  carrying a color, which is the solid member with its optional tag left off.
  *  A pref's stored value is `unknown`, so this is what stands between a paint
  *  control and a string someone saved there. */

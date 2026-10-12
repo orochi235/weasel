@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
-import type { FillStyle, GradientFill } from '@weasel-js/paint';
+import type { Paint, GradientFill } from '@weasel-js/paint';
 
 const STOPS = [
   { offset: 0, color: '#000000' },
@@ -63,9 +63,9 @@ describe('fillInPoseFrame', () => {
 
   it('leaves every other fill untouched, by identity', () => {
     const box = { x: 0, y: 0, width: 10, height: 10 };
-    const solid: FillStyle = { color: '#ff0000' };
-    const screenGradient: FillStyle = { ...LINEAR, units: 'screen' as const };
-    const unitless: FillStyle = { ...LINEAR, units: undefined };
+    const solid: Paint = { color: '#ff0000' };
+    const screenGradient: Paint = { ...LINEAR, units: 'screen' as const };
+    const unitless: Paint = { ...LINEAR, units: undefined };
     expect(fillInPoseFrame(solid, box)).toBe(solid);
     expect(fillInPoseFrame(screenGradient, box)).toBe(screenGradient);
     expect(fillInPoseFrame(unitless, box)).toBe(unitless);
@@ -112,7 +112,7 @@ describe('fillToBoundsFrame', () => {
   });
 
   it('leaves a solid fill alone', () => {
-    const solid: FillStyle = { color: '#ff0000' };
+    const solid: Paint = { color: '#ff0000' };
     expect(fillToBoundsFrame(solid, { x: 0, y: 0, width: 10, height: 10 })).toBe(solid);
   });
 });
@@ -125,7 +125,7 @@ describe('patterns', () => {
     const out = fillInPoseFrame(
       { fill: 'pattern', pattern: SPEC, units: 'bounds' },
       BOX,
-    ) as Extract<FillStyle, { fill: 'pattern' }>;
+    ) as Extract<Paint, { fill: 'pattern' }>;
     expect(out.units).toBe('local');
     expect(out.origin).toEqual({ x: 100, y: 50 });
     // A resize must reveal more tiles, not stretch them — so nothing about
@@ -137,17 +137,17 @@ describe('patterns', () => {
     const out = fillInPoseFrame(
       { fill: 'pattern', pattern: SPEC, units: 'bounds', origin: { x: 4, y: -6 } },
       BOX,
-    ) as Extract<FillStyle, { fill: 'pattern' }>;
+    ) as Extract<Paint, { fill: 'pattern' }>;
     expect(out.origin).toEqual({ x: 104, y: 44 });
   });
 
   it('leaves a pattern in any other space untouched', () => {
-    const world: FillStyle = { fill: 'pattern', pattern: SPEC, units: 'world' };
+    const world: Paint = { fill: 'pattern', pattern: SPEC, units: 'world' };
     expect(fillInPoseFrame(world, BOX)).toBe(world);
   });
 
   it('round-trips through fillToBoundsFrame', () => {
-    const original: FillStyle = { fill: 'pattern', pattern: SPEC, units: 'bounds', origin: { x: 4, y: -6 } };
+    const original: Paint = { fill: 'pattern', pattern: SPEC, units: 'bounds', origin: { x: 4, y: -6 } };
     const resolved = fillInPoseFrame(original, BOX);
     expect(fillToBoundsFrame(resolved, BOX)).toEqual(original);
   });

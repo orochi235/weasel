@@ -16,7 +16,7 @@ import {
   useScene,
   useSelection,
   type DragSample,
-  type FillStyle,
+  type Paint,
   type GradientFill,
   type Path,
   type Scene,
@@ -40,7 +40,7 @@ const W = 600, H = 420;
  *  anchor of `path`; `stroke.vertexWidths` is one width per anchor. */
 interface PaintedData {
   path: Path;
-  fill?: FillStyle | null;
+  fill?: Paint | null;
   stroke?: Stroke | null;
   vertexColors?: number[];
 }
@@ -227,7 +227,7 @@ function PaintPanel({
   // `setFill` / `setStroke` paint the selection, so the panel commits through
   // them rather than writing `data` itself: one undo entry, and the same path
   // a color picker or a keybinding takes.
-  const paint = (which: PaintSlot, next: FillStyle | null): void => {
+  const paint = (which: PaintSlot, next: Paint | null): void => {
     actions?.begin(which === 'fill' ? 'setFill' : 'setStroke', { paint: next })?.end('commit');
   };
   const write = (data: PaintedData): void => {

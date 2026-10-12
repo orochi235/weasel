@@ -34,7 +34,7 @@ import type {
  * this layer composes each target's bounds transform (rotation around the
  * AABB center, when present) once per region for both paint and hit-test.
  *
- * FillStyle order matches array order (first → last = bottom → top). Hit-test
+ * Paint order matches array order (first → last = bottom → top). Hit-test
  * walks affordances in reverse (top → bottom) and stops at the first that
  * claims the point; within it the nearest region wins (see
  * `hitAffordanceRegions`).
@@ -182,7 +182,7 @@ function recordRegionHitbox(
   });
 }
 
-// ─── FillStyle ──────────────────────────────────────────────────────────────────
+// ─── Paint ──────────────────────────────────────────────────────────────────
 
 function paintRegion(
   region: AffordanceRegion,

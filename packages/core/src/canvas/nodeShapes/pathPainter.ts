@@ -1,7 +1,7 @@
 import type {
   Path
 } from '@weasel-js/geom';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Paint, Stroke } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
@@ -30,7 +30,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     : withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as {
       path: Path;
-      fill?: FillStyle | null;
+      fill?: Paint | null;
       stroke?: Stroke | null;
       vertexColors?: number[];
     };
@@ -57,7 +57,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   ink: (node, _pose, ctx) => {
     const d = node.data as {
-      fill?: FillStyle | null;
+      fill?: Paint | null;
       stroke?: Stroke | null;
     };
     const { fill, stroke } = pathPaintOf(d);
