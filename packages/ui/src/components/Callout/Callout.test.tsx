@@ -1,3 +1,4 @@
+import { cssColorLiteral } from '@weasel-js/paint';
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import { useRef, useState } from 'react';
@@ -127,7 +128,7 @@ describe('Callout', () => {
 
   it('carries a tone beside the popover’s own positioning', () => {
     render(
-      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tone="#224a63" aria-label="Toned">
+      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tone={cssColorLiteral('#224a63')} aria-label="Toned">
         !
       </Callout>,
     );

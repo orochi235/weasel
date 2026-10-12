@@ -1,5 +1,6 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { ClaimableGesture, View } from '@weasel-js/core';
+import type { ColorSource } from '@weasel-js/paint';
 import type { ResolvedTheme } from '@weasel-js/theme';
 
 /** A widget's rectangle, in screen-space CSS pixels relative to the canvas. */
@@ -22,9 +23,9 @@ export interface HudDrawCtx {
    *  caller rather than read back off the DOM, so a HUD drawn headlessly is
    *  themed the same way one drawn in a browser is. */
   tokens: ResolvedTheme;
-  /** The `i`th color of the theme's tone list, wrapping — what a widget's
-   *  numeric `tone` names. */
-  toneAt(i: number): string;
+  /** A color source as a hex, resolved against the theme, tone list, and
+   *  palette the hud was attached with; `undefined` for one nothing answers. */
+  color(source: ColorSource): string | undefined;
 }
 
 /**
@@ -46,7 +47,7 @@ export interface HudContentCtx {
   rect: WidgetBounds;
   defaultFont: string;
   tokens: ResolvedTheme;
-  toneAt(i: number): string;
+  color(source: ColorSource): string | undefined;
 }
 
 /**

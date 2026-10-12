@@ -1,5 +1,6 @@
-import { colorCssAt, type Stance } from '@weasel-js/theme';
-import { useTones } from '@weasel-js/theme/react';
+import type { ColorSource } from '@weasel-js/paint';
+import { TONE_REF, type Stance } from '@weasel-js/theme';
+import { useColorCss } from '@weasel-js/theme/react';
 import type { CSSProperties } from 'react';
 
 export type { Stance } from '@weasel-js/theme';
@@ -13,9 +14,10 @@ export interface StanceProps {
   stance?: Stance;
   /**
    * Which of its peers this is: an index into the theme's tone list, wrapping,
-   * or a color given directly. Independent of `stance`, and allowed without one.
+   * or a color: a literal, or a `ColorRef` naming one in the theme or the
+   * provider's palette. Independent of `stance`, and allowed without one.
    */
-  tone?: number | string;
+  tone?: number | ColorSource;
 }
 
 /** The attributes a stanced surface renders, and the style carrying its resolved tone. */
@@ -27,17 +29,16 @@ export interface StanceAttrs {
 
 /**
  * Resolves `stance` and `tone` for a surface's root element. The tone is
- * written inline as `--wzl-tone`; a tone-list index resolves through the nearest
- * `<ThemeProvider>`'s tones, as a custom-property reference where the list is
- * a theme ramp, so it follows the mode without a re-render.
+ * written inline as `--wzl-tone`, resolved by `useColorCss`; an index is the
+ * `tone` ref at that index. A tone nothing answers is no tone.
  */
 export function useStance({ stance, tone }: StanceProps): StanceAttrs {
-  const ctx = useTones();
+  const css = useColorCss();
   if (stance === undefined && tone === undefined) return {};
-  const color = tone === undefined ? undefined : typeof tone === 'number' ? colorCssAt(ctx.tones, tone, ctx) : tone;
+  const color = css(typeof tone === 'number' ? { ref: TONE_REF, index: tone } : tone);
   return {
     'data-stance': stance,
-    'data-tone': tone === undefined ? undefined : String(tone),
+    'data-tone': color === undefined ? undefined : typeof tone === 'number' ? String(tone) : color,
     style: color === undefined ? undefined : ({ '--wzl-tone': color } as CSSProperties),
   };
 }

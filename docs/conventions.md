@@ -257,7 +257,9 @@ A surface that holds a class of content says which with `stance` —
 `scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`,
 `preview` — and which of its peers it is with `tone`: an index into the theme's
 tone list (`ThemeDefinition.tones`, a `ColorList`; weasel's is the swatch ramp),
-or a color. `PropertyPanel`, `PropertyGroup`, `MotifFrame`, `Subpanel`, `Callout`, `Dialog`,
+or a `ColorSource` (`@weasel-js/paint`): a literal, or a ref such as `{ ref: 'accent' }`,
+resolved by `colorSourceCss` (`@weasel-js/theme`; `useColorCss` in a component),
+as is every other color a kit component takes. `PropertyPanel`, `PropertyGroup`, `MotifFrame`, `Subpanel`, `Callout`, `Dialog`,
 labkit's `ControlPanel` and sidebar sections take both; `LayerList`'s items
 take a tone only, since a list's cards are one kind of thing. `Badge`, `Code`,
 `Button` and `Powerline` segments take both too, beside the `status` they report
@@ -266,7 +268,8 @@ color, and a toned primary button takes the tone as its accent. Toasts take
 neither: a toast reports how an event came out rather than holding a class of
 content. The hud `window` takes both, drawn in WebGL from the resolved theme:
 `resolveStanceSlots` (`@weasel-js/theme`) makes the same lookup the generated CSS
-does, and `mixOklab` (`@weasel-js/paint`) mixes the tone in. Anything else that takes several colors — chart series, diagram
+does, `colorSourceLiteral` resolves the tone with no cascade to ask, and `mixOklab`
+(`@weasel-js/paint`) mixes it in. Anything else that takes several colors — chart series, diagram
 categories — takes a `ColorList` (`@weasel-js/theme`), read with `colorAt` /
 `colorCssAt`, rather than hand-picked color strings that suit only one mode.
 
