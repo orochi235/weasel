@@ -1,46 +1,18 @@
 /**
- * TrueType/OpenType **collection** unpacking.
+ * TrueType/OpenType collection unpacking.
  *
- * `queryLocalFonts()` hands back the font *file* behind a face, and on macOS
- * a large share of the interesting ones — Helvetica, Times, Courier, Menlo —
- * are `.ttc` collections holding every weight and style in a single file with
- * one shared glyph store. A collection is not a font: its header is `ttcf`
- * rather than an sfnt version, so every parser worth using rejects it, and
- * opentype.js is no exception (it recognizes `\0\1\0\0`, `true`, `typ1`,
- * `OTTO`, `wOFF` and throws on anything else).
+ * `queryLocalFonts()` hands back the font file behind a face, and on macOS
+ * many of them — Helvetica, Times, Courier, Menlo — are `.ttc` collections
+ * holding every weight and style in a single file with one shared glyph
+ * store. A collection's header is `ttcf` rather than an sfnt version, so
+ * opentype.js throws on it.
  *
- * The fix is mechanical, because a collection is just N table directories
- * over one pool of tables: pick the directory whose PostScript name matches
- * the face we were asked for, then re-emit it as a standalone sfnt with the
- * tables copied and the offsets rewritten. Nothing is re-encoded — the table
- * bytes are the same bytes — so the result parses identically to a font that
- * had shipped on its own.
- *
- * Kept separate from `opentypeParser.ts` so the collection handling is
- * testable without a parser, and so swapping the parser later doesn't drag
- * this along.
- *
- * ### Why this lives here rather than upstream or in a bigger library
- *
- * Decided 2026-07-31, after looking at both alternatives — recorded so this
- * doesn't get "tidied up" into one of them later.
- *
- * The upstream fix is genuinely small: `parseOpenTypeTableEntries` hardcodes
- * `p = 12`, so the only thing opentype.js cannot do is be *told* the table
- * directory starts somewhere other than byte zero. Table records already
- * carry absolute offsets and the parser already reads them from a
- * whole-buffer view, so a `dirOffset` parameter and a `ttcf` branch would be
- * about ten lines. (Typr takes an offset in `readFONT` and gets collections
- * for free — same capability, one better-chosen signature.) It would make a
- * good PR. It would also not help for a while: opentype.js sat untouched from
- * 2021 to 2026, and we would carry this file until a release landed anyway.
- *
- * fontkit handles `.ttc` and `.dfont` natively, and WOFF2 besides — but it is
- * ~5.6 MB unpacked across nine dependencies (brotli, unicode-trie, dfa, …).
- * That is a shaping engine, and all this tier wants is a glyph outline.
- *
- * This version has an advantage over both: it runs *before* anything parses,
- * so it is parser-agnostic and survives swapping opentype.js out.
+ * A collection is N table directories over one pool of tables: pick the
+ * directory whose PostScript name matches the face we were asked for, then
+ * re-emit it as a standalone sfnt with the tables copied and the offsets
+ * rewritten. This runs before anything parses, so it is parser-agnostic.
+ * fontkit handles `.ttc` and `.dfont` natively, but is ~5.6 MB unpacked
+ * across nine dependencies.
  *
  * `.dfont` (Datafork TrueType) is the other container: whole fonts inside a
  * Macintosh resource map, read by `dataFork.ts` and selected here by the same
@@ -79,15 +51,10 @@ function readTableDirectory(view: DataView, dirOffset: number): TableRecord[] {
 }
 
 /**
- * PostScript name (`name` table, nameID 6) of the sub-font at `dirOffset`,
- * or `null` when it carries none.
- *
- * A deliberately minimal reader: identifying which member of a collection to
- * unpack is the only thing needed here, and a full `name` parser would be a
- * second implementation of something the real parser does properly once the
- * font is standalone. PostScript names are ASCII by specification, so both
- * the Macintosh (single-byte) and Windows (UTF-16BE) encodings reduce to
- * "take every byte that isn't a zero pad".
+ * PostScript name (`name` table, nameID 6) of a sub-font, or `null` when it
+ * carries none. PostScript names are ASCII by specification, so both the
+ * Macintosh (single-byte) and Windows (UTF-16BE) encodings reduce to "take
+ * every byte that isn't a zero pad".
  */
 function postScriptNameAt(view: DataView, records: readonly TableRecord[]): string | null {
   const name = records.find((r) => r.tag === 'name');
@@ -159,11 +126,8 @@ function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): Ar
  *
  * `postScriptName` selects the member; when it is absent or matches nothing,
  * the first member is returned, `matched` says which happened, and `names`
- * lists every member's PostScript name. A caller that needs the named face and
- * no other, as `createOpenTypeParser` does, rejects on `matched: false`.
- *
- * Passing a single font through is a no-op, so this is safe to call on any
- * bytes.
+ * lists every member's PostScript name. A single font passes through
+ * unchanged.
  */
 export function sfntFromCollection(
   bytes: ArrayBuffer,

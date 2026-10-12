@@ -39,9 +39,8 @@ export interface ItemListRow {
   /** Consumer classes for states this component has no opinion about. */
   className?: string;
   /** Handlers and data attributes for this row's element. `data-*` is
-   *  spelled out because `HTMLAttributes` does not admit it, and every
-   *  consumer here marks its rows up with one. A handler here runs before the
-   *  list's own, and `preventDefault()` in it keeps the list out. */
+   *  spelled out because `HTMLAttributes` does not admit it. A handler here
+   *  runs before the list's own, and `preventDefault()` in it keeps the list out. */
   rowProps?: HTMLAttributes<HTMLDivElement> & Record<`data-${string}`, unknown>;
 }
 
@@ -100,19 +99,12 @@ const ROLES: Record<Mode, { container: string; row: string }> = {
 };
 
 /**
- * The row chrome behind a sidebar list — layers, history, anything that is a
- * flat column of selectable rows in a panel.
+ * The row chrome behind a sidebar list — anything that is a flat column of
+ * selectable rows in a panel.
  *
- * It owns the container, the row box, the empty state, the list's semantics
- * and its keyboard; what a row *means* stays with the consumer. History dims
- * its redo entries and rules a line under the current one; a layer list drags
- * to reorder and leads each row with a swatch. Both reach that through
- * `className` and `rowProps` rather than through options here, so this does
- * not grow a flag per consumer.
- *
- * Rows are one height and one inset for every list, which is the point: two
- * panels stacked in the same sidebar have to agree, and they did not while
- * each owned a private copy of the same CSS.
+ * It owns the container, the row box, the empty state, the list's semantics,
+ * and its keyboard; what a row *means* stays with the consumer, through
+ * `className` and `rowProps`.
  *
  * **Semantics.** The role follows what the list can do:
  * - nothing to select or activate → `list` / `listitem`, and no row is focusable;
@@ -127,8 +119,8 @@ const ROLES: Record<Mode, { container: string; row: string }> = {
  * Enter/Space activate, carrying modifiers so Shift+Space is Shift+click, and
  * Alt+Up/Down call `onNudge`. In a multi-select list with `onSelectRange`,
  * Shift+Up/Down and Shift+Home/End move focus and report the rows from the
- * anchor — the row last focused or activated other than by a range — to it. In a grid, Right steps from the row into its
- * controls, Left and Escape step back; the controls leave the tab order.
+ * anchor to it. In a grid, Right steps from the row into its controls, Left
+ * and Escape step back; the controls leave the tab order.
  */
 export const ItemList = forwardRef(function ItemList(
   {

@@ -2,11 +2,9 @@
  * The scene adapter's clipboard seam: what a copy captures and what a paste
  * mints from it.
  *
- * `snapshotSceneSelection` captures adapter-shaped node copies;
  * `pasteSceneSnapshot` is a pure factory — it mints fresh nodes and never
  * touches the scene. Insertion happens through the caller's InsertOps (one per
- * created node, parents before children), which is what makes a whole paste a
- * single undo entry.
+ * created node, parents before children).
  *
  * A snapshot item carries its node's function fields twice: live, for a paste
  * in the same session, and as the scene's registry keys, for a snapshot that
@@ -171,9 +169,6 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   offset: { dx: number; dy: number },
   ctx?: PasteCtx,
 ): Node<TData, TLayer, TPose>[] {
-  // Snapshot items are adapter-shaped node copies: what the snapshot captures,
-  // and what this returns (`useClipboardOps` feeds `created` back in as the
-  // next cascade source).
   const all = clipboard.items as Item<TData, TLayer, TPose>[];
   if (all.length === 0) return [];
   const fns = new Map(all.map((item) => [item.id as string, restoredFnFields(env.scene, item)]));
@@ -203,8 +198,7 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
     return false;
   };
   // Without composition poses are absolute, so the delta applies to EVERY
-  // pasted node — the cluster translates rigidly, descendants staying
-  // attached to their parents.
+  // pasted node.
   let dx = offset.dx;
   let dy = offset.dy;
   if (ctx?.dropPoint) {

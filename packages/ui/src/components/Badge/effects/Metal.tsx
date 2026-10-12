@@ -4,19 +4,10 @@ import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
 /**
- * Metal — opaque cousin of the Aqua treatment. Same four sub-passes (body
- * gradient, specular gloss, normal-aware bezel, perimeter rim), but tuned
- * for an opaque metallic surface with a single tunable `specularity`
- * parameter that drives how sharp / contrasty the highlights read.
- *
- * Low specularity → matte aluminum / brushed pewter feel: muted contrast,
- *  soft gloss, faint bezel.
- * High specularity → chrome / polished steel: sharp specular peak at the
- *  equator, bright bezel and rim, hard transitions in the body gradient.
- *
- * The same `specularity` knob multiplies the equator brightness, gloss
- * alpha, bezel alpha, and rim alpha — so one slider moves the whole
- * surface along a coherent matte-to-mirror axis.
+ * Metal — opaque cousin of the Aqua treatment, with the same sub-passes. One
+ * `specularity` knob multiplies the equator brightness, gloss alpha, bezel
+ * alpha, and rim alpha — so one slider moves the whole surface along a
+ * matte-to-mirror axis.
  */
 export interface MetalEffectParams {
   /** Base metal color. Defaults to a neutral steel; pass e.g. `'#c8a657'` for brass. */
@@ -109,10 +100,6 @@ const Metal: EffectModule<MetalEffectParams> = {
     const bezelWidthVb = cfg.bezelWidth * widthScale;
     const rimWidthVb = cfg.rimWidth * widthScale;
 
-    // Gradient construction. Specularity sharpens by:
-    //   1. Driving the equator peak from neutral accent toward pure white.
-    //   2. Boosting gloss/bezel/rim alpha (applied below).
-    //   3. Increasing the contrast between dark stops and the equator stop.
     const equatorLo = Math.max(0, cfg.equator - cfg.equatorSpread);
     const equatorHi = Math.min(100, cfg.equator + cfg.equatorSpread);
     // At spec=0 the equator is just the accent; at spec=1 it's almost white.

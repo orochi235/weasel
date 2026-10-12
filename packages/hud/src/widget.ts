@@ -28,11 +28,8 @@ export interface HudDrawCtx {
   color(source: ColorSource): string | undefined;
 }
 
-/**
- * Input to a widget's optional `content` painter — the one place hud sees
- * the scene. `HudDrawCtx` stays data-free so widgets stay renderable
- * headlessly; this is an explicit opt-in on the composite instead.
- */
+/** Input to a widget's optional `content` painter — the one place hud sees
+ *  the scene. */
 export interface HudContentCtx {
   /** Scene data the hud layer was handed. Opaque here; painters that need
    *  it cast to a known shape, as tools do with `ToolCtx.adapter`. */

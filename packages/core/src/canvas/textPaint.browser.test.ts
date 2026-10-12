@@ -3,13 +3,10 @@
  *
  * Text below `OUTLINE_MIN_SCREEN_PX` draws off the distance-field atlas and
  * text above it draws as tessellated outlines, so the same node changes tier
- * as the view zooms. A paint is measured in world space either way, which is
- * what the tier checks pin: the same world point reads the same color on
- * either side of the threshold.
+ * as the view zooms.
  *
  * The batch checks are pixel probes rather than a baseline because a
- * screenshot cannot see which draw a pixel came from — see the batch trap in
- * the repo's CLAUDE.md.
+ * screenshot cannot see which draw a pixel came from.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';

@@ -36,11 +36,9 @@ export type ActionDisabledReason =
  */
 export interface ActionPresentation {
   label: string;
-  /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
-   *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
-   *  action metadata the same way `<ToolPalette>` renders from tool
-   *  metadata. May be a static `ReactNode` or a function (rare; useful
-   *  for state-aware icons like a "lock" toggle). */
+  /** Inline-SVG icon for palette / toolbar surfaces. May be a static
+   *  `ReactNode` or a function (rare; useful for state-aware icons like a
+   *  "lock" toggle). */
   icon?: ReactNode | (() => ReactNode);
   /** Grouping key for palette/menu surfaces. Free-form string; the kit
    *  ships defaults for `'align'` (six edges/centers), `'distribute'`
@@ -98,30 +96,21 @@ export interface ActionDispatch extends BindingSource {
   /**
    * @experimental
    * Optional predicate saying whether the action can run right now. Return
-   * `true` when it can, or a reason string (e.g. `'Selection required'`)
-   * when it cannot. The command palette greys out a disabled row, skips it
-   * in keyboard nav, ignores clicks, and shows the reason next to the label.
-   * The dispatcher skips a disabled action too, on a key as on a pointer, and
-   * falls through to the next binding that matches. `ActionsRegistry.trigger`
-   * does not ask, so the action's own `run` should still self-guard.
+   * `true` when it can, or an `ActionDisabledReason` when it cannot. The
+   * command palette greys out a disabled row, skips it in keyboard nav,
+   * ignores clicks, and shows the reason next to the label. The dispatcher
+   * skips a disabled action too, on a key as on a pointer, and falls through
+   * to the next binding that matches. `ActionsRegistry.trigger` does not ask,
+   * so the action's own `run` should still self-guard.
    *
    * **Contract:** must be pure (no side effects), fast (< 4ms in dev), and
-   * must not throw. If a call throws or exceeds the budget in dev mode,
-   * `evaluateEnabled` logs a one-time warning per action id; throws are
-   * caught and treated as disabled with reason `'(predicate threw)'`.
+   * must not throw. A throw is caught and treated as disabled with reason
+   * `ActionDisabledReason.PredicateThrew`.
    *
-   * Snapshot-on-open semantics: the palette evaluates `enabled` once when
-   * opened and does NOT re-evaluate on selection changes while open. Live
-   * reactive updates are deferred — palette is short-lived.
+   * The palette evaluates `enabled` once when opened and does NOT re-evaluate
+   * on selection changes while open.
    *
-   * The reason set is a closed enum — to add a new reason, edit
-   * `ActionDisabledReason` and the consumer's display map.
-   *
-   * The optional `deps` argument is the same bag passed to
-   * `ImmediateInvoker.run`; callers (`evaluateEnabled` / the ActionBar) may
-   * synthesize it from the surrounding `DepRegistry` so predicates can
-   * inspect selection / scene / etc. Predicates that don't need deps just
-   * ignore the arg.
+   * `deps` is the same bag passed to `ImmediateInvoker.run`.
    *
    * `at` is the world point of the event being routed, when it has one — a
    * click, a press, a long-press. An action that only applies somewhere
@@ -170,12 +159,11 @@ export interface ActionDispatch extends BindingSource {
   /**
    * CSS cursor shown while the pointer hovers a spot where this action
    * would win the drag — or, when the drag's winner declares no cursor,
-   * the click. The hover-cursor pump (in `useGestureDispatcher`) runs
-   * `Dispatcher.resolveOnly` on each idle pointermove — the same match
-   * walk a real press takes — and applies the winning action's `cursor`,
-   * so the hint and the actual target stay in sync by construction. Omitted = no override (the active tool's
-   * `Tool.cursor` shows). Affordance hits are resolved earlier in the
-   * pump via `AffordanceRegion.cursor` and never reach this field.
+   * the click. The hover-cursor pump runs the same match walk a real press
+   * takes, so the hint and the actual target stay in sync. Omitted = no
+   * override (the active tool's `Tool.cursor` shows). Affordance hits are
+   * resolved earlier in the pump via `AffordanceRegion.cursor` and never
+   * reach this field.
    *
    * Static value only. Prediction runs `enabled()` but cannot run the
    * invoker, so an action that matches yet bails at `start()` (empty
@@ -193,20 +181,13 @@ export interface ActionDispatch extends BindingSource {
    * ("you are panning"). An action can declare either, both, or neither;
    * with only `cursor` set, the hover hint holds for the duration of the
    * gesture.
-   *
-   * This is where mid-gesture cursors live now. They used to come from the
-   * tool side — an `engaged` phase entry's cursor,
-   * or a function-form `Tool.cursor` reading the gesture scratch out of the
-   * tool-routing dispatcher. Both belonged to a pipeline whose whole job was
-   * being taken over by bindings, and neither could describe a cursor for an
-   * action a tool doesn't own.
    */
   activeCursor?: CursorSpec;
 }
 
 /**
  * @experimental
- * Single registered action. v1: one binding per action.
+ * Single registered action.
  */
 export interface Action extends ActionDispatch, ActionPresentation {}
 

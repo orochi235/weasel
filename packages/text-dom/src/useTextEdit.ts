@@ -1,11 +1,7 @@
 /**
  * In-place text editing via a contenteditable overlay positioned over the
  * text node's screen-space pose. Enter / blur commit; Shift+Enter inserts a
- * newline; Escape cancels. The hook owns the DOM lifecycle of the overlay
- * element — caller just provides a container, the lookup hooks, and a
- * `setText` callback (which is responsible for op-batching/undo).
- *
- * The text layer should hide the node it's currently editing
+ * newline. The text layer should hide the node it's currently editing
  * (`isHidden: (n) => n.id === editingId`) so the overlay isn't drawn twice.
  */
 
@@ -40,20 +36,14 @@ import type {
  * it here would break cutting text mid-edit. Superscript takes Word's
  * Cmd+Shift+=; subscript takes Cmd+Shift+- rather than Word's Cmd+-, because
  * the unshifted pair is browser zoom, which a page cannot cancel.
- * `overline` has no shortcut — no editor has established one — and is
- * reachable only from a control.
  *
- * Matching is on the *unshifted* character (`shiftedKey`): a US layout
- * reports Cmd+Shift+= as `'+'` and Cmd+Shift+- as `'_'`, so keying the table
- * on what the legend says needs that mapping to survive the shift.
+ * Matching is on the *unshifted* character: a US layout reports Cmd+Shift+=
+ * as `'+'` and Cmd+Shift+- as `'_'`.
  *
  * Underline has to be intercepted, not merely supported. Left alone, the
  * browser runs its own `formatUnderline` and `domToRuns`' `<u>` flattening
  * makes that *look* like it worked while bypassing `patchForToggle`
- * entirely — no toggle-off, no mixed-range "turn the whole selection on"
- * rule, no pending style for a collapsed caret. The flattening stays
- * regardless, since it is what lets pasted decoration survive, but it is
- * defense in depth and was never the mechanism.
+ * entirely — no toggle-off, no pending style for a collapsed caret.
  */
 const STYLE_SHORTCUTS: ReadonlyArray<{ key: string; shift: boolean; toggle: StyleToggle }> = [
   { key: 'b', shift: false, toggle: 'bold' },
@@ -78,14 +68,9 @@ function toggleForKey(e: KeyboardEvent): StyleToggle | null {
 /**
  * The patch that toggles `toggle` against the styling in `current`: if it is
  * already carried, clear it; otherwise set it — so a mixed range turns fully
- * on, as in every other text editor. `script` clears to `undefined` rather
- * than to `false`, since the off state of an enum is its absence.
- *
- * `nodeStyle` is read as well as `current`, and has to be: a node flag
- * renders on every run whether or not the runs carry it, so a toggle that
- * consulted the runs alone would read Cmd+B inside a `fontWeight: 700` node
- * as "not bold" and *add* bold rather than clearing it. `script` has no node
- * level to consult — by design; see `StyledRun.script`.
+ * on. `nodeStyle` is read as well as `current`: a node flag renders on every
+ * run whether or not the runs carry it, so the runs alone would read Cmd+B
+ * inside a `fontWeight: 700` node as "not bold" and *add* bold.
  */
 function patchForToggle(
   current: RangeStyle,
@@ -104,25 +89,20 @@ function patchForToggle(
 /**
  * The styling at a collapsed caret: the run to its left, or — at the very
  * start of the text — the run to its right. This is what the next typed
- * character inherits, so it is what a character bar should be showing.
+ * character inherits.
  */
 function styleAtCaret(runs: readonly StyledRun[], at: number): RangeStyle {
   return at > 0 ? styleAtRange(runs, at - 1, at) : styleAtRange(runs, 0, 1);
 }
 
 /**
- * Return focus to the overlay after a styling arrived from editor chrome.
- *
- * A control that took focus in order to be clicked still holds it when the
- * patch lands, so the next keystroke goes to that button — and in an app that
- * binds bare letters to tools, "click Superscript, then type the 2" activates
- * the Text tool and pans the canvas instead of typing a 2. Restoring the
- * caret is what makes a styling control usable mid-edit at all.
+ * Return focus to the overlay after a styling arrived from editor chrome: a
+ * control that took focus to be clicked still holds it when the patch lands,
+ * so the next keystroke would go to that button.
  *
  * Two things are left holding focus deliberately: a text entry in the chrome
- * (the user is still typing a font size — stealing that is worse than the
- * problem) and anything inside an open dialog, which is where a color
- * picker's live `onChange` fires from.
+ * (the user is still typing a font size) and anything inside an open dialog,
+ * which is where a color picker's live `onChange` fires from.
  */
 function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelection): void {
   const active = document.activeElement;
@@ -143,9 +123,8 @@ const NO_PENDING: RunStylePatch = Object.freeze({});
 
 /**
  * Merge `patch` into a pending style. A key set to `false` or `undefined` is
- * deleted rather than stored — the same canonical form `patchRun` keeps, so
- * the pending style and a stored run agree on what "off" looks like, and
- * bold and a weight supersede each other here as they do there.
+ * deleted rather than stored, and bold and a weight supersede each other —
+ * the canonical form a stored run keeps.
  */
 function mergePending(prev: RunStylePatch, patch: RunStylePatch): RunStylePatch {
   const next: Record<string, unknown> = { ...prev };
@@ -220,26 +199,10 @@ export function useTextEdit(
     setPendingStyle(NO_PENDING);
   }, []);
 
-  /**
-   * The published range, mirrored in a ref. `applyStyleToSelection` reads it
-   * synchronously, and it is the fallback when the DOM selection has moved
-   * into editing chrome. Cleared with the state, never separately.
-   */
+  /** The published range, mirrored in a ref: the fallback when the DOM
+   *  selection has moved into editing chrome. */
   const selectionRef = useRef<TextEditSelection | null>(null);
 
-  /**
-   * Recompute the published caret range and its styling from the overlay.
-   * Called from the `selectionchange` listener and directly after anything
-   * the hook writes, so a control reading `rangeStyle` right after a patch
-   * sees the new value rather than flickering back to the old one.
-   *
-   * A selection that is not inside the overlay leaves the published range
-   * alone rather than clearing it. That state means focus moved into a
-   * control — which is precisely when the range matters most, and reporting
-   * `null` would read to a consumer as "collapsed caret" and send its patch
-   * to the wrong target. The range is cleared where it is actually over: on
-   * `startEdit` and on teardown.
-   */
   /** Publish `range` and the styling the overlay currently carries across it. */
   const publishRange = useCallback((overlay: HTMLElement, range: TextEditSelection) => {
     const collapsed = range.start === range.end;
@@ -261,6 +224,8 @@ export function useTextEdit(
     const overlay = overlayRef.current;
     if (!overlay) return;
     const next = readSelectionOffsets(overlay);
+    // A selection outside the overlay means focus moved into a control, which
+    // is when the range matters most: leave it published rather than clear it.
     if (next === null) return;
     publishRange(overlay, next);
   }, [publishRange]);
@@ -284,21 +249,9 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    // What decides this is whether *runs* are in play at the end of the
-    // edit — not whether the overlay was seeded from them. Mirroring the
-    // init-time guard (`getRuns` returned something non-empty) was the old
-    // rule, and it silently dropped every styling a freshly created text
-    // node acquired: no prior runs, so commit took the plain-text branch and
-    // `domToRuns`' output went in the bin. So two ways in:
-    //
-    // - the node already had runs — they have to be rewritten even when the
-    //   edit ended up unstyled, or stale styling survives a Cmd-B that
-    //   turned it off; or
-    // - the edit produced styling, whatever the node started as.
-    //
-    // A plain-text edit of a plain-text node satisfies neither and commits
-    // text alone, so a node that has no `runs` doesn't grow a single-run
-    // array just for being edited.
+    // Runs are written when the node already had them — or stale styling
+    // survives a Cmd-B that turned it off — or when the edit produced
+    // styling. A plain-text edit of a plain-text node commits text alone.
     const { getRuns, setRuns, setText, setStyle, commit: commitAll } = optsRef.current;
     const priorRuns = getRuns?.(id);
     const read = domToRuns(overlay);
@@ -337,22 +290,16 @@ export function useTextEdit(
     const overlay = overlayRef.current;
     if (!overlay) return;
     // An empty patch would still round-trip the runs through
-    // `applyStyleToRange`, whose normalization applies to the whole array and
-    // not just the patched span. Nothing asked for that, so don't do it.
+    // `applyStyleToRange`, whose normalization applies to the whole array.
     if (Object.keys(patch).length === 0) return;
     // Fall back to the last range that WAS in the overlay: the caller may be
-    // a control that took focus (and with it the DOM selection) to be
-    // clicked. `writeRunsPreservingSelection` puts the range back afterwards,
-    // so a second styling can follow without re-selecting either way.
+    // a control that took focus (and with it the DOM selection) to be clicked.
     const range = readSelectionOffsets(overlay) ?? selectionRef.current;
     if (!range) return;
 
-    // Lowering a flag the node itself sets is not expressible additively —
-    // the run algebra can only add — so it takes the rewrite in
-    // `setFlagOverRange`: clear the node flag, raise it outside the range.
-    // This is the one styling that reaches existing text from a collapsed
-    // caret, and has to: "stop being bold from here on" is otherwise
-    // unsayable in a bold node.
+    // Lowering a flag the node itself sets is not expressible additively, so
+    // it takes the rewrite in `setFlagOverRange`: clear the node flag, raise
+    // it outside the range. It reaches existing text even from a collapsed caret.
     const id = editingIdRef.current;
     const canWriteStyle = optsRef.current.setStyle !== undefined || optsRef.current.commit !== undefined;
     const runs = domToRuns(overlay);
@@ -377,9 +324,8 @@ export function useTextEdit(
       publishRange(overlay, range);
       // The rewrite raised the flag on every existing run, so a caret sitting
       // at the end of one is now *inside* a flagged span and the next
-      // character would be absorbed by it. Arming the `false` keeps it out:
-      // it is not a storable run value, but it is enough to make
-      // `beforeinput` open a fresh span, which `runsToDom` then emits bare.
+      // character would be absorbed by it. Arming the `false` makes
+      // `beforeinput` open a fresh span instead.
       if (range.start === range.end) {
         armPending({ ...pendingRef.current, [unsetFlag]: false }, range.start);
       }
@@ -403,8 +349,7 @@ export function useTextEdit(
     writeRunsPreservingSelection(overlay, next, range.start, range.end, baseRef.current);
     restoreOverlayFocus(overlay, range);
     // Republish from the range we just styled, not from the DOM selection:
-    // when the patch came from chrome the selection is in that control, and
-    // re-reading it would leave a consumer showing the pre-patch styling.
+    // when the patch came from chrome the selection is in that control.
     publishRange(overlay, range);
   }, [publishRange, armPending, editingIdRef, optsRef, styleOf, holdNodeStyle]);
 
@@ -474,16 +419,14 @@ export function useTextEdit(
     } else {
       placeCaretAt(overlay, range, initial);
     }
-    // Focus first, then place the caret: focusing an editable host is itself
-    // a selection-moving act (jsdom collapses to the start; browsers vary),
-    // so a range set beforehand is not reliably the one the user ends up with.
+    // Focus first, then place the caret: focusing an editable host itself
+    // moves the selection (jsdom collapses to the start; browsers vary).
     overlay.focus();
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
-    // The caret exists now, so publish it rather than waiting for the
-    // `selectionchange` task — a control mounted alongside the editor would
-    // otherwise render one frame with no selection.
+    // Publish now rather than on the `selectionchange` task — a control mounted
+    // alongside the editor would otherwise render one frame with no selection.
     syncSelection();
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -527,12 +470,9 @@ export function useTextEdit(
       },
     });
 
-    // Blur can't be the only way out. Once focus has moved into editing
-    // chrome the overlay is no longer focused, so nothing blurs when the user
-    // clicks away and the edit would never end. A pointerdown that lands
-    // outside both the overlay and the chrome is that click. Capture phase so
-    // it runs ahead of whatever the click was aimed at (a canvas gesture, a
-    // different tool) rather than after it.
+    // Blur can't be the only way out: once focus has moved into editing
+    // chrome, nothing blurs when the user clicks away. Capture phase so this
+    // runs ahead of whatever the click was aimed at.
     const onPointerDownOutside = (e: Event) => {
       const target = e.target;
       if (!(target instanceof Node) || overlay.contains(target)) return;
@@ -547,9 +487,7 @@ export function useTextEdit(
     overlay.addEventListener('input', onInput);
     overlay.addEventListener('beforeinput', onBeforeInput);
     document.addEventListener('pointerdown', onPointerDownOutside, true);
-    // `selectionchange` only exists on the document — there is no per-element
-    // event for it — so this listens globally and `readSelectionOffsets`
-    // filters to selections inside the overlay.
+    // `selectionchange` only exists on the document.
     document.addEventListener('selectionchange', syncSelection);
 
     // Follows the node's screen pose every frame — behind the visibility gate,
@@ -643,7 +581,6 @@ function placeCaretAt(root: HTMLElement, range: Range, offset: number): void {
     remaining -= len;
     node = walker.nextNode() as Text | null;
   }
-  // Fallback: collapse at end of the root.
   range.selectNodeContents(root);
   range.collapse(false);
 }
@@ -684,10 +621,6 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.textRendering = isCanvasFont(style.fontFamily) ? '' : 'geometricPrecision';
   el.style.lineHeight = String(style.lineHeight);
   applyOverlayDirection(el, style);
-  // Node-level decoration, so the overlay looks like the canvas the moment
-  // editing starts. Runs are additive over the node style (a run can't un-set
-  // a flag), which is exactly how CSS decoration propagates to descendants —
-  // a run span adds its own decoration but can't remove this one.
   const decorations: string[] = [];
   if (style.underline) decorations.push('underline');
   if (style.strikethrough) decorations.push('line-through');
@@ -712,9 +645,7 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
 
 /**
  * Inject a `<style>` element scoped to `overlayClass` so the edit overlay's
- * `::selection` matches the configured colors. Returns the style element so
- * the effect cleanup can remove it. Returns `null` when no selection
- * theming was requested.
+ * `::selection` matches the configured colors, or `null` when none are set.
  */
 function installSelectionStyle(
   overlayClass: string,
@@ -821,18 +752,16 @@ function placeOverlay(
   clipBox.style.height = `${clip?.height ?? 0}px`;
   el.style.display = '';
   // An unwrapped line can be wider than its box, and the canvas aligns it
-  // about the box's left edge, center or right edge regardless. The overlay
-  // sizes to its text and grows from that same anchor: `left` puts the anchor
-  // there and a trailing translate pulls the box back by that fraction of its
-  // own width.
+  // about the box's left edge, center, or right edge regardless. `left` puts
+  // that anchor there and a trailing translate pulls the overlay back by that
+  // fraction of its own width.
   const anchor = style.wrap ? 0 : ALIGN_ANCHOR[overlayAlignEdge(el, style)];
   el.style.left = `${pose.x + pose.width * (pose.zoom ?? 1) * anchor - (clip?.x ?? 0)}px`;
   el.style.width = style.wrap ? `${pose.width}px` : 'max-content';
   el.style.minWidth = style.wrap ? '' : `${pose.width}px`;
   // A node-level script draws the glyphs smaller and raised on the line the
   // plain text would hold, so the line height is pinned in pixels of the
-  // unscripted size rather than left to scale with the font. The rise is
-  // added to `top` with the baseline correction.
+  // unscripted size rather than left to scale with the font.
   const script = style.script
     ? scriptMetricsFor(style.fontFamily, numericWeight(style.fontWeight), style.fontStyle)[style.script]
     : undefined;
@@ -848,27 +777,17 @@ function placeOverlay(
   el.style.top = `${overlayTop(pose, aligned ? el.offsetHeight : pose.height, drop) - (clip?.y ?? 0)}px`;
   // A declared `zoom` means every size on the pose is pre-scale and the
   // overlay carries the view scale as a transform. Anchored at the top-left so
-  // `left`/`top` stay screen pixels. Written unconditionally (`none` at zoom
-  // 1) because the overlay element outlives an edit session and would
-  // otherwise keep a stale scale.
+  // `left`/`top` stay screen pixels.
   el.style.transformOrigin = '0 0';
   const transforms: string[] = [];
   if (pose.zoom !== undefined && pose.zoom !== 1) transforms.push(`scale(${pose.zoom})`);
   if (anchor !== 0) transforms.push(`translateX(${-anchor * 100}%)`);
   el.style.transform = transforms.length > 0 ? transforms.join(' ') : 'none';
-  // `letter-spacing` is not part of the CSS `font` shorthand, so
-  // `applyOverlayStyle`'s `el.style.font` never carries it — it needs its own
-  // assignment. It also lives here rather than there because without a
-  // transform it is the one world-unit typography value that has to be
-  // re-scaled as the view zooms.
-  //
-  // Under a transform there is nothing to re-scale: the world value is the
-  // value, and run-level overrides — which `runsToDom` writes in world units
-  // — scale by the same factor. Without one, `pose.fontSize` is documented as
+  // `letter-spacing` is not part of the CSS `font` shorthand. Under a
+  // transform the world value is the value. Without one, `pose.fontSize` is
   // `style.fontSize * zoom`, so their ratio is the world→screen factor; run
-  // overrides then stay unscaled, which is why that path is only correct at
-  // zoom 1. (CSS inheritance makes a run span's own declaration *replace* this
-  // value rather than add to it, in both paths.)
+  // overrides, which `runsToDom` writes in world units, then stay unscaled,
+  // so that path is only correct at zoom 1.
   const scale =
     pose.zoom !== undefined ? 1 : style.fontSize > 0 ? pose.fontSize / style.fontSize : 1;
   el.style.letterSpacing = `${style.letterSpacing * scale}px`;

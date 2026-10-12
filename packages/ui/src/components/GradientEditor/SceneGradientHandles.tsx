@@ -55,13 +55,9 @@ export interface SceneGradientHandlesProps<
  * and so does unmounting the overlay while a handle is held.
  *
  * Renders nothing unless the targeted slot holds a gradient or a mesh. The
- * node stores its gradient in `units: 'bounds'` — fractions of its own box, so the paint
- * survives pan, zoom and resize — which is not a frame polar math can work
- * in; the handles get it resolved onto the box and every edit is normalized
- * back on the way out.
- *
- * `slot` is a prop rather than state the kit keeps: an app that edits fill
- * and stroke separately already knows which one has focus.
+ * node stores its gradient in `units: 'bounds'`, fractions of its own box; the
+ * handles get it resolved onto the box and every edit is normalized back on
+ * the way out.
  */
 export function SceneGradientHandles<
   TData extends PaintedNodeData,

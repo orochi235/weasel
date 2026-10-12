@@ -57,22 +57,19 @@ export interface OverlayPortalTarget {
 /**
  * Resolves where an overlay should portal, and the anchor that answers it.
  *
- * The result goes to React Aria as `UNSTABLE_portalContainer`. Its documented
- * replacement, `UNSAFE_PortalProvider`, is not re-exported by
- * react-aria-components 1.18, and reaching past it to `react-aria` for the
- * provider risks a second copy of that package whose context the overlays
- * never read — a failure that shows up as an unthemed overlay, not an error.
- *
  * Render `anchor` at the component's own position in the tree — outside the
  * portal — and spread `portalProps` onto the React Aria overlay. Render the
- * overlay only once `ready` is true.
+ * overlay only once `ready` is true: the first render has no anchor to measure
+ * "nearest themed ancestor" from, and an overlay rendered then would portal
+ * into the body and move on the next render, after React Aria has made
+ * everything outside it `inert` — itself included. `ready` turns true on that
+ * next render, still before paint.
  *
- * The anchor is what "nearest themed ancestor" is measured from, and the
- * first render has none yet. An overlay rendered then would portal into the
- * body and move on the next render, but React Aria hides everything outside
- * it on the first mount — so a modal that mounted open left the app root
- * `inert` with itself now inside it. `ready` turns true on that next render,
- * still before paint.
+ * The result goes to React Aria as `UNSTABLE_portalContainer`. Its documented
+ * replacement, `UNSAFE_PortalProvider`, is not re-exported by
+ * react-aria-components 1.18, and importing it from `react-aria` risks a second
+ * copy of that package whose context the overlays never read — an unthemed
+ * overlay, not an error.
  */
 export function useOverlayPortal(explicit?: Element | null): {
   anchor: ReactElement;

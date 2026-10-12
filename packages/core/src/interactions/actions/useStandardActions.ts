@@ -2,13 +2,8 @@
  * @experimental
  * `useStandardActions` — register the kit-standard action descriptors into the
  * nearest `<ActionsProvider>` and publish dep sources into the nearest
- * `<DepRegistryProvider>`.
- *
- * Instead of calling closure-style factories, this hook registers each dep as
- * a live source and each kit-standard descriptor's `invoker` directly.
- *
- * Falls back silently to a no-op when no `<ActionsProvider>` or
- * `<DepRegistryProvider>` is in scope.
+ * `<DepRegistryProvider>`. Falls back silently to a no-op when either is
+ * not in scope.
  */
 import { useEffect } from 'react';
 import type { Action } from '@weasel-js/routing';
@@ -84,10 +79,6 @@ import {
   clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction,
 } from './defaults/clipboard';
 
-// viewportWheelPanAction / viewportZoomAction are NOT in KIT_STANDARD_DESCRIPTORS.
-// They are wired conditionally by SceneCanvas via `useViewportActions`
-// based on the `viewport.pan` / `viewport.zoom` flags.
-
 /** @experimental */
 export interface UseStandardActionsOptions {
   /** Kit selection state — ids of currently selected nodes. */
@@ -109,12 +100,10 @@ export interface UseStandardActionsOptions {
 }
 
 /**
- * The ordered list of all kit-standard action descriptors. Each descriptor
- * carries an `invoker` that reads from the dep registry at dispatch time.
- *
- * `viewport.pan` and `viewport.zoom` are NOT in this list — they're registered
- * conditionally by SceneCanvas's `useViewportActions` based on the
- * `viewport.pan` / `viewport.zoom` flags. See `src/canvas/SceneCanvas/useViewportActions.ts`.
+ * The ordered list of all kit-standard action descriptors. `viewport.pan`
+ * and `viewport.zoom` are NOT in this list — they're registered conditionally
+ * by SceneCanvas's `useViewportActions` based on the `viewport.pan` /
+ * `viewport.zoom` flags.
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
@@ -204,31 +193,23 @@ const YIELDS_TO: Readonly<Record<string, string>> = {
 /**
  * @experimental
  * Register each kit-standard dep source and action descriptor into the
- * surrounding providers.
+ * surrounding `<ActionsProvider>` and `<DepRegistryProvider>` (typically
+ * provided by `<SceneCanvas>`); a silent no-op when either is absent.
  *
- * **Provider requirements:** both `<ActionsProvider>` and
- * `<DepRegistryProvider>` must be in scope (typically provided by
- * `<SceneCanvas>`). The hook falls back silently to a no-op when either
- * provider is absent.
- *
- * **Dep registration:** each non-undefined option is published as a live source
- * in the dep registry under its canonical name (`selection`, `scene`, …). The
- * source thunk reads the latest option value at invocation time via a ref, so
- * consumers don't have to memoize their dep objects.
+ * Each option is published as a live source in the dep registry under its
+ * canonical name (`selection`, `scene`, …). The source reads the latest
+ * option value at invocation time, so consumers don't have to memoize their
+ * dep objects.
  */
 export function useStandardActions(opts: UseStandardActionsOptions): void {
   // --- Stabilize opts via ref ---
   const optsRef = useLatest(opts);
 
   // --- activeTool fallback: read from context when not supplied in opts ---
-  // Falls back to null when no <ActiveToolContextProvider> is in scope
-  // (preserves silent-no-op contract for consumers that mount without SceneCanvas).
   const activeToolCtx = useOptionalActiveToolContext();
   const activeToolCtxRef = useLatest(activeToolCtx);
 
   // --- Dep source registration ---
-  // Must be unconditional (rules of hooks). Each effect only registers when a
-  // provider is present (depReg !== null guard is inside the effect body).
   const depReg = useOptionalDepRegistry();
 
   useEffect(() => {
@@ -250,7 +231,7 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
     return () => { for (const u of unregisters) u(); };
   }, [depReg, optsRef, activeToolCtxRef]);
 
-  // --- Action descriptor registration with legacy run bridge ---
+  // --- Action descriptor registration ---
   const reg = useActionsRegistry();
 
   // Joined so a fresh array of the same ids does not re-register every render.
@@ -258,10 +239,6 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
 
   useEffect(() => {
     if (!reg || !depReg) return;
-    // `withLegacyRunBridge` is gone. Kit-standard descriptors
-    // register their `invoker` directly. `registry.trigger(id)` reads from the
-    // dep registry to build deps when calling `invoker.run` (so ActionBar /
-    // palette callers still work without a per-action `run` thunk).
     const excluded = new Set(excludeKey ? excludeKey.split('\u0000') : []);
     const unregisters = KIT_STANDARD_DESCRIPTORS
       .filter((a) => !excluded.has(a.id))

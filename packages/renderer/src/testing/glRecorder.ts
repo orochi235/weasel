@@ -4,11 +4,8 @@
  * Records every method call as { name, args, result } so tests can assert
  * against the call sequence. Returns synthetic handles for object creation
  * (createShader/Program/Buffer/etc.); reports truthy for *Parameter status
- * queries (i.e. assumes shader/program compilation succeeded).
- *
- * NOT a renderer correctness check — pixel-level correctness is verified
- * end-to-end by the smoke test in dev/smoke.spec.ts. This recorder catches
- * "did the dispatcher emit the right call sequence" bugs only.
+ * queries (i.e. assumes shader/program compilation succeeded). NOT a renderer
+ * correctness check: it sees the call sequence, never a pixel.
  */
 
 export interface GLCall {

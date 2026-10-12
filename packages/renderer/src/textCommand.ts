@@ -1,10 +1,8 @@
 /**
  * Build a `TextDrawCommand`. `textCommandFromPose` is the command for a text
- * node — what `kit:text` and `createTextLayer` both emit. `textCommand` takes
- * a plain string and wraps it in one run; `textCommandFromRuns` takes the
- * styled runs directly, for text that has no pose. All three
- * resolve through `resolveTextStyle` + `resolveRuns`, so every emitter of a
- * text command derives `align` and per-run resolution the same way — a
+ * node; `textCommand` takes a plain string and wraps it in one run;
+ * `textCommandFromRuns` takes the styled runs directly, for text that has no
+ * pose. All three resolve through `resolveTextStyle` + `resolveRuns` — a
  * caller that assembles the command by hand is one field away from a
  * silently different result.
  *

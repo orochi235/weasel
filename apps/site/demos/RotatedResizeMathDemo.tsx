@@ -6,33 +6,14 @@
  * shows the per-component median of the three broken poses, which recovers
  * green's size and rotation and not its position.
  *
- * ## Post-purge architecture
+ * The demo owns the *routing* of one gesture to four scenes; the gesture itself runs on the kit's
+ * `useHandleDrag`. Each move computes a proposed pose per scene with that scene's own
+ * `PoseDescriptor` and calls that scene's `setPose`.
  *
- * The pre-purge version used the `useResize` hook to instantiate four
- * `ResizeController`s, one per descriptor, and broadcast a single drag to
- * all four. `useResize` is gone; resize math now lives in the dispatcher's
- * `resizeAction` driven by the `resizePolicy` dep.
- *
- * Driving four scenes' dispatchers from one input would require either
- * cross-scene event injection (no clean API) or four mutually-coordinated
- * `selectTool` instances. Both fight the kit's design.
- *
- * **Chosen mechanism:** the demo owns the *routing* of one gesture to four
- * scenes; the gesture itself runs on the kit's `useHandleDrag`. A parent
- * pointerdown handler hit-tests corner handles and captures the start state
- * for all four scenes, then hands the press to `useHandleDrag`, which owns
- * capture, pointer identity and teardown. Each move computes a proposed pose
- * per scene by running the same math the kit's `resizeAction` runs —
- * `computeProposedBounds` + `geometry.remapBounds` + the rotation-pin
- * correction — using each scene's own `PoseDescriptor`, and calls that
- * scene's `setPose`. On release the scenes' batched history captures the
- * gesture.
- *
- * This bypasses `SceneCanvas`'s built-in dispatcher entirely: the four
- * canvases take no `features`, so they are pure renderers.
- * The math is the demo's own (`rotatedResize/math.ts`) because its pedagogy is
- * precisely that math — substituting a broken descriptor for each panel is the
- * whole point. `rotatedResize/panels.tsx` holds the ledger chrome.
+ * This bypasses `SceneCanvas`'s built-in dispatcher entirely: the four canvases take no
+ * `features`, so they are pure renderers. The math is the demo's own (`rotatedResize/math.ts`)
+ * because its pedagogy is precisely that math — substituting a broken descriptor for each panel
+ * is the whole point.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -72,9 +53,8 @@ export function RotatedResizeMathDemo() {
   // the current value rather than the render they were created in.
   const dragRef = useRef<DragState | null>(null);
 
-  // Per-panel in-flight pose for the active gesture (null when idle). Lives
-  // in React state so panels + overlays re-render on each move, and is
-  // mirrored into a ref so the commit reads the CURRENT value.
+  // In React state so panels + overlays re-render on each move, and mirrored into a ref so the
+  // commit reads the CURRENT value.
   const [live, setLive] = useState<Record<PanelId, Rect> | null>(null);
   const liveRef = useRef<Record<PanelId, Rect> | null>(null);
   const updateLive = useCallback((v: Record<PanelId, Rect> | null) => {
@@ -138,9 +118,8 @@ export function RotatedResizeMathDemo() {
   }, [updateLive]);
 
   const handleEnd = useCallback(({ moved }: HandleDragEnd) => {
-    // Commit each scene's live pose as the new committed pose via batch. Read
-    // through the ref, not the `live` state: this closure predates every move
-    // of the gesture.
+    // Read through the ref, not the `live` state: this closure predates every move of the
+    // gesture.
     const finalPoses = liveRef.current;
     if (moved && finalPoses) {
       for (const panel of PANEL_IDS) {
@@ -166,10 +145,8 @@ export function RotatedResizeMathDemo() {
     const wrapper = e.currentTarget;
     const pt = pressCoords(e, wrapper);
     if (!pt) return;
-    // Hit-test handles against the GREEN canonical pose. The four panels
-    // start with the same initial pose, so the hit is meaningful even when
-    // the user clicks on another panel's wrapper — and we always broadcast
-    // to all four scenes regardless of which one started the drag.
+    // Hit-test handles against the GREEN canonical pose: the four panels start with the same
+    // pose, and the drag is broadcast to all four scenes whichever one started it.
     const ref = greenScene.get(asNodeId('a'));
     if (!ref) return;
     const refPose = ref.pose as Rect;

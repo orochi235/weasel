@@ -1,10 +1,6 @@
 /**
  * `editAnchorsAction` — ongoing Action descriptor for editing polygon anchors.
  *
- * Owns the whole press-on-an-anchor gesture, because pressing and dragging
- * an anchor are two outcomes of one interaction rather than two
- * interactions:
- *
  *   - **Press** selects. Bare press replaces the anchor selection; Shift
  *     toggles the pressed anchor in or out of it. Pressing an anchor that
  *     is already part of a multi-anchor selection leaves the selection
@@ -19,19 +15,11 @@
  * (`nudgeAnchors`, `deleteAnchors`) and the overlay all need to read it
  * between gestures.
  *
- * ## Wiring
- *
- * The descriptor is operational when the consumer wires:
- *   1. `buildAffordanceAt` with a `getAnchorState` thunk so the dispatcher
- *      classifies anchor/control-handle hits as `anchor:N`, `controlIn:N`,
- *      or `controlOut:N` affordances on pointerdown.
- *   2. The `editAnchors` dep in the DepSchema.
- *
- * When `ctx.drag.affordance` is absent or is not an anchor/control kind,
- * `start` returns `{}` (no-op) so other bindings can handle the drag.
- *
- * @see buildAffordanceAt — the classifier that produces anchor affordances.
- * @see anchorEdits — the pure geometry these handlers drive.
+ * Operational when the consumer wires the `editAnchors` dep, and
+ * `buildAffordanceAt` with a `getAnchorState` thunk so the dispatcher
+ * classifies anchor/control-handle hits as `anchor:N`, `controlIn:N`, or
+ * `controlOut:N` affordances on pointerdown. On any other affordance `start`
+ * returns `{}` so other bindings can handle the drag.
  */
 
 import type { Action } from '@weasel-js/routing';
@@ -47,22 +35,12 @@ import {
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { worldEditToStorage } from '@weasel-js/geom';
-// Commit goes through dep.applyEdit (routes setPose or setPose+update
-// based on the node's path-storage shape); no direct op or dispatch
-// helpers needed here.
 import { inPlane, editingLayer } from '../planeInput';
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
 /**
- * Parse an anchor affordance kind string into the anchor it names.
- * Returns `null` when the affordance is not an anchor kind.
- *
- * Format: `'anchor:N'` | `'controlIn:N'` | `'controlOut:N'`, where N is the
- * flat anchor index — the same numbering `enumerateAnchors` produces and
- * `anchorEdits` addresses by.
+ * Parse an anchor affordance kind — `'anchor:N'` | `'controlIn:N'` |
+ * `'controlOut:N'`, where N is the flat anchor index — or `null` when the
+ * affordance is not an anchor kind.
  */
 function parseAnchorAffordance(
   kind: string,
@@ -97,10 +75,6 @@ export function selectionAfterAnchorPress(
   return new Set([anchorIndex]);
 }
 
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
-
 interface EditAnchorsScratch {
   dep: EditAnchorsDep;
   id: string;
@@ -124,15 +98,7 @@ interface EditAnchorsScratch {
   storageKind: 'pose' | 'data';
 }
 
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
-
-/**
- * Static descriptor for the `editAnchors` Action.
- *
- * Requires dep-schema entries: `selection`, `editAnchors`.
- */
+/** Static descriptor for the `editAnchors` Action. */
 export const editAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'editAnchors',
   label: 'Edit Anchors',
@@ -200,9 +166,8 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
           : [];
       }
 
-      // For data.path nodes, we also need the original rect pose + data
-      // so previewPose / previewData can be derived from currentPose.
-      // Captured at start so onMove doesn't re-read the scene.
+      // For data.path nodes, the original rect pose + data that previewPose /
+      // previewData derive from, captured at start.
       const nodeShape = storageKind === 'data' ? dep.getNodeShape(editingId) : null;
       const originRectPose =
         nodeShape ? (nodeShape.pose as { x: number; y: number; width: number; height: number }) : undefined;

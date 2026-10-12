@@ -2,21 +2,15 @@
  * Moving text must not change how it is drawn, only where.
  *
  * `layoutRuns` emits origin-relative geometry and `drawText` translates at
- * upload, which is what lets `layoutCache` ignore position and stay a hit
- * through a drag (0.130 ms/frame → 1.7e-4 ms for 500 wrapped glyphs). The
- * risk that buys is a missed translate: a channel — glyph quads, the
- * synthetic-italic baseline, decoration rules, outline geometry — that reads
- * the layout as absolute and paints at the origin while everything else
- * moves. This renders the same text at a spread of positions and asserts
- * every uploaded float lands exactly where the same text at (0, 0) would,
- * shifted.
+ * upload, which is what lets `layoutCache` ignore position. The risk is a
+ * missed translate: a channel — glyph quads, the synthetic-italic baseline,
+ * decoration rules, outline geometry — that reads the layout as absolute and
+ * paints at the origin while everything else moves.
  *
- * The comparison allows one float32 ulp at the magnitude of the largest term
- * — under 1e-5 world units here, four orders of magnitude below a subpixel
- * and seven below the error a dropped translate would produce. The slack is
- * the test's own, not the renderer's: the reference is read back out of a
- * vertex buffer, so it arrives already quantized, and offsetting *that*
- * carries a rounding error the renderer never incurs.
+ * The comparison allows one float32 ulp at the magnitude of the largest term.
+ * The slack is the test's own, not the renderer's: the reference is read back
+ * out of a vertex buffer, so it arrives already quantized, and offsetting
+ * *that* carries a rounding error the renderer never incurs.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT, registerFontOutlines, glyphOutline } from '@weasel-js/font';
@@ -69,9 +63,8 @@ const RUN = (text: string, over: Partial<ResolvedRun> = {}): ResolvedRun => ({
 /**
  * Every vertex buffer uploaded this frame, with its floats-per-vertex read off
  * the `vertexAttribPointer` recorded for that buffer rather than guessed from
- * the length. Glyphs, rules and outline meshes all stage into the batch now,
- * so these are the batch's vertices; a paint that takes its own draw still
- * arrives at whatever stride its own program declares.
+ * the length. A paint that takes its own draw arrives at whatever stride its
+ * own program declares.
  */
 function uploaded(): { stride: number; data: Float32Array }[] {
   return tracker.uploads();

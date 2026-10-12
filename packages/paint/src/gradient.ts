@@ -1,10 +1,6 @@
 /**
  * Gradient helpers shared by renderers, editors and exporters: reading a
  * color out of a stop list, and moving a gradient between its three kinds.
- *
- * The stop list is the part every consumer agrees on; the geometry
- * (`from`/`to`, `center`, `radius`, `angle`) differs per kind, which is what
- * `withGradientKind` exists to translate.
  */
 
 import { resolveColor, rgbaToHex } from './color';
@@ -17,9 +13,7 @@ export interface ResolvedGradientStop {
   rgba: readonly [number, number, number, number];
 }
 
-/** Narrow a paint to the gradient members of `FillStyle`. The three
- *  discriminants are the union's own definition of `GradientFill`, so every
- *  consumer that reaches for gradient geometry starts here. */
+/** Narrow a paint to the gradient members of `FillStyle`. */
 export function isGradientFill(fill: FillStyle | null | undefined): fill is GradientFill {
   if (fill == null) return false;
   return fill.fill === 'linear-gradient'
@@ -28,12 +22,10 @@ export function isGradientFill(fill: FillStyle | null | undefined): fill is Grad
 }
 
 /**
- * Sort a stop list by offset and parse each color to 0..1 RGBA — the reading
- * of a stop list that `sampleResolvedStops` works from, hoisted out so a
- * caller sampling many positions (the GL ramp) parses each color once.
- *
- * Colors go through `resolveColor`, so any CSS color the kit understands is a
- * legal stop, not just hex.
+ * Sort a stop list by offset and parse each color to 0..1 RGBA, so a caller
+ * sampling many positions parses each color once. Colors go through
+ * `resolveColor`, so any CSS color the kit understands is a legal stop, not
+ * just hex.
  */
 export function resolveGradientStops(stops: readonly GradStop[]): ResolvedGradientStop[] {
   return [...stops]
@@ -44,15 +36,12 @@ export function resolveGradientStops(stops: readonly GradStop[]): ResolvedGradie
 /**
  * RGBA (0..1) at position `t` along resolved stops: flat extension past
  * either end, interpolation between neighbors in `space`, alpha included.
- *
- * The single definition of what a stop list means. The GL ramp texture bakes
- * this at 256 positions and an editor calls it per pixel of a track; a second
- * implementation is a gradient that paints differently from its own swatch.
+ * The single definition of what a stop list means; a second implementation
+ * is a gradient that paints differently from its own swatch.
  *
  * `space` is a gradient's `interpolate`. Alpha is linear in every space —
- * only the color channels travel through OKLab or OKLCh.
- *
- * Returns transparent black for an empty list.
+ * only the color channels travel through OKLab or OKLCh. Returns transparent
+ * black for an empty list.
  */
 export function sampleResolvedStops(
   stops: readonly ResolvedGradientStop[], t: number, space: ColorSpace = 'rgb',
@@ -95,19 +84,15 @@ export function sampleGradientStops(
 
 /**
  * Retarget a gradient to a different kind, preserving stops, `units` and
- * `opacity`, and carrying the geometry across as faithfully as the kinds
- * allow.
+ * `opacity`. Linear carries a segment; radial and conic carry a center.
+ * Converting between them keeps the center fixed and reads the radius /
+ * angle off the segment.
  *
- * Linear carries a segment; radial and conic carry a center. Converting
- * between them keeps the center fixed and reads the radius / angle off the
- * segment, so switching kind in an editor moves the paint as little as
- * possible instead of snapping to an arbitrary default.
- *
- * Lossy in both directions, because the kinds hold different information: a
- * radial gradient stores no angle, so a round trip through one leaves the
- * segment horizontal; a conic stores no radius, so a round trip through one
- * resets the segment's length. An editor that wants a kind switch to be
- * undoable should keep the original paint rather than converting back.
+ * Lossy in both directions: a radial gradient stores no angle, so a round
+ * trip through one leaves the segment horizontal; a conic stores no radius,
+ * so a round trip through one resets the segment's length. An editor that
+ * wants a kind switch to be undoable should keep the original paint rather
+ * than converting back.
  */
 export function withGradientKind(fill: GradientFill, kind: GradientKind): GradientFill {
   if (fill.fill === kind) return fill;
@@ -134,12 +119,9 @@ export function withGradientKind(fill: GradientFill, kind: GradientKind): Gradie
 }
 
 /**
- * Center / radius / angle for any gradient kind — the shared polar reading
- * `withGradientKind` converts through, and what on-canvas handles position
- * themselves from.
- *
- * For a linear gradient the center is the segment midpoint, the radius is
- * half its length, and the angle is its direction.
+ * Center / radius / angle for any gradient kind. For a linear gradient the
+ * center is the segment midpoint, the radius is half its length, and the
+ * angle is its direction.
  */
 export function gradientGeometry(fill: GradientFill): {
   center: { x: number; y: number };
@@ -163,11 +145,9 @@ export function gradientGeometry(fill: GradientFill): {
 
 /**
  * Conic gradients carry no radius, but converting one to a linear or radial
- * gradient needs a non-zero length to build from.
- *
- * Unit-dependent, and that is the whole point: `'bounds'` geometry runs `0..1`
- * across the box, so a pixel-flavored default there does not mean "a bit under
- * half the box", it means fifty times it.
+ * gradient needs a non-zero length to build from. Unit-dependent: `'bounds'`
+ * geometry runs `0..1` across the box, so a pixel-flavored default there
+ * means fifty times it.
  */
 function conicArmRadius(units: GradientFill['units']): number {
   return units === 'bounds' ? 0.5 : 50;
@@ -175,9 +155,8 @@ function conicArmRadius(units: GradientFill['units']): number {
 
 /**
  * A gradient spanning a box left edge to right edge through its vertical
- * center (linear) or filling it (radial / conic) — the sensible starting
- * geometry when a consumer turns a solid fill into a gradient and has only
- * the shape's bounds to go on.
+ * center (linear) or filling it (radial / conic) — a starting geometry when
+ * only the shape's bounds are known.
  */
 export function gradientForBounds(
   kind: GradientKind,

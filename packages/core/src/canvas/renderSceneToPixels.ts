@@ -1,47 +1,27 @@
 /**
- * `renderSceneToPixels` — headless rasterization of a scene-space rect to
- * raw RGBA pixels at an explicit, per-axis scale.
- *
- * One renderer, two callers: this path drives the same WebGL2 pipeline
- * (`WeaselRenderer` + `buildSceneViewCommands`) as the on-screen view — it is
- * NOT a second renderer. Print, thumbnail, and export callers get the same
- * pixels the screen would produce at that scale.
+ * `renderSceneToPixels` — headless rasterization of a scene-space rect to raw RGBA pixels at an
+ * explicit, per-axis scale. It drives the same WebGL2 pipeline (`WeaselRenderer` +
+ * `buildSceneViewCommands`) as the on-screen view, so print, thumbnail, and export callers get
+ * the same pixels the screen would produce at that scale.
  *
  * Environment contract:
- * - Density arrives exclusively via `scale` (output pixels per scene unit,
- *   per axis — anisotropic values are first-class). This function never
- *   reads `window.devicePixelRatio`.
- * - Rounding policy: output width = max(1, round(sourceRect.width × |scale.x|)),
- *   height analogously. The scene-space rect is authoritative; the pixel
- *   grid derives from it. When round() lands below rect × scale, the
- *   rightmost/bottom sub-pixel band of scene content is cropped; when it
- *   rounds up, that band is instead padded (the `background` fill, or
- *   transparent, covers the pad).
- * - Context lifetime: each call opens a `RasterSession` — one
- *   `WeaselRenderer` — and disposes it before returning, freeing every GL
- *   object it created, caches included. Rendering in bulk, open one session
- *   with `createRasterSession` and render through it: programs compile once
- *   and bitmaps upload once for the whole batch, and `dispose()` frees them.
- *   With a caller-supplied `gl`, the context itself is caller-owned: it is
- *   never disposed here, and its drawing buffer must be at least
- *   width × height pixels (the render targets the bottom-left region).
- *   Auto-created canvases (`OffscreenCanvas` when available, else a detached
- *   DOM canvas) are discarded with the session; a session grows its own
- *   canvas to the largest render so far.
- * - Context loss: throws — a lost context cannot produce pixels, and the
- *   silent-noop convention of the screen path would return all-zero bytes.
- * - Output: top-down row order, NON-premultiplied ("straight") RGBA. The GL
- *   framebuffer is premultiplied (blendFunc ONE, ONE_MINUS_SRC_ALPHA) and
- *   bottom-up; readback flips and unpremultiplies. Over an opaque
- *   `background` both transforms are visually moot but still applied.
- * - Determinism: same context + same inputs → same bytes. Cross-driver /
- *   cross-machine byte equality is NOT guaranteed (GL rasterization varies);
- *   do not build golden-image tests on committed bytes.
- * - Image quality: image textures upload with mipmaps
- *   (`imageMinification: 'mipmap'`) so minified bitmaps don't moiré, and
- *   curve tessellation runs at an output-scale tolerance
- *   (`flattenTolerancePx`, default 0.25 output px). A bitmap node's source
- *   pixels are sampled exactly once, directly to the output grid.
+ * - Density arrives exclusively via `scale`; this function never reads
+ *   `window.devicePixelRatio`.
+ * - Rounding: output width = max(1, round(sourceRect.width × |scale.x|)), height analogously.
+ *   When round() lands below rect × scale, the rightmost/bottom sub-pixel band of scene content
+ *   is cropped; when it rounds up, that band is padded (the `background` fill, or transparent).
+ * - Context lifetime: a caller-supplied `gl` is caller-owned. It is never disposed here, and
+ *   its drawing buffer must be at least width × height pixels (the render targets the
+ *   bottom-left region). Auto-created canvases are discarded with the session.
+ * - Context loss: throws — a lost context cannot produce pixels, and the silent-noop
+ *   convention of the screen path would return all-zero bytes.
+ * - Output: top-down row order, NON-premultiplied ("straight") RGBA. The GL framebuffer is
+ *   premultiplied and bottom-up; readback flips and unpremultiplies.
+ * - Determinism: same context + same inputs → same bytes. Cross-driver / cross-machine byte
+ *   equality is NOT guaranteed; do not build golden-image tests on committed bytes.
+ * - Image quality: image textures upload with mipmaps so minified bitmaps don't moiré, and
+ *   curve tessellation runs at an output-scale tolerance (`flattenTolerancePx`, default 0.25
+ *   output px).
  */
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
@@ -111,8 +91,7 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
    *  available, else `document.createElement('canvas')`. */
   createCanvas?: (widthPx: number, heightPx: number) => HeadlessCanvasLike;
   /** Max curve-flattening error in OUTPUT pixels. Default 0.25. Converted to
-   *  world units against the larger scale axis and passed to the renderer's
-   *  `flattenTolerance`. Explicitly passing 0.25 is always valid. */
+   *  world units against the larger scale axis. */
   flattenTolerancePx?: number;
   /** Commands drawn over the scene in output-pixel space — origin at the
    *  output's top-left, one unit per output pixel. Annotations, watermarks,

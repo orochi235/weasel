@@ -1,58 +1,36 @@
 /**
- * Runs-aware MSDF layout. Walks `ResolvedRun[]` codepoint-by-codepoint,
- * switching atlas per run via `resolveFontVariant`, applying kerning
- * (using the left glyph's atlas table and size scaling, including across
- * run boundaries), and bucketing emitted quads by
- * `(family, resolvedWeight, resolvedStyle, syntheticBold, syntheticItalic, fillKey)`
- * so the renderer issues one draw call per atlas+color group.
+ * Runs-aware text layout: wraps `ResolvedRun[]` into lines and buckets the
+ * glyphs so the renderer issues one draw call per atlas+color group.
  *
  * A run's `letterSpacing` (world units, so it does not scale with `fontSize`)
  * is added to the advance *after* every grapheme cluster of that run,
- * including the last one on a line — the CSS `letter-spacing` rule, chosen so
- * a DOM overlay rendering the same text can be made to agree. The last code
- * point of a cluster carries it, so a combining mark hangs off its base
- * before the gap opens. Clusters are segmented per run. Trailing tracking
- * therefore widens the measured line width and counts toward wrapping. Spaces
- * are tracked like any other character; a newline is not (it consumes no
- * advance).
+ * including the last one on a line — the CSS `letter-spacing` rule. Trailing
+ * tracking therefore widens the measured line width and counts toward
+ * wrapping. Spaces are tracked like any other character; a newline is not.
  *
- * Word wrap is applied when `maxWidth` is finite: words — the text between
- * UAX #14 break opportunities — are committed to a new line when they would
- * exceed the current line width. Forced line breaks are emitted at UAX #14's
- * hard breaks — `\n`, CR, CRLF as one, VT, FF, NEL, U+2028 and U+2029 — none
+ * Word wrap is applied when `maxWidth` is finite, at UAX #14 break
+ * opportunities. Forced line breaks are emitted at UAX #14's hard breaks, none
  * of which lays out a cell. Every run on a line shares one baseline, sunk to
- * clear whichever run reaches highest above it, so mixing sizes or faces aligns
- * them the way inline text aligns everywhere else; line height is
+ * clear whichever run reaches highest above it; line height is
  * `max(fontSize * lineHeight)` across the line. A face that states its ascent
  * and descent sits in its line the way CSS sets it — half the leading above the
  * ascent, negative when the face is taller than the line, so its glyphs overflow
  * the box rather than growing it. A run a relative size shrank
- * measures at its `strutSize` for both, the way a CSS line keeps its parent's
- * strut under a `<sup>`.
+ * measures at its `strutSize` for both.
  *
- * A run may also sit off that shared baseline: `ResolvedRun.baselineShift`
- * displaces it, which is what `script: 'super' | 'sub'` resolves to. The shift
- * moves the run's glyphs, its outline geometry and its own decoration rules
- * together, and deliberately does not feed back into the line's baseline or
- * its height — a superscript rides on the line rather than reflowing it.
+ * `ResolvedRun.baselineShift` displaces a run off that shared baseline. The
+ * shift moves the run's glyphs, its outline geometry, and its own decoration
+ * rules together, and does not feed back into the line's baseline or its height.
  *
- * Underline, strikethrough and overline come out on a second channel,
- * `decorations` —
- * solid rectangles, not textured glyphs, so they cannot ride in a group's
- * `quads` (which upload UVs into an MSDF program). They are accumulated
- * during the same per-line pen walk that emits quads, *not* reconstructed
- * from quad extents afterwards: quads exist only for glyphs with ink, so a
- * decorated span's spaces would punch holes in a rule derived from them.
+ * Underline, strikethrough, and overline come out on a second channel,
+ * `decorations`, as solid rectangles. They are accumulated during the pen walk
+ * that emits quads, *not* reconstructed from quad extents afterwards: quads
+ * exist only for glyphs with ink, so a decorated span's spaces would punch
+ * holes in a rule derived from them.
  *
- * ### Coordinates are origin-relative
- *
- * Every coordinate out of here is measured from the text's own top-left, not
- * from anywhere on the page: the caller translates. That is what lets a text
- * node be dragged without re-laying out — `layoutCache` would otherwise need
- * the position in its key and miss on every frame of the drag — and it costs
- * the caller one addition per vertex, inside loops already walking every one.
- * Alignment, wrapping, tracking and decoration placement all read widths and
- * pen deltas, never an absolute coordinate, so the translation is exact.
+ * Every coordinate out of here is measured from the text's own top-left: the
+ * caller translates. That is what lets a text node be dragged without
+ * re-laying out.
  */
 
 import type { FillStyle, Stroke } from '@weasel-js/paint';
@@ -82,19 +60,12 @@ export interface LaidOutQuad {
 }
 
 /**
- * One glyph the renderer should tessellate rather than sample: real font
- * outline geometry, for text large enough that a distance field shows the
- * raster it was reconstructed from.
+ * One glyph the renderer should tessellate rather than sample.
  *
- * `d` is em-space SVG path data straight from `@weasel-js/font`'s outline
- * registry — 1 unit is 1 em, y grows down, origin on the baseline at the pen.
- * Placing it is therefore a uniform scale by `scale` (world units per em)
- * followed by a translate to `(x, baselineY)`, and nothing here depends on
- * zoom: the same glyph at the same size in two places is the same geometry
- * twice, which is what lets the renderer tessellate it once and cache it.
- *
- * `key` identifies that cached tessellation — face identity plus codepoint,
- * assembled here because layout is where both are in hand.
+ * `d` is em-space SVG path data — 1 unit is 1 em, y grows down, origin on the
+ * baseline at the pen. Placing it is therefore a uniform scale by `scale`
+ * followed by a translate to `(x, baselineY)`. `key` identifies the cached
+ * tessellation — face identity plus codepoint.
  */
 export interface LaidOutOutlineGlyph {
   d: string;
@@ -110,8 +81,7 @@ export interface LaidOutOutlineGlyph {
 /** Glyphs that share a resolved face, glyph source and paint — one draw call's worth. */
 export interface LaidOutGroup {
   /** Resolved atlas family — may differ from the requested family when the
-   *  cross-family fallback policy substituted a default. This is what the
-   *  renderer looks the atlas up by, so it must be the one that resolves. */
+   *  cross-family fallback policy substituted a default. */
   family: string;
   /** Resolved variant — matches the registered atlas and the texture-cache key. */
   weight: number;
@@ -128,24 +98,22 @@ export interface LaidOutGroup {
    *  alone. Only ever null on an `'outline'` group carrying a stroke, since
    *  nothing else can put ink down without a fill. */
   fill: FillStyle | null;
-  /** Outline painted over the glyphs, or absent for none. Only ever set on
-   *  an `'outline'` group — the SDF tiers have no geometry to stroke, which
-   *  is why a stroke pulls its run onto the outline tier at any size. A run
-   *  the tier cannot serve at all (no registered outlines, synthetic bold)
-   *  stays on the atlas and carries the request no further. */
+  /** Outline painted over the glyphs. Only ever set on an `'outline'` group —
+   *  the SDF tiers have no geometry to stroke, which is why a stroke pulls its
+   *  run onto the outline tier at any size. A run the tier cannot serve at all
+   *  (no registered outlines, synthetic bold) stays on the atlas, unstroked. */
   stroke?: Stroke;
   /** Textured glyph quads. Always empty for an `'outline'` group. */
   quads: LaidOutQuad[];
-  /** Outline geometry. Always empty for an `'atlas'` / `'canvas'` group —
-   *  the two channels are exclusive, since the group is also the draw call
-   *  and one draw call binds one program. */
+  /** Outline geometry. Always empty for an `'atlas'` / `'canvas'` group:
+   *  the group is also the draw call, and one draw call binds one program. */
   glyphs: LaidOutOutlineGlyph[];
 }
 
 /**
  * One decoration rule: an axis-aligned solid rectangle in the same world
  * space as `LaidOutQuad`. Never spans a line break, and carries the fill of
- * the run(s) it decorates so the rule follows the text colour.
+ * the run(s) it decorates so the rule follows the text color.
  */
 export interface LaidOutDecoration {
   kind: DecorationKind;
@@ -207,9 +175,7 @@ export interface LaidOutCell {
  * wrap box — so a short centered line reports the span it actually occupies.
  * `[y0, y1]` is the full line box: `y0` is the pen's line top, `y1` is
  * `y0 + max(fontSize * lineHeight)` over the line's runs. Ink can escape it
- * vertically (a tall accent, a deep descender at a lineHeight below ~1.06 —
- * see the `bounds` note at the end of `layoutRuns`); this is the typographic
- * box, not an ink bounding box.
+ * vertically; this is the typographic box, not an ink bounding box.
  *
  * Emitted for every line including empty ones, so indices line up with the
  * wrap. An empty line has `x0 === x1`.
@@ -242,10 +208,8 @@ export interface LaidOutRuns {
   /** Decoration rules, in line order; within a span, underline then
    *  strikethrough then overline. Empty when nothing is decorated. */
   decorations: LaidOutDecoration[];
-  /** Per-line boxes in layout order. Lets a caller reason about where the
-   *  text actually sits inside its wrap box without re-running the wrap —
-   *  `textLineBoxes` builds the text silhouette from these, so picking and
-   *  painting cannot drift apart. */
+  /** Per-line boxes in layout order: where the text actually sits inside its
+   *  wrap box. */
   lines: LaidOutLineBox[];
   /** The text's ink box. `width` is the widest line measured to its last
    *  non-space cell — a trailing space hangs past the aligned edge, so a
@@ -257,14 +221,9 @@ export interface LaidOutRuns {
  * Where a run's advances, kerning and baseline come from.
  *
  * The two tiers that carry metrics express them in different units — a baked
- * atlas in its own bake-size units, a parsed face in ems — so the walk reads
- * both through this instead of naming a `BmFont`. `size` is the divisor that
- * takes either into world units (`fontSize / size`), which is why an em-space
- * face reports `size: 1`.
- *
- * Not exported: a consumer supplies metrics by registering a font, not by
- * implementing this. It exists so the atlas is one case rather than the only
- * one.
+ * atlas in its own bake-size units, a parsed face in ems. `size` is the divisor
+ * that takes either into world units (`fontSize / size`), which is why an
+ * em-space face reports `size: 1`.
  */
 interface MetricsSource {
   /** Units per em of whatever `advance`, `base` and `kernOf` are measured in. */
@@ -348,19 +307,13 @@ export interface LayoutRunsOpts {
    * geometry, when the resolved face has outlines registered. Omit (the
    * default) to keep every glyph on its SDF tier.
    *
-   * A *world* size rather than a screen size because layout knows nothing
-   * about the view; `drawText` divides its screen-pixel threshold by the view
-   * scale before calling, so zooming in lowers the world size that qualifies.
-   *
-   * This is a rendering switch only. Advances, kerning, wrapping and
-   * baselines are identical either way — the outline tier changes what a
-   * glyph looks like, never where it sits — so measurement callers
-   * (`measureTextBounds`, `textLineBoxes`) leave it unset and still agree
-   * with the paint, and crossing the threshold cannot reflow text.
+   * This is a rendering switch only. Advances, kerning, wrapping, and
+   * baselines are identical either way, so measurement callers leave it unset
+   * and still agree with the paint, and crossing the threshold cannot reflow
+   * text.
    *
    * Ignored for a family that resolved to the outline tier because it has no
-   * atlas: there the geometry is not an upgrade over another rendering, it is
-   * the only one, so the threshold has nothing to choose between.
+   * atlas: there the geometry is the only rendering.
    */
   outlineMinSize?: number;
 }
@@ -376,11 +329,9 @@ function fillKey(p: FillStyle | null): string {
 }
 
 /**
- * Whether two runs' fills paint the same, for the purpose of merging their
- * decoration rules. Solid paints compare by value so two separate runs set
- * to the same colour merge; anything else compares by reference, because a
- * gradient/pattern has no cheap structural equality and a false positive
- * would paint one run's rule with another's paint.
+ * Whether two runs' fills paint the same, for merging their decoration rules.
+ * Solid paints compare by value; anything else compares by reference, because
+ * a false positive would paint one run's rule with another's paint.
  */
 function sameFill(a: FillStyle | null, b: FillStyle | null): boolean {
   if (a === b) return true;
@@ -390,10 +341,8 @@ function sameFill(a: FillStyle | null, b: FillStyle | null): boolean {
   return false;
 }
 
-/** Whether a stroke puts ink down — an omitted, unpainted or zero-width one
- *  does not, and must not pull a run onto the outline tier for nothing. A
- *  screen-pixel width is positive on the same terms; what it resolves to in
- *  world units depends on a scale this layer does not have and does not need. */
+/** Whether a stroke puts ink down — an omitted, unpainted, or zero-width one
+ *  does not, and must not pull a run onto the outline tier for nothing. */
 function strokePaints(s: Stroke | undefined): s is Stroke & { paint: FillStyle } {
   if (s?.paint === undefined) return false;
   const w = s.width ?? 1;
@@ -445,10 +394,7 @@ function getOrCreateGroup(
 ): LaidOutGroup {
   // The *resolved* family, not the requested one. The renderer looks this up
   // with an exact `getFont`, so a group tagged with a family that has no atlas
-  // uploads no texture and draws no quads — the run would occupy layout space
-  // and paint nothing. It also has to be in the key: two requested families
-  // substituting to different atlases must not collide, and two substituting to
-  // the same atlas should merge into one draw call.
+  // uploads no texture and draws no quads.
   const atlasFamily = resolved.resolved.family;
   const resolvedWeight = resolved.resolved.weight;
   const resolvedStyle = resolved.resolved.style;
@@ -497,17 +443,10 @@ interface GlyphHit {
 }
 
 /**
- * Find a glyph for `cp`, escalating past the run's atlas when it has none.
- *
- * Until 2026-07-29 a miss drew codepoint 63 — a literal `?`. That fabricates
- * a character the author never wrote and is indistinguishable from one they
- * did, which is how the committed text baseline came to read "Themed editing
- * ? magenta caret" for a whole commit without anyone noticing. Every real
- * text stack draws `.notdef` (tofu) precisely because it can't be mistaken
- * for content; the BmFont atlas format has no such glyph to draw, so the
- * order here is: the atlas, then the dynamic tier (which rasterizes from
- * installed fonts and can usually serve the character for real), then
- * nothing — with a warning naming the codepoint.
+ * Find a glyph for `cp`: the atlas, then the dynamic tier, then nothing — with
+ * a warning naming the codepoint. A miss never draws a stand-in `?`, which is
+ * indistinguishable from one the author wrote, and the BmFont atlas format has
+ * no `.notdef` to draw.
  */
 function resolveGlyph(
   run: ResolvedRun,
@@ -534,9 +473,6 @@ function resolveGlyph(
   return null;
 }
 
-// Layout runs per frame, so an unguarded warn would flood the console. Keyed
-// per (family, codepoint): one message per character the app actually can't
-// draw, however many times it appears.
 /**
  * Code point blocks whose strong characters read right-to-left.
  *
@@ -894,8 +830,7 @@ export function layoutRuns(
     const line: Line = { entries: [], width: 0, height: 0, ...(span.wrapped ? { wrapped: true } : {}) };
     if (span.start === span.end) {
       // A blank line still advances the pen, at the size of the break that
-      // closed it, since no other entry can supply one. Without this `"a\n\nb"`
-      // painted `b` directly under `a`.
+      // closed it, since no other entry can supply one.
       const brk = entries[span.end];
       line.height = lineSize(brk) * opts.lineHeight;
       line.blank = brk;
@@ -915,12 +850,6 @@ export function layoutRuns(
 
   /**
    * Em-space outline for `e`, or `null` to leave it on its SDF tier.
-   *
-   * Every `null` here is a rung of the fallback ladder, and they are all
-   * ordinary: the caller never opted in, the glyph is too small to be worth
-   * it, the face has no outlines registered, its bytes are still loading or
-   * failed to load, or the font simply has no such glyph. The tier is an
-   * upgrade applied where it is available, never a requirement.
    */
   function outlineFor(e: Entry): string | null {
     const r0 = e.resolved.resolved;
@@ -932,19 +861,13 @@ export function layoutRuns(
     }
     const min = opts.outlineMinSize;
     if (min === undefined) return null;
-    // A stroked run ignores the size gate. The gate is there because the SDF
-    // tiers reconstruct small text better than tessellated geometry does —
-    // but they have no geometry to stroke, so leaving a stroked run below the
-    // threshold drops the outline the consumer asked for rather than trading
-    // one correct rendering for another.
+    // A stroked run ignores the size gate: the SDF tiers have no geometry to
+    // stroke, so leaving it below the threshold drops the outline asked for.
     // Gated on the run's size, so a small-caps word is not split across tiers.
     if (e.run.fontSize < min && !strokePaints(e.run.stroke)) return null;
     // Synthetic bold is an SDF threshold shift, and a path has no threshold.
-    // Emboldening geometry properly means offsetting the outline — the same
-    // problem as stroke-to-fill, which the kit does not solve yet — and
-    // painting the regular weight instead would make text get *lighter* as
-    // you zoom past the threshold. Leave it with the tier that can fake it.
-    // Synthetic italic is not in the same position: a shear is exact on
+    // Painting the regular weight instead would make text get *lighter* as
+    // you zoom past the threshold. Synthetic italic is a shear, exact on
     // geometry, and the renderer applies it.
     if (e.resolved.synthetic.bold) return null;
     const r = e.resolved.resolved;
@@ -956,7 +879,7 @@ export function layoutRuns(
   const decorations: LaidOutDecoration[] = [];
 
   /** An open decoration span: contiguous entries on one line that agree on
-   *  which rules to draw, what colour to draw them, and the metrics that set
+   *  which rules to draw, what color to draw them, and the metrics that set
    *  their placement. `x1` grows as the pen walks. */
   interface DecoSpan {
     underline: boolean;
@@ -1026,14 +949,9 @@ export function layoutRuns(
     })();
     const lineX0 = alignShift;
     // One baseline for the whole line, sunk far enough below the line top to
-    // clear whichever run reaches highest above it — so runs set at different
-    // sizes sit on it together instead of each hanging from the line top at
-    // its own depth. A blank line has no entry to measure, so it falls back
-    // to the newline that closed it.
-    //
-    // Deliberately computed from *unshifted* ascents: a run's `baselineShift`
-    // moves it off this baseline, so letting the shift feed back into the
-    // baseline it is measured against would drag the rest of the line with it.
+    // clear whichever run reaches highest above it. A blank line falls back
+    // to the newline that closed it. Computed from *unshifted* ascents:
+    // letting `baselineShift` feed back would drag the rest of the line with it.
     let lineAscent = 0;
     for (const e of line.entries) lineAscent = Math.max(lineAscent, aboveBaseline(e));
     if (line.entries.length === 0 && line.blank) lineAscent = aboveBaseline(line.blank);
@@ -1042,8 +960,7 @@ export function layoutRuns(
     const cells: LaidOutCell[] = new Array(line.entries.length);
 
     // Visual order for this line, as positions within `line.entries`. Without
-    // an engine that is logical order, and everything below collapses to the
-    // straight left-to-right walk it was.
+    // an engine that is logical order.
     const flatOf = line.entries.map((e) => e.flat);
     const posOfFlat = new Map<number, number>();
     flatOf.forEach((f, pos) => posOfFlat.set(f, pos));
@@ -1125,21 +1042,16 @@ export function layoutRuns(
       };
       cells[pos] = cell;
       const scale = e.fontSize / e.metrics.size;
-      // Positive raises, and y grows down, so the shift subtracts. Everything
-      // below places against `baselineY` and so follows the run up or down —
-      // its glyphs, its outline geometry and its decoration rules alike.
-      // `?? 0` because 0 is the identity and the authored run type already
-      // makes the field optional. Absent it, every vertical coordinate on the
-      // quad goes NaN while x and the UVs stay right, so the glyphs draw as
-      // zero-area quads and the text reports as "rendered nothing".
+      // Positive raises, and y grows down, so the shift subtracts. `?? 0`
+      // because the authored run type makes the field optional: absent it,
+      // every vertical coordinate goes NaN and the glyphs draw as zero-area quads.
       const baselineY = lineBaselineY - (e.run.baselineShift ?? 0);
 
       // Extend or (re)open the decoration span *before* the no-ink bail-out
       // below, so a decorated span's spaces stay under the rule. `step`
-      // includes this glyph's trailing tracking, so the rule covers it — the
-      // CSS rule, and the same span the line width already accounts for.
+      // includes this glyph's trailing tracking, so the rule covers it.
       // An unfilled run's rules are dropped with its glyphs: a rule is a solid
-      // rect with only a fill to paint it, and no stroked counterpart.
+      // rect with only a fill to paint it.
       const decoFill = e.run.fill;
       if (decoFill !== null && (e.run.underline || e.run.strikethrough || e.run.overline)) {
         const face = runFaces.get(e.run);
@@ -1178,8 +1090,7 @@ export function layoutRuns(
       // Outline tier, decided per glyph at its run's size. Checked before the
       // no-ink bail-out below, not after: a dynamic-tier glyph still waiting
       // for its bake has `page < 0` and no atlas rect, but its outline is
-      // available right now — there is no reason to draw nothing while the
-      // exact geometry is in hand.
+      // available right now.
       const outlineD = outlineFor(e);
       // An unfilled run paints through its stroke, and only tessellated
       // geometry can carry one — an atlas quad would paint the fill that was
@@ -1217,9 +1128,8 @@ export function layoutRuns(
       const atlasH = e.font.common.scaleH;
       const qx0 = penX + e.glyph.xoffset * scale;
       // `yoffset` is measured from the line top in the atlas's own frame, so
-      // it is relative to that frame's baseline (`metrics.base`) — which is
-      // what lets a run hang off the line's shared baseline rather than off
-      // the line top, where its own ascent would place it.
+      // subtracting that frame's baseline (`metrics.base`) hangs the glyph off
+      // the line's shared baseline.
       const qy0 = baselineY + (e.glyph.yoffset - e.metrics.base) * scale;
       const qx1 = qx0 + e.glyph.width * scale;
       const qy1 = qy0 + e.glyph.height * scale;
@@ -1227,9 +1137,6 @@ export function layoutRuns(
       const v0 = e.glyph.y / atlasH;
       const u1 = (e.glyph.x + e.glyph.width) / atlasW;
       const v1 = (e.glyph.y + e.glyph.height) / atlasH;
-      // `baselineY` (computed above) is the typographic baseline, not the top
-      // of the line box — above-baseline vertices have y < baselineY so the
-      // synthetic italic skew leans them right.
       group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1, baselineY });
       penX += step;
     }
@@ -1254,17 +1161,8 @@ export function layoutRuns(
   }
 
   // `bounds` measures line boxes only — a decoration rule, and a run shifted
-  // off the baseline, can both fall outside it.
-  // An underline's bottom sits `base * scale + (UNDERLINE_OFFSET +
-  // DECORATION_THICKNESS) * fontSize` below the line top, so it escapes the
-  // last line once `lineHeight` drops below roughly `base / info.size + 0.15`
-  // (≈1.06 for the bundled atlases). An overline escapes the first line the
-  // other way for a face whose `base / info.size` is under 0.90, and a
-  // `baselineShift` escapes by however far it exceeds the slack around it.
-  // None of these are reachable at the 1.2 default with the bundled atlases
-  // and the `script` presets, so `measureTextBounds` and
-  // `verticalAlign: 'bottom'` are left as they are; tightening the box would
-  // move every existing text bound.
+  // off the baseline, can both fall outside it. Neither is reachable at the
+  // 1.2 default with the bundled atlases and the `script` presets.
   return {
     groups: [...ctx.groups.values()],
     decorations,

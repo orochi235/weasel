@@ -1,9 +1,7 @@
 # Extending weasel
 
-How to add a feature to a weasel canvas: first the units a feature is made of
-and how one installs, then the common extension points one at a time — custom
-layers, affordances, gesture behaviors, non-rect poses, derived geometry,
-actions — and mounting tools in a host of your own.
+How to add a feature to a weasel canvas: the units a feature is made of,
+the common extension points, and mounting tools in a host of your own.
 
 ## Extension units
 
@@ -120,7 +118,7 @@ const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, w:
 <SceneCanvas ambient={[minimap]} … />
 ```
 
-Three rules it depends on, each general:
+Rules it depends on, each general:
 
 - **A binding scoped to a view outranks the rest there.** Inside the minimap
   the select tool's drag is live at the active tier, which outranks the
@@ -172,12 +170,12 @@ layer goes after every standard slot (the top of the stack). Multiple
 custom entries can share an anchor; insertion order within an anchor is
 the iteration order of the `layers` map.
 
-A `RenderLayer<TData>` is just `{ id, draw(ctx, data?, vis?), label?,
+A `RenderLayer<TData>` is just `{ id, label, draw(data, view, dims),
 defaultVisible?, alwaysOn?, deps? }`. Build them with the helpers the kit
 exports: `createTextLayer`, `createPathLayer`, `createChildrenLayer`,
 `createSelectionOverlayLayer`, `createTilePattern` — and, from
 `@weasel-js/guides`, `createGridLayer`, `createCellHighlightLayer` and
-`createGuidesLayer`. Or write your own — it's a function.
+`createGuidesLayer`.
 
 The `grid` and `cellHighlight` slots take a pre-built layer, like any custom
 entry: `layers={{ grid: { layer: createGridLayer({ spacing: 20, bounds }) } }}`.
@@ -231,17 +229,17 @@ Affordances read state from `ChromeState` — a kit-built read-only object that 
 - `unionBounds: Bounds | null` — multi-union AABB when `multiActive`.
 - `modifiers: ModifierState` — alt/shift/meta/ctrl at the time of the call.
 
-Every layer's `hitTest` is consulted on pointerdown, and the result rides the gesture as `InvocationCtx.drag.affordance` — so an affordance hit fires the action bound to it even when a different tool is active. This is the principle: visible chrome is always hittable.
+Every layer's `hitTest` is consulted on pointerdown, and the result rides the gesture as `InvocationCtx.drag.affordance` — so an affordance hit fires the action bound to it even when a different tool is active.
 
 A layer that owns its chrome outright returns `strength: 'exclusive'` from its `hitTest`. That bars every binding whose `target` doesn't consult the affordance — a `kindOf` predicate built with `hitPredicate`, or the `affordance:<kind>` form — so a tool needs no predicate of its own to keep its hands off; a bare `{ kind: 'drag' }` simply doesn't compete for a claimed press. The default, `'shared'`, competes on scope and specificity as bindings always have.
 
 **A claim bars a whole gesture protocol, so bind every gesture in it.** `claimedKinds: ['pointer']` is one token covering `pointerDown`, `click` and `drag` — at the event level the first two are the same press told apart by stage. Claim it and bind only `drag`, and the pointerdown matches nothing that consults the affordance: the dispatcher drops the press, and the drag it would have grown into never happens. The kit says so — `exclusive claim by "<layer>" matched no binding` — and the chrome looks simply dead. Bind all three, even when two of them do nothing but absorb the press.
 
-A tool can still decline hits explicitly (`target: { kindOf: hitPredicate((hit) => hit == null) }` matches only presses that landed on the scene), but that is now for cases the claim doesn't cover, not the general defense against chrome.
+A tool can still decline hits explicitly (`target: { kindOf: hitPredicate((hit) => hit == null) }` matches only presses that landed on the scene), but that is for cases the claim doesn't cover.
 
 ### Naming a target
 
-`spec.target` takes one of five forms. Reach for a predicate when you need
+`spec.target` takes one of the forms below. Reach for a predicate when you need
 one; the string forms are shorter and rank higher in specificity, so a binding
 that can say what it wants in a string should.
 
@@ -291,8 +289,8 @@ interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd
 ```
 
 Each action pins the proposed/result shape; pick the matching alias
-(`MoveBehavior<TPose>`, `ResizeBehavior<TPose>`, `InsertBehavior<TPose>`,
-`AreaSelectBehavior`, `CloneBehavior<TPose>`).
+(`MoveBehavior<TPose>`, `BoundsConstraint<TPose>` for resize, `InsertBehavior<TPose>`,
+`LassoSelectBehavior`, `CloneBehavior<TPose>`).
 
 **Rules of thumb:**
 
@@ -574,8 +572,8 @@ with nothing left falls back to its authored pose rather than collapsing to a
 zero box.
 
 Everything reads a pose through `effectivePose(scene, node)` — override, else
-derived, else authored — which is why one change reached all three render walks,
-the pick walk and the adapters at once. `documentPose` is the same answer minus
+derived, else authored — the render walks,
+the pick walk, and the adapters alike. `documentPose` is the same answer minus
 the override step, for a reader that must not see an in-flight gesture: an
 action capturing the `from` of a transform op. Writing a derived node's pose
 still succeeds; it is simply not what anything reads.
@@ -639,7 +637,7 @@ code path.
 **Reference implementations** — all under
 `packages/core/src/interactions/actions/defaults/`:
 
-- `move.ts` — the fullest: threshold, multi-id, behavior chain, layout
+- `../move/action.ts` — the fullest: threshold, multi-id, behavior chain, layout
   reflow, reparent-on-commit.
 - `areaSelect.ts` — the simplest ongoing action, with `overlay()` rather than
   ghosts (marquee displaces nothing).

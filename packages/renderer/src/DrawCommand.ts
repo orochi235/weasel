@@ -7,12 +7,8 @@ import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgr
 import type { Effect } from './effects/types';
 import type { BlendFactors, CompositeOp } from './effects/compositeOp';
 
-/**
- * Solid-fill paint variant (subset of the full `FillStyle` union from
- * `@weasel-js/paint`). Kept for back-compat with step-1/2 consumers and
- * because some code reads `fill.color` directly. Through step 4, fills can
- * be any `FillStyle` variant — solid, pattern, or gradient.
- */
+/** Solid-fill paint variant (subset of the full `FillStyle` union from
+ *  `@weasel-js/paint`). */
 export interface SolidPaint {
   fill?: 'solid';
   /** Any CSS color string accepted by `parseColor`: hex, `rgb()`/`rgba()`, `hsl()`/`hsla()`, named, or `transparent`. */
@@ -41,16 +37,14 @@ export interface PathDrawCommand {
   stroke?: CommandStroke;
   /**
    * Optional flat RGBA-per-path-anchor color array (length =
-   * `4 × countPathAnchors(path)`, floats in 0..1). The renderer
-   * arc-length-interpolates these per-anchor colors across the
-   * flattened/triangulated mesh between consecutive anchors using the
-   * mesh's `anchorA` / `anchorB` / `anchorT` parameterization.
+   * `4 × countPathAnchors(path)`, floats in 0..1), arc-length-interpolated
+   * across the mesh between consecutive anchors.
    *
    * **`fill` must also be set when using `vertexColors`.** The renderer
    * only enters the per-vertex shader path when the command has a fill
-   * (the fill provides the opacity uniform; the vertex colors override
-   * the fill's color). Pass any solid `fill` (e.g. `{ color: '#fff' }`)
-   * as the placeholder; the per-vertex colors win in the shader.
+   * (the fill provides the opacity uniform). Pass any solid `fill` (e.g.
+   * `{ color: '#fff' }`) as the placeholder; the per-vertex colors win in
+   * the shader.
    */
   vertexColors?: number[];
 }
@@ -111,12 +105,9 @@ export interface GroupDrawCommand {
 
 /**
  * Text draw command. Renders one or more runs at (`x`, `y`) in screen
- * space, optionally word-wrapping at `maxWidth`. The renderer resolves
- * each run's `(fontFamily, fontWeight, fontStyle)` to an MSDF atlas via
- * `resolveFontVariant` and bucket-draws by atlas + color group.
- *
- * `style` carries node-level defaults (`lineHeight`, anti-alias width)
- * that don't belong on individual runs.
+ * space, optionally word-wrapping at `maxWidth`. `style` carries node-level
+ * defaults (`lineHeight`, anti-alias width) that don't belong on individual
+ * runs.
  */
 export interface TextDrawCommand {
   kind: 'text';
@@ -183,15 +174,12 @@ export const SPRITE_STRIDE = 9;
  * Draw many quads sampling one bitmap — an atlas, a sprite sheet, a wall of
  * thumbnails. The same picture as a run of `ImageDrawCommand`s the renderer
  * would coalesce anyway, handed over already packed so it never walks a
- * command object per quad.
- *
- * Reach for it past a few thousand sprites. Below that a plain run of image
- * commands merges into the same single draw and reads better; the packed form
- * exists because at 20,000 the object walk is about half the frame.
+ * command object per quad. Reach for it past a few thousand sprites: at
+ * 20,000 the object walk is about half the frame.
  *
  * The sprites are one run: they share a texture, a filter, and whatever group
- * transform, alpha, color matrix and clip are live, exactly as a merged run of
- * image commands would. Anything varying per sprite is in the array.
+ * transform, alpha, color matrix and clip are live. Anything varying per
+ * sprite is in the array.
  */
 export interface SpritesDrawCommand {
   kind: 'sprites';

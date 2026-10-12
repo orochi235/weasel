@@ -1,27 +1,13 @@
 /**
  * The default `OutlineParser`: opentype.js, loaded on demand.
  *
- * ### Why the dynamic import
- *
- * opentype.js is ~49 kB gzipped and it is the *only* runtime dependency this
- * package has. Charging that to every consumer of `@weasel-js/font` — most of
- * whom render text through a baked atlas and never touch an outline — would
- * be a poor trade for a tier that only engages above a size threshold. The
- * tier is inherently asynchronous anyway (font bytes arrive over `fetch` or
- * `queryLocalFonts`), so there is no synchronous path to slow down: the
- * import rides along with the load that was already going to happen, and a
- * bundler splits it into a chunk nobody fetches until large text appears.
- *
- * The other candidate was Typr — smaller, but unmaintained and untyped, and
- * this is a runtime dependency of a published package.
- *
- * ### Coordinate convention
+ * The import is dynamic because opentype.js is ~49 kB gzipped and most
+ * consumers render text through a baked atlas and never touch an outline.
+ * The other candidate was Typr — smaller, but unmaintained and untyped.
  *
  * `glyph.getPath(0, 0, 1)` already emits exactly what `OutlineFace` promises:
  * font units divided by the em, y flipped to grow downward, and the origin on
- * the baseline at the pen position. That is opentype.js's canvas-rendering
- * convention, and it happens to be the kit's world convention too, so no
- * transform is applied here — a flip would have to be undone downstream.
+ * the baseline at the pen position, so no transform is applied here.
  */
 
 import { OUTLINE_PRECISION, type OutlineFace, type OutlineParser } from './OutlineFace';
@@ -43,9 +29,8 @@ function loadOpenType(): Promise<OpenType> {
  * opentype.js 2.0 publishes ESM under `module` and a UMD bundle under `main`.
  * Only a bundler reads `module`; Node takes the UMD one, whose named exports
  * it cannot detect, so `ns.parse` is `undefined` there and every face fails to
- * load. The registry catches that and degrades to the SDF tier, which is why
- * it looks like nothing is wrong in an app that has an atlas — and why a
- * headless consumer, which has neither, gets no glyphs and no explanation.
+ * load. The registry catches that and degrades to the SDF tier, so a headless
+ * consumer, which has no atlas, gets no glyphs and no explanation.
  *
  * Exported for the test: the suite resolves through vite, which reads
  * `module` and therefore cannot reproduce the shape that breaks.
@@ -59,10 +44,8 @@ export function parserOf(ns: OpenType): OpenType['parse'] {
  * Wrap a parsed opentype.js font.
  *
  * `charToGlyphIndex` reports 0 — `.notdef` — for a codepoint the font does
- * not cover. That is a real glyph (the tofu box) and it renders, so returning
- * its outline would silently substitute a box for a character the atlas tier
- * might have been able to serve. Report the miss instead and let the caller's
- * fallback ladder run.
+ * not cover. That is a real glyph (the tofu box) and it renders, so report
+ * the miss instead and let the caller's fallback ladder run.
  */
 function faceFor(font: import('opentype.js').Font, gpos: PairKerning | null): OutlineFace {
   const upem = font.unitsPerEm;
@@ -90,8 +73,6 @@ function faceFor(font: import('opentype.js').Font, gpos: PairKerning | null): Ou
       if (!index) return null;
       const d = font.glyphs.get(index).getPath(0, 0, 1).toPathData(OUTLINE_PRECISION);
       // A glyph with no contours (a space) serializes to the empty string.
-      // Same answer as a missing glyph from the caller's point of view:
-      // nothing to tessellate.
       return d.length > 0 ? d : null;
     },
   };

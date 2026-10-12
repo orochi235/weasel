@@ -1,20 +1,6 @@
 /**
  * Selection overlay primitives — render layers for drawing selection
- * outlines and corner resize handles in world space.
- *
- * Three pieces:
- *   - `composeSelectionPose` resolves the live pose for a selected id by
- *     consulting the move overlay first, then the resize overlay, then the
- *     stored pose. When `getChildren`/`isContainer` are supplied and the id
- *     resolves to a container, the returned pose is the union AABB of all
- *     transitive leaf poses (with the same precedence rules applied per leaf).
- *   - `createSelectionOutlineLayer` draws the outline rect for each selected
- *     id (container ids resolve to a union AABB via `getChildren`/`isContainer`).
- *   - `createSelectionHandlesLayer` draws resize-handle rects (default 4
- *     corners) for each selected id, with the same container-resolution rules.
- *
- * `createSelectionOverlayLayer` is a thin convenience that returns a single
- * `RenderLayer` whose draw runs the outline pass then the handles pass.
+ * outlines and corner resize handles.
  *
  * **Pose shape:** TPose is generic; callers pass `poseDescriptor` for poses
  * `AUTO_POSE_DESCRIPTOR` can't read. Container ids reduce via `unionAABB`
@@ -86,7 +72,7 @@ export interface ComposeSelectionPoseOpts<TPose> {
    * Resize overlay; consulted only when move overlay does not own the id.
    * For container resize, `leafPoses` (when present) maps each leaf id under
    * the container to its overlay pose. If absent the container falls back to
-   * stored leaf poses (defensive — container-resize integration is in flight).
+   * stored leaf poses.
    */
   resizeOverlay?: {
     id: string;
@@ -226,16 +212,12 @@ export interface SelectionOverlayLayerOpts<TPose>
    * Which ids to draw chrome for. Omit to take them from the `ChromeState` on
    * the draw envelope, which is what makes one canvas's several views each
    * outline their own selection — the layer is shared, the envelope is not.
-   *
-   * A multi-selection resolves to the synthetic union id, with the real
-   * members going to the outline pass, exactly as the explicit form does.
    */
   getSelection?: () => readonly NodeId[];
   /**
    * Resolve an id to the pose to draw chrome around. Return null to skip an
    * id. Omit to take bounds from the same envelope `getSelection` omitted
-   * takes ids from — one cascade, the one the chrome state was built with,
-   * rather than a second one here that has to agree with it.
+   * takes ids from.
    *
    * Takes `string` rather than `NodeId` because the container-aware resolver
    * walks expanded leaf ids via `getChildren`, which is generic over strings.
@@ -253,16 +235,13 @@ export interface SelectionOverlayLayerOpts<TPose>
     | {
         distance?: number;
       };
-  /** Optional separate id list for the per-item outline pass. Use this in
-   *  multi-selection contexts where the handle pass works against a synthetic
-   *  union id (e.g. `MULTI_RESIZE_TARGET_ID`) but consumers still want to
-   *  see outlines around each real member. When omitted, the outline pass
-   *  uses the same `getSelection` ids as the handle pass. */
+  /** Optional separate id list for the per-item outline pass, for a
+   *  multi-selection whose handle pass works against a synthetic union id
+   *  (e.g. `MULTI_RESIZE_TARGET_ID`) while each real member is outlined.
+   *  When omitted, the outline pass uses the handle pass's ids. */
   getOutlineIds?: () => readonly NodeId[];
   /** Optional set of ids to suppress entirely — both outline and handles
-   *  are skipped. Used by SceneCanvas to hide the standard selection
-   *  chrome on the node currently in path-anchor edit mode, where the
-   *  per-anchor chrome takes over. */
+   *  are skipped. */
   getSuppressedIds?: () => ReadonlySet<string>;
 }
 
@@ -491,11 +470,9 @@ function handleCommandsFor(
   return out;
 }
 
-/** GL helper: emit a curved double-headed arrow indicating bidirectional
- *  rotation. The arc opens *toward* the object (apex on top, mouth pointing
- *  down) so the affordance reads as a small "rotate" badge sitting above
- *  the rect. Two arrowheads at the arc endpoints point along the tangent,
- *  signaling that rotation goes either direction. */
+/** GL helper: emit a curved double-headed arrow, the rotate badge above the
+ *  rect. The arc opens *toward* the object (apex on top, mouth pointing
+ *  down), with an arrowhead at each endpoint pointing along the tangent. */
 function rotationHandleCommands(
   worldB: Bounds,
   handles: ResolvedHandles,
@@ -508,9 +485,6 @@ function rotationHandleCommands(
   const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);
   const size = handles.size;
   const arcRadius = size;
-  // Arc spans ~240° (from 150° to -30° measured from arc center, going
-  // CCW). The arc center is the handle anchor; the arc itself bulges
-  // *toward the rect* (downward, since the handle sits above the AABB).
   const ARC_HALF_ANGLE = (Math.PI * 240) / 360 / 2; // 120°
   const N_SEGS = 18;
   const arcWidth = resolveStrokeWidth(handles.outline.width ?? 1, 1) * 1.5;
@@ -520,9 +494,8 @@ function rotationHandleCommands(
     cap: 'round',
     join: 'round',
   };
-  // Build the arc as a polyline in handle-local coords. Arc bulges *away*
-  // from the rect (upward in canvas space, since the handle sits above the
-  // AABB top edge): apex at -y, endpoints at +y near the rect side.
+  // The arc as a polyline in handle-local coords, centered on the handle
+  // anchor: apex at -y, endpoints at +y near the rect side.
   const cmds: number[] = [PATH_M];
   const xs: number[] = [];
   const ys: number[] = [];
@@ -544,10 +517,7 @@ function rotationHandleCommands(
     fillRule: 'nonzero',
   };
   // Arrowheads: small filled triangles at each endpoint, pointing along
-  // the tangent (away from the arc body). Tangent at endpoint = derivative
-  // of (sin(angle), cos(angle)) wrt angle = (cos(angle), -sin(angle)).
-  // At +ARC_HALF_ANGLE the tangent points "outward and slightly up"; at
-  // -ARC_HALF_ANGLE the tangent points the other way.
+  // the tangent (away from the arc body).
   const headLen = size * 0.6;
   const headWidth = size * 0.4;
   const arrowHead = (endX: number, endY: number, tx: number, ty: number): PolygonPath => {
@@ -573,8 +543,7 @@ function rotationHandleCommands(
     };
   };
   // Endpoint A (right side, angle = +ARC_HALF_ANGLE). Arc point:
-  // (sin(a)·R, -cos(a)·R). Tangent (d/da) = (cos(a)·R, sin(a)·R) — points
-  // outward/down at the right end. Use as "rotate further clockwise" arrow.
+  // (sin(a)·R, -cos(a)·R). Tangent (d/da) = (cos(a)·R, sin(a)·R).
   const angleA = ARC_HALF_ANGLE;
   const endAX = arcRadius * Math.sin(angleA);
   const endAY = -arcRadius * Math.cos(angleA);
@@ -644,12 +613,9 @@ function buildSelectionLayer<TPose>(
     space: 'screen',
     draw: (data, view) => {
       // The synthetic multi-resize id resolves to `ChromeState.unionBounds`,
-      // the single owner of the multi-selection union AABB — the same value
-      // the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`)
-      // reads, so painted chrome and its hit region stay in agreement. When
-      // no chromeState rides the draw envelope (bare/test callers), fall
-      // through to the supplied resolver so they can synthesize it via
-      // `getPose`.
+      // the same value the affordance hit-tester reads, so painted chrome
+      // and its hit region stay in agreement. With no chromeState on the
+      // draw envelope, fall through to the supplied resolver.
       const chromeState = asChromeState(data);
       const allIds = opts.getSelection
         ? opts.getSelection()
@@ -660,10 +626,8 @@ function buildSelectionLayer<TPose>(
         ? allIds.filter((id) => !suppressed.has(id as unknown as string))
         : allIds;
       if (ids.length === 0) return [];
-      // Chrome-caps: gate each of the three passes (outline, resize
-      // handles, rotation handle) on its canonical id. When no
-      // `getIsVisible` is wired (legacy callers / tests), every pass
-      // runs — preserving pre-chrome-caps behavior.
+      // Chrome-caps: gate each pass on its canonical id. When no
+      // `getIsVisible` is wired, every pass runs.
       const isVisible = asIsVisible(data);
       const showOutline = passes.outline && (isVisible ? isVisible('selection.outline') : true);
       const showHandles = isVisible ? isVisible('selection.resize-handles') : true;
@@ -767,8 +731,7 @@ export function createSelectionOverlayLayer<TPose>(
 
 /** Pull a chrome-caps visibility predicate off the draw `data` envelope.
  *  Returns `null` when the caller passed bare data (no `getIsVisible`
- *  thunk) — the layer then renders unconditionally, matching pre-
- *  chrome-caps behavior. */
+ *  thunk) — the layer then renders unconditionally. */
 function asIsVisible(data: unknown): ((id: string) => boolean) | null {
   const maybe = data as { getIsVisible?: () => (id: string) => boolean };
   if (typeof maybe?.getIsVisible === 'function') return maybe.getIsVisible();
@@ -784,11 +747,9 @@ function chromeSelectionIds(state: ChromeState | null): readonly NodeId[] {
   return state.selection;
 }
 
-/** Pull live `ChromeState` off the draw `data` envelope (the same channel
- *  `composeAffordanceLayer` uses). Returns `null` for bare/test callers that
- *  pass plain data with no `getChromeState` thunk — the layer then resolves
- *  the multi-union via the supplied `getPose` resolver, preserving pre-
- *  chromeState behavior. */
+/** Pull live `ChromeState` off the draw `data` envelope. Returns `null` for
+ *  callers that pass plain data with no `getChromeState` thunk — the layer
+ *  then resolves the multi-union via the supplied `getPose` resolver. */
 function asChromeState(data: unknown): ChromeState | null {
   const maybe = data as { getChromeState?: () => ChromeState };
   if (typeof maybe?.getChromeState === 'function') return maybe.getChromeState();

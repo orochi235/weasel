@@ -29,9 +29,7 @@ export interface AttachHudOptions {
    * Where the text a widget draws without naming a family comes from.
    *
    * - A family name: that family, already registered by the host. The HUD
-   *   fetches nothing, which is the point — an app that has registered Inter
-   *   as `'sans-serif'` was downloading the HUD's byte-identical copy of it a
-   *   second time.
+   *   fetches nothing.
    * - A `{ metricsUrl, atlasUrl }` pair: the HUD's own family, registered from
    *   the host's copy of the atlas rather than the bundled one.
    *
@@ -153,16 +151,9 @@ export function attachHud(
       const cursor = cursorOf(hit, sx, sy);
       // Report WHICH widget was hit and stop there. `<SceneCanvas>` folds this
       // into its `affordanceAt` thunk, so the hit reaches actions as an
-      // `AffordanceHit` of kind `layer:weasel-hud` carrying this payload; the
-      // `hud.pointer` action (see `tool.ts`) picks it up from there.
-      //
-      // This used to return a `DragChannel` for the tool-routing dispatcher to
-      // drive directly. That dispatcher is gone, and a hit-test handing back
-      // event handlers was always an odd shape — a hit-test should say what
-      // was hit.
+      // `AffordanceHit` of kind `layer:weasel-hud` carrying this payload.
       // Exclusive: hud chrome floats over the scene, so a press on it is not a
-      // press on whatever sits underneath. Bindings that don't consult the
-      // affordance are barred from it by the dispatcher.
+      // press on whatever sits underneath.
       return {
         initialScratch: { widget: hit },
         strength: 'exclusive',

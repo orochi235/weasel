@@ -1,33 +1,12 @@
 /**
- * `useEditAnchorsDepSource` — wires the `editAnchors` dep consumed by
- * `editAnchorsAction`, `enterPathEditAction`, `exitPathEditAction`, and
- * `insertPathAnchorAction`.
+ * `useEditAnchorsDepSource` — wires the `editAnchors` dep.
  *
- * `editingId` is explicit, set by `enterPathEditAction` (double-click)
- * and cleared by `exitPathEditAction` (Escape, or when the target leaves
- * the selection / is deleted).
- *
- * `getEditablePath(id)` returns the COMMITTED polygon in **world coords**,
- * regardless of where it's stored:
- *   - `node.pose.kind === 'polygon'` → pose IS the polygon.
- *   - `node.data.path` is a polygon → kit pen-tool default. Polygon's
- *     stored coords are pose-local (aligned to pose origin); we project
- *     to world via `pathInWorld` (translate + bake `pose.rotation`).
- *
- * `getStorageKind(id)` returns where the polygon lives (`'pose'` /
- * `'data'` / `null`). Actions use this to emit the right preview-ghost
- * axes: `previewPose` only for pose-as-polygon, `previewPose +
- * previewData` for data.path.
- *
- * `applyEdit(id, worldPath, label)` commits in the correct storage shape,
- * as one undoable batch. Pose-as-polygon is a `transform` op; data.path is
- * a `transform` (new bounds) plus a `setData` (re-aligned local path), so
- * the kit's render invariant (`pathInWorld(stored, pose) === world`) is
- * preserved. `editOps` returns those same ops unapplied, for a caller
- * folding the edit into a larger batch.
- *
- * Live previews ride the standard `OngoingHandle.previewIds/Pose/Data`
- * triple — this dep doesn't own preview state.
+ * A node's editable polygon lives in one of two places: the pose itself
+ * (`pose.kind === 'polygon'`), or `data.path` with a rect pose, stored pose-local.
+ * `getEditablePath` returns it in **world coords** either way, and `applyEdit` commits in the
+ * correct storage shape as one undoable batch, preserving the render invariant
+ * `pathInWorld(stored, pose) === world`. Live previews ride the standard
+ * `OngoingHandle.previewIds/Pose/Data` triple — this dep doesn't own preview state.
  */
 import { useCallback, useState } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
@@ -47,11 +26,8 @@ interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
 }
 
-/** Optional shared state for the edit-mode `editingId`. Pass when the
- *  consumer needs to read the current editingId from a sibling component
- *  (e.g. the path-editing overlay layer rendered above the SceneCanvas
- *  subtree where the dep is published). When omitted, the hook owns
- *  local state. */
+/** Shared state for the edit-mode `editingId`, for a consumer that reads it from a sibling
+ *  component (e.g. the path-editing overlay layer). When omitted, the hook owns local state. */
 export interface EditAnchorsStateRef {
   getEditingId(): string;
   setEditingId(id: string | null): void;
@@ -66,22 +42,16 @@ export interface EditAnchorsStateRef {
 /** Extra wiring for {@link useEditAnchorsDepSource}. */
 export interface EditAnchorsDepOptions {
   /**
-   * Whether the host currently permits anchor editing — i.e. whether the
-   * active mode allows the `edits-anchors` capability.
+   * Whether the host currently permits anchor editing — whether the active mode allows the
+   * `edits-anchors` capability.
    *
-   * **Omit this when no mode registry is wired.** Absent means "no
-   * modality, so nothing revokes edit mode", which is the correct
-   * behavior for the many consumers that never opt into modes; passing a
-   * predicate built from an empty capability set would revoke edit mode
-   * instantly. Same trap as `DEFAULT_ALLOWED_CAPABILITIES` guards against
-   * on the chrome side.
+   * **Omit this when no mode registry is wired.** Absent means "no modality, so nothing
+   * revokes edit mode"; a predicate built from an empty capability set would revoke edit
+   * mode instantly.
    *
-   * When supplied and it returns false, `editingId` reads as empty — the
-   * overlay stops drawing, the anchors stop being hittable, and the
-   * anchor selection is dropped. This is what makes leaving path-edit
-   * mode by ANY route (Escape, breadcrumb, a consumer calling
-   * `exitMode()` directly) tear down edit state, rather than only the one
-   * route that happens to reach `exitPathEditAction`.
+   * When supplied and it returns false, `editingId` reads as empty — the overlay stops
+   * drawing, the anchors stop being hittable, and the anchor selection is dropped — so
+   * leaving path-edit mode by ANY route tears down edit state.
    */
   anchorEditingAllowed?: () => boolean;
 }
@@ -105,11 +75,8 @@ function classifyStorage(
   return null;
 }
 
-/** Resolve a node's editable polygon in world coords. Shared between the
- *  dep source and SceneCanvas's chrome wiring so both apply the same
- *  "pose IS the polygon vs data.path with rect pose" routing. Does NOT
- *  consult any preview state — callers that want live state read
- *  in-flight handles themselves. */
+/** A node's editable polygon in world coords. Does NOT consult any preview state —
+ *  callers that want live state read in-flight handles themselves. */
 export function resolveEditablePathOf(
   node: { pose: unknown; data: unknown } | undefined | null,
 ): PolygonPath | null {
@@ -119,9 +86,8 @@ export function resolveEditablePathOf(
   // Pose-as-polygon: the pose IS the polygon (polygon poses can't carry
   // rotation), so it's already world.
   if (storage.kind === 'pose') return (node as { pose: PolygonPath }).pose;
-  // data.path: project to world via the world seam — translate to the pose
-  // origin AND bake `pose.rotation`, so anchors render on the rotated contour
-  // the renderer draws (not the unrotated one).
+  // data.path: translate to the pose origin AND bake `pose.rotation`, so anchors render on
+  // the rotated contour the renderer draws.
   return pathInWorld(storage.data.path, storage.pose) as PolygonPath;
 }
 
@@ -164,10 +130,8 @@ export function useEditAnchorsDepSource(
       const permitted = allowedRef.current ? allowedRef.current() : true;
       if (!node || !inSelection || !permitted) effectiveId = '';
     }
-    // Anchor selection and the marquee belong to one specific edited
-    // node. The moment `editingId` reads as empty — exited, deselected,
-    // deleted, or revoked by a mode change — they are stale by
-    // definition, so never hand them out alongside an empty id.
+    // Anchor selection and the marquee belong to one specific edited node, so never
+    // hand them out alongside an empty id.
     const selectedAnchors = effectiveId
       ? (ext?.getSelectedAnchors() ?? EMPTY_ANCHOR_SELECTION)
       : EMPTY_ANCHOR_SELECTION;
@@ -179,8 +143,7 @@ export function useEditAnchorsDepSource(
       const storage = classifyStorage(node as { pose: unknown; data: unknown });
       if (!storage) return [];
       if (storage.kind === 'pose') return [createTransformOp({ id, from: node.pose, to: wp, label })];
-      // Edited path arrives in world coords (rotation baked in by
-      // resolveEditablePathOf); invert it back to the unrotated stored
+      // The edited path arrives in world coords; invert it back to the unrotated stored
       // shape so `pose.rotation` is preserved and edits round-trip.
       const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
       return [

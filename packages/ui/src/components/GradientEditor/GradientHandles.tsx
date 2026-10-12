@@ -47,9 +47,9 @@ export interface GradientHandlesProps {
  * overlay above a canvas: endpoints for linear, center and radius for
  * radial, center and angle arm for conic.
  *
- * Positioning is entirely the consumer's `toScreen` / `toLocal` — this
- * component never sees a view or a scene node, so the same handles serve a
- * node-local gradient, a world-space one, and a plain unzoomed preview.
+ * Positioning is entirely the consumer's `toScreen` / `toLocal`, so the same
+ * handles serve a node-local gradient, a world-space one, and a plain
+ * unzoomed preview.
  *
  * The overlay ignores pointer events except on the handles themselves, so
  * it can sit over live canvas content without swallowing tool input.

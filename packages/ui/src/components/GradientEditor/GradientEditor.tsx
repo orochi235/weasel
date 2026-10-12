@@ -72,15 +72,12 @@ type StopThumb = Thumb & { color: string };
  * `Editor`. Switching kind goes through `switchGradientKind`, so the colors
  * carry across.
  *
- * Geometry (`from`/`to`, `center`, `radius`, `angle`) is deliberately not
- * edited here — on a canvas that belongs on the artwork, via
- * `<GradientHandles>`. This component owns the parts with no spatial
- * meaning, so it composes into a properties panel at any width.
+ * Geometry (`from`/`to`, `center`, `radius`, `angle`) is not edited here — on
+ * a canvas that belongs on the artwork, via `<GradientHandles>`.
  *
  * Stops are addressed by their position in `value.stops`, which is never
- * reordered — dragging one stop past another leaves both indices alone, so
- * a drag can cross a neighbour without the two swapping under the pointer.
- * Rendering sorts a copy.
+ * reordered, so a drag can cross a neighbor without the two swapping under
+ * the pointer.
  */
 export function GradientEditor(props: GradientEditorProps): ReactElement {
   const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, className } = props;

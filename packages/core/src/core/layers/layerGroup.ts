@@ -7,20 +7,17 @@ import type { Dims } from './render';
  *
  * A layer's own `effects` run over that layer alone, which is the wrong
  * picture whenever a pass reads neighboring pixels: `blur(A over B)` is not
- * `blur(A) over blur(B)`, and it costs a buffer and a pass chain per layer. A
- * group draws its members into one buffer, runs one chain over it, and
- * composites the result back once.
+ * `blur(A) over blur(B)`. A group draws its members into one buffer, runs one
+ * chain over it, and composites the result back once.
  *
  * Membership is by `RenderLayer.id` — the same names `layerOrder` and
  * `layerVisibility` use, not the `layers` map's slot keys.
  *
- * Only *consecutive* members share a buffer, because anything drawn between
- * two members has to land between them. A group whose members are separated in
- * the render order is drawn as one bracket per run, with a warning: the
- * picture is right, the declaration almost certainly is not.
+ * Only *consecutive* members share a buffer. A group whose members are
+ * separated in the render order is drawn as one bracket per run, with a
+ * warning.
  *
- * This is a render-stack bracket, not a scene `ContainerNode` — it holds no
- * ids, survives no reload, and nothing in the scene knows about it.
+ * This is a render-stack bracket, not a scene `ContainerNode`.
  */
 export interface LayerGroup {
   /** Names the group in warnings; not a layer id and never drawn. */
@@ -30,16 +27,12 @@ export interface LayerGroup {
    *
    * A name claims that layer and every layer under it in the `:` namespace, so
    * `'scene'` covers the `scene:<layerId>` layers a scene with declared layers
-   * draws as — the same set `before`/`after: 'scene'` anchors against. The
-   * separator is required: `'scene'` does not reach `scenery`. A name matching
-   * no layer being drawn is warned about rather than ignored.
+   * draws as. The separator is required: `'scene'` does not reach `scenery`.
+   * A name matching no layer being drawn is warned about.
    */
   layers: readonly string[];
-  /**
-   * Passes over the group's combined pixels, in order. A thunk is re-read on
-   * every frame, so an animating radius costs no React render; an array is
-   * read once per frame either way.
-   */
+  /** Passes over the group's combined pixels, in order. A thunk is re-read on
+   *  every frame, so an animating radius costs no React render. */
   effects?: readonly Effect[] | ((view: View, dims: Dims) => readonly Effect[]);
   /** Opacity applied to the group's composited result, not to each member. */
   alpha?: number;
@@ -52,13 +45,9 @@ export interface LayerGroup {
 }
 
 /**
- * Layer id → the group that owns it.
- *
- * A member name claims the layer of that exact id and every layer under it in
- * the `:` namespace, so `'scene'` claims the whole split scene slot. First
- * claim wins across groups, so a second one is a declaration bug rather than a
- * silent reassignment; the same group naming a layer twice — `['scene',
- * 'scene:tiles']` — is redundant, not a conflict, and passes quietly.
+ * Layer id → the group that owns it. First claim wins across groups, with a
+ * warning for the second; the same group naming a layer twice — `['scene',
+ * 'scene:tiles']` — passes quietly.
  */
 export function groupMembership(
   groups: readonly LayerGroup[] | undefined,
@@ -101,8 +90,7 @@ export function groupMembership(
  *
  * No transform: every member already carries its own space wrap, so a second
  * one here would apply the view twice to world layers and once to screen ones.
- * A group that composites plainly gets no wrapper at all — an extra group
- * command that changes nothing is still a push and a pop per frame.
+ * A group that composites plainly gets no wrapper at all.
  */
 export function wrapGroup(
   group: LayerGroup,

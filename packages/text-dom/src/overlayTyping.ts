@@ -20,14 +20,9 @@ import type { TextEditSelection } from './textEditTypes';
 /**
  * Put the caret *between* two run spans when `offset` falls on the boundary
  * of one, rather than at the same offset inside the left span's text node.
- *
- * The two positions are the same character offset and browsers report them
- * identically, but they type differently: a caret inside a span has the next
- * character absorbed by that run, and one between spans starts a fresh one.
- * That distinction is the whole point after a pending style has just been
- * committed to its own run — otherwise the character after a superscript is
- * superscript too. Leaves the selection alone when the offset falls mid-run,
- * where there is no boundary to prefer.
+ * A caret inside a span has the next character absorbed by that run —
+ * otherwise the character after a superscript is superscript too. Leaves the
+ * selection alone when the offset falls mid-run.
  */
 function placeCaretBetweenRuns(overlay: HTMLElement, runs: readonly StyledRun[], offset: number): void {
   let acc = 0;
@@ -121,7 +116,7 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
   };
 
   const onPaste = (ie: InputEvent): void => {
-    // An engine that hands the event no data inserts for itself, as before.
+    // An engine that hands the event no data inserts for itself.
     const at = ie.dataTransfer ? replacedOffsets(overlay, ie, host) : null;
     if (!ie.dataTransfer || !at) return;
     ie.preventDefault();
@@ -147,10 +142,8 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
       // Rebuild from the runs rather than splicing a span into the DOM.
       // `insertNode` at a caret sitting inside a run span nests the new
       // span *within* it, and `domToRuns` reads styling down the ancestor
-      // chain — so a pending style that has to escape the surrounding run
-      // (the `false` armed after a node-flag rewrite) would inherit exactly
-      // the flag it exists to shed. Going through the algebra also gets
-      // every run field for free, with no CSS written here.
+      // chain — so a pending style that has to shed the surrounding run's
+      // flag would inherit it.
       const at = readSelectionOffsets(overlay) ?? host.lastRange();
       if (!at || at.start !== at.end) return;
       ie.preventDefault();

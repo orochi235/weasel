@@ -27,15 +27,8 @@ export interface CanvasViewHandle {
 /**
  * The **base imperative ref handle** shared by the canvas components. For
  * `<SceneCanvas>` refs use {@link SceneCanvasApi} (this type plus the
- * scene-level surfaces, e.g. a non-optional `ingest`):
+ * scene-level surfaces, e.g. a non-optional `ingest`).
  *
- * ```tsx
- * const ref = useRef<SceneCanvasApi>(null);
- * <SceneCanvas ref={ref} … />;
- * ref.current?.element?.focus();
- * ```
- *
- * This is a deliberately small, supported consumer surface — not internal.
  * Consumers use `element` for focus / screenshots / `getBoundingClientRect`;
  * plugin packages (e.g. `@weasel-js/hud`) additionally use `requestRedraw`
  * and `registerLayer` to attach externally-owned draw layers.
@@ -135,20 +128,15 @@ export interface CanvasExtensionApi {
    * world-space point. Returns the id of the layer that claimed the point and
    * whatever its `hitTest` resolved, or `null` when none did.
    *
-   * `<SceneCanvas>` folds this into the `affordanceAt` thunk it hands the
-   * gesture dispatcher — ahead of the kit's own selection chrome, since
-   * registered layers draw on top — so a hit surfaces to actions as an
-   * `AffordanceHit` with kind `layer:<id>` and the hit's `initialScratch`
-   * as its `payload`. `owner` is set to the layer id, and `cursor` /
-   * `strength` carry through from the hit when the layer sets them.
-   * A layer's owner binds a `kindOf` predicate on that kind to claim the
-   * gesture; see `@weasel-js/hud` for the worked example.
+   * `<SceneCanvas>` folds this into the gesture dispatcher's hit-test ahead of
+   * the kit's own selection chrome, so a hit surfaces to actions as an
+   * `AffordanceHit` with kind `layer:<id>`, the hit's `initialScratch` as its
+   * `payload`, `owner` set to the layer id, and `cursor` / `strength` carried
+   * through. A layer's owner binds a `kindOf` predicate on that kind to claim
+   * the gesture.
    *
    * `frame` names the camera and surface size the point is expressed against.
-   * Omit it for the canvas's own view — the only case until a caller routes
-   * input to a viewport node, where the point is in that node's inner world
-   * and a layer resolving screen-pixel tolerances needs its view and rect
-   * size rather than the canvas's.
+   * Omit it for the canvas's own view.
    */
   hitTestExtras(
     worldX: number,

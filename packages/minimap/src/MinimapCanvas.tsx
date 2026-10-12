@@ -1,19 +1,3 @@
-/**
- * `<MinimapCanvas>` — opinionated minimap on a canvas of its own, built on
- * `<SceneViewCanvas>`.
- *
- * Renders the same `scene` the main canvas is showing, through a derived
- * "fit" view, and overlays a dashed visible-window indicator showing where
- * the main canvas is currently looking. Press anywhere in the minimap to
- * recenter the main view on that world point; drag to pan continuously.
- *
- * Input runs on a dispatcher of its own, through the same `minimap.center` /
- * `minimap.pan` actions the in-surface minimap (`createMinimapContribution`)
- * binds. It publishes its pointer into the pointer store in scope, and draws a
- * crosshair wherever that store says the pointer is on another surface — put
- * one `<PointerContextProvider>` around it and the main canvas for linked
- * cursors both ways.
- */
 import {
   useCallback,
   useEffect,
@@ -151,14 +135,6 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     return computeIndicatorCommand(mainView, mainViewDims, indicatorStyle, fitView);
   }, [mainView, mainViewDims, indicatorStyle, fitView]);
 
-  // -------------------------------------------------------------------------
-  // Input
-  // -------------------------------------------------------------------------
-  //
-  // The "latest" pattern (refs holding the current mainView / dims / setter
-  // / fitView) lets the dep and the listeners read up-to-date values without
-  // re-binding every frame.
-
   const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mainViewRef = useLatest(mainView);
   const mainViewDimsRef = useLatest(mainViewDims);
@@ -198,10 +174,6 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     keyboard: false,
     channels: CHANNELS,
   });
-
-  // -------------------------------------------------------------------------
-  // Linked cursor
-  // -------------------------------------------------------------------------
 
   const pointerStore = usePointerContext();
   useEffect(() => {
@@ -261,11 +233,14 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
 }
 
 /**
- * Opinionated minimap. See `MinimapCanvasProps` for the full surface and
- * the module docstring for the rendering / input model.
+ * Opinionated minimap on a canvas of its own. Renders the same `scene` the
+ * main canvas is showing through a derived "fit" view, and overlays a dashed
+ * indicator of where the main canvas is looking. Press anywhere in it to
+ * recenter the main view on that world point; drag to pan continuously.
  *
  * Its dispatcher, actions and deps are its own, so it never competes with
- * the main canvas for input. The pointer store is shared when one is in scope.
+ * the main canvas for input. Put one `<PointerContextProvider>` around it and
+ * the main canvas for linked cursors both ways.
  *
  * `forwardRef` is not used because the component is generic over
  * `<TData, TLayer, TPose>` and React's `forwardRef` erases generics. The

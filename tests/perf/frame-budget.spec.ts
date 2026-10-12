@@ -1,29 +1,21 @@
 /**
- * Frame budget: how many commands of each kind fit inside one frame.
+ * Frame budget: how many commands of each kind fit inside one frame. Fixes the
+ * budget (16.7 ms at 60 Hz, 8.3 at 120) and binary-searches the largest command
+ * count that renders inside it.
  *
- * `draw-loop.spec.ts` answers "how long do N commands take" — the right
- * question while optimizing a hot path, the wrong one while deciding what a
- * scene may contain. This inverts it: fix the budget (16.7 ms at 60 Hz, 8.3 at
- * 120) and binary-search the largest command count that renders inside it. The
- * answer is a capacity in a unit a scene author can act on, so "can this
- * document hit 60?" becomes a lookup.
+ * Each probe is the median of single frames drawn one per task —
+ * `lib/frameTiming.ts` says why. Check the unmasked GL renderer the run printed
+ * before believing a number.
  *
- * Each probe is the median of single frames drawn one per task, the way a
- * frame loop draws them — `lib/frameTiming.ts` says why. Check the unmasked GL
- * renderer the run printed before believing a number.
+ * **A single digit from this spec is not a result.** Run-to-run noise is wider
+ * than most of the wins anyone would measure against it. Every row is searched
+ * `RUNS` times and reported as a band; treat the width of that band as the
+ * resolution of the instrument.
  *
- * **A single digit from this spec is not a result.** The two runs behind the
- * 2026-08-15 stroke figure moved an *untouched* variant from 101 to 152 ms, so
- * this hardware's noise is wider than most of the wins anyone would measure
- * against it. Every row is searched `RUNS` times and reported as a band; treat
- * the width of that band as the resolution of the instrument.
- *
- * Capacity is searched, not derived from a per-command cost, because a command
- * has no cost on its own — it has one in the company it keeps. Each row here
- * renders one kind, so its commands batch and hold state; interleave them the
- * way a document does and the total runs well over the sum of these rows.
- * `mixed-doc` is the row that measures that, and it is the one to quote when
- * the question is whether a real scene will hold its frame rate.
+ * Each row renders one kind, so its commands batch and hold state; interleave
+ * them the way a document does and the total runs well over the sum of these
+ * rows. `mixed-doc` is the row that measures that, and it is the one to quote
+ * when the question is whether a real scene will hold its frame rate.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -44,18 +36,10 @@ const BUDGETS = [
 const RUNS = rounds(3);
 
 /** Upper bound on the search. A row that reaches it reports `>=` rather than a
- *  number: past this, building the command array costs more than rendering it,
- *  and the figure stops describing anything a document would do. */
+ *  number: past this, building the command array costs more than rendering it. */
 const CAP = 500_000;
 
-/**
- * One row each. `unit` names what is being counted — a capacity is meaningless
- * without it, and several of these are not one draw call.
- *
- * Order does not matter: each row gets its own renderer and GL context, so
- * unlike `draw-loop.spec.ts` there is no measurement to protect from its
- * predecessor's garbage.
- */
+/** One row each. `unit` names what is being counted; several are not one draw call. */
 const ALL_KINDS = [
   { id: 'solid-rect',    unit: 'solid rect' },
   { id: 'stroked-path',  unit: 'stroked rect (2px)' },
@@ -69,9 +53,7 @@ const ALL_KINDS = [
   { id: 'mixed-doc',     unit: 'document element (weighted mix)' },
 ];
 
-/** `PERF_KINDS=mixed-doc,solid-rect` narrows the sweep. A full one runs for
- *  many minutes, and re-measuring one row after a renderer change should not
- *  have to pay for the other nine. */
+/** `PERF_KINDS=mixed-doc,solid-rect` narrows the sweep. */
 const only = process.env.PERF_KINDS?.split(',').map((s) => s.trim()).filter(Boolean);
 const KINDS = only?.length ? ALL_KINDS.filter((k) => only.includes(k.id)) : ALL_KINDS;
 if (only?.length) {
@@ -110,8 +92,6 @@ test('frame budget: commands per kind that fit one frame', async ({ page, browse
 
   const rows: RowResult[] = [];
 
-  // Streamed out of the page as each row lands. A full sweep runs for minutes;
-  // a table printed at exit is indistinguishable from a hang while it works.
   await page.exposeFunction('__budgetReport', (msg: unknown) => {
     const m = msg as { type: string } & Record<string, unknown>;
     if (m.type === 'probe') {
@@ -171,15 +151,9 @@ test('frame budget: commands per kind that fit one frame', async ({ page, browse
       let glRenderer = '';
 
       /**
-       * A fresh context and renderer per row.
-       *
-       * Rows are not independent on a shared renderer: measured tenth, after
-       * nine rows had put a few hundred thousand paths through the caches, the
-       * mixed profile came back a quarter of what it measures on a clean one.
-       * A capacity table whose last row depends on what the first nine did is
-       * not a table anyone can read, and finding which retained thing costs the
-       * difference is a renderer investigation, not this spec's job. Starting
-       * clean makes each row answer only for itself.
+       * A fresh context and renderer per row. Rows are not independent on a
+       * shared renderer: after earlier rows had filled the caches, the mixed
+       * profile came back a quarter of what it measures on a clean one.
        */
       function freshRenderer(): void {
         renderer?.dispose();
@@ -231,8 +205,6 @@ void main() {
         bitmaps.push(await createImageBitmap(px));
       }
 
-      // ─── command builders ──────────────────────────────────────────────
-
       /** Element 0 always lands at (20, 20) so the paint probe knows where to
        *  look, whatever the kind. */
       const px = (i: number) => 20 + ((i * 37) % (W - 160));
@@ -254,9 +226,8 @@ void main() {
         return {
           kind: 'path',
           path: { kind: 'rect', x, y, width: 36, height: 36 },
-          // Anchored to the rect rather than fixed in screen space: a gradient
-          // whose ramp falls outside the shape it fills is a solid fill wearing
-          // a gradient's cost profile.
+          // Anchored to the rect: a ramp that falls outside the shape it fills
+          // paints a solid.
           fill: {
             fill: 'linear-gradient' as const,
             from: { x, y }, to: { x: x + 36, y: y + 36 },
@@ -340,14 +311,7 @@ void main() {
         return level;
       }
 
-      /**
-       * Weighted like a drawing rather than a stress test: mostly vector
-       * shapes, a fifth of it text, a handful of images and one or two shader
-       * panels. Assembled into a real tree with clips on some branches, so the
-       * figure includes the traversal and state a flat array leaves out.
-       * Elements spread across the full canvas, so overdraw rises with the
-       * count the way it does in a dense document.
-       */
+      /** Weighted like a drawing rather than a stress test. */
       const MIX = [
         ...Array(55).fill('rect'),
         ...Array(18).fill('stroke'),
@@ -369,13 +333,9 @@ void main() {
 
       /**
        * Sixteen chunks, four of them clipped: a fixed number of clipped frames
-       * over a quarter of the document, whatever the size.
-       *
-       * Hanging the clips off tree branches instead made this row step wherever
-       * `n` crossed a power of the fanout — the branch count drops from 6 to 2,
-       * so the clipped share jumps from a sixth to a half. A clip forces every
-       * draw beneath it out of the solid batch, so that share sets the row's
-       * cost, and the row reported the shape of its own scaffolding.
+       * over a quarter of the document, whatever the size. Hanging the clips off
+       * tree branches instead makes the clipped share, and so the row's cost,
+       * step wherever `n` crosses a power of the fanout.
        */
       function assembleMixed(leaves: unknown[]): unknown[] {
         const chunkSize = Math.max(1, Math.ceil(leaves.length / 16));
@@ -393,8 +353,7 @@ void main() {
         return out;
       }
 
-      /** `leaf` mints one unit; `assemble` optionally arranges the units into a
-       *  tree. Splitting them is what lets every kind share the leaf pool. */
+      /** `leaf` mints one unit; `assemble` optionally arranges the units into a tree. */
       const BUILDERS: Record<string, {
         leaf: (i: number) => unknown;
         assemble?: (leaves: unknown[]) => unknown[];
@@ -415,14 +374,9 @@ void main() {
        * Leaves are built once at the largest count the search reaches and
        * sliced; only the group wrappers are rebuilt per probe.
        *
-       * The pool is what makes the row measure a steady-state frame. Minting
-       * fresh leaves per probe hands the renderer paths it has never seen, so
-       * every probe re-tessellates, re-uploads and re-lays-out text — document
-       * load, not frame cost. The mixed profile measured 3x its true cost that
-       * way and degraded run over run, because a search step is a fresh
-       * document each time and a real one is the same nodes redrawn. Kit caches
-       * (`getMesh`, `layoutCache`) key on object identity precisely because
-       * consumers hold their nodes stable across frames.
+       * Minting fresh leaves per probe hands the renderer paths it has never
+       * seen, so every probe re-tessellates, re-uploads, and re-lays-out text —
+       * document load, not frame cost. Kit caches key on object identity.
        */
       let poolKind = '';
       let pool: unknown[] = [];
@@ -438,11 +392,7 @@ void main() {
         return spec.assemble ? spec.assemble(leaves) : leaves;
       }
 
-      /** Dropped when the sweep moves to the next kind — ten pools of 100k
-       *  commands alive at once is a memory profile no measurement wants. */
       function dropPool(): void { poolKind = ''; pool = []; }
-
-      // ─── timing ────────────────────────────────────────────────────────
 
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       const gcAvailable = typeof collect === 'function';
@@ -455,9 +405,8 @@ void main() {
        * dropped, and each one queues a VAO and two buffers into
        * `GLMeshCache.pendingDeletes`, which `render` drains at the top of the
        * next frame. Without that the measurement is charged for deleting its
-       * predecessor's GL resources: the mixed profile came back 3x slow, and
-       * because the backlog is a deterministic size it reproduced exactly
-       * across processes and read as a real cliff.
+       * predecessor's GL resources, and because the backlog is a deterministic
+       * size it reproduces exactly and reads as a real cliff.
        */
       async function measure(cmds: unknown[]): Promise<number> {
         if (collect) {
@@ -469,11 +418,9 @@ void main() {
 
       /**
        * A bisection step cannot revisit a verdict: one wrong `fits` high in the
-       * range truncates everything below it, and the run reports a number it
-       * never actually measured. Away from the boundary a single block decides
-       * it safely, but inside ±10% of the budget the verdict is a coin flip on
-       * a noisy row — the mixed profile returned both 2,464 and 1,232 for the
-       * same budget before this. Those probes, and only those, go best-of-three.
+       * range truncates everything below it. Inside ±10% of the budget the
+       * verdict is a coin flip on a noisy row, so those probes, and only those,
+       * take the median of three.
        */
       async function fits(kind: string, n: number, budgetMs: number): Promise<boolean> {
         const cmds = build(kind, n);
@@ -489,11 +436,9 @@ void main() {
        * noise floor and only costs probes.
        *
        * Every call ramps from scratch. Seeding the search from the previous
-       * run's answer was most of the sweep's speed, but it made the runs a
-       * converging sequence rather than independent samples: the mixed profile
-       * walked 2,272 -> 3,782 -> 3,934, each run inheriting the last one's
-       * floor. Reporting the spread of *that* as a band states a confidence the
-       * numbers do not have.
+       * run's answer makes the runs a converging sequence rather than
+       * independent samples, and the band then states a confidence the numbers
+       * do not have.
        */
       async function capacity(kind: string, budgetMs: number):
       Promise<{ n: number; capped: boolean }> {
@@ -518,14 +463,7 @@ void main() {
         return { n: lo, capped: false };
       }
 
-      // ─── does each kind actually paint? ────────────────────────────────
-
-      /**
-       * A kind that silently draws nothing measures free and would report an
-       * absurd capacity — a shader that failed to compile, an atlas that never
-       * loaded, an image that never uploaded. One command of each kind, then
-       * scan the framebuffer for any covered pixel.
-       */
+      /** A kind that silently draws nothing measures free and would report an absurd capacity. */
       function paintsAnything(kind: string): boolean {
         renderer.render(build(kind, 1), identity);
         gl.finish();
@@ -553,22 +491,16 @@ void main() {
         notPainting: notPainting.length ? notPainting.join(', ') : '',
       });
 
-      // ─── sweep ─────────────────────────────────────────────────────────
-
       // Run-major, not kind-major: three searches of one row back to back sit
       // inside one thermal state and agree with each other more than they
-      // agree with the truth. Spreading them across the sweep samples the
-      // machine's drift instead of hiding it.
+      // agree with the truth.
       for (let run = 1; run <= runs; run++) {
         for (const { id } of kinds) {
           dropPool();
           freshRenderer();
-          // Pay this context's one-time costs before the first probe. They are
-          // per-feature — program link, atlas upload, image texture, the solid
-          // batch's buffer growth — so on a cold context the ramp meets them at
-          // whichever count first uses that feature, and charges the count for
-          // them. 256 covers a full cycle of the mixed weighting, so every
-          // command kind has been through at least once.
+          // Pay this context's one-time costs (program link, atlas upload, image
+          // texture, batch buffer growth) before the first probe. 256 covers a
+          // full cycle of the mixed weighting.
           const warm = build(id, 256);
           for (let i = 0; i < 4; i++) renderer.render(warm, identity);
           gl.finish();
@@ -607,8 +539,6 @@ void main() {
 
   expect(errors).toEqual([]);
   for (const { id } of KINDS) {
-    // Free-measuring nothing is the failure mode that makes a capacity table
-    // dangerous rather than merely wrong.
     expect(paints[id], `${id}: rendered nothing, so its capacity is meaningless`).toBe(true);
     const got = rows.filter((r) => r.kind === id);
     expect(got.length, `${id}: missing runs`).toBe(RUNS);

@@ -1,12 +1,8 @@
 /**
  * Resolve a `units: 'bounds'` gradient into the frame its node is painted in.
- *
  * Node painters bake the pose into their geometry (`pathInPoseFrame`) rather
  * than emitting a per-node transform, so by the time the renderer sees a
  * scene node there is no node-local space left for a gradient to refer to.
- * This is the paint-side counterpart: it maps box-relative gradient geometry
- * onto the same box the path was just projected into, so the two arrive in
- * the renderer in one frame.
  */
 
 import type { FillStyle, GradientFill, PosedFill } from '@weasel-js/paint';
@@ -61,10 +57,6 @@ export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): PosedFill {
  * Inverse of {@link fillInPoseFrame}: express a gradient already positioned
  * in `box`'s frame as `0..1` fractions of that box (`units: 'bounds'`), so
  * it follows the node when moved or resized.
- *
- * The importer's counterpart — SVG `userSpaceOnUse` coordinates arrive in
- * page space, and normalizing them here makes an imported gradient behave
- * exactly like one drawn in the app.
  *
  * A zero-width or zero-height box has no frame to normalize against; the
  * fill is returned untouched rather than divided by zero.

@@ -2,52 +2,33 @@
  * HUD text against a transparent DOM overlay: which is cheaper per frame, and
  * where the answer flips.
  *
- * Two ways to put text over the canvas. `@weasel-js/hud` draws it as canvas
- * commands through the renderer; a DOM layer sits above the canvas and lets the
- * browser lay the text out and composite it. The sweep crosses glyph count,
- * whether the text changes every frame (a readout) or never (a label), and
- * whether it moves with the camera. Text comes in 10-glyph labels, so a glyph
- * count is ten times a label count.
+ * The sweep crosses glyph count, whether the text changes every frame (a
+ * readout) or never (a label), and whether it moves with the camera.
  *
  * **Unlike the other specs here, the canvas is in the document.** The overlay's
- * cost lives in the compositor, the raster workers and the GPU process, so an
- * off-document canvas would hand the DOM side a free lunch. Every cell renders
- * the same background scene every frame on both sides, and a `none` cell prices
- * that scene alone; read a cell against it.
+ * cost lives in the compositor, the raster workers, and the GPU process, so an
+ * off-document canvas would hand the DOM side a free lunch. A `none` cell
+ * prices the background scene alone; read a cell against it.
  *
  * **Time comes from a Chromium trace, not the page's clock.** Style, layout,
- * paint and raster happen outside any JavaScript a page can time. Each
- * measurement traces a window of frames and reports per frame: the renderer
- * main thread (split into script, style, layout, paint and other by the self
- * time of the trace events), the compositor thread, the raster workers, and the
- * GPU process. The GPU process figure is CPU time spent there — decoding the
- * command buffer and compositing — not GPU execution. GPU execution is timed
- * with `EXT_disjoint_timer_query_webgl2` where the browser exposes it, which
- * covers the canvas's own draws only; the result's `params.gpuTimer` says
- * whether it did.
+ * paint, and raster happen outside any JavaScript a page can time. The GPU
+ * process figure is CPU time spent there — decoding the command buffer and
+ * compositing — not GPU execution. GPU execution is timed with
+ * `EXT_disjoint_timer_query_webgl2` where the browser exposes it, which covers
+ * the canvas's own draws only.
  *
  * **Frame rate comes from an untraced window.** Tracing costs the browser
- * process enough to stretch frames on its own, so each measurement first runs
- * the same number of frames with tracing off and reads the rAF intervals from
- * those.
+ * process enough to stretch frames on its own.
  *
  * **ABBA order.** Every configuration runs `hud dom dom hud`, then `dom hud hud
  * dom` on the next pass, so a machine drifting across a configuration charges
- * both sides alike, and node noise shows up as spread across samples rather
- * than as a difference between approaches.
+ * both sides alike.
  *
- * "Moves with the camera" means per-label repositioning under a pan and a zoom
- * whose glyph size stays fixed — the case for labels pinned to scene nodes. A
- * "pan" camera translates without zooming, which lets a DOM overlay move as one
- * element.
- *
- * Approaches: `hud` draws through `attachHud`'s layer; `dom` is plain DOM, each
- * label moved by its own `transform`; `react` is the same spans rendered by
- * React (`lib/hudDomReact.tsx`, bundled here with React's production build,
- * which is what a consumer ships), so it adds reconciliation; `dom-layer`, run
- * only under a pan, leaves the labels where they are and moves the overlay
- * with one `transform`. The HUD has no layer-level offset, so under a pan it
- * still moves each widget.
+ * A "moving" camera pans and zooms with glyph size fixed, so every label is
+ * repositioned. A "pan" camera translates without zooming, which lets the
+ * `dom-layer` approach move the whole overlay with one `transform`. The HUD has
+ * no layer-level offset, so under a pan it still moves each widget. `react`
+ * bundles React's production build, which is what a consumer ships.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -121,8 +102,6 @@ interface Sample extends Cell {
   freeIntervalMs: number;
   freeMissed: number;
 }
-
-// ─── trace analysis ──────────────────────────────────────────────────────
 
 interface TraceEvent {
   ph: string; name: string; cat?: string; pid: number; tid: number;
@@ -250,10 +229,6 @@ async function traced(page: Page, browser: Browser, frames: number) {
   return { stats, breakdown: analyze(buf, stats.frames) };
 }
 
-// ─── the page ────────────────────────────────────────────────────────────
-
-/** Installed into the page: builds a cell, drives its frame loop, and counts
- *  frames for the traced window. Runs in the browser. */
 async function install(
   { root, w, h, glyphsPerLabel, reactUrl }: { root: string; w: number; h: number; glyphsPerLabel: number; reactUrl: string },
 ): Promise<{ glRenderer: string; gpuTimer: boolean }> {
@@ -366,9 +341,7 @@ async function install(
           const p = home(i);
           return hud.text({ id: `l${i}`, x: p.x, y: p.y, text: label(i, 0), fontSize: 14, color: '#e8e8e8' });
         });
-        // `attachHud`'s own layer, drawn after the scene underneath, so the
-        // cell pays whatever the real layer does per repaint — its widget
-        // command cache included.
+        // `attachHud`'s own layer, so the cell pays what the real layer does per repaint.
         let layer: { draw(data: unknown, view: unknown, dims: unknown): unknown[] } | null = null;
         const detach = attachHud({
           element: null,
@@ -497,8 +470,6 @@ const PAGE = `<!doctype html>
 </script>
 <body><canvas id="scene"></canvas><div id="overlay"></div></body></html>`;
 
-// ─── the sweep ───────────────────────────────────────────────────────────
-
 const fmt = (x: number, w = 6, d = 2) => x.toFixed(d).padStart(w);
 const med = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b);
@@ -586,8 +557,6 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     );
     console.log(`onto: progress ${idx + 1}/${plan.length}`);
   }
-
-  // ─── report ────────────────────────────────────────────────────────────
 
   const of = (c: Cell) => samples.filter((s) => s.approach === c.approach && s.glyphs === c.glyphs
     && (c.approach === 'none' || (s.update === c.update && s.camera === c.camera)));

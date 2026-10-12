@@ -1,19 +1,16 @@
 /**
  * The kit's `image/svg+xml` content handler.
  *
- * Default: a dropped SVG stays **one scene node** — the standard
- * embedded-image contract (`data.image.src` as a `data:image/svg+xml;…`
- * URI, source bytes preserved verbatim). Rendering rides the normal
- * `imageCache` path: browsers rasterize SVG in an `<img>`, so only the
- * ingest-time measurement needs special handling — Chromium's
- * `createImageBitmap` rejects raw SVG blobs, so this handler measures via
- * an `Image` element instead, falling back to 300×150 (the CSS default
- * object size) when the file declares no intrinsic dimensions.
+ * Default: a dropped SVG stays **one scene node** — an embedded image
+ * (`data.image.src` as a `data:image/svg+xml;…` URI, source bytes preserved
+ * verbatim). Chromium's `createImageBitmap` rejects raw SVG blobs, so this
+ * handler measures via an `Image` element instead, falling back to 300×150
+ * (the CSS default object size) when the file declares no intrinsic
+ * dimensions.
  *
  * `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>` switches to
- * parsing the file into native scene nodes. The unpacker is injected (see
- * `SvgIngestOptions.unpack`) because the SVG parser lives in
- * `@weasel-js/svg`, which depends on this package.
+ * parsing the file into native scene nodes. The unpacker is injected because
+ * the SVG parser lives in `@weasel-js/svg`, which depends on this package.
  *
  * Registered at priority -90: ahead of `kit:image` (-100) so SVG files
  * never hit the raster measure path, still behind any consumer handler
@@ -44,8 +41,7 @@ export function isSvgFileItem(item: IngestItem): boolean {
 /**
  * Strict-prefix sniff: could this text be an SVG document? `<svg` (or an XML
  * declaration, then optional whitespace/comments/DOCTYPE, then `<svg`) must
- * open the document — no mid-document substring scans, same discipline as
- * `sniffWeaselClipboardText`. Exists because Safari drops both custom MIMEs
+ * open the document — no mid-document substring scans. Exists because Safari drops both custom MIMEs
  * and `image/svg+xml` from async clipboard writes, leaving `text/plain` as
  * the only surviving flavor of an SVG copy.
  */
@@ -64,10 +60,8 @@ export function sniffSvgText(text: string): boolean {
       t = t.slice(end + 3);
       continue;
     }
-    // Illustrator-style preamble: <!DOCTYPE svg PUBLIC "..." "...">. Skipping
-    // ANY doctype is safe — a non-SVG doctype's root element fails the final
-    // `<svg` check anyway. (No internal-subset handling; clipboard SVG
-    // preambles don't carry `[...]` blocks.)
+    // Skipping ANY doctype is safe — a non-SVG doctype's root element fails
+    // the final `<svg` check anyway. No internal-subset (`[...]`) handling.
     if (/^<!doctype/i.test(t)) {
       const end = t.indexOf('>');
       if (end < 0) return false;
@@ -107,11 +101,8 @@ export const kitSvgHandler: ContentHandlerEntry = {
   priority: -90,
   handle(items, ctx: IngestCtx) {
     const files = items.flatMap((it) => (it.kind === 'file' ? [it.file] : []));
-    // String items (the text/plain SVG fallback flavor) enter the same file
-    // path — wrap the markup in a File so unpack/embed stays one code path.
-    // BUT skip them when the weasel-JSON handler already pasted this event's
-    // copy: draw writes weasel-JSON + SVG together, so ingesting both would
-    // double-paste. (ctx is shared per event; the weasel handler runs first.)
+    // String items are skipped when the weasel-JSON handler already pasted
+    // this event's copy: ingesting both flavors would double-paste.
     // WARNING: this read must stay before any `await` in this handle — the
     // sync-ordering of handler microtasks is what makes the flag visible.
     if (!ctx.consumedWeaselPayload) {

@@ -2,19 +2,14 @@
  * `resolveDerivedPath` — the path a node computes from its dependencies.
  *
  * It sits beside `derivedPose` rather than in `canvas/` because a *pose* can
- * now derive from a dependency's path: an edge label is positioned along the
- * route it labels, and `effectivePose` is what resolves it. The render walk's
- * wrapper stays in `canvas/derivedPath.ts`.
+ * derive from a dependency's path.
  *
  * Invalidation is both pushed and pulled. The scene pushes — dropping the
  * dependent's memo slot on the edits it performs — and on a memo hit this
  * module re-resolves the dependencies and compares their poses *by value*
- * against the ones the cached path was drawn from. The pull is what covers a
- * dependency that moved with no scene edit behind it: a lookup answering poses
- * of its own (`sceneDepLookup(scene, toPose)`), an ancestor's frame moving, a
- * dependency appearing or going away. Value, not reference: a pose override
- * mutates its buffer in place, so the reference never moves. `depMemo.ts`
- * says what else of a dependency the pull covers.
+ * against the ones the cached path was drawn from. Value, not reference: a
+ * pose override mutates its buffer in place, so the reference never moves.
+ * `depMemo.ts` says what else of a dependency the pull covers.
  */
 import type { Path } from '@weasel-js/geom';
 import { dependencyIdsOf } from './dependents';
@@ -40,10 +35,9 @@ interface PathMemo<TPose> extends DepRecord<TPose> {
   path: Path | null;
 }
 
-/** Ids whose path is on the stack. A dependency graph is meant to be acyclic
- *  and `dependsOn` is unvalidated; now that a path can read another path, a
- *  cycle has to resolve to `null` at whichever node closes it rather than
- *  overflowing the stack. */
+/** Ids whose path is on the stack. `dependsOn` is unvalidated, so a cycle
+ *  resolves to `null` at whichever node closes it rather than overflowing
+ *  the stack. */
 const resolving = new Set<NodeId>();
 
 /** Bumped each time the guard above fires, so a value computed from a

@@ -1,18 +1,11 @@
 /**
- * Character controls for a text edit in progress — the caret-range half of
- * text properties, opposite a panel's node-level ones.
- *
- * The controls are not assembled here: `useTextTool.options` declares them and
- * `<ToolOptionsBar schema>` draws them, the same way the selection panel draws
- * node properties. This file is the adapter between that schema and a range —
- * a `RangeStyle` in, a `RunStylePatch` out — and has no idea whether the caller
- * applies the patch to the runs under a selection or arms it for the next
- * character typed at a collapsed caret. That routing is `useTextEdit`'s:
- * `style` takes its `effectiveStyle`, `onPatch` its `applyStyleToSelection`.
+ * Character controls for a text edit in progress: the adapter between the
+ * `useTextTool.options` schema and a range — a `RangeStyle` in, a
+ * `RunStylePatch` out. Whether the patch lands on the runs under a selection
+ * or is armed for the next character typed at a collapsed caret is the caller's.
  *
  * `MIXED` becomes a path in the bar's `mixed` set, so each control shows its
- * own indeterminate presentation: a `Mixed` placeholder over an empty field,
- * a checkered color chip, `aria-pressed="mixed"` on a flag.
+ * own indeterminate presentation.
  */
 import {
   MIXED, numericWeight, resolveScreenLength, SCRIPT_METRICS, scriptMetricsFor, useTextTool,
@@ -83,14 +76,11 @@ function characterPatch(path: string, value: unknown): RunStylePatch {
 /**
  * A range's styling as the bar's value map.
  *
- * Two keys are not read straight off the range. Sizes are `ScreenLength`, and
- * the strip edits world units, so a `{ px }` size shows its pixel count and
- * commits back as a plain number — editing one converts it. And `script` is a
- * preset over `baselineShift` / `fontScale`, so a range that names it and not
- * them still *has* a shift and a scale: the preset's. Showing those fields
- * blank would hide the relationship and read as "unset"; this is what
- * `resolveRuns` does too, and typing over one half overrides just that half
- * exactly as it does there.
+ * Sizes are `ScreenLength`, and the strip edits world units, so a `{ px }`
+ * size shows its pixel count and commits back as a plain number — editing one
+ * converts it. `script` is a preset over `baselineShift` / `fontScale`, so a
+ * range that names it and not them shows the preset's shift and scale, as
+ * `resolveRuns` does.
  */
 function characterValues(style: RangeStyle): Record<string, unknown> {
   const script = style.script;
@@ -125,10 +115,9 @@ function characterMixed(style: RangeStyle): Set<string> {
     if (style[key as keyof RangeStyle] === MIXED) out.add(key);
   }
   // A gradient or pattern fill gets the same indeterminate treatment as a
-  // genuinely mixed range, rather than a swatch claiming the text is some
-  // solid color. The tag is checked as well as the key: a
-  // `{ fill: 'pattern', pattern, color }` hybrid can't be produced any more,
-  // but one can still arrive in an old document.
+  // mixed range, rather than a swatch claiming the text is some solid color.
+  // The tag is checked as well as the key: a
+  // `{ fill: 'pattern', pattern, color }` hybrid can arrive in an old document.
   const fill = style.fill;
   if (fill != null && fill !== MIXED && solidFill(fill) === undefined) out.add('fill');
   return out;

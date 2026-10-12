@@ -9,7 +9,6 @@ import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { derivesPath } from './memo';
 import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';
 
-// ─── Built-in painters ─────────────────────────────────────────────────
 /**
  * Built-in painter for nodes whose geometry is computed from other nodes'
  * poses. The path itself arrives on the paint context — see

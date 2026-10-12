@@ -2,9 +2,6 @@
  * Pure action core for path boolean operations. Resolves the current
  * selection into z-ordered paths, runs the chosen op, and dispatches a
  * single batch of `Op`s (delete sources + insert results + set selection).
- *
- * The hook (`useBooleans`) wraps this with React glue; testing here is
- * trivial because the function takes a plain adapter.
  */
 import type { Mat3, Path } from '@weasel-js/geom';
 import { createInsertOp } from 'core/ops/create';
@@ -78,8 +75,7 @@ export interface BooleansAdapter {
    * their `invert` (an insert) can restore the complete object on undo.
    * If omitted, a `{ id }` stub is captured — undo will reinstate the id
    * but consumers reading other fields (path, fill, etc.) will see them as
-   * undefined. Mirrors `DeleteAdapter.getNode`; should be provided whenever
-   * undo over boolean ops is expected to be lossless.
+   * undefined.
    */
   getNode?(id: NodeId): { id: string } | undefined | null;
   /**
@@ -150,10 +146,8 @@ function planBooleanOp(
   op: BooleanOp,
   opts: BooleanOpOptions,
 ): { entries: Entry[]; pieces: ResultPiece[] } | Exclude<BooleanOpResult, { kind: 'applied' }> {
-  // Resolve path nodes only, sorted ascending by `compareZ` so paths[0] is
-  // the bottommost (back) member. `subtract` relies on this: it computes
-  // `back − union(rest)`, which is Illustrator's "Minus Front." Keep this
-  // convention in sync if compareZ semantics ever flip.
+  // Sorted ascending by `compareZ` so the first entry is the bottommost
+  // (back) member. `subtract` relies on this: it computes `back − union(rest)`.
   let resolved: { id: NodeId; operand: BooleanOperand | undefined }[];
   try {
     resolved = sel.map((id) => ({ id, operand: resolveOperand(adapter, id, opts) }));

@@ -1,20 +1,13 @@
 /**
- * GL texture upload cache for ImageBitmap objects.
+ * GL texture upload cache for ImageBitmap objects, keyed by source identity
+ * (WeakMap) so GC can reclaim unreferenced bitmaps. A collected source's
+ * texture is queued and deleted at the renderer's next frame; GC timing is
+ * not prompt, so a source's owner that knows it will never be drawn again
+ * frees it at once with {@link releaseImageSource}, and `dispose` frees them
+ * all.
  *
- * Key: ImageBitmap (or pattern source object) identity (WeakMap) — lets GC
- * reclaim unreferenced bitmaps. A collected source's texture is queued and
- * deleted at the renderer's next frame, the way `GLMeshCache` frees a mesh's
- * buffers; GC timing is not prompt, so a source's owner that knows it will
- * never be drawn again frees it at once with {@link releaseImageSource}, and
- * `dispose` frees them all.
- *
- * Wrapping is set once at upload time per the `repetition` parameter:
- *   - undefined / 'no-repeat' → CLAMP_TO_EDGE
- *   - 'repeat'   → REPEAT (both axes)
- *   - 'repeat-x' → REPEAT on S, CLAMP on T
- *   - 'repeat-y' → CLAMP on S, REPEAT on T
- *
- * Texels are stored premultiplied, whatever the source: see `uploadPremultiplied`.
+ * Wrapping is set once at upload time. Texels are stored premultiplied,
+ * whatever the source: see `uploadPremultiplied`.
  */
 
 import { uploadPremultiplied, type ImageTexSource } from './uploadPremultiplied';
@@ -67,19 +60,10 @@ export class GLImageCache {
   private readonly textures = new Set<WebGLTexture>();
   /**
    * MAG_FILTER each texture currently carries, so a redundant write can be
-   * skipped.
-   *
-   * The batch sets this per flush — the same bitmap can be drawn at both
-   * filters in one frame, and the value has to be right at the draw rather than
-   * at upload. Filtering is state on the *texture object*, though, not on the
-   * unit, so re-asserting a value it already has is a write to a live texture
-   * for no reason. On a large sheet that is not free: a consumer's wall samples
-   * a 5652px-square atlas, 122MB resident, and measured `sampling: 'nearest'`
-   * costing up to 8x `'linear'` there — where the linear pass re-asserts the
-   * upload default and the nearest pass changes state on every draw.
-   *
-   * Whether that is the cause is unproven (see `docs/TODO.md`), but the write
-   * was redundant either way.
+   * skipped. The batch sets this per flush — the same bitmap can be drawn at
+   * both filters in one frame — but filtering is state on the *texture
+   * object*, not on the unit, so re-asserting a value it already has is a
+   * write to a live texture for no reason.
    */
   private readonly magFilters = new WeakMap<object, number>();
   private readonly finalizer: FinalizationRegistry<WebGLTexture>;
@@ -90,12 +74,10 @@ export class GLImageCache {
   private readonly lastDrawn = new WeakMap<object, number>();
 
   /** `minification` selects the MIN_FILTER strategy for uploaded textures.
-   *  `'linear'` (default) is the screen path's existing behavior. `'mipmap'`
-   *  generates mipmaps and filters LINEAR_MIPMAP_LINEAR — required for
-   *  quality minification when a large source bitmap is drawn small (the
-   *  headless print/export path); bilinear-only minification undersamples
-   *  and produces moiré. `'auto'` pays for that only on the textures a
-   *  frame draws small, when it first does. */
+   *  `'mipmap'` generates mipmaps and filters LINEAR_MIPMAP_LINEAR: when a
+   *  large source bitmap is drawn small, bilinear-only minification
+   *  undersamples and produces moiré. `'auto'` pays for that only on the
+   *  textures a frame draws small, when it first does. */
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly minification: ImageMinification = 'linear',

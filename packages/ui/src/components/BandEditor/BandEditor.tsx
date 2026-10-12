@@ -98,15 +98,13 @@ function keepData<T>(_at: number, from: T): T {
 /**
  * Divides a numeric axis into contiguous bands and lets you drag the seams
  * between them. Each band carries a payload the consumer supplies and
- * renders through `renderBand`; the control itself knows nothing about what
- * a band means.
+ * renders through `renderBand`.
  *
  * The range is always fully covered — N bands, N−1 interior seams, no gaps and
- * no overlaps — so editing is editing a sorted list of seam positions. Seams
- * clamp at their neighbours rather than crossing, which means a drag can
- * never destroy a band: removal is only ever the explicit `x` / `Delete`
- * merge. The first band is doubly exceptional, its left edge pinned to `min`
- * and its body immovable, and it has no left neighbour to merge into.
+ * no overlaps. Seams clamp at their neighbors rather than crossing, so a drag
+ * can never destroy a band: removal is only ever the explicit `x` / `Delete`
+ * merge. The first band has its left edge pinned to `min` and its body
+ * immovable, and it has no left neighbor to merge into.
  *
  * | Gesture | Effect |
  * |---|---|
@@ -116,12 +114,9 @@ function keepData<T>(_at: number, from: T): T {
  * | drag a band body | move both its seams, preserving its span |
  * | click the ruler | split the band under the pointer |
  * | `s` | split the selected band at the middle of its drawn span |
- * | `x` / `Delete` | merge the selected band into its left neighbour |
+ * | `x` / `Delete` | merge the selected band into its left neighbor |
  * | click a band | select it |
  * | `←` `→` on a focused seam | move it by one step; `shift` for ten |
- *
- * `scale` defaults to `'log'`, because the interesting part of a width axis
- * is usually its narrow end.
  */
 export function BandEditor<T, F extends Quantity = number>(props: BandEditorProps<T, F>): ReactElement {
   const {

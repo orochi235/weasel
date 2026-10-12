@@ -1048,6 +1048,10 @@ only story runner in the repo.
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
   need per-word `x` placement too, since `text-anchor` has no justify.
 
+- **(P3) `SerializeOptions.pretty` does nothing.** `packages/svg/src/types.ts` declares it and
+  nothing in `packages/svg/src` reads it, so the serializer's output is the same either way.
+  Implement it or remove the option.
+
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
   selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the
@@ -1406,3 +1410,9 @@ only story runner in the repo.
 
 - **(P3) `SceneCanvasInner` is one 1,340-line function.** It is most of the 1,541-line
   `canvas/SceneCanvas.tsx`, and wants breaking into hooks by concern rather than moving.
+
+- **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
+  together" and `<Canvas>` examples in concepts, and "Custom layers" in extending, pass `adapter` and
+  `selectionMode` to `<SceneCanvas>` and draw with a 2D `ctx.fillStyle`. The "Adapter" and "Gesture"
+  sections of concepts still describe per-action hooks, which `docs/taxonomy.md` contradicts. Each
+  needs rewriting against the current API, not trimming.

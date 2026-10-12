@@ -1,18 +1,10 @@
 /**
  * Map between SVG `<pattern>` elements and weasel's `pattern` `FillStyle`.
- * The counterpart to `gradients.ts` for the other paint-server kind.
  *
- * The tile's shapes come from `tileGeometry` in core, so the vector form a
- * viewer sees is generated from the same description that rasterizes the GL
- * texture. Alongside them we write the spec itself onto a `data-weasel-tile`
- * attribute: any SVG consumer renders the shapes, and weasel reads the
- * attribute back to recover the exact spec rather than reverse-engineering
- * it from geometry.
- *
- * A pattern whose payload is a `TextureHandle` has no vector form — the
- * handle is a session-scoped registry key with no tile description behind
- * it — and exports as nothing, with a warning. Same treatment conic
- * gradients get.
+ * The tile's shapes are written for any SVG consumer to render, and the spec
+ * itself goes on a `data-weasel-tile` attribute, which weasel reads back
+ * rather than reverse-engineering it from geometry. A pattern whose payload
+ * is a `TextureHandle` has no vector form and exports as nothing, with a warning.
  */
 
 import { escapeAttr } from './xmlEscape';
@@ -60,10 +52,8 @@ export function patternXml(id: string, paint: PatternFill, onWarn?: (m: string) 
 }
 
 /**
- * A single tile as a standalone `<svg>` document, sized to its own extent.
- * For UI that needs to show a tile outside a document — a picker swatch,
- * set as a repeating CSS `background-image` via a data URI. Shares the shape
- * mapper with `patternXml`, so a preview can't drift from what paints.
+ * A single tile as a standalone `<svg>` document, sized to its own extent,
+ * for UI that shows a tile outside a document, such as a picker swatch.
  */
 export function tilePreviewSvg(spec: TilePatternSpec, background?: string): string {
   const geometry = tileGeometry(spec);
@@ -123,9 +113,7 @@ function readPattern(el: Element, onWarn?: (m: string) => void): FillStyle | nul
   const raw = el.getAttribute('data-weasel-tile');
   if (!raw) {
     // A hand-authored pattern (Illustrator, Inkscape) holds arbitrary
-    // geometry no `TilePatternSpec` can express. Recognizing it would mean
-    // reverse-engineering a tile from its children; dropping it with a
-    // warning is honest, and the element survives in the source file.
+    // geometry no `TilePatternSpec` can express.
     onWarn?.(`<pattern id="${el.getAttribute('id')}"> has no data-weasel-tile — unsupported pattern, dropped`);
     return null;
   }

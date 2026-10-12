@@ -1,13 +1,10 @@
 /**
- * What merges into one image draw, and what breaks the run.
+ * What merges into one image draw, and what breaks the run. A missing flush
+ * never throws — it paints in the wrong order, or paints under state that
+ * moved.
  *
- * Painter's order is the whole contract, and a missing flush never throws — it
- * paints in the wrong order, or paints under state that moved. So most of this
- * file is about the breaks rather than the merge: the merge is one test, and
- * every other one is a way of getting it wrong silently.
- *
- * The counterpart to `drawBatch.test.ts`, and deliberately a separate file:
- * that one's buffer-replay helpers assume nothing else writes
+ * Deliberately a separate file from `drawBatch.test.ts`: that one's
+ * buffer-replay helpers assume nothing else writes
  * `bufferSubData(ARRAY_BUFFER)` in the frames it renders.
  */
 
@@ -165,9 +162,9 @@ describe('renderer — consecutive image batching', () => {
 
   it('folds group alpha into the same attribute and leaves u_alpha at 1', () => {
     // The vertex-colored fill forces the flush to happen *inside* the group,
-    // while alpha is still 0.5. Flushing after it pops would read 1 off the live state and
-    // hide a second application of it — the subtlest bug this design has. A
-    // solid rect will not do it any more: it joins the run.
+    // while alpha is still 0.5. Flushing after it pops would read 1 off the
+    // live state and hide a second application of it. A solid rect will not
+    // do it: it joins the run.
     r.render([{
       kind: 'group', alpha: 0.5,
       children: [img(0), img(20), breakerRect(40)],

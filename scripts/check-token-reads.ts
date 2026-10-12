@@ -2,8 +2,7 @@
  * Every `var(--wzl-*)` in live source names a property something declares: a
  * theme token, or a custom property the same package sets itself. A read of a
  * name nothing declares resolves to nothing and silently drops the declaration
- * it sits in — how the May token vocabulary (`--wzl-text`, `--wzl-panel-bg`)
- * outlived its themes.
+ * it sits in.
  *
  * The exception is an override hook: a property a component reads, with a
  * fallback, purely so a consumer can set it on a container. Those are declared
@@ -20,9 +19,7 @@ import { pathToFileURL } from 'node:url';
 import { TOKEN_HOOKS } from '../packages/theme/src/hooks';
 import { stanceSlotNames } from '../packages/theme/src/panel';
 
-/** Override hooks: read with a fallback, declared by no theme on purpose. The
- *  list is the theme package's, so the checker and the token manifest cannot
- *  disagree about which names are hooks. */
+/** Override hooks: read with a fallback, declared by no theme on purpose. */
 export const HOOKS = new Set(TOKEN_HOOKS.map((h) => `--wzl-${h.name}`));
 
 /** Per-stance slots: read with a fallback, declared by a theme only where a stance differs. */
@@ -84,9 +81,7 @@ export function findUndeclaredReads(
   return out;
 }
 
-/** A theme token is declared by every theme, so a fallback on it never fires — and a
- *  literal one records a stale guess at the value (an old accent, a retired surface)
- *  that reads as though it mattered. Stance slots and hooks are exempt: a theme may
+/** A theme token is declared by every theme, so a fallback on it never fires. Stance slots and hooks are exempt: a theme may
  *  leave those undeclared. Stylesheets only — an icon's SVG markup in TS can render
  *  as an image, outside any document that declares tokens. Core is exempt too: it
  *  draws on a page that may load no theme, where the fallback is all there is. */

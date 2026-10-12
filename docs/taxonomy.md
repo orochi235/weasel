@@ -1,8 +1,6 @@
 # Weasel Taxonomy
 
 A single source of truth for the kit's terminology, organized by concept-family.
-Covers consumer-side abstractions, dev-side abstractions, domain types, the gesture
-model, and concepts deferred or not yet in the kit.
 
 This doc is **meta-structure**: what the abstractions *are* and how they relate.
 Per-symbol details (function signatures, options, examples) live in JSDoc and the
@@ -92,9 +90,6 @@ flowchart TB
   Nd -. lives in .-> Scn
   Ad -. abstracts .-> Scn
 ```
-
-The diagram is the at-a-glance answer to "where does X live?" Detailed prose
-follows below in the per-concept sections.
 
 ---
 
@@ -208,8 +203,8 @@ where route-conflict reporting sees both entry bindings and action
 `defaultBinding`s, which is what lets a collision between them be reported at
 all. See `packages/routing/src/contributions/useContributions.ts`.
 
-`useTools({ active, registry, ambient })` remains as a shim over it, unchanged
-in shape: `registry` entries get `focus`, `ambient` entries get `always`, a
+`useTools({ active, registry, ambient })` is a shim over it:
+`registry` entries get `focus`, `ambient` entries get `always`, a
 `hotkey` declaration becomes `offhand`. Note it returns shallow copies for those
 last two categories, since it adds the declaration. See
 `packages/routing/src/tools/useTools.ts`.
@@ -229,7 +224,7 @@ canonical z-order: `grid`, `cellHighlight`, `scene`, `selectionOverlay`. Custom
 slots declare an `after` or `before` anchor relative to a standard slot; unanchored
 custom slots land at the top of the stack. Slot configs are distinct from raw
 `RenderLayer` values — the canvas constructs a `RenderLayer` from each slot config
-internally. See `packages/core/src/canvas/Canvas.tsx:70`.
+internally. See `packages/core/src/canvas/Canvas.tsx`.
 
 ### Adapter
 
@@ -259,9 +254,8 @@ user-intent operations; the action↔op mapping is many-to-many:
 - **1 action → N ops**: `align left` → N `createTransformOp`s (one per selected item).
 - **0 ops for an action**: `zoom in`, `escape`, `toggle grid` — non-undoable state
   changes bypass the op pipeline.
-- **Ops without an action**: a gesture commit can emit ops directly (e.g. a drag
-  resize) without dispatching through the action registry. (The longer-term shape
-  routes all drag-based mutation through actions; this is acknowledged drift.)
+- **Ops without an action**: a gesture commit can emit ops directly
+  without dispatching through the action registry.
 
 The `coalesceKey` field lets `createHistory({ coalesceWindowMs })` merge consecutive
 entries within a window when their op multiset (keyed by `coalesceKey`) matches —
@@ -328,19 +322,14 @@ invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
 and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
 under `packages/core/src/interactions/actions/`. All default actions are registered as descriptors
-with `defaultBinding` and dispatched through the action registry, and the drag-based
-descriptors (`resize`, `rotate`, `areaSelect`, `insert`, `clone`, `editAnchors`) now
-carry real invokers — the `useResize` / `useRotate` / `useMove` / `useAreaSelect` /
-`useInsert` / `useClone` / `useEditAnchors` gesture hooks they used to delegate to
-have been deleted. The split is closed: the phase-table route grammar and the
-second dispatcher that read it are gone, so a tool's entire input surface is
-`Tool.bindings` and every gesture resolves through one engine.
+and dispatched through the action registry. A tool's entire input surface is
+`Tool.bindings`, and every gesture resolves through one engine.
 
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
 register via `<SceneCanvas>`, each under the `features` preset that names it
 (`FEATURE_ACTION_IDS`), or with a tool that binds it; consumer-level actions
-register explicitly. See `packages/core/src/interactions/actions/registry.tsx`.
+register explicitly. See `packages/routing/src/interactions/actions/registry.ts`.
 
 An action may declare an optional `cursor` — the hover hint shown while the
 pointer rests where a drag would route to that action. The hover-cursor pump
@@ -444,12 +433,12 @@ with optional `onStart`, `onMove`, `onEnd`, `onCancel`, and `onSettled` hooks.
 Behaviors run in array order; each `onMove` may refine the proposed pose; the first
 `onEnd` returning a non-`undefined` value wins (ops to commit, or `null` to abort);
 `onSettled` runs once the commit has landed or the cancel has run. Type aliases pin
-the shapes per action: `MoveBehavior`, `ResizeBehavior`, `RotateBehavior`,
-`InsertBehavior`, `AreaSelectBehavior`, `CloneBehavior`.
+the shapes per action: `MoveBehavior`, `BoundsConstraint` (resize), `RotateBehavior`,
+`InsertBehavior`, `LassoSelectBehavior`, `CloneBehavior`.
 
 Distinct from [component-level behaviors](#mixin--lifecycle-behavior-deferred)
 which do not exist yet. See `packages/core/src/interactions/gestures/types.ts` for the
-`ActionBehavior` interface (renamed from `GestureBehavior` in 2026-05).
+`ActionBehavior` interface.
 
 ### Snap strategy
 
@@ -513,7 +502,7 @@ affordance-facing read-only view) is built from the `SelectionApi` via
 `usePublishSelection`) that non-canvas UI (palette, status bar) can read without
 prop-drilling. Provides the current selection ids and optional per-id `kinds`
 labels. The `kinds` parallel array is a temporary half-step toward typed scene
-references (see `docs/TODO.md` Tier 1.5). See
+references. See
 `packages/routing/src/ambient/SelectionContext.tsx`.
 
 ---
@@ -525,10 +514,9 @@ The vocabulary kit authors use when extending or organizing the kit.
 ### Feature
 
 A directory under `packages/core/src/features/<name>/` that bundles related primitives sharing a
-domain. Examples: `focus`, `selection`, `grid`, `groups`, `text`, `paths`,
-`viewport`, `drag`, `patterns`. Not a runtime concept — an organizing principle
-for the repo. The mental model (from `docs/TODO.md`): the fix for "the kit is
-turning into a katamari." Distinct from a [Contribution](#contribution) (which
+domain. Examples: `selection`, `text`, `paths`, `ingestion`, `modes`,
+`viewports`. Not a runtime concept — an organizing principle
+for the repo. Distinct from a [Contribution](#contribution) (which
 bundles parts with consumer-facing composition rules) in that features are internal
 to the kit — though a feature often exports one.
 
@@ -541,9 +529,9 @@ list is drawn from the other.
 **Bundle-shaped vs protocol-shaped features.** Features fall on a spectrum:
 
 - **Bundle-shaped** features are self-contained. Their primitives compose locally;
-  the rest of the kit doesn't need to know they exist. Focus, grid, patterns, text
-  are mostly bundle-shaped — if you don't import them, nothing breaks; if you do,
-  you wire them at one or two call sites.
+  the rest of the kit doesn't need to know they exist. Text
+  is mostly bundle-shaped — if you don't import it, nothing breaks; if you do,
+  you wire it at one or two call sites.
 
 - **Protocol-shaped** features introduce a *concept* that other code must honor.
   Selection is the canonical case: "current selection" is read by overlay layers,
@@ -563,13 +551,13 @@ kit's internal partial order.
 
 **Feature-authoring guide.** When adding or restructuring a feature:
 
-1. **Each feature is a directory under `packages/core/src/features/<name>/`.** The directory bundles related primitives that share a domain.
+1. **Each feature is a directory under `packages/core/src/features/<name>/`.**
 
 2. **Each feature has an `index.ts` barrel.** The barrel re-exports the feature's public primitives — every hook, layer factory, exported type, or helper a consumer or another feature might import. Internal helpers stay un-exported (or are exported only through deeper paths if needed for internal cross-feature wiring).
 
 3. **The kit's main barrel (`packages/core/src/index.ts`) imports from feature barrels, not from feature-internal paths.** This is the load-bearing discipline — once enforced, internal restructures (renaming a file, splitting a primitive into two) don't ripple through the main barrel.
 
-4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias and no `useFooFeature()` hook. (`<SceneCanvas features>` is unrelated: it names behavior presets, not these directories.)
+4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias and no `useFooFeature()` hook.
 
 5. **Protocol-shaped features document their protocol surface explicitly.** Selection's `SelectionApi`, `AreaSelectAdapter`, and the `getSelection`/`setSelection` methods threaded into Move/Resize/Rotate adapters are the model. When a feature introduces a cross-cutting concept other code must honor, name the contracts in TypeScript interfaces and reference them in the feature's docs.
 
@@ -586,8 +574,8 @@ directly; features are directories.
 A thinking tool for sorting a feature's primitives — not a code shape. Three roles:
 
 - **`api`** — typed surface for cross-feature consumption: live state, refs,
-  getters/setters. Cross-feature deps are typed function arguments
-  (`useBlurOnEscape(focus.api)`), not a runtime registry.
+  getters/setters. Cross-feature deps are typed function arguments,
+  not a runtime registry.
 - **`attrs`** — native DOM attributes and handlers to spread onto the canvas
   host element: `tabIndex`, `onFocus`, `onPointerMove`, `aria-*`. Distinct from
   React props the `<SceneCanvas>` component itself defines.
@@ -625,26 +613,19 @@ they fit.
   built *on* that protocol: the overlay render layers, and the ambient
   `SelectionContext`. The feature barrel covers those two and says so; moving
   the protocol up to join them would invert the layering.
-- **Mid-layer** (depend on foundation): `groups` (scene + selection), `grid`
-  (viewport), `focus` (nothing internal), `paths`, `patterns`, `text`.
+- **Mid-layer** (depend on foundation): `paths`, `text`.
 - **Gestures** (depend on foundation + adapter contracts): `useDragRect`,
-  `useDragRadial`, `useDragGesture` — the spatial input primitives. The
-  per-action gesture hooks (`useMove`, `useResize`, `useRotate`, `useAreaSelect`,
-  `useInsert`, `useClone`, `useEditAnchors`) are gone; their behavior lives in
-  the action descriptors under `interactions/actions/`.
+  `useDragRadial`, `useDragGesture` — the spatial input primitives.
 - **Actions** (depend on selection + scene): the
   [Actions Registry](#action) and its descriptors — `duplicate`, `delete`,
-  `nudge.*`, `reorder.*`, `selectAll`, `escape`, and the rest. The per-action
-  hooks that used to wrap these (`useDuplicate`, `useDelete`, …) are gone;
-  `useStandardActions` registers the descriptors instead.
+  `nudge.*`, `reorder.*`, `selectAll`, `escape`, and the rest.
+  `useStandardActions` registers the descriptors.
 - **Tools** (depend on gestures + actions): `useSelectTool`, `useRectTool` and
   the other shape tools, `useHandTool`, `usePenTool`, the viewport tools.
 - **Top-level** (depends on most things): `<Canvas>`, `<SceneCanvas>`.
 
-This order is not enforced at runtime; TypeScript module imports are the actual
-dependency graph. The layering above is descriptive of what existing imports
-already look like — useful for placement when adding a new feature, not a thing
-the build validates.
+This order is descriptive, not enforced; TypeScript module imports are the actual
+dependency graph.
 
 **Cycle-breaking conventions.** Some features have bidirectional needs. Selection
 ↔ scene is the canonical case:
@@ -660,9 +641,7 @@ events but does not import selection. The runtime relationship is bidirectional,
 but compile-time imports stay acyclic.
 
 **Convention:** when two features have bidirectional needs, one side owns state
-and exposes a `subscribe` (or callback) API; the other side subscribes. The
-"subscribed to" side stays oblivious of the subscriber. The static import graph
-remains a DAG.
+and exposes a `subscribe` (or callback) API; the other side subscribes.
 
 ---
 
@@ -680,19 +659,19 @@ Shape is generic (`TPose`). Common shapes: rect (`{x, y, width, height}`),
 the default absolute-pose model a parent imposes no transform, so local and
 world coincide; give the scene a `composition` and a container's pose becomes a
 frame its children are expressed in, which `getWorldPose` folds.
-See `packages/core/src/interactions/gestures/types.ts:108` (`ResizePose`, `RotatedPose`) and
+See `packages/core/src/core/geometry/poseDescriptor.ts` (`RotatedPose`) and
 `packages/geom/src/path.ts` (`Path`).
 
 ### PoseDescriptor
 
 `PoseDescriptor<TPose>` — a small projection that bridges an arbitrary `TPose` into
-the kit's rect-driven machinery. Required methods: `getBounds(pose) → ResizePose`
+the kit's rect-driven machinery. Required methods: `getBounds(pose) → Bounds`
 (AABB), `remapBounds(pose, src, dst) → TPose` (affine remap on resize or group
-scale). Optional: `translate`, `lerp`, `getRotation`. Used by
+scale), `fromBounds(bounds, template) → TPose`. Optional: `translate`, `lerp`, `getRotation`. Used by
 `resizeAction`, area-select, snap, and animation helpers. Built-ins:
-`RECT_POSE_DESCRIPTOR` (identity for `ResizePose`), `ROTATED_POSE_DESCRIPTOR`,
+`RECT_POSE_DESCRIPTOR` (identity for rect poses), `ROTATED_POSE_DESCRIPTOR`,
 `pathPoseDescriptor`. Distinct from [OriginProjection](#snap-strategy) which handles
-snap-point extraction for non-rect poses. See `packages/core/src/interactions/actions/resize/geometry.ts:15`.
+snap-point extraction for non-rect poses. See `packages/core/src/core/geometry/poseDescriptor.ts`.
 
 ### Scene
 
@@ -702,7 +681,7 @@ undo/redo. Created by `useScene`; passed to `<SceneCanvas>`. Exposes `add`,
 `subscribe` seam for React integration. Mutations are auto-undoable; the
 `recordOp` seam extends the history with consumer-defined ops. Distinct from a
 flat-array adapter wired through `useArrayAdapter` — the Scene is the higher-level
-path with first-class containers and layers built in. See `packages/core/src/core/scene/types.ts:83`.
+path with first-class containers and layers built in. See `packages/core/src/core/scene/types.ts`.
 
 ### Node
 
@@ -710,12 +689,11 @@ path with first-class containers and layers built in. See `packages/core/src/cor
 (`kind: 'leaf'`) or a `ContainerNode` (`kind: 'container'`, with `children: NodeId[]`).
 Every node carries `id`, `layer`, `pose`, `data`, and `parent`. The opaque `data`
 field holds the consumer's domain payload; the kit never inspects it. See
-`packages/core/src/core/scene/types.ts:17`.
+`packages/core/src/core/scene/types.ts`.
 
 ### Group vs Selection — not the same axis
 
-These are distinct concepts that the word "group" historically conflated; keep
-them separate.
+These are distinct concepts; keep them separate.
 
 - **Group** = a structural `ContainerNode` (`kind: 'container'`, `children`). The
   real "group" (Cmd+G): the `group`/`ungroup` actions create/dissolve a container
@@ -729,9 +707,7 @@ them separate.
 
 There is no persistent membership-list concept. A consumer that wants named,
 saved selections holds its own `Record<string, string[]>` and calls
-`selection.set(ids)`. (The former `Group`/`GroupAdapter`/`expandToLeaves`
-membership apparatus was removed in 2026-06 — it was a saved-selection wearing
-the name "group.")
+`selection.set(ids)`.
 
 ### View / ViewTransform
 
@@ -744,11 +720,11 @@ translation; `viewToTransform(view)` bridges between them. See
 
 ### Bounds / ResizeAnchor
 
-`ResizePose` (also called "bounds" in hit-test and overlay contexts) is
+`Bounds` is
 `{ x, y, width, height }` — the minimum rect shape the resize machinery requires.
 `ResizeAnchor` describes which corner/edge stays fixed during a resize:
 `{ x: 'min' | 'max' | 'free', y: 'min' | 'max' | 'free' }`. The pair is the
-spatial vocabulary of resize math. See `packages/core/src/interactions/gestures/types.ts:102`.
+spatial vocabulary of resize math. See `packages/routing/src/vocabulary.ts`.
 
 ### Path
 
@@ -768,13 +744,11 @@ Vocabulary for pointer-driven interactions.
 ### Gesture (spatial input primitives)
 
 A pointer-driven interaction with a `start` / `move` / `end` / `cancel` lifecycle.
-The surviving primitives are `useDragRect` (drag → bounds), `useDragRadial`
+The primitives are `useDragRect` (drag → bounds), `useDragRadial`
 (drag → center + radius), and `useDragGesture`. They are *input* primitives: a
 tool decides what to do with the geometry they emit.
 
-The per-action gesture hooks that used to live here (`useMove`, `useResize`,
-`useRotate`, `useInsert`, `useAreaSelect`, `useClone`, `useEditAnchors`) and
-their controller objects are **deleted**. Ongoing behavior is now an
+Ongoing behavior is an
 [Action](#action) descriptor with an `ongoing` invoker returning an
 `OngoingHandle`.
 
@@ -792,8 +766,7 @@ It is not itself a Gesture. A gesture emits world-space data with a
 knows nothing about geometry. `useHandleDrag`, `startThresholdDrag` and
 `useDragHandle` are gestures built on one.
 
-Two recovery rules live in `pointerSession/recovery.ts` because
-`useGestureDispatcher` needs them too and owns its own multi-pointer lifecycle:
+Two recovery rules live in `pointerSession/pointerSession.ts`:
 `lostpointercapture` ends the gesture, and a `pointermove` reporting no held
 button is read as the release that never arrived — but only when the press
 reported button state at all, since synthesized events routinely carry none.
@@ -801,7 +774,7 @@ reported button state at all, since synthesized events routinely carry none.
 ### Gesture overlay
 
 The live state an in-flight ongoing action exposes. Consumed by overlay layers
-to render in-flight chrome. Two distinct surfaces, deliberately separate:
+to render in-flight chrome. Two separate surfaces:
 
 - `OngoingHandle.overlay()` → dispatcher-authored chrome (marquee, lasso
   polyline, insert preview), painted by `useDispatcherOverlayLayer`.
@@ -811,24 +784,24 @@ to render in-flight chrome. Two distinct surfaces, deliberately separate:
 
 ### ToolCtx / GestureContext
 
-Two distinct context shapes that appear at different layers:
+Distinct context shapes that appear at different layers:
 
 - **`ToolCtx<TScratch>`** — the per-event context injected into every tool channel
   handler by `<Canvas>`. Carries `worldX/Y`, `modifiers`, `selection`, an opaque
   `adapter`, `applyBatch`, `view`, `setView`, `canvasRect`, and `scratch` (the
-  tool's per-gesture mutable store). See `packages/core/src/tools/types.ts:28`.
+  tool's per-gesture mutable store). See `packages/routing/src/tools/types.ts`.
 
 - **`GestureContext<TPose>`** — the per-frame context passed to
   [Behavior](#behavior) methods. Carries `draggedIds`, `origin`, `current` (live
   pose map), `snap`, `modifiers`, `pointer`, `frames` (stored pose to world and back),
   `adapter` (typed as `MoveAdapter`),
   and `scratch` (per-gesture key/value store). More gesture-specific than
-  `ToolCtx`. See `packages/core/src/interactions/gestures/types.ts:26`.
+  `ToolCtx`. See `packages/core/src/interactions/gestures/types.ts`.
 
 - **`InvocationCtx`** — the per-invocation context the dispatcher hands to an
   Action invoker: `world`, `screen`, `modifiers`, `deps`, and gesture-kind
   fields (`drag`, `wheel`, `multiTouch`, `key`). This is the one new code sees.
-  See `packages/core/src/interactions/actions/invoker.ts`.
+  See `packages/routing/src/interactions/actions/invoker.ts`.
 
 ---
 
@@ -837,19 +810,14 @@ Two distinct context shapes that appear at different layers:
 ### Backend
 
 The kit renders exclusively via **WebGL2** through `WeaselRenderer`
-(`@weasel-js/gl` was a separate package until Step 10; its sources are now
-folded into `packages/renderer/src/`). The 2D canvas codepath was deleted in Step 10
-(2026-05-09). The `backend` prop existed temporarily during the soak period and is
-gone. WebGPU is a future option tracked in `docs/TODO.md`.
+(`packages/renderer/src/`). There is no 2D canvas codepath and no `backend`
+prop. WebGPU is a future option tracked in `docs/TODO.md`.
 
 
 ### Op coalescing
 
-`Op.coalesceKey` is declared on `transform` and `setText` ops (and `reparent`)
-as a string key that could identify ops safe to merge with their predecessor in
-the undo history. The field is **written** but `History.append` does not yet
-coalesce — every drag step pushes a discrete entry. Implementation (time window?
-consecutive same-key only?) is deferred as Tier 1.5 in `docs/TODO.md:199`.
+`Op.coalesceKey` is a string key identifying ops safe to merge with their
+predecessor in the undo history. See [Op](#op) for the merge rule.
 
 ### Selection overlay
 
@@ -860,19 +828,18 @@ combined `createSelectionOverlayLayer`. The overlay reads overlay-aware pose
 lookups (live gesture pose wins over committed adapter pose) so handles track
 objects during a drag. The selection overlay is screen-space-constant for handle
 sizes but world-space for object positions. See
-`packages/core/src/features/selection/overlay.ts`. Phases of the chrome-affordances refactor
-(spec: `docs/superpowers/specs/2026-05-10-chrome-affordances-design.md`) introduced
+`packages/core/src/features/selection/overlay.ts`. The
 kit-level affordance factories (`createCornerResizeAffordance`,
-`createRotationAffordance`) that render the same chrome via reusable primitives;
-`createSelectionOverlayLayer` still exists as the legacy presentational helper.
-The two coexist until the cleanup completes.
+`createRotationAffordance`) render the same chrome via reusable primitives;
+`createSelectionOverlayLayer` is the legacy presentational helper, and
+the two coexist
+(spec: `docs/superpowers/specs/2026-05-10-chrome-affordances-design.md`).
 
 ---
 
 ## 6. Concepts not in the kit (yet)
 
-These have been discussed but are not shipped. Mentioned here so design
-conversations don't re-litigate whether they exist.
+Discussed but not shipped.
 
 ### Mixin / lifecycle behavior (deferred)
 
@@ -887,14 +854,12 @@ Distinct from gesture-level [Behaviors](#behavior) which already ship.
 A runtime DAG for cross-feature dependency resolution — typed indirect references
 between features (a "provides/requires" contract) rather than direct TypeScript
 import arguments. Explicitly deferred: the in-tree dependency graph is TypeScript
-imports; typed function arguments (`useBlurOnEscape(focus.api)`) carry cross-feature
+imports; typed function arguments carry cross-feature
 deps for now. Tracked in the feature-roles spec.
 
 ### Behaviors at the component level (deferred)
 
 The term "behavior" is used in two senses in the kit:
 1. **Gesture-level** ([`ActionBehavior`](#behavior)) — ships and is stable.
-2. **Component-level** — a hypothetical chain-of-responsibility mechanism that
-   would let features intercept pointer events or render passes at the `<SceneCanvas>`
-   boundary. This second sense does not exist yet and is explicitly out of scope
-   of the current feature-roles work.
+2. **Component-level** — the hypothetical mechanism under
+   [Mixin / lifecycle behavior](#mixin--lifecycle-behavior-deferred). It does not exist.

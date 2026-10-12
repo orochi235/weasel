@@ -9,16 +9,10 @@ import type { FillStyle, SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle } f
 const W = 600, H = 300;
 
 /**
- * The subset Inter that ships beside the baked atlas (same charset,
- * U+0020–00FF, 27 kB).
- *
- * It is loaded here twice, deliberately: once as a CSS `FontFace` under a
- * name of its own, and once as outline bytes for that same name. That makes
- * both tiers serve the *identical typeface*, which is the only way this
- * comparison is worth anything — the dynamic canvas-SDF tier rasterizes
- * through `fillText`, so it renders whatever the browser has under that
- * family name, and pointing both tiers at one file is what turns the toggle
- * below into a controlled experiment rather than a font swap.
+ * The subset Inter that ships beside the baked atlas. Loaded twice, deliberately: once as a CSS
+ * `FontFace` under a name of its own, and once as outline bytes for that same name, so both tiers
+ * serve the identical typeface — the dynamic canvas-SDF tier rasterizes through `fillText`, so it
+ * renders whatever the browser has under that family name.
  */
 const INTER_TTF = `${import.meta.env.BASE_URL}inter/inter.ttf`;
 const FAMILY = 'Weasel Outline Demo';
@@ -44,11 +38,9 @@ const style = (fontSize: number): TextStyle => ({ fontSize, fontFamily: FAMILY }
 const TEXT_FILL = solid('#1a1a1a');
 
 /**
- * The stroke the toggle applies. Round joins because a glyph's outline has
- * corners sharper than any miter limit flatters, and 2 world units because
- * that is a visible hairline on the 96px line and a heavy slab on the 13px
- * one — which is the point: stroke width is a world measure and does not
- * scale with the type.
+ * Round joins because a glyph's outline has corners sharper than any miter limit flatters. 2
+ * world units is a hairline on the 96px line and a heavy slab on the 13px one: stroke width is a
+ * world measure and does not scale with the type.
  */
 const DEMO_STROKE: Stroke = {
   paint: solid('#c0392b'),
@@ -77,9 +69,8 @@ const makeDrawOne = (
   (node, pose, view, ctx) => {
     if (!ready) return [];
     if (!node.data.text) return defaultDrawOne(node, pose, view, ctx);
-    // Paint is the node's, not the style's — `data.fill` / `data.stroke`, the
-    // slots every node kind uses, handed to the command as its paint. `null`
-    // is an explicit no-fill, the same value every other node kind reads.
+    // Paint is the node's, not the style's. `null` is an explicit no-fill, the same value
+    // every other node kind reads.
     return [textCommand(
       pose.x, pose.y, node.data.text, node.data.style,
       undefined, undefined, undefined,
@@ -90,20 +81,15 @@ const makeDrawOne = (
 /**
  * The outline text tier against the distance field it replaces.
  *
- * Both sides of the toggle draw the same face at the same size in the same
- * place. Unchecked, glyphs come from the dynamic canvas-SDF tier: one
- * `fillText` at 48px, a Euclidean distance transform, and a single-channel
- * field sampled at whatever size it is asked for. That is accurate near the
- * bake size and increasingly not above it — magnify it and the contours
- * ripple, with bumps one bake-texel apart, because the field is a
- * reconstruction of a raster. Checked, the same glyphs are real outlines
+ * Both sides of the toggle draw the same face at the same size in the same place. Unchecked,
+ * glyphs come from the dynamic canvas-SDF tier: a single-channel field baked at 48px, accurate
+ * near the bake size and increasingly not above it. Checked, the same glyphs are real outlines
  * tessellated in em space, which has no size to be near.
  *
- * Push the zoom up to watch the difference open. And watch the line positions
- * while you toggle: they do not move, because the tier decides how a glyph is
- * painted and never where it sits — advances, kerning and line breaking still
- * come from the SDF tier either way. That invariant is what lets the
- * threshold depend on zoom without text reflowing under the cursor.
+ * The line positions do not move while you toggle, because the tier decides how a glyph is
+ * painted and never where it sits — advances, kerning, and line breaking still come from the SDF
+ * tier either way. That invariant is what lets the threshold depend on zoom without text
+ * reflowing under the cursor.
  */
 export function TextOutlinesDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
@@ -136,9 +122,7 @@ export function TextOutlinesDemo() {
     if (outlines) registerFontOutlines(FAMILY, VARIANT, INTER_TTF);
     else unregisterFontOutlines(FAMILY, VARIANT);
     canvasRef.current?.requestRedraw();
-    // The face loads asynchronously and announces itself through the same
-    // glyph-ready signal the canvas already redraws on. This poll drives only
-    // the readout, which has no other reason to re-render.
+    // This poll drives only the readout, which has no other reason to re-render.
     const id = setInterval(() => {
       setStatus(outlines ? outlineStatus(FAMILY, 400, 'normal') ?? 'none' : 'off (canvas SDF)');
     }, 200);

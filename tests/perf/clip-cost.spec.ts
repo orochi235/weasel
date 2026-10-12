@@ -1,29 +1,22 @@
 /**
  * What entering a clip actually pays for: the stencil, or the batch break.
  *
- * `frame-budget.spec.ts` prices a clipped group holding one rect at ~65 us
- * against ~0.1 us for a bare rect, and nesting is nearly free — so the price is
- * entry. Two mechanisms could be charging it, and only one is fixable:
+ * Two mechanisms could be charging for clip entry:
  *
  *   - the **stencil**: `pushClip` and `popClip` each rasterize the clip path
- *     into the stencil buffer and move colorMask / stencilMask / stencilFunc
- *     around it. Inherent to how clipping works here.
+ *     into the stencil buffer. Inherent to how clipping works here.
  *   - the **batch break**: `stagedStateIsLive` compares `clipDepth`, so a
- *     clipped rect cannot share a draw with its unclipped neighbours, and
- *     `popClip` flushes a batch holding one rect. Fixable in principle.
+ *     clipped rect cannot share a draw with its unclipped neighbors.
  *
  * Separating them needs contents that would not have batched anyway. A
  * pattern-filled rect never joins the batch, so wrapping one in a clip adds the
  * stencil and nothing else; wrapping a *solid* rect adds the stencil and the
  * break. The difference between those two deltas is the break's share. The
- * spec checks that premise by counting draws, since gradients once played this
- * role and stopped breaking the run without anything here noticing.
+ * spec checks that premise by counting draws.
  *
- * `cmbreak` checks that answer from the other side: a group carrying a color
- * matrix that differs from its neighbour's breaks the run through the same test
- * without touching the stencil. Its pattern twin subtracts the color-matrix
- * upload that the trick itself costs, leaving a second, independent estimate of
- * one flush.
+ * `cmbreak` is a second, independent estimate of one flush: a group whose color
+ * matrix differs from the one before it breaks the run without touching the
+ * stencil, and its pattern twin subtracts the color-matrix upload.
  *
  * `-k8` puts eight leaves under each clip instead of one. If entry is the whole
  * price, the per-group figure holds and the per-leaf figure falls by eight.
@@ -38,8 +31,7 @@ import { dirname, resolve } from 'node:path';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-/** Leaves per frame. Every variant holds this many, so the deltas between
- *  them are per-leaf and comparable without rescaling. */
+/** Leaves per frame, the same in every variant. */
 const N = 512;
 
 /** Leaves per group in the `-k8` variants. */
@@ -47,9 +39,7 @@ const K = 8;
 
 const RUNS = rounds(3);
 
-/** `groups` is how many clips (or color-matrix breaks) the frame contains —
- *  the divisor for a per-entry figure, where `N` is the divisor for a
- *  per-leaf one. */
+/** `groups` is how many clips (or color-matrix breaks) the frame contains. */
 const VARIANTS = [
   { id: 'rect-plain',      groups: 0,     note: 'N solid rects, one batch' },
   { id: 'rect-clipped',    groups: N,     note: 'each rect in its own clip' },
@@ -157,9 +147,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       });
 
       /**
-       * Two color matrices that differ, alternated per group. Each is
-       * off-identity by a bias too small to see, which is all
-       * `stagedStateIsLive` needs to declare the run dead — and identity is
+       * Two color matrices that differ, alternated per group. Identity is
        * excluded on purpose, since it would fold alpha and compare equal.
        */
       const cm = (i: number) => {
@@ -171,8 +159,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       };
 
       /** Built once and held: the caches key on object identity, so fresh
-       *  leaves per measurement would price tessellation and uploads instead of
-       *  a steady-state frame. */
+       *  leaves per measurement would price tessellation and uploads. */
       const solids: unknown[] = [];
       const pats: unknown[] = [];
       for (let i = 0; i < n; i++) { solids.push(solidLeaf(i)); pats.push(patLeaf(i)); }
@@ -197,16 +184,13 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
         return chunk(leaves, 1, (i, kids) => ({ kind: 'group', clip: clipPath(i), children: kids }));
       }
 
-      /** Built once per variant, then reused: rebuilding the wrappers per
-       *  measurement would add allocation to the timed comparison. */
       const built: Record<string, unknown[]> = {};
       for (const v of variants) built[v.id] = buildVariant(v.id);
 
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       const gcAvailable = typeof collect === 'function';
 
-      /** A variant that silently draws nothing measures free, which is the one
-       *  failure mode that turns a wrong number into a confident one. */
+      /** A variant that silently draws nothing measures free. */
       function paintsAnything(id: string): boolean {
         renderer.render([built[id][0]], identity);
         gl.finish();

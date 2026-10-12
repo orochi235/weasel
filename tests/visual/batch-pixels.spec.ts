@@ -3,25 +3,13 @@
  *
  * The rest of `tests/visual/` compares screenshots of the demos. This one
  * builds command lists by hand and reads the framebuffer, because the thing it
- * guards is invisible to a baseline: a run's *composition*. A ground rect under
- * an atlas quad is the shape the batch exists for, and in every demo the quad
- * covers the rect, so a wrong ground never reaches a pixel a baseline samples.
- * Brick-icons hit it in an afternoon — a white ground drew olive, because the
- * solid sampled the run's atlas instead of the white texel it was promised.
+ * guards is invisible to a baseline: a run's *composition*. In every demo an
+ * atlas quad covers its ground rect, so a ground that sampled the run's atlas
+ * instead of the white texel never reaches a pixel a baseline samples.
  *
  * So these assert numbers, not likeness: a solid keeps its color whatever else
  * shares its draw, and a quad samples its own bitmap and no other. Both hold
- * however `draw.ts` decides to break runs, which is what makes them a gate on
- * the invariant rather than on the current run-breaking rules.
- *
- * Glyphs are in the same run as of the text merge, and they widen the class
- * rather than adding one: a font atlas is a texture in a slot like any other,
- * so a ground rect beside a label is exactly the pixel that drew olive. A
- * gradient widens it again: its texture is the ramp atlas, and two gradients in
- * one run are told apart only by the row each vertex names. The radial and
- * conic cases go further than the rest of this file and check the arithmetic
- * too — no baseline covers either kind, and the demo they would come from
- * shows one variant at a time.
+ * however `draw.ts` decides to break runs.
  */
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
@@ -45,9 +33,8 @@ interface Case {
   probes: Probe[];
 }
 
-/** Channel slack. The batch path is exact arithmetic — a white texel samples to
- *  1.0 and the multiply is the identity — so this covers rounding in the blend
- *  against the cleared framebuffer, nothing more. A tint shows up as tens. */
+/** Channel slack. The batch path is exact arithmetic, so this covers rounding in
+ *  the blend against the cleared framebuffer. A tint shows up as tens. */
 const TOLERANCE = 2;
 
 test('batched runs paint their own colors', async ({ page }) => {
@@ -83,10 +70,8 @@ test('batched runs paint their own colors', async ({ page }) => {
         ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
         : gl.getParameter(gl.RENDERER));
 
-      /** A flat opaque bitmap. Flat on purpose: a probe anywhere inside a quad
-       *  of it must read this color, so a quad drawn from the wrong texture
-       *  reads as the wrong color rather than as a plausible neighbouring
-       *  texel. */
+      /** A flat opaque bitmap, so a quad drawn from the wrong texture reads as
+       *  the wrong color rather than as a plausible neighboring texel. */
       async function flat(
         side: number, r: number, g: number, b: number,
       ): Promise<ImageBitmap> {
@@ -111,9 +96,7 @@ test('batched runs paint their own colors', async ({ page }) => {
         kind: 'image', image, x, y, w: size, h: size,
       });
 
-      /** Read one pixel, un-premultiplying so the probe compares against the
-       *  straight-alpha color the command asked for. Y is flipped: GL reads
-       *  from the bottom. */
+      /** One pixel, un-premultiplied. Y is flipped: GL reads from the bottom. */
       function read(x: number, y: number): [number, number, number] {
         const out = new Uint8Array(4);
         gl!.readPixels(x, h - 1 - y, 1, 1, gl!.RGBA, gl!.UNSIGNED_BYTE, out);
@@ -126,9 +109,7 @@ test('batched runs paint their own colors', async ({ page }) => {
 
       const stops = (a: string, b: string) =>
         [{ offset: 0, color: a }, { offset: 1, color: b }];
-      /** A rect filled left-to-right by a linear gradient between `x0` and
-       *  `x1` — screen coordinates, the renderer having been handed an
-       *  identity view. */
+      /** A rect filled left-to-right by a linear gradient between `x0` and `x1`. */
       const gradRect = (
         x: number, y: number, size: number,
         x0: number, x1: number, ramp: { offset: number; color: string }[],
@@ -142,8 +123,7 @@ test('batched runs paint their own colors', async ({ page }) => {
         },
       });
 
-      /** The gradients that carry a coordinate rather than a ramp position.
-       *  Centers sit on a half-pixel so a probe lands exactly on an axis: at
+      /** Centers sit on a half-pixel so a probe lands exactly on an axis: at
        *  `dy = 0` a conic gradient is on its own seam, where `fract` sends one
        *  side to 0 and the other to 1. */
       const radialRect = (
@@ -177,11 +157,9 @@ test('batched runs paint their own colors', async ({ page }) => {
       });
 
       /**
-       * The straight-alpha color of the most opaque pixel in a box.
-       *
-       * Where a glyph's ink lands inside its box depends on the face, so a
-       * fixed probe point is a coin flip; the darkest pixel is the one the
-       * glyph definitely painted, and its color is the assertion.
+       * The straight-alpha color of the most opaque pixel in a box. Where a
+       * glyph's ink lands inside its box depends on the face, so a fixed probe
+       * point is a coin flip.
        */
       function inkIn(x0: number, y0: number, x1: number, y1: number): [number, number, number] {
         const box = new Uint8Array((x1 - x0) * (y1 - y0) * 4);
@@ -201,9 +179,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       const cases: { name: string; probes: unknown[] }[] = [];
 
       /** Render one frame and read its probes *before* the next frame clears
-       *  the buffer. Reading them all at the end instead makes every case
-       *  report the last frame's pixels, which looks like a total failure and
-       *  says nothing. */
+       *  the buffer. */
       function frame(
         name: string,
         commands: unknown[],
@@ -218,9 +194,7 @@ test('batched runs paint their own colors', async ({ page }) => {
         });
       }
 
-      // A solid sharing a run with an image quad. The quad is beside the rect
-      // rather than over it, which is the whole point: a wall's ground shows
-      // around its art, and that is the pixel no baseline samples.
+      // The quad is beside the rect rather than over it, so the ground shows.
       frame('solid beside a quad', [rect(8, 8, 32, '#ffffff'), quad(red, 56, 8, 32)], [
         { name: 'white ground', x: 24, y: 24, want: [255, 255, 255] },
         { name: 'red quad', x: 72, y: 24, want: [255, 0, 0] },
@@ -233,8 +207,6 @@ test('batched runs paint their own colors', async ({ page }) => {
         { name: 'white ground', x: 72, y: 24, want: [255, 255, 255] },
       ]);
 
-      // Two bitmaps in one frame, interleaved with solids — brick-icons' cell
-      // is a ground, its art, and a badge stamped over it.
       frame('two bitmaps and a ground per cell', [
         rect(8, 8, 32, '#ffffff'), quad(red, 8, 8, 16), quad(blue, 24, 24, 16),
         rect(56, 8, 32, '#ffffff'), quad(red, 56, 8, 16), quad(blue, 72, 24, 16),
@@ -271,8 +243,7 @@ test('batched runs paint their own colors', async ({ page }) => {
         name: 'red glyph', x: 44, y: 4, want: [255, 0, 0], got: inkIn(40, 4, 96, 72),
       });
 
-      // The label first, so the run adopts the atlas before anything else
-      // joins — the order that broke the ground when a quad did it.
+      // The label first, so the run adopts the atlas before anything else joins.
       frame('label before a solid', [
         label('H', 4, 4, 64, '#ff0000'),
         rect(60, 8, 32, '#ffffff'),
@@ -283,11 +254,9 @@ test('batched runs paint their own colors', async ({ page }) => {
         name: 'red glyph', x: 4, y: 4, want: [255, 0, 0], got: inkIn(0, 4, 56, 72),
       });
 
-      // A gradient joins the run as a quad off the ramp atlas, so the atlas is
-      // a texture in a slot exactly as a bitmap is — and the ground beside it
-      // is the pixel that drew olive when a slot went wrong. Flat ramps here:
-      // the composition is what this file guards, and a flat one reads as a
-      // color rather than as a plausible neighbouring texel.
+      // A gradient joins the run as a quad off the ramp atlas, a texture in a
+      // slot exactly as a bitmap is. Flat ramps, so a wrong texture reads as a
+      // wrong color.
       frame('solid and quad beside a gradient', [
         rect(8, 8, 32, '#ffffff'),
         gradRect(56, 8, 32, 56, 88, stops('#00ff00', '#00ff00')),
@@ -310,7 +279,7 @@ test('batched runs paint their own colors', async ({ page }) => {
         { name: 'magenta gradient', x: 120, y: 24, want: [255, 0, 255] },
       ]);
 
-      // The ramp position rides the vertices now, so this is where a fold that
+      // The ramp position rides the vertices, so this is where a fold that
       // reversed or rescaled it shows up. The rect runs past both ends of the
       // ramp, and those clamp to the end texels exactly.
       frame('a gradient runs the way it was pointed', [
@@ -326,9 +295,7 @@ test('batched runs paint their own colors', async ({ page }) => {
 
       // Radial and conic gradients carry a gradient-space coordinate the shader
       // turns into a ramp position, so unlike the flat cases above these read
-      // the arithmetic as well as the composition. The white ground is still
-      // the pixel that matters most: two more paint modes, one more chance for
-      // a solid to sample somebody else's texture.
+      // the arithmetic as well as the composition.
       frame('a radial and a conic beside a ground', [
         rect(8, 8, 32, '#ffffff'),
         radialRect(56, 8, 32, 72.5, 24.5, 8, stops('#ff0000', '#0000ff')),
@@ -393,17 +360,15 @@ test('batched runs paint their own colors', async ({ page }) => {
  * inside it shares a run with content outside. This renders one scene twice —
  * clipped by rects, and by the same squares as polygons, which only the
  * stencil can express — and compares the two framebuffers channel by channel.
- * The clip edges sit on fractional pixels and cross every batched kind, a
- * nested clip narrows an outer one, a triangle crossing a clip edge is refused
- * the cut and goes through the stencil, and a per-vertex-color child forces
- * the rect clip onto the stencil part-way through, which is the mixed state
- * where a run crosses a clip that holds a bit.
+ * A triangle crossing a clip edge is refused the cut and goes through the
+ * stencil, and a per-vertex-color child forces the rect clip onto the stencil
+ * part-way through, which is the mixed state where a run crosses a clip that
+ * holds a bit.
  *
  * Within `TOLERANCE`, not exact: a cut corner's UV is interpolated on the CPU,
  * and a filtered texel near a rounding boundary lands one level apart. A
  * coverage difference — a lost or gained MSAA sample on an edge — is a quarter
- * of the color step, far outside it. That is what cutting a slanted edge
- * produced, and why the batch refuses to.
+ * of the color step, far outside it.
  */
 test('a rect clip cut on the CPU paints what the stencil would', async ({ page }) => {
   const errors: string[] = [];

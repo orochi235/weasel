@@ -6,10 +6,8 @@
   column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-row-gap, 4px);
   align-items: stretch;
-  /* A property panel is dense: its fields are shorter and tighter than a
-     standalone Input. Mapped here, on the container, so one declaration moves
-     every field in the panel — and read from the container-level name so a
-     density set further up is not shadowed by this declaration. */
+  /* Read from the container-level name so a density set further up is not
+     shadowed by this declaration. */
   --wzl-field-h: var(--wzl-prop-field-h, var(--wzl-control-h-sm));
   --wzl-field-pad-x: var(--wzl-prop-field-pad-x, 6px);
   /* A kit `<Select>` in a row is a field like any other, and its trigger reads
@@ -43,11 +41,8 @@
 }
 
 /* ── density ────────────────────────────────────────────────────────
-   Preset bundles for the container metrics above. Set on whichever container
-   the consumer puts `density` on; every metric inherits down from there, so a
-   panel sets the whole family and a single group can still differ. `normal`
-   states its values rather than omitting them, so a group can go back to the
-   default inside a tighter panel. */
+   `normal` states its values rather than omitting them, so a group can go back
+   to the default inside a tighter panel. */
 
 .densityTight {
   --wzl-prop-row-gap: 2px;
@@ -87,8 +82,6 @@
 
 /* ── align ──────────────────────────────────────────────────────────
    Where an inline row's label and control sit on the row's cross axis.
-   Inherits like density does, so a column of color rows lines its swatches up
-   on one edge from a single declaration on the list.
 
    Two names, because a color row aligns twice: its items within their grid row,
    and the whole grid within the row's box. They agree except at `baseline`,

@@ -1,11 +1,6 @@
 /**
- * The one hit-test walk.
- *
- * Four walks used to answer this question — two point queries, two area
- * queries — over the same tree with the same gates. They drifted three times
- * without a failing test, because nothing held them to each other. Everything
- * that decides whether a node *can* be hit lives here now; a query supplies
- * only the shape test and the clip predicate for its own region.
+ * The one hit-test walk. Everything that decides whether a node *can* be hit lives here; a
+ * query supplies only the shape test and the clip predicate for its own region.
  *
  * The gates, in the order the walk applies them:
  *   1. containers, when the query does not want them
@@ -139,11 +134,9 @@ export function pickWalk<TPose>(
   const isLocked = q.includeLocked === true ? undefined : src.isLocked;
   const out: string[] = [];
 
-  // Resolving a container's clip means `clipFromPose` or a silhouette build,
-  // which is the expensive half; the predicate against it is cheap. So the
-  // *path* is memoized per container for the walk and the predicate re-runs
-  // per candidate — `clipAdmits` needs the candidate, and caching its answer
-  // per container would answer the wrong question for an area query.
+  // Resolving a container's clip is the expensive half, so the *path* is memoized per
+  // container for the walk. The predicate re-runs per candidate: caching its answer per
+  // container would answer the wrong question for an area query.
   const clipPath = new Map<string, Path | null>();
   // A clip is in its container's plane; the query is in the candidate's.
   const carry = clipCarrier(src.planeOf ?? null);
@@ -203,10 +196,6 @@ export function pickWalk<TPose>(
 
   return out;
 }
-
-// ---------------------------------------------------------------------------
-// Sources
-// ---------------------------------------------------------------------------
 
 /** Answers `Scene.isLocked` from the layer records and parent links alone,
  *  so a partial scene stand-in works too. Null when nothing is locked, which
@@ -288,11 +277,8 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   const locked = lockedNodeTest(scene as never);
   const { getPose, alphaOf, layerIsPainted } = opts;
 
-  // Resolved once per walk rather than once per candidate: a scene with
-  // nothing faded has nothing to say about alpha, and asking it per node is a
-  // Map lookup on a linear scan that has no other reason to touch the
-  // override table. Needs enumeration — a partial scene stand-in carrying
-  // only `read` falls back to reading per node.
+  // Resolved once per walk rather than once per candidate. Needs enumeration — a
+  // partial scene stand-in carrying only `read` falls back to reading per node.
   let faded: Set<string> | null = null;
   const enumerable = typeof scene.overrides?.ids === 'function';
   if (!alphaOf && enumerable) {

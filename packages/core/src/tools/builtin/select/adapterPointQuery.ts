@@ -12,10 +12,8 @@ import { toPlane } from 'core/viewport/parallax';
  * painter with no `silhouette` — or one that returns null, as `kit:text` does
  * for an empty node — keeps the AABB answer.
  *
- * The AABB pre-filter is grown by the slop for the same reason
- * `<SceneCanvas>`'s is: a shape's outline, and the slop around it, reach
- * outside the shape's own bounds, and an un-grown pre-filter would discard
- * those hits before the refinement could claim them.
+ * The AABB pre-filter is grown by the slop: a shape's outline, and the slop
+ * around it, reach outside the shape's own bounds.
  *
  * A node that derives its path is tested against that path's box: its own pose
  * is a placeholder, and the box of a straight route has no area to land in

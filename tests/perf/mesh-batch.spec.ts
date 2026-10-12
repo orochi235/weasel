@@ -7,20 +7,14 @@
  * again every frame; one drawn alone sits in the persistent mesh cache and
  * costs a draw call, plus the flush of whatever run was open before it. This
  * times both at each rung of a vertex-count ladder by moving both caps
- * (`meshBatching`) around each frame, so the two sides run the same commands
- * through the same renderer, interleaved sample by sample.
+ * (`meshBatching`) around each frame.
  *
  * Two shapes of frame, each `K` meshes:
  *
  *   - `interleaved` — a rect before every mesh. A mesh drawn alone also
- *                     closes the rect's run, so this is the case the cap meets
- *                     in a scene of mixed shapes.
+ *                     closes the rect's run.
  *   - `meshes`      — meshes alone. Drawn alone, nothing else is flushed, so
  *                     this is the break-even at its most favorable to batching.
- *
- * Every mesh is a convex polygon of `v` points, tessellated once and held:
- * `getMesh` keys on the path's identity. Draw calls per frame are read from
- * `lastFrameStats` in an untimed pass, which is also what shows the cap moved.
  *
  * `WEASEL_PERF_VERTS` overrides the ladder (comma-separated vertex counts).
  *
@@ -230,8 +224,6 @@ test('mesh batch: where batching a mesh stops paying', async ({ page, browser, b
     },
     { root: repoRoot, w: W, h: H, k: K, verts: VERTS, runs: RUNS, shapes: [...SHAPES], modes: [...MODES] },
   );
-
-  // ─── report ────────────────────────────────────────────────────────────
 
   const med = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
   const frames = (n: number, s: Shape, m: Mode) =>

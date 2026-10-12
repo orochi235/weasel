@@ -1,16 +1,10 @@
 /**
  * `useInsertDepSource` — wires the `insert` dep consumed by `insertAction`.
  *
- * Provides kit-side kind→data factories for the 6 builtin shape kinds
- * (`rect`, `ellipse`, `line`, `polygon`, `star`, `pencil`). Acceptable because
- * these kinds are kit-shipped tools; a future phase can expose a
- * `nodeFactories` prop for consumer-defined kinds.
- *
- * `line`, `polygon`, `star` and `pencil` receive the drag AABB from the
- * insertAction invoker, but `extras` may carry richer geometry (endpoints,
- * center+radius+rotation, point trail). `insertPreviewExtent` resolves the
- * two into the node's real extent — the same resolution the live preview
- * and the reported gesture bounds use.
+ * `line`, `polygon`, `star`, and `pencil` receive the drag AABB from the insertAction invoker,
+ * but `extras` may carry richer geometry (endpoints, center+radius+rotation, point trail).
+ * `insertPreviewExtent` resolves the two into the node's real extent — the same resolution the
+ * live preview and the reported gesture bounds use.
  */
 import { useRef } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
@@ -127,9 +121,8 @@ export function useInsertDepSource(
         const extent = insertPreviewExtent({ shape: kind, bounds, extras });
         const pose: unknown = extent.bounds;
 
-        // Consumer factory wins over the kit default for this kind (and is the
-        // only way to insert consumer-defined kinds like `text`). It owns the
-        // node's data + optional pose; the dep still supplies id/layer/op.
+        // Consumer factory wins over the kit default for this kind. It owns the node's
+        // data + optional pose; the dep still supplies id/layer/op.
         const factory = factoriesRef.current?.[kind];
         if (factory) {
           const built = factory(bounds, extras);
@@ -173,11 +166,9 @@ export function useInsertDepSource(
           case 'box':
             switch (kind) {
               case 'rect':
-                // Geometry-in-local-frame: the rect path lives at the origin and
-                // the pose carries position. `pathInPoseFrame` rebases a rect path
-                // onto the pose box regardless of the stored coords, so origin vs.
-                // duplicated-pose-coords render identically — don't double-count
-                // the position. (#13)
+                // The rect path lives at the origin and the pose carries position:
+                // `pathInPoseFrame` rebases a rect path onto the pose box, so don't
+                // double-count the position.
                 data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), ...painted() };
                 break;
               case 'ellipse':
@@ -189,11 +180,10 @@ export function useInsertDepSource(
                 break;
               }
               case 'text': {
-                // The built-in `useTextTool` drags an empty text box you then type
-                // into (edit is entered via `enterTextEdit`), so `extras` carries
-                // no content and `text` defaults to `''`. The kit:text painter
-                // matches on `data.text != null` and applies style defaults at
-                // render time, so a bare `{ text }` is a complete, editable node.
+                // The built-in text tool drags an empty text box you then type into, so
+                // `extras` carries no content. The kit:text painter matches on
+                // `data.text != null` and applies style defaults at render time, so a bare
+                // `{ text }` is a complete, editable node.
                 const e = extras as Partial<{ text: string }>;
                 data = { text: e.text ?? '' };
                 break;

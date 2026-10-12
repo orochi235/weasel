@@ -1,9 +1,7 @@
 /**
  * Vite/vitest alias entries for every workspace under `packages/`, generated
  * from each package's `exports` map at config-load time: one alias per entry,
- * pointing at the source file that entry is built from
- * (`scripts/lib/packageEntries.mjs`). Adding a package or an entry needs no
- * edit here.
+ * pointing at the source file that entry is built from.
  *
  * A subpath no `exports` map publishes gets no alias, so it fails to resolve in
  * a dev server and a test the way it would for a consumer. The exception is
@@ -12,9 +10,6 @@
  *
  * An entry only a build produces (`@weasel-js/ui/style.css`) gets no alias
  * either, and resolves to the package's `dist`.
- *
- * Core's internal bare paths (`core/...`, `features/...`) ride along, matching
- * its tsconfig path mappings.
  */
 
 import { existsSync } from 'node:fs';
@@ -50,11 +45,7 @@ function packageAliases(repoRoot: string): ViteAlias[] {
   return out;
 }
 
-/**
- * Full alias list for any consumer of the weasel monorepo. Pass `repoRoot`
- * (the directory containing `packages/`) and an optional list of extra
- * aliases that should win over the generated entries.
- */
+/** Full alias list. `repoRoot` is the directory containing `packages/`; `overrides` win over the generated entries. */
 export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): ViteAlias[] {
   return [
     ...overrides,

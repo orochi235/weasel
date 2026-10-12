@@ -2,17 +2,12 @@
  * Consumer override hooks: custom properties kit CSS reads with a fallback and
  * **the built-in theme does not declare**. Setting one on any container
  * restyles the components below it; leaving it unset takes the fallback. A
- * theme built with `defineTheme` may pin one, as the bevel and button-face
- * hooks are there for, and a container below it still overrides the pin.
+ * theme built with `defineTheme` may pin one, and a container below it still
+ * overrides the pin.
  *
- * They stay out of `tokens.css` on purpose. A `:root` declaration would win
- * over the in-CSS fallback, so the two would have to agree forever, and
- * `scripts/check-token-reads.ts` would stop enforcing that every read carries
- * one. This file is their declaration instead: `emitManifest` writes each as a
- * `TOKEN_MANIFEST` row with `hook: true`, which is what makes them findable
- * without reading kit stylesheets.
- *
- * Adding a hook means adding it here, and the checker reads this list.
+ * They stay out of `tokens.css` on purpose: a `:root` declaration would win
+ * over the in-CSS fallback, so the two would have to agree forever. Adding a
+ * hook means adding it here; `scripts/check-token-reads.ts` reads this list.
  */
 
 /** One override hook, as the manifest describes it. */

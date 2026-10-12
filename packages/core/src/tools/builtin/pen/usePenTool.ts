@@ -47,23 +47,9 @@ export interface PenSubpath {
  * so click-by-click state survives gesture boundaries and the preview layer
  * can read the same object.
  *
- * ## The pen draws paths; it does not reshape them
- *
- * It draws new nodes, and extends an existing node's open subpath from one
- * of its ends (see `continuing`). Reshaping an existing path is anchor
- * editing: double-click a path to
- * enter edit mode, then use the `editAnchors` / `insertPathAnchor` /
- * `nudgeAnchors` / `deleteAnchors` / `marqueeAnchors` / `cutPathAtAnchor`
- * Actions.
- *
- * The pen used to carry a second, private implementation of all of that,
- * with its own scratch mode, hit-test override, overlay, and undo
- * plumbing. It was reachable only through a `getPathObj` option whose
- * contract required `pose.kind` to be `'polygon'` or `'rect'` — which no
- * kit-created node has, including the ones the pen itself creates. So it
- * was dead in every consumer while shadowing the live implementation, and
- * the two had drifted. Its geometry now lives in
- * `features/paths/anchorEdits.ts`, driven by those Actions.
+ * The pen draws new nodes, and extends an existing node's open subpath from
+ * one of its ends (see `continuing`). Reshaping an existing path is anchor
+ * editing: double-click a path to enter edit mode.
  */
 export interface PenScratch {
   finishedSubpaths: PenSubpath[];
@@ -116,13 +102,6 @@ export interface UsePenToolOptions {
    *  pen records or previews — anchor positions (corner clicks, smooth-
    *  drag base point), the rubber-band cursor, and the outgoing-handle
    *  target. Receives raw world coords; returns snapped world coords.
-   *  Wire to `gridSnapStrategy`-style spacing via the consumer:
-   *
-   *      snapPoint: (p) => ({
-   *        x: Math.round(p.x / SPACING) * SPACING,
-   *        y: Math.round(p.y / SPACING) * SPACING,
-   *      })
-   *
    *  Pen state (anchor handles, etc.) is computed AFTER snapping so the
    *  visible geometry stays grid-aligned. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
@@ -169,7 +148,6 @@ function buildPath(
 /**
  * Active-slot Tool: click + drag to build a `PolygonPath` Illustrator-style.
  *
- * State machine: Idle / Drawing / BetweenSubpaths (see design doc).
  * Click places a corner anchor; click-drag places an anchor with an
  * outgoing bezier handle; click-the-first-anchor closes the subpath; Enter
  * open-finishes; Esc discards, and so does a tool switch. Shift constrains the placement-drag handle to 0/45/90/135°;
@@ -191,20 +169,9 @@ export function usePenTool(
   // the Tool record (which would lose scratch identity in the dispatcher).
   const optsRef = useLatest({ autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
 
-  // Scratch is a mutable ref (so click-by-click state survives the
-  // dispatcher's per-gesture initScratch contract). Mutations alone don't
-  // trigger React re-renders, so Canvas never re-paints and the preview
-  // layer stays invisible until something else (e.g. commit) bumps host
-  // state. Force a render after every scratch mutation so the host's
-  // <Canvas layers={{...}}> literal gets a new identity and the paint
-  // useEffect fires. Pull the trigger via ref so the memoized Tool record
-  // doesn't need to rebuild.
+  // Scratch mutations alone don't trigger React re-renders, so the preview
+  // layer would not repaint. Force a render after every scratch mutation.
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
-
-  // Geometry helpers shared by the actions below. They read `optsRef` so a
-  // re-render with new options is visible without rebuilding the actions
-  // (which would lose the scratch identity `penPreviewLayer` reads through
-  // `Tool.initScratch`).
 
   /** Write the pen's subpaths back into the node it picked up: the first
    *  replaces the subpath it continued, any later ones are appended. Skips
@@ -405,12 +372,8 @@ export function usePenTool(
 
   /**
    * Actions the pen owns, registered by `useToolActions` from inside the
-   * ActionsProvider — see `ToolDef.actions`.
-   *
-   * They close over `scratchRef`, which is why the pen needs no `Selector`
-   * exposing tool scratch to the action layer: the state never leaves the
-   * hook. `useMemo([])` keeps their identity stable for the same reason
-   * `scratchRef` is a ref — the preview layer reads that one object.
+   * ActionsProvider — see `ToolDef.actions`. They close over `scratchRef`,
+   * so the state never leaves the hook.
    */
   const actions = useMemo<Action[]>(() => {
     const s = () => scratchRef.current!;
@@ -427,9 +390,7 @@ export function usePenTool(
             const p = params as { pressX?: number; pressY?: number } | undefined;
             if (p?.pressX === undefined || p.pressY === undefined) return;
             // The press point, not the release: a click may drift up to the
-            // drag threshold, and an anchor should land where you put the
-            // pointer down. Snapping happens here rather than at press time
-            // so the snapped value is what the geometry records.
+            // drag threshold.
             if (pickUpEndpoint(deps, p.pressX, p.pressY)) {
               trail.update(deps);
               return;
@@ -438,10 +399,7 @@ export function usePenTool(
             const scratch = s();
 
             // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`
-            // on (default) this commits right away so the closed region
-            // renders with its fill — Illustrator-style. With it off the
-            // closed subpath stays in scratch for compound-path builds and
-            // commits on Enter.
+            // off the closed subpath stays in scratch for compound-path builds.
             if (scratch.current && scratch.current.anchors.length >= 3) {
               const first = scratch.current.anchors[0];
               if (withinCloseRadius(deps, first.x, first.y, wx, wy)) {
@@ -484,13 +442,7 @@ export function usePenTool(
             // one has already appended an anchor. Undo exactly that before
             // committing: pop it, and drop the subpath entirely if it was the
             // only anchor in it (which happens when the FIRST click closed a
-            // subpath and the second started a fresh one). The net effect
-            // matches the pen's old private 300ms detector — one anchor
-            // placed, path finished — while using the dispatcher's single
-            // definition of a double click.
-            //
-            // No position check is needed: the anchor to drop is by
-            // construction the one the second click just appended.
+            // subpath and the second started a fresh one).
             if (p?.viaDoubleClick && scratch.current) {
               scratch.current.anchors.pop();
               if (scratch.current.anchors.length === 0) scratch.current = null;
@@ -511,10 +463,9 @@ export function usePenTool(
           timing: 'ongoing' as const,
           start: (ctx: InvocationCtx) => {
             const scratch = s();
-            // `drag.start` is the pointerdown position — the dispatcher
-            // buffers the press and releases it at the drag threshold, so the
-            // anchor lands where the user pressed rather than where the
-            // threshold happened to be crossed.
+            // `drag.start` is the pointerdown position, so the anchor lands
+            // where the user pressed rather than where the drag threshold
+            // happened to be crossed.
             const origin = ctx.drag?.start ?? ctx.world;
             // Dragging from an open path's end picks the path up and pulls
             // that end's own handle rather than placing a new anchor on it.
@@ -552,9 +503,7 @@ export function usePenTool(
                 const se = s();
                 if (reason === 'cancel') {
                   // `start` appended the anchor (or picked a path up); a
-                  // cancel (pointercancel is the reachable one — Escape and a
-                  // tool switch both reset the whole scratch first) has to
-                  // take it back out.
+                  // cancel has to take it back out.
                   if (pickedUp) {
                     resetScratch(se);
                   } else if (se.current && se.draggingHandleAt === se.current.anchors.length - 1) {
@@ -643,27 +592,18 @@ export function usePenTool(
       actions,
 
       onDeactivate: () => {
-        // Anything still in scratch is by definition incomplete — the user
-        // hasn't closed it (close-on-first-anchor), open-finished it
-        // (cmd-click), or pressed Enter. Switching tools mid-path should
-        // discard, not auto-commit a stub polyline that the user didn't
-        // ask for. Mirrors Escape's behavior so "stop drawing" is
-        // consistent across exits.
+        // Anything still in scratch is incomplete. Switching tools mid-path
+        // discards it, as Escape does, rather than committing a stub polyline.
         resetScratch(scratchRef.current!);
         trail.stop();
       },
 
       bindings: [
-        // Plain click places an anchor; ⌘/Ctrl-click open-finishes
-        // (Illustrator). Strict modifier matching keeps the two apart, and
-        // `mod` resolves to meta on mac / ctrl elsewhere — the tool-route
-        // grammar's modifier matcher accepted either key on either platform.
+        // Plain click places an anchor; ⌘/Ctrl-click open-finishes. Strict
+        // modifier matching keeps the two apart.
         { spec: { kind: 'click' as const, mods: { shift: 'optional' as const, alt: 'optional' as const } }, actionId: 'pen.placeAnchor' },
         { spec: { kind: 'click' as const, mods: { mod: true, shift: 'optional' as const, alt: 'optional' as const } }, actionId: 'pen.finishOpen' },
-        // Double-click on the last anchor also open-finishes. This used to be
-        // a private 300ms/radius check inside the click route — a fourth
-        // double-click detector in a codebase that had just collapsed three
-        // into one (audit 3.3).
+        // Double-click on the last anchor also open-finishes.
         {
           spec: { kind: 'doubleClick' as const, mods: { shift: 'optional' as const, alt: 'optional' as const } },
           actionId: 'pen.finishOpen',

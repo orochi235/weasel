@@ -4,11 +4,7 @@ import { createSelectionStore, intentOf, select, type SelectionStore as Store } 
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
-/**
- * `SelectionApi`, `SelectionMode` and `SelectionExtendKey` are declared in
- * `@weasel-js/routing` — the `selection` dep and half the kit's actions are
- * typed in them. Re-exported here, beside the hook that returns one.
- */
+/** Declared in `@weasel-js/routing`; re-exported here, beside the hook that returns one. */
 import type { SelectionApi, SelectionMode, SelectionExtendKey } from '@weasel-js/routing';
 export type { SelectionApi, SelectionMode, SelectionExtendKey };
 
@@ -39,9 +35,7 @@ export interface UseSelectionOptions {
   scene?: SelectionStore;
   /** When `true`, every mutator (`set`/`add`/`remove`/`toggle`/`clear`/
    *  `applyClick`) is a no-op — selection stays at whatever `initial`
-   *  pinned it to. Useful for demos that exist to showcase a single
-   *  pre-selected node and don't want a
-   *  stray click to deselect. */
+   *  pinned it to. */
   lock?: boolean;
 }
 
@@ -52,12 +46,9 @@ function paintOrderOf(store: SelectionStore): (() => Iterable<NodeId>) | undefin
 }
 
 /**
- * Default implementation of the `getSelection` / `setSelection` adapter
- * contract every action hook (delete, duplicate, nudge, group, ...) requires.
- *
  * Owns selection state, exposes a click-policy helper (single vs multi with
- * an extend key), and pre-builds the two adapter methods consumers otherwise
- * hand-roll in every demo:
+ * an extend key), and pre-builds the `getSelection` / `setSelection` adapter
+ * methods:
  *
  * ```tsx
  * const selection = useSelection({ mode: 'multi' });

@@ -1,15 +1,7 @@
 /**
- * `drawText` must not mutate the layout it was handed.
- *
- * This is trap 1 from the paint-caching handoff, one layer down. `drawText`
- * applies `verticalAlign` by walking `laid.groups` and doing `q.y0 += dy` —
- * fine while every frame lays the text out afresh, and silently wrong the
- * moment a layout is shared. A cached layout would gain another `dy` per
- * frame and the text would slide off the page.
- *
- * `layoutRuns` is the most expensive derivation the kit runs (25.9 ms/frame
- * for 200 wrapped paragraphs), so it *will* be cached — this pins the
- * precondition first, and it is correct on its own terms either way.
+ * `drawText` must not mutate the layout it was handed: a cached layout that
+ * absorbed the `verticalAlign` shift would gain another `dy` per frame and
+ * the text would slide off the page.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';

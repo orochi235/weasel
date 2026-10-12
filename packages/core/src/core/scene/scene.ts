@@ -83,30 +83,14 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   // reloads in any scene, not only one whose consumer registered the key.
   const registry = withKitRegistry(options.registry ?? {});
 
-  /**
-   * The registry-keyed function fields — `clipFromPose`, `derivePath`,
-   * `derivePose` — each with its key maps and the side-channel cache the
-   * `kit:add` redo path re-attaches from. A function cannot travel through a
-   * serializable op payload, so `scene.add` and the `initial` loader stash it
-   * here and the replayed op reads it back.
-   *
-   * Those caches are pruned at two hook points, both delivered via the history
-   * engine's `onEvict`, to prevent unbounded growth:
-   *   1. When the redo stack is cleared by a new op (branch-on-edit): any
-   *      kit:add in the discarded entries that references a node absent from
-   *      `state.nodes` is permanently unreachable — its cache entry is dropped.
-   *   2. When the undo stack overflows `historyLimit` and evicts the oldest
-   *      entry: same reasoning applies to the evicted entries.
-   * Invariant: after pruning, no entry remains for a node that is both absent
-   * from `state.nodes` AND unreachable via any remaining undo/redo log entry.
-   */
+  /** The registry-keyed function fields, each with its key maps. A function
+   *  cannot travel through a serializable op payload, so an op carries its key. */
   const fnFields = createNodeFnFields<TPose>(registry);
   const fnField = (name: 'clipFromPose' | 'derivePath' | 'derivePose' | 'layout'): NodeFnField =>
     fnFields.find((f) => f.spec.field === name)!;
 
   const layoutFrame = resolveLayoutFrame(options.layoutFrame);
-  /** Latched on the first layout a container is given, so a scene that never
-   *  declares one records exactly the entries it did before layouts existed. */
+  /** Latched on the first layout a container is given. */
   let hasLayouts = false;
   {
     const field = fnField('layout');
@@ -139,8 +123,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   // Accessor for the adapter restored external ops apply against.
   let historyAdapterAccessor: (() => unknown) | null = null;
 
-  // The scene's undo/redo engine. Recorded ops are `makeOp` wrappers over
-  // `registered` handlers, so the engine's adapter argument is unused (the
   /** The transient set of active ids. Deliberately not part of `state`:
    *  selection is not document content and never reaches `toJSON`. It is
    *  handed to the history engine so entries can restore it. */
@@ -154,8 +136,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     invalidateDependents,
   );
 
-  // wrappers close over their payloads). Eviction (branch-edit redo-clears
-  // + historyLimit overflow) drives function-field cache pruning via onEvict.
+  // The scene's undo/redo engine. Recorded ops are `makeOp` wrappers that
+  // close over their payloads, so the engine's adapter argument is unused.
   const history = createHistory(undefined, {
     selection: {
       get: () => selection,
@@ -163,13 +145,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     },
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
-    // Restore-time rebuild: scene-registered kinds (kit:* + consumer
-    // registerOp) rebuild via makeOp; external ops rebuild via the global
-    // op-factory registry, wrapped in the lazy history-adapter binding.
-    // Return null only when the global registry also misses — the engine
-    // then places its no-op placeholder. (The engine's own global-registry
-    // fallback never fires for scene histories: this hook already
-    // consulted it.)
+    // Restore-time rebuild. A null return, when the global registry also
+    // misses, makes the engine place its no-op placeholder.
     rebuildOp,
   });
 
@@ -202,15 +179,11 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   let untrackedDepth = 0;
 
   // ── Helpers ────────────────────────────────────────────────────────────
-  // When `batchDepth > 0` the per-op `notify()` is coalesced: we still bump
-  // the version so getVersion() reflects in-progress mutations, but we defer
-  // listener dispatch until the outermost batch closes. This avoids one
-  // React re-render per op during high-frequency gestures (e.g. snap moves
-  // that emit ~10 transform ops per pointer-move).
+  // When `batchDepth > 0` the per-op `notify()` still bumps the version, but
+  // listener dispatch is deferred until the outermost batch closes.
   let batchDirty = false;
-  // Mutable accessor for the active journal — seeded from options and
-  // swappable via `scene.setActiveJournalAccessor(fn)` so mode machines that
-  // depend on `scene.history` can wire it after construction.
+  // Seeded from options and swappable via `scene.setActiveJournalAccessor(fn)`,
+  // so mode machines that depend on `scene.history` can wire it after construction.
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
 
@@ -279,12 +252,9 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     handler.apply(payload);
   }
 
-  /** Bridge a registered scene op into an engine `Op`: a direction-flipping
-   *  wrapper over the `RegisteredOp`'s `apply`/`revert` pair. `invert()`
-   *  flips the direction with the same payload, so undo replays `revert`
-   *  and redo replays `apply` — no per-op inverse code. `name`/`args` carry
-   *  the (kind, payload) pair for eviction pruning (and, later,
-   *  serialization). Handler lookup happens at apply time so re-registered
+  /** Bridge a registered scene op into an engine `Op`. `invert()` flips the
+   *  direction with the same payload, so undo replays `revert` and redo
+   *  replays `apply`. Handler lookup happens at apply time so re-registered
    *  kinds take effect on replay, but existence is checked eagerly to fail
    *  fast at the call site. */
   function makeOp(kind: string, payload: unknown, dir: 'fwd' | 'rev' = 'fwd'): Op {
@@ -397,13 +367,10 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
   function applyBatchNow(ops: Op[], label: string, adapter: unknown): void {
     const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
-    // Either route drives mutations from a history engine (the journal's
-    // inner history, or the scene's own), so scene-side recording is
-    // suppressed for the duration: op applies that re-enter scene
-    // mutation methods via the adapter must mutate without re-recording.
-    // batchDepth coalesces the per-op notify() calls (same as
-    // scene.batch); exactly one listener dispatch fires at the end —
-    // mirroring the single-notification semantics callers expect.
+    // Either route drives mutations from a history engine, so scene-side
+    // recording is suppressed: op applies that re-enter scene mutation
+    // methods via the adapter must mutate without re-recording. batchDepth
+    // coalesces the per-op notify() calls into one dispatch at the end.
     const prevSuppress = suppressRecording;
     const prevDirty = batchDirty;
     suppressRecording = true;
@@ -416,8 +383,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         // journal opened on it, was built without one.
         const bound = ops.map((op) => carried.recording(stale.tolerant(bindOpToAdapter(op, adapter))));
         if (journal) journal.applyBatch(bound, label);
-        // Native path: one engine entry, coalescible across applyBatch
-        // calls via the ops' own coalesceKeys.
         else history.applyOps(bound, label);
       }, () => true);
     } finally {
@@ -427,9 +392,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       // swallow it; at true top level prevDirty is always false.
       batchDirty = batchDirty || prevDirty;
       // Flush inside finally so a throwing op can't strand subscribers
-      // after earlier ops in the batch already mutated state (mirrors
-      // scene.batch). Depth-guarded: a nested context defers to the
-      // outermost flush.
+      // after earlier ops in the batch already mutated state.
       if (batchDepth === 0 && batchDirty) {
         batchDirty = false;
         for (const listener of listeners) listener();
@@ -928,9 +891,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
               history.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
             }
           }
-          // Fire one coalesced notify if any op inside the batch dirtied
-          // state. Nested batches contribute to the same flush — only the
-          // outermost emits.
           if (batchDirty) {
             batchDirty = false;
             for (const listener of listeners) listener();

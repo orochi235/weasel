@@ -1,13 +1,6 @@
 /**
  * Pointer-tracking glue that turns hover position into a grid cell, suitable
- * for dropping straight into `createCellHighlightLayer({ getCell })`. Pairs
- * with `gridSnapStrategy` / `createGridLayer` so the visual hover preview
- * uses the exact same spacing as the snap behavior.
- *
- * Wires three things you'd otherwise glue by hand:
- *   1. pointermove on a target element → client coords
- *   2. client coords → world coords via your `ViewTransform`
- *   3. world coords → integer `{col, row}` via `pointToGridCell`
+ * for dropping straight into `createCellHighlightLayer({ getCell })`.
  *
  * State updates only fire when the cell actually changes (not on every
  * pointer tick). Pass `onChange` to trigger a canvas redraw on each transition.
