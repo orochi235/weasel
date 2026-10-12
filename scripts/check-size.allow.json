@@ -122,9 +122,6 @@
     "lines": 692,
     "longestFunction": 351
   },
-  "packages/core/src/interactions/actions/defaults/rotate.ts": {
-    "longestFunction": 208
-  },
   "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
     "longestFunction": 129
   },

@@ -35,7 +35,7 @@ export {
 } from './toolActivate';
 export { moveAction } from '../move/action';
 export { resizeAction } from './resize';
-export { rotateAction } from './rotate';
+export { rotateAction } from '../rotate/action';
 export { areaSelectAction } from './areaSelect';
 export { insertAction } from './insert';
 export { cloneAction } from './clone';

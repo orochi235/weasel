@@ -16,7 +16,7 @@ import type { Action } from '@weasel-js/routing';
 import { moveAction } from './move/action';
 import { resizeAction } from './defaults/resize';
 import { flipAction } from './defaults/flip';
-import { rotateAction } from './defaults/rotate';
+import { rotateAction } from './rotate/action';
 import { groupAction } from './defaults/group';
 import { cloneAction } from './defaults/clone';
 import { duplicateAction } from './defaults/duplicate';

@@ -4,7 +4,7 @@ import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
-import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
+import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { LayoutDep, NodeAtPointDep } from '../depSchema';
 import type { GeometryProjection } from '../geometryProjection';
@@ -80,11 +80,6 @@ export interface MoveGesture {
   frame(): MoveFrame;
 }
 
-export interface MoveReaders {
-  view: () => GestureContext<unknown>['view'];
-  plane: () => GestureContext<unknown>['plane'];
-}
-
 /** Capture a drag at press. Null when there is nothing to move. Runs each
  *  behavior's `onStart`. `frame` reads the drag's latest frame, for the
  *  behaviors appended to the binding's own. */
@@ -92,7 +87,7 @@ export function beginMove(
   ctx: InvocationCtx,
   opts: BindingOpts | undefined,
   frame: () => MoveFrame,
-): { session: MoveSession; readers: MoveReaders } | null {
+): { session: MoveSession; readers: GestureReaders } | null {
   const selection = ctx.deps.selection;
   const scene = ctx.deps.scene;
   const projection = poseDescriptorOf(ctx.deps.poseDescriptor);
@@ -137,7 +132,7 @@ export function beginMove(
   // rest, lands its batch the way the gesture's own commit does.
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
     commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops));
-  const readers: MoveReaders = { view: gestureViewReader(ctx.deps), plane: gesturePlaneReader(ctx.deps) };
+  const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);
 

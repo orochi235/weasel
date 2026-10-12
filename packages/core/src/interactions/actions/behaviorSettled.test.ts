@@ -10,7 +10,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { NodeId } from 'core/scene/types';
 import { moveAction } from './move/action';
 import { resizeAction } from './defaults/resize';
-import { rotateAction } from './defaults/rotate';
+import { rotateAction } from './rotate/action';
 import { insertAction } from './defaults/insert';
 import { lassoSelectAction } from './defaults/lassoSelect';
 import type { InsertDep, LassoSelectDep } from './depSchema';

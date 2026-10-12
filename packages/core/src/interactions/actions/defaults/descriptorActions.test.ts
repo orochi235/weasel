@@ -8,7 +8,7 @@ import { alignLeftAction } from './align';
 import { distributeHorizontalAction } from './distribute';
 import { duplicateAction } from './duplicate';
 import { cloneAction } from './clone';
-import { rotateAction } from './rotate';
+import { rotateAction } from '../rotate/action';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 type S = Scene<object, 'main', CirclePose>;

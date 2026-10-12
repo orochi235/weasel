@@ -14,7 +14,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import { moveAction } from './move/action';
 import { resizeAction } from './defaults/resize';
-import { rotateAction } from './defaults/rotate';
+import { rotateAction } from './rotate/action';
 import { cloneAction } from './defaults/clone';
 import { insertAction } from './defaults/insert';
 import { nudgeRightAction } from './defaults/nudge';

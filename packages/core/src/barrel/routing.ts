@@ -17,7 +17,7 @@ export { actionShortcuts, keySpecShortcut } from '../interactions/actions/action
 export type { ActionShortcut } from '../interactions/actions/actionShortcuts';
 export { moveAction } from '../interactions/actions/move/action';
 export { resizeAction } from '../interactions/actions/defaults/resize';
-export { rotateAction } from '../interactions/actions/defaults/rotate';
+export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/defaults/insert';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
