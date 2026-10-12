@@ -1,0 +1,13 @@
+.pill {
+  display: block;
+  width: fit-content;
+  padding: 1px 8px;
+  border-radius: var(--wzl-radius-pill);
+  background: #0a44e6;
+  color: #fff;
+  font-size: var(--wzl-font-size-md);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+  cursor: default;
+}
