@@ -1424,15 +1424,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Aria's Popover. Left: changing the anchor span's size by a sub-pixel instead, which trips React
   Aria's own `ResizeObserver` without touching `window`; whether that repositions needs a browser.
 
-- **(P3) ItemList: removing the focused row leaves focus on `<body>`.** A consumer's remove control
-  in a row's `trailing` cell unmounts the row with focus inside it, and
-  `packages/ui/src/components/ItemList/ItemList.tsx` computes a fallback tab stop for the vanished
-  `focusId` but never focuses it, so the next arrow key goes nowhere. `LayerList` now handles this
-  because it owns its remove button; `ItemList` does not own the control, so it has to infer "the
-  row that held focus is gone". That needs focus-within tracking that survives the removal, and
-  browsers differ on whether removing the focused element fires `blur`, so settle it in a
-  `*.browser.test.tsx`.
-
 - **(P3) BandEditor: splitting a band has no keyboard path.** A band is split only by clicking the
   ruler (`onTrackPointerDown` in `packages/ui/src/components/BandEditor/BandEditor.tsx`); every
   other edit has a key. It needs a key and a rule for where the split lands (the selected band's

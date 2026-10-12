@@ -14,6 +14,7 @@ import {
 import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
 import { assignRef } from '@weasel-js/react';
 import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
+import { useRemovedRowFocus } from '../../useRemovedRowFocus';
 import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';
 
@@ -159,6 +160,8 @@ export const ItemList = forwardRef(function ItemList(
   /** The row a range move is focusing, whose focus must not re-anchor. */
   const extending = useRef<string | null>(null);
 
+  const { rowRef } = useRemovedRowFocus<HTMLDivElement>(rows, (id) => targets.current.get(id)?.focus());
+
   const stopId = rows.some((r) => r.id === focusId)
     ? focusId
     : (rows.find((r) => r.selected) ?? rows[0])?.id;
@@ -303,16 +306,7 @@ export const ItemList = forwardRef(function ItemList(
     >
       {overlay}
       {ghost && container ? (
-        <DragGhost at={ghost} from={container}>
-          {rows
-            .filter((row) => ghost.ids.includes(row.id))
-            .map((row) => (
-              <div key={row.id} className={[s.row, row.selected && s.selected].filter(Boolean).join(' ')}>
-                {row.leading}
-                <span className={s.label}>{row.label}</span>
-              </div>
-            ))}
-        </DragGhost>
+        <DragGhost at={ghost} from={container}><GhostRows rows={rows} ids={ghost.ids} /></DragGhost>
       ) : null}
       {rows.map((row, i) => {
         const tabIndex = interactive ? (row.id === stopId ? 0 : -1) : undefined;
@@ -334,7 +328,10 @@ export const ItemList = forwardRef(function ItemList(
             {...row.rowProps}
             role={roles.row}
             aria-selected={selection && mode !== 'list' ? !!row.selected : undefined}
-            ref={mode === 'listbox' ? targetRef(row.id) : undefined}
+            ref={(el) => {
+              rowRef(row.id)(el);
+              if (mode === 'listbox') targetRef(row.id)(el);
+            }}
             tabIndex={mode === 'listbox' ? tabIndex : row.rowProps?.tabIndex}
             onKeyDown={interactive ? onKeyDown(row, i) : row.rowProps?.onKeyDown}
             onClick={interactive ? onClick(row, i) : row.rowProps?.onClick}
@@ -358,6 +355,18 @@ export const ItemList = forwardRef(function ItemList(
     </div>
   );
 });
+
+/** The dragged rows as the ghost draws them: leading and label, no controls. */
+function GhostRows({ rows, ids }: { rows: readonly ItemListRow[]; ids: readonly string[] }) {
+  return rows
+    .filter((row) => ids.includes(row.id))
+    .map((row) => (
+      <div key={row.id} className={[s.row, row.selected && s.selected].filter(Boolean).join(' ')}>
+        {row.leading}
+        <span className={s.label}>{row.label}</span>
+      </div>
+    ));
+}
 
 function modsOf(e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): PressModifiers {
   return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
