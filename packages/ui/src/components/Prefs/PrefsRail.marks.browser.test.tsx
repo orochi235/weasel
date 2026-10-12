@@ -93,19 +93,15 @@ it('leaves a nested page off the page that holds it and scrolls to a section tha
 
 it('scrolls to a section inside another until its heading clears the sticky one above, and keeps it marked there', async () => {
   const { entry, pane, marks } = mount();
+  // A smooth scroll passes every offset on its way, so the pane is read once the browser says it has ended.
+  const ended = new Promise((done) => pane().addEventListener('scrollend', done, { once: true }));
   fireEvent.click(entry('canvas.grid.dots'));
   const dots = pane().querySelector('[data-spy-section="canvas.grid.dots"]')!;
   const title = pane().querySelector('[data-spy-section="canvas.grid"] > [data-pref-sticky]')!;
-  // A smooth scroll passes every offset on its way, so the pane is read once it has stopped moving.
-  let last = -1;
-  await expect.poll(() => {
-    const still = pane().scrollTop === last;
-    last = pane().scrollTop;
-    return still && last > 0;
-  }, { interval: 120, timeout: 3000 }).toBe(true);
+  await ended;
+  expect(pane().scrollTop).toBeGreaterThan(0);
   expect(Math.abs(dots.getBoundingClientRect().top - title.getBoundingClientRect().bottom)).toBeLessThan(2);
   // The spy holds a chosen section until its scroll ends, and only then reads the pane again.
-  pane().dispatchEvent(new Event('scrollend'));
   await new Promise((done) => requestAnimationFrame(done));
   expect(marks()).toEqual({ canvas: 'open', 'canvas.grid.dots': 'current' });
 });
