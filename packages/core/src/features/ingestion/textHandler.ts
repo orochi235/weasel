@@ -29,6 +29,7 @@ export function createTextHandler(opts: TextHandlerOptions = {}): ContentHandler
   return {
     id: 'kit:text',
     match: (item: IngestItem) => item.kind === 'string' && item.mime === 'text/plain',
+    types: ['text/plain'],
     priority: -110,
     handle(items, ctx: IngestCtx) {
       let index = 0;

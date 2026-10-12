@@ -22,8 +22,10 @@
  * coords → `point: null`; handlers pick their own placement policy.
  */
 import type { Action } from '@weasel-js/routing';
-import type { ActionDeps } from '@weasel-js/routing';
-import { runIngest, type IngestCtx, type RunIngestOptions } from 'features/ingestion/contentHandlers';
+import { ActionDisabledReason, type ActionDeps } from '@weasel-js/routing';
+import {
+  couldClaim, runIngest, type ContentHandlerEntry, type IngestCtx, type RunIngestOptions,
+} from 'features/ingestion/contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
@@ -84,6 +86,16 @@ export function ingestFromEvent(
   runIngest(items, ctx, opts).catch((err) => console.warn('weasel ingest:', err));
 }
 
+/** `Action.enabled` for an action that routes what an event carries through
+ *  `handlers` (the registry's when omitted): refused when none could claim any
+ *  of it. An invocation that carries nothing, a trigger, is taken. */
+export function claimable(
+  carried: { items: readonly IngestItem[] } | undefined,
+  handlers?: readonly ContentHandlerEntry[],
+): true | ActionDisabledReason {
+  return !carried || couldClaim(carried.items, handlers) ? true : ActionDisabledReason.NotApplicable;
+}
+
 export const ingestAction: Action & { requires: string[] } = {
   id: 'ingest',
   label: 'Insert external content',
@@ -100,5 +112,5 @@ export const ingestAction: Action & { requires: string[] } = {
   // mode-agnostic in v1. Revisit if a capability-restricted mode needs to
   // refuse drops/pastes (the listener-level editable-target guard already
   // keeps text-editing pastes away from the scene).
-  enabled: () => true,
+  enabled: (_deps, _at, carried) => claimable(carried),
 };

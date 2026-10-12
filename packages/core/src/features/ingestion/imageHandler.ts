@@ -92,6 +92,7 @@ export async function embedFilesAsImageNodes(
 export const kitImageHandler: ContentHandlerEntry = {
   id: 'kit:image',
   match: (item: IngestItem) => item.kind === 'file' && item.mime.startsWith('image/'),
+  types: ['image/*'],
   priority: -100,
   handle(items, ctx: IngestCtx) {
     const files = items.flatMap((it) => (it.kind === 'file' ? [it.file] : []));

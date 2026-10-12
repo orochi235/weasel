@@ -35,11 +35,12 @@ Priority tags:
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
-  (a) drag-over feedback. A canvas now accepts a drag only when a `drop` binding would take what
-  it carries, and shows `weasel-dropover` then. Still missing: asking the content handlers, so a
-  drag no handler would claim is refused, and an insertion ghost under the pointer. Both belong in
-  the `ingest` action (`interactions/actions/defaults/ingest.ts`), which gives prediction nothing
-  to ask yet.
+  (a) an insertion ghost under the pointer during a drag. A canvas accepts a drag only when a
+  `drop` binding would take it and a content handler could claim it, and shows `weasel-dropover`
+  then. A ghost needs two things nothing has yet: somewhere for an action to draw while it is only
+  being predicted (`ingest` is an immediate action, and a dragover never invokes it), and what to
+  draw, since a browser withholds a dragged file's contents, its size included, until the drop.
+  It also needs a real OS drag to check, which no test here can start.
   (b) `kitTextHandler` turns pasted or dropped plain text into a text node sized to the string,
   and is exported but registered nowhere: a canvas opts in with `ingestion={{ handlers:
   [kitTextHandler] }}`. Whether `ingest` canvases should take text by default, and whether

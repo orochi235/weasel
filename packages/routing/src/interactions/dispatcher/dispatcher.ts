@@ -60,7 +60,7 @@ import type { DispatchRecord, WalkStep } from './dispatchRecord';
 import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
 import { buildDispatchRecord } from './buildDispatchRecord';
 import { DEV, recordTrace } from './dispatchTrace';
-import { immediateParams, worldPointOf } from './inputFacts';
+import { carriedBy, immediateParams, worldPointOf } from './inputFacts';
 import {
   describeEligible, isEligible, liveInView, preferContextual, preferViewScoped, ruleCtxOf,
   type Ranking, type Walked,
@@ -673,7 +673,7 @@ export function createDispatcher(opts?: {
       // winner's invoke reuses the same bag. Shared with
       // `ActionsRegistry.trigger`, including the dev undeclared-read guard.
       const deps = buildDepsFromRequires(action, ctx.depRegistry);
-      const enabled = action.enabled ? action.enabled(deps, worldPointOf(event)) : true;
+      const enabled = action.enabled ? action.enabled(deps, worldPointOf(event), carriedBy(event)) : true;
       if (enabled !== true) { push({ kind: 'declined', reason: String(enabled) }); continue; }
       if (stop !== 'exhausted') { push({ kind: 'outranked' }); continue; }
       if (!attempt) {
