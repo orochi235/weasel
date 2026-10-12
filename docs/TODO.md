@@ -174,14 +174,13 @@ Priority tags:
   later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
   the pointer session to say which.
 
-- **(P3) Long-press: a browser that sends its own `contextmenu` on a touch hold may fire the menu
-  twice.** `useGestureDispatcher`
-  (`packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx`) synthesizes `longpress`
-  after 500 ms and falls back to dispatching `contextmenu`; its `onContextMenu` listener also
-  dispatches `contextmenu` for the native event. Android Chrome sends a native `contextmenu` on a
-  touch hold, so a `contextMenu` binding could run from both. Not reproduced: it needs a real touch
-  device, since jsdom sends no native event. If real, drop the native event while a touch pointer
-  whose long-press fired is still held.
+- **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
+  `useGestureDispatcher` now treats a `contextmenu` that arrives while a touch or pen hold is in
+  progress as that hold's long-press: it fires the pending one early, or is dropped if the
+  long-press already ran, so a `contextMenu` binding runs once. Tested in jsdom with a hand-sent
+  event (`useGestureDispatcher.nativeLongPress.test.tsx`). Left: hold a finger on a canvas with a
+  `contextMenu` binding in Android Chrome and confirm one menu, and that the event really arrives
+  while the pointer is still held rather than after a `pointercancel`.
 
 - **(P2) Modes: "is this tool allowed in this mode" is answered three ways with two different
   rules.** `eligibleForMode` in `packages/modes/src/modeDefinition.ts` allows a tool when any of its

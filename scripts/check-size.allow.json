@@ -315,8 +315,8 @@
     "longestFunction": 923
   },
   "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx": {
-    "lines": 1178,
-    "longestFunction": 1038
+    "lines": 1156,
+    "longestFunction": 1031
   },
   "packages/simulation/src/useSimulation.ts": {
     "longestFunction": 130
