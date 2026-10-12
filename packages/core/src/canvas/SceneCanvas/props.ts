@@ -1,4 +1,5 @@
 import type { ModeRegistry } from '@weasel-js/modes';
+import type { PathEditHost } from './pathEditHost';
 import type { FillStyle } from '@weasel-js/paint';
 import type { ActionsProp } from '@weasel-js/routing';
 import { Yoke } from '@weasel-js/routing/react';
@@ -73,19 +74,6 @@ export interface BridgeAdapter {
  *  `DeviceProfile.targetScale`. */
 export const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;
 
-// ---------------------------------------------------------------------------
-// Dev-only coord trace
-// ---------------------------------------------------------------------------
-
-/**
- * `import.meta.env.DEV`, read through a cast rather than off a typed
- * `ImportMeta`. Core must not depend on a bundler's ambient augmentation
- * (`vite/client`) to compile — until core moved into `packages/core/`, two
- * call sites below read `import.meta.env` bare and only type-checked because
- * `apps/site/vite-env.d.ts` leaked its `/// <reference types="vite/client" />`
- * into the shared root-tsconfig program. Isolating core's build surfaced it.
- * Mirrors the same cast in dispatcher.ts and buildDeps.ts.
- */
 /** `<SceneCanvas longPress>`. */
 export interface SceneCanvasLongPress {
   /**
@@ -364,8 +352,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  layer, and the undoable op. Return `null` to reject an insert. */
     insertNodeFactories?: Record<string, InsertNodeFactory>;
 
-    /** The fill and stroke a kit-built shape is inserted with, by tool `kind`
-     *  and insert count; the kit keeps the geometry. Default
+    /** The fill, stroke, and fill rule a kit-built shape is inserted with, by
+     *  tool `kind` and insert count; the kit keeps the geometry. Default
      *  `paletteInsertPaint`, the kit palette in turn. A kind with a factory in
      *  `insertNodeFactories` is not asked. */
     insertPaint?: InsertPaint;
@@ -705,6 +693,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * revokes anchor editing.
      */
     modes?: ModeRegistry;
+
+    /** Hands which path is being anchor-edited to the host. See {@link PathEditHost}. */
+    pathEdit?: PathEditHost;
 
     /**
      * Override detected device facts. Merged over what `matchMedia` reports;

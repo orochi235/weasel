@@ -56,6 +56,7 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
       || item.mime === WEASEL_CLIPBOARD_MIME_WEB
       || (item.mime === 'text/plain'
         && (sniffWeaselClipboardText(item.text) || isMetadataBearingSvg(item.text)))),
+  types: [WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, 'text/plain'],
   handle(items, ctx: IngestCtx) {
     const clipboard = ctx.clipboard;
     if (!clipboard) {

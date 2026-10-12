@@ -7,7 +7,7 @@
  * came to disagree about where a node is, and a derived pose widens that gap
  * from "mid-drag" to "always".
  */
-import { recordDeps, sameDeps, type DepRecord } from './depMemo';
+import { deriveRecorded, emptyDepRecord, sameDeps, type DepRecord } from './depMemo';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
@@ -108,7 +108,7 @@ function derivedPoseIn<TPose>(
     let computed = false;
     const record = nodeMemo<PoseMemo<TPose>>(node, POSE_SLOT[reading], node.pose, () => {
       computed = true;
-      return run(node, derive, ids.map(depOf), { nodes: [], poses: [], value: null });
+      return run(node, derive, ids.map(depOf), { ...emptyDepRecord<TPose>(), value: null });
     });
     // Mutating the record in place is what updates the memo slot, which holds
     // this object.
@@ -129,8 +129,7 @@ function run<TPose>(
   deps: readonly (DerivedDep<TPose> | undefined)[],
   into: PoseMemo<TPose>,
 ): PoseMemo<TPose> {
-  into.value = derive(node as never, deps);
-  recordDeps(into, deps);
+  into.value = deriveRecorded(into, deps, (handed) => derive(node as never, handed));
   return into;
 }
 

@@ -52,6 +52,25 @@ export const Primary: Story = { args: { variant: 'primary' } };
 export const Secondary: Story = { args: { variant: 'secondary' } };
 export const Ghost: Story = { args: { variant: 'ghost' } };
 
+/** `--wzl-gloss` at 1, the glass a theme opts into. The default theme sets 0 and draws these flat. */
+export const Glass: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', ['--wzl-gloss' as string]: 1 }}>
+      <Button variant="primary">Save</Button>
+      <Button variant="secondary">Cancel</Button>
+      <KitToggleBar
+        ariaLabel="View"
+        items={[
+          { value: 'tree', label: 'Tree' },
+          { value: 'list', label: 'List' },
+        ]}
+        value="tree"
+        onChange={() => {}}
+      />
+    </div>
+  ),
+};
+
 /** `link` takes its type from the surrounding text, so it sits inside a
  *  sentence or a table cell at whatever size that text is. */
 export const Link: Story = {
@@ -274,6 +293,8 @@ const LAB_DEFAULTS: LabParams = {
 function buttonStyleFromLab(p: LabParams): CSSProperties {
   return {
     ['--wzl-accent' as never]: p.accent,
+    // The lab tunes the glass, which the default theme leaves off.
+    ['--wzl-gloss' as never]: '1',
     ['--btn-radius' as never]: `${p.radius}px`,
     ['--btn-height' as never]: `${p.height}px`,
     ['--btn-padx' as never]: `${p.padx}px`,

@@ -97,6 +97,7 @@ export type {
   LaidOutDecoration,
   LaidOutLineBox,
   MeasuredText,
+  MeasuredSpan,
   MeasureTextBoundsOpts,
   TextLineBoxesOpts,
   MarkdownFontOptions,
@@ -118,4 +119,5 @@ export type {
   CreateOutlinesResult,
   OutlinePathSpec,
   OutlineStrokeResult,
+  StrokeRegionOptions,
 } from '../interactions/actions/outlines';

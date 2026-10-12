@@ -224,3 +224,57 @@ describe('useGestureDispatcher — ingest channels', () => {
     await flushMicrotasks();
   });
 });
+
+describe('useGestureDispatcher — which drags a canvas accepts', () => {
+  /** A dragover as a browser sends it: each item's kind and type, no contents. */
+  function dragOver(canvas: Element, items: { kind: string; type: string }[], types: string[] = []): Event {
+    const ev = makeDropEvent({
+      dataTransfer: { items, files: [], types, dropEffect: 'none' },
+      clientX: 5, clientY: 5,
+      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    }, 'dragover');
+    act(() => { canvas.dispatchEvent(ev); });
+    return ev;
+  }
+
+  function mount(binding: Action['defaultBinding']): Element {
+    const action = makeProbeAction(binding, vi.fn());
+    const { container } = render(<Harness><Probe actionDef={action} /></Harness>);
+    return container.querySelector('canvas')!;
+  }
+
+  it('is no drop target when nothing binds a drop', () => {
+    const canvas = mount([{ kind: 'paste' }]);
+    const ev = dragOver(canvas, [{ kind: 'file', type: 'image/png' }]);
+    expect(ev.defaultPrevented).toBe(false);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(false);
+    expect((ev as unknown as DragEvent).dataTransfer!.dropEffect).toBe('none');
+  });
+
+  it('accepts a drag whose type a drop binding names, and refuses one it does not', () => {
+    const canvas = mount([{ kind: 'drop', types: ['image/*'] }]);
+    const text = dragOver(canvas, [{ kind: 'string', type: 'text/plain' }]);
+    expect(text.defaultPrevented).toBe(false);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(false);
+    const image = dragOver(canvas, [{ kind: 'file', type: 'image/png' }]);
+    expect(image.defaultPrevented).toBe(true);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(true);
+  });
+
+  it('drops the class when the drag turns into one it refuses', () => {
+    const canvas = mount([{ kind: 'drop', types: ['image/*'] }]);
+    dragOver(canvas, [{ kind: 'file', type: 'image/png' }]);
+    dragOver(canvas, [{ kind: 'string', type: 'text/plain' }]);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(false);
+  });
+
+  // Firefox names a dragged file `application/x-moz-file` until it is dropped,
+  // and a browser may name only `Files`. Neither says the file is not an image.
+  it('accepts a file whose type the browser withholds until the drop', () => {
+    const canvas = mount([{ kind: 'drop', types: ['image/*'] }]);
+    expect(dragOver(canvas, [{ kind: 'file', type: 'application/x-moz-file' }]).defaultPrevented).toBe(true);
+    expect(dragOver(canvas, [{ kind: 'file', type: '' }]).defaultPrevented).toBe(true);
+    expect(dragOver(canvas, [], ['Files']).defaultPrevented).toBe(true);
+  });
+});
+

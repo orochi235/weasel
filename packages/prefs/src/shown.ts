@@ -11,7 +11,7 @@ type Siblings = Record<string, unknown> | undefined;
 
 /** What the control over `leaf` shows for `stored`: what its `encoding` reads it as, else `stored` itself.
  *  `siblings` is the object the leaf is a field of. */
-export function prefShownValue(leaf: PrefLeaf, stored: unknown, siblings?: Siblings): unknown {
+export function prefShownValue(leaf: PrefLeaf, stored: unknown, siblings?: Record<string, unknown>): unknown {
   if (leaf.kind !== 'boolean' && leaf.kind !== 'enum') return stored;
   const { encoding } = leaf as PrefBoolean | PrefEnum;
   return encoding ? (encoding.read as (stored: unknown, siblings: Siblings) => unknown)(stored, siblings) : stored;

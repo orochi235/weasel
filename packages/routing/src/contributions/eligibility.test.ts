@@ -4,6 +4,7 @@
  * live tier, matching the dispatcher's existing hotkey > active > ambient walk.
  */
 import { describe, expect, it } from 'vitest';
+import { capabilitiesAllowed } from '@weasel-js/modes';
 import { liveScope } from './eligibility';
 import type { Eligibility } from './types';
 
@@ -57,10 +58,10 @@ describe('liveScope honors the capability filter', () => {
     expect(liveScope('pen', { focus: true }, { ...focused, allows: () => false })).toBe('active');
   });
 
-  it('asks the mode about an explicitly empty tag list', () => {
-    // `eligibleForMode` returns false for an empty list, so without the
-    // length check a `capabilities: []` entry would be silently withheld.
-    expect(liveScope('pen', { focus: true, capabilities: [] }, { ...focused, allows: () => false })).toBe('active');
+  it('leaves an explicitly empty tag list to the mode, which allows it', () => {
+    const allows = (tags: readonly string[]) => capabilitiesAllowed(new Set<string>(), tags);
+    expect(liveScope('pen', { focus: true, capabilities: [] }, { ...focused, allows })).toBe('active');
+    expect(liveScope('pen', { focus: true, capabilities: ['creates-paths'] }, { ...focused, allows })).toBeNull();
   });
 });
 

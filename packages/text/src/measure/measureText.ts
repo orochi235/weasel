@@ -12,6 +12,10 @@
  * Trailing spaces and tabs hang and are not included in `lines[i]`; neither is the
  * hard break that closed it.
  *
+ * A tab runs to its next stop, as in `layoutRuns`, and `fillText` draws one as
+ * a single space. So paint a line from `spans[i]`, its stretches between tabs
+ * and the x each starts at, and not from `lines[i]`.
+ *
  * The caller owns the `ctx.font` setup — pass a context whose `font`
  * already matches `style` (use `fontString(style)`).
  */
@@ -19,6 +23,7 @@
 import type { ResolvedTextStyle } from '../textStyle';
 import { graphemeCount } from './graphemes';
 import { hangs, wrapLines } from '../layout/lineBreak/wrapLines';
+import { widthWithTabs, type TabStop } from '../layout/tabStops';
 
 /**
  * Advance width of `text` in world units, tracking included.
@@ -39,9 +44,17 @@ export function measuredWidth(
     + (style.letterSpacing === 0 ? 0 : graphemeCount(text) * style.letterSpacing);
 }
 
+/** A stretch of a line between tabs, and how far into the line it starts. */
+export interface MeasuredSpan {
+  text: string;
+  x: number;
+}
+
 /** Result of `measureText`: wrapped lines, per-line source offsets, and total block height. */
 export interface MeasuredText {
   lines: string[];
+  /** Per line, what to paint and where: its text split at its tabs. */
+  spans: MeasuredSpan[][];
   lineStarts: number[];
   height: number;
 }
@@ -67,13 +80,28 @@ export function measureText(
   }
   at.push(u);
 
-  const wrapped = wrapLines(cps, maxWidth, (start, end) => measuredWidth(ctx, text.slice(at[start], at[end]), style));
-  const lines = wrapped.map((l) => {
+  const flatWidth = (start: number, end: number): number =>
+    measuredWidth(ctx, text.slice(at[start], at[end]), style);
+  const tabs: number[] = [];
+  cps.forEach((cp, k) => { if (cp === 9) tabs.push(k); });
+  const space = tabs.length === 0 ? 0 : ctx.measureText(' ').width;
+  const tab: TabStop = { stop: style.tabSize * (space + style.letterSpacing), min: space / 2 };
+  const widthOf = (
+    start: number, end: number, piece?: (start: number, end: number, x: number) => void,
+  ): number => widthWithTabs(start, end, tabs, () => tab, flatWidth, piece);
+
+  const wrapped = wrapLines(cps, maxWidth, (start, end) => widthOf(start, end));
+  const lines: string[] = [];
+  const spans: MeasuredSpan[][] = [];
+  for (const l of wrapped) {
     let end = l.end;
     while (end > l.start && hangs(cps[end - 1])) end--;
-    return text.slice(at[l.start], at[end]);
-  });
+    lines.push(text.slice(at[l.start], at[end]));
+    const row: MeasuredSpan[] = [];
+    widthOf(l.start, end, (from, to, x) => row.push({ text: text.slice(at[from], at[to]), x }));
+    spans.push(row);
+  }
   const lineStarts = wrapped.map((l) => at[l.start]);
   const height = lines.length * style.fontSize * style.lineHeight;
-  return { lines, lineStarts, height };
+  return { lines, spans, lineStarts, height };
 }

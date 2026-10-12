@@ -10,7 +10,7 @@ import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
 import { fontSizeOf } from './fontSize';
-import { joinLines, LineTracker, warnUnreadPositions } from './tspanLines';
+import { DEFAULT_LINE_HEIGHT, joinLines, LineTracker, warnUnreadPositions } from './tspanLines';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import type { GradientTable } from './gradients';
@@ -157,7 +157,6 @@ export function parseTextElement(
   const textStyle = readTextStyle(leafStyle, onWarn);
   const textPaint = readTextPaint(leafStyle, gradients, onWarn, isNonScalingStroke(el));
   const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
-  const lineHeight = textStyle.lineHeight ?? 1.2;
 
   const dominantBaseline = el.getAttribute('dominant-baseline');
   const explicitTopAnchor = dominantBaseline === 'text-before-edge'
@@ -176,7 +175,7 @@ export function parseTextElement(
   // Walk children: text nodes become plain run text; <tspan> elements
   // become StyledRuns with their attribute overrides applied.
   const runLines: StyledRun[][] = [[]];
-  const tracker = new LineTracker(el);
+  const tracker = new LineTracker(el, onWarn);
   const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
   for (let i = 0; i < el.childNodes.length; i++) {
     const child = el.childNodes[i];
@@ -193,13 +192,17 @@ export function parseTextElement(
         continue;
       }
       warnUnreadPositions(sp, onWarn);
-      if (tracker.startsLine(sp)) runLines.push([]);
+      const afterText = runLines.some((line) => line.some((r) => r.text.trim() !== ''));
+      if (tracker.startsLine(sp, afterText)) runLines.push([]);
       push(readTspanRun(sp, gradients, leafStyle, onWarn));
     }
   }
   if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
   const runs = joinLines(runLines);
   const plain = runs.map((r) => r.text).join('');
+  const pitched = tracker.lineHeight(fontSize);
+  if (pitched !== undefined) textStyle.lineHeight = pitched;
+  const lineHeight = textStyle.lineHeight ?? DEFAULT_LINE_HEIGHT;
 
   // data-weasel-* attrs win; otherwise the box is what the text lays out to.
   const dataW = num(el.getAttribute('data-weasel-width'), NaN);

@@ -262,13 +262,24 @@ describe('useSelectTool — press and drag bindings do not collide', () => {
     }));
   }
 
-  it.each(['selected-body', 'unselected-body', 'empty'] as const)(
+  it.each(['selected-body', 'unselected-body'] as const)(
     'the eager press on %s matches select.pick and no drag binding',
     (body) => {
       const matches = matchSorted(pressEvent(body), selectBindings(), false);
       expect(matches.map((m) => m.binding.actionId)).toEqual(['select.pick']);
     },
   );
+
+  // Nothing to pick there, so the press is left to a binding a tier below.
+  it('the eager press on empty matches nothing of the tool’s', () => {
+    expect(matchSorted(pressEvent('empty'), selectBindings(), false)).toEqual([]);
+  });
+
+  it('with no body class at all, the press still reaches select.pick', () => {
+    const { bodyTarget: _unwired, ...ev } = pressEvent('empty');
+    const matches = matchSorted(ev, selectBindings(), false);
+    expect(matches.map((m) => m.binding.actionId)).toEqual(['select.pick']);
+  });
 
   it('a modified press still reaches select.pick', () => {
     for (const mod of ['shiftKey', 'metaKey', 'altKey', 'ctrlKey'] as const) {

@@ -1,18 +1,20 @@
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { Op } from 'core/ops/types';
-import type { InsertAdapter, MoveAdapter, SnapTarget } from 'core/adapters/types';
+import type { MoveAdapter, SnapTarget } from 'core/adapters/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 
 import type { ModifierState } from '@weasel-js/routing';
-export type { ModifierState };
+import type { GestureFrames } from './frames';
+export type { GestureFrames, ModifierState };
 
-/** Pointer position in both world and client coords. */
+/** Pointer position in world coords, and in client coords when the event carried them
+ *  (a keystroke, a UI-driven trigger, and a synthetic probe do not). */
 export interface PointerState {
   worldX: number;
   worldY: number;
-  clientX: number;
-  clientY: number;
+  clientX?: number;
+  clientY?: number;
 }
 
 /**
@@ -41,6 +43,12 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
    * through this before comparing them with a pose.
    */
   plane?: PlaneMap | null;
+  /**
+   * Frame math over the scene the gesture edits; see {@link GestureFrames}.
+   * Set by move, resize, rotate, and clone. Absent where no node is behind
+   * the gesture's poses: an insert's points, a lasso's.
+   */
+  frames?: GestureFrames<TPose>;
   adapter: MoveAdapter<TNode, TPose>;
   /**
    * Per-gesture mutable store. Keys should be namespaced by behavior name to avoid
@@ -368,25 +376,17 @@ export interface PointSnapBehavior<TPose extends Bounds> {
 
 // ----- clone -----
 
-/** Pose carried through clone gestures: ids being cloned plus the pointer/offset state. */
-export interface ClonePose {
-  ids: string[];
-  offset: { dx: number; dy: number };
-  worldX: number;
-  worldY: number;
-}
+/** What a `CloneBehavior.onMove` can return: the translation to use for
+ *  every copy, and a snap target to announce. */
+export type CloneBehaviorResult<TPose> = Pick<BehaviorResult<TPose>, 'transform' | 'snap'>;
 
-/** Layer category a clone targets — kit-level placeholder; consumers may narrow. */
-export type CloneLayer = 'structures' | 'zones' | 'plantings';
-
-/** A behavior plugged into `useClone`; gates on modifier state and emits ops at gesture end. */
-export interface CloneBehavior {
-  id: string;
-  /** Decides whether this gesture should activate at start. */
-  activates: (modifiers: ModifierState) => boolean;
-  /** On end, returns ops to commit (or [] for no-op). */
-  onEnd: (
-    pose: ClonePose,
-    ctx: { adapter: InsertAdapter<{ id: string }> },
-  ) => Op[];
-}
+/**
+ * A behavior on the `clone` action's binding. It is told the originals: the
+ * selected roots as `draggedIds`, with `origin` and `current` holding the
+ * world pose of each node a copy is placed from, before and after the drag.
+ * `onMove` reshapes the translation; `onEnd` may claim the commit with ops of
+ * its own, which land in place of the copies, or abort it with `null`. A move
+ * behavior that only reshapes the translation, `snap(strategy)` among them,
+ * is one of these.
+ */
+export type CloneBehavior<TPose> = ActionBehavior<TPose, GroupTransform, CloneBehaviorResult<TPose>>;

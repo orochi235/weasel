@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readModuleCss } from '../../testing/readModuleCss';
 import { PropertyField } from './PropertyField';
 
 describe('number field unit', () => {
@@ -35,9 +35,8 @@ describe('number field spin buttons', () => {
   // own border and left a gap a unit looked like it should fill. jsdom computes
   // no appearance and renders no pseudo-element, so there is nothing here to
   // assert against — the stylesheet is the only place the removal is visible.
-  const sheet = readFileSync(
+  const sheet = readModuleCss(
     resolve(process.cwd(), 'packages/ui/src/components/Properties/Properties.module.css'),
-    'utf8',
   );
 
   it('drops the native steppers on a number input handed to a row', () => {

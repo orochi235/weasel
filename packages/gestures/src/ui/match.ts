@@ -31,6 +31,7 @@
 import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec, TargetPredicate } from './spec';
 import type { InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
+import { matchIngestTypes } from './ingestTypes';
 
 // ---------------------------------------------------------------------------
 // matchModifiers
@@ -320,30 +321,6 @@ function matchPhaseAtom(a: PhaseAtom, ctx: PhaseContext): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// matchIngestTypes
-// ---------------------------------------------------------------------------
-
-/** MIME-glob match: `'image/*'` prefix-matches the major type; anything
- *  else is an exact (case-insensitive) match; bare `'*'` or `'*\/*'` matches all. */
-export function mimeMatchesGlob(mime: string, glob: string): boolean {
-  const m = mime.toLowerCase();
-  const g = glob.toLowerCase();
-  if (g === '*' || g === '*/*') return true;
-  if (g.endsWith('/*')) return m.startsWith(g.slice(0, -1));
-  return m === g;
-}
-
-/** True if ANY item's MIME matches ANY of the `types` globs.
- *  `types: []` (empty) ≡ omitted = match any. */
-export function matchIngestTypes(
-  items: readonly { mime: string }[],
-  types: string[] | undefined,
-): boolean {
-  if (!types || types.length === 0) return true;
-  return items.some((it) => types.some((g) => mimeMatchesGlob(it.mime, g)));
-}
-
-// ---------------------------------------------------------------------------
 // matchSpec
 // ---------------------------------------------------------------------------
 
@@ -417,17 +394,14 @@ export function matchSpec(
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
-    case 'contextMenu': {
-      if (e.kind !== 'contextmenu') return false;
+    // Each happens at a point, so its target is what the event classified
+    // there: for a long-press, the affordance its press landed on.
+    case 'contextMenu':
+    case 'longPress':
+    case 'hover': {
+      if (e.kind !== 'contextmenu' && e.kind !== 'longpress' && e.kind !== 'hover') return false;
+      if (e.kind !== spec.kind.toLowerCase()) return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
-    }
-
-    case 'longPress': {
-      if (e.kind !== 'longpress') return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
-      // A long-press begins as a press, so its target is what was under the
-      // finger in scene terms: the affordance the press classified.
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 

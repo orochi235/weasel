@@ -56,7 +56,8 @@ export interface GroupPoseOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
 }
 
-type DerivePose<TPose> = (
+/** A `derivePose` function as the scene calls it: the node, then what it depends on, in `dependsOn` order. */
+export type DiagramDerivePose<TPose> = (
   node: { pose: TPose; data: unknown },
   deps: readonly (DerivedDep<TPose> | undefined)[],
 ) => TPose | null;
@@ -66,7 +67,7 @@ type DerivePose<TPose> = (
  * grown by the trait's inset. `null` — the authored pose stands — when the node
  * carries no group trait or every member is gone.
  */
-export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): DerivePose<TPose> {
+export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return (node, deps) => {
     const group = diagramGroupOf(node);
@@ -101,7 +102,7 @@ export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): Deri
  * A `derivePose` that keeps a node at a point on its dependency's bounds.
  * `null` when the node carries no anchor trait or the dependency is gone.
  */
-export function anchorDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): DerivePose<TPose> {
+export function anchorDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return (node, deps) => {
     const anchor = diagramAnchorOf(node);

@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useMemo, useRef, useLayoutEffect } from 'react';
+import type { ColorSource, Palette } from '@weasel-js/paint';
+import React, { createContext, useCallback, useContext, useMemo, useRef, useLayoutEffect } from 'react';
 import { applyTheme } from './applyTheme';
 import { themeTones, type ColorList } from './colorList';
+import { colorSourceCss } from './colorSource';
 import { fullSelection, selectionKey, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
@@ -15,17 +17,20 @@ export {
 export { isColorModePreference, type ColorMode, type ColorModePreference } from './colorMode';
 
 /** What `<ThemeProvider>` publishes: the theme, the full selection in force, the
- *  fully resolved token record for that pair, and the tone list in force. */
+ *  fully resolved token record for that pair, and the tone list and palette in force. */
 export interface ThemeContextValue {
   readonly theme: Theme;
   readonly selection: Selection;
   readonly resolved: ResolvedTheme;
   readonly tones: ColorList;
+  readonly palette: Palette;
 }
 
 /** What `<ThemeProvider>` publishes. Provide `null` to hide an outer theme from a subtree, as a
  *  boundary that renders its children the way a page with no provider would. */
 export const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+const NO_PALETTE: Palette = { entries: [] };
 
 /** Props for `<ThemeProvider>`. */
 export interface ThemeProviderProps {
@@ -34,6 +39,8 @@ export interface ThemeProviderProps {
   readonly selection?: Selection;
   /** The colors a `tone` index picks from in this subtree. Absent: the theme's own. */
   readonly tones?: ColorList;
+  /** Colors a `ColorRef` names in this subtree, answered before the theme's own names. Absent: none. */
+  readonly palette?: Palette;
   /** Applied to the wrapper element, so it can be the layout element too. */
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -54,6 +61,7 @@ export function ThemeProvider({
   theme = weaselTheme,
   selection,
   tones,
+  palette = NO_PALETTE,
   className,
   style,
   children,
@@ -65,9 +73,9 @@ export function ThemeProvider({
   const key = selectionKey(axes, full);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, selection: full, resolved: resolveTheme(theme, full), tones: tones ?? themeTones(theme) }),
+    () => ({ theme, selection: full, resolved: resolveTheme(theme, full), tones: tones ?? themeTones(theme), palette }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [theme, key, tones],
+    [theme, key, tones, palette],
   );
 
   // Applying again replaces what the element held, so only the unmount releases.
@@ -121,5 +129,17 @@ export function useTones(): ThemeContextValue {
     selection: fullSelection(themeAxes(weaselTheme)),
     resolved: resolveTheme(weaselTheme),
     tones: themeTones(weaselTheme),
+    palette: NO_PALETTE,
   });
+}
+
+/**
+ * Turns a `ColorSource` into a CSS color under the theme, tones, and palette in
+ * force: `colorSourceCss` against `useTones()`. Every component that takes a
+ * color writes it through this. `undefined` for no source, and for one nothing
+ * answers.
+ */
+export function useColorCss(): (source: ColorSource | null | undefined) => string | undefined {
+  const ctx = useTones();
+  return useCallback((source) => (source == null ? undefined : (colorSourceCss(source, ctx) ?? undefined)), [ctx]);
 }

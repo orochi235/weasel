@@ -4,14 +4,12 @@ import {
   PREF_SCOPE,
   type PrefAlias,
   type PrefAliasTargets,
-  type PrefConditionJudge,
   type PrefEntryApplied,
   type PrefGroup,
   type PrefLeaf,
   type PrefScope,
   type PrefSection,
   prefAliasTargets,
-  prefConditionHolds,
   prefJudge,
   prefLeafAt,
   prefReader,
@@ -158,14 +156,17 @@ export function conditionedLeaf(
 }
 
 /**
- * Whether a node of a schema not yet resolved is drawn by its own `showIf`,
- * as a condition or a function. It answers for the node alone: a walk that
- * skips what is under a node not shown counts the nesting. With no resolved
- * schema to read a leaf's `encoding` from, a condition compares stored values.
+ * Whether a node met on a walk of a schema's own shape is drawn by its own
+ * `showIf`, as a condition or a function. It answers for the node alone: a
+ * walk that skips what is under a node not shown counts the nesting. `schema`
+ * is that schema resolved, which a condition reads each leaf's `encoding` from.
  */
-export function isEntryShown(entry: ConfigEntry, config: Record<string, unknown>): boolean {
-  const judge: PrefConditionJudge = (condition) =>
-    prefConditionHolds(condition, (at) => valueAtPath(config, at));
+export function isEntryShown(
+  entry: ConfigEntry,
+  config: Record<string, unknown>,
+  schema: PrefGroup | PrefSection,
+): boolean {
+  const judge = prefJudge(schema, (at) => valueAtPath(config, at));
   if (!prefScopeUnder(PREF_SCOPE, entry.annotations, judge).shown) return false;
   return entry.options.showIf?.(config) ?? true;
 }

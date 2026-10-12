@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useId, useMemo, useRef, type ReactNode, type RefObject } from 'react';
+import { useCallback, useContext, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useLatest } from '@weasel-js/core';
 import {
@@ -14,6 +14,9 @@ import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } f
 import { CloseButton } from '../CloseButton';
 import { type StanceProps, useStance } from '../stance';
 import s from './Callout.module.css';
+
+/** Far past the 1/64px a browser lays out in, and far short of anything seen. */
+const ANCHOR_NUDGE_PX = 1 / 16;
 
 /**
  * Composition wrapper for press-to-open callouts:
@@ -148,19 +151,14 @@ export function Callout(props: CalloutProps) {
     node?.addEventListener('keydown', escapeListener.current);
   }, []);
   const titleId = useId();
-  // RAC positions on open and recomputes on scroll, resize, and a
-  // ResizeObserver on the anchor — none of which fire when `anchorRect` is
-  // merely *translated*, as it is when a consumer tracks a scene node across a
-  // pan. (Zoom happens to work, since scaling also changes the anchor's size.)
-  // Nudging RAC's own resize listener is the supported way to make it
-  // recompute; there's no public updatePosition on Popover.
-  const hasAnchorRect = anchorRect !== undefined;
-  // Only a controlled callout is known to be shut; RAC positions it afresh when it opens.
-  const knownClosed = rest.isOpen === false;
-  useEffect(() => {
-    if (!hasAnchorRect || knownClosed || typeof window === 'undefined') return;
-    window.dispatchEvent(new Event('resize'));
-  }, [hasAnchorRect, knownClosed, anchorRect?.x, anchorRect?.y, anchorRect?.width, anchorRect?.height]);
+  // RAC repositions when the anchor changes size, through its own ResizeObserver, and not when it only moves, as
+  // it does when a consumer tracks a scene node across a pan. Popover has no public updatePosition, so each move
+  // also flips the anchor's width by a fraction of a pixel, which that observer sees and nothing else does.
+  const [seen, setSeen] = useState({ x: anchorRect?.x, y: anchorRect?.y, flip: false });
+  if (seen.x !== anchorRect?.x || seen.y !== anchorRect?.y) {
+    setSeen({ x: anchorRect?.x, y: anchorRect?.y, flip: !seen.flip });
+  }
+  const nudge = seen.flip ? ANCHOR_NUDGE_PX : 0;
   // RAC's popover role-heuristic misses alertdialog; label the outer role
   // it stamps. Upstream: react-spectrum Popover.mjs querySelector('[role=dialog]').
   const popoverAriaLabelledby =
@@ -181,7 +179,7 @@ export function Callout(props: CalloutProps) {
             style={{
               left: anchorRect.x,
               top: anchorRect.y,
-              width: anchorRect.width,
+              width: anchorRect.width + nudge,
               height: anchorRect.height,
             }}
           />,

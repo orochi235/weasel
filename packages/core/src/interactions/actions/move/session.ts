@@ -128,7 +128,7 @@ export function beginMove(
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
     commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops), selection.adapterMethods);
   const readers = gestureReaders(ctx.deps);
-  const gestureCtx = buildGestureContext(ctx, ids, startPoses, adapter, readers);
+  const gestureCtx = buildGestureContext(ctx, scene, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);
 
   const session: MoveSession = {

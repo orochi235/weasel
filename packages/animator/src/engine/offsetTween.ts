@@ -59,6 +59,8 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   };
 
   seed.progress = (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, virtualNow / o.ms));
+  // With no `onTick` to call it has nothing to do until it ends.
+  if (!o.onTick) seed.due = Math.max(o.ms, 0);
   seed.onCancel = () => leave(true);
   seed.tick = (nowMs) => {
     if (ctx.tripwire()) { leave(true); return true; }

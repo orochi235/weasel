@@ -234,9 +234,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       const carried = containerCascade(scene, asNodeId(id), d, (pose) => adapter.setPose(id, pose));
       return scenePoseTarget(scene, id, descriptor ?? d, carried);
     },
-    getLayers() {
-      return scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax }));
-    },
+    getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
+    subscribeLayers: (listener) => scene.subscribe(listener),
     getLayout(id) {
       const declared = scene.layoutOf(asNodeId(id));
       if (declared !== null || !options.layouts) return declared;

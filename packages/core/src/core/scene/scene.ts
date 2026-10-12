@@ -19,6 +19,8 @@ import { createArrivalWindow } from './arrivalWindow';
 import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
 import { createAppliedLog } from './appliedLog';
+import { createStaleReplay, SceneMembershipError } from './staleReplay';
+import { statedFields } from './statedFields';
 import { createLayerStack } from './layerStack';
 import { registerKitOps, type RemoveSnapshot, type SetLayoutPayload } from './kitOps';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
@@ -69,6 +71,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     layerIndex: new Map(),
   };
   const order = createRenderOrder(state);
+  const stale = createStaleReplay(state.nodes, () => version);
   const {
     isLocked: isLockedInternal, refuse: refuseLocked, refuseLayer: refuseLockedLayer, reachable,
     lifted: withLocksLifted,
@@ -173,7 +176,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   function rebuildOp(name: string, args: unknown): Op | null {
     if (registered.has(name)) return makeOp(name, args);
     // Its writes are the scene's own, so it replays without an adapter.
-    if (name === 'arrange') return createArrangeOp(args as ArrangeArgs, undefined, writePose);
+    if (name === 'arrange') return stale.tolerant(createArrangeOp(args as ArrangeArgs, undefined, writePose));
     if (name === CARRY_OP) {
       const { op, poses } = args as CarryArgs<TPose>;
       const inner = rebuildOp(op.name, op.args);
@@ -265,7 +268,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     rebuildLayerIndex,
     invalidateOrder,
     fnFields,
-    narrowSelection: () => { selection = reachable(selection); },
+    // A new array only when one is dropped: readers compare the selection by identity.
+    narrowSelection: (gone) => { selection = reachable(selection.some((id) => gone?.has(id)) ? selection.filter((id) => !gone?.has(id)) : selection); },
   });
 
   // ── Op execution (used by both kit mutations and consumer recordOp) ────
@@ -294,10 +298,12 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       apply: () => {
         const handler = registered.get(kind);
         if (!handler) throw new Error(`Scene: no registered op for kind "${kind}"`);
+        if (stale.skips(kind, payload, dir === 'fwd')) return 'noop';
         (dir === 'fwd' ? handler.apply : handler.revert)(payload);
         // Only a replay logs here: a first apply is recorded by the entry it
         // creates, and reverting it would leave that entry describing nothing.
         if (suppressRecording) logApplied(kind, payload, dir === 'rev');
+        return undefined;
       },
       invert: () => makeOp(kind, payload, dir === 'fwd' ? 'rev' : 'fwd'),
     };
@@ -343,7 +349,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
    *  journal stepping. The engine inverts whole ops when one throws; this
    *  also reverts the scene writes of the op that threw partway. */
   function replay(step: () => void): void {
-    atomically(() => withLocksLifted(() => withRecordingSuppressed(step)), () => true);
+    atomically(() => withLocksLifted(() => stale.during(() => withRecordingSuppressed(step))), () => true);
   }
 
   function executeAndLog(kind: string, payload: unknown, label: string): void {
@@ -378,6 +384,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
   const sceneHistory = createSceneHistory({
     engine: history,
     applying: (step) => atomically(() => withRecordingSuppressed(step), () => true),
+    tolerant: stale.tolerant,
     replay,
     notify,
     refuseUntracked,
@@ -407,7 +414,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         // Either engine stores the ops and replays them later, so they are
         // rebound to this call's adapter: the scene's own engine, and any
         // journal opened on it, was built without one.
-        const bound = ops.map((op) => carried.recording(bindOpToAdapter(op, adapter)));
+        const bound = ops.map((op) => carried.recording(stale.tolerant(bindOpToAdapter(op, adapter))));
         if (journal) journal.applyBatch(bound, label);
         // Native path: one engine entry, coalescible across applyBatch
         // calls via the ops' own coalesceKeys.
@@ -472,9 +479,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
     add(spec) {
       const id = spec.id ?? generateId();
-      if (state.nodes.has(id)) {
-        throw new Error(`Scene: id collision on "${id}"`);
-      }
+      if (state.nodes.has(id)) throw new SceneMembershipError(`Scene: id collision on "${id}"`);
       requireLayerIndex(spec.layer);
       refuseLockedLayer(spec.layer, 'add to');
       const parent = spec.parent ?? null;
@@ -499,7 +504,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-        ...(spec.pickable !== undefined ? { pickable: spec.pickable } : {}),
+        ...statedFields(spec),
         ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
       };
       executeAndLog('kit:add', payload, `add ${spec.kind}`);
@@ -507,9 +512,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       return id;
     },
 
-    remove(id) {
-      scene.removeMany([id]);
-    },
+    remove: (id) => scene.removeMany([id]),
 
     removalClosure(rootIds) {
       return removalClosure(rootIds).ids;
@@ -818,8 +821,13 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
 
     setArrivalHandler: arrivalWindow.setHandler,
 
-    layoutOf(id) {
-      return layoutOfInternal(id);
+    layoutOf: layoutOfInternal,
+
+    setUnits(id, units) {
+      const node = requireNode(id);
+      if (node.kind !== 'container') throw new Error(`Scene: "${id}" is not a container`);
+      refuseLocked(id, 'set the units of');
+      executeAndLog('kit:setUnits', { id, from: node.units, to: units ?? undefined }, 'setUnits');
     },
 
     onReflow: arrivalWindow.onReflow,
@@ -852,10 +860,6 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
     canUndo: () => history.canUndo(),
     canRedo: () => history.canRedo(),
 
-    /** Read-only snapshot of every history entry currently reachable from
-     *  the present state. Order: oldest applied first, then redoable
-     *  entries in the order they'd be re-applied (top of redo stack last).
-     *  Each entry's `id` is stable for the entry's lifetime. */
     historyEntries() {
       const { undo, redo } = history.entries();
       const out: { id: string; label: string }[] = [];
@@ -865,13 +869,8 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
       return out;
     },
 
-    /** Index of the "current state". `0` = nothing applied (initial);
-     *  equals the number of applied (undoable) entries —
-     *  `historyEntries().length` when fully redone. */
     historyIndex: () => history.undoDepth(),
 
-    /** Walk to a target history index by calling undo/redo repeatedly.
-     *  Caps at the valid range; returns true if the index changed. */
     jumpToHistoryIndex(targetIndex: number) {
       const total = history.undoDepth() + history.redoDepth();
       const target = Math.max(0, Math.min(total, targetIndex));
@@ -1036,7 +1035,7 @@ export function createScene<TData, TLayer extends string, TPose = import('./comp
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
-        ...(spec.pickable !== undefined ? { pickable: spec.pickable } : {}),
+        ...statedFields(spec),
       });
       // No `kit:add` reaches history here, so nothing replays one. A restore
       // after `remove` comes from `kit:remove`'s revert, which clones the

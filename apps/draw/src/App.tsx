@@ -29,7 +29,6 @@ import {
   asNodeId,
   buildSceneViewCommands,
   BUILTIN_TOOL_IDS,
-  contrastLineColor,
   DEFAULT_STROKE_COLOR,
   defaultCommitAdapter,
   defaultDrawOne,
@@ -48,7 +47,6 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
   CharacterOptions,
@@ -78,19 +76,25 @@ import { PreferencesModal } from './PreferencesModal';
 import { type AppCommands, appCommandsContribution } from './appCommands';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { loadDoc, PAPER_PRESETS, saveDoc } from './docPersistence';
+import { reportSessionSave } from './fileNotices';
+import { showFirstRunNotice } from './firstRunNotice';
 import { disableMachineFontOutlines, enableMachineFontOutlines } from './fonts';
-import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
+import { dispatchDoubleClickEntry, modalityShortcuts, modePathEdit } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { useModality } from './modality/useModality';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { clipboardJsonReviver, serializeReplacer } from './persistence';
 import { PREFS, usePref } from './prefs';
+import { useRecording } from './recording/useRecording';
 import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 import { writeSession } from './sessionStore';
 import { colorContribution, useColorContext } from './tools/colorContext';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { TextEditDepPublisher } from './TextEditDepPublisher';
+import { toolEnumSources } from './registry/toolEnumSource';
+import { useGrid } from './useGrid';
+import { useLastTool } from './useLastTool';
 
 // Bounds for the sidebar drag come from the pref that stores the result, so
 // the handle and the Preferences number field can't drift apart. app.css
@@ -109,8 +113,6 @@ import { reportPasteOmissions } from './pasteOmissions';
 import { HISTORY_KEY, loadHistory, loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
-/** The grid's pitch in world units: what the grid layer draws and what snap rounds to. */
-const GRID_SPACING = 20;
 const RECENT_COLORS_KEY = 'weaseldraw:recent-colors';
 
 // Draw's full ingestion config: SVG unpack + clipboard revival.
@@ -200,16 +202,17 @@ export function App(): ReactElement {
       pendingSaveRef.current = null;
       if (!restoredRef.current) return;
       try {
-        writeSession(
+        reportSessionSave(writeSession(
           localStorage,
           [LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer)],
           [
             [HISTORY_KEY, JSON.stringify(modality.history.serialize(), serializeReplacer)],
             [SCENE_HISTORY_KEY, JSON.stringify(scene.serializeHistory(), serializeReplacer)],
           ],
-        );
+        ));
       } catch {
-        // Persistence is best-effort.
+        // No store at all, or a scene that will not serialize.
+        reportSessionSave(false);
       }
     };
     pendingSaveRef.current = save;
@@ -223,8 +226,8 @@ export function App(): ReactElement {
   }, []);
 
   const [recentColors] = useState(() => createRecentColorsStore({ key: RECENT_COLORS_KEY }));
-  const initialFill: ActivePaint = { kind: 'solid', color: INITIAL_FILL_COLOR };
-  const initialStroke: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR };
+  const initialFill: ActivePaint = { fill: 'solid', color: INITIAL_FILL_COLOR };
+  const initialStroke: ActivePaint = { fill: 'solid', color: DEFAULT_STROKE_COLOR };
 
   return (
     <RecentColorsProvider store={recentColors}>
@@ -250,6 +253,8 @@ function EditorWithSharedScene({
   modality: ReturnType<typeof useModality>;
 }): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  useLastTool(tools);
+  const prefSources = useMemo(() => toolEnumSources(tools), [tools]);
   const actionsReg = useActionsRegistry();
   const colors = useColorContext();
   // On-canvas gradient handles edit one node's one paint; which paint is the
@@ -258,10 +263,9 @@ function EditorWithSharedScene({
   const soleSelectedId = selectedIds.length === 1 ? selectedIds[0] : null;
   const [initialDoc] = useState(loadDoc);
   const [paperSize, setPaperSize] = useState<PaperSizeKey>(initialDoc.paperSize);
-  const [gridVisible, setGridVisible] = useState(false);
-  const [snapToGrid, setSnapToGrid] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => showFirstRunNotice(), []);
 
   // Right-sidebar width. The pref is the durable value; `dragWidth` shadows it
   // for the duration of a drag so a pointer-rate stream of samples doesn't
@@ -341,26 +345,23 @@ function EditorWithSharedScene({
       if (id === undefined || rest.length > 0) return null;
       return (scene.get(id)?.data as { path?: unknown } | undefined)?.path != null ? id : null;
     },
-    startPathEdit: (): void => { actionsReg?.trigger('enterPathEdit'); },
+    selection: (): readonly string[] => selection.get(),
   });
   const modalityKeys = useMemo(() => modalityShortcuts(modality.machine, {
     pathToEdit: () => pathEditEntry.current.pathToEdit(),
-    startPathEdit: () => pathEditEntry.current.startPathEdit(),
+    selection: () => pathEditEntry.current.selection(),
   }), [modality.machine, pathEditEntry]);
+
+  // The path being anchor-edited is the path-edit mode's target, read from the machine.
+  const pathEdit = useMemo(() => modePathEdit(
+    modality.machine,
+    (id) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
+  ), [modality.machine, scene]);
 
   // ── Modality SceneCanvas callbacks ────────────────────────────────────────
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
-
-  // TODO(modality): wire non-normal-mode background-click composition
-  // (text-edit commit, isolation scoped-clear) through `handleBackgroundClick`
-  // from `./modality` once we have a non-leaky hook into the dispatcher.
-  // SceneCanvas's `onBackgroundClick` prop is intentionally omitted because
-  // it would race with the gesture-dispatcher channel (marquee, lasso). For
-  // normal mode the select tool's `clearSelection` action already handles
-  // background clicks; soft modes exit via Esc and strict modes via the
-  // breadcrumb's commit/cancel buttons in the interim.
 
   const paper = PAPER_PRESETS[paperSize];
 
@@ -432,12 +433,15 @@ function EditorWithSharedScene({
   const hudTool = useHudContribution();
   const colorsRef = useLatest(colors);
   const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
-  const insertPaint = useMemo(() => activeInsertPaint(() => colorsRef.current), [colorsRef]);
+  const [pathFillRule] = usePref('drawing.pathFillRule');
+  const fillRuleRef = useLatest(pathFillRule);
+  const insertPaint = useMemo(
+    () => activeInsertPaint(() => colorsRef.current, () => (fillRuleRef.current === 'evenodd' ? 'evenodd' : 'nonzero')),
+    [colorsRef, fillRuleRef],
+  );
+  const grid = useGrid(paper, backgroundColor);
   const appCommands: AppCommands = {
-    gridVisible,
-    toggleGrid: () => setGridVisible(!gridVisible),
-    snapToGrid,
-    toggleSnap: () => setSnapToGrid(!snapToGrid),
+    ...grid.commands,
     canReleaseCompound: hasCompoundPath(scene, selection.current),
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
     openPrefs: () => setPrefsOpen(true),
@@ -445,9 +449,10 @@ function EditorWithSharedScene({
   };
   const appCommandsRef = useLatest(appCommands);
   const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
+  const recordingKeys = useRecording({ scene, view: () => view, setView });
   const ambient = useMemo(
-    () => [hudTool, modalityKeys, colorKeys, appKeys],
-    [hudTool, modalityKeys, colorKeys, appKeys],
+    () => [hudTool, modalityKeys, colorKeys, appKeys, recordingKeys],
+    [hudTool, modalityKeys, colorKeys, appKeys, recordingKeys],
   );
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
@@ -550,16 +555,6 @@ function EditorWithSharedScene({
     intensity: 0.4,
   }), [modality.machine, paper.width, paper.height]);
 
-  const gridLayer = useMemo(() => createGridLayer({
-    spacing: GRID_SPACING,
-    bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
-    accentEvery: 5,
-    style: {
-      line:   { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.06) }, width: 1 },
-      accent: { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.14) }, width: 1 },
-    },
-  }), [paper.width, paper.height, backgroundColor]);
-
   const redrawOnScoping = useMemo(() => [modality.scopingDim], [modality.scopingDim]);
 
   return (
@@ -571,11 +566,12 @@ function EditorWithSharedScene({
         paperSize={paperSize}
         setPaperSize={setPaperSize}
         filename={filename}
+        setFilename={setFilename}
         backgroundColor={backgroundColor}
         setBackgroundColor={setBackgroundColor}
         onClearJournalCache={() => modality.machine.clearJournalCache()}
       />
-      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {/* Permanently reserved, never mounted on demand: the canvas is sized
           to the workspace, so appearing mid-edit would resize it under the
@@ -644,16 +640,11 @@ function EditorWithSharedScene({
             pickHud
             modalityHud
             onToolsCreated={setTools}
-            selectTool={snapToGrid ? { snap: gridSnapStrategy<WeaselDrawPose>(GRID_SPACING) } : undefined}
-            toolOptions={snapToGrid ? {
-              snapPoint: (p) => ({
-                x: Math.round(p.x / GRID_SPACING) * GRID_SPACING,
-                y: Math.round(p.y / GRID_SPACING) * GRID_SPACING,
-              }),
-            } : undefined}
+            selectTool={grid.snap ? { snap: grid.snap } : undefined}
+            toolOptions={grid.snapPoint ? { snapPoint: grid.snapPoint } : undefined}
             layers={{
               paper: { layer: paperLayer, before: 'grid' },
-              ...(gridVisible ? { grid: { layer: gridLayer } } : {}),
+              ...(grid.layer ? { grid: { layer: grid.layer } } : {}),
               modeTint: { layer: workspaceTint, after: 'grid' },
             }}
             decorationLayer={modality.decorationLayer}
@@ -662,6 +653,7 @@ function EditorWithSharedScene({
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
             onDoubleClick={onDoubleClick}
             modes={modality.machine.registry}
+            pathEdit={pathEdit}
             geometryProjection={{
               transform: (node, m) => {
                 const data = node.data as WeaselDrawData;

@@ -36,4 +36,10 @@ describe('writeSession', () => {
     write(s);
     expect(Object.fromEntries(s.data)).toEqual(OLD);
   });
+
+  it('answers whether the scene was saved', () => {
+    expect(write(store(OLD, []))).toBe(true);
+    expect(write(store(OLD, ['undo']))).toBe(true);
+    expect(write(store(OLD, ['scene']))).toBe(false);
+  });
 });

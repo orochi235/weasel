@@ -17,7 +17,7 @@
  * `interactions/actions/move/action.ts`.
  */
 import type { PolygonPath } from '@weasel-js/geom';
-import { getActiveModeFor } from '@weasel-js/modes';
+import { capabilitiesAllowed, getActiveModeFor } from '@weasel-js/modes';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
@@ -208,6 +208,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onClick,
     chromeVisibility,
     modes,
+    pathEdit,
     getFocused: getFocusedProp,
     device,
     ...rest
@@ -441,6 +442,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // `editAnchorsAction` — both gate on `editingId !== ''`.
   const [pathEditingId, setPathEditingId] = useState<string>('');
   const pathEditingIdRef = useLatest(pathEditingId);
+  const pathEditRef = useLatest(pathEdit);
   // `anchorEditingAllowed` is declared below (it needs `getActiveModeRef`);
   // hold it in a ref so `effectivePathEditingId` — used by consumers
   // declared both above and below that point — can read it lazily.
@@ -464,10 +466,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
    * state. Read-time masking cannot go stale.
    */
   const effectivePathEditingId = useCallback((): string => {
+    if (pathEditRef.current) return pathEditRef.current.editingId() ?? '';
     const allowed = anchorEditingAllowedRef.current;
     if (allowed && !allowed()) return '';
     return pathEditingIdRef.current;
-  }, [pathEditingIdRef]);
+  }, [pathEditingIdRef, pathEditRef]);
   // Anchor selection + in-flight marquee. Both are per-frame inputs to
   // the overlay's draw(), never to a React render, so they live in refs
   // and request a repaint directly. Holding them in state would re-render
@@ -476,7 +479,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const anchorMarqueeRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   const editAnchorsExternalState = useMemo(() => ({
     getEditingId: () => effectivePathEditingId(),
-    setEditingId: (id: string | null) => setPathEditingId(id ?? ''),
+    setEditingId: (id: string | null) => (pathEditRef.current ? pathEditRef.current.setEditingId(id) : setPathEditingId(id ?? '')),
     getSelectedAnchors: () => selectedAnchorsRef.current,
     setSelectedAnchors: (next: ReadonlySet<number>) => {
       selectedAnchorsRef.current = next;
@@ -487,7 +490,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       anchorMarqueeRef.current = rect;
       canvasApiRef.current?.requestRedraw?.();
     },
-  }), [effectivePathEditingId]);
+  }), [effectivePathEditingId, pathEditRef]);
 
   // Apply the handle-size fallback here so useSceneSelectTool always receives
   // a concrete radius even when the caller omits selectTool entirely.
@@ -754,18 +757,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const liveToolsRef = useLatest<ToolsApi | null>(toolsTakeover ?? internalTools);
   const getActiveModeRef = useLatest(getActiveMode);
   //
-  // `isToolEligible` mirrors `eligibleForMode` (packages/modes) — the same
-  // predicate `ToolPalette` uses to grey a button out. Without a mode
-  // registry every tool stays activatable.
+  // Without a mode registry every tool stays activatable.
   const isToolEligible = useCallback((toolId: string): boolean => {
     const getMode = getActiveModeRef.current;
     if (!getMode) return true;
-    const registry = liveToolsRef.current?.registry;
-    const caps = registry?.[toolId]?.eligibility.capabilities ?? [];
-    if (caps.length === 0) return false;
-    const allowed = getMode().allowedCapabilities;
-    for (const c of caps) if (allowed.has(c)) return true;
-    return false;
+    const caps = liveToolsRef.current?.registry?.[toolId]?.eligibility.capabilities;
+    return capabilitiesAllowed(getMode().allowedCapabilities, caps);
   }, [getActiveModeRef, liveToolsRef]);
 
 
@@ -1260,17 +1257,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const items: IngestItem[] = (input as (File | IngestItem)[]).map((entry) =>
         entry instanceof File ? itemsFromFiles([entry])[0] : entry,
       );
-      if (items.length === 0) return;
+      if (items.length === 0) return false;
       if (!actionsRegistryRef.current) {
         // The registry is stashed by a descendant effect — a consumer calling
         // ingest() from its own ref callback / layout effect lands here.
         dwarn('ingest', 'CanvasExtensionApi.ingest called before the action registry mounted — call ignored. Defer to an effect or event handler.');
-        return;
+        return false;
       }
-      actionsRegistryRef.current.trigger('ingest', {
-        items,
-        ...(point ? { worldX: point.x, worldY: point.y } : {}),
-      });
+      const params = { items, ...(point ? { worldX: point.x, worldY: point.y } : {}) };
+      const ran = actionsRegistryRef.current.trigger('ingest', params);
+      if (!ran) dwarn('ingest', 'CanvasExtensionApi.ingest ran nothing: this canvas has no `ingest` action. Add `ingest` to `features`.');
+      return ran;
     },
     [],
   );

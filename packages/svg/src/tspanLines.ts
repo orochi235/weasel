@@ -4,24 +4,56 @@
  * `y`. This reads that shape back into the `\n` the runs model stores.
  */
 import type { StyledRun } from '@weasel-js/core';
+import { readLength } from './lengths';
+
+/** The line height a `<text>` has when nothing states one. */
+export const DEFAULT_LINE_HEIGHT = 1.2;
 
 /** Tracks the `y` the current line was placed at, to tell a tspan that moves
- *  down from one that only moves sideways along the same line. */
+ *  down from one that only moves sideways along the same line, and how far
+ *  down each new line was placed. */
 export class LineTracker {
   private y: string | null;
+  /** Where the current line sits, in user units. */
+  private at: number;
+  private readonly pitches: number[] = [];
 
-  constructor(text: Element) {
+  constructor(text: Element, private readonly onWarn: (message: string) => void) {
     this.y = text.getAttribute('y');
+    this.at = readLength(text, 'y', 'y', 0, onWarn);
   }
 
-  /** Whether `tspan` opens a new line. Call once per tspan, in order. */
-  startsLine(tspan: Element): boolean {
+  /** Whether `tspan` opens a new line. Call once per tspan, in order.
+   *  `afterText` is whether any text precedes it: the first line's own
+   *  placement is not a pitch. */
+  startsLine(tspan: Element, afterText: boolean): boolean {
     const y = tspan.getAttribute('y');
     const movedY = y != null && y !== this.y;
     if (y != null) this.y = y;
+    const from = this.at;
+    const dy = readLength(tspan, 'dy', 'y', 0, this.onWarn);
+    this.at = (y != null ? readLength(tspan, 'y', 'y', from, this.onWarn) : from) + dy;
     if (!tspan.hasAttribute('x')) return false;
-    const dy = parseFloat(tspan.getAttribute('dy') ?? '');
-    return movedY || (Number.isFinite(dy) && dy !== 0);
+    const starts = movedY || dy !== 0;
+    if (starts && afterText && this.at > from) this.pitches.push(this.at - from);
+    return starts;
+  }
+
+  /**
+   * The line height the lines were pitched at, as a multiple of `fontSize`:
+   * `undefined` for a single line, or for lines at the default pitch. The
+   * model holds one line height, so uneven pitches give their mean, which
+   * keeps the block's height.
+   */
+  lineHeight(fontSize: number): number | undefined {
+    const { pitches } = this;
+    if (pitches.length === 0 || !(fontSize > 0)) return undefined;
+    const mean = pitches.reduce((sum, p) => sum + p, 0) / pitches.length;
+    if (pitches.some((p) => Math.abs(p - mean) > 1e-3 * fontSize)) {
+      this.onWarn('<text> lines are pitched unevenly; they take the mean pitch as one line height');
+    }
+    const lineHeight = mean / fontSize;
+    return Math.abs(lineHeight - DEFAULT_LINE_HEIGHT) < 1e-6 ? undefined : lineHeight;
   }
 }
 

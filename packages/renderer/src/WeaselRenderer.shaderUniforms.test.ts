@@ -213,3 +213,27 @@ describe('re-registered program source', () => {
     error.mockRestore();
   });
 });
+
+describe('a shader command whose program this renderer has not compiled', () => {
+  it('compiles it on first draw, from the module-level source', () => {
+    const h = registerProgram('lazy-shader', '', frag(''));
+    mark();
+    r.render([shader(h, {})]);
+    expect(uploads(rec, 'linkProgram')).toHaveLength(1);
+    expect(uploads(rec, 'drawElements')).toHaveLength(1);
+    mark();
+    r.render([shader(h, {})]);
+    expect(uploads(rec, 'linkProgram')).toHaveLength(0);
+  });
+
+  it('draws nothing and says so once when the id was never registered', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const never = { id: 'never-registered-shader' };
+    mark();
+    r.render([shader(never, {})]);
+    r.render([shader(never, {})]);
+    expect(uploads(rec, 'drawElements')).toHaveLength(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+});

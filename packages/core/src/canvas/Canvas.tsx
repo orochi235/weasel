@@ -359,10 +359,10 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   debugSinkRef?: React.MutableRefObject<CanvasDebugSink | null>;
 
   /**
-   * Custom shader programs to compile on the renderer. Each handle must come
-   * from a module-level `registerProgram()` call. Compiled once per handle id
-   * on first render (or on context restore). Pass a stable reference (e.g.
-   * defined at module scope) — the array is read at renderer init time.
+   * Shader programs to compile before the frame that first draws them; one
+   * not named here compiles on that frame. Each handle comes from a
+   * module-level `registerProgram()`. Pass a stable reference (e.g. defined
+   * at module scope) — the array is read at renderer init time.
    * Re-registering one of these ids with new source repaints the canvas, and
    * the renderer recompiles it for that frame.
    */
@@ -943,7 +943,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
   }, [backgroundFill]);
 
-  const { key: sceneLayersKey, sync: syncSceneLayers } = useSceneLayerList(adapter);
+  const sceneLayersKey = useSceneLayerList(adapter);
   const layers = useMemo<RenderLayer<unknown>[]>(() => {
     const standardLayers: Partial<
       Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>
@@ -1101,7 +1101,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const paint = useCallback((): boolean => {
     const c = paintTargetRef.current ?? ownCanvasRef.current;
-    if (!c || syncSceneLayers()) return false;
+    if (!c) return false;
     const rect = paintRectRef.current;
     const {
       layers: paintLayers, width: w, height: h, debugSink: sink, frameStats,
@@ -1147,7 +1147,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (sink && spans) sink.recordFrame(frameStatsOf(spans, renderer.lastFrameStats(), performance.now() - paintT0));
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
-  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef, syncSceneLayers, viewRef]);
+  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef, viewRef]);
   useInsertionEffect(() => {
     paintRef.current = paint;
   });

@@ -292,7 +292,7 @@ interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd
 
 Each action pins the proposed/result shape; pick the matching alias
 (`MoveBehavior<TPose>`, `ResizeBehavior<TPose>`, `InsertBehavior<TPose>`,
-`AreaSelectBehavior`, `CloneBehavior`).
+`AreaSelectBehavior`, `CloneBehavior<TPose>`).
 
 **Rules of thumb:**
 
@@ -337,7 +337,6 @@ Each action pins the proposed/result shape; pick the matching alias
 - `packages/guides/src/behaviors/move/snapToGrid.ts` — pure pose refinement.
 - `packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
 - `packages/core/src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
-- `packages/core/src/interactions/actions/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
 
 ### Move behaviors
 

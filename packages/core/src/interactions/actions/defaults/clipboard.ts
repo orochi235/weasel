@@ -5,7 +5,7 @@ import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { buildDeleteOps } from './delete';
 import { requiresSelection } from './requiresSelection';
 import { kitWeaselJsonHandler } from 'features/ingestion/weaselJsonHandler';
-import { ANY_INGEST_MODS, INGEST_REQUIRES, ingestFromEvent } from './ingest';
+import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from './ingest';
 
 /**
  * @experimental
@@ -122,5 +122,5 @@ export const clipboardPasteEventAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps, params) => ingestFromEvent(deps, params, { handlers: PASTE_EVENT_HANDLERS }),
   },
-  enabled: () => true,
+  enabled: (_deps, _at, carried) => claimable(carried, PASTE_EVENT_HANDLERS),
 };

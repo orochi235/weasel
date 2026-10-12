@@ -8,9 +8,7 @@
  * and doing what it likes with the blob.
  */
 import { defineInstrument, f, Lab, useAnnotations } from '@weasel-js/labkit';
-// In-repo, so the source stylesheet: a consumer imports the built
-// `@weasel-js/labkit/styles.css` instead.
-import '@weasel-js/labkit/styles.less';
+import '@weasel-js/labkit/styles.css';
 import { createRef, useCallback, useSyncExternalStore } from 'react';
 import 'windease/styles.css';
 

@@ -117,7 +117,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     const leaf = leaves.get(path);
     return leaf && absentValue(leaf);
   };
-  const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS);
+  const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
   const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
 

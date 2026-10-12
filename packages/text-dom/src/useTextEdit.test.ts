@@ -675,7 +675,9 @@ function placeCaretAtChar(overlay: HTMLElement, charOffset: number): void {
 }
 
 // jsdom implements no contenteditable editing, so it never fires `beforeinput`
-// on its own — typing into the overlay silently does nothing.
+// on its own, and does nothing for one the hook leaves to the browser. This
+// stands in for that default: the text goes into the caret's text node and an
+// `input` follows. `overlayTyping.browser.test.tsx` types with real keys.
 function dispatchBeforeInput(overlay: HTMLElement, data: string): void {
   const ev = new InputEvent('beforeinput', {
     inputType: 'insertText',
@@ -683,7 +685,12 @@ function dispatchBeforeInput(overlay: HTMLElement, data: string): void {
     bubbles: true,
     cancelable: true,
   });
-  overlay.dispatchEvent(ev);
+  if (!overlay.dispatchEvent(ev)) return;
+  const range = window.getSelection()!.getRangeAt(0);
+  const node = range.startContainer as Text;
+  node.insertData(range.startOffset, data);
+  window.getSelection()!.collapse(node, range.startOffset + data.length);
+  overlay.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data, bubbles: true }));
 }
 
 describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {

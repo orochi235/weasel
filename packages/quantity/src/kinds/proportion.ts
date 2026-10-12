@@ -91,7 +91,8 @@ export const CONSTANTS = {
   e: { symbol: 'e', value: Math.E, spoken: 'e' },
 } as const satisfies Record<string, NamedConstant>;
 
-type FractionOptions = {
+/** How a `fraction` display picks and writes its fraction. */
+export type FractionOptions = {
   /** Default 64. */
   maxDenominator?: number;
   /**

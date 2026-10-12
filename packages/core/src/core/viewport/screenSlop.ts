@@ -8,7 +8,7 @@
  * frame is a tilted ellipse, so the test is run against the geometry's screen
  * image instead (`strokeHitTest`'s `slop`).
  */
-import { multiply, rotate, scale as scaleMat, type Mat3 } from '@weasel-js/geom';
+import { multiply, scale as scaleMat, type Mat3 } from '@weasel-js/geom';
 import type { Scale2 } from '@weasel-js/geom';
 
 /** `px` screen pixels under a view whose per-axis scale is `scale`. */
@@ -21,20 +21,21 @@ export interface ScreenSlop {
 export type PickSlop = number | ScreenSlop;
 
 /**
- * How `strokeHitTest` should apply a slop to geometry in a frame turned by
- * `rotation` from world: a world slop adds to the threshold, a screen slop is
- * handed over with the frame's map to the screen.
+ * How `strokeHitTest` should apply a slop to geometry in a frame that
+ * reaches world by `frame` (`poseFrameOf`; only its linear part is read): a
+ * world slop adds to the threshold, a screen slop is handed over with the
+ * frame's map to the screen.
  */
 export function slopForStrokeHit(
   slop: PickSlop | undefined,
-  rotation = 0,
+  frame?: Mat3 | null,
 ): { extra: number; opts: { slop?: { px: number; transform: Mat3 } } } {
   if (slop === undefined) return { extra: 0, opts: {} };
   if (typeof slop === 'number') return { extra: slop, opts: {} };
   const s = scaleMat(slop.scale.x, slop.scale.y);
   return {
     extra: 0,
-    opts: { slop: { px: slop.px, transform: rotation ? multiply(s, rotate(rotation)) : s } },
+    opts: { slop: { px: slop.px, transform: frame ? multiply(s, frame) : s } },
   };
 }
 

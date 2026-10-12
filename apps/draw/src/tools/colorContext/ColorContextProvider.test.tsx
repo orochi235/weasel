@@ -28,8 +28,8 @@ describe('ColorContextProvider — state cluster', () => {
       result.current.setStrokeColor('#abcdefff');
       result.current.reset();
     });
-    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
-    expect(result.current.stroke).toEqual({ kind: 'solid', color: '#000000ff' });
+    expect(result.current.fill).toEqual({ fill: 'solid', color: '#ffffffff' });
+    expect(result.current.stroke).toEqual({ fill: 'solid', color: '#000000ff' });
   });
 
   it('swap exchanges fill and stroke', () => {
@@ -41,8 +41,8 @@ describe('ColorContextProvider — state cluster', () => {
       result.current.setStrokeColor('#bbbbbbff');
       result.current.swap();
     });
-    expect(result.current.fill).toEqual({ kind: 'solid', color: '#bbbbbbff' });
-    expect(result.current.stroke).toEqual({ kind: 'solid', color: '#aaaaaaff' });
+    expect(result.current.fill).toEqual({ fill: 'solid', color: '#bbbbbbff' });
+    expect(result.current.stroke).toEqual({ fill: 'solid', color: '#aaaaaaff' });
   });
 
   it('swapFocus toggles focused side', () => {
@@ -61,9 +61,9 @@ describe('ColorContextProvider — state cluster', () => {
       wrapper: makeWrapper(),
     });
     act(() => result.current.toggleFocusedNone());
-    expect(result.current.fill).toEqual({ kind: 'none' });
+    expect(result.current.fill).toBeNull();
     act(() => result.current.toggleFocusedNone());
-    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
+    expect(result.current.fill).toEqual({ fill: 'solid', color: '#ffffffff' });
   });
 });
 

@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveUnit,
   ANGLE_RADIANS,
+  formatAxes,
   formatUnit,
   IMPERIAL_INCHES,
   METRIC_MM,
   PIXELS,
+  resolveAxes,
   unitScale,
   type UnitSystem,
 } from './units';
@@ -128,5 +130,45 @@ describe('affine units', () => {
 
   it('throws on a unit the system does not carry', () => {
     expect(() => unitScale(METRIC_MM, 'mi')).toThrow(/unknown unit 'mi'/);
+  });
+});
+
+const SECONDS: UnitSystem = { base: 'ms', units: { ms: 1, s: 1000 } };
+const VOLTS: UnitSystem = { base: 'V', units: { V: 1, mV: 0.001 } };
+
+describe('resolveAxes', () => {
+  it('gives one value to both axes', () => {
+    expect(resolveAxes(5)).toEqual({ x: 5, y: 5 });
+    expect(resolveAxes({ value: 1, unit: 'ft' }, IMPERIAL_INCHES)).toEqual({ x: 12, y: 12 });
+  });
+
+  it('resolves each axis against its own unit system', () => {
+    const units = { x: SECONDS, y: VOLTS };
+    expect(resolveAxes({ x: { value: 2, unit: 's' }, y: { value: 500, unit: 'mV' } }, units)).toEqual({
+      x: 2000,
+      y: 0.5,
+    });
+  });
+
+  it('resolves a per-axis value against one shared system', () => {
+    expect(resolveAxes({ x: { value: 1, unit: 'ft' }, y: 3 }, IMPERIAL_INCHES)).toEqual({ x: 12, y: 3 });
+  });
+
+  it('names the axis whose unit its system does not carry', () => {
+    const units = { x: SECONDS, y: VOLTS };
+    expect(() => resolveAxes({ x: 1, y: { value: 1, unit: 's' } }, units)).toThrow(/y axis.*unknown unit 's'/);
+  });
+});
+
+describe('formatAxes', () => {
+  it('formats each axis in its own display unit', () => {
+    expect(formatAxes({ x: 2500, y: 0.25 }, { x: 's', y: 'mV' }, { x: SECONDS, y: VOLTS })).toEqual({
+      x: '2.5s',
+      y: '250mV',
+    });
+  });
+
+  it('formats both axes in one unit of a shared system', () => {
+    expect(formatAxes({ x: 36, y: 6 }, 'ft', IMPERIAL_INCHES)).toEqual({ x: '3ft', y: '0.5ft' });
   });
 });

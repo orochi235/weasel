@@ -49,7 +49,7 @@ describe('openDrawPrefs', () => {
     const backing = new Map<string, unknown>([[`${PREFS_PREFIX}view.gridDensity`, 40]]);
     const store = openDrawPrefs(createMemoryAdapter(backing));
     expect(store.get('view.gridDensity')).toBe(40);
-    expect(store.get('view.gridVisible')).toBe(true);
+    expect(store.get('view.gridVisible')).toBe(false);
   });
 
   it('reads a stored panel map that is not a map as its default', () => {

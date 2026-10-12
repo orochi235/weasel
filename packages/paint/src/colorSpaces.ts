@@ -400,8 +400,8 @@ function oklabToSrgbClipped(L: number, A: number, B: number): [number, number, n
  * or black holds its hue instead of sweeping from red.
  */
 export function interpolateSrgb(
-  from: Rgb,
-  to: Rgb,
+  from: readonly [number, number, number],
+  to: readonly [number, number, number],
   t: number,
   space: ColorInterpolationSpace = 'oklch',
   hue: HueInterpolation = 'shorter',

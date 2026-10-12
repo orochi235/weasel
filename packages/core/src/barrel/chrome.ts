@@ -28,8 +28,20 @@ export {
   IMPERIAL_INCHES,
   METRIC_MM,
   PIXELS,
+  parseUnitExpr,
+  resolveUnitExpr,
+  axisUnits,
+  formatAxes,
+  resolveAxes,
+  formatScoped,
+  fromRoot,
+  resolveScoped,
+  scopesOf,
+  toRoot,
 } from '@weasel-js/quantity';
 export type { Unit, UnitEntry, UnitScale, UnitSystem, UnitValue } from '@weasel-js/quantity';
+export type { PerAxis, PlaneUnits, PlaneValue, UnitExpr, UnitExprContext } from '@weasel-js/quantity';
+export type { ScopeTree, UnitScope } from '@weasel-js/quantity';
 
 // ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
 export {
@@ -55,6 +67,7 @@ export {
   type PathAnchorAffordanceOptions,
   type RotationAffordanceOptions,
   type RotationScratch,
+  type TargetTransform,
 } from '../affordances';
 export type { ClaimableGesture } from '@weasel-js/gestures';
 export type { ChromeState } from '../core/selection/chromeState';

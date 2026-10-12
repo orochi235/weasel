@@ -23,7 +23,7 @@ import { formatShortcut } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { LabStoreContext } from '../state/context';
 import { as2DView } from '../state/view';
-import { useLabContext } from './LabContext';
+import { useLabCommands } from './LabContext';
 
 const ZOOM_ID = 'viewport.zoom';
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
@@ -82,7 +82,7 @@ export function LabZoom() {
 
 function LabZoomControls() {
   const registry = useActionsRegistry() as ActionsRegistry;
-  const { focusedTrialId } = useLabContext();
+  const { focusedTrialId } = useLabCommands();
   const cameras = useContext(CameraRegistryContext);
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <LabZoom> requires <LabStoreProvider>');

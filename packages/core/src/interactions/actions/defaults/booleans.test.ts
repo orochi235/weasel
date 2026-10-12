@@ -6,6 +6,8 @@ import {
   pathfinderExcludeAction,
   pathfinderDivideAction,
   pathfinderCropAction,
+  pathfinderTrimAction,
+  pathfinderMergeAction,
 } from './booleans';
 import type { BooleansAdapter } from '../booleans/booleans';
 import { asNodeId } from 'core/scene/types';
@@ -131,7 +133,7 @@ describe('pathfinderCropAction descriptor', () => {
 // All descriptors together
 // ---------------------------------------------------------------------------
 
-describe('pathfinder descriptors (all 6)', () => {
+describe('pathfinder descriptors (all of them)', () => {
   const all = [
     pathfinderUnionAction,
     pathfinderSubtractAction,
@@ -139,6 +141,8 @@ describe('pathfinder descriptors (all 6)', () => {
     pathfinderExcludeAction,
     pathfinderDivideAction,
     pathfinderCropAction,
+    pathfinderTrimAction,
+    pathfinderMergeAction,
   ];
 
   it('all have unique ids matching pathfinder.* pattern', () => {
@@ -148,10 +152,12 @@ describe('pathfinder descriptors (all 6)', () => {
       'pathfinder.divide',
       'pathfinder.exclude',
       'pathfinder.intersect',
+      'pathfinder.merge',
       'pathfinder.subtract',
+      'pathfinder.trim',
       'pathfinder.union',
     ]);
-    expect(new Set(ids).size).toBe(6);
+    expect(new Set(ids).size).toBe(8);
   });
 
   it('all belong to group "pathfinder"', () => {

@@ -1,16 +1,10 @@
-import type { PaperSizeKey } from './CommandBar';
+import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_PRESETS, type PaperSizeKey } from './paperSizes';
 
-/** Page dimensions in CSS px for each paper size. */
-export const PAPER_PRESETS: Record<PaperSizeKey, { width: number; height: number }> = {
-  letter: { width: 816, height: 1056 },
-  a4:     { width: 794, height: 1123 },
-  legal:  { width: 816, height: 1344 },
-};
+export { PAPER_PRESETS };
 
 export const DOC_KEY = 'weaseldraw:doc-v1';
 export const DEFAULT_FILENAME = 'untitled.svg';
 export const DEFAULT_BG_COLOR = '#ffffff';
-const DEFAULT_PAPER_SIZE: PaperSizeKey = 'letter';
 
 /** Document-level state kept beside the scene, under its own key. */
 export interface PersistedDoc {
@@ -18,8 +12,6 @@ export interface PersistedDoc {
   backgroundColor: string;
   paperSize: PaperSizeKey;
 }
-
-const isPaperSize = (v: unknown): v is PaperSizeKey => typeof v === 'string' && Object.hasOwn(PAPER_PRESETS, v);
 
 export function loadDoc(): PersistedDoc {
   try {

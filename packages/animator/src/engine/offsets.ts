@@ -129,7 +129,8 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
   /** The targets whose `adjust` holds something. A frame walks these and not every moving target. */
   const adjusted: TargetState[] = [];
   const token: TargetOwner = { ...owner, adjusted: (s) => { adjusted.push(s); } };
-  const live = new Set<TargetState>();
+  /** The moving targets with a `show`: the ones a frame has to call. */
+  const showing = new Set<TargetState>();
   const rested = new Set<TargetState>();
   const publishes = new Set<() => void>();
   /** Each table with a row moving, and how many of its rows are. */
@@ -149,7 +150,7 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
       }
       s.owner = token;
       s.live += 1;
-      live.add(s);
+      if (s.show) showing.add(s);
       rested.delete(s);
       if (s.row) {
         tables.set(s.row.table, (tables.get(s.row.table) ?? 0) + 1);
@@ -170,8 +171,7 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
       s.dimmed = false;
       s.adjust.fill(0);
       s.stale = false;
-      live.delete(s);
-      if (s.show) rested.add(s);
+      if (s.show && showing.delete(s)) rested.add(s);
     },
     settle() {
       for (const s of adjusted) {
@@ -189,7 +189,7 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
       s.row?.table.mark(s.row.index);
     },
     show() {
-      for (const s of live) if (s.show) shown(s, readTarget(s));
+      for (const s of showing) shown(s, readTarget(s));
       for (const s of rested) shown(s, s.get());
       rested.clear();
       for (const [t, moving] of tables) {

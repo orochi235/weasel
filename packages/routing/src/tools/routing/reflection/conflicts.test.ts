@@ -447,3 +447,38 @@ describe('rulesExclusive', () => {
     expect(rulesExclusive(b as never, a as never)).toBe(expected);
   });
 });
+
+describe('findConflicts — `mod` against the key it resolves to', () => {
+  const wheel = (mods: object, actionId: string, params?: unknown) =>
+    ({ spec: { kind: 'wheel', mods }, actionId, ...(params === undefined ? {} : { opts: { params } }) });
+
+  it('flags `mod` against `ctrl`, which are one key off a Mac', () => {
+    const c = findConflicts([tool('a', [wheel({ mod: true }, 'x')]), tool('b', [wheel({ ctrl: true }, 'y')])]);
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b']);
+  });
+
+  it('flags `mod` against `meta`, which are one key on a Mac', () => {
+    const c = findConflicts([tool('a', [wheel({ mod: true }, 'x')]), tool('b', [wheel({ meta: true }, 'y')])]);
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b']);
+  });
+
+  it('reports a pair that ties on both platforms once', () => {
+    const c = findConflicts([tool('a', [wheel({ shift: true }, 'x')]), tool('b', [wheel({ shift: true }, 'y')])]);
+    expect(c).toHaveLength(1);
+  });
+
+  it('lets one action bind `mod` and `ctrl` to the same thing: the same on one platform, different on the other', () => {
+    const zoom = tool('zoom', [wheel({ mod: true }, 'zoom', { kind: 'wheel' }), wheel({ ctrl: true }, 'zoom', { kind: 'wheel' })]);
+    expect(findConflicts([zoom])).toEqual([]);
+  });
+
+  it('flags the same pair when their params differ, since which one fires then matters', () => {
+    const zoom = tool('zoom', [wheel({ mod: true }, 'zoom', { kind: 'wheel' }), wheel({ ctrl: true }, 'zoom', { kind: 'pinch' })]);
+    expect(findConflicts([zoom])).toHaveLength(1);
+  });
+
+  it('flags the same pair on two actions of one owner', () => {
+    const t = tool('t', [wheel({ mod: true }, 'zoom'), wheel({ ctrl: true }, 'pan')]);
+    expect(findConflicts([t])).toHaveLength(1);
+  });
+});

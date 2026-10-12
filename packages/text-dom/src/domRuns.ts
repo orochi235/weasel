@@ -36,7 +36,7 @@ function solidColor(p: FillStyle | null | undefined): string | null {
  *  pattern, or `null` for no fill. */
 const FILL_ATTR = 'data-fill';
 
-interface StyleState {
+export interface StyleState {
   bold: boolean;
   italic: boolean;
   underline: boolean;
@@ -58,7 +58,7 @@ interface StyleState {
 
 const TRANSFORMS: ReadonlySet<string> = new Set(['none', 'uppercase', 'lowercase', 'capitalize']);
 
-const EMPTY_STYLE: StyleState = {
+export const EMPTY_STYLE: StyleState = {
   bold: false,
   italic: false,
   underline: false,
@@ -96,7 +96,7 @@ function cssFontVariant(el: HTMLElement): FontVariantCaps | undefined {
   return v === 'small-caps' || v === 'normal' ? v : undefined;
 }
 
-function styleStateFromElement(el: Element, parent: StyleState): StyleState {
+export function styleStateFromElement(el: Element, parent: StyleState): StyleState {
   if (isSmallCapsPiece(el)) return parent;
   const next: StyleState = { ...parent };
   const tag = el.tagName;
@@ -212,7 +212,7 @@ function styleEquals(a: StyleState, b: StyleState): boolean {
   );
 }
 
-function toRun(text: string, style: StyleState): StyledRun {
+export function toRun(text: string, style: StyleState): StyledRun {
   const run: StyledRun = { text };
   if (style.bold) run.bold = true;
   if (style.italic) run.italic = true;

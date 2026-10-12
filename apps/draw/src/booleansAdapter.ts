@@ -59,7 +59,7 @@ export function drawBooleansAdapter(
     },
     createPathNode: (path, _op, sourceId, paint) => {
       // Mint convention: pose = boundsOfPath(path); geometry lives in data.path.
-      // The result continues its topmost source: that node's paint, and
+      // The result continues the source it stands in for: that node's paint, and
       // whatever else it carried.
       const source = scene.get(sourceId);
       const template = source?.data;

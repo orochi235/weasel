@@ -1,32 +1,25 @@
-import { useCallback, useState } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 interface LayerListSource {
   getLayers?: () => readonly { id: string }[];
+  subscribeLayers?: (listener: () => void) => () => void;
 }
+
+const UNSUBSCRIBED = (): void => {};
 
 const read = (adapter: LayerListSource | undefined): string =>
   typeof adapter?.getLayers === 'function' ? adapter.getLayers().map((l) => l.id).join('\n') : '';
 
 /**
- * The adapter's scene-layer ids as a render input. A scene write repaints
- * without re-rendering, so nothing on the React side sees a layer added,
- * removed, or reordered; the paint calls `sync` to find out.
+ * The adapter's scene-layer ids as a render input: a string that changes when
+ * a layer is added, removed, or reordered. A scene write repaints without
+ * re-rendering, so the adapter's `subscribeLayers` is what tells React.
  */
-export function useSceneLayerList(adapter: LayerListSource | undefined): {
-  /** Changes when the layer list does. A memo dependency. */
-  key: string;
-  /** Re-read the list. Returns `true`, having queued a render, when the
-   *  layers built from `key` no longer match it. */
-  sync(): boolean;
-} {
-  const [key, setKey] = useState(() => read(adapter));
-  const live = useLatest({ adapter, key });
-  const sync = useCallback((): boolean => {
-    const now = read(live.current.adapter);
-    if (now === live.current.key) return false;
-    setKey(now);
-    return true;
-  }, [live]);
-  return { key, sync };
+export function useSceneLayerList(adapter: LayerListSource | undefined): string {
+  const subscribe = useCallback(
+    (listener: () => void) => adapter?.subscribeLayers?.(listener) ?? UNSUBSCRIBED,
+    [adapter],
+  );
+  const snapshot = useCallback(() => read(adapter), [adapter]);
+  return useSyncExternalStore(subscribe, snapshot, snapshot);
 }

@@ -150,6 +150,49 @@ describe('createTrialClock', () => {
       expect(clock.pass).toBe(2);
     });
 
+    it("stands at the end of the earlier pass on the line between two, given 'end'", () => {
+      const { clock } = started({ duration: 100, loop: true });
+      clock.seek(200);
+      expect([clock.pass, clock.phase]).toEqual([2, 0]);
+      clock.seek(200, 'end');
+      expect(clock.elapsed).toBe(200);
+      expect([clock.pass, clock.phase]).toEqual([1, 1]);
+      expect(clock.ended).toBe(false);
+      clock.seek(250, 'end');
+      expect(clock.pass).toBe(2);
+      expect(clock.phase).toBeCloseTo(0.5);
+      clock.seek(0, 'end');
+      expect([clock.pass, clock.phase]).toEqual([0, 0]);
+    });
+
+    it('plays on from the end of a pass into the next, and back into the same one', () => {
+      const { clock } = started({ duration: 100, loop: true });
+      clock.seek(200, 'end');
+      clock.rate = 1;
+      clock.sync(0);
+      clock.sync(10);
+      expect(clock.pass).toBe(2);
+      expect(clock.phase).toBeCloseTo(0.1);
+      clock.seek(200, 'end');
+      clock.rate = -1;
+      clock.sync(10);
+      clock.sync(20);
+      expect(clock.pass).toBe(1);
+      expect(clock.phase).toBeCloseTo(0.9);
+    });
+
+    it('keeps the end of a pass through a duration change and a reopen', () => {
+      const { clock } = createTrialClock({ duration: 100, loop: true });
+      clock.seek(200, 'end');
+      clock.duration = 300;
+      expect(clock.elapsed).toBe(600);
+      expect([clock.pass, clock.phase]).toEqual([1, 1]);
+      const position = clockPosition(clock, 100);
+      expect(position).toEqual({ elapsed: 600, rate: 0, duration: 300, passEnd: true });
+      const reopened = createTrialClock({ duration: 100, loop: true }, position).clock;
+      expect([reopened.pass, reopened.phase]).toEqual([1, 1]);
+    });
+
     it('clamps to the run', () => {
       const { clock } = createTrialClock({ duration: 100, loop: 2 });
       clock.seek(-5);

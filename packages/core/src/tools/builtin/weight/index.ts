@@ -1,3 +1,3 @@
 export * from './useWeightTool';
 export { createWeightOverlay } from './weightOverlay';
-export { weighedPaths, type WeighedPath } from './weightActions';
+export { weighedPaths, type WeighedPath, type WeightEnv } from './weightActions';

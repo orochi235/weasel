@@ -88,4 +88,14 @@ describe('createGridLayer', () => {
     });
     expect(() => layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 })).toThrow(/UnitSystem/);
   });
+
+  it('spaces each axis by its own pitch', () => {
+    const layer = createGridLayer({
+      spacing: { x: 10, y: 15 },
+      bounds: () => ({ x: 0, y: 0, width: 30, height: 30 }),
+    });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    // 4 vertical lines at x = 0, 10, 20, 30 and 3 horizontal at y = 0, 15, 30.
+    expect(tree.filter((c) => c.kind === 'path')).toHaveLength(7);
+  });
 });

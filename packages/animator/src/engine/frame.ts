@@ -9,6 +9,8 @@ export interface AnimatorClock {
   /** The timestamp the codec last advanced to. Null after the page was hidden and while nothing
    *  runs, so neither gap is charged to the codec; a tween starting then seeds it from `now()`. */
   frameT: number | null;
+  /** The virtual ms its frames have advanced it by: each animation's own clock is read off it. */
+  elapsed: number;
   timeScale: number;
   paused: boolean;
 }
@@ -16,7 +18,10 @@ export interface AnimatorClock {
 /** What {@link createFrame} needs of the animator around it. */
 export interface FrameHost {
   clock: AnimatorClock;
-  table: Pick<Table, 'animations' | 'retire' | 'reportEnd' | 'finish' | 'drop' | 'infoOf'>;
+  table: Pick<
+    Table,
+    'animations' | 'retire' | 'reportEnd' | 'finish' | 'drop' | 'infoOf' | 'ticks' | 'clockOf' | 'awake' | 'waiting'
+  >;
   codec: Pick<Codec, 'frame'>;
   targets: Pick<TargetBook, 'settle' | 'show'>;
   hub: AnimatorEventHub;
@@ -27,6 +32,8 @@ export interface FrameHost {
   /** Reads each touched target's voices again. */
   reread(): void;
   requestFrame(): void;
+  /** True once the host has unmounted; logs the first time. */
+  tripwire(): boolean;
 }
 
 export interface Frame {
@@ -47,28 +54,22 @@ export function createFrame(host: FrameHost): Frame {
   // rather than schedule a tween that would fight the caller.
   let tickDepth = 0;
 
-  /** Ticks every animation on the table as the frame began, and answers which finished. */
-  const tickEach = (t: number): ActiveAnimation[] => {
+  /** Ticks the animations with something to do this frame, as the table stood when the frame
+   *  began, and answers which finished. */
+  const tickEach = (): ActiveAnimation[] => {
     const finished: ActiveAnimation[] = [];
     const threw: [ActiveAnimation, unknown][] = [];
+    // One waiting for its `due` checks for nothing meanwhile, the host's unmount included:
+    // once that has happened every animation is ticked, so each sees it and leaves.
+    const all = table.waiting > 0 && host.tripwire();
     // A snapshot: an animation registered by this frame's ticks first ticks on the
     // next, or a zero-duration loop would chain inside one frame and never leave it.
-    for (const anim of [...animations.values()]) {
+    for (const anim of all ? [...animations.values()] : table.ticks()) {
       if (animations.get(anim.id) !== anim) continue;
-      // `t` comes from the frame clock; `lastRealNow` is seeded at register()
-      // from `now()` while the animator is idle. The two share a time origin in a browser, where the rAF
-      // timestamp and `performance.now()` are both page-relative — but not
-      // everywhere: jsdom starts them ~600ms apart, which made the first
-      // frame's delta hugely negative and left `virtualNow` climbing back
-      // toward zero for dozens of frames before a tween advanced at all.
-      // Time never runs backwards, so a negative sample is never real.
-      const realDt = anim.lastRealNow == null ? 0 : Math.max(0, t - anim.lastRealNow);
-      anim.lastRealNow = t;
       const scale = clock.paused ? 0 : clock.timeScale * (anim.paused ? 0 : anim.timeScale);
-      anim.virtualNow += realDt * scale;
       tickDepth += 1;
       try {
-        if (anim.tick(anim.virtualNow, scale)) finished.push(anim);
+        if (anim.tick(table.clockOf(anim), scale)) finished.push(anim);
       } catch (error) {
         threw.push([anim, error]);
       } finally {
@@ -86,19 +87,20 @@ export function createFrame(host: FrameHost): Frame {
     return finished;
   };
 
-  const awake = (): boolean => {
-    for (const a of animations.values()) if (!a.idle) return true;
-    return false;
-  };
-
   return {
     tick(t) {
+      // `t` comes from the frame clock, and `frameT` is seeded from `now()` while the animator
+      // is idle. The two share a time origin in a browser, where the rAF timestamp and
+      // `performance.now()` are both page-relative, but not everywhere: jsdom starts them
+      // ~600ms apart. Time never runs backwards, so a negative sample is never real.
       const frameDt = clock.frameT == null ? 0 : Math.max(0, t - clock.frameT);
       clock.frameT = t;
       framing = true;
-      host.codec.frame(frameDt * (clock.paused ? 0 : clock.timeScale));
+      const dt = frameDt * (clock.paused ? 0 : clock.timeScale);
+      clock.elapsed += dt;
+      host.codec.frame(dt);
       host.targets.settle();
-      for (const anim of tickEach(t)) {
+      for (const anim of tickEach()) {
         // Gone already if its own tick canceled it; replaced if something
         // revived it under the same id since.
         if (animations.get(anim.id) === anim) table.finish(anim.id);
@@ -114,13 +116,12 @@ export function createFrame(host: FrameHost): Frame {
       for (const sub of host.subscribers) {
         try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
       }
-      if (awake()) {
+      if (table.awake) {
         host.requestFrame();
         return;
       }
       // As when the page was hidden: the time asleep is charged to nothing.
       clock.frameT = null;
-      for (const anim of animations.values()) anim.lastRealNow = null;
     },
     framing: () => framing,
     ticking: () => tickDepth > 0,

@@ -1,5 +1,5 @@
 import type { ScopedBinding } from '../interactions/dispatcher/matcher';
-import type { CapabilityTag } from '@weasel-js/modes';
+import { capabilitiesAllowed, type CapabilityTag } from '@weasel-js/modes';
 import { liveScope, type EligibilityState } from './eligibility';
 import type { Contribution } from './types';
 
@@ -65,7 +65,7 @@ export function assembleEntries<T extends Contribution<unknown>>(
     state: {
       focusedId: inputs.focusedId,
       engagedIds: new Set(inputs.hotkeyStack),
-      ...(allowed ? { allows: (tags: readonly CapabilityTag[]) => tags.every((tag) => allowed.has(tag)) } : {}),
+      ...(allowed ? { allows: (tags: readonly CapabilityTag[]) => capabilitiesAllowed(allowed, tags) } : {}),
     },
   };
 }

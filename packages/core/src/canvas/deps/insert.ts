@@ -27,6 +27,7 @@ import {
   linePath,
   polygonFromPoints,
   schneiderFit,
+  type PathFillRule,
   type PolygonPath,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
@@ -60,11 +61,27 @@ export type InsertNodeFactory = (
  * off the node, so its painter's default applies; `null` is "none". A pencil
  * trail too short to fit is built as a rect and asks as one. A line and an
  * open pen path are inserted unfilled: a fill given to either is dropped.
+ * `fillRule` is the rule a path that carries one is built with, where the
+ * kit's own is nonzero; a rect or an ellipse has none to set.
  *
  * It paints only the shapes the kit builds: an `InsertNodeFactory` owns its
  * node's whole `data`. See `SceneCanvas`'s `insertPaint` prop.
  */
-export type InsertPaint = (kind: string, seq: number) => { fill?: FillStyle | null; stroke?: Stroke | null };
+export type InsertPaint = (kind: string, seq: number) => {
+  fill?: FillStyle | null;
+  stroke?: Stroke | null;
+  fillRule?: PathFillRule;
+};
+
+function paintKeys({ fill, stroke }: ReturnType<InsertPaint>): { fill?: FillStyle | null; stroke?: Stroke | null } {
+  return { ...(fill !== undefined ? { fill } : {}), ...(stroke !== undefined ? { stroke } : {}) };
+}
+
+function withFillRule(data: unknown, rule: PathFillRule | undefined): unknown {
+  const path = (data as { path?: object } | undefined)?.path;
+  if (rule === undefined || path === undefined || !('fillRule' in path)) return data;
+  return { ...(data as object), path: { ...path, fillRule: rule } };
+}
 
 /** The default {@link InsertPaint}: the next color of the kit palette, as a
  *  fill on a closed shape, a fill and a stroke on a pen path, and a stroke
@@ -102,10 +119,8 @@ export function useInsertDepSource(
         const kind = extras.kind;
         const seq = ++insertSeqRef.current;
         const id = sc.mintId();
-        const painted = (as: string = kind): { fill?: FillStyle | null; stroke?: Stroke | null } => {
-          const { fill, stroke } = paintRef.current(as, seq);
-          return { ...(fill !== undefined ? { fill } : {}), ...(stroke !== undefined ? { stroke } : {}) };
-        };
+        let asked: ReturnType<InsertPaint> | undefined;
+        const painted = (as: string = kind) => paintKeys(asked = paintRef.current(as, seq));
 
         // The nascent node's extent — drag AABB reconciled with whatever
         // richer geometry `extras` carries.
@@ -202,6 +217,7 @@ export function useInsertDepSource(
             break;
         }
 
+        data = withFillRule(data, asked?.fillRule);
         return {
           id,
           ops: [createInsertOp({ node: { id, kind: 'leaf', layer, pose, data } as unknown as { id: string }, label: `Insert ${kind}` })],

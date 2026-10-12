@@ -20,9 +20,11 @@ import type {
 import { DragGhost } from './DragGhost';
 
 /** A palette drag in progress. `screenPos` is in client pixels; `feedback` is
- *  the last `onDragOver` answer — `null` off the canvas or without one. */
+ *  the last `onDragOver` answer — `null` off the canvas or without one; `from`
+ *  is the element the drag began on. */
 export interface DragState {
   item: PaletteItem;
+  from: Element;
   screenPos: Point;
   feedback: DragFeedback | null;
 }
@@ -127,7 +129,12 @@ export function useDragDrop<TS, TC>({
   const startDrag = useCallback(
     (item: PaletteItem, e: ReactPointerEvent) => {
       if (sessionRef.current) return;
-      const next: DragState = { item, screenPos: { x: e.clientX, y: e.clientY }, feedback: null };
+      const next: DragState = {
+        item,
+        from: e.currentTarget,
+        screenPos: { x: e.clientX, y: e.clientY },
+        feedback: null,
+      };
       dragRef.current = next;
       setDrag(next);
       sessionRef.current = openPointerSession(e.currentTarget, e, {
@@ -177,5 +184,5 @@ export interface DragOverlayProps {
 /** The ghost for `drag`, or nothing when no drag is live. */
 export function DragOverlay({ drag }: DragOverlayProps) {
   if (!drag) return null;
-  return <DragGhost item={drag.item} screenPos={drag.screenPos} />;
+  return <DragGhost item={drag.item} screenPos={drag.screenPos} from={drag.from} />;
 }

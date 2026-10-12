@@ -46,7 +46,6 @@ export interface UseTreeDragOptions {
   onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, effect: TreeDragEffect): boolean;
   onDropOutside?(ids: string[], point: { x: number; y: number }, effect: TreeDragEffect): void;
   externalDrag?: { x: number; y: number } | null;
-  onExternalTarget?(target: TreeDropTarget | null): void;
   dropRef?: Ref<TreeDropHandle>;
   /** A press released without dragging — the row's activation. */
   onPress(id: string, mods: PressModifiers): void;

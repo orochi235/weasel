@@ -1,13 +1,11 @@
-import { createContext, type ReactElement, type ReactNode, useContext } from 'react';
+import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import type { LabStore } from './store';
 import type { LabStoreState } from './types';
 
-type LabStoreCtx = { store: LabStore } | null;
-
 /** Context carrying the lab store. Prefer `useLabStore`; this is exported for
  *  code that needs to read the context without subscribing. */
-export const LabStoreContext = createContext<LabStoreCtx>(null);
+export const LabStoreContext = createContext<{ store: LabStore } | null>(null);
 
 /** Provides a lab store to its subtree. */
 export function LabStoreProvider({
@@ -17,7 +15,8 @@ export function LabStoreProvider({
   store: LabStore;
   children: ReactNode;
 }): ReactElement {
-  return <LabStoreContext.Provider value={{ store }}>{children}</LabStoreContext.Provider>;
+  const value = useMemo(() => ({ store }), [store]);
+  return <LabStoreContext.Provider value={value}>{children}</LabStoreContext.Provider>;
 }
 
 /** Subscribe to the whole lab store. Throws outside a `<LabStoreProvider>`. */

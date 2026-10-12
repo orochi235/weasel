@@ -1,28 +1,19 @@
-import { type ReactPortal, useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { DragGhost as UiDragGhost } from '@weasel-js/ui';
 import type { PaletteItem, Point } from '../instrument/types';
 
 /** Props for `DragGhost`. `screenPos` is in client pixels. */
 export interface DragGhostProps {
   item: PaletteItem;
   screenPos: Point;
+  /** The element the drag began on; the ghost takes its theme and font. */
+  from: Element;
 }
 
-/** The dragged item's label, portaled to `document.body` just below-right of
- *  `screenPos`. Renders nothing until mounted, so it is SSR-safe. */
-export function DragGhost({ item, screenPos }: DragGhostProps): ReactPortal | null {
-  const [mounted, setMounted] = useState(false);
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- portals only after mount, so server and client render alike
-  useEffect(() => setMounted(true), []);
-  if (!mounted || typeof document === 'undefined') return null;
-  const style = {
-    left: `${screenPos.x + 12}px`,
-    top: `${screenPos.y + 12}px`,
-  };
-  return createPortal(
-    <div className="lk-drag-ghost" style={style}>
-      <span className="lk-drag-ghost__label">{item.label}</span>
-    </div>,
-    document.body,
+/** The dragged item's label, just below-right of `screenPos`. */
+export function DragGhost({ item, screenPos, from }: DragGhostProps) {
+  return (
+    <UiDragGhost at={{ left: screenPos.x + 12, top: screenPos.y + 12 }} from={from}>
+      <span className="lk-drag-ghost">{item.label}</span>
+    </UiDragGhost>
   );
 }

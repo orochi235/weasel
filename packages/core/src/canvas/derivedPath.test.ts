@@ -97,6 +97,10 @@ function pathCommands(cmds: readonly DrawCommand[]): { kind: 'path'; path: Path 
   return out;
 }
 
+/** The poses of the dependencies `derivePath` was last handed. */
+const handedPoses = (derivePath: { mock: { calls: unknown[][] } }): unknown[] =>
+  (derivePath.mock.calls.at(-1)![1] as ({ pose: unknown } | undefined)[]).map((d) => d?.pose);
+
 describe('resolveDerivedPath', () => {
   it('returns null for a node that derives from nothing', () => {
     const plain: Node<Data, 'main', RectPose> = {
@@ -110,7 +114,7 @@ describe('resolveDerivedPath', () => {
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
     resolveDerivedPath(node, (id) => dep(poses.get(id)), NO_CHILDREN);
-    expect(derivePath).toHaveBeenCalledWith(node, [dep(pose(0)), dep(pose(100))]);
+    expect(handedPoses(derivePath)).toEqual([pose(0), pose(100)]);
   });
 
   it('passes undefined for a dependency that no longer resolves', () => {
@@ -118,7 +122,7 @@ describe('resolveDerivedPath', () => {
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)]]);
     resolveDerivedPath(node, (id) => dep(poses.get(id)), NO_CHILDREN);
-    expect(derivePath).toHaveBeenCalledWith(node, [dep(pose(0)), undefined]);
+    expect(handedPoses(derivePath)).toEqual([pose(0), undefined]);
   });
 
   it('memoizes — a second call with unchanged poses does not re-derivePath', () => {

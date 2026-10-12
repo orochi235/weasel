@@ -1,0 +1,107 @@
+import { describe, it, expect } from 'vitest';
+import { resolveScoped, type UnitScope } from '@weasel-js/quantity';
+import { createScene, sceneFromJSON } from './scene';
+import { reconcileSpecs } from './reconcileSpecs';
+import { sceneMutators } from './sceneMutators';
+import { sceneUnitScopes } from './unitScopes';
+import { asNodeId, type AddNodeSpec, type ContainerNode, type RectPose } from './types';
+
+type Spec = AddNodeSpec<object, 'main', RectPose>;
+const POSE = { x: 0, y: 0, width: 10, height: 10 };
+const G = asNodeId('g');
+const INNER = asNodeId('inner');
+const LEAF = asNodeId('leaf');
+
+const INCHES: UnitScope = { system: { base: 'in', units: { in: 1, ft: 12 } } };
+const MM: UnitScope = { system: { base: 'mm', units: { mm: 1, cm: 10 } }, scale: 1 / 25.4 };
+const CM: UnitScope = { system: { base: 'cm', units: { cm: 1 } }, scale: 10 };
+
+const spec = (id: string, extra: Partial<Spec> = {}): Spec =>
+  ({ id: asNodeId(id), kind: 'leaf', layer: 'main', pose: { ...POSE }, data: {}, ...extra });
+const sceneOf = (specs: Spec[] = []) =>
+  createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], initial: specs });
+const unitsOf = (scene: ReturnType<typeof sceneOf>, id = G) =>
+  (scene.get(id) as ContainerNode<object, 'main', RectPose>).units;
+
+describe('Scene — a container declares its unit scope', () => {
+  it('keeps the scope a container is added with, and none on a leaf', () => {
+    const scene = sceneOf();
+    scene.add(spec('g', { kind: 'container', units: MM }));
+    scene.add(spec('leaf', { units: MM }));
+    expect(unitsOf(scene)).toEqual(MM);
+    expect((scene.get(LEAF) as { units?: unknown }).units).toBeUndefined();
+  });
+
+  it('keeps it through construction, a snapshot, and a removal undone', () => {
+    const scene = sceneOf([spec('g', { kind: 'container', units: MM })]);
+    expect(unitsOf(scene)).toEqual(MM);
+    expect(unitsOf(sceneFromJSON(JSON.parse(JSON.stringify(scene.toJSON()))))).toEqual(MM);
+    scene.remove(G);
+    scene.undo();
+    expect(unitsOf(scene)).toEqual(MM);
+  });
+
+  it('leaves a container that declares none out of the snapshot', () => {
+    const scene = sceneOf([spec('g', { kind: 'container' })]);
+    expect(JSON.stringify(scene.toJSON())).not.toContain('units');
+  });
+
+  it('setUnits is one undo step, and null clears the scope', () => {
+    const scene = sceneOf([spec('g', { kind: 'container' })]);
+    scene.setUnits(G, MM);
+    expect(unitsOf(scene)).toEqual(MM);
+    scene.undo();
+    expect(unitsOf(scene)).toBeUndefined();
+    scene.redo();
+    scene.setUnits(G, null);
+    expect(unitsOf(scene)).toBeUndefined();
+    expect(scene.historyEntries()).toHaveLength(2);
+  });
+
+  it('setUnits refuses a leaf', () => {
+    const scene = sceneOf([spec('leaf')]);
+    expect(() => scene.setUnits(LEAF, MM)).toThrow(/not a container/);
+  });
+
+  it('re-adding a node through an adapter keeps its scope', () => {
+    const scene = sceneOf([spec('g', { kind: 'container', units: MM })]);
+    const node = scene.get(G)!;
+    const adapter = sceneMutators(scene);
+    adapter.removeNode('g');
+    adapter.insertNode(node);
+    expect(unitsOf(scene)).toEqual(MM);
+  });
+
+  it('reconcileSpecs writes a changed scope without replacing the container', () => {
+    const prev = [spec('g', { kind: 'container', units: MM }), spec('leaf', { parent: G })];
+    const scene = sceneOf(prev);
+    const before = scene.get(G);
+    reconcileSpecs(scene, prev, [spec('g', { kind: 'container', units: CM }), spec('leaf', { parent: G })]);
+    expect(scene.get(G)).toBe(before);
+    expect(unitsOf(scene)).toEqual(CM);
+  });
+});
+
+describe('sceneUnitScopes', () => {
+  const nested = () => sceneOf([
+    spec('g', { kind: 'container', units: MM }),
+    spec('inner', { kind: 'container', parent: G, units: CM }),
+    spec('leaf', { parent: INNER }),
+  ]);
+
+  it('lists the scopes enclosing a node, outermost first', () => {
+    expect(sceneUnitScopes(nested(), LEAF, INCHES)).toEqual([INCHES, MM, CM]);
+  });
+
+  it("leaves out a container's own scope unless asked for it", () => {
+    const scene = nested();
+    expect(sceneUnitScopes(scene, INNER, INCHES)).toEqual([INCHES, MM]);
+    expect(sceneUnitScopes(scene, INNER, INCHES, { inclusive: true })).toEqual([INCHES, MM, CM]);
+  });
+
+  it('resolves a value written beside a node in the root scope', () => {
+    // 5 cm is 50 mm, which is 50 / 25.4 in.
+    const scopes = sceneUnitScopes(nested(), LEAF, INCHES);
+    expect(resolveScoped({ value: 5, unit: 'cm' }, scopes)).toBeCloseTo(50 / 25.4);
+  });
+});

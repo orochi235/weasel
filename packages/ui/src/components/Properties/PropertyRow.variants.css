@@ -1,0 +1,173 @@
+/* ── Color variant: label and swatch side-by-side, two per row in the grid.
+   Switches to a 2-row grid when an alpha slider is rendered beneath. */
+/* `align-content: end` sinks the whole grid so a color row paired with a
+   taller sibling keeps its alpha track on the neighbour's bottom edge. An
+   explicit `align` overrides both that and the per-item alignment below, which
+   is what a column of swatches read as a group needs. */
+.rowColor {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto;
+  align-content: var(--wzl-prop-row-align-content, end);
+  column-gap: var(--wzl-space-4);
+  row-gap: 0;
+  min-width: 0;
+}
+
+.rowColor .rowLabel {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: var(--wzl-prop-row-align, center);
+  flex: initial;
+  min-width: 0;
+}
+
+/* Padding: 0 is important — the native <input type="color"> in some browsers (esp. Chrome) inflates beyond its
+   declared box when given padding, which expands the grid row and pushes
+   the paired slider track out of bottom alignment. */
+.rowColor > input[type='color'] {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: var(--wzl-prop-row-align, center);
+  box-sizing: border-box;
+  width: 36px;
+  height: var(--wzl-control-h-xs);
+  background: transparent;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* A color field set directly in the row gives its parts to the row's grid:
+   the swatch beside the label, and the opacity track with its readout on a
+   second row beneath. Nested in another wrapper, it keeps its own line. */
+.rowColor > .colorField {
+  display: contents;
+}
+
+.rowColor > .colorField > :first-child {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: var(--wzl-prop-row-align, center);
+  justify-self: end;
+}
+
+.rowColor > .colorField > input[type='range'] {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.rowColor > .colorField > :last-child:not(:first-child):not(input) {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+}
+
+/* `layout="block"` stacks the color row: label, then swatch, then alpha. */
+.rowColor.rowBlock {
+  grid-template-columns: 1fr;
+}
+
+.rowColor.rowBlock .rowLabel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.rowColor.rowBlock > input[type='color'],
+.rowColor.rowBlock > .colorField > :first-child {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: start;
+}
+
+.rowColor.rowBlock > .colorField > input[type='range'] {
+  grid-row: 3;
+}
+
+/* A block row has one column, so the readout rides at the track's end. */
+.rowColor.rowBlock > .colorField > :last-child:not(:first-child):not(input) {
+  grid-column: 1;
+  grid-row: 3;
+  justify-self: end;
+}
+
+/* ── Checkbox variant: label-first inline layout. */
+.rowCheckbox {
+  flex-direction: row;
+  align-items: var(--wzl-prop-row-align, center);
+  /* Label on the leading edge and box on the trailing one, like every other
+     inline row: a column of settings is read down its labels, and a box that
+     leads its own row puts each label at a different indent. */
+  justify-content: space-between;
+  gap: var(--wzl-space-4);
+  cursor: pointer;
+}
+
+.rowCheckbox > input[type='checkbox']:not([role='switch']) {
+  accent-color: var(--wzl-accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* `layout="block"` stacks the checkbox row: label above, box beneath, both on
+   the leading edge — a block row's cross axis is the horizontal one. */
+.rowCheckbox.rowBlock {
+  flex-direction: column;
+  align-items: var(--wzl-prop-row-align, start);
+}
+
+
+/* A state the control cannot draw itself: a switch has no indeterminate form,
+   and nothing has an "unset" one. */
+.dimmed {
+  opacity: 0.55;
+}
+
+/* A slider cell's readout, beside its track rather than in a row's label line.
+   Doubled so a row laying its cells out evenly does not stretch it. */
+.cellReadout.cellReadout {
+  flex: none;
+  min-inline-size: 3ch;
+  text-align: end;
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+  background: var(--wzl-input-surface, var(--wzl-surface-sunken));
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  resize: vertical;
+}
+
+.textarea:disabled,
+.readoutInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Segmented toggle ─────────────────────────────────────────────
+   A `ToggleBar`, filling the row the way a field does and standing at the
+   row's field height rather than its own small size. */
+.row > .toggleBar {
+  display: flex;
+  width: 100%;
+  height: var(--wzl-field-h, var(--wzl-control-h));
+}
+
+/* A disabled inline paint: the editor itself, inert, dimmed here once since none of its controls is disabled. */
+.paintOff {
+  min-inline-size: 0;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paintOffBody {
+  display: contents;
+}

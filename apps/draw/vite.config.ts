@@ -23,14 +23,7 @@ export default defineConfig({
   // it. Atlas files live under repoRoot/assets/fonts/inter/.
   publicDir: resolve(repoRoot, 'assets/fonts'),
   resolve: {
-    alias: weaselAliases(repoRoot, [
-      // Specific overrides win — weasel-theme ships a `tokens.css` import the
-      // generic wildcard would otherwise rewrite to a `.ts` lookup.
-      {
-        find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
-      },
-    ]),
+    alias: weaselAliases(repoRoot),
   },
   plugins: [
     react(),

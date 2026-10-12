@@ -182,8 +182,10 @@ stops shrinking.
 Spacing is the `space-1` … `space-8` ladder, 2px rungs. `space-xs/sm/md/lg` are
 aliases for rungs 2/4/6/8. It does not vary by density — the rungs are finer
 than any density factor could resolve without rounding two of them onto the same
-pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal in
-`packages/ui/src` that has a rung.
+pixel. `npm run check:spacing` fails on a `gap`/`padding`/`margin` px literal that
+has a rung, in any package or app stylesheet. Core, which draws on a page that
+may load no theme, writes the rung with its px as the fallback; it is the one
+package `check:token-reads` lets do that.
 
 Control heights are four ranks, `control-h-xs` / `-sm` / `control-h` /
 `tb-height` — 18/20/24/28 at `comfortable`. A control box sizes itself from one
@@ -196,6 +198,37 @@ What deliberately does *not* follow density: icons and drawn glyphs (a chevron,
 a checkmark, a switch track), slider tracks and thumbs, and handles — those have
 their own tokens or are artwork. Scaling them with the type ramp makes them
 blurry rather than bigger.
+
+### Gloss
+
+`--wzl-gloss` is how much Aqua glass a boxed `Button` and a selected segment of
+`ToggleBar`, `ButtonBar`, or `OptionsBar` wear, from 0 to 1. The default theme
+sets 0: a flat accent fill, and for a secondary button the raised surface inside
+a 1px `--wzl-border-strong` line. At 1 they draw the ramp, the specular gloss,
+the rim, and the drop shadow. A theme turns the glass on by setting the token,
+and so does any ancestor that declares it. Each rule lays its flat fill over the
+ramp and fades the fill out as the gloss and shadows fade in, so a control that
+draws the ramp reads the token for every part of it.
+
+### Layers
+
+Anything that draws over the page takes its `z-index` from the `--wzl-z-*`
+ladder, so a consumer who retunes a rung moves every layer on it:
+
+| Rung | Value | Holds |
+|---|---|---|
+| `--wzl-z-toolbar` | 10 | chrome pinned over a workspace |
+| `--wzl-z-overlay` | 20 | a panel or readout floating over the chrome |
+| `--wzl-z-hud` | 900 | core's debug HUDs |
+| `--wzl-z-modal` | 1000 | `Dialog`, labkit's lightbox |
+| `--wzl-z-toast` | 1100 | toasts |
+| `--wzl-z-popover` | 1200 | `Tooltip`, `Callout` |
+| `--wzl-z-drag` | 10000 | drag ghosts |
+
+Core reads its rungs with a fallback (`var(--wzl-z-hud, 900)`), since it draws
+on a page that may load no theme. A small literal that orders siblings inside one stacking
+context is fine. `npm run check:layers` fails on a `z-index` literal, in a
+stylesheet or in script, at or above the lowest rung.
 
 ### Panel labels
 
@@ -257,7 +290,9 @@ A surface that holds a class of content says which with `stance` —
 `scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`,
 `preview` — and which of its peers it is with `tone`: an index into the theme's
 tone list (`ThemeDefinition.tones`, a `ColorList`; weasel's is the swatch ramp),
-or a color. `PropertyPanel`, `PropertyGroup`, `MotifFrame`, `Subpanel`, `Callout`, `Dialog`,
+or a `ColorSource` (`@weasel-js/paint`): a literal, or a ref such as `{ ref: 'accent' }`,
+resolved by `colorSourceCss` (`@weasel-js/theme`; `useColorCss` in a component),
+as is every other color a kit component takes. `PropertyPanel`, `PropertyGroup`, `MotifFrame`, `Subpanel`, `Callout`, `Dialog`,
 labkit's `ControlPanel` and sidebar sections take both; `LayerList`'s items
 take a tone only, since a list's cards are one kind of thing. `Badge`, `Code`,
 `Button` and `Powerline` segments take both too, beside the `status` they report
@@ -266,7 +301,8 @@ color, and a toned primary button takes the tone as its accent. Toasts take
 neither: a toast reports how an event came out rather than holding a class of
 content. The hud `window` takes both, drawn in WebGL from the resolved theme:
 `resolveStanceSlots` (`@weasel-js/theme`) makes the same lookup the generated CSS
-does, and `mixOklab` (`@weasel-js/paint`) mixes the tone in. Anything else that takes several colors — chart series, diagram
+does, `colorSourceLiteral` resolves the tone with no cascade to ask, and `mixOklab`
+(`@weasel-js/paint`) mixes it in. Anything else that takes several colors — chart series, diagram
 categories — takes a `ColorList` (`@weasel-js/theme`), read with `colorAt` /
 `colorCssAt`, rather than hand-picked color strings that suit only one mode.
 
@@ -292,9 +328,16 @@ borrowed from something real. It's neither a stance (what a surface holds) nor a
 theme (token values). `<MotifFrame motif>` and `<PropertyGroup motif>` take one
 from a factory: `rule()` (a title between two rules, the default), `stereo()` (a
 label bar along one edge, as on the back of an A/V receiver), `notch()` (the
-title cut into the border), `tab()` and `plaque()` (the tone fills the frame).
+title cut into the border), `tab()`, `plaque()` (the tone fills the frame) and
+`titlebar()` (a solid strip across the top, as a desktop window is titled).
 The root barrel has them as `motifs.stereo()`; `@weasel-js/ui/components/MotifFrame`
-exports the bare names.
+exports the bare names. `<DefaultMotif motif>` changes the default for every
+frame below it, which is how an app pairs a theme with the motif it wants.
+
+`titlebar` is the one motif a theme repaints: its strip, its title's color and
+alignment, and the frame's border and inset are the `--wzl-titlebar-*` hooks,
+and its edge takes `--wzl-bevel-raised`. A frame that names a tone paints the
+tone over the theme's strip.
 
 A motif renders the frame's root element itself, so it picks the element as well
 as the layout: `notch` must be a `<fieldset>`, because a `<legend>` cuts the

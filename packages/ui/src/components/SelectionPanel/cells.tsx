@@ -48,19 +48,20 @@ export interface RenderedCell {
   pair?: { key: string; label: string };
 }
 
-/**
- * True for a leaf that can join a flag bar: a paired toggle boolean the
- * consumer has not claimed with a renderer of its own.
- */
-export function isFlagCell(cell: LeafCell, renderers?: Record<string, PropertyRenderer>): boolean {
-  const { leaf } = cell;
+/** True for a leaf that joins a flag bar where it shares a pair: a toggle boolean the consumer has not claimed
+ *  with a renderer of its own. `path` is where its value lives. */
+export function isFlagLeaf(leaf: PrefLeaf, path: string, renderers?: Record<string, PropertyRenderer>): boolean {
   return (
     leaf.kind === 'boolean' &&
     (leaf as PrefBoolean).control === 'toggle' &&
-    cell.pair !== undefined &&
-    renderers?.[cell.ctx.path] === undefined &&
+    renderers?.[path] === undefined &&
     renderers?.[leaf.kind] === undefined
   );
+}
+
+/** True for a leaf that can join a flag bar: a paired {@link isFlagLeaf}. */
+export function isFlagCell(cell: LeafCell, renderers?: Record<string, PropertyRenderer>): boolean {
+  return cell.pair !== undefined && isFlagLeaf(cell.leaf, cell.ctx.path, renderers);
 }
 
 /**

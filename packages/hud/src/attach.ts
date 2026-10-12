@@ -13,19 +13,18 @@ import {
   type Widget, type HudDrawCtx, type HudKeyEvent, type HudPointerEvent,
 } from './widget';
 import type { HudHitPayload } from './tool';
-import {
-  colorAt, resolveTheme, themeTones, weaselTheme,
-  type ColorContext, type ColorList, type ResolvedTheme,
-} from '@weasel-js/theme';
+import { resolveTheme, weaselTheme, type ColorSourceContext, type ResolvedTheme } from '@weasel-js/theme';
+import { hudColor } from './colors';
 
+/** Options for `attachHud`. */
 export interface AttachHudOptions {
   /** Resolved theme the widgets draw with. Defaults to the built-in theme's
    *  default mode; pass `useTheme().resolved` to follow a live theme. */
   readonly theme?: ResolvedTheme;
-  /** The tone list a widget's numeric `tone` indexes, and the theme it
-   *  resolves against — `useTheme()`'s value is one. Defaults to the built-in
-   *  theme's list, resolved against `theme`. */
-  readonly tones?: ColorContext & { readonly tones: ColorList };
+  /** What a widget's color sources resolve against: a theme, the tone list a
+   *  numeric `tone` indexes, and a palette — `useTheme()`'s value is one.
+   *  Defaults to the built-in theme and its list, resolved against `theme`. */
+  readonly tones?: ColorSourceContext;
   /**
    * Where the text a widget draws without naming a family comes from.
    *
@@ -55,8 +54,7 @@ export function attachHud(
   options: AttachHudOptions = {},
 ): () => void {
   const theme = options.theme ?? resolveTheme(weaselTheme);
-  const tones = options.tones ?? { theme: weaselTheme, resolved: theme, tones: themeTones(weaselTheme) };
-  const toneAt = (i: number) => colorAt(tones.tones, i, tones);
+  const color = hudColor(options.tones ?? { theme: weaselTheme, resolved: theme });
   if (hud.attached) {
     throw new Error('weasel-hud: this HUD is already attached to a canvas.');
   }
@@ -117,7 +115,7 @@ export function attachHud(
     label: 'HUD',
     space: 'screen',
     draw: (data, view, dims): DrawCommand[] => {
-      const ctx = { dims, defaultFont, tokens: theme, toneAt };
+      const ctx = { dims, defaultFont, tokens: theme, color };
       const out: DrawCommand[] = [];
       // Pass 1: interiors. All content precedes all frames so one window's
       // content can never paint over another window's border.
@@ -126,7 +124,7 @@ export function attachHud(
         const rect = w.contentRect;
         if (rect.w <= 0 || rect.h <= 0) continue;
         const children = w.content({
-          data, view, dims, rect, defaultFont, tokens: theme, toneAt,
+          data, view, dims, rect, defaultFont, tokens: theme, color,
         });
         if (children.length === 0) continue;
         out.push({

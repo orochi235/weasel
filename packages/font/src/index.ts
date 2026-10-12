@@ -44,6 +44,7 @@ export { cssFamilyName } from './cssFamily';
 export {
   registerCanvasFont,
   unregisterCanvasFont,
+  refreshCanvasFont,
   isCanvasFont,
   listCanvasFonts,
   syncDynamicPageTexture,
@@ -52,7 +53,7 @@ export {
   DEFAULT_BAKE_BUDGET,
 } from './dynamic/dynamicAtlas';
 
-export type { CanvasFontEntry } from './dynamic/dynamicAtlas';
+export type { CanvasFontEntry, DynamicFace } from './dynamic/dynamicAtlas';
 
 export {
   registerFontOutlines,

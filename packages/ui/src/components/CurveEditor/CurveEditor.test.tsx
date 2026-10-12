@@ -601,6 +601,20 @@ describe('CurveEditor — visual chrome', () => {
     expect(d).toMatch(/Z$/);
   });
 
+  it('writes the fill color it is given, a color source, onto the fill path', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onInput={() => {}}
+        fill={{ side: 'below', color: { ref: 'accent' } }}
+        width={200}
+        height={100}
+      />,
+    );
+    const fillEl = container.querySelector<SVGPathElement>('[data-curve-element="fill"]')!;
+    expect(fillEl.style.getPropertyValue('--curve-fill')).toBe('var(--wzl-accent)');
+  });
+
   it('renders fill in 2D mode as well (closes along the chosen edge)', () => {
     const { container } = render(
       <CurveEditor

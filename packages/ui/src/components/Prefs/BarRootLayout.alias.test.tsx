@@ -27,6 +27,15 @@ describe('a vertical bar\'s popover for an alias', () => {
     expect(buttons()).toEqual(inForm);
   });
 
+  it('says so in a cell for an alias of nothing on a bar that runs across, in a form as in a Bar', () => {
+    render(<PrefsForm schema={SCHEMA} values={{}} onChange={() => {}} />);
+    const said = screen.getByText('(alias: no pref at nowhere)');
+    expect(within(screen.getByRole('toolbar')).getByText(said.textContent!)).toBe(said);
+    cleanup();
+    render(<Bar schema={SCHEMA} label="Tools" values={{}} />);
+    expect(within(screen.getByRole('toolbar')).getByText('(alias: no pref at nowhere)')).toBeInTheDocument();
+  });
+
   it('opens the row of that leaf, which writes at its path', () => {
     const onChange = vi.fn();
     render(<PrefsForm schema={SCHEMA} orientation="vertical" values={{ size: 7 }} onChange={onChange} />);

@@ -155,6 +155,21 @@ describe('DragDrop integration', () => {
     expect(document.querySelector('.lk-drag-ghost')).toBeNull();
   });
 
+  it("draws the ghost in the lab's own portal host, so it takes the lab's theme", async () => {
+    await renderLab();
+    const palette = screen.getByRole('button', { name: 'Item A' });
+
+    await act(async () => {
+      pointerDown(palette, 5, 5);
+    });
+    const ghost = document.querySelector('.lk-drag-ghost');
+    const host = palette.closest('[data-wzl-portal-host],[data-wzl-theme],[data-wzl-mode]');
+    expect(host).not.toBeNull();
+    expect(ghost?.closest('[aria-hidden="true"]')?.parentElement).toBe(host);
+
+    await pointerUp(250, 250);
+  });
+
   it('a cancelled gesture drops nothing and clears the ghost', async () => {
     let latest: DropState = { items: [] };
     await renderLab((s) => {

@@ -1,4 +1,5 @@
 import type { InvocationCtx } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import { resolveParams } from '@weasel-js/routing';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { InsertPoint } from '../../gestures/types';
@@ -15,7 +16,7 @@ function shapeEndpoints(
   session: Pick<InsertSession, 'opts' | 'snap' | 'behaviors' | 'gestureCtx'>,
   readers: GestureReaders,
   raw: Pick<InsertFrame, 'pointer' | 'altHeld' | 'shiftHeld'>,
-  modifiers: InvocationCtx['modifiers'],
+  moveCtx: Pick<InvocationCtx, 'modifiers' | 'screen'>,
 ): { start: InsertPoint; current: InsertPoint } {
   const resolved = resolveParams(session.opts?.params);
   const kind = (resolved?.['kind'] as string | undefined) ?? 'rect';
@@ -28,8 +29,8 @@ function shapeEndpoints(
   current = session.snap(current);
 
   if (session.behaviors.length > 0) {
-    gctx.modifiers = { ...modifiers };
-    gctx.pointer = { worldX: raw.pointer.x, worldY: raw.pointer.y, clientX: 0, clientY: 0 };
+    gctx.modifiers = { ...moveCtx.modifiers };
+    gctx.pointer = pointerStateOf(raw.pointer, moveCtx);
     gctx.view = readers.view();
     gctx.plane = readers.plane();
     gctx.current.set(GESTURE_KEY, current);
@@ -68,6 +69,6 @@ export function nextFrame(
     // attaches the array reference to each InvocationCtx.drag — keep
     // the latest reference in case the dispatcher swaps it.
     points: moveCtx.drag?.points ? moveCtx.drag.points : prev.points,
-    shaped: shapeEndpoints(session, readers, raw, moveCtx.modifiers),
+    shaped: shapeEndpoints(session, readers, raw, moveCtx),
   };
 }

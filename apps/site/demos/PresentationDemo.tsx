@@ -1,8 +1,6 @@
 import { defineInstrument, Lab, usePresentation } from '@weasel-js/labkit';
 import { Button } from '@weasel-js/ui';
-// In-repo, so the source stylesheet: a consumer imports the built
-// `@weasel-js/labkit/styles.css` instead.
-import '@weasel-js/labkit/styles.less';
+import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import './PresentationDemo.css';
 

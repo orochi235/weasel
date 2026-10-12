@@ -143,7 +143,8 @@ export function racQueueOf(queue: ToastQueue): UNSTABLE_ToastQueue<ToastContent>
 /** Module-level default queue used by `toast()` and `<ToastRegion>`. */
 export const defaultToastQueue = createToastQueue();
 
-type ToastFn = {
+/** `toast`: callable for an info toast, with a method per tone. */
+export type ToastFn = {
   (title: string, options?: ToastOptions): void;
   info(title: string, options?: ToastOptions): void;
   success(title: string, options?: ToastOptions): void;

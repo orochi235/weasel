@@ -1,4 +1,4 @@
-import { isBuiltinPref, type PrefLeaf } from '@weasel-js/prefs';
+import { isBuiltinPref, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { PropertyField, prefFieldProps } from '@weasel-js/ui';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
@@ -24,19 +24,21 @@ export interface OpenCell {
 export function MatrixEditor({
   open,
   schema,
+  over,
   config,
   setConfig,
   close,
 }: {
   open: OpenCell;
   schema: ResolvedConfig;
+  over?: PrefGroup | PrefSection;
   config: Record<string, unknown>;
   setConfig: (path: string, value: unknown) => void;
   close: () => void;
 }) {
   const { path, leaf } = open;
   const choices = useFieldChoices();
-  const disabled = !isLeafEnabled(schema, path, config);
+  const disabled = !isLeafEnabled(schema, path, config, over);
   const field = isBuiltinPref(leaf)
     ? prefFieldProps(leaf, {
         value: valueAtPath(config, path) ?? leaf.default,
@@ -63,6 +65,7 @@ export function MatrixEditor({
       path={path}
       leaf={leaf}
       resolved={schema}
+      over={over}
       config={config}
       shown={config}
       setConfig={setConfig}

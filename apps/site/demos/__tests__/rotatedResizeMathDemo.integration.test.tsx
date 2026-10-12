@@ -62,4 +62,10 @@ describe('RotatedResizeMathDemo', () => {
     expect(after.x).toBeCloseTo(bottomRight.x, 1);
     expect(after.y).toBeCloseTo(bottomRight.y, 1);
   });
+
+  it('says what the median panel recovers', () => {
+    const { container } = render(<RotatedResizeMathDemo />);
+    expect(container.textContent).toContain('recovers size and rotation');
+    expect(container.textContent).not.toContain('recovers green');
+  });
 });

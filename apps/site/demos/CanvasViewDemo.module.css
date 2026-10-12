@@ -1,16 +1,16 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .header {
   display: flex;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   align-items: center;
 }
 
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }

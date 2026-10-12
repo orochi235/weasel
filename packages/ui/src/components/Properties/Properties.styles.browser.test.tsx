@@ -1,0 +1,44 @@
+import '@weasel-js/theme/tokens.css';
+import { afterEach, expect, test } from 'vitest';
+import s from './Properties.module.css';
+
+// The module is assembled from imported sheets. Each one's rules have to land in
+// the module's own scope, or a class the components ask for styles nothing; only
+// the real CSS pipeline can say which, since the jsdom proxy answers to any key.
+
+let host: HTMLElement | undefined;
+afterEach(() => host?.remove());
+
+function mount(html: string): HTMLElement {
+  host = document.createElement('div');
+  host.innerHTML = html;
+  document.body.append(host);
+  return host;
+}
+
+test('a rule from every imported sheet reaches the class the module exports', () => {
+  const root = mount(`
+    <div class="${s.panel}" data-part="panel">
+      <div class="${s.list} ${s.listPairs}" data-part="list">
+        <label class="${s.row} ${s.rowInline}" data-part="row"><span class="${s.rowLabel}" data-part="label">Gap</span></label>
+        <label class="${s.row} ${s.rowColor}" data-part="color"></label>
+        <label class="${s.row} ${s.rowAuto}"><span class="${s.readout}" data-part="auto">auto</span></label>
+        <div class="${s.group}"><div class="${s.groupBody}" data-part="group"></div></div>
+        <section class="${s.subpanel}" data-part="subpanel"><div class="${s.subpanelTitle}" data-part="title"></div></section>
+      </div>
+    </div>`);
+  const style = (part: string) => getComputedStyle(root.querySelector(`[data-part="${part}"]`)!);
+  expect(style('panel').boxSizing).toBe('border-box'); // family.css
+  expect(style('panel').userSelect).toBe('none'); // family.css
+  expect(style('panel').borderTopStyle).toBe('solid'); // PropertyPanel.css, through PropertyPanel.stance.css
+  expect(style('list').display).toBe('grid'); // PropertyList.css
+  expect(style('row').display).not.toBe('inline'); // PropertyRow.css
+  expect(style('label').whiteSpace).not.toBe(''); // PropertyRow.inline.css
+  expect(style('color').display).not.toBe('inline'); // PropertyRow.variants.css
+  expect(style('group').display).toBe('grid'); // PropertyGroup.css
+  expect(style('subpanel').display).toBe('grid'); // Subpanel.css
+  expect(style('auto').textTransform).toBe('uppercase'); // PropertyRow.auto.css
+  // A rule naming two components: a subpanel spans both columns of a paired list.
+  expect(style('subpanel').gridColumnStart).toBe('1');
+  expect(style('subpanel').gridColumnEnd).toBe('-1');
+});

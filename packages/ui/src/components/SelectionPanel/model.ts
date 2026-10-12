@@ -17,7 +17,7 @@ import {
 } from '@weasel-js/core';
 import {
   isPrefLeaf,
-  pairRowsOf,
+  pairRuns,
   prefAliasTargets,
   prefSectionLeaves,
   type PrefAlias,
@@ -33,6 +33,7 @@ import {
 export { MIXED };
 export type { Mixed };
 
+/** A scene node of any data, layer, and pose. */
 export type AnyNode = SceneNode<unknown, string, unknown>;
 
 /**
@@ -122,19 +123,11 @@ function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTa
 /** Merge each leaf a `pair` names into the row of the leaf that names it,
  *  where they run consecutively, labeled as the pair says. */
 export function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
-  const pairs = pairRowsOf(leaves.map((item) => [panelLeafKey(item), item.leaf] as const));
-  const rows: PanelRow[] = [];
-  for (const item of leaves) {
-    const pair = pairs.get(panelLeafKey(item));
-    const prev = rows[rows.length - 1];
-    if (pair !== undefined && prev !== undefined && prev.pair === pair.key) {
-      prev.leaves.push(item);
-    } else {
-      rows.push({ label: pair?.label ?? item.leaf.name, leaves: [item], ...(pair ? { pair: pair.key } : {}) });
-    }
-  }
-  // A pairing whose partners are absent here leaves a row of one, which is no pair.
-  return rows.map((row) => (row.leaves.length > 1 ? row : { label: row.label, leaves: row.leaves }));
+  return pairRuns(leaves, (item) => [panelLeafKey(item), item.leaf] as const).map(({ items, pair }) => ({
+    label: pair?.label ?? items[0]!.leaf.name,
+    leaves: items,
+    ...(pair ? { pair: pair.key } : {}),
+  }));
 }
 
 const NOTHING: PrefSection = { name: '', members: {} };
@@ -190,12 +183,8 @@ export function effectiveSections(
     restKeys.every((set) => set.has(leafKey(l)));
 
   return flatFirst
-    .map((section) => ({
-      ...section,
-      rows: section.rows
-        .map((row) => ({ ...row, leaves: row.leaves.filter(keep) }))
-        .filter((row) => row.leaves.length > 0),
-    }))
+    // Paired again, since a pair may have lost a leaf to the other kinds.
+    .map((section) => ({ ...section, rows: pairRows(section.rows.flatMap((row) => row.leaves).filter(keep)) }))
     .filter((section) => section.rows.length > 0);
 }
 

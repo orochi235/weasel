@@ -1,6 +1,8 @@
 /** @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer. */
 export type { TextureHandle } from './texture';
-export type { CommandFill, CommandPaintUnits, CommandStroke, PosedFill, SolidFill } from './commandPaint';
+export type {
+  CommandFill, CommandPaintUnits, CommandStroke, InCommandUnits, PosedFill, SolidFill, WithPatternHandle,
+} from './commandPaint';
 export type {
   FillStyle,
   GradientUnits,
@@ -77,7 +79,9 @@ export {
 export {
   resolvePaletteColor,
   resolvePaletteColors,
+  colorLiteralToCss,
   colorLiteralToHex,
+  cssColorLiteral,
   hexToColorLiteral,
   type ColorLiteral,
   type ColorRef,

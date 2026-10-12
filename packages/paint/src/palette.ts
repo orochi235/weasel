@@ -1,3 +1,4 @@
+import { parseColor } from './color';
 import { oklabToSrgbU8, oklchToOklab } from './colorSpaces';
 import { parseHexBytes } from './hex';
 
@@ -146,6 +147,26 @@ export function colorLiteralToHex(color: ColorLiteral): string | null {
   }
   const a = color.alpha ?? 1;
   return `#${rgb.map(hex2).join('')}${a < 1 ? hex2(a * 255) : ''}`;
+}
+
+/**
+ * A literal as a CSS color: hex where `colorLiteralToHex` has one, else
+ * `color(<space> …)`, which is the form CSS gives every predefined space.
+ * `null` for fewer than three coordinates.
+ */
+export function colorLiteralToCss(color: ColorLiteral): string | null {
+  if (color.coords.length < 3) return null;
+  const hex = colorLiteralToHex(color);
+  if (hex) return hex;
+  const a = color.alpha ?? 1;
+  return `color(${color.space} ${color.coords.join(' ')}${a < 1 ? ` / ${a}` : ''})`;
+}
+
+/** Any color string `parseColor` reads, as an `srgb` literal. Throws, as it does, on one it cannot. */
+export function cssColorLiteral(css: string): ColorLiteral {
+  const [r, g, b, a] = parseColor(css);
+  const coords = [r, g, b];
+  return a < 1 ? { space: 'srgb', coords, alpha: a } : { space: 'srgb', coords };
 }
 
 /** `#rrggbb` or `#rrggbbaa` as an `srgb` literal; `null` for anything else. */

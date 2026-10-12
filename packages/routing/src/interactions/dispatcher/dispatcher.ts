@@ -60,7 +60,7 @@ import type { DispatchRecord, WalkStep } from './dispatchRecord';
 import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
 import { buildDispatchRecord } from './buildDispatchRecord';
 import { DEV, recordTrace } from './dispatchTrace';
-import { modifiersOf, worldPointOf } from './inputFacts';
+import { carriedBy, immediateParams, worldPointOf } from './inputFacts';
 import {
   describeEligible, isEligible, liveInView, preferContextual, preferViewScoped, ruleCtxOf,
   type Ranking, type Walked,
@@ -490,11 +490,24 @@ export function createDispatcher(opts?: {
       // to start a new ongoing handle on first dispatch.
     }
 
+    if (event.kind === 'hover') return hover(event, ctx);
+
     const r = rank(event, ctx, DEV);
     const walked = walk(r, event, ctx, (match, action, deps) => invoke(event, match, action, deps), false);
     const outcome: 'handled' | 'unhandled' = walked.stop === 'fired' ? 'handled' : 'unhandled';
     if (DEV) recordTrace(buildDispatchRecord(r, walked, event, ctx, false, outcome));
     return outcome;
+  }
+
+  /** A hover claims nothing, so the walk goes on past each binding it fires.
+   *  Untraced: one arrives per mouse event. */
+  function hover(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
+    let fired = false;
+    walk(rank(event, ctx, false), event, ctx, (match, action, deps) => {
+      if (invoke(event, match, action, deps) === 'fired') fired = true;
+      return 'empty-handle';
+    }, false);
+    return fired ? 'handled' : 'unhandled';
   }
 
   /** Run the winning candidate. `'fired'` ends the walk; `'empty-handle'`
@@ -507,78 +520,7 @@ export function createDispatcher(opts?: {
   ): 'fired' | 'empty-handle' | 'misbound' {
     if (action.invoker?.timing === 'immediate') {
       try {
-        // For wheel / click / doubleclick bindings, merge event-time
-        // delta/position data into params so the immediate invoker
-        // sees both binding-declared params (e.g. `kind: 'wheel'`)
-        // and runtime event data. Option (a) from the design doc —
-        // simpler than extending InvocationCtx for immediate invokers.
-        const resolved = resolveParams(match.binding.opts?.params);
-        let params: Record<string, unknown> | undefined;
-        if (event.kind === 'wheel') {
-          params = {
-            deltaX: event.deltaX,
-            deltaY: event.deltaY,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            affordance: event.affordance,
-            ...resolved,
-          };
-        } else if (event.kind === 'pinch') {
-          params = {
-            scale: event.scale,
-            rotation: event.rotation,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            affordance: event.affordance,
-            ...resolved,
-          };
-        } else if (event.kind === 'click' || event.kind === 'doubleclick') {
-          params = {
-            worldX: event.x,
-            worldY: event.y,
-            affordance: event.affordance,
-            // Press point as well as release point — an action that places
-            // geometry at the click wants the former. See `ClickEvent`.
-            ...(event.kind === 'click'
-              ? { pressX: event.pressX, pressY: event.pressY }
-              : {}),
-            mods: modifiersOf(event),
-            ...resolved,
-          };
-        } else if (event.kind === 'contextmenu' || event.kind === 'longpress') {
-          params = {
-            worldX: event.x,
-            worldY: event.y,
-            affordance: event.affordance,
-            bodyTarget: event.bodyTarget,
-            mods: modifiersOf(event),
-            ...resolved,
-          };
-        } else if (event.kind === 'pointerdown') {
-          // Only `stage: 'press'` events reach an immediate invoker — the
-          // buffered copy matches `drag` specs, which are ongoing.
-          params = {
-            worldX: event.x,
-            worldY: event.y,
-            affordance: event.affordance,
-            bodyTarget: event.bodyTarget,
-            mods: modifiersOf(event),
-            ...resolved,
-          };
-        } else if (event.kind === 'drop' || event.kind === 'paste') {
-          // External-content events: forward the materialized items and,
-          // for drops, the world-space arrival point.
-          params = {
-            items: event.items,
-            via: event.kind,
-            ...(event.kind === 'drop' && event.x !== undefined
-              ? { worldX: event.x, worldY: event.y }
-              : {}),
-            ...resolved,
-          };
-        } else {
-          params = resolved;
-        }
+        const params = immediateParams(event, resolveParams(match.binding.opts?.params));
         action.invoker.run(deps, params);
       } catch (err) {
         console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
@@ -593,11 +535,11 @@ export function createDispatcher(opts?: {
       // a handle already in flight and silently no-op. `PointerDownSpec`
       // documents itself as immediate-only; enforce it rather than let the
       // collision happen quietly.
-      if (event.kind === 'pointerdown' && event.stage === 'press') {
+      if (event.kind === 'hover' || (event.kind === 'pointerdown' && event.stage === 'press')) {
+        const spec = event.kind === 'hover' ? 'hover spec, which has no press to own' : 'pointerDown spec, which fires at press time';
         console.error(
           `weasel dispatcher: action "${action.id}" has an ongoing invoker but is bound to a `
-          + `pointerDown spec, which fires at press time. Bind it to a drag spec, or give the `
-          + `action an immediate invoker.`,
+          + `${spec}. Bind it to a drag spec, or give the action an immediate invoker.`,
         );
         return 'misbound';
       }
@@ -731,7 +673,7 @@ export function createDispatcher(opts?: {
       // winner's invoke reuses the same bag. Shared with
       // `ActionsRegistry.trigger`, including the dev undeclared-read guard.
       const deps = buildDepsFromRequires(action, ctx.depRegistry);
-      const enabled = action.enabled ? action.enabled(deps, worldPointOf(event)) : true;
+      const enabled = action.enabled ? action.enabled(deps, worldPointOf(event), carriedBy(event)) : true;
       if (enabled !== true) { push({ kind: 'declined', reason: String(enabled) }); continue; }
       if (stop !== 'exhausted') { push({ kind: 'outranked' }); continue; }
       if (!attempt) {

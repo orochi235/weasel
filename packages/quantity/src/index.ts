@@ -58,6 +58,7 @@ export {
   zoom,
   zoomKind,
   type FractionDisplay,
+  type FractionOptions,
   type NamedConstant,
   type MultiplierDisplay,
   type PercentDisplay,
@@ -98,16 +99,45 @@ export {
 } from './number';
 export {
   ANGLE_RADIANS,
+  axisUnits,
   entryScale,
+  formatAxes,
   formatUnit,
   IMPERIAL_INCHES,
   METRIC_MM,
   PIXELS,
+  resolveAxes,
   resolveUnit,
   unitScale,
+  type PerAxis,
+  type PlaneUnits,
+  type PlaneValue,
   type Unit,
   type UnitEntry,
   type UnitScale,
   type UnitSystem,
   type UnitValue,
 } from './units';
+export {
+  parseUnitExpr,
+  resolveUnitExpr,
+  type UnitExpr,
+  type UnitExprContext,
+} from './unitExpr';
+export {
+  formatScoped,
+  fromRoot,
+  resolveScoped,
+  scopesOf,
+  toRoot,
+  type ScopeTree,
+  type UnitScope,
+} from './scope';
+export {
+  presentRange,
+  presentVector,
+  rangeParts,
+  vectorParts,
+  type RangeOptions,
+  type VectorOptions,
+} from './composite';

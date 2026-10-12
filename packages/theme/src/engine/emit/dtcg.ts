@@ -4,11 +4,12 @@ import { ALPHA_EXT, type RawToken, type TokenValue } from '../../dtcg/types.ts';
 import { themeAxes } from '../../resolveTheme.ts';
 import type { Theme } from '../../theme.ts';
 
-type Group = Record<string, unknown> & { $type: string };
+/** A DTCG group: tokens of one `$type`, by name. */
+export type DtcgGroup = Record<string, unknown> & { $type: string };
 
 interface Layer {
-  primitives: Record<string, Group>;
-  modes: Record<string, Record<string, Group>>;
+  primitives: Record<string, DtcgGroup>;
+  modes: Record<string, Record<string, DtcgGroup>>;
 }
 
 const REF = /^\{([^}.]+)\}$/;
@@ -17,8 +18,8 @@ const REF = /^\{([^}.]+)\}$/;
 export interface DtcgExport {
   readonly name: string;
   readonly defaultMode?: string;
-  readonly primitives: Record<string, Group>;
-  readonly modes: Record<string, Record<string, Group>>;
+  readonly primitives: Record<string, DtcgGroup>;
+  readonly modes: Record<string, Record<string, DtcgGroup>>;
   readonly $extensions?: { readonly [AXES_EXT]?: DtcgAxesExtension };
 }
 
@@ -57,7 +58,7 @@ export function toDTCG(theme: Theme): DtcgExport {
     return type === undefined ? value : `{${type}.${target}}`;
   };
 
-  const put = (into: Record<string, Group>, name: string, t: RawToken) => {
+  const put = (into: Record<string, DtcgGroup>, name: string, t: RawToken) => {
     into[t.type] ??= { $type: t.type };
     into[t.type][name] = {
       $value: alias(t.value),

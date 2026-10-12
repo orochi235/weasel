@@ -251,8 +251,8 @@ export interface UseGestureDispatcherOptions {
    *
    * A mount that binds two gestures should not also have to take the rest of
    * the pipeline's side effects: `contextMenu` suppresses the native menu
-   * unconditionally, and `ingest` makes the element a valid drop target and
-   * styles it while an OS drag hovers. `@weasel-js/labkit`'s loupe mounts on
+   * unconditionally, and `ingest` hears every paste on the window and probes
+   * the bindings on each `dragover`. `@weasel-js/labkit`'s loupe mounts on
    * a lab's own canvas host for a wheel and a held key, and turning the other
    * three off is what keeps right-click and file drops working there.
    *

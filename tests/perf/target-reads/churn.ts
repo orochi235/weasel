@@ -1,7 +1,9 @@
 // What stopping and starting an animation costs with N running: each frame cancels 100 tweens
 // and starts 100 again, timing the cancels, the starts, the frame after them, and the frame
 // after that one apart.
-// Run through `node tests/perf/target-reads/run.mjs churn <N>...`.
+// Run through `node tests/perf/target-reads/run.mjs churn <N>... [keyed | stop]`. `keyed` runs
+// each tween under a cancel key of its own and cancels by key; `stop` cancels through
+// `target.stop()`. Both go by what is on the key or the target, not by a handle.
 import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
 import { createTarget } from '../../../packages/animator/src/target';
 
@@ -9,6 +11,7 @@ const N = Number(process.env.N ?? 10000);
 const CHURN = 100;
 const WARM = 50;
 const FRAMES = 300;
+const MODE = process.argv[2] ?? 'handle';
 
 let now = 0;
 const core = createAnimatorCore({
@@ -25,7 +28,15 @@ const targets = Array.from({ length: N }, (_, row) => createTarget<number[]>({
 }));
 const handles: { cancel(): void }[] = [];
 const start = (row: number): void => {
-  handles[row] = core.api.tween<number[]>({ target: targets[row]!, to: [500 + row, 100 + row], ms: 1e9 });
+  handles[row] = core.api.tween<number[]>({
+    target: targets[row]!, to: [500 + row, 100 + row], ms: 1e9,
+    cancelKey: MODE === 'keyed' ? `row:${row}` : undefined,
+  });
+};
+const cancel = (row: number): void => {
+  if (MODE === 'keyed') core.api.cancelKey(`row:${row}`);
+  else if (MODE === 'stop') targets[row]!.stop();
+  else handles[row]!.cancel();
 };
 const frame = (): void => { now += 16; core.tick(now); };
 
@@ -42,7 +53,7 @@ let first = 0;
 let second = 0;
 for (let f = 0; f < WARM + FRAMES; f++) {
   const a = performance.now();
-  for (let i = 0; i < CHURN; i++) handles[(next + i) % N]!.cancel();
+  for (let i = 0; i < CHURN; i++) cancel((next + i) % N);
   const b = performance.now();
   for (let i = 0; i < CHURN; i++) start((next + i) % N);
   const c = performance.now();
@@ -60,6 +71,6 @@ for (let f = 0; f < WARM + FRAMES; f++) {
 const us = (t: number): string => ((t * 1000) / (FRAMES * CHURN)).toFixed(2).padStart(6);
 const ms = (t: number): string => t.toFixed(3).padStart(7);
 process.stdout.write(
-  `${String(N).padStart(7)} running, ${CHURN} restarted a frame:  cancel ${us(canceling)} us each  start ${us(starting)} us each`
+  `${String(N).padStart(7)} running, ${CHURN} restarted a frame${MODE === 'handle' ? '' : ` (${MODE})`}:  cancel ${us(canceling)} us each  start ${us(starting)} us each`
   + `  frame ${ms(first / FRAMES)} ms  the one after ${ms(second / FRAMES)} ms  steady ${ms(steady)} ms\n`,
 );

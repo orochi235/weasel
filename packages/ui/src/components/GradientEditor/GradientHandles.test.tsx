@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { GradientFill } from '@weasel-js/core';
 import { GradientHandles } from './GradientHandles';
+import { handleHalf } from '../../handles';
 
 const STOPS = [
   { offset: 0, color: '#000000' },
@@ -43,6 +44,13 @@ describe('GradientHandles', () => {
     render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={() => {}} width={400} height={300} />);
     expect(screen.getByLabelText('Gradient start')).toHaveAttribute('cx', '10');
     expect(screen.getByLabelText('Gradient end')).toHaveAttribute('cx', '110');
+  });
+
+  it('sizes its handles from the handle-size token a mesh corner uses', () => {
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={() => {}} width={400} height={300} />);
+    for (const label of ['Gradient start', 'Gradient end']) {
+      expect(Number(screen.getByLabelText(label).getAttribute('r'))).toBe(handleHalf('--wzl-handle-size-lg'));
+    }
   });
 
   it('maps a dragged endpoint back into gradient space', () => {

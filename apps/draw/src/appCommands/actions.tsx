@@ -8,7 +8,7 @@
 import './depSchemaAugmentation';
 
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/core';
-import { GridIcon, SnapIcon } from '@weasel-js/ui';
+import { GridIcon, SearchIcon, SnapIcon } from '@weasel-js/ui';
 import { ReleaseCompoundIcon, SettingsIcon } from '../actionIcons';
 
 /** What the app's own commands read and do. */
@@ -80,6 +80,8 @@ export const preferencesAction: AppAction = {
 export const commandsAction: AppAction = {
   id: 'app.commands',
   label: 'Commands',
+  icon: () => <SearchIcon />,
+  group: 'app',
   defaultBinding: { kind: 'key', key: 'k', mods: { mod: true } },
   requires: ['appCommands'],
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.openPalette() },

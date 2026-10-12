@@ -42,6 +42,7 @@ export type { LabStore, LabStoreActions } from './store';
 export { createLabStore } from './store';
 export type {
   CreateLabStoreOptions,
+  InstrumentHooks,
   InstrumentSerializers,
   LabDocument,
   LabStoreState,

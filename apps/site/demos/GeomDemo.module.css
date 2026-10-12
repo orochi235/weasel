@@ -1,13 +1,13 @@
 .demo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--wzl-space-5);
   width: 620px;
 }
 
 .control {
   display: flex;
-  gap: 8px;
+  gap: var(--wzl-space-4);
   align-items: center;
 }
 
@@ -17,7 +17,7 @@
 
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .table {
@@ -25,13 +25,13 @@
 }
 
 .table td {
-  padding: 3px 8px;
+  padding: 3px var(--wzl-space-4);
 }
 
 .fn {
   white-space: nowrap;
   font-family: ui-monospace, SFMono-Regular, monospace;
-  color: var(--ckd-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .num {
@@ -44,7 +44,7 @@
   display: inline-block;
   width: 10px;
   height: 10px;
-  margin-inline-end: 6px;
+  margin-inline-end: var(--wzl-space-3);
   border-radius: 2px;
 }
 

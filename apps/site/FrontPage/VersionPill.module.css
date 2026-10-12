@@ -1,7 +1,7 @@
 .pill {
   display: block;
   width: fit-content;
-  padding: 1px 8px;
+  padding: 1px var(--wzl-space-4);
   border-radius: var(--wzl-radius-pill);
   background: #0a44e6;
   color: #fff;

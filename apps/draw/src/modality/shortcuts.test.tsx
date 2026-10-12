@@ -5,10 +5,11 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useActionsRegistry, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
+import { modePathEdit } from './pathEditHost';
 import { modalityShortcuts } from './shortcuts';
 
 beforeAll(() => {
@@ -104,16 +105,16 @@ describe('entering path-edit from the keyboard', () => {
     scene: ReturnType<typeof createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>>;
     pathToEdit: () => string | null;
   }) {
-    const actions = useActionsRegistry();
     const deps = useDepRegistry();
     depsRef.current = deps;
     const keys = useMemo(() => modalityShortcuts(machine, {
       pathToEdit,
-      startPathEdit: () => { actions?.trigger('enterPathEdit'); },
-    }), [machine, pathToEdit, actions]);
+      selection: () => scene.getSelection(),
+    }), [machine, pathToEdit, scene]);
+    const pathEdit = useMemo(() => modePathEdit(machine, () => true), [machine]);
     return (
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
-        ambient={[keys]} modes={machine.registry} />
+        ambient={[keys]} modes={machine.registry} pathEdit={pathEdit} />
     );
   }
   const depsRef: { current: DepRegistry | null } = { current: null };
@@ -132,11 +133,11 @@ describe('entering path-edit from the keyboard', () => {
         </ActionsProvider>
       </DepRegistryProvider>,
     );
-    const key = (k: string) => act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+    const key = (k: string, init: KeyboardEventInit = {}) => act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...init }));
     });
     const editingId = () => (depsRef.current!.get as (k: string) => { editingId: string } | undefined)('editAnchors')?.editingId;
-    return { machine, key, editingId };
+    return { machine, scene, key, editingId };
   }
 
   it('Enter on a selected path enters path-edit on it, with its anchors editable', () => {
@@ -151,5 +152,37 @@ describe('entering path-edit from the keyboard', () => {
     const t = setupPath(() => null);
     t.key('Enter');
     expect(t.machine.registry.current().id).toBe('normal');
+  });
+
+  it('Meta+T opens a free-transform transaction on the selection', () => {
+    const t = setupPath(() => ID);
+    t.key('t', { metaKey: true });
+    expect(t.machine.registry.current().id).toBe('free-transform');
+    expect(t.machine.getActiveTargetId()).toBe(ID);
+  });
+
+  it('Meta+T does nothing with nothing selected', () => {
+    const t = setupPath(() => null);
+    act(() => t.scene.setSelection([]));
+    t.key('t', { metaKey: true });
+    expect(t.machine.registry.current().id).toBe('normal');
+  });
+
+  it('C opens a crop transaction, which needs no selection', () => {
+    const t = setupPath(() => null);
+    act(() => t.scene.setSelection([]));
+    t.key('c');
+    expect(t.machine.registry.current().id).toBe('crop');
+    expect(t.machine.getActiveTargetId()).toBeNull();
+  });
+
+  it('an entry key pressed inside another mode leaves that mode alone', () => {
+    const t = setupPath(() => ID);
+    act(() => t.machine.enterMode('isolation', { targetId: 'g' }));
+    t.key('Enter');
+    t.key('c');
+    t.key('t', { metaKey: true });
+    expect(t.machine.registry.current().id).toBe('isolation');
+    expect(t.editingId() || null).toBeNull();
   });
 });

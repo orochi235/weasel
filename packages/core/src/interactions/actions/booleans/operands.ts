@@ -2,13 +2,13 @@
  * What each selected node gives a Boolean operation: its path, its glyph
  * outlines, or the region its ink covers once a stroke is counted.
  */
-import type { Path } from '@weasel-js/geom';
+import type { Mat3, Path, Scale2 } from '@weasel-js/geom';
 import { pathUnion } from '@weasel-js/geom/booleans';
-import { strokeToPath } from '@weasel-js/stroke';
 import { textToPath, textToPathsByPaint } from '@weasel-js/text';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { NodeId } from 'core/scene/types';
 import type { PaintedPath } from '../outlines/replaceWithPaths';
+import { strokeRegion } from '../outlines/strokeRegion';
 import type { BooleansAdapter } from './booleans';
 
 /**
@@ -28,8 +28,9 @@ export type BooleanStrokes = 'ignore' | 'unfilled' | 'include';
 export interface BooleanOpOptions {
   /** Default `'ignore'`. */
   strokes?: BooleanStrokes;
-  /** The view scale a `{ px }` stroke width resolves against. Default 1. */
-  scale?: number;
+  /** The view scale a `{ px }` stroke width resolves against: one number, or
+   *  the view's own scale per axis. Default 1. */
+  scale?: number | Scale2;
 }
 
 /** @internal */
@@ -40,13 +41,18 @@ export interface BooleanOperand {
   paint?: PathPaint;
 }
 
-function inkOf(source: PaintedPath, strokes: BooleanStrokes, scale: number | undefined): BooleanOperand {
+function inkOf(
+  source: PaintedPath,
+  strokes: BooleanStrokes,
+  frame: Mat3 | null | undefined,
+  scale: number | Scale2 | undefined,
+): BooleanOperand {
   const { path, fill } = source;
   const { stroke } = source;
   const strokePaint = stroke?.paint;
   if (!stroke || strokePaint == null) return { path };
   if (strokes === 'ignore' || (strokes === 'unfilled' && fill !== null)) return { path };
-  const ribbon = strokeToPath(path, stroke, { scale });
+  const ribbon = strokeRegion(path, stroke, frame, scale === undefined ? {} : { scale });
   if (ribbon.commands.length === 0) return { path };
   return { path: fill !== null ? pathUnion(path, ribbon) : ribbon, paint: { fill: fill ?? strokePaint } };
 }
@@ -64,7 +70,7 @@ export function resolveOperand(
   const path = adapter.getWorldPath(id);
   if (path) {
     const paint = strokes === 'ignore' ? undefined : adapter.getPaint?.(id);
-    return paint ? inkOf({ path, ...paint }, strokes, scale) : { path };
+    return paint ? inkOf({ path, ...paint }, strokes, adapter.getStrokeFrame?.(id), scale) : { path };
   }
   const text = adapter.getTextSource?.(id);
   if (!text) return undefined;
@@ -72,7 +78,7 @@ export function resolveOperand(
     const glyphs = textToPath(text.data, text.pose);
     return glyphs.commands.length > 0 ? { path: glyphs } : undefined;
   }
-  const inks = textToPathsByPaint(text.data, text.pose).map((p) => inkOf(p, strokes, scale));
+  const inks = textToPathsByPaint(text.data, text.pose).map((p) => inkOf(p, strokes, adapter.getStrokeFrame?.(id), scale));
   if (inks.length === 0) return undefined;
   const paint = inks.find((ink) => ink.paint)?.paint;
   const whole = inks.length === 1 ? inks[0]!.path : pathUnion(...inks.map((ink) => ink.path));

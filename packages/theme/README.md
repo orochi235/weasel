@@ -76,6 +76,38 @@ beside it. The resolved record carries that CSS as is, because a canvas has no
 `currentColor`; flatten it with `resolveCurrentColor(value, resolved['--wzl-fg'])`,
 passing the color of the text it is drawn beside.
 
+## Desktop themes
+
+Each is a pins-only theme over the built-in one, on its own entry so an app
+that never asks for it never loads it:
+
+```ts
+import { applyTheme } from '@weasel-js/theme';
+import { win9xTheme } from '@weasel-js/theme/themes/win9x';
+
+applyTheme(document.documentElement, win9xTheme);   // opens in light mode
+```
+
+- `win9xTheme`: Windows 95 and 98. Gray faces in two-pixel bevels, square
+  corners, a navy-to-blue title strip, and the system sans at 11, 12, or 14px
+  by density.
+- `platinumTheme`, from `@weasel-js/theme/themes/platinum`: Mac OS 8 and 9's
+  Platinum. Light gray faces with a black outline and a soft two-tone edge,
+  rounded buttons, white fields, and pinstriped window titles centered on the
+  strip. The same entry exports `classicMacTheme`, which it extends: the faces,
+  sizes, and geometry every classic Mac OS look shares, with no color of its
+  own. A System 7 theme is `defineTheme({ name, extends: classicMacTheme, pins })`
+  with that era's colors and edges.
+
+They open in light mode, the only one the originals had; the dark mode is the
+theme's own. The system faces are named first in the font stacks and are not
+bundled, so a machine without them draws the next face in the stack. The
+bevels and flat button faces are override hooks the theme pins (see below),
+which Button, the field frame, PropertyPanel, and the `titlebar` frame motif
+read; other controls take the theme's colors, corners, and type, and no bevel.
+To title every group as a window, wrap the app in
+`<DefaultMotif motif={motifs.titlebar()}>` from `@weasel-js/ui`.
+
 ## The engine
 
 `@weasel-js/theme/engine` is for authoring layered theme definitions: seeds,
@@ -157,10 +189,11 @@ names the token bare (`"ref": "gray-800"`).
 
 ## Override hooks
 
-Ten custom properties resize kit components and **no theme declares them**:
-`--wzl-swatch-size`, `--wzl-timeline-label-w`, `--wzl-number-field-width` and
-the rest. Kit CSS reads each one with a fallback, so setting it on any
-container is what changes it, and leaving it alone takes the fallback:
+Some custom properties restyle kit components and **the built-in theme does
+not declare them**: `--wzl-swatch-size`, `--wzl-timeline-label-w`,
+`--wzl-number-field-width` and the rest. Kit CSS reads each one with a
+fallback, so setting it on any container is what changes it, and leaving it
+alone takes the fallback:
 
 ```css
 .dense-panel { --wzl-swatch-size: 20px; --wzl-number-field-width: 6ch; }
@@ -174,6 +207,13 @@ what it sizes:
 import { TOKEN_MANIFEST } from '@weasel-js/theme';
 const hooks = TOKEN_MANIFEST.filter((t) => t.hook);
 ```
+
+A theme built with `defineTheme` can pin one too, which is how a theme changes
+what a token cannot say: `--wzl-bevel-raised`, `--wzl-bevel-sunken` and
+`--wzl-bevel-pressed` are the box shadows of a raised face, a well and a pressed
+button, and the `--wzl-button-*` hooks replace a Button's glass with a flat
+face. A pin's value is fixed where the theme is applied, so one written with
+`var()` does not follow a token a container overrides further down.
 
 They stay out of `tokens.css` on purpose. A `:root` value would outrank the
 fallback written beside every read, so the two would have to agree forever, and

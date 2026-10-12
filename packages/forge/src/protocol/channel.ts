@@ -8,6 +8,7 @@ export interface PortLike {
   close(): void;
 }
 
+/** One end of a two-way message link: sends `Out`, hears `In`. */
 export interface Channel<In, Out> {
   send(msg: Out): void;
   on(fn: (msg: In) => void): () => void;

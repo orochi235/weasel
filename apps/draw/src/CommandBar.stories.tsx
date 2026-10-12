@@ -55,6 +55,7 @@ const noop = () => {};
 const baseArgs: CommandBarProps = {
   onSaveSvg: noop,
   onOpenSvg: noop,
+  onImportSvg: noop,
   onNew: noop,
 };
 

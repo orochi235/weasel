@@ -11,7 +11,6 @@ import {
   useSelection,
   WEASEL_CLIPBOARD_MIME
 } from '@weasel-js/core';
-import { parseSvg } from '@weasel-js/svg';
 import {
   type ReactElement,
   useCallback,
@@ -19,13 +18,12 @@ import {
   useState
 } from 'react';
 import { CommandBar, type PaperSizeKey } from './CommandBar';
-import { DEFAULT_FILENAME, PAPER_PRESETS } from './docPersistence';
+import { importSvgFile, openSvgFile } from './openSvg';
 import { type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { reportPasteOmissions } from './pasteOmissions';
 import { serializeReplacer } from './persistence';
-import { clipboardSnapshotRootIds, sceneToSvgString, selectionToClipboardSvgString } from './svgExport';
-import { leafOfObj } from './svgImport';
-import { downloadSvg, parsedToDoc, pickSvgFile, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
+import { saveSvgFile } from './saveSvg';
+import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
 
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
 
@@ -35,6 +33,7 @@ export interface ToolbarProps {
   paperSize: PaperSizeKey;
   setPaperSize: (k: PaperSizeKey) => void;
   filename: string;
+  setFilename: (name: string) => void;
   backgroundColor: string;
   setBackgroundColor: (color: string) => void;
   /** Called at the start of every explicit save/load so stale journal
@@ -45,7 +44,7 @@ export interface ToolbarProps {
 export function Toolbar({
   scene, selection,
   paperSize, setPaperSize,
-  filename, backgroundColor, setBackgroundColor,
+  filename, setFilename, backgroundColor, setBackgroundColor,
   onClearJournalCache,
 }: ToolbarProps): ReactElement {
   const adapter = useSceneAdapter(scene, {});
@@ -103,66 +102,12 @@ export function Toolbar({
       <CommandBar
         onSaveSvg={() => {
           onClearJournalCache();
-          const paper = PAPER_PRESETS[paperSize];
-          const safe = filename.trim() || DEFAULT_FILENAME;
-          void sceneToSvgString(scene, {
-            filename,
-            paperSize,
-            paperWidth: paper.width,
-            paperHeight: paper.height,
-            backgroundColor,
-            onWarn: (w) => console.warn('[svg export]', w),
-          }).then((svg) => downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`));
+          void saveSvgFile(scene, { filename, paperSize, backgroundColor });
         }}
         onOpenSvg={() => {
-          // Pop the file picker, parse the chosen SVG, lower its nodes back
-          // into the scene-graph. Leaves become `kind: 'leaf'`; SVG groups
-          // become `kind: 'container'` and members are reparented under them
-          // (nested groups supported — outer groups process after their
-          // inner groups are resolved).
-          void (async () => {
-            const text = await pickSvgFile();
-            if (text === null) return;
-            onClearJournalCache();
-            const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES });
-            for (const w of parsed.warnings) console.warn('[svg import]', w);
-            const docPatch = parsedToDoc(parsed);
-            if (docPatch.paperSize) setPaperSize(docPatch.paperSize);
-            if (docPatch.backgroundColor) setBackgroundColor(docPatch.backgroundColor);
-            let seq = 0;
-            const drafts = svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`);
-            scene.batch('Import SVG', () => {
-              // Drafts arrive parent-before-child, so each draft's `parentId`
-              // (when set) has already been inserted and mapped. Map the
-              // draft's stable id → minted scene NodeId so children resolve
-              // their parent.
-              const idMap = new Map<string, ReturnType<typeof asNodeId>>();
-              for (const draft of drafts) {
-                const parent = draft.parentId != null ? idMap.get(draft.parentId) : undefined;
-                if (draft.kind === 'container') {
-                  // Container pose = AABB of descendants (computed by the
-                  // importer), matching the kit `group` action's convention.
-                  const sceneId = scene.add({
-                    kind: 'container',
-                    layer: 'default',
-                    pose: draft.pose,
-                    data: {},
-                    ...(parent != null ? { parent } : {}),
-                  });
-                  idMap.set(draft.id, sceneId);
-                  continue;
-                }
-                const sceneId = scene.add({
-                  kind: 'leaf',
-                  layer: 'default',
-                  ...leafOfObj(draft.obj),
-                  ...(parent != null ? { parent } : {}),
-                });
-                idMap.set(draft.id, sceneId);
-              }
-            });
-          })();
+          void openSvgFile({ scene, setFilename, setPaperSize, setBackgroundColor, onClearJournalCache });
         }}
+        onImportSvg={() => { void importSvgFile(scene); }}
         onNew={(size) => {
           setPaperSize(size);
           // The batch is what names the entry and captures the prior selection.

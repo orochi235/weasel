@@ -2,10 +2,11 @@ import type { Contribution } from '../../../contributions/types';
 import type { Action } from '../../../interactions/actions/action';
 import { actionBindings } from '../../../interactions/actions/binding';
 import type { ParsedModifiers } from '../routeGrammar';
-import { canonicalModifiers, formatRoute, VALID_MOD_NAMES } from '../routeGrammar';
+import { canonicalModifiers, formatRoute } from '../routeGrammar';
 import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
-import { buildRouteRegistry, PREDICATE_TARGET, type RegistryEntry, type GestureName } from './registry';
+import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
+import { argKeysOf, modifierTieKeys, objectId, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
 
 /** Two or more tools declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple — the dispatcher's slot precedence picks one
@@ -52,6 +53,11 @@ export interface Conflict {
  *  - Two bindings whose `opts.views` keep them from being live and equally
  *    ranked in any one view. See `viewsTie`.
  *
+ *  - Two bindings of one action with equal params that tie on one platform
+ *    only: `mod` against `ctrl`, which are one key off a Mac and two on it.
+ *    Whichever fires does the same thing. The same pair tying on both
+ *    platforms is a plain duplicate and is flagged.
+ *
  *  Note that two bindings sharing a tuple on the SAME tool are now possible
  *  (bindings are an array, where phase tables were objects with unique
  *  keys) — so a conflict may name one tool twice.
@@ -79,7 +85,7 @@ function findConflictsKeyed(
   modes: readonly ActiveMode[] = KIT_MODES,
 ): { key: string; conflict: Conflict }[] {
   const rows = buildRouteRegistry(entries);
-  const groups = new Map<string, { base: string; members: RegistryEntry[] }>();
+  const groups = new Map<string, { base: string; platform: Platform; members: RegistryEntry[] }>();
   for (const entry of rows) {
     // One bucket per arg the binding answers to, not one per display token.
     // `key: ['h','H']` and `key: 'H'` really do collide — `matchKey` takes any
@@ -89,11 +95,13 @@ function findConflictsKeyed(
     // state the spec accepts, so an optional Shift meets a forbidden one.
     for (const arg of argKeysOf(entry)) {
       const base = `${entry.phase}|${entry.gesture}|${arg}|${targetKey(entry)}`;
-      for (const state of modifierTieKeys(entry)) {
-        const key = `${base}|${state}`;
-        const bucket = groups.get(key);
-        if (bucket) { if (!bucket.members.includes(entry)) bucket.members.push(entry); }
-        else groups.set(key, { base, members: [entry] });
+      for (const platform of PLATFORMS) {
+        for (const state of modifierTieKeys(entry, platform)) {
+          const key = `${platform}|${base}|${state}`;
+          const bucket = groups.get(key);
+          if (bucket) { if (!bucket.members.includes(entry)) bucket.members.push(entry); }
+          else groups.set(key, { base, platform, members: [entry] });
+        }
       }
     }
   }
@@ -101,87 +109,36 @@ function findConflictsKeyed(
   const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.ownerId) ?? ALWAYS;
   const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
     viewsTie(e.views, f.views) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
-  const conflicts = new Map<string, Conflict>();
-  for (const { base, members } of groups.values()) {
+  const conflicts = new Map<string, { conflict: Conflict; bucket: RegistryEntry[]; platforms: Set<Platform> }>();
+  for (const { base, platform, members } of groups.values()) {
     // Keep only members that could tie with another member.
     const bucket = members.filter((e) => members.some((f) => f !== e && tie(e, f)));
     if (bucket.length < 2) continue;
     const first = bucket[0];
-    // Two specs that tie in one modifier state usually tie in several: one
-    // conflict per set of specs, each named by identity so the key is the same
-    // in every pass `findScopedConflicts` makes over them.
+    // Two specs that tie in one modifier state usually tie in several, and on
+    // both platforms: one conflict per set of specs, each named by identity so
+    // the key is the same in every pass `findScopedConflicts` makes over them.
     const key = `${base}|${bucket.map((e) => `${objectId(e.spec)}:${canonicalModifiers(e.modifiers)}`).join(';')}`;
-    if (conflicts.has(key)) continue;
+    const found = conflicts.get(key);
+    if (found) { found.platforms.add(platform); continue; }
     conflicts.set(key, {
-      phase: first.phase,
-      gesture: first.gesture,
-      arg: first.arg,
-      target: first.target,
-      modifiers: first.modifiers,
-      ownerIds: bucket.map((e) => e.ownerId),
+      conflict: {
+        phase: first.phase,
+        gesture: first.gesture,
+        arg: first.arg,
+        target: first.target,
+        modifiers: first.modifiers,
+        ownerIds: bucket.map((e) => e.ownerId),
+      },
+      bucket,
+      platforms: new Set([platform]),
     });
   }
-  return [...conflicts].map(([key, conflict]) => ({ key, conflict }));
-}
-
-/** One key per way an entry can win a press: each modifier state its spec
- *  accepts, with how many modifiers it requires. Two specs tie only where
- *  they share a state and that count, since the matcher ranks a required
- *  modifier above an optional one. `mod` is a key of its own here, as in the
- *  route grammar, so it never meets the `ctrl` or `meta` it resolves to. */
-function modifierTieKeys(entry: RegistryEntry): string[] {
-  const optional = VALID_MOD_NAMES.filter((k) => entry.modifiers[k] === 'optional');
-  const required = VALID_MOD_NAMES.filter((k) => entry.modifiers[k] === 'required');
-  const keys: string[] = [];
-  for (let bits = 0; bits < 1 << optional.length; bits++) {
-    const held = [...required, ...optional.filter((_, i) => (bits & (1 << i)) !== 0)].sort();
-    keys.push(`${held.join('+')}:${required.length}`);
-  }
-  return keys;
-}
-
-/** Whether two bindings' `views` let them tie in some view. A binding is live
- *  only in the views it names, and there it outranks one that names none
- *  (`preferViewScoped`), so a scoped and an unscoped binding never tie; two
- *  scoped ones tie where their views overlap. */
-function viewsTie(
-  a: readonly (string | null)[] | undefined,
-  b: readonly (string | null)[] | undefined,
-): boolean {
-  if (a === undefined || b === undefined) return a === b;
-  return a.some((v) => b.includes(v));
-}
-
-/** Every arg value an entry buckets under, lowercased — `matchKey` is
- *  case-insensitive, so `'h'` and `'H'` are one arg. */
-function argKeysOf(entry: RegistryEntry): readonly string[] {
-  const alts = entry.argAlternatives;
-  if (alts && alts.length > 0) return [...new Set(alts.map((a) => a.toLowerCase()))];
-  return [(entry.arg ?? '').toLowerCase()];
-}
-
-/** Bucket key for an entry's target slot. Predicate targets all render as
- *  the same grammar token, so they're keyed by the predicate's identity —
- *  two different functions are two different targets. */
-function targetKey(entry: RegistryEntry): string {
-  if (entry.target !== PREDICATE_TARGET) return entry.target ?? '';
-  const spec = entry.spec as { target?: unknown };
-  const pred = spec.target;
-  if (typeof pred !== 'object' || pred === null) return PREDICATE_TARGET;
-  return `${PREDICATE_TARGET}#${objectId(pred)}`;
-}
-
-const OBJECT_IDS = new WeakMap<object, number>();
-let nextObjectId = 0;
-
-/** A stable number for an object, so a bucket key can name it by identity. */
-function objectId(obj: object): number {
-  let id = OBJECT_IDS.get(obj);
-  if (id === undefined) {
-    id = nextObjectId++;
-    OBJECT_IDS.set(obj, id);
-  }
-  return id;
+  return [...conflicts]
+    // Bindings that fire one thing and tie on one platform only are how an
+    // action binds a key that `mod` covers there and not on the other.
+    .filter(([, c]) => c.platforms.size === PLATFORMS.length || !sameOutcome(c.bucket))
+    .map(([key, { conflict }]) => ({ key, conflict }));
 }
 
 /**

@@ -14,6 +14,7 @@ import {
 import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
 import type { TreeDropTarget } from '../../dropTarget';
 import { LIST_KEYS, selectModifiers, type PressModifiers } from '../../useReorderDragList';
+import { useRemovedRowFocus } from '../../useRemovedRowFocus';
 import { DisclosureMark } from '../Disclosure';
 import { TreeDragGhost, type TreeGhost, type TreeGhostWhere } from './TreeGhost';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
@@ -118,12 +119,10 @@ export interface TreeProps {
   renderGhost?(ids: readonly string[], where: TreeGhostWhere): TreeGhost | null;
   /**
    * A drag begun outside the tree, at this client point. The tree marks where
-   * it would land — asking `canDrop` with no ids — and reports the target
-   * through `onExternalTarget`, `null` while the point is off its rows. Both
-   * follow the pointer a render behind it: ask `dropRef` where a release lands.
+   * it would land, asking `canDrop` with no ids. The mark follows the pointer
+   * a render behind it: ask `dropRef` where a point lands.
    */
   externalDrag?: { x: number; y: number } | null;
-  onExternalTarget?(target: TreeDropTarget | null): void;
   /** Filled with the tree's answer to where a drop from outside lands at a point, for the moment of the drop. */
   dropRef?: Ref<TreeDropHandle>;
 }
@@ -172,7 +171,7 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', guides = false,
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, onExternalTarget, dropRef,
+    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -195,7 +194,6 @@ export const Tree = forwardRef(function Tree(
   }, [nodes, expanded]);
   const indexOf = useMemo(() => new Map(visible.map((v, i) => [v.node.id, i])), [visible]);
 
-  const items = useRef(new Map<string, HTMLLIElement>());
   const [focusId, setFocusId] = useState<string | null>(null);
   const anchor = useRef<string | null>(null);
   const typed = useRef({ text: '', at: 0 });
@@ -212,6 +210,10 @@ export const Tree = forwardRef(function Tree(
     ? focusId
     : (visible.find((v) => selectable && selected.has(v.node.id)) ?? visible[0])?.node.id;
 
+  const { els: items, rowRef: itemRef } = useRemovedRowFocus<HTMLLIElement>(
+    useMemo(() => visible.map((v) => ({ id: v.node.id, parentId: v.parentId })), [visible]),
+    (id, els) => els.get(id)?.focus(),
+  );
   const focus = (id: string | undefined) => { if (id != null) items.current.get(id)?.focus(); };
 
   const toggle = (node: TreeNode) => {
@@ -257,7 +259,7 @@ export const Tree = forwardRef(function Tree(
   useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
   const drag = useTreeDrag({
     enabled: !!onMove,
-    onDragOutside, onDropOutside, externalDrag, onExternalTarget, dropRef,
+    onDragOutside, onDropOutside, externalDrag, dropRef,
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
     rowEl: (id) => items.current.get(id)?.firstElementChild as HTMLElement | undefined,
@@ -362,11 +364,6 @@ export const Tree = forwardRef(function Tree(
   const onTwistyClick = (node: TreeNode) => (e: MouseEvent<HTMLSpanElement>) => {
     e.stopPropagation();
     toggle(node);
-  };
-
-  const itemRef = (id: string) => (el: HTMLLIElement | null) => {
-    if (el) items.current.set(id, el);
-    else items.current.delete(id);
   };
 
   let seq = 0;
