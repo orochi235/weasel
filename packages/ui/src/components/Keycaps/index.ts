@@ -4,6 +4,7 @@ export { KeySequence } from './Keycaps';
 export type { KeySequenceJoins, KeySequenceProps, KeySpec } from './Keycaps';
 export { keyGlyph } from './keyGlyph';
 export { keySpecsFromMods, keySpecFromKey, detectPlatform } from './keySpecsFromMods';
+export { keySpecsFromLegend } from './keySpecsFromLegend';
 export { keySpecsFromShortcut } from './keySpecsFromShortcut';
 export type {
   LogicalMod,
