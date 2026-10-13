@@ -21,8 +21,10 @@ export interface CollapseProps {
   /**
    * When the twisty shows. `'folded'` hides it while the contents are open:
    * a press on the title folds them, and the twisty is still reached by
-   * keyboard, showing while it holds focus. It keeps its room while hidden,
-   * so the title sits where it does beside a shown twisty. Default `'always'`.
+   * keyboard, showing while it holds focus. A panel's trails its header and
+   * holds no room while hidden, so the title never moves; a section's or a
+   * group's stays where its heading puts it and keeps its room. Default
+   * `'always'`.
    */
   twisty?: 'always' | 'folded';
 }

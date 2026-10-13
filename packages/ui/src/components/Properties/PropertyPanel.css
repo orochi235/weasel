@@ -33,6 +33,7 @@
 }
 
 .panelHeader {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--wzl-space-4);
@@ -57,6 +58,28 @@
    so the title is where it will be once the twisty shows. */
 .foldTwistyQuiet:not(:focus-visible) {
   opacity: 0;
+}
+
+/* A panel's `twisty="folded"` twisty trails its header and adds nothing to the
+   header's height, so the title sits where it does with no twisty at all,
+   open or folded. */
+.foldTwistyTrailing {
+  margin-block: calc(var(--wzl-disclosure-target, var(--wzl-control-h-sm)) / -2);
+  margin-inline-start: auto;
+}
+
+/* Hidden, it is out of the flow as well and holds no room. Under keyboard
+   focus it shows over the header's end, where it stands once folded. */
+.foldTwistyTrailing.foldTwistyQuiet {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 50%;
+  margin: 0;
+  translate: 0 -50%;
+}
+
+.foldTwistyTrailing.foldTwistyQuiet:not(:focus-visible) {
+  pointer-events: none;
 }
 
 .foldTitle {
