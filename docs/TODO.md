@@ -132,22 +132,14 @@ Priority tags:
   pass alone. Two fleet runs on one node would collide the same way. They need to run serially,
   or one of them needs a clipboard of its own.
 
-- **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument, and
-  `Tool.previewPose` / `previewBounds` / `previewIds` are gone. Still to go:
-  - `AnyTool` in `@weasel-js/core` is now the same type as `Tool`: it existed to hold tools of
-    mixed scratch types, and a tool no longer has one. Used across `canvas/SceneCanvas/` and
-    `ToolPalette` in `packages/ui`.
-  - `toolPreviewSources` and `canvas/toolPreview.ts`: no production caller. One test in
-    `SceneCanvas/usePreviewGhostLayer.test.tsx` plants a preview on a fake tool and imports it.
-  - `SurfaceViewInputs.tools` (`viewInputs.tsx`): read by nothing, still supplied by
-    `SceneCanvas.tsx`.
+- **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument,
+  `Tool.previewPose` / `previewBounds` / `previewIds`, and tool-side preview sources are gone.
+  Still to go:
   - `ToolBounds` (`routing/src/tools/types.ts`) existed only for `previewBounds`.
-  - `CanvasExtensionApi.clientToWorld` is optional only because test fakes of the handle omit
-    it (`SceneCanvas.derivedPath.test.tsx` and four in `packages/hud`). The dispatcher mounter,
-    `PointerProviderIfRoot.tsx`, and hover tracking in `SceneCanvas.tsx` still convert with the
-    bare rect helper and ignore a canvas's `clientToWorld` override; so do `CanvasView.tsx` and
-    `features/viewports/viewResolver.ts`, which need a client-to-canvas-local conversion the
-    override does not provide.
+  - A `<CanvasView>` converts client points with the bare rect helper (`clientToWorldHere` in
+    `CanvasView.tsx`), and so does `worldPointAt` for a point that resolves to a declared view. A
+    canvas's `clientToWorld` override reaches neither: it maps into the canvas's own world, and
+    these need a client-to-canvas-local conversion it does not provide.
   - `Canvas`'s `adapter` prop is typed as the Move, Resize, and Rotate adapters together, though
     Canvas reads only poses, nodes, layers, and children.
 
@@ -1483,7 +1475,7 @@ only story runner in the repo.
   +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
   observer that moves it has fired; it wants to wait on the position rather than read it once.
 
-- **(P3) `SceneCanvasInner` is one 888-line function.** It is most of the 1,046-line
+- **(P3) `SceneCanvasInner` is one 881-line function.** It is most of the 1,039-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
   chrome-caps rule context, and path editing landed 2026-10-12. Left open by the preset table and

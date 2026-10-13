@@ -2,7 +2,8 @@
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
 > acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
 > A, C, and D except for the items still listed under them, which were checked against the code and are
-> written as found. Every other section is unbuilt, and its line numbers predate all of that work.
+> written as found. F was checked and is written as found. Every other lettered section is unbuilt,
+> and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
 > work it lists has merged; `docs/TODO.md` holds what is left.
 
@@ -81,14 +82,34 @@ Lines 757, 762-768, 1099, 1263-1333.
 - **Mounter props that are constant gates** (evidence): `boundsOf` is read only in `if (!selectionRef || !boundsOf || !viewRef) return undefined` (`GestureDispatcherMounter.tsx:151`), and all three are always passed.
 - **Safe to convert to hooks when:** `PointerProviderIfRoot` moves into the wrapper (the registrar calls `usePointerContext()`), and the ordering the registrar relies on is kept. The registrar's own comment at 264-270 depends on child effects running before parent effects.
 
-### F. View state mirror (about 50 lines)
+### F. View state mirror
 
-Lines 299-348.
+Checked against the code after the `Canvas.tsx` pass merged. Not built: it cannot be done inside
+SceneCanvas's own files.
 
-- **`currentViewRef` is a third copy of the view**, beside `<Canvas>`'s `viewRef` and the prop. It has three writers: seed (301), insertion effect (306-308), and subscription (310-315).
-- **`handleViewChange` (319-323) re-implements the controlled/uncontrolled branch** that `useCanvasView.setView` already owns (evidence, `canvas/useCanvasView.ts:57-78`).
-- **Owner:** `useCanvasView`, lifted so `SceneCanvas` and `<Canvas>` share one channel. Readers of the mirror: `useSceneSelectTool.getView`, hover, the rule inputs, the test hook, the registrar, and the mounter.
-- **`resolvedViewportZoom` (339-348) and the three `enabled.has('view') ? … : false` props (1280-1282)** belong in `useViewportActions`, which should take `viewport` and the preset flag.
+- **`currentViewRef` is a third copy of the view**, beside the `viewRef` `<Canvas>` holds through
+  `useCanvasView` and the prop. It has three writers: the seed from `view` / `defaultView`, an
+  insertion effect that adopts a controlled `view`, and a `subscribeView` subscription that starts
+  once the handle is attached.
+- **Readers:** `useSceneSelectTool`'s `getView`, hover's picker view, the rule inputs, the camera
+  channel's `get`, the test hook, the registrar (`currentViewRef`, for ingestion and the view deps),
+  and the mounter's `viewRef`. Each wants the view in effect, synchronously, and the first three are
+  read during or before the first commit, when the handle is still null.
+- **`handleViewChange` re-implements the controlled/uncontrolled fork.** Uncontrolled it calls the
+  handle's `setView`, which clamps to `viewBounds`. Controlled it calls `onViewChange` itself and
+  skips the clamp. It is the `view.set` dep and the camera channel's `set`, so every pan, zoom, and
+  animation frame goes through it.
+- **Why the handle is not enough.** Its `setView` is the imperative write: controlled, it warns once
+  per mount and forwards. Input needs `useCanvasView`'s `setViewFromInput`, which forwards without
+  the warning, and the handle does not publish it. Its `getView` answers nothing before mount.
+- **Smallest change:** `<Canvas>` publishes the input write (on the handle, or by taking a view
+  state made by a `useCanvasView` call one level up, in `SceneCanvasInner`). `handleViewChange`
+  becomes that call and the mirror becomes that hook's `viewRef`. Either is an edit to `Canvas.tsx`,
+  and the first adds a member to the public `CanvasExtensionApi`.
+- **What would change:** a controlled `<SceneCanvas view viewBounds>` would hand `onViewChange` a
+  clamped view where it now hands the raw one.
+- **`resolvedViewportZoom` and the three `enabled.has('view') ? … : false` props** belong in
+  `useViewportActions`, which should take `viewport` and the preset flag.
 
 ### G. Redraw subscriptions
 
@@ -159,7 +180,7 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `internalCanvasRef` | 247 | `mergedRef` | hover, `PointerPublisher`, registrar, mounter | Canvas → siblings (real) |
 | `canvasApiRef` | 250 | `mergedRef` | redraw effects, `handleViewChange`, path-edit setters, registrar, mounter, keybindings | Canvas → siblings (real) |
 | `canvasReady` | 253 | `mergedRef` | view subscription, 1331 | ref-attach timing |
-| `currentViewRef` | 301 | seed, insertion effect, subscription | select tool, hover, rule inputs, test hook, registrar, mounter | Canvas-owned view read above Canvas |
+| `currentViewRef` | — | seed, insertion effect, subscription | select tool, hover, rule inputs, camera channel, test hook, registrar, mounter | Canvas-owned view read above Canvas |
 | `selectionRef` | 465 | render | mounter | dependency array |
 | `layerPaintRef` | 501 | render | `layerIsPainted` | dependency array |
 | `liveToolsRef` | 680 | render | test hook | dependency array |
@@ -214,20 +235,14 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 - **Effect ordering.** I did not trace every dep registration to confirm that turning the registrar into a hook keeps the child-before-parent order its comment relies on.
 - **Unread files.** `Canvas.tsx` was read by targeted grep, not line by line. Of the `SceneCanvas/` siblings I did not read `usePreviewGhostLayer`, `useDispatcherOverlayLayer`, `contributionFrameHooks`, `defaultNodeProperties`, `poseGeometry`, or any tests.
 - **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, `insertTool`, or `actionDefaults` are unknown.
-## From the Canvas.tsx pass (branch `long-file-audit`), to act on after it merges
+## From the Canvas.tsx pass
 
-Reported by the session doing `Canvas.tsx`; not verified here.
+Reported by the session that did `Canvas.tsx`, which has merged into this branch. The redundant
+`useLateContentRedraw` call and the mounter's second layer-claim conversion were checked and removed.
 
 - **Item I is reversed.** Canvas's selection-overlay config branch is unreachable from production, so
-  SceneCanvas keeps its prebuild and Canvas's copy is deleted there. Do not do I.
-- **Item F.** `useCanvasView` now takes a dims thunk and serves Canvas and CanvasView. Its
-  `setViewFromInput(next)` does the controlled/uncontrolled fork with the `viewBounds` clamp;
-  `handleViewChange` in SceneCanvas forks by hand and skips the clamp when controlled. Drop the
-  `currentViewRef` mirror onto the hook once that branch is on main.
-- `SceneCanvasInner`'s `useLateContentRedraw` call is redundant: Canvas does it through
-  `useCanvasSurface`.
-- `GestureDispatcherMounter.tsx` (~226) has a second copy of the layer-claim conversion;
-  `layerAffordance` in `canvas/affordanceAt.ts` is the shared one.
+  SceneCanvas keeps its prebuild and Canvas's copy is deleted there. Do not do I. Not verified here.
+- **Item F** needs a change in `Canvas.tsx`; see F.
 - `SceneCanvas/props.ts` may restate an old z-order. Verified there: `backgroundFill` sits beneath
   everything including the grid; `decorationLayer` sits above every slot and custom layer and beneath
   a tool's `'top'` overlays.
@@ -236,6 +251,3 @@ Reported by the session doing `Canvas.tsx`; not verified here.
 - Canvas findings 1, 2, 3, 4, and 8 (cursor resolution into routing; `buildSceneLayers`,
   `useSceneLayerList`, and the preview-id hide set into SceneCanvas; the three dev HUDs; slot types to
   `layerSlots.ts`) are that session's, on top of main after `scene-splits` merges.
-- **Pen overlay (item B) landed.** `penPreviewLayer.ts` takes the pen's state as `state` and nothing in
-  the preview path calls `initScratch`; `usePenTool` still defines it, for that session to delete with
-  the rest of the old tool design.
