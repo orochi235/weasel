@@ -247,17 +247,11 @@ describe('createMarkdownRenderer', () => {
 
     it('paints a superscript above the line baseline', () => {
       const { ctx, fillCalls } = makeMockCtx();
-      const r = createMarkdownRenderer(ctx, 'plain', 20);
-      r.renderer(ctx, 'plain', 0, 100);
+      const r = createMarkdownRenderer(ctx, [{ text: 'a' }, { text: 'b', script: 'super' }], 20);
+      r.renderer(ctx, '', 0, 100);
+      expect(fillCalls.map((c) => c.text)).toEqual(['a', 'b']);
       expect(fillCalls[0].y).toBe(100);
-
-      const layout = layoutMarkdown(
-        [{ text: 'a' }, { text: 'b', script: 'super' }],
-        Infinity,
-        20,
-        () => 10,
-      );
-      expect(layout.lines[0].runs[1].y).toBeLessThan(0);
+      expect(fillCalls[1].y).toBeCloseTo(100 - 20 * 0.333);
     });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isBoldWeight, resolveRuns, SCRIPT_METRICS, type ResolvedRun } from './resolveRuns';
+import { isBoldWeight, resolveRuns, type ResolvedRun } from './resolveRuns';
 import { SMALL_CAPS_SCALE, smallCapsScale } from './smallCaps';
 import { resolveTextStyle } from '../textStyle';
 import type { StyledRun } from '../runs';
@@ -135,15 +135,6 @@ describe('resolveRuns', () => {
     // Sub mirrors super: same size, opposite sign.
     expect(sub.fontSize).toBeCloseTo(58.3, 6);
     expect(sub.baselineShift).toBeCloseTo(-33.3, 6);
-  });
-
-  it('measures the shift against the inherited size, not the shrunken one', () => {
-    // Were the shift measured against the run's own (already-scaled) size, a
-    // superscript would climb less the smaller it was set.
-    const style = resolveTextStyle({ fontSize: 100 });
-    const [run] = resolveRuns([{ text: '2', script: 'super' }], style);
-    expect(run.baselineShift).toBeCloseTo(100 * SCRIPT_METRICS.super.shift, 6);
-    expect(run.baselineShift).not.toBeCloseTo(run.fontSize * SCRIPT_METRICS.super.shift, 3);
   });
 
   it('lets baselineShift and fontScale each override half of a script preset', () => {
