@@ -55,9 +55,11 @@ export function PropertyPanel({
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty: twistyShown });
   const { folds, folded, toggle } = fold;
   const heading = title != null && <h2 className={s.panelTitle}>{foldTitle(title, fold)}</h2>;
+  // Hidden while open, the twisty trails the header: the title sits where it does with no twisty.
+  const trailing = twistyShown === 'folded';
   const twisty = folds && (
     <Disclosure
-      className={twistyClass(fold)}
+      className={trailing ? `${twistyClass(fold)} ${s.foldTwistyTrailing}` : twistyClass(fold)}
       open={!folded}
       onToggle={toggle}
       label={typeof title === 'string' ? title : 'this panel'}
@@ -75,9 +77,10 @@ export function PropertyPanel({
     >
       {actions != null || folds ? (
         <div className={s.panelHeader}>
-          {twisty}
+          {!trailing && twisty}
           {heading}
           {actions != null && <div className={s.panelActions}>{actions}</div>}
+          {trailing && twisty}
         </div>
       ) : heading}
       {/* Folded contents stay mounted, so a control's local state survives. */}

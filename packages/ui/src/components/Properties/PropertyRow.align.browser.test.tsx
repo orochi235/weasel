@@ -115,6 +115,27 @@ test('a label that wraps puts its first line level with a one-line control', asy
   expect(Math.abs(label.top + line / 2 - mid(control))).toBeLessThan(2);
 });
 
+test('a label that wraps keeps its help glyph on its first line', async () => {
+  render(
+    <PropertyList align="center" className="narrow-labels">
+      <PropertyField
+        kind="boolean"
+        label="Silhouette outline width"
+        description="How wide the outline is."
+        value={false}
+        onChange={() => {}}
+        layout="inline"
+      />
+    </PropertyList>,
+  );
+  await frames();
+  const label = screen.getByText('Silhouette outline width', { selector: '[class*="rowLabel"]' });
+  const help = label.querySelector('[class*="help"]')!;
+  const line = Number.parseFloat(getComputedStyle(label).lineHeight);
+  expect(box(label).height).toBeGreaterThan(line * 1.5);
+  expect(Math.abs(box(label).top + line / 2 - mid(box(help)))).toBeLessThan(1);
+});
+
 test('a dropdown row sets its value at the label size, on the label baseline', async () => {
   render(
     <PropertyList className="split-sizes">

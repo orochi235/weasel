@@ -164,8 +164,9 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       );
     }
     // A group with no name organizes without heading it — core's rule for an
-    // empty `PrefGroup.name` — so it contributes its rows and no chrome.
-    if (found.name === '' || found.as === 'fragment')
+    // empty `PrefGroup.name` — so it contributes its rows and no chrome. One
+    // named as the section it sits in is under its heading already.
+    if (found.name === '' || found.as === 'fragment' || found.name === rows.heading)
       return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
     const lifted = lift(found.name, loosePaths(found, path));
     const reset = resolved.resettable?.has(path) ? (
