@@ -422,7 +422,7 @@ Priority tags:
   that write non-scene state (`setSelection`, `setPath`, `setText`). `core/ops` stays for adapters that
   are not a scene. Serialized histories change shape, so draw's persisted undo history needs a break
   or a migration. Do it after the `scene.ts` entry above.
-  **Designed and not built: stopped 2026-10-12 on three rulings**, listed with the design in
+  **Designed and not built.** The design, and the three rulings it waited on, are in
   `docs/audits/2026-10-12-scene.md`, section 1. Storing kit ops changes more than nesting: undo stops
   calling the adapter, and a journal opened on another history (every draw mode) stops leaving
   entries on the scene's stack when it is canceled. `scene.recordedForm.test.ts` pins today's
