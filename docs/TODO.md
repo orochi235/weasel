@@ -106,7 +106,8 @@ Priority tags:
 - **(P3) What the text layout split left.**
   - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
     between two letters takes their pair's kerning away: `A`, U+0301, `B` sets the `B` where an
-    unkerned one goes. Seen in `combiningMarkQuad.test.ts`'s fixture, where the pair kerns by 1.
+    unkerned one goes. `layoutEntries.letterSpacing.test.ts` ("tracks a base and its combining mark
+    once") expects exactly that, so whether a mark should be skipped when kerning is not chosen yet.
   - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
     which included grouping, need re-recording.
 
