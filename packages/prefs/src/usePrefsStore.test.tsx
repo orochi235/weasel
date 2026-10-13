@@ -127,7 +127,7 @@ describe('usePrefsStore', () => {
     expect(seen.live).toBe(0);
   });
 
-  it('replaces the store when the schema changes, the old one flushed first', async () => {
+  it('replaces the store when the schema changes, over the same records', async () => {
     const wider = {
       name: 'Test',
       children: { density: { ...SCHEMA.children.density, max: 1000 } },
@@ -137,13 +137,49 @@ describe('usePrefsStore', () => {
       ({ schema }: { schema: typeof SCHEMA }) => usePrefsStore(schema, { storage, prefix: 'p.' }),
       { initialProps: { schema: SCHEMA } },
     );
-    act(() => result.current.set('density', 200));
+    const narrow = result.current;
+    act(() => narrow.set('density', 200));
     rerender({ schema: wider });
     expect(result.current.schema).toBe(wider);
     expect(result.current.get('density')).toBe(200);
     await settle();
-    expect(seen).toEqual({ opens: 2, live: 1 });
+    expect(narrow.closed).toBe(true);
+    expect(seen).toEqual({ opens: 1, live: 1 });
     unmount();
+    await settle();
+    expect(seen.live).toBe(0);
+  });
+
+  it('keeps both stores open for two components with different schemas on one prefix', async () => {
+    const other = {
+      name: 'Other',
+      children: {
+        density: SCHEMA.children.density,
+        zoom: { kind: 'number', name: 'Zoom', description: '', default: 1 },
+      },
+    } satisfies PrefGroup;
+    const { storage, seen, backing } = counted();
+    const a = renderHook(() => usePrefsStore(SCHEMA, { storage, prefix: 'p.' }));
+    const b = renderHook(() => usePrefsStore(other, { storage, prefix: 'p.' }));
+    a.rerender();
+    await settle();
+    expect(a.result.current.closed).toBe(false);
+    expect(b.result.current.closed).toBe(false);
+    expect(a.result.current.schema).toBe(SCHEMA);
+    expect(b.result.current.schema).toBe(other);
+
+    act(() => a.result.current.set('density', 100));
+    expect(b.result.current.get('density')).toBe(100);
+
+    a.unmount();
+    await settle();
+    expect(a.result.current.closed).toBe(true);
+    expect(b.result.current.closed).toBe(false);
+    act(() => b.result.current.set('zoom', 3));
+    expect(await b.result.current.flush()).toBe(true);
+    expect(recordValue(backing.get('p.zoom'))).toBe(3);
+    expect(seen).toEqual({ opens: 1, live: 1 });
+    b.unmount();
     await settle();
     expect(seen.live).toBe(0);
   });
