@@ -1,4 +1,5 @@
-const CONSTRUCTORS = {
+/** The constructor of each typed array of numbers, under the tag its type is written by. */
+export const TYPED_ARRAY_CONSTRUCTORS = {
   i8: Int8Array,
   u8: Uint8Array,
   u8c: Uint8ClampedArray,
@@ -11,10 +12,10 @@ const CONSTRUCTORS = {
 } as const;
 
 /** The name a typed array's type is written under. */
-export type TypedArrayTag = keyof typeof CONSTRUCTORS;
+export type TypedArrayTag = keyof typeof TYPED_ARRAY_CONSTRUCTORS;
 
 /** A typed array of numbers: what a `Path` keeps its commands and coords in. */
-export type NumberTypedArray = InstanceType<(typeof CONSTRUCTORS)[TypedArrayTag]>;
+export type NumberTypedArray = InstanceType<(typeof TYPED_ARRAY_CONSTRUCTORS)[TypedArrayTag]>;
 
 /** A typed array as JSON holds it: its type's tag and its numbers. */
 export interface TaggedTypedArray {
@@ -23,7 +24,7 @@ export interface TaggedTypedArray {
 }
 
 const TAGS = new Map<string, TypedArrayTag>(
-  (Object.keys(CONSTRUCTORS) as TypedArrayTag[]).map((tag) => [CONSTRUCTORS[tag].name, tag]),
+  (Object.keys(TYPED_ARRAY_CONSTRUCTORS) as TypedArrayTag[]).map((tag) => [TYPED_ARRAY_CONSTRUCTORS[tag].name, tag]),
 );
 
 // By its string tag rather than `instanceof`, which is false for an array made in another realm.
@@ -40,8 +41,8 @@ export function tagTypedArray(value: unknown): TaggedTypedArray | undefined {
 export function untagTypedArray(value: unknown): NumberTypedArray | undefined {
   if (value === null || typeof value !== 'object') return undefined;
   const { __ta: tag, data } = value as Partial<TaggedTypedArray>;
-  if (typeof tag !== 'string' || !Object.hasOwn(CONSTRUCTORS, tag) || !Array.isArray(data)) return undefined;
-  return CONSTRUCTORS[tag].from(data);
+  if (typeof tag !== 'string' || !Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, tag) || !Array.isArray(data)) return undefined;
+  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data);
 }
 
 const isPlain = (value: unknown): value is Record<string, unknown> => classOf(value) === 'Object';
