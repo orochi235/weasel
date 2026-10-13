@@ -7,7 +7,7 @@
  * as-is — the internal tool registry is ignored in that case.
  */
 import type { PolygonPath } from '@weasel-js/geom';
-import { capabilitiesAllowed, getActiveModeFor } from '@weasel-js/modes';
+import { getActiveModeFor } from '@weasel-js/modes';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
@@ -17,19 +17,12 @@ import type { InsertAdapter } from 'core/adapters/types';
 import { sceneFromJSON } from 'core/scene/scene';
 import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
-import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import { rectFromPlane } from 'core/viewport/parallax';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
-import { normalizeView, viewZoom, type View } from 'core/viewport/view';
-import type { RuleCtx } from 'features/chrome-caps';
-import {
-  DEFAULT_ALLOWED_CAPABILITIES,
-  buildChromeCtx,
-  never,
-  resolveVisibility,
-  useHoverTracking,
-} from 'features/chrome-caps';
+import { normalizeView, type View } from 'core/viewport/view';
+import { never, useHoverTracking } from 'features/chrome-caps';
+import { useChromeCaps, type ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
 import {
   acquireKitContentHandlers,
   itemsFromFiles,
@@ -37,7 +30,6 @@ import {
   type IngestItem
 } from 'features/ingestion';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
-import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import {
   createSelectionOverlayLayer,
   rotationBadgeOf,
@@ -50,13 +42,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type React from 'react';
 import { forwardRef, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
-import { useHandTool } from 'tools/builtin/hand';
-import type { PenScratch } from 'tools/builtin/pen';
-import {
-  selectionMoveContribution,
-  selectionResizeContribution,
-  selectionRotateContribution,
-} from 'tools/builtin/select';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { createNodeRouting } from '../core/scene/NodeRouting';
 import { dwarn } from '../debug';
@@ -65,7 +50,7 @@ import type { DebugConfig } from '../debug/types';
 import { createLongPressFeedbackContribution } from '../features/longPress/longPressFeedback';
 import type { ReflowTransition } from '../layout/types';
 import { installTestHookIfRequested, releaseTestHook } from '../test-hook/install';
-import type { AnyTool, Contribution, Tool } from '../tools/overlayBinding';
+import type { Contribution } from '../tools/overlayBinding';
 import { useTools, type ToolsApi } from '../tools/overlayBinding';
 import type { LayersMap, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
 import { Canvas } from './Canvas';
@@ -78,17 +63,18 @@ import { inferredNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import { createDispatcherPreviewSources, createGestureSource } from './SceneCanvas/dispatcherGestureBounds';
 import {
   featureActionIds,
-  resolveFeatures
+  featureAmbient,
+  featureChromeRules,
+  resolveFeatures,
+  type FeatureBindingOptions,
 } from './SceneCanvas/features';
-import { IS_DEV } from './SceneCanvas/isDev';
 import {
-  NON_SHAPE_BUILTIN_TOOLS,
   mergeLayersWithDefaults,
   type BridgeAdapter,
-  type BuiltinToolId,
   type SceneCanvasProps,
 } from './SceneCanvas/props';
-import { useBuiltinShapeTools } from './SceneCanvas/useBuiltinShapeTools';
+import { useBuiltinTools } from './SceneCanvas/useBuiltinTools';
+import type { ToolsPatch } from './SceneCanvas/toolRegistry';
 import { contributionEntries } from './SceneCanvas/useContributionRoles';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
@@ -105,7 +91,7 @@ import { composeAlphaFor, wireSceneSlotToScene } from './sceneSlotWiring';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { useHitObserver } from './useHitObserver';
 import { useLateContentRedraw } from './useLateContentRedraw';
-import { ViewInputsProvider, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
+import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
 import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
 export { SCENE_CANVAS_FEATURES } from './SceneCanvas/features';
 export type { Feature } from './SceneCanvas/features';
@@ -128,7 +114,7 @@ const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set();
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
  *  / `active` / `registry`; the patch record shape has none of those. */
 function isToolsApi(
-  tools: ToolsApi | Record<string, AnyTool | true | false>,
+  tools: ToolsApi | ToolsPatch,
 ): tools is ToolsApi {
   return typeof (tools as ToolsApi).setActive === 'function';
 }
@@ -536,57 +522,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [featuresKey, hasViewport],
   );
 
-  const inertiaEnabled = !!viewport?.inertia;
-  const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
-  // `inertia: true` means "on with kit defaults", so an enabled-but-objectless
-  // config still has to reach the tool — an empty object, not `undefined`,
-  // which the tool reads as off.
-  const handToolInertia = inertiaEnabled
-    ? {
-        friction: inertiaObj?.friction,
-        minSpeed: inertiaObj?.minSpeed,
-        boundary: inertiaObj?.boundary,
-        bounds: inertiaObj?.bounds,
-      }
-    : undefined;
-  // Always called per rules-of-hooks; only registered below when requested.
-  const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
-
-  // Built-ins to mount: what `defaultTools` lists, plus the tool each preset
-  // brings — `select` the select tool, `view` the hand.
-  const baseRequestedTools: readonly BuiltinToolId[] = [
-    ...(defaultTools ?? []),
-    ...(enabled.has('select') ? ['select' as const] : []),
-    ...(enabled.has('view') ? ['hand' as const] : []),
-  ];
-
-  // Patch-form `tools` extras with value `true` widen the requested set ("pull in this
-  // built-in").
-  const KNOWN_BUILTIN_IDS: ReadonlySet<BuiltinToolId> = new Set<BuiltinToolId>([
-    ...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS,
-  ]);
-  const toolsPatchExtras = (() => {
-    if (!toolsProp || isToolsApi(toolsProp)) return null;
-    return toolsProp;
-  })();
-  const trueIds = new Set<BuiltinToolId>();
-  if (toolsPatchExtras) {
-    for (const [id, value] of Object.entries(toolsPatchExtras)) {
-      if (value !== true) continue;
-      if (!KNOWN_BUILTIN_IDS.has(id as BuiltinToolId)) {
-        if (IS_DEV) {
-          console.warn(`[SceneCanvas] tools.${id}=true is not a known built-in id; ignoring`);
-        }
-        continue;
-      }
-      trueIds.add(id as BuiltinToolId);
-    }
-  }
-  const wants = (id: BuiltinToolId): boolean =>
-    baseRequestedTools.includes(id) || trueIds.has(id);
-
-  // Always called per rules-of-hooks; only registered below when requested.
-  const shapeTools = useBuiltinShapeTools({ options: toolOptions });
+  // Takeover form: only when toolsProp is the full ToolsApi shape.
+  const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
+  const internalRegistry = useBuiltinTools({
+    select: internalSelect,
+    enabled,
+    defaultTools,
+    patch: toolsProp && !isToolsApi(toolsProp) ? toolsProp : null,
+    toolOptions,
+    inertia: viewport?.inertia,
+  });
 
   const defaultLongPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);
   const feedbackOpt = longPress?.feedback ?? true;
@@ -595,45 +540,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     () => (pressFeedback ? [...(ambient ?? []), pressFeedback] : (ambient ?? [])),
     [ambient, pressFeedback],
   );
-
-  const internalRegistry: Record<string, AnyTool> = {};
-  if (wants('select')) internalRegistry.select = internalSelect;
-  // `hand` stays in the registry (not ambient) so its H keybinding and its
-  // Space hold both apply.
-  if (wants('hand')) internalRegistry.hand = handTool;
-  // Shape / lasso / text tools — registry entries with built-in
-  // keybindings (R/E/G/N/L/T) routed via `useKeybindings`.
-  if (wants('rect'))    internalRegistry.rect    = shapeTools.rect;
-  if (wants('ellipse')) internalRegistry.ellipse = shapeTools.ellipse;
-  if (wants('line'))    internalRegistry.line    = shapeTools.line;
-  if (wants('polygon')) internalRegistry.polygon = shapeTools.polygon;
-  if (wants('star'))    internalRegistry.star    = shapeTools.star;
-  if (wants('pen'))     internalRegistry.pen     = shapeTools.pen;
-  if (wants('pencil'))  internalRegistry.pencil  = shapeTools.pencil;
-  if (wants('lasso'))   internalRegistry.lasso   = shapeTools.lasso;
-  if (wants('text'))    internalRegistry.text    = shapeTools.text;
-
-  // Patch-form `tools` prop: `false` drops a bundled tool, `true` was accounted for above via
-  // `wants()`, and an `AnyTool` adds or replaces (dev-only warning on replace).
-  const toolsPatch = toolsPatchExtras;
-  if (toolsPatch) {
-    for (const [id, value] of Object.entries(toolsPatch)) {
-      if (value === false) {
-        delete internalRegistry[id];
-      } else if (value === true) {
-        // Already pulled in via the `wants()`-driven if-ladder above.
-        continue;
-      } else {
-        if (IS_DEV && id in internalRegistry) {
-          console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
-        }
-        internalRegistry[id] = value;
-      }
-    }
-  }
-
-  // Takeover form: only when toolsProp is the full ToolsApi shape.
-  const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
 
   const internalTools = useTools({
     active: initialActiveTool ?? ('select' in internalRegistry ? 'select' : null),
@@ -645,28 +551,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const tools = toolsTakeover ?? internalTools;
   const liveToolsRef = useLatest<ToolsApi | null>(tools);
   const getActiveModeRef = useLatest(getActiveMode);
-  // Without a mode registry every tool stays activatable.
-  const isToolEligible = useCallback((toolId: string): boolean => {
-    const getMode = getActiveModeRef.current;
-    if (!getMode) return true;
-    const caps = liveToolsRef.current?.registry?.[toolId]?.eligibility.capabilities;
-    return capabilitiesAllowed(getMode().allowedCapabilities, caps);
-  }, [getActiveModeRef, liveToolsRef]);
 
-  // The selection's own ambient bindings: `move`, `resize` and `rotate`. They
-  // are not tools and sit outside `tools`, so they apply under a takeover too.
-  const selectionMoveOptions = useMemo(
-    () => ({ move: internalMoveOptions }),
-    [internalMoveOptions],
-  );
+  // The presets' ambient bindings. They are not tools and sit outside `tools`,
+  // so they apply under a takeover too.
   const rotateOptions = selectToolOpts?.rotate || undefined;
-  // Handles first: a handle sits over the selected body, so the move binding
-  // matches a handle drag too, and a tie goes to whichever is first.
-  const featureContributions = useMemo<Contribution[]>(() => [
-    ...(enabled.has('resize') ? [selectionResizeContribution()] : []),
-    ...(enabled.has('rotate') ? [selectionRotateContribution({ rotate: rotateOptions })] : []),
-    ...(enabled.has('move') ? [selectionMoveContribution(selectionMoveOptions)] : []),
-  ], [enabled, selectionMoveOptions, rotateOptions]);
+  const featureContributions = useMemo<Contribution[]>(
+    () => featureAmbient(enabled, {
+      move: internalMoveOptions as FeatureBindingOptions['move'],
+      rotate: rotateOptions as FeatureBindingOptions['rotate'],
+    }),
+    [enabled, internalMoveOptions, rotateOptions],
+  );
 
   // Kit-standard actions to register: every preset's own, plus whichever a
   // tool or contribution on this canvas binds — a tool brings the actions it
@@ -765,7 +660,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // after the preview-ghost so chrome paints on top of displaced ghost silhouettes.
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
-  // Chrome-caps hover tracking: the last-hovered NodeId fed into `ChromeCtx.hover`, cached
+  // Chrome-caps hover tracking: the last-hovered NodeId fed into `RuleCtx.hover`, cached
   // on a ref with no re-renders.
   const { getHover, canvasRef: trackHoverOn } = useHoverTracking({
     // One lookup, not a client→world thunk beside a picker: the point and the
@@ -791,25 +686,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     enabled: chromeVisibility !== undefined,
   });
 
-  // Live sources for `buildChromeCtx`; the resolver below is called per draw / per hitTest
-  // from Canvas.
-  const selectionForCapsRef = useLatest(selection.current as readonly NodeId[]);
-  const getFocusedPropRef = useLatest(getFocusedProp);
-  // Selection chrome belongs to the presets that turn it on: the outline to
-  // `outline`, each handle to the preset that binds it. `never` also takes a handle out of
-  // hit-testing, so a hidden handle cannot be grabbed.
-  //
   // `selectable={false}` suppresses the marquee / lasso chrome by default:
   // every selection write no-ops then, so the select tool's
   // empty-drag binding still CLAIMS the gesture (keeping it from falling
   // through to other ambient drag actions like insert) but paints nothing.
   // An explicit consumer rule for either id still wins.
-  const effectiveChromeVisibility = useMemo(() => {
+  const chromeRules = useMemo(() => {
     // Kit defaults first; consumer `chromeVisibility` spread last so it wins.
-    const defaults: import('features/chrome-caps').VisibilityRules = {};
-    if (!enabled.has('outline')) defaults['selection.outline'] = never;
-    if (!enabled.has('resize')) defaults['selection.resize-handles'] = never;
-    if (!enabled.has('rotate')) defaults['selection.rotation-handle'] = never;
+    const defaults = featureChromeRules(enabled);
     if (!selectable) {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;
@@ -817,65 +701,35 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // `selectTool.rotate === false` hides the rotation handle (`resolvedActions`
     // drops its action) so a non-rotatable consumer fully opts out.
     if (selectToolOpts?.rotate === false) defaults['selection.rotation-handle'] = never;
-    if (Object.keys(defaults).length === 0) return chromeVisibility;
     return { ...defaults, ...chromeVisibility };
   }, [chromeVisibility, selectable, selectToolOpts?.rotate, enabled]);
-  const chromeVisibilityRef = useLatest(effectiveChromeVisibility);
-  // Read through a ref for the same reason as the others here:
-  // `buildCurrentRuleCtx` is a stable `useCallback`, and adding the profile to
-  // its deps would rebuild it whenever a media query changes.
-  const deviceProfileRef = useLatest(deviceProfile);
-  // Per-node resizability predicate from `selectTool.resize.resizable`, folded
-  // over the live selection into the `selectionResizable` rule-ctx flag below.
-  const resizablePredRef = useLatest(selectToolOpts?.resize?.resizable);
 
-  /** Build the live RuleCtx — selection + view + modifiers + mode + capabilities
-   *  + active action. Consumed by chrome-caps' resolver and the dispatcher's
-   *  eligibility filter so both see the same view of the world. */
-  const buildRuleCtxFor = useCallback((inputs: ViewRuleInputs) => {
-    const sel = inputs.selection;
-    // No mode registry wired → behave as normal mode, capabilities included.
-    // An empty set here would make every `capability:` rule false and hide
-    // the chrome those rules gate. See DEFAULT_ALLOWED_CAPABILITIES.
-    const modeInfo = getActiveModeRef.current?.()
-      ?? { id: 'normal', allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES };
-    const ctx = buildChromeCtx({
-      focused: getFocusedPropRef.current ? getFocusedPropRef.current() : true,
-      selection: sel,
-      multiActive: sel.length > 1,
-      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      action: inputs.action,
-      hover: getHover(),
-      view: inputs.view,
-    });
-    // `mode` and `allowedCapabilities` are attached below so the mode-gated default rules
-    // can read them. `selectionResizable` is true only when every selected node is resizable
-    // (per `selectTool.resize.resizable`), and undefined when no predicate is supplied, which
-    // the `resizable:` selector treats as resizable.
-    const resizablePred = resizablePredRef.current;
-    const selectionResizable = resizablePred
-      ? sel.every((id) => resizablePred(id as string))
-      : undefined;
-    return {
-      ...ctx,
-      zoom: viewZoom(inputs.view),
-      mode: modeInfo.id,
-      allowedCapabilities: modeInfo.allowedCapabilities,
-      selectionResizable,
-      editingAnchors: effectivePathEditingId() !== '',
-      device: deviceProfileRef.current,
-    };
-  }, [getHover, effectivePathEditingId, getActiveModeRef, getFocusedPropRef, resizablePredRef, deviceProfileRef]);
+  const chromeCaps = useChromeCaps({
+    rules: chromeRules,
+    getMode: getActiveMode,
+    getFocused: getFocusedProp,
+    getHover,
+    resizable: selectToolOpts?.resize?.resizable,
+    editingAnchors: () => effectivePathEditingId() !== '',
+    device: deviceProfile,
+  });
 
+  // The selection as of the last commit, which is what the painted chrome was
+  // built from; `selection.current` can be a live getter that is ahead of it.
+  const committedSelectionRef = useLatest(selection.current as readonly NodeId[]);
   /** The surface's own view zero. */
   const currentRuleInputs = useCallback((): ViewRuleInputs => ({
-    selection: selectionForCapsRef.current,
+    selection: committedSelectionRef.current,
     view: currentViewRef.current,
     action: dispatcher.getActiveAction(),
-  }), [dispatcher, selectionForCapsRef]);
-  const buildCurrentRuleCtx = useCallback(
-    () => buildRuleCtxFor(currentRuleInputs()),
-    [buildRuleCtxFor, currentRuleInputs],
+  }), [dispatcher, committedSelectionRef]);
+  const getIsVisibleForCanvas = useCallback(
+    (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
+    [chromeCaps, currentRuleInputs],
+  );
+  const getRuleCtxForCanvas = useCallback(
+    () => chromeCaps.ruleCtx(currentRuleInputs()),
+    [chromeCaps, currentRuleInputs],
   );
 
   // Anchor editing survives only as long as the active mode permits it.
@@ -893,32 +747,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   useInsertionEffect(() => {
     anchorEditingAllowedRef.current = anchorEditingAllowed;
   });
-
-  /** The chrome-caps answers for one view: the surface's rule table evaluated
-   *  against that view's selection, camera and in-flight action. */
-  const chromeCaps = useMemo(() => ({
-    ruleCtx: (inputs: ViewRuleInputs) =>
-      (getActiveModeRef.current ? buildRuleCtxFor(inputs) as RuleCtx : undefined),
-    isVisible: (inputs: ViewRuleInputs) => resolveVisibility(
-      chromeVisibilityRef.current,
-      buildRuleCtxFor(inputs) as Parameters<typeof resolveVisibility>[1],
-    ),
-  }), [buildRuleCtxFor, getActiveModeRef, chromeVisibilityRef]);
-
-  const getIsVisibleForCanvas = useCallback(
-    (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
-    [chromeCaps, currentRuleInputs],
-  );
-
-  // Draws the pen tool's in-progress path from its persistent scratch. Null unless the pen
-  // tool is registered.
-  const wantsPen = wants('pen');
-  const penPreviewLayer = useMemo(
-    () => (wantsPen
-      ? createPenPreviewLayer({ penTool: shapeTools.pen as Tool<PenScratch> })
-      : null),
-    [shapeTools.pen, wantsPen],
-  );
 
   // The chrome layer reads `editingId` via a ref, so an edit-mode change needs an explicit
   // redraw.
@@ -1047,10 +875,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       : mergedLayers.selectionOverlay === null ? null : undefined,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
-    ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(slopsOn ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, slopsOn, slopsLayer]);
+  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, slopsOn, slopsLayer]);
 
   // `CanvasExtensionApi.ingest` is routed through `registry.trigger('ingest', …)` so the
   // action's `requires` deps are resolved exactly as on the dispatcher path.
@@ -1259,7 +1086,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               viewRef={currentViewRef}
               dispatcher={dispatcher}
               getIsVisibleForCanvas={getIsVisibleForCanvas}
-              getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
+              getRuleCtx={getRuleCtxForCanvas}
               targetScale={deviceProfile.targetScale}
               handleHitRadius={selectToolOpts?.handleHitRadius}
               rotationBadge={rotationBadge}
@@ -1272,7 +1099,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               internalTools={internalTools}
               toolsTakeover={toolsTakeover ?? undefined}
               enableKeybindings={enableKeybindings}
-              isToolEligible={isToolEligible}
+              modes={modes}
               canvasApi={canvasReady ? canvasApiRef.current : null}
               versionCheck={versionCheck}
             />

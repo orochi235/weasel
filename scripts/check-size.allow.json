@@ -31,8 +31,8 @@
     "longestFunction": 267
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 1339,
-    "longestFunction": 1157
+    "lines": 1166,
+    "longestFunction": 998
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 276
@@ -84,7 +84,7 @@
     "longestFunction": 123
   },
   "packages/core/src/features/paths/penPreviewLayer.ts": {
-    "longestFunction": 140
+    "longestFunction": 138
   },
   "packages/core/src/features/selection/overlay.ts": {
     "lines": 756

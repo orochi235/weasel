@@ -11,8 +11,9 @@ export type { InertiaConfig };
  *  binding params; momentum additionally needs a `view` dep publishing
  *  `decay`, which `<SceneCanvas>` wires. */
 export interface UseHandToolOptions {
-  /** Momentum after release. Omit or pass `false` for none. */
-  inertia?: false | InertiaConfig;
+  /** Momentum after release: `true` for the kit defaults, or the settings.
+   *  Omit or pass `false` for none. */
+  inertia?: boolean | InertiaConfig;
   /**
    * Which axes the drag responds to. Default `'both'`.
    *

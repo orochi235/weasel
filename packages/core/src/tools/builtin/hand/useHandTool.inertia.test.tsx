@@ -115,6 +115,21 @@ describe('useHandTool options reach viewport.dragPan through the dispatcher', ()
     expect(calls[0].friction).toBe(0.8);
   });
 
+  it('starts a coast with the kit defaults when inertia is true', () => {
+    const calls: DecayLoopConfig[] = [];
+    const { canvas } = mount({ inertia: true }, (c) => calls.push(c));
+    drag(canvas, [[0, 0], [10, 10], [25, 25], [45, 45]]);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].friction).toBeUndefined();
+  });
+
+  it('starts no coast when inertia is false', () => {
+    const calls: DecayLoopConfig[] = [];
+    const { canvas } = mount({ inertia: false }, (c) => calls.push(c));
+    drag(canvas, [[0, 0], [10, 10], [45, 45]]);
+    expect(calls).toHaveLength(0);
+  });
+
   it('starts no coast when inertia is not asked for', () => {
     const calls: DecayLoopConfig[] = [];
     const { canvas } = mount({}, (c) => calls.push(c));

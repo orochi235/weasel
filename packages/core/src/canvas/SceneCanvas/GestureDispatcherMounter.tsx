@@ -85,7 +85,7 @@ export function GestureDispatcherMounter({
   /** Live RuleCtx factory. Threaded into `useGestureDispatcher` so the
    *  dispatcher's eligibility filter sees the same mode/capabilities/selection
    *  view of the world that chrome-caps does. */
-  getRuleCtx?: () => RuleCtx;
+  getRuleCtx?: () => RuleCtx | undefined;
   /** `DeviceProfile.targetScale`, so the affordance grab zones resolve to the
    *  same sizes the chrome paints at. */
   targetScale?: number;

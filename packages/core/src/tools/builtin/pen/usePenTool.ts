@@ -7,10 +7,10 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
-import { pxExtent, withinPxRadius } from '@weasel-js/geom';
+import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
 import { PenIcon } from '../../../icons';
 import { boundsOfPath, type PolygonPath, anchorsToPath, pathToAnchors } from '@weasel-js/geom';
-import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
+import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
@@ -42,10 +42,10 @@ export interface PenSubpath {
 }
 
 /**
- * Mutable scratch shared across pen-tool gestures. The hook keeps a stable
- * reference to a single instance and `initScratch` returns it on every call,
- * so click-by-click state survives gesture boundaries and the preview layer
- * can read the same object.
+ * Mutable state shared across pen-tool gestures. The hook keeps a single
+ * instance for its life and changes it in place, so click-by-click state
+ * survives gesture boundaries and the tool's preview overlay reads the same
+ * object.
  *
  * The pen draws new nodes, and extends an existing node's open subpath from
  * one of its ends (see `continuing`). Reshaping an existing path is anchor
@@ -172,6 +172,7 @@ export function usePenTool(
   // Scratch mutations alone don't trigger React re-renders, so the preview
   // layer would not repaint. Force a render after every scratch mutation.
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
+  const overlay = useMemo(() => createPenPreviewLayer({ state: scratchRef.current! }), []);
 
   /** Write the pen's subpaths back into the node it picked up: the first
    *  replaces the subpath it continued, any later ones are appended. Skips
@@ -585,11 +586,10 @@ export function usePenTool(
         icon: createElement(PenIcon),
         group: 'draw',
       },
-      // Persistent-ref scratch. `penPreviewLayer` reads the in-progress path
-      // by calling `Tool.initScratch()` and getting this same object back, so
-      // the identity is load-bearing.
       initScratch: () => scratchRef.current!,
       actions,
+      overlay,
+      overlayPosition: 'before-selection',
 
       onDeactivate: () => {
         // Anything still in scratch is incomplete. Switching tools mid-path
@@ -614,7 +614,7 @@ export function usePenTool(
         { spec: { kind: 'key' as const, key: 'Escape' }, actionId: 'pen.cancel' },
       ],
     });
-  }, [actions, trail]);
+  }, [actions, trail, overlay]);
 }
 
 usePenTool.prefs = {

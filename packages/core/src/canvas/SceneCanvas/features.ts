@@ -7,6 +7,17 @@
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
  * and nothing else.
  */
+import { never } from 'features/chrome-caps/conditions';
+import type { ChromeId, VisibilityRules } from 'features/chrome-caps/types';
+import type { UseMoveOptions } from 'interactions/actions/move/options';
+import type { UseRotateOptions } from 'interactions/actions/rotate/options';
+import {
+  selectionMoveContribution,
+  selectionResizeContribution,
+  selectionRotateContribution,
+} from 'tools/builtin/select/selectionContributions';
+import type { Contribution } from 'tools/overlayBinding';
+import type { BuiltinToolId } from './props';
 
 /** A preset that names one behavior and abbreviates nothing. */
 export type BaseFeature =
@@ -35,25 +46,35 @@ export const SCENE_CANVAS_FEATURES: readonly Feature[] = [
   'edit', 'arrange', 'paths', 'ingest', 'draw',
 ];
 
-const BASE_FEATURES: readonly BaseFeature[] = [
-  'view', 'select', 'outline', 'move', 'resize', 'rotate', 'edit', 'arrange', 'paths', 'ingest',
-];
+/** What a preset's ambient bindings are built from: the `selectTool` options
+ *  that configure them. */
+export interface FeatureBindingOptions {
+  move?: UseMoveOptions<unknown>;
+  rotate?: UseRotateOptions<unknown>;
+}
 
-/** The base presets each composite preset turns on. */
-export const COMPOSITE_FEATURES: Readonly<Record<CompositeFeature, readonly BaseFeature[]>> = {
-  pick: ['select', 'outline'],
-  transform: ['resize', 'rotate'],
-  draw: BASE_FEATURES,
-};
+/** Everything turning one preset on means. */
+export interface FeaturePreset {
+  /** The kit-standard actions it registers. */
+  actions: readonly string[];
+  /** The built-in tools it mounts. */
+  tools?: readonly BuiltinToolId[];
+  /** Its ambient bindings: an always-live entry routing a gesture to its
+   *  actions under any tool that does not claim the gesture itself. */
+  ambient?: (options: FeatureBindingOptions) => Contribution;
+  /** The selection chrome that is drawn, and can be grabbed, only while it is on. */
+  chrome?: readonly ChromeId[];
+}
 
 /**
- * The kit-standard actions each preset registers.
+ * What each preset turns on.
+ *
+ * Row order is the order ambient bindings are matched in, and a tie goes to
+ * the first: a handle sits over the selected body, so `resize` and `rotate`
+ * come before `move`, whose binding matches a handle drag too.
  *
  * Every id `useStandardActions` knows appears under exactly one preset, except
- * the ones in {@link TOOL_DRIVEN_ACTION_IDS}. `move`, `resize` and `rotate`
- * also bring the ambient bindings that route drags to their actions, `select`
- * brings the select tool, and `outline`, `resize` and `rotate` bring their
- * selection chrome; this table is only the registration half.
+ * the ones in {@link TOOL_DRIVEN_ACTION_IDS}.
  *
  * Cmd/Ctrl+V arrives as a DOM `paste` event, and two presets answer it.
  * `edit` brings `clipboard.pasteEvent`, which pastes nodes a kit canvas
@@ -62,37 +83,80 @@ export const COMPOSITE_FEATURES: Readonly<Record<CompositeFeature, readonly Base
  * on, `ingest` answers alone: `useStandardActions` holds
  * `clipboard.pasteEvent` back wherever `ingest` is registered.
  */
-export const FEATURE_ACTION_IDS: Readonly<Record<BaseFeature, readonly string[]>> = {
-  view: ['viewport.dragPan', 'viewport.pinchZoom'],
-  select: ['areaSelect', 'clearSelection', 'lassoSelect'],
-  outline: [],
-  move: ['move', 'clone'],
-  resize: ['resize'],
-  rotate: ['rotate'],
-  edit: [
-    'escape', 'cancelGesture', 'selectAll', 'duplicate', 'delete',
-    'group', 'ungroup', 'undo', 'redo',
-    'nudge.up', 'nudge.down', 'nudge.left', 'nudge.right',
-    'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'clipboard.pasteEvent',
-    'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
-  ],
-  arrange: [
-    'flip',
-    'reorder.forward', 'reorder.backward',
-    'align.left', 'align.centerX', 'align.right',
-    'align.top', 'align.centerY', 'align.bottom',
-    'distribute.horizontal', 'distribute.vertical',
-  ],
-  paths: [
-    'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
-    'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop', 'pathfinder.trim', 'pathfinder.merge',
-    'createOutlines', 'outlineStroke',
-    'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor',
-    'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
-    'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
-  ],
-  ingest: ['ingest'],
+export const FEATURE_PRESETS: Readonly<Record<BaseFeature, FeaturePreset>> = {
+  view: {
+    actions: ['viewport.dragPan', 'viewport.pinchZoom'],
+    tools: ['hand'],
+  },
+  select: {
+    actions: ['areaSelect', 'clearSelection', 'lassoSelect'],
+    tools: ['select'],
+  },
+  outline: {
+    actions: [],
+    chrome: ['selection.outline'],
+  },
+  resize: {
+    actions: ['resize'],
+    ambient: () => selectionResizeContribution(),
+    chrome: ['selection.resize-handles'],
+  },
+  rotate: {
+    actions: ['rotate'],
+    ambient: ({ rotate }) => selectionRotateContribution({ rotate }),
+    chrome: ['selection.rotation-handle'],
+  },
+  move: {
+    actions: ['move', 'clone'],
+    ambient: ({ move }) => selectionMoveContribution({ move }),
+  },
+  edit: {
+    actions: [
+      'escape', 'cancelGesture', 'selectAll', 'duplicate', 'delete',
+      'group', 'ungroup', 'undo', 'redo',
+      'nudge.up', 'nudge.down', 'nudge.left', 'nudge.right',
+      'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'clipboard.pasteEvent',
+      'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
+    ],
+  },
+  arrange: {
+    actions: [
+      'flip',
+      'reorder.forward', 'reorder.backward',
+      'align.left', 'align.centerX', 'align.right',
+      'align.top', 'align.centerY', 'align.bottom',
+      'distribute.horizontal', 'distribute.vertical',
+    ],
+  },
+  paths: {
+    actions: [
+      'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
+      'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop', 'pathfinder.trim', 'pathfinder.merge',
+      'createOutlines', 'outlineStroke',
+      'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor',
+      'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
+      'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
+    ],
+  },
+  ingest: {
+    actions: ['ingest'],
+  },
 };
+
+const BASE_FEATURES = Object.keys(FEATURE_PRESETS) as BaseFeature[];
+
+/** The base presets each composite preset turns on. */
+export const COMPOSITE_FEATURES: Readonly<Record<CompositeFeature, readonly BaseFeature[]>> = {
+  pick: ['select', 'outline'],
+  transform: ['resize', 'rotate'],
+  draw: BASE_FEATURES,
+};
+
+/** The kit-standard actions each preset registers: the `actions` column of
+ *  {@link FEATURE_PRESETS}. */
+export const FEATURE_ACTION_IDS = Object.fromEntries(
+  BASE_FEATURES.map((f) => [f, FEATURE_PRESETS[f].actions]),
+) as Readonly<Record<BaseFeature, readonly string[]>>;
 
 /**
  * Kit-standard actions no preset registers: they belong to the tools that bind
@@ -125,6 +189,36 @@ export function resolveFeatures(
 /** The kit-standard action ids the given presets register. */
 export function featureActionIds(features: ReadonlySet<BaseFeature>): Set<string> {
   const ids = new Set<string>();
-  for (const f of features) for (const id of FEATURE_ACTION_IDS[f]) ids.add(id);
+  for (const f of features) for (const id of FEATURE_PRESETS[f].actions) ids.add(id);
   return ids;
+}
+
+/** The built-in tools the given presets mount. */
+export function featureToolIds(features: ReadonlySet<BaseFeature>): Set<BuiltinToolId> {
+  const ids = new Set<BuiltinToolId>();
+  for (const f of features) for (const id of FEATURE_PRESETS[f].tools ?? []) ids.add(id);
+  return ids;
+}
+
+/** The given presets' ambient entries, in the order they are matched. */
+export function featureAmbient(
+  features: ReadonlySet<BaseFeature>,
+  options: FeatureBindingOptions,
+): Contribution[] {
+  return BASE_FEATURES.flatMap((f) => {
+    const ambient = features.has(f) ? FEATURE_PRESETS[f].ambient : undefined;
+    return ambient ? [ambient(options)] : [];
+  });
+}
+
+/** Rules hiding the chrome of every preset that is not among `features`.
+ *  `never` also takes a handle out of hit-testing, so a hidden one cannot be
+ *  grabbed. */
+export function featureChromeRules(features: ReadonlySet<BaseFeature>): VisibilityRules {
+  const rules: VisibilityRules = {};
+  for (const f of BASE_FEATURES) {
+    if (features.has(f)) continue;
+    for (const id of FEATURE_PRESETS[f].chrome ?? []) rules[id] = never;
+  }
+  return rules;
 }

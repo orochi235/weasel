@@ -1,3 +1,4 @@
+import type { ModeRegistry } from '@weasel-js/modes';
 import { useKeybindings } from 'tools/useKeybindings';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import type { CanvasExtensionApi } from '../canvasExtension';
@@ -16,24 +17,24 @@ export function ToolKeybindingsMounter({
   internalTools,
   toolsTakeover,
   enableKeybindings,
-  isToolEligible,
+  modes,
   canvasApi,
   versionCheck,
 }: {
   internalTools: ToolsApi;
   toolsTakeover?: ToolsApi;
   enableKeybindings: boolean;
-  isToolEligible: (toolId: string) => boolean;
+  modes?: ModeRegistry;
   canvasApi: CanvasExtensionApi | null;
   versionCheck?: VersionCheck;
 }) {
   useKeybindings(internalTools, {
     disable: !!toolsTakeover || !enableKeybindings,
-    isToolEligible,
+    modes,
   });
   useKeybindings(toolsTakeover ?? internalTools, {
     disable: !toolsTakeover || !enableKeybindings,
-    isToolEligible,
+    modes,
   });
   // Entry-owned roles live here and not in the tool hooks because the hooks
   // run above the provider. Not gated on `enableKeybindings` — these back
