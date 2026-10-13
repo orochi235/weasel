@@ -8,8 +8,8 @@
  */
 import { getActiveModeFor } from '@weasel-js/modes';
 import { useLatest } from '@weasel-js/react';
-import type { ActionsProp, ActionsRegistry } from '@weasel-js/routing';
-import { InputScope } from '@weasel-js/routing/react';
+import type { ActionsProp } from '@weasel-js/routing';
+import { InputScope, useActionsRegistry } from '@weasel-js/routing/react';
 import { sceneFromJSON } from 'core/scene/scene';
 import { isSerializedScene } from 'core/scene/serialization';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -263,7 +263,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [actions, rotateOff],
   );
 
-  const { dispatcher, getActionRef, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher();
+  // The wrapper's `<InputScope>` provides it.
+  const actionsRegistry = useActionsRegistry();
+  const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
 
   const { layers: wiredLayers, rotationBadge, chromeAffordancesRef } = useSceneCanvasLayers({
     layers,
@@ -301,10 +303,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     dispatcher,
   });
 
-  // `StandardActionsRegistrar` stashes the registry into this ref.
-  const actionsRegistryRef = useRef<ActionsRegistry | null>(null);
   const { ingest, clipboard: ingestionClipboard } = useCanvasIngestion(
-    adapter, () => actionsRegistryRef.current, ingestion,
+    adapter, () => actionsRegistry, ingestion,
   );
 
   const { views: addedViews, addView } = useAddedViews();
@@ -389,7 +389,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           poseDescriptor={descriptor as PoseDescriptor<unknown>}
           geometryProjection={geometryProjection}
           dispatcher={dispatcher}
-          getActionRef={getActionRef}
           pickEvery={internalPickEvery}
           layerIsPainted={viewLayerGate}
           alphaOf={alphaFor ? composedAlphaFor : undefined}
@@ -410,7 +409,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           ingestionResolveSrc={ingestion?.resolveSrc}
           ingestionSvg={ingestion?.svg}
           ingestionClipboard={ingestionClipboard}
-          actionsRegistryRef={actionsRegistryRef}
         />
         <GestureDispatcherMounter
           canvasRef={internalCanvasRef}
