@@ -446,7 +446,7 @@ describe('keyboard', () => {
     const { container } = setup();
     const stops = [...container.querySelectorAll<HTMLElement>('[data-band-index], [role="slider"]')];
     expect(stops.map((el) => el.getAttribute('aria-label'))).toEqual([
-      'Band 1', 'Seam 1', 'Band 2', 'Seam 2', 'Band 3',
+      'Band 1, 0 to 20', 'Seam 1', 'Band 2, 20 to 60', 'Seam 2', 'Band 3, 60 to 100',
     ]);
     expect(stops.every((el) => el.tabIndex >= 0)).toBe(true);
   });
@@ -467,7 +467,7 @@ describe('range edges', () => {
     const { container } = setup({ onRangeChange: () => {} });
     const stops = [...container.querySelectorAll<HTMLElement>('[data-band-index], [role="slider"]')];
     expect(stops.map((el) => el.getAttribute('aria-label'))).toEqual([
-      'Range start', 'Band 1', 'Seam 1', 'Band 2', 'Seam 2', 'Band 3', 'Range end',
+      'Range start', 'Band 1, 0 to 20', 'Seam 1', 'Band 2, 20 to 60', 'Seam 2', 'Band 3, 60 to 100', 'Range end',
     ]);
   });
 
@@ -601,7 +601,7 @@ describe('locking', () => {
   it('names a locked band as locked', () => {
     const value = bands().map((b) => (b.data === 'c' ? { ...b, locked: true } : b));
     const { bodies } = setup({ value, onRangeChange: () => {} });
-    expect(bodies()[2].getAttribute('aria-label')).toBe('Band 3, locked');
+    expect(bodies()[2].getAttribute('aria-label')).toBe('Band 3, 60 to 100, locked');
   });
 
   it('leaves the context menu alone when the range is fixed, since a lock would do nothing', () => {
@@ -791,6 +791,14 @@ describe('BandEditor quantities', () => {
     const next = onChange.mock.calls[0]![0] as Band<string, Tagged>[];
     expect(next[1]!.from).toEqual({ value: 1 / 2, display: { kind: 'fraction' } });
     expect(next[0]!.from.display).toEqual({ kind: 'fraction' });
+  });
+
+  it('names a band with its range, spoken through each end\'s own display', () => {
+    const { container } = render(
+      <BandEditor<string, Tagged> value={tagged()} min={1 / 64} max={1 / 2} scale="linear" onChange={() => {}} />,
+    );
+    const names = [...container.querySelectorAll('[data-band-index]')].map((b) => b.getAttribute('aria-label'));
+    expect(names).toEqual(['Band 1, 1 over 64 to 1 over 12', 'Band 2, 1 over 12 to 0.5']);
   });
 
   it("gives a split band its parent's tag", () => {
