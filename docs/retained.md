@@ -1,7 +1,10 @@
-# Retained from contributions as the feature unit, and the stage overview — merged into `main`
+# Retained decisions and traps
 
-Merged 2026-09-25 (`7378cbe2d`), not pushed. Never push without Mike's
-explicit OK.
+For anyone about to change an area named in a heading below. Each section is what a finished arc
+left that the code and `git log` do not say: a decision made in conversation, or a trap met on the
+way. None of it is open work; that lives in `docs/TODO.md`.
+
+# Retained from contributions as the feature unit, and the stage overview — merged into `main`
 
 Where it lives now: `docs/extending.md` (the extension-unit map and the minimap
 worked example), `docs/taxonomy.md` §1 "Contribution",
@@ -23,20 +26,6 @@ labkit binding engine pieces under its own `usePanZoom`, which is now deleted.
 **The overview ships outside labkit's main bundle** (`@weasel-js/labkit/overview`).
 Mike's "d3dx sense": optional helpers on the core API, not in it. The loupe
 has since moved onto the same shape (`@weasel-js/labkit/loupe`).
-
-**The requester is levar's session `levar-0b`**, told on completion how an
-instrument declares the overview; it moves its eye marks lab onto it and
-deletes `visor/src/eyemarks/Context.tsx` and `GhostCursor.tsx`.
-
-## Traps
-
-**Weasel tests go to the fleet.** `onto test --ref origin/main` from the
-worktree (no upstream). A fresh tree needs `--setup --node <n>` once, and so
-does any tree after `package-lock.json` moves: `needs: node_modules` only checks
-the directory exists. Never pick `orochi` for `<n>`: it is Mike's own machine, so
-a run there is a local run. On 2026-09-27 orochi's fleet tree still held jsdom 26.1.0 against a
-29.0.1 pin, and `useTextEdit`'s caret tests failed there on color serialization
-while passing locally. `--spread` is refused: `.onto/tests` names no shard plugin.
 
 ---
 
@@ -118,7 +107,7 @@ Every editor callback for one emits `FillStyle`, not its own type.
 
 # Retained from completed work — the theme editor and palette lab
 
-Both phases of `docs/superpowers/specs/2026-09-10-theme-engine-and-editor-design.md` are merged.
+Both phases of the theme engine and editor design are merged, and its spec is deleted.
 These notes are kept because nothing else records them. Do not read them as open work.
 
 ## Traps from phase 1
@@ -285,9 +274,8 @@ collected by no project.
 ## Where it stands
 
 Solid geometry, image quads, up to seven distinct textures, text and all three
-gradients share one draw. **Nothing is left of step 4**, and
-`docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` is now a record
-rather than a plan. `docs/TODO.md`'s **"(P2) Breaking the batch is what a frame
+gradients share one draw. **Nothing is left of step 4**, and the batched dispatch spec is
+deleted. `docs/TODO.md`'s **"(P2) Breaking the batch is what a frame
 pays for"** entry holds what it left open, measured 2026-10-03; the arc's history
 is in `git log`.
 
