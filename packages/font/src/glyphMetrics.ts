@@ -5,6 +5,7 @@
  * world units (`fontSize / size`), which is why an em-space face reports 1.
  */
 import type { BmFont, BmFontChar } from './FontAtlas';
+import { isDefaultIgnorable } from './defaultIgnorable';
 import type { DynamicFace } from './dynamic/dynamicAtlas';
 import type { OutlineFace } from './outline/OutlineFace';
 import type { ResolveResult } from './registerFont';
@@ -30,10 +31,11 @@ export interface GlyphMetrics {
 }
 
 /** A canvas face that cannot measure a code point reports no advance and no
- *  ink for it, which is its only way to say it has no glyph. A glyph with ink
- *  has no width until its bake lands, and says so with a negative page. */
+ *  ink for it, which is its only way to say it has no glyph, and exactly how
+ *  it serves a default-ignorable one. A glyph with ink has no width until its
+ *  bake lands, and says so with a negative page. */
 export function usableGlyph(glyph: BmFontChar): boolean {
-  return glyph.xadvance > 0 || glyph.width > 0 || glyph.page < 0;
+  return glyph.xadvance > 0 || glyph.width > 0 || glyph.page < 0 || isDefaultIgnorable(glyph.id);
 }
 
 /** Reads through to `font` rather than copying: the canvas tier measures a

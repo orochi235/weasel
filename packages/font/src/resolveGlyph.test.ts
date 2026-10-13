@@ -12,6 +12,7 @@ import { glyphIn, resolveGlyph } from './resolveGlyph';
 
 const MISSING = 0xe000;
 const MARK = 0x0301;
+const JOINER = 0x200d;
 
 beforeEach(() => {
   _resetFontRegistryForTests();
@@ -21,7 +22,7 @@ beforeEach(() => {
   __setGlyphRasterizerForTests({
     faceMetrics: () => ({ ascent: 40, descent: 8 }),
     rasterize: (_f, _w, _s, cp) => {
-      if (cp === MISSING) return { width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance: 0 };
+      if (cp === MISSING || cp === JOINER) return { width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance: 0 };
       const advance = cp === MARK ? 0 : 22;
       return { width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255), left: -8, top: 26, advance };
     },
@@ -85,6 +86,11 @@ describe('glyphIn', () => {
     expect(glyphIn(resolved, 65)).toMatchObject({ advance: 22, font: resolved.dynamicFace!.font });
   });
 
+  it('finds a default-ignorable code point a canvas face serves as nothing', () => {
+    registerCanvasFont('Dyn');
+    expect(glyphIn(resolveFontVariant('Dyn', 400, 'normal'), JOINER)).toMatchObject({ advance: 0 });
+  });
+
   it('finds a zero-advance glyph still waiting for its bake', () => {
     registerCanvasFont('Dyn');
     resetBakeBudget(0);
@@ -107,6 +113,16 @@ describe('resolveGlyph', () => {
     const resolved = resolveFontVariant('inter', 400, 'normal');
     expect(resolveGlyph(resolved, 'inter', 400, 'normal', 65)!.resolved).toBe(resolved);
     expect(resolveGlyph(resolved, 'inter', 400, 'normal', 0x2014)!.resolved.source).toBe('canvas');
+  });
+
+  it('does not warn for a default-ignorable code point the dynamic tier serves as nothing', async () => {
+    await registerTestFont('inter');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const resolved = resolveFontVariant('inter', 400, 'normal');
+    expect(resolveGlyph(resolved, 'inter', 400, 'normal', JOINER)!.resolved.source).toBe('canvas');
+    expect(resolveGlyph(resolved, 'inter', 400, 'normal', MISSING)).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('U+E000');
   });
 
   it('warns once per code point for a miss, and not at all when told not to', async () => {
