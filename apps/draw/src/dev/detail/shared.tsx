@@ -2,12 +2,7 @@ import { Badge, Button, Code, type BadgeProps } from '@weasel-js/ui';
 import { Fragment } from 'react';
 import s from '../RegistryInspector.module.css';
 import { BUNDLE_BADGE_PROPS, KIND_BADGE_PROPS } from '../badgeTokens';
-import type {
-  ActionEntry,
-  ToolEntry,
-  TreeCategoryNode,
-  TreeEntry
-} from '../registryData';
+import type { ActionEntry, ToolEntry, TreeCategoryNode, TreeEntry } from '../registryEntries';
 
 /** Minimal inline-markdown renderer — splits on backtick-delimited code
  *  spans and wraps each in <code>. No other markdown features. Used by every

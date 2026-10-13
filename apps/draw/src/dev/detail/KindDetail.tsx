@@ -3,11 +3,7 @@ import traitSchemas from 'virtual:weasel-trait-schemas';
 import { ToolIcon } from '../../ui/ToolIcon';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
-import type {
-  PropertiesKindEntry,
-  RoutingKindEntry,
-  ShapeKindEntry
-} from '../registryData';
+import type { PropertiesKindEntry, RoutingKindEntry, ShapeKindEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
 import { collectOpFactoriesTargeting } from './OpDetail';
 import { InlineMarkdown, Jsdoc, EntryLink, KindBadge, type Props } from './shared';

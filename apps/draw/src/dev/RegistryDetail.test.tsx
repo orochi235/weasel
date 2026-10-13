@@ -3,7 +3,8 @@ import { vi } from 'vitest';
 import { keySpecFromKey } from '@weasel-js/ui';
 import { RegistryDetail } from './RegistryDetail';
 import { RouteBadge } from './detail/RouteBadge';
-import { collectBundles, type ActionEntry, type TreeEntry } from './registryData';
+import { collectBundles } from './registryData';
+import type { ActionEntry, TreeEntry } from './registryEntries';
 
 describe('RegistryDetail', () => {
   it('renders a Tool entry with id and route signatures', () => {

@@ -3,9 +3,7 @@ import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import { TOKEN_SETS, type TokenSet } from '../badgeTokens';
-import type {
-  MetaEntry
-} from '../registryData';
+import type { MetaEntry } from '../registryEntries';
 import { RouteBadge } from './RouteBadge';
 import { InlineMarkdown } from './shared';
 

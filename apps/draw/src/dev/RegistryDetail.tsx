@@ -9,12 +9,8 @@ import { OpFactoryDetail, OpKindDetail } from './detail/OpDetail';
 import { GroupDetail, ModifierSetDetail, RouteDetail, RouteTargetDetail, SlotDetail } from './detail/RouteDetail';
 import { ToolDetail } from './detail/ToolDetail';
 import type { Props } from './detail/shared';
-import type {
-  ActionEntry,
-  ToolEntry,
-  TreeEntry
-} from './registryData';
-import { GESTURE_CHANNEL_KEYS, parseRoute, PHASE_OUTPUT_KEYS } from './registryData';
+import { parseRoute } from './registryData';
+import { type ActionEntry, type ToolEntry, type TreeEntry, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS } from './registryEntries';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
 void parseRoute;

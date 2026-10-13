@@ -1,8 +1,6 @@
 import { Code } from '@weasel-js/ui';
 import s from '../RegistryInspector.module.css';
-import type {
-  CallbackRef, CallbackSource
-} from '../registryData';
+import type { CallbackRef, CallbackSource } from '../registryEntries';
 
 /** Renders a list of source-linked callbacks as `vscode://file/...` anchors.
  *  Quiet (renders nothing) when the list is empty — the dev-only Vite

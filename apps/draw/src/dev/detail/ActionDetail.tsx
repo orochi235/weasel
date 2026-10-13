@@ -4,10 +4,7 @@ import { Badge, Code, DataGrid, DetailList, DetailRow, KeySequence, keySpecsFrom
 import { Fragment } from 'react';
 import s from '../RegistryInspector.module.css';
 import { BOOLEAN_BADGE_PROPS } from '../badgeTokens';
-import type {
-  ActionEntry,
-  ToolEntry
-} from '../registryData';
+import type { ActionEntry, ToolEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
 import { RouteBadge } from './RouteBadge';
 import { Jsdoc, EntryLink, type Props } from './shared';

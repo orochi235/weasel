@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Input, SearchIcon, Tree, filterTree, treeBranchIds, type TreeNode } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
-import type { TreeCategoryNode, TreeEntry } from './registryData';
+import type { TreeCategoryNode, TreeEntry } from './registryEntries';
 
 interface Props {
   nodes: readonly TreeCategoryNode[];

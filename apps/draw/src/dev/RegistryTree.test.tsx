@@ -2,7 +2,7 @@ import { Profiler } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import { RegistryTree } from './RegistryTree';
-import type { ToolSurface, TreeCategoryNode } from './registryData';
+import type { ToolSurface, TreeCategoryNode } from './registryEntries';
 
 const EMPTY_SURFACE: ToolSurface = {
   gestures: {

@@ -5,25 +5,8 @@ import { DevShell } from './DevShell';
 import { RegistryTree } from './RegistryTree';
 import { RegistryDetail } from './RegistryDetail';
 import { RegistryProbe, type RegistrySnapshot } from './registryProbe';
-import {
-  collectBundles,
-  collectGestures,
-  collectGroups,
-  countForEntry,
-  collectIcons,
-  collectMeta,
-  collectModifierSets,
-  collectRoutingTrait,
-  collectPropertiesTrait,
-  collectOpKinds,
-  collectPhaseOutputs,
-  collectRoutes,
-  collectRouteTargets,
-  collectShapeTrait,
-  collectSlots,
-  type TreeCategoryNode,
-  type TreeEntry,
-} from './registryData';
+import { collectBundles, collectGestures, collectGroups, countForEntry, collectIcons, collectMeta, collectModifierSets, collectRoutingTrait, collectPropertiesTrait, collectOpKinds, collectPhaseOutputs, collectRoutes, collectRouteTargets, collectShapeTrait, collectSlots } from './registryData';
+import type { TreeCategoryNode, TreeEntry } from './registryEntries';
 
 const BUNDLE_OPTIONS = [
   { value: 'all', label: 'All bundles' },

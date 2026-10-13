@@ -2,11 +2,8 @@ import { formatPhaseAtom } from '@weasel-js/core/routing';
 import { Badge, Button, Code, DataGrid, DetailList, DetailRow, GestureRoute, KeySequence, keySpecsFromShortcut, type BadgeProps } from '@weasel-js/ui';
 import s from '../RegistryInspector.module.css';
 import { GESTURE_BADGE_PROPS } from '../badgeTokens';
-import type {
-  ToolEntry,
-  ToolSurface
-} from '../registryData';
-import { collectBundles, GESTURE_CHANNEL_KEYS, parseRoute, PHASE_OUTPUT_KEYS } from '../registryData';
+import { collectBundles, parseRoute } from '../registryData';
+import { type ToolEntry, type ToolSurface, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
 import { hotkeyTriggerToKeySpec } from './RouteBadge';
 import { BundleBadge, Jsdoc, Absent, EntryLink, type Props, Wildcardable } from './shared';

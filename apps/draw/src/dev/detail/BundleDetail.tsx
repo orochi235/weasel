@@ -1,10 +1,7 @@
 import { Badge, Button, Code, DataGrid, DetailList, DetailRow, KeySequence, keySpecsFromShortcut, type DataGridColumn } from '@weasel-js/ui';
 import s from '../RegistryInspector.module.css';
-import type {
-  BundleEntry,
-  ToolEntry
-} from '../registryData';
 import { collectBundles } from '../registryData';
+import type { BundleEntry, ToolEntry } from '../registryEntries';
 import { BundleBadge, type Props } from './shared';
 
 export type BundleMemberRow = { id: string; tool: ToolEntry | undefined };

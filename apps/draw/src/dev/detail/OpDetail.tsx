@@ -3,10 +3,7 @@ import { Code, DetailList, DetailRow } from '@weasel-js/ui';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
-import type {
-  OpFactoryEntry,
-  OpKindEntry
-} from '../registryData';
+import type { OpFactoryEntry, OpKindEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
 import { KindBadge, Jsdoc, type Props } from './shared';
 import { SourceLink } from './sourceLinks';

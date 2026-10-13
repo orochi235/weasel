@@ -1,8 +1,6 @@
 import { Code, DetailList, DetailRow } from '@weasel-js/ui';
 import s from '../RegistryInspector.module.css';
-import type {
-  IconEntry
-} from '../registryData';
+import type { IconEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
 import { Jsdoc } from './shared';
 import { SourceLink } from './sourceLinks';

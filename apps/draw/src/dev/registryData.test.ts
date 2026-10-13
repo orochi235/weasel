@@ -1,15 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createElement, type ReactNode } from 'react';
-import {
-  collectIcons,
-  collectBundles,
-  collectRoutingTrait,
-  collectPropertiesTrait,
-  collectOpFactories,
-  collectOpKinds,
-  collectShapeTrait,
-  type ActionEntry,
-} from './registryData';
+import { collectIcons, collectBundles, collectRoutingTrait, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
+import type { ActionEntry } from './registryEntries';
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, defaultNodeProperties, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 

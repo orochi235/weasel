@@ -17,7 +17,7 @@ import {
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
-import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
+import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 
 export interface RegistrySnapshot {

@@ -2,15 +2,8 @@ import { canonicalModifiers, describeRoute, describeRouteParts, formatPhaseAtom,
 import { Code, DataGrid, DetailList, DetailRow, GestureRoute } from '@weasel-js/ui';
 import { Fragment, type ReactNode } from 'react';
 import s from '../RegistryInspector.module.css';
-import type {
-  ActionEntry,
-  GroupEntry,
-  ModifierSetEntry,
-  RouteEntry, RouteTargetEntry,
-  SlotEntry,
-  ToolEntry
-} from '../registryData';
 import { parseRoute } from '../registryData';
+import type { ActionEntry, GroupEntry, ModifierSetEntry, RouteEntry, RouteTargetEntry, SlotEntry, ToolEntry } from '../registryEntries';
 import { mergedToolColumn, toolNameColumn } from './GestureDetail';
 import { RouteBadge } from './RouteBadge';
 import { EntryLink, InlineMarkdown, type Props } from './shared';

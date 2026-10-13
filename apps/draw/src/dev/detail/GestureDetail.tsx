@@ -3,11 +3,7 @@ import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import { GESTURE_BADGE_PROPS } from '../badgeTokens';
-import type {
-  ActionEntry,
-  GestureEntry, PhaseOutputEntry,
-  ToolEntry
-} from '../registryData';
+import type { ActionEntry, GestureEntry, PhaseOutputEntry, ToolEntry } from '../registryEntries';
 import { describeGestureSpec } from './ActionDetail';
 import { EntryLink, InlineMarkdown, type Props } from './shared';
 
