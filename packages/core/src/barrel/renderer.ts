@@ -125,11 +125,11 @@ export type {
 export { createPaintedCursorLayer, PAINTED_CURSOR_LAYER_ID } from '../canvas/paintedCursorLayer';
 export type {
   LayersMap,
-  SceneSlotConfig,
   SelectionOverlaySlotConfig,
   LayerSlotValue,
   StandardSlotConfig,
-} from '../canvas/Canvas';
+} from '../canvas/layerSlots';
+export type { SceneSlotConfig } from '../canvas/buildSceneLayer';
 export type { BuiltinToolId, Feature } from '../canvas/SceneCanvas';
 export type { BaseFeature, CompositeFeature } from '../canvas/SceneCanvas/features';
 export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from '../canvas/SceneCanvas';

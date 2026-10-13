@@ -23,7 +23,7 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 1022,
+    "lines": 957,
     "longestFunction": 584
   },
   "packages/core/src/canvas/CanvasView.tsx": {

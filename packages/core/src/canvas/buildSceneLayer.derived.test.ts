@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { PATH_L, PATH_M, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { buildSceneLayer } from './Canvas';
+import { buildSceneLayer } from './buildSceneLayer';
 import type { NodePaintCtx } from './NodeShape';
 
 type Pose = { x: number; y: number; width: number; height: number };

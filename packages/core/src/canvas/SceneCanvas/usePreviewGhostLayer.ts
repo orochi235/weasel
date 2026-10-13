@@ -12,7 +12,7 @@ import { useEffect, useMemo, useReducer } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { type DrawCommand, type GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import type { LayersMap } from '../Canvas';
+import type { LayersMap } from '../layerSlots';
 import type { Node, Scene } from 'core/scene/types';
 import { findShapeSilhouette } from '../NodeShape';
 import { wrapWithPoseRotation } from '../poseRotation';

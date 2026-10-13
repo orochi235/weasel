@@ -10,7 +10,7 @@ import { useRef, useEffect } from 'react';
 import type React from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasProps } from './SceneCanvas';
-import type { CanvasHelpers } from './Canvas';
+import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { never } from 'features/chrome-caps';

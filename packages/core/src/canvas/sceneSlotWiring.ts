@@ -7,7 +7,7 @@
  * colors, which live in an animator. `<SceneCanvas>` folds them into the slot
  * here; `buildSceneViewCommands` does the same for the headless walk.
  */
-import type { SceneSlotConfig } from './Canvas';
+import type { SceneSlotConfig } from './buildSceneLayer';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';

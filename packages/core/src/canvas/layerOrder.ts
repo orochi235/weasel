@@ -1,6 +1,5 @@
 import type { RenderLayer } from '../core/layers/render';
-import type { LayerSlotValue } from './Canvas';
-import { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
+import { STANDARD_SLOTS, isCustomEntry, type LayerSlotValue } from './layerSlots';
 import type { OverlayPosition } from '@weasel-js/routing';
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);

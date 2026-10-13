@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildSceneLayer } from './Canvas';
+import { buildSceneLayer } from './buildSceneLayer';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';

@@ -3,7 +3,7 @@ import {
   createScene, defaultDrawOne, getNodeShapes, RIGID_POSE_COMPOSITION, sceneToAdapter,
   type DrawCommand, type RectPose, type View,
 } from '@weasel-js/core';
-import { buildSceneLayer } from 'canvas/Canvas';
+import { buildSceneLayer } from 'canvas/buildSceneLayer';
 import { mergeLayersWithDefaults } from 'canvas/SceneCanvas';
 import { WORLD } from '../platformer/worldLevel';
 import { freshGame, POLE } from '../platformer/world';

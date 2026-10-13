@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSceneLayer, buildSceneLayers } from './Canvas';
+import { buildSceneLayer, buildSceneLayers } from './buildSceneLayer';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';

@@ -7,8 +7,7 @@ import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
-import type { BuiltinShapeToolId } from 'core/shapeKinds';
-import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
+import { KIT_SHAPE_KINDS, type BuiltinShapeToolId } from 'core/shapeKinds';
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
 import type {
@@ -33,9 +32,10 @@ import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugConfig } from '../../debug/types';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
 import type { DrawCommand, ShaderProgramHandle } from '@weasel-js/renderer';
-import type { Tool } from '../../tools/overlayBinding';
-import type { ToolsApi } from '../../tools/overlayBinding';
-import type { CanvasProps, LayersMap, SceneSlotConfig } from '../Canvas';
+import type { Tool, ToolsApi } from '../../tools/overlayBinding';
+import type { SceneSlotConfig } from '../buildSceneLayer';
+import type { CanvasProps } from '../Canvas';
+import type { LayersMap } from '../layerSlots';
 import type { CanvasViewProps } from '../CanvasView';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
 import type {

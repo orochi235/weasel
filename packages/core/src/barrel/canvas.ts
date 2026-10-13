@@ -63,14 +63,9 @@ export {
   inferredNodeProperties,
   rotationDegreesUnit,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
-export type {
-  CanvasProps,
-  CanvasHelpers,
-  CanvasViewHelpers,
-  CanvasSurfaceHelpers,
-  StandardSlotName,
-  CustomLayerEntry,
-} from '../canvas/Canvas';
+export type { CanvasProps } from '../canvas/Canvas';
+export type { CanvasHelpers, CanvasViewHelpers, CanvasSurfaceHelpers } from '../canvas/useViewHelpers';
+export type { StandardSlotName, CustomLayerEntry } from '../canvas/layerSlots';
 export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from '../canvas/canvasExtension';
 // The in-flight gesture seam behind `CanvasHelpers.getGestureBounds()` /
 // `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; bare
