@@ -200,6 +200,90 @@ describe('a removable badge with an action', () => {
     }
   }
 
+  const HIT_SHAPES: readonly BadgeShape[] = [...SHAPES, 'hexagon', 'shield'];
+  const hits = (el: Element | null, target: Element) => el !== null && target.contains(el);
+
+  for (const shape of HIT_SHAPES) {
+    for (const size of SIZES) {
+      test(`${shape} ${size}: the label takes the padding and the gap, the remove control only itself`, () => {
+        const { clickable, link } = row(shape, size);
+        for (const badge of [clickable, link]) {
+          const target = badge.querySelector('a, [role="button"]')!;
+          const removeEl = badge.querySelector('button')!;
+          const box = badge.getBoundingClientRect();
+          const text = textBox(badge, 'label');
+          const remove = removeEl.getBoundingClientRect();
+          const midY = (text.top + text.bottom) / 2;
+          if (text.left - box.left >= 1) {
+            expect(hits(document.elementFromPoint((box.left + text.left) / 2, midY), target), 'left padding').toBe(true);
+          }
+          if (text.top - box.top >= 1) {
+            expect(hits(document.elementFromPoint((text.left + text.right) / 2, (box.top + text.top) / 2), target), 'top padding').toBe(true);
+          }
+          expect(hits(document.elementFromPoint(remove.left - 1, (remove.top + remove.bottom) / 2), target), 'gap').toBe(true);
+          expect(hits(document.elementFromPoint((remove.left + remove.right) / 2, (remove.top + remove.bottom) / 2), removeEl), 'remove').toBe(true);
+        }
+      });
+    }
+  }
+
+  for (const shape of ['pill', 'square', 'notched'] as const) {
+    test(`${shape}: a click in the padding acts and does not remove`, async () => {
+      const calls: string[] = [];
+      const { container } = render(
+        <Surface mode="light">
+          <p>
+            <Badge shape={shape} onClick={() => calls.push('click')} onRemove={() => calls.push('remove')}>label</Badge>{' '}
+            <Badge shape={shape} href="#x" onClick={() => calls.push('follow')} onRemove={() => calls.push('remove')}>label</Badge>
+          </p>
+        </Surface>,
+      );
+      for (const badge of container.querySelectorAll<HTMLElement>('[data-status]')) {
+        await userEvent.click(badge, { position: { x: 1.5, y: badge.getBoundingClientRect().height / 2 } });
+      }
+      expect(calls).toEqual(['click', 'follow']);
+    });
+  }
+
+  // An absolutely positioned box inside a wrapped inline spans from the first fragment's start to
+  // the last one's end, which is not the badge, so pill and plain grow the label's own inline box.
+  for (const breakStyle of ['slice', 'clone'] as const) {
+    test(`a wrapped pill (${breakStyle}) takes clicks on its fragments and nowhere else`, () => {
+      const { container } = render(
+        <Surface mode="light">
+          <p style={{ width: 130 }}>
+            xx xx <Badge breakStyle={breakStyle} onRemove={() => {}}>alpha beta gamma delta</Badge>
+          </p>
+          <p style={{ width: 130 }}>
+            xx xx <Badge breakStyle={breakStyle} onClick={() => {}} onRemove={() => {}}>alpha beta gamma delta</Badge>
+          </p>
+        </Surface>,
+      );
+      const [removable, clickable] = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+      const target = clickable.querySelector('[role="button"]')!;
+      const frags = [...clickable.getClientRects()];
+      expect(frags.length).toBeGreaterThan(1);
+      // The label's padding must not move anything.
+      const want = [...removable.getClientRects()];
+      const top = want[0].top - frags[0].top;
+      expect(frags.map((f) => [f.left, f.top + top, f.width, f.height])).toEqual(want.map((f) => [f.left, f.top, f.width, f.height]));
+
+      const [first, second] = frags;
+      const midY = (f: DOMRect) => (f.top + f.bottom) / 2;
+      expect(hits(document.elementFromPoint(first.left + 2, midY(first)), target), 'first fragment, left padding').toBe(true);
+      expect(hits(document.elementFromPoint(first.left + 20, first.top + 1.5), target), 'first fragment, top padding').toBe(true);
+      expect(hits(document.elementFromPoint(second.left + 20, second.top + 1.5), target), 'second fragment, top padding').toBe(true);
+      if (breakStyle === 'clone') {
+        expect(hits(document.elementFromPoint(second.left + 2, midY(second)), target), 'second fragment, left padding').toBe(true);
+      }
+      // Left of the first fragment, on its line: inside the badge's bounding box, outside the badge.
+      expect(first.left).toBeGreaterThan(second.left + 4);
+      expect(hits(document.elementFromPoint(second.left + 2, midY(first)), clickable), 'beside the first fragment').toBe(false);
+      const last = frags[frags.length - 1];
+      expect(hits(document.elementFromPoint(last.right + 4, midY(last)), clickable), 'after the last fragment').toBe(false);
+    });
+  }
+
   test('a linked label keeps the badge\'s ink and takes no underline', () => {
     const { plain, link } = row('pill', 'sm');
     const anchor = link.querySelector('a')!;

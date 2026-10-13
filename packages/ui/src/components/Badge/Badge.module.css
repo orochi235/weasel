@@ -170,6 +170,36 @@ a.badge {
 }
 .target:is(a, [role='button']) { cursor: pointer; }
 
+/* The label takes a pointer over the whole badge but the remove control. A shape drawn as one
+   box stretches the label over the root: unpositioned, `.content` keeps its z-index as a flex
+   item and stops containing the label's absolute box. */
+.badge:not([data-shape='pill'], [data-shape='plain']) > .content:has(> .target) { position: static; }
+.badge:not([data-shape='pill'], [data-shape='plain']) .target::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+/* Pill and plain are inline and can wrap, where an absolute box spans from the first fragment's
+   start to the last one's end rather than covering the fragments. There the label's own inline
+   box grows into the padding, fragment by fragment. */
+.badge:is([data-shape='pill'], [data-shape='plain']) :is(.content, .target) {
+  -webkit-box-decoration-break: inherit;
+  box-decoration-break: inherit;
+}
+.badge:is([data-shape='pill'], [data-shape='plain']) .target {
+  --_hit-gap: var(--wzl-space-1);
+  padding-right: var(--_hit-gap);
+  margin-right: calc(-1 * var(--_hit-gap));
+}
+.badge[data-shape='pill'] .target {
+  --_hit-left: calc(var(--badge-pad-x, 6px) + var(--badge-inset-left, 0px) + var(--badge-stroke-width, 1px));
+  padding-block:
+    calc(var(--badge-pad-y, 1px) + var(--badge-inset-top, 0px) + var(--badge-stroke-width, 1px))
+    calc(var(--badge-pad-y, 1px) + var(--badge-inset-bottom, 0px) + var(--badge-stroke-width, 1px));
+  padding-left: var(--_hit-left);
+  margin-left: calc(-1 * var(--_hit-left));
+}
+
 /* Mixed from what the edge is made of: a property that reads itself is a cycle, and resolves to nothing. */
 button.badge:hover,
 a.badge:hover,
@@ -183,6 +213,8 @@ a.badge:hover,
 }
 
 .remove {
+  /* Above the label's stretched hit area. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
