@@ -22,6 +22,7 @@ import { startOffsetTween } from './offsetTween';
 import { startPhysics } from './physicsAnimation';
 import { timeScaleOf, type Table } from './table';
 import { startTween } from './tweenAnimation';
+import type { Emitter } from '@weasel-js/registry';
 
 /** What {@link createAnimatorApi} needs of the animator around it. */
 export interface ApiHost {
@@ -33,7 +34,7 @@ export interface ApiHost {
   ticking(): boolean;
   /** Runs a callback once the frame's ticks are done. */
   afterTicks(cb: () => void): void;
-  subscribers: Set<() => void>;
+  subscribers: Pick<Emitter, 'subscribe'>;
   colorOverrides: ColorOverrideRegistry;
   /** Stops the frame loop, once everything is canceled and its targets are shown at rest. */
   halt(): void;
@@ -146,10 +147,7 @@ export function createAnimatorApi(host: ApiHost): Animator {
       )) as Animator['stagger'],
     timeline: (o: TimelineOptions) => startTimeline(host, o),
     colorOverrides: host.colorOverrides,
-    onTick: (cb) => {
-      host.subscribers.add(cb);
-      return () => { host.subscribers.delete(cb); };
-    },
+    onTick: (cb) => host.subscribers.subscribe(cb),
     keepAlive: () => {
       const sup = createSupervisor({ kind: 'keepAlive' });
       return () => sup.cancel();

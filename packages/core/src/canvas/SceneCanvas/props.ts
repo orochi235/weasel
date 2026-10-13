@@ -35,7 +35,7 @@ import type { DrawCommand, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { Tool, ToolsApi } from '../../tools/overlayBinding';
 import type { SceneSlotConfig } from '../buildSceneLayer';
 import type { CanvasProps } from '../Canvas';
-import type { LayersMap } from '../layerSlots';
+import { isCustomEntry, type LayersMap } from '../layerSlots';
 import type { CanvasViewProps } from '../CanvasView';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
 import type {
@@ -117,8 +117,8 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
 
   if (!('scene' in user)) {
     result.scene = defaults.scene;
-  } else if (user.scene === null) {
-    result.scene = null;
+  } else if (user.scene === null || isCustomEntry(user.scene)) {
+    result.scene = user.scene;
   } else {
     const scene = { ...defaults.scene, ...user.scene };
     result.scene = user.scene && 'paintBounds' in user.scene
@@ -128,8 +128,8 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
 
   if (!('selectionOverlay' in user)) {
     result.selectionOverlay = defaults.selectionOverlay;
-  } else if (user.selectionOverlay === null) {
-    result.selectionOverlay = null;
+  } else if (user.selectionOverlay === null || isCustomEntry(user.selectionOverlay)) {
+    result.selectionOverlay = user.selectionOverlay;
   } else {
     result.selectionOverlay = { ...defaults.selectionOverlay, ...user.selectionOverlay };
   }

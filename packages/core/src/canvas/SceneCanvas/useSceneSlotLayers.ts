@@ -30,7 +30,7 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
 }): {
   /** The scene-wired config, for whatever else paints with its `drawOne`. */
   config: SceneSlot<TData, TLayer, TPose>;
-  /** Absent when the slot is empty or carries no `drawOne`. */
+  /** Absent when the slot is empty or carries no `drawOne`; a pre-built layer is the whole slot. */
   layers: SceneSlotLayers | undefined;
 } {
   const { slot, scene, adapter, alphaFor, colorOverrides, boundsOf, previewIds } = args;
@@ -47,7 +47,8 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
 
   const sceneLayersKey = useSceneLayerList(adapter);
   const layers = useMemo<SceneSlotLayers | undefined>(() => {
-    if (!config || isCustomEntry(config) || !config.drawOne) return undefined;
+    if (isCustomEntry(config)) return { layers: [{ key: 'scene', layer: config.layer }] };
+    if (!config || !config.drawOne) return undefined;
     return {
       layers: buildSceneLayers(config, adapter, boundsOf, () => {
         const ids = new Set(previewIds() ?? []);

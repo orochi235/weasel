@@ -1,4 +1,5 @@
 import type { Skin } from '@weasel-js/animator';
+import { createEmitter } from '@weasel-js/registry';
 import type { NodeId } from 'core/scene/types';
 import type { PaintedSkins } from '../../../animation/rig/rigNode';
 
@@ -24,24 +25,20 @@ const NONE: ReadonlyMap<NodeId, Skin> = new Map();
 export function createRigEditState(): RigEditState {
   let active: string | null = null;
   let painted = NONE;
-  const listeners = new Set<() => void>();
-  const tell = (): void => { for (const fn of [...listeners]) fn(); };
+  const changed = createEmitter();
   return {
     active: () => active,
     setActive(joint) {
       if (joint === active) return;
       active = joint;
-      tell();
+      changed.emit();
     },
     painted: () => painted,
     paint(next) {
       if ((next ?? NONE) === painted) return;
       painted = next ?? NONE;
-      tell();
+      changed.emit();
     },
-    listen(fn) {
-      listeners.add(fn);
-      return () => { listeners.delete(fn); };
-    },
+    listen: changed.subscribe,
   };
 }

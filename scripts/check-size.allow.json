@@ -111,7 +111,7 @@
     "longestFunction": 209
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
-    "longestFunction": 192
+    "longestFunction": 188
   },
   "packages/d3/src/bind.ts": {
     "longestFunction": 140

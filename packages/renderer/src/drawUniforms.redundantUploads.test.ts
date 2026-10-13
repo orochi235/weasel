@@ -52,8 +52,10 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
     // Identity for the first rect, a real matrix for the second.
     const tinted = new Array(20).fill(0);
     tinted[0] = 0.5; tinted[6] = 0.5; tinted[12] = 0.5; tinted[18] = 1;
-    // Images, whose color only the shader can map: a solid's is mapped on the
-    // CPU and never moves the uniform.
+    tinted[4] = 0.25;
+    // Images under a bias, which only the shader can map: a solid's color, and
+    // an image's under a plain scale, is mapped on the CPU and never moves the
+    // uniform.
     const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const img = (x: number): DrawCommand => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 });
     r.render([

@@ -71,15 +71,9 @@ export function offenders(files: readonly { path: string; source: string }[], ru
   return out;
 }
 
-/**
- * Foundations is the token showcase: its literals are the subject, not a lapse.
- * The site's command palette is held out until its literals move; docs/TODO.md has the entry.
- */
+/** Foundations is the token showcase: its literals are the subject, not a lapse. */
 export const isStylesheet = (p: string) =>
-  /\.(css|less)$/.test(p) &&
-  !p.includes('.stories.') &&
-  !p.includes('/Foundations/') &&
-  !p.includes('apps/site/CommandPalette/');
+  /\.(css|less)$/.test(p) && !p.includes('.stories.') && !p.includes('/Foundations/');
 
 if (process.argv[1]?.endsWith('check-spacing.ts')) {
   const root = join(import.meta.dirname, '..');

@@ -8,6 +8,7 @@ import type { ActiveAnimation, AnimationContext } from './context';
 import { createFrame, type AnimatorClock } from './frame';
 import { createTargetBook } from './offsets';
 import { createTable } from './table';
+import { createEmitter } from '@weasel-js/registry';
 
 /** What {@link createAnimatorCore} needs of whoever hosts it: a clock and a frame loop. */
 export interface CoreHost {
@@ -37,7 +38,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     return row ? { group: row.table, tag: row.index } : undefined;
   });
   const afterTicks: (() => void)[] = [];
-  const subscribers = new Set<() => void>();
+  const subscribers = createEmitter();
   let nextId = 1;
   const seedClock = (): void => { if (clock.frameT == null) clock.frameT = host.now(); };
 

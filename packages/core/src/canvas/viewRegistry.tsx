@@ -15,6 +15,7 @@ import type { View } from 'core/viewport/view';
 import type { ViewportLayer } from 'features/viewports/viewportLayer';
 import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
 import { createViewResolver, type ViewResolver } from 'features/viewports/viewResolver';
+import { createEmitter } from '@weasel-js/registry';
 
 /**
  * What a view needs from the surface hosting it.
@@ -115,13 +116,13 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
   const entriesRef = useRef(new Map<ViewRegistration, number>());
   const seqRef = useRef(0);
   const versionRef = useRef(0);
-  const listenersRef = useRef(new Set<() => void>());
   const surfaceRef = useRef<SurfaceHandle | null>(null);
 
   const registry = useMemo<ViewRegistry>(() => {
+    const listeners = createEmitter();
     const changed = (): void => {
       versionRef.current++;
-      for (const fn of listenersRef.current) fn();
+      listeners.emit();
     };
     const ordered = (): ViewRegistration[] => [...entriesRef.current.keys()].sort((a, b) => (
       a.order - b.order || entriesRef.current.get(a)! - entriesRef.current.get(b)!
@@ -146,10 +147,7 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
       },
       list: ordered,
       getVersion: () => versionRef.current,
-      subscribe: (fn) => {
-        listenersRef.current.add(fn);
-        return () => { listenersRef.current.delete(fn); };
-      },
+      subscribe: listeners.subscribe,
       surface: () => surfaceRef.current,
       attachSurface: (handle) => {
         surfaceRef.current = handle;

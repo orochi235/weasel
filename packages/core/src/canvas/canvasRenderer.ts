@@ -12,6 +12,7 @@ import { viewToMat3 } from '@weasel-js/geom';
 import type { ShaderProgramHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
+import { createEmitter } from '@weasel-js/registry';
 
 /** The live renderers painting into each element, across every lease. */
 const TENANTS: WeakMap<HTMLCanvasElement, Set<WeaselRenderer>> = new WeakMap();
@@ -125,7 +126,7 @@ function free(held: Held): void {
 /** Hold the renderer of the canvas a surface paints into, until released. */
 export function leaseCanvasRenderer(): CanvasRendererLease {
   let held: Held | null = null;
-  const restoredSubs = new Set<() => void>();
+  const restored = createEmitter();
   const bind = (canvas: HTMLCanvasElement, size: CanvasPaintSize, options: CanvasPaintOptions = {}): WeaselRenderer | null => {
     const { width, height } = size;
     const dpr = size.dpr ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
@@ -166,7 +167,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
         onLost: () => { mine.lost = true; },
         onRestored: () => {
           mine.lost = false;
-          for (const fn of [...restoredSubs]) fn();
+          restored.emit();
         },
       };
       canvas.addEventListener('webglcontextlost', held.onLost);
@@ -216,10 +217,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       renderer.render(commands, viewToMat3(view), options?.render);
       return true;
     },
-    subscribeRestored(fn) {
-      restoredSubs.add(fn);
-      return () => { restoredSubs.delete(fn); };
-    },
+    subscribeRestored: restored.subscribe,
     release() {
       if (held) free(held);
       held = null;

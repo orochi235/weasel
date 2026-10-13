@@ -41,3 +41,33 @@ export function foldColor(
     clamp01(cm[15] * r + cm[16] * g + cm[17] * b + cm[18] * a + cm[19]) * alpha,
   ];
 }
+
+/** Channel scales for a textured quad; the fourth multiplies its alpha after the texel's. */
+export type Tint = readonly [number, number, number, number];
+
+const NO_TINT: Tint = [1, 1, 1, 1];
+const DIAGONAL = [0, 6, 12, 18];
+
+/**
+ * The per-channel scale `cm` amounts to on a texel, or null when the CPU
+ * cannot stand in for the shader.
+ *
+ * It can when the matrix has no bias and nothing off its diagonal, and every
+ * scale is within 0..1: then `clamp(CM * texel)` clamps nothing, and scaling
+ * the vertex color the texel is multiplied by gives the same product under
+ * identity. A scale past 1 does not qualify, because the shader clamps after
+ * the texel and a vertex color cannot.
+ */
+export function textureTint(cm: Float32Array): Tint | null {
+  if (isIdentityColorMatrix(cm)) return NO_TINT;
+  for (let i = 0; i < 20; i++) {
+    const v = cm[i];
+    if (DIAGONAL.includes(i) ? v < 0 || v > 1 : v !== 0) return null;
+  }
+  return [cm[0], cm[6], cm[12], cm[18]];
+}
+
+/** The tint a quad staged into `staged` carries: the live matrix's in a run drawn under identity. */
+export function stagedTint(staged: StagedBatchState, tint: Tint | null): Tint {
+  return staged.foldsAlpha && tint !== null ? tint : NO_TINT;
+}

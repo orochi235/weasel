@@ -3,6 +3,7 @@ import type { Codec } from './codec';
 import type { ActiveAnimation } from './context';
 import type { TargetBook } from './offsets';
 import type { Table } from './table';
+import type { Emitter } from '@weasel-js/registry';
 
 /** The animator's clock: where its frames stand, and how fast they run. */
 export interface AnimatorClock {
@@ -28,7 +29,7 @@ export interface FrameHost {
   /** Supervisor frame callbacks due this frame, run once its ticks are done. */
   afterTicks: (() => void)[];
   /** Told once a frame, after its ticks and its targets are shown. */
-  subscribers: ReadonlySet<() => void>;
+  subscribers: Pick<Emitter, 'emit'>;
   /** Reads each touched target's voices again. */
   reread(): void;
   requestFrame(): void;
@@ -112,10 +113,7 @@ export function createFrame(host: FrameHost): Frame {
       framing = false;
       host.targets.show();
       // After the tick batch, so each subscriber sees the latest color overrides and poses.
-      // An error in one does not suppress the others.
-      for (const sub of host.subscribers) {
-        try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
-      }
+      host.subscribers.emit();
       if (table.awake) {
         host.requestFrame();
         return;

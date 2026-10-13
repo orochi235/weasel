@@ -1,11 +1,13 @@
 /**
- * A solid under a group color matrix is mapped on the CPU and an image is
- * mapped by the shader. Against real WebGL2, both routes have to paint the
- * same pixel, and the solid must not also be mapped by the uniform.
+ * A solid under a group color matrix is mapped on the CPU, and so is an image
+ * under one that only scales channels down; any other image is mapped by the
+ * shader. Against real WebGL2, both routes have to paint the same pixel, and
+ * nothing mapped on the CPU may also be mapped by the uniform.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
+import { colorFolding } from './draw';
 
 const SIZE = 8;
 const ORANGE = [200, 100, 50];
@@ -73,6 +75,33 @@ describe('a group color matrix, in a real context', () => {
     const imageFirst = paint([{ kind: 'group', colorMatrix: MATRIX, children: [img(0), solid(4)] }]);
     expectNear(imageFirst(1, 4), [...MAPPED, 255]);
     expectNear(imageFirst(5, 4), [...MAPPED, 255]);
+  });
+
+  it('paints an image under a matrix that only scales channels down as the shader would', async () => {
+    const image = await createImageBitmap(new ImageData(new Uint8ClampedArray([200, 100, 50, 128]), 1, 1));
+    const scaled = [
+      0.5, 0, 0, 0, 0,
+      0, 0.25, 0, 0, 0,
+      0, 0, 1, 0, 0,
+      0, 0, 0, 0.5, 0,
+    ];
+    const commands: DrawCommand[] = [{
+      kind: 'group', colorMatrix: scaled, alpha: 0.5,
+      children: [{ kind: 'image', image, x: 0, y: 0, w: SIZE, h: SIZE }],
+    }];
+    const tinted = paint(commands)(4, 4);
+    renderer!.dispose();
+    colorFolding.enabled = false;
+    let byShader: number[];
+    try {
+      byShader = paint(commands)(4, 4);
+    } finally {
+      colorFolding.enabled = true;
+    }
+    expectNear(tinted, byShader);
+    // Alpha 128/255 by the matrix's half and the group's half; color premultiplied by it.
+    const a = (128 / 255) * 0.25;
+    expectNear(tinted, [200 * 0.5 * a, 100 * 0.25 * a, 50 * a, 255 * a]);
   });
 
   it('fades a mapped solid by the group alpha once', () => {

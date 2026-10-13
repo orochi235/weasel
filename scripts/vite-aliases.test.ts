@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { workspaceEntries } from './lib/packageEntries.mjs';
+import { tsconfigPaths as generatedPaths } from './lib/tsconfigPaths.mjs';
 import { weaselAliases } from './vite-aliases';
 
 const REPO = resolve(__dirname, '..');
@@ -97,6 +98,17 @@ describe('weaselAliases', () => {
 });
 
 describe('the root tsconfig paths', () => {
+  it('are what `npm run gen:tsconfig-paths` writes', () => {
+    expect(tsconfigPaths()).toEqual(generatedPaths(REPO));
+  });
+
+  it('resolve no subpath an exports map does not publish, as the aliases do not', () => {
+    const paths = tsconfigPaths();
+    expect(viaPaths(paths, '@weasel-js/labkit/lab/Lab')).toBeNull();
+    expect(viaPaths(paths, '@weasel-js/geom/mat3')).toBeNull();
+    expect(viaPaths(paths, '@weasel-js/renderer/draw')).toBeNull();
+  });
+
   it('send every exported entry to the same source file the aliases do', () => {
     const paths = tsconfigPaths();
     const wrong: string[] = [];

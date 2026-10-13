@@ -1238,12 +1238,15 @@ only story runner in the repo.
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`), 16 of it bind and draw;
     no other call in `flushBatch` moves it by more than its noise, about 1.2 us. So what remains is
     the draw count: synthetic bold and an eighth texture still break the run, and so does a color
-    matrix around an image or a gradient. A solid or a glyph under a color matrix has its color
+    matrix around a gradient, or around an image when it does more than scale channels down. A solid or a glyph under a color matrix has its color
     mapped on the CPU (`draw/foldColor.ts`), which paints the same pixel as the shader in headless
     Chromium (`colorMatrixFold.browser.test.ts`) and has not been timed. The specs that break a run
     with a matrix on solid rects (`flush-anatomy`, `clip-cost`, `flush-noise`) turn the mapping off
-    through `colorFolding`, and have not been run since that edit. An image under a diagonal matrix
-    with no bias could be mapped the same way and is not.
+    through `colorFolding`, and have not been run since that edit. An image under a matrix that only
+    scales channels, each by 0 to 1, now rides its vertices the same way (`textureTint`), checked
+    against the shader's pixel in `colorMatrixFold.browser.test.ts` and not timed;
+    `image-quad.spec.ts`'s `unmerged` frame broke its runs with such a matrix, so it now uses a bias,
+    and has not been run since.
   - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
     why a slanted edge cannot be cut). The stencil itself costs about 4.9 us a push and pop, 7.9 at
@@ -1431,31 +1434,23 @@ only story runner in the repo.
   `dependencies`, so a consumer installs one copy and runs another. In the repo, aliases resolve
   both to one source, so no test can see it.
 
-- **(P3) tsconfig `paths` is still kept by hand, and wider than `exports`.**
-  `scripts/vite-aliases.test.ts` fails when the root `paths` sends an exported entry anywhere but
-  where `exports` does. Two things it does not cover. The root `paths` has wildcard keys
-  (`@weasel-js/geom/*`, `guides/*`, `renderer/*`, `labkit/*`, `forge/*`), so `tsc` resolves a
-  subpath no `exports` map publishes that vite refuses. And `packages/core/tsconfig.json` maps ten
-  siblings to source and leaves the others core imports — `animator`, `cursor`, `font`, `paint`,
-  `prefs`, `quantity`, `renderer`, `stroke`, `text`, and `text-dom` — to resolve to their built
-  `dist`; `tsup` reads that file for core's build, so widening it wants a look at what the
-  declaration build then pulls in. Generate both blocks from the module the dev aliases come from
-  (`scripts/lib/packageEntries.mjs`).
+- **(P3) core's tsconfig `paths` is still kept by hand.** The root `paths` is generated from every
+  package's `exports` (`npm run gen:tsconfig-paths`, held current by `scripts/vite-aliases.test.ts`).
+  `packages/core/tsconfig.json` still maps ten siblings to source by hand and leaves the others core
+  imports — `animator`, `cursor`, `font`, `paint`, `prefs`, `quantity`, `renderer`, `stroke`, `text`,
+  and `text-dom` — to resolve to their built `dist`; `tsup` reads that file for core's build, so
+  widening it wants a look at what the declaration build then pulls in. Generate it from
+  `scripts/lib/tsconfigPaths.mjs` too.
 
 - **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
   is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run). Still hand-rolled, each a `Set` and a loop:
   - in packages that already depend on registry: the scene (four loops in `core/scene/scene.ts`),
-    and core's `useSliceTool`, `viewRegistry.tsx`, `canvasRenderer.ts`, `rigEditState.ts`,
-    `useBoneTool.ts`, and `useWeightTool.ts`; animator's `engine/core.ts` and `engine/offsets.ts`.
+    and animator's `timeline/createTimeline.ts`.
   - in packages that do not, where each move adds the dependency: routing's `PointerContext` and
     `longPressState`, history and its journal, `select/store.ts`, storage's records, loupe's
     `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
     `cameraRegistry`, and several in forge.
-
-- **(P3) `check:spacing` exempts a directory that holds no stylesheet.** `isStylesheet` in
-  `scripts/check-spacing.ts` skips `apps/site/CommandPalette/`, which now contains only
-  `useCommandPaletteShortcut.ts`. Drop the exemption and the comment above it.
 
 - **(P3) `SceneCanvasInner` is one 717-line function.** It is most of the 870-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
@@ -1469,15 +1464,9 @@ only story runner in the repo.
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
 
-- **(P3) A pre-built layer in `<SceneCanvas layers>`'s `scene` or `selectionOverlay` slot is not
-  painted.** Read, not run. `mergeLayersWithDefaults` spreads a `{ layer }` entry over the slot's
-  defaults; `useSceneSlotLayers` then builds nothing for the scene slot, and
-  `useSelectionOverlayLayer` builds its own overlay from what is left and never reads `layer`.
-  `LayersMap` types `selectionOverlay` as accepting a `CustomLayerEntry`, so the second one
-  typechecks. Either honor the entry in both hooks or take it out of the type.
-
-- **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
-  together" and `<Canvas>` examples in concepts, and "Custom layers" in extending, pass `adapter` and
-  `selectionMode` to `<SceneCanvas>` and draw with a 2D `ctx.fillStyle`. The "Adapter" and "Gesture"
-  sections of concepts still describe per-action hooks, which `docs/taxonomy.md` contradicts. Each
-  needs rewriting against the current API, not trimming.
+- **(P3) `docs/concepts.md`'s "Adapter" section teaches per-action hooks.** It says every gesture
+  takes an adapter and that one struct is passed "to every hook", and calls `arrayAdapter` the
+  default for new apps; `docs/taxonomy.md`'s own "Adapter" entry lists the same per-action
+  interfaces. Both want rewriting around the scene `<SceneCanvas>` synthesizes an adapter from, once
+  "`arrayAdapter` as the default Canvas adapter" is settled. The examples rewritten 2026-10-13
+  ("Putting it together" in concepts, "Custom layers" in extending) have not been compiled.

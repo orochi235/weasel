@@ -8,21 +8,10 @@ The mental model behind `@weasel-js/core`. Read this before writing code.
 > Consumers use `<SceneCanvas>`, which mounts it.
 
 A single `<canvas>` element wired up: it owns DPR setup, layer composition,
-and the pointer-event router. Drop in an adapter and a `layers` map and you
-get scene rendering plus the chrome slots; selection, picking, the kind
-registry and the scene-aware overlays live in `<SceneCanvas>`.
-
-```tsx
-<Canvas<Rect, Pose>
-  width={W} height={H}
-  adapter={adapter}
-  layers={{
-    scene: { drawOne: (ctx, obj, pose) => { /* draw obj at pose */ } },
-    grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) },
-    selectionOverlay: { handles: true },
-  }}
-/>
-```
+and the pointer-event router. It composes layers that are already built
+(`CanvasLayers`) and knows nothing of a scene; `<SceneCanvas>` builds those
+layers from its `scene` and `layers` props, and selection, picking, the kind
+registry, and the scene-aware overlays live there.
 
 There are no controller-override props.
 Move, resize, rotate, insert and area-select are actions in the Actions
@@ -523,12 +512,18 @@ Same adapter, same op pipeline, same undo history. The split is about
 
 ## Gesture
 
-A **gesture** is a pointer-driven interaction with a start/move/end
-lifecycle. Move, resize, rotate, insert, area-select, clone, and
-edit-anchors are all gestures.
+A **gesture** is a form of input: a click, a drag, a wheel turn, a keystroke,
+a pinch, a hover. It says how input arrives and nothing about what happens
+next. Move, resize, rotate, insert, area-select, clone, and edit-anchors are
+[actions](#action); a binding pairs one with the gesture that drives it, and
+the pair is an [interaction](#interaction). [taxonomy.md](./taxonomy.md#gesture)
+lists every gesture kind.
 
-A **behavior** is a small composable extension that refines the in-flight
-pose and/or supplies commit ops:
+An action a drag drives is *ongoing*: it has a start, a move per frame, and an
+end or a cancel.
+
+A **behavior** is a small composable extension to an ongoing action that
+refines the in-flight pose and/or supplies commit ops:
 
 ```ts
 interface ActionBehavior<TPose, TProposed, TMoveResult> {
@@ -724,30 +719,46 @@ and run on ambient bindings alone.
 ## Putting it together
 
 ```tsx
-const selection = useSelection({ mode: 'multi' });
-const adapter = {
-  ...arrayAdapter<Rect, Pose>({ ref: rectsRef, setItems: setRects, toPose }),
-  ...selection.adapterMethods,
-};
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import { createGridLayer } from '@weasel-js/guides';
 
-// No per-action wiring: `duplicate` (Cmd+D) and `delete` (Backspace/Delete)
-// are kit-standard descriptors, registered by the canvas's `edit` preset.
+type Swatch = { color: string };
 
-return (
-  <SceneCanvas<Rect, Pose>
-    width={W} height={H}
-    adapter={adapter}
-    features={['draw']}
-    selection={selection}
-    selectionMode="multi"
-    layers={{
-      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
-      grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) },
-      selectionOverlay: { handles: true },
-    }}
-  />
-);
+const GRID = createGridLayer({ spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) });
+
+function Editor() {
+  const scene = useScene<Swatch, 'default'>({
+    systemLayers: [{ id: 'default' }],
+    initial: [
+      { kind: 'leaf', layer: 'default', pose: { x: 40, y: 40, width: 70, height: 50 }, data: { color: '#7fb069' } },
+    ],
+  });
+
+  // No per-action wiring: move, resize, rotate, `duplicate` (Cmd+D), and
+  // `delete` (Backspace/Delete) are registered by the features named here.
+  return (
+    <SceneCanvas
+      width={W} height={H}
+      scene={scene}
+      features={['draw']}
+      selectionOptions={{ mode: 'multi' }}
+      layers={{
+        scene: {
+          drawOne: (node, pose) => [
+            { kind: 'path', path: { kind: 'rect', ...pose }, fill: { paint: { color: node.data.color } } },
+          ],
+        },
+        grid: { layer: GRID },
+        selectionOverlay: { handles: true },
+      }}
+    />
+  );
+}
 ```
+
+The scene slot's `drawOne` returns draw commands for one node at its pose; it
+does not draw into a 2D context. Leave the slot out and the canvas paints each
+node from its `data` with `defaultDrawOne`.
 
 ## System registries
 

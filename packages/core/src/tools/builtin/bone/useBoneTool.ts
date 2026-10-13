@@ -9,6 +9,7 @@ import { createBoneActions, type BoneEnv } from './boneActions';
 import { createBoneOverlay } from './boneOverlay';
 import { placedRig } from './placedRig';
 import { createRigEditState, type RigEditState } from './rigEditState';
+import { createEmitter } from '@weasel-js/registry';
 
 /** Options for `useBoneTool`. */
 export interface UseBoneToolOptions {
@@ -40,7 +41,7 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
   const liveRef = useRef<Skeleton | null>(null);
 
   const env = useMemo(() => {
-    const listeners = new Set<() => void>();
+    const changed = createEmitter();
     const tool: BoneEnv & { listen(fn: () => void): () => void } = {
       state,
       scene: () => opts.current.scene,
@@ -49,12 +50,12 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
       shown: () => liveRef.current,
       show(skeleton) {
         liveRef.current = skeleton;
-        for (const fn of [...listeners]) fn();
+        changed.emit();
       },
       listen(fn) {
-        listeners.add(fn);
+        const offOwn = changed.subscribe(fn);
         const off = state.listen(fn);
-        return () => { listeners.delete(fn); off(); };
+        return () => { offOwn(); off(); };
       },
     };
     return tool;

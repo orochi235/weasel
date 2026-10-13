@@ -67,9 +67,13 @@ export type LayersMap<
   /** Grid slot, beneath the scene. Takes a pre-built layer (`{ layer }`) —
    *  e.g. `createGridLayer` from `@weasel-js/guides` — or `null`. */
   grid?: CustomLayerEntry | null;
-  scene?: TSceneSlot | null;
+  /** Scene slot: the config `<SceneCanvas>` builds its layers from, a
+   *  pre-built layer that paints the scene in their place, or `null`. A
+   *  pre-built layer gets no ghost of a node in flight, which needs `drawOne`. */
+  scene?: TSceneSlot | CustomLayerEntry | null;
   /** Selection-overlay slot: the config `<SceneCanvas>` builds the layer
-   *  from, or `null` for no selection chrome. */
+   *  from, a pre-built layer that paints in its place, or `null` for no
+   *  selection chrome. */
   selectionOverlay?: SelectionOverlaySlotConfig<TPose> | CustomLayerEntry | null;
   /** Cell-highlight overlay slot, drawn immediately after the grid. Takes a
    *  pre-built layer (`{ layer }`) — e.g. `createCellHighlightLayer` from

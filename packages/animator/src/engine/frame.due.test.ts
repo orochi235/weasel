@@ -3,6 +3,7 @@ import { AnimatorEventHub } from '../observe';
 import type { AnimationSeed } from './context';
 import { createFrame, type AnimatorClock } from './frame';
 import { createTable } from './table';
+import { createEmitter } from '@weasel-js/registry';
 
 /** A table and a frame loop with nothing under them, and a log of every tick. */
 function rig() {
@@ -25,7 +26,7 @@ function rig() {
     codec: { frame() {} },
     targets: { settle() {}, show() {} },
     afterTicks: [],
-    subscribers: new Set(),
+    subscribers: createEmitter(),
     reread() {},
     requestFrame() {},
     tripwire: () => state.tripped,

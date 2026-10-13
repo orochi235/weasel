@@ -12,7 +12,7 @@ import { useEffect, useMemo, useReducer } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { type DrawCommand, type GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import type { LayersMap } from '../layerSlots';
+import { isCustomEntry, type LayersMap } from '../layerSlots';
 import type { Node, Scene } from 'core/scene/types';
 import { findShapeSilhouette } from '../NodeShape';
 import { wrapWithPoseRotation } from '../poseRotation';
@@ -58,8 +58,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
     label: 'Preview ghost',
     draw: (data, view) => {
       const slot = sceneSlotRef.current;
-      const drawOne = slot?.drawOne;
-      if (!slot || !drawOne) return [];
+      if (!slot || isCustomEntry(slot) || !slot.drawOne) return [];
+      const drawOne = slot.drawOne;
       // Whose gesture this frame is showing belongs to the view being drawn,
       // not to the surface that built the layer.
       const sources = previewSourcesFrom(data);
