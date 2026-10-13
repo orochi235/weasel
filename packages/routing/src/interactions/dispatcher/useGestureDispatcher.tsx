@@ -114,7 +114,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       views: () => viewsRef.current,
       context: () => ctxRef.current,
       actions: () => registryRef.current,
-      // Views mount and unmount under a live surface, each with its own dispatcher.
       uses: () => { redraw.sync(allDispatchers()); },
       disposed: () => disposed,
     });
