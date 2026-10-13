@@ -50,6 +50,8 @@ describe('L1 — resetting to the paragraph level', () => {
     const whole = line('R WS R', 'ltr');
     expect([...whole.levels]).toEqual([1, 1, 1]);
 
+    // L1 is specified against the *original* class: by now N1 has rewritten
+    // the space to R, so a rule reading the resolved class resets nothing.
     const cut = line('R WS R', 'ltr', 0, 2);
     expect([...cut.levels]).toEqual([1, 0]);
   });
@@ -63,18 +65,5 @@ describe('L1 — resetting to the paragraph level', () => {
 
   it('resets a paragraph separator', () => {
     expect(line('R B', 'ltr').levels[1]).toBe(0);
-  });
-
-  it('reads the original class, not the resolved one', () => {
-    // By L1 the space has been rewritten to R by N1. L1 is specified against
-    // the *original* class, so a rule reading the resolved one finds no
-    // whitespace to reset and silently does nothing.
-    const cut = line('R WS R', 'ltr', 0, 2);
-    expect(cut.levels[1]).toBe(0);
-  });
-
-  it('leaves whitespace in the middle of a line alone', () => {
-    const r = line('R WS R', 'ltr');
-    expect(r.levels[1]).toBe(1);
   });
 });

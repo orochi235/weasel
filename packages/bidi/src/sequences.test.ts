@@ -20,13 +20,6 @@ describe('BD13 — isolating run sequences', () => {
     expect(r.map((s) => s.indices)).toEqual([[0], [2], [4]]);
   });
 
-  it('omits X9-removed characters entirely', () => {
-    for (const s of seqs('L RLE R PDF L')) {
-      expect(s.indices).not.toContain(1);
-      expect(s.indices).not.toContain(3);
-    }
-  });
-
   it('joins a run ending in an isolate initiator to its matching PDI run', () => {
     // The outside text is one sequence across the isolate; the inside is its
     // own. This is the whole point of BD13 — an isolate does not break the

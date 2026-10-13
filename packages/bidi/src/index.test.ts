@@ -38,10 +38,11 @@ describe('the public seam', () => {
     expect(mirror(0x41)).toBe(null);
   });
 
-  it('exposes the same three calls on the default engine', () => {
-    expect(typeof bidi.analyze).toBe('function');
-    expect(typeof bidi.reorder).toBe('function');
-    expect(typeof bidi.mirror).toBe('function');
+  it('exposes the same calls on the default engine', () => {
+    expect(bidi.analyze).toBe(analyze);
+    expect(bidi.reorder).toBe(reorder);
+    expect(bidi.mirror).toBe(mirror);
+    expect(bidi.baseLevel).toBe(baseLevel);
   });
 
   it('reports the Unicode version its tables came from', () => {
