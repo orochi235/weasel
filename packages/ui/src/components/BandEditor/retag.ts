@@ -1,4 +1,4 @@
-import { amount, retag, type Quantity } from '@weasel-js/quantity';
+import { amount, presentRange, retag, type Display, type Quantity } from '@weasel-js/quantity';
 import type { Band } from './bands';
 
 export function untag<T, F extends Quantity>(band: Band<T, F>): Band<T> {
@@ -19,4 +19,18 @@ export function retagBands<T, F extends Quantity>(input: readonly Band<T, F>[], 
       (next.length === input.length ? input[i] : input.find((b) => b.data === band.data)) ?? firstTagged;
     return { ...band, from: retag(source.from, band.from) };
   });
+}
+
+/** A band's accessible name: its number, its range as spoken, and whether it is locked. */
+export function bandName<T, F extends Quantity>(
+  bands: readonly Band<T, F>[],
+  index: number,
+  from: number,
+  to: number,
+  display: Display,
+): string {
+  const band = bands[index]!;
+  const next = bands[index + 1];
+  const range = presentRange(retag(band.from, from), next ? retag(next.from, to) : to, display).spoken;
+  return `Band ${index + 1}, ${range}${band.locked ? ', locked' : ''}`;
 }

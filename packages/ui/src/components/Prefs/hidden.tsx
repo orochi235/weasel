@@ -31,11 +31,17 @@ export function hiddenAttrs(marked: boolean): Record<string, string | undefined>
   return { [HIDDEN_ATTR]: marked ? '' : undefined };
 }
 
-/** The word a marked node carries: beside its name, or with `lead` on a line of its own above what has none. */
-export function HiddenBadge({ lead = false }: { lead?: boolean }) {
-  return (
-    <Badge size="xs" status="muted" variant="outline" className={lead ? `${s.badge} ${s.lead}` : s.badge}>
+/**
+ * The word a marked node carries: beside its name, with `lead` on a line of
+ * its own above what has none, or `gapped` in a row that spaces its own children.
+ */
+export function HiddenBadge({ lead = false, gapped = false }: { lead?: boolean; gapped?: boolean }) {
+  const badge = (
+    <Badge size="xs" status="muted" variant="outline" className={[s.badge, lead && s.lead, gapped && s.gapped].filter(Boolean).join(' ')}>
       hidden
     </Badge>
   );
+  // An outline badge is inline text, so with no break before it a name and its badge are one word, which a
+  // narrow label column cannot wrap.
+  return lead || gapped ? badge : <><wbr />{badge}</>;
 }

@@ -16,7 +16,7 @@ import { useThumbDrags } from './useThumbDrags';
  *  ±Infinity onto the end stop and back, and speaks it through `spokenAt`. */
 export function SliderBody<T extends Thumb = Thumb>(
   props: SliderProps<T> & {
-    spokenAt?: (v: number) => string | undefined;
+    spokenAt?: (v: number, thumb: T) => string | undefined;
     /** The finite range, where the track runs past it to an endless end's stop. */
     range?: readonly [number, number];
   },
@@ -220,7 +220,7 @@ export function SliderBody<T extends Thumb = Thumb>(
               aria-valuemin={min}
               aria-valuemax={max}
               aria-valuenow={thumb.value}
-              aria-valuetext={thumb.valueText ?? props.spokenAt?.(thumb.value) ?? (display ? qty(thumb.value, display).spoken : undefined)}
+              aria-valuetext={thumb.valueText ?? props.spokenAt?.(thumb.value, thumb) ?? (display ? qty(thumb.value, display).spoken : undefined)}
               aria-label={[ariaLabel, thumb.label].filter(Boolean).join(' ') || undefined}
               className={cls}
               style={{ left: `${valueToFraction(thumb.value) * 100}%` }}

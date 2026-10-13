@@ -8,7 +8,7 @@ import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
-import { aggregateAttributes, WHOLE } from './attrAggregate';
+import { aggregateAttributes, isObjectField, setObjectField, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
@@ -261,7 +261,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
             return;
           }
           const attr = attrOf(p);
-          writeAll(attr, normalizeAttr(attr, value, own[attr]));
+          if (isObjectField(agg.schema, attr)) onChange(setObjectField(schema, targets, attr, value)); else writeAll(attr, normalizeAttr(attr, value, own[attr]));
         }}
       />
       </Lockable>

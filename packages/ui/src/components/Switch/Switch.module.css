@@ -28,6 +28,7 @@
   /* Keeps the box the thumb is placed in; the track's fill shows through it. */
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-pill);
+  box-shadow: var(--wzl-bevel-sunken, none);
   transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
@@ -40,7 +41,7 @@
 }
 
 .switch[data-focus-visible] .track {
-  box-shadow: 0 0 0 2px var(--wzl-focus-ring);
+  box-shadow: var(--wzl-bevel-sunken, 0 0 0 0 transparent), 0 0 0 2px var(--wzl-focus-ring);
 }
 
 .switch[data-selected] .track {
@@ -55,6 +56,7 @@
   height: 12px;
   background: var(--wzl-fg);
   border-radius: 50%;
+  box-shadow: var(--wzl-bevel-raised, none);
   transition: transform var(--wzl-motion-fast);
 }
 

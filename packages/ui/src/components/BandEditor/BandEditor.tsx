@@ -17,7 +17,7 @@ import { decimal, qty, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
-import { retagBands, untag } from './retag';
+import { bandName, retagBands, untag } from './retag';
 import { pct } from './track';
 import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
 import { DraftGhost, type DraftGhostAt } from './DraftGhost';
@@ -347,7 +347,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
                   .filter(Boolean)
                   .join(' ')}
                 style={{ '--be-from': pct(toUnit(from)), '--be-to': pct(toUnit(to)) } as CSSProperties}
-                aria-label={bands[i].locked ? `Band ${i + 1}, locked` : `Band ${i + 1}`}
+                aria-label={bandName(shown, i, from, to, display)}
                 aria-pressed={isSelected}
                 data-band-index={i}
                 onPointerDown={onBandPointerDown(i)}

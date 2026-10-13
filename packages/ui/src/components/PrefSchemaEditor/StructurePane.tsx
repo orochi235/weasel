@@ -244,7 +244,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
           if (!node) return null;
           const topLevel = parentPath(ids[0]!) === null;
           return {
-            content: <DraggedNodes node={node} topLevel={topLevel} count={ids.length} renderers={renderers} />,
+            content: <DraggedNodes node={node} topLevel={topLevel} count={ids.length} renderers={renderers} over={over} />,
             width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'],
           };
         }}

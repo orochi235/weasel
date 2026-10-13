@@ -103,6 +103,23 @@ describe('PrefsForm markHidden on a group', () => {
     expect(within(pane).getByRole('checkbox', { name: 'Fine' })).toBeInTheDocument();
   });
 
+  it('marks the rail entry of a hidden page, and of no page that is shown', () => {
+    const { container } = render(<PrefsForm layout="rail" schema={schema} values={{}} onChange={() => {}} markHidden />);
+    const entry = (path: string) => container.querySelector<HTMLElement>(`[data-pref-rail="${path}"]`)!;
+    expect(entry('grid')).toHaveAttribute('data-pref-hidden');
+    expect(within(entry('grid')).getByText('hidden')).toBeInTheDocument();
+    expect(entry('snap')).not.toHaveAttribute('data-pref-hidden');
+    expect(within(entry('snap')).queryByText('hidden')).toBeNull();
+  });
+
+  it('marks a hidden cell of a bar with the badge, and no cell that is shown', () => {
+    const bar: PrefGroup = { name: 'Bar', as: 'bar', children: { on: flag('On'), size: num('Size', { showIf: { path: 'on' } }) } };
+    const { container } = render(<PrefsForm schema={bar} values={{}} onChange={() => {}} markHidden />);
+    expect(at(container, 'size')).toHaveAttribute('data-pref-hidden');
+    expect(within(at(container, 'size')).getByText('hidden')).toBeInTheDocument();
+    expect(within(at(container, 'on')).queryByText('hidden')).toBeNull();
+  });
+
   it('marks a row hidden on its own inside a group that is shown', () => {
     const { container } = render(<PrefsForm layout="list" schema={schema} values={{ snap: { on: true } }} onChange={() => {}} markHidden />);
     expect(at(container, 'grid')).not.toHaveAttribute('data-pref-hidden');

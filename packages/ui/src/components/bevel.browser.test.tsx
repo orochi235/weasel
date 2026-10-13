@@ -3,7 +3,16 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { CSSProperties, ReactNode } from 'react';
 import { afterEach, describe, expect, test } from 'vitest';
 import { Button } from './Button';
+import { Checkbox } from './Checkbox';
+import { Dialog } from './Dialog';
 import { Input } from './Input';
+import { Radio, RadioGroup } from './RadioGroup';
+import { Switch } from './Switch';
+import dialog from './Dialog/Dialog.module.css';
+import listbox from './listbox.module.css';
+import radio from './RadioGroup/RadioGroup.module.css';
+import toggle from './Switch/Switch.module.css';
+import tooltip from './Tooltip/Tooltip.module.css';
 import { PropertyPanel } from './Properties';
 import p from './Properties/Properties.module.css';
 
@@ -140,5 +149,58 @@ describe('a field frame', () => {
     screen.getByRole('textbox', { name: 'Name' }).focus();
     // The frame eases its shadow in, so the first read is mid-way.
     await expect.poll(() => css(frameOf('Name')).boxShadow).toBe(BLUE_SHADOW);
+  });
+});
+
+describe('the marks and the overlays', () => {
+  const marks = (
+    <>
+      <Checkbox aria-label="Check" />
+      <RadioGroup aria-label="Pick"><Radio value="a">A</Radio></RadioGroup>
+      <Switch aria-label="Flip" />
+    </>
+  );
+  const overlays = (
+    <>
+      <div className={listbox.surface} data-testid="popover" />
+      <div className={tooltip.tooltip} data-testid="tooltip" />
+      <Dialog inline title="Box">body</Dialog>
+    </>
+  );
+  const shadowOf = (selector: string) => css(document.querySelector(selector)!).boxShadow;
+
+  test('with no hook set, a mark has no shadow and an overlay keeps its drop shadow', () => {
+    render(<Scope>{marks}{overlays}</Scope>);
+    expect(css(screen.getByRole('checkbox', { name: 'Check' })).boxShadow).toBe('none');
+    expect(shadowOf(`.${radio.dot}`)).toBe('none');
+    expect(shadowOf(`.${toggle.track}`)).toBe('none');
+    expect(shadowOf(`.${toggle.thumb}`)).toBe('none');
+    for (const el of [screen.getByTestId('popover'), screen.getByTestId('tooltip'), document.querySelector(`.${dialog.inline}`)!]) {
+      expect(css(el).boxShadow).toMatch(/^rgba?\(.*\) 0px \d+px \d+px 0px$/);
+    }
+  });
+
+  test('--wzl-bevel-sunken is the shadow of a checkbox, a radio, and a switch track', () => {
+    render(<Scope vars={{ '--wzl-bevel-sunken': RED, '--wzl-bevel-raised': BLUE }}>{marks}</Scope>);
+    expect(css(screen.getByRole('checkbox', { name: 'Check' })).boxShadow).toBe(RED_SHADOW);
+    expect(shadowOf(`.${radio.dot}`)).toBe(RED_SHADOW);
+    expect(shadowOf(`.${toggle.track}`)).toBe(RED_SHADOW);
+    expect(shadowOf(`.${toggle.thumb}`)).toBe(BLUE_SHADOW);
+  });
+
+  test('a focused checkbox keeps its bevel under the focus ring', async () => {
+    render(<Scope vars={{ '--wzl-bevel-sunken': RED }}>{marks}</Scope>);
+    const box = screen.getByRole('checkbox', { name: 'Check' });
+    box.focus();
+    await expect.poll(() => (box.matches(':focus-visible') ? css(box).boxShadow : 'unfocused')).toMatch(
+      /^rgb\(255, 0, 0\) 1px 1px 0px 0px inset, rgba?\(.*\) 0px 0px 0px 2px$/,
+    );
+  });
+
+  test('--wzl-bevel-raised is the shadow of a popover, a tooltip, and a dialog', () => {
+    render(<Scope vars={{ '--wzl-bevel-raised': RED }}>{overlays}</Scope>);
+    expect(css(screen.getByTestId('popover')).boxShadow).toBe(RED_SHADOW);
+    expect(css(screen.getByTestId('tooltip')).boxShadow).toBe(RED_SHADOW);
+    expect(shadowOf(`.${dialog.inline}`)).toBe(RED_SHADOW);
   });
 });

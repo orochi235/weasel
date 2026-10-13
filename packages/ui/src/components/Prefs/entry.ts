@@ -54,3 +54,10 @@ export function entryConditions(
 export function entriesDisabled(ctx: Conditions & { path: string }): boolean {
   return ctx.disabled === true || ctx.disabledAt?.(`${ctx.path}.${PREF_ENTRY}`) === true;
 }
+
+/** Whether the entry at `index` of the list at `ctx.path` is disabled: the list is, or the item's conditions over that entry. */
+export function entryDisabledAt(
+  ctx: Conditions & { path: string }, item: PrefLeaf, entries: readonly unknown[],
+): (index: number) => boolean {
+  return (index) => entryConditions(ctx, `${ctx.path}.${index}`, item, entries[index]).disabled === true;
+}

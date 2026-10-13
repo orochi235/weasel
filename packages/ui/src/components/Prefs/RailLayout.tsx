@@ -133,7 +133,7 @@ export function RailLayout(props: PrefsFormProps & {
         ariaLabel={schema.name}
         header={filterField}
         showCounts={query.trim() !== ''}
-        foldable={props.foldable === true}
+        foldable={props.foldable === true} hidden={props.ctx.hidden}
         dropInto={drop?.rail && drop.where === 'into' ? drop.path : null}
       />
       {props.resizableRail === true && (

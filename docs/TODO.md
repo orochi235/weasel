@@ -574,10 +574,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   whether both are variants every bar takes, is a visual call.
 
 - **(P3) Nothing in `@weasel-js/ui` shows a quantity's composites or styles its parts.**
-  `presentRange` and `presentVector` exist, but no component calls them: `BandEditor` does not
-  report a band as a range. `Slider`'s thumbs still take bare numbers where `BandEditor`'s bands
-  take tagged ones; and no ui stylesheet styles the `data-part` or `data-composite` spans the HTML
-  form emits, so `PropertyField` still draws its suffix from its own `unit` prop.
+  `BandEditor` names each band with its range through `presentRange`, and that is the one caller:
+  nothing calls `presentVector`. No ui component renders a quantity's HTML form, so no stylesheet
+  styles its `data-part` or `data-composite` spans and `PropertyField` still draws its suffix from
+  its own `unit` prop.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
@@ -691,16 +691,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `--btn-*` tunes and `--wzl-gloss` fades. Whether any of it wants a theme token, and under what
   name, is not decided.
 
-- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this.
+- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this. Measured in
+  Chromium 2026-10-13, three text segments, each variant at `md` and `sm`: every segment sits
+  inside its track at one height, none clips its label, and a focused segment draws a 2px
+  outline. One thing a reader of the props would not expect: under `minimal`, `size` does
+  nothing. Both sizes are 20px high at the `sm` font size, where `default` is 32px and 22px
+  and `flat` 28px and 20px.
 
-- **(P3) Loose ends of the condition work.** A rail entry for a group drawn under
-  `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
-  `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
-  `PrefSchemaEditor` edits an entry's own
+- **(P3) Loose ends of the condition work.** `PrefSchemaEditor` edits an entry's own
   `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
-  `{ from: 'item' }` condition is written in code. A list of plain text entries is one
-  `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
-  entry does nothing there.
+  `{ from: 'item' }` condition is written in code. labkit's `ControlRow` draws a list of plain
+  text entries as one `ListEditor` and passes it no `entryDisabled`, so an item `enableIf` that
+  reads the entry does nothing in a lab; `PrefsForm` and `SelectionPanel` pass it.
 
 - **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
   into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting
@@ -709,8 +711,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   default should stand in there is not decided. (2) `PrefSchemaEditor`'s preview of a properties
   layout seeds its one node from the layout's own leaves and writes only under `pose` and
   `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
-  Its drag ghost draws a pointer with no `over`, as an alias of nothing. (3) A lab
-  resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
+  (3) A lab resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
   cannot hold a condition on another's setting. labkit's `ControlMatrix` takes `over` for its
   conditions and for the popover an alias's cell opens, but the cell itself summarizes the
   alias's own path, which holds nothing.
@@ -733,17 +734,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   section in view should unfold is open; it would move the rail under a reader who is scrolling.
   (2) A section's rail entry and a nested page's look the same until one is chosen.
 
-- **(P3) What `SelectionPanel`'s `selected` still does not reach.** A top-level section drawn
-  `as: 'bar'` or `as: 'fragment'`, or with no name, draws no heading, tab, or panel, and its key
-  marks and reports nothing, which is ruled to stay so (2026-10-11). Cmd or Ctrl on a press of a
-  tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
-  so the press arrives as the focus it causes, which carries no modifier.
-
 - **(P3) Loose ends beside a number's unit as data.** The text tool's
   percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
   stored value, so the run properties do not export as a literal. Nothing reads a unit's `format`
-  yet. A unit whose accepted suffix is all digits moves to the front of the list, as an object's
-  integer keys do.
+  yet: every surface shows a number leaf through its field, which formats by `display`.
 
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
   `display: contents`, so a drag in `PrefSchemaEditor`'s preview cannot land beside or into an
@@ -761,15 +755,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) The desktop themes bevel four things and have never been looked at.** Of `win9xTheme`
-  and `platinumTheme` (`@weasel-js/theme/themes/*`), only `Button`, the field frame,
-  `PropertyPanel`, and a `titlebar` frame read the `--wzl-bevel-*` hooks. Checkbox, radio, switch,
-  tabs, sliders, `ToggleBar` and the segmented control, menus and popovers, `Dialog`, toolbars,
-  and the tooltip take each theme's colors and corners and draw no bevel, so a screen of them
-  reads as flat gray. Each wants the matching hook read as a `var()` fallback, as
-  `field.module.css` does. The systems' own faces are named in the font stacks and not bundled; a
-  bundled lookalike needs a face whose license allows it. And nobody has seen either theme:
-  browser tests pin computed values only.
+- **(P3) The desktop themes bevel some controls and have never been looked at.** Under
+  `win9xTheme` and `platinumTheme` (`@weasel-js/theme/themes/*`), `Button`, the field frame,
+  `PropertyPanel`, a `titlebar` frame, the checkbox, the radio, the switch, menus and popovers,
+  `Dialog`, and the tooltip read the `--wzl-bevel-*` hooks. Tabs, sliders, `ToggleBar` and the
+  segmented control, and toolbars take each theme's colors and corners and draw no bevel. Each
+  wants the matching hook read as a `var()` fallback, as `field.module.css` does: a tab is
+  open along one edge, which no hook draws, and the slider and the segmented track set a
+  shadow per variant. The checkbox, radio, switch, and overlays keep their own 1px border
+  inside the bevel, where the field frame drops its border through `--wzl-field-border`. The
+  systems' own faces are named in the font stacks and not bundled; a bundled lookalike needs a
+  face whose license allows it. And nobody has seen either theme: browser tests pin computed
+  values only.
 
 - **(P3) Two gaps beside a `ColorSource` written to CSS.** A palette entry or a function source
   is written as the literal it resolves to in the provider's selection (`colorSourceCss`,
@@ -833,11 +830,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the example first needs a
   way for an instrument to declare its config as a pref schema.
 
-- **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed object or union attribute read-only.**
-  `aggregateAttributes` drops an object, list, map, or union attribute from the form when the
-  selected nodes disagree on it. `PrefsForm` draws a mixed field and writes it at its own path,
-  so the pane could show such an attribute field by field; its `onChange` would then have to take
-  a field path, where `attrOf` reads `default.width` as an attribute name.
+- **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed list, map, or union attribute read-only.**
+  `aggregateAttributes` keeps an object attribute the selected nodes disagree on and marks its
+  mixed fields, each written into every node's own object. A list, a map, or a union that
+  disagrees is still dropped from the form and listed as `mixed`, as is an object with a field of
+  one of those kinds that disagrees: none has a control with a mixed state.
 
 ### WeaselDraw app follow-ups (defer)
 

@@ -44,6 +44,8 @@ export function UnitEditor({ ctx }: { ctx: PrefRenderContext }) {
   };
   const rename = (i: number, name: string) => {
     if (name !== '' && rows.some(([other], j) => j !== i && other === name)) return;
+    // `52` would read as 5 of a unit named `2`, and an all-digit key leaves its place in the object's order.
+    if (/^\d/.test(name)) return;
     setAccepted(rows.map((row, j) => (j === i ? [name, row[1]] : row)));
   };
   const rescale = (i: number, patch: Partial<Required<UnitScale>>) => {

@@ -52,4 +52,35 @@ describe('PrefSchemaEditor custom kinds', () => {
     fireEvent.click(screen.getByRole('option', { name: 'lookup' }));
     expect(leaf('flag')).toMatchObject({ kind: 'lookup', source: 'tools' });
   });
+
+  it('edits one field of an object attribute across several leaves, and leaves the fields they differ on elsewhere alone', () => {
+    const field = (name: string): PrefLeaf => ({ kind: 'string', name, description: '', default: '' });
+    const kinds: CustomKinds = {
+      boxed: { frame: { kind: 'object', name: 'Frame', description: '', default: {}, children: { edge: field('Edge'), fill: field('Fill') } } as PrefLeaf },
+    };
+    const start: PrefGroup = {
+      name: 'Prefs',
+      children: {
+        view: { name: 'View', children: {
+          one: { kind: 'boxed', name: 'One', description: '', default: '', frame: { edge: 'thin', fill: 'red' } } as PrefLeaf,
+          two: { kind: 'boxed', name: 'Two', description: '', default: '', frame: { edge: 'thick', fill: 'red' } } as PrefLeaf,
+        } },
+      },
+    };
+    function Both() {
+      const [schema, setSchema] = useState(start);
+      latest = schema;
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} kinds={kinds} />;
+    }
+    render(<Both />);
+    select('one');
+    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(two)'), { metaKey: true });
+    expect(attributes().getByRole('textbox', { name: 'Edge' })).toHaveValue('');
+    fireEvent.change(attributes().getByRole('textbox', { name: 'Fill' }), { target: { value: 'blue' } });
+    expect(leaf('one').frame).toEqual({ edge: 'thin', fill: 'blue' });
+    expect(leaf('two').frame).toEqual({ edge: 'thick', fill: 'blue' });
+    fireEvent.change(attributes().getByRole('textbox', { name: 'Edge' }), { target: { value: 'hair' } });
+    expect(leaf('one').frame).toEqual({ edge: 'hair', fill: 'blue' });
+    expect(leaf('two').frame).toEqual({ edge: 'hair', fill: 'blue' });
+  });
 });
