@@ -74,6 +74,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     seedClock,
     register: table.register,
     has: (id) => table.animations.has(id),
+    defer: table.defer,
     reportEnd: table.reportEnd,
     finish: table.finish,
     touch: (target, at) => {

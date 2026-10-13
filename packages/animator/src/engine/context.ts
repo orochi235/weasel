@@ -63,6 +63,9 @@ export interface AnimationContext {
   register(seed: AnimationSeed): AnimationHandle;
   /** Whether `id` is still on the table. */
   has(id: number): boolean;
+  /** Leaves `id` unticked until its clock has run `ms` more, for one whose `tick` has nothing
+   *  to do before then. From then it is ticked every frame, as past its `due`. */
+  defer(id: number, ms: number): void;
   /** Reports `id` as finished, ahead of its `onDone`. */
   reportEnd(id: number): void;
   /** Takes `id` off the table as finished, for one that ends outside its own tick. */

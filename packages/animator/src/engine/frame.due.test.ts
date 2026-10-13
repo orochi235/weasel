@@ -133,6 +133,22 @@ describe('a frame and the animations it ticks', () => {
     expect(r.clock.frameT).toBe(32);
   });
 
+  it('leaves one unticked again when it is deferred, from waiting or from every frame', () => {
+    const r = rig();
+    const a = r.start('a', 1000);
+    const b = r.start('b', 1000, { due: 50 });
+    expect(r.tick(16)).toEqual(['a@16']);
+    r.table.defer(a.id, 100);
+    r.table.defer(b.id, 20);
+    expect(r.table.waiting).toBe(2);
+    expect(r.tick(32)).toEqual([]);
+    expect(r.tick(48)).toEqual(['b@48']);
+    expect(r.tick(112)).toEqual(['b@112']);
+    expect(r.tick(120)).toEqual(['a@120', 'b@120']);
+    expect(r.table.waiting).toBe(0);
+    r.table.defer(999, 10);
+  });
+
   it('never ticks one that was canceled while it waited', () => {
     const r = rig();
     const a = r.start('a', 100, { due: 100 });

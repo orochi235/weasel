@@ -45,6 +45,8 @@ export interface Table {
   pace(a: ActiveAnimation, paused: boolean, timeScale: number): void;
   /** `a`'s own clock now, in virtual ms. */
   clockOf(a: ActiveAnimation): number;
+  /** Leaves `id` unticked until its clock has run `ms` more. */
+  defer(id: number, ms: number): void;
   /** The animations to tick this frame, in the order they registered. */
   ticks(): ActiveAnimation[];
   /** Whether any animation changes from one frame to the next. */
@@ -155,6 +157,7 @@ export function createTable(host: TableHost): Table {
     on: roster.on,
     pace,
     clockOf: schedule.clockOf,
+    defer: (id, ms) => schedule.defer(animations.get(id), ms),
     ticks: schedule.ticks,
     get awake() { return schedule.awake; },
     get waiting() { return schedule.waiting; },

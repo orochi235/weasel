@@ -3,9 +3,45 @@ import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../type
 import type { AnimationContext, AnimationSeed } from './context';
 import { absorb, axesFor, comeOut, commitOffset, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
+import { earliestRest } from './springRest';
 import { createSpringVoices } from './springVoices';
 
 const any = (a: readonly number[]): boolean => a.some((x) => x !== 0);
+
+/** The spring's constants, refused where blits' closed forms cannot solve them. */
+function constantsFor(o: Parameters<typeof resolveSpringConstants>[0], kind: AnimationKind, toward: boolean) {
+  const c = resolveSpringConstants(o);
+  if (!(c.damping > 0) || !(c.mass > 0) || (toward && !(c.stiffness > 0))) {
+    throw new Error(`${kind}: an animation on a target needs positive damping and mass, and stiffness to reach \`to\``);
+  }
+  return c;
+}
+
+type Along = readonly number[];
+
+/** When a spring or a coast with no `onTick` can next be at rest. Until then its tick, which
+ *  only asks whether it is, has nothing to do. */
+function restWaits(
+  ctx: AnimationContext,
+  id: number,
+  quiet: boolean,
+  c: { stiffness: number; damping: number; mass: number },
+  threshold: number,
+) {
+  // Nothing pulls a coast, so it is at rest once it is slow.
+  const until = (value: Along, velocity: Along, coast: boolean): number =>
+    earliestRest(value, velocity, coast ? 0 : c.stiffness, c.damping, c.mass, threshold);
+  return {
+    /** The `due` it registers with. */
+    first: (value: Along, velocity: Along, coast: boolean): number | undefined =>
+      (quiet ? until(value, velocity, coast) : undefined),
+    /** Leaves it unticked until then. Answers false, as the tick of one still moving does. */
+    again(value: Along, velocity: Along, coast: boolean): false {
+      if (quiet) ctx.defer(id, until(value, velocity, coast));
+      return false;
+    },
+  };
+}
 
 /**
  * A spring or a coast on a target. A spring commits its destination as it starts and its voices
@@ -19,17 +55,16 @@ export function startOffsetPhysics<T>(
 ): PhysicsHandle<T> {
   const s = stateOf(o.target);
   const ax = s.axes;
-  const { stiffness, damping, mass } = resolveSpringConstants(o);
   let dest = o.to == null ? null : axesFor(ax, o.to, 'to');
-  if (!(damping > 0) || !(mass > 0) || (dest && !(stiffness > 0))) {
-    throw new Error(`${kind}: an animation on a target needs positive damping and mass, and stiffness to reach \`to\``);
-  }
+  const constants = constantsFor(o, kind, dest != null);
+  const { stiffness, damping, mass } = constants;
   const given = o.from === undefined ? null : axesFor(ax, o.from, 'from');
   let velocity = o.velocity === undefined ? null : axesFor(ax, o.velocity, 'velocity');
   const restThreshold = o.restThreshold ?? 0.01;
   const zeros = (): number[] => new Array<number>(ax.count).fill(0);
 
   const id = ctx.nextId();
+  const waits = restWaits(ctx, id, !o.onTick, constants, restThreshold);
   const interrupts = o.interrupt !== false;
   const seed = {
     id, kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
@@ -72,6 +107,7 @@ export function startOffsetPhysics<T>(
   };
 
   let ticked = false;
+  seed.due = waits.first(start, velocity ?? zeros(), dest == null);
   seed.onCancel = () => leave(true);
   seed.onRate = (paused, timeScale) => voices.rate(paused ? 0 : timeScale);
   seed.velocity = () => voices.own().velocity;
@@ -86,7 +122,9 @@ export function startOffsetPhysics<T>(
     ticked = true;
     o.onTick?.(ax.from(plus(dest ?? ax.to(s.get()), own.value)));
     if (!ctx.has(id)) return true;
-    if (norm(own.velocity) >= restThreshold || (dest && norm(own.value) >= restThreshold)) return false;
+    if (norm(own.velocity) >= restThreshold || (dest && norm(own.value) >= restThreshold)) {
+      return waits.again(own.value, own.velocity, dest == null);
+    }
     if (dest) o.onTick?.(ax.from(dest));
     if (!ctx.has(id)) return true;
     finish();
@@ -107,6 +145,7 @@ export function startOffsetPhysics<T>(
         dest = null;
         voices.rest(minus(own.value, moved), own.velocity, true);
         voices.settleMove();
+        waits.again(own.value, own.velocity, true);
         return;
       }
       const to = axesFor(ax, next, 'setTarget');
@@ -117,11 +156,14 @@ export function startOffsetPhysics<T>(
       if (dest == null) voices.rest(own.value, own.velocity, false);
       dest = to;
       voices.move(shift);
+      waits.again(plus(own.value, shift), own.velocity, false);
       ctx.targets.showNow(s as never);
     },
     setVelocity(v) {
       if (left) return;
-      voices.push(axesFor(ax, v, 'setVelocity'));
+      const pushed = axesFor(ax, v, 'setVelocity');
+      waits.again(voices.own().value, pushed, dest == null);
+      voices.push(pushed);
     },
   };
 }

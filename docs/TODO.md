@@ -536,14 +536,6 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   design left would move it and is not started: holds on a target table's rows could keep
   their values and weights as rows of the table's own arrays, which adds public API to the
   table whose shape is not ruled on.
-- **(P3) A spring or a coast on a target is ticked every frame, to ask whether it has come to
-  rest** — a tween on a target with no `onTick`, and a hold, are ticked only once they have
-  something to do (`due` on an animation's row, `packages/animator/src/engine/schedule.ts`);
-  a frame of 10,000 such tweens costs 0.28 ms (`node tests/perf/target-reads/run.mjs table
-  10000 idle`). A spring has no time it is known to rest by, so it still costs a call a frame
-  as an object, as anything with an `onTick` must. A bound on when a spring can first be at
-  rest, from its damping, would give it a `due`; retargeting and pushing it would move the
-  bound. The rest of a frame is blits' pull.
 - **(P2) Stopping and starting an animation costs more as more are running, and what is left
   of that is in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the
   parts (orochi, plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs
