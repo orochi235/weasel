@@ -25,6 +25,7 @@ export interface RecognizerSink {
   multiTouchInFlight(fingers: number): boolean;
 }
 
+/** What a host hears about beyond the events themselves, to drive press feedback. */
 export interface RecognizerObserver extends ClickObserver {
   /** The press being held toward a long-press, or `null` once it fires or is abandoned. */
   holdChanged?(pending: HeldPress | null): void;
@@ -32,6 +33,7 @@ export interface RecognizerObserver extends ClickObserver {
   longPress?(pointerType: 'touch' | 'pen'): void;
 }
 
+/** What {@link createPointerRecognizer} needs from its host. */
 export interface PointerRecognizerOptions {
   sink: RecognizerSink;
   clock: RecognizerClock;
@@ -49,6 +51,7 @@ export interface PointerRecognizerOptions {
   observer?: RecognizerObserver;
 }
 
+/** A recognizer for one surface. Its host feeds it every pointer sample the surface receives. */
 export interface PointerRecognizer {
   press(sample: PressSample): void;
   /** A move of any pointer, held or not. */
@@ -112,6 +115,7 @@ function fireLongPress(rec: Held | undefined, sink: RecognizerSink, observer: Re
   if (rec.holdType) observer.longPress?.(rec.holdType);
 }
 
+/** Build a recognizer holding no pointers. It touches no DOM: time and timers come from `opts.clock`. */
 export function createPointerRecognizer(opts: PointerRecognizerOptions): PointerRecognizer {
   const { sink, clock, observer = {}, toSurface = (p) => p } = opts;
   const world = (s: PointerSample): Point => opts.toWorld?.(s.clientX, s.clientY) ?? { x: s.clientX, y: s.clientY };
