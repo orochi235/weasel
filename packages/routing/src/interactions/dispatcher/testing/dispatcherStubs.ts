@@ -1,5 +1,5 @@
 /** Stubs for the pure dispatcher's tests: no React, no DOM, no real registry. */
-import { vi } from 'vitest';
+import { vi, type Mock } from 'vitest';
 import type { DispatcherContext } from '../dispatcher';
 import type { ActionsRegistry } from '../../actions/registry';
 import type { Action } from '../../actions/action';
@@ -45,7 +45,7 @@ export function makeCtx(
 }
 
 /** A minimal immediate action. */
-export function immediateAction(id: string, gestureKey: string, run = vi.fn()): Action {
+export function immediateAction(id: string, gestureKey: string, run: Mock = vi.fn()): Action {
   return {
     id,
     label: id,
@@ -58,7 +58,7 @@ export function immediateAction(id: string, gestureKey: string, run = vi.fn()): 
 export function ongoingAction(
   id: string,
   spec: Action['defaultBinding'],
-  startFn = vi.fn().mockReturnValue({}),
+  startFn: Mock = vi.fn().mockReturnValue({}),
 ): Action {
   return {
     id,
