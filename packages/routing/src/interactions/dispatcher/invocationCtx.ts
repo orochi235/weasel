@@ -88,7 +88,7 @@ function multiTouchOf(
   return {
     centroid,
     spread,
-    rotation: 0,
+    rotation: facts.rotation ?? 0,
     // Pinch geometry, on a move of a running gesture.
     ...(startSpread !== undefined && event.spread !== undefined
       ? { pinch: { startSpread, currentSpread: spread, centroid } }

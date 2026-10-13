@@ -102,10 +102,6 @@ Priority tags:
     in core's canvas, and `PointerPublisher` in `PointerProviderIfRoot.tsx`.
   - The hover pump and `Canvas.tsx` each turn a resolved cursor into a `style.cursor` write plus a
     painted-cursor write. One cursor sink beside `PaintedCursorState` would serve both.
-  - `InvocationCtx.multiTouch.rotation` is hard-coded to 0 and read nowhere; making it real needs
-    an angle on `MultiTouchEvent`.
-  - `useGestureDispatcher.listeners.test.tsx`: "does NOT cancel on initial mount" cannot fail,
-    since nothing is ever in flight in it.
 
 - **(P3) What the text layout split left.**
   - `packages/text/src/layout/paintRuns.ts`: a zero-advance atlas glyph gets no quad, against the

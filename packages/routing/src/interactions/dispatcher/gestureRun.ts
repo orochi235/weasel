@@ -104,6 +104,7 @@ export function pumpGesture(run: GestureRun, event: InputEvent): Outcome | undef
     const gestureId = gestureIdFor(event);
     const handle = inFlight.handles.get(gestureId);
     if (handle?.onMove) {
+      run.facts.turn(gestureId, event);
       handle.onMove(ctxFor(run, event, {}, gestureId));
       return 'handled';
     }
