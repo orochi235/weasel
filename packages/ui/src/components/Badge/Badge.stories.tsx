@@ -9,8 +9,11 @@ import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
 import { ALL_SHAPES, SHAPES } from './shapes';
 import type { BadgeShape, BadgeStatus, BadgeVariant } from './types';
 import { BASES, type BadgeBase } from './bases';
+import { compileNurbs, evalNurbsAtS } from './bases/OctantBSpline';
+import { compileSpline, evalCompiled } from './bases/OctantSpline';
+import { quatrefoilRadius, type QuatrefoilParams } from './bases/Quatrefoil';
 import { EFFECTS, type BadgeEffect, type EffectSpec } from './effects';
-import { SHAPE_CONTROLS, defaultParamsFor } from './shapeControls';
+import { QUATREFOIL_CONTROLS, SHAPE_CONTROLS, defaultParamsFor, defaultsOf, type ShapeControl } from './shapeControls';
 import { BADGE_STATUS_ICONS } from './statusIcons';
 import { BADGE_VARIANT_ICONS } from './variantIcons';
 
@@ -570,14 +573,15 @@ export const SlotPillReplica: Story = {
 
 // --- Compose lab ----------------------------------------------------------
 
-type LabControl =
-  | { key: string; kind: 'range'; min: number; max: number; step: number; default: number }
-  | { key: string; kind: 'select'; options: string[]; default: string }
-  | { key: string; kind: 'color'; default: string }
-  | { key: string; kind: 'text'; default: string }
-  | { key: string; kind: 'header'; label: string };
+const OCTANT_SPLINE_CONTROLS: ShapeControl[] = [
+  { key: 'mode',     kind: 'select', options: ['octant', 'quadrant'], default: 'octant' },
+  { key: 'count',    kind: 'range', min: 3,   max: 12,  step: 1,    default: 5 },
+  { key: '__advanced__', kind: 'header', label: 'Advanced' },
+  { key: 'rotation', kind: 'range', min: -45, max: 45,  step: 0.5, default: 0 },
+  { key: 'samples',  kind: 'range', min: 48,  max: 360, step: 4,   default: 192 },
+];
 
-const BASE_LAB_CONTROLS: Record<BadgeBase, LabControl[]> = {
+const BASE_LAB_CONTROLS: Record<BadgeBase, ShapeControl[]> = {
   'rounded-rect':   [
     { key: 'erosion', kind: 'range', min: 0, max: 1, step: 0.02, default: 0.16 },
     { key: 'eccentricity', kind: 'range', min: 0.3, max: 3, step: 0.05, default: 1 },
@@ -593,39 +597,9 @@ const BASE_LAB_CONTROLS: Record<BadgeBase, LabControl[]> = {
     { key: 'tabSize',    kind: 'range', min: 4, max: 30, step: 0.5, default: 12 },
     { key: 'arcSamples', kind: 'range', min: 6, max: 40, step: 1,   default: 18 },
   ],
-  'octant-spline':  [
-    { key: 'mode',     kind: 'select', options: ['octant', 'quadrant'], default: 'octant' },
-    { key: 'count',    kind: 'range', min: 3,   max: 12,  step: 1,    default: 5 },
-    { key: '__advanced__', kind: 'header', label: 'Advanced' },
-    { key: 'rotation', kind: 'range', min: -45, max: 45,  step: 0.5, default: 0 },
-    { key: 'samples',  kind: 'range', min: 48,  max: 360, step: 4,   default: 192 },
-  ],
-  'octant-bspline': [
-    { key: 'mode',     kind: 'select', options: ['octant', 'quadrant'], default: 'octant' },
-    { key: 'count',    kind: 'range', min: 3,   max: 12,  step: 1,    default: 5 },
-    { key: '__advanced__', kind: 'header', label: 'Advanced' },
-    { key: 'rotation', kind: 'range', min: -45, max: 45,  step: 0.5, default: 0 },
-    { key: 'samples',  kind: 'range', min: 48,  max: 360, step: 4,   default: 192 },
-  ],
-  'quatrefoil':     [
-    { key: '__spike__',       kind: 'header', label: 'Spike' },
-    { key: 'spikeR',          kind: 'range', min: 5,   max: 50,   step: 0.5,  default: 50 },
-    { key: 'spikeCurvature',  kind: 'range', min: 0.3, max: 4,    step: 0.05, default: 1 },
-    { key: 'spikeBend',       kind: 'range', min: -0.9, max: 0.9, step: 0.02, default: 0 },
-    { key: 'spikeTipErosion', kind: 'range', min: 0,   max: 1,    step: 0.02, default: 0 },
-    { key: '__valley__',      kind: 'header', label: 'Valley' },
-    { key: 'valleyR',         kind: 'range', min: 0,   max: 50,   step: 0.5,  default: 25 },
-    { key: 'valleyAt',        kind: 'range', min: 0.05, max: 0.95, step: 0.01, default: 0.5 },
-    { key: 'valleySmooth',    kind: 'range', min: 0,   max: 20,   step: 0.25, default: 3 },
-    { key: '__lobe__',        kind: 'header', label: 'Lobe' },
-    { key: 'lobeR',           kind: 'range', min: 5,   max: 75,   step: 0.5,  default: 42 },
-    { key: 'lobeCurvature',   kind: 'range', min: 0.3, max: 4,    step: 0.05, default: 1 },
-    { key: 'lobeBend',        kind: 'range', min: -0.9, max: 0.9, step: 0.02, default: 0 },
-    { key: 'lobeTipErosion',  kind: 'range', min: 0,   max: 1,    step: 0.02, default: 0 },
-    { key: '__advanced__',    kind: 'header', label: 'Advanced' },
-    { key: 'rotation',        kind: 'range', min: -45, max: 45,   step: 0.5,  default: 0 },
-    { key: 'samples',         kind: 'range', min: 48,  max: 360,  step: 4,    default: 192 },
-  ],
+  'octant-spline':  OCTANT_SPLINE_CONTROLS,
+  'octant-bspline': OCTANT_SPLINE_CONTROLS,
+  'quatrefoil':     QUATREFOIL_CONTROLS,
   'ribbon':         [
     { key: 'left',       kind: 'select', options: ['flat', 'inward', 'outward'], default: 'inward' },
     { key: 'right',      kind: 'select', options: ['flat', 'inward', 'outward'], default: 'outward' },
@@ -638,7 +612,7 @@ const BASE_LAB_CONTROLS: Record<BadgeBase, LabControl[]> = {
   ],
 };
 
-const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
+const EFFECT_LAB_CONTROLS: Record<BadgeEffect, ShapeControl[]> = {
   spikes: [
     { key: 'count',         kind: 'range',  min: 4,  max: 96, step: 1,    default: 44 },
     { key: 'length',        kind: 'range',  min: 1,  max: 30, step: 0.5,  default: 8 },
@@ -751,15 +725,6 @@ const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
 
 const BASE_KEYS = Object.keys(BASES) as BadgeBase[];
 const EFFECT_KEYS = Object.keys(EFFECTS) as BadgeEffect[];
-
-function defaultsFor(controls: LabControl[]): Record<string, number | string> {
-  const obj: Record<string, number | string> = {};
-  for (const c of controls) {
-    if (c.kind === 'header') continue;
-    obj[c.key] = c.default;
-  }
-  return obj;
-}
 
 interface LabEffect { id: number; type: BadgeEffect; params: Record<string, number | string> }
 
@@ -969,7 +934,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
   const saved = useRef<Partial<LabSnapshot>>(loadLabSnapshot()).current;
   const [base, setBase] = useState<BadgeBase>(saved.base ?? 'rounded-rect');
   const [baseParams, setBaseParams] = useState<Record<string, number | string>>(
-    () => saved.baseParams ?? defaultsFor(BASE_LAB_CONTROLS[saved.base ?? 'rounded-rect']),
+    () => saved.baseParams ?? defaultsOf(BASE_LAB_CONTROLS[saved.base ?? 'rounded-rect']),
   );
   const [labEffects, setLabEffects] = useState<LabEffect[]>(saved.labEffects ?? []);
   const [nextId, setNextId] = useState(saved.nextId ?? 1);
@@ -1141,14 +1106,14 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
     // baseParams in state is typed `Record<string, number | string>`; presets allow array-
     // valued vertices for the polygon base. Cast at the boundary — runtime is fine because
     // BASES[base].build() narrows per-base.
-    setBaseParams({ ...defaultsFor(BASE_LAB_CONTROLS[preset.base]), ...preset.baseParams } as Record<string, number | string>);
+    setBaseParams({ ...defaultsOf(BASE_LAB_CONTROLS[preset.base]), ...preset.baseParams } as Record<string, number | string>);
     let id = nextId;
     const next: LabEffect[] = [];
     for (const e of preset.effects) {
       next.push({
         id,
         type: e.type,
-        params: { ...defaultsFor(EFFECT_LAB_CONTROLS[e.type]), ...e.params },
+        params: { ...defaultsOf(EFFECT_LAB_CONTROLS[e.type]), ...e.params },
       });
       id += 1;
     }
@@ -1159,10 +1124,10 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
 
   const onPickBase = (b: BadgeBase) => {
     setBase(b);
-    setBaseParams(defaultsFor(BASE_LAB_CONTROLS[b]));
+    setBaseParams(defaultsOf(BASE_LAB_CONTROLS[b]));
   };
   const addEffect = (type: BadgeEffect) => {
-    const params = defaultsFor(EFFECT_LAB_CONTROLS[type]);
+    const params = defaultsOf(EFFECT_LAB_CONTROLS[type]);
     setLabEffects((prev) => [...prev, { id: nextId, type, params }]);
     setNextId((n) => n + 1);
   };
@@ -1171,7 +1136,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
     setLabEffects((prev) => prev.map((e) => (e.id === id ? { ...e, params: { ...e.params, [key]: value } } : e)));
   const changeEffectType = (id: number, type: BadgeEffect) =>
     setLabEffects((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, type, params: defaultsFor(EFFECT_LAB_CONTROLS[type]) } : e)),
+      prev.map((e) => (e.id === id ? { ...e, type, params: defaultsOf(EFFECT_LAB_CONTROLS[type]) } : e)),
     );
   const reorderEffectTo = (id: number, targetIndex: number) => setLabEffects((prev) => {
     const idx = prev.findIndex((e) => e.id === id);
@@ -1243,7 +1208,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
   const effectCardStyle: CSSProperties = { background: 'rgba(0, 0, 0, 0.18)', border: '1px solid rgba(255,255,255,0.08)' };
 
   const renderControl = (
-    c: LabControl,
+    c: ShapeControl,
     value: number | string,
     onChange: (v: number | string) => void,
   ) => {
@@ -1338,7 +1303,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
         </label>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={handleExport} style={{ fontSize: 11, padding: '6px 12px', cursor: 'pointer' }}>Copy snippet</button>
-          <button onClick={() => { setLabEffects([]); setBase('rounded-rect'); setBaseParams(defaultsFor(BASE_LAB_CONTROLS['rounded-rect'])); setExportText(null); }} style={{ fontSize: 11, padding: '6px 12px', cursor: 'pointer' }}>Reset</button>
+          <button onClick={() => { setLabEffects([]); setBase('rounded-rect'); setBaseParams(defaultsOf(BASE_LAB_CONTROLS['rounded-rect'])); setExportText(null); }} style={{ fontSize: 11, padding: '6px 12px', cursor: 'pointer' }}>Reset</button>
         </div>
         {exportText && (
           <textarea
@@ -1575,7 +1540,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
                     onAnchorChange={onAnchorChange}
                     onAnchorDelete={onAnchorDelete}
                     onAnchorAdd={onAnchorAdd}
-                    evalAtS={base === 'octant-bspline' ? bsplineSplineEval(liveAnchors) : naturalSplineEval(liveAnchors)}
+                    evalAtS={splineEvaluator(base, liveAnchors)}
                   />
                   {BASE_LAB_CONTROLS[base]
                     .filter((c) => c.key !== 'mode')
@@ -1716,129 +1681,13 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
 
 interface SplineAnchor { s: number; r: number; w: number }
 
-function solveSplineM(anchors: SplineAnchor[]): number[] {
-  const n = anchors.length - 1;
-  if (n < 1) return [0];
-  const h: number[] = new Array(n);
-  for (let i = 0; i < n; i++) h[i] = Math.max(1e-9, anchors[i + 1].s - anchors[i].s);
-  const a: number[] = new Array(n + 1);
-  const b: number[] = new Array(n + 1);
-  const c: number[] = new Array(n + 1);
-  const d: number[] = new Array(n + 1);
-  a[0] = 0; b[0] = h[0] / 3; c[0] = h[0] / 6;
-  d[0] = (anchors[1].r - anchors[0].r) / h[0];
-  for (let i = 1; i < n; i++) {
-    a[i] = h[i - 1] / 6;
-    b[i] = (h[i - 1] + h[i]) / 3;
-    c[i] = h[i] / 6;
-    d[i] = (anchors[i + 1].r - anchors[i].r) / h[i] - (anchors[i].r - anchors[i - 1].r) / h[i - 1];
+function splineEvaluator(base: BadgeBase, anchors: SplineAnchor[]): (s: number) => number {
+  if (base === 'octant-bspline') {
+    const nurbs = compileNurbs(anchors);
+    return (s) => evalNurbsAtS(s, nurbs);
   }
-  a[n] = h[n - 1] / 6; b[n] = h[n - 1] / 3; c[n] = 0;
-  d[n] = -(anchors[n].r - anchors[n - 1].r) / h[n - 1];
-  for (let i = 1; i <= n; i++) {
-    const w = a[i] / b[i - 1];
-    b[i] -= w * c[i - 1];
-    d[i] -= w * d[i - 1];
-  }
-  const M: number[] = new Array(n + 1);
-  M[n] = d[n] / b[n];
-  for (let i = n - 1; i >= 0; i--) M[i] = (d[i] - c[i] * M[i + 1]) / b[i];
-  return M;
-}
-
-function splineEval(s: number, anchors: SplineAnchor[], M: number[]): number {
-  const N = anchors.length;
-  if (N === 0) return 0;
-  if (N === 1) return anchors[0].r;
-  if (s <= anchors[0].s) return anchors[0].r;
-  if (s >= anchors[N - 1].s) return anchors[N - 1].r;
-  let i = 0;
-  while (i < N - 1 && anchors[i + 1].s <= s) i++;
-  const p0 = anchors[i];
-  const p1 = anchors[i + 1];
-  const h = p1.s - p0.s;
-  if (h <= 0) return p0.r;
-  const A = (p1.s - s) / h;
-  const B = (s - p0.s) / h;
-  const liftA = ((A * A * A - A) * h * h) / 6;
-  const liftB = ((B * B * B - B) * h * h) / 6;
-  return A * p0.r + B * p1.r + liftA * M[i] * p0.w + liftB * M[i + 1] * p1.w;
-}
-
-function naturalSplineEval(anchors: SplineAnchor[]): (s: number) => number {
-  const M = solveSplineM(anchors);
-  return (s) => splineEval(s, anchors, M);
-}
-
-function bsplineSplineEval(anchors: SplineAnchor[]): (s: number) => number {
-  // Mirror phantom controls for zero-slope endpoint closure.
-  const N = anchors.length;
-  const left1 = { s: -anchors[1].s, r: anchors[1].r, w: anchors[1].w };
-  const left2 = { s: -anchors[Math.min(2, N - 1)].s, r: anchors[Math.min(2, N - 1)].r, w: anchors[Math.min(2, N - 1)].w };
-  const right1 = { s: 2 - anchors[N - 2].s, r: anchors[N - 2].r, w: anchors[N - 2].w };
-  const right2 = { s: 2 - anchors[Math.max(N - 3, 0)].s, r: anchors[Math.max(N - 3, 0)].r, w: anchors[Math.max(N - 3, 0)].w };
-  const ctrl = [left2, left1, ...anchors, right1, right2];
-  const degree = 3;
-  const m = ctrl.length + degree + 1;
-  const knots: number[] = new Array(m);
-  for (let i = 0; i <= degree; i++) knots[i] = 0;
-  const interior = ctrl.length - degree - 1;
-  for (let i = 1; i <= interior; i++) knots[degree + i] = i / (interior + 1);
-  for (let i = m - degree - 1; i < m; i++) knots[i] = 1;
-  const findSpan = (u: number): number => {
-    if (u >= knots[ctrl.length]) return ctrl.length - 1;
-    if (u <= knots[degree]) return degree;
-    let lo = degree, hi = ctrl.length, mid = (lo + hi) >>> 1;
-    while (u < knots[mid] || u >= knots[mid + 1]) {
-      if (u < knots[mid]) hi = mid; else lo = mid;
-      mid = (lo + hi) >>> 1;
-    }
-    return mid;
-  };
-  const basisFns = (span: number, u: number): number[] => {
-    const Nb: number[] = new Array(degree + 1).fill(0);
-    const left: number[] = new Array(degree + 1);
-    const right: number[] = new Array(degree + 1);
-    Nb[0] = 1;
-    for (let j = 1; j <= degree; j++) {
-      left[j] = u - knots[span + 1 - j];
-      right[j] = knots[span + j] - u;
-      let saved = 0;
-      for (let r = 0; r < j; r++) {
-        const denom = right[r + 1] + left[j - r];
-        const temp = denom === 0 ? 0 : Nb[r] / denom;
-        Nb[r] = saved + right[r + 1] * temp;
-        saved = left[j - r] * temp;
-      }
-      Nb[j] = saved;
-    }
-    return Nb;
-  };
-  const evalU = (u: number): { s: number; r: number } => {
-    const span = findSpan(u);
-    const Nb = basisFns(span, u);
-    let sN = 0, rN = 0, wS = 0;
-    for (let i = 0; i <= degree; i++) {
-      const c = ctrl[span - degree + i];
-      const wn = c.w * Nb[i];
-      sN += wn * c.s;
-      rN += wn * c.r;
-      wS += wn;
-    }
-    return wS > 0 ? { s: sN / wS, r: rN / wS } : { s: 0, r: 0 };
-  };
-  return (s) => {
-    if (s <= 0) return evalU(0).r;
-    if (s >= 1) return evalU(1).r;
-    let lo = 0, hi = 1;
-    for (let iter = 0; iter < 30; iter++) {
-      const mid = (lo + hi) * 0.5;
-      const { s: sMid } = evalU(mid);
-      if (sMid < s) lo = mid; else hi = mid;
-      if (hi - lo < 1e-5) break;
-    }
-    return evalU((lo + hi) * 0.5).r;
-  };
+  const spline = compileSpline(anchors);
+  return (s) => evalCompiled(s, spline);
 }
 
 function OctantSplineEditor({
@@ -2065,58 +1914,8 @@ function OctantSplineEditor({
 
 // --- Quatrefoil octant explorer ------------------------------------------------
 
-type QFParams = Parameters<typeof import('./bases/Quatrefoil').quatrefoilVertices>[0];
-
-const QF_DEFAULTS: Required<NonNullable<QFParams>> = {
-  spikeR: 50,
-  lobeR: 42,
-  valleyR: 25,
-  valleyAt: 0.5,
-  spikeCurvature: 1,
-  spikeBend: 0,
-  spikeTipErosion: 0,
-  lobeCurvature: 1,
-  lobeBend: 0,
-  lobeTipErosion: 0,
-  valleySmooth: 3,
-  rotation: 0,
-  samples: 192,
-};
-
-function smoothMaxOctant(a: number, b: number, g: number): number {
-  const d = a - b;
-  return (a + b + Math.sqrt(d * d + g * g)) / 2;
-}
-
-function octantR(s: number, p: Required<NonNullable<QFParams>>): number {
-  const spike = Math.max(5, Math.min(p.spikeR, 50));
-  const lobe = Math.max(5, Math.min(p.lobeR, 50 * Math.SQRT2));
-  const valley = Math.max(0, Math.min(p.valleyR, Math.min(spike, lobe)));
-  const vAt = Math.max(0.05, Math.min(p.valleyAt, 0.95));
-  const sCurv = Math.max(0.2, p.spikeCurvature);
-  const sBend = Math.max(-0.95, Math.min(p.spikeBend, 0.95));
-  const sErode = Math.max(0, Math.min(p.spikeTipErosion, 1));
-  const lCurv = Math.max(0.2, p.lobeCurvature);
-  const lBend = Math.max(-0.95, Math.min(p.lobeBend, 0.95));
-  const lErode = Math.max(0, Math.min(p.lobeTipErosion, 1));
-  const smooth = Math.max(0, p.valleySmooth);
-  const seg = (t: number, curv: number, bend: number, erode: number) => {
-    if (t <= 0) return 0;
-    if (t >= 1) return 1 - erode;
-    const a = Math.max(0.1, curv * (1 + bend));
-    const b = Math.max(0.1, curv * (1 - bend));
-    const v = Math.pow(1 - Math.pow(1 - t, a), 1 / b);
-    return Math.min(v, 1 - erode);
-  };
-  const t1 = (vAt - s) / vAt;
-  const t2 = (s - vAt) / (1 - vAt);
-  const rSpike = valley + (spike - valley) * seg(Math.max(0, t1), sCurv, sBend, sErode);
-  const rLobe = valley + (lobe - valley) * seg(Math.max(0, t2), lCurv, lBend, lErode);
-  return smoothMaxOctant(rSpike, rLobe, smooth);
-}
-
-function OctantCell({ params, label }: { params: Partial<NonNullable<QFParams>>; label: string }) {
-  const full: Required<NonNullable<QFParams>> = { ...QF_DEFAULTS, ...params };
+function OctantCell({ params, label }: { params: QuatrefoilParams; label: string }) {
+  const radiusAt = quatrefoilRadius(params);
   const N = 96;
   // Octant arc from θ=0 (cardinal, east) to θ=π/4 (diagonal, NE). SVG y is flipped so we
   // negate y to draw the diagonal going up-right.
@@ -2124,7 +1923,7 @@ function OctantCell({ params, label }: { params: Partial<NonNullable<QFParams>>;
   for (let i = 0; i <= N; i++) {
     const θ = (i / N) * (Math.PI / 4);
     const s = Math.sin(2 * θ);
-    const r = octantR(s, full);
+    const r = radiusAt(s);
     const x = r * Math.cos(θ);
     const y = -r * Math.sin(θ);
     pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
@@ -2147,7 +1946,7 @@ function OctantCell({ params, label }: { params: Partial<NonNullable<QFParams>>;
 
 function ParamSweep({ title, paramKey, values, fmt }: {
   title: string;
-  paramKey: keyof NonNullable<QFParams>;
+  paramKey: keyof QuatrefoilParams;
   values: number[];
   fmt?: (v: number) => string;
 }) {
@@ -2156,7 +1955,7 @@ function ParamSweep({ title, paramKey, values, fmt }: {
       <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.75, margin: 0 }}>{title}</h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
         {values.map((v) => (
-          <OctantCell key={`${String(paramKey)}-${v}`} params={{ [paramKey]: v } as Partial<NonNullable<QFParams>>} label={`${String(paramKey)} = ${fmt ? fmt(v) : v}`} />
+          <OctantCell key={`${String(paramKey)}-${v}`} params={{ [paramKey]: v } as QuatrefoilParams} label={`${String(paramKey)} = ${fmt ? fmt(v) : v}`} />
         ))}
       </div>
     </section>
