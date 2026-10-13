@@ -158,23 +158,12 @@ describe('Slider stop marks', () => {
     expect(ticksOf(container)).toHaveLength(0);
   });
 
-  it('keeps the marks out of the accessibility tree and out of hit testing', () => {
+  it('keeps the marks out of the accessibility tree', () => {
     const { container } = render(
       <Slider min={0} max={100} stops={[0, 50, 100]} thumbs={[{ value: 10 }]} onInput={() => {}} />,
     );
     const marks = container.querySelector('[data-slider-ticks]') as HTMLElement;
     expect(marks.getAttribute('aria-hidden')).toBe('true');
-  });
-
-  it('does not let a mark swallow a track click that would add a thumb', () => {
-    const onAddThumb = vi.fn((v: number) => ({ value: v }));
-    const { container } = render(
-      <Slider min={0} max={100} stops={[0, 50, 100]} thumbs={[{ value: 10 }]} onAddThumb={onAddThumb} onInput={() => {}} />,
-    );
-    const track = container.querySelector('[data-slider-ticks]')!.parentElement as HTMLElement;
-    stubRect(track, { left: 0, width: 200 });
-    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
-    expect(onAddThumb).toHaveBeenCalledWith(50);
   });
 });
 

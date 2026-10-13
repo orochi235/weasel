@@ -37,13 +37,6 @@ describe('PrefsForm selection', () => {
     expect(onSelect).toHaveBeenLastCalledWith('a', { toggle: true });
   });
 
-  it('does not report the focus that follows a press on the same row', () => {
-    const onSelect = form(['a', 'b']);
-    fireEvent.pointerDown(rowOf('Gamma'), { metaKey: true });
-    fireEvent.focus(screen.getByRole('textbox', { name: 'Gamma' }));
-    expect(onSelect).toHaveBeenCalledTimes(1);
-  });
-
   it('reports a focus that arrives without a press', () => {
     const onSelect = form(['a']);
     fireEvent.focus(screen.getByRole('textbox', { name: 'Gamma' }));

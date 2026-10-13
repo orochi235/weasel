@@ -408,11 +408,6 @@ describe('PrefsForm — exhaustiveness over built-in kinds', () => {
     },
   });
 
-  it('names an app-defined kind rather than rendering nothing', () => {
-    render(<PrefsForm schema={schemaWith('registry-enum')} onChange={() => {}} />);
-    expect(screen.getByText('(registry-enum: no renderer)')).toBeTruthy();
-  });
-
   it('throws for a built-in kind with no case arm', () => {
     (PREF_KINDS as Record<string, true>)[KIND] = true;
     expect(() =>

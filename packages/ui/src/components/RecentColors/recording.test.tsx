@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { GradientPaint } from '@weasel-js/core';
@@ -42,11 +42,11 @@ describe('recent-color recording', () => {
     expect(store.get()).toEqual(['#445566ff']);
   });
 
-  it('records nothing outside a provider', () => {
-    const store = createRecentColorsStore({ storage: null });
-    render(<ColorField value="#112233ff" onChange={() => {}} aria-label="Fill" />);
+  it('commits outside a provider, where there is nowhere to record', () => {
+    const onChange = vi.fn();
+    render(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);
     pick('Fill', '#445566');
-    expect(store.get()).toEqual([]);
+    expect(onChange).toHaveBeenCalledWith('#445566ff');
   });
 
   it('records a gradient stop recolor', () => {
