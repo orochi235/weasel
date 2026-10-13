@@ -985,22 +985,6 @@ only story runner in the repo.
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
 
-- **(P2) The API reference build still reports warnings: 8 at the last run, 6 if exporting
-  `Bivariant` and `ScopedScene` from core cleared theirs, which no build has confirmed.**
-  `docs/conventions.md` says `npx typedoc` reports none. Each is a documented export naming a type
-  its barrel does not export:
-  - `CONSTRUCTORS` in geom's `typedArrayJson.ts`: `NumberTypedArray` is
-    `InstanceType<(typeof CONSTRUCTORS)[TypedArrayTag]>`, so the reference names a private
-    constant. Writing the union out by hand lists the nine array types twice.
-  - `LabBaseProps` (labkit's `Lab.tsx`) and `CreateOptions` (storage's `records.ts`): an exported
-    type needs a doc line, and both files sit at their `check:size` cap, so each wants its split
-    first.
-  - `BadgePropsByShape` in ui: exporting it surfaces `BadgeBaseProps`, `BadgeShapeParams`, and
-    about thirty per-shape, per-base, and per-effect parameter types behind them.
-  - `DepSchema` and `OverlaySchema` in routing, which its root does export. core merges into both
-    with `declare module`, and TypeDoc appears to file the merged interface under another symbol
-    than the one `DepName` and `KernelOverlay` reference (read from the warning, not traced).
-
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
   a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time,
