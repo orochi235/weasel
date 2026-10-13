@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vitest';
 import { createDispatcher } from './dispatcher';
 import type { Action } from '../actions/action';
 import type { Contribution } from '../../contributions/types';
@@ -10,8 +10,8 @@ const spaceDown: InputEvent = { kind: 'key-held', key: ' ', phase: 'down', ...NO
 const spaceUp: InputEvent = { kind: 'key-held', key: ' ', phase: 'up', ...NO_MODS };
 const keyX: InputEvent = { kind: 'key', key: 'x', ...NO_MODS };
 
-function holdAction(id: string, onEnd: () => void): Action {
-  return { id, label: id, invoker: { timing: 'ongoing', start: vi.fn().mockReturnValue({ onEnd }) } };
+function holdAction(id: string, start: Mock): Action {
+  return { id, label: id, invoker: { timing: 'ongoing', start } };
 }
 
 function engagedAction(id: string, run: () => void): Action {
@@ -23,8 +23,8 @@ function setup() {
   const ambientEnd = vi.fn();
   const focusedEngaged = vi.fn();
   const ambientEngaged = vi.fn();
-  const focusedHold = holdAction('focused.hold', focusedEnd);
-  const ambientHold = holdAction('ambient.hold', ambientEnd);
+  const focusedStart = vi.fn().mockReturnValue({ onEnd: focusedEnd });
+  const ambientStart = vi.fn().mockReturnValue({ onEnd: ambientEnd });
   const focused: Contribution = {
     id: 'focused',
     eligibility: { focus: true },
@@ -43,15 +43,15 @@ function setup() {
   };
   const ctx = makeCtx({
     actions: makeRegistry([
-      focusedHold,
-      ambientHold,
+      holdAction('focused.hold', focusedStart),
+      holdAction('ambient.hold', ambientStart),
       engagedAction('focused.engaged', focusedEngaged),
       engagedAction('ambient.engaged', ambientEngaged),
     ]),
     activeToolId: 'focused',
     entriesById: new Map([['focused', focused], ['ambient', ambient]]),
   });
-  return { ctx, focusedHold, ambientHold, focusedEnd, ambientEnd, focusedEngaged, ambientEngaged };
+  return { ctx, focusedStart, ambientStart, focusedEnd, ambientEnd, focusedEngaged, ambientEngaged };
 }
 
 describe('two entries holding the same key', () => {
@@ -62,8 +62,8 @@ describe('two entries holding the same key', () => {
     expect(dispatcher.handleInput(spaceDown, s.ctx)).toBe('handled');
     expect(dispatcher.handleInput(spaceDown, s.ctx)).toBe('handled');
 
-    expect((s.focusedHold.invoker as { start: ReturnType<typeof vi.fn> }).start).toHaveBeenCalledOnce();
-    expect((s.ambientHold.invoker as { start: ReturnType<typeof vi.fn> }).start).not.toHaveBeenCalled();
+    expect(s.focusedStart).toHaveBeenCalledOnce();
+    expect(s.ambientStart).not.toHaveBeenCalled();
     expect(dispatcher.inFlight().size).toBe(1);
 
     dispatcher.handleInput(keyX, s.ctx);
@@ -86,7 +86,7 @@ describe('two entries holding the same key', () => {
 
   it('falls to the other entry when the best-ranked one declines the hold', () => {
     const s = setup();
-    (s.focusedHold.invoker as { start: ReturnType<typeof vi.fn> }).start.mockReturnValue({});
+    s.focusedStart.mockReturnValue({});
     const dispatcher = createDispatcher();
 
     dispatcher.handleInput(spaceDown, s.ctx);
