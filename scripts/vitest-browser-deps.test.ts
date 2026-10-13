@@ -18,7 +18,7 @@ beforeEach(() => {
   put(
     'packages/kit/package.json',
     JSON.stringify({
-      name: '@weasel-js/kit',
+      name: '@fixture/kit',
       exports: { '.': { types: './dist/index.d.ts', import: './dist/index.js' }, './style.css': './dist/style.css' },
     }),
   );
@@ -27,10 +27,10 @@ beforeEach(() => {
   put('packages/kit/src/unreached.ts', `import 'never-loaded';\n`);
   put(
     'packages/app/package.json',
-    JSON.stringify({ name: '@weasel-js/app', exports: { '.': { types: './dist/index.d.ts' } } }),
+    JSON.stringify({ name: '@fixture/app', exports: { '.': { types: './dist/index.d.ts' } } }),
   );
   put('packages/app/src/index.ts', `export {};\n`);
-  put('packages/app/src/Panel.tsx', `import { store } from '@weasel-js/kit';\nexport const Panel = () => <i>{store.getState()}</i>;\n`);
+  put('packages/app/src/Panel.tsx', `import { store } from '@fixture/kit';\nexport const Panel = () => <i>{store.getState()}</i>;\n`);
   put(
     'packages/app/src/Panel.browser.test.tsx',
     `import { render } from '@testing-library/react';\nimport { Panel } from './Panel';\nrender(<Panel />);\n`,
@@ -86,7 +86,7 @@ describe('browserDeps', () => {
         `import { expect } from 'vitest';`,
         `import { page } from 'vitest/browser';`,
         `import { commands } from '@vitest/browser/context';`,
-        `import '@weasel-js/kit/style.css';`,
+        `import '@fixture/kit/style.css';`,
         `import 'some-pkg/theme.css';`,
         `import { readFileSync } from 'node:fs';`,
         `import path from 'path';`,

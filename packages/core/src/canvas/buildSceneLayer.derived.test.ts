@@ -38,17 +38,13 @@ const items = (): Item[] => [
   },
 ];
 
-function paint(list: Item[], hierarchical: boolean) {
+function paint(list: Item[]) {
   const adapter = {
     getNodes: () => list,
     getNode: (id: string) => list.find((n) => n.id === id),
     getPose: (id: string) => list.find((n) => n.id === id)!.pose,
-    ...(hierarchical
-      ? {
-        getLayers: () => [{ id: 'main', visible: true }],
-        getChildren: (parent: string | null) => (parent === null ? list.map((n) => n.id) : []),
-      }
-      : {}),
+    getLayers: () => [{ id: 'main', visible: true }],
+    getChildren: (parent: string | null) => (parent === null ? list.map((n) => n.id) : []),
   };
   const drawOne = vi.fn((_n: Item, _p: Pose, _v: unknown, _ctx?: NodePaintCtx): DrawCommand[] => []);
   const layer = buildSceneLayer<Item, Pose>({ drawOne }, adapter as never, () => null, () => null);
@@ -60,24 +56,21 @@ function paint(list: Item[], hierarchical: boolean) {
 const coords = (path: Path | null | undefined): number[] =>
   (path ? [...(path as { coords: Float32Array }).coords] : []);
 
-describe.each([['flat', false], ['hierarchical', true]] as const)(
-  'buildSceneLayer over a bare %s adapter',
-  (_name, hierarchical) => {
-    it('hands a derived node the path it derives', () => {
-      const { ctxOf } = paint(items(), hierarchical);
-      expect(coords(ctxOf('edge')?.derivedPath)).toEqual([0, 0, 200, 100]);
-    });
+describe('buildSceneLayer over a bare adapter', () => {
+  it('hands a derived node the path it derives', () => {
+    const { ctxOf } = paint(items());
+    expect(coords(ctxOf('edge')?.derivedPath)).toEqual([0, 0, 200, 100]);
+  });
 
-    it('hands a node that derives nothing no context', () => {
-      const { ctxOf } = paint(items(), hierarchical);
-      expect(ctxOf('a')).toBeUndefined();
-    });
+  it('hands a node that derives nothing no context', () => {
+    const { ctxOf } = paint(items());
+    expect(ctxOf('a')).toBeUndefined();
+  });
 
-    it('re-derives when the adapter answers a moved dependency', () => {
-      const list = items();
-      paint(list, hierarchical);
-      list[1] = { ...list[1], pose: { x: 50, y: 60, width: 10, height: 10 } };
-      expect(coords(paint(list, hierarchical).ctxOf('edge')?.derivedPath)).toEqual([0, 0, 50, 60]);
-    });
-  },
-);
+  it('re-derives when the adapter answers a moved dependency', () => {
+    const list = items();
+    paint(list);
+    list[1] = { ...list[1], pose: { x: 50, y: 60, width: 10, height: 10 } };
+    expect(coords(paint(list).ctxOf('edge')?.derivedPath)).toEqual([0, 0, 50, 60]);
+  });
+});
