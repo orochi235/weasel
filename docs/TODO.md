@@ -1047,6 +1047,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) `foldTwisty.browser.test.tsx` fails on one machine and passes on the fleet.** "sets the
+  title of a panel with a hidden twisty where a panel that does not fold has it" measured the
+  title 3px higher with the twisty (`top: 12` against `15`) on brainhouse on 2026-10-13, with and
+  without that day's changes, and passed in three fleet runs on teitou the same day. Not looked
+  into: which of the two machines draws the header the way a reader's browser does.
+
 - **(P3) A release whose notes for one package pass 125,000 characters fails after it has
   published.** `changesets/action` writes a GitHub release per package with that package's
   changelog section as the body, and GitHub refuses a longer one. 1.10.0's core section was 135,412
