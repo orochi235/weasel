@@ -6,9 +6,11 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefList,
+  type PrefNumber,
   type PrefSection,
   prefAliasName,
   prefIsCompound,
+  resolvePrefUnit,
 } from '@weasel-js/prefs';
 import {
   DialogRow,
@@ -56,10 +58,14 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   over?: PrefGroup | PrefSection;
 }
 
-/** An auto value as tooltip text. A computed number is cut to 6 significant
- *  digits, so `0.1 + 0.2` reads `0.3`. */
-function summarizeAuto(value: unknown): string {
-  return summarizeValue(typeof value === 'number' ? Number(value.toPrecision(6)) : value);
+/** An auto value as tooltip text. A number with a unit reads as its field shows it. Any other computed
+ *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
+function summarizeAuto(value: unknown, leaf: PrefLeaf): string {
+  if (typeof value !== 'number') return summarizeValue(value);
+  const unit = leaf.kind === 'number' ? (leaf as PrefNumber).unit : undefined;
+  return unit === undefined
+    ? summarizeValue(Number(value.toPrecision(6)))
+    : resolvePrefUnit(unit).format(value);
 }
 
 /** One leaf's row, as the panel draws it. Shared with `ControlMatrix`, whose
@@ -230,7 +236,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   const resolves = canAuto && autoResolverOf(leaf) !== undefined;
   const unpinned = useUnpinned({ resolves, isAutoRow, shown, resolved, config, auto, path });
   const onAutoChange = canAuto && !unpinned.cycles ? setAuto : undefined;
-  const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value);
+  const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value, leaf);
   const autoProps = { auto: isAutoRow, onAutoChange, autoValue };
 
   const custom = customRow(resolved, renderers, path, leaf);
