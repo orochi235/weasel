@@ -311,14 +311,11 @@ Priority tags:
   synthesized (capitals scaled by x-height over cap height), and a face with an `smcp` feature
   should get its own small-cap glyphs instead.
 
-- **(P3) Text direction: the Align bar lights `start` / `end` as if an omitted `direction` were
-  `ltr`.** An omitted `TextStyle.direction` is `'auto'`, each paragraph's first strong character, so
-  right-to-left text aligned `start` paints from the right while the bar lights Left. The bar's
-  encoding (`alignEncoding` in `packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts`) is
-  handed the leaf's siblings, which are the style's fields and not the node's text, and
-  `paragraphDirection(text, direction)` needs the text. Undecided: whether `PrefEnumEncoding.read`
-  and `write` should be handed the whole node, or the bar should show `start` / `end` as their own
-  state instead of resolving them to an edge.
+- **(P3) Text direction: the Align bar has no segment for `start` / `end`.** Under a stated
+  `direction` they light the edge they resolve to; under `auto`, where each paragraph takes its
+  own from its first strong character, they light nothing. A click on any segment still writes an
+  edge over the reading-order value. Giving them segments of their own takes two glyphs, which
+  have to be drawn and proofed in a browser (`packages/ui/scripts/icons/text.mjs`).
 
 - **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
   tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs

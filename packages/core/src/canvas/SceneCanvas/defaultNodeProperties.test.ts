@@ -245,6 +245,21 @@ describe('inferredNodeProperties', () => {
     expect(align.encoding!.read('start', { direction: 'rtl' })).toBe('right');
   });
 
+  it('lights no Align segment for start or end while the direction is each paragraph\'s own', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const style = ((entry.schema.members.text as PrefSection).members['data.style']) as PrefObject;
+    const { read } = ((style.children.paragraph as PrefSection).members.align as PrefEnum).encoding!;
+    for (const siblings of [{}, { direction: 'auto' }, undefined]) {
+      expect(read('start', siblings)).toBeUndefined();
+      expect(read('end', siblings)).toBeUndefined();
+      expect(read('right', siblings)).toBe('right');
+      expect(read('justify', siblings)).toBe('justify');
+    }
+    expect(read('start', { direction: 'ltr' })).toBe('left');
+    expect(read('end', { direction: 'ltr' })).toBe('right');
+    expect(read('end', { direction: 'rtl' })).toBe('left');
+  });
+
   it('offers the box alignment beside the style, as a field of the node', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const text = entry.schema.members.text as PrefSection;
