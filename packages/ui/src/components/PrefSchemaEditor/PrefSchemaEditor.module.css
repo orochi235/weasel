@@ -44,6 +44,14 @@
 .pane { min-height: 0; overflow: auto; }
 /* The structure runs the editor's whole height under the bar, and everything else sits in what is left beside it. */
 .structurePane { grid-column: 1; grid-row: 2 / -1; display: flex; flex-direction: column; overflow: hidden; }
+/* One edge for the structure's text: a pane's title, the filter's text, and a top-level leaf's name start where a
+   group's name does, past the 16px glyph that folds it and the gap after. A leaf's label takes one more step. */
+.structurePane { --structure-text-inset: calc(16px + var(--wzl-space-3)); --wzl-tree-root-leaf-indent: calc(var(--structure-text-inset) - var(--wzl-space-1)); }
+.structurePane .paneTitle { padding-inline-start: var(--structure-text-inset); }
+/* Less the inset the tree gives what it draws when it has no rows. */
+.structurePane .storedEmpty { padding-inline-start: calc(var(--structure-text-inset) - var(--wzl-space-4)); }
+/* Less the field's own 1px border. */
+.structurePane .treeFilter { --wzl-field-pad-x: calc(var(--structure-text-inset) - 1px); }
 .structureHandle { grid-column: 2; grid-row: 2 / -1; }
 .listed { grid-template-columns: var(--structure-w) auto var(--attributes-w) auto minmax(320px, 1fr) auto var(--aside-w); }
 /* The sidebar mirrors the structure: the editor's whole height under the bar, at its other edge. */
@@ -59,7 +67,7 @@
 /* A group's glyph folds it, and says it is open. */
 :is(.treeArea, .storedArea, .shelfPane) [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }
 /* Padded all the time, so the outline a drop draws inside its edge has room and nothing moves when it appears. */
-.storedArea { flex: 0 0 var(--stored-h); box-sizing: border-box; padding: var(--wzl-space-2); }
+.storedArea { flex: 0 0 var(--stored-h); box-sizing: border-box; padding-block: var(--wzl-space-2); }
 .storedArea[data-drop] { outline: 2px solid var(--wzl-accent); outline-offset: -2px; }
 .storedEmpty { margin: 0; color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-sm); }
 .previewPane { display: flex; flex-direction: column; overflow: hidden; }

@@ -38,6 +38,11 @@
   padding-inline-start: var(--wzl-tree-leaf-indent, 0);
 }
 
+/* `--wzl-tree-root-leaf-indent`: the same for a leaf no branch holds, for a host whose own text stands at another edge. */
+.tree[data-guides] > .item:not([aria-expanded]) > .row {
+  padding-inline-start: var(--wzl-tree-root-leaf-indent, var(--wzl-tree-leaf-indent, 0));
+}
+
 .tree[data-guides] .group::before {
   content: '';
   position: absolute;
