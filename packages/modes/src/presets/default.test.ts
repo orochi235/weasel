@@ -2,10 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { DEFAULT_MODES, byId } from './default';
 
 describe('default mode preset', () => {
-  it('ships exactly six stock modes', () => {
-    expect(DEFAULT_MODES.length).toBe(6);
-  });
-
   it('includes the six documented mode ids', () => {
     const ids = DEFAULT_MODES.map((m) => m.id).sort();
     expect(ids).toEqual(['crop', 'free-transform', 'isolation', 'normal', 'path-edit', 'text-edit']);
