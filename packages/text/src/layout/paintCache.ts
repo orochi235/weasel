@@ -11,16 +11,29 @@ import type { ResolvedRun } from '../runs/resolveRuns';
 import type { LaidOutRuns } from './layoutRuns';
 import { paintRuns, type PaintedRuns, type PaintRunsOpts } from './paintRuns';
 
-/** Distinct paintings held for one layout before the whole set is dropped. */
-export const PAINT_CACHE_VARIANT_LIMIT = 8;
+/** Paintings held for one layout on behalf of runs arrays that have since
+ *  gone, before the least recently used is dropped. Sized for a palette. */
+export const PAINT_CACHE_VARIANT_LIMIT = 32;
 
-interface Entry {
-  /** `glyphGeneration()` when this entry was filled. */
+interface Painting {
+  /** `glyphGeneration()` when it was painted. */
   generation: number;
-  byVariant: Map<string, PaintedRuns>;
+  key: string;
+  painted: PaintedRuns;
 }
 
-const cache = new WeakMap<LaidOutRuns, Entry>();
+/**
+ * Two tiers, as the layout cache has and for the same reason. A runs array
+ * that stays put, which is what the renderer is handed, keeps its own painting
+ * for as long as it and its layout both live: any number of labels can share
+ * one layout and none evicts another. Runs built fresh on every call can only
+ * be found by what they paint, in a bounded map per layout.
+ *
+ * Both hang off the layout weakly and hold no reference back to it, so
+ * neither keeps one the layout cache has let go.
+ */
+const own = new WeakMap<readonly ResolvedRun[], WeakMap<LaidOutRuns, Painting>>();
+const shared = new WeakMap<LaidOutRuns, Map<string, Painting>>();
 
 /**
  * How many of the distinct font sizes present in `runs` reach `min`. The
@@ -66,21 +79,30 @@ export function cachedPaintRuns(
   runs: readonly ResolvedRun[],
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
-  const glyphs = glyphGeneration();
-  let entry = cache.get(laid);
-  if (entry === undefined) {
-    entry = { generation: glyphs, byVariant: new Map() };
-    cache.set(laid, entry);
-  } else if (entry.generation !== glyphs) {
-    entry.generation = glyphs;
-    entry.byVariant.clear();
-  }
+  const generation = glyphGeneration();
   const key = variantKey(runs, opts);
-  let painted = entry.byVariant.get(key);
-  if (painted === undefined) {
-    painted = paintRuns(laid, runs, opts);
-    if (entry.byVariant.size >= PAINT_CACHE_VARIANT_LIMIT) entry.byVariant.clear();
-    entry.byVariant.set(key, painted);
+  const fresh = (p: Painting | undefined): p is Painting =>
+    p !== undefined && p.generation === generation && p.key === key;
+
+  let byLayout = own.get(runs);
+  if (byLayout === undefined) {
+    byLayout = new WeakMap();
+    own.set(runs, byLayout);
   }
-  return painted;
+  const mine = byLayout.get(laid);
+  if (fresh(mine)) return mine.painted;
+
+  let byKey = shared.get(laid);
+  if (byKey === undefined) {
+    byKey = new Map();
+    shared.set(laid, byKey);
+  }
+  let painting = byKey.get(key);
+  // Deleted either way, so that setting it below makes it the youngest.
+  byKey.delete(key);
+  if (!fresh(painting)) painting = { generation, key, painted: paintRuns(laid, runs, opts) };
+  if (byKey.size >= PAINT_CACHE_VARIANT_LIMIT) byKey.delete(byKey.keys().next().value!);
+  byKey.set(key, painting);
+  byLayout.set(laid, painting);
+  return painting.painted;
 }

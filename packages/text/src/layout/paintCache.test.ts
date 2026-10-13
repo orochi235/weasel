@@ -119,6 +119,30 @@ describe('cachedPaintRuns', () => {
     });
   });
 
+  describe('labels that share a layout and differ in paint', () => {
+    const label = (i: number): ResolvedRun[] => [{
+      ...run('AB'),
+      fill: { paint: { kind: 'solid', color: `hsl(${i * 7} 50% 50%)` } },
+      underline: i % 3 === 0,
+      ...(i % 5 === 0 ? { stroke: { paint: { color: '#f00' }, width: 1 + i } } : {}),
+    }];
+    const frame = (labels: readonly ResolvedRun[][]) =>
+      labels.map((runs) => cachedPaintRuns(cachedLayoutRuns(runs, OPTS), runs));
+
+    it('paints each once, however many there are, while their runs arrays live', () => {
+      const labels = Array.from({ length: PAINT_CACHE_VARIANT_LIMIT * 4 }, (_, i) => label(i));
+      expect(new Set(labels.map((runs) => cachedLayoutRuns(runs, OPTS))).size).toBe(1);
+      const first = frame(labels);
+      expect(new Set(first).size).toBe(labels.length);
+      frame(labels).forEach((painted, i) => expect(painted).toBe(first[i]));
+    });
+
+    it('paints each once from runs built fresh every frame, for a palette of paints', () => {
+      const first = frame(Array.from({ length: 24 }, (_, i) => label(i)));
+      frame(Array.from({ length: 24 }, (_, i) => label(i))).forEach((painted, i) => expect(painted).toBe(first[i]));
+    });
+  });
+
   it('bounds the paintings held for one layout', () => {
     const laid = cachedLayoutRuns([run('AB')], OPTS);
     const colored = (i: number): ResolvedRun[] =>
