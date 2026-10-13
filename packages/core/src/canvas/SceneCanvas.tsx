@@ -10,12 +10,13 @@ import { getActiveModeFor } from '@weasel-js/modes';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
-import { InputScope, usePublishSelection } from '@weasel-js/routing/react';
+import { InputScope } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import type { InsertAdapter } from 'core/adapters/types';
 import { sceneFromJSON } from 'core/scene/scene';
 import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import { readOnlySelection } from 'core/selection/readOnlySelection';
+import { usePublishSceneSelection } from 'core/selection/usePublishSceneSelection';
 import { useSelection, type UseSelectionOptions } from 'core/selection/useSelection';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { normalizeView, type View } from 'core/viewport/view';
@@ -307,29 +308,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // consumer's own api is not wrapped and still writes.
   const selection = selectable ? baseSelection : readOnlySelection(baseSelection);
 
-  // Publish the current selection (with optional per-id kind labels) into any surrounding
-  // `<SelectionContextProvider>`. No-op when no provider is in scope.
-  const currentSelection = selection.current;
-  const selectionKinds = useMemo<readonly (string | undefined)[] | undefined>(() => {
-    if (currentSelection.length === 0) return undefined;
-    const out: (string | undefined)[] = [];
-    for (const id of currentSelection) {
-      const node = scene.get(id);
-      if (!node) { out.push(undefined); continue; }
-      if (describeKind) { out.push(describeKind(node)); continue; }
-      // Default heuristic: containers -> 'group', poses with .kind -> 'path',
-      // everything else unlabelled (consumer can supply describeKind to fill in).
-      if (node.kind === 'container') { out.push('group'); continue; }
-      const pose = node.pose as unknown as { kind?: unknown } | null;
-      if (pose && typeof pose === 'object' && 'kind' in pose && typeof pose.kind === 'string') {
-        out.push('path');
-        continue;
-      }
-      out.push(undefined);
-    }
-    return out;
-  }, [currentSelection, scene, describeKind]);
-  usePublishSelection(currentSelection, selectionKinds);
+  usePublishSceneSelection(scene, selection.current, describeKind);
 
   // `isAllowed` is absent, not a predicate, when no mode registry is wired:
   // see `PathEditSource.isAllowed`.
