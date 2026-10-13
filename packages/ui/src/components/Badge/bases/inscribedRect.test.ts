@@ -36,9 +36,26 @@ describe('inscribedRect', () => {
 });
 
 describe('fitInsets', () => {
-  it('pads the content out until it covers the rectangle and no more', () => {
-    const insets = fitInsets({ left: 25, top: 10, right: 75, bottom: 60 }, { w: 100, h: 20 });
+  const none = { top: 0, right: 0, bottom: 0, left: 0 };
+
+  it('pads the content out until the rectangle holds it and no more', () => {
     // The content is half the box's width and half its height.
+    const insets = fitInsets({ left: 25, top: 10, right: 75, bottom: 60 }, { w: 100, h: 20 }, none);
     expect(insets).toEqual({ top: 4, right: 50, bottom: 16, left: 50 });
+  });
+
+  it('keeps a side at its floor when the outline asks for less', () => {
+    const insets = fitInsets({ left: 25, top: 0, right: 100, bottom: 100 }, { w: 90, h: 20 }, { top: 6, right: 8, bottom: 6, left: 4 });
+    // 25% of a box of 90 + 8 + left is left: 32.67.
+    expect(insets).toEqual({ top: 6, right: 8, bottom: 6, left: 32.67 });
+  });
+
+  it('holds the content inside the rectangle with the floor applied', () => {
+    const rect = { left: 17, top: 0, right: 70, bottom: 100 };
+    const content = { w: 120, h: 14 };
+    const insets = fitInsets(rect, content, { top: 12, right: 16, bottom: 12, left: 16 });
+    const width = content.w + insets.left + insets.right;
+    expect(insets.left).toBeGreaterThanOrEqual((rect.left / 100) * width - 0.01);
+    expect(insets.left + content.w).toBeLessThanOrEqual((rect.right / 100) * width + 0.01);
   });
 });

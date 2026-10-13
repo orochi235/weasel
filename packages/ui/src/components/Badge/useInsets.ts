@@ -36,8 +36,8 @@ function useElementSize(ref: RefObject<HTMLElement | null>, enabled: boolean): {
 
 /**
  * The padding a shape or base adds around the badge's content. A base that `fitsContent` has
- * an outline that dips inside its box by a share of the box, so its insets are a share of the
- * content at `contentRef`, and its declared `insets` only stand in until that is measured.
+ * an outline that dips inside its box by a share of the box, so its declared `insets`
+ * grow by whatever share of the content at `contentRef` keeps that content inside the outline.
  */
 export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefObject<HTMLElement | null>): ShapeInsets {
   const fits = source.fitsContent === true && source.build !== undefined;
@@ -48,6 +48,6 @@ export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefO
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `params` is a fresh object every render; `key` is its value.
     [fits, source, key],
   );
-  if (rect && size) return fitInsets(rect, size);
-  return (typeof source.insets === 'function' ? source.insets(params) : source.insets) ?? NONE;
+  const declared = (typeof source.insets === 'function' ? source.insets(params) : source.insets) ?? NONE;
+  return rect && size ? fitInsets(rect, size, declared) : declared;
 }

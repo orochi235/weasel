@@ -64,15 +64,29 @@ export function clearRect(sampler: BaseSampler): ViewRect {
   return { left: r.left + by, top: r.top + by, right: Math.max(r.left + by, r.right - by), bottom: Math.max(r.top + by, r.bottom - by) };
 }
 
-/** The padding that puts a `content`-sized box exactly over `rect` of the box the padding makes. */
-export function fitInsets(rect: ViewRect, content: { w: number; h: number }): ShapeInsets {
-  const perW = content.w / Math.max(1, rect.right - rect.left);
-  const perH = content.h / Math.max(1, rect.bottom - rect.top);
-  const up = (n: number) => Math.ceil(n * 100) / 100;
-  return {
-    top: up(perH * rect.top),
-    right: up(perW * (100 - rect.right)),
-    bottom: up(perH * (100 - rect.bottom)),
-    left: up(perW * rect.left),
+/** Padding on the two sides of one axis: each at least its `floor`, and each at least the share of the padded length that `before` and `after` take. */
+function fitAxis(content: number, before: number, after: number, floor: [number, number]): [number, number] {
+  let pad = floor;
+  // The length depends on the padding and the padding on the length; the shares sum to under 1, so this settles.
+  for (let i = 0; i < 40; i++) {
+    const length = content + pad[0] + pad[1];
+    pad = [Math.max(floor[0], before * length), Math.max(floor[1], after * length)];
+  }
+  return pad;
+}
+
+/**
+ * The least padding, no side under `floor`, that keeps a `content`-sized box inside `rect` of
+ * the box the padding makes.
+ */
+export function fitInsets(rect: ViewRect, content: { w: number; h: number }, floor: ShapeInsets): ShapeInsets {
+  // A rectangle with no room in it would ask for endless padding.
+  const share = (from: number, to: number): [number, number] => {
+    const scale = Math.min(1, 0.9 / Math.max(1e-6, (from + 100 - to) / 100));
+    return [(from / 100) * scale, ((100 - to) / 100) * scale];
   };
+  const [left, right] = fitAxis(content.w, ...share(rect.left, rect.right), [floor.left, floor.right]);
+  const [top, bottom] = fitAxis(content.h, ...share(rect.top, rect.bottom), [floor.top, floor.bottom]);
+  const up = (n: number) => Math.ceil(n * 100) / 100;
+  return { top: up(top), right: up(right), bottom: up(bottom), left: up(left) };
 }
