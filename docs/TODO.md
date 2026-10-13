@@ -624,6 +624,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
+  `plain` `Badge`, when the line cannot hold the last word and the control together, the control
+  breaks alone and takes its negative margin with it, so it sits left of the line's start. Measured
+  in bare markup, not on a badge. A word joiner, a non-breaking space, and `white-space: nowrap` do
+  not stop Chromium breaking before an inline-block.
+
+- **(P3) A `Badge` padded through `style` keeps its old click target.** The label of a removable
+  `pill` or `plain` badge reaches into the padding by `--badge-pad-*`, which only the `padding`
+  prop sets. Read from the code.
+
+- **(P3) A fitted badge base ignores effects and a negative `bloat`.** `useInsets` keeps the
+  content inside the base's sampled outline, but not inside one an effect or `bloat` has pushed
+  inward. Read from the code.
+
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (flip, align, distribute, clone, clipboard, booleans, outlines,
   edit-anchors, lasso-select) holds its options, geometry, and gesture adapter. One directory per
