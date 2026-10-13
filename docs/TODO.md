@@ -285,14 +285,6 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P2) `SelectionPanel` cannot clear a fill.** Since `fill` became a record (2026-10-12), the
-  default node properties describe `data.fill` as an object leaf with a `paint` child, and
-  `leafField.ts` gives a paint nested in an object `allowNone: false`. Its comment says no kit paint
-  field is optional, which is no longer so: `Fill.paint` and `Stroke.paint` are both optional, and
-  either record with no paint paints nothing. "None" on a nested paint should remove the `paint`
-  field from its parent, which gives a stroke the same control. Draw is unaffected: it clears a
-  fill through `setFill`.
-
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),

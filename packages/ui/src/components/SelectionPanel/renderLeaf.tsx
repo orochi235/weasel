@@ -24,9 +24,8 @@ export interface RenderBuiltinOptions {
   /** Identifies the current selection, so a control holding per-selection
    *  scratch (the paint kind memory) is remounted rather than carried over. */
   selectionKey?: string;
-  /** True for a field of an object leaf. Such a field writes itself into its
-   *  parent, so it can only hold values its parent's type permits — which is
-   *  what rules "none" out for a nested paint. */
+  /** True for a field of an object leaf, which writes itself into its parent:
+   *  "None" on a nested paint removes the field. */
   nested?: boolean;
   surface?: LeafSurface;
 }
