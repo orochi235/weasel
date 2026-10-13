@@ -130,10 +130,9 @@ export interface UseViewHelpersOpts<TPose> {
   boundsOfPose?: ((id: string, pose: TPose) => Bounds | null) | undefined;
   selection: readonly NodeId[];
   gestureSource: GestureSource | undefined;
-  /** Dispatcher-published preview overlays, read through a ref so a change
-   *  mid-gesture doesn't rebuild the memos that depend on them. */
+  /** The dispatcher's preview pose for an id, read through a ref so a change
+   *  mid-gesture doesn't rebuild the memos that depend on it. */
   previewPoseExtra: ((id: string) => unknown) | undefined;
-  previewIdsExtra: (() => Iterable<string> | null) | undefined;
   /** Chrome-caps predicate for this view. Absent means everything is visible. */
   getIsVisible?: (() => (id: string) => boolean) | undefined;
 }
@@ -141,15 +140,6 @@ export interface UseViewHelpersOpts<TPose> {
 export interface ViewHelpersBundle<TPose> {
   helpers: CanvasViewHelpers<TPose>;
   chromeState: ChromeState;
-  /** Committed pose straight from the adapter, no overlay applied. */
-  committedPoseOf(id: string): TPose | null;
-  /** Bounds resolver after the `boundsOf` / adapter fallback, before previews. */
-  effectiveBoundsOf: ((id: string) => Bounds | null) | undefined;
-  /** Live dispatcher preview extras, for callers outside this bundle. */
-  previewExtraRef: React.MutableRefObject<{
-    previewPoseExtra: ((id: string) => unknown) | undefined;
-    previewIdsExtra: (() => Iterable<string> | null) | undefined;
-  }>;
 }
 
 /** The composed pose when the adapter resolves one, its stored pose otherwise.
@@ -171,7 +161,7 @@ export function useViewHelpers<TPose>(
 ): ViewHelpersBundle<TPose> {
   const {
     adapter, geometry, boundsOf, boundsOfPose, selection, gestureSource,
-    previewPoseExtra, previewIdsExtra, getIsVisible,
+    previewPoseExtra, getIsVisible,
   } = opts;
   const boxOf = useCallback(
     (id: string, pose: TPose): Bounds | null =>
@@ -207,14 +197,14 @@ export function useViewHelpers<TPose>(
 
   const multiActive = selection.length > 1;
 
-  const previewExtraRef = useLatest({ previewPoseExtra, previewIdsExtra });
+  const previewPoseExtraRef = useLatest(previewPoseExtra);
 
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
 
   const previewPoseOf = useCallback((id: string): TPose | null => {
-    const p = previewExtraRef.current.previewPoseExtra?.(id);
+    const p = previewPoseExtraRef.current?.(id);
     return p != null ? (p as TPose) : null;
-  }, [previewExtraRef]);
+  }, [previewPoseExtraRef]);
   const previewBoundsOf = useCallback((id: string): Bounds | null => {
     const p = previewPoseOf(id);
     return p != null ? boxOf(id, p) : null;
@@ -273,11 +263,5 @@ export function useViewHelpers<TPose>(
     getIsVisible: (): ((id: string) => boolean) => getIsVisible?.() ?? alwaysVisible,
   };
 
-  return {
-    helpers,
-    chromeState,
-    committedPoseOf,
-    effectiveBoundsOf,
-    previewExtraRef,
-  };
+  return { helpers, chromeState };
 }

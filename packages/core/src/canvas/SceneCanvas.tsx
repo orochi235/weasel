@@ -25,10 +25,7 @@ import { useChromeCaps, type ViewRuleInputs } from 'features/chrome-caps/useChro
 import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
 import { isSelectedNode } from 'features/paths/pathEditState';
 import { usePathEditOverlayLayer, usePathEditState } from 'features/paths/usePathEdit';
-import {
-  createSelectionOverlayLayer,
-  rotationBadgeOf,
-} from 'features/selection/overlay';
+import { rotationBadgeOf } from 'features/selection/overlay';
 import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -44,9 +41,8 @@ import { createLongPressFeedbackContribution } from '../features/longPress/longP
 import type { ReflowTransition } from '../layout/types';
 import { installTestHookIfRequested, releaseTestHook } from '../test-hook/install';
 import { useTools, type Contribution, type ToolsApi } from '../tools/overlayBinding';
-import type { SceneSlotConfig } from './buildSceneLayer';
 import { Canvas } from './Canvas';
-import type { LayersMap, SelectionOverlaySlotConfig } from './layerSlots';
+import { builtLayersOf, type CanvasLayers, type SelectionOverlaySlotConfig } from './layerSlots';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import { GestureDispatcherMounter } from './SceneCanvas/GestureDispatcherMounter';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
@@ -72,13 +68,15 @@ import type { ToolsPatch } from './SceneCanvas/toolRegistry';
 import { contributionEntries } from './SceneCanvas/useContributionRoles';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
+import { useSceneSlotLayers } from './SceneCanvas/useSceneSlotLayers';
+import { useSelectionOverlayLayer } from './SceneCanvas/useSelectionOverlayLayer';
 import type { PickView } from './SceneCanvas/useSceneSelectTool';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from './canvasExtension';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
 import { useSceneAdapter } from './sceneAdapter';
 import { createSceneLayerGate, type ViewLayerPaint } from './sceneLayerPaint';
-import { composeAlphaFor, wireSceneSlotToScene } from './sceneSlotWiring';
+import { composeAlphaFor } from './sceneSlotWiring';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { useHitObserver } from './useHitObserver';
 import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
@@ -524,16 +522,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
-  const sceneSlot = useMemo(() => {
-    const slot = mergedLayers.scene;
-    if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
-    return wireSceneSlotToScene(
-      slot as SceneSlotConfig<Node<TData, TLayer, TPose>, TPose>,
-      scene,
-      alphaFor,
-      animator?.colorOverrides,
-    );
-  }, [mergedLayers.scene, alphaFor, scene, animator]);
+  const { config: sceneSlot, layers: sceneLayers } = useSceneSlotLayers({
+    slot: mergedLayers.scene,
+    scene,
+    adapter,
+    alphaFor,
+    colorOverrides: animator?.colorOverrides,
+    boundsOf: internalBoundsOf,
+    previewIds: previewIdsExtra,
+  });
 
   // Renders in-flight gesture poses on top of the committed scene using the scene slot's
   // `drawOne`. It takes the scene-wired slot, so a ghosted derived node still resolves its path.
@@ -644,52 +641,19 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     planeOfNode: internalPlaneOfNode,
   });
 
-  const selectionOverlayLayer = useMemo(() => {
-    const selCfg = mergedLayers.selectionOverlay as
-      | SelectionOverlaySlotConfig<TPose>
-      | null
-      | undefined;
-    if (selCfg === null) return null;
-    const cfg = (selCfg ?? {}) as SelectionOverlaySlotConfig<TPose>;
+  const selectionOverlayLayer = useSelectionOverlayLayer<TPose>(
+    selectionOverlayCfg, pathEditState.getEditingIds, descriptor as PoseDescriptor<TPose>,
+  );
 
-    // The per-anchor chrome replaces the outline and handles of the node in
-    // path-edit mode.
-    const callerSuppress = cfg.getSuppressedIds;
-    const getSuppressedIds = (): ReadonlySet<string> => {
-      const own = pathEditState.getEditingIds();
-      const caller = callerSuppress?.();
-      if (!caller || caller.size === 0) return own;
-      if (own.size === 0) return caller;
-      const merged = new Set<string>(caller);
-      for (const id of own) merged.add(id);
-      return merged;
-    };
-
-    return createSelectionOverlayLayer<TPose>({
-      ...cfg,
-      getSuppressedIds,
-      ...(cfg.poseById
-        ? {
-            getPose: cfg.poseById,
-            poseDescriptor: cfg.poseDescriptor ?? (descriptor as PoseDescriptor<TPose>),
-          }
-        : {}),
-    });
-  }, [mergedLayers.selectionOverlay, pathEditState, descriptor]);
-
-  const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
-    ...mergedLayers,
-    ...(sceneSlot ? { scene: sceneSlot } : {}),
-    // Pass the pre-built selection overlay layer so Canvas receives a
-    // CustomLayerEntry and skips its own factory construction for this slot.
-    selectionOverlay: selectionOverlayLayer
-      ? { layer: selectionOverlayLayer }
-      : mergedLayers.selectionOverlay === null ? null : undefined,
+  const wiredLayers = useMemo<CanvasLayers>(() => ({
+    ...builtLayersOf(mergedLayers),
+    scene: sceneLayers,
+    selectionOverlay: selectionOverlayLayer ? { layer: selectionOverlayLayer } : null,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(slopsOn ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, slopsOn, slopsLayer]);
+  }), [mergedLayers, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, slopsOn, slopsLayer]);
 
   // `StandardActionsRegistrar` stashes the registry into this ref.
   const actionsRegistryRef = useRef<ActionsRegistry | null>(null);
@@ -766,7 +730,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       boundsOf={internalBoundsOf}
       boundsOfPose={internalBoundsOfPose}
       getIsVisible={getIsVisibleForCanvas}
-      previewIdsExtra={previewIdsExtra}
       // The gesture surface behind `helpersRef.getGestureBounds()` /
       // `subscribeGestures()` — Canvas has no dispatcher of its own.
       gestureSource={gestureSource}

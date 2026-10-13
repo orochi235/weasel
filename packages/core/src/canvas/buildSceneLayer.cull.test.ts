@@ -47,7 +47,6 @@ function layerFor(cull: boolean | undefined, withBounds = false) {
   const layer = buildSceneLayer<TestNode, Pose>(
     { cull, drawOne, ...(withBounds ? { paintBounds: testPaintBounds } : {}) },
     sceneToAdapter(scene) as never,
-    null,
     () => null,
     () => null,
   );
@@ -113,7 +112,7 @@ describe('buildSceneLayer — cull', () => {
     const drawOne = vi.fn((): DrawCommand[] => []);
     const layer = buildSceneLayer<TestNode, Pose>(
       { cull: true, drawOne, paintBounds: () => null },
-      sceneToAdapter(scene) as never, null, () => null, () => null,
+      sceneToAdapter(scene) as never, () => null, () => null,
     );
     layer.draw(null, VIEW, DIMS);
     expect(paintedNodeIds(drawOne)).toEqual([far]);

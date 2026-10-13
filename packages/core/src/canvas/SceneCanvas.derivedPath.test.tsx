@@ -25,17 +25,13 @@ import { strokeOf } from '../util/paint';
 
 type Data = Record<string, never>;
 
-/** The slots this file drives, read back off the `layers` prop `<SceneCanvas>`
- *  hands `<Canvas>`. `LayersMap`'s index signature collapses its named slots to
- *  `never` when read generically, so they are re-declared rather than cast. */
+type Drawable = { draw: (data: unknown, view: View, dims: typeof DIMS) => DrawCommand[] };
+
+/** The slots this file drives, read back off the built `layers` prop
+ *  `<SceneCanvas>` hands `<Canvas>`. */
 interface CapturedLayers {
-  scene: {
-    drawOne: (n: Node<Data, 'main', RectPose>, p: RectPose, v: View) => DrawCommand[];
-    alphaFor?: (id: string) => number;
-  };
-  previewGhost: {
-    layer: { draw: (data: unknown, view: View, dims: typeof DIMS) => DrawCommand[] };
-  };
+  scene: { layers: ReadonlyArray<{ key: string; layer: Drawable }> };
+  previewGhost: { layer: Drawable };
 }
 
 const captured = vi.hoisted(() => ({ layers: null as unknown }));
@@ -111,13 +107,18 @@ function makeEdgeScene() {
   return { scene, a, b, edge };
 }
 
+/** Every command in `cmds`, groups and what they hold alike. */
+function flat(cmds: readonly DrawCommand[]): DrawCommand[] {
+  return cmds.flatMap((cmd) => (cmd.kind === 'group' ? [cmd, ...flat(cmd.children)] : [cmd]));
+}
+
 function pathCommands(cmds: readonly DrawCommand[]): Path[] {
-  const out: Path[] = [];
-  for (const cmd of cmds) {
-    if (cmd.kind === 'path') out.push(cmd.path);
-    else if (cmd.kind === 'group') out.push(...pathCommands(cmd.children));
-  }
-  return out;
+  return flat(cmds).flatMap((cmd) => (cmd.kind === 'path' ? [cmd.path] : []));
+}
+
+/** What the scene slot paints, across the canvas layers it was built into. */
+function paintScene(layers: CapturedLayers): DrawCommand[] {
+  return layers.scene.layers.flatMap(({ layer }) => layer.draw(null, VIEW, DIMS));
 }
 
 function mount(scene: Scene<Data, 'main', RectPose>, animator?: Animator): CapturedLayers {
@@ -135,21 +136,19 @@ function mount(scene: Scene<Data, 'main', RectPose>, animator?: Animator): Captu
 }
 
 describe('<SceneCanvas> installs the scene wiring', () => {
-  it('paints the derived path through the scene slot it hands the renderer', () => {
-    const { scene, edge } = makeEdgeScene();
-    const slot = mount(scene).scene;
-    const node = scene.get(edge)!;
-    expect(pathCommands(slot.drawOne(node, node.pose, VIEW))).toEqual([EXPECTED]);
+  it('paints the derived path through the scene layers it hands the renderer', () => {
+    const { scene } = makeEdgeScene();
+    expect(pathCommands(paintScene(mount(scene)))).toContainEqual(EXPECTED);
   });
 
-  it('composes a node\'s override alpha into the slot it hands the renderer', () => {
+  it('composes a node\'s override alpha into the scene layers it hands the renderer', () => {
     const { scene, a } = makeEdgeScene();
     scene.overrides.set(a, { alpha: 0.25 });
-    const slot = mount(scene).scene;
-    expect(slot.alphaFor?.(a)).toBeCloseTo(0.25);
+    const alphas = flat(paintScene(mount(scene))).flatMap((c) => (c.kind === 'group' ? [c.alpha] : []));
+    expect(alphas.filter((alpha) => alpha !== undefined && alpha !== 1)).toEqual([0.25]);
   });
 
-  it('paints its animator\'s vertex-color overrides through the scene slot', () => {
+  it('paints its animator\'s vertex-color overrides through the scene layers', () => {
     const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({
       kind: 'leaf',
@@ -161,9 +160,7 @@ describe('<SceneCanvas> installs the scene wiring', () => {
     colorOverrides.set(id, 'stroke', [1, 0, 0, 1, 0, 0, 1, 1]);
     const animator = { colorOverrides, onTick: () => () => {} } as unknown as Animator;
 
-    const slot = mount(scene, animator).scene;
-    const node = scene.get(id)!;
-    const body = slot.drawOne(node, node.pose, VIEW).find((c) => c.kind === 'path');
+    const body = flat(paintScene(mount(scene, animator))).find((c) => c.kind === 'path');
     expect(body?.kind === 'path' && body.stroke?.vertexColors).toEqual([1, 0, 0, 1, 0, 0, 1, 1]);
   });
 

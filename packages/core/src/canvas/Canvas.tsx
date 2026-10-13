@@ -5,9 +5,9 @@
  * scene-shaped state — selection, picking, kind registry, scene-aware overlays all live in
  * `<SceneCanvas>`, which wraps it.
  *
- * The `layers` prop is a map keyed by slot name. Standard slots render at a canonical position;
- * custom entries (any other key, value carrying `.layer`) insert at `after`/`before` an existing
- * slot, defaulting to the top.
+ * The `layers` prop is a map keyed by slot name, every slot already a layer. Standard slots
+ * render at a canonical position; custom entries (any other key, value carrying `.layer`) insert
+ * at `after`/`before` an existing slot, defaulting to the top.
  *
  * @internal
  * @deprecated Bare `<Canvas>` is not a supported consumer surface.
@@ -18,14 +18,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useInsertionEf
 import type React from 'react';
 import type { Paint } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
-import { buildSceneLayers, type CanvasAdapter, type SceneSlotConfig } from './buildSceneLayer';
-import {
-  STANDARD_SLOTS,
-  isCustomEntry,
-  type CustomLayerEntry,
-  type LayersMap,
-  type SelectionOverlaySlotConfig,
-} from './layerSlots';
+import type { CanvasAdapter } from './buildSceneLayer';
+import { STANDARD_SLOTS, isCustomEntry, type CanvasLayers } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { registerMountedCanvas } from './mountedCanvases';
 import type { ToolsApi } from '../tools/overlayBinding';
@@ -47,11 +41,9 @@ import {
 import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
 import { shaderKeyOf } from './canvasRenderer';
-import { useSceneLayerList } from './useSceneLayerList';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
-import { createSelectionOverlayLayer } from 'features/selection/overlay';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { CanvasDebugSink, DebugConfig } from '../debug/types';
@@ -113,16 +105,12 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  declares it on `RenderLayer.subscribe` instead. */
   redrawOn?: readonly RedrawSource[];
 
-  /**
-   * Adapter the scene slot draws from and pose and bounds lookups read. Required only for the
-   * scene or selection-overlay slots. The scene-tree
-   * methods (`getLayers`/`getNode`/`getChildren`) are optional — present on a hierarchical
-   * `SceneCanvasAdapter`, absent on flat adapters — and feature-detected at draw time.
-   */
+  /** Adapter the pose and bounds lookups on `helpersRef` read. Only `getPose` and, where
+   *  present, `getWorldPose` are called. */
   adapter?: CanvasAdapter<TNode, TPose>;
 
   /** Layer map. See module docstring for slot semantics. */
-  layers: LayersMap<TNode, TPose>;
+  layers: CanvasLayers;
 
   /**
    * Current selection state; Canvas owns none of its own and never writes it. When absent,
@@ -234,8 +222,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  - `DebugConfig` object: force on with that config, ignore URL.
    *
    * When enabled, the Canvas appends a screen-space `debug-overlay` layer and builds the
-   * sink it paints: the scene slot and each paint record into it, and the layer helpers and
-   * the ref handle's `getDebug` hand it to whatever else records.
+   * sink it paints: each paint records into it, and the layer helpers and the ref handle's
+   * `getDebug` hand it to whatever else records.
    */
   debug?: DebugConfig | false;
 
@@ -252,12 +240,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * canvas, and the renderer recompiles it for that frame.
    */
   shaders?: ShaderProgramHandle[];
-
-  /**
-   * Ids whose committed paint is suppressed during the current frame. `<SceneCanvas>` wires
-   * it to the gesture dispatcher's in-flight handles.
-   */
-  previewIdsExtra?: () => Iterable<string> | null;
 
   /**
    * Preview-pose lookup, so selection chrome tracks the ghost during dispatcher-driven
@@ -398,7 +380,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     debug: debugProp,
     debugSinkRef,
     shaders,
-    previewIdsExtra,
     previewPoseExtra,
     gestureSource,
     backgroundFill,
@@ -608,12 +589,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // One view's overlay-aware state. A hook, so N views are N components each
   // calling it once — not a loop in this body.
-  const {
-    helpers: viewHelpers,
-    chromeState: viewChromeState,
-    effectiveBoundsOf,
-    previewExtraRef,
-  } = useViewHelpers<TPose>({
+  const { helpers: viewHelpers, chromeState: viewChromeState } = useViewHelpers<TPose>({
     adapter,
     geometry,
     boundsOf,
@@ -621,7 +597,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     selection: selectedIdsForWiring,
     gestureSource,
     previewPoseExtra,
-    previewIdsExtra,
     getIsVisible: () => gateRef.current.getIsVisible?.() ?? alwaysVisible,
   });
 
@@ -635,69 +610,23 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     [backgroundFill],
   );
 
-  const sceneLayersKey = useSceneLayerList(adapter);
   const layers = useMemo<RenderLayer<unknown>[]>(() => {
     const standardLayers: Partial<
       Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>
     > = {};
-
-    const grid = layersMap.grid;
-    if (isCustomEntry(grid)) standardLayers.grid = grid.layer;
-    const cellHighlight = layersMap.cellHighlight;
-    if (isCustomEntry(cellHighlight)) standardLayers.cellHighlight = cellHighlight.layer;
-
-    const sceneCfg = layersMap.scene as SceneSlotConfig<TNode, TPose> | null | undefined;
-    let sceneLayers: Array<{ key: string; layer: RenderLayer<unknown> }> | undefined;
-    if (
-      sceneCfg &&
-      !isCustomEntry(sceneCfg) &&
-      (sceneCfg as SceneSlotConfig<TNode, TPose>).drawOne
-    ) {
-      sceneLayers = buildSceneLayers<TNode, TPose>(
-        sceneCfg,
-        adapter,
-        debugSink,
-        effectiveBoundsOf,
-        () => {
-          const ids = new Set(previewExtraRef.current.previewIdsExtra?.() ?? []);
-          return ids.size > 0 ? ids : null;
-        },
-      );
+    for (const slot of ['grid', 'cellHighlight', 'selectionOverlay'] as const) {
+      const entry = layersMap[slot];
+      if (isCustomEntry(entry)) standardLayers[slot] = entry.layer;
     }
-
-    const selSlot = layersMap.selectionOverlay as
-      | SelectionOverlaySlotConfig<TPose>
-      | CustomLayerEntry
-      | null
-      | undefined;
-    if (isCustomEntry(selSlot)) {
-      // Pre-built layer (e.g. from SceneCanvas) — pass through directly.
-      standardLayers.selectionOverlay = selSlot.layer;
-    } else if (selSlot !== null) {
-      const cfg = (selSlot ?? {}) as SelectionOverlaySlotConfig<TPose>;
-      standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
-        ...cfg,
-        // A consumer-supplied pose lookup still needs the configured geometry
-        // to project with; without one the layer reads bounds off the chrome
-        // state and never calls either.
-        ...(cfg.poseById
-          ? { getPose: cfg.poseById, poseDescriptor: cfg.poseDescriptor ?? geometry }
-          : {}),
-      });
-    }
-
     const out: RenderLayer<unknown>[] = composeOrderedLayers(
       decorationLayer ? { ...layersMap, decorationLayer: { layer: decorationLayer } } : layersMap,
-      standardLayers, sceneLayers, backgroundLayer,
+      standardLayers, layersMap.scene?.layers, backgroundLayer,
     );
     if (tools) {
       placeToolOverlays(out, standardLayers.selectionOverlay, tools.getActiveOverlays);
     }
     return out;
-    // `sceneLayersKey` stands for `adapter.getLayers()`, which `buildSceneLayers` reads.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layersMap, adapter, effectiveBoundsOf, debugSink, tools, backgroundLayer,
-      decorationLayer, geometry, previewExtraRef, sceneLayersKey]);
+  }, [layersMap, tools, backgroundLayer, decorationLayer]);
 
   const viewRegistryVersion = useSyncExternalStore(
     useCallback((cb: () => void) => viewRegistry?.subscribe(cb) ?? (() => {}), [viewRegistry]),

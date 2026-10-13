@@ -39,7 +39,7 @@ function paintCalls(cull: boolean, view: View): { calls: number; nodes: number }
   const layer = buildSceneLayer(
     slot as never,
     sceneToAdapter(scene) as never,
-    null, () => null, () => null,
+    () => null, () => null,
   );
   const spies = getNodeShapes().map((p) => vi.spyOn(p, 'paint'));
   layer.draw(null, view, DIMS) as DrawCommand[];

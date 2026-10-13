@@ -59,7 +59,7 @@ describe('<Canvas paintInto> moved to another element', () => {
     const input = document.createElement('div');
     document.body.append(a, b, input);
 
-    const props = { width: 50, height: 40, layers: { probe: rectLayer }, inputElement: input };
+    const props = { width: 50, height: 40, layers: { probe: { layer: rectLayer } }, inputElement: input };
     const { rerender, unmount } = render(<Canvas {...props} paintInto={{ canvas: a, x: 0, y: 0 }} />);
     await settle();
     const recA = recorders.get(a)!;

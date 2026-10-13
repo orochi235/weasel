@@ -1,5 +1,5 @@
 import type { RenderLayer } from '../core/layers/render';
-import { STANDARD_SLOTS, isCustomEntry, type LayerSlotValue } from './layerSlots';
+import { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 import type { OverlayPosition } from '@weasel-js/routing';
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
@@ -16,8 +16,8 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
  * - Dangling references and cycles go to the tail with a `console.warn`.
  * - An entry with both `after` and `before` is placed by `after`.
  */
-export function composeOrderedLayers<TNode extends { id: string }, TPose>(
-  layersMap: Record<string, LayerSlotValue<TNode, TPose> | null | undefined>,
+export function composeOrderedLayers(
+  layersMap: Record<string, unknown>,
   standardLayers: Partial<Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>>,
   /** The `scene` slot split into per-scene-layer canvas layers (keyed
    *  `scene:<layerId>`), in render order. Each key becomes an anchor point;

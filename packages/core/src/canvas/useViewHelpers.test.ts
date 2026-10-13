@@ -25,7 +25,6 @@ describe('useViewHelpers chrome state', () => {
       selection,
       gestureSource: undefined,
       previewPoseExtra: undefined,
-      previewIdsExtra: undefined,
     };
     const { result, rerender } = renderHook((o) => useViewHelpers(o), { initialProps: opts });
     const corners = createCornerResizeAffordance();
@@ -59,7 +58,6 @@ describe('useViewHelpers preview bounds', () => {
       selection: [asNodeId('a')],
       gestureSource: undefined,
       previewPoseExtra: () => ({ x: 100, y: 40, width: 20, height: 20 }),
-      previewIdsExtra: () => ['a'],
     }));
     expect(result.current.helpers.getEffectiveBounds('a')).toEqual({ x: 50, y: 20, width: 10, height: 10 });
   });

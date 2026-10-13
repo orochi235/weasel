@@ -8,7 +8,7 @@ beforeAll(stubCanvasContext);
 
 describe('Canvas debug overlay', () => {
   function noopScene() {
-    return { drawOne: () => [] } as const;
+    return { layers: [{ key: 'scene', layer: { id: 'scene', label: 'Scene', draw: () => [] } }] };
   }
 
   it('debug={false} produces no overlay layer even when URL has ?debug=all', () => {
@@ -49,7 +49,7 @@ describe('Canvas debug overlay', () => {
     render(
       <Canvas
         width={100} height={100}
-                layers={{ scene: { drawOne: () => [] } }}
+                layers={{ scene: noopScene() }}
         boundsOf={(id) => {
           const it = items.find((i) => i.id === id);
           return it ? { x: it.x, y: it.y, width: it.w, height: it.h } : null;

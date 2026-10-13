@@ -53,7 +53,7 @@ describe('<Canvas> backgroundFill prop', () => {
       <Canvas
         width={200}
         height={200}
-        layers={{ scene: { drawOne: () => [] } }}
+        layers={{ scene: { layers: [{ key: 'scene', layer: { id: 'scene', label: 'Scene', draw: () => [] } }] } }}
         backgroundFill={{ color: '#ff0000' }}
         debug={{ layers: true }}
         debugSinkRef={sinkRef}

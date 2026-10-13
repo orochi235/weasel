@@ -48,7 +48,6 @@ describe('buildSceneLayer — alphaFor', () => {
         alphaFor,
       },
       adapter as never,
-      null,
       () => null,
       () => null,
     );
@@ -93,7 +92,6 @@ describe('buildSceneLayer — alphaFor', () => {
         alphaFor: () => 1,
       },
       adapter as never,
-      null,
       () => null,
       () => null,
     );

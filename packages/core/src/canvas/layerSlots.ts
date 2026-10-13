@@ -31,7 +31,7 @@ export function isCustomEntry(v: unknown): v is CustomLayerEntry {
 }
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
- *  minus the `getSelection`/`getPose` Canvas wires automatically. */
+ *  minus the `getSelection`/`getPose` the canvas wires automatically. */
 export type SelectionOverlaySlotConfig<TPose> = Omit<
   SelectionOverlayLayerOpts<TPose>,
   'getSelection' | 'getPose'
@@ -68,9 +68,8 @@ export type LayersMap<
    *  e.g. `createGridLayer` from `@weasel-js/guides` — or `null`. */
   grid?: CustomLayerEntry | null;
   scene?: TSceneSlot | null;
-  /** Selection-overlay slot. Canvas constructs the layer from a
-   *  `SelectionOverlaySlotConfig`; pass a `CustomLayerEntry` (`{ layer }`) to
-   *  supply a pre-built layer (e.g. from `<SceneCanvas>`). */
+  /** Selection-overlay slot: the config `<SceneCanvas>` builds the layer
+   *  from, or `null` for no selection chrome. */
   selectionOverlay?: SelectionOverlaySlotConfig<TPose> | CustomLayerEntry | null;
   /** Cell-highlight overlay slot, drawn immediately after the grid. Takes a
    *  pre-built layer (`{ layer }`) — e.g. `createCellHighlightLayer` from
@@ -79,3 +78,31 @@ export type LayersMap<
 } & {
   [customKey: string]: LayerSlotValue<TNode, TPose> | TSceneSlot | undefined;
 };
+
+/** The scene slot once built: its canvas layers, bottom first. Each `key` is
+ *  an anchor a custom layer can name (`scene`, or `scene:<layerId>`). */
+export interface SceneSlotLayers {
+  layers: ReadonlyArray<{ key: string; layer: RenderLayer<unknown> }>;
+}
+
+/** What `<Canvas>` composes: a {@link LayersMap} with every slot already a
+ *  layer. `<SceneCanvas>` builds one from its `layers` prop. */
+export type CanvasLayers = {
+  grid?: CustomLayerEntry | null;
+  cellHighlight?: CustomLayerEntry | null;
+  scene?: SceneSlotLayers | null;
+  selectionOverlay?: CustomLayerEntry | null;
+} & {
+  [customKey: string]: CustomLayerEntry | SceneSlotLayers | null | undefined;
+};
+
+/** The layers of `map` that are already built, in its key order: each
+ *  `{ layer }` entry and each `null`. A slot config is left out, for whoever
+ *  builds it to put back. */
+export function builtLayersOf(map: Record<string, unknown>): Record<string, CustomLayerEntry | null> {
+  const out: Record<string, CustomLayerEntry | null> = {};
+  for (const [key, value] of Object.entries(map)) {
+    if (value === null || isCustomEntry(value)) out[key] = value;
+  }
+  return out;
+}

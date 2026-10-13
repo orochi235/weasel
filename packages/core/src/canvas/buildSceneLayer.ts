@@ -1,16 +1,16 @@
 /**
- * The scene slot: how `<Canvas>` turns an adapter's nodes into render layers.
- * One layer for a flat adapter, one per scene layer for a hierarchical one.
+ * The scene slot: an adapter's nodes as render layers. One layer for a flat
+ * adapter, one per scene layer for a hierarchical one.
  */
 import type { Path } from '@weasel-js/geom';
 import type { MoveAdapter, ResizeAdapter, RotateAdapter } from 'core/adapters/types';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
-import type { DebugSink } from '../debug/types';
 import { cullDrawCommands, viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 import { adapterDerivedPathOf } from './adapterDerivedPath';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
+import { debugSinkFrom } from './drawEnvelope';
 import type { NodePaintCtx } from './NodeShape';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { sceneLayerKey } from './sceneLayerPaint';
@@ -36,8 +36,8 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
   /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
   toPose?: (obj: TNode) => TPose;
   /** Draw a single object as a `DrawCommand` tree. `ctx` carries a derived
-   *  node's path: `<SceneCanvas>` resolves it from the scene, and a bare
-   *  `<Canvas>` from its adapter. */
+   *  node's path: `<SceneCanvas>` resolves it from the scene, and
+   *  `buildSceneLayer` called without one from its adapter. */
   drawOne: (obj: TNode, pose: TPose, view: View, ctx?: NodePaintCtx) => DrawCommand[];
   /** The path a container derives from its dependencies' poses, for the clip
    *  it imposes on its subtree — `drawOne`'s `ctx` carries the derived path a
@@ -116,12 +116,12 @@ function withAdapterDerivedPaths<TNode extends { id: string }, TPose>(
 
 /**
  * Build the scene layer, which draws committed poses. `hideIds()` skips the committed paint
- * of ids the active tool is currently ghosting so the source doesn't show through.
+ * of ids the active tool is currently ghosting so the source doesn't show through. With a
+ * debug sink on its draw envelope, it records each node's bounds and origin there.
  */
 export function buildSceneLayer<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
   adapter: CanvasAdapter<TNode, TPose> | undefined,
-  debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
   /** When set, the returned layer carries this `id` and paints ONLY the named
@@ -145,7 +145,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
   return {
     id: slot?.id ?? 'scene',
     label: slot ? `Scene: ${slot.forLayer}` : 'Scene',
-    draw: (_data, view, dims) => {
+    draw: (data, view, dims) => {
+      const debugSink = debugSinkFrom(data);
       const hidden = hideIds();
       const a = adapter;
       if (
@@ -226,7 +227,6 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
 export function buildSceneLayers<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
   adapter: CanvasAdapter<TNode, TPose> | undefined,
-  debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
 ): Array<{ key: string; layer: RenderLayer<unknown> }> {
@@ -235,11 +235,11 @@ export function buildSceneLayers<TNode extends { id: string }, TPose>(
       ? adapter.getLayers().map((l) => l.id)
       : null;
   if (!sceneLayerIds || sceneLayerIds.length === 0) {
-    return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds) }];
+    return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, boundsOfFn, hideIds) }];
   }
   return sceneLayerIds.map((id) => ({
     key: sceneLayerKey(id),
-    layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds, {
+    layer: buildSceneLayer(cfg, adapter, boundsOfFn, hideIds, {
       id: sceneLayerKey(id),
       forLayer: id,
     }),

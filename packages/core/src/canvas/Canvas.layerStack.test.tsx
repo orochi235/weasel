@@ -38,35 +38,6 @@ async function stackOf(props: Partial<CanvasProps>): Promise<string[]> {
   return sinkRef.current!.snapshot().layers.map((l) => l.id);
 }
 
-describe('<Canvas> scene slot', () => {
-  const POSE = { x: 0, y: 0, width: 10, height: 10 };
-  const adapter = {
-    getNodes: () => [{ id: 'a' }, { id: 'b' }],
-    getPose: () => POSE,
-  };
-
-  async function drawnIds(props: Partial<CanvasProps>): Promise<string[]> {
-    const drawn = new Set<string>();
-    render(
-      <Canvas
-        width={100}
-        height={100}
-        adapter={adapter as never}
-        layers={{ scene: { drawOne: (n: { id: string }) => { drawn.add(n.id); return []; } } }}
-        {...props}
-      />,
-    );
-    await act(waitForFrame);
-    await act(waitForFrame);
-    return [...drawn].sort();
-  }
-
-  it('leaves out the committed paint of an id the in-flight gesture previews', async () => {
-    expect(await drawnIds({})).toEqual(['a', 'b']);
-    expect(await drawnIds({ previewIdsExtra: () => ['a'] })).toEqual(['b']);
-  });
-});
-
 describe('<Canvas> layer stack', () => {
   it('puts the background fill beneath everything, the grid included', async () => {
     expect(await stackOf({
@@ -74,6 +45,7 @@ describe('<Canvas> layer stack', () => {
       layers: {
         grid: { layer: layer('grid') },
         under: { layer: layer('under'), before: 'grid' },
+        selectionOverlay: { layer: layer('selection-overlay') },
       },
     })).toEqual(['scene-background-fill', 'under', 'grid', 'selection-overlay', 'painted-cursor']);
   });
@@ -81,6 +53,7 @@ describe('<Canvas> layer stack', () => {
   it('puts the decoration layer above every slot and custom layer, and above anchored tool overlays only when there is no selection chrome', async () => {
     const layers = {
       grid: { layer: layer('grid') },
+      selectionOverlay: { layer: layer('selection-overlay') },
       loose: { layer: layer('loose') },
       above: { layer: layer('above'), after: 'selectionOverlay' },
     };

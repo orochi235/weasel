@@ -20,7 +20,6 @@ describe('buildSceneLayer hierarchical path', () => {
     const layer = buildSceneLayer(
       { drawOne: (_node, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } }] },
       adapter as never,
-      null,
       () => null,
       () => null,
     );
@@ -57,7 +56,6 @@ describe('buildSceneLayer hierarchical path', () => {
         },
       },
       adapter as never,
-      null,
       () => null,
       () => null,
     );
@@ -79,7 +77,6 @@ describe('buildSceneLayer hierarchical path', () => {
     const layer = buildSceneLayer(
       { drawOne: (_obj, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } }] },
       adapter as never,
-      null,
       () => null,
       () => null,
     );
@@ -118,7 +115,6 @@ describe('buildSceneLayer postProcess', () => {
         },
       },
       adapter as never,
-      null,
       () => null,
       () => null,
     );
@@ -146,7 +142,6 @@ describe('buildSceneLayer postProcess', () => {
         },
       },
       adapter as never,
-      null,
       () => null,
       () => null,
     );
@@ -157,11 +152,11 @@ describe('buildSceneLayer postProcess', () => {
   it('identity hook emits commands deep-equal to the no-hook baseline', () => {
     const cfg = { drawOne: () => RED_RECT };
     const baseline = buildSceneLayer(
-      cfg, makeHierarchicalAdapter() as never, null, () => null, () => null,
+      cfg, makeHierarchicalAdapter() as never, () => null, () => null,
     ).draw(null, VIEW, DIMS);
     const withHook = buildSceneLayer(
       { ...cfg, postProcess: (cmds: DrawCommand[]) => cmds },
-      makeHierarchicalAdapter() as never, null, () => null, () => null,
+      makeHierarchicalAdapter() as never, () => null, () => null,
     ).draw(null, VIEW, DIMS);
     expect(withHook).toEqual(baseline);
   });
@@ -185,7 +180,6 @@ describe('buildSceneLayer postProcess', () => {
         },
       },
       adapter as never,
-      null,
       () => null,
       () => null,
     );
@@ -211,7 +205,6 @@ describe('buildSceneLayer postProcess', () => {
         },
       },
       undefined,
-      null,
       () => null,
       () => null,
     );
@@ -235,7 +228,6 @@ describe('buildSceneLayer postProcess', () => {
         },
       },
       undefined,
-      null,
       () => null,
       () => null,
     );

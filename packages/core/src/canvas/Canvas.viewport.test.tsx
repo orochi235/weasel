@@ -7,7 +7,7 @@ beforeAll(stubCanvasContext);
 
 describe('Canvas viewport', () => {
   function noopScene() {
-    return { drawOne: () => [] } as const;
+    return { layers: [{ key: 'scene', layer: { id: 'scene', label: 'Scene', draw: () => [] } }] };
   }
 
   it('uncontrolled: defaults to {x:0,y:0} and is internally mutable', () => {

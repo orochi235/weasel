@@ -58,7 +58,11 @@ describe('<Canvas> debug overlay', () => {
       <Canvas
         width={100}
         height={100}
-        layers={{ grid: { layer: layer('grid') }, mine: { layer: layer('mine') } }}
+        layers={{
+          grid: { layer: layer('grid') },
+          selectionOverlay: { layer: layer('selection-overlay') },
+          mine: { layer: layer('mine') },
+        }}
         debug={{ layers: true }}
         debugSinkRef={sinkRef}
       />,

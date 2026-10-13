@@ -9,7 +9,8 @@
 import type { ChromeState } from 'core/selection/chromeState';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import type { GesturePreviewSource } from './gestureBounds';
-import type { CanvasViewHelpers } from './useViewHelpers';
+import type { DebugSink } from '../debug/types';
+import type { CanvasSurfaceHelpers, CanvasViewHelpers } from './useViewHelpers';
 
 type PartialEnvelope = Partial<CanvasViewHelpers<unknown>>;
 
@@ -41,6 +42,13 @@ export function previewSourcesFrom(data: unknown): readonly GesturePreviewSource
 /** The overlay shapes this view's in-flight handles publish. */
 export function gestureOverlaysFrom(data: unknown): readonly OngoingOverlay[] {
   return thunk(data, 'getGestureOverlays')?.() ?? EMPTY_OVERLAYS;
+}
+
+/** The surface's debug sink, or `null` when debugging is off and when the
+ *  caller passed plain data. */
+export function debugSinkFrom(data: unknown): DebugSink | null {
+  const getDebug = (data as Partial<CanvasSurfaceHelpers> | null | undefined)?.getDebug;
+  return typeof getDebug === 'function' ? getDebug() : null;
 }
 
 /** First non-null `previewPose(id)` across `sources`, or `null`. */

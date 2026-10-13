@@ -51,7 +51,7 @@ function paint(list: Item[], hierarchical: boolean) {
       : {}),
   };
   const drawOne = vi.fn((_n: Item, _p: Pose, _v: unknown, _ctx?: NodePaintCtx): DrawCommand[] => []);
-  const layer = buildSceneLayer<Item, Pose>({ drawOne }, adapter as never, null, () => null, () => null);
+  const layer = buildSceneLayer<Item, Pose>({ drawOne }, adapter as never, () => null, () => null);
   layer.draw(undefined, VIEW, DIMS);
   const ctxOf = (id: string) => drawOne.mock.calls.find(([n]) => n.id === id)![3];
   return { ctxOf };
