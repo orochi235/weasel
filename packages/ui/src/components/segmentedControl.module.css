@@ -22,9 +22,11 @@
      the selected segment's glass treatment doesn't paint over the rounded
      outer pixels. */
   overflow: hidden;
-  box-shadow:
+  box-shadow: var(
+    --wzl-bevel-sunken,
     inset 0 1px 2px rgba(0, 0, 0, 0.4),
-    0 1px 0 rgba(255, 255, 255, 0.06);
+    0 1px 0 rgba(255, 255, 255, 0.06)
+  );
   /* The track clips, so without this a squeezing row shrinks it to nothing. */
   min-width: max-content;
   user-select: none;
@@ -110,12 +112,14 @@
     0 1px 0 rgba(0, 0, 0, calc(var(--btn-text-shadow, 0.35) * var(--wzl-gloss))),
     var(--btn-text-inset-x, 0px) var(--btn-text-inset-y, 1px) 0 rgba(0, 0, 0, calc(var(--btn-text-inset, 0.55) * var(--wzl-gloss))),
     0 0 6px rgba(0, 0, 0, calc(var(--btn-text-shadow, 0.35) * 0.5 * var(--wzl-gloss)));
-  box-shadow:
+  box-shadow: var(
+    --wzl-bevel-raised,
     inset 0 1px 0 rgba(255, 255, 255, calc(var(--btn-inset-hi, 0.42) * var(--wzl-gloss))),
     inset 0 -1px 2px rgba(0, 0, 0, calc(var(--btn-inset-lo, 0.3) * var(--wzl-gloss))),
     0 0 0 1px rgba(0, 0, 0, calc(var(--btn-rim, 0.22) * var(--wzl-gloss))),
     0 1px 2px rgba(0, 0, 0, calc(var(--btn-drop-near, 0.3) * var(--wzl-gloss))),
-    0 2px 4px rgba(0, 0, 0, calc(var(--btn-drop-far, 0.18) * 0.8 * var(--wzl-gloss)));
+    0 2px 4px rgba(0, 0, 0, calc(var(--btn-drop-far, 0.18) * 0.8 * var(--wzl-gloss)))
+  );
 }
 
 /* Specular gloss on the selected segment. Top corners inherit the
@@ -270,6 +274,7 @@
   /* Sunken, so an unselected cell sits below the panel and the selected one
      reads as raised without needing the glass treatment back. */
   background: var(--wzl-surface-sunken);
+  box-shadow: var(--wzl-bevel-sunken, none);
   color: var(--wzl-fg-muted);
 }
 
@@ -303,7 +308,7 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   text-shadow: none;
-  box-shadow: none;
+  box-shadow: var(--wzl-bevel-raised, none);
 }
 
 .variant_flat .segmentSelected::before {

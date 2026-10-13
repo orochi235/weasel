@@ -6,6 +6,7 @@
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   padding: var(--wzl-space-2);
+  box-shadow: var(--wzl-bevel-raised, none);
   user-select: none;
 }
 .palette.horizontal {

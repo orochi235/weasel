@@ -20,6 +20,7 @@
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
+  box-shadow: var(--wzl-bevel-raised, none);
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -27,6 +28,17 @@
 .framed[data-orientation='vertical'] {
   padding: var(--wzl-space-3) 0;
   overflow-x: visible;
+}
+
+/* Opening what does not fit, a bar takes its host's room along the line: one only as long as its
+   cells could not tell when another fits. */
+.bar[data-overflow='menu'] {
+  flex: 1 1 auto;
+  overflow: visible;
+}
+
+.bar[data-overflow='menu'][data-orientation='vertical'] {
+  min-block-size: 0;
 }
 
 .cell {
@@ -67,6 +79,30 @@
   flex: 1;
   block-size: 1px;
   margin-inline: var(--wzl-space-2);
+}
+
+/* The cells a line had no room for, one under another. */
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-4);
+}
+
+.menu > .divider {
+  inline-size: auto;
+  block-size: 1px;
+  margin: 0;
+}
+
+.menu > .cell:has(> .rule) {
+  align-self: stretch;
+}
+
+.menu > .cell > .rule {
+  flex: 1;
+  block-size: 1px;
 }
 
 /* A nested group inside a group a bar opened. */
@@ -206,6 +242,7 @@
 
 .action[aria-pressed='true'] {
   background: var(--wzl-accent);
+  box-shadow: var(--wzl-bevel-pressed, none);
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);

@@ -103,8 +103,8 @@ They open in light mode, the only one the originals had; the dark mode is the
 theme's own. The system faces are named first in the font stacks and are not
 bundled, so a machine without them draws the next face in the stack. The
 bevels and flat button faces are override hooks the theme pins (see below),
-which Button, the field frame, PropertyPanel, and the `titlebar` frame motif
-read; other controls take the theme's colors, corners, and type, and no bevel.
+which the controls in `@weasel-js/ui` read wherever they draw a raised face, a
+well, or a button that stays down; the description of each hook lists them.
 To title every group as a window, wrap the app in
 `<DefaultMotif motif={motifs.titlebar()}>` from `@weasel-js/ui`.
 

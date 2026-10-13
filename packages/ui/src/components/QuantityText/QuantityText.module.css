@@ -1,0 +1,19 @@
+/* `position: relative` holds the spoken copy, which is out of flow, inside this box. */
+.quantity {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  position: relative;
+  white-space: nowrap;
+}
+
+/* What a value is measured in, and what a member is called, sit back from how much. */
+.quantity :is([data-part='unit'], [data-part='percentSign'], [data-part='label']) {
+  color: var(--wzl-fg-muted);
+}
+
+.spoken {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

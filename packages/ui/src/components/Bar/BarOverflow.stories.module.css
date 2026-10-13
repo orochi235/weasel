@@ -1,0 +1,15 @@
+/* A host whose width the reader drags. */
+.room {
+  display: flex;
+  align-items: center;
+  inline-size: 360px;
+  min-inline-size: 80px;
+  max-inline-size: 100%;
+  min-block-size: var(--wzl-tb-height);
+  padding: 0 var(--wzl-space-4);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  color: var(--wzl-fg);
+  resize: horizontal;
+  overflow: hidden;
+}

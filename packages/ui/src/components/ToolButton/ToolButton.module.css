@@ -26,6 +26,7 @@
 .button.active {
   background: var(--wzl-surface-pressed);
   border-color: var(--wzl-accent);
+  box-shadow: var(--wzl-bevel-pressed, none);
   color: var(--wzl-fg);
 }
 .button[disabled] {

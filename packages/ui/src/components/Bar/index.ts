@@ -7,6 +7,7 @@ export {
   type BarLeafNode,
   type BarNode,
   type BarOrientation,
+  type BarOverflowMode,
 } from './BarLayout';
 export { BarField, type BarFieldProps, type BarFieldCellProps } from './BarField';
 export { BarAction, BarActionButton, type BarActionButtonProps } from './BarAction';

@@ -580,11 +580,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   that, a bordered box with square corners and a rule between neighbors. Which look wins, or
   whether both are variants every bar takes, is a visual call.
 
-- **(P3) Nothing in `@weasel-js/ui` shows a quantity's composites or styles its parts.**
-  `BandEditor` names each band with its range through `presentRange`, and that is the one caller:
-  nothing calls `presentVector`. No ui component renders a quantity's HTML form, so no stylesheet
-  styles its `data-part` or `data-composite` spans and `PropertyField` still draws its suffix from
-  its own `unit` prop.
+- **(P3) No control in `@weasel-js/ui` draws its numbers through `QuantityText`.** `QuantityText`
+  draws a quantity, a range, or a vector as the HTML form `@weasel-js/quantity` writes, and dims
+  a unit, a percent sign, and a label. No control uses it: `Slider`'s readouts, `BandEditor`'s
+  ticks and ends, and `Transport`'s rate draw `qty().text`, and `PropertyField` still draws its
+  suffix from its own `unit` prop. It draws no kind's MathML form.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The
@@ -725,8 +725,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
-  that prop to become icon names or `Bar` to take icon overrides by path. A bar too long for its
-  room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
+  that prop to become icon names or `Bar` to take icon overrides by path. `overflow="menu"`
+  opens the cells a line has no room for from a button at its end, on `Bar` and `BarLayout` only: a
+  bar in a `PrefsForm`, a `SelectionPanel`, an object row, or labkit's `ControlBar` has no way to ask
+  for it, and whether it becomes the default is not decided. A cell in the menu is mounted only
+  while the menu is open, so `PrefSchemaEditor`'s preview, which asks for no menu and keeps every
+  cell on the line, would lose those cells as drop targets if it did. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
 - **(P3) Two `usePrefsStore` callers with different schemas leave one holding a closed store.**
@@ -743,8 +747,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) Loose ends beside a number's unit as data.** The text tool's
   percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
-  stored value, so the run properties do not export as a literal. Nothing reads a unit's `format`
-  yet: every surface shows a number leaf through its field, which formats by `display`.
+  stored value, so the run properties do not export as a literal. A unit's `format` has one
+  reader, the auto value labkit's `ControlRow` quotes in a row's tooltip. A compound leaf's
+  one-line summary (`summarizeValue`) still writes the stored numbers of fields that have a unit.
 
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
   `display: contents`, so a drag in `PrefSchemaEditor`'s preview cannot land beside or into an
@@ -762,18 +767,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) The desktop themes bevel some controls and have never been looked at.** Under
-  `win9xTheme` and `platinumTheme` (`@weasel-js/theme/themes/*`), `Button`, the field frame,
-  `PropertyPanel`, a `titlebar` frame, the checkbox, the radio, the switch, menus and popovers,
-  `Dialog`, and the tooltip read the `--wzl-bevel-*` hooks. Tabs, sliders, `ToggleBar` and the
-  segmented control, and toolbars take each theme's colors and corners and draw no bevel. Each
-  wants the matching hook read as a `var()` fallback, as `field.module.css` does: a tab is
-  open along one edge, which no hook draws, and the slider and the segmented track set a
-  shadow per variant. The checkbox, radio, switch, and overlays keep their own 1px border
-  inside the bevel, where the field frame drops its border through `--wzl-field-border`. The
-  systems' own faces are named in the font stacks and not bundled; a bundled lookalike needs a
-  face whose license allows it. And nobody has seen either theme: browser tests pin computed
-  values only.
+- **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
+  `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
+  raised face, a well, or a button that stays down reads the `--wzl-bevel-*` hooks;
+  `packages/theme/src/hooks.ts` says which takes which. Each was chosen from computed values
+  and one headless screenshot per theme, not by eye. Drawn with no bevel: `StatusBar`, a
+  `minimal` segmented control, a mixed segment, and a notched slider thumb, whose clip path a
+  box shadow ignores. The checkbox, radio, switch, overlays, flat segment cells, and toolbar
+  strips keep their own 1px border inside the bevel, where the field frame drops its border
+  through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
+  bundled; a bundled lookalike needs a face whose license allows it.
 
 - **(P3) Two gaps beside a `ColorSource` written to CSS.** A palette entry or a function source
   is written as the literal it resolves to in the provider's selection (`colorSourceCss`,
