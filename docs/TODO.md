@@ -919,18 +919,13 @@ only story runner in the repo.
   the trial's mode is Auto, since the panel does not know which scheme the
   frame resolved.
 
-- **(P3, isolated stories only) A forge story whose `viewport` the index cannot
-  read reloads its frame once when first opened.** The index reads a native
-  story's `viewport` when both sides are number literals (`viewportOf`,
-  `packages/forge/src/vite/indexFile.ts`), and the first instrument takes its
-  stage from that. Otherwise — a computed size, or a CSF story, whose viewport
-  comes from `parameters.viewport` and `globals.viewport` — the stage arrives
-  with the frame's `ready`, and labkit's `Trial`
-  (`packages/labkit/src/trial/Trial.tsx`) renders stage content inside `<Stage>`
-  and other content bare, so `FrameView` remounts and the iframe reloads. A
-  general fix keeps the frame through that remount (it is already placed by hand,
-  and `moveBefore` moves an iframe without reloading it), or has `Trial` keep
-  the body at one tree position whether or not there is a stage.
+- **(P3, isolated stories only) Watch in a browser that a story whose `viewport` the index cannot
+  read keeps its frame when first opened.** The stage for a computed size, or a CSF story's
+  `parameters.viewport`, arrives with the frame's `ready`, and labkit's `Trial` then remounts
+  `FrameView` inside a `<Stage>`. The frame now moves to the new view with `moveBefore`
+  (`useKeptFrame`, `packages/forge/src/shell/keptFrame.ts`), tested in jsdom as the same element on
+  the same port, which cannot show that the document did not reload. A browser without
+  `moveBefore` still reloads it once.
 
 - **(P3) windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders

@@ -41,7 +41,7 @@ script holds, so the count only goes down. The value is read from the source
 without running it, and must be a string literal.
 
 If the count ever reaches
-zero, the frame side goes: `FrameView`, `framePool`, `trialFrames`,
+zero, the frame side goes: `FrameView`, `framePool`, `keptFrame`, `trialFrames`,
 `answers`, `readyKey`, `labHarness`, `mountFrame`, `protocol/*`, the frame
 entry, `frame.html`, `html.ts`, the frame page in `build.ts`, the `./frame`
 and `./frame.css` exports, the ratchet script, and the `docs/TODO.md` entries
