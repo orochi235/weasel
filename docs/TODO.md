@@ -688,6 +688,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   text entries as one `ListEditor` and passes it no `entryDisabled`, so an item `enableIf` that
   reads the entry does nothing in a lab; `PrefsForm` and `SelectionPanel` pass it.
 
+- **(P3) `PrefConditionEditor` cannot compose conditions.** It edits one flat list of tests
+  under a single all-of or any-of. A `PrefCondition` nests (`all` and `any` inside each other,
+  and `not` around either), but a nested combinator, a `not`, and a test with several operators
+  (a range) each draw as a row of read-only text that can only be removed. Left: a row that is
+  itself a group, with its own all-of or any-of and its own rows; negating a row or a group; and
+  a second operator on a number's row.
+
 - **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
   into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting
   of `over` takes that leaf's default only where the surface takes its own leaves': a `Bar`
