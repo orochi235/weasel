@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { TRANSPORT_RATES } from '../passthrough/weasel-ui';
 
 /**
@@ -186,9 +187,9 @@ export function createTrialClock(spec: ClockCapability, start?: ClockPosition): 
   /** Inert as of the last sync: the next one only records the time. */
   let slept = false;
   let wakeFired = false;
-  const wakes = new Set<() => void>();
-  const subs = new Set<() => void>();
-  const frames = new Set<(elapsed: number, pass: number) => void>();
+  const wakes = createEmitter();
+  const subs = createEmitter();
+  const frames = createEmitter<[elapsed: number, pass: number]>();
 
   const mix = spec.mix?.() ?? null;
   // The mix's host clock: it only goes forward, by what the clock moved forward.
@@ -204,14 +205,12 @@ export function createTrialClock(spec: ClockCapability, start?: ClockPosition): 
   mix?.sync(host);
 
   const isInert = (): boolean => rate === 0 && ramp === null && !changed;
-  const notify = (): void => {
-    for (const fn of [...subs]) fn();
-  };
+  const notify = subs.emit;
   const change = (): void => {
     changed = true;
     if (wakeFired) return;
     wakeFired = true;
-    for (const fn of [...wakes]) fn();
+    wakes.emit();
   };
   const passAt = (): number => placeOf(elapsed, duration, passesOf(loop), edge).pass;
   const phaseAt = (): number => placeOf(elapsed, duration, passesOf(loop), edge).phase;
@@ -330,7 +329,7 @@ export function createTrialClock(spec: ClockCapability, start?: ClockPosition): 
       if (elapsed !== before || wasChanged) {
         follow();
         const pass = passAt();
-        for (const fn of [...frames]) fn(elapsed, pass);
+        frames.emit(elapsed, pass);
       }
     },
     rebase() {
@@ -339,18 +338,8 @@ export function createTrialClock(spec: ClockCapability, start?: ClockPosition): 
     get inert() {
       return isInert();
     },
-    onWake(fn) {
-      wakes.add(fn);
-      return () => {
-        wakes.delete(fn);
-      };
-    },
-    subscribe(fn) {
-      subs.add(fn);
-      return () => {
-        subs.delete(fn);
-      };
-    },
+    onWake: wakes.subscribe,
+    subscribe: subs.subscribe,
   };
 
   follow();
@@ -367,11 +356,6 @@ export function createTrialClock(spec: ClockCapability, start?: ClockPosition): 
       change();
       notify();
     },
-    onFrame(fn) {
-      frames.add(fn);
-      return () => {
-        frames.delete(fn);
-      };
-    },
+    onFrame: frames.subscribe,
   };
 }

@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { createContext } from 'react';
 import type { TrialClockHandle } from './trialClock';
 
@@ -18,10 +19,8 @@ export interface ClockRegistry {
 /** An in-memory `ClockRegistry`, holding the lab's own clock when given one. */
 export function createClockRegistry(lab: TrialClockHandle | null = null): ClockRegistry {
   const handles = new Map<string, TrialClockHandle>();
-  const listeners = new Set<() => void>();
-  const notify = (): void => {
-    for (const l of [...listeners]) l();
-  };
+  const changed = createEmitter();
+  const notify = changed.emit;
   return {
     register(trialId, handle) {
       handles.set(trialId, handle);
@@ -35,12 +34,7 @@ export function createClockRegistry(lab: TrialClockHandle | null = null): ClockR
     get: (trialId) => handles.get(trialId) ?? null,
     lab,
     all: () => new Set(lab ? [lab, ...handles.values()] : handles.values()),
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: changed.subscribe,
   };
 }
 

@@ -172,4 +172,25 @@ describe('Hud', () => {
     for (const fn of subs) fn();
     expect(seen).not.toHaveBeenCalled();
   });
+
+  it('still tells the focus and frame subscribers after one that throws', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const hud = createHud();
+    let frame = (): void => {};
+    hud.bind({ ...makeHost(), subscribeFrame: (fn: () => void) => { frame = fn; return () => {}; } });
+    const w = { ...makeWidget('w'), focusable: true };
+    hud.add(w);
+    const focusHeard = vi.fn();
+    const frameHeard = vi.fn();
+    hud.subscribeFocus(() => { throw new Error('boom'); });
+    hud.subscribeFocus(focusHeard);
+    hud.subscribeFrame(() => { throw new Error('boom'); });
+    hud.subscribeFrame(frameHeard);
+    expect(() => hud.focus(w)).not.toThrow();
+    expect(() => frame()).not.toThrow();
+    expect(focusHeard).toHaveBeenCalledWith(w);
+    expect(frameHeard).toHaveBeenCalledTimes(1);
+    expect(logged).toHaveBeenCalledTimes(2);
+    logged.mockRestore();
+  });
 });

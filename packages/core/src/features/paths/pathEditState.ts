@@ -4,6 +4,7 @@
  * `editAnchors` dep, the anchor overlay, the selection overlay's suppressed
  * set, the chrome-caps rule context, and the select tool's shift-click lock.
  */
+import { createEmitter } from '@weasel-js/registry';
 import type { PathEditHost } from 'canvas/SceneCanvas/pathEditHost';
 
 /** A world-coord rect. */
@@ -76,8 +77,8 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
   let selectedAnchors = NO_ANCHORS;
   let marquee: AnchorMarquee | null = null;
   let idSet = NO_IDS;
-  const listeners = new Set<() => void>();
-  const notify = (): void => { for (const l of [...listeners]) l(); };
+  const changed = createEmitter();
+  const notify = changed.emit;
 
   const getEditingId = (): string => {
     const host = source.host?.();
@@ -114,9 +115,6 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
       marquee = rect;
       notify();
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: changed.subscribe,
   };
 }

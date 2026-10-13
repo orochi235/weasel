@@ -1,4 +1,4 @@
-import { isPrefLeaf, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import {
   Button,
   type CollapseProps,
@@ -15,12 +15,14 @@ import {
 import { type ReactElement, type ReactNode, useRef, useState } from 'react';
 import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-components';
 import { auto as autoValue } from '../config/auto';
-import { schemaNodeAtPath, valueAtPath } from '../config/path';
+import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
-import { isLeafEnabled, isLeafVisible } from '../config/visible';
+import { aliasTargetsOf, isLeafEnabled, isLeafVisible } from '../config/visible';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
-import { clearable, MatrixCell } from './MatrixCell';
+import { clearable } from './MatrixCell';
 import { MatrixEditor, type OpenCell } from './MatrixEditor';
+import { MatrixSlot } from './MatrixSlot';
+import { type MatrixTarget, matrixTargetAt } from './matrixTarget';
 
 /** One column of a {@link ControlMatrix}: a config group, every one the same shape. */
 export interface ControlMatrixColumn {
@@ -75,11 +77,6 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
 
 const nameOf = (column: ControlMatrixColumn): string => column.title ?? column.label;
 
-function leafOf(schema: ResolvedConfig, path: string): PrefLeaf | undefined {
-  const node = schemaNodeAtPath(schema.group, path);
-  return node && isPrefLeaf(node) ? node : undefined;
-}
-
 /**
  * One setting across several config groups of the same shape: settings down
  * the side, scopes across the top, a compact read-only cell at each crossing.
@@ -116,21 +113,22 @@ export function ControlMatrix({
   const triggerRef = useRef<HTMLElement | null>(null);
   const { anchor, portalProps, ready } = useOverlayPortal();
 
-  const leafAt = (path: string): PrefLeaf | undefined => leafOf(schema, path);
+  const targets = aliasTargetsOf(schema, config, over);
+  const cellAt = (path: string): MatrixTarget | undefined => matrixTargetAt(schema, path, targets);
 
   // A row is named in `rows`, so a leaf's static `hidden` does not drop it; a `showIf` does.
   const visible = (path: string): boolean => isLeafVisible(schema, path, config, true, over);
   const rowSpecs = rows
     .map((row) => {
-      const leaves = columns.map((column) => leafAt(`${column.key}.${row.key}`));
-      const named = leaves.find((leaf) => leaf !== undefined);
-      return { row, leaves, label: row.label ?? named?.name ?? row.key, about: named?.description };
+      const cells = columns.map((column) => cellAt(`${column.key}.${row.key}`));
+      const named = cells.find((cell) => cell !== undefined)?.leaf;
+      return { row, cells, label: row.label ?? named?.name ?? row.key, about: named?.description };
     })
     // A setting no column shows has no row; one no column has keeps its row of dashes.
     .filter(
-      ({ row, leaves }) =>
-        leaves.every((leaf) => leaf === undefined) ||
-        leaves.some((leaf, i) => leaf !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
+      ({ row, cells }) =>
+        cells.every((cell) => cell === undefined) ||
+        cells.some((cell, i) => cell !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
     );
 
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
@@ -165,7 +163,7 @@ export function ControlMatrix({
           </tr>
         </thead>
         <tbody>
-          {rowSpecs.map(({ row, leaves, label, about }) => (
+          {rowSpecs.map(({ row, cells, label, about }) => (
             <tr key={row.key}>
               <th scope="row" className="lk-control-matrix__label">
                 <span className="lk-control-matrix__label-text">{label}</span>
@@ -173,43 +171,27 @@ export function ControlMatrix({
               </th>
               {columns.map((column, i) => {
                 const path = `${column.key}.${row.key}`;
-                const leaf = leaves[i];
-                if (!leaf) {
-                  return (
-                    <td key={column.key} className="lk-control-matrix__cell is-missing">
-                      <span role="img" aria-label={`${nameOf(column)} has no ${label}`}>
-                        —
-                      </span>
-                    </td>
-                  );
-                }
-                if (!visible(path)) {
-                  return <td key={column.key} className="lk-control-matrix__cell" />;
-                }
+                const cell = cells[i];
                 const first = i === 0;
-                const inherited = !first && auto.has(path);
+                const inherited = !first && cell?.own === true && auto.has(path);
                 return (
-                  <td
+                  <MatrixSlot
                     key={column.key}
-                    className={
-                      inherited ? 'lk-control-matrix__cell is-inherited' : 'lk-control-matrix__cell'
-                    }
-                  >
-                    <MatrixCell
-                      path={path}
-                      leaf={leaf}
-                      value={valueAtPath(config, path)}
-                      name={`${nameOf(column)} ${label}`}
-                      hint={inherited ? hintFor(column) : undefined}
-                      canUnpin={!first && !inherited}
-                      disabled={!isLeafEnabled(schema, path, config, over)}
-                      setConfig={setConfig}
-                      onOpen={(el) => {
-                        triggerRef.current = el;
-                        setOpen({ path, leaf, column, first, label });
-                      }}
-                    />
-                  </td>
+                    cell={cell}
+                    shown={visible(path)}
+                    value={cell && valueAtPath(config, cell.at)}
+                    name={`${nameOf(column)} ${label}`}
+                    absent={`${nameOf(column)} has no ${label}`}
+                    inherited={inherited}
+                    hint={inherited ? hintFor(column) : undefined}
+                    canUnpin={!first && !inherited}
+                    disabled={!isLeafEnabled(schema, path, config, over)}
+                    setConfig={setConfig}
+                    onOpen={(el) => {
+                      triggerRef.current = el;
+                      if (cell) setOpen({ path, leaf: cell.node, column, first, label, cell });
+                    }}
+                  />
                 );
               })}
             </tr>
@@ -243,19 +225,19 @@ export function ControlMatrix({
                   close={() => setOpen(null)}
                 />
               </PropertyList>
-              {clearable(open.leaf) ? (
+              {clearable(open.cell.leaf) ? (
                 <div className="lk-control-matrix__editor-actions">
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={!valueAtPath(config, open.path) || auto.has(open.path)}
-                    onClick={() => setConfig(open.path, null)}
+                    disabled={!valueAtPath(config, open.cell.at) || auto.has(open.cell.at)}
+                    onClick={() => setConfig(open.cell.at, null)}
                   >
                     Clear
                   </Button>
                 </div>
               ) : null}
-              {open.first ? null : (
+              {open.first || !open.cell.own ? null : (
                 <div className="lk-control-matrix__editor-actions">
                   <Button
                     size="sm"

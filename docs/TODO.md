@@ -709,9 +709,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   layout seeds its one node from the layout's own leaves and writes only under `pose` and
   `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
   (3) A lab resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
-  cannot hold a condition on another's setting. labkit's `ControlMatrix` takes `over` for its
-  conditions and for the popover an alias's cell opens, but the cell itself summarizes the
-  alias's own path, which holds nothing.
+  cannot alias into another schema or hold a condition on its setting. Every surface reads `over`'s
+  values from the config it is handed, and a trial's config holds its instrument's alone: where a
+  lab keeps another schema's values (each trial's config, the lab's store, or the app's) is not
+  decided, and the instrument's `render` would need them too.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -752,10 +753,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   config paths.
 
 - **(P3) `sectionTree` doesn't lift heading controls.** `ControlPanel` draws a `.heading()` leaf,
-  or a first row repeating its heading ("Pump" under "Pumping"), in the heading's title row and
-  warns about the repeat. The prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf
-  as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
-  a control in a rail item or subsection heading.
+  or a first row repeating its heading ("Pump" under "Pumping"), in the heading's title row. The
+  prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf as a row under a heading of
+  the same name, because `PrefsForm` has no slot for a control in a rail item or subsection
+  heading, and `PrefLeaf` no field saying a leaf is one: `heading` is a labkit extra. `sectionTree`
+  warns about the repeat, as the panel does.
 
 - **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
@@ -1408,23 +1410,23 @@ only story runner in the repo.
   `dependencies`, so a consumer installs one copy and runs another. In the repo, aliases resolve
   both to one source, so no test can see it.
 
-- **(P3) core's tsconfig `paths` is still kept by hand.** The root `paths` is generated from every
-  package's `exports` (`npm run gen:tsconfig-paths`, held current by `scripts/vite-aliases.test.ts`).
-  `packages/core/tsconfig.json` still maps ten siblings to source by hand and leaves the others core
-  imports — `animator`, `cursor`, `font`, `paint`, `prefs`, `quantity`, `renderer`, `stroke`, `text`,
-  and `text-dom` — to resolve to their built `dist`; `tsup` reads that file for core's build, so
-  widening it wants a look at what the declaration build then pulls in. Generate it from
-  `scripts/lib/tsconfigPaths.mjs` too.
+- **(P3) core's tsconfig sends half its siblings to their built `dist`.** Both `paths` blocks are
+  generated from every package's `exports` (`npm run gen:tsconfig-paths`, held current by
+  `scripts/vite-aliases.test.ts`). Core's maps the ten siblings named in `CORE_FROM_SOURCE`
+  (`scripts/lib/tsconfigPaths.mjs`) to source, and leaves the others core imports (`animator`,
+  `cursor`, `font`, `paint`, `prefs`, `quantity`, `renderer`, `stroke`, `text`, and `text-dom`) to
+  resolve to `dist`, so `tsc -p packages/core` reads whatever was last built there. `tsup` reads
+  that file for core's declaration build: widen the list to every dependency, build core, and diff
+  its `dist/*.d.ts` to see that no sibling's types were inlined.
 
-- **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
-  is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
-  throwing listener is logged and the rest run). Still hand-rolled, each a `Set` and a loop:
-  - in packages that already depend on registry: the scene (four loops in `core/scene/scene.ts`),
-    and animator's `timeline/createTimeline.ts`.
-  - in packages that do not, where each move adds the dependency: routing's `PointerContext` and
-    `longPressState`, history and its journal, `select/store.ts`, storage's records, loupe's
-    `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
-    `cameraRegistry`, and several in forge.
+- **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
+  `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
+  throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
+  is in a package that depends on nothing else in weasel, and the move would give it its first
+  sibling dependency: history and its journal, `select/store.ts`, storage's records (two sets),
+  cursor's `paintedCursorState`, and react's `useFrameClock`. A throw from one of their listeners
+  still reaches whatever caused the notify. Moving them means either that dependency or the
+  emitter living somewhere all five can reach.
 
 - **(P3) `SceneCanvasInner` is one 699-line function.** It is most of the 854-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another

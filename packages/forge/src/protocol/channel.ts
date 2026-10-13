@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { type Envelope, PROTOCOL_VERSION } from './messages';
 
 export interface PortLike {
@@ -22,7 +23,7 @@ export interface ChannelOptions {
 }
 
 export function openChannel<In, Out>(port: PortLike, options: ChannelOptions = {}): Channel<In, Out> {
-  const listeners = new Set<(msg: In) => void>();
+  const messages = createEmitter<[msg: In]>();
   const onMessage = (event: MessageEvent) => {
     const data: unknown = event.data;
     if (typeof data !== 'object' || data === null || !('msg' in data)) {
@@ -34,19 +35,15 @@ export function openChannel<In, Out>(port: PortLike, options: ChannelOptions = {
       options.onMismatch?.({ reason: 'version', version: envelope.v });
       return;
     }
-    for (const fn of listeners) fn(envelope.msg as In);
+    messages.emit(envelope.msg as In);
   };
   port.addEventListener('message', onMessage);
   port.start?.();
   return {
     send: (msg) => port.postMessage({ v: PROTOCOL_VERSION, msg } satisfies Envelope<Out>),
-    on: (fn) => {
-      listeners.add(fn);
-      return () => listeners.delete(fn);
-    },
+    on: messages.subscribe,
     close: () => {
       port.removeEventListener('message', onMessage);
-      listeners.clear();
       port.close();
     },
   };

@@ -1,4 +1,5 @@
 import { useLatest } from '@weasel-js/core';
+import { createEmitter } from '@weasel-js/registry';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { annotationsFromJSON } from '../annotations/store';
 import type {
@@ -89,20 +90,20 @@ export function useTrialMarks({
   // commit. So once a change to them commits, those readers are told to read
   // again. Through the context's `subscribe` alone: the store's own would have
   // the debounce below save marks that did not change.
-  const inputsCommitted = useRef(new Set<() => void>());
+  const inputsCommitted = useRef(createEmitter());
   // biome-ignore lint/correctness/useExhaustiveDependencies: these are what `targets` and `config` answer from — the signal, not values this reads
   useLayoutEffect(() => {
-    for (const fn of inputsCommitted.current) fn();
+    inputsCommitted.current.emit();
   }, [record.state, record.view, config, annotationsCap]);
   const provided = useMemo<AnnotationsApi>(
     () => ({
       ...annotations,
       subscribe: (fn) => {
         const off = annotations.subscribe(fn);
-        inputsCommitted.current.add(fn);
+        const offCommitted = inputsCommitted.current.subscribe(fn);
         return () => {
           off();
-          inputsCommitted.current.delete(fn);
+          offCommitted();
         };
       },
     }),

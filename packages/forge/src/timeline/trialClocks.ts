@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import type { Clock } from './clock';
 
@@ -11,10 +12,8 @@ export interface TrialClocks {
 
 export function createTrialClocks(): TrialClocks {
   const clocks = new Map<string, Clock>();
-  const listeners = new Set<() => void>();
-  const notify = () => {
-    for (const listener of [...listeners]) listener();
-  };
+  const changed = createEmitter();
+  const notify = changed.emit;
   return {
     publish(trialId, clock) {
       clocks.set(trialId, clock);
@@ -26,10 +25,7 @@ export function createTrialClocks(): TrialClocks {
       };
     },
     get: (trialId) => clocks.get(trialId) ?? null,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribe: changed.subscribe,
   };
 }
 

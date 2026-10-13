@@ -4,6 +4,7 @@
  * any binding would fire on it. Feedback — a filling ring, a haptic — reads
  * this; nothing here decides what the feedback looks like.
  */
+import { createEmitter } from '@weasel-js/registry';
 import { LONG_PRESS_MS } from '@weasel-js/gestures';
 
 /** A press being held toward a long-press. */
@@ -81,7 +82,7 @@ const nowMs = (): number =>
 /** A store holding the press currently being held, or none. Pass it as `LongPressOptions.state`. */
 export function createLongPressStore(): LongPressStore {
   let current: PendingLongPress | null = null;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     get: () => current,
     progress: (now = nowMs()) => {
@@ -90,14 +91,11 @@ export function createLongPressStore(): LongPressStore {
       const t = (now - current.startedAt) / current.duration;
       return t <= 0 ? 0 : t >= 1 ? 1 : t;
     },
-    subscribe: (fn) => {
-      listeners.add(fn);
-      return () => { listeners.delete(fn); };
-    },
+    subscribe: changed.subscribe,
     set: (next) => {
       if (next === current) return;
       current = next;
-      for (const fn of [...listeners]) fn();
+      changed.emit();
     },
   };
 }

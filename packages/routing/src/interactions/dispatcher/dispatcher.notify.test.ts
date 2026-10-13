@@ -98,4 +98,16 @@ describe('dispatcher subscribers', () => {
     expect(seen).toHaveBeenCalledTimes(2);
     expect(d.getVersion()).toBe(2);
   });
+
+  it('still hear a change after a subscriber that throws', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { d, ctx } = setup();
+    const after = vi.fn();
+    d.subscribe(() => { throw new Error('boom'); });
+    d.subscribe(after);
+    expect(d.handleInput(pointer('pointerdown'), ctx)).toBe('handled');
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(logged).toHaveBeenCalledTimes(1);
+    logged.mockRestore();
+  });
 });

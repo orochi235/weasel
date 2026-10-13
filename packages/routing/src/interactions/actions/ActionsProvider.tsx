@@ -175,12 +175,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       }
       return true;
     },
-    subscribe: (listener: () => void) => {
-      this.tree.listeners.add(listener);
-      return () => {
-        this.tree.listeners.delete(listener);
-      };
-    },
+    subscribe: (listener: () => void) => this.tree.listeners.subscribe(listener),
     setDispatcher: (d: Dispatcher | null) => pushOwner(this.dispatchers, d),
     begin: (id: string, params?: Record<string, unknown>) => {
       const leaf = this.start();

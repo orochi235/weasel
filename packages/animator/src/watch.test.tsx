@@ -291,4 +291,20 @@ describe('animator.watch cost', () => {
     expect(emit).toHaveBeenCalled();
     stop();
   });
+
+  it('leaves a listener added during a delivery for the next event', () => {
+    const hub = new AnimatorEventHub();
+    const late = vi.fn();
+    let added = false;
+    hub.add(() => {
+      if (added) return;
+      added = true;
+      hub.add(late);
+    });
+    const event = { type: 'start' } as AnimatorEvent;
+    hub.emit(event);
+    expect(late).not.toHaveBeenCalled();
+    hub.emit(event);
+    expect(late).toHaveBeenCalledTimes(1);
+  });
 });

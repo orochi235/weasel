@@ -1,5 +1,5 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
 import { sectionTree } from './sectionTree';
@@ -196,5 +196,40 @@ describe('sectionTree, sections inside a group', () => {
     const { group } = sectionTree(resolved, config);
     const timing = groupAt(groupAt(group, 'playback'), 'timing');
     expect(groupAt(timing, 'a-changed-line').children.line).toMatchObject({ block: true });
+  });
+
+  it('warns once of a first row that repeats its section heading, at the root and inside a group', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const resolved = resolveConfigSchema(
+      f.schema({
+        pump: f.boolean(true).label('Pump').section('Pumping'),
+        rate: f.number(1).label('Rate').section('Pumping'),
+        tank: f.group({
+          fill: f.boolean(true).label('Fill').section('Filling'),
+          level: f.number(1).label('Level').section('Filling'),
+        }),
+      }),
+    );
+    const config = { pump: true, rate: 1, tank: { fill: true, level: 1 } };
+    sectionTree(resolved, config);
+    sectionTree(resolved, config);
+    expect(warn.mock.calls.map(([message]) => message)).toEqual([
+      '[labkit] "Pump" (pump) repeats its heading "Pumping". Give it a label of its own.',
+      '[labkit] "Fill" (tank.fill) repeats its heading "Filling". Give it a label of its own.',
+    ]);
+    warn.mockRestore();
+  });
+
+  it('says nothing of a first row marked as its heading, or one with a label of its own', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const resolved = resolveConfigSchema(
+      f.schema({
+        pump: f.boolean(true).label('Pump').heading().section('Pumping'),
+        lift: f.number(1).label('Lift').section('View'),
+      }),
+    );
+    sectionTree(resolved, { pump: true, lift: 1 });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

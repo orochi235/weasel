@@ -6,7 +6,7 @@
     "longestFunction": 135
   },
   "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 178
+    "longestFunction": 172
   },
   "packages/audio/src/createAudioEngine.ts": {
     "lines": 765,
@@ -174,7 +174,7 @@
     "longestFunction": 162
   },
   "packages/hud/src/hud.ts": {
-    "longestFunction": 193
+    "longestFunction": 188
   },
   "packages/hud/src/loupe/createLoupe.ts": {
     "longestFunction": 230
@@ -193,8 +193,8 @@
     "longestFunction": 126
   },
   "packages/labkit/src/annotations/store.ts": {
-    "lines": 470,
-    "longestFunction": 328
+    "lines": 464,
+    "longestFunction": 321
   },
   "packages/labkit/src/canvas/CanvasStack.tsx": {
     "longestFunction": 138
@@ -203,10 +203,10 @@
     "longestFunction": 223
   },
   "packages/labkit/src/clock/trialClock.ts": {
-    "longestFunction": 216
+    "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 206
+    "longestFunction": 191
   },
   "packages/labkit/src/controls/ControlRow.tsx": {
     "longestFunction": 123
@@ -247,7 +247,7 @@
     "longestFunction": 237
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
-    "longestFunction": 258
+    "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
     "lines": 548,

@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { type ConfigAnswers, stableStringify } from '../protocol/messages';
 import type { SchemaAnswers } from '../protocol/schema';
 import { storyConfig } from './globals';
@@ -20,7 +21,7 @@ export function createAnswerBook(): AnswerBook {
     string,
     { hidden: readonly string[]; errors: Readonly<Record<string, string[]>>; key: string }
   >();
-  const listeners = new Set<() => void>();
+  const answered = createEmitter();
   const held = new Map<string, number>();
   const keyOf = (config: unknown) => stableStringify(storyConfig(config));
   const answerFor = (config: unknown) => byConfig.get(keyOf(config));
@@ -35,7 +36,7 @@ export function createAnswerBook(): AnswerBook {
         const oldest = byConfig.keys().next().value;
         if (oldest !== undefined) byConfig.delete(oldest);
       }
-      if (changed && held.has(answers.configKey)) for (const fn of listeners) fn();
+      if (changed && held.has(answers.configKey)) answered.emit();
     },
     hold(config) {
       const key = keyOf(config);
@@ -51,11 +52,6 @@ export function createAnswerBook(): AnswerBook {
       return hidden?.some((h) => path === h || path.startsWith(`${h}.`)) ?? false;
     },
     errors: (path, config) => answerFor(config)?.errors[path] ?? [],
-    subscribe(fn) {
-      listeners.add(fn);
-      return () => {
-        listeners.delete(fn);
-      };
-    },
+    subscribe: answered.subscribe,
   };
 }

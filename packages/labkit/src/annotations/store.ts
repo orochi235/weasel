@@ -5,6 +5,7 @@ import {
   type SerializedScene,
   sceneFromJSON,
 } from '@weasel-js/core';
+import { createEmitter } from '@weasel-js/registry';
 import { captureTarget } from './capture';
 import { type MarkDrawOptions, resolveMarkStyle } from './drawOne';
 import type { WorldRect } from './frac';
@@ -130,11 +131,9 @@ function splitId(id: string): { target: string; node: string } | undefined {
 export function createAnnotationStore(opts: AnnotationStoreOptions): AnnotationsApi {
   const { targets, restore } = opts;
   const scenes = new Map<string, MarkScene>();
-  const subs = new Set<() => void>();
+  const subs = createEmitter();
   const history = new MarkHistory();
-  const notify = (): void => {
-    for (const fn of subs) fn();
-  };
+  const notify = subs.emit;
 
   // Scene changes made while held are told to subscribers as one, once the
   // outermost hold ends — so a click that also clears another target, or a
@@ -358,12 +357,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       });
     },
 
-    subscribe(fn) {
-      subs.add(fn);
-      return () => {
-        subs.delete(fn);
-      };
-    },
+    subscribe: subs.subscribe,
 
     add(init: AnnotationInit, config?: unknown) {
       const target = targetOf(init.target);

@@ -1,33 +1,8 @@
 import { isBuiltinPref, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
 import { schemaNodeAtPath } from '../config/path';
+import { stutters, warnOfStutter, warnOnce } from '../config/stutter';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { extra } from './fields';
-
-/**
- * Whether a row's label only repeats the heading above it: the same word, or
- * one word grown from the other, as "Pump" under "Pumping". Such a row is a
- * heading with a control, written as a heading over a row.
- */
-export function stutters(heading: string, label: string): boolean {
-  const h = heading.trim().toLowerCase();
-  const l = label.trim().toLowerCase();
-  if (h === '' || l === '') return false;
-  if (h === l) return true;
-  if (/\s/.test(h) || /\s/.test(l)) return false;
-  const [short, long] = h.length < l.length ? [h, l] : [l, h];
-  return short.length >= 3 && long.startsWith(short);
-}
-
-const warned = new WeakMap<ResolvedConfig, Set<string>>();
-
-function warnOnce(resolved: ResolvedConfig, key: string, message: string): void {
-  if (process.env.NODE_ENV === 'production') return;
-  const seen = warned.get(resolved) ?? new Set<string>();
-  warned.set(resolved, seen);
-  if (seen.has(key)) return;
-  seen.add(key);
-  console.warn(`[labkit] ${message}`);
-}
 
 /** The leaf heading a run of rows: the one marked `.heading()`, or a first row
  *  that repeats `heading`, which is warned about as the authoring mistake it
@@ -61,13 +36,7 @@ export function headingLeaf(
     );
   if (marked === undefined) {
     if (typeof heading !== 'string' || !stutters(heading, leaf.name)) return undefined;
-    warnOnce(
-      resolved,
-      `${heading}|${path}`,
-      compact
-        ? `"${leaf.name}" (${path}) repeats its heading "${heading}". It is drawn in the heading instead; mark it .heading() to say so, or give it a label of its own.`
-        : `"${leaf.name}" (${path}) repeats its heading "${heading}". Give it a label of its own.`,
-    );
+    warnOfStutter(resolved, heading, path, leaf.name, compact);
   } else if (!compact) {
     warnOnce(
       resolved,

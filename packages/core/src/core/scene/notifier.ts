@@ -1,3 +1,5 @@
+import { createEmitter } from '@weasel-js/registry';
+
 /**
  * The scene's change notice: its version, its subscribers, and when a change
  * reaches them.
@@ -17,7 +19,7 @@ export interface Notifier {
 }
 
 export function createNotifier(): Notifier {
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   let version = 0;
   let held = 0;
   let pending = false;
@@ -29,13 +31,10 @@ export function createNotifier(): Notifier {
         pending = true;
         return;
       }
-      for (const listener of listeners) listener();
+      changed.emit();
     },
     version: () => version,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribe: changed.subscribe,
     deferred(fn, settle) {
       held++;
       try {
@@ -45,7 +44,7 @@ export function createNotifier(): Notifier {
         settle?.();
         if (held === 0 && pending) {
           pending = false;
-          for (const listener of listeners) listener();
+          changed.emit();
         }
       }
     },

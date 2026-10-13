@@ -1,3 +1,5 @@
+import { createEmitter } from '@weasel-js/registry';
+
 /** What a story declares to get a playhead. Times are in ms, as `@weasel-js/ui`'s timeline components take them. */
 export interface TimelineSpec {
   /** How long the span runs. */
@@ -97,7 +99,7 @@ export function createClock(spec: TimelineSpec, initial?: number | null): Clock 
     rate: validRate(spec.rate) ? spec.rate : 1,
     span: declared,
   };
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   const pendingIn = (at: ClockState): number | null =>
     requested && requested.time !== null && requested.time !== at.time ? requested.time : null;
   // What echoes the playhead outward waits on a pending request, so its coming and going notifies as a move does.
@@ -117,7 +119,7 @@ export function createClock(spec: TimelineSpec, initial?: number | null): Clock 
       return;
     state = next;
     pending = nextPending;
-    for (const listener of [...listeners]) listener();
+    changed.emit();
   };
   const moved = (next: ClockState): void => {
     requested = null;
@@ -130,10 +132,7 @@ export function createClock(spec: TimelineSpec, initial?: number | null): Clock 
 
   return {
     get: () => state,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribe: changed.subscribe,
     play() {
       if (state.playing) return;
       // Playing from the end starts over, as a player's play button does.

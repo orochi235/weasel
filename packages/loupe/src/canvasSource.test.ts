@@ -111,6 +111,19 @@ describe('createCanvasSource', () => {
     expect(requestRedraw).not.toHaveBeenCalled();
   });
 
+  it('still tells the frame subscribers after one that throws', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const s = createCanvasSource(gl(false));
+    const fn = vi.fn();
+    s.subscribeFrame(() => { throw new Error('boom'); });
+    s.subscribeFrame(fn);
+    s.retain();
+    expect(() => s.capture()).not.toThrow();
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(logged).toHaveBeenCalledTimes(1);
+    logged.mockRestore();
+  });
+
   it('notifies frame subscribers on each capture', () => {
     const s = createCanvasSource(gl(false));
     const fn = vi.fn();

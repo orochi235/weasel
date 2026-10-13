@@ -69,6 +69,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "^5.0.2",
+    "@weasel-js/registry": "1.9.4",
     "@weasel-js/theme": "1.9.4",
     "@weasel-js/ui": "1.9.4",
     "axe-core": "^4.13.0",
