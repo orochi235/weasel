@@ -34,7 +34,7 @@ export interface OctantSplineParams {
 
 export const OCTANT_SPLINE_MAX_ANCHORS = 12;
 
-const DEFAULTS: Required<OctantSplineParams> = {
+export const OCTANT_SPLINE_DEFAULTS: Required<OctantSplineParams> = {
   mode: 'octant',
   count: 5,
   s0: 0,    s1: 0.25, s2: 0.5,  s3: 0.75, s4: 1,    s5: 1,
@@ -47,7 +47,10 @@ const DEFAULTS: Required<OctantSplineParams> = {
   samples: 192,
 };
 
-interface Anchor { s: number; r: number; w: number }
+const DEFAULTS = OCTANT_SPLINE_DEFAULTS;
+
+/** One control point of the octant curve: position `s` along it, radius `r`, weight `w`. */
+export interface Anchor { s: number; r: number; w: number }
 
 export function extractAnchorPairs(params: OctantSplineParams = {}): Anchor[] {
   const cfg = { ...DEFAULTS, ...params };
