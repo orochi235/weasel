@@ -10,7 +10,7 @@ import { captureCanvas, assertMatchesBaseline } from './diff.js';
 const DEMO_ID = 'gestures';
 const BASELINE_DIR = resolve(import.meta.dirname, 'baselines');
 
-test(`${DEMO_ID} — visual baseline`, async ({ page }) => {
+test(`${DEMO_ID} — mounts an empty canvas`, async ({ page }) => {
   const png = await captureCanvas(page, `/#${DEMO_ID}`);
   assertMatchesBaseline(png, resolve(BASELINE_DIR, `${DEMO_ID}.png`));
 });

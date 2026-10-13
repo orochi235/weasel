@@ -162,11 +162,5 @@ for (const mode of ['dark', 'light'] as const) {
       expect(l.pinned.borderStyle).toBe('dotted');
       expect(l.aside.borderStyle).toBe('solid');
     });
-
-    test(`screenshot, ${mode}`, async ({ page }) => {
-      await page.setViewportSize({ width: 780, height: 900 });
-      await mount(page, mode);
-      await page.screenshot({ path: resolve(root, `test-results/panel-stances-${mode}.png`), fullPage: true });
-    });
   });
 }

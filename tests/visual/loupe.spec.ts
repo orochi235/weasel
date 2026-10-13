@@ -20,8 +20,9 @@ const DEMO_ID = 'loupe';
  *  `{ x: 30, y: 48, w: 208, h: 170 }`. Sample a scanline well inside that. */
 const SCAN = { x: 40, w: 188, y: 130 };
 
-/** Share of neighboring pixels along the scanline that are identical. */
-async function flatnessAcrossLoupe(page: Page): Promise<number> {
+/** Along the scanline: the share of neighboring pixels that are identical,
+ *  and how many times the color steps. */
+async function scanLoupe(page: Page): Promise<{ flat: number; steps: number }> {
   return page.evaluate((scan) => {
     const c = document.querySelector('canvas')!;
     const o = document.createElement('canvas');
@@ -36,7 +37,7 @@ async function flatnessAcrossLoupe(page: Page): Promise<number> {
     for (let i = 0; i < data.length; i += 4) px.push(`${data[i]},${data[i + 1]},${data[i + 2]}`);
     let same = 0;
     for (let i = 1; i < px.length; i++) if (px[i] === px[i - 1]) same++;
-    return same / (px.length - 1);
+    return { flat: same / (px.length - 1), steps: px.length - 1 - same };
   }, SCAN);
 }
 
@@ -54,6 +55,9 @@ test(`${DEMO_ID} — pixel mode magnifies with hard edges`, async ({ page }) => 
   await page.mouse.move(box.x + 431, box.y + 311);
   await page.waitForTimeout(600);   // readback → createImageBitmap → redraw
 
+  const { flat, steps } = await scanLoupe(page);
+  // A lens that paints nothing, or misses the ruling, is flat all the way across.
+  expect(steps, 'the scanline should cross the magnified rules').toBeGreaterThan(8);
   // 8× NEAREST holds ~7 of every 8 pairs flat; LINEAR holds almost none.
-  expect(await flatnessAcrossLoupe(page)).toBeGreaterThan(0.6);
+  expect(flat).toBeGreaterThan(0.6);
 });
