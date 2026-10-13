@@ -229,8 +229,9 @@ Typecheck is `npm run typecheck`. It runs two programs: the root `tsconfig.json`
 those use `@vitest/browser`'s matchers and the rest use jest-dom's — the two declare
 `toHaveTextContent` incompatibly, and in one program load order picks the winner. A bare
 `npx tsc --noEmit` checks only the first. `tsc -p packages/core/tsconfig.json`
-exits 1 with 31 pre-existing `TS6059` errors on a clean tree — core's `outDir` pins `rootDir` to
-`packages/core` while its `paths` reach into sibling packages. Those errors are not yours.
+exits 1 with a couple of hundred pre-existing `TS6059` errors on a clean tree — core's `outDir`
+pins `rootDir` to `packages/core` while its `paths` reach into sibling packages. A sibling whose
+`dist` is older than its source adds a few `TS2305` and `TS2339` beside them. None are yours.
 
 ## Traps
 
@@ -497,14 +498,14 @@ calls alongside whatever else the loop counts.
 UI words have specific referents — don't conflate them:
 
 - **workspace** — the striped/gray area surrounding the rendered page. In WeaselDraw this is `.wd-canvas-host`; in ToolkitBuilder there's no separate host so the `<canvas>` element itself plays this role.
-- **canvas** — the HTML `<canvas>` element. In WeaselDraw this is sized to the document page (`paper.width × paper.height`) and sits inside the workspace; in ToolkitBuilder the canvas spans the visible area.
-- **document** / **page** — the white paper drawn on the canvas (or, in WeaselDraw, the canvas itself since it IS sized to the paper). When the user says "document" they mean the page, not the canvas element.
+- **canvas** — the HTML `<canvas>` element. In WeaselDraw it fills the workspace, and the page is one layer drawn on it; in ToolkitBuilder the canvas spans the visible area.
+- **document** / **page** — the white paper drawn on the canvas, at world (0, 0) and the paper size (`paper.width × paper.height`). When the user says "document" they mean the page, not the canvas element.
 - **scene** — the kit-owned tree (`Scene<TData, TLayer, TPose>`). Logical, not visual. Don't say "scene" when you mean "document" or "canvas".
 - **group** — a structural `ContainerNode` (`kind: 'container'`). The real Cmd+G group; `group`/`ungroup` create/dissolve a container and reparent the selection under it; round-trips to SVG `<g>`. Persistent and id-bearing. **Not** a membership list — there is no membership "group" type (the old `Group`/`GroupAdapter` was removed in 2026-06).
 - **selection** — the transient, immutable set of active ids (`SelectionApi.get()`/`set()`). "Operate on these N as a unit" with no persistence and no id; not a scene entity. Don't reintroduce a persistent membership-list "group" — a saved selection is just a consumer-held `string[]` passed to `selection.set`. See `docs/taxonomy.md` ("Group vs Selection — not the same axis").
 - **params** — the settings-editing surfaces as a family: `PropertyPanel`, `Prefs` and labkit's `ControlPanel`. Not a component. The `--wzl-params-label-*` properties are named for it; see `docs/conventions.md` ("Panel labels").
 
-When positioning HUDs / overlays, pick the right anchor: "inside the workspace" means `.wd-canvas-host`'s rect, not the canvas's.
+When positioning HUDs / overlays, pick the right anchor: "inside the workspace" means `.wd-canvas-host`'s rect, and "on the page" means the paper's rect on the canvas, which moves with the view.
 
 ## Gesture / action / interaction taxonomy
 
