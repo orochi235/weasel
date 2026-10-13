@@ -107,8 +107,6 @@ Priority tags:
     in core's canvas, and `PointerPublisher` in `PointerProviderIfRoot.tsx`.
   - The hover pump and `Canvas.tsx` each turn a resolved cursor into a `style.cursor` write plus a
     painted-cursor write. One cursor sink beside `PaintedCursorState` would serve both.
-  - A long-press timer fires on whichever view was routed last, not the view the press went down
-    in (`channels/pointer.ts`).
   - `InvocationCtx.multiTouch.rotation` is hard-coded to 0 and read nowhere; making it real needs
     an angle on `MultiTouchEvent`.
   - `useGestureDispatcher.listeners.test.tsx`: "does NOT cancel on initial mount" cannot fail,

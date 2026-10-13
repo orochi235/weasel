@@ -4,7 +4,7 @@
  */
 import {
   createPointerRecognizer, isInControlWithin, longPressEvents, stylusOf,
-  type ClickMemory, type HeldPress, type PointerSample,
+  type ClickMemory, type HeldPress, type PointerSample, type RecognizerClock,
 } from '@weasel-js/gestures';
 import { openPointerSession, type PointerSession } from '../../pointerSession';
 import type { PointerDispatchCore } from '../dispatchCore';
@@ -75,6 +75,34 @@ function holdPublisher(core: PointerDispatchCore, longPress: PointerInputOptions
   };
 }
 
+/**
+ * The recognizer's clock. Its one timer is the long-press hold, armed inside
+ * `press`, and other input routes elsewhere while that press is held: the hold
+ * fires on the view its press went down in.
+ */
+function holdClock(core: PointerDispatchCore): { clock: RecognizerClock; routeToPress(): void } {
+  let holdView: { id: string | null } | null = null;
+  return {
+    clock: {
+      now: () => performance.now(),
+      setTimer: (fn, ms) => {
+        const view = core.routedView();
+        holdView = { id: view };
+        return setTimeout(() => {
+          holdView = null;
+          core.setRoutedView(view);
+          fn();
+        }, ms);
+      },
+      clearTimer: (timer) => {
+        holdView = null;
+        clearTimeout(timer as ReturnType<typeof setTimeout>);
+      },
+    },
+    routeToPress: () => { if (holdView) core.setRoutedView(holdView.id); },
+  };
+}
+
 export function pointerInput(core: PointerDispatchCore, opts: PointerInputOptions): PointerInput {
   const { canvas, routeAt, routeDown, routeRelease, toWorld, target } = core;
   const sessions = new Map<number, PointerSession>();
@@ -82,17 +110,14 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   // `dblclick` that follows is marked handled, so a container that opens or
   // toggles on double-click leaves it alone.
   let claimedDoubleClick = false;
+  const hold = holdClock(core);
 
   const recognizer = createPointerRecognizer({
     sink: {
       dispatch: (ev) => core.dispatch(ev),
       multiTouchInFlight: (fingers) => core.dispatcherNow().inFlight().has(multiTouchGestureId(fingers)),
     },
-    clock: {
-      now: () => performance.now(),
-      setTimer: (fn, ms) => setTimeout(fn, ms),
-      clearTimer: (timer) => { clearTimeout(timer as ReturnType<typeof setTimeout>); },
-    },
+    clock: hold.clock,
     toWorld,
     toSurface: (p) => core.toCanvasLocal(p.x, p.y),
     longPressMs: () => opts.longPress()?.duration,
@@ -171,7 +196,10 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       claimedDoubleClick = false;
       e.preventDefault();
     },
-    takeNativeHold: () => recognizer.takeHold(),
+    takeNativeHold: () => {
+      hold.routeToPress();
+      return recognizer.takeHold();
+    },
     heldCount: () => recognizer.heldCount(),
     cancelHeld() {
       for (const session of [...sessions.values()]) session.cancel();
