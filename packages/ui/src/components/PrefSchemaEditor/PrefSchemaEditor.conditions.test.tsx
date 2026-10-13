@@ -100,16 +100,27 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
     expect(attr('Enabled if')).toHaveTextContent('"view.units" never holds \'mm\': it is a number');
   });
 
-  it('sets one condition on several prefs at once, and lists conditions that differ without a control to overwrite them', () => {
+  it('draws conditions that differ as none, marked as mixed, and writes the first edit over them all', () => {
+    render(<Live start={CONDITIONED} />);
+    select('grid');
+    fireEvent.click(within(structure()).getByText('size'), { metaKey: true });
+    const shown = attr('Shown if');
+    expect(within(shown).queryByRole('group', { name: 'Condition 1' })).toBeNull();
+    expect(shown.closest('[data-mixed]')).not.toBeNull();
+    expect(held('view/size').showIf).toEqual({ path: 'view.grid', is: true });
+    pick(shown, /Add a condition/, /Units/);
+    expect(held('view/grid').showIf).toEqual({ path: 'view.units', is: 'px' });
+    expect(held('view/size').showIf).toEqual({ path: 'view.units', is: 'px' });
+    expect(attr('Shown if').closest('[data-mixed]')).toBeNull();
+  });
+
+  it('sets one condition on several prefs at once', () => {
     render(<Live start={CONDITIONED} />);
     select('grid');
     fireEvent.click(within(structure()).getByText('units'), { metaKey: true });
     pick(attr('Shown if'), /Add a condition/, /Grid size/);
     expect(held('view/grid').showIf).toEqual({ path: 'view.size', above: 0 });
     expect(held('view/units').showIf).toEqual({ path: 'view.size', above: 0 });
-    fireEvent.click(within(structure()).getByText('size'), { metaKey: true });
-    expect(attributes().queryByRole('group', { name: 'Shown if' })).toBeNull();
-    expect(held('view/size').showIf).toEqual({ path: 'view.grid', is: true });
   });
 
   it('offers a pref every pref but itself to be conditioned on, and a group none of its own', () => {

@@ -8,8 +8,8 @@ import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
-import { aggregateAttributes, isObjectField, setObjectField, WHOLE } from './attrAggregate';
-import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
+import { aggregateAttributes, isObjectField, setObjectField } from './attrAggregate';
+import { ATTR_RENDERERS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaRoot } from './schemaEdit';
@@ -40,9 +40,8 @@ const NAME_KIND = 'schema-name';
 const ENTRY_KIND = 'schema-entry-kind';
 const AUTO_VALUE_KIND = 'schema-auto-value';
 
-/** Whether an attribute kind's control can stand for several values that disagree. */
-const drawsMixed = (kind: string): boolean =>
-  kind !== CONDITION_KIND && (kind in ATTR_RENDERERS ? MIXED_ATTR_KINDS.has(kind) : !WHOLE.has(kind));
+/** Every attribute whose values disagree is drawn with none, and an edit to it is written over them all. An object is split, so the fields that agree keep their values. */
+const drawsMixed = (kind: string): boolean => kind !== 'object';
 
 /** `children` with every control in it disabled while `locked`: the form has no read-only mode of its own. */
 function Lockable({ locked, children }: { locked: boolean; children: ReactElement }) {
@@ -265,15 +264,12 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
         }}
       />
       </Lockable>
-      {readOnly.length + agg.apart.length > 0 && (
+      {readOnly.length > 0 && (
         <DetailList>
           {readOnly.map(([k, v]) => (
             <DetailRow key={k} label={k}>
               <Code size="xs" status="muted">{containsCode(v) && v !== STUB ? `${KEEP} (code)` : printValue(v).replace(/\s*\n\s*/g, ' ')}</Code>
             </DetailRow>
-          ))}
-          {agg.apart.map((k) => (
-            <DetailRow key={k} label={k}><Code size="xs" status="muted">mixed</Code></DetailRow>
           ))}
         </DetailList>
       )}

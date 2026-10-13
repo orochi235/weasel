@@ -97,6 +97,3 @@ export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' 
       value={typeof ctx.value === 'string' ? ctx.value : ''} onChange={ctx.setValue} />
   ),
 };
-
-/** Kinds drawn here whose control has a mixed state. The rest are listed, not edited, when values disagree. */
-export const MIXED_ATTR_KINDS: ReadonlySet<string> = new Set(['optional-number', 'symbol']);

@@ -1,4 +1,10 @@
 .mixed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+}
+
+.word {
   font-size: var(--wzl-font-size-sm);
   opacity: 0.5;
   font-style: italic;

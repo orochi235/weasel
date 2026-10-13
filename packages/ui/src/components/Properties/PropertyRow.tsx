@@ -65,6 +65,8 @@ export interface PropertyRowProps extends PropertyMetricProps {
   hint?: ReactNode;
   /** The row's value differs from a baseline of the caller's: its label is drawn in the accent color. */
   changed?: boolean;
+  /** The row stands for several values that differ: its label is drawn in the warning color. Outranks `changed`. */
+  mixed?: boolean;
   /** The row's control takes no input: its label is drawn as a disabled control's is. */
   disabled?: boolean;
   /** What the row reads when it is auto, whether or not it is now. Shown as the
@@ -94,6 +96,7 @@ export function PropertyRow({
   autoControl = 'hidden',
   hint,
   changed = false,
+  mixed = false,
   disabled = false,
   autoValue,
 }: PropertyRowProps) {
@@ -141,7 +144,7 @@ export function PropertyRow({
     </span>
   );
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
-  const multi = { [ROW_ATTR]: '', ...(multiline ? { 'data-multiline': '' } : {}), ...(changed ? { 'data-changed': '' } : {}), ...(disabled ? { 'data-disabled': '' } : {}) };
+  const multi = { [ROW_ATTR]: '', ...(multiline ? { 'data-multiline': '' } : {}), ...(changed ? { 'data-changed': '' } : {}), ...(mixed ? { 'data-mixed': '' } : {}), ...(disabled ? { 'data-disabled': '' } : {}) };
   return group ? (
     <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
       {head}

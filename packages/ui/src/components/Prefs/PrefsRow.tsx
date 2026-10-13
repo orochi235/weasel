@@ -215,6 +215,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
     <PropertyRow
       label={pref.name}
       changed={ctx.changed?.has(path)}
+      mixed={renderCtx.mixedAt?.(path, true)}
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={stacked ? `${s.row} ${s.rowStacked}` : s.row}
@@ -273,7 +274,7 @@ function renderBuiltin(
     />
   );
   if (pref.kind === 'object') return object(ctx);
-  if (ctx.mixed && (pref.kind === 'list' || pref.kind === 'map')) return <PrefMixed />;
+  if (ctx.mixed && (pref.kind === 'list' || pref.kind === 'map')) return <PrefMixed onReplace={ctx.disabled ? undefined : () => ctx.setValue(pref.kind === 'list' ? [] : {})} />;
   if (pref.kind === 'list')
     return <ListLeaf ctx={ctx} renderers={renderers} renderItem={(item) => renderPrefControl(item, renderers)} />;
   if (pref.kind === 'map') {

@@ -23,7 +23,7 @@ export function ListLeaf({
 }) {
   const pref = ctx.pref as PrefList;
   const { item } = pref;
-  if (ctx.mixed) return <PrefMixed />;
+  if (ctx.mixed) return <PrefMixed onReplace={ctx.disabled ? undefined : () => ctx.setValue([])} />;
   const shared = {
     'aria-label': item.name || pref.name,
     onChange: ctx.setValue,
