@@ -16,9 +16,9 @@ import type { Rect } from './box';
 import type { Path } from './path';
 import { closedSubpaths, flatSubpaths, regionSubpaths } from './pathSubpaths';
 import type { Mat3 } from './mat3';
+import type { Point } from './paths/cubicMath';
 import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screenBand';
 
-type XY = { x: number; y: number };
 
 /** Options for the path hit-tests. */
 export interface PointInPathOptions {
@@ -127,7 +127,7 @@ function someSegment(
 
 // ─── Region vs path ─────────────────────────────────────────────────────────
 
-function rectToVerts(r: Rect): XY[] {
+function rectToVerts(r: Rect): Point[] {
   return [
     { x: r.x, y: r.y },
     { x: r.x + r.width, y: r.y },
@@ -137,7 +137,7 @@ function rectToVerts(r: Rect): XY[] {
 }
 
 /** Flatten a vertex array into an interleaved [x0,y0,x1,y1,...] array. */
-function flattenVerts(poly: readonly XY[]): number[] {
+function flattenVerts(poly: readonly Point[]): number[] {
   const flat: number[] = new Array(poly.length * 2);
   for (let i = 0; i < poly.length; i++) {
     flat[i * 2] = poly[i].x;
@@ -147,7 +147,7 @@ function flattenVerts(poly: readonly XY[]): number[] {
 }
 
 /** Edge-vs-edge segment intersection check between two closed polygons. */
-function polygonsIntersect(a: readonly XY[], b: readonly XY[]): boolean {
+function polygonsIntersect(a: readonly Point[], b: readonly Point[]): boolean {
   if (a.length === 0 || b.length === 0) return false;
   if (pointInPolygon(flattenVerts(a), b[0].x, b[0].y)) return true;
   if (pointInPolygon(flattenVerts(b), a[0].x, a[0].y)) return true;
@@ -186,7 +186,7 @@ function anyEdgeCrossesRect(subpaths: readonly number[][], r: Rect): boolean {
   );
 }
 
-function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly XY[]): boolean {
+function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly Point[]): boolean {
   if (poly.length === 0) return false;
   return anyEdge(subpaths, (ax, ay, bx, by) => {
     for (let i = 0; i < poly.length; i++) {
@@ -198,7 +198,7 @@ function anyEdgeCrossesPolygon(subpaths: readonly number[][], poly: readonly XY[
 }
 
 /** `anyEdgeCrossesPolygon` for open runs: no edge back to the first vertex. */
-function anyOpenEdgeCrossesPolygon(runs: readonly number[][], poly: readonly XY[]): boolean {
+function anyOpenEdgeCrossesPolygon(runs: readonly number[][], poly: readonly Point[]): boolean {
   for (const run of runs) {
     for (let i = 0; i + 3 < run.length; i += 2) {
       const ax = run[i], ay = run[i + 1], bx = run[i + 2], by = run[i + 3];
@@ -282,7 +282,7 @@ export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOpti
 /** Returns true if every vertex of `polygon` lies inside `path`. */
 export function pathContainsPolygon(
   path: Path,
-  polygon: readonly XY[],
+  polygon: readonly Point[],
   opts: PointInPathOptions = {},
 ): boolean {
   if (polygon.length === 0) return false;
@@ -307,7 +307,7 @@ export function pathContainsPolygon(
 /** Returns true if `polygon` overlaps (intersects or is contained by) `path`. */
 export function pathIntersectsPolygon(
   path: Path,
-  polygon: readonly XY[],
+  polygon: readonly Point[],
   opts: PointInPathOptions = {},
 ): boolean {
   if (polygon.length === 0) return false;
@@ -329,7 +329,7 @@ export function pathIntersectsPolygon(
  * {@link pathContainsPolygon}. A lasso enclosing a shape asks this.
  */
 export function polygonContainsPath(
-  polygon: readonly XY[],
+  polygon: readonly Point[],
   path: Path,
   opts: PointInPathOptions = {},
 ): boolean {
@@ -360,7 +360,7 @@ export function polygonContainsPath(
  * {@link polygonContainsPath}; a lasso touching a shape asks this.
  */
 export function polygonIntersectsPath(
-  polygon: readonly XY[],
+  polygon: readonly Point[],
   path: Path,
   opts: PointInPathOptions = {},
 ): boolean {

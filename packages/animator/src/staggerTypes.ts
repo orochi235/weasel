@@ -92,7 +92,7 @@ export type StaggerItemTweenOptions<TItem> = TItem extends Target<infer T> ? Sta
 export type StaggerItemSpringOptions<TItem> = TItem extends Target<infer T> ? StaggerTargetSpringOptions<T, TItem> : never;
 
 /** Narrows a builder method's target options to the call that names its `target`. */
-type Naming = { target: NonNullable<unknown> };
+export type Naming = { target: NonNullable<unknown> };
 
 /**
  * Fluent form of `Animator.stagger`: pick what to run per item after the

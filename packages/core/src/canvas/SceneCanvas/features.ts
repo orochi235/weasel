@@ -152,8 +152,7 @@ export const COMPOSITE_FEATURES: Readonly<Record<CompositeFeature, readonly Base
   draw: BASE_FEATURES,
 };
 
-/** The kit-standard actions each preset registers: the `actions` column of
- *  {@link FEATURE_PRESETS}. */
+/** The kit-standard actions each preset registers. */
 export const FEATURE_ACTION_IDS = Object.fromEntries(
   BASE_FEATURES.map((f) => [f, FEATURE_PRESETS[f].actions]),
 ) as Readonly<Record<BaseFeature, readonly string[]>>;

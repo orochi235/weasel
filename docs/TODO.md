@@ -1134,18 +1134,19 @@ only story runner in the repo.
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
 
-- **(P2) The API reference build still reports 12 warnings.** `docs/conventions.md` says
+- **(P2) The API reference build still reports 8 warnings.** `docs/conventions.md` says
   `npx typedoc` reports none. Each is a documented export naming a type its barrel does not export:
-  - `Bivariant` (`packages/core/src/core/scene/types.ts`), `OpsApplier` (`canvas/deps/slice.ts`),
-    `XY` (geom's `pathHitTest.ts`), and `OnTokenChange` (ui's `TokenPanel/tokenTypes.ts`): a
-    one-line export each.
+  - `Bivariant` (`packages/core/src/core/scene/types.ts`) and `ScopedScene`
+    (`core/scene/unitScopes.ts`): each needs `export` on its declaration and a line in core's
+    scene barrel.
+  - `CONSTRUCTORS` in geom's `typedArrayJson.ts`: `NumberTypedArray` is
+    `InstanceType<(typeof CONSTRUCTORS)[TypedArrayTag]>`, so the reference names a private
+    constant. Writing the union out by hand lists the nine array types twice.
   - `LabBaseProps` (labkit's `Lab.tsx`) and `CreateOptions` (storage's `records.ts`): an exported
     type needs a doc line, and both files sit at their `check:size` cap, so each wants its split
     first.
   - `BadgePropsByShape` in ui: exporting it surfaces `BadgeBaseProps`, `BadgeShapeParams`, and
     about thirty per-shape, per-base, and per-effect parameter types behind them.
-  - `Key` (`string | number`), declared three times in ui: `useAsyncOptions.ts`, `ComboBox.tsx`,
-    and `Select.tsx`. It wants one exported definition.
   - `DepSchema` and `OverlaySchema` in routing, which its root does export. core merges into both
     with `declare module`, and TypeDoc appears to file the merged interface under another symbol
     than the one `DepName` and `KernelOverlay` reference (read from the warning, not traced).
