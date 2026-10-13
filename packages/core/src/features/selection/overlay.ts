@@ -13,9 +13,11 @@ import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
 import { unionAABB } from 'core/geometry/unionBounds';
 import {
+  framedBounds,
   visualBoundsViaDescriptor,
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
+import { angleOf, localToWorld, targetCorners, targetTransformOf, type TargetTransform } from 'core/geometry/targetFrame';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { alignedStrokeRect, type CommandStroke, type CommandFill } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
@@ -23,8 +25,6 @@ import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from 'interactions/actions/rotate/handle';
-import { rectCorners, rotatePoint } from 'interactions/actions/rotate/geometry';
-import { poseRotationOf } from '@weasel-js/geom';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
@@ -153,11 +153,7 @@ function makeContainerAwareBoundsResolver<TPose>(
   getChildren?: (id: string) => readonly string[],
   isContainer?: (id: string) => boolean,
 ): (id: string) => Bounds | null {
-  const oriented = (p: TPose): Bounds => {
-    const b = d.getBounds(p);
-    const r = d.getRotation?.(p);
-    return r ? { ...b, rotation: r } : b;
-  };
+  const oriented = (p: TPose): Bounds => framedBounds(p, d);
   if (getChildren === undefined || isContainer === undefined) {
     return (id: string) => {
       const p = getPose(id);
@@ -354,18 +350,17 @@ function outlineCommandsFor(
       width: b.width + pad * 2,
       height: b.height + pad * 2,
     };
-    const rot = poseRotationOf(worldB);
-    if (!rot) {
+    const xf = targetTransformOf(worldB);
+    if (xf.identity) {
       const r = alignedStrokeRect(padded, align, width);
       out.push({ kind: 'path', path: rectPathFor(r.x, r.y, r.width, r.height), stroke });
       continue;
     }
-    // Turned, the target lands on screen as a parallelogram whenever the zoom
-    // is non-uniform, so the outline is traced through its projected corners
-    // rather than drawn as a screen rect and turned. `alignedStrokeRect`'s
+    // Turned or skewed, the target lands on screen as a parallelogram, so the
+    // outline is traced through its projected corners. `alignedStrokeRect`'s
     // shift is folded into the offset so the ribbon lands where it would.
     const shift = align === 'outer' ? width / 2 : align === 'inner' ? -width / 2 : 0;
-    const q = screenCorners(worldB, rot, view, pad + shift);
+    const q = screenCorners(worldB, xf, view, pad + shift);
     out.push({
       kind: 'path',
       path: {
@@ -381,23 +376,22 @@ function outlineCommandsFor(
 }
 
 /**
- * A turned target's corners on screen, TL/TR/BR/BL, each pushed `pad` screen
+ * A framed target's corners on screen, TL/TR/BR/BL, each pushed `pad` screen
  * pixels out from both edges that meet there.
  */
 function screenCorners(
   worldB: Bounds,
-  rot: { cx: number; cy: number; rotation: number },
+  xf: TargetTransform,
   view: View,
   pad: number,
 ): { x: number; y: number }[] {
   const t = viewToTransform(view);
-  const q = rectCorners(worldB).map((c) => {
-    const w = rotatePoint(c.x, c.y, rot.cx, rot.cy, rot.rotation);
+  const q = targetCorners(worldB, xf).map((w) => {
     const [x, y] = worldToScreen(w.x, w.y, t);
     return { x, y };
   });
   if (pad === 0) return q;
-  const [ccx, ccy] = worldToScreen(rot.cx, rot.cy, t);
+  const [ccx, ccy] = worldToScreen(worldB.x + worldB.width / 2, worldB.y + worldB.height / 2, t);
   const normal = (a: { x: number; y: number }, b: { x: number; y: number }) => {
     let nx = -(b.y - a.y), ny = b.x - a.x;
     const l = Math.hypot(nx, ny) || 1;
@@ -429,14 +423,13 @@ function handleCommandsFor(
   for (const id of ids) {
     const worldB = resolveBounds(id);
     if (!worldB) continue;
-    // Rotation gate + angle from the kit's one convention. Turned in world,
-    // then projected: turning the projected point instead lands somewhere else
-    // under non-uniform zoom.
-    const r = poseRotationOf(worldB);
+    // Framed in world, then projected: turning the projected point instead
+    // lands somewhere else under non-uniform zoom.
+    const xf = targetTransformOf(worldB);
     const t = viewToTransform(view);
-    const angle = r ? screenAngleOf(r.rotation, view.scale) : 0;
+    const angle = screenAngleOf(angleOf(xf), view.scale);
     for (const hLocal of handlesOf(worldB)) {
-      const hWorld = r ? rotatePoint(hLocal.x, hLocal.y, r.cx, r.cy, r.rotation) : hLocal;
+      const hWorld = localToWorld(xf, hLocal.x, hLocal.y);
       const [hsx, hsy] = worldToScreen(hWorld.x, hWorld.y, t);
       const center = { x: hsx, y: hsy };
       const baseRect = {
@@ -456,7 +449,7 @@ function handleCommandsFor(
         path: rectPathFor(sr.x, sr.y, sr.width, sr.height),
         stroke: handles.outline,
       };
-      if (!r) {
+      if (angle === 0) {
         out.push(fillCmd, strokeCmd);
       } else {
         out.push({

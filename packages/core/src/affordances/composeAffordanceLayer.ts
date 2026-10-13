@@ -4,7 +4,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { pxExtent } from '@weasel-js/geom';
+import { isRigid, pxExtentIn, targetCorners } from 'core/geometry/targetFrame';
 import type { DebugSink } from '../debug/types';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
 import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
@@ -138,21 +138,26 @@ function recordRegionHitbox(
     // Approximated as the outer ellipse's AABB: the DebugSink's hitbox primitives don't
     // model ring shapes.
     const s = region.shape;
-    const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
-    const c = localToWorld(xf, s.cx, s.cy);
-    debug.recordHitbox(affordanceId, 'handle', {
-      kind: 'rect',
-      x: c.x - rx,
-      y: c.y - ry,
-      width: 2 * rx,
-      height: 2 * ry,
-      ...(xf.identity ? {} : { rotation: Math.atan2(xf.sin, xf.cos) }),
-    });
+    const { rx, ry } = annulusSemiAxes(s, view, xf);
+    recordLocalRect(debug, affordanceId, xf, { x: s.cx - rx, y: s.cy - ry, width: 2 * rx, height: 2 * ry });
     return;
   }
-  // rect: axis-aligned in local frame; apply target rotation around the
-  // AABB pivot when present.
-  const r = region.shape;
+  recordLocalRect(debug, affordanceId, xf, region.shape);
+}
+
+/** A rect of the target's own frame as a debug hitbox: the unturned box plus
+ *  the rotation while the frame only turns it, and the quad it lands on once
+ *  the frame skews or stretches it. */
+function recordLocalRect(
+  debug: DebugSink,
+  affordanceId: string,
+  xf: TargetTransform,
+  r: { x: number; y: number; width: number; height: number },
+): void {
+  if (!isRigid(xf)) {
+    debug.recordHitbox(affordanceId, 'handle', { kind: 'polygon', points: targetCorners(r, xf) });
+    return;
+  }
   const w = localToWorld(xf, r.x + r.width / 2, r.y + r.height / 2);
   debug.recordHitbox(affordanceId, 'handle', {
     kind: 'rect',
@@ -160,7 +165,7 @@ function recordRegionHitbox(
     y: w.y - r.height / 2,
     width: r.width,
     height: r.height,
-    ...(xf.identity ? {} : { rotation: Math.atan2(xf.sin, xf.cos) }),
+    ...(xf.identity ? {} : { rotation: angleOf(xf) }),
   });
 }
 
@@ -209,11 +214,10 @@ function paintRegion(
     if (region.shape.kind !== 'annulus') return; // type mismatch — silent skip
     const s = region.shape;
     // The screen-px inset in target-local units, so it visually matches at any zoom.
-    // `localToWorld` is rotation+translation (no scale), so target-local units equal world units.
-    const insetLocal = pxExtent(paint.insetPx ?? 0, view.scale, angleOf(xf));
+    const insetLocal = pxExtentIn(paint.insetPx ?? 0, view.scale, xf);
     // Same `minBandPx` clamp the hit-test applies, so the ring you can see is
     // the ring you can grab.
-    const cmd = annulusCommand(s, annulusSemiAxes(s, view, angleOf(xf)), insetLocal, xf, viewT, paint.fill, paint.stroke);
+    const cmd = annulusCommand(s, annulusSemiAxes(s, view, xf), insetLocal, xf, viewT, paint.fill, paint.stroke);
     if (cmd) out.push(cmd);
     return;
   }
@@ -327,13 +331,14 @@ function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): Cus
     return { x: w.x, y: w.y };
   }
   if (region.shape.kind === 'annulus') {
-    // The outer ellipse's bounding box in world coords. Turned by θ, its
-    // half-extents are √(rx²cos²θ + ry²sin²θ) and √(rx²sin²θ + ry²cos²θ).
+    // The outer ellipse's bounding box in world coords: each half-extent is
+    // the length of that row of the frame applied to the semi-axes.
     const s = region.shape;
-    const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
+    const { rx, ry } = annulusSemiAxes(s, view, xf);
     const c = localToWorld(xf, s.cx, s.cy);
-    const hw = Math.hypot(rx * xf.cos, ry * xf.sin);
-    const hh = Math.hypot(rx * xf.sin, ry * xf.cos);
+    const [ma, mb, mc, md] = xf.toWorld;
+    const hw = Math.hypot(rx * ma, ry * mc);
+    const hh = Math.hypot(rx * mb, ry * md);
     return { x: c.x - hw, y: c.y - hh, width: 2 * hw, height: 2 * hh };
   }
   // Rect: under rotation, width/height describe the AABB of the rotated rect. Affordances

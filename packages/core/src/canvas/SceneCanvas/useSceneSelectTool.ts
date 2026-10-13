@@ -20,6 +20,7 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { poseDescriptorForNode, type PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { framedBounds } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseContains, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
@@ -247,10 +248,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     return (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null): Bounds | null => {
       const n = scene.get(asNodeId(id));
       if (!n) return null;
-      const g = poseDescriptorForNode(d, n);
-      const b = g.getBounds(pose);
-      const rot = g.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
-      const own = rot ? { ...b, rotation: rot } : b;
+      const own = framedBounds(pose, poseDescriptorForNode(d, n));
       // A plane node is drawn where its plane puts it, and the chrome has to
       // follow it there.
       const plane = wiredPlaneOfNode(id, view);

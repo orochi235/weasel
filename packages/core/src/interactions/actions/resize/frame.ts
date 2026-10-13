@@ -1,35 +1,30 @@
 import { poseRotationOf } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
+import { localToWorld, worldDeltaToLocal, type TargetTransform } from 'core/geometry/targetFrame';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BoundsConstraint, GestureContext, ResizeAnchor, RotatedPose } from '../../gestures/types';
 import { carryPose, planeOf } from '../planeInput';
-import { rotatePoint } from '../rotate/geometry';
 import { fixedCornerOf } from './cornerHandles';
 import { remapRotatedLeaf, translatePoseViaDescriptor, type PoseDescriptor } from './geometry';
 import { snapPose } from './pointSnap';
 import { boundsForRules } from './ruleBounds';
+import { boxFrame } from './boxFrame';
 import type { ResizeBox, ResizeFrame, ResizeSession } from './session';
 
 /** `ob` with the edges `anchor` leaves free moved by the drag delta, which is
- *  turned into the box's own axes first when it is rotated. */
+ *  taken into the axes of the frame the box is drawn in first. A frame nothing
+ *  maps back through moves no edge. */
 function computeProposedBounds(
   ob: Bounds,
   anchor: ResizeAnchor,
-  dx: number,
-  dy: number,
-  rotation: number,
+  worldDx: number,
+  worldDy: number,
+  frame: TargetTransform,
 ): Bounds {
-  if (rotation !== 0) {
-    const cs = Math.cos(-rotation);
-    const sn = Math.sin(-rotation);
-    const dxLocal = cs * dx - sn * dy;
-    const dyLocal = sn * dx + cs * dy;
-    dx = dxLocal;
-    dy = dyLocal;
-  }
+  const { x: dx, y: dy } = worldDeltaToLocal(frame, worldDx, worldDy) ?? { x: 0, y: 0 };
   let nx = ob.x;
   let ny = ob.y;
   let nw = ob.width;
@@ -87,21 +82,17 @@ function leafPose(
 }
 
 /** `pose` shifted so the corner opposite the dragged one stays where the
- *  press found it, which resizing a rotated box about its center moves. */
+ *  press found it, which resizing a box whose frame is about its center moves. */
 function pinFixedCorner(
   g: PoseDescriptor<unknown>,
   pose: unknown,
-  box: Pick<ResizeBox, 'anchor' | 'rotation' | 'fixedWorld'>,
+  box: Pick<ResizeBox, 'anchor' | 'rotation' | 'transform' | 'fixedWorld'>,
   proposed: Bounds,
 ): unknown {
-  if (box.rotation === 0) return pose;
+  const frame = boxFrame(box, proposed);
+  if (frame.identity) return pose;
   const newFixedLocal = fixedCornerOf(proposed, box.anchor);
-  const newFixedWorld = rotatePoint(
-    newFixedLocal.x, newFixedLocal.y,
-    proposed.x + proposed.width / 2,
-    proposed.y + proposed.height / 2,
-    box.rotation,
-  );
+  const newFixedWorld = localToWorld(frame, newFixedLocal.x, newFixedLocal.y);
   return translatePoseViaDescriptor(
     pose,
     box.fixedWorld.x - newFixedWorld.x,
@@ -139,7 +130,7 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
     session.constraints,
     gctx,
     box.anchor,
-    computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, box.rotation),
+    computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, boxFrame(box, box.bounds)),
   );
 
   const previews = new Map<NodeId, unknown>();
@@ -166,7 +157,7 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
     session.pointSnap,
     g,
     pinFixedCorner(g, remapped, box, proposed),
-    box.rotation,
+    box,
     box.anchor,
     gctx.modifiers,
     gctx.plane ?? null,

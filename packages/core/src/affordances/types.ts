@@ -38,8 +38,8 @@ export interface AffordanceRegion<TScratch = unknown> {
   id: string;
 
   /** Target id whose `state.boundsOf(targetId)` defines this region's
-   *  local frame. `bounds.rotation` (if present) is the only transform
-   *  applied — translation is the AABB origin; scale is identity. Pass
+   *  local frame: the bounds' `rotation` and `transform`, as `poseFrameOf`
+   *  composes them about the box center. Pass
    *  `null` for affordances anchored to the viewport / world frame
    *  (identity transform). */
   targetId: string | null;

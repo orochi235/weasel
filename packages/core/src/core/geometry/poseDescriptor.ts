@@ -192,11 +192,17 @@ export function visualBoundsViaDescriptor<TPose>(
   pose: TPose,
   geometry: PoseDescriptor<TPose>,
 ): Bounds {
+  return axisAlignedBounds(framedBounds(pose, geometry));
+}
+
+/** The pose's box with the rotation and `transform` it is drawn in: what
+ *  `poseFrameOf` reads, for a pose only its descriptor can read. */
+export function framedBounds<TPose>(pose: TPose, geometry: PoseDescriptor<TPose>): Bounds {
   const b = geometry.getBounds(pose);
-  const rotation =
-    geometry.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
-  const transform = poseLinearOf(pose) ?? undefined;
-  return axisAlignedBounds({ x: b.x, y: b.y, width: b.width, height: b.height, rotation, transform });
+  const rotation = geometry.getRotation?.(pose) ?? b.rotation ?? 0;
+  const transform = poseLinearOf(pose) ?? poseLinearOf(b);
+  if (!rotation && !transform) return b;
+  return { ...b, ...(rotation ? { rotation } : {}), ...(transform ? { transform } : {}) };
 }
 
 /** Translate through `geometry.translate`, or via `remapBounds` onto a shifted

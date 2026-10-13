@@ -8,7 +8,7 @@
  * these shapes is a change to core's contract that happens to be spelled here.
  */
 
-import type { View } from '@weasel-js/geom';
+import type { PoseLinear, View } from '@weasel-js/geom';
 import type { SelectionExtendKey, SelectionMode } from '@weasel-js/select';
 export type { SelectionExtendKey, SelectionMode };
 
@@ -19,8 +19,9 @@ export type { View };
 
 /**
  * Axis-aligned rectangle in world space. The optional `rotation` (radians,
- * around the AABB center) lets chrome attach an orientation to an otherwise
- * axis-aligned rect without a parallel type.
+ * around the AABB center) and `transform` (inside it, about the same center)
+ * let chrome carry the frame a box is drawn in without a parallel type;
+ * `poseFrameOf` composes the two.
  */
 export interface Bounds {
   x: number;
@@ -28,6 +29,7 @@ export interface Bounds {
   width: number;
   height: number;
   rotation?: number;
+  transform?: PoseLinear;
 }
 
 

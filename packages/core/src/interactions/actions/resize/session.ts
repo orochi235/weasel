@@ -1,3 +1,4 @@
+import type { PoseLinear } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -20,8 +21,10 @@ export interface ResizeBox {
   readonly anchor: ResizeAnchor;
   /** A lone target's rotation; 0 for a group. */
   readonly rotation: number;
-  /** World position of the corner opposite the dragged one, which a rotated
-   *  resize pins. */
+  /** A lone target's `transform`; none for a group. */
+  readonly transform?: PoseLinear;
+  /** World position of the corner opposite the dragged one, which a resize
+   *  in a turned or skewed frame pins. */
   readonly fixedWorld: { x: number; y: number };
 }
 

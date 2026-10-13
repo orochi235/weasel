@@ -1,4 +1,6 @@
+import { poseLinearOf } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
+import { localToWorld } from 'core/geometry/targetFrame';
 import { pointerStateOf } from '../pointerState';
 import { sceneGestureFrames } from '../gestureFrames';
 import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
@@ -9,12 +11,12 @@ import type { BoundsConstraint, GestureContext, PointSnapBehavior, ResizeAnchor 
 import type { ResizePolicy } from '../depSchema';
 import { carryPose, invertPlane, planeOf } from '../planeInput';
 import type { PoseFrame } from '../poseFrame';
-import { rotatePoint } from '../rotate/geometry';
 import { shapeSources } from '../selectionSubtree';
 import { DEFAULT_RESIZE_BEHAVIORS } from './behaviors';
 import { fixedCornerOf } from './cornerHandles';
 import { visualBoundsViaDescriptor, type PoseDescriptor } from './geometry';
 import { boundsForRules } from './ruleBounds';
+import { boxFrame } from './boxFrame';
 import type { ResizeBox } from './session';
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
@@ -118,18 +120,12 @@ export function captureBox(
   // A lone target is read as its own shape; a shared box is a plain rect.
   const originGeometry = lone ? geometryOf(writeIds[0]) : geometry;
   const rotation = !isGroupPath ? (originGeometry.getRotation?.(originPose) ?? 0) : 0;
+  const transform = (lone && poseLinearOf(originPose)) || undefined;
 
   const fixedLocal = fixedCornerOf(bounds, anchor);
-  const fixedWorld = rotation === 0
-    ? fixedLocal
-    : rotatePoint(
-        fixedLocal.x, fixedLocal.y,
-        bounds.x + bounds.width / 2,
-        bounds.y + bounds.height / 2,
-        rotation,
-      );
+  const fixedWorld = localToWorld(boxFrame({ rotation, transform }, bounds), fixedLocal.x, fixedLocal.y);
   return {
-    box: { bounds, anchor, rotation, fixedWorld },
+    box: { bounds, anchor, rotation, transform, fixedWorld },
     ruleOrigin: boundsForRules(originGeometry, originPose),
   };
 }
