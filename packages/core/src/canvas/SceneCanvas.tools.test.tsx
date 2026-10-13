@@ -239,7 +239,7 @@ describe('SceneCanvas tools prop patch form', () => {
           scene={scene}
           width={100} height={100}
           layers={{}}
-          // Cast through unknown: the public type permits `true | false | AnyTool`
+          // Cast through unknown: the public type permits `true | false | Tool`
           // per id, but the test wants to exercise all three plus the unknown-id case.
           tools={toolsProp as never}
           onToolsCreated={(t) => { captured = t; }}

@@ -1,19 +1,19 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ToolPalette } from './ToolPalette';
-import type { AnyTool, ToolsApi } from '@weasel-js/core';
+import type { Tool, ToolsApi } from '@weasel-js/core';
 import { createModeRegistry } from '@weasel-js/modes';
 import { DEFAULT_MODES } from '@weasel-js/modes/presets/default';
 
-function fakeTool(id: string, group?: string, label?: string): AnyTool {
+function fakeTool(id: string, group?: string, label?: string): Tool {
   return {
     id,
     presentation: { label: label ?? id, group },
-  } as AnyTool;
+  } as Tool;
 }
 
-function fakeTools(list: AnyTool[], active: string | null = null): ToolsApi {
-  const registry: Record<string, AnyTool> = {};
+function fakeTools(list: Tool[], active: string | null = null): ToolsApi {
+  const registry: Record<string, Tool> = {};
   for (const t of list) registry[t.id] = t;
   return {
     active: active ?? (list[0]?.id ?? ''),
@@ -33,7 +33,7 @@ describe('ToolPalette', () => {
   it('leaves out a tool whose presentation says hide', () => {
     const tools = fakeTools([
       fakeTool('select'),
-      { id: 'scrub', presentation: { label: 'Scrub', hide: true } } as AnyTool,
+      { id: 'scrub', presentation: { label: 'Scrub', hide: true } } as Tool,
     ]);
     render(<ToolPalette tools={tools} />);
     expect(screen.getAllByRole('button')).toHaveLength(1);
@@ -47,7 +47,7 @@ describe('ToolPalette', () => {
   });
 
   it('falls back to id when presentation.label is absent', () => {
-    const tools = fakeTools([{ id: 'mystery' } as AnyTool]);
+    const tools = fakeTools([{ id: 'mystery' } as Tool]);
     render(<ToolPalette tools={tools} />);
     expect(screen.getByText('mystery')).toBeTruthy();
   });
@@ -108,7 +108,7 @@ describe('ToolPalette — grouping', () => {
   it('tools without presentation.group go into the implicit misc bucket (last)', () => {
     const tools = fakeTools([
       fakeTool('select', 'select'),
-      { id: 'orphan', presentation: { label: 'Orphan' } } as AnyTool,
+      { id: 'orphan', presentation: { label: 'Orphan' } } as Tool,
     ]);
     render(<ToolPalette tools={tools} />);
     const buttons = screen.getAllByRole('button');
@@ -144,8 +144,8 @@ describe('ToolPalette — grouping', () => {
 });
 
 describe('ToolPalette — shortcuts', () => {
-  function withKeybinding(id: string, keybinding: { key: string; mod?: boolean; shift?: boolean; alt?: boolean }): AnyTool {
-    return { id, keybinding, presentation: { label: id, group: 'select' } } as AnyTool;
+  function withKeybinding(id: string, keybinding: { key: string; mod?: boolean; shift?: boolean; alt?: boolean }): Tool {
+    return { id, keybinding, presentation: { label: id, group: 'select' } } as Tool;
   }
 
   it('shows shortcut derived from keybinding', () => {
@@ -159,7 +159,7 @@ describe('ToolPalette — shortcuts', () => {
       id: 'select',
       keybinding: { key: 'v' },
       presentation: { label: 'Select', group: 'select', shortcut: 'Sel' },
-    } as AnyTool;
+    } as Tool;
     const tools = fakeTools([tool]);
     render(<ToolPalette tools={tools} />);
     expect(screen.getByText('Sel')).toBeTruthy();
@@ -178,7 +178,7 @@ describe('ToolPalette — shortcuts', () => {
   });
 
   it('button tooltip is just the label when no shortcut is available', () => {
-    const tool = { id: 'select', presentation: { label: 'Select', group: 'select' } } as AnyTool;
+    const tool = { id: 'select', presentation: { label: 'Select', group: 'select' } } as Tool;
     const tools = fakeTools([tool]);
     render(<ToolPalette tools={tools} />);
     const btn = screen.getByRole('button', { name: /select/i });
@@ -260,21 +260,21 @@ describe('ToolPalette — keyboard nav', () => {
 
 describe('ToolPalette — mode eligibility', () => {
   /**
-   * Builds a fake AnyTool with capability tags so eligibility works.
+   * Builds a fake Tool with capability tags so eligibility works.
    * The 'creates-selection' tag is allowed in NORMAL but not PATH_EDIT;
    * 'edits-anchors' is allowed in PATH_EDIT.
    * 'navigation' (the hand tool) is always allowed.
    */
-  function toolWithCaps(id: string, capabilities: string[], group = 'select'): AnyTool {
-    return { id, eligibility: { focus: true, capabilities }, presentation: { label: id, group } } as AnyTool;
+  function toolWithCaps(id: string, capabilities: string[], group = 'select'): Tool {
+    return { id, eligibility: { focus: true, capabilities }, presentation: { label: id, group } } as Tool;
   }
 
   const selectTool = toolWithCaps('select', ['creates-selection']);
   const anchorTool = toolWithCaps('anchor-edit', ['edits-anchors'], 'draw');
   const handTool   = toolWithCaps('hand', ['navigation'], 'view');
 
-  function makeTools(...list: AnyTool[]): ToolsApi {
-    const registry: Record<string, AnyTool> = {};
+  function makeTools(...list: Tool[]): ToolsApi {
+    const registry: Record<string, Tool> = {};
     for (const t of list) registry[t.id] = t;
     return { active: list[0]?.id ?? '', registry, setActive: vi.fn() } as unknown as ToolsApi;
   }

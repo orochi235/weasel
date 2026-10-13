@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defineTool } from './overlayBinding';
 import type { RenderLayer } from '../core/layers/render';
-import type { AnyTool, Tool } from './overlayBinding';
+import type { Tool } from './overlayBinding';
 
 /**
  * `defineTool` used to be a compiler: it translated `initial` / `engaged`
@@ -85,7 +85,7 @@ describe('defineTool — one definition across routing and core', () => {
   it('builds tools the canvas accepts, with or without an overlay', async () => {
     const { defineTool: routingDefineTool } = await import('@weasel-js/routing');
     const layer = {} as RenderLayer<unknown>;
-    const tools: AnyTool[] = [
+    const tools: Tool[] = [
       routingDefineTool({ id: 'bare' }),
       routingDefineTool({ id: 'drawn', overlay: layer }),
     ];

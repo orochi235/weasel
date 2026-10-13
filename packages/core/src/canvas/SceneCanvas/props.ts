@@ -33,7 +33,7 @@ import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugConfig } from '../../debug/types';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
 import type { DrawCommand, ShaderProgramHandle } from '@weasel-js/renderer';
-import type { AnyTool } from '../../tools/overlayBinding';
+import type { Tool } from '../../tools/overlayBinding';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import type { CanvasProps, LayersMap, SceneSlotConfig } from '../Canvas';
 import type { CanvasViewProps } from '../CanvasView';
@@ -388,13 +388,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
      *
-     *  **Patch form** (`Record<string, AnyTool | true | false>`): merged
+     *  **Patch form** (`Record<string, Tool | true | false>`): merged
      *  into the built-in registry on top of whatever `defaultTools` and
      *  `features` already selected.
      *    - `true` pulls in the built-in for this id (`'pen'`, `'lasso'`,
      *      `'hand'`, …), the same as listing it in `defaultTools`. Unknown
      *      built-in ids warn in dev and are ignored.
-     *    - `AnyTool` adds a new id or replaces an existing one
+     *    - `Tool` adds a new id or replaces an existing one
      *      (dev-only warning on replace).
      *    - `false` omits a bundled tool entirely.
      *  Auto-wiring (keybindings, dispatcher, action registry) still runs.
@@ -405,7 +405,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  Every other preset still applies. Keybindings are still auto-wired
      *  against the supplied registry; pass `enableKeybindings={false}` to opt
      *  out. */
-    tools?: ToolsApi | Record<string, AnyTool | true | false>;
+    tools?: ToolsApi | Record<string, Tool | true | false>;
 
     /**
      * Auto-wire keyboard shortcuts. Default `true`. When `false`, SceneCanvas still mounts
