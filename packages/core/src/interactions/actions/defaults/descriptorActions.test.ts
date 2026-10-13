@@ -4,7 +4,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import { flipAction } from '../flip/action';
 import { nudgeRightAction } from './nudge';
-import { alignLeftAction } from './align';
+import { alignLeftAction } from '../align/action';
 import { distributeHorizontalAction } from './distribute';
 import { duplicateAction } from './duplicate';
 import { cloneAction } from './clone';

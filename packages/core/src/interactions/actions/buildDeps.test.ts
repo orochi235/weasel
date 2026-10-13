@@ -20,7 +20,7 @@ import { rotateAction } from './rotate/action';
 import { groupAction } from './defaults/group';
 import { cloneAction } from './defaults/clone';
 import { duplicateAction } from './defaults/duplicate';
-import { alignLeftAction } from './defaults/align';
+import { alignLeftAction } from './align/action';
 import { distributeHorizontalAction } from './defaults/distribute';
 import {
   nudgeUpAction,

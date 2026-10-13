@@ -13,7 +13,7 @@ import { shapeSources } from '../selectionSubtree';
 import { resizeAction } from '../resize/action';
 import { rotateAction } from '../rotate/action';
 import { flipAction } from '../flip/action';
-import { alignRightAction } from './align';
+import { alignRightAction } from '../align/action';
 import { distributeHorizontalAction } from './distribute';
 
 type Pose = RectPose & { rotation?: number };

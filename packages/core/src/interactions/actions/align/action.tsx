@@ -8,7 +8,7 @@ import {
   visualBoundsViaDescriptor,
   type AlignEdge,
   type AlignReference,
-} from '../align/align';
+} from './align';
 import { actionReferenceSources } from '../spatialReference';
 import type { PointerContextValue } from '@weasel-js/routing/react';
 import { scenePoseFrame } from '../poseFrame';
@@ -24,7 +24,7 @@ import {
   AlignBottomIcon,
   AlignCenterXIcon,
   AlignCenterYIcon,
-} from './icons/alignIcons';
+} from '../defaults/icons/alignIcons';
 const ID_FOR: Record<AlignEdge, string> = {
   'left': 'align.left',
   'right': 'align.right',

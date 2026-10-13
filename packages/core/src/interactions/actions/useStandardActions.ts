@@ -33,7 +33,7 @@ import { reorderForwardAction, reorderBackwardAction } from './defaults/reorder'
 import {
   alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
   alignCenterXAction, alignCenterYAction,
-} from './defaults/align';
+} from './align/action';
 import {
   distributeHorizontalAction, distributeVerticalAction,
 } from './defaults/distribute';

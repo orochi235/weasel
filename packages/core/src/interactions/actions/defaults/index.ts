@@ -7,7 +7,7 @@ export { flipAction } from '../flip/action';
 export {
   alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
   alignCenterXAction, alignCenterYAction,
-} from './align';
+} from '../align/action';
 export {
   distributeHorizontalAction, distributeVerticalAction,
 } from './distribute';
