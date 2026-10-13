@@ -9,7 +9,7 @@ import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { asNodeId } from 'core/scene/types';
-import { outlineStrokeAction } from '../defaults/outlineStroke';
+import { outlineStrokeAction } from './outlineStrokeAction';
 import { stubDeps } from '../testUtils';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { applyOutlineStroke } from './outlineStroke';

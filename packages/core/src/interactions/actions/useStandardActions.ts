@@ -42,8 +42,8 @@ import {
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
   pathfinderTrimAction, pathfinderMergeAction,
 } from './booleans/action';
-import { createOutlinesAction } from './defaults/createOutlines';
-import { outlineStrokeAction } from './defaults/outlineStroke';
+import { createOutlinesAction } from './outlines/createOutlinesAction';
+import { outlineStrokeAction } from './outlines/outlineStrokeAction';
 import { moveAction } from './move/action';
 import { resizeAction } from './resize/action';
 import { rotateAction } from './rotate/action';
