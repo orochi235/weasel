@@ -510,8 +510,10 @@ Priority tags:
 - **(P3) A skinned path is seen at rest by a view with its own `toPose` and by a node that
   derives from it** — an override's `path` is in the scene's frame, so `sceneDerivedPathOf`
   leaves it out for a `toPose` reader, and `DerivedDep.path` answers a derived path only.
-- **(P3) `useRigNode` drops a running animation when it binds again** — a change to the rig
-  node or anything under it makes a new rig with a new `target`.
+- **(P3) `useRigNode` drops a running animation when the skeleton's joints change** — adding,
+  removing, renaming, or reordering a joint makes a new `target` at the bind pose, since a pose
+  target's axes are its joints in order. Carrying an animation across needs the animator to
+  move what runs on one target to another with different axes.
 - **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
   mounted as `tools={{ bone, weight }}`, as slice is.
 

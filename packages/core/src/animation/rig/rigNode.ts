@@ -6,7 +6,8 @@ import type { NodeId } from '../../core/scene/types';
 import type { BindRigOptions, Rig, RigScene } from './bindRig';
 import type { Skin } from '@weasel-js/animator';
 import type { Skeleton } from '@weasel-js/animator';
-import { useRig } from './useRig';
+import { createRigSeat } from './rigSeat';
+import { useSeatedRig } from './useRig';
 
 /** What a rig reads from node data: a `skeleton` on the node that is the rig, and on the nodes
  *  under it a `skin` for a path that bends or a `joint` for a node that rides one whole. */
@@ -132,9 +133,12 @@ export interface UseRigNodeOptions<TPose>
 }
 
 /**
- * A {@link Rig} read from a node, as {@link rigFromNode} reads it. It is bound again, with a
- * new `target`, when the rig node or a node under it changes its pose or data, or when nodes
- * under it come or go; an edit elsewhere in the scene leaves it alone.
+ * A {@link Rig} read from a node, as {@link rigFromNode} reads it. It is bound again when the
+ * rig node or a node under it changes its pose or data, or when nodes under it come or go; an
+ * edit elsewhere in the scene leaves it alone. A rig bound again keeps its `target`, with the
+ * animations running on it, its committed pose, and its placement, unless the skeleton's
+ * joints were added, removed, renamed, or reordered: then it starts at the bind pose with a
+ * new `target`.
  */
 export function useRigNode<TPose>(options: UseRigNodeOptions<TPose>): Rig {
   const { scene, node, apply, descriptor, restPath } = options;
@@ -149,7 +153,11 @@ export function useRigNode<TPose>(options: UseRigNodeOptions<TPose>): Rig {
   const [held, setHeld] = useState(next);
   const parts = sameRefs(held, next) ? held : next;
   if (parts !== held) setHeld(next);
-  return useRig({
+  const joints = JSON.stringify(parts.skeleton.joints.map((joint) => joint.name));
+  // A pose target's axes are its joints' names in order, so the seat holds while those do.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const seat = useMemo(() => createRigSeat(parts.skeleton), [joints]);
+  return useSeatedRig({
     scene, skeleton: parts.skeleton, bindings: parts.bindings, skins: parts.skins, apply, descriptor, restPath,
-  });
+  }, seat);
 }
