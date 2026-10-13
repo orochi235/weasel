@@ -4,10 +4,11 @@ import {
   OCTANT_SPLINE_DEFAULTS, OCTANT_SPLINE_MAX_ANCHORS, compileSpline, evalCompiled,
   type Anchor, type OctantSplineParams,
 } from '../bases/OctantSpline';
+import type { LabParams } from './snapshot';
 
 export type SplineAnchor = Anchor;
 export type SplineMode = 'octant' | 'quadrant';
-export type SplineParams = Record<string, number | string>;
+type SplineParams = LabParams;
 
 const MIN_ANCHORS = 3;
 /** The closest two anchors may sit along the curve when one is inserted between them. */
