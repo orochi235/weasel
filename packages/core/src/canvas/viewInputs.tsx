@@ -8,24 +8,13 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOpts } from './useViewHelpers';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
-import type { RuleCtx } from 'features/chrome-caps';
+import type { ChromeCaps } from 'features/chrome-caps/useChromeCaps';
 import type { PickView } from './SceneCanvas/useSceneSelectTool';
 
-/**
- * The part of a chrome-caps rule context that belongs to one view. Everything
- * else a `RuleCtx` carries — mode, capabilities, device, focus — is the
- * surface's and the same for every view drawn on it.
- */
-export interface ViewRuleInputs {
-  selection: readonly NodeId[];
-  view: View;
-  /** What that view's dispatcher currently has in flight. */
-  action: { kind: string | null; id: string | null };
-}
+export type { ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
 
 /**
  * @internal Provided by the surface, consumed by `<CanvasView>`.
@@ -53,20 +42,9 @@ export interface SurfaceViewInputs
   pickBest?: (worldX: number, worldY: number, view?: PickView | null) => string | null;
   /** A hit node's routing-trait kind, so `target: 'kind:text'` bindings match. */
   kindOfNode?: (id: string) => string | undefined;
-  /**
-   * The surface's chrome-caps rule table, evaluated against a view's own
-   * context. The rules are surface-wide on purpose — one consumer table, one
-   * set of kit defaults — but a rule keyed on selection, camera or the
-   * in-flight action answers differently per view, so the caller supplies the
-   * context and both the paint gate and the dispatcher's eligibility filter
-   * read the same one.
-   */
-  chromeCaps?: {
-    /** `undefined` when the surface gates nothing — no mode registry wired,
-     *  which is what `<SceneCanvas>` reports for its own view too. */
-    ruleCtx(inputs: ViewRuleInputs): RuleCtx | undefined;
-    isVisible(inputs: ViewRuleInputs): (id: string) => boolean;
-  };
+  /** The surface's chrome-caps rule table, evaluated against a view's own
+   *  context. */
+  chromeCaps?: ChromeCaps;
   /** The surface's selection, which a view shares unless it was given one of
    *  its own. */
   selectionApi: SelectionApi;

@@ -20,15 +20,9 @@ import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import { rectFromPlane } from 'core/viewport/parallax';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
-import { normalizeView, viewZoom, type View } from 'core/viewport/view';
-import type { RuleCtx } from 'features/chrome-caps';
-import {
-  DEFAULT_ALLOWED_CAPABILITIES,
-  buildChromeCtx,
-  never,
-  resolveVisibility,
-  useHoverTracking,
-} from 'features/chrome-caps';
+import { normalizeView, type View } from 'core/viewport/view';
+import { never, useHoverTracking } from 'features/chrome-caps';
+import { useChromeCaps, type ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
 import {
   acquireKitContentHandlers,
   itemsFromFiles,
@@ -97,7 +91,7 @@ import { composeAlphaFor, wireSceneSlotToScene } from './sceneSlotWiring';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { useHitObserver } from './useHitObserver';
 import { useLateContentRedraw } from './useLateContentRedraw';
-import { ViewInputsProvider, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
+import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
 import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
 export { SCENE_CANVAS_FEATURES } from './SceneCanvas/features';
 export type { Feature } from './SceneCanvas/features';
@@ -666,7 +660,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // after the preview-ghost so chrome paints on top of displaced ghost silhouettes.
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
-  // Chrome-caps hover tracking: the last-hovered NodeId fed into `ChromeCtx.hover`, cached
+  // Chrome-caps hover tracking: the last-hovered NodeId fed into `RuleCtx.hover`, cached
   // on a ref with no re-renders.
   const { getHover, canvasRef: trackHoverOn } = useHoverTracking({
     // One lookup, not a client→world thunk beside a picker: the point and the
@@ -692,16 +686,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     enabled: chromeVisibility !== undefined,
   });
 
-  // Live sources for `buildChromeCtx`; the resolver below is called per draw / per hitTest
-  // from Canvas.
-  const selectionForCapsRef = useLatest(selection.current as readonly NodeId[]);
-  const getFocusedPropRef = useLatest(getFocusedProp);
   // `selectable={false}` suppresses the marquee / lasso chrome by default:
   // every selection write no-ops then, so the select tool's
   // empty-drag binding still CLAIMS the gesture (keeping it from falling
   // through to other ambient drag actions like insert) but paints nothing.
   // An explicit consumer rule for either id still wins.
-  const effectiveChromeVisibility = useMemo(() => {
+  const chromeRules = useMemo(() => {
     // Kit defaults first; consumer `chromeVisibility` spread last so it wins.
     const defaults = featureChromeRules(enabled);
     if (!selectable) {
@@ -711,65 +701,35 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // `selectTool.rotate === false` hides the rotation handle (`resolvedActions`
     // drops its action) so a non-rotatable consumer fully opts out.
     if (selectToolOpts?.rotate === false) defaults['selection.rotation-handle'] = never;
-    if (Object.keys(defaults).length === 0) return chromeVisibility;
     return { ...defaults, ...chromeVisibility };
   }, [chromeVisibility, selectable, selectToolOpts?.rotate, enabled]);
-  const chromeVisibilityRef = useLatest(effectiveChromeVisibility);
-  // Read through a ref for the same reason as the others here:
-  // `buildCurrentRuleCtx` is a stable `useCallback`, and adding the profile to
-  // its deps would rebuild it whenever a media query changes.
-  const deviceProfileRef = useLatest(deviceProfile);
-  // Per-node resizability predicate from `selectTool.resize.resizable`, folded
-  // over the live selection into the `selectionResizable` rule-ctx flag below.
-  const resizablePredRef = useLatest(selectToolOpts?.resize?.resizable);
 
-  /** Build the live RuleCtx — selection + view + modifiers + mode + capabilities
-   *  + active action. Consumed by chrome-caps' resolver and the dispatcher's
-   *  eligibility filter so both see the same view of the world. */
-  const buildRuleCtxFor = useCallback((inputs: ViewRuleInputs) => {
-    const sel = inputs.selection;
-    // No mode registry wired → behave as normal mode, capabilities included.
-    // An empty set here would make every `capability:` rule false and hide
-    // the chrome those rules gate. See DEFAULT_ALLOWED_CAPABILITIES.
-    const modeInfo = getActiveModeRef.current?.()
-      ?? { id: 'normal', allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES };
-    const ctx = buildChromeCtx({
-      focused: getFocusedPropRef.current ? getFocusedPropRef.current() : true,
-      selection: sel,
-      multiActive: sel.length > 1,
-      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      action: inputs.action,
-      hover: getHover(),
-      view: inputs.view,
-    });
-    // `mode` and `allowedCapabilities` are attached below so the mode-gated default rules
-    // can read them. `selectionResizable` is true only when every selected node is resizable
-    // (per `selectTool.resize.resizable`), and undefined when no predicate is supplied, which
-    // the `resizable:` selector treats as resizable.
-    const resizablePred = resizablePredRef.current;
-    const selectionResizable = resizablePred
-      ? sel.every((id) => resizablePred(id as string))
-      : undefined;
-    return {
-      ...ctx,
-      zoom: viewZoom(inputs.view),
-      mode: modeInfo.id,
-      allowedCapabilities: modeInfo.allowedCapabilities,
-      selectionResizable,
-      editingAnchors: effectivePathEditingId() !== '',
-      device: deviceProfileRef.current,
-    };
-  }, [getHover, effectivePathEditingId, getActiveModeRef, getFocusedPropRef, resizablePredRef, deviceProfileRef]);
+  const chromeCaps = useChromeCaps({
+    rules: chromeRules,
+    getMode: getActiveMode,
+    getFocused: getFocusedProp,
+    getHover,
+    resizable: selectToolOpts?.resize?.resizable,
+    editingAnchors: () => effectivePathEditingId() !== '',
+    device: deviceProfile,
+  });
 
+  // The selection as of the last commit, which is what the painted chrome was
+  // built from; `selection.current` can be a live getter that is ahead of it.
+  const committedSelectionRef = useLatest(selection.current as readonly NodeId[]);
   /** The surface's own view zero. */
   const currentRuleInputs = useCallback((): ViewRuleInputs => ({
-    selection: selectionForCapsRef.current,
+    selection: committedSelectionRef.current,
     view: currentViewRef.current,
     action: dispatcher.getActiveAction(),
-  }), [dispatcher, selectionForCapsRef]);
-  const buildCurrentRuleCtx = useCallback(
-    () => buildRuleCtxFor(currentRuleInputs()),
-    [buildRuleCtxFor, currentRuleInputs],
+  }), [dispatcher, committedSelectionRef]);
+  const getIsVisibleForCanvas = useCallback(
+    (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
+    [chromeCaps, currentRuleInputs],
+  );
+  const getRuleCtxForCanvas = useCallback(
+    () => chromeCaps.ruleCtx(currentRuleInputs()),
+    [chromeCaps, currentRuleInputs],
   );
 
   // Anchor editing survives only as long as the active mode permits it.
@@ -787,22 +747,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   useInsertionEffect(() => {
     anchorEditingAllowedRef.current = anchorEditingAllowed;
   });
-
-  /** The chrome-caps answers for one view: the surface's rule table evaluated
-   *  against that view's selection, camera and in-flight action. */
-  const chromeCaps = useMemo(() => ({
-    ruleCtx: (inputs: ViewRuleInputs) =>
-      (getActiveModeRef.current ? buildRuleCtxFor(inputs) as RuleCtx : undefined),
-    isVisible: (inputs: ViewRuleInputs) => resolveVisibility(
-      chromeVisibilityRef.current,
-      buildRuleCtxFor(inputs) as Parameters<typeof resolveVisibility>[1],
-    ),
-  }), [buildRuleCtxFor, getActiveModeRef, chromeVisibilityRef]);
-
-  const getIsVisibleForCanvas = useCallback(
-    (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
-    [chromeCaps, currentRuleInputs],
-  );
 
   // The chrome layer reads `editingId` via a ref, so an edit-mode change needs an explicit
   // redraw.
@@ -1142,7 +1086,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               viewRef={currentViewRef}
               dispatcher={dispatcher}
               getIsVisibleForCanvas={getIsVisibleForCanvas}
-              getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
+              getRuleCtx={getRuleCtxForCanvas}
               targetScale={deviceProfile.targetScale}
               handleHitRadius={selectToolOpts?.handleHitRadius}
               rotationBadge={rotationBadge}
