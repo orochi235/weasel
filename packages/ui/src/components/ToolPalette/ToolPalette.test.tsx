@@ -99,7 +99,7 @@ describe('ToolPalette — grouping', () => {
   it('puts tools with unknown groups after known ones but before misc', () => {
     const tools = fakeTools([
       fakeTool('select', 'select'),
-      { id: 'orphan', presentation: { label: 'Orphan' } } as AnyTool,
+      { id: 'orphan', presentation: { label: 'Orphan' } } as Tool,
       fakeTool('weird', 'experimental'),
       fakeTool('hand', 'view'),
     ]);
