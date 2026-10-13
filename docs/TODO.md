@@ -880,13 +880,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   pan it had, so the part and its marks sit past the stage's edge, out of sight until the trial is
   panned back. Whether a stage that narrows should re-fit or keep its pan is not decided.
 
-- **(P3) labkit lab: the lab itself re-renders whenever any trial's record changes.** `Lab`
-  (`packages/labkit/src/lab/Lab.tsx`) subscribes to the store's `trials` for the workspace's ids,
-  the focused trial, and `LabContext`'s value, so a pan frame, a job item, a clock write, or a mark
-  save in one trial renders `Lab`, `Workspace`, and every reader of `useLabContext` (`LabHeader`,
-  `LabChrome`). Wanted: `Lab` selects the trial ids alone, and `LabProviders` is the one
-  subscriber that builds the full context value.
-
 - **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
   the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,
   `SelectionPanel/renderLeaf.tsx` (`renderBuiltin`), labkit's `controls/fields.tsx` (`labField`) and

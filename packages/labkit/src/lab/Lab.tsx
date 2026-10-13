@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react';
 import { useStore } from 'zustand/react';
+import { useShallow } from 'zustand/react/shallow';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { labAnnotationTools } from '../annotations/toolMap';
 import { type CameraGestures, CameraGesturesContext } from '../canvas/cameraGestures';
@@ -369,13 +370,11 @@ function LabRuntime({
     store.getState().setInstruments(instruments);
   }, [instruments, store]);
 
-  const trials = useStore(store, (s) => s.trials);
+  const trialIds = useStore(store, useShallow((s) => s.trials.map((t) => t.id)));
   const [cameras] = useState(createCameraRegistry);
   const clocks = useLabClocks(clock, opened.records);
   const [focusPick, setFocusPick] = useState<string | null>(null);
-  const focusedTrialId = trials.some((t) => t.id === focusPick)
-    ? focusPick
-    : (trials[0]?.id ?? null);
+  const focusedTrialId = focusPick !== null && trialIds.includes(focusPick) ? focusPick : (trialIds[0] ?? null);
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
   const layout = useStore(store, (s) => s.layout);
@@ -536,7 +535,7 @@ function LabRuntime({
   const workspace = (
     <Workspace
       panels={workspacePanels}
-      ids={trials.map((w) => w.id)}
+      ids={trialIds}
       resizable
       reorderable
       onReorder={(ids) => commands.reorderTrials(ids)}
@@ -545,20 +544,20 @@ function LabRuntime({
       expandOnDoubleClick={
         typeof expandOnDoubleClick === 'function'
           ? (id) => {
-              const trial = trials.find((t) => t.id === id);
+              const trial = store.getState().trials.find((t) => t.id === id);
               return trial ? expandOnDoubleClick(trial) : false;
             }
           : expandOnDoubleClick
       }
     >
-      {trials.map((w) => (
-        <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
+      {trialIds.map((id) => (
+        <Trial key={id} id={id} chrome={chrome} suppress={suppress} />
       ))}
     </Workspace>
   );
 
   return (
-    <LabProviders store={store} commands={commands} trials={trials}>
+    <LabProviders store={store} commands={commands}>
       <PersistenceContext.Provider value={opened.records}>
         <AnnotationPreloadContext.Provider value={opened.marks}>
           <PresentationContext.Provider value={presentation}>
