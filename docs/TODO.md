@@ -134,9 +134,9 @@ Priority tags:
 
 - **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument, and
   `Tool.previewPose` / `previewBounds` / `previewIds` are gone. Still to go:
-  - `Tool.initScratch`, `ToolLifecycleCtx`, and the dispatcher's lifecycle scratch. No production
-    `onActivate` / `onDeactivate` takes an argument, and the pen's preview layer no longer reads
-    the pen's state through `initScratch`.
+  - `AnyTool` in `@weasel-js/core` is now the same type as `Tool`: it existed to hold tools of
+    mixed scratch types, and a tool no longer has one. Used across `canvas/SceneCanvas/` and
+    `ToolPalette` in `packages/ui`.
   - `toolPreviewSources` and `canvas/toolPreview.ts`: no production caller. One test in
     `SceneCanvas/usePreviewGhostLayer.test.tsx` plants a preview on a fake tool and imports it.
   - `SurfaceViewInputs.tools` (`viewInputs.tsx`): read by nothing, still supplied by

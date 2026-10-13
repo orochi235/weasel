@@ -133,18 +133,18 @@ itself, not because of which argument a consumer passed it in.
 
 ### Tool
 
-A `Tool<TScratch>` is the **focus-declaring case** of a Contribution: it adds
+A `Tool` is the **focus-declaring case** of a Contribution: it adds
 the fields that only mean something for a mode the user switches into —
-`initScratch`, `onActivate`/`onDeactivate`, a `cursor`. A tool publishes no
+`onActivate`/`onDeactivate`, a `cursor`. A tool publishes no
 preview of its own: what a gesture proposes comes from the in-flight action's
 handle (see [Gesture overlay](#gesture-overlay)). The lifecycle pair brackets the time a tool is
-*live* — in the active slot, held by its `hotkey`, or both — and receives only
-`{ scratch }`. Distinct from [Gesture hooks](#gesture) in that a
+*live* — in the active slot, held by its `hotkey`, or both — and takes no
+argument: a tool that keeps state between gestures closes over it. Distinct from [Gesture hooks](#gesture) in that a
 Tool is a stateful mode while a gesture hook is a direct binding to a pointer
 interaction. See `packages/routing/src/tools/types.ts`.
 
 Not every entry is a Tool. `@weasel-js/hud` contributes bindings and actions and
-declares `claimed`; it has no scratch, no palette icon, and nothing to preview.
+declares `claimed`; it has no lifecycle, no palette icon, and nothing to preview.
 `isTool(entry)` is the test — `focus` or `offhand` eligibility — and the focus
 hooks run only for entries it passes. So "tool" names only what a user picks from
 a palette or holds on a key. Anything that holds every kind of entry takes
