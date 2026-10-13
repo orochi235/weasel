@@ -75,8 +75,7 @@ Priority tags:
   3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, and `ingestion` are
   satisfiable as typed, because every coordinate in them is a screen point under the identity
   `clientToWorld` a 3D host passes. `pointer` has not been re-measured since it became the pointer
-  store (`PointerContextValue`). In the routing package, `ToolCtx` (`tools/types.ts`) still names
-  `View`, and only `<Canvas>` builds one.
+  store (`PointerContextValue`).
 
 - **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Mat3)` names a
   plane in its signature, so a kernel with a camera has nothing to implement it with. Core builds
@@ -132,6 +131,30 @@ Priority tags:
   it back. In a fleet run on 2026-10-12 each read the other's text (`'before'` and `'PQ'`); both
   pass alone. Two fleet runs on one node would collide the same way. They need to run serially,
   or one of them needs a clipboard of its own.
+
+- **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument, and
+  `Tool.previewPose` / `previewBounds` / `previewIds` are gone. Still to go:
+  - `AnyTool` in `@weasel-js/core` is now the same type as `Tool`: it existed to hold tools of
+    mixed scratch types, and a tool no longer has one. Used across `canvas/SceneCanvas/` and
+    `ToolPalette` in `packages/ui`.
+  - `toolPreviewSources` and `canvas/toolPreview.ts`: no production caller. One test in
+    `SceneCanvas/usePreviewGhostLayer.test.tsx` plants a preview on a fake tool and imports it.
+  - `SurfaceViewInputs.tools` (`viewInputs.tsx`): read by nothing, still supplied by
+    `SceneCanvas.tsx`.
+  - `ToolBounds` (`routing/src/tools/types.ts`) existed only for `previewBounds`.
+  - `CanvasExtensionApi.clientToWorld` is optional only because test fakes of the handle omit
+    it (`SceneCanvas.derivedPath.test.tsx` and four in `packages/hud`). The dispatcher mounter,
+    `PointerProviderIfRoot.tsx`, and hover tracking in `SceneCanvas.tsx` still convert with the
+    bare rect helper and ignore a canvas's `clientToWorld` override; so do `CanvasView.tsx` and
+    `features/viewports/viewResolver.ts`, which need a client-to-canvas-local conversion the
+    override does not provide.
+  - `Canvas`'s `adapter` prop is typed as the Move, Resize, and Rotate adapters together, though
+    Canvas reads only poses, nodes, layers, and children.
+
+- **(P3) `packages/ui/src/components/Badge/Badge.stories.tsx` is 2,200 lines, 750 of them one
+  function.** `ComposeLabView` and the `OctantSplineEditor` it uses cannot move to a second
+  stories file, because forge lists every named export of one as a story, and in a plain module
+  both break the 120-line function cap. Breaking `ComposeLabView` up comes first.
 
 - **(P3) `DrawCanvas.tsx` and `SceneViewCanvas.tsx` each carry the same first-paint block**
   (`paintedRef` plus a layout effect). It belongs in `useCanvasSurface`.

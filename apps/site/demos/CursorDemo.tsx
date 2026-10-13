@@ -55,7 +55,7 @@ export function CursorDemo() {
 
   const scene = useScene<unknown, 'default', unknown>({ systemLayers: [{ id: 'default' }] });
   const tool = useMemo(
-    () => defineTool<null>({ id: 'cursor', cursor: { glyph, size, fallback: FALLBACK } }),
+    () => defineTool({ id: 'cursor', cursor: { glyph, size, fallback: FALLBACK } }),
     [glyph, size],
   );
   const tier = resolveCursorTier({ glyph, size }).kind;

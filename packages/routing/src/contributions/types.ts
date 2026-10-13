@@ -18,12 +18,12 @@ export type HotkeyTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift' | (strin
  *
  *  Note: cursor is NOT here. `Tool.cursor` (inherited from `Contribution`)
  *  is already plumbed through `<Canvas>` to `style.cursor` on the host. */
-export interface ToolPresentation<TScratch = unknown> {
+export interface ToolPresentation {
   /** Human-readable label, distinct from the `id`. Falls back to `id`. */
   label?: string;
-  /** Inline-SVG icon component output. May be a static `ReactNode` or a
-   *  function of scratch state (rare; useful for shape-aware affordances). */
-  icon?: import('react').ReactNode | ((scratch?: TScratch) => import('react').ReactNode);
+  /** Inline-SVG icon component output: a static `ReactNode`, or a function
+   *  returning one. */
+  icon?: import('react').ReactNode | (() => import('react').ReactNode);
   /** Palette grouping key. Tools sharing a group render contiguously
    *  with separators between groups. Free-form string; the kit
    *  recommends 'select' | 'shape' | 'draw' | 'type' | 'view'. */

@@ -45,8 +45,8 @@ export function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate
 
   // Callbacks already cited by a Routes row would otherwise appear twice —
   // once in this list and once in the table's `source` column. Keep only the
-  // ones the table can't show: lifecycle members (initScratch / onActivate /
-  // cursor / hitOverride) and any handler whose route didn't resolve.
+  // ones the table can't show: lifecycle members (onActivate / onDeactivate /
+  // cursor) and any handler whose route didn't resolve.
   const citedInRoutes = new Set(
     routeRows.map((r) => r.source && sourceKey(r.source)).filter((k): k is string => k !== undefined),
   );

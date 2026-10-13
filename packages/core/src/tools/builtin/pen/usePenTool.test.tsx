@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, render } from '@testing-library/react';
-import { usePenTool, type PenScratch } from './usePenTool';
+import { usePenTool } from './usePenTool';
+import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { Tool } from '../../overlayBinding';
 import {
@@ -31,6 +32,14 @@ import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter'
 import { createInsertOp } from 'core/ops/create';
 import type { InsertExtras } from 'interactions/actions/depSchema';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
+
+// The real layer, recorded: the pen keeps its state to itself, and the one
+// place it hands that object out is to the preview layer that paints from it.
+vi.mock('features/paths/penPreviewLayer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('features/paths/penPreviewLayer')>();
+  return { ...actual, createPenPreviewLayer: vi.fn(actual.createPenPreviewLayer) };
+});
+const previewLayers = vi.mocked(createPenPreviewLayer);
 
 interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }
 
@@ -99,9 +108,8 @@ function setup(over: {
   const adapter = makeAdapter();
   const { result } = renderHook(() => usePenTool(toolOpts));
   const tool = result.current;
-  // Pen state is persistent — initScratch returns the same ref, which is also
-  // how `penPreviewLayer` reads the in-progress path.
-  const scratch = tool.initScratch!() as PenScratch;
+  // The state this pen's overlay paints from.
+  const scratch = previewLayers.mock.lastCall![0].state;
 
   const scene = { ...paths };
   // Stand-ins for the two deps the pen reads existing paths through. The
@@ -201,7 +209,7 @@ function setup(over: {
      *  the ambient `escape` ladder take over. */
     escape(): boolean { return fire('pen.cancel'); },
 
-    deactivate() { act(() => { tool.onDeactivate?.({} as never); }); },
+    deactivate() { act(() => { tool.onDeactivate?.(); }); },
   };
 }
 
@@ -212,17 +220,20 @@ describe('usePenTool', () => {
     expect(typeof tool.cursor).toBe('function');
   });
 
-  it('cursor is the nib glyph normally, "pointer" when closeHintActive', () => {
+  it('cursor is the nib glyph normally, "pointer" while the close hint shows', () => {
     // jsdom draws no cursor; this checks the string handed to the host. The
     // close hint stays a keyword because it is about what the next click does,
     // not about which tool is active.
-    const { tool, scratch } = setup();
-    const cursor = tool.cursor as (ctx: never) => string;
-    expect(cursor({} as never)).toMatch(/^url\("data:image\/svg\+xml,/);
-    expect(cursor({} as never)).toMatch(/, crosshair$/);
-    scratch.closeHintActive = true;
-    expect(cursor({} as never)).toBe('pointer');
-    scratch.closeHintActive = false;
+    const pointer = createPointerStore();
+    const p = setup({ deps: { pointer }, closeHitRadius: 8 });
+    const cursor = p.tool.cursor as () => string;
+    expect(cursor()).toMatch(/^url\("data:image\/svg\+xml,/);
+    expect(cursor()).toMatch(/, crosshair$/);
+    p.click(0, 0); p.click(100, 0); p.click(100, 100);
+    act(() => { pointer.set({ worldX: 3, worldY: 3, viewId: null }); });
+    expect(cursor()).toBe('pointer');
+    act(() => { pointer.set({ worldX: 40, worldY: 40, viewId: null }); });
+    expect(cursor()).toMatch(/, crosshair$/);
   });
 
   it('declares its whole input surface as bindings', () => {
@@ -418,9 +429,14 @@ describe('usePenTool', () => {
     expect(p.adapter.setSelection).not.toHaveBeenCalled();
   });
 
-  it('initScratch returns the same persistent ref across calls', () => {
-    const { tool } = setup();
-    expect(tool.initScratch!()).toBe(tool.initScratch!());
+  it('keeps one state object, and one overlay painting from it, across renders', () => {
+    const before = previewLayers.mock.calls.length;
+    const { result, rerender } = renderHook(() => usePenTool());
+    const overlay = result.current.overlay;
+    rerender();
+    expect(previewLayers.mock.calls.length).toBe(before + 1);
+    expect(result.current.overlay).toBe(overlay);
+    expect(overlay).toBe(previewLayers.mock.results.at(-1)!.value);
   });
 
   describe('bindings', () => {
@@ -460,14 +476,14 @@ describe('usePenTool', () => {
     it('hints the close while the pointer is on the first anchor of three or more', () => {
       const pointer = createPointerStore();
       const p = setup({ deps: { pointer }, closeHitRadius: 8 });
-      const cursor = p.tool.cursor as (ctx: never) => string;
+      const cursor = p.tool.cursor as () => string;
       p.click(0, 0); p.click(100, 0);
       act(() => { pointer.set(at(2, 2)); });
       expect(p.scratch.closeHintActive).toBe(false);
       p.click(100, 100);
       act(() => { pointer.set(at(3, 3)); });
       expect(p.scratch.closeHintActive).toBe(true);
-      expect(cursor({} as never)).toBe('pointer');
+      expect(cursor()).toBe('pointer');
       act(() => { pointer.set(at(40, 40)); });
       expect(p.scratch.closeHintActive).toBe(false);
     });
@@ -1137,7 +1153,7 @@ describe('usePenTool — through the kit insert dep', () => {
     const scene = createScene<unknown, 'default', RectPose>({ systemLayers: [{ id: 'default' }] }) as unknown as Scene<unknown, string, unknown>;
     const selected: string[][] = [];
     let reg!: DepRegistry;
-    let tool!: Tool<PenScratch>;
+    let tool!: Tool;
     function Wire() {
       useInsertDepSource(scene, { applyOps: (ops, label) => scene.applyBatch(ops, label ?? '', defaultCommitAdapter(scene)) });
       useDepSource('selection', () => ({ set: (ids: string[]) => { selected.push(ids); } }) as unknown as SelectionApi);
@@ -1169,7 +1185,7 @@ describe('usePenTool — through the kit insert dep', () => {
 describe('usePenTool — abandoned renders', () => {
   it('commits through the committed options, not an abandoned render\'s', () => {
     const adapter = makeAdapter();
-    let tool = null as Tool<PenScratch> | null;
+    let tool = null as Tool | null;
     function Probe({ autoSelect }: { autoSelect: boolean }) {
       tool = usePenTool({ autoSelect });
       return null;

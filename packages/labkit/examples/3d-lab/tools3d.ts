@@ -9,8 +9,8 @@
 import { useMemo } from 'react';
 import { defineTool, type Tool } from '@weasel-js/core';
 
-export function useBoxTool(): Tool<null> {
-  return useMemo(() => defineTool<null>({
+export function useBoxTool(): Tool {
+  return useMemo(() => defineTool({
     id: 'box',
     capabilities: ['creates-shapes'],
     hookName: 'useBoxTool',

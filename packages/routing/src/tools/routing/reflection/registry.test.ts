@@ -4,8 +4,8 @@ import type { Tool } from '../../types';
 import { parseRoute, routeToSpec, specificity, type GestureSpec } from '@weasel-js/gestures';
 import { hitPredicate } from '@weasel-js/gestures';
 
-function tool(id: string, bindings: unknown[]): Tool<unknown> {
-  return { id, bindings } as unknown as Tool<unknown>;
+function tool(id: string, bindings: unknown[]): Tool {
+  return { id, bindings } as unknown as Tool;
 }
 
 describe('buildRouteRegistry', () => {

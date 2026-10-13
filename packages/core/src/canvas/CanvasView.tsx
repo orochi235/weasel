@@ -125,7 +125,6 @@ const NO_INPUTS: Omit<SurfaceViewInputs, 'selectionApi'> = {
   adapter: undefined,
   geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>,
   boundsOf: undefined,
-  tools: undefined,
 };
 
 const ALWAYS_VISIBLE = (): boolean => true;

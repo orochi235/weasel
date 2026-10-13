@@ -4,7 +4,7 @@
  *
  * This is the composition of `clientToCanvas` + the view-inverse half of
  * `screenToWorld`, but expressed against the `ViewLike` shape used by
- * `SceneCanvas` / `ToolCtx` (`{ scale: { x, y }, x, y }`) rather than the
+ * `SceneCanvas` (`{ scale: { x, y }, x, y }`) rather than the
  * `ViewTransform` shape used by `screenToWorld` (`{ panX, panY, zoom }`).
  */
 export interface ViewLike {

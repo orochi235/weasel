@@ -235,6 +235,7 @@ function Harness({ layers, onReady }: {
       requestRedraw: () => {},
       hitTestExtras: () => null,
       claimsAbove: () => false,
+      clientToWorld: (x, y) => [x, y],
       chromeState: () => ({
         selection: [], multiActive: false, boundsOf: () => null, unionBounds: null,
         modifiers: { alt: false, shift: false, meta: false, ctrl: false },

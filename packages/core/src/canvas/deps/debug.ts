@@ -1,8 +1,8 @@
 /**
  * `useDebugDepSource` — wires the `debug` dep: the sink of the canvas this
- * registrar belongs to, so actions report to the same debug overlay tools do
- * through `ToolCtx.debug`. Resolved at invocation, because the canvas creates
- * its sink after this registers and swaps it whenever `debug` changes.
+ * registrar belongs to, so actions report to the debug overlay that canvas
+ * draws. Resolved at invocation, because the canvas creates its sink after
+ * this registers and swaps it whenever `debug` changes.
  */
 import { useDepSource } from '@weasel-js/routing/react';
 import type { CanvasExtensionApi } from '../canvasExtension';

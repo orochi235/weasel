@@ -157,16 +157,14 @@ function buildPath(
  */
 export function usePenTool(
   options: UsePenToolOptions = {},
-): Tool<PenScratch> {
+): Tool {
   const { autoSelect = true, autoCommitOnClose = true, closeHitRadius = 8, anchorSnapRadius = 8, snapPoint } = options;
 
-  // Persistent scratch: single ref reused across gestures so multi-click
-  // state survives the dispatcher's per-gesture initScratch contract.
   const scratchRef = useRef<PenScratch | null>(null);
   if (scratchRef.current === null) scratchRef.current = freshScratch();
 
   // Latest options stashed so handlers see fresh values without rebuilding
-  // the Tool record (which would lose scratch identity in the dispatcher).
+  // the Tool record.
   const optsRef = useLatest({ autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
 
   // Scratch mutations alone don't trigger React re-renders, so the preview
@@ -570,13 +568,11 @@ export function usePenTool(
   }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef, trail]);
 
   return useMemo(() => {
-    return defineTool<PenScratch>({
+    return defineTool({
       id: 'pen',
       keybinding: { key: 'P' },
       capabilities: ['creates-paths'],
       hookName: 'usePenTool',
-      // Reads the tool's own ref rather than a scratch handed in by a
-      // dispatcher — the pen owns this state and nothing else needs it.
       cursor: () =>
         scratchRef.current?.closeHintActive
           ? 'pointer'
@@ -586,7 +582,6 @@ export function usePenTool(
         icon: createElement(PenIcon),
         group: 'draw',
       },
-      initScratch: () => scratchRef.current!,
       actions,
       overlay,
       overlayPosition: 'before-selection',

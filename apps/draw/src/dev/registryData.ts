@@ -123,8 +123,8 @@ export interface ToolEntry {
    *  press-and-hold slot. */
   hotkey?: string;
   /** Palette presentation. `icon` is the rendered `presentation.icon` when
-   *  the def supplies one (the kit accepts either `ReactNode` or a thunk;
-   *  we invoke the thunk with `undefined` scratch for display). */
+   *  the def supplies one (the kit accepts either `ReactNode` or a thunk,
+   *  which we invoke for display). */
   presentation?: {
     label?: string;
     group?: string;
@@ -135,7 +135,6 @@ export interface ToolEntry {
   surface: ToolSurface;
   /** Top-level optional members present on the `ToolDef`. */
   capabilities: {
-    initScratch: boolean;
     onActivate: boolean;
     onDeactivate: boolean;
   };

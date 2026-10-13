@@ -13,11 +13,11 @@ import { cursorFor } from '@weasel-js/cursor';
  * node factory override the dep (`useDepSource('insert', …)`) rather than
  * the tool. Grid snapping comes from the `snap` dep.
  */
-export function useRectTool(options: InsertToolOptions = {}): Tool<null> {
+export function useRectTool(options: InsertToolOptions = {}): Tool {
   const { behaviors } = options;
   return useMemo(
     () =>
-      defineTool<null>({
+      defineTool({
         id: 'rect',
         keybinding: { key: 'R' },
         capabilities: ['creates-shapes'],

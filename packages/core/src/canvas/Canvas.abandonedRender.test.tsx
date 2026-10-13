@@ -11,8 +11,6 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { Canvas } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import { defineTool, useTools } from '../tools/overlayBinding';
-import { WeaselProvider } from '../WeaselProvider';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
@@ -59,31 +57,6 @@ describe('<Canvas> after an abandoned render', () => {
       <Canvas ref={ref} width={100} height={100} layers={{}} debug={debug} />
     ));
     expect(ref.current!.getDebug()).toBeNull();
-  });
-
-  it("applies a tool cursor ctx's ops to the committed adapter", () => {
-    let applyOps: ((ops: never[], label: string) => void) | undefined;
-    function Test({ adapter }: { adapter: { applyOps: () => void } }) {
-      const tools = useTools({
-        active: 't',
-        registry: {
-          t: defineTool({
-            id: 't',
-            cursor: (ctx) => {
-              applyOps = ctx.applyOps as typeof applyOps;
-              return 'crosshair';
-            },
-          }),
-        },
-      });
-      return <Canvas width={100} height={100} adapter={adapter as never} layers={{}} tools={tools} />;
-    }
-    const a = { applyOps: vi.fn() };
-    const b = { applyOps: vi.fn() };
-    renderThenAbandon(a, b, (adapter) => <WeaselProvider><Test adapter={adapter} /></WeaselProvider>);
-    applyOps!([], 'op');
-    expect(a.applyOps).toHaveBeenCalledWith([], 'op');
-    expect(b.applyOps).not.toHaveBeenCalled();
   });
 
   it('keeps redrawOn subscribed when a later render repeats the committed sources', () => {

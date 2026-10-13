@@ -81,12 +81,12 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     return tagged
       .filter(({ t }) => (seen.has(t.id) ? false : (seen.add(t.id), true)))
       .map(({ slot, t }): ToolEntry => {
-        const def = t.def as ToolDef<unknown> | undefined;
+        const def = t.def as ToolDef | undefined;
         const callbacks = def ? collectToolCallbacks(def) : [];
         const declaredRoutes = def
           ? collectDeclaredRoutes(
               def,
-              t.bindings as ToolDef<unknown>['bindings'],
+              t.bindings as ToolDef['bindings'],
               callbacks,
               actionsByID,
             )
@@ -116,7 +116,6 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           } : undefined,
           surface,
           capabilities: {
-            initScratch: !!def?.initScratch,
             onActivate: !!def?.onActivate,
             onDeactivate: !!def?.onDeactivate,
           },
@@ -174,8 +173,8 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
  *  reads: a hook is free to attach bindings to the returned Tool instead of declaring them in
  *  the def. */
 export function collectDeclaredRoutes(
-  def: ToolDef<unknown>,
-  bindings: ToolDef<unknown>['bindings'],
+  def: ToolDef,
+  bindings: ToolDef['bindings'],
   _callbacks: readonly CallbackRef[],
   actionsByID: ReadonlyMap<string, unknown>,
 ): readonly DeclaredRoute[] {
@@ -189,7 +188,7 @@ export function collectDeclaredRoutes(
 }
 
 function bindingRouteRefs(
-  bindings: ToolDef<unknown>['bindings'],
+  bindings: ToolDef['bindings'],
 ): readonly { route: string; actionId: string }[] {
   if (!bindings || bindings.length === 0) return [];
   const out: { route: string; actionId: string }[] = [];
@@ -271,12 +270,10 @@ function snapshotEnabled(
   }
 }
 
-/** The thunk form is invoked with `undefined` scratch — the inspector has no live gesture
- *  state to feed in. */
 function renderPresentationIcon(icon: unknown): ReactNode | undefined {
   if (icon === undefined || icon === null) return undefined;
   if (typeof icon === 'function') {
-    try { return (icon as (s?: unknown) => ReactNode)(undefined); }
+    try { return (icon as () => ReactNode)(); }
     catch { return undefined; }
   }
   if (isValidElement(icon)) return icon;
@@ -298,9 +295,8 @@ function pushCallback(out: CallbackRef[], label: string, fn: unknown): void {
   if (source) out.push({ label, source });
 }
 
-function collectToolCallbacks(def: ToolDef<unknown>): readonly CallbackRef[] {
+function collectToolCallbacks(def: ToolDef): readonly CallbackRef[] {
   const out: CallbackRef[] = [];
-  pushCallback(out, 'initScratch', def.initScratch);
   pushCallback(out, 'onActivate', def.onActivate);
   pushCallback(out, 'onDeactivate', def.onDeactivate);
   if (typeof def.cursor === 'function') pushCallback(out, 'cursor', def.cursor);

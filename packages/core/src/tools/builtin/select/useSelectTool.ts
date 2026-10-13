@@ -139,7 +139,7 @@ interface PressClassification {
 export function useSelectTool<TNode extends { id: string }, TPose>(
   adapter: SelectAdapter<TNode, TPose>,
   options: UseSelectToolOptions<TPose>,
-): Tool<null> {
+): Tool {
 
   // pickEvery / boundsOf defaults — for any adapter the kit can derive both
   // from `adapter.getNodes()` + `adapter.getPose(id)` + the descriptor.
@@ -263,7 +263,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
   return useMemo(
     () => {
-      const base = defineTool<null>({
+      const base = defineTool({
         id: 'select',
         keybinding: { key: 'V' },
         capabilities: ['creates-selection'],

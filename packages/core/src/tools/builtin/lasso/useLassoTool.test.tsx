@@ -67,7 +67,7 @@ describe('useLassoTool', () => {
   });
 
   it('the params thunk reads the committed mode, not an abandoned render\'s', () => {
-    let tool = null as Tool<undefined> | null;
+    let tool = null as Tool | null;
     function Probe({ mode }: { mode: 'intersect' | 'enclosed' }) {
       tool = useLassoTool({ mode });
       return null;
