@@ -8,6 +8,18 @@ describe('ColorField', () => {
     expect(screen.getByLabelText('Fill')).toHaveValue('#ff0000');
   });
 
+  it('shows a color written as rgba() or by name as its hex, and one it cannot read as black', () => {
+    const shown = (value: string) => {
+      const { unmount } = render(<ColorField value={value} alpha onChange={() => {}} />);
+      const out = [(screen.getByLabelText('Color') as HTMLInputElement).value, (screen.getByRole('slider') as HTMLInputElement).value];
+      unmount();
+      return out;
+    };
+    expect(shown('rgba(20, 40, 60, 0.5)')).toEqual(['#14283c', '50']);
+    expect(shown('rebeccapurple')).toEqual(['#663399', '100']);
+    expect(shown('rgb(from red r g b / 50%)')).toEqual(['#000000', '100']);
+  });
+
   it('emits live onInput and a single commit onChange on blur', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();

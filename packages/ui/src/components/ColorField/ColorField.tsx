@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
+import { parseColor, rgbaToHex } from '@weasel-js/paint';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { OpacityRange } from './OpacityRange';
 import { usePickerClose } from './usePickerClose';
@@ -37,6 +38,19 @@ export interface ColorFieldProps {
 }
 
 /**
+ * `value` as `#rrggbbaa`, which is all the native picker shows. A color written any other way CSS has (`rgba()`,
+ * `hsl()`, a name) is read as the color it names; one that cannot be read here (`rgb(from …)`, `oklch()`) is black.
+ */
+function hex8Of(value: string): string {
+  if (value.startsWith('#')) return toHex8(value);
+  try {
+    return toHex8(rgbaToHex(parseColor(value)));
+  } catch {
+    return '#000000ff';
+  }
+}
+
+/**
  * Compact color editor: native color input + optional opacity slider.
  * Commit semantics are gesture-based (see `onChange`) because native
  * color/range inputs fire `change` continuously during interaction —
@@ -44,7 +58,7 @@ export interface ColorFieldProps {
  */
 export function ColorField(props: ColorFieldProps) {
   const { value, mixed = false, alpha = false, alphaDisabled = false, disabled = false, onInput, onChange, id, className } = props;
-  const hex8 = toHex8(value ?? '#000000');
+  const hex8 = hex8Of(value ?? '#000000');
   const rgb6 = hex8.slice(0, 7);
   const alpha01 = getAlpha01(hex8);
   const alphaPct = Math.round(alpha01 * 100);
