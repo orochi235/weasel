@@ -32,7 +32,7 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
   onElsewhere?(id: string): void;
 }): ReactElement {
   const listed: Array<ListedAsset & { held: boolean }> = [
-    ...assets.map((asset) => ({ id: asset.id, label: asset.label, under: headingOf(asset), readOnly: asset.readOnly, held: true })),
+    ...assets.map((asset) => ({ id: asset.id, label: asset.label, under: headingOf(asset), readOnly: asset.readOnly, changed: changed.has(asset.id), held: true })),
     ...elsewhere.filter((other) => !assets.some((asset) => asset.id === other.id)).map((other) => ({ ...other, held: false })),
   ];
   const rows = order ? inOrder(listed, order) : listed;
@@ -53,9 +53,9 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
             <ListBoxSection key={title} className={s.group}>
               <Header className={s.heading}>{title}</Header>
               {held.map((row) => (
-                <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={changed.has(row.id) || undefined}
+                <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={row.changed || undefined}
                   data-rail-mark={row.id === selected ? 'current' : undefined} className={s.row}>
-                  <span className={changed.has(row.id) ? `${s.label} ${s.changed}` : s.label}>{row.label}</span>
+                  <span className={row.changed ? `${s.label} ${s.changed}` : s.label}>{row.label}</span>
                   {row.readOnly && <Icon name="bolt" size={16} label="Dynamic" className={s.dynamic} />}
                 </ListBoxItem>
               ))}

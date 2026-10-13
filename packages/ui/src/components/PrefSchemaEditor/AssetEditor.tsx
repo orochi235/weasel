@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { CloseButton } from '../CloseButton';
@@ -64,6 +64,9 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   order?: readonly string[];
   /** The reader picked one of `elsewhere`; the host shows it, in whatever holds it. */
   onElsewhere?(id: string): void;
+  /** Called with the ids of the assets that differ from the baseline, when the editor mounts and whenever the set
+   *  changes: what a host needs to mark them `changed` in the `elsewhere` of another editor. */
+  onChangedAssets?(ids: ReadonlySet<string>): void;
   /** The asset shown when the editor mounts. Default: the first. */
   startOn?: string;
   /** Draws the preview of an asset in place of the editor's own: a panel as the host's own panel, a toolbar as its
@@ -80,7 +83,7 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
  * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
  */
 export function AssetEditor(
-  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
   const [first] = useState(workspace);
   const base = original ?? first;
@@ -122,6 +125,9 @@ export function AssetEditor(
 
   const changedAssets = useAssetChanges(base, workspace, same);
   const changes = changedAssets.of(assetId);
+  const changedIds = changedAssets.ids;
+  const reportChanged = useLatest(onChangedAssets);
+  useEffect(() => reportChanged.current?.(changedIds), [changedIds, reportChanged]);
   // The document packs every asset as sent, so every changed one is handed over, whichever is shown.
   const submit: SubmitChanges | undefined = onSubmit && (() => doc.send(() => onSubmit(changedAssets.sent(types))));
   const changed = useMemo(() => changedPaths(changes), [changes]);

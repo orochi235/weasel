@@ -38,6 +38,8 @@ export interface ListedAsset {
   label: string;
   under: AssetHeading;
   readOnly?: boolean;
+  /** It differs from its baseline, which only whatever holds it can say: listed as a changed asset of this editor's is. */
+  changed?: boolean;
 }
 
 /** Everything one editor holds: its dialogs, and the layouts that point into them. The set is the host's, and fixed. */
