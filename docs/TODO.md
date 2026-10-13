@@ -1169,15 +1169,23 @@ only story runner in the repo.
   its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
   canvas's adapter, so the seat has to say where a scene-level write gets animated.
 
-- **(P3) draw warns of two route conflicts every time it loads.** In the console of the dev build,
-  each "two bindings declare the same (phase, gesture, arg, target, modifiers) tuple in the same
-  scope, so declaration order alone decides which one fires":
-  `[*:*] drag ?shift ?alt — declared by slice, slice`, which is `useSliceTool`'s
-  `slice.dragPoint` binding (shift and alt optional) against its own plain `slice` drag
-  (`packages/core/src/tools/builtin/slice/useSliceTool.ts`), and
-  `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
-  mode.crop.commit`. Not looked into further: whether each is a real ambiguity, or bindings the
-  check cannot tell apart because a predicate or a mode keeps them from being live together.
+- **(P3) draw warns of two route conflicts every time it loads, and both are a binding that
+  declines through `enabled()` so the next one fires.** `findScopedConflicts`
+  (`packages/routing/src/tools/routing/reflection/conflicts.ts`) cannot see that, since it does not
+  evaluate actions, so it reports each as "declaration order alone decides which one fires":
+  - `[*:*] drag ?shift ?alt — declared by slice, slice`. `useSliceTool` lists `slice.dragPoint`
+    ahead of its plain `slice` drag, and `slice.dragPoint` is enabled only while points are placed.
+    Read from the code: the order is the design, and a comment on the binding says so.
+  - `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
+    mode.crop.commit`. `modeShortcuts` (`packages/routing/src/contributions/modeShortcuts.ts`)
+    gives every entry key the rule `{ mode: { not: <its mode> } }`, which holds inside any other
+    mode, so path-edit's entry ties with each other mode's commit. draw keeps entry to normal mode
+    in `canEnter` (`apps/draw/src/modality/shortcuts.ts`), which the check cannot read. The two
+    commits do not tie with each other; they share a line because each ties with the entry.
+
+  Not chosen yet: a way for a binding to say it yields when its action declines, so the check
+  skips the pair, or a way for `modeShortcuts` to take the modes an entry key works from as a rule,
+  which settles the second and leaves the first.
 
 - **(P3) draw: two owners for "is a text edit open".** The kit's `useSceneTextEdit` holds
   `editingId`; the app's mode machine (`apps/draw/src/modality/machine.ts`) holds a `text-edit` mode
