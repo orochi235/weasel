@@ -3,7 +3,7 @@
  * far it advances, and the kerning before it. Nothing here knows about lines.
  */
 import {
-  metricsOf, resolveFontVariant, resolveGlyph, warnNoMetrics,
+  glyphIn, metricsOf, resolveFontVariant, resolveGlyph, warnNoMetrics,
   type BmFont, type BmFontChar, type GlyphMetrics, type ResolveResult,
 } from '@weasel-js/font';
 import { graphemeEnds } from '../measure/graphemes';
@@ -114,7 +114,13 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
           entries.push({ ...blank, tab: { stop: tabSize * (advance + run.letterSpacing), min: advance / 2 } });
           prev = undefined;
         } else {
-          prev = { ...blank, advance, tracking, kerningBefore };
+          // Its record in the run's own tier, for an atlas that draws one. It
+          // never escalates: a face without a space still parts words.
+          const own = glyphIn(resolved, 32);
+          prev = {
+            ...blank, font: own?.font ?? null, glyph: own?.glyph ?? null,
+            advance, tracking, kerningBefore,
+          };
           entries.push(prev);
         }
       } else {
