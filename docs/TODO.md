@@ -1521,10 +1521,6 @@ only story runner in the repo.
     `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
     `cameraRegistry`, and several in forge.
 
-- **(P3) `check:spacing` exempts a directory that holds no stylesheet.** `isStylesheet` in
-  `scripts/check-spacing.ts` skips `apps/site/CommandPalette/`, which now contains only
-  `useCommandPaletteShortcut.ts`. Drop the exemption and the comment above it.
-
 - **(P3) `SceneCanvasInner` is one 717-line function.** It is most of the 870-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the

@@ -62,6 +62,7 @@ describe('isStylesheet', () => {
     expect(isStylesheet('packages/ui/src/components/Button/Button.module.css')).toBe(true);
     expect(isStylesheet('packages/labkit/src/trial/Trial.less')).toBe(true);
     expect(isStylesheet('apps/site/canvas-kit-demo.css')).toBe(true);
+    expect(isStylesheet('apps/site/CommandPalette/CommandPalette.css')).toBe(true);
   });
 
   it('leaves out stories, the token showcase, and source files', () => {
