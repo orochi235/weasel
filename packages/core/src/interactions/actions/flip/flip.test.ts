@@ -1,6 +1,6 @@
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
-import { flipAction } from './flip';
+import { flipAction } from './action';
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { NodeId } from 'core/scene/types';

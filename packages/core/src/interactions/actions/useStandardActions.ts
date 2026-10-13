@@ -25,7 +25,7 @@ import { deleteAction } from './defaults/delete';
 import { duplicateAction } from './defaults/duplicate';
 import { groupAction, ungroupAction } from './defaults/group';
 import { undoAction, redoAction } from './defaults/undoRedo';
-import { flipAction } from './defaults/flip';
+import { flipAction } from './flip/action';
 import {
   nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction,
 } from './defaults/nudge';

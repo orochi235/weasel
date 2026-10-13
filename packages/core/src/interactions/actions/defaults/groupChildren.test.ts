@@ -12,7 +12,7 @@ import { unionOfChildren } from 'core/scene/kitRegistry';
 import { shapeSources } from '../selectionSubtree';
 import { resizeAction } from '../resize/action';
 import { rotateAction } from '../rotate/action';
-import { flipAction } from './flip';
+import { flipAction } from '../flip/action';
 import { alignRightAction } from './align';
 import { distributeHorizontalAction } from './distribute';
 

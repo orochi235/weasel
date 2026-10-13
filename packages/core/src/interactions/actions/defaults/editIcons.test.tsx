@@ -5,7 +5,7 @@ import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from '.
 import { duplicateAction } from './duplicate';
 import { groupAction, ungroupAction } from './group';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
-import { flipAction } from './flip';
+import { flipAction } from '../flip/action';
 import { undoAction, redoAction } from './undoRedo';
 import { deleteAction } from './delete';
 

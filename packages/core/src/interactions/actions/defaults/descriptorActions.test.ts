@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
-import { flipAction } from './flip';
+import { flipAction } from '../flip/action';
 import { nudgeRightAction } from './nudge';
 import { alignLeftAction } from './align';
 import { distributeHorizontalAction } from './distribute';

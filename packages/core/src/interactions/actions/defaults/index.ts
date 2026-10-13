@@ -3,7 +3,7 @@ export { escapeAction } from './escape';
 export { duplicateAction } from './duplicate';
 export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './nudge';
 export { reorderForwardAction, reorderBackwardAction } from './reorder';
-export { flipAction } from './flip';
+export { flipAction } from '../flip/action';
 export {
   alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
   alignCenterXAction, alignCenterYAction,

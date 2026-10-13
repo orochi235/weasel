@@ -41,7 +41,7 @@ import { resizeAction } from '../resize/action';
 import { moveAction } from '../move/action';
 import { rotateAction } from '../rotate/action';
 import { nudgeRightAction } from '../defaults/nudge';
-import { flipAction } from '../defaults/flip';
+import { flipAction } from '../flip/action';
 
 interface AABBPose {
   x: number;
