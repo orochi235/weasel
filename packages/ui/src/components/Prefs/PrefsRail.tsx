@@ -110,7 +110,7 @@ export function PrefsRail(props: PrefsRailProps) {
       const entry = (
         <button
           type="button"
-          className={[s.railItem, item.depth > 0 && s.railSub, item.passes && s.railPasses].filter(Boolean).join(' ')}
+          className={[s.railItem, item.depth > 0 && item.page !== item.path && s.railSub, item.passes && s.railPasses].filter(Boolean).join(' ')}
           aria-current={open ? 'page' : here ? 'location' : undefined}
           data-rail-mark={here ? 'current' : open ? 'open' : undefined}
           data-rail-fold={foldable && nested ? item.path : undefined}

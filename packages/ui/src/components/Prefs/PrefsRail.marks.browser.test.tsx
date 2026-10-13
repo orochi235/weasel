@@ -109,3 +109,10 @@ it('scrolls a selected section inside another into view below the sticky heading
   expect(dots.getBoundingClientRect().top - title.getBoundingClientRect().bottom).toBeLessThan(16);
   await expect.poll(marks).toEqual({ canvas: 'open', 'canvas.grid': 'current' });
 });
+
+it('sets a page under another entry as the top entries are, and a section under one lighter', () => {
+  const { entry } = mount();
+  const weight = (path: string) => Number(getComputedStyle(entry(path).querySelector('[class*="railName"]')!).fontWeight);
+  expect(weight('canvas.guides')).toBe(weight('canvas'));
+  expect(weight('canvas.grid')).toBeLessThan(weight('canvas'));
+});
