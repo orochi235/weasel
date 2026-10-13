@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefSection, type PrefObject } from '@weasel-js/prefs';
+import { prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { getMarker, registerMarker } from '@weasel-js/stroke';
@@ -12,7 +12,7 @@ type EditOverlayChrome = 'caretColor' | 'selectionBackground' | 'selectionColor'
 
 describe('defaultNodeProperties', () => {
   it('shows every typed number to two places, where a drag or a scale leaves many', () => {
-    const typed: [string, PrefLeaf & { kind: 'number' }][] = [];
+    const typed: [string, PrefNumber][] = [];
     const walk = (at: unknown, key: string): void => {
       if (!at || typeof at !== 'object') return;
       const o = at as Record<string, unknown>;
