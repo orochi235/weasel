@@ -2,7 +2,8 @@
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
 > acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
 > A, C, and D except for the items still listed under them, which were checked against the code and are
-> written as found. F was checked and is written as found. Every other lettered section is unbuilt,
+> written as found. F was checked and is written as found. J and N have landed and are deleted, and
+> H has landed except for the item still listed under it. Every other lettered section is unbuilt,
 > and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
 > work it lists has merged; `docs/TODO.md` holds what is left.
@@ -76,7 +77,7 @@ The assembly landed: `features/chrome-caps/useChromeCaps.ts` builds the context,
 
 Lines 757, 762-768, 1099, 1263-1333.
 
-- **`getActionRef` (757) and `actionsRegistryRef` (1099)** carry the actions registry up from `StandardActionsRegistrar` (its lines 188-207). The registry is in scope here, so they are vestigial. `ingestImpl`'s "registry not mounted yet" branch (1122-1127) goes with them.
+- **`getActionRef` (757) and `actionsRegistryRef` (1099)** carry the actions registry up from `StandardActionsRegistrar` (its lines 188-207). The registry is in scope here, so they are vestigial. The "registry not mounted yet" branch of `ingest` goes with them: it is now in `features/ingestion/useCanvasIngestion.ts`, which takes the registry as a getter so this arc can re-point it.
 - **The registrar takes 37 props (1263-1299)**, mostly values this function computed only to hand down.
 - **`ToolKeybindingsMounter`** is misnamed: it also installs every contribution's actions, deps, and `attach` (`useContributionRoles`). It needs two `useKeybindings` calls because the takeover branch is decided above it.
 - **Mounter props that are constant gates** (evidence): `boundsOf` is read only in `if (!selectionRef || !boundsOf || !viewRef) return undefined` (`GestureDispatcherMounter.tsx:151`), and all three are always passed.
@@ -115,25 +116,35 @@ SceneCanvas's own files.
 
 Lines 269-297. The effects for `scene.subscribe` and `scene.overrides.subscribe` do by hand what `redrawOn` does. Both match `RedrawSource` (`subscribe(listener) → unsubscribe`, `core/layers/render.ts:44`), and 240-243 already appends `modes` that way. `animator.onTick` has a different shape and would need adapting.
 
-### H. Selection
+### H. Two kind classifiers that disagree
 
-Lines 350-408.
+The read-only wrapper landed as `core/selection/readOnlySelection.ts`, and the label published with
+the selection moved to `core/selection/usePublishSceneSelection.ts`. The label was not folded into
+the routing kind, because the two answer differently for every node tried
+(`SceneCanvas.selectionKinds.test.tsx`, run against the code) and the difference shows: the command
+palette's selection summary (`ui/CommandPalette/selectionSummary.ts`) prints the label.
 
-- **The read-only wrapper for `selectable={false}` (364-384)** belongs in `core/selection`. No such helper exists (evidence, grep).
-- **`selectionKinds` (389-407) is a second node-kind classifier** beside `kindClassifier` (470-476), with different answers. The routing default calls `{ path }` data `'path'` (`SceneCanvas/defaultNodeRouting.ts:37-41`); this one calls a pose with `.kind` `'path'` and a container `'group'`. Owner: the selection-context publisher.
+| Node | Published label | Routing kind (`inferredNodeRouting`) |
+|---|---|---|
+| leaf, `data.path`, plain box pose | none | `'path'` |
+| leaf, pose carrying a string `kind` | `'path'` | `'unknown'` |
+| leaf, `data.kind: 'rect'`, plain box pose | none | `'unknown'` |
+| leaf, `data.text` | none | `'text'` |
+| leaf, `data.image` | none | `'image'` |
+| leaf matching a consumer `routing` entry | none | the entry's name |
+| container | `'group'` | `'unknown'` |
+
+`describeKind` replaces the label for every node, containers included. A third classifier,
+`classifyKind` in `ui/SelectionPanel/model.ts`, answers `'group'` for a container and the routing
+entry otherwise. Making these one needs a decision on what the palette should print.
 
 ### I. Selection overlay prebuild
 
 Lines 1042-1079. `<Canvas>` builds the same layer with the same `poseById` handling (evidence, `Canvas.tsx:862-871`). The only addition here is merging `getSuppressedIds`, which the slot config already accepts (1058). Passing a merged config removes the `createSelectionOverlayLayer` import and the `descriptor` dependency.
 
-### J. Ingestion
-
-Lines 260-267, 1096-1134. Handler registration, the clipboard context, and `ingestImpl` belong in a `features/ingestion` hook. `ingestionClipboard` is built here only "where the typed adapter is in scope" (`StandardActionsRegistrar.tsx:176-178`), and is then cast untyped at 1111.
-
 ### K. Dead or vestigial (grep-verified)
 
 - **`chromeSizes` (219-222).** Its only use is `handleHitRadius: chromeSizes.handle` (456), and `useSceneSelectTool`'s `selectTool` argument has no such field (`useSceneSelectTool.ts:92-104`). The `targetSizesPx` import goes with it.
-- **`actionDefaults` (181, 1267).** It appears in the registrar's prop type (`StandardActionsRegistrar.tsx:95`) but not its destructure (57-91), and `props.ts:532` marks it "unused after legacy-bridge removal".
 - **`insertTool` (154, 515-516).** It becomes `adapter.commitInsert`, which has no non-test caller (grep `\.commitInsert`: one test, `mintId.test.ts:53`). The insert action uses the `insert` dep.
 - **`nodeResolver`'s `pose` and `data` (551).** The only readers of the hit take `id` and `kind` (`useHitObserver.ts:21`) or `id` (827). `getNodeAtPoint.ts` still documents a `<Canvas getNodeAtPoint>` prop that no longer exists.
 - **Duplicate refs:**
@@ -157,13 +168,9 @@ Lines 260-267, 1096-1134. Handler registration, the clipboard context, and `inge
 
 Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`, `rotateOptions`, `snap`, `handleHitRadius`, `selectionOptions`, and `onBackgroundClick`, none of which `CanvasProps` declares (evidence, grep of `Canvas.tsx`).
 
-### N. Device profile resolved twice
-
-`useDeviceProfile(device)` runs at 212, and `<DeviceProfileProvider value={device}>` (1256) calls it again (`core/device/useDeviceProfile.ts:126-129`). That is two sets of media-query listeners. The provider should take the resolved profile.
-
 ### Belongs here
 
-- The scene bake (224-234), though `isSerialized` belongs in `core/scene`.
+- The scene bake (224-234).
 - `kindClassifier` and `kindOfNode`.
 - `composedAlphaFor` and the layer gate.
 - The `useSceneAdapter`, `useSceneSelectTool`, and `useTools` calls.
@@ -191,15 +198,13 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `dispatcherRef` | 762 | init | everything gesture-related | lazy init |
 | `committedSelectionRef` | — | render | `currentRuleInputs` | dependency array, and commit timing |
 | `chromeAffordancesRef` | 985 | mounter insertion effect | slops layer | child → parent, debug only |
-| `actionsRegistryRef` | 1099 | registrar effect | `ingestImpl` | provider boundary that is gone |
-| `ingestionClipboardOmitted` | 1107 | render | clipboard ctx | dependency array |
+| `actionsRegistryRef` | 1099 | registrar effect | `useCanvasIngestion`'s registry getter | provider boundary that is gone |
 | `addedViews` | 1137 | `addView` / `remove` | JSX | — |
 | `testHookSceneRef`, `testHookSelectionRef` | 1232-1233 | render | test hook | duplicates of 970 and 465 |
 
 ## Stale comments (checked against code)
 
 - **9-10:** "`Scene` stores absolute poses…". This describes the move action, and the scene composes local poses into world ones (`core/scene/composeFrame.ts:46`).
-- **209-211:** "Resolved once here and provided to the subtree". See N.
 - **214-218:** paint, hit-test, and slops "all resolve from this one object". `chromeSizes` feeds only a dead option.
 - **453-454:** "so useSceneSelectTool always receives a concrete radius". It has no such option.
 - **463-464:** thunks "live in an effect closure". They are `useMemo`s, and `affordanceAt` never reads the selection.
@@ -212,8 +217,8 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 2. Landed: chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
 3. Mounters become hooks, removing `getActionRef`, `actionsRegistryRef`, and the 37-prop call (E).
 4. One view channel shared with `<Canvas>` (F).
-5. Ingestion hook (J).
-6. Selection read-only wrapper and kinds to `core/selection` (H).
+5. Landed: ingestion hook (J).
+6. Landed: selection read-only view and kind labels to `core/selection` (H). The two kind classifiers stay two.
 7. Let `<Canvas>` build the selection overlay (I).
 8. Scene and overrides through `redrawOn` (G).
 9. Delete the dead items and pass-through destructures (K, M).
@@ -234,7 +239,7 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 - **View zero as a `CanvasView`.** I read `CanvasView.tsx` only at 245-405. If view zero could be one, most of E disappears, but that is a design question I could not settle by reading.
 - **Effect ordering.** I did not trace every dep registration to confirm that turning the registrar into a hook keeps the child-before-parent order its comment relies on.
 - **Unread files.** `Canvas.tsx` was read by targeted grep, not line by line. Of the `SceneCanvas/` siblings I did not read `usePreviewGhostLayer`, `useDispatcherOverlayLayer`, `contributionFrameHooks`, `defaultNodeProperties`, `poseGeometry`, or any tests.
-- **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, `insertTool`, or `actionDefaults` are unknown.
+- **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, or `insertTool` are unknown.
 ## From the Canvas.tsx pass
 
 Reported by the session that did `Canvas.tsx`, which has merged into this branch. The redundant

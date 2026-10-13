@@ -1475,17 +1475,16 @@ only story runner in the repo.
   +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
   observer that moves it has fired; it wants to wait on the position rather than read it once.
 
-- **(P3) `SceneCanvasInner` is one 881-line function.** It is most of the 1,039-line
+- **(P3) `SceneCanvasInner` is one 788-line function.** It is most of the 944-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
-  chrome-caps rule context, and path editing landed 2026-10-12. Left open by the preset table and
-  the rule context, and described in the audit: `selectTool.rotate === false` is still decided in three places that do not agree, and the
+  chrome-caps rule context, path editing, selection, ingestion, and the device profile landed
+  2026-10-12. Left open by the preset table and the rule context, and described in the audit:
+  `selectTool.rotate === false` is still decided in three places that do not agree, and the
   `modifierHeld` condition can never match on a `<SceneCanvas>`, which always reports no modifier
-  held. Left open by the dead-code pass: `actionDefaults` is a public
-  prop nothing reads, kept only because `SceneCanvas.actions.test.tsx` passes it at 13 sites; and
-  `<DeviceProfileProvider>` resolves the profile a second time beside `SceneCanvasInner`'s own
-  `useDeviceProfile`, so the media-query listeners are doubled. The provider is public and its
-  `value` is a partial override, so taking a resolved profile needs a new prop.
+  held. Left open by the selection pass: the kind label published with the selection and the routing
+  kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
+  summary prints the label, so making them one needs a decision on what it should say.
 
 - **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
   together" and `<Canvas>` examples in concepts, and "Custom layers" in extending, pass `adapter` and
