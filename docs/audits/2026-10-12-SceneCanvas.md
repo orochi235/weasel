@@ -253,3 +253,33 @@ Reported by the session doing `Canvas.tsx`; not verified here.
   `ToolCtx`, and `Tool.previewPose` / `previewBounds` / `previewIds`. `penPreviewLayer.ts` reaches the
   pen's state through `penTool.initScratch()`. When the pen overlay moves onto the pen tool it takes
   the pen's state directly, and that session is told so it can delete `initScratch`.
+
+## Canvas findings 2 and 3, taken here (from the Canvas.tsx audit, unverified)
+
+Do these after `long-file-audit` is on main: its first pass changed the Canvas side they cut from
+(`debug` is `useDebugSink`, the layer gate is `paintedLayers` in `core/layers/render.ts`, and
+Canvas's visibility and order refs folded into one `gateRef`). Line numbers are the Canvas audit's.
+
+### 2. Scene-layer and selection-overlay construction (other owner: SceneCanvas)
+
+Lines 819-872, plus imports at 20, 34, 55, and 65-70.
+
+- The header says "Canvas owns NO scene-shaped state" (4-5). The body calls `buildSceneLayers` on the adapter (837), subscribes to `adapter.subscribeLayers` through `useSceneLayerList` (819), and merges tool and dispatcher preview ids to hide ghosted nodes (842-849).
+- The selection-overlay config branch (861-872) is unreachable from production. `SceneCanvas.tsx:1086-1088` always passes `{ layer }` or `null`, and its comment says so: "so Canvas receives a CustomLayerEntry and skips its own factory construction".
+- That branch duplicates `SceneCanvas.tsx:1069-1078` nearly line for line (the `poseById`/`poseDescriptor` spread).
+- `selSlot !== null` (861) also builds a default overlay when the slot is `undefined`, so a bare `<Canvas layers={{}}>` gets selection chrome nobody asked for.
+- **Owner:** SceneCanvas, which already owns `wireSceneSlotToScene`, the ghost layer, and the overlay.
+- **Safe when:** `LayersMap.scene` can carry a pre-built ordered list, since `composeOrderedLayers` needs the per-scene-layer keys as anchors (`layerOrder.ts:27`). The roughly 20 bare-Canvas tests that rely on the built-in scene or selection slot must move to SceneCanvas or pass pre-built layers.
+- This also removes `selection`, `poseDescriptor`, `boundsOf`, `boundsOfPose`, `previewIdsExtra`, and most of `adapter` as Canvas props, if `useViewHelpers` moves up with it (see finding 6).
+
+### 3. Dev HUDs and the pick props that exist only for them (other owner)
+
+Lines 86-88, 216, 345-362, 748-770, and 1141-1175.
+
+- `pickEvery` and `pickBest` have one use in the file: `PickHud`. The docstring says so (213).
+- Canvas keeps two refs and three callbacks to stabilize them (750-770).
+- `PickHud` and `CursorCoordsHud` are already exported standalone (`barrel/canvas.ts:18-21`). `ModalityHud` needs only an element.
+- Grep: `modalityHud={{ modeId }}` has no caller. `apps/draw/src/App.tsx:546` passes the bare flag while holding `modeId` at line 262, so the mode row always shows "—".
+- **Owner:** SceneCanvas, which owns the picks, `internalCanvasRef`, and `currentViewRef`.
+- **Safe when:** the HUDs get the element from the handle. The detached-mount guard at 1171-1175 goes with them.
+
