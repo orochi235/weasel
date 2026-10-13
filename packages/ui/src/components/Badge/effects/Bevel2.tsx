@@ -1,7 +1,8 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
-export interface Bevel2EffectParams {
+/** What an effect of type `bevel2` takes as `params`. */
+export interface BadgeBevel2EffectParams {
   /** Bevel band width in CSS px. */
   bevelWidth?: number;
   /** Compass angle the light originates from, in degrees. 0° = top, 90° =
@@ -9,7 +10,7 @@ export interface Bevel2EffectParams {
   lightFrom?: number;
 }
 
-const DEFAULTS: Required<Bevel2EffectParams> = { bevelWidth: 6, lightFrom: 315 };
+const DEFAULTS: Required<BadgeBevel2EffectParams> = { bevelWidth: 6, lightFrom: 315 };
 
 const SAMPLES = 240;
 
@@ -30,7 +31,7 @@ function lightDirFor(angleDeg: number): { lx: number; ly: number } {
   return { lx: Math.sin(rad), ly: -Math.cos(rad) };
 }
 
-const Bevel2: EffectModule<Bevel2EffectParams> = {
+const Bevel2: EffectModule<BadgeBevel2EffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;

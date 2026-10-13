@@ -1,6 +1,5 @@
 /**
- * The scene slot: an adapter's nodes as render layers. One layer for a flat
- * adapter, one per scene layer for a hierarchical one.
+ * The scene slot: an adapter's tree as render layers, one per scene layer.
  */
 import type { Path } from '@weasel-js/geom';
 import type { MoveAdapter, ResizeAdapter, RotateAdapter } from 'core/adapters/types';
@@ -16,22 +15,17 @@ import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { wrapNodeOutput } from './wrapNodeOutput';
 
-/** The scene-tree reading methods Canvas feature-detects at draw time, as an *optional*
- *  mixin. A `SceneCanvasAdapter` supplies them; flat / bare-Canvas adapters don't. */
-type OptionalSceneHierarchy<TNode, TPose> = Partial<
-  Pick<HierarchicalAdapter<TNode, TPose>, 'getLayers' | 'getNode' | 'getChildren'>
->;
-
 /** The adapter shape `<Canvas>` accepts: the move/resize/rotate intersection
- *  plus the optional scene-tree methods. */
+ *  plus the tree the scene slot walks. A `SceneCanvasAdapter` is one. */
 export type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPose> &
   ResizeAdapter<TNode, TPose> &
   RotateAdapter<TNode, TPose> &
-  OptionalSceneHierarchy<TNode, TPose>;
+  Pick<HierarchicalAdapter<TNode, TPose>, 'getLayers' | 'getNode' | 'getChildren'>;
 
 /** Scene slot config — describes how to draw one object with its effective pose. */
 export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
-  /** Override `adapter.getNodes()` for the object iteration. */
+  /** Paint these, in this order, in place of the adapter's tree: one flat run with no
+   *  scene layers, no container clips, and no pose composition. */
   objects?: TNode[];
   /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
   toPose?: (obj: TNode) => TPose;
@@ -97,14 +91,14 @@ function withAdapterDerivedPaths<TNode extends { id: string }, TPose>(
   toPose: (obj: TNode) => TPose,
 ): Pick<SceneSlotConfig<TNode, TPose>, 'drawOne' | 'derivedPathOf'> {
   const drawOne = cfg.drawOne;
-  if (cfg.derivedPathOf !== undefined || !drawOne || typeof adapter?.getNode !== 'function') return cfg;
+  if (cfg.derivedPathOf !== undefined || !drawOne || !adapter) return cfg;
   const pathOf = adapterDerivedPathOf<TPose>(cfg.toPose === undefined ? adapter : {
     getNode: (id) => adapter.getNode(id),
     getPose: (id) => {
       const obj = adapter.getNode(id);
       return obj ? toPose(obj) : adapter.getPose(id);
     },
-    ...(adapter.getChildren ? { getChildren: (id: string | null) => adapter.getChildren!(id) } : {}),
+    getChildren: (id) => adapter.getChildren(id),
   });
   return {
     derivedPathOf: (obj) => pathOf(obj.id),
@@ -149,14 +143,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       const debugSink = debugSinkFrom(data);
       const hidden = hideIds();
       const a = adapter;
-      if (
-        a &&
-        cfg.objects === undefined &&
-        typeof a.getLayers === 'function' &&
-        typeof a.getNode === 'function' &&
-        typeof a.getChildren === 'function' &&
-        drawOne
-      ) {
+      if (a && cfg.objects === undefined && drawOne) {
         const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
           if (hidden && hidden.has(obj.id)) return [];
           const cmds = drawOne(obj, pose, v);
@@ -175,7 +162,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           ? {
               ...a,
               getPose: (id: string) => {
-                const obj = a.getNode!(id);
+                const obj = a.getNode(id);
                 return obj ? toPose(obj) : a.getPose(id);
               },
             }
@@ -191,9 +178,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }
-      // Flat fallback: a flat adapter has no scene layers, so the `scene:<layer>` split is
-      // a no-op and we emit the whole scene.
-      const objects = cfg.objects ?? adapter?.getNodes() ?? [];
+      // `cfg.objects`: the caller's own list, which has no scene layers to split by.
+      const objects = cfg.objects ?? [];
       const children: DrawCommand[] = [];
       const culled = culledIn(view, dims);
       for (const obj of objects) {
@@ -219,10 +205,10 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
 }
 
 /**
- * The scene slot as one canvas layer **per scene layer** — keyed `scene:<layerId>` — when the
- * adapter is hierarchical, so consumers can interleave custom layers *between* scene layers via
- * the standard slot anchoring (`before: 'scene:plantings'`). Falls back to a single `scene`
- * layer for flat adapters or adapters with no declared layers.
+ * The scene slot as one canvas layer **per scene layer** — keyed `scene:<layerId>` — so
+ * consumers can interleave custom layers *between* scene layers via the standard slot
+ * anchoring (`before: 'scene:plantings'`). A single `scene` layer when `cfg.objects` replaces
+ * the tree, or the adapter declares no layers.
  */
 export function buildSceneLayers<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
@@ -231,9 +217,7 @@ export function buildSceneLayers<TNode extends { id: string }, TPose>(
   hideIds: () => Set<string> | null,
 ): Array<{ key: string; layer: RenderLayer<unknown> }> {
   const sceneLayerIds =
-    cfg.objects === undefined && typeof adapter?.getLayers === 'function'
-      ? adapter.getLayers().map((l) => l.id)
-      : null;
+    cfg.objects === undefined && adapter ? adapter.getLayers().map((l) => l.id) : null;
   if (!sceneLayerIds || sceneLayerIds.length === 0) {
     return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, boundsOfFn, hideIds) }];
   }

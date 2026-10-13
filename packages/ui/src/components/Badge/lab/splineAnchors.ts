@@ -2,7 +2,7 @@ import type { BadgeBase } from '../bases';
 import { OCTANT_BSPLINE_MIN_WEIGHT, compileNurbs, evalNurbsAtS } from '../bases/OctantBSpline';
 import {
   OCTANT_SPLINE_DEFAULTS, OCTANT_SPLINE_MAX_ANCHORS, compileSpline, evalCompiled,
-  type Anchor, type OctantSplineParams,
+  type Anchor, type BadgeOctantSplineBaseParams,
 } from '../bases/OctantSpline';
 import type { LabParams } from './snapshot';
 
@@ -17,7 +17,7 @@ const INSERT_GAP = 0.01;
 const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
 function slot(params: SplineParams, axis: 's' | 'r' | 'w', i: number): number {
-  return Number(params[`${axis}${i}`] ?? OCTANT_SPLINE_DEFAULTS[`${axis}${i}` as keyof OctantSplineParams]);
+  return Number(params[`${axis}${i}`] ?? OCTANT_SPLINE_DEFAULTS[`${axis}${i}` as keyof BadgeOctantSplineBaseParams]);
 }
 
 export function anchorCount(params: SplineParams): number {

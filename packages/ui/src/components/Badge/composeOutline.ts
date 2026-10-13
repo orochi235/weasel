@@ -1,5 +1,5 @@
 import type { BaseSampler } from './bases/types';
-import { EFFECTS, type EffectSpec } from './effects';
+import { EFFECTS, type BadgeEffectSpec } from './effects';
 
 const SAMPLES = 600;
 
@@ -20,7 +20,7 @@ function closedPath(at: (sCss: number) => { x: number; y: number }, totalCss: nu
  */
 export function composeOutline(
   base: BaseSampler,
-  effects: readonly EffectSpec[] | undefined,
+  effects: readonly BadgeEffectSpec[] | undefined,
   bloatCss: number,
   box: Box,
   phase: number,

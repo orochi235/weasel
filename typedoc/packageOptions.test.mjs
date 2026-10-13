@@ -1,6 +1,6 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { packageOptions, publicEntries, specifierOf } from './packageOptions.mjs';
 
@@ -75,5 +75,14 @@ describe('packageOptions', () => {
     expect(options.intentionallyNotExported).toEqual(['Join']);
     expect(specifierOf(join(dir, 'src/react.ts'))).toBe('@weasel-js/demo/react');
     expect(specifierOf(join(dir, 'src/other.ts'))).toBeUndefined();
+  });
+
+  it('builds the package from its own sources, on the shared options', () => {
+    const dir = pkg({ '.': types('./dist/index.d.ts') }, ['src/index.ts']);
+    const { tsconfig } = packageOptions(dir);
+    const written = JSON.parse(readFileSync(tsconfig, 'utf8'));
+    expect(tsconfig).toBe(join(dir, 'tsconfig.docs.json'));
+    expect(written.include).toEqual(['src']);
+    expect(resolve(dir, written.extends)).toBe(join(import.meta.dirname, 'tsconfig.json'));
   });
 });

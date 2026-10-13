@@ -1,7 +1,8 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 
-export interface PolygonParams {
+/** What `baseParams` takes on a badge whose `base` is `polygon`. */
+export interface BadgePolygonBaseParams {
   /** Vertices in viewBox 0..100 coordinates, traced clockwise. */
   vertices?: [number, number][];
 }
@@ -10,7 +11,7 @@ const DEFAULT_VERTS: [number, number][] = [
   [0, 0], [100, 0], [100, 100], [0, 100],
 ];
 
-const Polygon: BaseModule<PolygonParams> = {
+const Polygon: BaseModule<BadgePolygonBaseParams> = {
   build: (params, boxW, boxH) => {
     const verts = (params?.vertices && params.vertices.length >= 3) ? params.vertices : DEFAULT_VERTS;
     return polygonSampler(verts, boxW, boxH);

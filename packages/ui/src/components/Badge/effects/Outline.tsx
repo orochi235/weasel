@@ -2,7 +2,8 @@ import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import type { EffectModule } from '../bases/types';
 
-export interface OutlineEffectParams {
+/** What an effect of type `outline` takes as `params`. */
+export interface BadgeOutlineEffectParams {
   /** Stroke width in CSS px. */
   width?: number;
   /** Stroke color. */
@@ -16,7 +17,7 @@ export interface OutlineEffectParams {
   opacity?: number;
 }
 
-const DEFAULTS: Required<OutlineEffectParams> = {
+const DEFAULTS: Required<BadgeOutlineEffectParams> = {
   width: 1,
   color: { ref: '--badge-edge' },
   dash: '',
@@ -24,7 +25,7 @@ const DEFAULTS: Required<OutlineEffectParams> = {
   opacity: 1,
 };
 
-const Outline: EffectModule<OutlineEffectParams> = {
+const Outline: EffectModule<BadgeOutlineEffectParams> = {
   Component: ({ sampler, boxW, boxH, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const css = useColorCss();

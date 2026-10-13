@@ -1,16 +1,16 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import type { BadgeCorner } from '../types';
 
-export type Corner = 'tl' | 'tr' | 'bl' | 'br';
-
-export interface BevelEffectParams {
+/** What an effect of type `bevel` takes as `params`. */
+export interface BadgeBevelEffectParams {
   /** Bevel band width in CSS px. */
   bevelWidth?: number;
   /** Which corner the light originates from (drives the highlight/shadow distribution across edges). */
-  lightFrom?: Corner;
+  lightFrom?: BadgeCorner;
 }
 
-const DEFAULTS: Required<BevelEffectParams> = { bevelWidth: 6, lightFrom: 'tl' };
+const DEFAULTS: Required<BadgeBevelEffectParams> = { bevelWidth: 6, lightFrom: 'tl' };
 
 type Side = 'top' | 'right' | 'bottom' | 'left';
 
@@ -20,7 +20,7 @@ function sideForNormal(nx: number, ny: number): Side {
     : (nx < 0 ? 'left' : 'right');
 }
 
-function bevelClasses(lightFrom: Corner): Record<Side, string> {
+function bevelClasses(lightFrom: BadgeCorner): Record<Side, string> {
   const isTop = lightFrom[0] === 't';
   const isLeft = lightFrom[1] === 'l';
   return {
@@ -33,7 +33,7 @@ function bevelClasses(lightFrom: Corner): Record<Side, string> {
 
 const SAMPLES = 240;
 
-const Bevel: EffectModule<BevelEffectParams> = {
+const Bevel: EffectModule<BadgeBevelEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;

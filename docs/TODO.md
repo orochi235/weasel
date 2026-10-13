@@ -201,12 +201,6 @@ Priority tags:
   marked stroke gets one pair per half. Not compared with what the renderer draws for the one
   path.
 
-- **(P3) `arrayAdapter` selects a closed outline with no fill from inside it.** A marquee or lasso
-  in `intersect` mode drawn wholly inside an unfilled closed shape takes it. `regionTakes`
-  (`packages/core/src/core/geometry/regionHit.ts`) takes "is this filled" beside the outline and
-  the scene walk passes the painter's ink, but `arrayAdapter` has only its `silhouette` config and
-  nothing that says how an item is inked.
-
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
   per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
   (`packages/svg/src/tspanLines.ts`). Kerned text exported as one `<tspan>` per glyph run imports
@@ -332,11 +326,27 @@ Priority tags:
   nine-element column-major matrix a GL uniform takes. Both are exported from `@weasel-js/geom`'s
   root, a capital letter apart.
 
-- **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** `arrayAdapter`,
-  `useArrayAdapter`, and `sceneToAdapter` are three separate wirings, and `Canvas.tsx` takes
-  whichever a caller built as its `adapter` prop, with a no-op one when none is passed. What is
-  left is one adapter contract and one default wiring, with every scene a tree rooted at one
-  container, as `useScene`'s already is.
+- **(P2) Hand-written adapters may still be flat lists.** `sceneToAdapter` is the only adapter the
+  kit builds, and the scene slot paints only a tree. What is left is the tier below it: an adapter
+  written by hand against the narrow contracts, which may leave the tree out. Readers still carry
+  a second path for one that does — `adapterPickSource` (`canvas/pickWalk.ts`) walks `getNodes()`
+  when `getChildren` or `getNode` is missing, `OrderedAdapter`'s two methods are optional and
+  reorder ops do nothing without them, and the ops' `OrderedReader` (`core/ops/slot.ts`) treats a
+  missing `getChildren` as "no siblings". `useSelectTool.zorder.test.tsx` and
+  `useSelectTool.viewGates.test.tsx` pin the flat path. Needs a decision: require the tree of
+  every adapter and delete those paths, or keep the flat list as the least a hand-written adapter
+  can be. Two smaller ends: `<Canvas>`'s `adapter` prop is optional and typed as the whole
+  `CanvasAdapter` though it reads only `getPose` and `getWorldPose`; and `sceneAsHierarchy`
+  (`canvas/sceneViewRender.ts`) rebuilds four of `sceneToAdapter`'s reads because
+  `sceneAdapter.ts` imports React for `useSceneAdapter`, which a headless render cannot.
+
+- **(P3) A marquee and a lasso disagree on a node whose descriptor bounds reach past what it
+  draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one of
+  them a 40-square box. A marquee over the band above the pose takes that node; an `intersect`
+  lasso around the same band takes nothing (run against `sceneToAdapter`, 2026-10-13). Inferred
+  cause: `regionTakes` (`core/geometry/regionHit.ts`) answers a marquee from the bounds when the
+  outline is an axis-aligned rect, and the lasso tests the outline itself, which is the pose rect.
+  `sceneAdapter.regionOutline.test.ts` pins the marquee half only.
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
@@ -463,13 +473,17 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   design left would move it and is not started: holds on a target table's rows could keep
   their values and weights as rows of the table's own arrays, which adds public API to the
   table whose shape is not ruled on.
-- **(P2) Stopping and starting an animation costs more as more are running, and what is left
-  of that is in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the
-  parts (orochi, plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs
-  with 1,000 running and 21 with 10,000, a start 1 and 2, and the frame after them 1.1 ms and
-  4.1 against 0.08 and 0.93 steady. The cancel is blits' `forget` walking every subject the
-  mix holds, and the slow frame is blits' first read of the new voices.
-  `~/src/blits/NOTES-FROM-WEASEL.md` ("Stopping a subject's voice") has the lines and a fix.
+- **(P2) Take the blits release that makes stopping an animation cheap.** With 100 animations
+  restarted a frame, a cancel cost 5 µs with 1,000 running and 21 with 10,000, because blits'
+  `forget` walked every subject the mix held. blits `b97c8c1` (unreleased, on 0.10.0) stops that:
+  measured inside blits with `node bench/restart.mjs 1000 10000`, a stop went from 15.4–15.7 µs to
+  2.4–2.9 at 10,000 and the frame after from 1.99–2.15 ms to 1.26–1.43. `animator`, `core`, and
+  `labkit` pin `@msb235/blits` at exactly 0.10.0, so nothing reaches weasel until blits releases
+  and the three pins move. blits' changelog holds a breaking change for that release, `loop`
+  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first
+  (`packages/animator/src/engine/holdVoices.ts` has one). After the bump, rerun
+  `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
+
 - **(P3) Playing an animation backward** — a time scale below 0 is refused where it is set
   (`timeScaleOf`, `engine/table.ts`). Playing backward needs the animator's clock to keep going
   forward and hand each voice a rate below 0, which blits 0.9.0 ends where the voice started,
@@ -486,15 +500,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ### labkit presentation mode
 
-- **(P2) agnew and rosee on `<Lab>`: built, not merged.** Each repo has an unpushed
-  `lab-onto-labkit-lab` branch that mounts `<Lab>` and serves its `?bare` embed through
-  presentation, with its smoke test passing. agnew's runs on labkit 1.9.2 as it is. rosee's
-  plays every tile on the lab's clock and needs `<Lab clock>`, `opening`, and the
-  empty-sidebar fix, which `packages/labkit/CHANGELOG.md` lists under 1.9.3: its
-  `@weasel-js/labkit` range must be raised to that before it can merge. agnew still plays
-  from its own transport, because its three.js view advances the pen itself and holds a
-  finished curve before redrawing it; moving it onto a lab clock is an agnew library change,
-  and the owner's call.
+- **(P3) agnew plays from its own transport, not a lab clock.** agnew and rosee both mount
+  `<Lab>` on their `main`. agnew's three.js view advances the pen itself and holds a finished curve
+  before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
+  call.
 
 ### labkit's deprecated snapshot undo
 
@@ -627,37 +636,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   that ends over the canvas, which no binding on the canvas's dispatcher sees
   begin. Routing it needs a drag that starts on one element and drops on
   another — the same shape `ingest` answers for an OS drag.
-
-- **(P2) Things that look duplicated in this engine and are not.** Pairs a duplication audit
-  will flag again, and the reason each one stays two.
-
-  Local- vs world-space bounds, and `nodeAtPoint` vs `pickBest`, are different
-  questions. Miter apex vs capsule, and butt cap vs half-disc, are a defensible hit
-  model over shared base geometry. `unionBounds` stays rotation-free beside
-  `unionAABB` for commit-time actions that write poses back in the unrotated frame.
-  SVG's `#000000` initial fill is a spec default, not drift. `resolveNodeFill`'s
-  split between `kit:path` and `kit:shape` is documented and correct.
-  `useBuiltinShapeTools`' nine hook calls are not a list, and are already
-  compiler-linked through the return type. `arrayAdapter` has no `setChildOrder`
-  because its root order *is* the item array's order. `sceneToAdapter`'s area walk
-  returns containers where the live marquee dep does not — one flag on the shared
-  walk, because a bare-adapter consumer has no selection parent-folding to fold
-  them back in.
-
-  In labkit, modes, d3, paint, and ui:
-  labkit's camera (`worldToScreen`, `zoomAt`, `centerOn`, `clampZoomAbout`) is a
-  pan/zoom/`yDir` view model, not affine kernel math. labkit's `fitView` anchors at
-  the origin where `TrialOverview`'s `fitRect` centers with padding. `toShape`
-  collapses a zero-size axis to 0 where `boxToBox` keeps scale 1, and Plot2D's
-  `modelToPlot` fails on a zero range where `boxToBox` would silently not scale.
-  `toDeviceRect` is a y-flip plus device-pixel snap. Badge's `polygonSampler`
-  parameterizes a polygon by CSS-pixel arc length under the viewBox's anisotropic
-  scale, and Powerline carries its own normals. paint's `lerpHueDeg` is CSS Color 4
-  hue interpolation, not angle geometry. CurveEditor's Catmull-Rom and monotone
-  splines are curves geom does not have, and its bezier easing already goes through
-  geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))` clamps
-  scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
-  and modes do no geometry at all.
 
 - **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`
@@ -941,17 +919,14 @@ only story runner in the repo.
   `plugin.test.ts`) fail in this state and read as a regression; and what holds `fseventsd` there is
   not known.
 
-- **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
-  three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
-  non-CSS file even when `fullReload` is off. The page's own stamp in `~/src/wake/src/client.ts` is
-  a `const` read once from `<meta name="wake-build">`, so after a successful hot update the next
-  poll sees a newer server stamp, and after `GRACE_MS` the page reloads itself. Scenario: edit a
-  story in forge with wake loaded; forge reloads the story in place, then the tab reloads and
-  unpersisted trial state is lost. This hides forge's own hot-update path on this machine, which is
-  why `WAKE_PATH=/nonexistent` is needed to see it. The same client is injected into `/frame.html`,
-  so every isolated frame and both warm pool frames poll `/__wake`, draw their own `.wake-badge`,
-  and reload on their own. Fix in wake: adopt the server's stamp on `vite:afterUpdate` when
-  `fullReload` is off, and skip the client when `window.parent !== window`.
+- **(P2) Confirm in forge that a hot update is no longer followed by a full reload.** wake set a
+  new stamp on every hot update and the page kept the one it loaded with, so about three seconds
+  after forge reloaded a story in place the tab reloaded itself, and every isolated frame polled
+  and reloaded on its own. wake `c9f75c3` sends the stamp to the page with the update and skips the
+  client in a frame whose parent already runs it. Tested in wake against stubbed globals only.
+  To confirm: build wake (`npm run build` there; weasel reads `~/src/wake/dist`), edit a story in
+  forge, and watch that trial state survives past the grace and that `/frame.html` draws no
+  `.wake-badge`.
 
 - **(P3) wake (`~/src/wake`, not this repo): a server's exit-time release can drop another app's
   registry entry.** `releaseSync` and `releaseExtraSync` in `~/src/wake/src/claim.ts` read the
@@ -966,13 +941,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P2) Three visual baselines were captured on macOS and have not been compared on CI.**
-  `insert-rect.png`, `gestures-drag-trace.png`, and `shape-tools-three-shapes.png` under
-  `tests/visual/` were written locally on 2026-10-13. Baselines belong to `visual-update.yml` on
-  ubuntu-22.04; dispatch it after the push and commit what it captures. `gestures.spec.ts` is the
-  likeliest to differ: its whole trace is 0.31% of the canvas, so it compares at
-  `maxDiffRatio: 0.0005`.
-
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
@@ -984,22 +952,6 @@ only story runner in the repo.
   hand-written guides per package (only labkit has any, in its own VitePress site), and the
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
-
-- **(P2) The API reference build still reports warnings: 8 at the last run, 6 if exporting
-  `Bivariant` and `ScopedScene` from core cleared theirs, which no build has confirmed.**
-  `docs/conventions.md` says `npx typedoc` reports none. Each is a documented export naming a type
-  its barrel does not export:
-  - `CONSTRUCTORS` in geom's `typedArrayJson.ts`: `NumberTypedArray` is
-    `InstanceType<(typeof CONSTRUCTORS)[TypedArrayTag]>`, so the reference names a private
-    constant. Writing the union out by hand lists the nine array types twice.
-  - `LabBaseProps` (labkit's `Lab.tsx`) and `CreateOptions` (storage's `records.ts`): an exported
-    type needs a doc line, and both files sit at their `check:size` cap, so each wants its split
-    first.
-  - `BadgePropsByShape` in ui: exporting it surfaces `BadgeBaseProps`, `BadgeShapeParams`, and
-    about thirty per-shape, per-base, and per-effect parameter types behind them.
-  - `DepSchema` and `OverlaySchema` in routing, which its root does export. core merges into both
-    with `declare module`, and TypeDoc appears to file the merged interface under another symbol
-    than the one `DepName` and `KernelOverlay` reference (read from the warning, not traced).
 
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
@@ -1108,40 +1060,27 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) A new dependency in browser-tested code fails the first fleet run that meets it.** A node
-  keeps `node_modules/.vite` between runs, and with a cache in place vite skips the scan of
-  `optimizeDeps.entries`. A dependency first imported since the cache was written is then found
-  mid-run, vite reloads the page, and the suites loading at that moment fail with "Vitest failed
-  to find the runner": 12 of them on 2026-10-13, when `Lab.tsx` first imported
-  `zustand/react/shallow`. That one is named in the `browser` project's `optimizeDeps.include`
-  now, which is a list someone has to keep. `optimizeDeps.force: true` was tried and is worse: in
-  two runs, on studio and on teitou, the browser session never connected, with a one-minute and a
-  three-minute timeout. Wants the cache keyed to what the entries import, or cleared on the node
-  when the tree's dependencies change.
+- **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
+  first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
+  the scan that finds dependencies, so one first imported since then was met mid-run and vite
+  reloaded the page under the suites ("Vitest failed to find the runner", 12 suites on 2026-10-13).
+  The `browser` project's `optimizeDeps.include` is now computed from what its tests import
+  (`scripts/vitest-browser-deps.ts`), and vite keys the cache on that list, so a new import
+  discards the cache before a test loads. Tested against vite alone; not yet run on a node with a
+  stale cache. To confirm: on a node that has run the suite, start a fleet run of a commit that
+  adds an import of an installed, not yet imported dependency to a module a browser test loads.
+  The log should read "Re-optimizing dependencies because vite config has changed" and no suite
+  should fail to find the runner. Two things it does not cover: a dependency reached only through
+  `import.meta.glob` or a computed `import()`, and the opt-in `forge-stories` project, which has
+  no such list.
 
-- **(P2) `onto` can start a suite in a tree another session synced; the fix belongs in
-  `~/src/onto`.** weasel now turns this into a red run: `scripts/fleet-tree.gate.ts` fails when the
-  tree is not the commit `npm run test:fleet` asked for, and the run has to be started again. On
-  2026-10-13 it went unnoticed instead, and a run of `599685677` reported 20901 passed from a tree
-  without that commit's changes. The cause, read from onto's source and not reproduced:
-  - A node keeps one tree per repository. Every weasel worktree on this machine syncs into the
-    tree named `weasel` (`mainCheckout` in `client.go`), and the tree lock (`lockTreeForJob` in
-    `agent.go`) is held only during a sync and during a job, never from a run's sync to the
-    start of its suite. `onto test` runs a setup job in between, which widens the gap.
-  - The stamp in `stamp.go` exists to close that gap and cannot between two sessions on one
-    machine. `syncRepoAt` writes the stamp the node returned into `~/.config/onto/stamps.json`,
-    keyed by node and tree, and `withTreeStamps` reads that file back when the job launches. A
-    second session's sync of the same tree overwrites the entry first, so the first session sends
-    the second's stamp, the node's `checkTreeStamps` finds it matches, and the suite starts in
-    the second session's tree.
-  - What would fix it: have the launch carry the stamp its own sync was answered with, passed in
-    memory from `syncRepoAt` to `startJob`, so the node's 412 and `resyncing` do their job.
-    `stamps.json` then only serves a job launched by a later command than the sync.
-  - Two smaller holes beside it: `rememberStamp` reads, edits, and rewrites the file under a
-    mutex that covers one process, so two sessions can drop each other's entries, and both
-    `withTreeStamps` and `checkTreeStamps` skip the check when no stamp is found.
-  - `updated weasel on <node> at <sha>` always prints the base the sync was given
-    (`syncResp.SHA` is `req.Ref`), so that line says nothing about which commit's files are there.
+- **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
+  onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
+  longer start in a tree another session synced; `scripts/fleet-tree.gate.ts` stays as the check
+  on this side. `--spread` calls `prepare()` once and runs its shards outside the retry, since
+  retrying would rerun groups already finished. The fix reaches a machine when its `onto` binary
+  is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
+  `onto push <node>`.
 
 - **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
   a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
@@ -1439,9 +1378,5 @@ only story runner in the repo.
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
 
-- **(P3) `docs/concepts.md`'s "Adapter" section teaches per-action hooks.** It says every gesture
-  takes an adapter and that one struct is passed "to every hook", and calls `arrayAdapter` the
-  default for new apps; `docs/taxonomy.md`'s own "Adapter" entry lists the same per-action
-  interfaces. Both want rewriting around the scene `<SceneCanvas>` synthesizes an adapter from, once
-  "`arrayAdapter` as the default Canvas adapter" is settled. The examples rewritten 2026-10-13
-  ("Putting it together" in concepts, "Custom layers" in extending) have not been compiled.
+- **(P3) Two doc examples have not been compiled.** "Putting it together" in `docs/concepts.md`
+  and "Custom layers" in `docs/extending.md`, both rewritten 2026-10-13.

@@ -1,7 +1,8 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
-export interface WoodgrainEffectParams {
+/** What an effect of type `woodgrain` takes as `params`. */
+export interface BadgeWoodgrainEffectParams {
   /** Number of grain curves. */
   lines?: number;
   /** Number of knot circles. */
@@ -10,14 +11,14 @@ export interface WoodgrainEffectParams {
   intensity?: number;
 }
 
-const DEFAULTS: Required<WoodgrainEffectParams> = { lines: 4, knots: 2, intensity: 0.55 };
+const DEFAULTS: Required<BadgeWoodgrainEffectParams> = { lines: 4, knots: 2, intensity: 0.55 };
 
 // Deterministic per-line/knot wobble.
 function osc(seed: number) {
   return Math.sin(seed * 1.73 + 0.5);
 }
 
-const Woodgrain: EffectModule<WoodgrainEffectParams> = {
+const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
   Component: ({ sampler, variant, params }) => {
     const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;

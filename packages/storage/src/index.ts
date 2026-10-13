@@ -7,6 +7,7 @@ export {
   createRecordCache,
   openRecords,
   openRecordsSync,
+  type CreateRecordCacheOptions,
   type OwnedRecordCache,
   type RecordCache,
   type RecordCacheOptions,

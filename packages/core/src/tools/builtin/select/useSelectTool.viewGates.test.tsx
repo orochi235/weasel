@@ -4,11 +4,10 @@
  * not draw, is not under the pointer.
  */
 import { describe, it, expect } from 'vitest';
-import { useRef, useState } from 'react';
 import { renderHook, act } from '@testing-library/react';
-import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
+import { rectListAdapter } from './testing/rectListAdapter';
 import { asNodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
@@ -24,16 +23,8 @@ const RECTS: Rect[] = [
 
 function pressAt(options: UseSelectToolOptions<Pose>, x: number, y: number): readonly string[] {
   const { result } = renderHook(() => {
-    const [rects, setRects] = useState<Rect[]>(RECTS);
-    const ref = useRef(rects);
-    ref.current = rects;
     const sel = useSelection({ mode: 'single' });
-    const base = arrayAdapter<Rect, Pose>({
-      ref,
-      setItems: setRects,
-      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-    });
-    return { tool: useSelectTool({ ...base, ...sel.adapterMethods }, options), sel };
+    return { tool: useSelectTool({ ...rectListAdapter(RECTS), ...sel.adapterMethods }, options), sel };
   });
   const tool = result.current.tool as { actions?: readonly Action[] };
   const invoker = tool.actions?.find((a) => a.id === 'select.pick')?.invoker;

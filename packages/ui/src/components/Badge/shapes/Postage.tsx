@@ -1,14 +1,15 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
 
-export interface PostageParams {
+/** What `shapeParams` takes on a `postage` badge. */
+export interface BadgePostageShapeParams {
   biteRadius?: number;
   biteSpacing?: number;
   irregularity?: number;
 }
 
-const DEFAULTS: Required<PostageParams> = { biteRadius: 3, biteSpacing: 8, irregularity: 0 };
+const DEFAULTS: Required<BadgePostageShapeParams> = { biteRadius: 3, biteSpacing: 8, irregularity: 0 };
 
-const Postage: ShapeModule<PostageParams> = {
+const Postage: ShapeModule<BadgePostageShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = { ...DEFAULTS, ...params };
     return {

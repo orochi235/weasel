@@ -71,7 +71,7 @@ function bottomAlignedText(): DrawCommand {
       overline: false, baselineShift: 0,
     }],
     align: 'left',
-    style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } },
+    style: { fontFamily: 'inter', fontSize: 32, fill: { paint: { color: '#fff' } } },
   } as DrawCommand;
 }
 

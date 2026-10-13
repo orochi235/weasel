@@ -5,8 +5,7 @@ import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import { sceneToAdapter } from '../canvas/sceneAdapter';
 import { useAnimator } from '@weasel-js/animator';
-import { tweenPose } from './poseHelpers';
-import type { SceneAdapter } from '../core/adapters/types';
+import { tweenPose, type PoseAnimationAdapter } from './poseHelpers';
 
 /** A polygon of `n` points along y = 0 from `x`, one unit apart. */
 const poly = (x: number, n = 3): Path => ({
@@ -31,7 +30,7 @@ function setup(pose: Path) {
   };
   const scene = createScene<object, 'main', Path>({ systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: {} });
-  const adapter = sceneToAdapter(scene) as unknown as SceneAdapter<{ id: string }, Path>;
+  const adapter = sceneToAdapter(scene) as unknown as PoseAnimationAdapter<Path>;
   const shown = () => effectivePose(scene, scene.get(a)!);
   /** The first x of the pose on screen. */
   const x = (): number => { const p = shown(); return p.kind === 'rect' ? p.x : p.coords[0]!; };

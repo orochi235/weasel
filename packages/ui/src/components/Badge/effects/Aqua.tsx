@@ -14,7 +14,8 @@ import type { EffectModule } from '../bases/types';
  * badge's own flat fill doesn't paint behind the gradient, and set
  * `backdrop-filter: blur(...)` on the host element via CSS.
  */
-export interface AquaEffectParams {
+/** What an effect of type `aqua` takes as `params`. */
+export interface BadgeAquaEffectParams {
   /** Body tint. Defaults to `var(--badge-edge)` so the badge's color drives it. */
   accent?: ColorSource;
   /** Stop opacities along the body gradient (0..1). */
@@ -40,7 +41,7 @@ export interface AquaEffectParams {
   rimWidth?: number;   // CSS px
 }
 
-const DEFAULTS: Required<AquaEffectParams> = {
+const DEFAULTS: Required<BadgeAquaEffectParams> = {
   accent: { ref: '--badge-edge' },
   topAlpha: 0.45,
   upperAlpha: 0.7,
@@ -59,7 +60,7 @@ const DEFAULTS: Required<AquaEffectParams> = {
 
 const BEZEL_SAMPLES = 240;
 
-const Aqua: EffectModule<AquaEffectParams> = {
+const Aqua: EffectModule<BadgeAquaEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const bodyGradId = useId();
     const glossGradId = useId();

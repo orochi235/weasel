@@ -1,9 +1,31 @@
-import { join } from 'node:path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { packageEntries } from '../scripts/lib/packageEntries.mjs';
 
 // A package's own tsconfig maps only some siblings to source; the rest resolve to
 // `dist/*.d.ts`, which documents a build artifact and needs a build to exist.
-const DOCS_TSCONFIG = join(import.meta.dirname, 'tsconfig.json');
+const BASE_TSCONFIG = join(import.meta.dirname, 'tsconfig.json');
+
+/** The file `docsTsconfig` writes in a package. Gitignored. */
+const DOCS_TSCONFIG = 'tsconfig.docs.json';
+
+/**
+ * Write the tsconfig one package's reference is built from, and answer its path: the
+ * shared options over that package's sources alone, so its program holds them and
+ * what they import. A program over every package's sources also holds each
+ * `declare module` a sibling aims at this package, and TypeScript then hands out
+ * one symbol for the interface the barrel exports and another for the one a type in
+ * it names. TypeDoc documents the first and cannot find the second.
+ *
+ * @param {string} packageDir absolute path to the package
+ */
+export function docsTsconfig(packageDir) {
+  const path = join(packageDir, DOCS_TSCONFIG);
+  const config = { extends: relative(packageDir, BASE_TSCONFIG), include: ['src'] };
+  const text = `${JSON.stringify(config, null, 2)}\n`;
+  if (!existsSync(path) || readFileSync(path, 'utf8') !== text) writeFileSync(path, text);
+  return path;
+}
 
 /** `exports` keys that are not API a consumer imports types from. */
 const NOT_DOCUMENTED = new Set(['./test-seams', './internal']);
@@ -39,7 +61,7 @@ const nameOf = (specifier, key) => (key === '.' ? specifier : specifier.slice(0,
 export function packageOptions(packageDir, own = {}) {
   const entries = publicEntries(packageDir);
   ENTRY_SPECIFIERS.set(packageDir, new Map(entries.map((e) => [join(packageDir, e.source), e.specifier])));
-  return { entryPoints: entries.map((e) => e.source), tsconfig: DOCS_TSCONFIG, ...own };
+  return { entryPoints: entries.map((e) => e.source), tsconfig: docsTsconfig(packageDir), ...own };
 }
 
 /** Per package directory: absolute entry source to the specifier it is imported by. */

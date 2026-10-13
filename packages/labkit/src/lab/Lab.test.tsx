@@ -7,8 +7,9 @@ import { auto } from '../config/auto';
 import type { Instrument } from '../instrument/types';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
-import { Lab, type LabProps } from './Lab';
+import { Lab } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
+import type { LabProps } from './labProps';
 
 const stub: Instrument = {
   name: 'Stub',

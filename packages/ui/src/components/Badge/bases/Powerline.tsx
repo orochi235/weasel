@@ -1,7 +1,8 @@
 import { resolveEdge, type EdgeCap, type EdgePoint } from './edgeProfiles';
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
 
-export interface PowerlineParams {
+/** What `baseParams` takes on a badge whose `base` is `powerline`. */
+export interface BadgePowerlineBaseParams {
   /** Profile for the left edge (the cap segment N inherits from segment N-1). */
   leftEdge?: EdgeCap;
   /** Profile for the right edge (this segment's own end cap). */
@@ -10,7 +11,7 @@ export interface PowerlineParams {
   depth?: number;
 }
 
-const DEFAULTS: Required<PowerlineParams> = {
+const DEFAULTS: Required<BadgePowerlineBaseParams> = {
   leftEdge: 'flat',
   rightEdge: 'flat',
   depth: 6,
@@ -20,7 +21,7 @@ const DEFAULTS: Required<PowerlineParams> = {
 // a cap whose shape does (puzzle) is averaged at a typical row height.
 const INSETS_HEIGHT = 20;
 
-const Powerline: BaseModule<PowerlineParams> = {
+const Powerline: BaseModule<BadgePowerlineBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
     const left = resolveEdge(cfg.leftEdge)(cfg.depth, boxH);

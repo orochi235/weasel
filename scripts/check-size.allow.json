@@ -218,8 +218,7 @@
     "longestFunction": 262
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "lines": 627,
-    "longestFunction": 292
+    "longestFunction": 205
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -281,8 +280,7 @@
     "longestFunction": 133
   },
   "packages/storage/src/records.ts": {
-    "lines": 403,
-    "longestFunction": 281
+    "longestFunction": 197
   },
   "packages/stroke/src/tessellate/dash.ts": {
     "longestFunction": 125

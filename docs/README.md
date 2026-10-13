@@ -12,9 +12,9 @@ Read in roughly this order:
   primitives, and viewport helpers), plus the action table and default
   keybindings. Interactions are action descriptors reached by gesture
   bindings, not per-interaction hooks.
-- [adapters.md](./adapters.md) — adapter shape, the structural-typing trick
-  (one struct satisfies all the narrow per-hook adapters), and `arrayAdapter`
-  as the default.
+- [adapters.md](./adapters.md) — the adapter a scene is read and written
+  through: where it comes from, the contract in slices, and writing one by
+  hand.
 - [extending.md](./extending.md) — custom layers, custom gesture behaviors,
   non-rect poses via `PoseDescriptor<TPose>`.
 - [dispatcher.md](./dispatcher.md) — diagrams of input routing: the dispatch

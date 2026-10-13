@@ -61,12 +61,8 @@ export type {
 } from '@weasel-js/history';
 export { swapOp } from '@weasel-js/history';
 
-// ─── Adapters: contract types + reference arrayAdapter ──────────────────────
+// ─── Adapters: the contracts the interaction layer reads ────────────────────
 export * from '../core/adapters/types';
-export { arrayAdapter } from '../core/adapters/arrayAdapter';
-export type { ArrayAdapter, ArrayAdapterConfig, ArrayPoseTargets } from '../core/adapters/arrayAdapter';
-export { useArrayAdapter } from '../core/adapters/useArrayAdapter';
-export type { UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 
 // ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
 export {

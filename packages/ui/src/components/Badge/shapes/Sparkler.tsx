@@ -1,13 +1,14 @@
 import type { ShapeModule } from '../types';
 
-export interface SparklerParams {
+/** What `shapeParams` takes on a `sparkler` badge. */
+export interface BadgeSparklerShapeParams {
   points?: number;
   outerR?: number;
   innerR?: number;
   rotation?: number;
 }
 
-const DEFAULTS: Required<SparklerParams> = {
+const DEFAULTS: Required<BadgeSparklerShapeParams> = {
   points: 16,
   outerR: 58,
   innerR: 50,
@@ -30,7 +31,7 @@ function sparklerPath(points: number, outerR: number, innerR: number, rotation: 
   return d + ' Z';
 }
 
-const Sparkler: ShapeModule<SparklerParams> = {
+const Sparkler: ShapeModule<BadgeSparklerShapeParams> = {
   Component: ({ variant, focused, params }) => {
     const { points, outerR, innerR, rotation } = { ...DEFAULTS, ...params };
     const d = sparklerPath(points, outerR, innerR, rotation);

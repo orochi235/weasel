@@ -133,7 +133,7 @@ export type {
 export type { PointerSample, PressSample } from './recognizer/samples';
 export type { HeldPress, RecognizerClock } from './recognizer/longPressHold';
 export type { ClickMemory, ClickObserver, ReleaseOutcome } from './recognizer/click';
-export { multiTouchGeometry, type Point } from './recognizer/multiTouch';
+export { multiTouchGeometry, type MultiTouchGeometry, type Point } from './recognizer/multiTouch';
 export { clickEvents, longPressEvents } from './recognizer/pressFacts';
 export type { PressFacts, ReleaseFacts } from './recognizer/pressFacts';
 export { CONTROL_SELECTOR, isInControlWithin } from './ui/controlTarget';

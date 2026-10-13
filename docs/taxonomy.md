@@ -229,12 +229,13 @@ internally. See `packages/core/src/canvas/Canvas.tsx`.
 
 ### Adapter
 
-A consumer-implemented object that bridges the kit to the app's scene state. The
-kit never reads or writes scene state directly; it asks the adapter for poses, hit
-results, and writes mutations back through `Op` application. Adapter interfaces are
-narrow and structural: `MoveAdapter`, `ResizeAdapter`, `RotateAdapter`,
-`AreaSelectAdapter`, `InsertAdapter`, `OrderedAdapter`. A single struct satisfying
-all of them at once is the common pattern. See
+The object the interaction layer reads a scene through and writes it back through:
+poses, hit results, selection, and the mutators an `Op` applies. `sceneToAdapter`
+builds one from a `Scene` (a `SceneCanvasAdapter`), and `<SceneCanvas>` does that
+itself. Each reader takes a narrow structural slice of it: `MoveAdapter`,
+`ResizeAdapter`, `RotateAdapter`, `AreaSelectAdapter`, `InsertAdapter`,
+`OrderedAdapter`. A store the kit does not own gets a hand-written object
+implementing the slices its readers take. See
 `packages/core/src/core/adapters/types.ts` and `docs/adapters.md`.
 
 ### Op
@@ -678,9 +679,9 @@ snap-point extraction for non-rect poses. See `packages/core/src/core/geometry/p
 undo/redo. Created by `useScene`; passed to `<SceneCanvas>`. Exposes `add`,
 `remove`, `update`, `setPose`, `move`, `reorder`, `batch`, `undo`, `redo`, and a
 `subscribe` seam for React integration. Mutations are auto-undoable; the
-`recordOp` seam extends the history with consumer-defined ops. Distinct from a
-flat-array adapter wired through `useArrayAdapter` — the Scene is the higher-level
-path with first-class containers and layers built in. See `packages/core/src/core/scene/types.ts`.
+`recordOp` seam extends the history with consumer-defined ops. A flat list of
+items is a scene too (`useScene({ items })`): its nodes sit under the root in list
+order. See `packages/core/src/core/scene/types.ts`.
 
 ### Node
 

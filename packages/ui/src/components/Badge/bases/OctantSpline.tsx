@@ -14,7 +14,8 @@ import { polygonSampler } from './polygonSampler';
  * (so the reflected/rotated full curve has no kink crossing the symmetry axes). C² across
  * the whole octant — continuous curvature, not just slope.
  */
-export interface OctantSplineParams {
+/** What `baseParams` takes on a badge whose `base` is `octant-spline`. */
+export interface BadgeOctantSplineBaseParams {
   mode?: 'octant' | 'quadrant';
   /** Number of active anchors (3..12). */
   count?: number;
@@ -34,7 +35,7 @@ export interface OctantSplineParams {
 
 export const OCTANT_SPLINE_MAX_ANCHORS = 12;
 
-export const OCTANT_SPLINE_DEFAULTS: Required<OctantSplineParams> = {
+export const OCTANT_SPLINE_DEFAULTS: Required<BadgeOctantSplineBaseParams> = {
   mode: 'octant',
   count: 5,
   s0: 0,    s1: 0.25, s2: 0.5,  s3: 0.75, s4: 1,    s5: 1,
@@ -52,12 +53,12 @@ const DEFAULTS = OCTANT_SPLINE_DEFAULTS;
 /** One control point of the octant curve: position `s` along it, radius `r`, weight `w`. */
 export interface Anchor { s: number; r: number; w: number }
 
-export function extractAnchorPairs(params: OctantSplineParams = {}): Anchor[] {
+export function extractAnchorPairs(params: BadgeOctantSplineBaseParams = {}): Anchor[] {
   const cfg = { ...DEFAULTS, ...params };
   const count = Math.max(3, Math.min(Math.floor(cfg.count), OCTANT_SPLINE_MAX_ANCHORS));
-  const sKeys: (keyof Required<OctantSplineParams>)[] = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11'];
-  const rKeys: (keyof Required<OctantSplineParams>)[] = ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','r10','r11'];
-  const wKeys: (keyof Required<OctantSplineParams>)[] = ['w0','w1','w2','w3','w4','w5','w6','w7','w8','w9','w10','w11'];
+  const sKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11'];
+  const rKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','r10','r11'];
+  const wKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['w0','w1','w2','w3','w4','w5','w6','w7','w8','w9','w10','w11'];
   const pairs: Anchor[] = [];
   for (let i = 0; i < count; i++) {
     pairs.push({
@@ -153,7 +154,7 @@ export function evalCompiled(s: number, spline: CompiledSpline): number {
   return baseLine + curvatureTerm;
 }
 
-const OctantSpline: BaseModule<OctantSplineParams> = {
+const OctantSpline: BaseModule<BadgeOctantSplineBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
     const anchors = extractAnchorPairs(cfg);

@@ -1,19 +1,20 @@
 import type { EffectModule } from '../bases/types';
-import { rangeMask, type RangeMaskParams } from './rangeMask';
+import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
-export interface BitesEffectParams extends RangeMaskParams {
+/** What an effect of type `bites` takes as `params`. */
+export interface BadgeBitesEffectParams extends BadgeRangeMaskParams {
   biteRadius?: number;
   biteSpacing?: number;
   irregularity?: number;
 }
 
-const DEFAULTS: Required<Omit<BitesEffectParams, 'range'>> = {
+const DEFAULTS: Required<Omit<BadgeBitesEffectParams, 'range'>> = {
   biteRadius: 3,
   biteSpacing: 8,
   irregularity: 0,
 };
 
-const Bites: EffectModule<BitesEffectParams> = {
+const Bites: EffectModule<BadgeBitesEffectParams> = {
   offsetAt: (s, { params, phase, totalCss, perimeterAt }) => {
     const cfg = { ...DEFAULTS, ...params };
     const mask = rangeMask(s, totalCss, cfg.range);

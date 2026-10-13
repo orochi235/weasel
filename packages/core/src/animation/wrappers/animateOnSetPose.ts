@@ -36,8 +36,8 @@ export interface AnimateOnSetPoseOptions<TPose> {
  * written for a node currently under a gesture, are passed straight through.
  *
  * Over a scene-backed adapter the document takes each pose as it is written
- * and only the node on screen glides; an `arrayAdapter` holds the pose on
- * screen, and takes the written one as the glide ends. Writing a node again while it glides
+ * and only the node on screen glides; a store behind `createWrittenPoseTarget`
+ * holds the pose on screen, and takes the written one as the glide ends. Writing a node again while it glides
  * bends the glide toward the new pose, or under `spring` carries its velocity
  * into the new one. Over an adapter with no `poseTarget`, a second write ends
  * the glide: the new pose is written at once and stands.

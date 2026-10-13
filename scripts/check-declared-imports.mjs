@@ -10,11 +10,11 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SOURCE, importSpecifiers, isBare, packageOf } from './lib/imports.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
 
-const SOURCE = /\.(ts|tsx|mts|js|mjs)$/;
 const NOT_SHIPPED = /(\.(test|stories|fixture|bench)\.|\.d\.ts$|\/__tests__\/|\/testing\/|\/test\/|\/test-utils\/|test-setup\.)/;
 // Helpers only test files import, whose names do not say so. Each must exist.
 const TEST_HELPERS = [
@@ -23,28 +23,6 @@ const TEST_HELPERS = [
   'packages/storage/src/adapterContract.ts',
 ];
 const BUILTINS = new Set(builtinModules);
-
-/** `from '…'`, `import '…'`, `import('…')`, and `require('…')`, on code with comments removed.
- *  A type-only import is erased at build and is not matched. */
-const SPECIFIER =
-  /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)(['"])([^'"\n]+)\1/g;
-const TYPE_ONLY = /\b(?:import|export)\s+type\b[^;'"]*?\bfrom\s*(['"])[^'"\n]+\1/g;
-
-function stripComments(text) {
-  return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-}
-
-/** `@scope/name/sub` → `@scope/name`; `name/sub` → `name`. */
-function packageOf(specifier) {
-  const parts = specifier.split('/');
-  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
-}
-
-function isBare(specifier) {
-  if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
-  if (specifier.startsWith('node:') || specifier.startsWith('virtual:')) return false;
-  return /^(@[\w.-]+\/)?[\w.-]+(\/.*)?$/.test(specifier);
-}
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
@@ -112,9 +90,8 @@ for (const name of readdirSync(PACKAGES).sort()) {
   for (const file of walk(join(dir, 'src'))) {
     const rel = relative(ROOT, file);
     if (NOT_SHIPPED.test(rel) || TEST_HELPERS.includes(rel)) continue;
-    const text = stripComments(readFileSync(file, 'utf8')).replace(TYPE_ONLY, '');
-    for (const match of text.matchAll(SPECIFIER)) {
-      const specifier = match[2].replace(/\?.*$/, '');
+    for (const written of importSpecifiers(readFileSync(file, 'utf8'))) {
+      const specifier = written.replace(/\?.*$/, '');
       if (!isBare(specifier)) continue;
       const pkg = packageOf(specifier);
       if (declared.has(pkg) || BUILTINS.has(pkg)) continue;

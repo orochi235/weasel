@@ -1,13 +1,14 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
 
-export interface HexagonParams {
+/** What `shapeParams` takes on a `hexagon` badge. */
+export interface BadgeHexagonShapeParams {
   tipHeight?: number;
   /** Truncate the top and bottom tips, leaving a horizontal flat edge.
    *  Measured as a distance from each tip vertically (0 = sharp point, tipHeight = fully flat). */
   tipTruncation?: number;
 }
 
-const DEFAULTS: Required<HexagonParams> = { tipHeight: 25, tipTruncation: 0 };
+const DEFAULTS: Required<BadgeHexagonShapeParams> = { tipHeight: 25, tipTruncation: 0 };
 
 function hexVerts(tip: number, truncation: number): [number, number][] {
   const t = Math.max(0, Math.min(tip, 49));
@@ -26,7 +27,7 @@ function hexVerts(tip: number, truncation: number): [number, number][] {
   ];
 }
 
-const Hexagon: ShapeModule<HexagonParams> = {
+const Hexagon: ShapeModule<BadgeHexagonShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = { ...DEFAULTS, ...params };
     return { base: 'polygon', baseParams: { vertices: hexVerts(cfg.tipHeight, cfg.tipTruncation) } };
