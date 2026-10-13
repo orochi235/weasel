@@ -8,8 +8,8 @@ import {
   pathfinderCropAction,
   pathfinderTrimAction,
   pathfinderMergeAction,
-} from './booleans';
-import type { BooleansAdapter } from '../booleans/booleans';
+} from './action';
+import type { BooleansAdapter } from './booleans';
 import { asNodeId } from 'core/scene/types';
 import { pathFromD, pointInPath, type Path } from '@weasel-js/geom';
 import { ActionDisabledReason } from '@weasel-js/routing';

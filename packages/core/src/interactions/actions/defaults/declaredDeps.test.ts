@@ -17,7 +17,7 @@ import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
 import { alignLeftAction, alignCenterYAction } from '../align/action';
 import { distributeHorizontalAction, distributeVerticalAction } from '../distribute/action';
-import { pathfinderUnionAction, pathfinderExcludeAction } from './booleans';
+import { pathfinderUnionAction, pathfinderExcludeAction } from '../booleans/action';
 
 const IDS = ['a', 'b', 'c'];
 

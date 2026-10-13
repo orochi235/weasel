@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { applyBooleanOp, type BooleanOp } from '../booleans/booleans';
-import type { BooleanStrokes } from '../booleans/operands';
+import { applyBooleanOp, type BooleanOp } from './booleans';
+import type { BooleanStrokes } from './operands';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
@@ -13,7 +13,7 @@ import {
   CropIcon,
   TrimIcon,
   MergeIcon,
-} from './icons/booleanIcons';
+} from '../defaults/icons/booleanIcons';
 
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',

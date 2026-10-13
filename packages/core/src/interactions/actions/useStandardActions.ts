@@ -41,7 +41,7 @@ import {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
   pathfinderTrimAction, pathfinderMergeAction,
-} from './defaults/booleans';
+} from './booleans/action';
 import { createOutlinesAction } from './defaults/createOutlines';
 import { outlineStrokeAction } from './defaults/outlineStroke';
 import { moveAction } from './move/action';
