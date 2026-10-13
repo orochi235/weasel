@@ -1425,8 +1425,7 @@ only story runner in the repo.
 - **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
   is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run). Still hand-rolled, each a `Set` and a loop:
-  - in packages that do not depend on registry, where each move adds the dependency: history and its journal, `select/store.ts`, storage's records, loupe's
-    `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
+  - in packages that do not depend on registry, where each move adds the dependency: history and its journal, `select/store.ts`, storage's records, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
     `cameraRegistry`, and several in forge.
 
 - **(P3) `SceneCanvasInner` is one 717-line function.** It is most of the 870-line

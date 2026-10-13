@@ -29,7 +29,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.9.4"
+    "@weasel-js/geom": "1.9.4",
+    "@weasel-js/registry": "1.9.4"
   },
   "devDependencies": {
     "@weasel-js/core": "1.9.4"

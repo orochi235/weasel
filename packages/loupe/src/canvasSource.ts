@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { type LoupePoint, type LoupeSize, loupeExtent } from './geometry';
 
 /** A canvas whose pixels a loupe can read. */
@@ -127,7 +128,7 @@ export function createCanvasSource(
   let missed = 0;
   let warned = false;
   let probe: Ctx2D | null = null;
-  const listeners = new Set<() => void>();
+  const frames = createEmitter();
 
   const source: CanvasSource = {
     canvas,
@@ -152,7 +153,7 @@ export function createCanvasSource(
       ctx.drawImage(canvas, 0, 0);
       current = true;
       missed = 0;
-      for (const fn of listeners) fn();
+      frames.emit();
     },
 
     frame() {
@@ -202,12 +203,7 @@ export function createCanvasSource(
       };
     },
 
-    subscribeFrame(fn) {
-      listeners.add(fn);
-      return () => {
-        listeners.delete(fn);
-      };
-    },
+    subscribeFrame: frames.subscribe,
   };
   return source;
 }

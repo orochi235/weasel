@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { isFocusable, type Widget } from './widget';
 import type { HudHost } from './host';
 import { createRect, type RectOptions, type RectWidget } from './widgets/rect';
@@ -73,14 +74,14 @@ export function createHud(): Hud {
   const list: Widget[] = [];
   let host: HudHost | null = null;
   let detached = false;
-  const frameSubs = new Set<() => void>();
+  const frameSubs = createEmitter();
   let hostFrameSub: (() => void) | null = null;
 
   const requestRedraw = () => { host?.requestRedraw(); };
 
   let focused: Widget | null = null;
   let focusVisible = false;
-  const focusSubs = new Set<(w: Widget | null) => void>();
+  const focusSubs = createEmitter<[Widget | null]>();
 
   const setFocus = (next: Widget | null, visible: boolean): void => {
     const was = focused;
@@ -93,7 +94,7 @@ export function createHud(): Hud {
     }
     was?.onFocusChange?.(false);
     next?.onFocusChange?.(true);
-    for (const fn of [...focusSubs]) fn(next);
+    focusSubs.emit(next);
     requestRedraw();
   };
 
@@ -118,9 +119,7 @@ export function createHud(): Hud {
   // taken while unbound is not lost and bind/unbind stays cheap.
   const attachFrames = () => {
     if (hostFrameSub || !host || frameSubs.size === 0) return;
-    hostFrameSub = host.subscribeFrame(() => {
-      for (const fn of [...frameSubs]) fn();
-    });
+    hostFrameSub = host.subscribeFrame(frameSubs.emit);
   };
 
   // NOTE: factory methods (rect, text, image, label, button) inject
@@ -192,10 +191,7 @@ export function createHud(): Hud {
       return next;
     },
     tabOrder,
-    subscribeFocus(fn) {
-      focusSubs.add(fn);
-      return () => { focusSubs.delete(fn); };
-    },
+    subscribeFocus: focusSubs.subscribe,
     markDirty() { requestRedraw(); },
     bind(h) {
       if (host) throw new Error('weasel-hud: HUD is already bound to a host.');
@@ -211,10 +207,10 @@ export function createHud(): Hud {
       detached = true;
     },
     subscribeFrame(fn) {
-      frameSubs.add(fn);
+      const off = frameSubs.subscribe(fn);
       attachFrames();
       return () => {
-        frameSubs.delete(fn);
+        off();
         if (frameSubs.size === 0) { hostFrameSub?.(); hostFrameSub = null; }
       };
     },
