@@ -83,3 +83,32 @@ describe('svg export: an open subpath no fill closes is written unfilled', () =>
     expect(Array.from((back.children[1].path as PolygonPath).coords.slice(0, 2)).map(Math.round)).toEqual([20, 10]);
   });
 });
+
+describe('svg export: a split path draws the markers the renderer draws', () => {
+  const MARKED = { ...STROKE, markerStart: 'circle', markerMid: 'square', markerEnd: 'arrow' } as const;
+  const paths = (n: SvgNode) => serializeSvg([n]).replace(/<defs>[\s\S]*<\/defs>/, '').match(/<path [^>]*>/g)!;
+  const dOf = (p: string) => /d="([^"]*)"/.exec(p)![1];
+
+  it('writes no start or end marker on the closed half', () => {
+    const [closed, open] = paths(node(MIXED, { stroke: MARKED }, 'none'));
+    expect(closed).not.toMatch(/marker-(start|end)=/);
+    expect(closed).toContain('marker-mid=');
+    expect(open).toMatch(/marker-start=.*marker-mid=.*marker-end=/);
+  });
+
+  it('writes each open subpath of a marked stroke as its own path', () => {
+    const out = paths(node(`${MIXED} M40 0L50 0`, { stroke: MARKED }, 'none'));
+    expect(out.map(dOf)).toEqual(['M0 0L10 0L10 10Z', 'M20 0L30 0L30 10', 'M40 0L50 0']);
+    expect(out.slice(1).every((p) => p.includes('marker-start=') && p.includes('marker-end='))).toBe(true);
+
+    const allOpen = paths(node('M0 0L10 0 M20 0L30 0', { stroke: MARKED }, 'none'));
+    expect(allOpen.map(dOf)).toEqual(['M0 0L10 0', 'M20 0L30 0']);
+    expect(allOpen.every((p) => p.includes('fill="none"') && p.includes('marker-end='))).toBe(true);
+  });
+
+  it('keeps the open subpaths of an unmarked stroke in one path', () => {
+    expect(paths(node(`${MIXED} M40 0L50 0`, { stroke: STROKE }, 'none'))).toHaveLength(2);
+    expect(paths(node('M0 0L10 0 M20 0L30 0', { stroke: STROKE }, 'none'))).toHaveLength(1);
+    expect(paths(node(`${MIXED} M40 0L50 0`, { stroke: { ...STROKE, markerMid: 'square' } }, 'none'))).toHaveLength(2);
+  });
+});
