@@ -1,10 +1,4 @@
-import type { Journal } from '@weasel-js/history';
-import type { Op } from 'core/ops/types';
 import { createHistory } from 'core/ops/createHistory';
-import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
-import { createArrangeOp, type ArrangeArgs } from 'core/ops/arrange';
-import { bindOpToAdapter, bindOpToHistoryAdapter } from './boundOps';
-import { CARRY_OP, createCarriedPoses, type CarryArgs } from './carriedPoses';
 import { sameDependsOn } from './dependents';
 import { withKitRegistry } from './kitRegistry';
 import {
@@ -21,6 +15,7 @@ import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
 import { createNotifier } from './notifier';
 import { createOpTable } from './opTable';
+import { createOuterOps } from './outerOps';
 import { createRecorder } from './recorder';
 import { createEditMode } from './editMode';
 import { createSceneSelection } from './sceneSelection';
@@ -143,9 +138,6 @@ function buildScene<TData, TLayer extends string, TPose>(
     applied: (kind, payload, reverted) => { if (!mode.records()) logApplied(kind, payload, reverted); },
   });
 
-  // Accessor for the adapter restored external ops apply against.
-  let historyAdapterAccessor: (() => unknown) | null = null;
-
   const selection = createSceneSelection(reachable);
   // A selection change is a scene change to every subscriber.
   selection.subscribe(notify);
@@ -157,46 +149,35 @@ function buildScene<TData, TLayer extends string, TPose>(
     invalidateDependents,
   );
 
+  // The one place the scene's two recorded forms are reconciled: see
+  // `outerOps.ts`, and "One recorded form for a scene edit" in docs/TODO.md.
+  const outer = createOuterOps<TPose>({
+    own: (name, args) => (ops.handlers.has(name) ? ops.op(name, args) : null),
+    tolerant: stale.tolerant,
+    has: (id) => state.nodes.has(id),
+    setPose: (id, pose) => scene.setPose(id, pose),
+    // Deferred rather than muted, so a throwing op cannot strand subscribers
+    // after earlier ops in the batch already mutated state.
+    driving: (step) => notifier.deferred(() => mode.during('engine', () => atomically(step, () => true))),
+    getActiveJournal: options.getActiveJournal ?? null,
+  });
+
   // The scene's undo/redo engine. Its recorded ops close over their payloads,
   // so the engine's adapter argument is unused.
   const history = createHistory(undefined, {
     selection: { get: selection.get, set: (ids) => selection.set(ids as readonly NodeId[]) },
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
-    // Restore-time rebuild. A null return, when the global registry also
-    // misses, makes the engine place its no-op placeholder.
-    rebuildOp,
+    rebuildOp: outer.rebuild,
   });
-
-  function rebuildOp(name: string, args: unknown): Op | null {
-    if (ops.handlers.has(name)) return ops.op(name, args);
-    // Its writes are the scene's own, so it replays without an adapter.
-    if (name === 'arrange') return stale.tolerant(createArrangeOp(args as ArrangeArgs, undefined, writePose));
-    if (name === CARRY_OP) {
-      const { op, poses } = args as CarryArgs<TPose>;
-      const inner = rebuildOp(op.name, op.args);
-      return inner === null ? null : carried.rebuilt(inner, poses);
-    }
-    const rebuilt = rebuildGlobalOp(name, args);
-    return rebuilt === null ? null : bindOpToHistoryAdapter(rebuilt, () => historyAdapterAccessor);
-  }
 
   // Keyed by node object: every entry into `state.nodes` is a fresh object and
   // every edit mutates it in place, which is exactly an incarnation's lifetime.
   const incarnations = new WeakMap<object, number>();
   let nextIncarnation = 1;
-  // Seeded from options and swappable via `scene.setActiveJournalAccessor(fn)`.
-  let activeJournalAccessor: (() => Journal | null) | null =
-    options.getActiveJournal ?? null;
-
   function writePose(id: string, pose: unknown): void {
     scene.setPose(asNodeId(id), pose as TPose);
   }
-
-  const carried = createCarriedPoses<TPose>(
-    (id) => state.nodes.has(id),
-    (id, pose) => scene.setPose(id, pose),
-  );
 
   function refuseUntracked(verb: string): void {
     if (mode.untracked()) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
@@ -253,21 +234,6 @@ function buildScene<TData, TLayer extends string, TPose>(
     refuseUntracked,
     runArrivalEdit,
   });
-
-  function applyBatchNow(ops: Op[], label: string, adapter: unknown): void {
-    const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
-    // Either route drives mutations from a history engine. Deferred rather
-    // than muted, so a throwing op cannot strand subscribers after earlier
-    // ops in the batch already mutated state.
-    notifier.deferred(() => mode.during('engine', () => atomically(() => {
-      // Either engine stores the ops and replays them later, so they are
-      // rebound to this call's adapter: the scene's own engine, and any
-      // journal opened on it, was built without one.
-      const bound = ops.map((op) => carried.recording(stale.tolerant(bindOpToAdapter(op, adapter))));
-      if (journal) journal.applyBatch(bound, label);
-      else history.applyOps(bound, label);
-    }, () => true)));
-  }
 
   /** Check that `spec` can be placed, and answer with the `kit:add` payload
    *  that places it. Throws on an id collision, an unknown or locked layer,
@@ -420,14 +386,12 @@ function buildScene<TData, TLayer extends string, TPose>(
       const resizes = node.kind === 'container' && resized(layoutFrame, id, node.pose, pose);
       edit('setPose', resizes, () => {
         if (resizes) noteChange(id);
-        carried.wrote(id, node.pose, pose);
+        outer.wrote(id, node.pose, pose);
         record('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
       });
     },
 
-    carry(id, pose) {
-      if (carried.carries()) scene.setPose(id, pose);
-    },
+    carry: outer.carry,
 
     setLayer(id, layer) {
       requireLayerIndex(layer);
@@ -553,13 +517,11 @@ function buildScene<TData, TLayer extends string, TPose>(
       record(op.kind, op.payload, op.kind);
     },
 
-    setActiveJournalAccessor(fn) {
-      activeJournalAccessor = fn;
-    },
+    setActiveJournalAccessor: outer.setActiveJournalAccessor,
 
-    applyBatch(ops, label, adapter) {
+    applyBatch(batch, label, adapter) {
       refuseUntracked('applyBatch');
-      return runArrivalEdit(ops, (all) => applyBatchNow(all, label, adapter));
+      return runArrivalEdit(batch, (all) => outer.apply(history, all, label, adapter));
     },
 
     setArrivalHandler: arrivalWindow.setHandler,
@@ -584,9 +546,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
     ...historyMethods,
 
-    setHistoryAdapter(fn) {
-      historyAdapterAccessor = fn;
-    },
+    setHistoryAdapter: outer.setHistoryAdapter,
 
     batch: recorder.batch,
     untracked: recorder.untracked,
