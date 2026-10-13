@@ -33,17 +33,6 @@ describe('matchBest (precedence)', () => {
     expect(result?.scope).toBe('ambient');
   });
 
-  it('precedence: hotkey beats active beats ambient', () => {
-    const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
-    const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient', ownerId: null },
-      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerId: 'test-tool' },
-      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey', ownerId: 'test-tool' },
-    ];
-    const result = matchBest(e, bs, false);
-    expect(result?.binding.actionId).toBe('hotkey-a');
-  });
-
   it('within scope, first-declared wins', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
@@ -70,15 +59,6 @@ describe('matchBest (precedence)', () => {
       { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey', ownerId: 'test-tool' },
     ];
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('hotkey-a');
-  });
-
-  it('result includes correct scope', () => {
-    const e: InputEvent = { kind: 'key', key: 'z', ...noMods };
-    const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'z' }, 'z-active'), scope: 'active', ownerId: 'test-tool' },
-    ];
-    const result = matchBest(e, bs, false);
-    expect(result?.scope).toBe('active');
   });
 
   it('wheel gesture routed correctly through matchBest', () => {

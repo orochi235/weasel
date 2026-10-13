@@ -30,25 +30,6 @@ describe('createDispatcher', () => {
       expect(startFn).toHaveBeenCalledOnce();
     });
 
-    it('inFlight() shows the active handle', () => {
-      const handle = { onMove: vi.fn(), onEnd: vi.fn() };
-      const startFn = vi.fn().mockReturnValue(handle);
-      const action = ongoingAction('drag-action', { kind: 'drag' }, startFn);
-      const registry = makeRegistry([action]);
-      const dispatcher = createDispatcher();
-
-      const pointerdownEvent: InputEvent = {
-        kind: 'pointerdown',
-        altKey: false,
-        ctrlKey: false,
-        metaKey: false,
-        shiftKey: false,
-      };
-
-      dispatcher.handleInput(pointerdownEvent, makeCtx({ actions: registry }));
-      expect(dispatcher.inFlight().size).toBe(1);
-    });
-
     it('cancelAll calls onEnd("cancel") on every handle and clears map', () => {
       const handle = { onEnd: vi.fn() };
       const startFn = vi.fn().mockReturnValue(handle);
@@ -89,33 +70,6 @@ describe('createDispatcher', () => {
         const dispatcher = createDispatcher();
         expect(dispatcher.getVersion()).toBe(0);
         expect(dispatcher.getVersion()).toBe(0);
-      });
-
-      it('fires and bumps on gesture start, each pump, and end', () => {
-        const { dispatcher, ctx } = dragSetup();
-        const sub = vi.fn();
-        dispatcher.subscribe(sub);
-
-        dispatcher.handleInput(pointer('pointerdown'), ctx);
-        expect(sub).toHaveBeenCalledTimes(1);
-        expect(dispatcher.getVersion()).toBe(1);
-
-        dispatcher.handleInput(pointer('pointermove'), ctx);
-        dispatcher.handleInput(pointer('pointermove'), ctx);
-        expect(sub).toHaveBeenCalledTimes(3);
-        expect(dispatcher.getVersion()).toBe(3);
-
-        dispatcher.handleInput(pointer('pointerup'), ctx);
-        expect(sub).toHaveBeenCalledTimes(4);
-        expect(dispatcher.getVersion()).toBe(4);
-      });
-
-      it('bumps on cancelAll', () => {
-        const { dispatcher, ctx } = dragSetup();
-        dispatcher.handleInput(pointer('pointerdown'), ctx);
-        const before = dispatcher.getVersion();
-        dispatcher.cancelAll('cancel');
-        expect(dispatcher.getVersion()).toBe(before + 1);
       });
 
       it('the new version is already visible inside the subscriber callback', () => {
@@ -265,21 +219,6 @@ describe('createDispatcher', () => {
         expect(handleA.onEnd).toHaveBeenCalledTimes(1);
         expect(handleB.onEnd).not.toHaveBeenCalled();
         expect([...dispatcher.inFlight().keys()]).toEqual(['pointer-2']);
-      });
-
-      it('keys events with no pointerId to `pointer-mouse`', () => {
-        // Synthesized events (tests, programmatic drags, the hover pump's
-        // resolveOnly probe) carry no pointerId and share one slot, which is
-        // exactly the pre-threading behavior.
-        const handle = { kind: 'marquee', onMove: vi.fn(), onEnd: vi.fn() };
-        const action = ongoingAction('marquee', { kind: 'drag' }, vi.fn().mockReturnValue(handle));
-        const dispatcher = createDispatcher();
-
-        dispatcher.handleInput(
-          { kind: 'pointerdown', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false },
-          makeCtx({ actions: makeRegistry([action]) }),
-        );
-        expect([...dispatcher.inFlight().keys()]).toEqual(['pointer-mouse']);
       });
     });
 

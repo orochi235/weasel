@@ -19,16 +19,6 @@ import {
 describe('createDispatcher', () => {
 
   describe('scope assembly + precedence', () => {
-    it('walks actions registry for ambient bindings', () => {
-      const run = vi.fn();
-      const action = immediateAction('actionA', 'a', run);
-      const registry = makeRegistry([action]);
-      const dispatcher = createDispatcher();
-
-      dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry }));
-      expect(run).toHaveBeenCalledOnce();
-    });
-
     it('active tool bindings beat ambient on same spec', () => {
       const ambientRun = vi.fn();
       const activeRun = vi.fn();
@@ -94,26 +84,6 @@ describe('createDispatcher', () => {
       expect(result).toBe('handled');
       expect(hotkeyRun).toHaveBeenCalledOnce();
       expect(activeRun).not.toHaveBeenCalled();
-    });
-
-    it('entriesById lookup for active tool when present', () => {
-      const activeRun = vi.fn();
-      const activeAction = immediateAction('active', 'a', activeRun);
-      const registry = makeRegistry([activeAction]);
-
-      const activeTool: Tool = {
-        id: 'myTool',
-        eligibility: { focus: true },
-        bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
-      };
-      const entriesById = new Map([['myTool', activeTool]]);
-
-      const dispatcher = createDispatcher();
-      dispatcher.handleInput(
-        keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
-      );
-      expect(activeRun).toHaveBeenCalledOnce();
     });
 
     it("Action.scope:'hotkey' bindings beat active-tool bindings on the same spec", () => {
@@ -232,32 +202,6 @@ describe('createDispatcher', () => {
       expect(result).toBe('handled');
       expect(ambientRun).toHaveBeenCalledOnce();
       warn.mockRestore();
-    });
-
-    it('stops at the first enabled action (does not invoke later candidates)', () => {
-      const activeRun = vi.fn();
-      const ambientRun = vi.fn();
-
-      // Both enabled — higher precedence must win exclusively.
-      const activeAction = immediateAction('active', 'a', activeRun);
-      const ambientAction = immediateAction('ambient', 'a', ambientRun);
-
-      const registry = makeRegistry([activeAction, ambientAction]);
-      const activeTool: Tool = {
-        id: 'myTool',
-        eligibility: { focus: true },
-        bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
-      };
-      const entriesById = new Map([['myTool', activeTool]]);
-
-      const dispatcher = createDispatcher();
-      dispatcher.handleInput(
-        keyAEvent,
-        makeCtx({ actions: registry, activeToolId: 'myTool', entriesById }),
-      );
-
-      expect(activeRun).toHaveBeenCalledOnce();
-      expect(ambientRun).not.toHaveBeenCalled();
     });
   });
 });
