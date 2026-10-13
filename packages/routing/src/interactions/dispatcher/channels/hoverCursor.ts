@@ -2,7 +2,7 @@
  * The hover half of the pointer channel: a `hover` event for each move of an
  * unpressed pointer, and the cursor shown for what a press there would do.
  */
-import { resolveCursorTier, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
+import { createCursorSink, resolveCursorTier, type CursorSink, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
 import type { EventModifiers } from '@weasel-js/gestures';
 import type { DispatchCore } from '../dispatchCore';
 import { DEV, publishLiveDispatch } from '../dispatchTrace';
@@ -15,40 +15,6 @@ const hoverOf = (e: Hover): Hover => ({
   clientX: e.clientX, clientY: e.clientY,
   altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
 });
-
-/**
- * The cursor override, written as an inline style on purpose: clearing it
- * restores the React-managed `Tool.cursor` with no effect churn.
- */
-function cursorOverride(canvas: HTMLElement | null, painted: () => PaintedCursorState | undefined): {
-  apply(spec: CursorSpec | null): void;
-  clear(): void;
-} {
-  let overridden = false;
-  const clear = (): void => {
-    painted()?.setOverride(null);
-    if (overridden && canvas) {
-      canvas.style.cursor = '';
-      overridden = false;
-    }
-  };
-  const apply = (spec: CursorSpec | null): void => {
-    const tier = spec === null ? null : resolveCursorTier(spec);
-    // A painted cursor is two writes: the native cursor gets out of the way
-    // and the layer is told what to draw. Only the first is no cursor at all.
-    const cursor = tier === null ? '' : tier.kind === 'css' ? tier.css : 'none';
-    if (!tier || !canvas || !cursor) {
-      clear();
-      return;
-    }
-    // A CSS cursor silences the layer too, or a painted tool cursor keeps
-    // drawing under the native one.
-    painted()?.setOverride(tier.kind === 'painted' ? tier : 'none');
-    canvas.style.cursor = cursor;
-    overridden = true;
-  };
-  return { apply, clear };
-}
 
 export interface HoverCursorInput {
   /** A pointer moved, and its move has been dispatched. */
@@ -71,9 +37,17 @@ export function hoverCursorInput(
   core: DispatchCore,
   paintedCursor: () => PaintedCursorState | undefined,
   pointersHeld: () => number,
+  /** The surface's own sink, which also holds its tool cursor. Without one
+   *  the override is written to the canvas and removed when it clears. */
+  cursorSink: () => CursorSink | undefined = () => undefined,
 ): HoverCursorInput {
   const { canvas, routeAt, toWorld, target, dispatch, dispatcherNow, ctxNow } = core;
-  const override = cursorOverride(canvas, paintedCursor);
+  const ownSink = createCursorSink({ element: () => canvas, painted: paintedCursor });
+  const override = {
+    apply: (spec: CursorSpec | null): void =>
+      (cursorSink() ?? ownSink).setOverride(spec === null ? null : resolveCursorTier(spec)),
+    clear: (): void => (cursorSink() ?? ownSink).setOverride(null),
+  };
   let last: Hover | null = null;
   /** What the last move found under the pointer, so its hover and its cursor hit-test once. */
   let facts: { at: Hover; where: UnderPointer } | null = null;

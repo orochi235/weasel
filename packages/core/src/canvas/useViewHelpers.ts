@@ -118,10 +118,16 @@ export interface CanvasHelpers<TPose> extends CanvasViewHelpers<TPose>, CanvasSu
   readonly viewId: string | null;
 }
 
+/** What a view's pose and bounds lookups read of an adapter. */
+export interface ViewPoseAdapter<TPose> {
+  getPose(id: string): TPose;
+  /** Where the node is drawn, when the adapter composes poses. An adapter
+   *  without it stores absolute poses, where the two agree. */
+  getWorldPose?(id: string): TPose;
+}
+
 export interface UseViewHelpersOpts<TPose> {
-  /** Only `getPose` is read here — the narrow slice keeps this hook off the
-   *  full adapter contract. */
-  adapter: { getPose(id: string): TPose } | undefined;
+  adapter: ViewPoseAdapter<TPose> | undefined;
   geometry: PoseDescriptor<TPose>;
   /** Consumer-supplied bounds resolver. Falls back to the adapter's pose. */
   boundsOf: ((id: string) => Bounds | null) | undefined;
@@ -143,12 +149,7 @@ export interface ViewHelpersBundle<TPose> {
   chromeState: ChromeState;
 }
 
-/** The composed pose when the adapter resolves one, its stored pose otherwise.
- *  Adapters predating `getWorldPose` are absolute-pose, where the two agree. */
-function worldPoseOf<TPose>(
-  adapter: { getPose(id: string): TPose; getWorldPose?(id: string): TPose },
-  id: string,
-): TPose {
+function worldPoseOf<TPose>(adapter: ViewPoseAdapter<TPose>, id: string): TPose {
   return typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id);
 }
 

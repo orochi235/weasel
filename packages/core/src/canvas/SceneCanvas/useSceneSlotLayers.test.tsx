@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import type { Node } from 'core/scene/types';
-import type { CanvasAdapter } from '../buildSceneLayer';
+import type { HierarchicalAdapter } from '../buildSceneTree';
 import { sceneToAdapter } from '../sceneAdapter';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 
@@ -27,7 +27,7 @@ function setup(over: {
   const { result } = renderHook(() => useSceneSlotLayers<Record<string, never>, 'bg', Pose>({
     slot: slot as never,
     scene,
-    adapter: sceneToAdapter(scene) as unknown as CanvasAdapter<TestNode, Pose>,
+    adapter: sceneToAdapter(scene) as unknown as HierarchicalAdapter<TestNode, Pose>,
     alphaFor: undefined,
     colorOverrides: undefined,
     boundsOf: () => BOX,

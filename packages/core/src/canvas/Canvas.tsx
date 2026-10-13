@@ -18,18 +18,16 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useInsertionEf
 import type React from 'react';
 import type { Paint } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
-import type { CanvasAdapter } from './buildSceneLayer';
 import { STANDARD_SLOTS, isCustomEntry, type CanvasLayers } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { registerMountedCanvas } from './mountedCanvases';
-import type { ToolsApi } from '../tools/overlayBinding';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
 import { useSurfaceInput } from './useSurfaceInput';
 import type { CanvasViewState } from './useCanvasView';
 import { useOptionalViewRegistry } from './viewRegistry';
 import { useCanvasSurface } from './useCanvasSurface';
-import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
+import type { CanvasHelpers, CanvasSurfaceHelpers, ViewPoseAdapter } from './useViewHelpers';
 
 import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
@@ -51,10 +49,9 @@ import type { CanvasDebugSink, DebugConfig } from '../debug/types';
 import { beginDebugFrame, useDebugSink } from '../debug/useDebugSink';
 
 const alwaysVisible = (_id: string): boolean => true;
-import { resolveCursorTier } from '@weasel-js/cursor';
-import type { ResolvedCursor } from '@weasel-js/cursor';
-import { createPaintedCursorState } from '@weasel-js/cursor';
-import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
+import { createCursorSink, createPaintedCursorState } from '@weasel-js/cursor';
+import type { PaintedCursorState } from '@weasel-js/cursor';
+import { useToolCursor } from './useToolCursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
 
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -64,7 +61,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
  * delivery, and slot composition, and not gesture dispatch, selection state, picking logic,
  * kind registries, or scene-aware overlays.
  */
-export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
+export interface CanvasProps<TPose = unknown> {
   /** CSS-pixel width. */
   width: number;
   /** CSS-pixel height. */
@@ -103,9 +100,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  declares it on `RenderLayer.subscribe` instead. */
   redrawOn?: readonly RedrawSource[];
 
-  /** Adapter the pose and bounds lookups on `helpersRef` read. Only `getPose` and, where
-   *  present, `getWorldPose` are called. */
-  adapter?: CanvasAdapter<TNode, TPose>;
+  /** Adapter the pose and bounds lookups on `helpersRef` read. */
+  adapter?: ViewPoseAdapter<TPose>;
 
   /** Layer map. See module docstring for slot semantics. */
   layers: CanvasLayers;
@@ -289,24 +285,13 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   layerGroups?: readonly LayerGroup[];
 }
 
-function resolveToolsCursor(tools: ToolsApi): ResolvedCursor | undefined {
-  const id = tools.hotkeyEngaged ?? tools.active;
-  const tool = id === null ? undefined : tools.registry[id];
-  if (!tool?.cursor) return undefined;
-  if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);
-  try {
-    return resolveCursorTier(tool.cursor());
-  } catch {
-    return undefined;
-  }
-}
 
 const NO_SELECTION: SelectionApi['current'] = [];
 
 const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
 
-function CanvasInner<TNode extends { id: string }, TPose>(
-  props: CanvasProps<TNode, TPose>,
+function CanvasInner<TPose>(
+  props: CanvasProps<TPose>,
   ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
@@ -480,6 +465,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // is not drawing needs its own pump. The store stays quiet unless something
   // painted is actually on screen.
   useEffect(() => paintedCursor.subscribe(() => { requestRedraw(); }), [paintedCursor, requestRedraw]);
+  // The one writer of the input element's `cursor` style: the tool's cursor
+  // from here, a hover cursor from the pump, which reaches it through the handle.
+  const cursorSink = useMemo(
+    () => createCursorSink({ element: () => canvasRef.current, painted: () => paintedCursor }),
+    [paintedCursor],
+  );
 
   const getSurfaceRect = useCallback(() => {
     const origin = paintRectRef.current;
@@ -505,12 +496,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     subscribeView,
     getPaintedVersion,
     paintedCursor,
+    cursorSink,
     getDebug,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintInto?.canvas,
        getSurfaceRect, toWorld, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume,
        registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
-       paintedCursor, getDebug]);
+       paintedCursor, cursorSink, getDebug]);
 
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
 
@@ -708,29 +700,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
   }, [clearSubscribers]);
 
-  const toolsCursorTier = tools ? resolveToolsCursor(tools) : undefined;
-  // A painted tool cursor gets `none` here and the layer draws it instead.
-  const toolsCursor =
-    toolsCursorTier === undefined
-      ? undefined
-      : toolsCursorTier.kind === 'css'
-        ? toolsCursorTier.css
-        : 'none';
-  const effectiveStyle: React.CSSProperties | undefined = toolsCursor
-    ? { ...style, cursor: toolsCursor }
-    : style;
-  const toolsPainted: PaintedCursor | null =
-    toolsCursorTier?.kind === 'painted' ? toolsCursorTier : null;
-  // Keyed on the value, not the object: the tier is rebuilt every render, and
-  // publishing from render would notify a repaint mid-render.
-  const toolsPaintedKey = toolsPainted
-    ? `${toolsPainted.glyph}|${toolsPainted.angle}|${toolsPainted.size}|${toolsPainted.worldRadius}`
-    : '';
-  useEffect(() => {
-    paintedCursor.setBase(toolsPainted);
-    // `toolsPainted` is a fresh object each render; the key is its identity.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paintedCursor, toolsPaintedKey]);
+  useToolCursor(cursorSink, tools, detached ? inputElement : null, style?.cursor);
 
   useSurfaceInput(canvasRef, {
     focusOnPress: autoFocusOnPointerDown,
@@ -751,14 +721,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     },
   });
 
-  // The cursor is a tool's, but under `paintInto` it has no element of ours to
-  // sit on. Written imperatively rather than by the caller, so a tool's cursor
-  // keeps working without the caller mirroring tool state.
-  useEffect(() => {
-    if (!detached || !inputElement) return;
-    inputElement.style.cursor = toolsCursor ?? '';
-  }, [detached, inputElement, toolsCursor]);
-
   if (detached) return null;
 
   return (
@@ -767,17 +729,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       width={width}
       height={height}
       tabIndex={tabIndex}
-      {...surfaceBox(width, height, className, effectiveStyle)}
+      {...surfaceBox(width, height, className, style)}
     />
   );
 }
 
-/** Forward-ref'd `<canvas>` wrapper. Generic over the object and pose types, inferred from
- *  the `adapter` prop. */
-export const Canvas = forwardRef(CanvasInner) as <
-  TNode extends { id: string } = { id: string },
-  TPose = unknown,
->(
-  props: CanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
+/** Forward-ref'd `<canvas>` wrapper. Generic over the pose type, inferred from the
+ *  `adapter` prop. */
+export const Canvas = forwardRef(CanvasInner) as <TPose = unknown>(
+  props: CanvasProps<TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;
 

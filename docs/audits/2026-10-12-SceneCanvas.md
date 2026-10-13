@@ -125,7 +125,6 @@ entry otherwise. Making these one needs a decision on what the palette should pr
 
 - **Lines 120-123:** a module-scope write of `window.__weaselCoordLog__`. No reader in `packages`, `apps`, `tests`, `scripts`, or `docs` (grep). If kept, it belongs in `coordTrace.ts`.
 - **Lines 255-258:** mount/unmount `dlog`.
-- **Lines 1231-1253:** the test hook. It has real readers (`tests/e2e/fixtures.ts`, `tests/e2e/path-anchor-edit.spec.ts`, `tests/visual/text-edit-overlay.spec.ts`), but it costs two extra refs here. Owner: a `test-hook` hook or contribution reading from context.
 - **Slops (125-130, 971, 982-989, 1093).** `chromeAffordancesRef` is written by the mounter and read only by this debug layer. The view wiring owns the affordances and could register the layer itself.
 - **`onToolsCreated` (171, 726-727).** Every caller in `packages` and `apps` is a test (grep), so it is test introspection carried as a prop.
 

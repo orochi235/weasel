@@ -12,7 +12,7 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import type { CanvasProps } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
-import type { Node, RectPose, Scene } from 'core/scene/types';
+import type { RectPose, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { type Path, linePath } from '@weasel-js/geom';
@@ -40,7 +40,7 @@ vi.mock('./Canvas', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./Canvas')>();
   const react = await import('react');
   const Canvas = react.forwardRef(function CanvasStub(
-    props: CanvasProps<Node<Data, 'main', RectPose>, RectPose>,
+    props: CanvasProps<RectPose>,
     ref: React.Ref<unknown>,
   ) {
     captured.layers = props.layers;
@@ -63,6 +63,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         subscribeView: () => () => {},
         getPaintedVersion: () => 0,
         paintedCursor: createPaintedCursorState(),
+        cursorSink: { setBase() {}, setOverride() {} },
         getDebug: () => null,
         registerLayer: () => () => {},
         hitTestExtras: () => null,
