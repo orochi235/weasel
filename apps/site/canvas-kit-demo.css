@@ -964,6 +964,7 @@ a:hover { text-decoration: underline; }
 .ckd-bus .ckd-range { width: 100px; }
 
 .ckd-panel-wide { width: 300px; }
+.ckd-panel-plain { border: 0; }
 
 /* labkit ------------------------------------------------------------------ */
 
