@@ -73,7 +73,6 @@ function buildScene<TData, TLayer extends string, TPose>(
 ): Scene<TData, TLayer, TPose> {
   if (layers.length === 0) throw new Error('Scene: systemLayers must declare at least one layer');
 
-  // ── State ──────────────────────────────────────────────────────────────
   const state: SceneState<TData, TLayer, TPose> = {
     nodes: new Map(),
     roots: [],
@@ -175,6 +174,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   // every edit mutates it in place, which is exactly an incarnation's lifetime.
   const incarnations = new WeakMap<object, number>();
   let nextIncarnation = 1;
+
   function writePose(id: string, pose: unknown): void {
     scene.setPose(asNodeId(id), pose as TPose);
   }
