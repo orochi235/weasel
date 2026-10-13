@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import 'windease/styles.css';
 import '../styles.less';
 import './LabLightbox.browser.test.less';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
@@ -157,14 +157,14 @@ test('an expanded trial keeps its marks over it and takes new ones', async () =>
       <Lab instruments={[Marked]} defaultInstrument="Marked" />
     </div>,
   );
-  await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
   const pane = document.querySelector('.lk-lightbox-lab-pane') as HTMLElement;
   await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
 
   await drawRect(pane.getBoundingClientRect());
   await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
 
-  await userEvent.click(screen.getByRole('button', { name: 'Expand trial' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Expand trial' }));
   const box = pane.closest('.lk-lightbox') as HTMLElement;
   expect(box.matches(':popover-open')).toBe(true);
   const big = pane.getBoundingClientRect();

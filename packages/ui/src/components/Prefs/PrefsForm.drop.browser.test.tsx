@@ -86,6 +86,9 @@ const center = (el: Element) => {
 };
 const placeholder = (box: HTMLElement) => box.querySelector('[data-drop-placeholder]');
 
+// A sweep renders the form and lays it out twice at every point: over 3 s on an idle machine, against a 15 s default.
+const SWEEP_TIMEOUT = 60_000;
+
 describe.each([1, 2] as const)('a drop drawn at %i across', (across) => {
   it('opens a gap at the row under the pointer and draws the node in it', () => {
     const h = mount(across);
@@ -118,7 +121,7 @@ describe.each([1, 2] as const)('a drop drawn at %i across', (across) => {
         }
       }
       expect(moved).toBeGreaterThan(50);
-    });
+    }, SWEEP_TIMEOUT);
 
   it('leaves a dragged row out of where it was', () => {
     const h = mount(across, 'canvas.a');

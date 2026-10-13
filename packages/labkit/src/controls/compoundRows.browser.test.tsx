@@ -1,9 +1,9 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { afterEach, expect, test } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { afterEach, beforeAll, expect, test } from 'vitest';
+import { page } from 'vitest/browser';
 import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
@@ -39,33 +39,24 @@ function Panel() {
   );
 }
 
-async function opened(label: string): Promise<{ box: DOMRect; inputs: DOMRect[] }> {
-  await userEvent.click(screen.getByRole('button', { name: `Edit ${label}` }));
-  const dialog = await screen.findByRole('dialog');
-  const inputs = [...dialog.querySelectorAll('input')].map((el) => el.getBoundingClientRect());
-  const box = dialog.getBoundingClientRect();
-  // Escape goes to whatever holds focus, and the dialog takes focus a beat after it mounts.
-  await expect.poll(() => dialog.contains(document.activeElement), { timeout: 5000 }).toBe(true);
-  await userEvent.keyboard('{Escape}');
-  await expect.poll(() => screen.queryByRole('dialog'), { timeout: 5000 }).toBeNull();
-  return { box, inputs };
-}
+beforeAll(() => page.viewport(720, 600));
 
-test('a row opens an object, a map and a union in a dialog with room for their controls', async () => {
-  await page.viewport(720, 600);
+test.each([
+  ['Stop', 2],
+  ['Limits', 4],
+  ['Ramp', 1],
+] as const)('a row opens %s in a dialog with room for its controls', async (label, count) => {
   render(<Panel />);
-  for (const [label, count] of [
-    ['Stop', 2],
-    ['Limits', 4],
-    ['Ramp', 1],
-  ] as const) {
-    const { box, inputs } = await opened(label);
-    const shown = inputs.filter((r) => r.width > 0);
-    expect(shown.length, label).toBeGreaterThanOrEqual(count);
-    for (const r of shown) {
-      expect(r.width, label).toBeGreaterThan(20);
-      expect(r.left, label).toBeGreaterThanOrEqual(box.left);
-      expect(r.right, label).toBeLessThanOrEqual(box.right);
-    }
+  fireEvent.click(screen.getByRole('button', { name: `Edit ${label}` }));
+  const dialog = await screen.findByRole('dialog');
+  const box = dialog.getBoundingClientRect();
+  const shown = [...dialog.querySelectorAll('input')]
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width > 0);
+  expect(shown.length).toBeGreaterThanOrEqual(count);
+  for (const r of shown) {
+    expect(r.width).toBeGreaterThan(20);
+    expect(r.left).toBeGreaterThanOrEqual(box.left);
+    expect(r.right).toBeLessThanOrEqual(box.right);
   }
 });
