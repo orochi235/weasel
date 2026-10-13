@@ -221,9 +221,13 @@ export interface RotateProposed<TPose> {
   rotation: number;
 }
 
-/** Per-frame result a `RotateBehavior.onMove` can return to override the proposed pose. */
+/** Per-frame result a `RotateBehavior.onMove` can return to override the proposed turn. */
 export interface RotateMoveResult<TPose> {
+  /** A pose whose rotation, read through its descriptor, the selection turns to. */
   pose?: TPose;
+  /** The angle to turn to, in radians, for a behavior that changes only the
+   *  angle. Wins over `pose`. */
+  rotation?: number;
 }
 
 /** A behavior on a rotate. */

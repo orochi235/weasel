@@ -148,10 +148,6 @@ Priority tags:
 - **(P3) `DrawCanvas.tsx` and `SceneViewCanvas.tsx` each carry the same first-paint block**
   (`paintedRef` plus a layout effect). It belongs in `useCanvasSurface`.
 
-- **(P3) Rotate has no angle snap.** Nothing under
-  `packages/core/src/interactions/actions/rotate/` quantizes the angle, with Shift or otherwise, and
-  core ships no rotate behavior that does.
-
 ### Cursor package follow-ups
 
 - **(P3) Cursor rasterization is unmeasured in Safari.** Chrome and headed Firefox are measured
