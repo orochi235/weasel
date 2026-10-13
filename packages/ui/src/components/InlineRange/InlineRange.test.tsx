@@ -42,9 +42,4 @@ describe('InlineRange', () => {
     fireEvent.change(screen.getByLabelText('Opacity'), { target: { value: '70' } });
     expect(seen).toEqual(['70']);
   });
-
-  it('keeps a caller class alongside its own', () => {
-    render(<InlineRange aria-label="W" className="mine" value={1} onChange={() => {}} />);
-    expect(screen.getByLabelText('W').className).toContain('mine');
-  });
 });

@@ -112,7 +112,7 @@ describe('CurveEditor — drag', () => {
     const onInput = vi.fn();
     const { container } = render(
       <CurveEditor
-        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
+        value={[{ x: 0, y: 0 }, { x: 0.4, y: 0.4 }, { x: 0.8, y: 0.8 }]}
         onInput={onInput}
         domain="1d"
         width={200}
@@ -120,12 +120,12 @@ describe('CurveEditor — drag', () => {
       />,
     );
     const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
-    fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
+    fireEvent.pointerDown(middle, { clientX: 80, clientY: 60, pointerId: 1 });
     fireEvent.pointerMove(document, { clientX: 500, clientY: 50, pointerId: 1 });
+    expect(onInput.mock.calls.at(-1)![0][1].x).toBe(0.8);
 
-    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
-    expect(last[1].x).toBeLessThanOrEqual(1.0);
-    expect(last[1].x).toBeGreaterThanOrEqual(0);
+    fireEvent.pointerMove(document, { clientX: -500, clientY: 50, pointerId: 1 });
+    expect(onInput.mock.calls.at(-1)![0][1].x).toBe(0);
   });
 
   it('does NOT clamp x to neighbors in 2D mode (still clamps to canvas)', () => {
@@ -222,18 +222,12 @@ describe('CurveEditor — drag', () => {
       />,
     );
     const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
-    // Drag way above the plot — clamp should hit yHi=100 (not collapse).
     fireEvent.pointerDown(first, { clientX: 0, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(document, { clientX: 0, clientY: -500, pointerId: 1 });
-    let last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
-    expect(last[0].y).toBeLessThanOrEqual(100);
-    expect(last[0].y).toBeGreaterThanOrEqual(0);
+    expect(onInput.mock.calls.at(-1)![0][0].y).toBe(0);
 
-    // Drag way below — clamp should hit yLo=0.
     fireEvent.pointerMove(document, { clientX: 0, clientY: 600, pointerId: 1 });
-    last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
-    expect(last[0].y).toBeLessThanOrEqual(100);
-    expect(last[0].y).toBeGreaterThanOrEqual(0);
+    expect(onInput.mock.calls.at(-1)![0][0].y).toBe(100);
   });
 });
 

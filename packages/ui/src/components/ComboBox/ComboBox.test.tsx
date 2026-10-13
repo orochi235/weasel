@@ -52,14 +52,17 @@ describe('ComboBox', () => {
     expect(container.querySelector('[aria-hidden="true"]:not(svg)')).toBeNull();
   });
 
-  it('supports the children form with explicit items', () => {
+  it('supports the children form with explicit items', async () => {
+    const user = userEvent.setup();
     render(
       <ComboBox label="Color">
         <ComboBoxItem id="r">Red</ComboBoxItem>
         <ComboBoxItem id="g">Green</ComboBoxItem>
       </ComboBox>,
     );
-    expect(screen.getByRole('combobox')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /Show options/ }));
+    await screen.findByRole('listbox');
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Red', 'Green']);
   });
 });
 

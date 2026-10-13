@@ -9,8 +9,7 @@ afterEach(() => { cleanup(); });
 describe('ItemList', () => {
   it('renders a row per item, in order', () => {
     render(<ItemList rows={[{ id: 'a', label: 'One' }, { id: 'b', label: 'Two' }]} />);
-    expect(screen.getByText('One')).toBeInTheDocument();
-    expect(screen.getByText('Two')).toBeInTheDocument();
+    expect(screen.getAllByText(/One|Two/).map((el) => el.textContent)).toEqual(['One', 'Two']);
   });
 
   it('shows the empty slot instead of rows when there are none', () => {
@@ -67,7 +66,9 @@ describe('ItemList', () => {
       rows={[{ id: 'a', label: 'Row' }]}
       overlay={<div data-testid="drop" />}
     />);
-    expect(screen.getByTestId('drop')).toBeInTheDocument();
+    const drop = screen.getByTestId('drop');
+    expect(drop.parentElement).toContainElement(screen.getByText('Row'));
+    expect(drop.parentElement!.firstElementChild).toBe(drop);
   });
 
   it('drops the overlay when there are no rows — there is nothing to drop onto', () => {

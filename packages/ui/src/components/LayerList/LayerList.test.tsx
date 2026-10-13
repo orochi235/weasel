@@ -74,7 +74,8 @@ describe('LayerList rows', () => {
 
   it('draws a leading node before the label', () => {
     list({ items: [{ id: 'a', label: 'Alpha', leading: <i data-testid="swatch" /> }] });
-    expect(screen.getByTestId('swatch')).toBeInTheDocument();
+    const swatch = screen.getByTestId('swatch');
+    expect(swatch.compareDocumentPosition(screen.getByText('Alpha')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('appends className to the root, keeping its own class', () => {

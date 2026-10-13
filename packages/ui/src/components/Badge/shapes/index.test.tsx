@@ -3,14 +3,8 @@ import { render } from '@testing-library/react';
 import { SHAPES, ALL_SHAPES } from './index';
 
 describe('shape registry', () => {
-  it('lists every supported shape', () => {
-    expect(ALL_SHAPES).toEqual([
-      'pill', 'plain', 'square', 'notched', 'perforated',
-      'hexagon',
-      'starburst', 'scalloped', 'shield', 'ribbon', 'beavis',
-      'sparkler', 'postage', 'cloud', 'house', 'plaque',
-      'crest', 'urn', 'coffin', 'receipt', 'wood', 'quatrefoil',
-    ]);
+  it('lists every registered shape', () => {
+    expect([...ALL_SHAPES].sort()).toEqual(Object.keys(SHAPES).sort());
   });
 
   it('each shape entry has Component or compose, plus insets + stretches', () => {

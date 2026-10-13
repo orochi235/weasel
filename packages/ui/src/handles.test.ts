@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { TOKEN_MANIFEST } from '@weasel-js/theme';
 import { HANDLE_SIZE_TOKENS, handleHalf, handleSize } from './handles';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -33,10 +34,9 @@ describe('handle size tokens', () => {
   });
 
   it('names every rank the theme publishes, so a new one cannot be missed', () => {
-    expect([...HANDLE_SIZE_TOKENS]).toEqual([
-      '--wzl-handle-size', '--wzl-handle-size-sm', '--wzl-handle-size-lg',
-      '--wzl-handle-dot-size', '--wzl-handle-dot-size-sm',
-    ]);
+    const published = TOKEN_MANIFEST.map((t) => t.name).filter((name) => name.startsWith('--wzl-handle-'));
+    expect(published.length).toBeGreaterThan(0);
+    expect([...HANDLE_SIZE_TOKENS].sort()).toEqual(published.sort());
   });
 
   // The module-scope read resolves to the same number a literal would, so the

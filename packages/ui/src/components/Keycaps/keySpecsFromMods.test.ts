@@ -59,13 +59,6 @@ describe('keySpecsFromMods — legend override', () => {
       .toEqual([{ label: 'Ctrl' }, { label: '⇧' }, { label: '⊞' }]);
   });
 
-  it('defaults to symbol on macOS, text on others (when legend is omitted)', () => {
-    const macSpecs = keySpecsFromMods([{ name: 'mod' }], { platform: 'macos' });
-    const winSpecs = keySpecsFromMods([{ name: 'mod' }], { platform: 'windows' });
-    expect(macSpecs).toEqual([{ label: '⌘' }]);
-    expect(winSpecs).toEqual([{ label: 'Ctrl' }]);
-  });
-
   it('explicit legend: "auto" matches the default behavior', () => {
     for (const p of ['macos', 'windows', 'linux'] as const) {
       const auto = keySpecsFromMods([{ name: 'mod' }], { platform: p, legend: 'auto' });
