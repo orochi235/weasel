@@ -4,6 +4,7 @@ import { TAP_THRESHOLD_PX } from './thresholds';
 /** A position in whatever space the recognizer's `positionOf` reports. */
 export interface Point { x: number; y: number }
 
+/** Where two or more pointers sit: what `multiTouchGeometry` reads from their positions. */
 export interface MultiTouchGeometry {
   centroid: Point;
   /** Distance between the first two pointers. */
