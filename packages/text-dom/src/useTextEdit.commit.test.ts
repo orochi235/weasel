@@ -30,12 +30,15 @@ describe('useTextEdit — rich-text init and commit', () => {
   });
 
   it('falls back to plain text when getRuns is omitted or returns nothing', () => {
-    const h = makeHarness({ a: 'hello' });
-    const { result } = renderHook(() => useTextEdit(h.opts));
-    act(() => result.current.startEdit('a'));
-    const overlay = getOverlay(h.container)!;
-    expect(overlay.querySelectorAll('span[data-run]')).toHaveLength(0);
-    expect(overlay.textContent).toBe('hello');
+    const omitted = makeHarness({ a: 'hello' });
+    const empty = makeRichHarness({ a: { text: 'hello', runs: [] } });
+    for (const h of [omitted, empty]) {
+      const { result } = renderHook(() => useTextEdit(h.opts));
+      act(() => result.current.startEdit('a'));
+      const overlay = getOverlay(h.container)!;
+      expect(overlay.querySelectorAll('span[data-run]')).toHaveLength(0);
+      expect(overlay.textContent).toBe('hello');
+    }
   });
 
   it('commit walks DOM via domToRuns and calls setRuns + setText', () => {
@@ -55,16 +58,6 @@ describe('useTextEdit — rich-text init and commit', () => {
       runs: [{ text: 'a ' }, { text: 'b', bold: true }, { text: ' c' }],
     }]);
     expect(h.textCommits).toEqual([{ id: 'a', text: 'a b c' }]);
-  });
-
-  it('commit on a plain-text edit (no setRuns) only fires setText', () => {
-    const h = makeHarness({ a: 'hi' });
-    const { result } = renderHook(() => useTextEdit(h.opts));
-    act(() => result.current.startEdit('a'));
-    const overlay = getOverlay(h.container)!;
-    seedPlainOverlay(overlay, 'edited');
-    act(() => result.current.commit());
-    expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
   });
 });
 

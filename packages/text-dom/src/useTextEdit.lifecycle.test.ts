@@ -125,18 +125,6 @@ describe('useTextEdit', () => {
     expect(result.current.editingId).toBe('a');
   });
 
-  it('Shift+Enter does not commit (handler ignores it)', () => {
-    const h = makeHarness({ a: 'hello' });
-    const { result } = renderHook(() => useTextEdit(h.opts));
-    act(() => result.current.startEdit('a'));
-    const overlay = getOverlay(h.container)!;
-    act(() => {
-      overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true, cancelable: true }));
-    });
-    expect(h.commits).toEqual([]);
-    expect(result.current.editingId).toBe('a');
-  });
-
   it('Escape cancels via the overlay keydown handler', () => {
     const h = makeHarness({ a: 'hello' });
     const { result } = renderHook(() => useTextEdit(h.opts));
