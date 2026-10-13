@@ -289,11 +289,13 @@ describe('createLoupe', () => {
 
   it('declines a pick that maps back under the window itself', () => {
     const hud = createHud();
-    bindHost(hud);
+    const frame = bindHost(hud);
     const el = makeElement();
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
-      readPixels: () => {},
+      readPixels: (_x: number, _y: number, _w: number, _h: number, _f: number, _t: number, buf: Uint8Array) => {
+        buf.fill(255);
+      },
     } as unknown as WebGL2RenderingContext);
     const onPick = vi.fn();
     const loupe = createLoupe({
@@ -304,6 +306,7 @@ describe('createLoupe', () => {
     // chrome rather than artwork.
     loupe.window.setBounds({ x: 100, y: 100, w: 220, h: 200 });
     loupe.aimAt({ x: 96, y: 200 });
+    frame();
     const rect = loupe.window.contentRect;
     expect(loupe.pick({ x: rect.x + rect.w - 1, y: rect.y + rect.h / 2 })).toBeNull();
     expect(onPick).not.toHaveBeenCalled();

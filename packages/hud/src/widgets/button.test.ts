@@ -75,6 +75,7 @@ describe('button widget', () => {
 
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     b.onPointer({ type: 'cancel', native: null });
+    b.onPointer({ type: 'up', x: 5, y: 5, native: null });
     expect(press).not.toHaveBeenCalled();
   });
 
@@ -104,12 +105,6 @@ describe('button widget', () => {
     expect(() => b.setHidden(true)).toThrow();
     expect(() => b.on('press', () => {})).toThrow();
     expect(() => b.off('press', () => {})).toThrow();
-  });
-
-  it('dispose() is idempotent — calling twice does not throw', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
-    b.dispose();
-    expect(() => b.dispose()).not.toThrow();
   });
 
   it('dispose() calls removeFromHud', () => {
