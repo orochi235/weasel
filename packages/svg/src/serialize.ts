@@ -6,7 +6,7 @@
 import { escapeAttr, escapeText } from './xmlEscape';
 import type { FontRequest, Stroke, StrokeAlign } from '@weasel-js/core';
 import { isSolidPaint, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
-import { metaAttrsXml, metaElementsXml, namespacedElementXml } from './metaXml';
+import { metaAttrsXml, metaElementsXml } from './metaXml';
 import type {
   SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,

@@ -3,7 +3,7 @@
 import { escapeAttr, escapeText } from './xmlEscape';
 import type { NamespaceMeta, NamespacedElement } from './types';
 
-export function namespacedElementXml(prefix: string, localName: string, el: NamespacedElement): string {
+function namespacedElementXml(prefix: string, localName: string, el: NamespacedElement): string {
   const attrs: string[] = [];
   for (const [name, value] of Object.entries(el.attrs)) {
     attrs.push(`${name}="${escapeAttr(value)}"`);
