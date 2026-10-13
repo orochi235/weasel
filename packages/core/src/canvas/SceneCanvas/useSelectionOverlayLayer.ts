@@ -1,9 +1,10 @@
 /**
- * The selection-overlay slot, built: `null` when the slot is switched off.
+ * The selection-overlay slot, built, and where it paints its rotate badge.
+ * Both are `null` when the slot is switched off.
  */
 import { useMemo } from 'react';
 import type { RenderLayer } from 'core/layers/render';
-import { createSelectionOverlayLayer } from 'features/selection/overlay';
+import { createSelectionOverlayLayer, rotationBadgeOf } from 'features/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SelectionOverlaySlotConfig } from '../layerSlots';
 
@@ -15,8 +16,19 @@ export function useSelectionOverlayLayer<TPose>(
   getOwnSuppressedIds: () => ReadonlySet<string>,
   /** What a slot's `poseById` is projected with when it names no descriptor. */
   poseDescriptor: PoseDescriptor<TPose>,
-): RenderLayer<unknown> | null {
-  return useMemo(() => {
+): {
+  layer: RenderLayer<unknown> | null;
+  rotationBadge: ReturnType<typeof rotationBadgeOf>;
+} {
+  const badge = slot ? rotationBadgeOf(slot) : null;
+  // Kept by value so the layers and hit-testers keyed on it don't rebuild
+  // every render.
+  const rotationBadge = useMemo(
+    () => badge,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [badge?.distancePx, badge?.sizePx],
+  );
+  const layer = useMemo(() => {
     if (slot === null) return null;
     const cfg = slot ?? {};
     const callerSuppress = cfg.getSuppressedIds;
@@ -39,4 +51,5 @@ export function useSelectionOverlayLayer<TPose>(
         : {}),
     });
   }, [slot, getOwnSuppressedIds, poseDescriptor]);
+  return { layer, rotationBadge };
 }

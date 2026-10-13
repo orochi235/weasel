@@ -25,7 +25,6 @@ import { useChromeCaps, type ViewRuleInputs } from 'features/chrome-caps/useChro
 import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
 import { isSelectedNode } from 'features/paths/pathEditState';
 import { usePathEditOverlayLayer, usePathEditState } from 'features/paths/usePathEdit';
-import { rotationBadgeOf } from 'features/selection/overlay';
 import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -44,6 +43,7 @@ import { useTools, type Contribution, type ToolsApi } from '../tools/overlayBind
 import { Canvas } from './Canvas';
 import { builtLayersOf, type CanvasLayers, type SelectionOverlaySlotConfig } from './layerSlots';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
+import { DevHuds } from './SceneCanvas/DevHuds';
 import { GestureDispatcherMounter } from './SceneCanvas/GestureDispatcherMounter';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { worldPointAt } from './SceneCanvas/worldPointAt';
@@ -152,6 +152,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     modes,
     pathEdit,
     getFocused: getFocusedProp,
+    cursorCoordsHud, pickHud, modalityHud,
     ...rest
   } = props;
 
@@ -617,16 +618,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const sceneRef = useLatest(scene);
   const slopsOn = debug !== undefined && debug !== false && debug.slops === true;
-  const selectionOverlayCfg = mergedLayers.selectionOverlay as
-    | SelectionOverlaySlotConfig<TPose> | null | undefined;
-  const badgeOf = selectionOverlayCfg ? rotationBadgeOf(selectionOverlayCfg) : null;
-  // Kept by value so the layers and hit-testers keyed on it don't rebuild
-  // every render.
-  const rotationBadge = useMemo(
-    () => badgeOf,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [badgeOf?.distancePx, badgeOf?.sizePx],
-  );
   // Debug: slops viz layer (off by default). Draws the affordances the
   // gesture mounter hit-tests, which it publishes here, so the halos are the
   // hit regions rather than a copy of them.
@@ -641,8 +632,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     planeOfNode: internalPlaneOfNode,
   });
 
-  const selectionOverlayLayer = useSelectionOverlayLayer<TPose>(
-    selectionOverlayCfg, pathEditState.getEditingIds, descriptor as PoseDescriptor<TPose>,
+  const { layer: selectionOverlayLayer, rotationBadge } = useSelectionOverlayLayer<TPose>(
+    mergedLayers.selectionOverlay as SelectionOverlaySlotConfig<TPose> | null | undefined,
+    pathEditState.getEditingIds, descriptor as PoseDescriptor<TPose>,
   );
 
   const wiredLayers = useMemo<CanvasLayers>(() => ({
@@ -724,7 +716,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       poseDescriptor={descriptor as PoseDescriptor<TPose>}
       tools={tools}
       layers={wiredLayers}
-      pickEvery={internalPickEvery}
       // The chrome's bounds are the picker's: a node on a parallax plane is
       // boxed where the plane draws it, and a `geometry.boundsOf` reaches both.
       boundsOf={internalBoundsOf}
@@ -735,7 +726,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       gestureSource={gestureSource}
       previewPoseExtra={previewPoseExtra}
       {...(debug !== undefined ? { debug: canvasDebug(debug) } : {})}
-      pickBest={internalPickBest}
       contentVersion={scene.getVersion}
       layerVisibility={layerVisibility}
       layerOrder={layerOrder}
@@ -770,87 +760,96 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   return (
     <ViewInputsProvider value={viewInputs}>
       <PointerProviderIfRoot>
-        <>
-          {canvas}
-          <PointerPublisher canvasRef={internalCanvasRef} canvasApiRef={canvasApiRef} />
-          <StandardActionsRegistrar
-            selection={selection}
-            scene={scene}
-            adapter={adapter as unknown as BridgeAdapter}
-            actions={resolvedActions}
-            excludeActions={standardActionsExclude}
-            currentViewRef={currentViewRef}
-            onViewChange={handleViewChange}
-            resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-            poseDescriptor={descriptor}
-            geometryProjection={geometryProjection}
-            dispatcher={dispatcher}
-            getActionRef={getActionRef}
-            pickEvery={internalPickEvery}
-            layerIsPainted={viewLayerGate}
-            alphaOf={alphaFor ? composedAlphaFor : undefined}
-            viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
-            viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
-            viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
-            viewportRecenter={viewport?.recenter}
-            viewAnimation={viewAnimation}
-            editAnchorsExternalState={pathEditState}
-            layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
-            layoutDropTarget={layoutDropTarget}
-            reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
-            insertNodeFactories={insertNodeFactories}
-            insertPaint={insertPaint}
-            snapPoint={toolOptions?.snapPoint}
-            canvasRef={internalCanvasRef}
-            canvasApiRef={canvasApiRef}
-            ingestionResolveSrc={ingestion?.resolveSrc}
-            ingestionSvg={ingestion?.svg}
-            ingestionClipboard={ingestionClipboard}
-            actionsRegistryRef={actionsRegistryRef}
-          />
-          <GestureDispatcherMounter
-            canvasRef={internalCanvasRef}
-            canvasApiRef={canvasApiRef}
-            tools={tools}
-            contributions={featureContributions}
-            enabled={enableGestureDispatcher}
-            keyboard={enableKeybindings}
-            claimKeys={claimKeys}
-            selectionRef={selectionRef}
-            boundsOf={internalBoundsOf}
-            planeOfNode={internalPlaneOfNode}
-            pickEvery={internalPickEvery}
-            pickBest={internalPickBest}
-            kindOfNode={kindOfNode}
-            viewRef={currentViewRef}
-            dispatcher={dispatcher}
-            getIsVisibleForCanvas={getIsVisibleForCanvas}
-            getRuleCtx={getRuleCtxForCanvas}
-            targetScale={deviceProfile.targetScale}
-            handleHitRadius={selectToolOpts?.handleHitRadius}
-            rotationBadge={rotationBadge}
-            chromeAffordancesRef={chromeAffordancesRef}
-            onDoubleClick={onDoubleClickObserver}
-            onClick={onClickObserver}
-            longPress={longPress}
-          />
-          <ToolKeybindingsMounter
-            internalTools={internalTools}
-            toolsTakeover={toolsTakeover ?? undefined}
-            enableKeybindings={enableKeybindings}
-            modes={modes}
-            canvasApi={canvasReady ? canvasApiRef.current : null}
-            versionCheck={versionCheck}
-          />
-          {viewDescriptors?.map((v, i) => (
-            <CanvasView key={v.id} {...v} order={v.order ?? i} />
-          ))}
-          {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
-            <CanvasView key={`contribution:${v.id}`} {...v} />
-          ))}
-          {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
-          {children}
-        </>
+        {canvas}
+        <DevHuds
+          cursorCoords={cursorCoordsHud}
+          pick={pickHud}
+          modality={modalityHud}
+          canvasRef={internalCanvasRef}
+          canvasApiRef={canvasApiRef}
+          detachedInput={restProps.paintInto ? restProps.inputElement ?? null : undefined}
+          viewRef={currentViewRef}
+          pickEvery={internalPickEvery}
+          pickBest={internalPickBest}
+        />
+        <PointerPublisher canvasRef={internalCanvasRef} canvasApiRef={canvasApiRef} />
+        <StandardActionsRegistrar
+          selection={selection}
+          scene={scene}
+          adapter={adapter as unknown as BridgeAdapter}
+          actions={resolvedActions}
+          excludeActions={standardActionsExclude}
+          currentViewRef={currentViewRef}
+          onViewChange={handleViewChange}
+          resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+          poseDescriptor={descriptor}
+          geometryProjection={geometryProjection}
+          dispatcher={dispatcher}
+          getActionRef={getActionRef}
+          pickEvery={internalPickEvery}
+          layerIsPainted={viewLayerGate}
+          alphaOf={alphaFor ? composedAlphaFor : undefined}
+          viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
+          viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
+          viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
+          viewportRecenter={viewport?.recenter}
+          viewAnimation={viewAnimation}
+          editAnchorsExternalState={pathEditState}
+          layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+          layoutDropTarget={layoutDropTarget}
+          reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
+          insertNodeFactories={insertNodeFactories}
+          insertPaint={insertPaint}
+          snapPoint={toolOptions?.snapPoint}
+          canvasRef={internalCanvasRef}
+          canvasApiRef={canvasApiRef}
+          ingestionResolveSrc={ingestion?.resolveSrc}
+          ingestionSvg={ingestion?.svg}
+          ingestionClipboard={ingestionClipboard}
+          actionsRegistryRef={actionsRegistryRef}
+        />
+        <GestureDispatcherMounter
+          canvasRef={internalCanvasRef}
+          canvasApiRef={canvasApiRef}
+          tools={tools}
+          contributions={featureContributions}
+          enabled={enableGestureDispatcher}
+          keyboard={enableKeybindings}
+          claimKeys={claimKeys}
+          selectionRef={selectionRef}
+          boundsOf={internalBoundsOf}
+          planeOfNode={internalPlaneOfNode}
+          pickEvery={internalPickEvery}
+          pickBest={internalPickBest}
+          kindOfNode={kindOfNode}
+          viewRef={currentViewRef}
+          dispatcher={dispatcher}
+          getIsVisibleForCanvas={getIsVisibleForCanvas}
+          getRuleCtx={getRuleCtxForCanvas}
+          targetScale={deviceProfile.targetScale}
+          handleHitRadius={selectToolOpts?.handleHitRadius}
+          rotationBadge={rotationBadge}
+          chromeAffordancesRef={chromeAffordancesRef}
+          onDoubleClick={onDoubleClickObserver}
+          onClick={onClickObserver}
+          longPress={longPress}
+        />
+        <ToolKeybindingsMounter
+          internalTools={internalTools}
+          toolsTakeover={toolsTakeover ?? undefined}
+          enableKeybindings={enableKeybindings}
+          modes={modes}
+          canvasApi={canvasReady ? canvasApiRef.current : null}
+          versionCheck={versionCheck}
+        />
+        {viewDescriptors?.map((v, i) => (
+          <CanvasView key={v.id} {...v} order={v.order ?? i} />
+        ))}
+        {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
+          <CanvasView key={`contribution:${v.id}`} {...v} />
+        ))}
+        {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
+        {children}
       </PointerProviderIfRoot>
     </ViewInputsProvider>
   );

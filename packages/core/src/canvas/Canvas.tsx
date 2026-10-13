@@ -57,9 +57,6 @@ import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
 
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { CursorCoordsHud } from './CursorCoordsHud';
-import { PickHud } from './PickHud';
-import { ModalityHud } from './ModalityHud';
 
 /**
  * Props for `<Canvas>`. Canvas is scene-agnostic: it owns the GL surface, view state, hover
@@ -126,11 +123,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   poseDescriptor?: PoseDescriptor<TPose>;
 
-  /**
-   * Used by `PickHud` to display the list of ids under the cursor. Canvas routes no input
-   * with it.
-   */
-  pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
   /**
    * Override for committed bounds lookup, taking precedence over the `poseDescriptor`-derived
    * fallback. Used by the selection overlay, the multi-select union AABB, and
@@ -260,26 +252,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   backgroundFill?: Paint;
 
-  /** Dev HUD: a fixed-position widget showing live cursor coords in both viewport (client)
-   *  and canvas (world) frames. */
-  cursorCoordsHud?: boolean;
-
-  /** Dev HUD: a fixed-position widget listing the ids `pickEvery(world)` returns under the
-   *  cursor. */
-  pickHud?: boolean;
-
-  /**
-   * Dev HUD: a fixed-position widget reporting the active modality mode, the active-slot
-   * tool, and the hotkey stack. `true` renders `—` for the mode line; pass an object to
-   * supply the current mode id.
-   */
-  modalityHud?: boolean | { modeId?: string };
-
-  /** Single-best hit resolver for the `pickHud` — the id this point would select on a bare
-   *  click. When omitted the HUD skips the bold-best highlight. */
-  pickBest?: (worldX: number, worldY: number) => string | null;
-
-
   /**
    * Mode-owned decoration layer (e.g. path-edit anchor dots). Composed as a `decorationLayer`
    * entry in `layers` with no anchor, which this prop replaces: it paints above every slot
@@ -360,7 +332,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     selection,
     boundsOf,
     boundsOfPose,
-    pickEvery,
     clientToWorld,
     paintInto,
     inputElement,
@@ -383,10 +354,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     previewPoseExtra,
     gestureSource,
     backgroundFill,
-    cursorCoordsHud,
-    pickHud,
-    modalityHud,
-    pickBest,
     decorationLayer,
     getIsVisible,
     layerVisibility,
@@ -498,9 +465,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     helpersForLayersRef.current,
   ), [hitTestExtrasIn, dimsRef, viewRef]);
 
-  // The one client→world conversion: hover, the HUDs, the view registry and
-  // both handles answer with it, so a `clientToWorld` override reaches all of
-  // them or none.
+  // The one client→world conversion: hover, the view registry and both
+  // handles answer with it, so a `clientToWorld` override reaches all of them
+  // or none.
   const clientToWorldRef = useLatest(clientToWorld);
   const toWorld = useCallback((clientX: number, clientY: number): [number, number] => {
     const el = canvasRef.current;
@@ -567,24 +534,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // registry, which is the single-view case.
   const viewRegistry = useOptionalViewRegistry();
 
-  // Read the ref at call time so the HUDs don't reinstall their useEffect on every render
-  // when the prop identity changes.
-  const pickEveryRef = useLatest(pickEvery);
-  const pickBestRef = useLatest(pickBest);
-  const stablePickEveryForHud = useCallback(
-    (wx: number, wy: number): readonly string[] => {
-      const pe = pickEveryRef.current;
-      if (!pe) return [];
-      const raw = pe(wx, wy);
-      if (!raw) return [];
-      return Array.isArray(raw) ? raw : [raw];
-    },
-    [pickEveryRef],
-  );
-  const stablePickBestForHud = useCallback(
-    (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
-    [pickBestRef],
-  );
   const selectedIdsForWiring = selection?.current ?? NO_SELECTION;
 
   // One view's overlay-aware state. A hook, so N views are N components each
@@ -824,54 +773,17 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     inputElement.style.cursor = toolsCursor ?? '';
   }, [detached, inputElement, toolsCursor]);
 
-  const huds = (
-    <>
-      {cursorCoordsHud && (
-        <CursorCoordsHud
-          canvasRef={canvasRef}
-          {...(detached ? { anchorRef: canvasRef } : {})}
-          viewRef={viewRef}
-          toWorld={toWorld}
-        />
-      )}
-      {pickHud && (
-        <PickHud
-          canvasRef={canvasRef}
-          {...(detached ? { anchorRef: canvasRef } : {})}
-          viewRef={viewRef}
-          toWorld={toWorld}
-          pickEvery={stablePickEveryForHud}
-          pickBest={stablePickBestForHud}
-        />
-      )}
-      {modalityHud && (
-        <ModalityHud
-          canvasRef={canvasRef}
-          {...(detached ? { anchorRef: canvasRef } : {})}
-          modeId={typeof modalityHud === 'object' ? modalityHud.modeId : undefined}
-        />
-      )}
-    </>
-  );
-
-  // Detached: no element of our own, but the HUDs are DOM and still belong to
-  // this pane. Held until the input element arrives — `useHostAnchor` resolves
-  // its host on mount and again only when the panel or the window moves, so a
-  // HUD mounted against a null host would latch off.
-  if (detached) return inputElement ? huds : null;
+  if (detached) return null;
 
   return (
-    <>
-      <canvas
-        ref={setOwnCanvas}
-        width={width}
-        height={height}
-        tabIndex={tabIndex}
-        className={className}
-        style={effectiveStyle}
-      />
-      {huds}
-    </>
+    <canvas
+      ref={setOwnCanvas}
+      width={width}
+      height={height}
+      tabIndex={tabIndex}
+      className={className}
+      style={effectiveStyle}
+    />
   );
 }
 

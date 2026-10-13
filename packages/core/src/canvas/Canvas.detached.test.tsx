@@ -1,7 +1,6 @@
 /**
- * `<Canvas>` under `paintInto` / `inputElement`: the ref handle, the HUDs and
- * the input plumbing when the element painted into is not the element input
- * comes from.
+ * `<Canvas>` under `paintInto` / `inputElement`: the ref handle and the input
+ * plumbing when the element painted into is not the element input comes from.
  *
  * jsdom cannot paint, so nothing here asserts pixels — the real-GL guards for
  * that live in `tests/visual/tiled-surface.spec.ts`. What jsdom *can* see is
@@ -211,76 +210,5 @@ describe('<Canvas> detached focus', () => {
     shared.remove();
     first.remove();
     second.remove();
-  });
-});
-
-describe('<Canvas> HUDs when detached', () => {
-  it('renders the cursor-coords HUD even with no canvas of its own', async () => {
-    const shared = document.createElement('canvas');
-    const input = document.createElement('div');
-    document.body.append(shared, input);
-
-    let container!: HTMLElement;
-    await act(async () => {
-      ({ container } = render(
-        <Canvas
-          width={200}
-          height={200}
-          layers={{}}
-          paintInto={{ canvas: shared, x: 0, y: 0 }}
-          inputElement={input}
-          cursorCoordsHud
-        />,
-      ));
-    });
-
-    // The HUD is the only thing this render can produce: detached, <Canvas>
-    // renders no element of its own.
-    expect(container.querySelectorAll('div').length).toBeGreaterThan(0);
-    expect(container.querySelector('canvas')).toBeNull();
-
-    shared.remove();
-    input.remove();
-  });
-
-  it('anchors a detached HUD to the input box, not to the shared container', async () => {
-    const host = document.createElement('div');
-    const shared = document.createElement('canvas');
-    const input = document.createElement('div');
-    host.append(shared, input);
-    document.body.append(host);
-
-    const measured: Element[] = [];
-    for (const [el, rect] of [
-      [host, { left: 0, top: 0, width: 820, height: 400 }],
-      [input, { left: 400, top: 0, width: 380, height: 360 }],
-    ] as const) {
-      el.getBoundingClientRect = () => {
-        measured.push(el);
-        return {
-          ...rect, right: rect.left + rect.width, bottom: rect.top + rect.height,
-        } as DOMRect;
-      };
-    }
-
-    await act(async () => {
-      render(
-        <Canvas
-          width={380}
-          height={360}
-          layers={{}}
-          paintInto={{ canvas: shared, x: 400, y: 0 }}
-          inputElement={input}
-          cursorCoordsHud
-        />,
-      );
-    });
-
-    // The anchor measured the pane, not the strip it sits in. Both panes'
-    // HUDs would otherwise resolve to the same corner.
-    expect(measured).toContain(input);
-    expect(measured).not.toContain(host);
-
-    host.remove();
   });
 });

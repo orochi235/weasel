@@ -161,7 +161,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<Node<TData, TLayer, TPose>, TPose>,
     | 'adapter'
-    | 'pickEvery' | 'boundsOf'
+    | 'boundsOf'
     | 'selection' | 'tools'
     | 'layers'          // stripped so we can re-add as optional below
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
