@@ -28,6 +28,7 @@ import { useTrialFrame } from '../trialFrames';
 import { useCssOverrides } from './overrides';
 import { SectionJump } from './SectionJump';
 import { THEME_NAME, TOKEN_PREFIX, type UnsavedScale, useThemeSave } from './useThemeSave';
+import { useThemeTokens } from './useThemeTokens';
 import { useVarsHistory, type VarsState } from './varsHistory';
 
 type Tab = 'theme' | 'story';
@@ -134,22 +135,14 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   const [tab, setTab] = useState<Tab>('theme');
   const [filter, setFilter] = useState('');
 
+  const themeTokens = useThemeTokens(globals, frame.vars);
   const tokens = useMemo<TokenEntry[]>(() => {
-    if (tab === 'story') {
-      return frame.vars.map(({ name, value }) => {
-        const known = MANIFEST.get(name);
-        return { name, type: known?.type ?? inferTokenType(value), group: known?.group ?? groupOf(name), value };
-      });
-    }
-    const reported = new Map(frame.vars.map((v) => [v.name, v.value]));
-    return TOKEN_MANIFEST.map((token) => ({
-      name: token.name,
-      type: token.type,
-      group: token.group,
-      value: reported.get(token.name) ?? token.defaultValue,
-      description: token.description,
-    }));
-  }, [tab, frame.vars]);
+    if (tab === 'theme') return themeTokens;
+    return frame.vars.map(({ name, value }) => {
+      const known = MANIFEST.get(name);
+      return { name, type: known?.type ?? inferTokenType(value), group: known?.group ?? groupOf(name), value };
+    });
+  }, [tab, frame.vars, themeTokens]);
 
   const query = filter.trim().toLowerCase();
   const shown = tokens

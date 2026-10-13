@@ -105,6 +105,17 @@ describe('CssVarsPanel', () => {
     expect(token.getByRole('textbox')).toHaveValue('#f5f5f6');
   });
 
+  it('shows a token the frame has not reported at the value the theme gives it under the trial’s globals', async () => {
+    location.hash = '#/x--a';
+    const mode = { label: 'Mode', default: 'light', options: [{ value: 'light', label: 'Light' }] };
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ globals: { mode } }} storage={createMemoryAdapter()} />);
+    await openTrial('A');
+    const panel = vars();
+    fireEvent.change(panel.getByLabelText('Filter'), { target: { value: 'secondary-base' } });
+    // Teal in light mode; the manifest's default is dark mode's amber.
+    expect(row(panel, '--wzl-secondary-base').getByRole('textbox')).toHaveValue('#3ee1cb');
+  });
+
   it('regenerates every step of a theme scale from a new base, with the theme’s own rule', async () => {
     location.hash = '#/x--a';
     render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
