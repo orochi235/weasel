@@ -5,6 +5,9 @@ import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
+// A second checkout running the visual specs on the default port would otherwise
+// be reused outside CI, and every spec would capture that checkout's code.
+const port = Number(process.env.WEASEL_VISUAL_PORT ?? ports.visual);
 
 export default defineConfig({
   testDir: here,
@@ -19,7 +22,7 @@ export default defineConfig({
     // run silently attaches to whatever already listens there, and every
     // baseline then fails against the wrong application — which reads like a
     // mass regression rather than a misconfiguration.
-    baseURL: `http://localhost:${ports.visual}`,
+    baseURL: `http://localhost:${port}`,
     headless: true,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
@@ -37,14 +40,14 @@ export default defineConfig({
   // naming conventions.
   snapshotDir: resolve(here, 'baselines'),
   webServer: {
-    command: `npx vite --config vite.config.ts --port ${ports.visual}`,
+    command: `npx vite --config vite.config.ts --port ${port}`,
     cwd: repoRoot,
-    port: ports.visual,
+    port,
     // vite.config.ts loads vite-plugin-wake, which otherwise stops any other
     // running copy of this app to take its remembered port. WAKE_EXTRA runs
     // an extra copy on exactly this port instead, leaving a developer's dev
     // server alone.
-    env: { WAKE_EXTRA: String(ports.visual) },
+    env: { WAKE_EXTRA: String(port) },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },

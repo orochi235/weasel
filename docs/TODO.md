@@ -1076,14 +1076,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P2) Six visual specs and one perf spec were edited in the 2026-10-12 test audit and have not
-  been run.** No browser was available to the audit. `tests/visual/params-labels.spec.ts` and
-  `panel-stances.spec.ts` mounted `Properties.module.css` raw, which has held only `@import` lines
-  since that sheet was split, and now read it through `readModuleCss`. `loupe.spec.ts` passed on an
-  empty lens and now also requires the scanline to cross the magnified rules. `insert.spec.ts`,
-  `gestures.spec.ts`, and `shape-tools.spec.ts` were retitled, and `tests/perf/draw-loop.spec.ts`
-  had comments corrected. Run the visual project and fix what the new assertions find.
-
 - **(P3) Three visual baselines are of an empty canvas.** `tests/visual/insert.spec.ts`,
   `gestures.spec.ts`, and `shape-tools.spec.ts` each screenshot the canvas at mount, before any
   gesture, so none can catch a change to what its name says it covers. They are titled "mounts an
