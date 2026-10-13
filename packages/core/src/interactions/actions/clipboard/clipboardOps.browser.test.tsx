@@ -4,7 +4,7 @@
  * the OS clipboard, `web `-prefixed custom types included, and a flavor that
  * rejects costs only itself.
  */
-import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -66,8 +66,15 @@ function failAfter(ms: number): Promise<string> {
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg"/>';
 const JSON_TEXT = '{"weaselClipboard":1,"nodes":[{"id":"a"}]}';
 
+// Another file or another run may hold the machine's clipboard for a while.
+const CLIPBOARD_WAIT_MS = 180_000;
+
 beforeAll(async () => {
-  await commands.grantClipboard();
+  await commands.holdClipboard();
+}, CLIPBOARD_WAIT_MS);
+
+afterAll(async () => {
+  await commands.releaseClipboard();
 });
 
 afterEach(async () => {

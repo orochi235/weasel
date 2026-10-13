@@ -113,14 +113,6 @@ Priority tags:
   - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
     which included grouping, need re-recording.
 
-- **(P3) Two browser tests share the machine's clipboard and fail when they overlap.**
-  `packages/text-dom/src/overlayTyping.browser.test.tsx` ("reads a page's markup as runs") and
-  `packages/core/src/interactions/actions/clipboard/clipboardOps.browser.test.tsx` ("leaves the
-  previous clipboard whole when every flavor rejects") each write the real OS clipboard and read
-  it back. In a fleet run on 2026-10-12 each read the other's text (`'before'` and `'PQ'`); both
-  pass alone. Two fleet runs on one node would collide the same way. They need to run serially,
-  or one of them needs a clipboard of its own.
-
 - **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument,
   `Tool.previewPose` / `previewBounds` / `previewIds`, and tool-side preview sources are gone.
   Still to go:

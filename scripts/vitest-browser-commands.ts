@@ -1,6 +1,9 @@
 import type { BrowserCommand } from 'vitest/node';
 import type {} from '@vitest/browser-playwright';
 import type { Download } from '@playwright/test';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { holdMachineLock } from './machine-lock.ts';
 
 // Server-side commands for the `browser` vitest project, reached from a test
 // through `commands` in 'vitest/browser'. They run against the Playwright
@@ -8,9 +11,21 @@ import type { Download } from '@playwright/test';
 
 const downloads = new Map<string, Promise<Download | null>>();
 
-/** Grant clipboard read and write to the test page's origin. */
-const grantClipboard: BrowserCommand<[]> = async (ctx) => {
+// Headless Chromium reads and writes the machine's one clipboard, so two test
+// files using it at once, or two runs on one machine, read each other's text.
+const CLIPBOARD_LOCK = join(tmpdir(), 'weasel-test-clipboard.lock');
+const clipboardHeld = new Map<string, () => void>();
+
+/** Take the machine's clipboard for this test file, waiting for whoever has
+ *  it, and grant the page clipboard read and write. `releaseClipboard` gives it back. */
+const holdClipboard: BrowserCommand<[]> = async (ctx) => {
+  if (!clipboardHeld.has(ctx.sessionId)) clipboardHeld.set(ctx.sessionId, await holdMachineLock(CLIPBOARD_LOCK));
   await ctx.context.grantPermissions(['clipboard-read', 'clipboard-write']);
+};
+
+const releaseClipboard: BrowserCommand<[]> = async (ctx) => {
+  clipboardHeld.get(ctx.sessionId)?.();
+  clipboardHeld.delete(ctx.sessionId);
 };
 
 /** Start listening for the page's next download. Call before the action that
@@ -36,11 +51,12 @@ const takeDownload: BrowserCommand<[]> = async (ctx) => {
   return { filename: download.suggestedFilename(), text };
 };
 
-export const browserCommands = { grantClipboard, armDownload, takeDownload };
+export const browserCommands = { holdClipboard, releaseClipboard, armDownload, takeDownload };
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
-    grantClipboard: () => Promise<void>;
+    holdClipboard: () => Promise<void>;
+    releaseClipboard: () => Promise<void>;
     armDownload: (timeoutMs: number) => Promise<void>;
     takeDownload: () => Promise<{ filename: string; text: string } | null>;
   }
