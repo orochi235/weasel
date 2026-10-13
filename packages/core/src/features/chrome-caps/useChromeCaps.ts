@@ -9,6 +9,7 @@ import {
   buildRuleCtx,
   DEFAULT_ALLOWED_CAPABILITIES,
   type DeviceProfile,
+  type ModifierState,
   type RuleCtx,
 } from '@weasel-js/routing';
 import type { NodeId } from '../../core/scene/types';
@@ -31,6 +32,8 @@ export interface ViewRuleInputs {
 /** The part of a rule context that belongs to the surface. */
 export interface SurfaceRuleInputs {
   focused: boolean;
+  /** The modifier keys held. Absent means none, so `modifierHeld` never matches. */
+  modifiers?: ModifierState | undefined;
   hover: NodeId | null;
   /** Absent on a surface with no mode registry, which behaves as normal mode. */
   mode: ActiveMode | undefined;
@@ -49,9 +52,7 @@ export function surfaceRuleCtx(surface: SurfaceRuleInputs, view: ViewRuleInputs)
     focused: surface.focused,
     selection: view.selection,
     multiActive: view.selection.length > 1,
-    // Nothing on a surface tracks held keys for rules yet, so `modifierHeld`
-    // never matches here.
-    modifiers: NO_MODIFIERS,
+    modifiers: surface.modifiers ?? NO_MODIFIERS,
     action: view.action,
     hover: surface.hover,
     zoom: viewZoom(view.view),
@@ -76,6 +77,8 @@ export interface ChromeCapsSource {
   /** Absent means the surface always counts as focused. */
   getFocused: (() => boolean) | undefined;
   getHover: () => NodeId | null;
+  /** Absent means no modifier key ever counts as held. */
+  getModifiers?: (() => ModifierState) | undefined;
   resizable: ((id: string) => boolean) | undefined;
   editingAnchors: () => boolean;
   device: DeviceProfile;
@@ -103,6 +106,7 @@ export function useChromeCaps(source: ChromeCapsSource): ChromeCaps {
       const now = live.current;
       return surfaceRuleCtx({
         focused: now.getFocused ? now.getFocused() : true,
+        modifiers: now.getModifiers?.(),
         hover: now.getHover(),
         mode: now.getMode?.(),
         resizable: now.resizable,

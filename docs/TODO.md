@@ -1415,15 +1415,14 @@ only story runner in the repo.
     `canvasSource`, ui's `recentColors`, labkit's `panelHost`, `clockRegistry`, and
     `cameraRegistry`, and several in forge.
 
-- **(P3) `SceneCanvasInner` is one 717-line function.** It is most of the 870-line
+- **(P3) `SceneCanvasInner` is one 699-line function.** It is most of the 854-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
-  chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, and
-  the layer slots landed 2026-10-12. `canvas/Canvas.tsx` is 783 lines, 467 of them `CanvasInner`,
+  chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, the
+  layer slots, and the redraw subscriptions have landed. `canvas/Canvas.tsx` is 783 lines, 467 of them `CanvasInner`,
   after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas. Left open by the preset table and the rule context, and described in the audit:
-  `selectTool.rotate === false` is still decided in three places that do not agree, and the
-  `modifierHeld` condition can never match on a `<SceneCanvas>`, which always reports no modifier
-  held. Left open by the selection pass: the kind label published with the selection and the routing
+  `selectTool.rotate === false` is still decided in three places that do not agree, and making
+  them one changes behavior three ways the audit lists, each needing a decision. Left open by the selection pass: the kind label published with the selection and the routing
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
 

@@ -2,7 +2,7 @@
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
 > acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
 > A, C, and D except for the items still listed under them, which were checked against the code and are
-> written as found. F, I, J, and N have landed and are deleted, F except for the item still listed
+> written as found. F, G, I, J, and N have landed and are deleted, F except for the item still listed
 > under it, and H has landed except for the item still listed under it. Every other lettered
 > section is unbuilt, and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
@@ -63,10 +63,6 @@ behavior change that needs a decision.
 The assembly landed: `features/chrome-caps/useChromeCaps.ts` builds the context, derives
 `multiActive`, and writes the mode gate once.
 
-- **`modifiers` is not vestigial.** The `modifierHeld` condition (`conditions.ts`, exported) compiles to
-  a selector that `routing/src/eligibility/rule.ts` evaluates against `ctx.modifiers`. What is true is
-  that `<SceneCanvas>` always supplies all-false, so `modifierHeld` can never match on one. The fix is
-  a source of held modifiers for `surfaceRuleCtx`, not removing the field.
 - **`buildChromeCtx`, `BuildChromeCtxArgs`, and `ChromeCtx` are public and nothing in the kit calls
   them.** Removing them is an API change.
 - **One ref stays in `SceneCanvasInner`:** the selection as of the last commit. `selection.current` is
@@ -91,10 +87,6 @@ The mirror landed: `SceneCanvas/useCanvasCamera.ts` makes the one camera with `u
 - **`resolvedViewportZoom` and the three `enabled.has('view') ? … : false` props** belong in
   `useViewportActions`, which should take `viewport` and the preset flag. Left because they are
   props of `StandardActionsRegistrar`, which section E replaces.
-
-### G. Redraw subscriptions
-
-Lines 269-297. The effects for `scene.subscribe` and `scene.overrides.subscribe` do by hand what `redrawOn` does. Both match `RedrawSource` (`subscribe(listener) → unsubscribe`, `core/layers/render.ts:44`), and 240-243 already appends `modes` that way. `animator.onTick` has a different shape and would need adapting.
 
 ### H. Two kind classifiers that disagree
 
@@ -196,7 +188,7 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 5. Landed: ingestion hook (J).
 6. Landed: selection read-only view and kind labels to `core/selection` (H). The two kind classifiers stay two.
 7. Landed, the other way round: SceneCanvas builds the selection overlay and `<Canvas>` does not (I).
-8. Scene and overrides through `redrawOn` (G).
+8. Landed: scene, overrides, and the animator through `redrawOn` (G).
 9. Delete the dead items and pass-through destructures (K, M).
 
 ## (b) What would be left in `SceneCanvasInner`

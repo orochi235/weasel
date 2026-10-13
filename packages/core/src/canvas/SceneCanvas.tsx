@@ -19,6 +19,7 @@ import { readOnlySelection } from 'core/selection/readOnlySelection';
 import { usePublishSceneSelection } from 'core/selection/usePublishSceneSelection';
 import { useSelection, type UseSelectionOptions } from 'core/selection/useSelection';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
+import { useHeldModifiers } from './SceneCanvas/useHeldModifiers';
 import { never, useHoverTracking } from 'features/chrome-caps';
 import { useChromeCaps, type ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
 import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
@@ -32,6 +33,7 @@ import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions
 import type React from 'react';
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
+import type { RedrawSource } from '../core/layers/render';
 import { createNodeRouting } from '../core/scene/NodeRouting';
 import { dlog } from '../debug/flag';
 import type { DebugConfig } from '../debug/types';
@@ -168,10 +170,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const { view, onViewChange, defaultView, viewBounds, redrawOn: redrawOnProp, ...restProps } = rest;
   const getActiveMode = useMemo(() => (modes ? getActiveModeFor(modes) : undefined), [modes]);
-  const redrawOn = useMemo(
-    () => (modes ? [...(redrawOnProp ?? []), modes] : redrawOnProp),
-    [modes, redrawOnProp],
-  );
+  const heldModifiers = useHeldModifiers();
+  // Neither a scene write nor an override write renders this component, and
+  // an override write does not bump the scene version either. An animator
+  // frame repaints for a `drawOne` reading `animator.colorOverrides`.
+  const redrawOn = useMemo((): readonly RedrawSource[] => [
+    ...(redrawOnProp ?? []),
+    scene,
+    scene.overrides,
+    heldModifiers,
+    ...(animator ? [{ subscribe: (repaint: () => void) => animator.onTick(repaint) }] : []),
+    ...(modes ? [modes] : []),
+  ], [scene, heldModifiers, animator, modes, redrawOnProp]);
 
   // Internal canvas ref so the dispatcher can attach its input listeners
   // even when the consumer passes their own forwarded ref.
@@ -187,32 +197,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     dlog('scene-canvas', 'mount');
     return () => dlog('scene-canvas', 'unmount');
   }, []);
-
-  // Redraw on every active animator frame so `drawOne` functions reading
-  // `animator.colorOverrides` (or any other non-scene channel) reflect the latest values.
-  // The animator only ticks while animations are active.
-  useEffect(() => {
-    if (!animator) return;
-    const unsubscribe = animator.onTick(() => {
-      canvasApiRef.current?.requestRedraw?.();
-    });
-    return unsubscribe;
-  }, [animator]);
-
-  // Override writes deliberately don't bump the scene version — that fanout is
-  // what a frame loop is trying to avoid — so the repaint has to come from
-  // here instead.
-  useEffect(() => scene.overrides.subscribe(() => {
-    canvasApiRef.current?.requestRedraw?.();
-  }), [scene]);
-
-  // A scene write repaints; it does not re-render this component. The layers read the scene
-  // at paint time and `contentVersion` is a getter. Chrome rendering node data as DOM
-  // subscribes for itself, which is what lets a host driving poses from a frame loop take
-  // `useScene(…, { subscribe: false })`.
-  useEffect(() => scene.subscribe(() => {
-    canvasApiRef.current?.requestRedraw?.();
-  }), [scene]);
 
   const { viewState, viewAnimation, camera } = useCanvasCamera({
     view, defaultView, onViewChange, viewBounds,
@@ -557,6 +541,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     getMode: getActiveMode,
     getFocused: getFocusedProp,
     getHover,
+    getModifiers: heldModifiers.get,
     resizable: selectToolOpts?.resize?.resizable,
     editingAnchors: () => pathEditState.getEditingId() !== '',
     device: deviceProfile,
