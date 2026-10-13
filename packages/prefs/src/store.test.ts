@@ -179,22 +179,6 @@ describe('createPrefsStore', () => {
     expect(heard).toEqual([]);
   });
 
-  it('says it is closed, and ignores a write or a reset made after, with a warning', async () => {
-    const { store } = make([['name', 'doc']]);
-    expect(store.closed).toBe(false);
-    await store.close();
-    expect(store.closed).toBe(true);
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    store.set('name', 'late');
-    store.reset('name');
-    expect(store.get('name')).toBe('doc');
-    expect(warn.mock.calls.map(([message]) => message)).toEqual([
-      '[prefs] the store is closed; ignoring the write to "name"',
-      '[prefs] the store is closed; ignoring the reset of "name"',
-    ]);
-    warn.mockRestore();
-  });
-
   it('exposes its schema', () => {
     expect(make().store.schema).toBe(SCHEMA);
   });

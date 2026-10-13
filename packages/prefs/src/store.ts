@@ -51,8 +51,6 @@ export interface PrefsStore<S extends PrefGroup> {
   /** Resolves true when every queued write reached storage. */
   flush(): Promise<boolean>;
   close(): Promise<void>;
-  /** True once `close` has been called. A closed store still reads; a `set` or a `reset` on it is ignored, with a warning. */
-  readonly closed: boolean;
 }
 
 interface Snapshot {
@@ -84,34 +82,6 @@ const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {
   }
   return out ?? value;
 };
-
-/** Every record of `cache` but the version's, as a nested tree. */
-function storedTreeOf(cache: OwnedRecordCache): Record<string, unknown> {
-  const tree: Record<string, unknown> = {};
-  const branches = new WeakSet<object>([tree]);
-  for (const [name, record] of cache.entries()) {
-    if (name === VERSION_RECORD) continue;
-    const value = recordValue(record);
-    const parts = name.split('.');
-    let cursor = tree;
-    for (const part of parts.slice(0, -1)) {
-      const next = cursor[part];
-      // A record's own value is never descended into: one named `a` and
-      // another `a.b` cannot both show, and the branch wins.
-      if (typeof next === 'object' && next !== null && branches.has(next)) {
-        cursor = next as Record<string, unknown>;
-      } else {
-        const branch: Record<string, unknown> = {};
-        branches.add(branch);
-        setOwnPrefValue(cursor, part, branch);
-        cursor = branch;
-      }
-    }
-    const last = parts[parts.length - 1]!;
-    if (!branches.has(cursor[last] as object)) setOwnPrefValue(cursor, last, value);
-  }
-  return tree;
-}
 
 /** A store over an open cache. `openPrefs` / `openPrefsSync` are the usual
  *  way in; they run migrations first. */
@@ -159,7 +129,33 @@ export function createPrefsStore<S extends PrefGroup>(
   const current = (): Snapshot => (snapshot ??= build());
 
   let storedTree: Record<string, unknown> | null = null;
-  let closed = false;
+  const buildStored = (): Record<string, unknown> => {
+    const tree: Record<string, unknown> = {};
+    const branches = new WeakSet<object>([tree]);
+    for (const [name, record] of cache.entries()) {
+      if (name === VERSION_RECORD) continue;
+      const value = recordValue(record);
+      const parts = name.split('.');
+      let cursor = tree;
+      for (const part of parts.slice(0, -1)) {
+        const next = cursor[part];
+        // A record's own value is never descended into: one named `a` and
+        // another `a.b` cannot both show, and the branch wins.
+        if (typeof next === 'object' && next !== null && branches.has(next)) {
+          cursor = next as Record<string, unknown>;
+        } else {
+          const branch: Record<string, unknown> = {};
+          branches.add(branch);
+          setOwnPrefValue(cursor, part, branch);
+          cursor = branch;
+        }
+      }
+      const last = parts[parts.length - 1]!;
+      if (!branches.has(cursor[last] as object)) setOwnPrefValue(cursor, last, value);
+    }
+    return tree;
+  };
+
   let changed = createEmitter<[PrefChange[]]>();
   const stopCache = cache.subscribe((changes) => {
     const records = changes.filter((c) => c.name !== VERSION_RECORD);
@@ -176,10 +172,6 @@ export function createPrefsStore<S extends PrefGroup>(
     schema,
     get: (path) => current().byPath.get(path) as never,
     set: (path, value) => {
-      if (closed) {
-        console.warn(`[prefs] the store is closed; ignoring the write to "${path}"`);
-        return;
-      }
       const leaf = leaves.get(path);
       if (!leaf) {
         console.warn(`[prefs] no leaf at "${path}"; ignoring the write`);
@@ -190,10 +182,6 @@ export function createPrefsStore<S extends PrefGroup>(
       cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
     },
     reset: (path) => {
-      if (closed) {
-        console.warn(`[prefs] the store is closed; ignoring the reset of ${path === undefined ? 'every leaf' : `"${path}"`}`);
-        return;
-      }
       for (const p of leaves.keys()) {
         if (path === undefined || p === path || p.startsWith(`${path}.`)) cache.delete(p);
       }
@@ -201,7 +189,7 @@ export function createPrefsStore<S extends PrefGroup>(
     isSet: (path) => cache.has(path),
     values: () => current().tree,
     unset: () => current().unset,
-    stored: () => (storedTree ??= storedTreeOf(cache)),
+    stored: () => (storedTree ??= buildStored()),
     subscribe: (listener) => changed.subscribe(listener),
     get writable() {
       return cache.writable;
@@ -209,11 +197,7 @@ export function createPrefsStore<S extends PrefGroup>(
     read: () => cache.read(),
     whenRead: () => cache.whenRead(),
     flush: () => cache.flush(),
-    get closed() {
-      return closed;
-    },
     close: async () => {
-      closed = true;
       onClose?.();
       stopCache();
       changed = createEmitter();

@@ -9,8 +9,6 @@ interface Held {
   schema: PrefGroup | null;
   store: PrefsStore<PrefGroup> | null;
   holders: number;
-  /** The schemas mounted components hold the prefix with, and how many hold each. */
-  schemas: Map<PrefGroup, number>;
 }
 
 const held = new WeakMap<StorageAdapter, Map<string, Held>>();
@@ -19,7 +17,7 @@ function heldAt(storage: StorageAdapter, prefix: string): Held {
   let byPrefix = held.get(storage);
   if (!byPrefix) held.set(storage, (byPrefix = new Map()));
   let entry = byPrefix.get(prefix);
-  if (!entry) byPrefix.set(prefix, (entry = { schema: null, store: null, holders: 0, schemas: new Map() }));
+  if (!entry) byPrefix.set(prefix, (entry = { schema: null, store: null, holders: 0 }));
   return entry;
 }
 
@@ -64,7 +62,7 @@ function acquire<S extends PrefGroup>(
  *
  * One store is open per `storage` and `prefix` at a time. Components naming
  * the same pair share it, and it closes when the last of them unmounts; they
- * must pass the same `schema`, and a second one mounting with another warns.
+ * must pass the same `schema`.
  *
  * `storage` and `schema` are compared by identity and `prefix` by value, so
  * keep the first two out of the render body. A change to `storage` or
@@ -83,19 +81,10 @@ export function usePrefsStore<S extends PrefGroup>(
   const hold = useCallback(() => {
     const entry = heldAt(storage, prefix);
     entry.holders++;
-    entry.schemas.set(schema, (entry.schemas.get(schema) ?? 0) + 1);
-    if (entry.schemas.size > 1) {
-      console.warn(
-        `[prefs] two mounted usePrefsStore callers name the prefix "${prefix}" with different schemas; the store one of them holds is now closed`,
-      );
-    }
     return () => {
-      const left = entry.schemas.get(schema)! - 1;
-      if (left === 0) entry.schemas.delete(schema);
-      else entry.schemas.set(schema, left);
       if (--entry.holders === 0) closeUnheldSoon(storage, prefix, entry);
     };
-  }, [storage, prefix, schema]);
+  }, [storage, prefix]);
   // Read again once held, so a store closed between render and mount is
   // replaced before anything uses it.
   const current = () => acquire(schema, options);
