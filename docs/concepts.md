@@ -751,7 +751,6 @@ function Editor() {
           ],
         },
         grid: { layer: GRID },
-        selectionOverlay: { handles: true },
       }}
     />
   );
