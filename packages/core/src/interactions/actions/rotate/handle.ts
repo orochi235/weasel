@@ -1,6 +1,6 @@
-import { aabbCenter, rotatePoint } from './geometry';
+import { localToWorld, normalToWorld, targetTransformOf } from 'core/geometry/targetFrame';
 import { ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
-import { standoff, type Scale2 } from '@weasel-js/geom';
+import { standoff, type PoseLinear, type Scale2 } from '@weasel-js/geom';
 
 /** Default world-space distance from the rect's top edge to the rotation
  *  handle's center. Matches the demo's visual default; consumers can
@@ -19,19 +19,18 @@ export interface RotationHandle {
   angle: number;
 }
 
-/** Rotation handle for a rotated rect: `distance` pixels off the top edge's
- *  midpoint, along that edge's outward normal as it lands on a screen whose
- *  per-axis zoom is `scale`. With no `scale`, a pixel is a world unit. When
- *  `pose.rotation` is missing it's treated as 0. */
+/** Rotation handle for a box as its frame draws it: `distance` pixels off the
+ *  top edge's midpoint, along that edge's outward normal as it lands on a
+ *  screen whose per-axis zoom is `scale`. With no `scale`, a pixel is a world
+ *  unit. */
 export function rotationHandle(
-  pose: { x: number; y: number; width: number; height: number; rotation?: number },
+  pose: { x: number; y: number; width: number; height: number; rotation?: number; transform?: PoseLinear },
   distance: number = DEFAULT_ROTATION_HANDLE_DISTANCE,
   scale: Scale2 = UNIT_SCALE,
 ): RotationHandle {
-  const rotation = pose.rotation ?? 0;
-  const c = aabbCenter(pose);
-  const top = rotatePoint(pose.x + pose.width / 2, pose.y, c.x, c.y, rotation);
-  const p = standoff(top, { x: Math.sin(rotation), y: -Math.cos(rotation) }, distance, scale);
+  const xf = targetTransformOf(pose);
+  const top = localToWorld(xf, pose.x + pose.width / 2, pose.y);
+  const p = standoff(top, normalToWorld(xf, { x: 0, y: -1 }), distance, scale);
   return { cx: p.x, cy: p.y, angle: Math.atan2(p.nx, -p.ny) };
 }
 

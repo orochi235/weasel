@@ -6,6 +6,7 @@
 import type { Bounds } from 'tools/builtin/select';
 import { applyToPoint, pointInPath, strokeHitTest, type Mat3 } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { framedBounds } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'core/geometry/autoPoseDescriptor';
 import { poseFrameInverseOf, poseFrameOf, poseLinearOf } from '@weasel-js/geom';
 import { hasSlop, slopForStrokeHit, type ScreenSlop } from 'core/viewport/screenSlop';
@@ -114,14 +115,4 @@ function containsInFrame<TPose>(
   };
   if (pointInPath(grown, x, y)) return true;
   return hasSlop(screen) && strokeHitTest(grown, x, y, 0, opts);
-}
-
-/** The box, rotation, and `transform` a descriptor-read pose is drawn in. */
-function framedBounds<TPose>(pose: TPose, descriptor: PoseDescriptor<unknown>): unknown {
-  const b = descriptor.getBounds(pose);
-  return {
-    x: b.x, y: b.y, width: b.width, height: b.height,
-    rotation: descriptor.getRotation?.(pose) ?? 0,
-    transform: poseLinearOf(pose) ?? undefined,
-  };
 }

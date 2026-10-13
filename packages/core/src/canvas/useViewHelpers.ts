@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { framedBounds } from 'core/geometry/poseDescriptor';
 import { useLatest } from '@weasel-js/react';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
@@ -165,7 +166,7 @@ export function useViewHelpers<TPose>(
   } = opts;
   const boxOf = useCallback(
     (id: string, pose: TPose): Bounds | null =>
-      (boundsOfPose ? boundsOfPose(id, pose) : geometry.getBounds(pose)),
+      (boundsOfPose ? boundsOfPose(id, pose) : framedBounds(pose, geometry)),
     [boundsOfPose, geometry],
   );
 
@@ -176,10 +177,7 @@ export function useViewHelpers<TPose>(
       try {
         // World: chrome is drawn over the picture, so it has to agree with
         // where the renderer put the node, not with where its pose is stored.
-        const pose = worldPoseOf(adapter, id);
-        const b = geometry.getBounds(pose);
-        const rot = geometry.getRotation?.(pose);
-        return rot ? { ...b, rotation: rot } : b;
+        return framedBounds(worldPoseOf(adapter, id), geometry);
       } catch {
         return null;
       }
