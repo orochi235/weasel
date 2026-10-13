@@ -128,4 +128,16 @@ describe('createRecentColorsStore', () => {
     store.record('#00ff00ff');
     expect(listener).toHaveBeenCalledTimes(1);
   });
+
+  it('still tells the subscribers after one that throws', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const store = createRecentColorsStore({ storage: null });
+    const listener = vi.fn();
+    store.subscribe(() => { throw new Error('boom'); });
+    store.subscribe(listener);
+    expect(() => store.record('#ff0000ff')).not.toThrow();
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(logged).toHaveBeenCalledTimes(1);
+    logged.mockRestore();
+  });
 });

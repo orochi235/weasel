@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { toHex8 } from '@weasel-js/core';
 
 /** The slice of the Web Storage API the store reads and writes. */
@@ -87,7 +88,7 @@ export function createRecentColorsStore(options: RecentColorsStoreOptions = {}):
   const limit = Math.max(1, options.limit ?? DEFAULT_LIMIT);
   const key = options.key ?? DEFAULT_KEY;
   const storage = options.storage === undefined ? defaultStorage() : options.storage;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   let list: readonly string[] = read(storage, key, limit);
 
   const set = (next: readonly string[], persist: boolean): void => {
@@ -98,7 +99,7 @@ export function createRecentColorsStore(options: RecentColorsStoreOptions = {}):
         storage.setItem(key, JSON.stringify(list));
       } catch { /* the in-memory list stands */ }
     }
-    for (const l of [...listeners]) l();
+    changed.emit();
   };
 
   // Another tab writing the same key. Only a real `localStorage` fires these.
@@ -112,11 +113,11 @@ export function createRecentColorsStore(options: RecentColorsStoreOptions = {}):
     record: (colors) => set(merge(typeof colors === 'string' ? [colors] : colors, list, limit), true),
     clear: () => set([], true),
     subscribe: (listener) => {
-      if (listeners.size === 0 && watchesOtherTabs) window.addEventListener('storage', onStorage);
-      listeners.add(listener);
+      if (changed.size === 0 && watchesOtherTabs) window.addEventListener('storage', onStorage);
+      const off = changed.subscribe(listener);
       return () => {
-        listeners.delete(listener);
-        if (listeners.size === 0 && watchesOtherTabs) window.removeEventListener('storage', onStorage);
+        off();
+        if (changed.size === 0 && watchesOtherTabs) window.removeEventListener('storage', onStorage);
       };
     },
   };
