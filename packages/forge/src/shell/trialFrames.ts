@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
 import type { A11yReport, CssVarReport, ToFrame } from '../protocol/messages';
 
@@ -36,10 +37,8 @@ const NO_FRAME: TrialFrame = { send: null, vars: [], audit: null, a11y: null };
 
 export function createTrialFrames(): TrialFrames {
   const frames = new Map<string, TrialFrame>();
-  const listeners = new Set<() => void>();
-  const changed = () => {
-    for (const listener of [...listeners]) listener();
-  };
+  const changes = createEmitter();
+  const changed = changes.emit;
   const patch = (trialId: string, next: Partial<TrialFrame>) => {
     const frame = frames.get(trialId);
     if (!frame) return;
@@ -59,10 +58,7 @@ export function createTrialFrames(): TrialFrames {
     report: (trialId, vars) => patch(trialId, { vars }),
     reportA11y: (trialId, a11y) => patch(trialId, { a11y }),
     get: (trialId) => frames.get(trialId) ?? NO_FRAME,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribe: changes.subscribe,
   };
 }
 

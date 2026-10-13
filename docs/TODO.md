@@ -1422,10 +1422,14 @@ only story runner in the repo.
   widening it wants a look at what the declaration build then pulls in. Generate it from
   `scripts/lib/tsconfigPaths.mjs` too.
 
-- **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
-  is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
-  throwing listener is logged and the rest run). Still hand-rolled, each a `Set` and a loop:
-  - in packages that do not depend on registry, where each move adds the dependency: history and its journal, `select/store.ts`, storage's records, and several in forge.
+- **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
+  `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
+  throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each
+  is in a package that depends on nothing else in weasel, and the move would give it its first
+  sibling dependency: history and its journal, `select/store.ts`, storage's records (two sets),
+  cursor's `paintedCursorState`, and react's `useFrameClock`. A throw from one of their listeners
+  still reaches whatever caused the notify. Moving them means either that dependency or the
+  emitter living somewhere all five can reach.
 
 - **(P3) `SceneCanvasInner` is one 717-line function.** It is most of the 870-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another

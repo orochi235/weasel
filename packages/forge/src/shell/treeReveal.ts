@@ -1,16 +1,13 @@
-type Listener = (path: string) => void;
+import { createEmitter } from '@weasel-js/registry';
 
-const listeners = new Set<Listener>();
+const reveals = createEmitter<[path: string]>();
 
 /** Asks the story tree to show the folder at `path`, as clicking its row would. */
 export function revealInTree(path: string): void {
-  for (const listener of listeners) listener(path);
+  reveals.emit(path);
 }
 
 /** Hears `revealInTree`; returns the unsubscribe. */
-export function onRevealInTree(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
+export function onRevealInTree(listener: (path: string) => void): () => void {
+  return reveals.subscribe(listener);
 }
