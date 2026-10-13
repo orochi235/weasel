@@ -91,6 +91,37 @@ Why:
 or emit geometry. Internal kit code uses the typed-array form directly —
 this rule governs the consumer boundary, not kit internals.
 
+## Pairs that look duplicated and are not
+
+A duplication audit flags these again each time. Each stays two, for the reason given.
+
+Local- vs world-space bounds, and `nodeAtPoint` vs `pickBest`, are different
+questions. Miter apex vs capsule, and butt cap vs half-disc, are a defensible hit
+model over shared base geometry. `unionBounds` stays rotation-free beside
+`unionAABB` for commit-time actions that write poses back in the unrotated frame.
+SVG's `#000000` initial fill is a spec default, not drift. `resolveNodeFill`'s
+split between `kit:path` and `kit:shape` is documented and correct.
+`useBuiltinShapeTools`' nine hook calls are not a list, and are already
+compiler-linked through the return type. `sceneToAdapter`'s area walk
+returns containers where the live marquee dep does not — one flag on the shared
+walk, because a bare-adapter consumer has no selection parent-folding to fold
+them back in.
+
+In labkit, modes, d3, paint, and ui:
+labkit's camera (`worldToScreen`, `zoomAt`, `centerOn`, `clampZoomAbout`) is a
+pan/zoom/`yDir` view model, not affine kernel math. labkit's `fitView` anchors at
+the origin where `TrialOverview`'s `fitRect` centers with padding. `toShape`
+collapses a zero-size axis to 0 where `boxToBox` keeps scale 1, and Plot2D's
+`modelToPlot` fails on a zero range where `boxToBox` would silently not scale.
+`toDeviceRect` is a y-flip plus device-pixel snap. Badge's `polygonSampler`
+parameterizes a polygon by CSS-pixel arc length under the viewBox's anisotropic
+scale, and Powerline carries its own normals. paint's `lerpHueDeg` is CSS Color 4
+hue interpolation, not angle geometry. CurveEditor's Catmull-Rom and monotone
+splines are curves geom does not have, and its bezier easing already goes through
+geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))` clamps
+scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
+and modes do no geometry at all.
+
 ## Every public export is documented and nameable
 
 `npm run audit:jsdoc` must report zero undocumented exports and no
