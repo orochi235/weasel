@@ -474,3 +474,45 @@ describe('findConflicts — `mod` against the key it resolves to', () => {
     expect(findConflicts([t])).toHaveLength(1);
   });
 });
+
+// A binding that says it yields steps aside when its action declines, so the
+// pair it leads is ordered on purpose and not by accident.
+describe('findConflicts — a binding that yields', () => {
+  const drag = (actionId: string, yields?: boolean) => ({
+    spec: { kind: 'drag' }, actionId, ...(yields ? { opts: { yields: true } } : {}),
+  });
+
+  it('does not flag a yielding binding declared ahead of the one it falls to', () => {
+    expect(findConflicts([tool('a', [drag('first', true), drag('second')])])).toEqual([]);
+  });
+
+  it('still flags a yielding binding declared behind one that does not yield', () => {
+    expect(findConflicts([tool('a', [drag('first'), drag('second', true)])])).toHaveLength(1);
+  });
+
+  it('still flags the two behind a yielding binding', () => {
+    const c = findConflicts([tool('a', [drag('first', true), drag('second'), drag('third')])]);
+    expect(c).toHaveLength(1);
+    expect(c[0].ownerIds).toEqual(['a', 'a']);
+  });
+});
+
+describe('findScopedConflicts — a mode entry key another mode commits on', () => {
+  const modes: ModeDefinition[] = [
+    { id: 'draw', kind: 'soft', allows: [], scoping: false },
+    { id: 'edit', kind: 'soft', allows: [], scoping: false, entry: { shortcut: 'Enter' } },
+    { id: 'crop', kind: 'strict', allows: [], scoping: false, commit: { shortcut: 'Enter' } },
+  ];
+  const registry = () => createModeRegistry({ modes, initial: 'draw' });
+  const active = modes.map(activeModeOf);
+
+  it('is not flagged when the host says when a mode can be entered', () => {
+    const { actions } = modeShortcuts(registry(), { enter: () => {}, commit: () => {}, canEnter: () => true });
+    expect(findScopedConflicts({ registry: [], actions, modes: active })).toEqual([]);
+  });
+
+  it('is flagged when nothing keeps the entry key out of the other mode', () => {
+    const { actions } = modeShortcuts(registry(), { enter: () => {}, commit: () => {} });
+    expect(findScopedConflicts({ registry: [], actions, modes: active })).toHaveLength(1);
+  });
+});

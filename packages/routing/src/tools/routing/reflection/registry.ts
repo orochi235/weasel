@@ -53,6 +53,8 @@ export interface RegistryEntry {
   views?: readonly (string | null)[];
   /** The binding's `opts.params`, as declared: a thunk is not called. */
   params?: unknown;
+  /** The binding's `opts.yields`, when it is set. */
+  yields?: true;
 }
 
 /**
@@ -85,8 +87,13 @@ export function buildRouteRegistry(
     for (const binding of owner.bindings ?? []) {
       const row = entryFor(owner.id, binding.spec, binding.actionId);
       if (!row) continue;
-      const { views, params } = binding.opts ?? {};
-      out.push({ ...row, ...(views === undefined ? {} : { views }), ...(params === undefined ? {} : { params }) });
+      const { views, params, yields } = binding.opts ?? {};
+      out.push({
+        ...row,
+        ...(views === undefined ? {} : { views }),
+        ...(params === undefined ? {} : { params }),
+        ...(yields ? { yields: true as const } : {}),
+      });
     }
   }
   return out;

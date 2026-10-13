@@ -221,7 +221,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
         opts: { params: { viaDoubleClick: true } },
       },
       // Ahead of the cutting drags: it declines unless points are placed.
-      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.dragPoint' },
+      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.dragPoint', opts: { yields: true } },
       { spec: { kind: 'drag' }, actionId: 'slice' },
       { spec: { kind: 'drag', mods: { alt: true } }, actionId: 'slice', opts: { params: { cut: 'freehand' } } },
       { spec: { kind: 'key', key: 'Enter' }, actionId: 'slice.finish' },

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useSliceTool } from './useSliceTool';
-import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
+import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
 import { createPointerStore } from '@weasel-js/routing/react';
 import { SceneCanvas } from 'canvas/SceneCanvas';
@@ -301,5 +301,12 @@ describe('useSliceTool — through <SceneCanvas>', () => {
     act(() => { click(canvas, 300, 20); });
     act(() => { key('Enter'); });
     expect(commit.mock.calls[0][0]).toEqual([{ x: 100, y: 20 }, { x: 300, y: 20 }]);
+  });
+});
+
+describe('useSliceTool and the route-conflict check', () => {
+  it('reports nothing for the point drag declared ahead of the cutting drag', () => {
+    const { result } = renderHook(() => useSliceTool());
+    expect(reportRouteConflicts({ registry: [result.current] }, () => {})).toEqual([]);
   });
 });

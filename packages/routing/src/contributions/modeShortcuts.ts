@@ -61,6 +61,10 @@ export function modeShortcutSpec(shortcut: string): KeySpec {
  * `exit` / `discard` / `commit` / `cancel` while that mode is active, `entry`
  * while it is not. Install it with `<SceneCanvas ambient>`.
  *
+ * An entry key one mode shares with another mode's leaving key is reported as
+ * a route conflict unless `canEnter` is given: that is what keeps the entry
+ * key from firing inside the other mode.
+ *
  * The bindings ride the hotkey tier, so leaving a mode outranks what the same
  * key does otherwise (Escape clearing the selection), and they yield while a
  * gesture is in flight, so Escape mid-drag still cancels the drag first. Keys
@@ -75,9 +79,10 @@ export function modeShortcuts(
     const entry = mode.entry?.shortcut;
     const enter = handlers.enter;
     if (entry && enter) {
+      // Without `canEnter` an entry key is live in every other mode, so it does not yield there.
       actions.push(shortcutAction(mode, 'entry', entry, { mode: { not: mode.id } },
         () => registry.current().id !== mode.id && (handlers.canEnter?.(mode.id) ?? true),
-        () => enter(mode.id)));
+        () => enter(mode.id), handlers.canEnter !== undefined));
     }
     for (const role of LEAVING) {
       const shortcut = mode[role]?.shortcut;
@@ -85,7 +90,7 @@ export function modeShortcuts(
       if (!shortcut || !run) continue;
       actions.push(shortcutAction(mode, role, shortcut, { mode: mode.id },
         () => registry.current().id === mode.id,
-        run));
+        run, true));
     }
   }
   return { id: 'modes.shortcuts', eligibility: { always: true }, actions };
@@ -98,15 +103,16 @@ function shortcutAction(
   eligible: Rule,
   live: () => boolean,
   run: () => void,
+  yields: boolean,
 ): Action {
   return {
     id: `mode.${mode.id}.${role}`,
     label: `${VERB[role]} ${modeLabel(mode)}`,
     scope: 'hotkey',
-    defaultBinding: {
-      ...modeShortcutSpec(shortcut),
-      phase: [{ channel: '*', phase: 'initial' }],
-    },
+    defaultBinding: [{
+      spec: { ...modeShortcutSpec(shortcut), phase: [{ channel: '*', phase: 'initial' }] },
+      opts: { yields },
+    }],
     eligible,
     // `eligible` is the gate the dispatcher and palettes read, but a canvas
     // with no `modes` evaluates none; without this the key is

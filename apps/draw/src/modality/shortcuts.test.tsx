@@ -6,8 +6,9 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
+import { reportRouteConflicts } from '@weasel-js/core/routing';
 import { useMemo } from 'react';
-import { DEFAULT_MODES } from '@weasel-js/modes';
+import { DEFAULT_MODES, activeModeOf } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
 import { modePathEdit } from './pathEditHost';
 import { modalityShortcuts } from './shortcuts';
@@ -184,5 +185,13 @@ describe('entering path-edit from the keyboard', () => {
     t.key('t', { metaKey: true });
     expect(t.machine.registry.current().id).toBe('isolation');
     expect(t.editingId() || null).toBeNull();
+  });
+});
+
+describe('modalityShortcuts and the route-conflict check', () => {
+  it('reports nothing for Enter, which enters path edit and commits two other modes', () => {
+    const machine = createModeMachine({ modes: DEFAULT_MODES, history: fakeHistory() as never });
+    const { actions } = modalityShortcuts(machine, { pathToEdit: () => null, selection: () => [] });
+    expect(reportRouteConflicts({ registry: [], actions, modes: DEFAULT_MODES.map(activeModeOf) }, () => {})).toEqual([]);
   });
 });

@@ -190,6 +190,13 @@ export interface BindingOpts {
    * drag bound inside a minimap view loses to the active tool's marquee.
    */
   views?: readonly (string | null)[];
+  /**
+   * Says this binding is declared ahead of another on the same input on
+   * purpose: its action declines through `enabled()` when the input is not its
+   * to take, and the next binding fires. The dispatcher does that for any
+   * binding; this tells the route-conflict check the order is the design.
+   */
+  yields?: boolean;
 }
 
 /** Resolve `BindingOpts.params` to a concrete record (calling the thunk if

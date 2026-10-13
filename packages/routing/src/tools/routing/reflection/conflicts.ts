@@ -43,8 +43,10 @@ export interface Conflict {
  *    The same pair tying on both platforms is a plain duplicate and is flagged.
  *
  *  A binding whose action declines via `enabled()` so a lower-priority one
- *  takes the gesture is flagged all the same: seeing that intent would mean
- *  evaluating the action.
+ *  takes the gesture is flagged all the same, since seeing that intent would
+ *  mean evaluating the action, unless it says so with `opts.yields`. A pair
+ *  whose earlier binding yields is not a conflict; one whose later binding
+ *  yields still is, as the earlier one decides alone.
  *
  *  Two bindings on the same tool can share a tuple, so a conflict may name
  *  one tool twice.
@@ -92,8 +94,11 @@ function findConflictsKeyed(
     viewsTie(e.views, f.views) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
   const conflicts = new Map<string, { conflict: Conflict; bucket: RegistryEntry[]; platforms: Set<Platform> }>();
   for (const { base, platform, members } of groups.values()) {
-    // Keep only members that could tie with another member.
-    const bucket = members.filter((e) => members.some((f) => f !== e && tie(e, f)));
+    // Keep only members that could tie with another member. Members are in
+    // declaration order, and a pair led by a binding that yields is ordered on purpose.
+    const ties = (e: RegistryEntry, i: number, f: RegistryEntry, j: number): boolean =>
+      i !== j && !(i < j ? e : f).yields && tie(e, f);
+    const bucket = members.filter((e, i) => members.some((f, j) => ties(e, i, f, j)));
     if (bucket.length < 2) continue;
     const first = bucket[0];
     // Two specs that tie in one modifier state usually tie in several, and on
@@ -254,7 +259,8 @@ export function formatConflict(conflict: Conflict): string {
  *
  * **Warn, never throw.** A conflict between a consumer's tool and a kit tool
  * is sometimes deliberate, since the loser can still take the gesture when
- * the winner declines through `enabled()`.
+ * the winner declines through `enabled()`. A binding ordered that way on
+ * purpose says so with `opts.yields`, and is not reported.
  *
  * @returns The conflicts found, so callers can dedupe repeat reports.
  */

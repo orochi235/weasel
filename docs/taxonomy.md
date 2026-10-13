@@ -412,7 +412,10 @@ bindings, and a canvas that wants a marquee or a pan under every tool adds
 step 4 fall to registration order, and the kit's route-conflict check reports
 them (`reportRouteConflicts`). Two actions gated by different rules count as
 tied unless the rules exclude each other, or, when the check is given the
-canvas's modes, no mode lets both hold.
+canvas's modes, no mode lets both hold. A binding declared ahead of another
+on the same input on purpose, because its action declines through `enabled()`
+when the input is not its to take, says so with `opts: { yields: true }`, and
+the pair is not reported.
 
 **A focused HUD widget hears a key before the canvas's key bindings do.** The
 dispatcher listens for keys on `window`; `@weasel-js/hud` listens on the canvas
