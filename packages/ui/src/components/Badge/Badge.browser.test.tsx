@@ -237,10 +237,37 @@ describe('a removable badge with an action', () => {
           expect(remove.width).toBeGreaterThan(0);
           expect(remove.left).toBeGreaterThanOrEqual(box.left);
           expect(remove.right).toBeLessThanOrEqual(box.right);
-          // A plain badge is a bare run of text with no box to hold anything vertically.
-          if (shape === 'plain') continue;
           expect(remove.top).toBeGreaterThanOrEqual(box.top - 0.5);
           expect(remove.bottom).toBeLessThanOrEqual(box.bottom + 0.5);
+        }
+      });
+    }
+  }
+
+  /** The label's baseline and the top of its capitals, measured apart from the CSS `cap` unit. */
+  const capBand = (badge: HTMLElement) => {
+    const label = badge.querySelector<HTMLElement>('a, [role="button"]')!;
+    const probe = document.createElement('span');
+    probe.style.cssText = 'display:inline-block;width:0;height:0';
+    label.appendChild(probe);
+    const baseline = probe.getBoundingClientRect().bottom;
+    probe.remove();
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    const cs = getComputedStyle(label);
+    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    return { baseline, capTop: baseline - ctx.measureText('H').actualBoundingBoxAscent };
+  };
+
+  for (const shape of SHAPES) {
+    for (const size of SIZES) {
+      test(`${shape} ${size}: centers the remove control on the label's capitals`, () => {
+        const { clickable, link } = row(shape, size);
+        for (const badge of [clickable, link]) {
+          const { baseline, capTop } = capBand(badge);
+          for (const el of [badge.querySelector('button')!, badge.querySelector('button > svg')!]) {
+            const r = el.getBoundingClientRect();
+            expect(Math.abs((r.top + r.bottom) / 2 - (baseline + capTop) / 2), el.tagName).toBeLessThan(0.3);
+          }
         }
       });
     }
