@@ -13,6 +13,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
 import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
 import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
+import { createEmitter } from '@weasel-js/registry';
 
 /** Options for `useSliceTool`. */
 export interface UseSliceToolOptions {
@@ -48,15 +49,11 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
   // What the overlay layer's `subscribe` hears: a change to the points, and,
   // while any are placed, every move of the pointer the rubber band follows.
   const live = useMemo(() => {
-    const listeners = new Set<() => void>();
-    const notify = (): void => { for (const fn of [...listeners]) fn(); };
+    const changed = createEmitter();
     return {
-      notify,
-      listen(fn: () => void): () => void {
-        listeners.add(fn);
-        return () => { listeners.delete(fn); };
-      },
-      ...createPointerFollower(notify),
+      notify: changed.emit,
+      listen: changed.subscribe,
+      ...createPointerFollower(changed.emit),
     };
   }, []);
 

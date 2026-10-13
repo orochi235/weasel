@@ -1,3 +1,5 @@
+import { createEmitter } from '@weasel-js/registry';
+
 /** What the bone and weight tools share between gestures: the joint they act on. */
 export interface RigEditState {
   /** The active joint's name, or `null`. */
@@ -11,17 +13,14 @@ export interface RigEditState {
  *  bone tool is the one the weight tool paints. */
 export function createRigEditState(): RigEditState {
   let active: string | null = null;
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   return {
     active: () => active,
     setActive(joint) {
       if (joint === active) return;
       active = joint;
-      for (const fn of [...listeners]) fn();
+      changed.emit();
     },
-    listen(fn) {
-      listeners.add(fn);
-      return () => { listeners.delete(fn); };
-    },
+    listen: changed.subscribe,
   };
 }

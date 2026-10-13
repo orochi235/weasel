@@ -10,6 +10,7 @@ import { placedRig } from '../bone/placedRig';
 import { createRigEditState, type RigEditState } from '../bone/rigEditState';
 import { createWeightActions, weighedPaths, type WeightEnv } from './weightActions';
 import { createWeightOverlay } from './weightOverlay';
+import { createEmitter } from '@weasel-js/registry';
 
 /** Options for `useWeightTool`. */
 export interface UseWeightToolOptions {
@@ -45,7 +46,7 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
   const paintedRef = useRef(NONE);
 
   const env = useMemo(() => {
-    const listeners = new Set<() => void>();
+    const changed = createEmitter();
     const tool: WeightEnv & { listen(fn: () => void): () => void } = {
       state,
       scene: () => opts.current.scene,
@@ -55,12 +56,12 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
       painted: () => paintedRef.current,
       paint(next) {
         paintedRef.current = next ?? NONE;
-        for (const fn of [...listeners]) fn();
+        changed.emit();
       },
       listen(fn) {
-        listeners.add(fn);
+        const offOwn = changed.subscribe(fn);
         const off = state.listen(fn);
-        return () => { listeners.delete(fn); off(); };
+        return () => { offOwn(); off(); };
       },
     };
     return tool;
