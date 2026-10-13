@@ -9,6 +9,7 @@
  */
 import { defineInstrument, f, Lab, useAnnotations } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
+import { createEmitter } from '@weasel-js/registry';
 import { createRef, useCallback, useSyncExternalStore } from 'react';
 import 'windease/styles.css';
 
@@ -22,15 +23,11 @@ const paneRef = createRef<HTMLDivElement>();
  *  otherwise see an export it did not start. Module scope because the
  *  capability is declared outside React, same as the target refs. */
 let latest: { url: string; w: number; h: number } | null = null;
-const listeners = new Set<() => void>();
-const subscribe = (fn: () => void) => {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
-};
+const captured = createEmitter();
 function publish(next: typeof latest): void {
   if (latest) URL.revokeObjectURL(latest.url);
   latest = next;
-  for (const fn of listeners) fn();
+  captured.emit();
 }
 
 /** Four flat quadrants and a black dot dead centre. A capture landing at the
@@ -63,7 +60,7 @@ function Target({ hue }: { hue: number }) {
 function CapturePanel() {
   const marks = useAnnotations();
   const shot = useSyncExternalStore(
-    subscribe,
+    captured.subscribe,
     useCallback(() => latest, []),
     () => null,
   );
