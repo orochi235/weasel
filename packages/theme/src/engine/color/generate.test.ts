@@ -3,9 +3,8 @@ import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './
 import { contrast, deltaE, hueGap } from './oklch';
 import { floorDegrees } from './generate';
 
-/** `crayonAnchor('yellow')` and `crayonHex('yellow')` from the theme editor, as of 2026-09-13. */
+/** `crayonAnchor('yellow')` from the theme editor, as of 2026-09-13. */
 const YELLOW_ANCHOR: Anchor = { name: 'yellow', hue: 110, lightness: 0.9 };
-const YELLOW_HEX = '#e7e82a';
 
 const withC = (over: Partial<Constraints>): Constraints => ({ ...DEFAULT_CONSTRAINTS, ...over });
 
@@ -100,11 +99,9 @@ describe('feasibility reporting', () => {
   });
 
   it('reports the realized gap, not the requested one', () => {
-    const p = generate(withC({ count: 16, hueFloor: (32 * 16) / 360, minContrast: 4 }));
-    if (p.feasible) {
-      expect(p.stats.minHueGap).toBeGreaterThanOrEqual(31.99);
-      expect(p.stats.minContrast).toBeGreaterThanOrEqual(4);
-    }
+    const p = generate(withC({ count: 16, hueFloor: (32 * 16) / 360, minContrast: 0, minDistance: 0, minSurfaceDistance: 0 }));
+    expect(p.feasible).toBe(false);
+    expect(p.stats.minHueGap).toBeLessThanOrEqual(360 / 16);
   });
 
   it('stays feasible with two anchors at a gap the set can hold', () => {
@@ -140,10 +137,16 @@ describe('perceptual gates', () => {
   });
 
   it('admits a vivid yellow on paper that WCAG contrast would reject', () => {
-    // The point of the surface-distance gate. On white, a real yellow scores
-    // about 1.2:1 by luminance and is plainly visible.
-    expect(contrast(YELLOW_HEX, '#f5f5f6')).toBeLessThan(1.6);
-    expect(deltaE(YELLOW_HEX, '#f5f5f6')).toBeGreaterThan(deltaE('#c1c1c1', '#f5f5f6'));
+    const paper = '#f5f5f6';
+    const onPaper = (over: Partial<Constraints>) =>
+      generate(withC({ count: 2, surface: paper, hueFloor: 0, minDistance: 0, minContrast: 0, minSurfaceDistance: 0, anchors: [YELLOW_ANCHOR], ...over }));
+
+    const byDistance = onPaper({ minSurfaceDistance: deltaE('#c1c1c1', paper) });
+    expect(byDistance.feasible).toBe(true);
+    const yellow = byDistance.swatches.find((s) => s.anchored)!;
+    expect(contrast(yellow.hex, paper)).toBeLessThan(1.6);
+
+    expect(onPaper({ minContrast: 1.6 }).feasible).toBe(false);
   });
 
   it('scales the hue floor with the set size', () => {
