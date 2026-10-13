@@ -756,7 +756,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `--btn-*` tunes and `--wzl-gloss` fades. Whether any of it wants a theme token, and under what
   name, is not decided.
 
-- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this.
+- **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this. Measured in
+  Chromium 2026-10-13, three text segments, each variant at `md` and `sm`: every segment sits
+  inside its track at one height, none clips its label, and a focused segment draws a 2px
+  outline. One thing a reader of the props would not expect: under `minimal`, `size` does
+  nothing. Both sizes are 20px high at the `sm` font size, where `default` is 32px and 22px
+  and `flat` 28px and 20px.
 
 - **(P3) Loose ends of the condition work.** `PrefSchemaEditor` edits an entry's own
   `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
