@@ -1,7 +1,9 @@
 > **Scaffolding for work in flight on branch `scene-splits`, 2026-10-12. Not built, and not verified:**
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
-> acted on. Section B (built-in tool registry assembly) has landed and is deleted from here; every other
-> section is unbuilt, and its line numbers predate that work. Delete this file when the SceneCanvas.tsx
+> acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
+> C and D except for the items still listed under them, which were checked against the code and are
+> written as found. Every other section is unbuilt, and its line numbers predate all of that work.
+> Delete this file when the SceneCanvas.tsx
 > work it lists has merged; `docs/TODO.md` holds what is left.
 
 # Audit: `packages/core/src/canvas/SceneCanvas.tsx`
@@ -34,30 +36,38 @@ Lines 410-451, 455-461, 919-933, 961-965, 970, 991-1048, 1092.
 - **`useEditAnchorsDepSource` keeps a dead fallback** (evidence): its `localEditingId` state runs only when `externalState` is omitted, and its one non-test caller (`StandardActionsRegistrar.tsx:254`) always passes it.
 - **Safe to move when:** the state object is created above both the dep source and the layers (the layer memo at 1025-1040 is deliberately identity-stable), and `pathEdit` hosts still override the id.
 
-### C. Preset definitions are scattered
+### C. `selectTool.rotate === false` is still decided three times
 
-A preset's four halves live in four places:
+The preset table landed: `FEATURE_PRESETS` in `SceneCanvas/features.ts` holds each preset's actions,
+tools, ambient entry, and chrome. What is left is the rotate opt-out, which was pinned and not
+collapsed, because the three sites do not agree and the difference can be observed
+(`SceneCanvas.rotateOff.test.tsx`, run against the code):
 
-| Half | Where |
-|---|---|
-| Action ids | `SceneCanvas/features.ts` `FEATURE_ACTION_IDS` |
-| Tools | `SceneCanvas/toolRegistry.ts` `resolveToolRegistry` |
-| Ambient bindings | 702-706 |
-| Chrome rules | 845-860 |
+- `resolvedActions` mutes the `rotate` action. That also covers a tool that binds `rotate`, and it
+  yields to a consumer's own `actions.rotate`, which stays registered and merged.
+- `chromeRules` hides `selection.rotation-handle`, and a consumer `chromeVisibility` rule can put it back.
+- `rotateOptions` turns `false` into `undefined`, and the rotate preset's ambient entry stays installed.
+  With the handle put back, a drag on it resolves the `rotate` binding, finds the action muted, and the
+  dispatcher warns `binding resolved actionId "rotate" which has no registered action`.
 
-`features.ts:55-56` admits it ("this table is only the registration half"). Owner: the preset table.
+Dropping `rotate` from the resolved preset set would remove that warning, register `rotate` again for
+a tool that binds it, and leave a partial `actions.rotate` with no default to merge onto. Each is a
+behavior change that needs a decision.
 
-**`selectTool.rotate === false` is decided three times** (evidence): 746-752 mutes the action, 857 hides the handle, and 699 turns `false` into `undefined`. At 704 the rotate contribution is still installed whenever the `rotate` preset is on. Removing `rotate` from `enabled` once would make 850 and `featureActionIds` do all three jobs.
+### D. Left over from the chrome-caps rule context
 
-### D. Chrome-caps rule context (about 115 lines)
+The assembly landed: `features/chrome-caps/useChromeCaps.ts` builds the context, derives
+`multiActive`, and writes the mode gate once.
 
-Lines 832-949.
-
-- **Owner:** `features/chrome-caps`. `buildChromeCtx` (`features/chrome-caps/buildChromeCtx.ts:25-35`) is a seven-field identity copy, while the real assembly (mode, capabilities, `selectionResizable`, `editingAnchors`, device, zoom) is here at 873-906.
-- **`modifiers` is always all-false (884)** and no condition in `features/chrome-caps/*.ts` reads it (evidence, grep). Vestigial field.
-- **`multiActive: sel.length > 1` (883)** is derived from another argument of the same call.
-- **The mode gate is written twice** (evidence): `chromeCaps.ruleCtx` (938-939) and `getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}` (1317). `CanvasView.tsx:402` uses only the first.
-- **Refs** `selectionForCapsRef`, `getFocusedPropRef`, `chromeVisibilityRef`, `deviceProfileRef`, and `resizablePredRef` exist only to keep `buildRuleCtxFor` identity-stable.
+- **`modifiers` is not vestigial.** The `modifierHeld` condition (`conditions.ts`, exported) compiles to
+  a selector that `routing/src/eligibility/rule.ts` evaluates against `ctx.modifiers`. What is true is
+  that `<SceneCanvas>` always supplies all-false, so `modifierHeld` can never match on one. The fix is
+  a source of held modifiers for `surfaceRuleCtx`, not removing the field.
+- **`buildChromeCtx`, `BuildChromeCtxArgs`, and `ChromeCtx` are public and nothing in the kit calls
+  them.** Removing them is an API change.
+- **One ref stays in `SceneCanvasInner`:** the selection as of the last commit. `selection.current` is
+  a live getter on the kit's own selection, so reading it at rule time would run ahead of the painted
+  chrome.
 
 ### E. Mounter children and the refs that feed them
 
@@ -161,7 +171,7 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `getNodeAtPointRefForHover` | 807 | render | hover | duplicate of 732 |
 | `getActionRef` | 757 | registrar effect | dispatcher `getAction` | provider boundary that is gone |
 | `dispatcherRef` | 762 | init | everything gesture-related | lazy init |
-| five chrome-caps refs | 834-868 | render | `buildRuleCtxFor` | dependency array |
+| `committedSelectionRef` | — | render | `currentRuleInputs` | dependency array, and commit timing |
 | `chromeAffordancesRef` | 985 | mounter insertion effect | slops layer | child → parent, debug only |
 | `sceneRefForOverlay` | 970 | render | `livePathFor` | once-built layer memo |
 | `actionsRegistryRef` | 1099 | registrar effect | `ingestImpl` | provider boundary that is gone |
@@ -171,7 +181,6 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 
 ## Stale comments (checked against code)
 
-- **1-4:** "each of which registers its own actions, tools, ambient bindings, and chrome". The presets register nothing; see C.
 - **9-10:** "`Scene` stores absolute poses…". This describes the move action, and the scene composes local poses into world ones (`core/scene/composeFrame.ts:46`).
 - **209-211:** "Resolved once here and provided to the subtree". See N.
 - **214-218:** paint, hit-test, and slops "all resolve from this one object". `chromeSizes` feeds only a dead option.
@@ -179,14 +188,13 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 - **415-417:** `anchorEditingAllowed` "needs `getActiveModeRef`". It needs only `getActiveMode`.
 - **463-464:** thunks "live in an effect closure". They are `useMemo`s, and `affordanceAt` never reads the selection.
 - **754-756, 1096-1098, and `StandardActionsRegistrar.tsx:179-181`:** "OUTSIDE the actions provider". See E.
-- **855-856:** "its action is also dropped below". It is dropped above, at 746.
 - **967-969:** the path-editing overlay comment sits over unrelated declarations, 55 lines above the layer at 1025.
 - **1223-1225 and `props.ts:168`:** both discuss `onBackgroundClick`, and say opposite things about a prop that no longer exists.
 
 ## (a) Biggest simplifications, ranked
 
 1. Path-edit state, mask, live path, and overlay to `features/paths` (A).
-2. Chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
+2. Landed: chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
 3. Mounters become hooks, removing `getActionRef`, `actionsRegistryRef`, and the 37-prop call (E).
 4. One view channel shared with `<Canvas>` (F).
 5. Ingestion hook (J).
