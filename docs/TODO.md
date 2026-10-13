@@ -1114,6 +1114,17 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) A new dependency in browser-tested code fails the first fleet run that meets it.** A node
+  keeps `node_modules/.vite` between runs, and with a cache in place vite skips the scan of
+  `optimizeDeps.entries`. A dependency first imported since the cache was written is then found
+  mid-run, vite reloads the page, and the suites loading at that moment fail with "Vitest failed
+  to find the runner": 12 of them on 2026-10-13, when `Lab.tsx` first imported
+  `zustand/react/shallow`. That one is named in the `browser` project's `optimizeDeps.include`
+  now, which is a list someone has to keep. `optimizeDeps.force: true` was tried and is worse: in
+  two runs, on studio and on teitou, the browser session never connected, with a one-minute and a
+  three-minute timeout. Wants the cache keyed to what the entries import, or cleared on the node
+  when the tree's dependencies change.
+
 - **(P2) `onto` can start a suite in a tree another session synced; the fix belongs in
   `~/src/onto`.** weasel now turns this into a red run: `scripts/fleet-tree.gate.ts` fails when the
   tree is not the commit `npm run test:fleet` asked for, and the run has to be started again. On

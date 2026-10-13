@@ -210,13 +210,12 @@ export default defineConfig({
       // resolves none of. Headless Chromium, like forge-stories below.
       {
         ...shared,
-        // Scanned up front: a dependency discovered mid-run makes vite re-optimize and reload,
-        // and the reloaded page gets a second React ("Invalid hook call").
-        // `force`: a node keeps its dep cache between runs, and with one in place vite skips the scan,
-        // meets a newly imported dependency mid-run, and reloads the page under a dozen suites.
+        // A dependency met mid-run makes vite re-optimize and reload the page under the suites. The scan
+        // of `entries` prevents that only on a cold cache, and a fleet node keeps its cache between
+        // runs, so `include` names what it has missed. `force: true` stops the browser connecting.
         optimizeDeps: {
-          force: true,
           entries: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'],
+          include: ['zustand/react/shallow'],
         },
         test: {
           name: 'browser',
@@ -235,9 +234,6 @@ export default defineConfig({
             provider: playwright(),
             commands: browserCommands,
             headless: true,
-            // The forced re-scan above bundles every dependency before the page can load, which on a
-            // busy node outlasts the default minute.
-            connectTimeout: 180_000,
             instances: [{ browser: 'chromium' }],
           },
         },
