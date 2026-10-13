@@ -347,9 +347,7 @@ Priority tags:
   missing `getChildren` as "no siblings". `useSelectTool.zorder.test.tsx` and
   `useSelectTool.viewGates.test.tsx` pin the flat path. Needs a decision: require the tree of
   every adapter and delete those paths, or keep the flat list as the least a hand-written adapter
-  can be. A smaller end: `sceneAsHierarchy`
-  (`canvas/sceneViewRender.ts`) rebuilds four of `sceneToAdapter`'s reads because
-  `sceneAdapter.ts` imports React for `useSceneAdapter`, which a headless render cannot.
+  can be.
 
 - **(P3) A marquee and a lasso disagree on a node whose descriptor bounds reach past what it
   draws.** Two nodes share the pose `{0, 0, 40, 10}`, and a descriptor's `forNode` gives one a

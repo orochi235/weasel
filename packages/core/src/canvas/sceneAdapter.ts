@@ -3,7 +3,6 @@
  * `getPose` / `setPose` return / write **local** coordinates (relative to
  * parent); world composition is the renderer's job via `composeWorldPose`.
  */
-import { useMemo } from 'react';
 import type {
   AreaSelectAdapter,
   ClipboardSnapshot,
@@ -304,23 +303,4 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   };
 
   return adapter;
-}
-
-/**
- * React-hook wrapper around `sceneToAdapter`. Memoizes on every option, so
- * the adapter keeps its identity across renders unless one of them changes.
- */
-export function useSceneAdapter<TData, TLayer extends string, TPose>(
-  scene: Scene<TData, TLayer, TPose>,
-  options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
-): SceneCanvasAdapter<TData, TLayer, TPose> {
-  const {
-    selection, commitInsert, insertLayer, layouts, poseDescriptor,
-  } = options;
-  return useMemo(
-    () => sceneToAdapter(scene, {
-      selection, commitInsert, insertLayer, layouts, poseDescriptor,
-    }),
-    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor],
-  );
 }

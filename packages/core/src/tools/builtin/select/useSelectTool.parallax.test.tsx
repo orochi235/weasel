@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useScene } from 'core/scene/useScene';
-import { useSceneAdapter } from 'canvas/sceneAdapter';
+import { useSceneAdapter } from 'canvas/useSceneAdapter';
 import { useSelection } from 'core/selection/useSelection';
 import { useSelectTool } from './useSelectTool';
 import { asNodeId } from 'core/scene/types';

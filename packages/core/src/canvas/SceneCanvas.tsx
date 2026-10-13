@@ -52,7 +52,7 @@ import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewLayerGate } from './SceneCanvas/useViewLayerGate';
 import { viewportZoomOption } from './SceneCanvas/useViewportActions';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
-import { useSceneAdapter } from './sceneAdapter';
+import { useSceneAdapter } from './useSceneAdapter';
 import { composeAlphaFor } from './sceneSlotWiring';
 import { useHitObserver } from './useHitObserver';
 import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';

@@ -17,6 +17,7 @@ function fakeScene(nodes: Node<unknown, 'default', RectPose>[]): Scene<unknown, 
   return {
     layers: [{ id: 'default', visible: true, locked: false }],
     roots: nodes.map((n) => n.id),
+    childrenOf: () => [],
     renderOrder: () => nodes.map((n) => n.id),
     renderOrderNodes: () => nodes,
     composition: IDENTITY_POSE_COMPOSITION,
