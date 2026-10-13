@@ -8,7 +8,7 @@ import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
 import { composeOutline, offsetOutline } from './composeOutline';
-import { paddingStyle } from './paddingSides';
+import { liftPadding, paddingStyle } from './paddingSides';
 import { useInsets } from './useInsets';
 import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
@@ -202,7 +202,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
       boxDecorationBreak: breakStyle,
       WebkitBoxDecorationBreak: breakStyle,
     }),
-    ...styleOverride,
+    ...liftPadding(styleOverride),
   };
 
   const commonProps = {

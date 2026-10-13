@@ -230,6 +230,29 @@ describe('Badge removable with an action of its own', () => {
 
 // jsdom resolves no var() and the CSS-module proxy answers any key, so these
 // read the stylesheet as text — a proxy for the rules existing at all.
+describe('Badge padded through style', () => {
+  // A proxy for the click target: the stylesheet pads the root and stretches a removable badge's
+  // label from the same --badge-pad-* properties, and jsdom lays neither out.
+  it('pads through the properties the click target reads, not through padding itself', () => {
+    const { container } = render(
+      <Badge onClick={() => {}} onRemove={() => {}} style={{ padding: '2px 12px', paddingLeft: 20 }}>x</Badge>,
+    );
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.style.padding).toBe('');
+    expect(el.style.paddingLeft).toBe('');
+    expect(el.style.getPropertyValue('--badge-pad-top')).toBe('2px');
+    expect(el.style.getPropertyValue('--badge-pad-right')).toBe('12px');
+    expect(el.style.getPropertyValue('--badge-pad-left')).toBe('20px');
+  });
+
+  it('lets style win over the padding prop', () => {
+    const { container } = render(<Badge padding={4} style={{ paddingRight: 9 }}>x</Badge>);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.style.getPropertyValue('--badge-pad-left')).toBe('4px');
+    expect(el.style.getPropertyValue('--badge-pad-right')).toBe('9px');
+  });
+});
+
 describe('Badge stylesheet', () => {
   const css = readFileSync(resolve(__dirname, 'Badge.module.css'), 'utf8');
 
