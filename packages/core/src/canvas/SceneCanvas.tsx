@@ -845,14 +845,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     boundsOf: internalBoundsOf,
     boundsOfPose: internalBoundsOfPose as SurfaceViewInputs['boundsOfPose'],
     planeOfNode: internalPlaneOfNode,
-    tools,
     pickEvery: internalPickEvery,
     pickBest: internalPickBest,
     kindOfNode,
     chromeCaps,
     selectionApi: selection,
     rotationBadge,
-  }), [adapter, descriptor, internalBoundsOf, internalBoundsOfPose, internalPlaneOfNode, tools,
+  }), [adapter, descriptor, internalBoundsOf, internalBoundsOfPose, internalPlaneOfNode,
        internalPickEvery, internalPickBest, kindOfNode, chromeCaps, selection, rotationBadge]);
 
   const canvas = (
