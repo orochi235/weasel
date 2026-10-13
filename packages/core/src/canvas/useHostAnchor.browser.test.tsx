@@ -22,8 +22,6 @@ function Panel({ host }: { host: Element }) {
   return <div ref={ref} data-testid="panel" style={{ position: 'fixed', width: 10, height: 10, ...style }} />;
 }
 
-const settled = () => new Promise((r) => setTimeout(r, 250));
-
 function mount(): { sibling: HTMLDivElement; host: HTMLDivElement; panelTop: () => number } {
   page = document.createElement('div');
   page.innerHTML =
@@ -42,23 +40,22 @@ function mount(): { sibling: HTMLDivElement; host: HTMLDivElement; panelTop: () 
 describe('useHostAnchor', () => {
   it('follows a host that a collapsing sibling moves', async () => {
     const { sibling, host, panelTop } = mount();
-    await settled();
-    expect(panelTop()).toBeCloseTo(host.getBoundingClientRect().top, 0);
+    const hostTop = () => Math.round(host.getBoundingClientRect().top);
+    await expect.poll(() => Math.round(panelTop())).toBe(hostTop());
 
-    const before = host.getBoundingClientRect().top;
+    const before = hostTop();
     sibling.style.height = '0px';
-    await settled();
-    expect(host.getBoundingClientRect().top).toBeCloseTo(before - 80, 0);
-    expect(panelTop()).toBeCloseTo(host.getBoundingClientRect().top, 0);
+    expect(hostTop()).toBe(before - 80);
+    await expect.poll(() => Math.round(panelTop())).toBe(before - 80);
   });
 
   it('keeps following through a second move', async () => {
     const { sibling, host, panelTop } = mount();
-    await settled();
+    const hostTop = () => Math.round(host.getBoundingClientRect().top);
+    const start = hostTop();
     sibling.style.height = '0px';
-    await settled();
+    await expect.poll(() => Math.round(panelTop())).toBe(start - 80);
     sibling.style.height = '140px';
-    await settled();
-    expect(panelTop()).toBeCloseTo(host.getBoundingClientRect().top, 0);
+    await expect.poll(() => Math.round(panelTop())).toBe(start + 60);
   });
 });

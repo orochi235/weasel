@@ -1094,17 +1094,6 @@ only story runner in the repo.
   with a gradient measures one program. A pattern fill still breaks the run; replace the variant
   with one, and count draws to pin the premise.
 
-- **(P2) `useHostAnchor.browser.test.tsx` fails on the fleet about every other run.** Two full
-  runs on 2026-10-12 each failed one test in it, a different one each time: "keeps following
-  through a second move" read 0 where it expected 140 (studio), and "follows a host that a
-  collapsing sibling moves" left the panel 80px from its host (teitou). Neither commit changes
-  anything under `packages/core`, and the file passed in a full run of `main` the same evening.
-  Both are assertion failures after `settled()`, not timeouts, so the panel had not followed the
-  host by the time the test read it. The second also failed once in a fleet run of `main` at
-  `d5a9d4943` and passed on that commit in the run before. Not reproduced, and not run alone. The
-  assertion reads the anchor before the observer that moves it has fired; it wants to wait on the
-  position rather than read it once.
-
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
   failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a
   `locator.screenshot` timeout, and passed in the runs around it:
