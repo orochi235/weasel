@@ -277,6 +277,7 @@ a:hover { text-decoration: underline; }
   color: var(--wzl-fg-subtle);
   font-style: italic;
 }
+.ckd-hint kbd { font-style: normal; }
 
 /* A row of inline controls under a canvas (EffectsDemo's blur slider). */
 .ckd-controls {

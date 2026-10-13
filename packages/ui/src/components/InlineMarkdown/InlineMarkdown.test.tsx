@@ -21,6 +21,15 @@ describe('InlineMarkdown', () => {
     expect(c.textContent).toBe('Every gesture form is one two surface.');
   });
 
+  it('renders a kbd shortcut as one key cap per key, in the reader’s own legend', () => {
+    const c = html('Press <kbd>Mod+Shift+Z</kbd> to redo, or <kbd>Escape</kbd>.');
+    const caps = [...c.querySelectorAll('kbd')].map((k) => k.textContent);
+    expect(caps.slice(-2, -1)).toEqual(['Z']);
+    expect(caps).toHaveLength(4);
+    expect(c.textContent).not.toContain('Mod');
+    expect(inlineMarkdownText('Press <kbd>Mod+Z</kbd>.')).toBe('Press Mod+Z.');
+  });
+
   it('renders marks inside marks', () => {
     const c = html('**never `eval`** it');
     expect(c.querySelector('strong code')?.textContent).toBe('eval');

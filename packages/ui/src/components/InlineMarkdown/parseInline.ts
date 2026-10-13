@@ -2,19 +2,21 @@
 export type InlineToken =
   | { type: 'text'; text: string }
   | { type: 'code'; text: string }
+  /** A shortcut, as `keySpecsFromChord` reads one. */
+  | { type: 'keys'; chord: string }
   | { type: 'strong' | 'em' | 'del'; children: InlineToken[] }
   | { type: 'link'; href: string; children: InlineToken[] };
 
-// Alternatives in precedence order: a code span, strong, emphasis, strikethrough, a link, an escaped mark.
+// Alternatives in precedence order: a code span, a shortcut, strong, emphasis, strikethrough, a link, an escaped mark.
 // A mark opens and closes against a non-space, so `a * b` and a glob's `*.ts` stay as written. Underscores
 // are never emphasis: prose here names snake_case identifiers.
 const INLINE =
-  /`([^`]+)`|\*\*(?=\S)([^]+?)(?<=\S)\*\*|\*(?=[^\s*])([^*]+?)(?<=\S)\*|~~(?=\S)([^]+?)(?<=\S)~~|\[([^\]]+)\]\(([^)\s]+)\)|\\([`*~[\]\\])/g;
+  /`([^`]+)`|<kbd>([^<]+)<\/kbd>|\*\*(?=\S)([^]+?)(?<=\S)\*\*|\*(?=[^\s*])([^*]+?)(?<=\S)\*|~~(?=\S)([^]+?)(?<=\S)~~|\[([^\]]+)\]\(([^)\s]+)\)|\\([`*~[\]\\])/g;
 
 const SAFE_HREF = /^(https?:|mailto:|[/#.])/i;
 
 /**
- * Reads a line of inline markdown: code spans in backticks, `**strong**`, `*emphasis*`,
+ * Reads a line of inline markdown: code spans in backticks, a shortcut in `<kbd>Mod+Z</kbd>`, `**strong**`, `*emphasis*`,
  * `~~strikethrough~~`, and `[label](href)` links, with a backslash keeping a mark literal. Nothing
  * block-level. A link whose `href` is not http(s), mailto, or relative comes back as its label alone.
  */
@@ -29,8 +31,9 @@ export function parseInline(source: string): InlineToken[] {
   for (const m of source.matchAll(INLINE)) {
     text(source.slice(at, m.index));
     at = m.index + m[0].length;
-    const [, code, strong, em, del, label, href, escaped] = m;
+    const [, code, chord, strong, em, del, label, href, escaped] = m;
     if (code !== undefined) out.push({ type: 'code', text: code });
+    else if (chord !== undefined) out.push({ type: 'keys', chord });
     else if (strong !== undefined) out.push({ type: 'strong', children: parseInline(strong) });
     else if (em !== undefined) out.push({ type: 'em', children: parseInline(em) });
     else if (del !== undefined) out.push({ type: 'del', children: parseInline(del) });
@@ -52,6 +55,6 @@ export function parseInline(source: string): InlineToken[] {
  *  a screen reader speaks. */
 export function inlineMarkdownText(source: string): string {
   const flat = (tokens: InlineToken[]): string =>
-    tokens.map((t) => ('text' in t ? t.text : flat(t.children))).join('');
+    tokens.map((t) => ('text' in t ? t.text : 'chord' in t ? t.chord : flat(t.children))).join('');
   return flat(parseInline(source));
 }

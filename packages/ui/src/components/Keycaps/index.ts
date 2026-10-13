@@ -6,6 +6,7 @@ export { keyGlyph } from './keyGlyph';
 export { keySpecsFromMods, keySpecFromKey, detectPlatform } from './keySpecsFromMods';
 export { keySpecsFromLegend } from './keySpecsFromLegend';
 export { keySpecsFromShortcut } from './keySpecsFromShortcut';
+export { keySpecsFromChord } from './keySpecsFromChord';
 export type {
   LogicalMod,
   LogicalModSpec,

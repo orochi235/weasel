@@ -256,7 +256,7 @@ function DemoView({ entry }: { entry: DemoEntry }) {
         <Suspense fallback={<div className="ckd-demo-loading" />}>
           <Component />
         </Suspense>
-        {entry.hint && <span className="ckd-hint">{entry.hint}</span>}
+        {entry.hint && <span className="ckd-hint"><InlineMarkdown text={entry.hint} /></span>}
       </div>
 
       <div className="ckd-code-panel" ref={panelRef}>
