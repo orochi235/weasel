@@ -630,12 +630,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) A `Badge` with both `onClick` and `onRemove` renders a `<button>` inside a `<button>`.**
-  `Badge.tsx` wraps its content in a `<button>` when it is clickable and draws the remove control as
-  a second `<button>` inside it. React logs "<button> cannot contain a nested <button>" when
-  `Badge.test.tsx` "fires onRemove without firing wrapper onClick" runs, and no test marks it. The
-  fix moves the click target off the outer element (a `role="button"` wrapper beside the remove
-  control), which changes the badge's box and needs a browser to check.
+- **(P3) A removable badge's click target is its label only.** Since the nested button fix, a
+  `Badge` with `onRemove` and `onClick` or `href` has a `<span>` root, and the label inside it takes
+  the click, so the badge's padding and the gap before the remove control no longer click. Stretch
+  the label's hit area over the padding without covering the remove control.
+
+- **(P3) A `Badge` drawn with `base` may show no focus indicator.** Read from `Badge.module.css`
+  and not tested, clickable or not.
 
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (flip, align, distribute, clone, clipboard, booleans, outlines,
@@ -1077,16 +1078,9 @@ only story runner in the repo.
   `tests/perf/draw-loop.spec.ts` on 2026-10-13 printed -0.15 ms for `scene` and -0.07 ms for
   `rotated` in the 100-command row. Not investigated.
 
-- **(P2) `useHostAnchor.browser.test.tsx` fails on the fleet about every other run.** Two full
-  runs on 2026-10-12 each failed one test in it, a different one each time: "keeps following
-  through a second move" read 0 where it expected 140 (studio), and "follows a host that a
-  collapsing sibling moves" left the panel 80px from its host (teitou). Neither commit changes
-  anything under `packages/core`, and the file passed in a full run of `main` the same evening.
-  Both are assertion failures after `settled()`, not timeouts, so the panel had not followed the
-  host by the time the test read it. The second also failed once in a fleet run of `main` at
-  `d5a9d4943` and passed on that commit in the run before. Not reproduced, and not run alone. The
-  assertion reads the anchor before the observer that moves it has fired; it wants to wait on the
-  position rather than read it once.
+- **(P3) `watchElementMove` stops watching a host that is zero-sized when a frame is built.**
+  `packages/core/src/canvas/watchElementMove.ts`. `useHostAnchor`'s `ResizeObserver` recomputes
+  when the host gains size, but the position watch does not restart. Read from the code, not tested.
 
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
   failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a
