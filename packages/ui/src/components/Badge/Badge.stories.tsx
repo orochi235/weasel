@@ -167,6 +167,17 @@ export const Removable: Story = { args: { onRemove: () => {} } };
 
 export const Clickable: Story = { args: { onClick: () => {} } };
 
+/** With both, the root stays a `<span>`: the label is the click target and the remove button sits beside it. */
+export const ClickableRemovable: Story = {
+  name: 'Clickable and removable',
+  args: { onClick: () => {}, onRemove: () => {} },
+};
+
+export const LinkRemovable: Story = {
+  name: 'Link and removable',
+  args: { href: '#badge', onRemove: () => {} },
+};
+
 /** A plain badge with `tooltip` joins the tab order as an image named by its
  *  text; hover or Tab to it. */
 export const WithTooltip: Story = {

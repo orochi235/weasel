@@ -162,14 +162,24 @@ a.badge {
      from shape-specific rules still apply on top. */
   border: 0 solid transparent;
 }
+/* A removable badge's label, standing in for the root as its button or link. The root
+   draws the focus ring, from data-focused. */
+.target {
+  color: inherit;
+  outline: 0;
+}
+.target:is(a, [role='button']) { cursor: pointer; }
+
 /* Mixed from what the edge is made of: a property that reads itself is a cycle, and resolves to nothing. */
 button.badge:hover,
-a.badge:hover {
+a.badge:hover,
+.badge:has(.target:is(a, [role='button']):hover) {
   --badge-edge: color-mix(in oklab, var(--_s-accent, var(--badge-status-edge)) 88%, white);
 }
 @media (prefers-reduced-motion: reduce) {
   button.badge:hover,
-  a.badge:hover { --badge-edge: var(--_s-accent, var(--badge-status-edge)); }
+  a.badge:hover,
+  .badge:has(.target:is(a, [role='button']):hover) { --badge-edge: var(--_s-accent, var(--badge-status-edge)); }
 }
 
 .remove {
@@ -189,6 +199,11 @@ a.badge:hover {
   font-size: var(--wzl-font-size);
   line-height: 1;
   vertical-align: middle;
+  /* Its content is an svg, so in a baseline-aligned row it would stand on the baseline, and at
+     md it is taller than the label's line. Either would make the badge taller than one with no
+     remove control. */
+  align-self: center;
+  margin-block: -4px;
 }
 .remove:hover { background: color-mix(in oklab, var(--badge-fg) 20%, transparent); }
 .remove > svg { display: block; }

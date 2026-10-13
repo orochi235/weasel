@@ -9,6 +9,7 @@ import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import { EFFECTS, type EffectSpec, type BadgeEffect } from './effects';
 import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
+import { BadgeRemove, BadgeTarget } from './BadgeLabel';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 import { type StanceProps, useStance } from '../stance';
 
@@ -51,6 +52,7 @@ interface BadgeBaseProps extends StanceProps {
    * trigger must be focusable and carry a role that announces its
    * description, so a badge that is neither a button nor a link joins the tab
    * order as `role="img"`, named by `aria-label` or else by string content.
+   * On a badge with `onRemove`, the label is the trigger rather than the root.
    */
   tooltip?: ReactNode;
 }
@@ -82,6 +84,11 @@ function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
 /**
  * A small labelled chip. Renders as a `<span>`, or as a `<button>`/`<a>` when
  * given `onClick`/`href` — override with `as`.
+ *
+ * With `onRemove` the root is always a `<span>`, since neither a button nor a
+ * link may hold the remove button. The label inside it takes the action
+ * instead, as a `role="button"` element or an `<a>`, along with `aria-label`
+ * and the tooltip, and the remove button sits beside it.
  *
  * Beyond the built-in {@link BadgeShape} silhouettes, a badge can be composed:
  * `base` picks the underlying outline and `effects` layer perimeter treatments
@@ -123,6 +130,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   } = props;
   const element = chooseElement(props);
   const tooltipOnPlainBadge = tooltip != null && element === 'span';
+  const split = onRemove != null && (element !== 'span' || tooltip != null);
   const ariaLabel = ariaLabelProp
     ?? (tooltipOnPlainBadge && (typeof children === 'string' || typeof children === 'number') ? String(children) : undefined);
   const [focused, setFocused] = useState(false);
@@ -195,7 +203,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
 
   const commonProps = {
     ...domProps,
-    ...(tooltipOnPlainBadge && domProps.role === undefined && { role: 'img' }),
+    ...(tooltipOnPlainBadge && !split && domProps.role === undefined && { role: 'img' }),
     className: cls,
     style,
     'data-shape': composeBase ? 'compose' : resolvedShape,
@@ -205,9 +213,9 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     'data-variant': variant,
     'data-size': size,
     'data-focused': focused ? 'true' : undefined,
-    onFocus: (e: FocusEvent<HTMLElement>) => { setFocused(true); onFocus?.(e); },
-    onBlur: (e: FocusEvent<HTMLElement>) => { setFocused(false); onBlur?.(e); },
-    'aria-label': ariaLabel,
+    onFocus: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(true); onFocus?.(e); },
+    onBlur: (e: FocusEvent<HTMLElement>) => { if (!split) setFocused(false); onBlur?.(e); },
+    'aria-label': split ? undefined : ariaLabel,
   };
 
   // Sample the base perimeter at COMPOSE_SAMPLES points and sum every offset-style
@@ -320,26 +328,17 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     <>
       {decoSvg}
       <span className={s.content}>
-        <span>{children}</span>
-        {onRemove && (
-          <button
-            type="button"
-            className={s.remove}
-            aria-label={removeLabel ?? 'Remove'}
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-          >
-            <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true" focusable="false">
-              <path d="M 2 2 L 8 8 M 8 2 L 2 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-            </svg>
-          </button>
-        )}
+        {split ? (
+          <BadgeTarget element={element} href={href} onClick={onClick} aria-label={ariaLabel} tooltip={tooltip} onFocusChange={setFocused}>
+            {children}
+          </BadgeTarget>
+        ) : <span>{children}</span>}
+        {onRemove && <BadgeRemove label={removeLabel} onRemove={onRemove} />}
       </span>
     </>
   );
 
+  if (split) return <span {...commonProps} ref={ref}>{inner}</span>;
   let badge;
   if (element === 'button') {
     badge = (

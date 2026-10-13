@@ -118,6 +118,116 @@ describe('Badge removable', () => {
   });
 });
 
+const INTERACTIVE = 'button, a, [role="button"], [tabindex]';
+
+/** Interactive elements that sit inside another one, which HTML forbids for a button or a link. */
+function nestedInteractive(container: HTMLElement): Element[] {
+  return [...container.querySelectorAll(INTERACTIVE)].filter((el) => el.parentElement?.closest(INTERACTIVE));
+}
+
+describe('Badge removable with an action of its own', () => {
+  const cases = {
+    'onClick': <Badge onClick={() => {}} onRemove={() => {}}>x</Badge>,
+    'href': <Badge href="/x" onRemove={() => {}}>x</Badge>,
+    'as="button"': <Badge as="button" onRemove={() => {}}>x</Badge>,
+    'a tooltip': <Badge tooltip="tip" onRemove={() => {}}>x</Badge>,
+    'onClick and a tooltip': <Badge tooltip="tip" onClick={() => {}} onRemove={() => {}}>x</Badge>,
+  };
+
+  for (const [name, badge] of Object.entries(cases)) {
+    it(`nests no interactive element in another with ${name}`, () => {
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { container } = render(badge);
+      expect(nestedInteractive(container)).toEqual([]);
+      expect(container.firstElementChild?.tagName).toBe('SPAN');
+      expect(container.firstElementChild?.matches(INTERACTIVE)).toBe(false);
+      expect(errors).not.toHaveBeenCalled();
+      errors.mockRestore();
+    });
+  }
+
+  it('keeps the box, the data attributes, and the ref on the root', () => {
+    const ref = createRef<HTMLElement>();
+    const { container } = render(
+      <Badge ref={ref} id="b1" status="warn" size="md" shape="notched" onClick={() => {}} onRemove={() => {}}>x</Badge>,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(ref.current).toBe(root);
+    expect(root.id).toBe('b1');
+    expect(root.dataset.status).toBe('warn');
+    expect(root.dataset.size).toBe('md');
+    expect(root.dataset.shape).toBe('notched');
+    expect(root.style.getPropertyValue('--badge-inset-left')).toBe('4px');
+  });
+
+  it('fires onClick from a click, Enter, and Space on the click target', () => {
+    const onClick = vi.fn();
+    const onRemove = vi.fn();
+    render(<Badge aria-label="Filter by tag" onClick={onClick} onRemove={onRemove}>tag</Badge>);
+    const target = screen.getByRole('button', { name: 'Filter by tag' });
+    expect(target.tabIndex).toBe(0);
+    target.click();
+    expect(onClick).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(target, { key: 'Enter' });
+    expect(onClick).toHaveBeenCalledTimes(2);
+    fireEvent.keyDown(target, { key: ' ' });
+    fireEvent.keyUp(target, { key: ' ' });
+    expect(onClick).toHaveBeenCalledTimes(3);
+    expect(onRemove).not.toHaveBeenCalled();
+  });
+
+  it('fires only onRemove from the remove control, by click', () => {
+    const onClick = vi.fn();
+    const onRemove = vi.fn();
+    render(<Badge onClick={onClick} onRemove={onRemove}>tag</Badge>);
+    const remove = screen.getByRole('button', { name: 'Remove' });
+    remove.click();
+    fireEvent.keyDown(remove, { key: 'Enter' });
+    fireEvent.keyDown(remove, { key: ' ' });
+    fireEvent.keyUp(remove, { key: ' ' });
+    expect(onRemove).toHaveBeenCalledTimes(1);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('links the label and leaves the remove control beside the link', () => {
+    const onRemove = vi.fn();
+    render(<Badge href="/tags/x" onRemove={onRemove}>tag</Badge>);
+    const link = screen.getByRole('link', { name: 'tag' });
+    expect(link.getAttribute('href')).toBe('/tags/x');
+    const remove = screen.getByRole('button', { name: 'Remove' });
+    expect(link.contains(remove)).toBe(false);
+    expect(remove.parentElement).toBe(link.parentElement);
+  });
+
+  it('marks the root focused while the click target holds focus, not the remove control', () => {
+    const { container } = render(<Badge shape="notched" onClick={() => {}} onRemove={() => {}}>tag</Badge>);
+    const root = container.firstElementChild as HTMLElement;
+    const target = screen.getByRole('button', { name: 'tag' });
+    fireEvent.focus(target);
+    expect(root.getAttribute('data-focused')).toBe('true');
+    expect(container.querySelector('.badge-focus')).not.toBeNull();
+    fireEvent.blur(target);
+    fireEvent.focus(screen.getByRole('button', { name: 'Remove' }));
+    expect(root.hasAttribute('data-focused')).toBe(false);
+  });
+
+  it('describes the click target with the tooltip', () => {
+    render(<Badge tooltip="Filter by tag" onClick={() => {}} onRemove={() => {}}>tag</Badge>);
+    const target = screen.getByRole('button', { name: 'tag' });
+    keyboardFocus(target);
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toContain('Filter by tag');
+    expect(target.getAttribute('aria-describedby')).toBe(tip.id);
+  });
+
+  it('keeps the remove control reachable beside a tooltip-only label', () => {
+    render(<Badge tooltip="Matched by a predicate" onRemove={() => {}}>?</Badge>);
+    const label = screen.getByRole('img', { name: '?' });
+    expect(label.tabIndex).toBe(0);
+    expect(label.contains(screen.getByRole('button', { name: 'Remove' }))).toBe(false);
+  });
+});
+
 // jsdom resolves no var() and the CSS-module proxy answers any key, so these
 // read the stylesheet as text — a proxy for the rules existing at all.
 describe('Badge stylesheet', () => {

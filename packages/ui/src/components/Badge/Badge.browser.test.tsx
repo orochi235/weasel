@@ -5,7 +5,7 @@ import { userEvent } from 'vitest/browser';
 import { painted } from '../../testing/paintedContrast';
 import { GestureRoute } from '../GestureRoute/GestureRoute';
 import { Badge } from './Badge';
-import type { BadgeStatus } from './types';
+import type { BadgeShape, BadgeSize, BadgeStatus } from './types';
 
 // Badge colors come from tokens that follow currentColor and from color-mix,
 // neither of which jsdom resolves, so legibility is only checkable here.
@@ -131,5 +131,106 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
     const hovered = edge();
     expect(luminance(hovered)).toBeGreaterThan(luminance(rest));
     expect(hovered[0] - hovered[2], 'still a red').toBeGreaterThan(80);
+  });
+});
+
+// The remove button cannot sit inside a root button or link, so a removable badge with an
+// action moves the action onto its label. The box has to come out the same as any other badge's.
+describe('a removable badge with an action', () => {
+  const textBox = (badge: HTMLElement, text: string): DOMRect => {
+    const walker = document.createTreeWalker(badge, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      if (walker.currentNode.textContent !== text) continue;
+      const range = document.createRange();
+      range.selectNodeContents(walker.currentNode);
+      return range.getBoundingClientRect();
+    }
+    throw new Error(`no text ${text}`);
+  };
+  const row = (shape: BadgeShape, size: BadgeSize) => {
+    const { container } = render(
+      <Surface mode="light">
+        <p>
+          <Badge shape={shape} size={size} status="info">label</Badge>{' '}
+          <Badge shape={shape} size={size} status="info" onRemove={() => {}}>label</Badge>{' '}
+          <Badge shape={shape} size={size} status="info" onClick={() => {}} onRemove={() => {}}>label</Badge>{' '}
+          <Badge shape={shape} size={size} status="info" href="#x" onRemove={() => {}}>label</Badge>
+        </p>
+      </Surface>,
+    );
+    const [plain, removable, clickable, link] = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+    return { plain, removable, clickable, link };
+  };
+
+  const SHAPES: readonly BadgeShape[] = ['pill', 'square', 'notched', 'plain'];
+  const SIZES: readonly BadgeSize[] = ['xs', 'sm', 'md'];
+
+  for (const shape of SHAPES) {
+    for (const size of SIZES) {
+      test(`${shape} ${size}: sits on the baseline and at the height of a plain badge`, () => {
+        const { plain, removable, clickable, link } = row(shape, size);
+        const want = plain.getBoundingClientRect();
+        const wantText = textBox(plain, 'label');
+        for (const badge of [clickable, link]) {
+          const got = badge.getBoundingClientRect();
+          expect(got.height).toBeCloseTo(want.height, 1);
+          expect(got.top).toBeCloseTo(want.top, 1);
+          const text = textBox(badge, 'label');
+          expect(text.top).toBeCloseTo(wantText.top, 1);
+          expect(text.bottom).toBeCloseTo(wantText.bottom, 1);
+          // The same content as a badge that is only removable, so the same width.
+          expect(got.width).toBeCloseTo(removable.getBoundingClientRect().width, 1);
+        }
+      });
+
+      test(`${shape} ${size}: holds the remove control inside its box`, () => {
+        const { clickable, link } = row(shape, size);
+        for (const badge of [clickable, link]) {
+          const box = badge.getBoundingClientRect();
+          const remove = badge.querySelector('button')!.getBoundingClientRect();
+          expect(remove.width).toBeGreaterThan(0);
+          expect(remove.left).toBeGreaterThanOrEqual(box.left);
+          expect(remove.right).toBeLessThanOrEqual(box.right);
+          // A plain badge is a bare run of text with no box to hold anything vertically.
+          if (shape === 'plain') continue;
+          expect(remove.top).toBeGreaterThanOrEqual(box.top - 0.5);
+          expect(remove.bottom).toBeLessThanOrEqual(box.bottom + 0.5);
+        }
+      });
+    }
+  }
+
+  test('a linked label keeps the badge\'s ink and takes no underline', () => {
+    const { plain, link } = row('pill', 'sm');
+    const anchor = link.querySelector('a')!;
+    expect(getComputedStyle(anchor).color).toBe(getComputedStyle(plain.lastElementChild!).color);
+    expect(getComputedStyle(anchor).textDecorationLine).toBe('none');
+    expect(getComputedStyle(anchor).cursor).toBe('pointer');
+  });
+
+  test('focusing the label rings the badge, and the label draws no ring of its own', async () => {
+    const { clickable } = row('pill', 'sm');
+    const target = clickable.querySelector<HTMLElement>('[role="button"]')!;
+    target.focus();
+    await waitFor(() => expect(getComputedStyle(clickable).outlineStyle).toBe('solid'));
+    expect(getComputedStyle(target).outlineStyle).toBe('none');
+  });
+
+  test('Enter on the label acts, and the remove control is the next tab stop', async () => {
+    let clicks = 0;
+    let removes = 0;
+    const { container } = render(
+      <Surface mode="light">
+        <Badge onClick={() => { clicks++; }} onRemove={() => { removes++; }}>label</Badge>
+      </Surface>,
+    );
+    await userEvent.tab();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.keyboard(' ');
+    expect([clicks, removes]).toEqual([2, 0]);
+    await userEvent.tab();
+    expect(document.activeElement).toBe(container.querySelector('button'));
+    await userEvent.keyboard('{Enter}');
+    expect([clicks, removes]).toEqual([2, 1]);
   });
 });
