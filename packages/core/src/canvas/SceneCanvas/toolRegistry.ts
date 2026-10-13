@@ -1,5 +1,5 @@
 import type { AnyTool } from 'tools/overlayBinding';
-import type { BaseFeature } from './features';
+import { featureToolIds, type BaseFeature } from './features';
 import { IS_DEV } from './isDev';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 
@@ -14,8 +14,8 @@ export interface ResolveToolRegistryArgs {
   builtins: BuiltinTools;
   /** Built-ins asked for by id. */
   defaultTools?: readonly BuiltinToolId[];
-  /** The presets the canvas runs with: `select` brings the select tool and
-   *  `view` the hand. */
+  /** The presets the canvas runs with, each bringing the tools its
+   *  `FEATURE_PRESETS` row names. */
   enabled: ReadonlySet<BaseFeature>;
   patch: ToolsPatch | null;
   /** Whether to warn about a patch entry that is probably a mistake. */
@@ -32,13 +32,11 @@ export interface ResolveToolRegistryArgs {
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, AnyTool> {
   const { builtins, defaultTools = [], enabled, patch, dev = IS_DEV } = args;
   const registry: Record<string, AnyTool> = {};
+  const preset = featureToolIds(enabled);
   for (const id of BUILTIN_TOOL_IDS) {
     const patched = patch?.[id];
     if (patched === false) continue;
-    const asked = patched === true
-      || defaultTools.includes(id)
-      || (id === 'select' && enabled.has('select'))
-      || (id === 'hand' && enabled.has('view'));
+    const asked = patched === true || defaultTools.includes(id) || preset.has(id);
     if (asked) registry[id] = builtins[id];
   }
   for (const [id, value] of Object.entries(patch ?? {})) {

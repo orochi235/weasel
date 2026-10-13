@@ -48,11 +48,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type React from 'react';
 import { forwardRef, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
-import {
-  selectionMoveContribution,
-  selectionResizeContribution,
-  selectionRotateContribution,
-} from 'tools/builtin/select';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { createNodeRouting } from '../core/scene/NodeRouting';
 import { dwarn } from '../debug';
@@ -74,7 +69,10 @@ import { inferredNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import { createDispatcherPreviewSources, createGestureSource } from './SceneCanvas/dispatcherGestureBounds';
 import {
   featureActionIds,
-  resolveFeatures
+  featureAmbient,
+  featureChromeRules,
+  resolveFeatures,
+  type FeatureBindingOptions,
 } from './SceneCanvas/features';
 import {
   mergeLayersWithDefaults,
@@ -560,20 +558,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const liveToolsRef = useLatest<ToolsApi | null>(tools);
   const getActiveModeRef = useLatest(getActiveMode);
 
-  // The selection's own ambient bindings: `move`, `resize` and `rotate`. They
-  // are not tools and sit outside `tools`, so they apply under a takeover too.
-  const selectionMoveOptions = useMemo(
-    () => ({ move: internalMoveOptions }),
-    [internalMoveOptions],
-  );
+  // The presets' ambient bindings. They are not tools and sit outside `tools`,
+  // so they apply under a takeover too.
   const rotateOptions = selectToolOpts?.rotate || undefined;
-  // Handles first: a handle sits over the selected body, so the move binding
-  // matches a handle drag too, and a tie goes to whichever is first.
-  const featureContributions = useMemo<Contribution[]>(() => [
-    ...(enabled.has('resize') ? [selectionResizeContribution()] : []),
-    ...(enabled.has('rotate') ? [selectionRotateContribution({ rotate: rotateOptions })] : []),
-    ...(enabled.has('move') ? [selectionMoveContribution(selectionMoveOptions)] : []),
-  ], [enabled, selectionMoveOptions, rotateOptions]);
+  const featureContributions = useMemo<Contribution[]>(
+    () => featureAmbient(enabled, {
+      move: internalMoveOptions as FeatureBindingOptions['move'],
+      rotate: rotateOptions as FeatureBindingOptions['rotate'],
+    }),
+    [enabled, internalMoveOptions, rotateOptions],
+  );
 
   // Kit-standard actions to register: every preset's own, plus whichever a
   // tool or contribution on this canvas binds — a tool brings the actions it
@@ -702,10 +696,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // from Canvas.
   const selectionForCapsRef = useLatest(selection.current as readonly NodeId[]);
   const getFocusedPropRef = useLatest(getFocusedProp);
-  // Selection chrome belongs to the presets that turn it on: the outline to
-  // `outline`, each handle to the preset that binds it. `never` also takes a handle out of
-  // hit-testing, so a hidden handle cannot be grabbed.
-  //
   // `selectable={false}` suppresses the marquee / lasso chrome by default:
   // every selection write no-ops then, so the select tool's
   // empty-drag binding still CLAIMS the gesture (keeping it from falling
@@ -713,10 +703,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // An explicit consumer rule for either id still wins.
   const effectiveChromeVisibility = useMemo(() => {
     // Kit defaults first; consumer `chromeVisibility` spread last so it wins.
-    const defaults: import('features/chrome-caps').VisibilityRules = {};
-    if (!enabled.has('outline')) defaults['selection.outline'] = never;
-    if (!enabled.has('resize')) defaults['selection.resize-handles'] = never;
-    if (!enabled.has('rotate')) defaults['selection.rotation-handle'] = never;
+    const defaults = featureChromeRules(enabled);
     if (!selectable) {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;
