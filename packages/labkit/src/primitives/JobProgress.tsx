@@ -32,7 +32,7 @@ export function JobProgress({ job, className }: JobProgressProps) {
             progress updates never reflow the status bar. */}
         <div
           className="lk-job__fill"
-          style={{ transform: `scaleX(${determinate ? fraction : 1})` }}
+          style={determinate ? { transform: `scaleX(${fraction})` } : undefined}
         />
       </div>
 
