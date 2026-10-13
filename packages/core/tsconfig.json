@@ -9,8 +9,9 @@
   // directory, not the root's.
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    // `paths` sends every sibling to its source, and TS 6 defaults `rootDir`
-    // to this directory, which those files are outside of.
+    // The root sets `rootDir` for every other package. tsup's declaration
+    // build resolves an inherited one against this directory, as it does
+    // `paths`, and then fails on each sibling's source with TS6059.
     "rootDir": "../..",
     "outDir": "./dist",
     "tsBuildInfoFile": "../../.tsbuildinfo/core.tsbuildinfo",

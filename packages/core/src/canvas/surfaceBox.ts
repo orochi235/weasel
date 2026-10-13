@@ -1,3 +1,4 @@
+/// <reference path="../css-modules.d.ts" />
 import type { CSSProperties } from 'react';
 import s from './surface.module.css';
 

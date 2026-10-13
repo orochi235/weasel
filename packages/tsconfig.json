@@ -12,7 +12,6 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "types": ["node", "@vitest/browser/matchers"],
-    "rootDir": "..",
     "tsBuildInfoFile": "../.tsbuildinfo/browser-tests.tsbuildinfo"
   },
   // The .d.ts files are the ambient declarations (CSS modules, `?url`

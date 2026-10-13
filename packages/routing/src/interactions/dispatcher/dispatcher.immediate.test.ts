@@ -66,6 +66,7 @@ describe('createDispatcher', () => {
       // action (reorder/duplicate/flip/nudge/setFill/escape-fallthrough) could
       // never dispatch via the keyboard.
       const run = vi.fn();
+      // `selection` is a dep core merges into `DepSchema`; routing alone declares only `activeTool`.
       const action = {
         id: 'actionA',
         label: 'A',
@@ -74,7 +75,7 @@ describe('createDispatcher', () => {
         enabled: (deps?: { selection?: unknown[] }): true | 'selection-required' =>
           deps?.selection?.length ? true : 'selection-required',
         invoker: { timing: 'immediate' as const, run },
-      } as Action & { requires: string[] };
+      } as unknown as Action;
       const registry = makeRegistry([action]);
       const dispatcher = createDispatcher();
 
@@ -95,7 +96,6 @@ describe('createDispatcher', () => {
 
     it('passes deps from depRegistry to invoker.run', () => {
       const run = vi.fn();
-      // `requires` is a field not yet on Action's type; cast to add it.
       const action = {
         id: 'actionA',
         label: 'A',
@@ -103,7 +103,7 @@ describe('createDispatcher', () => {
         requires: ['selection'],
         invoker: { timing: 'immediate' as const, run },
         run,
-      } as Action & { requires: string[] };
+      } as unknown as Action;
       const depRegistry = makeDepRegistry({ selection: ['item1'] });
       const registry = makeRegistry([action]);
       const dispatcher = createDispatcher();

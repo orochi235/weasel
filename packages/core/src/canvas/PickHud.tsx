@@ -1,3 +1,4 @@
+/// <reference path="../css-modules.d.ts" />
 /**
  * Dev HUD listing the ids returned by `pickEvery(world)` under the cursor.
  *
