@@ -1375,16 +1375,6 @@ only story runner in the repo.
   machine (the job allows 100 minutes), and whether the base, measured first, reads differently
   from the head for that reason alone.
 
-- **(P3) labkit inlines siblings that own module state.** `packages/labkit/tsup.config.ts` bundles
-  every `@weasel-js/*` sibling except core, theme, and animator, and its own comment gives the
-  reason those are external: module-global state inlined twice is two copies of it. The same holds
-  for `@weasel-js/quantity` (`registerDisplayKind` writes a module-level map, so a kind an app
-  registers is unknown to the copy inside labkit's `dist`, and `displayKindOf` falls back to
-  decimal without a warning), `@weasel-js/storage` (`memorySubscribers`), and `@weasel-js/ui`
-  (`RecentColorsProvider`, the overlay portal host). labkit also lists those siblings as
-  `dependencies`, so a consumer installs one copy and runs another. In the repo, aliases resolve
-  both to one source, so no test can see it.
-
 - **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
   `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a
   throwing listener is logged and the rest run). These still hold a `Set` and a loop, because each

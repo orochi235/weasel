@@ -90,10 +90,9 @@ verifies that advertised export paths exist in the tarball.
 - **Peer ranges are exact.** Changesets rewrites an exact peer range in the
   same pass that bumps the group, so a dependent never sees an out-of-range
   peer and no release escalates to a major on its account.
-- **`labkit` externalizes core and theme rather than inlining them.** Its `tsup`
-  and `.d.ts` builds keep every other weasel sibling bundled and let those two
-  through as external specifiers, so there is something to peer and a consumer
-  resolves one copy. `test:smoke:consumer`'s peer-externalization audit is what
+- **`labkit` inlines no weasel sibling.** Its `tsup` and `.d.ts` builds leave
+  every one as an external specifier, so there is something to peer and a
+  consumer resolves one copy. `test:smoke:consumer`'s peer-externalization audit is what
   holds it: for every package, a `@weasel-js` peer it imports at runtime must
   appear as an external specifier in its own `dist` JS. An inlined peer
   resolves, bundles and renders against its own copy, which is the state no

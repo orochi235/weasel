@@ -70,8 +70,7 @@ function escapeRegex(s: string): string {
 
 // Everything a consumer installs alongside labkit stays an `import` in the
 // emitted types: third-party libs, the core/theme peers, and every weasel
-// sibling labkit declares as a dependency. The JS bundle inlines those
-// siblings, but their types must not be copied in: a copied type labkit never
+// sibling labkit declares as a dependency. A copied type labkit never
 // re-exports leaves a consumer whose inferred types reach it with TS2742.
 const external = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies }).map(
   (name) => new RegExp(`^${escapeRegex(name)}($|/)`),
