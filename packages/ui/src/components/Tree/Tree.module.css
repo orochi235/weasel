@@ -113,10 +113,22 @@
   align-items: center;
 }
 
+/* `--wzl-tree-leading-size`: every leading glyph sits in a square of that side, whatever the host handed in. One
+   of another shape is scaled to fit inside it, and centered. Unset, a glyph keeps its own size. */
+.leading {
+  justify-content: center;
+  inline-size: var(--wzl-tree-leading-size, auto);
+  block-size: var(--wzl-tree-leading-size, auto);
+}
+
+.leading > :is(svg, img) {
+  max-inline-size: 100%;
+  max-block-size: 100%;
+}
+
 .leading[data-tree-twisty] {
   cursor: pointer;
-  width: var(--wzl-tree-fold-size, 16px);
-  justify-content: center;
+  width: var(--wzl-tree-leading-size, var(--wzl-tree-fold-size, 16px));
   /* The row's gap is narrower than the gutter leaves after the glyph: the label starts where the gutter ends. */
   margin-inline: calc(-1 * var(--tree-gutter)) calc(var(--wzl-space-3) - var(--wzl-space-2));
 }

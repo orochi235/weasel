@@ -40,7 +40,7 @@ function Live() {
 const preview = () => screen.getByRole('region', { name: 'Live preview' });
 const cell = (key: string) => preview().querySelector(`[data-pref-path="${key}"]`) as HTMLElement;
 const treeRow = (tree: string, key: string) =>
-  within(screen.getByRole('tree', { name: tree })).getByText(`(${key})`).closest('[role="treeitem"]') as HTMLElement;
+  within(screen.getByRole('tree', { name: tree })).getByText(key).closest('[role="treeitem"]') as HTMLElement;
 
 test('an action dropped on the near half of a cell of a bar root lands before it', () => {
   render(<Live />);

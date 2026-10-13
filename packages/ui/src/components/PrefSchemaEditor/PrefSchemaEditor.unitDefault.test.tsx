@@ -37,14 +37,14 @@ const type = (name: string, text: string) => {
 describe('PrefSchemaEditor: a number shown in a unit', () => {
   it('shows its default and its auto value in that unit', () => {
     render(<Live />);
-    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(dim)'));
+    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('dim'));
     expect(attributes().getByRole('spinbutton', { name: 'Default' })).toHaveValue('50');
     expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toHaveValue('25');
   });
 
   it('stores what is typed there in the stored unit', () => {
     render(<Live />);
-    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(dim)'));
+    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('dim'));
     type('Default', '80');
     expect(dim().default).toBeCloseTo(0.8);
     type('Auto value', '10');

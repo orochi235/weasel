@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, getDefaultNormalizer, render, screen, within }
 import { useState } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { keyedRow, rowKey } from './treeRows.fixture';
 
 afterEach(cleanup);
 
@@ -26,7 +27,7 @@ function Live({ start = START }: { start?: PrefGroup }) {
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 /** A row in the structure tree, by the key it shows after its name. */
-const row = (key: string) => within(structure()).getByText(`(${key})`);
+const row = (key: string) => within(structure()).getByText(key);
 const preview = () => screen.getByRole('region', { name: 'Live preview' });
 
 describe('PrefSchemaEditor', () => {
@@ -118,7 +119,7 @@ describe('PrefSchemaEditor', () => {
 
   it('shows a row as its name with its key, and a nameless one as its key alone', () => {
     render(<Live start={{ name: 'Prefs', children: { bare: { name: '', children: {} }, view: START.children.view! } }} />);
-    expect(within(structure()).getByRole('treeitem', { name: /^View \(view\)/ })).toBeInTheDocument();
+    expect(within(structure()).getByRole('treeitem', { name: /^View view/ })).toBeInTheDocument();
     expect(within(structure()).getByRole('treeitem', { name: /^bare 0$/ })).toBeInTheDocument();
   });
 
@@ -155,9 +156,9 @@ describe('PrefSchemaEditor', () => {
   it('narrows the tree to the rows a filter matches, under the branches that hold them', () => {
     render(<Live />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'dock' } });
-    expect(within(structure()).getByRole('treeitem', { name: /\(dock\)/ })).toBeInTheDocument();
-    expect(within(structure()).getByRole('treeitem', { name: /\(panels\)/ })).toBeInTheDocument();
-    expect(within(structure()).queryByRole('treeitem', { name: /\(view\)/ })).toBeNull();
+    expect(keyedRow(structure(), 'dock')).toBeInTheDocument();
+    expect(keyedRow(structure(), 'panels')).toBeInTheDocument();
+    expect(keyedRow(structure(), 'view')).toBeNull();
   });
 
   it('narrows the unplaced rows by the same filter', () => {
@@ -166,8 +167,8 @@ describe('PrefSchemaEditor', () => {
     render(<PrefSchemaEditor schema={start} onChange={() => {}} unplaced={waiting} />);
     const unplaced = screen.getByRole('tree', { name: 'Unplaced' });
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'glo' } });
-    expect(within(unplaced).getByRole('treeitem', { name: /\(glow\)/ })).toBeInTheDocument();
-    expect(within(unplaced).queryByRole('treeitem', { name: /\(author\)/ })).toBeNull();
+    expect(keyedRow(unplaced, 'glow')).toBeInTheDocument();
+    expect(keyedRow(unplaced, 'author')).toBeNull();
   });
 
   it('sets the host\'s controls, the palette, and the add and remove buttons in one bar above the panes', () => {
@@ -214,21 +215,21 @@ describe('PrefSchemaEditor', () => {
       panels: { ...(START.children.panels as PrefGroup), children: { ...(START.children.panels as PrefGroup).children, grid: (START.children.view as PrefGroup).children.grid! } },
     } };
     const { rerender } = render(<PrefSchemaEditor schema={START} original={START} onChange={() => {}} rowMark={mark} />);
-    expect(screen.getByTestId('mark').closest('[role="treeitem"]')).toHaveAccessibleName(/\(grid\)/);
+    expect(rowKey(screen.getByTestId('mark').closest('[role="treeitem"]')!)).toBe('grid');
     rerender(<PrefSchemaEditor schema={moved} original={START} onChange={() => {}} rowMark={mark} />);
     expect(screen.getAllByTestId('mark')).toHaveLength(1);
-    expect(screen.getByTestId('mark').closest('[role="group"]')!.closest('[role="treeitem"]')).toHaveAccessibleName(/\(panels\)/);
+    expect(rowKey(screen.getByTestId('mark').closest('[role="group"]')!.closest('[role="treeitem"]')!)).toBe('panels');
   });
 
   it('opens with the rows folded that were folded under its draft key last time', () => {
     localStorage.clear();
     const first = render(<PrefSchemaEditor schema={START} onChange={() => {}} draftKey="folds-test" />);
     fireEvent.click(row('view').closest('[role="treeitem"]')!.querySelector('[data-tree-twisty]')!);
-    expect(within(structure()).getByRole('treeitem', { name: /\(view\)/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(keyedRow(structure(), 'view')).toHaveAttribute('aria-expanded', 'false');
     first.unmount();
     render(<PrefSchemaEditor schema={START} onChange={() => {}} draftKey="folds-test" />);
-    expect(within(structure()).getByRole('treeitem', { name: /\(view\)/ })).toHaveAttribute('aria-expanded', 'false');
-    expect(within(structure()).getByRole('treeitem', { name: /\(panels\)/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(keyedRow(structure(), 'view')).toHaveAttribute('aria-expanded', 'false');
+    expect(keyedRow(structure(), 'panels')).toHaveAttribute('aria-expanded', 'true');
     localStorage.clear();
   });
 
@@ -263,9 +264,9 @@ describe('PrefSchemaEditor', () => {
     render(<Live />);
     fireEvent.click(row('snap'));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    expect(within(structure()).queryByText('(snap)')).toBeNull();
+    expect(within(structure()).queryByText('snap')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(within(structure()).getByRole('treeitem', { name: /^Snap \(snap\)/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(structure()).getByRole('treeitem', { name: /^Snap snap/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('starts the history over on a schema it did not write', () => {
@@ -318,10 +319,10 @@ describe('PrefSchemaEditor', () => {
     fireEvent.keyDown(name, { key: 'Backspace' });
     expect(row('snap')).toBeInTheDocument();
     fireEvent.keyDown(structure(), { key: 'Delete' });
-    expect(within(structure()).queryByText('(snap)')).toBeNull();
+    expect(within(structure()).queryByText('snap')).toBeNull();
     fireEvent.click(row('dock'));
     fireEvent.keyDown(preview(), { key: 'Backspace' });
-    expect(within(structure()).queryByText('(dock)')).toBeNull();
+    expect(within(structure()).queryByText('dock')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(row('dock')).toBeInTheDocument();
   });
@@ -354,7 +355,7 @@ describe('PrefSchemaEditor', () => {
       expect(screen.getByText(/Draft saved/)).toBeInTheDocument();
       first.unmount();
       render(<Kept />);
-      expect(within(structure()).queryByText('(snap)')).toBeNull();
+      expect(within(structure()).queryByText('snap')).toBeNull();
       expect(row('grid')).toBeInTheDocument();
       expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
     });
@@ -377,7 +378,7 @@ describe('PrefSchemaEditor', () => {
       expect(localStorage.getItem('test-draft')).toBeNull();
       first.unmount();
       render(<Filed />);
-      expect(within(structure()).queryByText('(snap)')).toBeNull();
+      expect(within(structure()).queryByText('snap')).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
       expect(held.has('test-draft')).toBe(false);
     });
@@ -393,7 +394,7 @@ describe('PrefSchemaEditor', () => {
       render(<Kept />);
       expect(row('grid')).toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
-      expect(within(structure()).queryByText('(grid)')).toBeNull();
+      expect(within(structure()).queryByText('grid')).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
       expect(row('snap')).toBeInTheDocument();
@@ -412,7 +413,7 @@ describe('PrefSchemaEditor', () => {
       const draft = JSON.parse(localStorage.getItem('test-draft')!);
       localStorage.setItem('test-draft', JSON.stringify({ ...draft, steps: { schemas: [], current: 4, stacks: {} } }));
       render(<Kept />);
-      expect(within(structure()).queryByText('(snap)')).toBeNull();
+      expect(within(structure()).queryByText('snap')).toBeNull();
       expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
     });
 
@@ -429,7 +430,7 @@ describe('PrefSchemaEditor', () => {
         return <PrefSchemaEditor schema={schema} onChange={setSchema} original={moved} draftKey="test-draft" />;
       }
       render(<Later />);
-      expect(within(structure()).queryByText('(snap)')).toBeNull();
+      expect(within(structure()).queryByText('snap')).toBeNull();
       expect(within(structure()).getByText('Grid lines')).toBeInTheDocument();
       expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
       fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
@@ -468,11 +469,11 @@ describe('PrefSchemaEditor', () => {
   it('lists what the root holds on no page as unplaced, out of the tree and the preview, and selects one from there', () => {
     const start: PrefGroup = { name: '', children: { ...START.children, author: { kind: 'string', name: 'Author', description: '', default: '' } } };
     render(<Live start={start} />);
-    expect(within(structure()).queryByText('(author)')).toBeNull();
+    expect(within(structure()).queryByText('author')).toBeNull();
     expect(within(structure()).queryByRole('treeitem', { name: /General/ })).toBeNull();
     expect(within(preview()).queryByText('Author')).toBeNull();
     const waiting = screen.getByRole('tree', { name: 'Unplaced' });
-    fireEvent.click(within(waiting).getByText('(author)'));
+    fireEvent.click(within(waiting).getByText('author'));
     expect(within(waiting).getByRole('treeitem', { name: /author/ })).toHaveAttribute('aria-selected', 'true');
     expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('author');
   });
@@ -505,9 +506,9 @@ describe('PrefSchemaEditor', () => {
     render(<PrefSchemaEditor schema={START} onChange={() => {}} unplaced={waiting} />);
     const tree = screen.getByRole('tree', { name: 'Unplaced' });
     expect(within(tree).getAllByRole('treeitem').map((r) => r.getAttribute('aria-level'))).toEqual(['1', '1', '2']);
-    expect(within(tree).getByRole('treeitem', { name: /^Glow \(glow\)/ })).toBeInTheDocument();
-    expect(within(tree).getByRole('treeitem', { name: /^Ease \(ease\)/ })).toBeInTheDocument();
-    expect(within(tree).queryByRole('treeitem', { name: /\(grid\)/ })).toBeNull();
+    expect(within(tree).getByRole('treeitem', { name: /^Glow glow/ })).toBeInTheDocument();
+    expect(within(tree).getByRole('treeitem', { name: /^Ease ease/ })).toBeInTheDocument();
+    expect(keyedRow(tree, 'grid')).toBeNull();
     expect(screen.queryByRole('dialog', { name: 'Add pref' })).toBeNull();
   });
 
@@ -556,9 +557,9 @@ describe('PrefSchemaEditor', () => {
 
   it('keeps a moved group open', () => {
     render(<Live />);
-    act(() => within(structure()).getByRole('treeitem', { name: /\(panels\)/ }).focus());
+    act(() => keyedRow(structure(), 'panels')!.focus());
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight', altKey: true });
-    expect(within(structure()).getByRole('treeitem', { name: /\(panels\)/ })).toHaveAttribute('aria-level', '2');
+    expect(keyedRow(structure(), 'panels')).toHaveAttribute('aria-level', '2');
     expect(row('dock')).toBeInTheDocument();
   });
 
@@ -679,8 +680,8 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
     expect(add()).toBeDisabled();
     fireEvent.click(row('grid'));
     fireEvent.click(add());
-    const keys = within(structure()).getAllByRole('treeitem').map((li) => li.firstElementChild!.textContent ?? '');
-    expect(keys.findIndex((r) => r.includes('grid2'))).toBe(keys.findIndex((r) => r.includes('(grid)')) + 1);
+    const keys = within(structure()).getAllByRole('treeitem').map(rowKey);
+    expect(keys.indexOf('grid2')).toBe(keys.indexOf('grid') + 1);
     expect(within(attrs()).getByRole('button', { name: /Of/ })).toHaveTextContent('view.grid');
   });
 

@@ -33,7 +33,7 @@ const preview = () => screen.getByRole('region', { name: 'Live preview' });
 const label = (name: string) => within(preview()).getByText(name);
 const rail = (path: string) => preview().querySelector(`[data-pref-rail="${path}"]`) as HTMLElement;
 const treeRow = (key: string) =>
-  within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(`(${key})`).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
+  within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(key).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 const tool = (name: string) => within(screen.getByRole('group', { name: 'Drag to add' })).getByRole('button', { name });
 /** Each page's keys, in order. */
 const layout = () => Object.fromEntries(Object.entries(latest.children).map(([key, group]) => [key, Object.keys((group as PrefGroup).children)]));

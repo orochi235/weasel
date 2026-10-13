@@ -50,7 +50,7 @@
 .aside { grid-column: 7; grid-row: 2 / -1; }
 .asideHandle { grid-column: 6; grid-row: 2 / -1; }
 /* The tree reads at the size of the fields in the pane beside it. */
-.treeArea, .storedArea, .shelfPane { min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); }
+.treeArea, .storedArea, .shelfPane { min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); --wzl-tree-leading-size: 16px; }
 .treeArea { flex: 1; --wzl-tree-leaf-indent: var(--wzl-space-2); }
 /* A group's glyph folds it, and says it is open. */
 :is(.treeArea, .storedArea, .shelfPane) [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }
@@ -85,9 +85,9 @@
   text-transform: var(--wzl-params-label-case, uppercase);
 }
 .paneTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
-.treeKey { font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
-/* A row with no glyph before its label. */
-.treeBare { padding-inline-start: 2px; }
+.treeKey { font-size: var(--wzl-font-size-sm); font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
+/* A leaf's row: no glyph before its label, which is set in the plain weight under a group's bolder one. */
+.treeLeaf { padding-inline-start: var(--wzl-space-1); font-weight: var(--wzl-font-weight-normal); }
 /* A setting the layout shown already points at. */
 .pointed { color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }

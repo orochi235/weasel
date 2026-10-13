@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { useState } from 'react';
 import { prefType, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { rowKey } from './treeRows.fixture';
 
 afterEach(cleanup);
 
@@ -34,8 +35,8 @@ function Live() {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
-const row = (key: string) => within(structure()).getByText(`(${key})`);
-const rows = () => within(structure()).getAllByRole('treeitem').map((r) => r.textContent);
+const row = (key: string) => within(structure()).getByText(key);
+const keys = () => within(structure()).getAllByRole('treeitem').map(rowKey);
 const entryField = (attr: string) => attributes().querySelector<HTMLInputElement>(`[data-pref-path="$entry.${attr}"] input`)!;
 const attributes = () => screen.getByRole('region', { name: 'Attributes' });
 const literal = () => screen.getByTestId('schema-literal');
@@ -47,7 +48,7 @@ const pick = (button: RegExp, option: string) => {
 describe('PrefSchemaEditor over a list, a union and a typed leaf', () => {
   it('shows each as one row, with nothing under it', () => {
     render(<Live />);
-    expect(rows().filter((text) => /\((item|circle|at)\)/.test(text ?? ''))).toEqual([]);
+    expect(keys().filter((key) => ['item', 'circle', 'at'].includes(key))).toEqual([]);
     expect(row('phases')).toBeInTheDocument();
     expect(row('shape')).toBeInTheDocument();
     expect(row('first')).toBeInTheDocument();

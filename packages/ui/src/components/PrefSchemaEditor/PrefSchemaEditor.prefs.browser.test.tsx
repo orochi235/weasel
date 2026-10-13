@@ -6,6 +6,7 @@ import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag as dragTo } from './pointerDrag.fixture';
+import { rowKey } from './treeRows.fixture';
 
 // A drop into the live preview is hit-tested against the form's layout, which only a browser has.
 
@@ -40,7 +41,7 @@ test('a row dropped in the live preview becomes the selection', () => {
   render(<Live />);
   drag('Dock', 'Show grid');
   expect(order()).not.toEqual(['grid', 'snap', 'dock']);
-  expect(selectedRows().map((r) => r.textContent)).toEqual([expect.stringContaining('(dock)')]);
+  expect(selectedRows().map(rowKey)).toEqual(['dock']);
 });
 
 test('with "Select what is dropped" off in the editor\'s preferences, the selection stays where it was', async () => {
@@ -50,8 +51,8 @@ test('with "Select what is dropped" off in the editor\'s preferences, the select
   fireEvent.click(within(screen.getByRole('dialog', { name: 'Schema editor preferences' })).getByRole('button', { name: 'Close dialog' }));
   // The dialog leaves on its exit animation, which a loaded fleet node has taken over a second to finish.
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Schema editor preferences' })).toBeNull(), { timeout: 10_000 });
-  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(snap)'));
+  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('snap'));
   drag('Dock', 'Show grid');
   expect(order()).not.toEqual(['grid', 'snap', 'dock']);
-  expect(selectedRows().map((r) => r.textContent)).toEqual([expect.stringContaining('(snap)')]);
+  expect(selectedRows().map(rowKey)).toEqual(['snap']);
 });

@@ -6,7 +6,7 @@ import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { GROUP_ICON, type PaletteDrag } from './Palette';
 import { childrenOf, joinPath, valuePathOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { pointable, pointedAt, pointersTo } from './settingPointers';
-import { nodeLabel } from './structureRows';
+import { leafLabel, nodeLabel } from './structureRows';
 import s from './PrefSchemaEditor.module.css';
 
 /** The rows for what `node` of the dialog `over` holds: its settings, and each group that holds one. */
@@ -18,7 +18,7 @@ function toRows(over: SchemaRoot, node: SchemaNode, path: string | null, placed:
       if (!pointable(over, id)) return [];
       const label = nodeLabel(child.name, key);
       const pointed = placed.has(valuePathOf(over, id));
-      return [{ ...row, label: pointed ? <span className={s.pointed}>{label}</span> : label, trailing: <PrefKindBadge kind={child.type ?? child.kind} /> }];
+      return [{ ...row, label: leafLabel(pointed ? <span className={s.pointed}>{label}</span> : label), trailing: <PrefKindBadge kind={child.type ?? child.kind} /> }];
     }
     const children = toRows(over, child, id, placed);
     if (children.length === 0) return [];

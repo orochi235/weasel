@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { keyedRow } from './treeRows.fixture';
 
 afterEach(cleanup);
 
@@ -20,7 +21,7 @@ function Live() {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
-const row = (key: string) => within(structure()).queryByText(`(${key})`);
+const row = (key: string) => within(structure()).queryByText(key);
 
 describe('PrefSchemaEditor folds across undo', () => {
   it('keeps a group open when its re-keying is undone and redone', () => {
@@ -32,7 +33,7 @@ describe('PrefSchemaEditor folds across undo', () => {
     const key = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' });
     fireEvent.change(key, { target: { value: 'display' } });
     fireEvent.blur(key);
-    expect(within(structure()).getByRole('treeitem', { name: /\(display\)/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(keyedRow(structure(), 'display')).toHaveAttribute('aria-expanded', 'true');
     expect(row('grid')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(row('view')).not.toBeNull();

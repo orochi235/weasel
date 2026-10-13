@@ -47,11 +47,12 @@ describe('AssetEditor on a panel', () => {
   it('names a pointer\'s row as the setting it points at, and a dead one by its key', () => {
     render(<Live start={WITH_LOCKED} />);
     fireEvent.click(asset('Code'));
-    expect(row('grid')).toHaveAccessibleName(/Show grid \(grid\)/);
-    expect(row('snap')).toHaveAccessibleName(/Snap \(snap\)/);
+    expect(row('grid')).toHaveAccessibleName(/^Show grid grid\b/);
+    expect(row('snap')).toHaveAccessibleName(/^Snap snap\b/);
     fireEvent.click(asset('Layout'));
     expect(within(structure()).getByText('gone')).toBeInTheDocument();
     expect(within(row('gone')).getByText('no setting')).toBeInTheDocument();
-    expect(within(structure()).queryByText('(gone)')).toBeNull();
+    // Its key is the whole label, with no name before it and so no key set apart after one.
+    expect(row('gone').querySelector('[class*="treeKey"]')).toBeNull();
   });
 });

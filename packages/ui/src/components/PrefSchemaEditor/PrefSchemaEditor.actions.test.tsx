@@ -38,8 +38,8 @@ describe('PrefSchemaEditor actions', () => {
   it('lists the actions it is given under their groups, each by label and key', () => {
     render(<Live actions={ACTIONS} />);
     expect(within(actions()).getByText('Edit')).toBeInTheDocument();
-    expect(within(actions()).getByText('(edit.redo)')).toBeInTheDocument();
-    expect(within(actions()).getByText('(view.snap)')).toBeInTheDocument();
+    expect(within(actions()).getByText('edit.redo')).toBeInTheDocument();
+    expect(within(actions()).getByText('view.snap')).toBeInTheDocument();
     // Its shortcut as keycaps, a key to a cap.
     expect(within(actions()).getByText('⌘')).toBeInTheDocument();
     expect(within(actions()).getByText('Z')).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe('PrefSchemaEditor actions', () => {
         <Live />
       </ActionsProvider>,
     );
-    expect(within(actions()).getByText('(file.save)')).toBeInTheDocument();
+    expect(within(actions()).getByText('file.save')).toBeInTheDocument();
   });
 
   it('draws no list with no actions and no registry, and marks nothing', () => {
@@ -69,7 +69,7 @@ describe('PrefSchemaEditor actions', () => {
 
   it('marks a pref that fires a key the list does not hold, and no other', () => {
     render(<Live actions={ACTIONS} />);
-    const row = (key: string) => within(structure()).getByText(`(${key})`).closest('[role="treeitem"]') as HTMLElement;
+    const row = (key: string) => within(structure()).getByText(key).closest('[role="treeitem"]') as HTMLElement;
     expect(within(row('flatten')).getByText('no action')).toBeInTheDocument();
     expect(within(row('undo')).queryByText('no action')).toBeNull();
   });
@@ -77,13 +77,13 @@ describe('PrefSchemaEditor actions', () => {
   it('filters the list with the structure’s filter', () => {
     render(<Live actions={ACTIONS} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'snap' } });
-    expect(within(actions()).getByText('(view.snap)')).toBeInTheDocument();
-    expect(within(actions()).queryByText('(edit.redo)')).toBeNull();
+    expect(within(actions()).getByText('view.snap')).toBeInTheDocument();
+    expect(within(actions()).queryByText('edit.redo')).toBeNull();
   });
 
   it('offers an action pref’s key as a choice among the list, with a key it does not hold kept', () => {
     render(<Live actions={ACTIONS} />);
-    fireEvent.click(within(structure()).getByText('(flatten)'));
+    fireEvent.click(within(structure()).getByText('flatten'));
     const attributes = screen.getByRole('region', { name: 'Attributes' });
     fireEvent.click(within(attributes).getByRole('button', { name: /Action/ }));
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([

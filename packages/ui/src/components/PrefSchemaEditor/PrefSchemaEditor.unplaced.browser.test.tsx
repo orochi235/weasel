@@ -18,7 +18,7 @@ const START: PrefGroup = {
 };
 
 const treeRow = (key: string) =>
-  within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(`(${key})`).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
+  within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(key).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 const heading = () => screen.getByRole('heading', { name: 'Unplaced' });
 /** The list's box: the heading sits in its header, and the header in the box a drop is outlined on. */
 const area = () => heading().parentElement!.parentElement!;

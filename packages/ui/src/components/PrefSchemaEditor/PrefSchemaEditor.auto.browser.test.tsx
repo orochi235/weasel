@@ -21,7 +21,7 @@ test('an unset auto value draws its switch before a faded control on one line, a
       <PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />
     </div>,
   );
-  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(gap)'));
+  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('gap'));
   const attributes = within(screen.getByRole('region', { name: 'Attributes' }));
   const input = attributes.getByRole('spinbutton', { name: 'Auto value' });
   input.scrollIntoView({ block: 'center' });

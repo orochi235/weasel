@@ -6,6 +6,7 @@ import type { TreeNode } from '../Tree';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import type { PaletteDrag } from './Palette';
 import { UnplacedTree } from './UnplacedTree';
+import { rowKey } from './treeRows.fixture';
 
 afterEach(cleanup);
 
@@ -26,26 +27,23 @@ function Live() {
 const unplaced = () => screen.getByRole('tree', { name: 'Unplaced' });
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 const selectedIn = (tree: HTMLElement) =>
-  within(tree).queryAllByRole('treeitem', { selected: true }).map((r) => {
-    const row = r.firstElementChild!.textContent ?? '';
-    return row.match(/\((\w+)\)/)?.[1] ?? row.replace(/alias$/i, '').trim();
-  });
+  within(tree).queryAllByRole('treeitem', { selected: true }).map(rowKey);
 
 describe('several unplaced nodes at once', () => {
   it('adds a row to the selection on Cmd-click, and replaces it on a plain click', () => {
     render(<Live />);
-    fireEvent.click(within(unplaced()).getByText('(author)'));
-    fireEvent.click(within(unplaced()).getByText('(owner)'), { metaKey: true });
+    fireEvent.click(within(unplaced()).getByText('author'));
+    fireEvent.click(within(unplaced()).getByText('owner'), { metaKey: true });
     expect(selectedIn(unplaced())).toEqual(['author', 'owner']);
     expect(screen.getByRole('region', { name: 'Attributes' })).toHaveTextContent('2 selected');
-    fireEvent.click(within(unplaced()).getByText('(author)'));
+    fireEvent.click(within(unplaced()).getByText('author'));
     expect(selectedIn(unplaced())).toEqual(['author']);
   });
 
   it('keeps a row selected in the structure tree when one here joins it', () => {
     render(<Live />);
-    fireEvent.click(within(structure()).getByText('(view)'));
-    fireEvent.click(within(unplaced()).getByText('(author)'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('view'));
+    fireEvent.click(within(unplaced()).getByText('author'), { metaKey: true });
     expect(selectedIn(structure())).toEqual(['view']);
     expect(selectedIn(unplaced())).toEqual(['author']);
   });
@@ -79,15 +77,12 @@ describe('Add alias with several prefs selected', () => {
   }
   const add = () => screen.getByRole('button', { name: 'Add alias' });
   // An alias has no name of its own, so its row reads as its key alone, before its kind.
-  const keys = () => within(structure()).getAllByRole('treeitem').map((li) => {
-    const row = li.firstElementChild!.textContent ?? '';
-    return row.match(/\((\w+)\)/)?.[1] ?? row.replace(/alias$/i, '').trim();
-  });
+  const keys = () => within(structure()).getAllByRole('treeitem').map(rowKey);
 
   it('adds an alias of each, together after the one picked last', () => {
     render(<Editor />);
-    fireEvent.click(within(structure()).getByText('(snap)'));
-    fireEvent.click(within(structure()).getByText('(grid)'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('snap'));
+    fireEvent.click(within(structure()).getByText('grid'), { metaKey: true });
     expect(add()).toBeEnabled();
     fireEvent.click(add());
     expect(keys()).toEqual(['view', 'grid', 'snap2', 'grid2', 'snap', 'zoom']);
@@ -96,8 +91,8 @@ describe('Add alias with several prefs selected', () => {
 
   it('offers none while one of them is a group, which has no alias', () => {
     render(<Editor />);
-    fireEvent.click(within(structure()).getByText('(snap)'));
-    fireEvent.click(within(structure()).getByText('(view)'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('snap'));
+    fireEvent.click(within(structure()).getByText('view'), { metaKey: true });
     expect(add()).toBeDisabled();
   });
 });

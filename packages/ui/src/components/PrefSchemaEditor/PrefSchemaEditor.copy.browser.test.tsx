@@ -23,7 +23,7 @@ function Live() {
   return <div style={{ height: 600 }}><PrefSchemaEditor schema={schema} onChange={setSchema} /></div>;
 }
 
-const row = (key: string) => within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(`(${key})`).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
+const row = (key: string) => within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(key).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 
 test('a row dragged onto another group with Alt held is copied there, and stays where it was', () => {
   render(<Live />);

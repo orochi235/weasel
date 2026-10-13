@@ -23,8 +23,8 @@ function Live({ start = NODE }: { start?: PrefSection }) {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
-const row = (key: string) => within(structure()).getByText(`(${key})`);
-const treeRows = (key: string) => within(structure()).getAllByText(`(${key})`).map((el) => el.closest('[data-tree-id]') as HTMLElement);
+const row = (key: string) => within(structure()).getByText(key);
+const treeRows = (key: string) => within(structure()).getAllByText(key).map((el) => el.closest('[data-tree-id]') as HTMLElement);
 const attributes = () => within(screen.getByRole('region', { name: 'Attributes' }));
 
 describe('PrefSchemaEditor over a node property schema: one value path, one pref', () => {
@@ -72,7 +72,7 @@ describe('PrefSchemaEditor over a node property schema: one value path, one pref
     const rows = treeRows('opacity');
     expect(rows).toHaveLength(2);
     for (const r of rows) expect(r.firstElementChild).toHaveTextContent('key taken');
-    expect(within(structure()).getByText('(look)').closest('[data-tree-id]')!.firstElementChild).not.toHaveTextContent('key taken');
+    expect(within(structure()).getByText('look').closest('[data-tree-id]')!.firstElementChild).not.toHaveTextContent('key taken');
   });
 
   it('marks both rows of a schema that came holding one value path twice, and no other row', () => {
@@ -81,6 +81,6 @@ describe('PrefSchemaEditor over a node property schema: one value path, one pref
     const rows = treeRows('pose.x');
     expect(rows).toHaveLength(2);
     for (const r of rows) expect(r).toHaveTextContent('key taken');
-    expect(within(structure()).getByText('(look)').closest('[data-tree-id]')!.firstElementChild).not.toHaveTextContent('key taken');
+    expect(within(structure()).getByText('look').closest('[data-tree-id]')!.firstElementChild).not.toHaveTextContent('key taken');
   });
 });

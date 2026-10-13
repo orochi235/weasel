@@ -23,7 +23,7 @@ function Live() {
 
 // By selector: a modal dialog hides the rest of the page from the accessibility tree.
 const row = (key: string) => document.querySelector<HTMLElement>(`[data-tree-id$="${key}"]`);
-const pick = (key: string) => fireEvent.click(screen.getByText(`(${key})`));
+const pick = (key: string) => fireEvent.click(row(key)!.firstElementChild!);
 
 describe('PrefSchemaEditor keys pressed in its own dialogs', () => {
   it('leaves the selected node alone when Backspace or Delete is pressed on a dialog\'s button', () => {

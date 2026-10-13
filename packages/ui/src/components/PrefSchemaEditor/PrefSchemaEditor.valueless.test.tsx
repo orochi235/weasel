@@ -16,9 +16,9 @@ describe('PrefSchemaEditor: a pref that holds no value', () => {
     } };
     render(<PrefSchemaEditor schema={start} onChange={() => {}} />);
     const pane = screen.getByRole('region', { name: 'Attributes' });
-    fireEvent.click(within(structure()).getByText('(x)'));
+    fireEvent.click(within(structure()).getByText('x'));
     expect(pane).toHaveTextContent('Default');
-    fireEvent.click(within(structure()).getByText('(note)'));
+    fireEvent.click(within(structure()).getByText('note'));
     expect(pane).not.toHaveTextContent(/default/i);
     expect(pane).not.toHaveTextContent('undefined');
     fireEvent.click(within(structure()).getByText('rule'));

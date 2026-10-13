@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render } from '@testing-library/react';
 import { asset, Live, pickRow, rekey, structure, tool } from './AssetEditor.fixture';
 import type { Workspace } from './workspace';
 import { CODE, WORKSPACE } from './workspace.fixtures';
+import { rowKey } from './treeRows.fixture';
 
 afterEach(cleanup);
 
@@ -12,7 +13,7 @@ const START: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[
 /** The asset shown, and the keys of the rows selected in it. */
 const shown = () => ({
   asset: ['Settings', 'Code'].find((label) => asset(label).getAttribute('aria-selected') === 'true'),
-  selected: [...structure().querySelectorAll('[role="treeitem"][aria-selected="true"]')].map((el) => /\((\w+)\)/.exec(el.firstElementChild!.textContent)![1]),
+  selected: [...structure().querySelectorAll('[role="treeitem"][aria-selected="true"]')].map(rowKey),
 });
 
 // Each test renders the whole editor through a dozen edits and steps: over 1 s on an idle machine, against a 5 s default.

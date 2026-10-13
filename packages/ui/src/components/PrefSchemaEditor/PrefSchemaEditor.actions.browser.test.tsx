@@ -32,7 +32,7 @@ function Live() {
 }
 
 const rowIn = (tree: string, key: string) =>
-  within(screen.getByRole('tree', { name: tree })).getByText(`(${key})`).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
+  within(screen.getByRole('tree', { name: tree })).getByText(key).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 const underTools = () => (latest.children.tools as PrefGroup).children;
 const UNDO = { kind: 'action', name: 'Undo', description: '', default: undefined, action: 'edit.undo' };
 
@@ -41,7 +41,7 @@ test('an action dragged onto a group in the tree lands there as a pref that fire
   drag(rowIn('Actions', 'edit.undo'), rowIn('Schema structure', 'tools'));
   expect(underTools().editUndo).toEqual(UNDO);
   expect(Object.keys(underTools())).toContain('grid');
-  expect(within(screen.getByRole('tree', { name: 'Actions' })).getByText('(edit.undo)')).toBeInTheDocument();
+  expect(within(screen.getByRole('tree', { name: 'Actions' })).getByText('edit.undo')).toBeInTheDocument();
 });
 
 test('an action let go on a row the tree has not marked yet lands there', async () => {

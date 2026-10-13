@@ -34,7 +34,7 @@ test('a list\'s entry is edited inside the attributes pane, its type\'s own cont
       <PrefSchemaEditor schema={SCHEMA} onChange={() => {}} types={[GradientStop]} />
     </div>,
   );
-  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(stops)'));
+  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('stops'));
   const pane = screen.getByRole('region', { name: 'Attributes' });
   const bounds = pane.getBoundingClientRect();
   const picker = within(pane).getByRole('button', { name: /Entry kind/ });

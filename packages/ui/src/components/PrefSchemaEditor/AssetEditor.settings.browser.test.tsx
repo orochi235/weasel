@@ -25,7 +25,7 @@ function Live() {
 
 const option = (label: string) => within(screen.getByRole('listbox', { name: 'Assets' })).getByRole('option', { name: new RegExp(`^${label}`) });
 const rowIn = (tree: string, key: string) =>
-  within(screen.getByRole('tree', { name: tree })).getByText(`(${key})`).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
+  within(screen.getByRole('tree', { name: tree })).getByText(key).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 const rootOf = (id: string) => latest.assets.find((a) => a.id === id)!.root as PrefGroup;
 const pointers = (group: PrefGroup): Record<string, unknown> =>
   Object.fromEntries(Object.entries(group.children).map(([key, kid]) => [key, isPrefLeaf(kid) ? (kid as PrefAlias).of : pointers(kid as PrefGroup)]));

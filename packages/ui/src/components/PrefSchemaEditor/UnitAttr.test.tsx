@@ -121,7 +121,7 @@ describe('a number pref selected in PrefSchemaEditor', () => {
       return <PrefSchemaEditor schema={schema} onChange={setSchema} />;
     }
     render(<Live />);
-    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(zoom)'));
+    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('zoom'));
     const attributes = screen.getByRole('region', { name: 'Attributes' });
     fireEvent.change(within(attributes).getByRole('textbox', { name: 'Unit suffix' }), { target: { value: '%' } });
     const zoom = () => (latest.children.view as PrefGroup).children.zoom as PrefNumber;

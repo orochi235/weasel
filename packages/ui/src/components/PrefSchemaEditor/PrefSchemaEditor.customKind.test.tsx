@@ -32,7 +32,7 @@ function Live() {
 }
 
 const attributes = () => within(screen.getByRole('region', { name: 'Attributes' }));
-const select = (key: string) => fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(`(${key})`));
+const select = (key: string) => fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(key));
 const leaf = (key: string) => (latest.children.view as PrefGroup).children[key] as unknown as Record<string, unknown>;
 
 describe('PrefSchemaEditor custom kinds', () => {
@@ -74,7 +74,7 @@ describe('PrefSchemaEditor custom kinds', () => {
     }
     render(<Both />);
     select('one');
-    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(two)'), { metaKey: true });
+    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('two'), { metaKey: true });
     expect(attributes().getByRole('textbox', { name: 'Edge' })).toHaveValue('');
     fireEvent.change(attributes().getByRole('textbox', { name: 'Fill' }), { target: { value: 'blue' } });
     expect(leaf('one').frame).toEqual({ edge: 'thin', fill: 'blue' });

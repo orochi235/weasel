@@ -25,7 +25,7 @@ const SCHEMA: PrefGroup = {
 test('the unit\'s four fields share a line inside the pane, and an accepted suffix sits on a line of its own under them', async () => {
   await page.viewport(1300, 720);
   render(<div className="unit-editor-box"><PrefSchemaEditor schema={SCHEMA} onChange={() => {}} /></div>);
-  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(heat)'));
+  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('heat'));
   const pane = screen.getByRole('region', { name: 'Attributes' });
   const box = (name: string) => within(pane).getByRole('textbox', { name }).getBoundingClientRect();
   const fields = ['Unit suffix', 'Unit scale', 'Unit offset', 'Unit places'].map(box);

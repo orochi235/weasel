@@ -15,7 +15,10 @@ function leafCount(nodes: readonly SchemaNode[]): number {
 }
 
 /** A row's label for a node: its name before its key, and an unnamed node's key alone. */
-export const nodeLabel = (name: string, key: string): ReactNode => (name ? <>{name} <span className={s.treeKey}>({key})</span></> : key);
+export const nodeLabel = (name: string, key: string): ReactNode => (name ? <>{name} <span className={s.treeKey}>{key}</span></> : key);
+
+/** A leaf's label: a row with no glyph before it, set in from where one would be and in the plain weight. */
+export const leafLabel = (label: ReactNode): ReactNode => <span className={s.treeLeaf}>{label}</span>;
 
 const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
 
@@ -30,7 +33,7 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
     const label = changed.has(p) ? <span className={s.changed}>{named}</span> : named;
     return {
       id: p,
-      label: isPrefLeaf(child) ? <span className={s.treeBare}>{label}</span> : label,
+      label: isPrefLeaf(child) ? leafLabel(label) : label,
       textValue: name ? `${name} ${key}` : key,
       ...(child.description ? { tooltip: child.description } : {}),
       // Unset, a group is drawn by its depth: a page under the root, a section below that.

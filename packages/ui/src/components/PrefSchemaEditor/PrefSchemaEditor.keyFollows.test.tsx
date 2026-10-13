@@ -30,7 +30,7 @@ function Live() {
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 const attributes = () => within(screen.getByRole('region', { name: 'Attributes' }));
-const select = (key: string) => fireEvent.click(within(structure()).getByText(`(${key})`));
+const select = (key: string) => fireEvent.click(within(structure()).getByText(key));
 const rename = (to: string) => {
   const name = attributes().getByRole('textbox', { name: 'Name' });
   act(() => name.focus());

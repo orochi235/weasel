@@ -17,9 +17,9 @@ describe('the settings of a layout\'s dialog', () => {
     render(<Live start={WITH_LOCKED} />);
     expect(hasSettings()).toBe(false);
     fireEvent.click(asset('Code'));
-    expect(within(settings()).getByText('(view)')).toBeInTheDocument();
-    expect(within(settings()).getByText('(grid)')).toBeInTheDocument();
-    expect(within(settings()).getByText('(snap)')).toBeInTheDocument();
+    expect(within(settings()).getByText('view')).toBeInTheDocument();
+    expect(within(settings()).getByText('grid')).toBeInTheDocument();
+    expect(within(settings()).getByText('snap')).toBeInTheDocument();
     fireEvent.click(asset('Layout'));
     expect(hasSettings()).toBe(false);
   });
@@ -28,7 +28,7 @@ describe('the settings of a layout\'s dialog', () => {
     const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: removeNode(CODE, 'snap') }] };
     render(<Live start={start} />);
     fireEvent.click(asset('Code'));
-    const muted = (key: string) => within(settings()).getByText(`(${key})`).parentElement!.className.includes('pointed');
+    const muted = (key: string) => within(settings()).getByText(key).parentElement!.className.includes('pointed');
     expect(muted('grid')).toBe(true);
     expect(muted('snap')).toBe(false);
   });
@@ -37,8 +37,8 @@ describe('the settings of a layout\'s dialog', () => {
     render(<Live />);
     fireEvent.click(asset('Code'));
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'snap' } });
-    expect(within(settings()).queryByText('(grid)')).toBeNull();
-    expect(within(settings()).getByText('(snap)')).toBeInTheDocument();
+    expect(within(settings()).queryByText('grid')).toBeNull();
+    expect(within(settings()).getByText('snap')).toBeInTheDocument();
   });
 
   it('carries a pointer to the setting dragged out, and a heading of pointers for a group', () => {
@@ -48,7 +48,7 @@ describe('the settings of a layout\'s dialog', () => {
     tree.setPointerCapture = vi.fn();
     tree.releasePointerCapture = vi.fn();
     for (const key of ['snap', 'view']) {
-      const row = within(tree).getByText(`(${key})`).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
+      const row = within(tree).getByText(key).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
       fireEvent.pointerDown(row, { pointerId: 1, button: 0, clientX: 20, clientY: 20 });
       fireEvent.pointerMove(document, { pointerId: 1, clientX: 400, clientY: 200 });
       fireEvent.pointerUp(document, { pointerId: 1, clientX: 400, clientY: 200 });

@@ -7,6 +7,7 @@ import type { PrefAlias, PrefGroup } from '@weasel-js/prefs';
 import { AssetEditor } from './AssetEditor';
 import { DEMO_WORKSPACE } from './AssetEditor.demo';
 import { drag, grip, pointer, pointIn, type Point } from './pointerDrag.fixture';
+import { keyedRow } from './treeRows.fixture';
 import type { Workspace } from './workspace';
 import { workspaceCodec } from './workspaceCodec';
 
@@ -30,7 +31,7 @@ const option = (label: string) => within(list()).getByRole('option', { name: new
 const labelOf = (row: HTMLElement) => row.firstElementChild as HTMLElement;
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 const treeRow = (key: string) =>
-  (within(structure()).queryByText(`(${key})`) ?? within(structure()).getByText(key)).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
+  keyedRow(structure(), key)!.firstElementChild as HTMLElement;
 const preview = () => screen.getByRole('region', { name: 'Live preview' });
 const rootOf = (id: string) => latest.assets.find((a) => a.id === id)!.root as PrefGroup;
 const overlap = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
@@ -88,7 +89,7 @@ test('a changed asset\'s label takes the color of a changed row in the tree, and
   const before = { settings: box(labelOf(option('Settings'))), exported: box(labelOf(option('Export'))), lock: box(within(option('Export')).getByRole('img')) };
   const plain = getComputedStyle(labelOf(option('Canvas'))).color;
   // Removing a setting changes the dialog and the panel that pointed at it.
-  fireEvent.click(within(structure()).getByText('(scale)'));
+  fireEvent.click(within(structure()).getByText('scale'));
   fireEvent.keyDown(structure(), { key: 'Delete' });
   expect(option('Settings')).toHaveAttribute('data-changed');
   expect(option('Export')).toHaveAttribute('data-changed');
@@ -100,7 +101,7 @@ test('a changed asset\'s label takes the color of a changed row in the tree, and
   expect(shown).not.toBe(changed);
   expect(shown).not.toBe(getComputedStyle(option('Settings')).color);
   expect(getComputedStyle(labelOf(option('Canvas'))).color).toBe(plain);
-  fireEvent.click(within(structure()).getByText('(format)'));
+  fireEvent.click(within(structure()).getByText('format'));
   fireEvent.change(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' }), { target: { value: 'File type' } });
   expect(getComputedStyle(within(structure()).getByText('File type')).color).toBe(changed);
   expect(box(labelOf(option('Settings')))).toEqual(before.settings);
@@ -174,7 +175,7 @@ test('a read-only panel marks no place to drop, in its tree or in its preview, a
   expect(dragTool('Separator')).toBeDisabled();
   expect(latest).toBe(DEMO_WORKSPACE);
   // Where its pointer points is shown, and takes no press.
-  fireEvent.click(within(structure()).getByText('(format)'));
+  fireEvent.click(within(structure()).getByText('format'));
   const attributes = screen.getByRole('region', { name: 'Attributes' });
   const of = within(attributes).getByRole('button', { name: /Format \(export\.format\)/ });
   expect(of.matches(':disabled')).toBe(true);

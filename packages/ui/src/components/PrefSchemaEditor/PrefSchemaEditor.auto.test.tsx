@@ -26,7 +26,7 @@ function Live() {
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 const attributes = () => within(screen.getByRole('region', { name: 'Attributes' }));
-const select = (key: string) => fireEvent.click(within(structure()).getByText(`(${key})`));
+const select = (key: string) => fireEvent.click(within(structure()).getByText(key));
 const leaf = (key: string) => (latest.children.view as PrefGroup).children[key] as unknown as Record<string, unknown>;
 
 describe('PrefSchemaEditor auto attributes', () => {

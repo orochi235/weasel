@@ -31,7 +31,7 @@ function Live() {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
-const item = (key: string) => within(structure()).getByText(`(${key})`).closest('[role="treeitem"]') as HTMLElement;
+const item = (key: string) => within(structure()).getByText(key).closest('[role="treeitem"]') as HTMLElement;
 const row = (key: string) => item(key).firstElementChild as HTMLElement;
 const preview = () => screen.getByRole('region', { name: 'Live preview' });
 const label = (name: string) => within(preview()).getByText(name);

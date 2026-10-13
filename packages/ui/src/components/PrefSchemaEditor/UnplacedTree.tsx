@@ -7,6 +7,7 @@ import { GROUP_ICON, type PaletteDrag } from './Palette';
 import { keyOf, type SchemaNode } from './schemaEdit';
 import { unplacedAt } from './unplaced';
 import s from './PrefSchemaEditor.module.css';
+import { leafLabel, nodeLabel } from './structureRows';
 
 const SEP = '/';
 /** What leads the id of a row the schema does not hold. No key holds a `/`, so no schema path starts with one. */
@@ -15,10 +16,10 @@ const NEW = SEP;
 function toRows(group: PrefGroup, path: string): TreeNode[] {
   return Object.entries(group.children).map(([key, child]) => {
     const id = `${path}${path === NEW ? '' : SEP}${key}`;
-    const label = <>{child.name || key} <span className={s.treeKey}>({key})</span></>;
+    const label = nodeLabel(child.name, key);
     const row = { id, label, textValue: `${child.name} ${key}`, ...(child.description ? { tooltip: child.description } : {}) };
     return isPrefLeaf(child)
-      ? { ...row, trailing: <PrefKindBadge kind={child.kind} /> }
+      ? { ...row, label: leafLabel(label), trailing: <PrefKindBadge kind={child.kind} /> }
       : { ...row, leading: <Icon size={16} name={GROUP_ICON[child.as ?? 'section']} />, children: toRows(child, id) };
   });
 }

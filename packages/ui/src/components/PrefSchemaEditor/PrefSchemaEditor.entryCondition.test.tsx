@@ -35,7 +35,7 @@ describe('PrefSchemaEditor: the condition on a list\'s entry', () => {
 
   it('sets it from the entry\'s own fields, as a test that reads from the entry', () => {
     render(<Live />);
-    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(phases)'));
+    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('phases'));
     expect(attributes().queryByRole('group', { name: 'Entry shown if' })).toBeNull();
     const entry = attributes().getByRole('group', { name: 'Entry enabled if' });
     fireEvent.click(within(entry).getByRole('button', { name: /Add a condition/ }));

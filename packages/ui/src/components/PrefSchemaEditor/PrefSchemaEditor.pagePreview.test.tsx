@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { useState } from 'react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { keyedRow } from './treeRows.fixture';
 
 afterEach(cleanup);
 
@@ -22,8 +23,8 @@ function Live() {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
-const row = (key: string) => within(structure()).getByText(`(${key})`);
-const item = (key: RegExp) => within(structure()).getByRole('treeitem', { name: key });
+const row = (key: string) => within(structure()).getByText(key);
+const item = (key: string) => keyedRow(structure(), key);
 const preview = () => screen.getByRole('region', { name: 'Live preview' });
 const attributes = () => screen.getByRole('region', { name: 'Attributes' });
 const entry = (path: string) => preview().querySelector<HTMLElement>(`[data-pref-rail="${path}"]`)!;
@@ -66,11 +67,11 @@ describe('PrefSchemaEditor previewing sections and pages', () => {
 
     fireEvent.pointerDown(entry('canvas'));
     fireEvent.click(entry('canvas'));
-    expect(item(/\(canvas\)/)).toHaveAttribute('aria-selected', 'true');
+    expect(item('canvas')).toHaveAttribute('aria-selected', 'true');
     expect(page()).toBe('canvas');
     fireEvent.pointerDown(entry('canvas.snapping'));
     fireEvent.click(entry('canvas.snapping'));
-    expect(item(/\(snapping\)/)).toHaveAttribute('aria-selected', 'true');
+    expect(item('snapping')).toHaveAttribute('aria-selected', 'true');
     expect(page()).toBe('canvas.snapping');
   });
 });

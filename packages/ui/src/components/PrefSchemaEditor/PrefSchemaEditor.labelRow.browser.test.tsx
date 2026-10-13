@@ -33,7 +33,7 @@ test('a label row and a block row stand as far from the row under them as any ro
 
 test('a selected label row\'s outline stops short of the label of the row under it', () => {
   render(<div style={{ height: 760 }}><PrefSchemaEditor schema={NODE} onChange={() => {}} /></div>);
-  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(note)'));
+  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('note'));
   const row = rowAt('note');
   const style = getComputedStyle(row);
   expect(style.outlineStyle).toBe('solid');

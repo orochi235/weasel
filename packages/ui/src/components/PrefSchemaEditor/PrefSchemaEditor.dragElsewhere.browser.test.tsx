@@ -34,7 +34,7 @@ const preview = () => screen.getByRole('region', { name: 'Live preview' });
 const label = (name: string) => within(preview()).getByText(name);
 const rail = (path: string) => preview().querySelector(`[data-pref-rail="${path}"]`) as HTMLElement;
 const treeRow = (key: string) =>
-  within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(`(${key})`).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
+  within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(key).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 const tool = (name: string) => within(screen.getByRole('group', { name: 'Drag to add' })).getByRole('button', { name });
 /** The list's box: the heading sits in its header, and the header in the box a drop lands on. */
 const unplaced = () => screen.getByRole('heading', { name: 'Unplaced' }).parentElement!.parentElement!;

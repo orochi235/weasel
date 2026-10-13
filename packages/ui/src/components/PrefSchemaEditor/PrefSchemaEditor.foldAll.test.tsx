@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { rowKey } from './treeRows.fixture';
 
 const flag = (name: string) => ({ kind: 'boolean', name, description: '', default: false }) as const;
 const SCHEMA: PrefGroup = {
@@ -13,7 +14,7 @@ const SCHEMA: PrefGroup = {
 };
 
 const tree = () => within(screen.getByRole('tree', { name: 'Schema structure' }));
-const keys = () => tree().getAllByRole('treeitem').map((row) => /\((\w+)\)/.exec(row.textContent ?? '')?.[1]);
+const keys = () => tree().getAllByRole('treeitem').map(rowKey);
 
 describe('PrefSchemaEditor structure folds', () => {
   it('folds every branch from Collapse all, and opens every one from Expand all', () => {

@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { useState } from 'react';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { keyedRow } from './treeRows.fixture';
 
 afterEach(cleanup);
 
@@ -28,8 +29,8 @@ function Live() {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
-const row = (key: string) => within(structure()).getByText(`(${key})`);
-const item = (key: RegExp) => within(structure()).getByRole('treeitem', { name: key });
+const row = (key: string) => within(structure()).getByText(key);
+const item = (key: string) => keyedRow(structure(), key);
 const preview = () => screen.getByRole('region', { name: 'Live preview' });
 const marked = () => [...preview().querySelectorAll('[data-pref-path][data-selected]')].map((el) => el.getAttribute('data-pref-path'));
 
@@ -45,13 +46,13 @@ describe('PrefSchemaEditor with a properties-panel preview', () => {
   it('selects in the tree the row the preview is pressed on, and adds one with Cmd held', () => {
     render(<Live />);
     fireEvent.pointerDown(within(preview()).getByText('Width'));
-    expect(item(/\(width\)/)).toHaveAttribute('aria-selected', 'true');
+    expect(item('width')).toHaveAttribute('aria-selected', 'true');
     fireEvent.pointerDown(within(preview()).getByText('Tint'));
-    expect(item(/\(data\.tint\)/)).toHaveAttribute('aria-selected', 'true');
-    expect(item(/\(width\)/)).toHaveAttribute('aria-selected', 'false');
+    expect(item('data.tint')).toHaveAttribute('aria-selected', 'true');
+    expect(item('width')).toHaveAttribute('aria-selected', 'false');
     fireEvent.pointerDown(within(preview()).getByText('Shade'), { metaKey: true });
-    expect(item(/\(data\.tint\)/)).toHaveAttribute('aria-selected', 'true');
-    expect(item(/\(data\.shade\)/)).toHaveAttribute('aria-selected', 'true');
+    expect(item('data.tint')).toHaveAttribute('aria-selected', 'true');
+    expect(item('data.shade')).toHaveAttribute('aria-selected', 'true');
     expect(marked()).toEqual(['data.tint', 'data.shade']);
   });
 
@@ -61,8 +62,8 @@ describe('PrefSchemaEditor with a properties-panel preview', () => {
     expect(marked()).toEqual(['pose.x']);
     fireEvent.click(row('data.tint'));
     fireEvent.pointerDown(within(preview()).getByText('Position'));
-    expect(item(/\(pose\.x\)/)).toHaveAttribute('aria-selected', 'true');
-    expect(item(/\(pose\.y\)/)).toHaveAttribute('aria-selected', 'false');
+    expect(item('pose.x')).toHaveAttribute('aria-selected', 'true');
+    expect(item('pose.y')).toHaveAttribute('aria-selected', 'false');
   });
 
   it('marks a top-level section the tree selects, selects it for a press on its heading, and marks nothing for a nested one', () => {
@@ -70,7 +71,7 @@ describe('PrefSchemaEditor with a properties-panel preview', () => {
     fireEvent.click(row('inner'));
     expect(marked()).toEqual([]);
     fireEvent.pointerDown(within(preview()).getByRole('heading', { name: 'Look' }));
-    expect(item(/\(look\)/)).toHaveAttribute('aria-selected', 'true');
+    expect(item('look')).toHaveAttribute('aria-selected', 'true');
     expect(marked()).toEqual(['look']);
     fireEvent.click(row('data.tint'));
     fireEvent.click(row('look'));

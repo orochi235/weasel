@@ -5,6 +5,7 @@ import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { actionLeaf, actionLeafKey, type EditorAction } from './editorActions';
 import type { PaletteDrag } from './Palette';
 import s from './PrefSchemaEditor.module.css';
+import { nodeLabel } from './structureRows';
 
 /** What leads a group row's id. No action key is asked to start with it: a row is looked up among the actions. */
 const GROUP = 'group:';
@@ -12,7 +13,7 @@ const GROUP = 'group:';
 function toRows(actions: readonly EditorAction[]): TreeNode[] {
   const row = (a: EditorAction): TreeNode => ({
     id: a.key,
-    label: <>{a.label} <span className={s.treeKey}>({a.key})</span></>,
+    label: nodeLabel(a.label, a.key),
     textValue: `${a.label} ${a.key}`,
     ...(a.icon != null ? { leading: a.icon } : {}),
     ...(a.shortcut ? { trailing: <KeySequence keys={keySpecsFromLegend(a.shortcut)} joins="none" /> } : {}),

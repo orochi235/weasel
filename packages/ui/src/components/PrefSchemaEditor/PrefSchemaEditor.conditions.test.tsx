@@ -35,8 +35,8 @@ function Live({ start }: { start: PrefGroup }) {
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 const attributes = () => within(screen.getByRole('region', { name: 'Attributes' }));
-const select = (key: string) => fireEvent.click(within(structure()).getByText(`(${key})`));
-const treeRow = (key: string) => within(structure()).getByText(`(${key})`).closest('[data-tree-id]') as HTMLElement;
+const select = (key: string) => fireEvent.click(within(structure()).getByText(key));
+const treeRow = (key: string) => within(structure()).getByText(key).closest('[data-tree-id]') as HTMLElement;
 const attr = (name: string) => attributes().getByRole('group', { name });
 const pick = (inside: HTMLElement, button: RegExp, option: string | RegExp) => {
   fireEvent.click(within(inside).getByRole('button', { name: button }));
@@ -103,11 +103,11 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   it('sets one condition on several prefs at once, and lists conditions that differ without a control to overwrite them', () => {
     render(<Live start={CONDITIONED} />);
     select('grid');
-    fireEvent.click(within(structure()).getByText('(units)'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('units'), { metaKey: true });
     pick(attr('Shown if'), /Add a condition/, /Grid size/);
     expect(held('view/grid').showIf).toEqual({ path: 'view.size', above: 0 });
     expect(held('view/units').showIf).toEqual({ path: 'view.size', above: 0 });
-    fireEvent.click(within(structure()).getByText('(size)'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('size'), { metaKey: true });
     expect(attributes().queryByRole('group', { name: 'Shown if' })).toBeNull();
     expect(held('view/size').showIf).toEqual({ path: 'view.grid', is: true });
   });
@@ -122,7 +122,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
     };
     select('size');
     expect(offered()).toEqual(['Show grid', 'Units']);
-    fireEvent.click(within(structure()).getByText('(units)'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('units'), { metaKey: true });
     expect(offered()).toEqual(['Show grid']);
     select('view');
     expect(within(attr('Shown if')).getByRole('button', { name: /Add a condition/ })).toBeDisabled();

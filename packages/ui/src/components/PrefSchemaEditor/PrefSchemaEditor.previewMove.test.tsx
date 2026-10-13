@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { keyedRow, rowKey } from './treeRows.fixture';
 
 // jsdom lays nothing out, so the form cannot say what is under a point: the mark is given.
 vi.mock('../Prefs', async (original) => ({
@@ -29,21 +30,21 @@ function Live() {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
-const item = (key: RegExp) => within(structure()).queryByRole('treeitem', { name: key });
+const item = (key: string) => keyedRow(structure(), key);
 
 describe('PrefSchemaEditor moves from the live preview', () => {
   it('opens a folded group in the tree when a row is dropped into it', () => {
     render(<Live />);
-    fireEvent.click(item(/\(panels\)/)!.querySelector('[data-tree-twisty]')!);
-    expect(item(/\(dock\)/)).toBeNull();
+    fireEvent.click(item('panels')!.querySelector('[data-tree-twisty]')!);
+    expect(item('dock')).toBeNull();
     const preview = screen.getByRole('region', { name: 'Live preview' });
     const label = within(preview).getByText('Grid color');
     fireEvent.pointerDown(label, { button: 0, clientX: 5, clientY: 5 });
     fireEvent.pointerMove(label, { clientX: 60, clientY: 60 });
     // The form redraws the row as it is dragged, so the release goes to a row the stage still holds.
     fireEvent.pointerUp(preview.querySelector('[data-pref-path]')!, { clientX: 60, clientY: 60 });
-    expect(item(/\(grid\)/)).toHaveAttribute('aria-selected', 'true');
-    expect(item(/\(grid\)/)!.closest('[role="group"]')!.closest('[role="treeitem"]')).toHaveAccessibleName(/\(panels\)/);
+    expect(item('grid')).toHaveAttribute('aria-selected', 'true');
+    expect(rowKey(item('grid')!.closest('[role="group"]')!.closest('[role="treeitem"]')!)).toBe('panels');
   });
 
   it('steps back from a move through a rail entry to the selection the drag began with', () => {
@@ -56,11 +57,11 @@ describe('PrefSchemaEditor moves from the live preview', () => {
       fireEvent.pointerMove(label, { clientX: 60, clientY: 60 });
       // Held on the rail entry long enough to open its page, which selects its group.
       act(() => { vi.advanceTimersByTime(1000); });
-      expect(item(/\(panels\)/)).toHaveAttribute('aria-selected', 'true');
+      expect(item('panels')).toHaveAttribute('aria-selected', 'true');
       fireEvent.pointerUp(preview.querySelector('[data-pref-path]')!, { clientX: 60, clientY: 60 });
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-      expect(item(/\(grid\)/)).toHaveAttribute('aria-selected', 'true');
-      expect(item(/\(panels\)/)).toHaveAttribute('aria-selected', 'false');
+      expect(item('grid')).toHaveAttribute('aria-selected', 'true');
+      expect(item('panels')).toHaveAttribute('aria-selected', 'false');
     } finally {
       vi.useRealTimers();
     }

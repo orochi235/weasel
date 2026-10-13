@@ -26,9 +26,9 @@ function Live() {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
-const row = (key: string) => within(structure()).getByText(`(${key})`);
+const row = (key: string) => within(structure()).getByText(key);
 const item = (key: string) => row(key).closest('[role="treeitem"]')!;
-const queryRow = (key: string) => within(structure()).queryByText(`(${key})`);
+const queryRow = (key: string) => within(structure()).queryByText(key);
 const attributes = () => screen.getByRole('region', { name: 'Attributes' });
 
 describe('PrefSchemaEditor with several nodes selected', () => {

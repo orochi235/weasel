@@ -45,8 +45,8 @@ describe('PrefSchemaEditor over a root drawn as a bar', () => {
   it('lists the bar’s prefs in the tree, since a bar holds them on no page', () => {
     render(<Live />);
     const tree = screen.getByRole('tree', { name: 'Schema structure' });
-    expect(within(tree).getByText('(size)')).toBeInTheDocument();
-    expect(within(tree).getByText('(undo)')).toBeInTheDocument();
+    expect(within(tree).getByText('size')).toBeInTheDocument();
+    expect(within(tree).getByText('undo')).toBeInTheDocument();
   });
 
   it('runs the bar down its side from a switch', () => {
