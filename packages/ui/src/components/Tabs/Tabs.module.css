@@ -41,6 +41,23 @@
   transition: color var(--wzl-motion-fast);
 }
 
+/* A tab's raised edge, under a theme that draws one: every side but the one its panel is on. The
+   face runs past that side and is cut back to it, which leaves the bevel there outside the cut. */
+.tab::before {
+  --_open: 8px;
+  content: '';
+  position: absolute;
+  inset: 0 0 calc(-1 * var(--_open)) 0;
+  clip-path: inset(0 0 var(--_open) 0);
+  box-shadow: var(--wzl-bevel-raised, none);
+  pointer-events: none;
+}
+
+.tabs[data-orientation="vertical"] .tab::before {
+  inset: 0 calc(-1 * var(--_open)) 0 0;
+  clip-path: inset(0 var(--_open) 0 0);
+}
+
 .tab[data-hovered]:not([data-disabled]) {
   color: var(--wzl-fg);
 }

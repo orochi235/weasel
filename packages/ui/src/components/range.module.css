@@ -34,6 +34,7 @@
     --wzl-range-track-bg,
     color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-track-mix), transparent)
   );
+  box-shadow: var(--wzl-bevel-sunken, none);
 }
 
 .range::-moz-range-track {
@@ -43,6 +44,7 @@
     --wzl-range-track-bg,
     color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-track-mix), transparent)
   );
+  box-shadow: var(--wzl-bevel-sunken, none);
 }
 
 .range::-webkit-slider-thumb {
@@ -53,6 +55,7 @@
   border: none;
   border-radius: 50%;
   background: color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-thumb-mix), transparent);
+  box-shadow: var(--wzl-bevel-raised, none);
   /* WebKit and Blink hang the thumb from the track's top edge. A transform, not
      margin-top: Blink rounds a thumb margin to a whole CSS pixel, which leaves an
      odd track/thumb gap half a pixel off center at every DPR. */
@@ -65,6 +68,7 @@
   border: none;
   border-radius: 50%;
   background: color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-thumb-mix), transparent);
+  box-shadow: var(--wzl-bevel-raised, none);
 }
 
 /* :where() keeps these at the specificity of `.range` alone, which is what a bare

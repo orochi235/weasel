@@ -23,6 +23,7 @@
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
+  box-shadow: var(--wzl-bevel-sunken, none);
   cursor: var(--rp-track-cursor, crosshair);
   /* No `overflow: hidden` here — thumbs at extreme values would get
    * clipped at the track edges. The gradient/track-paint clip is
@@ -87,7 +88,7 @@
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   /* Subtle raise — sells the "thumb is on top of the track" hierarchy. */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--wzl-bevel-raised, 0 1px 2px rgba(0, 0, 0, 0.2));
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size-xs);
   line-height: var(--wzl-leading-tight);
@@ -109,7 +110,7 @@
   border: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  box-shadow: none;
+  box-shadow: var(--wzl-bevel-raised, none);
   background: color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-thumb-mix), transparent);
 }
 

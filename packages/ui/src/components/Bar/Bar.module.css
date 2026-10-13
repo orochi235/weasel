@@ -20,6 +20,7 @@
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
+  box-shadow: var(--wzl-bevel-raised, none);
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -241,6 +242,7 @@
 
 .action[aria-pressed='true'] {
   background: var(--wzl-accent);
+  box-shadow: var(--wzl-bevel-pressed, none);
   color: var(--wzl-fg-on-accent);
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);

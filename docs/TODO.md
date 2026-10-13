@@ -765,18 +765,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) The desktop themes bevel some controls and have never been looked at.** Under
-  `win9xTheme` and `platinumTheme` (`@weasel-js/theme/themes/*`), `Button`, the field frame,
-  `PropertyPanel`, a `titlebar` frame, the checkbox, the radio, the switch, menus and popovers,
-  `Dialog`, and the tooltip read the `--wzl-bevel-*` hooks. Tabs, sliders, `ToggleBar` and the
-  segmented control, and toolbars take each theme's colors and corners and draw no bevel. Each
-  wants the matching hook read as a `var()` fallback, as `field.module.css` does: a tab is
-  open along one edge, which no hook draws, and the slider and the segmented track set a
-  shadow per variant. The checkbox, radio, switch, and overlays keep their own 1px border
-  inside the bevel, where the field frame drops its border through `--wzl-field-border`. The
-  systems' own faces are named in the font stacks and not bundled; a bundled lookalike needs a
-  face whose license allows it. And nobody has seen either theme: browser tests pin computed
-  values only.
+- **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
+  `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
+  raised face, a well, or a button that stays down reads the `--wzl-bevel-*` hooks;
+  `packages/theme/src/hooks.ts` says which takes which. Each was chosen from computed values
+  and one headless screenshot per theme, not by eye. Drawn with no bevel: `StatusBar`, a
+  `minimal` segmented control, a mixed segment, and a notched slider thumb, whose clip path a
+  box shadow ignores. The checkbox, radio, switch, overlays, flat segment cells, and toolbar
+  strips keep their own 1px border inside the bevel, where the field frame drops its border
+  through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
+  bundled; a bundled lookalike needs a face whose license allows it.
 
 - **(P3) Two gaps beside a `ColorSource` written to CSS.** A palette entry or a function source
   is written as the literal it resolves to in the provider's selection (`colorSourceCss`,
