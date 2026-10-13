@@ -1,6 +1,6 @@
-import { isPrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
-import type { SchemaNode } from './schemaEdit';
+import { nodeAt, setAttribute, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** Whether two attribute values hold the same thing. Functions and class instances compare by identity. */
 export function sameValue(a: unknown, b: unknown): boolean {
@@ -19,8 +19,63 @@ export function sameValue(a: unknown, b: unknown): boolean {
   return keys.length === Object.keys(y).length && keys.every((k) => Object.hasOwn(y, k) && sameValue(x[k], y[k]));
 }
 
-/** Attribute kinds whose control shows one whole value, so several that disagree are listed and not edited. */
+/** Attribute kinds whose control shows one whole value. Several that disagree are listed and not edited, but for an object, which is split by field. */
 export const WHOLE: ReadonlySet<string> = new Set(['list', 'map', 'object', 'union']);
+
+const fieldsOf = (value: unknown): Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+
+/**
+ * An object attribute whose values disagree, field by field: the fields every value agrees on, and the path under
+ * `at` of each that they do not. Null when a field that disagrees has a control with no mixed state.
+ */
+function splitObject(
+  def: PrefObject, each: readonly unknown[], at: string, drawsMixed: (kind: string) => boolean,
+): { agreed: Record<string, unknown>; mixed: string[] } | null {
+  const agreed: Record<string, unknown> = {};
+  const mixed: string[] = [];
+  for (const [key, field] of prefSectionLeaves(def.children)) {
+    const held = each.map((value) => fieldsOf(value)[key]);
+    if (held.every((value) => sameValue(value, held[0]))) {
+      if (held[0] !== undefined) agreed[key] = held[0];
+    } else if (field.kind === 'object') {
+      const inner = splitObject(field as PrefObject, held, `${at}.${key}`, drawsMixed);
+      if (inner === null) return null;
+      agreed[key] = inner.agreed;
+      mixed.push(...inner.mixed);
+    } else if (drawsMixed(field.kind)) {
+      mixed.push(`${at}.${key}`);
+    } else {
+      return null;
+    }
+  }
+  return { agreed, mixed };
+}
+
+/** `held` with `value` at the field `keys` name, a field holding nothing left out. */
+function withObjectField(held: unknown, keys: readonly string[], value: unknown): Record<string, unknown> {
+  const [key, ...rest] = keys;
+  const next = { ...fieldsOf(held) };
+  const inner = rest.length === 0 ? value : withObjectField(next[key!], rest, value);
+  if (inner === undefined) delete next[key!];
+  else next[key!] = inner;
+  return next;
+}
+
+/** Whether `attr` names a field inside an object attribute of `schema`, as `frame.edge` does, and not an attribute. */
+export function isObjectField(schema: AttributeSchema, attr: string): boolean {
+  const top = attr.split('.')[0]!;
+  return top !== attr && (schema.shared[top] ?? schema.own[top] ?? schema.auto[top])?.kind === 'object';
+}
+
+/** The field `attr` names set on the node at each of `paths`, inside that node's own object, as one edit. */
+export function setObjectField<R extends SchemaRoot>(root: R, paths: ReadonlyArray<string | null>, attr: string, value: unknown): R {
+  const [top, ...field] = attr.split('.');
+  return paths.reduce<R>((next, path) => {
+    const holds = (nodeAt(next, path) as unknown as Record<string, unknown>)[top!];
+    return setAttribute(next, path, top!, withObjectField(holds, field, value));
+  }, root);
+}
 
 /** Several nodes' attributes as one form. */
 export interface AttributeAggregate {
@@ -28,7 +83,7 @@ export interface AttributeAggregate {
   schema: AttributeSchema;
   /** Each agreed attribute's value. A mixed one has no entry. */
   values: Record<string, unknown>;
-  /** The attributes in `schema` whose values disagree. */
+  /** The attributes in `schema` whose values disagree, and under an object attribute the path of each field that does. */
   mixed: ReadonlySet<string>;
   /** Attributes every node has whose values disagree and cannot be edited together. */
   apart: readonly string[];
@@ -38,7 +93,8 @@ export interface AttributeAggregate {
 
 /**
  * The attributes `nodes` share, as {@link attributeSchema} gives them for one. `drawsMixed` says whether an
- * attribute kind's control has a mixed state; one that does not is left out when its values disagree.
+ * attribute kind's control has a mixed state; one that does not is left out when its values disagree, but for an
+ * object, which is kept field by field where every field that disagrees has one.
  */
 export function aggregateAttributes(
   nodes: readonly SchemaNode[], custom: CustomKinds = {}, drawsMixed: (kind: string) => boolean = (k) => !WHOLE.has(k),
@@ -60,7 +116,14 @@ export function aggregateAttributes(
         out[key] = def;
         mixed.add(key);
       } else {
-        apart.push(key);
+        const split = def.kind === 'object' ? splitObject(def as PrefLeaf as PrefObject, held.map((h) => h[key]), key, drawsMixed) : null;
+        if (split === null) {
+          apart.push(key);
+          continue;
+        }
+        out[key] = def;
+        values[key] = split.agreed;
+        for (const at of split.mixed) mixed.add(at);
       }
     }
     return out;

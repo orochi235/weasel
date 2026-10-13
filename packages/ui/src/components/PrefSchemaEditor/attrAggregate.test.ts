@@ -47,4 +47,26 @@ describe('aggregateAttributes', () => {
     expect(Object.keys(both.schema.shared)).toContain('name');
     expect(both.schema.own).toEqual({});
   });
+
+  const frame = (name: string, description: string) => ({ kind: 'string', name, description, default: '' }) as PrefLeaf;
+  const KINDS = {
+    boxed: {
+      frame: { kind: 'object', name: 'Frame', description: '', default: {}, children: { edge: frame('Edge', ''), fill: frame('Fill', ''), tags: { kind: 'list', name: 'Tags', description: '', default: [], item: frame('', '') } } } as PrefLeaf,
+    },
+  };
+  const boxed = (held: Record<string, unknown>): PrefLeaf => ({ kind: 'boxed', name: 'B', description: '', default: '', frame: held }) as PrefLeaf;
+
+  it('keeps an object attribute whose values disagree, with the fields that agree and a mark on each that does not', () => {
+    const both = aggregateAttributes([boxed({ edge: 'thin', fill: 'red' }), boxed({ edge: 'thick', fill: 'red' })], KINDS);
+    expect(both.schema.own).toHaveProperty('frame');
+    expect(both.values.frame).toEqual({ fill: 'red' });
+    expect([...both.mixed]).toEqual(['frame.edge']);
+    expect(both.apart).toEqual([]);
+  });
+
+  it('still sets an object attribute apart when a field that disagrees has no mixed state', () => {
+    const both = aggregateAttributes([boxed({ tags: ['a'] }), boxed({ tags: ['b'] })], KINDS);
+    expect(both.schema.own).not.toHaveProperty('frame');
+    expect(both.apart).toEqual(['frame']);
+  });
 });

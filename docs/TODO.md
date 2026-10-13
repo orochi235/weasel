@@ -897,11 +897,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the example first needs a
   way for an instrument to declare its config as a pref schema.
 
-- **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed object or union attribute read-only.**
-  `aggregateAttributes` drops an object, list, map, or union attribute from the form when the
-  selected nodes disagree on it. `PrefsForm` draws a mixed field and writes it at its own path,
-  so the pane could show such an attribute field by field; its `onChange` would then have to take
-  a field path, where `attrOf` reads `default.width` as an attribute name.
+- **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed list, map, or union attribute read-only.**
+  `aggregateAttributes` keeps an object attribute the selected nodes disagree on and marks its
+  mixed fields, each written into every node's own object. A list, a map, or a union that
+  disagrees is still dropped from the form and listed as `mixed`, as is an object with a field of
+  one of those kinds that disagrees: none has a control with a mixed state.
 
 ### WeaselDraw app follow-ups (defer)
 
