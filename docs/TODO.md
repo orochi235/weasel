@@ -396,14 +396,13 @@ Priority tags:
   left is one adapter contract and one default wiring, with every scene a tree rooted at one
   container, as `useScene`'s already is.
 
-- **(P3) `packages/core/src/core/scene/scene.ts` is still over the size cap: 611 lines, 519 of them
-  `buildScene`.** What is left in that function is the node mutators (`add`, `removeMany`, `setPose`,
-  `setLayer`, `setLayout`, `move`, `reorder`, and the smaller ones, about 210 lines) and the wiring
-  of the modules that now own the rest: `notifier.ts`, `editMode.ts`, `sceneSelection.ts`,
-  `opTable.ts`, `recorder.ts`, `outerOps.ts`, `layerStack.ts`, and `historyFacade.ts`. Each mutator
-  checks its arguments against the lock guard, the layer stack, and the node store, then records, so
-  moving them out as they stand hands one module all of those at once. The wiring shrinks when the
-  entry below lands and `outerOps.ts` goes.
+- **(P3) `buildScene` in `packages/core/src/core/scene/scene.ts` is still over the function cap:
+  292 lines against 120.** The file is under its cap. What is left in the function is wiring: it
+  builds each module (`notifier.ts`, `editMode.ts`, `lockGuard.ts`, `nodeStore.ts`, `opTable.ts`,
+  `recorder.ts`, `outerOps.ts`, `historyFacade.ts`, `treeEdits.ts`, `fieldEdits.ts`, and the rest)
+  and hands each the others it reads, then assembles the `Scene` object and `loadState`. Splitting
+  it means grouping modules that are built together, such as the op table with its applied log
+  and recorder.
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
