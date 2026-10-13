@@ -624,14 +624,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P3) A removable badge's click target is its label only.** Since the nested button fix, a
-  `Badge` with `onRemove` and `onClick` or `href` has a `<span>` root, and the label inside it takes
-  the click, so the badge's padding and the gap before the remove control no longer click. Stretch
-  the label's hit area over the padding without covering the remove control.
-
-- **(P3) A `Badge` drawn with `base` may show no focus indicator.** Read from `Badge.module.css`
-  and not tested, clickable or not.
-
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (flip, align, distribute, clone, clipboard, booleans, outlines,
   edit-anchors, lasso-select) holds its options, geometry, and gesture adapter. One directory per
@@ -1067,10 +1059,6 @@ only story runner in the repo.
   ubuntu-22.04; dispatch it after the push and commit what it captures. `gestures.spec.ts` is the
   likeliest to differ: its whole trace is 0.31% of the canvas, so it compares at
   `maxDiffRatio: 0.0005`.
-
-- **(P3) `draw-loop` reports negative frame times at 100 commands.** A run of
-  `tests/perf/draw-loop.spec.ts` on 2026-10-13 printed -0.15 ms for `scene` and -0.07 ms for
-  `rotated` in the 100-command row. Not investigated.
 
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
   failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a
