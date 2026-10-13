@@ -1,7 +1,7 @@
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
-import type { SchemaNode } from './schemaEdit';
+import type { SchemaNode, SchemaRoot } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
 /** How wide each kind of ghost is drawn. */
@@ -19,11 +19,13 @@ export function ghostIsPage(node: SchemaNode, topLevel: boolean): boolean {
  * A dragged node near enough to how the form will draw it: a leaf as its row, a page as a rail entry, and any
  * other group as its tab, box, or heading, emptied, since what it holds comes along unseen.
  */
-export function NodeGhost({ node, topLevel = false, renderers }: {
+export function NodeGhost({ node, topLevel = false, renderers, over }: {
   node: SchemaNode;
   /** The node sits, or will sit, directly under the root, where a group with no `as` is a page. */
   topLevel?: boolean;
   renderers?: Record<string, PrefRenderer>;
+  /** The schema a pointer names its setting in, which the ghost of one is drawn as. */
+  over?: SchemaRoot;
 }) {
   if (ghostIsPage(node, topLevel)) return <div className={s.ghostPage}>{node.name}</div>;
   const drawn = isPrefLeaf(node)
@@ -33,21 +35,22 @@ export function NodeGhost({ node, topLevel = false, renderers }: {
   return (
     <div className={s.ghostNode}>
       <PrefsForm layout="list" schema={{ name: '', children: { ghost: drawn } }} values={NO_VALUES} onChange={ignore}
-        renderers={renderers} showEmpty showHidden />
+        renderers={renderers} showEmpty showHidden over={over} />
     </div>
   );
 }
 
 /** A drag's ghost: the one node it draws, and on its corner how many it carries when that is more. */
-export function DraggedNodes({ node, topLevel, count, renderers }: {
+export function DraggedNodes({ node, topLevel, count, renderers, over }: {
   node: SchemaNode;
   topLevel: boolean;
   count: number;
   renderers?: Record<string, PrefRenderer>;
+  over?: SchemaRoot;
 }) {
   return (
     <>
-      <NodeGhost node={node} topLevel={topLevel} renderers={renderers} />
+      <NodeGhost node={node} topLevel={topLevel} renderers={renderers} over={over} />
       {count > 1 && <Badge size="xs" className={s.ghostCount}>{count}</Badge>}
     </>
   );

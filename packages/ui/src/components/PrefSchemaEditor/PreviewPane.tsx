@@ -81,7 +81,7 @@ function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRe
           showHidden showEmpty markHidden drop={drop} selected={marked} over={over}
           onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
           onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
-        <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
+        <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} over={over} />
       </div>
     </section>
   );
@@ -102,10 +102,10 @@ interface GroupPreviewProps {
 }
 
 /** What follows the pointer while the form draws the dragged node nowhere. */
-function PreviewDragGhost({ ghost, stageRef, drop, renderers }: Pick<GroupPreviewProps, 'ghost' | 'stageRef' | 'drop' | 'renderers'>) {
+function PreviewDragGhost({ ghost, stageRef, drop, renderers, over }: Pick<GroupPreviewProps, 'ghost' | 'stageRef' | 'drop' | 'renderers' | 'over'>) {
   if (!ghost || !stageRef?.current || drawsNode(drop)) return null;
   return (
-    <DragGhost at={ghost} from={stageRef.current}><DraggedNodes node={ghost.node} topLevel={ghost.topLevel} count={ghost.count} renderers={renderers} /></DragGhost>
+    <DragGhost at={ghost} from={stageRef.current}><DraggedNodes node={ghost.node} topLevel={ghost.topLevel} count={ghost.count} renderers={renderers} over={over} /></DragGhost>
   );
 }
 
@@ -132,7 +132,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle {...size} min={360} max={900} ariaLabel="Resize preview" />
-      <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
+      <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} over={over} />
       </div>
     </section>
   );

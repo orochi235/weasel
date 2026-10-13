@@ -37,4 +37,14 @@ describe('NodeGhost', () => {
     render(<NodeGhost node={group(undefined)} topLevel />);
     expect(screen.queryByRole('heading')).toBeNull();
   });
+
+  it('draws a pointer as the setting of `over` it names, and as an alias of nothing without it', () => {
+    const pointer = { kind: 'alias', name: '', description: '', of: 'view.snap' } as unknown as PrefLeaf;
+    const over: PrefGroup = { name: 'Dialog', children: { view: { name: 'View', children: { snap: { kind: 'boolean', name: 'Snap', description: '', default: true } } } } };
+    const { unmount } = render(<NodeGhost node={pointer} over={over} />);
+    expect(screen.getByRole('checkbox', { name: 'Snap' })).toBeChecked();
+    unmount();
+    render(<NodeGhost node={pointer} />);
+    expect(screen.getByText('(alias: no pref at view.snap)')).toBeInTheDocument();
+  });
 });

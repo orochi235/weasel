@@ -772,8 +772,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   default should stand in there is not decided. (2) `PrefSchemaEditor`'s preview of a properties
   layout seeds its one node from the layout's own leaves and writes only under `pose` and
   `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
-  Its drag ghost draws a pointer with no `over`, as an alias of nothing. (3) A lab
-  resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
+  (3) A lab resolves its instrument's config schema with no `over` (`useConfigSchema`), so that schema
   cannot hold a condition on another's setting. labkit's `ControlMatrix` takes `over` for its
   conditions and for the popover an alias's cell opens, but the cell itself summarizes the
   alias's own path, which holds nothing.
