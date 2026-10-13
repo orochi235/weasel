@@ -122,6 +122,7 @@ const Quatrefoil: BaseModule<QuatrefoilParams> = {
   build: (params, boxW, boxH) => polygonSampler(quatrefoilVertices(params), boxW, boxH),
   defaults: DEFAULTS,
   insets: { top: 10, right: 14, bottom: 10, left: 14 },
+  fitsContent: true,
 };
 
 export default Quatrefoil;

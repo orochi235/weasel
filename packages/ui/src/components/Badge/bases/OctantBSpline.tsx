@@ -197,6 +197,7 @@ const OctantBSpline: BaseModule<OctantBSplineParams> = {
   },
   defaults: DEFAULTS,
   insets: { top: 10, right: 14, bottom: 10, left: 14 },
+  fitsContent: true,
 };
 
 export default OctantBSpline;

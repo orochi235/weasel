@@ -9,6 +9,7 @@ import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
 import { EFFECTS, type EffectSpec } from './effects';
 import { composeOutline, offsetOutline } from './composeOutline';
 import { paddingStyle } from './paddingSides';
+import { useInsets } from './useInsets';
 import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
 import { BadgeRemove, BadgeTarget } from './BadgeLabel';
@@ -188,9 +189,8 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
 
   const sampler = composeBase ? composeBase.build(composeBaseParams, box.w, box.h) : null;
 
-  const insets = composeBase
-    ? (typeof composeBase.insets === 'function' ? composeBase.insets(composeBaseParams) : composeBase.insets) ?? { top: 0, right: 0, bottom: 0, left: 0 }
-    : (typeof shapeModule.insets === 'function' ? shapeModule.insets(params) : shapeModule.insets);
+  const contentRef = useRef<HTMLSpanElement>(null);
+  const insets = useInsets<unknown>(composeBase ?? shapeModule, composeBase ? composeBaseParams : params, contentRef);
   const style: CSSProperties = {
     ...stanced.style,
     ['--badge-inset-top' as never]: `${insets.top}px`,
@@ -273,7 +273,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   const inner = (
     <>
       {decoSvg}
-      <span className={s.content}>
+      <span ref={contentRef} className={s.content}>
         {split ? (
           <BadgeTarget element={element} href={href} onClick={onClick} aria-label={ariaLabel} tooltip={tooltip} onFocusChange={setFocused}>
             {children}

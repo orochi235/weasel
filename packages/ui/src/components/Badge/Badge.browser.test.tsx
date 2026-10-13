@@ -5,6 +5,7 @@ import { userEvent } from 'vitest/browser';
 import { painted } from '../../testing/paintedContrast';
 import { GestureRoute } from '../GestureRoute/GestureRoute';
 import { Badge } from './Badge';
+import { BASES, type BadgeBase } from './bases';
 import type { BadgeShape, BadgeSize, BadgeStatus } from './types';
 
 // Badge colors come from tokens that follow currentColor and from color-mix,
@@ -169,6 +170,43 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
     expect(luminance(hovered)).toBeGreaterThan(luminance(rest));
     expect(hovered[0] - hovered[2], 'still a red').toBeGreaterThan(80);
   });
+});
+
+// A base's outline is stretched to the badge's box, so one that dips inward dips further the
+// longer the label is. The content has to stay inside it at any length.
+describe('a base holds its content inside its outline', () => {
+  /** Points along a path, in client px, close enough together that none can step over a corner of the content. */
+  const outline = (path: SVGPathElement): DOMPoint[] => {
+    const toClient = path.getScreenCTM()!;
+    const total = path.getTotalLength();
+    const points: DOMPoint[] = [];
+    for (let i = 0; i < 4000; i++) points.push(path.getPointAtLength((i / 4000) * total).matrixTransform(toClient));
+    return points;
+  };
+
+  for (const base of Object.keys(BASES) as BadgeBase[]) {
+    for (const label of ['ab', 'a considerably longer label']) {
+      for (const removable of [false, true]) {
+        test(`${base}, "${label}"${removable ? ', removable' : ''}`, async () => {
+          const { container } = render(
+            <Surface mode="light">
+              <p><Badge base={base} onRemove={removable ? () => {} : undefined}>{label}</Badge></p>
+            </Surface>,
+          );
+          const badge = container.querySelector<HTMLElement>('[data-status]')!;
+          const content = badge.lastElementChild!;
+          await waitFor(() => {
+            const path = badge.querySelector<SVGPathElement>('.badge-stroke');
+            if (!path) throw new Error('no outline yet');
+            const box = content.getBoundingClientRect();
+            const inside = outline(path).filter((p) => p.x > box.left + 0.25 && p.x < box.right - 0.25 && p.y > box.top + 0.25 && p.y < box.bottom - 0.25);
+            const worst = Math.max(0, ...inside.map((p) => Math.min(p.x - box.left, box.right - p.x, p.y - box.top, box.bottom - p.y)));
+            expect(inside.length, `${inside.length} outline points inside the content, the deepest ${worst.toFixed(1)}px in`).toBe(0);
+          });
+        });
+      }
+    }
+  }
 });
 
 // A composed badge has no CSS box to outline: its silhouette is an SVG path, and a root button
