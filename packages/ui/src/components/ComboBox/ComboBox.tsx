@@ -20,6 +20,7 @@ import { Caret } from '../Caret';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './ComboBox.module.css';
+import type { Key } from '../../optionKey';
 
 /**
  * One option in a {@link ComboBox}'s `options` list. `textValue` is the
@@ -32,8 +33,6 @@ export type ComboBoxOption = {
   textValue?: string;
   isDisabled?: boolean;
 };
-
-type Key = string | number;
 
 /**
  * How the typed text narrows the options.

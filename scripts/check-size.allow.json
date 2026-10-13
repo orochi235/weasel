@@ -222,7 +222,7 @@
     "longestFunction": 262
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "lines": 628,
+    "lines": 496,
     "longestFunction": 294
   },
   "packages/labkit/src/lab/Workspace.tsx": {
@@ -289,7 +289,6 @@
     "longestFunction": 133
   },
   "packages/storage/src/records.ts": {
-    "lines": 403,
     "longestFunction": 281
   },
   "packages/stroke/src/tessellate/dash.ts": {
@@ -390,7 +389,7 @@
     "longestFunction": 167
   },
   "packages/ui/src/components/Select/Select.tsx": {
-    "lines": 496,
+    "lines": 495,
     "longestFunction": 127
   },
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {

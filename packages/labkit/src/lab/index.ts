@@ -1,4 +1,3 @@
-export type { LabProps } from './Lab';
 export { Lab } from './Lab';
 export { LabBoundary, type LabBoundaryProps } from './LabBoundary';
 export type { LabCommands, LabContextValue } from './LabContext';
@@ -12,6 +11,7 @@ export { LabShell } from './LabShell';
 export type { LabPage, LabSwitcherProps } from './LabSwitcher';
 export { currentPage, LabSwitcher } from './LabSwitcher';
 export { LabZoom } from './LabZoom';
+export type { LabBaseProps, LabProps } from './labProps';
 export type { PresentationSeed } from './openLab';
 export {
   type Presentation,

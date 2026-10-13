@@ -111,6 +111,7 @@ export { rampColor, colorRamp } from './color/ramp';
 export type { ColorRampOptions } from './color/ramp';
 export { useAsyncOptions } from './useAsyncOptions';
 export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
+export type { Key } from './optionKey';
 export { useReorderDragList } from './useReorderDragList';
 export { pickActiveSection, useScrollSpy } from './useScrollSpy';
 export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollSpy';

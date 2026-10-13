@@ -11,7 +11,7 @@ import { useLatest } from '@weasel-js/react';
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId, Node } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { Op } from 'core/ops/types';
+import type { OpsApplier } from './opsApplier';
 import type { Path } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -28,9 +28,6 @@ export function useSliceDep(dep: SliceDep): void {
   useDepSource('slice', (): SliceDep => depRef.current);
 }
 
-interface OpsApplier {
-  applyOps(ops: Op[], label?: string): void;
-}
 
 /**
  * The kit `slice` dep: cut every leaf the cut crosses and swap it for its

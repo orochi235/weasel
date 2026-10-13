@@ -20,12 +20,10 @@ import { classifyPathStorage, resolveEditablePathOf } from 'features/paths/edita
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { recordModeSwitch } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
+import type { OpsApplier } from './opsApplier';
 import { createTransformOp } from 'core/ops/transform';
 import { createSetDataOp } from 'core/ops/setData';
 
-interface OpsApplier {
-  applyOps(ops: Op[], label?: string): void;
-}
 
 /** The part of a `PathEditState` the dep reads and writes. */
 export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingIds'>;

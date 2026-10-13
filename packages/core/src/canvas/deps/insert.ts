@@ -12,6 +12,7 @@ import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { OpsApplier } from './opsApplier';
 import { createInsertOp } from 'core/ops/create';
 import {
   rectPath,
@@ -28,9 +29,6 @@ import { insertPreviewExtent } from '../insertPreviewExtent';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 
-interface OpsApplier {
-  applyOps(ops: Op[], label?: string): void;
-}
 
 /**
  * Consumer-supplied node factory for one insert `kind`. Given the drag AABB

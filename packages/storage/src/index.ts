@@ -3,14 +3,13 @@ export { type IndexedDbAdapterOptions, createIndexedDbAdapter, indexedDbAdapter 
 export { createMemoryAdapter, noneAdapter } from './memory';
 export { urlHashAdapter } from './urlHashAdapter';
 export { localStorageAdapter, sessionStorageAdapter } from './webStorage';
-export {
-  createRecordCache,
-  openRecords,
-  openRecordsSync,
-  type OwnedRecordCache,
-  type RecordCache,
-  type RecordCacheOptions,
-  type RecordChange,
-} from './records';
+export { createRecordCache, openRecords, openRecordsSync } from './records';
+export type {
+  CreateRecordCacheOptions,
+  OwnedRecordCache,
+  RecordCache,
+  RecordCacheOptions,
+  RecordChange,
+} from './recordTypes';
 export type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 export { decodeUrlHash, encodeUrlHash } from './urlHash';
