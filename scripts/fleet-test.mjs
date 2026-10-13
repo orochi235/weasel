@@ -12,7 +12,7 @@
  *   npm run test:fleet -- HEAD --node studio    # the rest goes to `onto test`
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -54,6 +54,7 @@ const branch = branchOf(named ? first : 'HEAD');
 if (branch && !ontoArgs.includes('--branch')) ontoArgs.unshift('--branch', branch);
 
 const main = git('worktree', 'list', '--porcelain').split('\n')[0].replace(/^worktree /, '');
+mkdirSync(join(main, '.worktrees'), { recursive: true });
 const tree = mkdtempSync(join(main, '.worktrees', 'fleet-'));
 git('worktree', 'add', '--detach', '--force', tree, commit);
 

@@ -1,14 +1,12 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, test, vi } from 'vitest';
-import { useTrialDrag } from '../trial/TrialDragContext';
+import { TileGrip } from './TileGrip';
 import { Workspace } from './Workspace';
 
-/** Reports whether its tile supplied a drag source — the title bar is the
- *  drag surface now, so there is no grip element to assert on. */
+/** A tile whose whole body is its grip, as a plain tile draws one. */
 function DragProbe({ label }: { label: string }) {
-  const drag = useTrialDrag();
-  return <div data-testid={`drag-${label}`}>{drag ? 'draggable' : 'static'}</div>;
+  return <TileGrip data-testid={`drag-${label}`}>{label}</TileGrip>;
 }
 
 const VIEWPORT = { w: 800, h: 600 };
@@ -134,6 +132,14 @@ describe('Workspace', () => {
   });
 
   test('reports the order a drop would produce instead of applying it', async () => {
+    // jsdom lays nothing out, so a drop is hit-tested against each element's inline rect.
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      const { left, top, width, height } = (this as HTMLElement).style;
+      const px = (value: string) => Number.parseFloat(value) || 0;
+      return new DOMRect(px(left), px(top), px(width), px(height));
+    });
     const onReorder = vi.fn();
     const { container } = await renderSettled(
       <Workspace ids={['a', 'b']} reorderable onReorder={onReorder} viewport={VIEWPORT}>
@@ -141,15 +147,21 @@ describe('Workspace', () => {
         <DragProbe label="b" />
       </Workspace>,
     );
-    // The grid is controlled: each tile offers itself as a drag source and
-    // commits nothing itself. Order still comes from `ids`.
-    expect(screen.getByTestId('drag-a')).toHaveTextContent('draggable');
-    expect(screen.getByTestId('drag-b')).toHaveTextContent('draggable');
-    expect(onReorder).not.toHaveBeenCalled();
+    const grip = screen.getByTestId('drag-a');
+    // Drag `a` from its own tile to the far side of `b`.
+    await act(async () => {
+      fireEvent.pointerDown(grip, { pointerId: 1, clientX: 100, clientY: 300 });
+      fireEvent.pointerMove(grip, { pointerId: 1, clientX: 760, clientY: 300 });
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      fireEvent.pointerUp(grip, { pointerId: 1, clientX: 760, clientY: 300 });
+    });
+
+    expect(onReorder).toHaveBeenCalledWith(['b', 'a']);
     const nodes = [...container.querySelectorAll('[data-node]')].map((el) =>
       el.getAttribute('data-node'),
     );
     expect(nodes).toEqual(['a', 'b']);
+    vi.restoreAllMocks();
   });
 
   test('offers no drag source unless reorderable', async () => {
@@ -159,7 +171,14 @@ describe('Workspace', () => {
         <DragProbe label="b" />
       </Workspace>,
     );
-    expect(screen.getByTestId('drag-a')).toHaveTextContent('static');
-    expect(screen.getByTestId('drag-b')).toHaveTextContent('static');
+    expect(screen.getByTestId('drag-a')).not.toHaveAttribute('data-lk-tile-grip');
+    expect(screen.getByTestId('drag-b')).not.toHaveAttribute('data-lk-tile-grip');
+  });
+
+  test('a grip outside a workspace is a plain div', async () => {
+    await renderSettled(<TileGrip className="lk-probe">bar</TileGrip>);
+    const grip = screen.getByText('bar');
+    expect(grip).toHaveClass('lk-probe');
+    expect(grip).not.toHaveAttribute('data-lk-tile-grip');
   });
 });

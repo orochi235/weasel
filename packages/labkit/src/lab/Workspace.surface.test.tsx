@@ -47,13 +47,4 @@ describe('Workspace with a surface above it', () => {
 
     expect(handle.invalidateRects).toHaveBeenCalled();
   });
-
-  it('renders unchanged with no surface above it', async () => {
-    const { getByText } = await renderSettled(
-      <Workspace ids={['a']} viewport={{ w: 800, h: 600 }}>
-        <div>a</div>
-      </Workspace>,
-    );
-    expect(getByText('a')).toBeInTheDocument();
-  });
 });

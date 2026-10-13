@@ -10,6 +10,7 @@ A map of the library so agents can find what they need quickly.
 |---|---|
 | `<LabShell>` | `src/lab/LabShell.tsx` |
 | `<Workspace>` | `src/lab/Workspace.tsx` |
+| `<TileGrip>` | `src/lab/TileGrip.tsx` |
 | `<Lightbox>`, `useLightbox`, `useLightboxControl`, `<LightboxLayers>` | `src/lightbox/` |
 | The lab body and its shared surface's layers | `src/lab/LabSurface.tsx` |
 | Presentation mode: `usePresentation`, `?present`, the seed and its store, the refit and the play controls | `src/lab/presentation.tsx`, `src/lab/openLab.ts`, `src/lab/presentation.less`, `src/lab/PresentedTransport.tsx`, `src/trial/useViewPlacement.ts` |

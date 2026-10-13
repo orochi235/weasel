@@ -361,6 +361,23 @@ import { LabShell, Workspace } from '@weasel-js/labkit';
 </LabShell>;
 ```
 
+With `reorderable`, a tile is dragged by its `<TileGrip>`: wrap the tile's
+header in one, and commit the order `onReorder` reports. A `<Trial>`'s title
+bar is a grip already.
+
+```tsx
+import { TileGrip } from '@weasel-js/labkit';
+
+function MyPane({ id }: { id: string }) {
+  return (
+    <section>
+      <TileGrip className="my-pane__bar">{id}</TileGrip>
+      …
+    </section>
+  );
+}
+```
+
 Every tile has an expand button in its corner that shows it large over the
 page; Escape, a click in the margin, or the close button puts it back. The tile
 is lifted into the browser's top layer rather than remounted, so a WebGL

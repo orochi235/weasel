@@ -23,5 +23,6 @@ export type {
   PresentationMessageOptions,
   PresentationState,
 } from './presentationMessages';
+export { TileGrip, type TileGripProps } from './TileGrip';
 export type { PanelDescriptor, TrialLayout, WorkspaceProps } from './Workspace';
 export { Workspace } from './Workspace';
