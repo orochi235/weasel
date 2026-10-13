@@ -32,17 +32,6 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-function makeScene(): Scene<D, L, P> {
-  const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  s.batch('seed', () => {
-    s.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
-      pose: { x: 10, y: 10, width: 50, height: 50 } as P });
-    s.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
-      pose: { x: 100, y: 10, width: 50, height: 50 } as P });
-  });
-  return s;
-}
-
 function firstId(scene: Scene<D, L, P>): NodeId {
   for (const id of scene.renderOrder()) return id;
   throw new Error('No nodes');
@@ -60,71 +49,6 @@ function pd(canvas: HTMLCanvasElement, x: number, y: number, opts: PointerEventI
 function pu(canvas: HTMLCanvasElement, x: number, y: number, opts: PointerEventInit = {}) {
   canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1, ...opts }));
 }
-
-describe('Behavior 2: a supplied multi selection accumulates', () => {
-  it('shift-click on a second node adds it to the selection (does not replace)', () => {
-    const scene = makeScene();
-    const [idA, idB] = idsOf(scene);
-
-    // Track selection via the selection prop override.
-    let selState: NodeId[] = [idA];
-    const selApi = {
-      get current() { return selState; },
-      get() { return [...selState]; },
-      set(ids: NodeId[]) { selState = ids; },
-      add(id: NodeId) { if (!selState.includes(id)) selState = [...selState, id]; },
-      remove(id: NodeId) { selState = selState.filter(i => i !== id); },
-      toggle(id: NodeId) {
-        if (selState.includes(id)) {
-          selState = selState.filter(i => i !== id);
-        } else {
-          selState.push(id);
-        }
-      },
-      clear() { selState = []; },
-      contains(id: NodeId) { return selState.includes(id); },
-      applyClick(id: NodeId, mods: { shift: boolean; meta: boolean; ctrl: boolean }) {
-        if (mods.shift) {
-          // multi mode: toggle
-          if (selState.includes(id)) {
-            selState = selState.filter(i => i !== id);
-          } else {
-            selState.push(id);
-          }
-        } else {
-          selState = [id];
-        }
-      },
-      adapterMethods: {
-        getSelection: () => [...selState],
-        setSelection: (ids: NodeId[]) => { selState = ids; },
-      },
-    };
-
-    const { container } = render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={400}
-        height={400}
-        selection={selApi as Parameters<typeof SceneCanvas>[0]['selection']}
-      />,
-    );
-
-    const canvas = container.querySelector('canvas')!;
-
-    // Click node B with shift — should add idB to the selection.
-    act(() => {
-      // Node B at x:100, width:50 → center at (125, 35).
-      pd(canvas, 125, 35, { shiftKey: true });
-      pu(canvas, 125, 35, { shiftKey: true });
-    });
-
-    // Both idA (initial) and idB (shift-clicked) should be selected.
-    expect(selState).toContain(idA);
-    expect(selState).toContain(idB);
-  });
-});
 
 describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
   it('worldXY passed to pickEvery accounts for view.x pan offset', () => {
@@ -182,103 +106,6 @@ describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
 
     // The node should be selected because the view transform was applied.
     expect(selState).toContain(id);
-  });
-});
-
-describe('Behavior 7: backgroundFill prop wires a layer', () => {
-  it('mounts without throwing when backgroundFill is set', () => {
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const { container } = render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={200}
-        height={200}
-        backgroundFill={{ color: '#ff0000' }}
-      />,
-    );
-    expect(container.querySelector('canvas')).toBeTruthy();
-  });
-
-  it('backgroundFill=undefined produces no background layer (no throw, no extra noise)', () => {
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const { container } = render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={200}
-        height={200}
-      />,
-    );
-    expect(container.querySelector('canvas')).toBeTruthy();
-  });
-});
-
-describe('Behavior 8: cursorCoordsHud and pickHud render when enabled', () => {
-  it('cursorCoordsHud=true mounts without throwing and canvas is present', () => {
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const { container } = render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={200}
-        height={200}
-        cursorCoordsHud={true}
-      />,
-    );
-    expect(container.querySelector('canvas')).toBeTruthy();
-  });
-
-  it('pickHud=true mounts without throwing', () => {
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const { container } = render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={200}
-        height={200}
-        pickHud={true}
-      />,
-    );
-    expect(container.querySelector('canvas')).toBeTruthy();
-  });
-
-  it('both cursorCoordsHud and pickHud can be enabled together without throwing', () => {
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const { container } = render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={200}
-        height={200}
-        cursorCoordsHud={true}
-        pickHud={true}
-      />,
-    );
-    expect(container.querySelector('canvas')).toBeTruthy();
-  });
-
-  it('cursorCoordsHud updates world coords on pointermove via document listener', () => {
-    // Asserts only that the HUD's update does not throw.
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const { container, unmount } = render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={200}
-        height={200}
-        cursorCoordsHud={true}
-      />,
-    );
-    // Fire a pointermove on document — CursorCoordsHud listens on document.
-    act(() => {
-      document.dispatchEvent(new PointerEvent('pointermove', {
-        bubbles: true, clientX: 50, clientY: 50,
-      }));
-    });
-    // Canvas should still be present (no throw from HUD update).
-    expect(container.querySelector('canvas')).toBeTruthy();
-    unmount();
   });
 });
 

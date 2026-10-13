@@ -119,7 +119,11 @@ function pathCommands(cmds: readonly DrawCommand[]): Path[] {
   return out;
 }
 
-function mount(scene: Scene<Data, 'main', RectPose>, animator?: Animator): CapturedLayers {
+function mount(
+  scene: Scene<Data, 'main', RectPose>,
+  animator?: Animator,
+  alphaFor?: (id: string) => number,
+): CapturedLayers {
   captured.layers = null;
   render(
     <SceneCanvas<Data, 'main', RectPose>
@@ -127,6 +131,7 @@ function mount(scene: Scene<Data, 'main', RectPose>, animator?: Animator): Captu
       width={300}
       height={300}
       animator={animator}
+      alphaFor={alphaFor}
     />,
   );
   if (!captured.layers) throw new Error('SceneCanvas rendered no <Canvas> layers');
@@ -146,6 +151,14 @@ describe('<SceneCanvas> installs the scene wiring', () => {
     scene.overrides.set(a, { alpha: 0.25 });
     const slot = mount(scene).scene;
     expect(slot.alphaFor?.(a)).toBeCloseTo(0.25);
+  });
+
+  it('multiplies a consumer alphaFor by the override alpha exactly once', () => {
+    const { scene, a, b } = makeEdgeScene();
+    scene.overrides.set(a, { alpha: 0.5 });
+    const slot = mount(scene, undefined, () => 0.4).scene;
+    expect(slot.alphaFor?.(a)).toBeCloseTo(0.2);
+    expect(slot.alphaFor?.(b)).toBeCloseTo(0.4);
   });
 
   it('paints its animator\'s vertex-color overrides through the scene slot', () => {

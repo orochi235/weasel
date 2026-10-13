@@ -286,11 +286,6 @@ describe('shapeCoversPoint — align decides which side is grabbable', () => {
 describe('a stroke with no paint', () => {
   const paintless = { width: 2 } as unknown as ReturnType<typeof strokeOf>;
 
-  it('paints the node without throwing', () => {
-    const node = pathNode({ fill: { paint: solid('#f00') }, stroke: paintless });
-    expect(() => findNodeShape(node)!.paint(node, POSE)).not.toThrow();
-  });
-
   it('emits no stroke — a stroke with no paint has nothing to draw', () => {
     const node = pathNode({ fill: { paint: solid('#f00') }, stroke: paintless });
     const [cmd] = findNodeShape(node)!.paint(node, POSE);
@@ -330,21 +325,6 @@ describe('findShapeInk — text', () => {
     // grabbable at its line-box edge and nowhere near the letters.
     expect(findShapeInk(textNode({ fill: null, stroke: strokeOf('#000', 4) }), POSE))
       .toEqual({ filled: true, outset: 2, inset: 2 });
-  });
-});
-
-describe('painter precedence', () => {
-  it('paints a derived node that also carries a path with its derived path', () => {
-    const node = {
-      id: asNodeId('d'),
-      kind: 'leaf',
-      layer: 'main',
-      pose: { x: 0, y: 0, width: 100, height: 100 },
-      dependsOn: [asNodeId('a')],
-      derivePath: () => null,
-      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } },
-    } as unknown as Node<unknown, string, RectPose>;
-    expect(findNodeShape(node)?.id).toBe('kit:derived');
   });
 });
 

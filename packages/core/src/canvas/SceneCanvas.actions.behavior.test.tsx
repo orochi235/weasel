@@ -38,30 +38,13 @@ function makeScene(): Scene<D, L, P> {
 }
 
 describe('SceneCanvas keydown dispatch', () => {
-  it('Ctrl+A reaches the registered selectAll action without throwing', () => {
+  it('Escape clears the selection', () => {
     const scene = makeScene();
-    const customRun = vi.fn();
-    render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
-        actions={{ selectAll: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }} />,
-    );
-    // jsdom is not Mac, so `mod: true` in the defaultBinding resolves to ctrlKey.
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true })); });
-    expect(customRun).toHaveBeenCalledOnce();
-  });
-
-  it('Escape clears selection (no throw, dispatch reaches handler)', () => {
-    const scene = makeScene();
-    const { container } = render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />);
-    expect(container).toBeTruthy();
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
-  });
-
-  it('a non-matching key does not throw', () => {
-    const scene = makeScene();
+    scene.setSelection([...scene.renderOrder()]);
+    expect(scene.getSelection()).toHaveLength(1);
     render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />);
-    expect(() => act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F13', bubbles: true })); }))
-      .not.toThrow();
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+    expect(scene.getSelection()).toEqual([]);
   });
 
   it('skipInEditable: keydown inside an <input> does not invoke the action', () => {

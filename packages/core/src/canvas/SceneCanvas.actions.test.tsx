@@ -240,24 +240,6 @@ describe('SceneCanvas actions integration', () => {
     expect(childReg!.list().map((a) => a.id)).toContain('host.only');
   });
 
-  it('unmount cleans up registered defaults', () => {
-    const scene = makeScene();
-    let seen: string[] = [];
-    // Probe must render AFTER SceneCanvas: effects run in commit order, so a
-    // probe placed first reads an empty registry and asserts nothing.
-    function Probe3() { const r = useActionsRegistry(); useEffect(() => { seen = r ? r.list().map(a => a.id) : []; }); return null; }
-    const { unmount, rerender } = render(
-      <ActionsProvider>
-        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }} />
-        <Probe3 />
-      </ActionsProvider>,
-    );
-    expect(seen).toContain('selectAll');
-    rerender(<ActionsProvider><Probe3 /></ActionsProvider>);
-    expect(seen).not.toContain('selectAll');
-    unmount();
-  });
-
   it('partial override with explicit id mismatch ignores the id field, applies override to the slot', () => {
     const scene = makeScene();
     const customRun = vi.fn();
@@ -319,9 +301,11 @@ describe('SceneCanvas actions integration', () => {
     expect(captured!.defaultBinding).toEqual({ kind: 'key', key: 'D', mods: { mod: true, shift: true } });
   });
 
-  it('re-mount re-registers defaults', () => {
+  it('unmount removes the registered defaults and a re-mount registers them again', () => {
     const scene = makeScene();
     let seen: string[] = [];
+    // Probe must render AFTER SceneCanvas: effects run in commit order, so a
+    // probe placed first reads an empty registry and asserts nothing.
     function Probe4() { const r = useActionsRegistry(); useEffect(() => { seen = r ? r.list().map(a => a.id) : []; }); return null; }
     const { rerender } = render(
       <ActionsProvider>

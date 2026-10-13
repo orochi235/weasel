@@ -167,6 +167,7 @@ describe('Canvas baseBoundsOf synthesis', () => {
     act(() => { detach = ref.current?.registerLayer(extra); });
     await waitForFrame();
     expect(beginFrameSpy).toHaveBeenCalled();
+    expect(sinkRef.current!.snapshot().layers.some(l => l.id === 'extra')).toBe(true);
 
     // After detach + another redraw, beginFrame fires again but the extra layer
     // should be absent from the snapshot's layer list.

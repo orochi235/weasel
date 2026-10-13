@@ -125,6 +125,7 @@ const ACTION_KEY_MATRIX: readonly ActionKeyCase[] = [
   { actionId: 'duplicate', key: 'd', mods: { ctrlKey: true },                  label: 'Cmd/Ctrl+D → duplicate' },
   { actionId: 'group',     key: 'g', mods: { ctrlKey: true },                  label: 'Cmd/Ctrl+G → group' },
   { actionId: 'ungroup',   key: 'g', mods: { ctrlKey: true, shiftKey: true },  label: 'Cmd/Ctrl+Shift+G → ungroup' },
+  { actionId: 'escape',    key: 'Escape',                                      label: 'Escape → escape' },
 ];
 
 describe('default keybindings: action shortcuts', () => {
@@ -152,30 +153,4 @@ describe('default keybindings: action shortcuts', () => {
       expect(run).toHaveBeenCalledOnce();
     });
   }
-});
-
-// --- Escape: dispatched by multiple actions; just prove the key isn't
-// dead. The action that wins is gated on context (cancelGesture if a
-// gesture is in flight, exitPathEdit in path-edit mode, escape otherwise).
-describe('default keybindings: Escape is reachable', () => {
-  it('Escape dispatches to the escape action when no gesture or path-edit context is active', () => {
-    const scene = makeScene();
-    const run = vi.fn();
-    render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={64}
-        height={64}
-        actions={{
-          escape: {
-            invoker: { timing: 'immediate' as const, run: () => { run(); } },
-            enabled: () => true,
-          },
-        }}
-      />,
-    );
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
-    expect(run).toHaveBeenCalledOnce();
-  });
 });

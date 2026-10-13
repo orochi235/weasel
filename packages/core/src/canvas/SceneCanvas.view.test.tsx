@@ -221,19 +221,19 @@ describe('SceneCanvas view', () => {
     expect(apiRef.current!.getPaintedVersion()).toBe(bumped);
   });
 
-  it('does not accept a consumer-supplied contentVersion', () => {
-    const props: SceneCanvasProps<D, L, P> = {
-      scene: newScene(),
-      width: 200,
-      height: 150,
-      // @ts-expect-error `contentVersion` is SceneCanvas's wiring to
-      // `scene.getVersion`; a consumer value would spread over it and make
-      // `getPaintedVersion()` report something other than the scene version.
-      contentVersion: () => 7,
-    };
-    expect(props.width).toBe(200);
-  });
 });
+
+void function contentVersionIsNotAProp(): SceneCanvasProps<D, L, P> {
+  return {
+    scene: newScene(),
+    width: 200,
+    height: 150,
+    // @ts-expect-error `contentVersion` is SceneCanvas's wiring to
+    // `scene.getVersion`; a consumer value would spread over it and make
+    // `getPaintedVersion()` report something other than the scene version.
+    contentVersion: () => 7,
+  };
+};
 
 describe('SceneCanvas view zoom invariant', () => {
   const finitePositive = (n: number) => Number.isFinite(n) && n > 0;
