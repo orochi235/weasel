@@ -186,7 +186,7 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
           if (!drawn) return [{ path: own, content: <span className={s.unrenderable}>{aliasOfNothing(leaf as PrefAlias)}</span> }];
           const { renderCtx } = prefRenderContext(ctx, own, drawn.pref, drawn.at);
           const content = renderPrefControl(renderCtx, ctx.renderers, undefined, 'bar');
-          return content == null ? [] : [{ path: own, content }];
+          return content == null ? [] : [{ path: own, content: marksHidden(ctx.hidden, own) ? <>{content}<HiddenBadge /></> : content }];
         })
       }
       row={({ path: own, leaf, at }) => <PrefRow ctx={ctx} path={own} pref={leaf} at={at} />}

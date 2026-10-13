@@ -25,9 +25,11 @@ export interface ListEditorProps<T = string> {
   empty?: string;
   /** Text of the add button. */
   addLabel?: string;
-  /** Names the list for assistive tech; each entry is named from it. */
   /** The list takes no input: no entry is typed in, added, or removed. A `renderEntry` disables what it draws. */
   disabled?: boolean;
+  /** Whether the text field of the entry at `index` takes no typing. The entry can still be removed. */
+  entryDisabled?: (index: number) => boolean;
+  /** Names the list for assistive tech; each entry is named from it. */
   'aria-label'?: string;
   className?: string;
 }
@@ -57,6 +59,7 @@ export function ListEditor<T>({
   minItems = 0,
   maxItems = Infinity,
   disabled = false,
+  entryDisabled,
 }: ListEditorProps<T>) {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
   const removes = useRef<(HTMLButtonElement | null)[]>([]);
@@ -120,7 +123,7 @@ export function ListEditor<T>({
                   aria-label={name(i)}
                   value={entry as string}
                   placeholder={placeholder}
-                  disabled={disabled}
+                  disabled={disabled || entryDisabled?.(i) === true}
                   onChange={(e) => set(i, e.target.value as T)}
                   onKeyDown={(e) => onKeyDown(e, i)}
                 />

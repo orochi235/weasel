@@ -70,6 +70,15 @@ describe('PrefsForm conditions that read the entry', () => {
     expect(second).toBeEnabled();
   });
 
+  it("disables one text entry by the item's own enableIf, leaves the next, and still lets it be removed", () => {
+    const tags = list('Tags', { kind: 'string', name: 'Tag', description: '', default: '', enableIf: { from: 'item', path: '', isNot: 'fixed' } } as PrefLeaf);
+    render(<PrefsForm schema={{ name: '', children: { tags } }} values={{ tags: ['fixed', 'free'] }} onChange={() => {}} />);
+    expect(screen.getByRole('textbox', { name: 'Tag 1' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Tag 2' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Remove Tag 1' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Add' })).toBeEnabled();
+  });
+
   it('keeps and marks a field an entry hides where hidden prefs are marked', () => {
     render(<PrefsForm markHidden schema={{ name: '', children: { phases: schema.children.phases! } }} values={values} onChange={() => {}} />);
     const holds = screen.getAllByRole('spinbutton', { name: 'Hold' });

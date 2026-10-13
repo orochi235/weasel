@@ -13,3 +13,8 @@
   margin-inline-start: 0;
   margin-block-end: var(--wzl-space-1);
 }
+
+.gapped {
+  flex: none;
+  margin-inline-start: 0;
+}

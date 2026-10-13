@@ -2,6 +2,7 @@ import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
 import { dropSlot, isDropPath } from './drop';
+import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { prefRailAbove, prefRailParent, type PrefRailItem } from './schema';
 import s from './Prefs.module.css';
 
@@ -31,6 +32,8 @@ export interface PrefsRailProps {
   /** Path of the entry to mark as the one a drag would drop into. An entry whose path is a drop placeholder's is
    *  drawn as one. */
   dropInto?: string | null;
+  /** Paths a `showIf` hides, in a form given `markHidden`: each one's entry is dimmed, and the outermost carries the badge. */
+  hidden?: ReadonlySet<string>;
 }
 
 /**
@@ -50,7 +53,7 @@ export interface PrefsRailProps {
  * `data-rail-mark="open"`, the weak one.
  */
 export function PrefsRail(props: PrefsRailProps) {
-  const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts, dropInto } = props;
+  const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts, dropInto, hidden } = props;
   const foldable = props.foldable === true;
   const holds = (path: string): boolean => {
     for (let at: string | null = section; at !== null; at = prefRailAbove(items, at)) if (at === path) return true;
@@ -115,9 +118,11 @@ export function PrefsRail(props: PrefsRailProps) {
           data-drop-placeholder={isDropPath(item.path) ? dropSlot(item.path) ?? '' : undefined}
           data-drop-rail={isDropPath(item.path) ? '' : undefined}
           data-drop={dropInto === item.path ? 'into' : undefined}
+          {...hiddenAttrs(hidden?.has(item.path) === true)}
           onClick={() => activate(item)}
         >
           <span className={s.railName}>{item.name}</span>
+          {marksHidden(hidden, item.path) && <HiddenBadge gapped />}
           {showCounts ? <span className={s.railCount}>{item.matches}</span> : null}
         </button>
       );

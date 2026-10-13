@@ -54,6 +54,19 @@ describe('SelectionPanel markHidden', () => {
     expect(within(row).getByText('hidden')).toBeInTheDocument();
   });
 
+  it('marks a hidden cell of a bar section with the badge, and no cell that is shown', () => {
+    const scene = createScene<Data, 'default', Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+    scene.add({ id: asNodeId('n'), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', on: false } });
+    const bar: PrefSection['members'] = { tools: { name: 'Tools', as: 'bar', members: { 'data.on': flag('On'), 'data.size': num('Size', { showIf: on }) } } };
+    const { container } = render(
+      <SelectionPanel scene={scene} selection={{ current: ['n'] } as unknown as SelectionApi}
+        properties={[{ name: 'thing', schema: { name: 'Properties', members: bar } }]} routing={routing} markHidden />,
+    );
+    expect(at(container, 'data.size')).toHaveAttribute('data-pref-hidden');
+    expect(within(at(container, 'data.size')).getByText('hidden')).toBeInTheDocument();
+    expect(within(at(container, 'data.on')).queryByText('hidden')).toBeNull();
+  });
+
   it('marks nothing that is shown', () => {
     const container = setup({ on: true }, { markHidden: true });
     expect(container.querySelector('[data-pref-hidden]')).toBeNull();

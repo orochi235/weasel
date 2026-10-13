@@ -759,14 +759,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Visual still needs polish — literally, polish this.
 
-- **(P3) Loose ends of the condition work.** A rail entry for a group drawn under
-  `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
-  `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
-  `PrefSchemaEditor` edits an entry's own
+- **(P3) Loose ends of the condition work.** `PrefSchemaEditor` edits an entry's own
   `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
-  `{ from: 'item' }` condition is written in code. A list of plain text entries is one
-  `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
-  entry does nothing there.
+  `{ from: 'item' }` condition is written in code. labkit's `ControlRow` draws a list of plain
+  text entries as one `ListEditor` and passes it no `entryDisabled`, so an item `enableIf` that
+  reads the entry does nothing in a lab; `PrefsForm` and `SelectionPanel` pass it.
 
 - **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
   into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting

@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
@@ -56,9 +56,48 @@ it('dims a hidden row and a hidden section of a selection panel once each', () =
   expect(opacityAt('data.radius')).toBe(1);
   const section = screen.getByRole('heading', { name: /Corners/ }).closest('section')!;
   expect(Number(getComputedStyle(section).opacity)).toBeCloseTo(0.55);
-  // On the control's line, and not pushing it off. The label column is narrow: the badge may touch the field.
-  const badge = screen.getAllByText('hidden')[0]!.getBoundingClientRect();
+  const badgeEl = screen.getAllByText('hidden')[0]!;
+  const badge = badgeEl.getBoundingClientRect();
   const field = screen.getByRole('spinbutton', { name: 'Size' }).getBoundingClientRect();
-  expect(badge.right).toBeLessThanOrEqual(field.left + 4);
+  // The label column is narrower than the name and the badge together: the badge wraps under the name.
+  expect(badge.right).toBeLessThanOrEqual(field.left);
   expect(Math.abs((badge.top + badge.bottom) / 2 - (field.top + field.bottom) / 2)).toBeLessThan(field.height);
+});
+
+it('sets a hidden page\'s badge inside its rail entry, on the name\'s line', () => {
+  const schema: PrefGroup = {
+    name: 'Prefs',
+    children: {
+      main: { name: 'Main', children: { on: flag('On') } },
+      grid: { name: 'A page with a long name', showIf: { path: 'main.on' }, children: { fine: num('Fine') } },
+    },
+  };
+  render(<PrefsForm layout="rail" schema={schema} values={{}} onChange={() => {}} markHidden />);
+  const entry = document.querySelector<HTMLElement>('[data-pref-rail="grid"]')!;
+  expect(Number(getComputedStyle(entry).opacity)).toBeCloseTo(0.55);
+  expect(Number(getComputedStyle(document.querySelector('[data-pref-rail="main"]')!).opacity)).toBe(1);
+  const box = entry.getBoundingClientRect();
+  const badge = within(entry).getByText('hidden').getBoundingClientRect();
+  const name = entry.firstElementChild!.getBoundingClientRect();
+  expect(badge.width).toBeGreaterThan(0);
+  expect(badge.left).toBeGreaterThanOrEqual(name.right);
+  expect(badge.right).toBeLessThanOrEqual(box.right);
+  expect(badge.top).toBeGreaterThanOrEqual(box.top);
+  expect(badge.bottom).toBeLessThanOrEqual(box.bottom);
+});
+
+it('sets a hidden bar cell\'s badge inside the cell, beside its control and inside the bar', () => {
+  const bar: PrefGroup = { name: 'Bar', as: 'bar', children: { on: flag('On'), size: num('Size', { showIf: { path: 'on' } }) } };
+  render(<PrefsForm schema={bar} values={{}} onChange={() => {}} markHidden />);
+  const cell = document.querySelector<HTMLElement>('[data-pref-path="size"]')!;
+  expect(Number(getComputedStyle(cell).opacity)).toBeCloseTo(0.55);
+  const box = cell.getBoundingClientRect();
+  const strip = document.querySelector('[data-pref-bar]')!.getBoundingClientRect();
+  const badge = within(cell).getByText('hidden').getBoundingClientRect();
+  const field = within(cell).getByRole('spinbutton').getBoundingClientRect();
+  expect(badge.width).toBeGreaterThan(0);
+  expect(badge.left).toBeGreaterThanOrEqual(field.right);
+  expect(badge.right).toBeLessThanOrEqual(box.right);
+  expect(badge.top).toBeGreaterThanOrEqual(strip.top);
+  expect(badge.bottom).toBeLessThanOrEqual(strip.bottom);
 });
