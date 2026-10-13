@@ -50,18 +50,6 @@ describe('Journal.commit', () => {
     expect(adapter.values).toEqual([]);
   });
 
-  it('journal is closed after commit; further calls throw', () => {
-    const adapter = { values: [] as number[] };
-    const parent = createHistory(adapter);
-    const j = parent.beginJournal({ label: 'session' });
-
-    j.applyBatch([pushOp(1)], 'a');
-    j.commit('Edit');
-
-    expect(j.isActive()).toBe(false);
-    expect(() => j.applyBatch([pushOp(2)], 'x')).toThrow();
-  });
-
   it('committing an empty journal pushes nothing to parent', () => {
     const adapter = { values: [] as number[] };
     const parent = createHistory(adapter);

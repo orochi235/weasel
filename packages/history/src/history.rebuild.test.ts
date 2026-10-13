@@ -14,7 +14,7 @@ function setX(cell: Cell, from: number, to: number): Op {
 }
 
 describe('CreateHistoryOptions.rebuildOp', () => {
-  it('hook wins over the global registry and receives (name, args)', () => {
+  it('rebuilds each serialized op through the hook, which receives (name, args)', () => {
     const src: Cell = { x: 0 };
     const a = createHistory(null);
     a.applyOps([setX(src, 0, 5)], 'set');
@@ -40,7 +40,7 @@ describe('CreateHistoryOptions.rebuildOp', () => {
     expect(dst.x).toBe(5);
   });
 
-  it('hook null + unknown global name still yields a no-op placeholder', () => {
+  it('substitutes a no-op placeholder when the hook returns null', () => {
     const cell: Cell = { x: 0 };
     const a = createHistory(null);
     a.applyOps([{

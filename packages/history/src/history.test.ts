@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createHistory } from './history';
 import type { Op } from './op';
 
@@ -329,11 +329,6 @@ describe('createHistory entries / goto / version / subscribe', () => {
     expect(adapter.state.get('a')).toEqual({ x: 2, y: 0 });
     expect(history.entries().undo.map((e) => e.label)).toEqual(['A', 'B']);
     expect(history.entries().redo.map((e) => e.label)).toEqual(['C']);
-    // No-op when already at target.
-    const v = history.getVersion();
-    history.goto(2);
-    // goto always bumps once; that's fine — the panel just re-renders.
-    expect(history.getVersion()).toBeGreaterThanOrEqual(v);
   });
 
   it('goto rejects out-of-range targets', () => {
@@ -370,7 +365,8 @@ describe('createHistory entries / goto / version / subscribe', () => {
 describe('createHistory — serialize / restore', () => {
   it('drops entries whose ops lack a name (with debug log)', () => {
     const a1 = makeAdapter();
-    const h1 = createHistory(a1 as any);
+    const debug = { log: vi.fn(), warn: vi.fn() };
+    const h1 = createHistory(a1 as any, { debug });
     // A consumer-style op that doesn't go through any registered factory.
     h1.applyOps([{
       apply: (_ad: unknown) => { /* no-op */ },
@@ -384,6 +380,7 @@ describe('createHistory — serialize / restore', () => {
     // The dropped entry is reported on the snapshot so callers can detect
     // loss without parsing the debug log.
     expect(snap.droppedEntries).toBe(1);
+    expect(debug.log).toHaveBeenCalledWith(expect.stringContaining('"Custom"'));
   });
 
   it('cuts the snapshot at a nameless entry rather than keeping what lies beyond it', () => {
@@ -462,17 +459,37 @@ describe('createHistory — serialize / restore', () => {
     expect(() => h.redo()).not.toThrow();
   });
 
+  const restoredEntry = (id: number) => ({
+    id,
+    label: 'restored',
+    forwardOps: [{ name: 'transform', args: {} }],
+    baseOps: [{ name: 'transform', args: {} }],
+  });
+
   it('restore bumps nextEntryId past the highest restored id', () => {
-    const a = makeAdapter();
-    const h = createHistory(a as any);
+    const h = createHistory(makeAdapter() as any);
+    h.restore({
+      version: 1,
+      undoStack: [restoredEntry(9)],
+      redoStack: [],
+      nextEntryId: 2,
+      droppedEntries: 0,
+    });
+    h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    expect(h.entries().undo.map((e) => e.id)).toEqual([9, 10]);
+  });
+
+  it('restore bumps nextEntryId past an id held only by a branch', () => {
+    const h = createHistory(makeAdapter() as any);
     h.restore({
       version: 1,
       undoStack: [],
       redoStack: [],
-      nextEntryId: 5,
+      branches: [{ at: 0, entries: [restoredEntry(9)] }],
+      nextEntryId: 2,
       droppedEntries: 0,
     });
     h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
-    expect(h.entries().undo[0].id).toBe(5);
+    expect(h.entries().undo.map((e) => e.id)).toEqual([10]);
   });
 });
