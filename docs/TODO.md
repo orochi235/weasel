@@ -575,16 +575,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) GPU / Web Animations API bridge** — offload to compositor for very large concurrent counts.
 
-- **(P3) Two `Workspace` tests from the 2026-10-12 test audit are still open.** They were held
-  back because the `tile-grip` branch rewrites `packages/labkit/src/lab/Workspace.test.tsx`; do
-  them once it is on `main`. "reports the order a drop would produce instead of applying it" never
-  drops anything: it asserts that `onReorder` was not called and that the DOM order is unchanged,
-  both true of a grid whose `onReorder` is never wired. Drive a drag of `a` past `b` and assert
-  `onReorder` got `['b', 'a']` with the DOM still `['a', 'b']`; from reading windease, a drop can
-  be driven in jsdom if `getBoundingClientRect` is stubbed to each tile's inline rect. And
-  `Workspace.surface.test.tsx` "renders unchanged with no surface above it" repeats "renders all
-  children" in `Workspace.test.tsx`; delete it if that test survives the rewrite.
-
 ---
 
 ### labkit presentation mode
@@ -728,6 +718,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   cursor from its own `onPointerMove`. Wants a leave signal (and a decision on whether crossing
   between targets is one), then the loupe's aim and the demo's cursor-following panels moved onto
   bindings. Only jsdom has run a hover binding.
+
+- **(P3) Two `Workspace` tests from the 2026-10-12 test audit are still open.** They were held
+  back because the `tile-grip` branch rewrites `packages/labkit/src/lab/Workspace.test.tsx`; do
+  them once it is on `main`. "reports the order a drop would produce instead of applying it" never
+  drops anything: it asserts that `onReorder` was not called and that the DOM order is unchanged,
+  both true of a grid whose `onReorder` is never wired. Drive a drag of `a` past `b` and assert
+  `onReorder` got `['b', 'a']` with the DOM still `['a', 'b']`; from reading windease, a drop can
+  be driven in jsdom if `getBoundingClientRect` is stubbed to each tile's inline rect. And
+  `Workspace.surface.test.tsx` "renders unchanged with no surface above it" repeats "renders all
+  children" in `Workspace.test.tsx`; delete it if that test survives the rewrite.
 
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap, and loupe route through weasel's dispatcher (`CameraInput`),
