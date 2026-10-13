@@ -44,7 +44,7 @@ import { useJob } from '../job/useJob';
 import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
 import { useIsPresented } from '../lab/presentation';
-import { LayerList, type LayerListItem, moveLayers } from '../passthrough/weasel-ui';
+import type { LayerListItem } from '../passthrough/weasel-ui';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
@@ -53,6 +53,7 @@ import { resolveLabTool } from '../tools/labTool';
 import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
+import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
 import { useKeptMarks } from './useKeptMarks';
 import { useTrialMarks } from './useTrialMarks';
 import { useTrialWrites } from './useTrialWrites';
@@ -144,8 +145,7 @@ function TrialRuntime({
   const schema = useConfigSchema(instrument);
   const { config } = useResolvedConfig(schema, record.config, record.auto);
 
-  const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({});
-  const [layerOrder, setLayerOrder] = useState<string[] | null>(null);
+  const { layerVisibility, layerOrder, setOrder, setShown } = useTrialLayerState();
   const [loupeOn, setLoupeOn] = useState(false);
   const [lenses, setLenses] = useState(0);
   const mountLens = useCallback(() => {
@@ -452,19 +452,14 @@ function TrialRuntime({
   const layerListNode = useMemo(
     () =>
       instrument.layers && layerDescriptors.length > 0 ? (
-        <LayerList
+        <TrialLayerList
           items={layerItems}
-          onReorder={(move) => {
-            snapshotIfNeeded('layers.reorder');
-            setLayerOrder(moveLayers(layerItems, move).map((l) => l.id));
-          }}
-          onVisibilityChange={(lid, visible) => {
-            snapshotIfNeeded('layers.toggle');
-            setLayerVisibility((prev) => ({ ...prev, [lid]: visible }));
-          }}
+          snapshot={snapshotIfNeeded}
+          setOrder={setOrder}
+          setVisibility={setShown}
         />
       ) : null,
-    [instrument.layers, layerDescriptors, layerItems, snapshotIfNeeded, setLayerOrder, setLayerVisibility],
+    [instrument.layers, layerDescriptors, layerItems, snapshotIfNeeded, setOrder, setShown],
   );
 
   const extraChrome = useMemo<TrialContribution[]>(() => {

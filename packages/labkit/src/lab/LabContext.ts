@@ -77,3 +77,7 @@ export function useLabContext(): LabContextValue {
   }
   return ctx;
 }
+
+/** The ids of a lab's trials, in order: a selector for a reader that must not re-render when a record changes. */
+export const trialIdsOf = (s: { trials: readonly { id: string }[] }): string[] =>
+  s.trials.map((t) => t.id);
