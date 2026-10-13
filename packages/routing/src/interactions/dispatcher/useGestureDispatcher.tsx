@@ -35,7 +35,7 @@ export type {
  * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -80,7 +80,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     ...(viewsRef.current?.targets() ?? []).map((t) => t.dispatcher),
   ], [rootTargetRef, viewsRef]);
   const requestRedrawRef = useLatest(requestRedraw);
-  const paintedCursorRef = useLatest(paintedCursor);
+  const cursorRef = useLatest({ painted: paintedCursor, sink: cursorSink });
   const longPressRef = useLatest(longPress);
 
   // Held here rather than in the effect: a re-bind of the listeners between
@@ -120,7 +120,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const keys = keyboardInput(core);
     const pinch = webkitPinchInput(core);
     const ingest = ingestInput(core);
-    const hover = hoverCursorInput(core, () => paintedCursorRef.current?.(), () => pointer.heldCount());
+    const hover = hoverCursorInput(core, () => cursorRef.current.painted?.(), () => pointer.heldCount(), () => cursorRef.current.sink?.());
     const pointer: PointerInput = pointerInput(core, {
       longPress: () => longPressRef.current,
       onClick: () => onClickRef.current,
@@ -192,5 +192,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };
   }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
-    allDispatchers, ctxRef, longPressRef, onClickRef, onDoubleClickRef, paintedCursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, ctxRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

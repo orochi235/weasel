@@ -63,6 +63,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         subscribeView: () => () => {},
         getPaintedVersion: () => 0,
         paintedCursor: createPaintedCursorState(),
+        cursorSink: { setBase() {}, setOverride() {} },
         getDebug: () => null,
         registerLayer: () => () => {},
         hitTestExtras: () => null,

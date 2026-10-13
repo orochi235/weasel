@@ -643,8 +643,10 @@ pointermove and writes a cursor override to the canvas. Precedence:
    the open hand whenever pan would actually win the drag — including when
    a higher-specificity marquee binding falls through because its deps
    aren't wired.
-3. **Tool base** — no override; the active tool's `Tool.cursor` (React-
-   managed on the canvas host) shows through.
+3. **Tool base** — no override; the active tool's `Tool.cursor` shows. The
+   canvas's cursor sink (`CanvasExtensionApi.cursorSink`) holds both and is the
+   one writer of the element's `cursor` style, so clearing an override puts
+   the tool's cursor back.
 
 Give a consumer action a hover hint by declaring `cursor` on its
 descriptor — no pump wiring needed. Because prediction runs `enabled()`

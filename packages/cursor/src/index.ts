@@ -27,3 +27,5 @@ export type { CursorGlyph, CursorPath } from './types';
 // between whoever decides it and the layer that draws it.
 export { createPaintedCursorState } from './paintedCursorState';
 export type { PaintedCursor, PaintedCursorFrame, PaintedCursorState } from './paintedCursorState';
+export { createCursorSink } from './cursorSink';
+export type { CursorSink, CursorSinkTarget } from './cursorSink';

@@ -3,7 +3,7 @@ import type { Dims, RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { IngestItem } from '@weasel-js/routing';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
-import type { PaintedCursorState } from '@weasel-js/cursor';
+import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
@@ -135,6 +135,13 @@ export interface CanvasExtensionApi {
    * and so should an input layer built against a bare `<Canvas>`.
    */
   paintedCursor: PaintedCursorState;
+  /**
+   * Where this surface's cursor is written: its input element's `cursor`
+   * style and `paintedCursor`. The canvas sets the active tool's cursor as the
+   * base. Whoever shows a cursor over it, as the kit's gesture dispatcher does
+   * on hover, sets the override here, and clearing that puts the tool's back.
+   */
+  cursorSink: CursorSink;
   /** The sink this canvas's debug overlay reads, or null while `debug` is off.
    *  Its `snapshot()` is what `renderDebugSnapshot` rasterizes. */
   getDebug(): CanvasDebugSink | null;

@@ -23,8 +23,8 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 778,
-    "longestFunction": 466
+    "lines": 742,
+    "longestFunction": 443
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "lines": 412,
@@ -35,7 +35,7 @@
     "longestFunction": 388
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
-    "longestFunction": 254
+    "longestFunction": 253
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
     "longestFunction": 216
