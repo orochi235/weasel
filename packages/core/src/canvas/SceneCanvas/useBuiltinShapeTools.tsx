@@ -4,8 +4,8 @@
  * a complete drawing toolset via `<SceneCanvas defaultTools={['rect', 'ellipse']}>`
  * without writing per-tool factory code.
  *
- * All hooks are always called (React rules of hooks) — `<SceneCanvas>` only
- * registers the ones requested via `defaultTools`.
+ * All hooks are always called (React rules of hooks) — `resolveToolRegistry`
+ * decides which the canvas registers.
  */
 import { useEllipseTool } from 'tools/builtin/ellipse/useEllipseTool';
 import { useLassoTool } from 'tools/builtin/lasso/useLassoTool';
@@ -56,8 +56,8 @@ export interface UseBuiltinShapeToolsArgs {
 
 export type BuiltinShapeTools = Record<BuiltinShapeToolId, AnyTool>;
 
-/** Synthesize the full shape-tool registry. Hooks always run; consumers
- *  decide via `wants(...)` which to register with `useTools`. */
+/** Synthesize the full shape-tool registry. Hooks always run;
+ *  `useBuiltinTools` registers the ones asked for. */
 export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): BuiltinShapeTools {
   const { options } = args;
 

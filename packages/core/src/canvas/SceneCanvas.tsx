@@ -17,7 +17,6 @@ import type { InsertAdapter } from 'core/adapters/types';
 import { sceneFromJSON } from 'core/scene/scene';
 import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
-import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import { rectFromPlane } from 'core/viewport/parallax';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
@@ -49,7 +48,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type React from 'react';
 import { forwardRef, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
-import { useHandTool } from 'tools/builtin/hand';
 import {
   selectionMoveContribution,
   selectionResizeContribution,
@@ -63,7 +61,7 @@ import type { DebugConfig } from '../debug/types';
 import { createLongPressFeedbackContribution } from '../features/longPress/longPressFeedback';
 import type { ReflowTransition } from '../layout/types';
 import { installTestHookIfRequested, releaseTestHook } from '../test-hook/install';
-import type { AnyTool, Contribution } from '../tools/overlayBinding';
+import type { Contribution } from '../tools/overlayBinding';
 import { useTools, type ToolsApi } from '../tools/overlayBinding';
 import type { LayersMap, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
 import { Canvas } from './Canvas';
@@ -78,15 +76,13 @@ import {
   featureActionIds,
   resolveFeatures
 } from './SceneCanvas/features';
-import { IS_DEV } from './SceneCanvas/isDev';
 import {
-  NON_SHAPE_BUILTIN_TOOLS,
   mergeLayersWithDefaults,
   type BridgeAdapter,
-  type BuiltinToolId,
   type SceneCanvasProps,
 } from './SceneCanvas/props';
-import { useBuiltinShapeTools } from './SceneCanvas/useBuiltinShapeTools';
+import { useBuiltinTools } from './SceneCanvas/useBuiltinTools';
+import type { ToolsPatch } from './SceneCanvas/toolRegistry';
 import { contributionEntries } from './SceneCanvas/useContributionRoles';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
@@ -126,7 +122,7 @@ const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set();
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
  *  / `active` / `registry`; the patch record shape has none of those. */
 function isToolsApi(
-  tools: ToolsApi | Record<string, AnyTool | true | false>,
+  tools: ToolsApi | ToolsPatch,
 ): tools is ToolsApi {
   return typeof (tools as ToolsApi).setActive === 'function';
 }
@@ -534,44 +530,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [featuresKey, hasViewport],
   );
 
-  // Always called per rules-of-hooks; only registered below when requested.
-  const handTool = useHandTool({ inertia: viewport?.inertia });
-
-  // Built-ins to mount: what `defaultTools` lists, plus the tool each preset
-  // brings — `select` the select tool, `view` the hand.
-  const baseRequestedTools: readonly BuiltinToolId[] = [
-    ...(defaultTools ?? []),
-    ...(enabled.has('select') ? ['select' as const] : []),
-    ...(enabled.has('view') ? ['hand' as const] : []),
-  ];
-
-  // Patch-form `tools` extras with value `true` widen the requested set ("pull in this
-  // built-in").
-  const KNOWN_BUILTIN_IDS: ReadonlySet<BuiltinToolId> = new Set<BuiltinToolId>([
-    ...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS,
-  ]);
-  const toolsPatchExtras = (() => {
-    if (!toolsProp || isToolsApi(toolsProp)) return null;
-    return toolsProp;
-  })();
-  const trueIds = new Set<BuiltinToolId>();
-  if (toolsPatchExtras) {
-    for (const [id, value] of Object.entries(toolsPatchExtras)) {
-      if (value !== true) continue;
-      if (!KNOWN_BUILTIN_IDS.has(id as BuiltinToolId)) {
-        if (IS_DEV) {
-          console.warn(`[SceneCanvas] tools.${id}=true is not a known built-in id; ignoring`);
-        }
-        continue;
-      }
-      trueIds.add(id as BuiltinToolId);
-    }
-  }
-  const wants = (id: BuiltinToolId): boolean =>
-    baseRequestedTools.includes(id) || trueIds.has(id);
-
-  // Always called per rules-of-hooks; only registered below when requested.
-  const shapeTools = useBuiltinShapeTools({ options: toolOptions });
+  // Takeover form: only when toolsProp is the full ToolsApi shape.
+  const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
+  const internalRegistry = useBuiltinTools({
+    select: internalSelect,
+    enabled,
+    defaultTools,
+    patch: toolsProp && !isToolsApi(toolsProp) ? toolsProp : null,
+    toolOptions,
+    inertia: viewport?.inertia,
+  });
 
   const defaultLongPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);
   const feedbackOpt = longPress?.feedback ?? true;
@@ -580,45 +548,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     () => (pressFeedback ? [...(ambient ?? []), pressFeedback] : (ambient ?? [])),
     [ambient, pressFeedback],
   );
-
-  const internalRegistry: Record<string, AnyTool> = {};
-  if (wants('select')) internalRegistry.select = internalSelect;
-  // `hand` stays in the registry (not ambient) so its H keybinding and its
-  // Space hold both apply.
-  if (wants('hand')) internalRegistry.hand = handTool;
-  // Shape / lasso / text tools — registry entries with built-in
-  // keybindings (R/E/G/N/L/T) routed via `useKeybindings`.
-  if (wants('rect'))    internalRegistry.rect    = shapeTools.rect;
-  if (wants('ellipse')) internalRegistry.ellipse = shapeTools.ellipse;
-  if (wants('line'))    internalRegistry.line    = shapeTools.line;
-  if (wants('polygon')) internalRegistry.polygon = shapeTools.polygon;
-  if (wants('star'))    internalRegistry.star    = shapeTools.star;
-  if (wants('pen'))     internalRegistry.pen     = shapeTools.pen;
-  if (wants('pencil'))  internalRegistry.pencil  = shapeTools.pencil;
-  if (wants('lasso'))   internalRegistry.lasso   = shapeTools.lasso;
-  if (wants('text'))    internalRegistry.text    = shapeTools.text;
-
-  // Patch-form `tools` prop: `false` drops a bundled tool, `true` was accounted for above via
-  // `wants()`, and an `AnyTool` adds or replaces (dev-only warning on replace).
-  const toolsPatch = toolsPatchExtras;
-  if (toolsPatch) {
-    for (const [id, value] of Object.entries(toolsPatch)) {
-      if (value === false) {
-        delete internalRegistry[id];
-      } else if (value === true) {
-        // Already pulled in via the `wants()`-driven if-ladder above.
-        continue;
-      } else {
-        if (IS_DEV && id in internalRegistry) {
-          console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
-        }
-        internalRegistry[id] = value;
-      }
-    }
-  }
-
-  // Takeover form: only when toolsProp is the full ToolsApi shape.
-  const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
 
   const internalTools = useTools({
     active: initialActiveTool ?? ('select' in internalRegistry ? 'select' : null),
