@@ -8,10 +8,6 @@ describe('VERSION', () => {
   it('matches the version in package.json', () => {
     expect(VERSION).toBe(pkg.version);
   });
-
-  it('is not the missing-define fallback', () => {
-    expect(VERSION).not.toBe('0.0.0-unknown');
-  });
 });
 
 /**

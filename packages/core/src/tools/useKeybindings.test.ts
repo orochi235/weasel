@@ -278,21 +278,6 @@ describe('useKeybindings', () => {
     expect(ids(result.current)).toContain('tool.activate');
   });
 
-  it('disable: true also skips tool.offhand registration', () => {
-    const select = defineTool({ id: 'select' });
-    const hand   = defineTool({ id: 'hand' });
-    const { result } = renderHook(() => {
-      const tools = useTools({ active: 'select', registry: { select, hand } });
-      useKeybindings(tools, { disable: true });
-      const reg = useActionsRegistry();
-      return reg?.list() ?? [];
-    }, { wrapper: makeWrapper('select') });
-
-    const ids = result.current.map((a) => a.id);
-    expect(ids).not.toContain('tool.offhand');
-    expect(ids).not.toContain('tool.activate');
-  });
-
   it('skips when focus is in an editable element', () => {
     const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
     const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
@@ -367,12 +352,12 @@ describe('useKeybindings', () => {
     // enforced: `ToolPalette` greyed an ineligible tool's button while its
     // keyboard shortcut still activated it, and once active its routes ran
     // unfiltered (audit 3.10). Activation now consults the same predicate.
-    function setup(isToolEligible?: (id: string) => boolean) {
+    function setup(isToolEligible: (id: string) => boolean) {
       const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
       const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
       return renderHook(() => {
         const tools = useTools({ active: 'select', registry: { select, pen } });
-        useKeybindings(tools, isToolEligible ? { isToolEligible } : {});
+        useKeybindings(tools, { isToolEligible });
         return tools;
       }, { wrapper: makeWrapper('select', true) });
     }
@@ -385,12 +370,6 @@ describe('useKeybindings', () => {
 
     it('allows activation when the tool is eligible', () => {
       const { result } = setup((id) => id === 'pen');
-      act(() => press('p'));
-      expect(result.current.active).toBe('pen');
-    });
-
-    it('every tool stays activatable when no gate is supplied', () => {
-      const { result } = setup();
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
     });

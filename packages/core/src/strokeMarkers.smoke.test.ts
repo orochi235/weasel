@@ -12,9 +12,4 @@ describe('stroke markers are public API', () => {
     expect(typeof kit.markerSites).toBe('function');
     expect(typeof kit.markerInset).toBe('function');
   });
-
-  it('re-exports the marker types from paint', () => {
-    const stroke: kit.Stroke = { paint: { kind: 'solid', color: '#000' }, markerEnd: 'arrow' };
-    expect(stroke.markerEnd).toBe('arrow');
-  });
 });

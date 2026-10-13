@@ -97,24 +97,13 @@ describe('defaultDrawOne', () => {
     expect(cmds[1].kind).toBe('text');
   });
 
-  it('text branch: emits a textCommand anchored on the pose box top-left', () => {
-    const cmds = defaultDrawOne(
-      node({ text: 'Hello', style: { fontFamily: 'sans-serif', fontSize: 20 } }),
-      POSE,
-    );
-    expect(cmds).toHaveLength(1);
-    const cmd = cmds[0] as TextDrawCommand;
-    expect(cmd.kind).toBe('text');
-    expect(cmd.x).toBe(10); // POSE.x
-    expect(cmd.y).toBe(20); // POSE.y — `y` is the line-box top, not a baseline
-  });
-
   it('text branch: forwards the pose box, and wraps nothing the style does not declare', () => {
     // `height` with the default verticalAlign ('top') resolves to a zero offset.
     const cmds = defaultDrawOne(
       node({ text: 'Hello', style: { fontFamily: 'sans-serif', fontSize: 20 } }),
       POSE,
     );
+    expect(cmds).toHaveLength(1);
     const cmd = cmds[0] as TextDrawCommand;
     expect(cmd).toMatchObject({
       kind: 'text',

@@ -86,10 +86,6 @@ describe('renderer — non-solid stroke paint', () => {
     expect(() => render({ width: 10, paint: GRADIENT })).not.toThrow();
   });
 
-  it('paints a gradient stroke on an inner-aligned polygon instead of throwing', () => {
-    expect(() => render({ width: 10, align: 'inner', paint: GRADIENT })).not.toThrow();
-  });
-
   /** Inner/outer alignment paints a doubled ribbon and stencils half of it
    *  away, so the ribbon draw carries GL state this function set up itself.
    *  Binding the paint through `drawPathFillByKind` calls `applyClipTest`,

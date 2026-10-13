@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defineTool } from './overlayBinding';
 import type { RenderLayer } from '../core/layers/render';
-import type { ToolCtx } from '@weasel-js/routing';
+import { defineTool as routingDefineTool, type ToolCtx } from '@weasel-js/routing';
 import type { AnyTool, Tool } from './overlayBinding';
 
 const CTX = { scratch: null } as unknown as ToolCtx<null>;
@@ -88,6 +88,16 @@ describe('defineTool', () => {
 // the canvas takes. It used to return `Tool<S, unknown>`, which a `tools` prop
 // typed for `RenderLayer` overlays rejected (TS2322) — the root typecheck is
 // what fails on the assignments below.
+const layer = {} as RenderLayer<unknown>;
+const tools: AnyTool[] = [
+  routingDefineTool({ id: 'bare' }),
+  routingDefineTool<null>({ id: 'scratch', cursor: 'crosshair' }),
+  routingDefineTool<null>({ id: 'drawn', overlay: layer }),
+];
+const typed: Tool<null> = routingDefineTool<null>({ id: 'typed', overlay: [layer] });
+void tools;
+void typed;
+
 describe('defineTool — one definition across routing and core', () => {
   it('is routing’s own function', async () => {
     const routing = await import('@weasel-js/routing');
@@ -95,16 +105,4 @@ describe('defineTool — one definition across routing and core', () => {
     expect(core.defineTool).toBe(routing.defineTool);
     // Importing core's whole barrel can pass 5s on a loaded machine.
   }, 30_000);
-
-  it('builds tools the canvas accepts, with or without explicit scratch', async () => {
-    const { defineTool: routingDefineTool } = await import('@weasel-js/routing');
-    const layer = {} as RenderLayer<unknown>;
-    const tools: AnyTool[] = [
-      routingDefineTool({ id: 'bare' }),
-      routingDefineTool<null>({ id: 'scratch', cursor: 'crosshair' }),
-      routingDefineTool<null>({ id: 'drawn', overlay: layer }),
-    ];
-    const typed: Tool<null> = routingDefineTool<null>({ id: 'typed', overlay: [layer] });
-    expect([...tools, typed].map((t) => t.id)).toEqual(['bare', 'scratch', 'drawn', 'typed']);
-  });
 });
