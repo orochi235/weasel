@@ -154,13 +154,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     modes,
     pathEdit,
     getFocused: getFocusedProp,
-    device,
     ...rest
   } = props;
 
   const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
 
-  const deviceProfile = useDeviceProfile(device);
+  const deviceProfile = useDeviceProfile();
 
   // `scene` accepts either a live `Scene` or a `SerializedScene` JSON object. JSON is baked
   // once; later prop changes are ignored (use a `key` on `<SceneCanvas>` to force a fresh canvas).
@@ -806,93 +805,91 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   }, [sceneRef, selectionRef, liveToolsRef]);
 
   return (
-    <DeviceProfileProvider value={device}>
-      <ViewInputsProvider value={viewInputs}>
-        <PointerProviderIfRoot>
-          <>
-            {canvas}
-            <PointerPublisher canvasRef={internalCanvasRef} canvasApiRef={canvasApiRef} />
-            <StandardActionsRegistrar
-              selection={selection}
-              scene={scene}
-              adapter={adapter as unknown as BridgeAdapter}
-              actions={resolvedActions}
-              excludeActions={standardActionsExclude}
-              currentViewRef={currentViewRef}
-              onViewChange={handleViewChange}
-              resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-              poseDescriptor={descriptor}
-              geometryProjection={geometryProjection}
-              dispatcher={dispatcher}
-              getActionRef={getActionRef}
-              pickEvery={internalPickEvery}
-              layerIsPainted={viewLayerGate}
-              alphaOf={alphaFor ? composedAlphaFor : undefined}
-              viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
-              viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
-              viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
-              viewportRecenter={viewport?.recenter}
-              viewAnimation={viewAnimation}
-              editAnchorsExternalState={pathEditState}
-              layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
-              layoutDropTarget={layoutDropTarget}
-              reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
-              insertNodeFactories={insertNodeFactories}
-              insertPaint={insertPaint}
-              snapPoint={toolOptions?.snapPoint}
-              canvasRef={internalCanvasRef}
-              canvasApiRef={canvasApiRef}
-              ingestionResolveSrc={ingestion?.resolveSrc}
-              ingestionSvg={ingestion?.svg}
-              ingestionClipboard={ingestionClipboard}
-              actionsRegistryRef={actionsRegistryRef}
-            />
-            <GestureDispatcherMounter
-              canvasRef={internalCanvasRef}
-              canvasApiRef={canvasApiRef}
-              tools={tools}
-              contributions={featureContributions}
-              enabled={enableGestureDispatcher}
-              keyboard={enableKeybindings}
-              claimKeys={claimKeys}
-              selectionRef={selectionRef}
-              boundsOf={internalBoundsOf}
-              planeOfNode={internalPlaneOfNode}
-              pickEvery={internalPickEvery}
-              pickBest={internalPickBest}
-              kindOfNode={kindOfNode}
-              viewRef={currentViewRef}
-              dispatcher={dispatcher}
-              getIsVisibleForCanvas={getIsVisibleForCanvas}
-              getRuleCtx={getRuleCtxForCanvas}
-              targetScale={deviceProfile.targetScale}
-              handleHitRadius={selectToolOpts?.handleHitRadius}
-              rotationBadge={rotationBadge}
-              chromeAffordancesRef={chromeAffordancesRef}
-              onDoubleClick={onDoubleClickObserver}
-              onClick={onClickObserver}
-              longPress={longPress}
-            />
-            <ToolKeybindingsMounter
-              internalTools={internalTools}
-              toolsTakeover={toolsTakeover ?? undefined}
-              enableKeybindings={enableKeybindings}
-              modes={modes}
-              canvasApi={canvasReady ? canvasApiRef.current : null}
-              versionCheck={versionCheck}
-            />
-            {viewDescriptors?.map((v, i) => (
-              <CanvasView key={v.id} {...v} order={v.order ?? i} />
-            ))}
-            {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
-              <CanvasView key={`contribution:${v.id}`} {...v} />
-            ))}
-            {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
-            {children}
-          </>
-        </PointerProviderIfRoot>
-      </ViewInputsProvider>
-    </DeviceProfileProvider>
+    <ViewInputsProvider value={viewInputs}>
+      <PointerProviderIfRoot>
+        <>
+          {canvas}
+          <PointerPublisher canvasRef={internalCanvasRef} canvasApiRef={canvasApiRef} />
+          <StandardActionsRegistrar
+            selection={selection}
+            scene={scene}
+            adapter={adapter as unknown as BridgeAdapter}
+            actions={resolvedActions}
+            excludeActions={standardActionsExclude}
+            currentViewRef={currentViewRef}
+            onViewChange={handleViewChange}
+            resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+            poseDescriptor={descriptor}
+            geometryProjection={geometryProjection}
+            dispatcher={dispatcher}
+            getActionRef={getActionRef}
+            pickEvery={internalPickEvery}
+            layerIsPainted={viewLayerGate}
+            alphaOf={alphaFor ? composedAlphaFor : undefined}
+            viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
+            viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
+            viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
+            viewportRecenter={viewport?.recenter}
+            viewAnimation={viewAnimation}
+            editAnchorsExternalState={pathEditState}
+            layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+            layoutDropTarget={layoutDropTarget}
+            reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
+            insertNodeFactories={insertNodeFactories}
+            insertPaint={insertPaint}
+            snapPoint={toolOptions?.snapPoint}
+            canvasRef={internalCanvasRef}
+            canvasApiRef={canvasApiRef}
+            ingestionResolveSrc={ingestion?.resolveSrc}
+            ingestionSvg={ingestion?.svg}
+            ingestionClipboard={ingestionClipboard}
+            actionsRegistryRef={actionsRegistryRef}
+          />
+          <GestureDispatcherMounter
+            canvasRef={internalCanvasRef}
+            canvasApiRef={canvasApiRef}
+            tools={tools}
+            contributions={featureContributions}
+            enabled={enableGestureDispatcher}
+            keyboard={enableKeybindings}
+            claimKeys={claimKeys}
+            selectionRef={selectionRef}
+            boundsOf={internalBoundsOf}
+            planeOfNode={internalPlaneOfNode}
+            pickEvery={internalPickEvery}
+            pickBest={internalPickBest}
+            kindOfNode={kindOfNode}
+            viewRef={currentViewRef}
+            dispatcher={dispatcher}
+            getIsVisibleForCanvas={getIsVisibleForCanvas}
+            getRuleCtx={getRuleCtxForCanvas}
+            targetScale={deviceProfile.targetScale}
+            handleHitRadius={selectToolOpts?.handleHitRadius}
+            rotationBadge={rotationBadge}
+            chromeAffordancesRef={chromeAffordancesRef}
+            onDoubleClick={onDoubleClickObserver}
+            onClick={onClickObserver}
+            longPress={longPress}
+          />
+          <ToolKeybindingsMounter
+            internalTools={internalTools}
+            toolsTakeover={toolsTakeover ?? undefined}
+            enableKeybindings={enableKeybindings}
+            modes={modes}
+            canvasApi={canvasReady ? canvasApiRef.current : null}
+            versionCheck={versionCheck}
+          />
+          {viewDescriptors?.map((v, i) => (
+            <CanvasView key={v.id} {...v} order={v.order ?? i} />
+          ))}
+          {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
+            <CanvasView key={`contribution:${v.id}`} {...v} />
+          ))}
+          {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
+          {children}
+        </>
+      </PointerProviderIfRoot>
+    </ViewInputsProvider>
   );
 }
 
@@ -900,15 +897,18 @@ const SceneCanvasInnerForwardRef = forwardRef(SceneCanvasInner);
 
 // The canvas's input scope sits above `SceneCanvasInner`, whose own hooks
 // (`useTools` among them) must already read this canvas's tool and registries.
+// Its device profile too, so the canvas and everything under it share one.
 function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
-  props: SceneCanvasProps<TData, TLayer, TPose>,
+  { device, ...props }: SceneCanvasProps<TData, TLayer, TPose>,
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   return (
     <InputScope yoke={props.yoke}>
-      <ViewRegistryProvider>
-        <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
-      </ViewRegistryProvider>
+      <DeviceProfileProvider value={device}>
+        <ViewRegistryProvider>
+          <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
+        </ViewRegistryProvider>
+      </DeviceProfileProvider>
     </InputScope>
   );
 }

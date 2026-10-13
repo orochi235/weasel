@@ -43,13 +43,13 @@ function detectOnce(): DetectedDeviceFacts {
  * Detect device facts and keep them live.
  *
  * Three subscriptions: pointer coarseness, hover capability, and pixel
- * density.
+ * density. None while `watch` is false, and the facts then go stale.
  */
-function useDetectedFacts(): DetectedDeviceFacts {
+function useDetectedFacts(watch: boolean): DetectedDeviceFacts {
   const [facts, setFacts] = useState<DetectedDeviceFacts>(detectOnce);
 
   useEffect(() => {
-    if (!hasMatchMedia()) return;
+    if (!watch || !hasMatchMedia()) return;
 
     const coarseMq = window.matchMedia(COARSE_QUERY);
     const hoverMq = window.matchMedia(HOVER_QUERY);
@@ -79,7 +79,7 @@ function useDetectedFacts(): DetectedDeviceFacts {
       coarseMq.removeEventListener('change', onCoarse as EventListener);
       hoverMq.removeEventListener('change', onHover as EventListener);
     };
-  }, []);
+  }, [watch]);
 
   return facts;
 }
@@ -89,8 +89,8 @@ const DeviceProfileContext = createContext<DeviceProfile | null>(null);
 /**
  * Read the ambient device profile.
  *
- * Uses the nearest {@link DeviceProfileProvider} when one exists, and
- * otherwise detects for itself — so a standalone overlay or a labkit panel
+ * Uses the nearest {@link DeviceProfileProvider} when one exists, watching
+ * nothing of its own, and otherwise detects for itself — so a standalone overlay or a labkit panel
  * rendered outside a `<SceneCanvas>` still gets correct facts.
  *
  * `overrides` always wins over both, which is what makes tests and
@@ -98,7 +98,7 @@ const DeviceProfileContext = createContext<DeviceProfile | null>(null);
  */
 export function useDeviceProfile(overrides?: Partial<DeviceProfile>): DeviceProfile {
   const provided = useContext(DeviceProfileContext);
-  const detected = useDetectedFacts();
+  const detected = useDetectedFacts(provided === null);
   const base: DetectedDeviceFacts = provided ?? detected;
   const { coarsePointer, canHover, dpr, targetScale } = overrides ?? {};
   return useMemo(
