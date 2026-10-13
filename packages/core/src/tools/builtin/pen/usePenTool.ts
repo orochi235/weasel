@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useReducer, useRef, createElement } from 'react';
+import { useCallback, useMemo, useReducer, useRef, useState, createElement } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { defineTool } from '../../overlayBinding';
@@ -170,7 +170,7 @@ export function usePenTool(
   // Scratch mutations alone don't trigger React re-renders, so the preview
   // layer would not repaint. Force a render after every scratch mutation.
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
-  const overlay = useMemo(() => createPenPreviewLayer({ state: scratchRef.current! }), []);
+  const [overlay] = useState(() => createPenPreviewLayer({ state: scratchRef.current! }));
 
   /** Write the pen's subpaths back into the node it picked up: the first
    *  replaces the subpath it continued, any later ones are appended. Skips
@@ -565,7 +565,7 @@ export function usePenTool(
         },
       },
     ];
-  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef, trail]);
+  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef, trail, forceRender]);
 
   return useMemo(() => {
     return defineTool({

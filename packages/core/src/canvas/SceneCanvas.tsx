@@ -479,13 +479,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // The dispatcher's contribution to `helpersRef` — in-flight preview ids,
   // nascent-insert bounds, and the pump signal. Reads through the ref so one
   // stable object keeps pointing at the live dispatcher.
-  const gestureSource = useMemo(() => createGestureSource(() => dispatcherRef.current), []);
+  const [gestureSource] = useState(() => createGestureSource(() => dispatcherRef.current));
 
   // The dispatcher's half of this view's overlay-aware lookups: whose
   // committed paint a ghost hides, and the pose a handle proposes for an id.
-  const { previewIdsExtra, previewPoseExtra } = useMemo(
+  const [{ previewIdsExtra, previewPoseExtra }] = useState(
     () => createDispatcherPreviewSources(() => dispatcherRef.current),
-    [],
   );
 
   const { config: sceneSlot, layers: sceneLayers } = useSceneSlotLayers({

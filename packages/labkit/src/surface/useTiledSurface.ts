@@ -182,9 +182,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     { target: () => container.current },
   );
 
-  const schedule = useCallback(() => {
-    frameLoop.request();
-  }, [frameLoop]);
+  const schedule = frameLoop.request;
 
   const invalidate = useCallback(
     (id: string) => {

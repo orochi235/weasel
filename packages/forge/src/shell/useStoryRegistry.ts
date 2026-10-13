@@ -107,24 +107,24 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
 
   // One import per file, shared by every entry it holds; a reload drops the file's promise and asks again.
   const imports = useRef(new Map<string, Promise<Record<string, unknown>>>());
-  const live = useLatest({ index, importers, setup, load, libraries });
+  const liveRef = useLatest({ index, importers, setup, load, libraries });
   // Files asked for before the importers held them: a story file added while the workshop runs lists first.
   const missing = useRef(new Set<string>());
 
   const importOf = useCallback((file: string): Promise<Record<string, unknown>> => {
     let loading = imports.current.get(file);
     if (!loading) {
-      const importer = live.current.importers?.[file];
+      const importer = liveRef.current.importers?.[file];
       if (!importer) missing.current.add(file);
       loading = importer ? importer() : Promise.reject(new Error(`No importer for ${file}`));
       imports.current.set(file, loading);
     }
     return loading;
-  }, [live]);
+  }, [liveRef]);
 
   const request = useCallback(
     (entry: IndexEntry): void => {
-      const { setup: current, load: loadModule } = live.current;
+      const { setup: current, load: loadModule } = liveRef.current;
       const settle = (ids: string[], result: Map<string, Loaded>) => {
         setLoaded((prev) => {
           const next = new Map(prev);
@@ -142,7 +142,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
         });
       };
       if (isIndexId(entry.id)) {
-        const entries = live.current.index.filter((e) => !isIndexId(e.id) && indexId(e.title) === entry.id);
+        const entries = liveRef.current.index.filter((e) => !isIndexId(e.id) && indexId(e.title) === entry.id);
         const files = [...new Set(entries.map((e) => e.file))];
         void Promise.all(files.map(importOf))
           .then(async (mods) => {
@@ -156,7 +156,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
               kind: 'index',
               bundle: {
                 title: entry.title,
-                library: live.current.libraries.of(entry),
+                library: liveRef.current.libraries.of(entry),
                 ...(entry.componentDescription === undefined ? {} : { description: entry.componentDescription }),
                 ...(entry.tags === undefined ? {} : { tags: entry.tags }),
                 galleries: entries.filter(isGallery).map((e) => e.id),
@@ -170,7 +170,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
           .catch((error: unknown) => fail([entry.id], error));
         return;
       }
-      const siblings = live.current.index.filter((e) => e.file === entry.file && !isIndexId(e.id));
+      const siblings = liveRef.current.index.filter((e) => e.file === entry.file && !isIndexId(e.id));
       const ids = siblings.map((e) => e.id);
       void importOf(entry.file)
         .then(async (mod) => {
@@ -187,19 +187,19 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
         })
         .catch((error: unknown) => fail(ids, error));
     },
-    [importOf, live],
+    [importOf, liveRef],
   );
 
   const reload = useCallback(
     (file: string) => {
       imports.current.delete(file);
-      const affected = live.current.index.filter((e) => e.file === file || (isIndexId(e.id) && live.current.index.some((s) => s.file === file && indexId(s.title) === e.id)));
+      const affected = liveRef.current.index.filter((e) => e.file === file || (isIndexId(e.id) && liveRef.current.index.some((s) => s.file === file && indexId(s.title) === e.id)));
       const ids = new Set(affected.map((e) => e.id));
       setLoaded((prev) => pruned(prev, new Set([...prev.keys()].filter((id) => !ids.has(id)))));
       setFaults((prev) => pruned(prev, new Set([...prev.keys()].filter((id) => !ids.has(id)))));
       setGenerations((prev) => new Map(prev).set(file, (prev.get(file) ?? 0) + 1));
     },
-    [live],
+    [liveRef],
   );
 
   useEffect(() => {

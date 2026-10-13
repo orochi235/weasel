@@ -99,32 +99,32 @@ export function FrameView(props: FrameViewProps) {
   const slotRef = useRef<HTMLDivElement>(null);
   const inView = useNearViewport(hostRef, IN_VIEW_MARGIN);
   const link = useRef<Link | null>(null);
-  const latest = useLatest({ ...props, globals, overrides, pool, lab, title });
+  const latestRef = useLatest({ ...props, globals, overrides, pool, lab, title });
   const [fault, setFault] = useState<Fault | null>(null);
   // A loaded document stays hidden until its story has rendered, so a new trial never shows the blank page.
   const [pending, setPending] = useState(true);
 
   const init = useCallback((current: Link): void => {
-    const { ctx: live, globals: liveGlobals } = latest.current;
+    const { ctx: live, globals: liveGlobals } = latestRef.current;
     current.awaiting = null;
     current.sent = { config: storyConfig(live.config), state: live.state, globals: liveGlobals };
     current.inputs += 1;
     current.channel.send({ type: 'init', ...current.sent });
-  }, [latest]);
+  }, [latestRef]);
 
   const receive = (current: Link, msg: FromFrame): void => {
-    const { ctx: live, answers, onReady } = latest.current;
+    const { ctx: live, answers, onReady } = latestRef.current;
     switch (msg.type) {
       case 'ready': {
         clearTimeout(current.timer);
         setFault(null);
-        for (const [name, value] of Object.entries(latest.current.overrides)) {
+        for (const [name, value] of Object.entries(latestRef.current.overrides)) {
           current.channel.send({ type: 'vars.set', name, value });
         }
         const key = readyKey(msg);
         current.awaiting = key;
-        onReady(latest.current.entry, msg);
-        if (current.awaiting === key && key === latest.current.descriptionKey) init(current);
+        onReady(latestRef.current.entry, msg);
+        if (current.awaiting === key && key === latestRef.current.descriptionKey) init(current);
         break;
       }
       case 'rendered':
@@ -154,7 +154,7 @@ export function FrameView(props: FrameViewProps) {
         break;
       }
       case 'open': {
-        const { lab: liveLab } = latest.current;
+        const { lab: liveLab } = latestRef.current;
         if (!trialId || !liveLab.instruments.some((instrument) => instrument.name === msg.id)) break;
         liveLab.swapTrial(trialId, msg.id);
         setRoute(msg.id, { inPlace: true });
@@ -206,7 +206,7 @@ export function FrameView(props: FrameViewProps) {
     };
     link.current = current;
     channel.on((msg) => receive(current, msg));
-    target.postMessage({ type: PORT_HANDOFF, id: latest.current.entry.id } satisfies PortHandoff, location.origin, [
+    target.postMessage({ type: PORT_HANDOFF, id: latestRef.current.entry.id } satisfies PortHandoff, location.origin, [
       port2,
     ]);
   };
@@ -218,10 +218,10 @@ export function FrameView(props: FrameViewProps) {
   useEffect(() => {
     const slot = slotRef.current;
     if (!inView || !slot) return;
-    const claimed = latest.current.pool?.claim() ?? null;
+    const claimed = latestRef.current.pool?.claim() ?? null;
     const frame = claimed ?? document.createElement('iframe');
     frame.className = 'fg-frame-view';
-    frame.title = latest.current.title;
+    frame.title = latestRef.current.title;
     frame.removeAttribute('tabindex');
     frame.toggleAttribute('data-pending', true);
     iframeRef.current = frame;
@@ -253,7 +253,7 @@ export function FrameView(props: FrameViewProps) {
       setPending(true);
       setFault(null);
     };
-  }, [inView, src, connectRef, latest]);
+  }, [inView, src, connectRef, latestRef]);
 
   useEffect(() => {
     iframeRef.current?.toggleAttribute('data-pending', pending && !fault);

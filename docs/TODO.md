@@ -1238,8 +1238,9 @@ only story runner in the repo.
 ## Lint
 
 - **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
-  Every compiler rule with no reports is on, as is `set-state-in-effect`. Three are off, with the
-  rationale in `eslint.config.js`, counted on 2026-10-12:
+  Every compiler rule with no reports is on, as are `set-state-in-effect` and
+  `preserve-manual-memoization`. Two are off, with the rationale in `eslint.config.js`, counted on
+  2026-10-12:
   - `refs` — 408 reports in 83 files; reading a ref during render is how a
     canvas library reaches frame state, and there is no writes-only mode
     (`weasel/no-render-ref-write` covers writes).
@@ -1247,14 +1248,13 @@ only story runner in the repo.
     a prop or an outer variable from inside a probe component. The rest are
     `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
     refs, DOM nodes, and mutable engine objects.
-  - `preserve-manual-memoization` — 16 reports in 9 files, of a `useMemo` or
-    `useCallback` whose listed dependencies differ from the ones the compiler
-    infers. Nothing here is compiled, but a mismatch is also where a stale
-    closure would hide, so each wants reading: `SceneCanvas.tsx` (4),
-    forge's `useStoryRegistry.ts` (3), `StoryTrial.tsx` (2), and `FrameView.tsx`,
-    labkit's `Trial.tsx` (2) and `useTiledSurface.ts`, core's
-    `GestureDispatcherMounter.tsx`, ui's `useOutsideDrop.ts`, and the
-    `ForceGraphDemo`.
+
+- **(P3) `preserve-manual-memoization` is off for two files under `canvas/SceneCanvas/`.** Neither
+  report is a stale closure. `GestureDispatcherMounter.tsx` memoizes `longPress` on
+  `longPressOpts?.duration` and `?.haptics` where the compiler infers `longPressOpts`: read the two
+  fields into locals first. `DevHuds.tsx` reads a `useLatest` ref named `pickers`, which the
+  compiler takes for a ref only under a name ending in `Ref`. Fix both and delete the override
+  block in `eslint.config.js`.
 
 ---
 
