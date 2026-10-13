@@ -72,10 +72,10 @@ Priority tags:
 - **(P3) One dep still names a plane, not ten.** Read for what a camera-bearing host can
   implement, only `geometryProjection` obstructs (its own entry below). `view` is per-kernel by
   design, and `kernel3d` declares `camera3d`. `editAnchors` and `booleansAdapter` are 2D features a
-  3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, and `ingestion` are
-  satisfiable as typed, because every coordinate in them is a screen point under the identity
-  `clientToWorld` a 3D host passes. `pointer` has not been re-measured since it became the pointer
-  store (`PointerContextValue`).
+  3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, `ingestion`, and
+  `pointer` are satisfiable as typed, because every coordinate in them is a screen point under the
+  identity `clientToWorld` a 3D host passes. `pointer` was read, not run in a 3D host: its store
+  (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no camera.
 
 - **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Mat3)` names a
   plane in its signature, so a kernel with a camera has nothing to implement it with. Core builds
