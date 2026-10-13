@@ -27,6 +27,7 @@ import {
   registerContentHandler,
   type IngestItem
 } from 'features/ingestion';
+import { isSelectedNode } from 'features/paths/pathEditState';
 import { usePathEditOverlayLayer, usePathEditState } from 'features/paths/usePathEdit';
 import {
   createSelectionOverlayLayer,
@@ -354,16 +355,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   }, [currentSelection, scene, describeKind]);
   usePublishSelection(currentSelection, selectionKinds);
 
-  // Anchor editing survives only as long as the active mode permits it.
-  // Deliberately undefined when no mode registry is wired: "no modality"
-  // means nothing revokes edit mode, whereas a predicate built from the
-  // fallback capability set would revoke it immediately (the default set
-  // is NORMAL's, which doesn't include `edits-anchors`).
-  const anchorEditingAllowed = useMemo(
-    () => (getActiveMode ? () => getActiveMode().allowedCapabilities.has('edits-anchors') : undefined),
-    [getActiveMode],
-  );
-  const pathEditState = usePathEditState({ host: pathEdit, isAllowed: anchorEditingAllowed });
+  // `isAllowed` is absent, not a predicate, when no mode registry is wired:
+  // see `PathEditSource.isAllowed`.
+  const pathEditState = usePathEditState({
+    host: pathEdit,
+    isAllowed: getActiveMode
+      ? () => getActiveMode().allowedCapabilities.has('edits-anchors')
+      : undefined,
+    isSelectedNode: (id) => isSelectedNode(scene, selection, id),
+  });
 
   const selectToolWithDefaults = useMemo(() => ({
     // Shift-click belongs to the anchor selection while a path is being
@@ -936,7 +936,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               viewportRecenter={viewport?.recenter}
               viewAnimation={viewAnimation}
               editAnchorsExternalState={pathEditState}
-              anchorEditingAllowed={anchorEditingAllowed}
               layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
               layoutDropTarget={layoutDropTarget}
               reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}

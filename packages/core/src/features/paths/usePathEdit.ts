@@ -16,6 +16,7 @@ export interface UsePathEditStateOptions {
   host: PathEditHost | undefined;
   /** See `PathEditSource.isAllowed`; absent when no mode registry is wired. */
   isAllowed: (() => boolean) | undefined;
+  isSelectedNode: (id: string) => boolean;
 }
 
 /** One state object for the life of the component, answering from the
@@ -25,6 +26,7 @@ export function usePathEditState(options: UsePathEditStateOptions): PathEditStat
   const [state] = useState(() => createPathEditState({
     host: () => live.current.host,
     isAllowed: () => live.current.isAllowed?.() ?? true,
+    isSelectedNode: (id) => live.current.isSelectedNode(id),
   }));
   return state;
 }

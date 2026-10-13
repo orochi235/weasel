@@ -1,7 +1,9 @@
 /**
- * What `<SceneCanvas>` treats as "the path being anchor-edited" once the edit
- * target stops qualifying without `exitPathEdit` having run: its node leaves
- * the selection, or leaves the scene.
+ * A path is being anchor-edited only while its node exists, is selected, and
+ * the mode permits it. Everything on `<SceneCanvas>` that asks — the
+ * `editAnchors` dep, the anchor overlay, the selection overlay, the rule
+ * context, and the select tool's shift-click lock — gets the one answer, also
+ * when the target stops qualifying without `exitPathEdit` having run.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
@@ -145,7 +147,7 @@ describe('a path being anchor-edited, with its node selected', () => {
     expect(t.overlayCommands()).toBe(4);
     expect(t.outlineSuppressed(A)).toBe(true);
     expect(t.ruleSaysEditing()).toBe(true);
-    t.shiftClick(220, 120);
+    t.shiftClick(200, 120);
     expect(t.selection()).toEqual([A]);
   });
 
@@ -187,10 +189,7 @@ describe('a path being anchor-edited, with its node selected', () => {
   });
 });
 
-// PINNED DIVERGENCE: the dep drops an edit target whose node is deselected or
-// gone; the canvas's own copy of the id does not. Every test named "canvas
-// copy" below pins the half that disagrees with the dep.
-describe('a path being anchor-edited whose node leaves the selection without exitPathEdit', () => {
+describe('a path whose node leaves the selection mid-edit, without exitPathEdit', () => {
   function deselected(props?: Record<string, unknown>) {
     const t = setup(props);
     t.enter();
@@ -198,7 +197,7 @@ describe('a path being anchor-edited whose node leaves the selection without exi
     return t;
   }
 
-  it("is no longer the dep's edit target, so its anchors cannot be grabbed", () => {
+  it("is no longer the dep's edit target, so a drag on an anchor moves the node", () => {
     const t = deselected();
     expect(t.depEditingId()).toBe('');
     const before = t.worldCoords(A);
@@ -206,22 +205,22 @@ describe('a path being anchor-edited whose node leaves the selection without exi
     expect(anchorsMoved(before, t.worldCoords(A))).toBe(4);
   });
 
-  it('canvas copy: the overlay still paints its anchors', () => {
-    expect(deselected().overlayCommands()).toBe(4);
+  it('has its anchors leave the overlay', () => {
+    expect(deselected().overlayCommands()).toBe(0);
   });
 
-  it('canvas copy: the selection overlay would still skip it', () => {
-    expect(deselected().outlineSuppressed(A)).toBe(true);
+  it('is no longer skipped by the selection overlay', () => {
+    expect(deselected().outlineSuppressed(A)).toBe(false);
   });
 
-  it('canvas copy: the rule context still says a path is being edited', () => {
-    expect(deselected().ruleSaysEditing()).toBe(true);
+  it('leaves the rule context saying no path is being edited', () => {
+    expect(deselected().ruleSaysEditing()).toBe(false);
   });
 
-  it('canvas copy: shift-click still belongs to the anchor selection', () => {
+  it('gives shift-click back to the node selection', () => {
     const t = deselected();
-    t.shiftClick(120, 220);
-    expect(t.selection()).toEqual([B]);
+    t.shiftClick(100, 220);
+    expect(t.selection()).toEqual([C]);
   });
 
   it('is the edit target again once its node is reselected', () => {
@@ -231,19 +230,19 @@ describe('a path being anchor-edited whose node leaves the selection without exi
     expect(t.overlayCommands()).toBe(4);
   });
 
-  it('canvas copy: a host-owned edit target behaves the same way', () => {
+  it('is dropped the same way when a host owns the id, which the host still holds', () => {
     let editing: string | null = null;
     const host = { editingId: () => editing, setEditingId: (next: string | null) => { editing = next; } };
     const t = deselected({ pathEdit: host });
     expect(editing).toBe(A);
     expect(t.depEditingId()).toBe('');
-    expect(t.overlayCommands()).toBe(4);
-    expect(t.outlineSuppressed(A)).toBe(true);
-    expect(t.ruleSaysEditing()).toBe(true);
+    expect(t.overlayCommands()).toBe(0);
+    expect(t.outlineSuppressed(A)).toBe(false);
+    expect(t.ruleSaysEditing()).toBe(false);
   });
 });
 
-describe('a path being anchor-edited whose node is removed', () => {
+describe('a path whose node is removed mid-edit', () => {
   function removed() {
     const t = setup();
     t.enter();
@@ -258,18 +257,18 @@ describe('a path being anchor-edited whose node is removed', () => {
     expect(t.overlayCommands()).toBe(0);
   });
 
-  it('canvas copy: the selection overlay would still skip its id', () => {
-    expect(removed().outlineSuppressed(A)).toBe(true);
+  it('is no longer skipped by the selection overlay', () => {
+    expect(removed().outlineSuppressed(A)).toBe(false);
   });
 
-  it('canvas copy: the rule context still says a path is being edited', () => {
-    expect(removed().ruleSaysEditing()).toBe(true);
+  it('leaves the rule context saying no path is being edited', () => {
+    expect(removed().ruleSaysEditing()).toBe(false);
   });
 
-  it('canvas copy: shift-click still belongs to the anchor selection', () => {
+  it('gives shift-click back to the node selection', () => {
     const t = removed();
     t.select([B]);
-    t.shiftClick(120, 220);
-    expect(t.selection()).toEqual([B]);
+    t.shiftClick(100, 220);
+    expect(t.selection()).toEqual([C]);
   });
 });

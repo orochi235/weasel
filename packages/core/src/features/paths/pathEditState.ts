@@ -14,9 +14,15 @@ export interface AnchorMarquee {
   height: number;
 }
 
-/** What decides whether a stored edit target is still one. Each is read at
- *  the moment of the question. */
+/**
+ * What decides whether a stored edit target is still one: its node exists and
+ * is selected, and the mode permits anchor editing. Each is read at the
+ * moment of the question.
+ */
 export interface PathEditSource {
+  /** Whether `id` names a node that exists and is selected. Absent means
+   *  every id does. */
+  isSelectedNode?(id: string): boolean;
   /** A host that owns the id; the state then keeps none of its own. */
   host?(): PathEditHost | undefined;
   /**
@@ -32,7 +38,8 @@ export interface PathEditSource {
 
 export interface PathEditState {
   /**
-   * The node whose anchors are editable now, or `''`. Masked rather than
+   * The node whose anchors are editable now, or `''`: the stored id, or the
+   * host's, while `PathEditSource` still lets it stand. Masked rather than
    * cleared: a host's mode machine can leave path-edit mode without running
    * `exitPathEdit`, and nothing re-renders when it does, so there is no
    * moment to write the id back.
@@ -55,6 +62,15 @@ export interface PathEditState {
 const NO_IDS: ReadonlySet<string> = new Set();
 const NO_ANCHORS: ReadonlySet<number> = new Set();
 
+/** Whether `id` names a node `scene` holds and `selection` includes. */
+export function isSelectedNode(
+  scene: { get(id: never): unknown },
+  selection: { readonly current: readonly string[] },
+  id: string,
+): boolean {
+  return scene.get(id as never) != null && selection.current.includes(id);
+}
+
 export function createPathEditState(source: PathEditSource = {}): PathEditState {
   let ownId = '';
   let selectedAnchors = NO_ANCHORS;
@@ -65,9 +81,11 @@ export function createPathEditState(source: PathEditSource = {}): PathEditState 
 
   const getEditingId = (): string => {
     const host = source.host?.();
-    if (host) return host.editingId() ?? '';
+    const id = host ? host.editingId() ?? '' : ownId;
+    if (!id) return '';
     if (source.isAllowed && !source.isAllowed()) return '';
-    return ownId;
+    if (source.isSelectedNode && !source.isSelectedNode(id)) return '';
+    return id;
   };
 
   return {

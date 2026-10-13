@@ -57,6 +57,34 @@ describe('createPathEditState', () => {
     expect(state.getEditingId()).toBe('a');
   });
 
+  it('reads an id as empty while its node is missing or deselected, and keeps it for when it is back', () => {
+    const selected = new Set(['a']);
+    const state = createPathEditState({ isSelectedNode: (id) => selected.has(id) });
+    state.setEditingId('a');
+    expect(state.getEditingId()).toBe('a');
+    selected.clear();
+    expect(state.getEditingId()).toBe('');
+    expect(state.getEditingIds().size).toBe(0);
+    selected.add('a');
+    expect(state.getEditingId()).toBe('a');
+  });
+
+  it("holds a host's id to the same rule", () => {
+    let allowed = true;
+    let selected = true;
+    const state = createPathEditState({
+      host: () => ({ editingId: () => 'h', setEditingId: () => {} }),
+      isAllowed: () => allowed,
+      isSelectedNode: () => selected,
+    });
+    expect(state.getEditingId()).toBe('h');
+    allowed = false;
+    expect(state.getEditingId()).toBe('');
+    allowed = true;
+    selected = false;
+    expect(state.getEditingId()).toBe('');
+  });
+
   it('leaves the id to a host: reads it there, writes it there, and announces nothing', () => {
     let hosted: string | null = 'h';
     const host = { editingId: () => hosted, setEditingId: vi.fn((id: string | null) => { hosted = id; }) };

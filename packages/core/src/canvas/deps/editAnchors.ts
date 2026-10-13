@@ -17,7 +17,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { PolygonPath } from '@weasel-js/geom';
 import { worldEditToStorage } from '@weasel-js/geom';
 import { classifyPathStorage, resolveEditablePathOf } from 'features/paths/editablePath';
-import { createPathEditState, type PathEditState } from 'features/paths/pathEditState';
+import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { recordModeSwitch } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
@@ -32,23 +32,6 @@ export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingI
 
 export { resolveEditablePathOf };
 
-/** Extra wiring for {@link useEditAnchorsDepSource}. */
-export interface EditAnchorsDepOptions {
-  /**
-   * Whether the host currently permits anchor editing — whether the active mode allows the
-   * `edits-anchors` capability.
-   *
-   * **Omit this when no mode registry is wired.** Absent means "no modality, so nothing
-   * revokes edit mode"; a predicate built from an empty capability set would revoke edit
-   * mode instantly.
-   *
-   * When supplied and it returns false, `editingId` reads as empty — the overlay stops
-   * drawing, the anchors stop being hittable, and the anchor selection is dropped — so
-   * leaving path-edit mode by ANY route tears down edit state.
-   */
-  anchorEditingAllowed?: () => boolean;
-}
-
 const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set<number>();
 
 export function useEditAnchorsDepSource(
@@ -56,31 +39,22 @@ export function useEditAnchorsDepSource(
   selection: SelectionApi,
   adapter: OpsApplier,
   externalState?: EditAnchorsStateRef,
-  options?: EditAnchorsDepOptions,
 ): void {
   const sceneRef = useLatest(scene);
   const selectionRef = useLatest(selection);
   const adapterRef = useLatest(adapter);
-  const allowedRef = useLatest(options?.anchorEditingAllowed);
 
   // A caller that shares the state with nothing else gets one of its own.
-  const [ownState] = useState(createPathEditState);
+  const [ownState] = useState(() => createPathEditState({
+    isSelectedNode: (id) => isSelectedNode(sceneRef.current, selectionRef.current, id),
+  }));
   const stateRef = useLatest(externalState ?? ownState);
 
   useDepSource('editAnchors', (): EditAnchorsDep => {
     const sc = sceneRef.current;
     const ad = adapterRef.current;
-    const s = selectionRef.current;
     const state = stateRef.current;
-    let effectiveId = state.getEditingId();
-    if (effectiveId) {
-      const node = sc.get(effectiveId as NodeId);
-      const inSelection = (s.current as NodeId[]).includes(effectiveId as NodeId);
-      // A mode registry that no longer permits `edits-anchors` revokes
-      // edit mode wholesale — see EditAnchorsDepOptions.anchorEditingAllowed.
-      const permitted = allowedRef.current ? allowedRef.current() : true;
-      if (!node || !inSelection || !permitted) effectiveId = '';
-    }
+    const effectiveId = state.getEditingId();
     // Anchor selection and the marquee belong to one specific edited node, so never
     // hand them out alongside an empty id.
     const selectedAnchors = effectiveId ? state.getSelectedAnchors() : EMPTY_ANCHOR_SELECTION;
