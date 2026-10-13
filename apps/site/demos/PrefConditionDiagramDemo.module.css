@@ -1,0 +1,5 @@
+.demo {
+  display: grid;
+  gap: var(--wzl-space-6);
+  width: 640px;
+}
