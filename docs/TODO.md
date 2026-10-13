@@ -1118,15 +1118,11 @@ only story runner in the repo.
   projects was not the cause, and the `groupOrder` line should come out. Not measured: fewer
   workers for `browser`, and whether studio's own load is the cause.
 
-- **(P3) `forge/src/vite/plugin.test.ts` fails when the dev server does not follow a rewritten
-  file.** Every failure is a test that writes a file and waits 15 to 20 s for the server to follow
-  it, among them "serves the component graph from source, and pushes it again when a component file
-  changes" and "titles a native story by its meta when forge's meta reaches it through a helper
-  module, and re-decides when the helper changes". It has failed in fleet runs on studio and
-  teitou, and alone on orochi, where it is not load from the suite: 2 of 3 runs failed at
-  `af9f3db6b`, up to five tests each, and 1 of 2 at `29dfa85eb`. A site dev server on orochi that
-  evening also served a file as it was before an edit, and a `touch` did not wake it, so there the
-  watcher missed the write.
+- **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
+  as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
+  reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
+  7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
+  measured.
 
 - **(P2) A docs minisite per package: overview, guides, and demos.** `npm run build:api` documents
   every published package in one TypeDoc site at `/api/`. Still to design: an overview and
