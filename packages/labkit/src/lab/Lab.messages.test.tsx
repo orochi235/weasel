@@ -3,8 +3,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
-import { Lab } from './Lab';
-import type { LabProps } from './labProps';
+import { Lab, type LabProps } from './Lab';
 import type { PresentationState } from './presentationMessages';
 
 let clock: TrialClock | null = null;

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
 import type { ComboBoxOption } from './components/ComboBox/ComboBox';
-import type { Key } from './optionKey';
+
+type Key = string | number;
 
 /** An option list keyed to the value type its combo box commits. */
 export type AsyncOption<T extends Key> = ComboBoxOption & { value: T };

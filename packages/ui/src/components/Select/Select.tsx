@@ -32,7 +32,6 @@ import listbox from '../listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 import { Caret } from '../Caret';
-import type { Key } from '../../optionKey';
 
 /** One option in a {@link Select}'s `options` list. */
 export type SelectOption = {
@@ -55,6 +54,8 @@ export type SelectOptionGroup<T extends Key = string> = {
   title: ReactNode;
   options: ReadonlyArray<SelectOption & { value: T }>;
 };
+
+type Key = string | number;
 
 function isGroup<T extends Key>(
   entry: (SelectOption & { value: T }) | SelectOptionGroup<T>,

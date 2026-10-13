@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from './memory';
-import { createRecordCache, openRecords, openRecordsSync } from './records';
-import type { RecordChange } from './recordTypes';
+import { createRecordCache, openRecords, openRecordsSync, type RecordChange } from './records';
 import type { StorageAdapter } from './types';
 
 const PREFIX = 'lk:t:';

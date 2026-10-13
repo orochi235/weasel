@@ -6,8 +6,7 @@ import { useClockFrame } from '../clock/hooks';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { Instrument } from '../instrument/types';
 import { labPrefix } from '../state/labRecords';
-import { Lab } from './Lab';
-import type { LabProps } from './labProps';
+import { Lab, type LabProps } from './Lab';
 
 let clock: TrialClock | null = null;
 

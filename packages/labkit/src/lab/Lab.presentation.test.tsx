@@ -4,9 +4,8 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { labPrefix } from '../state/labRecords';
-import { Lab } from './Lab';
+import { Lab, type LabProps } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
-import type { LabProps } from './labProps';
 import { type Presentation, usePresentation } from './presentation';
 
 const stub: Instrument = {
