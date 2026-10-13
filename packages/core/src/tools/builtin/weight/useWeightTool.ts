@@ -1,8 +1,7 @@
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
-import type { Skin } from '@weasel-js/animator';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { createBoneOverlay } from '../bone/boneOverlay';
@@ -26,15 +25,14 @@ export interface UseWeightToolOptions {
   reach?: number;
 }
 
-const NONE: ReadonlyMap<NodeId, Skin> = new Map();
-
 /**
  * Paints how much the active joint weighs each point of the paths under a rig node, into
  * their `data.skin`. A click on a joint makes it the active one. A drag is a round brush:
  * points under it follow the active joint more, the nearer the brush's center, and their
  * other joints give way; with Alt held they follow it less. A click away from any joint is
  * one dab. Every point shows as a dot colored by the active joint's share of it. A stroke is
- * one undo entry.
+ * one undo entry, and until it ends its weights are in `state.painted()`, which `useRigNode`
+ * binds when given the same `state` as `painting`.
  */
 export function useWeightTool(options: UseWeightToolOptions): Tool {
   const ownState = useMemo(() => createRigEditState(), []);
@@ -42,29 +40,15 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
   const opts = useLatest({
     scene: options.scene, rig: options.rig, radius: options.radius ?? 24, reach: options.reach ?? 10,
   });
-  const paintedRef = useRef(NONE);
-
-  const env = useMemo(() => {
-    const listeners = new Set<() => void>();
-    const tool: WeightEnv & { listen(fn: () => void): () => void } = {
-      state,
-      scene: () => opts.current.scene,
-      placed: () => placedRig(opts.current.scene, opts.current.rig()),
-      reachPx: () => opts.current.reach,
-      radiusPx: () => opts.current.radius,
-      painted: () => paintedRef.current,
-      paint(next) {
-        paintedRef.current = next ?? NONE;
-        for (const fn of [...listeners]) fn();
-      },
-      listen(fn) {
-        listeners.add(fn);
-        const off = state.listen(fn);
-        return () => { listeners.delete(fn); off(); };
-      },
-    };
-    return tool;
-  }, [opts, state]);
+  const env = useMemo((): WeightEnv => ({
+    state,
+    scene: () => opts.current.scene,
+    placed: () => placedRig(opts.current.scene, opts.current.rig()),
+    reachPx: () => opts.current.reach,
+    radiusPx: () => opts.current.radius,
+    painted: state.painted,
+    paint: state.paint,
+  }), [opts, state]);
 
   const actions = useMemo(() => createWeightActions(env), [env]);
   const overlay = useMemo(() => [
@@ -72,13 +56,13 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
       id: 'weight-tool-points',
       paths: () => weighedPaths(env),
       active: state.active,
-      subscribe: env.listen,
+      subscribe: state.listen,
     }),
     createBoneOverlay({
       id: 'weight-tool-skeleton',
       skeleton: () => env.placed()?.skeleton ?? null,
       active: state.active,
-      subscribe: env.listen,
+      subscribe: state.listen,
     }),
   ], [env, state]);
 

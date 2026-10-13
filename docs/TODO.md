@@ -504,9 +504,6 @@ Priority tags:
   a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
   actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or
   the skin would be weighed again with `autoSkin`.
-- **(P3) A stroke of the weight tool bends the path when it ends, not while it is painted** —
-  the rig in view is bound from the document, and a stroke is written at its end. Showing it
-  live needs the bound rig to read the tool's in-flight weights.
 - **(P3) A skinned path is seen at rest by a view with its own `toPose` and by a node that
   derives from it** — an override's `path` is in the scene's frame, so `sceneDerivedPathOf`
   leaves it out for a `toPose` reader, and `DerivedDep.path` answers a derived path only.

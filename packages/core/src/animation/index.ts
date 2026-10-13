@@ -51,6 +51,6 @@ export {
   bindRig, dataRestPath, placeSkeleton, rigFromNode, rigidRigApply, unplaceSkeleton, useRig, useRigNode,
 } from './rig';
 export type {
-  BindRigOptions, RestPath, Rig, RigApply, RigApplyContext, RigNodeData, RigNodeParts, RigNodeSource, RigScene,
-  UseRigNodeOptions,
+  BindRigOptions, PaintedSkins, RestPath, Rig, RigApply, RigApplyContext, RigNodeData, RigNodeParts, RigNodeSource,
+  RigScene, UseRigNodeOptions,
 } from './rig';

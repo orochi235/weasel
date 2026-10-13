@@ -18,6 +18,14 @@ export interface RigNodeData {
   joint?: string;
 }
 
+/** Weights to bind in place of the document's, and word of when they change. A `RigEditState`
+ *  is one: it holds what a stroke of the weight tool has painted and not yet written. */
+export interface PaintedSkins {
+  /** By node. A new map whenever the weights change. */
+  painted(): ReadonlyMap<NodeId, Skin>;
+  listen(fn: () => void): () => void;
+}
+
 /** The part of a scene `rigFromNode` reads. */
 export interface RigNodeSource<TPose> {
   get(id: NodeId): { pose: TPose; data?: unknown } | undefined;
@@ -81,7 +89,16 @@ export function unplaceSkeleton<TPose>(
   };
 }
 
-function read<TPose>(scene: RigNodeSource<TPose>, id: NodeId, descriptor: PoseDescriptor<TPose>): Reading {
+const UNPAINTED: ReadonlyMap<NodeId, Skin> = new Map();
+const noWord = (): (() => void) => () => {};
+const unpainted = (): ReadonlyMap<NodeId, Skin> => UNPAINTED;
+
+function read<TPose>(
+  scene: RigNodeSource<TPose>,
+  id: NodeId,
+  descriptor: PoseDescriptor<TPose>,
+  painted: ReadonlyMap<NodeId, Skin> = UNPAINTED,
+): Reading {
   const node = scene.get(id);
   if (!node) throw new Error(`rigFromNode: the rig is node "${id}", which the scene lacks.`);
   const local = (node.data as RigNodeData | null | undefined)?.skeleton;
@@ -95,8 +112,9 @@ function read<TPose>(scene: RigNodeSource<TPose>, id: NodeId, descriptor: PoseDe
       const n = scene.get(child);
       if (!n) continue;
       const data = n.data as RigNodeData | null | undefined;
-      out.refs.push(child, n.pose, n.data);
-      if (data?.skin) out.skins[child] = data.skin;
+      const skin = painted.get(child) ?? data?.skin;
+      out.refs.push(child, n.pose, n.data, skin);
+      if (skin) out.skins[child] = skin;
       else if (data?.joint !== undefined) (out.bindings[data.joint] ??= []).push(child);
       walk(child);
     }
@@ -130,6 +148,9 @@ export interface UseRigNodeOptions<TPose>
   };
   /** The node whose data holds the skeleton. */
   node: NodeId;
+  /** Weights bound in place of a node's `data.skin` while they are held. Give it the
+   *  `RigEditState` the weight tool has, and a stroke bends the path as it is painted. */
+  painting?: PaintedSkins;
 }
 
 /**
@@ -141,13 +162,14 @@ export interface UseRigNodeOptions<TPose>
  * new `target`.
  */
 export function useRigNode<TPose>(options: UseRigNodeOptions<TPose>): Rig {
-  const { scene, node, apply, descriptor, restPath } = options;
+  const { scene, node, apply, descriptor, restPath, painting } = options;
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion);
+  const painted = useSyncExternalStore(painting?.listen ?? noWord, painting?.painted ?? unpainted);
   const next = useMemo(
-    () => read(scene, node, descriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>)),
+    () => read(scene, node, descriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>), painted),
     // `version` is what says the scene may answer differently.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [scene, node, descriptor, version],
+    [scene, node, descriptor, version, painted],
   );
   // Each read makes new objects; the rig must outlive a read that found nothing changed.
   const [held, setHeld] = useState(next);
