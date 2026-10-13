@@ -173,20 +173,17 @@ Priority tags:
 
 ## Paths & booleans
 
-- **(P3) a pose's `transform` is drawn, picked, and edited as a path, and the selection chrome and
-  the resize and rotate handles do not read it.** A box pose may carry a `transform` (`PoseLinear`,
+- **(P3) a pose's `transform` is drawn, picked, outlined, and resized in its own frame, and these
+  do not read it yet.** A box pose may carry a `transform` (`PoseLinear`,
   `packages/geom/src/poseFrame.ts`): the skew or per-axis scale its box and rotation cannot hold.
   Ruled 2026-10-11: text and image nodes carry a full transform, and such text stays editable
-  text. These readers see only the box and its rotation, so for such a node each acts on the
-  unstretched, unskewed box:
-  - The selection outline and handles (`features/selection/overlay.ts`,
-    `affordances/hitAffordanceRegions.ts`, `wiredBoundsOfPose` in
-    `canvas/SceneCanvas/useSceneSelectTool.ts`) sit on the unstretched box, and the resize and
-    rotate actions (`interactions/actions/resize/frame.ts`, `rotate/geometry.ts`,
-    `rotate/handle.ts`) take their drags in that box's frame. A resize changes the box and keeps
-    the transform, so the result is drawn stretched; these have to change together.
+  text. The selection chrome, its hit regions, and a lone node's resize and rotate read the frame
+  through `core/geometry/targetFrame.ts`; a resize writes the box and keeps the transform. What
+  still sees only the box and its rotation:
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
-    resize gives a turned leaf rather than writing it to the leaf's `transform`.
+    resize gives a turned leaf rather than writing it to the leaf's `transform`, and reads only
+    the leaf's rotation, so a leaf that already carries a skew is remapped as if it had none. The
+    chrome now follows whatever it writes.
   - The text edit overlay and its carets are placed from the pose's `x`, `y`, `width`, and
     `height` alone (`getScreenPose` in `features/text/useSceneTextEdit.ts`): neither the
     rotation nor the `transform` reaches the DOM. Needs a browser to verify.

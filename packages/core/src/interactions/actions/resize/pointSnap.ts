@@ -8,23 +8,22 @@ import type {
   PointSnapResult,
   ResizeAnchor,
 } from '../../gestures/types';
-import { rotatePoint } from '../rotate/geometry';
+import { targetCorners, worldDeltaToLocal, type TargetTransform } from 'core/geometry/targetFrame';
+import { boxFrame } from './boxFrame';
+import type { ResizeBox } from './session';
 import type { PoseDescriptor } from './geometry';
 import { boundsForRules } from './ruleBounds';
 
 function buildPointSnapContext<TPose extends Bounds>(
   pose: TPose,
+  frame: TargetTransform,
   rotation: number,
   anchor: ResizeAnchor,
   modifiers: ModifierState,
 ): PointSnapContext<TPose> {
   const cx = pose.x + pose.width / 2;
   const cy = pose.y + pose.height / 2;
-
-  const tl = rotatePoint(pose.x, pose.y, cx, cy, rotation);
-  const tr = rotatePoint(pose.x + pose.width, pose.y, cx, cy, rotation);
-  const br = rotatePoint(pose.x + pose.width, pose.y + pose.height, cx, cy, rotation);
-  const bl = rotatePoint(pose.x, pose.y + pose.height, cx, cy, rotation);
+  const [tl, tr, br, bl] = targetCorners(pose, frame);
 
   let draggedCorner: { worldX: number; worldY: number } | null = null;
   let fixedCorner: { worldX: number; worldY: number } | null = null;
@@ -56,7 +55,7 @@ function buildPointSnapContext<TPose extends Bounds>(
 
 function applyPointSnap<TPose extends Bounds>(
   pose: TPose,
-  rotation: number,
+  frame: TargetTransform,
   result: PointSnapResult,
   ctx: PointSnapContext<TPose>,
 ): TPose {
@@ -72,14 +71,11 @@ function applyPointSnap<TPose extends Bounds>(
   }
   const pin = result.frame === 'dragged-corner' ? ctx.fixedCorner : ctx.draggedCorner;
   if (!pin) return pose;
-  const Dx = result.worldX - pin.worldX;
-  const Dy = result.worldY - pin.worldY;
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const localW = Dx * cos + Dy * sin;
-  const localH = -Dx * sin + Dy * cos;
-  const newWidth = Math.abs(localW);
-  const newHeight = Math.abs(localH);
+  // The diagonal from the pinned corner, in the box's own axes.
+  const diagonal = worldDeltaToLocal(frame, result.worldX - pin.worldX, result.worldY - pin.worldY);
+  if (!diagonal) return pose;
+  const newWidth = Math.abs(diagonal.x);
+  const newHeight = Math.abs(diagonal.y);
   const newCx = (pin.worldX + result.worldX) / 2;
   const newCy = (pin.worldY + result.worldY) / 2;
   return { ...pose, x: newCx - newWidth / 2, y: newCy - newHeight / 2, width: newWidth, height: newHeight };
@@ -120,14 +116,15 @@ export function snapPose(
   rules: readonly PointSnapBehavior<Bounds>[],
   g: PoseDescriptor<unknown>,
   pose: unknown,
-  rotation: number,
+  box: Pick<ResizeBox, 'rotation' | 'transform'>,
   anchor: ResizeAnchor,
   modifiers: ModifierState,
   plane: PlaneMap | null,
 ): unknown {
   if (rules.length === 0) return pose;
   const poseAsRect = boundsForRules(g, pose);
-  const psCtx = buildPointSnapContext(poseAsRect, rotation, anchor, modifiers);
+  const frame = boxFrame(box, poseAsRect);
+  const psCtx = buildPointSnapContext(poseAsRect, frame, box.rotation, anchor, modifiers);
   // Point snaps are the surface's rules over the camera's world, so
   // on a plane their points cross at this boundary.
   for (const rule of rules) {
@@ -135,7 +132,7 @@ export function snapPose(
       ? pointSnapFromPlane(rule.onMove(pointSnapToCamera(psCtx, plane)), plane)
       : rule.onMove(psCtx);
     if (!result) continue;
-    const snapped = applyPointSnap(poseAsRect, rotation, result, psCtx);
+    const snapped = applyPointSnap(poseAsRect, frame, result, psCtx);
     return isRectPose(pose) ? snapped : g.remapBounds(pose, poseAsRect, snapped);
   }
   return pose;
