@@ -6,6 +6,7 @@ import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import { resolveAlign, type TextAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
+import { poseLinearOf } from '@weasel-js/geom';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
@@ -78,6 +79,14 @@ const alignEncoding: PrefEnumEncoding = {
   write: (edge) => edge,
 };
 
+/** `pose.transform` as a flag: on while the pose carries a skew or a per-axis
+ *  scale, and off removes it. On keeps the one held, since a flag cannot
+ *  author a matrix. */
+const transformEncoding: PrefBooleanEncoding = {
+  read: (stored) => poseLinearOf({ transform: stored }) !== null,
+  write: (on, pose) => (on ? pose?.transform : undefined),
+};
+
 type MarkerOptions = PrefEnum['options'];
 let markerOptionsCache: { generation: number; options: MarkerOptions } | undefined;
 
@@ -139,6 +148,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
           'pose.width': { kind: 'number', display: TWO_PLACES, name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: { with: 'pose.height', label: 'Size' } },
           'pose.height': { kind: 'number', display: TWO_PLACES, name: 'H', description: 'Height, world units.', default: 0, min: 0 },
           'pose.rotation': { kind: 'number', name: 'Rotation', description: 'Rotation about the box center.', default: 0, step: 1, unit: rotationDegreesUnit, absentIsDefault: true },
+          'pose.transform': { kind: 'boolean', name: 'Skew', description: 'The skew or per-axis scale the box and rotation cannot hold. Off removes it.', default: false, control: 'switch', encoding: transformEncoding },
         },
       },
       // What the node *is* outranks how it is painted: a text node's copy is
