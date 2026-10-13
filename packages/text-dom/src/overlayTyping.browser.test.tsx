@@ -4,8 +4,8 @@
  * on the native undo stack, and the hook steps in only where the character
  * must open a run of its own.
  */
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { userEvent } from 'vitest/browser';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { commands, userEvent } from 'vitest/browser';
 import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
@@ -136,6 +136,9 @@ async function copyThenPaste(source: HTMLElement, overlay: HTMLElement): Promise
 }
 
 describe('pasting into the edit overlay', () => {
+  beforeEach(() => commands.holdClipboard(60_000), 90_000);
+  afterEach(() => commands.dropClipboard());
+
   const PAGE =
     '<p style="color: red; font-family: Georgia; font-size: 30px">Hello <b>bold</b> and <i>it</i></p>\n'
     + '<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>'

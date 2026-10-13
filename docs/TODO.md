@@ -124,14 +124,6 @@ Priority tags:
   - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
     which included grouping, need re-recording.
 
-- **(P3) Two browser tests share the machine's clipboard and fail when they overlap.**
-  `packages/text-dom/src/overlayTyping.browser.test.tsx` ("reads a page's markup as runs") and
-  `packages/core/src/interactions/actions/clipboard/clipboardOps.browser.test.tsx` ("leaves the
-  previous clipboard whole when every flavor rejects") each write the real OS clipboard and read
-  it back. In a fleet run on 2026-10-12 each read the other's text (`'before'` and `'PQ'`); both
-  pass alone. Two fleet runs on one node would collide the same way. They need to run serially,
-  or one of them needs a clipboard of its own.
-
 - **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument,
   `Tool.previewPose` / `previewBounds` / `previewIds`, and tool-side preview sources are gone.
   Still to go:
@@ -1045,27 +1037,6 @@ only story runner in the repo.
   `packages/core/src/canvas/watchElementMove.ts`. `useHostAnchor`'s `ResizeObserver` recomputes
   when the host gains size, but the position watch does not restart. Read from the code, not tested.
 
-- **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
-  failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a
-  `locator.screenshot` timeout, and passed in the runs around it:
-  `Prefs/PrefsForm.drop.browser.test.tsx`, `labkit/src/lightbox/Lightbox.browser.test.tsx`,
-  `labkit/src/controls/compoundRows.browser.test.tsx`,
-  `PatternPicker/PatternPicker.browser.test.tsx`,
-  `core/src/features/text/overlayAlignment.browser.test.tsx`,
-  `labkit/src/lab/LabLightbox.browser.test.tsx` ("an expanded trial keeps its marks over it and
-  takes new ones"), `SelectionPanel/SelectionPanel.selection.browser.test.tsx`, and
-  `PrefSchemaEditor/PrefSchemaEditor.types.browser.test.tsx`. Those run alone on this machine at a
-  failing commit passed: `PatternPicker`, `overlayAlignment`, and `LabLightbox` (3 of 3, 1.3 s).
-  Measured 2026-10-12, nine full runs at one commit, three on each of studio, teitou, and msb-uai:
-  with `browser` run after the other projects (`sequence.groupOrder` in `vitest.config.ts`) none of
-  six runs had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That
-  is suggestive and no more: at a one in three rate six clean runs come up about 9% of the time. It
-  cost 12 to 52 s a run on teitou and msb-uai and nothing on studio, which takes about 175 s either
-  way against 100 to 115 s on the others and hosts a long-running render service; both failing runs
-  were there. A 15 s `browser` timeout in a run made since would mean running beside the other
-  projects was not the cause, and the `groupOrder` line should come out. Not measured: fewer
-  workers for `browser`, and whether studio's own load is the cause.
-
 - **(P3) `forge/src/vite/plugin.test.ts` fails when the dev server does not follow a rewritten
   file.** Every failure is a test that writes a file and waits 15 to 20 s for the server to follow
   it, among them "serves the component graph from source, and pushes it again when a component file
@@ -1224,16 +1195,41 @@ only story runner in the repo.
   - `updated weasel on <node> at <sha>` always prints the base the sync was given
     (`syncResp.SHA` is `req.Ref`), so that line says nothing about which commit's files are there.
 
-- **(P2) Browser tests time out under fleet load, each inside a Playwright action.** Every one
-  passes alone, and nobody has confirmed load is the cause:
-  - `PrefSchemaEditor.types.browser.test.tsx` ("a list's entry is edited inside the attributes
-    pane…"): 14.5 s in `userEvent.click` after the tree row was found and scrolled to; 0.3 s alone.
-  - `core/src/features/text/overlayAlignment.browser.test.tsx` ("sans-serif 16px lands on the
-    canvas glyphs"): 7.8 s in `page.screenshot` waiting for the element to be stable.
-  - `AssetEditor.steps.test.tsx`: timed out at 5 s.
-  - `forge/src/vite/plugin.test.ts` ("serves the component graph from source…", 15 s) and
-    `forge/src/timeline/timeline.browser.test.tsx` ("plays on real frames"), in separate runs
-    while about twenty other runs shared the fleet.
+- **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
+  a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
+  teitou, or msb-uai, a different handful of tests each run, and the test hits its 15 s limit or
+  the action's own. Every one passes alone, and nobody has confirmed load is the cause. Two stalls
+  were timed: 14.5 s in `userEvent.click` after the row was found and scrolled to
+  (`PrefSchemaEditor.types.browser.test.tsx`, 0.3 s alone), and 7.8 s in `page.screenshot` waiting
+  for a `position: fixed` element that never moves to be stable
+  (`core/src/features/text/overlayAlignment.browser.test.tsx`, "sans-serif 16px lands on the canvas
+  glyphs").
+  - **Still exposed**, because the action is what the test is about and nothing in it sleeps or
+    animates: `overlayAlignment` (a screenshot a test, 0.55 s each alone),
+    `labkit/src/lightbox/Lightbox.browser.test.tsx`,
+    `SelectionPanel/SelectionPanel.selection.browser.test.tsx`,
+    `PatternPicker/PatternPicker.browser.test.tsx`, and the full-page screenshot in
+    `labkit/src/lab/LabLightbox.browser.test.tsx`.
+  - **Changed on 2026-10-13, none of it confirmed by a fleet run.** `PrefSchemaEditor.types`,
+    `labkit/src/controls/compoundRows.browser.test.tsx`, and `LabLightbox`'s toolbar buttons click
+    through the DOM, since the click is not what they test; `compoundRows` is one test a dialog and
+    no longer waits for each to close. Testing Library's `waitFor` and `findBy*` wait 5 s in the
+    `browser` project, as `expect.poll` already did; they waited 1 s, in `LabLightbox` and in
+    `forge/src/timeline/timeline.browser.test.tsx` ("plays on real frames") among others. Two
+    timeouts were raised for tests that do the work: the sweeps in
+    `Prefs/PrefsForm.drop.browser.test.tsx` take 3.1 to 3.6 s each alone and have 60 s, and
+    `AssetEditor.steps.test.tsx`, a jsdom test that timed out at 5 s, takes 0.9 to 1.4 s alone and
+    has 20 s.
+  - **Running `browser` after the other projects** (`sequence.groupOrder` in `vitest.config.ts`),
+    measured 2026-10-12 over nine full runs at one commit, three on each node: none of six runs
+    had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That is
+    suggestive and no more: at a one in three rate six clean runs come up about 9% of the time. It
+    cost 12 to 52 s a run on teitou and msb-uai and nothing on studio, which takes about 175 s
+    either way against 100 to 115 s on the others and hosts a long-running render service; both
+    failing runs were there. A 15 s `browser` timeout in a run made since would mean running beside
+    the other projects was not the cause, and the `groupOrder` line should come out. Not measured:
+    fewer workers for `browser`, and whether studio's own load is the cause.
+  - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
   the HUD against plain DOM, a React overlay, and a DOM layer moved as one element

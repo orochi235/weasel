@@ -1,6 +1,7 @@
 import type { BrowserCommand } from 'vitest/node';
 import type {} from '@vitest/browser-playwright';
 import type { Download } from '@playwright/test';
+import { createServer, type Server } from 'node:net';
 
 // Server-side commands for the `browser` vitest project, reached from a test
 // through `commands` in 'vitest/browser'. They run against the Playwright
@@ -36,11 +37,47 @@ const takeDownload: BrowserCommand<[]> = async (ctx) => {
   return { filename: download.suggestedFilename(), text };
 };
 
-export const browserCommands = { grantClipboard, armDownload, takeDownload };
+// Test files share the real clipboard, so a test that uses it holds this port while it does.
+// A port, not a file: it holds off a second run on the machine too, and is freed when a run dies.
+const CLIPBOARD_PORT = 47_611;
+const clipboardHolds = new Map<string, Server>();
+
+const listenOnce = (): Promise<Server | null> =>
+  new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once('error', (err: NodeJS.ErrnoException) =>
+      err.code === 'EADDRINUSE' ? resolve(null) : reject(err));
+    server.listen(CLIPBOARD_PORT, '127.0.0.1', () => resolve(server));
+  });
+
+/** Take the machine's clipboard for this test, waiting for any other test that has it.
+ *  `dropClipboard` gives it back. */
+const holdClipboard: BrowserCommand<[timeoutMs: number]> = async (ctx, timeoutMs) => {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const server = await listenOnce();
+    if (server) {
+      clipboardHolds.set(ctx.sessionId, server);
+      return;
+    }
+    if (Date.now() > deadline) throw new Error(`the clipboard was held for ${timeoutMs} ms (port ${CLIPBOARD_PORT})`);
+    await new Promise((r) => setTimeout(r, 25));
+  }
+};
+
+const dropClipboard: BrowserCommand<[]> = async (ctx) => {
+  const server = clipboardHolds.get(ctx.sessionId);
+  clipboardHolds.delete(ctx.sessionId);
+  if (server) await new Promise((r) => server.close(r));
+};
+
+export const browserCommands = { grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload };
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
     grantClipboard: () => Promise<void>;
+    holdClipboard: (timeoutMs: number) => Promise<void>;
+    dropClipboard: () => Promise<void>;
     armDownload: (timeoutMs: number) => Promise<void>;
     takeDownload: () => Promise<{ filename: string; text: string } | null>;
   }
