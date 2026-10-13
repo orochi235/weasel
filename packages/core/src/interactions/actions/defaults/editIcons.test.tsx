@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isValidElement } from 'react';
 import { actionItems, type ActionItem } from '@weasel-js/routing';
-import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from './clipboard';
+import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from '../clipboard/action';
 import { duplicateAction } from './duplicate';
 import { groupAction, ungroupAction } from './group';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';

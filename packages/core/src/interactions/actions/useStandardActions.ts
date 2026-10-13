@@ -77,7 +77,7 @@ import { setStrokeOpacityAction } from './defaults/setStrokeOpacity';
 import { ingestAction } from './defaults/ingest';
 import {
   clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction,
-} from './defaults/clipboard';
+} from './clipboard/action';
 
 /** @experimental */
 export interface UseStandardActionsOptions {

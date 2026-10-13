@@ -50,7 +50,7 @@ export {
   clipboardCutAction,
   clipboardPasteAction,
   clipboardPasteEventAction,
-} from '../interactions/actions/defaults/clipboard';
+} from '../interactions/actions/clipboard/action';
 export { enterTextEditAction } from '../interactions/actions/defaults/enterTextEdit';
 export type { SliceDep, ClipboardDep, TextEditDep } from '../interactions/actions/depSchema';
 export { useStandardActions, KIT_STANDARD_ACTION_IDS } from '../interactions/actions/useStandardActions';

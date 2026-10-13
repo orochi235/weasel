@@ -1,11 +1,11 @@
 import { createElement } from 'react';
-import { CopyIcon, CutIcon, PasteIcon } from './icons/editIcons';
+import { CopyIcon, CutIcon, PasteIcon } from '../defaults/icons/editIcons';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { buildDeleteOps } from './delete';
-import { requiresSelection } from './requiresSelection';
+import { buildDeleteOps } from '../defaults/delete';
+import { requiresSelection } from '../defaults/requiresSelection';
 import { kitWeaselJsonHandler } from 'features/ingestion/weaselJsonHandler';
-import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from './ingest';
+import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
 
 /**
  * @experimental
