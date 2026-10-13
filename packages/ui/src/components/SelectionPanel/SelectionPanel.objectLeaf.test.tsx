@@ -483,15 +483,6 @@ describe('SelectionPanel — object leaf', () => {
     });
   });
 
-  it('offers no None on the stroke paint, which cannot hold one', () => {
-    // `Stroke.paint` is required. A nested paint writes one field of its
-    // parent, so offering None here would produce `{ ...stroke, paint: null }`
-    // — an invalid Stroke. Dropping the stroke is the parent's edit to make.
-    renderStroke(sceneWithStroke({ paint: { kind: 'solid', color: '#00ff00ff' }, width: 4 }));
-    expect(screen.queryByRole('radio', { name: 'None' })).toBeNull();
-    expect(screen.getByRole('radio', { name: 'Solid' })).toBeInTheDocument();
-  });
-
   it('edits a gradient stroke paint as a gradient', () => {
     // The stroke's paint field is the same `paint` leaf the fill uses, so it
     // gets the whole editor rather than a chip that can only degrade it.

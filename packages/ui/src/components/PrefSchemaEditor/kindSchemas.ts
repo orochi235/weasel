@@ -135,7 +135,7 @@ function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }):
   switch (leaf.kind) {
     case 'number': {
       const n = leaf as PrefNumber;
-      return { ...base, kind: 'number', default: 0, min: n.min, max: n.max, step: n.step } as PrefLeaf;
+      return { ...base, kind: 'number', default: 0, min: n.min, max: n.max, step: n.step, unit: n.unit } as PrefLeaf;
     }
     case 'boolean': return { ...base, kind: 'boolean', default: false };
     case 'string': return { ...base, kind: 'string', default: '' } as PrefLeaf;

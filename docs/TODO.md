@@ -279,14 +279,6 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P2) `SelectionPanel` cannot clear a fill.** Since `fill` became a record (2026-10-12), the
-  default node properties describe `data.fill` as an object leaf with a `paint` child, and
-  `leafField.ts` gives a paint nested in an object `allowNone: false`. Its comment says no kit paint
-  field is optional, which is no longer so: `Fill.paint` and `Stroke.paint` are both optional, and
-  either record with no paint paints nothing. "None" on a nested paint should remove the `paint`
-  field from its parent, which gives a stroke the same control. Draw is unaffected: it clears a
-  fill through `setFill`.
-
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
@@ -814,8 +806,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
   so the press arrives as the focus it causes, which carries no modifier.
 
-- **(P3) Loose ends beside a number's unit as data.** `PrefSchemaEditor` edits a number's
-  default, and its auto value, in the stored unit and not the one the leaf shows. The text tool's
+- **(P3) Loose ends beside a number's unit as data.** The text tool's
   percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
   stored value, so the run properties do not export as a literal. Nothing reads a unit's `format`
   yet. A unit whose accepted suffix is all digits moves to the front of the list, as an object's
@@ -892,9 +883,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
   a lab, and `withCommitPolicy` applies it for all three. (1) labkit's `ControlPanel` debounces
   text by 150 ms in its own row (`useDebouncedText`), which the table has no word for: it reads
-  as "writes as it changes". (2) The panel's reason for settling text and color is that every
-  write is an undo step, yet a slider there writes per move; whether `scene.batch` coalesces
-  those into one undo step is unverified.
+  as "writes as it changes". (2) A slider dragged in a `SelectionPanel` leaves one undo step per
+  move. Measured in jsdom 2026-10-13: three `change` events on a `control: 'slider'` leaf took
+  three `scene.undo()` calls to unwind, because `commitLeaf` writes through `scene.batch`, whose
+  entries never coalesce. The slider is live there so the canvas follows the drag; one step per
+  drag needs the drag's writes to share an entry, which the scene has to offer.
 
 - **(P3) Collecting a run of `tab` groups, and what each other `as` draws, is written four times.**
   `Prefs/PrefsPane.tsx`, `Prefs/objectRows.tsx` (both `ObjectLeaf`s),
