@@ -1,5 +1,4 @@
 import {
-  PREF_ENTRY,
   type PrefAction,
   type PrefAlias,
   type PrefAliasTargets,
@@ -14,6 +13,8 @@ import {
 } from '@weasel-js/prefs';
 import {
   DialogRow,
+  entriesDisabled,
+  entryDisabledAt,
   ListEditor,
   PrefActionButton,
   PrefControl,
@@ -124,15 +125,18 @@ function CompoundControl({
   // Plain text entries keep the list's own fields, and the placeholder only they have.
   if (leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined)) {
     const list = leaf as PrefList;
+    const texts = prefListTexts(value);
+    const ctx = { path, disabledAt: inside.disabledAt, entryAt: inside.entryAt };
     return (
       <ListEditor
         aria-label={list.item.name || label}
-        value={prefListTexts(value)}
+        value={texts}
         onChange={onChange}
         minItems={list.minItems}
         maxItems={list.maxItems}
         placeholder={extra<string>(leaf, 'placeholder')}
-        disabled={inside.disabledAt(`${path}.${PREF_ENTRY}`)}
+        disabled={entriesDisabled(ctx)}
+        entryDisabled={entryDisabledAt(ctx, list.item, texts)}
       />
     );
   }

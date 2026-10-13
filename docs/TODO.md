@@ -717,11 +717,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Left: a public function that reads a stored draft (its storage, key, codec, and the original
   workspace) and returns the ids of the assets it changes.
 
-- **(P3) Loose ends of the condition work.** `PrefSchemaEditor` edits an entry's own
-  `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
-  `{ from: 'item' }` condition is written in code. labkit's `ControlRow` draws a list of plain
-  text entries as one `ListEditor` and passes it no `entryDisabled`, so an item `enableIf` that
-  reads the entry does nothing in a lab; `PrefsForm` and `SelectionPanel` pass it.
+- **(P3) A field's condition inside an object entry is written in code.** `PrefSchemaEditor`
+  edits an entry's own `enableIf` and nothing inside an object entry: the structure tree shows a
+  list or a map as one row (`slotOf` in `schemaTree.ts`), so a field of its item has no row to
+  select and its `{ from: 'item' }` condition no editor.
 
 - **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
   into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting
