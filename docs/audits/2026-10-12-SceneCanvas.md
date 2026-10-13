@@ -1,7 +1,8 @@
 > **Scaffolding for work in flight on branch `scene-splits`, 2026-10-12. Not built, and not verified:**
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
-> acted on. Delete this file when the SceneCanvas.tsx work it lists has merged; `docs/TODO.md` holds what is
-> left.
+> acted on. Section B (built-in tool registry assembly) has landed and is deleted from here; every other
+> section is unbuilt, and its line numbers predate that work. Delete this file when the SceneCanvas.tsx
+> work it lists has merged; `docs/TODO.md` holds what is left.
 
 # Audit: `packages/core/src/canvas/SceneCanvas.tsx`
 
@@ -33,18 +34,6 @@ Lines 410-451, 455-461, 919-933, 961-965, 970, 991-1048, 1092.
 - **`useEditAnchorsDepSource` keeps a dead fallback** (evidence): its `localEditingId` state runs only when `externalState` is omitted, and its one non-test caller (`StandardActionsRegistrar.tsx:254`) always passes it.
 - **Safe to move when:** the state object is created above both the dep source and the layers (the layer memo at 1025-1040 is deliberately identity-stable), and `pathEdit` hosts still override the id.
 
-### B. Built-in tool registry assembly (about 95 lines)
-
-Lines 573-668, 671-691.
-
-- **Hand tool inertia (573-588).** `handToolInertia` copies `friction`, `minSpeed`, `boundary`, and `bounds` out of an object whose type is exactly those four fields (evidence, `InertiaConfig`, `core/viewport/useDecayLoop.ts:15-22`). The `true → {}` normalization belongs in `useHandTool`'s option type.
-- **`KNOWN_BUILTIN_IDS` (600-602) duplicates `BUILTIN_TOOL_IDS`** (evidence, `SceneCanvas/props.ts:148`, same construction), and is rebuilt every render.
-- **The `wants` ladder (641-649) is a loop over `KIT_SHAPE_KINDS` spelled out by hand.** `shapeTools` is already `Record<BuiltinShapeToolId, AnyTool>`. A new shape kind in `core/shapeKinds.ts` silently does not mount.
-- **`toolsPatchExtras` (603) and `toolsPatch` (653)** are one value under two names, walked twice.
-- **Owner:** one resolver beside `useBuiltinShapeTools` that takes features, `defaultTools`, the `tools` patch, `toolOptions`, and `viewport.inertia`, and returns the registry.
-- **`isToolEligible` (680-688)** belongs to `useKeybindings` or `@weasel-js/modes`. `ToolsApi` already carries `modes` (`routing/src/tools/useTools.ts:141`) and each tool its `eligibility.capabilities`. Safe when a takeover `ToolsApi` built without `modes` still gets the canvas's `modes` prop; today that is the only thing the two refs add.
-- **Pen preview layer (951-959, 1091).** This is one tool's chrome built by the generic component. `Contribution.overlay` exists (`routing/src/contributions/types.ts:93`) and `<Canvas>` already places tool overlays (`canvas/layerOrder.ts:134`). Owner: `usePenTool`.
-
 ### C. Preset definitions are scattered
 
 A preset's four halves live in four places:
@@ -52,7 +41,7 @@ A preset's four halves live in four places:
 | Half | Where |
 |---|---|
 | Action ids | `SceneCanvas/features.ts` `FEATURE_ACTION_IDS` |
-| Tools | 592-596 |
+| Tools | `SceneCanvas/toolRegistry.ts` `resolveToolRegistry` |
 | Ambient bindings | 702-706 |
 | Chrome rules | 845-860 |
 
@@ -166,7 +155,7 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `selectionRef` | 465 | render | mounter | dependency array |
 | `layerPaintRef` | 501 | render | `layerIsPainted` | dependency array |
 | `planeOfNodeRef` | 539 | render | `livePathFor`, marquee | once-built layer memo |
-| `liveToolsRef`, `getActiveModeRef` | 680-681 | render | `isToolEligible`, rule ctx, 927, test hook | dependency array |
+| `liveToolsRef`, `getActiveModeRef` | 680-681 | render | rule ctx, 927, test hook | dependency array |
 | `onToolsCreatedRef` | 726 | render | effect 727 | dependency array |
 | `getNodeAtPointRef` | 732 | render | hit observers | dependency array |
 | `getNodeAtPointRefForHover` | 807 | render | hover | duplicate of 732 |
@@ -189,7 +178,6 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 - **453-454:** "so useSceneSelectTool always receives a concrete radius". It has no such option.
 - **415-417:** `anchorEditingAllowed` "needs `getActiveModeRef`". It needs only `getActiveMode`.
 - **463-464:** thunks "live in an effect closure". They are `useMemo`s, and `affordanceAt` never reads the selection.
-- **586-587:** `useHandTool` is "a no-op when viewport is absent". Registration is keyed on the preset, `defaultTools`, and the patch.
 - **754-756, 1096-1098, and `StandardActionsRegistrar.tsx:179-181`:** "OUTSIDE the actions provider". See E.
 - **855-856:** "its action is also dropped below". It is dropped above, at 746.
 - **967-969:** the path-editing overlay comment sits over unrelated declarations, 55 lines above the layer at 1025.
@@ -199,14 +187,13 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 
 1. Path-edit state, mask, live path, and overlay to `features/paths` (A).
 2. Chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
-3. Built-in tool registry resolver, with the pen overlay on the pen tool and eligibility in `useKeybindings` (B).
-4. Mounters become hooks, removing `getActionRef`, `actionsRegistryRef`, and the 37-prop call (E).
-5. One view channel shared with `<Canvas>` (F).
-6. Ingestion hook (J).
-7. Selection read-only wrapper and kinds to `core/selection` (H).
-8. Let `<Canvas>` build the selection overlay (I).
-9. Scene and overrides through `redrawOn` (G).
-10. Delete the dead items and pass-through destructures (K, M).
+3. Mounters become hooks, removing `getActionRef`, `actionsRegistryRef`, and the 37-prop call (E).
+4. One view channel shared with `<Canvas>` (F).
+5. Ingestion hook (J).
+6. Selection read-only wrapper and kinds to `core/selection` (H).
+7. Let `<Canvas>` build the selection overlay (I).
+8. Scene and overrides through `redrawOn` (G).
+9. Delete the dead items and pass-through destructures (K, M).
 
 ## (b) What would be left in `SceneCanvasInner`
 
@@ -222,7 +209,6 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 ## (c) Not determined
 
 - **View zero as a `CanvasView`.** I read `CanvasView.tsx` only at 245-405. If view zero could be one, most of E disappears, but that is a design question I could not settle by reading.
-- **Pen preview visibility.** The contribution overlay is drawn only while the tool is live; today the layer is always in the stack. I did not trace whether the pen scratch must stay visible under another tool.
 - **Effect ordering.** I did not trace every dep registration to confirm that turning the registrar into a hook keeps the child-before-parent order its comment relies on.
 - **The deselect divergence in A** is reasoned from the two masks, not reproduced.
 - **Unread files.** `Canvas.tsx` was read by targeted grep, not line by line. Of the `SceneCanvas/` siblings I did not read `usePreviewGhostLayer`, `useDispatcherOverlayLayer`, `contributionFrameHooks`, `defaultNodeProperties`, `poseGeometry`, or any tests.
@@ -249,37 +235,6 @@ Reported by the session doing `Canvas.tsx`; not verified here.
 - Canvas findings 1, 2, 3, 4, and 8 (cursor resolution into routing; `buildSceneLayers`,
   `useSceneLayerList`, and the preview-id hide set into SceneCanvas; the three dev HUDs; slot types to
   `layerSlots.ts`) are that session's, on top of main after `scene-splits` merges.
-- **Pen overlay (item B).** The old tool design is being removed by that session: `Tool.initScratch`,
-  `ToolCtx`, and `Tool.previewPose` / `previewBounds` / `previewIds`. `penPreviewLayer.ts` reaches the
-  pen's state through `penTool.initScratch()`. When the pen overlay moves onto the pen tool it takes
-  the pen's state directly, and that session is told so it can delete `initScratch`.
-
-## Canvas findings 2 and 3, taken here (from the Canvas.tsx audit, unverified)
-
-Do these after `long-file-audit` is on main: its first pass changed the Canvas side they cut from
-(`debug` is `useDebugSink`, the layer gate is `paintedLayers` in `core/layers/render.ts`, and
-Canvas's visibility and order refs folded into one `gateRef`). Line numbers are the Canvas audit's.
-
-### 2. Scene-layer and selection-overlay construction (other owner: SceneCanvas)
-
-Lines 819-872, plus imports at 20, 34, 55, and 65-70.
-
-- The header says "Canvas owns NO scene-shaped state" (4-5). The body calls `buildSceneLayers` on the adapter (837), subscribes to `adapter.subscribeLayers` through `useSceneLayerList` (819), and merges tool and dispatcher preview ids to hide ghosted nodes (842-849).
-- The selection-overlay config branch (861-872) is unreachable from production. `SceneCanvas.tsx:1086-1088` always passes `{ layer }` or `null`, and its comment says so: "so Canvas receives a CustomLayerEntry and skips its own factory construction".
-- That branch duplicates `SceneCanvas.tsx:1069-1078` nearly line for line (the `poseById`/`poseDescriptor` spread).
-- `selSlot !== null` (861) also builds a default overlay when the slot is `undefined`, so a bare `<Canvas layers={{}}>` gets selection chrome nobody asked for.
-- **Owner:** SceneCanvas, which already owns `wireSceneSlotToScene`, the ghost layer, and the overlay.
-- **Safe when:** `LayersMap.scene` can carry a pre-built ordered list, since `composeOrderedLayers` needs the per-scene-layer keys as anchors (`layerOrder.ts:27`). The roughly 20 bare-Canvas tests that rely on the built-in scene or selection slot must move to SceneCanvas or pass pre-built layers.
-- This also removes `selection`, `poseDescriptor`, `boundsOf`, `boundsOfPose`, `previewIdsExtra`, and most of `adapter` as Canvas props, if `useViewHelpers` moves up with it (see finding 6).
-
-### 3. Dev HUDs and the pick props that exist only for them (other owner)
-
-Lines 86-88, 216, 345-362, 748-770, and 1141-1175.
-
-- `pickEvery` and `pickBest` have one use in the file: `PickHud`. The docstring says so (213).
-- Canvas keeps two refs and three callbacks to stabilize them (750-770).
-- `PickHud` and `CursorCoordsHud` are already exported standalone (`barrel/canvas.ts:18-21`). `ModalityHud` needs only an element.
-- Grep: `modalityHud={{ modeId }}` has no caller. `apps/draw/src/App.tsx:546` passes the bare flag while holding `modeId` at line 262, so the mode row always shows "—".
-- **Owner:** SceneCanvas, which owns the picks, `internalCanvasRef`, and `currentViewRef`.
-- **Safe when:** the HUDs get the element from the handle. The detached-mount guard at 1171-1175 goes with them.
-
+- **Pen overlay (item B) landed.** `penPreviewLayer.ts` takes the pen's state as `state` and nothing in
+  the preview path calls `initScratch`; `usePenTool` still defines it, for that session to delete with
+  the rest of the old tool design.

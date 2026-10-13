@@ -1429,9 +1429,10 @@ only story runner in the repo.
   +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
   observer that moves it has fired; it wants to wait on the position rather than read it once.
 
-- **(P3) `SceneCanvasInner` is one 1,157-line function.** It is most of the 1,339-line
+- **(P3) `SceneCanvasInner` is one 1,059-line function.** It is most of the 1,235-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
-  owner; its dead-code pass landed 2026-10-12. Left open by that pass: `actionDefaults` is a public
+  owner; its dead-code pass and its built-in tool registry section landed 2026-10-12. Left open by
+  the dead-code pass: `actionDefaults` is a public
   prop nothing reads, kept only because `SceneCanvas.actions.test.tsx` passes it at 13 sites; and
   `<DeviceProfileProvider>` resolves the profile a second time beside `SceneCanvasInner`'s own
   `useDeviceProfile`, so the media-query listeners are doubled. The provider is public and its
