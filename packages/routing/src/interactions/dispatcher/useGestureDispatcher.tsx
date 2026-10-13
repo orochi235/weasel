@@ -107,14 +107,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Dispatcher-only overlays (marquee, lasso) repaint on nothing else, and
     // the event that closes a gesture still has to clear its overlay.
     const redraw = dispatcherWatch(() => { requestRedrawRef.current?.(); });
-    for (const d of allDispatchers()) redraw.watch(d);
+    redraw.sync(allDispatchers());
     const core = createDispatchCore({
       canvas,
       root: () => rootTargetRef.current,
       views: () => viewsRef.current,
       context: () => ctxRef.current,
       actions: () => registryRef.current,
-      uses: redraw.watch,
+      // Views mount and unmount under a live surface, each with its own dispatcher.
+      uses: () => { redraw.sync(allDispatchers()); },
       disposed: () => disposed,
     });
     const keys = keyboardInput(core);

@@ -3,7 +3,8 @@
  * the incoming one hears it is live, so a new tool never inherits a gesture.
  */
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef, type ReactNode } from 'react';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import {
@@ -40,12 +41,21 @@ function mount(opts: { enabled?: boolean } = {}) {
       start: () => ({ kind: 'drag', onMove: () => {}, onEnd: (_ctx, reason) => { log.push(`end:${reason}`); } }),
     },
   };
+  const held: Action = {
+    id: 'held', label: 'held',
+    defaultBinding: { kind: 'key-held', key: ' ' },
+    invoker: {
+      timing: 'ongoing',
+      start: () => { log.push('start:held'); return { onEnd: (_ctx, reason) => { log.push(`end:held:${reason}`); } }; },
+    },
+  };
   let ctx!: ActiveToolContextValue;
   function Mount(): ReactNode {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const registry = useActionsRegistry();
     ctx = useActiveToolContext();
     useAction(drag);
+    useAction(held);
     useGestureDispatcher({
       canvasRef, actions: registry!, entriesById: entries, requestRedraw: redraw,
       ...(opts.enabled === undefined ? {} : { enabled: opts.enabled }),
@@ -77,6 +87,16 @@ describe('switching the active tool mid-gesture', () => {
     log.length = 0;
     act(() => { tools().setActive('b'); });
     expect(log).toEqual(['deactivate:a', 'end:cancel', 'activate:b']);
+  });
+
+  it('cancels an action a held key has in flight', () => {
+    const { log, tools } = mount();
+    act(() => { tools().setActive('a'); });
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' })); });
+    expect(log).toContain('start:held');
+    log.length = 0;
+    act(() => { tools().setActive('b'); });
+    expect(log).toEqual(['deactivate:a', 'end:held:cancel', 'activate:b']);
   });
 
   it('asks for a redraw, so the canceled gesture\'s overlay does not stay painted', () => {
