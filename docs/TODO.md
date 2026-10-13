@@ -1414,13 +1414,14 @@ only story runner in the repo.
   `dependencies`, so a consumer installs one copy and runs another. In the repo, aliases resolve
   both to one source, so no test can see it.
 
-- **(P3) core's tsconfig `paths` is still kept by hand.** The root `paths` is generated from every
-  package's `exports` (`npm run gen:tsconfig-paths`, held current by `scripts/vite-aliases.test.ts`).
-  `packages/core/tsconfig.json` still maps ten siblings to source by hand and leaves the others core
-  imports — `animator`, `cursor`, `font`, `paint`, `prefs`, `quantity`, `renderer`, `stroke`, `text`,
-  and `text-dom` — to resolve to their built `dist`; `tsup` reads that file for core's build, so
-  widening it wants a look at what the declaration build then pulls in. Generate it from
-  `scripts/lib/tsconfigPaths.mjs` too.
+- **(P3) core's tsconfig sends half its siblings to their built `dist`.** Both `paths` blocks are
+  generated from every package's `exports` (`npm run gen:tsconfig-paths`, held current by
+  `scripts/vite-aliases.test.ts`). Core's maps the ten siblings named in `CORE_FROM_SOURCE`
+  (`scripts/lib/tsconfigPaths.mjs`) to source, and leaves the others core imports (`animator`,
+  `cursor`, `font`, `paint`, `prefs`, `quantity`, `renderer`, `stroke`, `text`, and `text-dom`) to
+  resolve to `dist`, so `tsc -p packages/core` reads whatever was last built there. `tsup` reads
+  that file for core's declaration build: widen the list to every dependency, build core, and diff
+  its `dist/*.d.ts` to see that no sibling's types were inlined.
 
 - **(P3) Five leaf packages keep their own listener sets.** Every other store notifies through
   `createEmitter()` in `@weasel-js/registry` (a pass walks the listeners held when it began; a

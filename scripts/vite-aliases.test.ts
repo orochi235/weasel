@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { workspaceEntries } from './lib/packageEntries.mjs';
-import { tsconfigPaths as generatedPaths } from './lib/tsconfigPaths.mjs';
+import { coreTsconfigPaths, tsconfigPaths as generatedPaths } from './lib/tsconfigPaths.mjs';
 import { weaselAliases } from './vite-aliases';
 
 const REPO = resolve(__dirname, '..');
@@ -22,9 +22,9 @@ const inRepo = (specifier: string) => {
   return hit === null ? null : relative(REPO, hit);
 };
 
-/** `paths` from the root tsconfig, which allows comments. */
-function tsconfigPaths(): Record<string, string[]> {
-  const raw = readFileSync(join(REPO, 'tsconfig.json'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
+/** `paths` from the tsconfig in `dir`, which allows comments. */
+function tsconfigPaths(dir = '.'): Record<string, string[]> {
+  const raw = readFileSync(join(REPO, dir, 'tsconfig.json'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
   return JSON.parse(raw).compilerOptions.paths;
 }
 
@@ -120,6 +120,29 @@ describe('the root tsconfig paths', () => {
         if (got === null) wrong.push(`${entry.specifier}: no path; wants ./${want}`);
         else if (!isSameFile(got, want)) wrong.push(`${entry.specifier}: ${got}; wants ./${want}`);
       }
+    }
+    expect(wrong).toEqual([]);
+  });
+});
+
+describe("core's tsconfig paths", () => {
+  it('are what `npm run gen:tsconfig-paths` writes', () => {
+    expect(tsconfigPaths('packages/core')).toEqual(coreTsconfigPaths(REPO));
+  });
+
+  it('resolve no subpath an exports map does not publish', () => {
+    const paths = tsconfigPaths('packages/core');
+    expect(viaPaths(paths, '@weasel-js/geom/mat3')).toBeNull();
+    expect(viaPaths(paths, '@weasel-js/core/nothing')).toBeNull();
+  });
+
+  it('send each entry they map to the file the root paths send it to', () => {
+    const root = tsconfigPaths();
+    const wrong: string[] = [];
+    for (const [specifier, [target]] of Object.entries(tsconfigPaths('packages/core'))) {
+      const got = relative(REPO, join(REPO, 'packages/core', target));
+      const want = join(root[specifier]?.[0] ?? '');
+      if (got !== want) wrong.push(`${specifier}: ${got}; the root has ${want}`);
     }
     expect(wrong).toEqual([]);
   });

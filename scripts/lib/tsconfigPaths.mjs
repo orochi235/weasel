@@ -1,7 +1,7 @@
 /**
- * The root tsconfig's `paths`, from the same `exports` maps the dev aliases
- * come from, so `tsc` resolves a specifier exactly where vite does and
- * refuses the ones vite refuses.
+ * The root tsconfig's `paths` and core's, from the same `exports` maps the
+ * dev aliases come from, so `tsc` resolves a specifier exactly where vite
+ * does and refuses the ones vite refuses.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -32,6 +32,33 @@ export function tsconfigPaths(repoRoot) {
   return paths;
 }
 
+/**
+ * The siblings core's own tsconfig resolves to source. Its other dependencies
+ * resolve to their built `dist`, and `tsup` reads that file for core's
+ * declaration build.
+ */
+const CORE_FROM_SOURCE = ['geom', 'gestures', 'history', 'modes', 'react', 'registry', 'routing', 'select', 'simulation', 'svg'];
+
+/**
+ * @param {string} repoRoot the directory containing `packages/`
+ * @returns {Record<string, string[]>} `packages/core/tsconfig.json`'s `paths`: the root's entries for core and
+ *   the siblings it reads from source, relative to core. Paths resolve against the file that declares them, so
+ *   core cannot inherit the root's.
+ */
+export function coreTsconfigPaths(repoRoot) {
+  const coreDir = join(repoRoot, 'packages', 'core');
+  const mapped = new Set(['core', ...CORE_FROM_SOURCE].map((name) => `@weasel-js/${name}`));
+  const owner = (specifier) => specifier.split('/').slice(0, 2).join('/');
+  /** @type {Record<string, string[]>} */
+  const paths = {};
+  for (const [specifier, [target]] of Object.entries(tsconfigPaths(repoRoot))) {
+    if (specifier.startsWith('@') && !mapped.has(owner(specifier))) continue;
+    const local = relative(coreDir, join(repoRoot, target));
+    paths[specifier] = [local.startsWith('.') ? local : `./${local}`];
+  }
+  return paths;
+}
+
 /** `source`, a tsconfig's text, with its `paths` block replaced by `paths`. */
 export function withPaths(source, paths) {
   const start = source.indexOf(OPEN);
@@ -41,11 +68,16 @@ export function withPaths(source, paths) {
   return source.slice(0, start) + OPEN + NOTE + lines.join(',\n') + source.slice(end);
 }
 
-/** Rewrite `<repoRoot>/tsconfig.json`'s `paths`. Returns whether the file changed. */
+/** Rewrite the `paths` of the root tsconfig and of core's. Returns the files that changed, relative to `repoRoot`. */
 export function writeTsconfigPaths(repoRoot) {
-  const file = join(repoRoot, 'tsconfig.json');
-  const before = readFileSync(file, 'utf8');
-  const after = withPaths(before, tsconfigPaths(repoRoot));
-  if (after !== before) writeFileSync(file, after);
-  return after !== before;
+  const files = { 'tsconfig.json': tsconfigPaths(repoRoot), 'packages/core/tsconfig.json': coreTsconfigPaths(repoRoot) };
+  const changed = [];
+  for (const [file, paths] of Object.entries(files)) {
+    const before = readFileSync(join(repoRoot, file), 'utf8');
+    const after = withPaths(before, paths);
+    if (after === before) continue;
+    writeFileSync(join(repoRoot, file), after);
+    changed.push(file);
+  }
+  return changed;
 }
