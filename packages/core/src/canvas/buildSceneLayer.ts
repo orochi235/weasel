@@ -2,7 +2,6 @@
  * The scene slot: an adapter's tree as render layers, one per scene layer.
  */
 import type { Path } from '@weasel-js/geom';
-import type { MoveAdapter, ResizeAdapter, RotateAdapter } from 'core/adapters/types';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
@@ -14,13 +13,6 @@ import type { NodePaintCtx } from './NodeShape';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { wrapNodeOutput } from './wrapNodeOutput';
-
-/** The adapter shape `<Canvas>` accepts: the move/resize/rotate intersection
- *  plus the tree the scene slot walks. A `SceneCanvasAdapter` is one. */
-export type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPose> &
-  ResizeAdapter<TNode, TPose> &
-  RotateAdapter<TNode, TPose> &
-  Pick<HierarchicalAdapter<TNode, TPose>, 'getLayers' | 'getNode' | 'getChildren'>;
 
 /** Scene slot config — describes how to draw one object with its effective pose. */
 export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
@@ -87,7 +79,7 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
  */
 function withAdapterDerivedPaths<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
-  adapter: CanvasAdapter<TNode, TPose> | undefined,
+  adapter: HierarchicalAdapter<TNode, TPose> | undefined,
   toPose: (obj: TNode) => TPose,
 ): Pick<SceneSlotConfig<TNode, TPose>, 'drawOne' | 'derivedPathOf'> {
   const drawOne = cfg.drawOne;
@@ -115,7 +107,7 @@ function withAdapterDerivedPaths<TNode extends { id: string }, TPose>(
  */
 export function buildSceneLayer<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
-  adapter: CanvasAdapter<TNode, TPose> | undefined,
+  adapter: HierarchicalAdapter<TNode, TPose> | undefined,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
   /** When set, the returned layer carries this `id` and paints ONLY the named
@@ -169,7 +161,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           : a;
         // World-space commands; drawLayers wraps in viewToMat3 automatically.
         const tree = buildSceneTree(
-          hierarchicalAdapter as Parameters<typeof buildSceneTree>[0],
+          hierarchicalAdapter as unknown as Parameters<typeof buildSceneTree>[0],
           filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
           view,
           slot?.forLayer,
@@ -212,7 +204,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
  */
 export function buildSceneLayers<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
-  adapter: CanvasAdapter<TNode, TPose> | undefined,
+  adapter: HierarchicalAdapter<TNode, TPose> | undefined,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
 ): Array<{ key: string; layer: RenderLayer<unknown> }> {

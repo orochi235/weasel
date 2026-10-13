@@ -10,7 +10,7 @@ import type { PathEditState } from 'features/paths/pathEditState';
 import { usePathEditOverlayLayer } from 'features/paths/usePathEdit';
 import type { rotationBadgeOf } from 'features/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { CanvasAdapter } from '../buildSceneLayer';
+import type { HierarchicalAdapter } from '../buildSceneTree';
 import { builtLayersOf, type CanvasLayers } from '../layerSlots';
 import { createSlopsDebugLayer } from '../slopsDebugLayer';
 import { mergeLayersWithDefaults, type SceneCanvasLayers } from './props';
@@ -32,7 +32,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** The device profile's, which sizes the default handles. */
   targetScale: number;
   scene: Scene<TData, TLayer, TPose>;
-  adapter: CanvasAdapter<Node<TData, TLayer, TPose>, TPose>;
+  adapter: HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose>;
   poseDescriptor: PoseDescriptor<TPose>;
   alphaFor: ((id: string) => number) | undefined;
   colorOverrides: ColorOverrideRegistry | undefined;

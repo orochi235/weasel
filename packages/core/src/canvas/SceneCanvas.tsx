@@ -12,7 +12,7 @@ import type { ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { InputScope } from '@weasel-js/routing/react';
 import { sceneFromJSON } from 'core/scene/scene';
 import { isSerializedScene } from 'core/scene/serialization';
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { NodeId, Scene } from 'core/scene/types';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { useHeldModifiers } from './SceneCanvas/useHeldModifiers';
 import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
@@ -341,7 +341,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   return (
     <ViewInputsProvider value={viewInputs}>
       <PointerProviderIfRoot>
-        <Canvas<Node<TData, TLayer, TPose>, TPose>
+        <Canvas<TPose>
           ref={handleRef}
           adapter={adapter}
           selection={selection}

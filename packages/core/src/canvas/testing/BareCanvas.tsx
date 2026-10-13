@@ -9,11 +9,11 @@ import { Canvas as CanvasSurface, type CanvasProps } from '../Canvas';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { useCanvasView, type CameraProps } from '../useCanvasView';
 
-export type BareCanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> =
-  Omit<CanvasProps<TNode, TPose>, 'viewState'> & CameraProps;
+export type BareCanvasProps<TPose = unknown> =
+  Omit<CanvasProps<TPose>, 'viewState'> & CameraProps;
 
-function BareCanvas<TNode extends { id: string }, TPose>(
-  props: BareCanvasProps<TNode, TPose>,
+function BareCanvas<TPose>(
+  props: BareCanvasProps<TPose>,
   ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const { view, defaultView, onViewChange, viewBounds, ...rest } = props;
@@ -31,12 +31,9 @@ function BareCanvas<TNode extends { id: string }, TPose>(
     apiRef.current = api;
     assignRef(ref, api);
   }, [ref]);
-  return <CanvasSurface<TNode, TPose> {...rest} viewState={viewState} ref={setApi} />;
+  return <CanvasSurface<TPose> {...rest} viewState={viewState} ref={setApi} />;
 }
 
-export const Canvas = forwardRef(BareCanvas) as <
-  TNode extends { id: string } = { id: string },
-  TPose = unknown,
->(
-  props: BareCanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
+export const Canvas = forwardRef(BareCanvas) as <TPose = unknown>(
+  props: BareCanvasProps<TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof BareCanvas>;

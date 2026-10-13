@@ -18,7 +18,6 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useInsertionEf
 import type React from 'react';
 import type { Paint } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
-import type { CanvasAdapter } from './buildSceneLayer';
 import { STANDARD_SLOTS, isCustomEntry, type CanvasLayers } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { registerMountedCanvas } from './mountedCanvases';
@@ -29,7 +28,7 @@ import { useSurfaceInput } from './useSurfaceInput';
 import type { CanvasViewState } from './useCanvasView';
 import { useOptionalViewRegistry } from './viewRegistry';
 import { useCanvasSurface } from './useCanvasSurface';
-import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
+import type { CanvasHelpers, CanvasSurfaceHelpers, ViewPoseAdapter } from './useViewHelpers';
 
 import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
@@ -64,7 +63,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
  * delivery, and slot composition, and not gesture dispatch, selection state, picking logic,
  * kind registries, or scene-aware overlays.
  */
-export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
+export interface CanvasProps<TPose = unknown> {
   /** CSS-pixel width. */
   width: number;
   /** CSS-pixel height. */
@@ -103,9 +102,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  declares it on `RenderLayer.subscribe` instead. */
   redrawOn?: readonly RedrawSource[];
 
-  /** Adapter the pose and bounds lookups on `helpersRef` read. Only `getPose` and, where
-   *  present, `getWorldPose` are called. */
-  adapter?: CanvasAdapter<TNode, TPose>;
+  /** Adapter the pose and bounds lookups on `helpersRef` read. */
+  adapter?: ViewPoseAdapter<TPose>;
 
   /** Layer map. See module docstring for slot semantics. */
   layers: CanvasLayers;
@@ -305,8 +303,8 @@ const NO_SELECTION: SelectionApi['current'] = [];
 
 const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
 
-function CanvasInner<TNode extends { id: string }, TPose>(
-  props: CanvasProps<TNode, TPose>,
+function CanvasInner<TPose>(
+  props: CanvasProps<TPose>,
   ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
@@ -772,12 +770,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   );
 }
 
-/** Forward-ref'd `<canvas>` wrapper. Generic over the object and pose types, inferred from
- *  the `adapter` prop. */
-export const Canvas = forwardRef(CanvasInner) as <
-  TNode extends { id: string } = { id: string },
-  TPose = unknown,
->(
-  props: CanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
+/** Forward-ref'd `<canvas>` wrapper. Generic over the pose type, inferred from the
+ *  `adapter` prop. */
+export const Canvas = forwardRef(CanvasInner) as <TPose = unknown>(
+  props: CanvasProps<TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;
 

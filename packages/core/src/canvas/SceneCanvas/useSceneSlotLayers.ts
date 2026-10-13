@@ -7,7 +7,8 @@ import { useMemo } from 'react';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { Node, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { buildSceneLayers, type CanvasAdapter, type SceneSlotConfig } from '../buildSceneLayer';
+import { buildSceneLayers, type SceneSlotConfig } from '../buildSceneLayer';
+import type { HierarchicalAdapter } from '../buildSceneTree';
 import { isCustomEntry, type LayersMap, type SceneSlotLayers } from '../layerSlots';
 import { wireSceneSlotToScene } from '../sceneSlotWiring';
 import { useSceneLayerList } from '../useSceneLayerList';
@@ -19,7 +20,7 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
   /** The slot after `mergeLayersWithDefaults`. */
   slot: SceneSlot<TData, TLayer, TPose>;
   scene: Scene<TData, TLayer, TPose>;
-  adapter: CanvasAdapter<Node<TData, TLayer, TPose>, TPose>;
+  adapter: HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose>;
   alphaFor: ((id: string) => number) | undefined;
   colorOverrides: ColorOverrideRegistry | undefined;
   /** Committed bounds of a node, for the debug overlay's record of it. */
