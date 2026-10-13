@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   asNodeId,
   boundsOfPath,
@@ -7,9 +8,12 @@ import {
   solid,
   starPath,
   useScene,
+  useSelection,
   useSliceTool,
   type Path,
+  type ToolsApi,
 } from '@weasel-js/core';
+import { ToolPalette } from '@weasel-js/ui';
 
 const W = 480, H = 320;
 
@@ -21,7 +25,8 @@ const leaf = (id: string, path: Path, color: string) => {
     layer: 'default' as const,
     parent: null,
     pose: { x, y, width, height },
-    data: { path, fill: { paint: solid(color) } },
+    // Stroked, so the edge a cut leaves shows between two pieces of one color.
+    data: { path, fill: { paint: solid(color) }, stroke: { paint: solid('#1a130d'), width: 1.5 } },
   };
 };
 
@@ -36,15 +41,22 @@ export function SliceDemo() {
   // is all this needs: every cut swaps the paths it crosses for their pieces.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const slice = useSliceTool();
+  const selection = useSelection({ mode: 'multi' });
+  const [tools, setTools] = useState<ToolsApi | null>(null);
   return (
-    <SceneCanvas
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      features={['pick', 'move', 'edit']}
-      tools={{ slice }}
-      initialActiveTool="slice"
-    />
+    <div className="ckd-shape-tools-demo">
+      {tools && <ToolPalette tools={tools} orientation="horizontal" />}
+      <SceneCanvas
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+        features={['pick', 'move', 'edit']}
+        tools={{ slice }}
+        initialActiveTool="slice"
+        onToolsCreated={setTools}
+      />
+    </div>
   );
 }
