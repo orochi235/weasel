@@ -5,17 +5,17 @@
  *
  * `toScreen` maps the node's **unrotated world box** frame, which is the
  * frame `fillInPoseFrame` resolves a `units: 'bounds'` paint into and the
- * one `pathInPoseFrame` projects geometry into. Rotation lives in this hook,
- * not in those: a node's stored geometry is pre-rotation by definition.
+ * one `pathInPoseFrame` projects geometry into. The pose's rotation and
+ * `transform` live in this hook, not in those: a node's stored geometry is
+ * in its box by definition.
  */
 import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
-import { applyToPoint, invert, multiply, type Mat3 } from '@weasel-js/geom';
+import { applyToPoint, invert, multiply, poseFrameOf, type Mat3 } from '@weasel-js/geom';
 import type { Node, RectPose, Scene } from '../scene/types';
 import { useCanvasSize } from './useCanvasSize';
 import type { View } from './view';
 import { composeRectPose, composeWorldPose } from 'core/scene/composePose';
 import { effectivePose } from 'core/scene/effectivePose';
-import { poseRotationOf } from '@weasel-js/geom';
 
 /** Structural point, matching every other `{ x, y }` the kit passes across a
  *  boundary. */
@@ -30,7 +30,8 @@ export interface NodeOverlayFrame {
   /** The node's composed world box, **unrotated**: the frame `toScreen` maps
    *  from, and the box to hand `fillInPoseFrame` / `fillToBoundsFrame`. */
   box: { x: number; y: number; width: number; height: number };
-  /** Node box frame → overlay pixels, rotation and view included. */
+  /** Node box frame → overlay pixels: the pose's rotation and `transform`,
+   *  then the view. */
   toScreen: (p: OverlayPoint) => OverlayPoint;
   /** Overlay pixels → node box frame. Inverts `toScreen`; while a live view
    *  flattens an axis, it keeps the last mapping that had an inverse. */
@@ -59,7 +60,8 @@ export interface UseNodeOverlayFrameOptions<TPose> {
  * projection to land.
  *
  * Returns `null` when there is no node under `nodeId`, when the container has
- * not been measured, or when the view collapses an axis to zero.
+ * not been measured, or when the view or the pose's `transform` collapses an
+ * axis to zero.
  */
 export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends RectPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -73,7 +75,9 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
   const project = useCallback((): Mat3 | null => {
     const box = worldBoxOf(scene, nodeId, compose);
     if (!box) return null;
-    return multiply(viewMatrix(resolveView(view)), rotationMatrix(box));
+    const frame = poseFrameOf(box);
+    const toView = viewMatrix(resolveView(view));
+    return frame ? multiply(toView, frame) : toView;
   }, [scene, nodeId, compose, view]);
 
   const toScreen = useCallback((p: OverlayPoint): OverlayPoint => {
@@ -131,13 +135,4 @@ function viewMatrix(view: View | undefined): Mat3 {
   if (!view) return [1, 0, 0, 1, 0, 0];
   const { x: sx, y: sy } = view.scale;
   return [sx, 0, 0, sy, -view.x * sx, -view.y * sy];
-}
-
-/** The pose→world leg the box frame omits, per `poseRotationOf`'s convention. */
-function rotationMatrix(pose: RectPose): Mat3 {
-  const r = poseRotationOf(pose);
-  if (!r) return [1, 0, 0, 1, 0, 0];
-  const c = Math.cos(r.rotation);
-  const s = Math.sin(r.rotation);
-  return [c, s, -s, c, r.cx - r.cx * c + r.cy * s, r.cy - r.cx * s - r.cy * c];
 }

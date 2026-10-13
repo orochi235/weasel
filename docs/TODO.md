@@ -224,8 +224,9 @@ Priority tags:
     the transform, so the result is drawn stretched; these have to change together.
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
     resize gives a turned leaf rather than writing it to the leaf's `transform`.
-  - `useNodeOverlayFrame` (`core/viewport/`), which places DOM chrome over a node, the text
-    edit overlay and its carets included, applies the rotation alone. Needs a browser to verify.
+  - The text edit overlay and its carets are placed from the pose's `x`, `y`, `width`, and
+    `height` alone (`getScreenPose` in `features/text/useSceneTextEdit.ts`): neither the
+    rotation nor the `transform` reaches the DOM. Needs a browser to verify.
   - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
