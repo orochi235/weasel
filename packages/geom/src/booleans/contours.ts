@@ -5,11 +5,14 @@ import type { Path, PathFillRule } from '../path';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Point } from '../paths/cubicMath';
 import { EPS } from '../scalar';
+import { fillsOpenSubpaths } from '../openFill';
 import { type Contour, evalSeg, derivSeg, reverseContour, sideCoeffs, signChanges } from './contourSegments';
 
-/** Closed contours of `path`. Open subpaths close implicitly, as a fill does. */
+/** The contours a fill of `path` covers: an open subpath closes implicitly
+ *  where a fill closes it, and is left out where one does not. */
 export function parseContours(path: Path): Contour[] {
-  return parseSubpaths(path).map((s) => s.segs);
+  const fillsOpen = path.kind === 'rect' || fillsOpenSubpaths(path);
+  return parseSubpaths(path).filter((s) => s.closed || fillsOpen).map((s) => s.segs);
 }
 
 export interface Subpath {

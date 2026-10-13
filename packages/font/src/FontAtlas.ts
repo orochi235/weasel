@@ -33,6 +33,9 @@ export interface BmFontChar {
   yoffset: number;
   xadvance: number;
   page: number;
+  /** Set on a glyph whose atlas rect holds its own colors, on a page of the
+   *  dynamic tier's color set: an emoji. It is painted as it is, untinted. */
+  color?: true;
 }
 
 /** A kerning pair: `amount` px to add to the advance when `second` follows

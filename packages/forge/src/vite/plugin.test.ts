@@ -18,6 +18,9 @@ vi.mock('node:fs', async (importOriginal) => {
  *  Under a loaded machine 5s has run out; the project's test timeout is 20s. */
 const FOLLOWS = { timeout: 15_000, interval: 50 };
 
+/** macOS file events for a temp directory can go missing for longer than `FOLLOWS` waits. */
+const POLLED = { usePolling: true, interval: 50 };
+
 const story = (title: string, ...names: string[]) =>
   `export default { title: '${title}' };\n${names.map((n) => `export const ${n} = {};`).join('\n')}\n`;
 
@@ -53,7 +56,7 @@ describe('forge vite plugin', () => {
       root,
       configFile: false,
       plugins: [forge({ stories: ['*.stories.tsx'] })],
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
       // The dependency crawl writes into root after close, so rmSync meets ENOTEMPTY.
       optimizeDeps: { noDiscovery: true },
@@ -127,7 +130,7 @@ describe('forge vite plugin', () => {
       root,
       configFile: false,
       plugins: [forge({ stories: ['*/*.stories.tsx'] })],
-      server: { middlewareMode: true, ws: false },
+      server: { middlewareMode: true, ws: false, watch: POLLED },
       appType: 'custom',
       logLevel: 'silent',
     });
@@ -171,7 +174,7 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
       root: dir,
       configFile: false,
       plugins: [forge({ stories: ['*.stories.tsx'] })],
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
       logLevel: 'silent',
       ...config,
@@ -363,7 +366,7 @@ describe('forge vite plugin, with a config module per realm', () => {
       plugins: [
         forge({ stories: ['*.stories.tsx'], frameConfig: 'forge.frame.ts', shellConfig: 'forge.shell.ts', frameStyles: ['frame.css'] }),
       ],
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
       optimizeDeps: { noDiscovery: true },
       logLevel: 'silent',
@@ -432,7 +435,7 @@ describe('forge vite plugin, with a config module per realm', () => {
       root,
       configFile: false,
       plugins: [forge({ stories: ['*.stories.tsx'] })],
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
       logLevel: 'silent',
     });

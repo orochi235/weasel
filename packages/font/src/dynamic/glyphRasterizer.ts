@@ -44,11 +44,48 @@ export interface RasterizedGlyph {
   advance: number;
 }
 
+/** A glyph in its own colors. Placed as a {@link RasterizedGlyph} is. */
+export interface RasterizedColorGlyph {
+  width: number;
+  height: number;
+  /** Premultiplied RGBA, four bytes a texel. */
+  rgba: Uint8ClampedArray;
+  left: number;
+  top: number;
+  advance: number;
+}
+
 export interface GlyphRasterizer {
   faceMetrics(family: string, weight: number, style: FontStyle): FaceMetrics;
   rasterize(
     family: string, weight: number, style: FontStyle, codepoint: number,
   ): RasterizedGlyph;
+  /** `text`, one grapheme cluster, as the color glyph the platform draws for
+   *  it, or null when it draws none: no ink, or ink in the fill color alone. */
+  rasterizeColor?(
+    family: string, weight: number, style: FontStyle, text: string,
+  ): RasterizedColorGlyph | null;
+}
+
+/** Ink this far below white did not come from the white fill. */
+const COLORED_BELOW = 240;
+
+/** `data`, straight RGBA drawn with a white fill, premultiplied. Null when
+ *  every inked texel is the fill's white: a glyph with no color of its own. */
+export function premultipliedColor(data: Uint8ClampedArray): Uint8ClampedArray | null {
+  const out = new Uint8ClampedArray(data.length);
+  let colored = false;
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    if (a === 0) continue;
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    if (a >= 128 && Math.min(r, g, b) < COLORED_BELOW) colored = true;
+    out[i] = Math.round((r * a) / 255);
+    out[i + 1] = Math.round((g * a) / 255);
+    out[i + 2] = Math.round((b * a) / 255);
+    out[i + 3] = a;
+  }
+  return colored ? out : null;
 }
 
 type Canvas2D = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
@@ -81,6 +118,38 @@ export function createCanvasRasterizer(): GlyphRasterizer {
     ctx!.textAlign = 'left';
   }
 
+  /** `text` filled in white, as straight RGBA. No ink is a box of no size. */
+  function draw(family: string, weight: number, style: FontStyle, text: string): {
+    data: Uint8ClampedArray; width: number; height: number; left: number; top: number; advance: number;
+  } {
+    setFont(family, weight, style);
+    const m = ctx!.measureText(text);
+    const advance = m.width;
+    const inkLeft = Math.ceil(m.actualBoundingBoxLeft ?? 0);
+    const inkRight = Math.ceil(m.actualBoundingBoxRight ?? advance);
+    const inkAscent = Math.ceil(m.actualBoundingBoxAscent ?? BAKE_SIZE * 0.8);
+    const inkDescent = Math.ceil(m.actualBoundingBoxDescent ?? BAKE_SIZE * 0.2);
+    const inkW = inkLeft + inkRight;
+    const inkH = inkAscent + inkDescent;
+    if (inkW <= 0 || inkH <= 0) {
+      return { data: new Uint8ClampedArray(0), width: 0, height: 0, left: 0, top: 0, advance };
+    }
+    const w = inkW + 2 * PAD;
+    const h = inkH + 2 * PAD;
+    if (canvas.width < w || canvas.height < h) {
+      canvas.width = Math.max(canvas.width, w);
+      canvas.height = Math.max(canvas.height, h);
+      setFont(family, weight, style); // resizing resets 2D state
+    }
+    ctx!.clearRect(0, 0, w, h);
+    ctx!.fillStyle = '#fff';
+    ctx!.fillText(text, PAD + inkLeft, PAD + inkAscent);
+    return {
+      data: ctx!.getImageData(0, 0, w, h).data,
+      width: w, height: h, left: -(inkLeft + PAD), top: inkAscent + PAD, advance,
+    };
+  }
+
   return {
     faceMetrics(family, weight, style) {
       setFont(family, weight, style, METRICS_SIZE);
@@ -93,40 +162,16 @@ export function createCanvasRasterizer(): GlyphRasterizer {
     },
 
     rasterize(family, weight, style, codepoint) {
-      setFont(family, weight, style);
-      const chStr = String.fromCodePoint(codepoint);
-      const m = ctx!.measureText(chStr);
-      const advance = m.width;
-      const inkLeft = Math.ceil(m.actualBoundingBoxLeft ?? 0);
-      const inkRight = Math.ceil(m.actualBoundingBoxRight ?? advance);
-      const inkAscent = Math.ceil(m.actualBoundingBoxAscent ?? BAKE_SIZE * 0.8);
-      const inkDescent = Math.ceil(m.actualBoundingBoxDescent ?? BAKE_SIZE * 0.2);
-      const inkW = inkLeft + inkRight;
-      const inkH = inkAscent + inkDescent;
-      if (inkW <= 0 || inkH <= 0) {
-        return { width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance };
-      }
-      const w = inkW + 2 * PAD;
-      const h = inkH + 2 * PAD;
-      if (canvas.width < w || canvas.height < h) {
-        canvas.width = Math.max(canvas.width, w);
-        canvas.height = Math.max(canvas.height, h);
-        setFont(family, weight, style); // resizing resets 2D state
-      }
-      ctx!.clearRect(0, 0, w, h);
-      ctx!.fillStyle = '#fff';
-      ctx!.fillText(chStr, PAD + inkLeft, PAD + inkAscent);
-      const img = ctx!.getImageData(0, 0, w, h);
-      const alpha = new Uint8ClampedArray(w * h);
-      for (let i = 0; i < alpha.length; i++) alpha[i] = img.data[i * 4 + 3];
-      return {
-        width: w,
-        height: h,
-        alpha,
-        left: -(inkLeft + PAD),
-        top: inkAscent + PAD,
-        advance,
-      };
+      const { data, ...box } = draw(family, weight, style, String.fromCodePoint(codepoint));
+      const alpha = new Uint8ClampedArray(box.width * box.height);
+      for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4 + 3];
+      return { ...box, alpha };
+    },
+
+    rasterizeColor(family, weight, style, text) {
+      const { data, ...box } = draw(family, weight, style, text);
+      const rgba = premultipliedColor(data);
+      return rgba && { ...box, rgba };
     },
   };
 }

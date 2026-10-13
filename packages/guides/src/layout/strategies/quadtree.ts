@@ -1,3 +1,4 @@
+import type { Rect } from '@weasel-js/geom';
 import {
   createTransformOp,
   type ContainerBounds,
@@ -9,7 +10,6 @@ import {
 import { containedThenNearest } from '../snaps';
 import { defaultCenterOf } from './sequence';
 
-type Rect = { x: number; y: number; width: number; height: number };
 
 /** Options for `quadtree`. */
 export interface QuadtreeOptions<TPose> {

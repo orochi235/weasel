@@ -33,6 +33,16 @@ Substitution changes advance widths, so measurement and wrap differ from the
 requested font. `ResolveResult.substituted` reports it so a UI can
 surface the swap.
 
+## Emoji
+
+An emoji is drawn by the platform, whatever face its run is set in: the whole
+grapheme cluster (`👍🏽`, `🇨🇦`, a joined family) is rasterized once through a 2D
+canvas and kept, in its own colors, on RGBA pages of the dynamic atlas beside
+the distance-field ones. It paints untinted and takes only the opacity of the
+text's fill. Under `setFontFallbackPolicy('none')` only a run already on the
+canvas tier gets one; anywhere without a canvas or a color emoji font, a
+cluster is laid out one code point at a time in the fill color.
+
 ## Generating an atlas
 
 `npm run gen:font` (source in `scripts/gen-font.ts`).

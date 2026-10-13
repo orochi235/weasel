@@ -1,10 +1,15 @@
 /**
  * Runs measured code point by code point: which glyph serves each one, how
  * far it advances, and the kerning before it. Nothing here knows about lines.
+ *
+ * A grapheme cluster with emoji presentation is the exception to one glyph a
+ * code point: where the canvas tier draws a color glyph for it, that glyph
+ * sits in the slot of the cluster's closing code point, and the code points
+ * before it are slots with nothing in them.
  */
 import {
-  glyphIn, metricsOf, resolveFontVariant, resolveGlyph, warnNoMetrics,
-  type BmFont, type BmFontChar, type GlyphMetrics, type ResolveResult,
+  glyphIn, metricsOf, resolveColorCluster, resolveFontVariant, resolveGlyph, warnNoMetrics,
+  type BmFont, type BmFontChar, type GlyphMetrics, type ResolvedGlyph, type ResolveResult,
 } from '@weasel-js/font';
 import { graphemeEnds } from '../measure/graphemes';
 import type { ResolvedRun } from '../runs/resolveRuns';
@@ -71,13 +76,23 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
     }
     const runBase = srcIndex;
     const map = run.srcMap;
-    const clusterEnds = new Set(graphemeEnds(run.text));
+    const clusterEnds = graphemeEnds(run.text);
+    let cluster = 0;
+    let clusterStart = 0;
+    /** The color glyph of the cluster being walked, when it has one. */
+    let color: ResolvedGlyph | null = null;
     let at = 0;
 
     for (const ch of run.text) {
       const cp = ch.codePointAt(0)!;
       const fontSize = run.sizeMap ? run.sizeMap[at] : run.fontSize;
-      const clusterEnd = clusterEnds.has(at + ch.length);
+      if (at === clusterStart) {
+        color = resolveColorCluster(
+          resolved, run.fontFamily, run.fontWeight, run.fontStyle, run.text.slice(at, clusterEnds[cluster]),
+        );
+      }
+      const clusterEnd = at + ch.length === clusterEnds[cluster];
+      if (clusterEnd) clusterStart = clusterEnds[cluster++];
       // World units, deliberately not scaled by fontSize: the same tracking
       // opens the same gap whatever size the run is set at.
       const tracking = clusterEnd ? run.letterSpacing : 0;
@@ -103,7 +118,19 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
         advance: 0, tracking: 0, kerningBefore: 0, drawsInk: false,
       };
 
-      if (isHardLineBreak(cp)) {
+      // An escalated code point is served in another tier's units, so its
+      // scale is its own.
+      const inked = (hit: ResolvedGlyph, kerning: number): Entry => ({
+        ...blank,
+        resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph,
+        advance: hit.advance * (fontSize / hit.metrics.size),
+        tracking, kerningBefore: kerning, drawsInk: true,
+      });
+
+      if (color) {
+        entries.push(clusterEnd ? inked(color, 0) : blank);
+        prev = undefined;
+      } else if (isHardLineBreak(cp)) {
         entries.push(blank);
         prev = undefined;
       } else if (cp === 9 || cp === 32) {
@@ -125,14 +152,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
         }
       } else {
         const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp);
-        // An escalated code point is served in another tier's units, so its
-        // scale is its own.
-        prev = hit ? {
-          ...blank,
-          resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph,
-          advance: hit.advance * (fontSize / hit.metrics.size),
-          tracking, kerningBefore, drawsInk: true,
-        } : blank;
+        prev = hit ? inked(hit, kerningBefore) : blank;
         entries.push(prev);
       }
     }

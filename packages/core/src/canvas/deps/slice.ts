@@ -28,7 +28,8 @@ export function useSliceDep(dep: SliceDep): void {
   useDepSource('slice', (): SliceDep => depRef.current);
 }
 
-interface OpsApplier {
+/** What the `slice` dep writes its batch through. An adapter satisfies it. */
+export interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
 }
 

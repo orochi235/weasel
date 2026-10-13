@@ -49,6 +49,8 @@ export {
   listCanvasFonts,
   syncDynamicPageTexture,
   dynamicPageTextureId,
+  syncColorPageTexture,
+  colorPageTextureId,
   resetBakeBudget,
   DEFAULT_BAKE_BUDGET,
 } from './dynamic/dynamicAtlas';
@@ -76,7 +78,7 @@ export type {
 export type { OutlineFace, OutlineParser } from './outline/OutlineFace';
 export { metricsOf } from './glyphMetrics';
 export type { GlyphMetrics } from './glyphMetrics';
-export { glyphIn, resolveGlyph } from './resolveGlyph';
+export { glyphIn, resolveGlyph, resolveColorCluster } from './resolveGlyph';
 export type { ResolvedGlyph } from './resolveGlyph';
 export { warnNoMetrics } from './glyphWarnings';
 export type { FontStyle } from './fontStyle';

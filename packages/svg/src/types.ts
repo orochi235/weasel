@@ -326,6 +326,10 @@ export interface SerializeOptions {
    * `elements` become children placed immediately before any geometry.
    */
   documentMeta?: NamespaceMeta;
+  /**
+   * Put each element on its own line, indented two spaces per level. A
+   * `<text>` element, and any element holding character data, stays on one
+   * line, since whitespace inside it is content.
+   */
   pretty?: boolean;
-
 }

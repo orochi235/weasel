@@ -124,14 +124,6 @@ Priority tags:
   - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
     which included grouping, need re-recording.
 
-- **(P3) Two browser tests share the machine's clipboard and fail when they overlap.**
-  `packages/text-dom/src/overlayTyping.browser.test.tsx` ("reads a page's markup as runs") and
-  `packages/core/src/interactions/actions/clipboard/clipboardOps.browser.test.tsx` ("leaves the
-  previous clipboard whole when every flavor rejects") each write the real OS clipboard and read
-  it back. In a fleet run on 2026-10-12 each read the other's text (`'before'` and `'PQ'`); both
-  pass alone. Two fleet runs on one node would collide the same way. They need to run serially,
-  or one of them needs a clipboard of its own.
-
 - **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument,
   `Tool.previewPose` / `previewBounds` / `previewIds`, and tool-side preview sources are gone.
   Still to go:
@@ -218,40 +210,26 @@ Priority tags:
     the transform, so the result is drawn stretched; these have to change together.
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
     resize gives a turned leaf rather than writing it to the leaf's `transform`.
-  - `useNodeOverlayFrame` (`core/viewport/`), which places DOM chrome over a node, the text
-    edit overlay and its carets included, applies the rotation alone. Needs a browser to verify.
+  - The text edit overlay and its carets are placed from the pose's `x`, `y`, `width`, and
+    `height` alone (`getScreenPose` in `features/text/useSceneTextEdit.ts`): neither the
+    rotation nor the `transform` reaches the DOM. Needs a browser to verify.
   - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
   - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
 
-- **(P3) Under `openFill: 'none'`, SVG import and export and the booleans still close an open
-  subpath.** A path says whether a fill closes its open subpaths (`PolygonPath.openFill`, or
-  `setDefaultOpenFill` for a path that names none). SVG always closes one, so these disagree with a
-  path that says `'none'`: `packages/svg/src/lowerLeaf.ts` imports a filled `<polyline>` without
-  stamping `openFill: 'close'`, so it stops painting under a `'none'` default, and the SVG writer
-  emits an unfilled open subpath with its node's fill, which a browser then paints. The export half
-  has to split a path that mixes closed and open subpaths. The booleans close every open contour
-  whatever the path says (`packages/geom/src/booleans/contours.ts`, `implicitClose`). Also: a mesh
-  the renderer cached keeps the rule it was built under when the default changes
-  (`packages/renderer/src/cache/cache.ts` keys on the path), so the default has to be set before
-  the first paint.
+- **(P3) svg export: a path split for `openFill: 'none'` writes its stroke markers on both
+  halves.** A path that mixes closed and open subpaths under a fill that does not close the open
+  ones is written as a `<g>` of two `<path>`s (`packages/svg/src/openSubpathFill.ts`), each with
+  the node's whole stroke. SVG draws `marker-start` and `marker-end` once per `<path>`, so a
+  marked stroke gets one pair per half. Not compared with what the renderer draws for the one
+  path.
 
-- **(P3) A closed outline with no fill is selected from inside it.** A marquee or lasso in
-  `intersect` mode drawn wholly inside an unfilled closed shape takes it, though a click there
-  does not: `shapeCoversPoint` reads the painter's ink (`NodeInk.filled`) and `regionTakes`
-  (`packages/core/src/core/geometry/regionHit.ts`) is handed a path and tests its filled region.
-  `canvas/deps/hitTestArea.ts` passes the ink for open subpaths only (`asInked`), because a path
-  can say its open subpaths enclose nothing and cannot say that of a closed one. The same is true of
-  `containsInFrame` (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`), which calls
-  `pointInPath` on a path-shaped pose with no node in hand: wherever picking is not by shape, an
-  unfilled path is picked across what it encloses, open subpaths included. Both want the region and
-  frame tests to take "is this filled" beside the path.
-
-- **(P3) WeaselDraw: no browser has drawn an imported clipped group.** A `<g clip-path>` reaches
-  the scene as a container whose `data` is the clip, and the unit tests stop at that data. What is
-  left is a `*.browser.test` that opens one and reads a pixel inside the group's box and outside
-  the clip's outline.
+- **(P3) `arrayAdapter` selects a closed outline with no fill from inside it.** A marquee or lasso
+  in `intersect` mode drawn wholly inside an unfilled closed shape takes it. `regionTakes`
+  (`packages/core/src/core/geometry/regionHit.ts`) takes "is this filled" beside the outline and
+  the scene walk passes the painter's ink, but `arrayAdapter` has only its `silhouette` config and
+  nothing that says how an item is inked.
 
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
   per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
@@ -269,23 +247,15 @@ Priority tags:
 
 ### Pathfinder follow-ups (post-v1)
 
-- **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
+- **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
 - **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. What is left is everything that shows them: no Pathfinder action has a gesture or a key to hold, an action has no way to say what it would do while its button is hovered, and nothing draws paths that are not nodes over the scene.
-- **(P3) A group's `data.label` is not drawn on the canvas.** Outline Stroke on draw's starter rect makes a group that takes the rect's data (`drawOutlinesAdapter`, `apps/draw/src/outlinesAdapter.ts`), so the layer list still reads "Welcome", but the word the rect wore on the canvas is gone: `defaultDrawOne` draws a leaf's label and nothing draws a container's.
+- **(P3) A group's `data.label` is not drawn on the canvas.** Outline Stroke on draw's starter rect makes a group that takes the rect's data (`drawOutlinesAdapter`, `apps/draw/src/outlinesAdapter.ts`), so the layer list still reads "Welcome", but the word the rect wore on the canvas is gone. `defaultDrawOne` does emit a container's label, but `buildSceneTree` (`packages/core/src/canvas/buildSceneTree.ts`) pushes a container's own commands before its children's, so the group's paths cover it. Drawing it on top needs the walk to paint a container a second time after its children, which `drawOne` has no way to ask for.
 
 ---
 
 ## Rendering & paint
-
-- **(P2) `SelectionPanel` cannot clear a fill.** Since `fill` became a record (2026-10-12), the
-  default node properties describe `data.fill` as an object leaf with a `paint` child, and
-  `leafField.ts` gives a paint nested in an object `allowNone: false`. Its comment says no kit paint
-  field is optional, which is no longer so: `Fill.paint` and `Stroke.paint` are both optional, and
-  either record with no paint paints nothing. "None" on a nested paint should remove the `paint`
-  field from its parent, which gives a stroke the same control. Draw is unaffected: it clears a
-  fill through `setFill`.
 
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
@@ -368,12 +338,14 @@ Priority tags:
   and `write` should be handed the whole node, or the bar should show `start` / `end` as their own
   state instead of resolving them to an edge.
 
-- **(P2) Text: emoji paint as flat silhouettes, and multi-code-point emoji paint as their parts.**
-  The canvas tier keeps only the alpha channel (`packages/font/src/dynamic/glyphRasterizer.ts`), and
-  `layoutRuns` looks glyphs up one code point at a time, so `👍🏽` is a thumb plus a swatch, `🇨🇦` is
-  two letters, and `👨‍👩‍👧` is three people, all in the run's fill color. Needs glyph lookup by
-  grapheme cluster and a color (RGBA) atlas page drawn untinted for clusters with emoji
-  presentation. `LaidOutCell.clusterEnd` already marks where each cluster closes.
+- **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
+  tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs
+  above it: a 96px heading, or body text zoomed past 4x. A distance field has no such limit and
+  an emoji has no field, so it needs a second bake at the size it is drawn at, the way a vector
+  image re-rasterizes in power-of-two steps (`maybeReraster` in
+  `packages/renderer/src/images/imageCache.ts`). Separately, `textToPath` refuses text holding an
+  emoji with `no-outlines`, as it did when the emoji was an escalated canvas glyph (read from
+  `textToPath.ts`, not run).
 
 ---
 
@@ -390,20 +362,13 @@ Priority tags:
   left is one adapter contract and one default wiring, with every scene a tree rooted at one
   container, as `useScene`'s already is.
 
-- **(P3) `packages/core/src/core/scene/scene.ts` is still over the size cap: 611 lines, 519 of them
-  `buildScene`.** What is left in that function is the node mutators (`add`, `removeMany`, `setPose`,
-  `setLayer`, `setLayout`, `move`, `reorder`, and the smaller ones, about 210 lines) and the wiring
-  of the modules that now own the rest: `notifier.ts`, `editMode.ts`, `sceneSelection.ts`,
-  `opTable.ts`, `recorder.ts`, `outerOps.ts`, `layerStack.ts`, and `historyFacade.ts`. Each mutator
-  checks its arguments against the lock guard, the layer stack, and the node store, then records, so
-  moving them out as they stand hands one module all of those at once. The wiring shrinks when the
-  entry below lands and `outerOps.ts` goes.
-
-- **(P3) `loadState` can leave a locked node selected.** It keeps the selected ids the loaded
-  snapshot still holds and does not ask whether a lock now covers them, so a selected node the
-  snapshot puts on a locked layer stays selected: `getSelection()` answers with it and `isLocked`
-  answers true. Every other selection write goes through `set` or `narrow` in `sceneSelection.ts`,
-  which drop locked ids; `loadState` uses `replace`, which does not.
+- **(P3) `buildScene` in `packages/core/src/core/scene/scene.ts` is still over the function cap:
+  292 lines against 120.** The file is under its cap. What is left in the function is wiring: it
+  builds each module (`notifier.ts`, `editMode.ts`, `lockGuard.ts`, `nodeStore.ts`, `opTable.ts`,
+  `recorder.ts`, `outerOps.ts`, `historyFacade.ts`, `treeEdits.ts`, `fieldEdits.ts`, and the rest)
+  and hands each the others it reads, then assembles the `Scene` object and `loadState`. Splitting
+  it means grouping modules that are built together, such as the op table with its applied log
+  and recorder.
 
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
@@ -490,11 +455,6 @@ Priority tags:
 
 ### Timelines and rigging
 
-- **(P3) A paused looping timeline seeked to its `duration` shows its start** — the next frame
-  wraps a playhead at `duration` to 0 and counts a lap, paused or not (`tick` in
-  `packages/animator/src/timeline/createTimeline.ts`). In the timeline demo, dragging **scrub**
-  to its right end shows t = 0: the readout says `3000 / 3000 ms`, then `0 / 3000 ms` a frame
-  later.
 - **(P3) A pose typed by an interface is not a `ClipValue`** — `ClipValue`'s object arm is an
   index signature, which an interface such as `RectPose` does not satisfy, so
   `{ t: 0, value: pose }` is a type error for a `pose: RectPose` and fine for the same object
@@ -503,14 +463,13 @@ Priority tags:
   a point does not renumber `data.skin`, whose arrays are indexed by point. The anchor edit
   actions (`interactions/actions/defaults/anchorEditing.ts`) would splice each joint's array, or
   the skin would be weighed again with `autoSkin`.
-- **(P3) A stroke of the weight tool bends the path when it ends, not while it is painted** —
-  the rig in view is bound from the document, and a stroke is written at its end. Showing it
-  live needs the bound rig to read the tool's in-flight weights.
 - **(P3) A skinned path is seen at rest by a view with its own `toPose` and by a node that
   derives from it** — an override's `path` is in the scene's frame, so `sceneDerivedPathOf`
   leaves it out for a `toPose` reader, and `DerivedDep.path` answers a derived path only.
-- **(P3) `useRigNode` drops a running animation when it binds again** — a change to the rig
-  node or anything under it makes a new rig with a new `target`.
+- **(P3) `useRigNode` drops a running animation when the skeleton's joints change** — adding,
+  removing, renaming, or reordering a joint makes a new `target` at the bind pose, since a pose
+  target's axes are its joints in order. Carrying an animation across needs the animator to
+  move what runs on one target to another with different axes.
 - **(P3) The bone and weight tools have no icon and are not `defaultTools` ids** — they are
   mounted as `tools={{ bone, weight }}`, as slice is.
 
@@ -536,14 +495,6 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   design left would move it and is not started: holds on a target table's rows could keep
   their values and weights as rows of the table's own arrays, which adds public API to the
   table whose shape is not ruled on.
-- **(P3) A spring or a coast on a target is ticked every frame, to ask whether it has come to
-  rest** — a tween on a target with no `onTick`, and a hold, are ticked only once they have
-  something to do (`due` on an animation's row, `packages/animator/src/engine/schedule.ts`);
-  a frame of 10,000 such tweens costs 0.28 ms (`node tests/perf/target-reads/run.mjs table
-  10000 idle`). A spring has no time it is known to rest by, so it still costs a call a frame
-  as an object, as anything with an `onTick` must. A bound on when a spring can first be at
-  rest, from its damping, would give it a `due`; retargeting and pushing it would move the
-  bound. The rest of a frame is blits' pull.
 - **(P2) Stopping and starting an animation costs more as more are running, and what is left
   of that is in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the
   parts (orochi, plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs
@@ -827,8 +778,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   tab does not toggle, in the panel or in `PrefsForm`: a react-aria tab keeps its pointer events,
   so the press arrives as the focus it causes, which carries no modifier.
 
-- **(P3) Loose ends beside a number's unit as data.** `PrefSchemaEditor` edits a number's
-  default, and its auto value, in the stored unit and not the one the leaf shows. The text tool's
+- **(P3) Loose ends beside a number's unit as data.** The text tool's
   percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
   stored value, so the run properties do not export as a literal. Nothing reads a unit's `format`
   yet. A unit whose accepted suffix is all digits moves to the front of the list, as an object's
@@ -905,9 +855,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `Prefs/commitPolicy.ts` says which controls write only a settled value in a form, a panel, and
   a lab, and `withCommitPolicy` applies it for all three. (1) labkit's `ControlPanel` debounces
   text by 150 ms in its own row (`useDebouncedText`), which the table has no word for: it reads
-  as "writes as it changes". (2) The panel's reason for settling text and color is that every
-  write is an undo step, yet a slider there writes per move; whether `scene.batch` coalesces
-  those into one undo step is unverified.
+  as "writes as it changes". (2) A slider dragged in a `SelectionPanel` leaves one undo step per
+  move. Measured in jsdom 2026-10-13: three `change` events on a `control: 'slider'` leaf took
+  three `scene.undo()` calls to unwind, because `commitLeaf` writes through `scene.batch`, whose
+  entries never coalesce. The slider is live there so the canvas follows the drag; one step per
+  drag needs the drag's writes to share an entry, which the scene has to offer.
 
 - **(P3) Collecting a run of `tab` groups, and what each other `as` draws, is written four times.**
   `Prefs/PrefsPane.tsx`, `Prefs/objectRows.tsx` (both `ObjectLeaf`s),
@@ -1026,21 +978,18 @@ only story runner in the repo.
   again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
   fix belongs in windease; the workaround goes when it lands.
 
-- **(P2) A forge dev server started with `WAKE_EXTRA` served the modules it started with, whatever
-  was edited after.** Seen on `WAKE_EXTRA=33461 npm run dev:forge`, four times in one session: after
-  an edit to `packages/labkit/src/chrome/regions/SidebarRegion.less`,
-  `/packages/labkit/src/styles.less` (which imports it) kept answering with the old rules while
-  `/@fs/…/SidebarRegion.less` asked for directly had the new ones, and a `touch` changed nothing;
-  after an edit to `packages/forge/src/shell/cssVars/CssVarsPanel.tsx` the page ran the old
-  component across reloads. No `hmr update` line reached the log, so the watcher looks dead rather
-  than one import edge untracked. A restart served the new code every time. A real vite server on
-  a temp root does not reproduce it: a file replaced whole (written beside and renamed over) is
-  served new each time, for a module and for a stylesheet another one imports
-  (`packages/forge/src/vite/replacedFile.test.ts`), and it still is with 13,000 more directories
-  under the root, about what 26 worktrees in `.claude/worktrees` add to the main checkout's watch.
-  Read, not run: nothing in wake's `WAKE_EXTRA` path or forge's plugin touches the watcher. Not
-  checked: the real server on the repo root, where it has to be watched failing, and whether the
-  server wake owns does the same.
+- **(P3) A dev server serves no edit while macOS file events are not arriving, and only forge's says so.**
+  This is what "a forge dev server started with `WAKE_EXTRA` served the modules it started with" was,
+  measured 2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached
+  neither `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the
+  file itself fired at once; a forge server on `WAKE_EXTRA` served none of three edits; and
+  `packages/forge/src/vite/replacedFile.test.ts` failed both its tests. wake, `WAKE_EXTRA`, and the
+  worktree are not part of it. That the earlier sighting had this cause is inferred from the matching
+  symptom, not measured. forge now writes a file at startup and warns when no event comes back
+  (`packages/forge/src/vite/watchProbe.ts`). Left: the site and draw servers give no such warning;
+  the forge tests that wait on a real watcher (`replacedFile.test.ts`, the `FOLLOWS` polls in
+  `plugin.test.ts`) fail in this state and read as a regression; and what holds `fseventsd` there is
+  not known.
 
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
@@ -1074,36 +1023,11 @@ only story runner in the repo.
   likeliest to differ: its whole trace is 0.31% of the canvas, so it compares at
   `maxDiffRatio: 0.0005`.
 
-- **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
-  failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a
-  `locator.screenshot` timeout, and passed in the runs around it:
-  `Prefs/PrefsForm.drop.browser.test.tsx`, `labkit/src/lightbox/Lightbox.browser.test.tsx`,
-  `labkit/src/controls/compoundRows.browser.test.tsx`,
-  `PatternPicker/PatternPicker.browser.test.tsx`,
-  `core/src/features/text/overlayAlignment.browser.test.tsx`,
-  `labkit/src/lab/LabLightbox.browser.test.tsx` ("an expanded trial keeps its marks over it and
-  takes new ones"), `SelectionPanel/SelectionPanel.selection.browser.test.tsx`, and
-  `PrefSchemaEditor/PrefSchemaEditor.types.browser.test.tsx`. Those run alone on this machine at a
-  failing commit passed: `PatternPicker`, `overlayAlignment`, and `LabLightbox` (3 of 3, 1.3 s).
-  Measured 2026-10-12, nine full runs at one commit, three on each of studio, teitou, and msb-uai:
-  with `browser` run after the other projects (`sequence.groupOrder` in `vitest.config.ts`) none of
-  six runs had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That
-  is suggestive and no more: at a one in three rate six clean runs come up about 9% of the time. It
-  cost 12 to 52 s a run on teitou and msb-uai and nothing on studio, which takes about 175 s either
-  way against 100 to 115 s on the others and hosts a long-running render service; both failing runs
-  were there. A 15 s `browser` timeout in a run made since would mean running beside the other
-  projects was not the cause, and the `groupOrder` line should come out. Not measured: fewer
-  workers for `browser`, and whether studio's own load is the cause.
-
-- **(P3) `forge/src/vite/plugin.test.ts` fails when the dev server does not follow a rewritten
-  file.** Every failure is a test that writes a file and waits 15 to 20 s for the server to follow
-  it, among them "serves the component graph from source, and pushes it again when a component file
-  changes" and "titles a native story by its meta when forge's meta reaches it through a helper
-  module, and re-decides when the helper changes". It has failed in fleet runs on studio and
-  teitou, and alone on orochi, where it is not load from the suite: 2 of 3 runs failed at
-  `af9f3db6b`, up to five tests each, and 1 of 2 at `29dfa85eb`. A site dev server on orochi that
-  evening also served a file as it was before an edit, and a `touch` did not wake it, so there the
-  watcher missed the write.
+- **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
+  as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
+  reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
+  7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
+  measured.
 
 - **(P2) A docs minisite per package: overview, guides, and demos.** `npm run build:api` documents
   every published package in one TypeDoc site at `/api/`. Still to design: an overview and
@@ -1111,18 +1035,19 @@ only story runner in the repo.
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
 
-- **(P2) The API reference build still reports 12 warnings.** `docs/conventions.md` says
+- **(P2) The API reference build still reports 8 warnings.** `docs/conventions.md` says
   `npx typedoc` reports none. Each is a documented export naming a type its barrel does not export:
-  - `Bivariant` (`packages/core/src/core/scene/types.ts`), `OpsApplier` (`canvas/deps/slice.ts`),
-    `XY` (geom's `pathHitTest.ts`), and `OnTokenChange` (ui's `TokenPanel/tokenTypes.ts`): a
-    one-line export each.
+  - `Bivariant` (`packages/core/src/core/scene/types.ts`) and `ScopedScene`
+    (`core/scene/unitScopes.ts`): each needs `export` on its declaration and a line in core's
+    scene barrel.
+  - `CONSTRUCTORS` in geom's `typedArrayJson.ts`: `NumberTypedArray` is
+    `InstanceType<(typeof CONSTRUCTORS)[TypedArrayTag]>`, so the reference names a private
+    constant. Writing the union out by hand lists the nine array types twice.
   - `LabBaseProps` (labkit's `Lab.tsx`) and `CreateOptions` (storage's `records.ts`): an exported
     type needs a doc line, and both files sit at their `check:size` cap, so each wants its split
     first.
   - `BadgePropsByShape` in ui: exporting it surfaces `BadgeBaseProps`, `BadgeShapeParams`, and
     about thirty per-shape, per-base, and per-effect parameter types behind them.
-  - `Key` (`string | number`), declared three times in ui: `useAsyncOptions.ts`, `ComboBox.tsx`,
-    and `Select.tsx`. It wants one exported definition.
   - `DepSchema` and `OverlaySchema` in routing, which its root does export. core merges into both
     with `declare module`, and TypeDoc appears to file the merged interface under another symbol
     than the one `DepName` and `KernelOverlay` reference (read from the warning, not traced).
@@ -1133,10 +1058,6 @@ only story runner in the repo.
   which `@weasel-js/svg` does not have. A justified node is written at its start edge with
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
   need per-word `x` placement too, since `text-anchor` has no justify.
-
-- **(P3) `SerializeOptions.pretty` does nothing.** `packages/svg/src/types.ts` declares it and
-  nothing in `packages/svg/src` reads it, so the serializer's output is the same either way.
-  Implement it or remove the option.
 
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
@@ -1149,15 +1070,23 @@ only story runner in the repo.
   its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
   canvas's adapter, so the seat has to say where a scene-level write gets animated.
 
-- **(P3) draw warns of two route conflicts every time it loads.** In the console of the dev build,
-  each "two bindings declare the same (phase, gesture, arg, target, modifiers) tuple in the same
-  scope, so declaration order alone decides which one fires":
-  `[*:*] drag ?shift ?alt — declared by slice, slice`, which is `useSliceTool`'s
-  `slice.dragPoint` binding (shift and alt optional) against its own plain `slice` drag
-  (`packages/core/src/tools/builtin/slice/useSliceTool.ts`), and
-  `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
-  mode.crop.commit`. Not looked into further: whether each is a real ambiguity, or bindings the
-  check cannot tell apart because a predicate or a mode keeps them from being live together.
+- **(P3) draw warns of two route conflicts every time it loads, and both are a binding that
+  declines through `enabled()` so the next one fires.** `findScopedConflicts`
+  (`packages/routing/src/tools/routing/reflection/conflicts.ts`) cannot see that, since it does not
+  evaluate actions, so it reports each as "declaration order alone decides which one fires":
+  - `[*:*] drag ?shift ?alt — declared by slice, slice`. `useSliceTool` lists `slice.dragPoint`
+    ahead of its plain `slice` drag, and `slice.dragPoint` is enabled only while points are placed.
+    Read from the code: the order is the design, and a comment on the binding says so.
+  - `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
+    mode.crop.commit`. `modeShortcuts` (`packages/routing/src/contributions/modeShortcuts.ts`)
+    gives every entry key the rule `{ mode: { not: <its mode> } }`, which holds inside any other
+    mode, so path-edit's entry ties with each other mode's commit. draw keeps entry to normal mode
+    in `canEnter` (`apps/draw/src/modality/shortcuts.ts`), which the check cannot read. The two
+    commits do not tie with each other; they share a line because each ties with the entry.
+
+  Not chosen yet: a way for a binding to say it yields when its action declines, so the check
+  skips the pair, or a way for `modeShortcuts` to take the modes an entry key works from as a rule,
+  which settles the second and leaves the first.
 
 - **(P3) draw: two owners for "is a text edit open".** The kit's `useSceneTextEdit` holds
   `editingId`; the app's mode machine (`apps/draw/src/modality/machine.ts`) holds a `text-edit` mode
@@ -1229,25 +1158,65 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P1) A fleet run can report green for a tree that is not the commit it names.** `npm run
-  test:fleet` on `599685677` printed `tests 20901 passed 0 failed` on 2026-10-13, and its log lists
-  `scene.carry.test.ts`, which that commit deletes, and none of the three test files it adds. Two
-  tests that fail at that commit passed. The log shows the delta sent (`delta 27 file(s), 2
-  deleted`) and then `updated weasel on teitou at c7da2a61`, the base, before the tests ran. Other
-  sessions had runs on the fleet at the time, and a node holds one tree per repository. Not looked
-  into further. Until it is, a green run is only green if its log names a test file the commit
-  added.
+- **(P2) `onto` can start a suite in a tree another session synced; the fix belongs in
+  `~/src/onto`.** weasel now turns this into a red run: `scripts/fleet-tree.gate.ts` fails when the
+  tree is not the commit `npm run test:fleet` asked for, and the run has to be started again. On
+  2026-10-13 it went unnoticed instead, and a run of `599685677` reported 20901 passed from a tree
+  without that commit's changes. The cause, read from onto's source and not reproduced:
+  - A node keeps one tree per repository. Every weasel worktree on this machine syncs into the
+    tree named `weasel` (`mainCheckout` in `client.go`), and the tree lock (`lockTreeForJob` in
+    `agent.go`) is held only during a sync and during a job, never from a run's sync to the
+    start of its suite. `onto test` runs a setup job in between, which widens the gap.
+  - The stamp in `stamp.go` exists to close that gap and cannot between two sessions on one
+    machine. `syncRepoAt` writes the stamp the node returned into `~/.config/onto/stamps.json`,
+    keyed by node and tree, and `withTreeStamps` reads that file back when the job launches. A
+    second session's sync of the same tree overwrites the entry first, so the first session sends
+    the second's stamp, the node's `checkTreeStamps` finds it matches, and the suite starts in
+    the second session's tree.
+  - What would fix it: have the launch carry the stamp its own sync was answered with, passed in
+    memory from `syncRepoAt` to `startJob`, so the node's 412 and `resyncing` do their job.
+    `stamps.json` then only serves a job launched by a later command than the sync.
+  - Two smaller holes beside it: `rememberStamp` reads, edits, and rewrites the file under a
+    mutex that covers one process, so two sessions can drop each other's entries, and both
+    `withTreeStamps` and `checkTreeStamps` skip the check when no stamp is found.
+  - `updated weasel on <node> at <sha>` always prints the base the sync was given
+    (`syncResp.SHA` is `req.Ref`), so that line says nothing about which commit's files are there.
 
-- **(P2) Browser tests time out under fleet load, each inside a Playwright action.** Every one
-  passes alone, and nobody has confirmed load is the cause:
-  - `PrefSchemaEditor.types.browser.test.tsx` ("a list's entry is edited inside the attributes
-    pane…"): 14.5 s in `userEvent.click` after the tree row was found and scrolled to; 0.3 s alone.
-  - `core/src/features/text/overlayAlignment.browser.test.tsx` ("sans-serif 16px lands on the
-    canvas glyphs"): 7.8 s in `page.screenshot` waiting for the element to be stable.
-  - `AssetEditor.steps.test.tsx`: timed out at 5 s.
-  - `forge/src/vite/plugin.test.ts` ("serves the component graph from source…", 15 s) and
-    `forge/src/timeline/timeline.browser.test.tsx` ("plays on real frames"), in separate runs
-    while about twenty other runs shared the fleet.
+- **(P2) Browser tests time out under fleet load, inside a Playwright action.** A click, a key, or
+  a screenshot that takes a fraction of a second alone stalls for seconds in a full run on studio,
+  teitou, or msb-uai, a different handful of tests each run, and the test hits its 15 s limit or
+  the action's own. Every one passes alone, and nobody has confirmed load is the cause. Two stalls
+  were timed: 14.5 s in `userEvent.click` after the row was found and scrolled to
+  (`PrefSchemaEditor.types.browser.test.tsx`, 0.3 s alone), and 7.8 s in `page.screenshot` waiting
+  for a `position: fixed` element that never moves to be stable
+  (`core/src/features/text/overlayAlignment.browser.test.tsx`, "sans-serif 16px lands on the canvas
+  glyphs").
+  - **Still exposed**, because the action is what the test is about and nothing in it sleeps or
+    animates: `overlayAlignment` (a screenshot a test, 0.55 s each alone),
+    `labkit/src/lightbox/Lightbox.browser.test.tsx`,
+    `SelectionPanel/SelectionPanel.selection.browser.test.tsx`,
+    `PatternPicker/PatternPicker.browser.test.tsx`, and the full-page screenshot in
+    `labkit/src/lab/LabLightbox.browser.test.tsx`.
+  - **Changed on 2026-10-13, none of it confirmed by a fleet run.** `PrefSchemaEditor.types`,
+    `labkit/src/controls/compoundRows.browser.test.tsx`, and `LabLightbox`'s toolbar buttons click
+    through the DOM, since the click is not what they test; `compoundRows` is one test a dialog and
+    no longer waits for each to close. Testing Library's `waitFor` and `findBy*` wait 5 s in the
+    `browser` project, as `expect.poll` already did; they waited 1 s, in `LabLightbox` and in
+    `forge/src/timeline/timeline.browser.test.tsx` ("plays on real frames") among others. Two
+    timeouts were raised for tests that do the work: the sweeps in
+    `Prefs/PrefsForm.drop.browser.test.tsx` take 3.1 to 3.6 s each alone and have 60 s, and
+    `AssetEditor.steps.test.tsx`, a jsdom test that timed out at 5 s, takes 0.9 to 1.4 s alone and
+    has 20 s.
+  - **Running `browser` after the other projects** (`sequence.groupOrder` in `vitest.config.ts`),
+    measured 2026-10-12 over nine full runs at one commit, three on each node: none of six runs
+    had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That is
+    suggestive and no more: at a one in three rate six clean runs come up about 9% of the time. It
+    cost 12 to 52 s a run on teitou and msb-uai and nothing on studio, which takes about 175 s
+    either way against 100 to 115 s on the others and hosts a long-running render service; both
+    failing runs were there. A 15 s `browser` timeout in a run made since would mean running beside
+    the other projects was not the cause, and the `groupOrder` line should come out. Not measured:
+    fewer workers for `browser`, and whether studio's own load is the cause.
+  - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
   the HUD against plain DOM, a React overlay, and a DOM layer moved as one element

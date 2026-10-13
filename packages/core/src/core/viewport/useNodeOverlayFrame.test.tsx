@@ -105,6 +105,31 @@ describe('useNodeOverlayFrame', () => {
     near(frame!.toLocal({ x: 50, y: 100 }), 100, 50);
   });
 
+  it("carries the pose's transform, about the pose center and under its rotation", () => {
+    const stretched = sceneWith([
+      { id: 'a', pose: { x: 0, y: 0, width: 100, height: 50, transform: [2, 0, 0, 1] } as RectPose },
+    ]);
+    const flat = frameFor(stretched, 'a')!;
+    near(flat.toScreen({ x: 100, y: 25 }), 150, 25);
+    near(flat.toScreen({ x: 0, y: 0 }), -50, 0);
+    near(flat.toLocal({ x: 150, y: 25 }), 100, 25);
+
+    const turned = sceneWith([{
+      id: 'a',
+      pose: { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2, transform: [1, 0, 0.5, 1] } as RectPose,
+    }]);
+    // Skewed first: the bottom-edge midpoint (50, 100) leans to (75, 100), then
+    // the quarter turn about (50, 50) carries it to (0, 75).
+    near(frameFor(turned, 'a')!.toScreen({ x: 50, y: 100 }), 0, 75);
+  });
+
+  it('has no frame for a pose whose transform is singular', () => {
+    const scene = sceneWith([
+      { id: 'a', pose: { x: 0, y: 0, width: 100, height: 50, transform: [1, 0, 0, 0] } as RectPose },
+    ]);
+    expect(frameFor(scene, 'a')).toBeNull();
+  });
+
   it('round-trips a point through rotation, pan and anisotropic zoom', () => {
     const scene = sceneWith([
       { id: 'a', pose: { x: 40, y: 60, width: 120, height: 80, rotation: 0.7 } },

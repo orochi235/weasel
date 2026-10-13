@@ -1,6 +1,7 @@
 /** Two or more pointers down at once: their geometry, and whether the episode was a tap. */
 import { TAP_THRESHOLD_PX } from './thresholds';
 
+/** A position in whatever space the recognizer's `positionOf` reports. */
 export interface Point { x: number; y: number }
 
 /**

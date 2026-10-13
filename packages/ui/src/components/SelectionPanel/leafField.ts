@@ -1,6 +1,7 @@
 import { withCommitPolicy } from '../Prefs/commitPolicy';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PropertyControlProps } from '../Properties/PropertyField';
+import type { PropertyPaintFieldProps } from '../Properties/fieldTypes';
 import type { PropertyRenderContext } from './renderContext';
 
 /**
@@ -28,12 +29,22 @@ export function leafField(ctx: PropertyRenderContext, nested: boolean): Property
     },
     fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
   });
-  // A nested paint writes one field of its parent, and no kit paint field is
-  // optional — `Stroke.paint` is required. Removing the whole parent is a
-  // different edit than repainting it, so the control must not offer one as
-  // the other.
-  if (field?.kind === 'paint') return { ...field, allowNone: !nested };
+  if (field?.kind === 'paint') return nested ? nestedPaint(ctx, field) : field;
   return field && withCommitPolicy(field, 'panel');
+}
+
+/**
+ * A paint that is a field of an object: absent from an object the node holds,
+ * it is no paint, and None removes the field.
+ */
+function nestedPaint(ctx: PropertyRenderContext, field: PropertyPaintFieldProps): PropertyPaintFieldProps {
+  const held = ctx.eachSiblings !== undefined && ctx.eachSiblings.every((o) => o !== undefined);
+  const none = held && !ctx.mixed && ctx.value === undefined;
+  return {
+    ...field,
+    ...(none ? { value: null, unset: false } : {}),
+    onChange: (paint) => ctx.setValue(paint ?? undefined),
+  };
 }
 
 /** The dotted path of the leaf `key` beside the one at `path`. */

@@ -365,3 +365,29 @@ export function tryStageFill(
   flushForOwnDraw(ctx);
   return false;
 }
+
+/** A color page has no distance field, so nothing reads its slot's scale. */
+const NO_FIELD = [0, 0] as const;
+
+/**
+ * Open or continue a run for a quad off the page of color glyphs `atlasId`.
+ * The page takes a slot as a font atlas does, and the run is an image quad's:
+ * its texel is a color, which cannot fold through the group's color matrix
+ * before it is staged.
+ */
+export function stageColorGlyphs(
+  ctx: DrawContext, atlasId: string,
+): { staged: StagedBatchState; slot: number } {
+  if (ctx.batchState !== undefined
+      && (!stagedStateIsLive(ctx, ctx.batchState) || slotForAtlas(ctx.batchState, atlasId) < 0)) {
+    flushBatch(ctx);
+  }
+  if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
+  const staged = openRun(ctx);
+  let slot = slotForAtlas(staged, atlasId);
+  if (slot > staged.textures.length) {
+    staged.textures.push({ kind: 'atlas', id: atlasId, fieldScale: NO_FIELD });
+    slot = staged.textures.length;
+  }
+  return { staged, slot };
+}

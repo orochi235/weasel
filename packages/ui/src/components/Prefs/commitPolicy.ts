@@ -4,7 +4,7 @@ import type { PropertyControlProps } from '../Properties/PropertyField';
 export type ParamsSurface = 'form' | 'panel' | 'lab';
 
 /** The controls that write more than once in one edit: a number typed, a slider dragged, text typed, a color picked. */
-type LiveControl = 'number' | 'slider' | 'string' | 'color';
+export type LiveControl = 'number' | 'slider' | 'string' | 'color';
 
 /**
  * Which controls write only the value an edit settles on, by surface; any other writes as it changes. A form

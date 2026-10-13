@@ -2,11 +2,11 @@ import { f } from '@weasel-js/labkit/config';
 import { act } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { openChannel } from '../protocol/channel';
-import type { FromFrame, ToFrame } from '../protocol/messages';
+import type { A11yReport, FromFrame, ToFrame } from '../protocol/messages';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
 import type { LoadedStory } from '../story/types';
-import { runAxe } from './a11y';
+import { PAGE_RULES, runAxe } from './a11y';
 import { startFrame } from './FrameController';
 
 async function flush() {
@@ -85,6 +85,21 @@ describe('runAxe', () => {
       expect(report.violations).toEqual([]);
       expect(report.passes).toBeGreaterThan(0);
       expect(report.inapplicable).toBeGreaterThan(0);
+    } finally {
+      host.remove();
+    }
+  }, 20_000);
+
+  it('runs one rule fewer per page rule turned off, but for `bypass`, which axe never runs below the document', async () => {
+    const host = document.createElement('div');
+    host.innerHTML = '<img src="cat.png" alt="a cat">';
+    document.body.append(host);
+    try {
+      const ran = (r: A11yReport) => r.passes + r.inapplicable + r.violations.length + r.incomplete.length;
+      const whole = ran(await runAxe(host));
+      const part = ran(await runAxe(host, { page: false }));
+      expect(PAGE_RULES).toContain('bypass');
+      expect(whole - part).toBe(PAGE_RULES.length - 1);
     } finally {
       host.remove();
     }

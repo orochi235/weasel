@@ -110,6 +110,7 @@ export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
 export { rampColor, colorRamp } from './color/ramp';
 export type { ColorRampOptions } from './color/ramp';
 export { useAsyncOptions } from './useAsyncOptions';
+export type { OptionKey } from './optionKey';
 export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
 export { useReorderDragList } from './useReorderDragList';
 export { pickActiveSection, useScrollSpy } from './useScrollSpy';

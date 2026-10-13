@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { page } from 'vitest/browser';
 
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
@@ -34,7 +34,7 @@ test('a list\'s entry is edited inside the attributes pane, its type\'s own cont
       <PrefSchemaEditor schema={SCHEMA} onChange={() => {}} types={[GradientStop]} />
     </div>,
   );
-  await userEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(stops)'));
+  fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(stops)'));
   const pane = screen.getByRole('region', { name: 'Attributes' });
   const bounds = pane.getBoundingClientRect();
   const picker = within(pane).getByRole('button', { name: /Entry kind/ });

@@ -63,9 +63,15 @@ describe('<ControlPanel> group descriptions', () => {
   it('heads a group named as its section once, with the group’s rows under the section', () => {
     const schema = resolveConfigSchema(
       f.schema({
-        debug: f.group({ boxes: f.boolean(false) }).section('Debug').label('Debug'),
+        debug: f
+          .group({ boxes: f.boolean(false) })
+          .section('Debug')
+          .label('Debug'),
         route: f.boolean(false).section('Debug'),
-        other: f.group({ depth: f.number(1) }).section('Debug').label('Other'),
+        other: f
+          .group({ depth: f.number(1) })
+          .section('Debug')
+          .label('Other'),
       }),
       [],
     );

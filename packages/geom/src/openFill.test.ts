@@ -11,6 +11,9 @@ import { transformPath } from './paths/transformPath';
 import { splitSubpaths } from './paths/splitSubpaths';
 import { reversePath } from './paths/winding';
 import { editAnchorSet } from './paths/anchorEdits';
+import { pathToMultiPolygon } from './booleans/adapter';
+import { parseContours } from './booleans/contours';
+import { pathIntersect } from './booleans';
 import type { PathOpenFill, PolygonPath } from './path';
 
 /** A right triangle whose last edge, back to (0,0), is never drawn. */
@@ -67,6 +70,24 @@ describe('whether an open subpath fills', () => {
     expect(tessellate(mixed).indices.length).toBe(3);
     expect(pathSignedArea(mixed)).toBe(5000);
     expect(pointInPath(mixed, 275, 25)).toBe(false);
+  });
+
+  it('gives a boolean only the contours a fill covers', () => {
+    const mixed = (rule: PathOpenFill): PolygonPath => ({
+      ...(pathFromD('M0 0 L100 0 L100 100 Z M200 0 L300 0 L300 100') as PolygonPath),
+      openFill: rule,
+    });
+    expect(pathToMultiPolygon(mixed('close'))).toHaveLength(2);
+    expect(pathToMultiPolygon(mixed('none'))).toHaveLength(1);
+    expect(pathToMultiPolygon(open('none'))).toEqual([]);
+    expect(parseContours(mixed('close'))).toHaveLength(2);
+    expect(parseContours(mixed('none'))).toHaveLength(1);
+    const rect = { kind: 'rect', x: 250, y: 10, width: 500, height: 20 } as const;
+    const drawn = (rule: PathOpenFill) => (pathIntersect(mixed(rule), rect) as PolygonPath).commands.length;
+    expect(drawn('close')).toBeGreaterThan(0);
+    expect(drawn('none')).toBe(0);
+    setDefaultOpenFill('none');
+    expect(pathToMultiPolygon(open())).toEqual([]);
   });
 
   it('counts a rect wholly inside the closed-over region as meeting the path', () => {

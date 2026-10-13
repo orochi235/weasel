@@ -2,11 +2,11 @@ import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId, PoseOverride } from '../../core/scene/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import { createTarget, type Target } from '@weasel-js/animator';
-import { skeletonAxes } from '@weasel-js/animator';
+import type { Target } from '@weasel-js/animator';
 import { resolveSkeleton } from '@weasel-js/animator';
 import type { Pose, Skeleton } from '@weasel-js/animator';
 import type { Skin } from '@weasel-js/animator';
+import { createRigSeat, type RigBinding, type RigSeat } from './rigSeat';
 import { bindSkins, dataRestPath, type RestPath, type SkinScene } from './skinBinding';
 
 /** The part of a scene a rig writes to. */
@@ -131,6 +131,18 @@ interface Bound<TPose> {
  * the scene's tree stays free to order and group them for drawing.
  */
 export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
+  const seat = createRigSeat(options.skeleton);
+  const { rig, binding } = bindRigOn(options, seat);
+  seat.binding = binding;
+  return rig;
+}
+
+/** {@link bindRig} on a seat the caller keeps. The rig shows the seat's target once its
+ *  `binding` is the seat's. */
+export function bindRigOn<TPose>(
+  options: BindRigOptions<TPose>,
+  seat: RigSeat,
+): { rig: Rig; binding: RigBinding } {
   const { scene, skeleton } = options;
   const descriptor = options.descriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const apply = options.apply ?? rigidRigApply(descriptor);
@@ -167,16 +179,20 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
   let world: ReadonlyMap<string, GlMat3> = restWorlds;
   let installed = false;
 
-  const release = () => {
+  const drop = () => {
     if (!installed) return;
     installed = false;
     for (const b of bound) scene.overrides.clear(b.node);
     skins.release();
   };
+  const release = () => {
+    seat.shown = false;
+    drop();
+  };
 
-  let root: GlMat3 | undefined;
   const show = (pose: Pose): void => {
     const local = resolveSkeleton(skeleton, pose);
+    const { root } = seat;
     if (root) for (const [name, m] of local) local.set(name, mat3.multiply(root, m));
     world = local;
     const fromRest = new Map<string, GlMat3>();
@@ -196,27 +212,21 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
     skins.joints.forEach(motionOf);
     skins.show(fromRest);
     installed = true;
+    seat.shown = true;
     scene.overrides.commit();
   };
 
-  let committed: Pose = {};
-  const target = createTarget<Pose>({
-    get: () => committed,
-    set: (pose) => { committed = pose; },
-    axes: skeletonAxes(skeleton),
-    show,
-  });
-
-  return {
+  const { target } = seat;
+  const rig: Rig = {
     skeleton,
     target,
     pose(pose, at) {
-      committed = pose;
-      if (at) root = at;
+      seat.committed = pose;
+      if (at) seat.root = at;
       show(target.read());
     },
     place(at) {
-      root = at;
+      seat.root = at;
       show(target.read());
     },
     world: () => world,
@@ -230,4 +240,5 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
     },
     release,
   };
+  return { rig, binding: { show, drop } };
 }

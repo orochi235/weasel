@@ -10,6 +10,9 @@ export interface Schedule {
   remove(a: ActiveAnimation): void;
   /** Sets `a`'s pause and time scale, leaving its clock where it stands. */
   pace(a: ActiveAnimation, paused: boolean, timeScale: number): void;
+  /** Leaves `a` unticked until its clock has run `ms` more, whether it was waiting already or
+   *  ticked every frame. Nothing for an `a` that has left. */
+  defer(a: ActiveAnimation | undefined, ms: number): void;
   /** The animations to tick this frame, in the order they registered: those ticked every
    *  frame, and those whose clock has just reached their `due`. */
   ticks(): ActiveAnimation[];
@@ -68,6 +71,12 @@ export function createSchedule(elapsed: () => number): Schedule {
       a.paused = paused;
       a.timeScale = timeScale;
       if (!every.has(a)) wait(a);
+    },
+    defer(a, ms) {
+      if (!a) return;
+      a.due = clockOf(a) + ms;
+      if (every.delete(a)) waiting += 1;
+      wait(a);
     },
     ticks() {
       const steady = [...every];

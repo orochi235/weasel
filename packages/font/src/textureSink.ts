@@ -19,4 +19,8 @@ export interface GlyphTextureSink {
   upload(id: string, source: TexSource): string;
   uploadR8(id: string, width: number, height: number, data: Uint8Array): void;
   subImageR8(id: string, x: number, y: number, w: number, h: number, data: Uint8Array): void;
+  /** Create a texture of premultiplied RGBA texels that are a color, not a
+   *  field, so it may be minified through mipmaps. */
+  uploadRGBA(id: string, width: number, height: number, data: Uint8Array): void;
+  subImageRGBA(id: string, x: number, y: number, w: number, h: number, data: Uint8Array): void;
 }

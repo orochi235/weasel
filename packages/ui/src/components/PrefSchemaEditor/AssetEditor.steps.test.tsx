@@ -15,7 +15,8 @@ const shown = () => ({
   selected: [...structure().querySelectorAll('[role="treeitem"][aria-selected="true"]')].map((el) => /\((\w+)\)/.exec(el.firstElementChild!.textContent)![1]),
 });
 
-describe('AssetEditor steps across assets', () => {
+// Each test renders the whole editor through a dozen edits and steps: over 1 s on an idle machine, against a 5 s default.
+describe('AssetEditor steps across assets', { timeout: 20_000 }, () => {
   it('selects in the asset a step lands on what was selected there, however many times the step is taken', () => {
     render(<Live start={START} />);
     pickRow('grid');

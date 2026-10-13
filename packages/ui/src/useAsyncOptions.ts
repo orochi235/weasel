@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
 import type { ComboBoxOption } from './components/ComboBox/ComboBox';
-
-type Key = string | number;
+import type { OptionKey } from './optionKey';
 
 /** An option list keyed to the value type its combo box commits. */
-export type AsyncOption<T extends Key> = ComboBoxOption & { value: T };
+export type AsyncOption<T extends OptionKey> = ComboBoxOption & { value: T };
 
 /** Options for {@link useAsyncOptions}. */
-export type UseAsyncOptionsProps<T extends Key> = {
+export type UseAsyncOptionsProps<T extends OptionKey> = {
   /**
    * Fetches the options for a query. The signal aborts when a later keystroke
    * supersedes this call, so a `fetch` should forward it.
@@ -21,7 +20,7 @@ export type UseAsyncOptionsProps<T extends Key> = {
 };
 
 /** What {@link useAsyncOptions} returns, shaped to spread into a `ComboBox`. */
-export type AsyncOptionsResult<T extends Key> = {
+export type AsyncOptionsResult<T extends OptionKey> = {
   options: ReadonlyArray<AsyncOption<T>>;
   isLoading: boolean;
   loadError: unknown | null;
@@ -38,7 +37,7 @@ export type AsyncOptionsResult<T extends Key> = {
  * "working", so the previous results stay on screen — and stay arrowable —
  * while the next request is in flight.
  */
-export function useAsyncOptions<T extends Key = string>({
+export function useAsyncOptions<T extends OptionKey = string>({
   load,
   debounceMs = 150,
   minLength = 0,

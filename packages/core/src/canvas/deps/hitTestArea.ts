@@ -118,9 +118,9 @@ export function hitTestLassoPolygon(
 
 /** `shape` as a region reads it: a polygon path's open subpaths enclose
  *  nothing when the node's painter lays down no fill. */
-function asInked<T>(node: unknown, pose: unknown, shape: T): T {
+function asInked<T>(filled: () => boolean, shape: T): T {
   if ((shape as { kind?: unknown } | null)?.kind !== 'polygon') return shape;
-  return findShapeInk(node as never, pose)?.filled === false ? { ...shape, openFill: 'none' } : shape;
+  return filled() ? shape : { ...shape, openFill: 'none' };
 }
 
 /** The walk every region query shares: skip containers unless asked, gate on
@@ -145,8 +145,10 @@ function walkArea(
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
       const b = regionBoundsOf(node as object, pose, g);
-      return regionTakes(r, mode, asInked(node, pose, pose), b, () =>
-        asInked(node, pose, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)));
+      let ink: boolean | undefined;
+      const filled = (): boolean => ink ??= findShapeInk(node as never, pose)?.filled !== false;
+      return regionTakes(r, mode, asInked(filled, pose), b, () =>
+        asInked(filled, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)), filled);
     },
     inPlane: (m) => regionQuery(regionInPlane(r, m)),
   });

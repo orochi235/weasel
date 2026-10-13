@@ -118,6 +118,7 @@ export type {
 export {
   applyCreateOutlines,
   applyOutlineStroke,
+  strokeRegion,
   useCreateOutlinesAdapter,
 } from '../interactions/actions/outlines';
 export type {

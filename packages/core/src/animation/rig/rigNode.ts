@@ -6,7 +6,8 @@ import type { NodeId } from '../../core/scene/types';
 import type { BindRigOptions, Rig, RigScene } from './bindRig';
 import type { Skin } from '@weasel-js/animator';
 import type { Skeleton } from '@weasel-js/animator';
-import { useRig } from './useRig';
+import { createRigSeat } from './rigSeat';
+import { useSeatedRig } from './useRig';
 
 /** What a rig reads from node data: a `skeleton` on the node that is the rig, and on the nodes
  *  under it a `skin` for a path that bends or a `joint` for a node that rides one whole. */
@@ -15,6 +16,14 @@ export interface RigNodeData {
   skeleton?: Skeleton;
   skin?: Skin;
   joint?: string;
+}
+
+/** Weights to bind in place of the document's, and word of when they change. A `RigEditState`
+ *  is one: it holds what a stroke of the weight tool has painted and not yet written. */
+export interface PaintedSkins {
+  /** By node. A new map whenever the weights change. */
+  painted(): ReadonlyMap<NodeId, Skin>;
+  listen(fn: () => void): () => void;
 }
 
 /** The part of a scene `rigFromNode` reads. */
@@ -80,7 +89,16 @@ export function unplaceSkeleton<TPose>(
   };
 }
 
-function read<TPose>(scene: RigNodeSource<TPose>, id: NodeId, descriptor: PoseDescriptor<TPose>): Reading {
+const UNPAINTED: ReadonlyMap<NodeId, Skin> = new Map();
+const noWord = (): (() => void) => () => {};
+const unpainted = (): ReadonlyMap<NodeId, Skin> => UNPAINTED;
+
+function read<TPose>(
+  scene: RigNodeSource<TPose>,
+  id: NodeId,
+  descriptor: PoseDescriptor<TPose>,
+  painted: ReadonlyMap<NodeId, Skin> = UNPAINTED,
+): Reading {
   const node = scene.get(id);
   if (!node) throw new Error(`rigFromNode: the rig is node "${id}", which the scene lacks.`);
   const local = (node.data as RigNodeData | null | undefined)?.skeleton;
@@ -94,8 +112,9 @@ function read<TPose>(scene: RigNodeSource<TPose>, id: NodeId, descriptor: PoseDe
       const n = scene.get(child);
       if (!n) continue;
       const data = n.data as RigNodeData | null | undefined;
-      out.refs.push(child, n.pose, n.data);
-      if (data?.skin) out.skins[child] = data.skin;
+      const skin = painted.get(child) ?? data?.skin;
+      out.refs.push(child, n.pose, n.data, skin);
+      if (skin) out.skins[child] = skin;
       else if (data?.joint !== undefined) (out.bindings[data.joint] ??= []).push(child);
       walk(child);
     }
@@ -129,27 +148,38 @@ export interface UseRigNodeOptions<TPose>
   };
   /** The node whose data holds the skeleton. */
   node: NodeId;
+  /** Weights bound in place of a node's `data.skin` while they are held. Give it the
+   *  `RigEditState` the weight tool has, and a stroke bends the path as it is painted. */
+  painting?: PaintedSkins;
 }
 
 /**
- * A {@link Rig} read from a node, as {@link rigFromNode} reads it. It is bound again, with a
- * new `target`, when the rig node or a node under it changes its pose or data, or when nodes
- * under it come or go; an edit elsewhere in the scene leaves it alone.
+ * A {@link Rig} read from a node, as {@link rigFromNode} reads it. It is bound again when the
+ * rig node or a node under it changes its pose or data, or when nodes under it come or go; an
+ * edit elsewhere in the scene leaves it alone. A rig bound again keeps its `target`, with the
+ * animations running on it, its committed pose, and its placement, unless the skeleton's
+ * joints were added, removed, renamed, or reordered: then it starts at the bind pose with a
+ * new `target`.
  */
 export function useRigNode<TPose>(options: UseRigNodeOptions<TPose>): Rig {
-  const { scene, node, apply, descriptor, restPath } = options;
+  const { scene, node, apply, descriptor, restPath, painting } = options;
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion);
+  const painted = useSyncExternalStore(painting?.listen ?? noWord, painting?.painted ?? unpainted);
   const next = useMemo(
-    () => read(scene, node, descriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>)),
+    () => read(scene, node, descriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>), painted),
     // `version` is what says the scene may answer differently.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [scene, node, descriptor, version],
+    [scene, node, descriptor, version, painted],
   );
   // Each read makes new objects; the rig must outlive a read that found nothing changed.
   const [held, setHeld] = useState(next);
   const parts = sameRefs(held, next) ? held : next;
   if (parts !== held) setHeld(next);
-  return useRig({
+  const joints = JSON.stringify(parts.skeleton.joints.map((joint) => joint.name));
+  // A pose target's axes are its joints' names in order, so the seat holds while those do.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const seat = useMemo(() => createRigSeat(parts.skeleton), [joints]);
+  return useSeatedRig({
     scene, skeleton: parts.skeleton, bindings: parts.bindings, skins: parts.skins, apply, descriptor, restPath,
-  });
+  }, seat);
 }

@@ -6,7 +6,7 @@
     "longestFunction": 135
   },
   "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 187
+    "longestFunction": 178
   },
   "packages/audio/src/createAudioEngine.ts": {
     "lines": 765,
@@ -71,8 +71,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/scene.ts": {
-    "lines": 606,
-    "longestFunction": 514
+    "longestFunction": 292
   },
   "packages/core/src/core/scene/types.ts": {
     "lines": 669
@@ -156,7 +155,7 @@
     "longestFunction": 183
   },
   "packages/forge/src/vite/plugin.ts": {
-    "longestFunction": 286
+    "longestFunction": 272
   },
   "packages/geom/src/tessellate/polyline.ts": {
     "longestFunction": 141
@@ -305,7 +304,7 @@
     "longestFunction": 129
   },
   "packages/svg/src/serialize.ts": {
-    "lines": 568
+    "lines": 521
   },
   "packages/text-dom/src/domRuns.ts": {
     "lines": 474

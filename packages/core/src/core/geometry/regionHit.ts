@@ -109,7 +109,8 @@ export function poseOutline(pose: unknown, b: Bounds): Path {
  * Whether `region` takes a node under `mode`, given its pose, its bounds `b`
  * from {@link regionBoundsOf}, and its drawn outline on demand.
  *
- * - `intersect` — the outline meets the region anywhere.
+ * - `intersect` — the outline meets the region anywhere: its interior too,
+ *   unless `filled` says nothing paints it.
  * - `enclosed` — the whole outline lies inside it.
  * - `centers` — the center of `b` lies inside it.
  *
@@ -121,6 +122,7 @@ export function regionTakes(
   pose: unknown,
   b: Bounds,
   outline: () => Path,
+  filled: () => boolean = () => true,
 ): boolean {
   if (
     !Number.isFinite(b.x) || !Number.isFinite(b.y) ||
@@ -150,8 +152,8 @@ export function regionTakes(
   }
   // Swallowed whole by a marquee: no outline can change the answer.
   if (region.isRect && inBox) return true;
-  if (silhouette) return polygonIntersectsPath(region.verts, pose);
-  const drawn = outline();
+  const drawn = silhouette ? pose : outline();
+  if (!filled()) return polygonIntersectsPath(region.verts, drawn, { filled: false });
   // An axis-aligned rect overlapping a marquee's box already meets it.
   if (drawn.kind === 'rect' && region.isRect) return true;
   return polygonIntersectsPath(region.verts, drawn);

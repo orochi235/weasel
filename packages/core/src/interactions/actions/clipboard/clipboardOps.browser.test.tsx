@@ -4,7 +4,7 @@
  * the OS clipboard, `web `-prefixed custom types included, and a flavor that
  * rejects costs only itself.
  */
-import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -70,12 +70,18 @@ beforeAll(async () => {
   await commands.grantClipboard();
 });
 
+beforeEach(() => commands.holdClipboard(60_000), 90_000);
+
 afterEach(async () => {
   root?.unmount();
   host?.remove();
   root = null;
   host = null;
-  await navigator.clipboard.writeText('sentinel');
+  try {
+    await navigator.clipboard.writeText('sentinel');
+  } finally {
+    await commands.dropClipboard();
+  }
 });
 
 describe('useClipboardOps copy, real Chromium clipboard', () => {
