@@ -243,16 +243,11 @@ Priority tags:
   (`packages/renderer/src/cache/cache.ts` keys on the path), so the default has to be set before
   the first paint.
 
-- **(P3) A closed outline with no fill is selected from inside it.** A marquee or lasso in
-  `intersect` mode drawn wholly inside an unfilled closed shape takes it, though a click there
-  does not: `shapeCoversPoint` reads the painter's ink (`NodeInk.filled`) and `regionTakes`
-  (`packages/core/src/core/geometry/regionHit.ts`) is handed a path and tests its filled region.
-  `canvas/deps/hitTestArea.ts` passes the ink for open subpaths only (`asInked`), because a path
-  can say its open subpaths enclose nothing and cannot say that of a closed one. The same is true of
-  `containsInFrame` (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`), which calls
-  `pointInPath` on a path-shaped pose with no node in hand: wherever picking is not by shape, an
-  unfilled path is picked across what it encloses, open subpaths included. Both want the region and
-  frame tests to take "is this filled" beside the path.
+- **(P3) `arrayAdapter` selects a closed outline with no fill from inside it.** A marquee or lasso
+  in `intersect` mode drawn wholly inside an unfilled closed shape takes it. `regionTakes`
+  (`packages/core/src/core/geometry/regionHit.ts`) takes "is this filled" beside the outline and
+  the scene walk passes the painter's ink, but `arrayAdapter` has only its `silhouette` config and
+  nothing that says how an item is inked.
 
 - **(P3) WeaselDraw: no browser has drawn an imported clipped group.** A `<g clip-path>` reaches
   the scene as a container whose `data` is the clip, and the unit tests stop at that data. What is

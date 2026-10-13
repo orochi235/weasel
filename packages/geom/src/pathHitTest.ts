@@ -26,6 +26,13 @@ export interface PointInPathOptions {
   tolerance?: number;
 }
 
+/** Options for {@link polygonIntersectsPath}. */
+export interface PolygonIntersectsPathOptions extends PointInPathOptions {
+  /** False when nothing paints the path's interior: only its outline can meet
+   *  the polygon, and a polygon lying wholly inside meets nothing. Default true. */
+  filled?: boolean;
+}
+
 /** Options for {@link strokeHitTest}. */
 export interface StrokeHitTestOptions {
   /** Bezier flattening tolerance in world units. Default 0.5. */
@@ -355,18 +362,22 @@ export function polygonContainsPath(
 
 /**
  * Returns true if any of `path` meets the closed `polygon`: its filled region,
- * or the line of an open subpath, which encloses nothing. Beziers are
+ * or the line of an open subpath, which encloses nothing. With `filled: false`
+ * a closed subpath is a line too. Beziers are
  * flattened, so a control point off the curve never counts. The companion of
  * {@link polygonContainsPath}; a lasso touching a shape asks this.
  */
 export function polygonIntersectsPath(
   polygon: readonly XY[],
   path: Path,
-  opts: PointInPathOptions = {},
+  opts: PolygonIntersectsPathOptions = {},
 ): boolean {
   if (polygon.length < 3) return false;
-  if (path.kind === 'rect') return polygonsIntersect(rectToVerts(path), polygon);
-  const { closed, open } = regionSubpaths(path, opts);
+  const filled = opts.filled !== false;
+  if (path.kind === 'rect' && filled) return polygonsIntersect(rectToVerts(path), polygon);
+  const { closed, open } = path.kind === 'rect'
+    ? { closed: [flattenVerts(rectToVerts(path))], open: [] }
+    : regionSubpaths(path, opts);
   const flatPoly = flattenVerts(polygon);
   if (anyVertexInPolygon(closed, flatPoly) || anyVertexInPolygon(open, flatPoly)) return true;
   if (anyEdgeCrossesPolygon(closed, polygon) || anyOpenEdgeCrossesPolygon(open, polygon)) {
@@ -374,5 +385,5 @@ export function polygonIntersectsPath(
   }
   // No vertex inside and no crossing: the polygon lies wholly in one region
   // of the path, so one of its vertices decides whether that region is filled.
-  return closed.length > 0 && pointInPath(path, polygon[0].x, polygon[0].y, opts);
+  return filled && closed.length > 0 && pointInPath(path, polygon[0].x, polygon[0].y, opts);
 }

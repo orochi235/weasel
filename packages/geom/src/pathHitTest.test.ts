@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { polygonContainsPath, polygonIntersectsPath } from './pathHitTest';
+import { PATH_L, PATH_M, PATH_Z } from './commands';
 import type { Path } from './path';
 
 const SQUARE = [
@@ -49,4 +50,27 @@ describe('polygonIntersectsPath — rect paths', () => {
   it('misses on a degenerate polygon (< 3 vertices)', () => {
     expect(polygonIntersectsPath([{ x: 0, y: 0 }, { x: 1, y: 1 }], rect(0, 0, 1, 1))).toBe(false);
   });
+});
+
+describe('polygonIntersectsPath — a path nothing fills', () => {
+  const INNER = [{ x: 4, y: 4 }, { x: 6, y: 4 }, { x: 6, y: 6 }, { x: 4, y: 6 }];
+  const ACROSS = [{ x: 8, y: 4 }, { x: 14, y: 4 }, { x: 14, y: 6 }, { x: 8, y: 6 }];
+  const AROUND = [{ x: -5, y: -5 }, { x: 25, y: -5 }, { x: 25, y: 25 }, { x: -5, y: 25 }];
+  const square: Path = {
+    kind: 'polygon',
+    commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z),
+    coords: Float32Array.of(0, 0, 10, 0, 10, 10, 0, 10),
+    fillRule: 'nonzero',
+  };
+
+  for (const [name, path] of [['rect', rect(0, 0, 10, 10)], ['polygon', square]] as const) {
+    it(`${name}: a polygon wholly inside meets a filled one only`, () => {
+      expect(polygonIntersectsPath(INNER, path)).toBe(true);
+      expect(polygonIntersectsPath(INNER, path, { filled: false })).toBe(false);
+    });
+    it(`${name}: a polygon across the outline or around it still meets it`, () => {
+      expect(polygonIntersectsPath(ACROSS, path, { filled: false })).toBe(true);
+      expect(polygonIntersectsPath(AROUND, path, { filled: false })).toBe(true);
+    });
+  }
 });

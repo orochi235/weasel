@@ -41,7 +41,7 @@ export {
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
   pathContainsPolygon, pathIntersectsPolygon,
   polygonContainsPath, polygonIntersectsPath,
-  type PointInPathOptions, type StrokeHitTestOptions,
+  type PointInPathOptions, type PolygonIntersectsPathOptions, type StrokeHitTestOptions,
 } from './pathHitTest';
 export { transformCoords } from './affine';
 export { circlePath, squarePath, rectMarkerPath, roundRectPath } from './paths/markers';
