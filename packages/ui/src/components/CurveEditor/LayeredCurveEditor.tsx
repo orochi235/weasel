@@ -21,6 +21,7 @@ import {
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import { dispatchContextMenu } from './contextMenuDispatch';
+import { CurveLayers } from './CurveLayers';
 import { sameFields } from './sameFields';
 import type {
   CurveLayer, LayerCtx, LayerGesture, LayerModifiers, ModelPoint, PlotPoint,
@@ -457,18 +458,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       onKeyDown={onSvgKeyDown}
     >
       {children}
-      {layers.map((b) => {
-        const ctx = {
-          ...renderCtxBase,
-          modifiers: { shift: false, alt: false, meta: false, ctrl: false },
-          isActive: activeLayerId === b.layer.id,
-        };
-        return (
-          <g key={b.layer.id} data-layer-id={b.layer.id}>
-            {b.layer.render(b.state, ctx)}
-          </g>
-        );
-      })}
+      <CurveLayers layers={layers} base={renderCtxBase} activeLayerId={activeLayerId} />
     </Plot2D>
   );
 }
