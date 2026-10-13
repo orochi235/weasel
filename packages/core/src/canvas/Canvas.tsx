@@ -39,7 +39,7 @@ import {
 import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
 import { shaderKeyOf } from './canvasRenderer';
-import { surfaceBox } from './surfaceBox';
+import { SurfaceCanvas } from './SurfaceCanvas';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -724,12 +724,12 @@ function CanvasInner<TPose>(
   if (detached) return null;
 
   return (
-    <canvas
+    <SurfaceCanvas
       ref={setOwnCanvas}
       width={width}
       height={height}
       tabIndex={tabIndex}
-      {...surfaceBox(width, height, className, style)}
+      className={className} style={style}
     />
   );
 }

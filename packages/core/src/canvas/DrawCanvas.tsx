@@ -13,7 +13,7 @@ import type { Ref } from 'react';
 import { assignRef } from '@weasel-js/react';
 import type { Paint } from '@weasel-js/paint';
 import { useCanvasSurface } from './useCanvasSurface';
-import { surfaceBox } from './surfaceBox';
+import { SurfaceCanvas } from './SurfaceCanvas';
 import type { CanvasRendererLease } from './canvasRenderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -82,5 +82,5 @@ export function DrawCanvas(props: DrawCanvasProps) {
   };
   useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn, paintOnCommit: true });
 
-  return <canvas ref={setRefs} width={width} height={height} {...surfaceBox(width, height, className)} />;
+  return <SurfaceCanvas ref={setRefs} width={width} height={height} className={className} />;
 }

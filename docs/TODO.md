@@ -166,14 +166,6 @@ Priority tags:
   the canvas's world, not the panel's. Composing would mean a view's camera derived from the view
   under its aim, and a resolver that descends rather than picking one rect.
 
-- **(P3) A page that does not load core's stylesheet shows every canvas at its buffer size.** The
-  renderer sets only a canvas's drawing buffer, and `<Canvas>`, `<SceneViewCanvas>`, and
-  `<DrawCanvas>` size the element with a zero-specificity class from `@weasel-js/core/style.css`
-  (`surfaceBox`). Without that stylesheet the element is `dpr` times too large, so it is wrong
-  only on a high-density screen, and nothing warns. Core could adopt the one rule itself when a
-  canvas mounts, the way `applyTheme` adopts its sheet; that reaches a page with no stylesheet
-  and misses a canvas in a shadow root or a second document. Not chosen yet.
-
 ---
 
 ## Paths & booleans
