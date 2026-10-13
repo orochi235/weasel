@@ -24,7 +24,8 @@
     "@weasel-js/animator": "1.9.4",
     "@weasel-js/core": "1.9.4",
     "@weasel-js/font": "1.9.4",
-    "@weasel-js/geom": "1.9.4"
+    "@weasel-js/geom": "1.9.4",
+    "@weasel-js/simulation": "1.9.4"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

@@ -6,7 +6,7 @@
  * where they are on every tick, the way the scene derives it: around its own
  * nodes and the boxes of the groups nested in it.
  */
-import type { SimulationForce } from '@weasel-js/core/math';
+import type { SimulationForce } from '@weasel-js/simulation';
 import type { GraphGroup } from './graph';
 import type { ForceBody } from './force';
 
