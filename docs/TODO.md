@@ -797,8 +797,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) Loose ends beside a number's unit as data.** The text tool's
   percent unit (`useTextTool.ts`) is still code, for the rounding it does on the way back to the
   stored value, so the run properties do not export as a literal. Nothing reads a unit's `format`
-  yet. A unit whose accepted suffix is all digits moves to the front of the list, as an object's
-  integer keys do.
+  yet: every surface shows a number leaf through its field, which formats by `display`.
 
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
   `display: contents`, so a drag in `PrefSchemaEditor`'s preview cannot land beside or into an

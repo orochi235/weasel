@@ -94,6 +94,17 @@ describe('the unit attribute', () => {
     type('Accepted suffix 1', 'm');
     expect(seen.unit!.accepts).toEqual({ mil: 0.1, m: 100 });
   });
+
+  it('refuses an accepted suffix that starts with a digit, which a typed number would end in', () => {
+    const seen: Seen = {};
+    render(<Unit seen={seen} start={{ scale: 10, accepts: { mm: 0.1, m: 100 } }} />);
+    type('Accepted suffix 2', '2');
+    type('Accepted suffix 2', '2x');
+    expect(seen.unit).toEqual({ scale: 10, accepts: { mm: 0.1, m: 100 } });
+    expect(box('Accepted suffix 2')).toHaveValue('m');
+    type('Accepted suffix 2', 'm2');
+    expect(Object.keys(seen.unit!.accepts!)).toEqual(['mm', 'm2']);
+  });
 });
 
 const START: PrefGroup = {
