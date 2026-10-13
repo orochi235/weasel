@@ -1042,6 +1042,14 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) A release whose notes for one package pass 125,000 characters fails after it has
+  published.** `changesets/action` writes a GitHub release per package with that package's
+  changelog section as the body, and GitHub refuses a longer one. 1.10.0's core section was 135,412
+  characters: every package was already on its way to npm and tagged, the step then failed, and the
+  registry check and the registry smoke test after it never ran. Its release was made by hand with
+  the notes cut short and a link to the changelog. Either the release step cuts a long body the
+  same way, or the two checks run whether or not that step failed.
+
 - **(P2) Confirm on a fleet node that a new dependency in browser-tested code no longer fails the
   first run that meets it.** A node keeps its vite dep cache between runs, and a warm cache skips
   the scan that finds dependencies, so one first imported since then was met mid-run and vite
