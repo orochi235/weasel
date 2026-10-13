@@ -596,33 +596,33 @@ const BASE_LAB_CONTROLS: Record<BadgeBase, LabControl[]> = {
   'octant-spline':  [
     { key: 'mode',     kind: 'select', options: ['octant', 'quadrant'], default: 'octant' },
     { key: 'count',    kind: 'range', min: 3,   max: 12,  step: 1,    default: 5 },
-    { key: '__advanced__', kind: 'header', label: 'Advanced', default: '' } as never,
+    { key: '__advanced__', kind: 'header', label: 'Advanced' },
     { key: 'rotation', kind: 'range', min: -45, max: 45,  step: 0.5, default: 0 },
     { key: 'samples',  kind: 'range', min: 48,  max: 360, step: 4,   default: 192 },
   ],
   'octant-bspline': [
     { key: 'mode',     kind: 'select', options: ['octant', 'quadrant'], default: 'octant' },
     { key: 'count',    kind: 'range', min: 3,   max: 12,  step: 1,    default: 5 },
-    { key: '__advanced__', kind: 'header', label: 'Advanced', default: '' } as never,
+    { key: '__advanced__', kind: 'header', label: 'Advanced' },
     { key: 'rotation', kind: 'range', min: -45, max: 45,  step: 0.5, default: 0 },
     { key: 'samples',  kind: 'range', min: 48,  max: 360, step: 4,   default: 192 },
   ],
   'quatrefoil':     [
-    { key: '__spike__',       kind: 'header', label: 'Spike', default: '' } as never,
+    { key: '__spike__',       kind: 'header', label: 'Spike' },
     { key: 'spikeR',          kind: 'range', min: 5,   max: 50,   step: 0.5,  default: 50 },
     { key: 'spikeCurvature',  kind: 'range', min: 0.3, max: 4,    step: 0.05, default: 1 },
     { key: 'spikeBend',       kind: 'range', min: -0.9, max: 0.9, step: 0.02, default: 0 },
     { key: 'spikeTipErosion', kind: 'range', min: 0,   max: 1,    step: 0.02, default: 0 },
-    { key: '__valley__',      kind: 'header', label: 'Valley', default: '' } as never,
+    { key: '__valley__',      kind: 'header', label: 'Valley' },
     { key: 'valleyR',         kind: 'range', min: 0,   max: 50,   step: 0.5,  default: 25 },
     { key: 'valleyAt',        kind: 'range', min: 0.05, max: 0.95, step: 0.01, default: 0.5 },
     { key: 'valleySmooth',    kind: 'range', min: 0,   max: 20,   step: 0.25, default: 3 },
-    { key: '__lobe__',        kind: 'header', label: 'Lobe', default: '' } as never,
+    { key: '__lobe__',        kind: 'header', label: 'Lobe' },
     { key: 'lobeR',           kind: 'range', min: 5,   max: 75,   step: 0.5,  default: 42 },
     { key: 'lobeCurvature',   kind: 'range', min: 0.3, max: 4,    step: 0.05, default: 1 },
     { key: 'lobeBend',        kind: 'range', min: -0.9, max: 0.9, step: 0.02, default: 0 },
     { key: 'lobeTipErosion',  kind: 'range', min: 0,   max: 1,    step: 0.02, default: 0 },
-    { key: '__advanced__',    kind: 'header', label: 'Advanced', default: '' } as never,
+    { key: '__advanced__',    kind: 'header', label: 'Advanced' },
     { key: 'rotation',        kind: 'range', min: -45, max: 45,   step: 0.5,  default: 0 },
     { key: 'samples',         kind: 'range', min: 48,  max: 360,  step: 4,    default: 192 },
   ],
@@ -714,18 +714,18 @@ const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
     { key: 'gradientEnd',   kind: 'range', min: 0,  max: 1,  step: 0.02, default: 1 },
   ],
   aqua: [
-    { key: '__body__',       kind: 'header', label: 'Body' } as never,
+    { key: '__body__',       kind: 'header', label: 'Body' },
     { key: 'topAlpha',       kind: 'range', min: 0, max: 1, step: 0.02, default: 0.45 },
     { key: 'upperAlpha',     kind: 'range', min: 0, max: 1, step: 0.02, default: 0.7 },
     { key: 'equator',        kind: 'range', min: 15, max: 85, step: 1, default: 52 },
     { key: 'equatorSpread',  kind: 'range', min: 1, max: 40, step: 1, default: 12 },
     { key: 'equatorTint',    kind: 'range', min: 50, max: 100, step: 1, default: 95 },
     { key: 'baseTint',       kind: 'range', min: 20, max: 100, step: 1, default: 70 },
-    { key: '__gloss__',      kind: 'header', label: 'Gloss' } as never,
+    { key: '__gloss__',      kind: 'header', label: 'Gloss' },
     { key: 'glossTopAlpha',  kind: 'range', min: 0, max: 1, step: 0.02, default: 0.7 },
     { key: 'glossMidAlpha',  kind: 'range', min: 0, max: 1, step: 0.02, default: 0.18 },
     { key: 'glossExtent',    kind: 'range', min: 5, max: 90, step: 1, default: 50 },
-    { key: '__bezel__',      kind: 'header', label: 'Bezel & rim' } as never,
+    { key: '__bezel__',      kind: 'header', label: 'Bezel & rim' },
     { key: 'bezelAlpha',     kind: 'range', min: 0, max: 1, step: 0.02, default: 0.7 },
     { key: 'bezelWidth',     kind: 'range', min: 0, max: 4, step: 0.25, default: 1 },
     { key: 'rimAlpha',       kind: 'range', min: 0, max: 1, step: 0.02, default: 0.22 },
@@ -733,15 +733,15 @@ const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
   ],
   metal: [
     { key: 'specularity',    kind: 'range', min: 0, max: 1, step: 0.02, default: 0.6 },
-    { key: '__body__',       kind: 'header', label: 'Body' } as never,
+    { key: '__body__',       kind: 'header', label: 'Body' },
     { key: 'equator',        kind: 'range', min: 15, max: 85, step: 1, default: 50 },
     { key: 'equatorSpread',  kind: 'range', min: 1, max: 30, step: 1, default: 8 },
     { key: 'topDarkness',    kind: 'range', min: 0, max: 100, step: 1, default: 55 },
     { key: 'baseDarkness',   kind: 'range', min: 0, max: 100, step: 1, default: 35 },
-    { key: '__gloss__',      kind: 'header', label: 'Gloss' } as never,
+    { key: '__gloss__',      kind: 'header', label: 'Gloss' },
     { key: 'glossAlphaTop',  kind: 'range', min: 0, max: 1, step: 0.02, default: 0.55 },
     { key: 'glossExtent',    kind: 'range', min: 5, max: 90, step: 1, default: 50 },
-    { key: '__bezel__',      kind: 'header', label: 'Bezel & rim' } as never,
+    { key: '__bezel__',      kind: 'header', label: 'Bezel & rim' },
     { key: 'bezelAlpha',     kind: 'range', min: 0, max: 1, step: 0.02, default: 0.85 },
     { key: 'bezelWidth',     kind: 'range', min: 0, max: 4, step: 0.25, default: 1 },
     { key: 'rimAlpha',       kind: 'range', min: 0, max: 1, step: 0.02, default: 0.35 },
@@ -1577,8 +1577,8 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
                     onAnchorAdd={onAnchorAdd}
                     evalAtS={base === 'octant-bspline' ? bsplineSplineEval(liveAnchors) : naturalSplineEval(liveAnchors)}
                   />
-                  {(BASE_LAB_CONTROLS[base] ?? [])
-                    .filter((c) => !/^[srw]\d+$/.test(c.key) && c.key !== 'mode')
+                  {BASE_LAB_CONTROLS[base]
+                    .filter((c) => c.key !== 'mode')
                     .map((c) => {
                       if (c.key === 'count' && c.kind !== 'header') {
                         return renderControl(c, baseParams[c.key] ?? c.default, (v) => handleCountChange(Number(v)));
@@ -1589,7 +1589,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
               );
             })()
           ) : (
-            (BASE_LAB_CONTROLS[base] ?? []).map((c) =>
+            BASE_LAB_CONTROLS[base].map((c) =>
               renderControl(c, baseParams[c.key], (v) => setBaseParams((p) => ({ ...p, [c.key]: v }))),
             )
           )}
@@ -1672,7 +1672,7 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
                   <code style={{ fontSize: 9, opacity: 0.6 }}>{EFFECTS[eff.type].offsetAt ? 'offset' : (EFFECTS[eff.type].zone ?? 'foreground')}</code>
                   <CloseButton ariaLabel={`Remove effect ${i + 1}`} onClick={() => removeEffect(eff.id)} />
                 </div>
-                {(EFFECT_LAB_CONTROLS[eff.type] ?? []).map((c) =>
+                {EFFECT_LAB_CONTROLS[eff.type].map((c) =>
                   renderControl(c, eff.params[c.key], (v) => updateEffect(eff.id, c.key, v)),
                 )}
               </div>
@@ -2115,7 +2115,7 @@ function octantR(s: number, p: Required<NonNullable<QFParams>>): number {
   return smoothMaxOctant(rSpike, rLobe, smooth);
 }
 
-function OctantCell({ params, label, size = 100 }: { params: Partial<NonNullable<QFParams>>; label: string; size?: number }) {
+function OctantCell({ params, label }: { params: Partial<NonNullable<QFParams>>; label: string }) {
   const full: Required<NonNullable<QFParams>> = { ...QF_DEFAULTS, ...params };
   const N = 96;
   // Octant arc from θ=0 (cardinal, east) to θ=π/4 (diagonal, NE). SVG y is flipped so we
@@ -2132,7 +2132,7 @@ function OctantCell({ params, label, size = 100 }: { params: Partial<NonNullable
   // Coordinate frame: -5..80 horizontal, -80..5 vertical. Pad a bit for the diagonal end.
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <svg viewBox="-5 -80 90 85" width={size} height={size} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 4 }}>
+      <svg viewBox="-5 -80 90 85" width={100} height={100} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 4 }}>
         {/* Reference axes */}
         <line x1="0" y1="0" x2="75" y2="0" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" strokeDasharray="2 2" />
         <line x1="0" y1="0" x2={(75 * Math.cos(Math.PI / 4)).toFixed(2)} y2={(-75 * Math.sin(Math.PI / 4)).toFixed(2)} stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" strokeDasharray="2 2" />
