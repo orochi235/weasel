@@ -1,20 +1,22 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 
-export type PuzzleEdge = 'flat' | 'out' | 'in';
+/** One side of a puzzle piece: straight, a tab out, or a socket in. */
+export type BadgePuzzleEdge = 'flat' | 'out' | 'in';
 
-export interface PuzzleParams {
-  top?: PuzzleEdge;
-  right?: PuzzleEdge;
-  bottom?: PuzzleEdge;
-  left?: PuzzleEdge;
+/** What `baseParams` takes on a badge whose `base` is `puzzle`. */
+export interface BadgePuzzleBaseParams {
+  top?: BadgePuzzleEdge;
+  right?: BadgePuzzleEdge;
+  bottom?: BadgePuzzleEdge;
+  left?: BadgePuzzleEdge;
   /** Tab radius in viewBox units (0..50). */
   tabSize?: number;
   /** Sample density per tab arc. */
   arcSamples?: number;
 }
 
-const DEFAULTS: Required<PuzzleParams> = {
+const DEFAULTS: Required<BadgePuzzleBaseParams> = {
   top: 'out',
   right: 'in',
   bottom: 'out',
@@ -36,7 +38,7 @@ function edgeVertices(
   end: [number, number],
   outwardX: number,
   outwardY: number,
-  type: PuzzleEdge,
+  type: BadgePuzzleEdge,
   tabR: number,
   arcSamples: number,
 ): [number, number][] {
@@ -80,7 +82,7 @@ function edgeVertices(
   return out;
 }
 
-const Puzzle: BaseModule<PuzzleParams> = {
+const Puzzle: BaseModule<BadgePuzzleBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
     const r = Math.max(2, Math.min(cfg.tabSize, 40));

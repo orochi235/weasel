@@ -10,7 +10,8 @@ import { polygonSampler } from './polygonSampler';
  * derived from the second-from-end anchors, which enforces zero slope at s=0 and s=1 so
  * the reflected/rotated full silhouette closes cleanly across the symmetry axes.
  */
-export interface OctantBSplineParams {
+/** What `baseParams` takes on a badge whose `base` is `octant-bspline`. */
+export interface BadgeOctantBSplineBaseParams {
   mode?: 'octant' | 'quadrant';
   count?: number;
   s0?: number; s1?: number; s2?: number; s3?: number; s4?: number; s5?: number;
@@ -25,7 +26,7 @@ export interface OctantBSplineParams {
 
 export const OCTANT_BSPLINE_MAX_ANCHORS = 12;
 
-const DEFAULTS: Required<OctantBSplineParams> = {
+const DEFAULTS: Required<BadgeOctantBSplineBaseParams> = {
   mode: 'octant',
   count: 5,
   s0: 0,    s1: 0.25, s2: 0.5,  s3: 0.75, s4: 1,    s5: 1,
@@ -43,12 +44,12 @@ interface Anchor { s: number; r: number; w: number }
 /** The least weight an anchor draws with: at zero a rational curve divides by zero at its ends. */
 export const OCTANT_BSPLINE_MIN_WEIGHT = 0.01;
 
-export function extractAnchorPairs(params: OctantBSplineParams = {}): Anchor[] {
+export function extractAnchorPairs(params: BadgeOctantBSplineBaseParams = {}): Anchor[] {
   const cfg = { ...DEFAULTS, ...params };
   const count = Math.max(3, Math.min(Math.floor(cfg.count), OCTANT_BSPLINE_MAX_ANCHORS));
-  const sKeys: (keyof Required<OctantBSplineParams>)[] = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11'];
-  const rKeys: (keyof Required<OctantBSplineParams>)[] = ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','r10','r11'];
-  const wKeys: (keyof Required<OctantBSplineParams>)[] = ['w0','w1','w2','w3','w4','w5','w6','w7','w8','w9','w10','w11'];
+  const sKeys: (keyof Required<BadgeOctantBSplineBaseParams>)[] = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11'];
+  const rKeys: (keyof Required<BadgeOctantBSplineBaseParams>)[] = ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','r10','r11'];
+  const wKeys: (keyof Required<BadgeOctantBSplineBaseParams>)[] = ['w0','w1','w2','w3','w4','w5','w6','w7','w8','w9','w10','w11'];
   const pairs: Anchor[] = [];
   for (let i = 0; i < count; i++) {
     pairs.push({
@@ -173,7 +174,7 @@ export function evalNurbsAtS(s: number, nurbs: CompiledNurbs): number {
   return evalNurbsAtU((lo + hi) * 0.5, nurbs).r;
 }
 
-const OctantBSpline: BaseModule<OctantBSplineParams> = {
+const OctantBSpline: BaseModule<BadgeOctantBSplineBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
     const anchors = extractAnchorPairs(cfg);

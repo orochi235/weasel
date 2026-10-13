@@ -1,19 +1,20 @@
 import type { EffectModule } from '../bases/types';
-import { rangeMask, type RangeMaskParams } from './rangeMask';
+import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
-export interface ScallopsEffectParams extends RangeMaskParams {
+/** What an effect of type `scallops` takes as `params`. */
+export interface BadgeScallopsEffectParams extends BadgeRangeMaskParams {
   scallopRadius?: number;
   scallopSpacing?: number;
   irregularity?: number;
 }
 
-const DEFAULTS: Required<Omit<ScallopsEffectParams, 'range'>> = {
+const DEFAULTS: Required<Omit<BadgeScallopsEffectParams, 'range'>> = {
   scallopRadius: 4,
   scallopSpacing: 10,
   irregularity: 0,
 };
 
-const Scallops: EffectModule<ScallopsEffectParams> = {
+const Scallops: EffectModule<BadgeScallopsEffectParams> = {
   offsetAt: (s, { params, phase, totalCss, perimeterAt }) => {
     const cfg = { ...DEFAULTS, ...params };
     const mask = rangeMask(s, totalCss, cfg.range);

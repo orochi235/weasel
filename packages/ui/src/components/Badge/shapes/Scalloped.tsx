@@ -1,14 +1,15 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
 
-export interface ScallopedParams {
+/** What `shapeParams` takes on a `scalloped` badge. */
+export interface BadgeScallopedShapeParams {
   scallopRadius?: number;
   scallopSpacing?: number;
   irregularity?: number;
 }
 
-const DEFAULTS: Required<ScallopedParams> = { scallopRadius: 5, scallopSpacing: 12, irregularity: 0 };
+const DEFAULTS: Required<BadgeScallopedShapeParams> = { scallopRadius: 5, scallopSpacing: 12, irregularity: 0 };
 
-const Scalloped: ShapeModule<ScallopedParams> = {
+const Scalloped: ShapeModule<BadgeScallopedShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = { ...DEFAULTS, ...params };
     return {

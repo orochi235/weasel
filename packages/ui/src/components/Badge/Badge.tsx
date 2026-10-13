@@ -6,7 +6,7 @@ import { useVisibleRaf } from '@weasel-js/core';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
-import { EFFECTS, type EffectSpec } from './effects';
+import { EFFECTS, type BadgeEffectSpec } from './effects';
 import { composeOutline, offsetOutline } from './composeOutline';
 import { paddingStyle } from './paddingSides';
 import { useInsets } from './useInsets';
@@ -16,7 +16,9 @@ import { BadgeRemove, BadgeTarget } from './BadgeLabel';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 import { type StanceProps, useStance } from '../stance';
 
-interface BadgeBaseProps extends StanceProps {
+/** What {@link Badge} takes whatever its shape: every prop of {@link BadgeProps}
+ *  but `shape`, `shapeParams`, and the DOM attributes it passes through. */
+export interface BadgeOwnProps extends StanceProps {
   /** The status the badge reports. A peer `tone`, or a stance's accent, paints over it. */
   status?: BadgeStatus;
   variant?: BadgeVariant;
@@ -38,7 +40,7 @@ interface BadgeBaseProps extends StanceProps {
   base?: BadgeBase;
   baseParams?: BadgeBaseParams[BadgeBase];
   /** Compose-mode: layered effects applied around / over the base. */
-  effects?: EffectSpec[];
+  effects?: BadgeEffectSpec[];
   onClick?: () => void;
   onRemove?: () => void;
   removeLabel?: string;
@@ -62,20 +64,18 @@ interface BadgeBaseProps extends StanceProps {
 
 /** DOM attributes a badge passes through to its root element, e.g. the ones
  *  `Focusable` supplies when a badge sits under a `TooltipTrigger`. */
-type BadgeDomProps = Omit<
+export type BadgeDomProps = Omit<
   HTMLAttributes<HTMLElement>,
-  keyof BadgeBaseProps | 'onClick' | 'children' | 'className' | 'style'
+  keyof BadgeOwnProps | 'onClick' | 'children' | 'className' | 'style'
 >;
-
-type BadgePropsByShape = {
-  [S in BadgeShape]: BadgeBaseProps & BadgeDomProps & { shape?: S; shapeParams?: BadgeShapeParams[S] };
-}[BadgeShape];
 
 /**
  * Props for {@link Badge}. Discriminated on `shape` so `shapeParams` is typed
  * to the chosen shape's own parameters.
  */
-export type BadgeProps = BadgePropsByShape;
+export type BadgeProps = {
+  [S in BadgeShape]: BadgeOwnProps & BadgeDomProps & { shape?: S; shapeParams?: BadgeShapeParams[S] };
+}[BadgeShape];
 
 /** CSS px between a composed badge's outline and its focus ring. */
 const FOCUS_RING_OFFSET = 2;
@@ -180,9 +180,9 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   const resolvedBaseParams = base
     ? baseParams
     : (shapeComposeSpec?.baseParams as BadgeBaseParams[BadgeBase] | undefined);
-  const resolvedEffects: EffectSpec[] | undefined = base
+  const resolvedEffects: BadgeEffectSpec[] | undefined = base
     ? effects
-    : (shapeComposeSpec?.effects as EffectSpec[] | undefined) ?? effects;
+    : (shapeComposeSpec?.effects as BadgeEffectSpec[] | undefined) ?? effects;
   const composeBaseParams = composeBase ? { ...(composeBase.defaults ?? {}), ...(resolvedBaseParams ?? {}) } : null;
   const decoRef = useRef<SVGSVGElement>(null);
   const box = useSvgBox(decoRef, composeBase);
@@ -233,7 +233,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   const maskDecorations = decoEffects.filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS].zone === 'mask');
   const bodyMaskId = `badge-mask-${useId().replace(/:/g, '')}`;
 
-  const renderDecoration = (eff: EffectSpec, i: number) => {
+  const renderDecoration = (eff: BadgeEffectSpec, i: number) => {
     const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
     const EffComponent = mod?.Component;
     if (!EffComponent || !composedSampler) return null;

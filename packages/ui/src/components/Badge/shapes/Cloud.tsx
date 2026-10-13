@@ -1,6 +1,7 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
 
-export interface CloudParams {
+/** What `shapeParams` takes on a `cloud` badge. */
+export interface BadgeCloudShapeParams {
   bumpWidth?: number;
   puffiness?: number;
   /** 0..1 fraction of max body roundness. */
@@ -8,14 +9,14 @@ export interface CloudParams {
   irregularity?: number;
 }
 
-const DEFAULTS: Required<CloudParams> = {
+const DEFAULTS: Required<BadgeCloudShapeParams> = {
   bumpWidth: 24,
   puffiness: 14,
   erosion: 0.2,
   irregularity: 0,
 };
 
-const Cloud: ShapeModule<CloudParams> = {
+const Cloud: ShapeModule<BadgeCloudShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = { ...DEFAULTS, ...params };
     return {

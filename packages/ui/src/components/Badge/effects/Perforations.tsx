@@ -1,19 +1,20 @@
 import type { EffectModule } from '../bases/types';
-import { rangeMask, type RangeMaskParams } from './rangeMask';
+import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
-export interface PerforationsEffectParams extends RangeMaskParams {
+/** What an effect of type `perforations` takes as `params`. */
+export interface BadgePerforationsEffectParams extends BadgeRangeMaskParams {
   /** Hole radius in CSS px. */
   holeRadius?: number;
   /** Spacing between hole centers along the perimeter, in CSS px. */
   holeSpacing?: number;
 }
 
-const DEFAULTS: Required<Omit<PerforationsEffectParams, 'range'>> = {
+const DEFAULTS: Required<Omit<BadgePerforationsEffectParams, 'range'>> = {
   holeRadius: 3,
   holeSpacing: 11,
 };
 
-const Perforations: EffectModule<PerforationsEffectParams> = {
+const Perforations: EffectModule<BadgePerforationsEffectParams> = {
   Component: ({ sampler, boxW, boxH, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const sx = 100 / boxW;
@@ -39,7 +40,7 @@ const Perforations: EffectModule<PerforationsEffectParams> = {
     );
   },
   zone: 'mask',
-  defaults: DEFAULTS as PerforationsEffectParams,
+  defaults: DEFAULTS as BadgePerforationsEffectParams,
 };
 
 export default Perforations;

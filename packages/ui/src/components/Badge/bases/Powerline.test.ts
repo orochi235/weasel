@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import Powerline, { type PowerlineParams } from './Powerline';
+import Powerline, { type BadgePowerlineBaseParams } from './Powerline';
 import { BASES, type BadgeBase } from './index';
 import type { ShapeInsets } from '../types';
 
-const insetsOf = Powerline.insets as (params: PowerlineParams) => ShapeInsets;
+const insetsOf = Powerline.insets as (params: BadgePowerlineBaseParams) => ShapeInsets;
 
 describe('Powerline base', () => {
   const W = 120;

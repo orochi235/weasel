@@ -1,19 +1,19 @@
 import type { EffectModule } from '../bases/types';
+import type { BadgeCorner } from '../types';
 
-export type Corner = 'tl' | 'tr' | 'bl' | 'br';
-
-export interface RivetsEffectParams {
+/** What an effect of type `rivets` takes as `params`. */
+export interface BadgeRivetsEffectParams {
   /** Rivet radius in CSS px. */
   radius?: number;
   /** Inset from each corner in CSS px. */
   inset?: number;
   /** Light origin (drives which side of each rivet gets the highlight). */
-  lightFrom?: Corner;
+  lightFrom?: BadgeCorner;
 }
 
-const DEFAULTS: Required<RivetsEffectParams> = { radius: 2.4, inset: 7, lightFrom: 'tl' };
+const DEFAULTS: Required<BadgeRivetsEffectParams> = { radius: 2.4, inset: 7, lightFrom: 'tl' };
 
-const Rivets: EffectModule<RivetsEffectParams> = {
+const Rivets: EffectModule<BadgeRivetsEffectParams> = {
   Component: ({ boxW, boxH, variant, params }) => {
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };

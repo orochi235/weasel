@@ -3,7 +3,8 @@ import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
-export interface SunbeamsEffectParams {
+/** What an effect of type `sunbeams` takes as `params`. */
+export interface BadgeSunbeamsEffectParams {
   /** Number of beams (parallelograms) cast across the body. */
   count?: number;
   /** Beam width in CSS px (measured horizontally before the skew). */
@@ -29,7 +30,7 @@ export interface SunbeamsEffectParams {
   gradientEnd?: number;
 }
 
-const DEFAULTS: Required<SunbeamsEffectParams> = {
+const DEFAULTS: Required<BadgeSunbeamsEffectParams> = {
   count: 3,
   width: 18,
   gap: 8,
@@ -43,7 +44,7 @@ const DEFAULTS: Required<SunbeamsEffectParams> = {
   gradientEnd: 1,
 };
 
-const Sunbeams: EffectModule<SunbeamsEffectParams> = {
+const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
   Component: ({ sampler, boxW, boxH, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const css = useColorCss();

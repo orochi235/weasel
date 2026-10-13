@@ -12,7 +12,8 @@ import { polygonSampler } from './polygonSampler';
  *
  * Each segment has its own curvature, bend bias, and tip-erosion controls.
  */
-export interface QuatrefoilParams {
+/** What `baseParams` takes on a badge whose `base` is `quatrefoil`. */
+export interface BadgeQuatrefoilBaseParams {
   /** Radius at s=0 (cardinal direction). */
   spikeR?: number;
   /** Radius at s=1 (diagonal direction). */
@@ -43,7 +44,7 @@ export interface QuatrefoilParams {
   samples?: number;
 }
 
-const DEFAULTS: Required<QuatrefoilParams> = {
+const DEFAULTS: Required<BadgeQuatrefoilBaseParams> = {
   spikeR: 50,
   lobeR: 42,
   valleyR: 25,
@@ -76,7 +77,7 @@ function curveSegment(t: number, curvature: number, bend: number, erosion: numbe
 }
 
 /** The radius profile r(s) of one octant: s = 0 is the cardinal direction, s = 1 the diagonal. */
-export function quatrefoilRadius(params: QuatrefoilParams = {}): (s: number) => number {
+export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: number) => number {
   const cfg = { ...DEFAULTS, ...params };
   const spike = Math.max(5, Math.min(cfg.spikeR, 50));
   const lobe = Math.max(5, Math.min(cfg.lobeR, 50 * Math.SQRT2));
@@ -103,7 +104,7 @@ export function quatrefoilRadius(params: QuatrefoilParams = {}): (s: number) => 
   };
 }
 
-export function quatrefoilVertices(params: QuatrefoilParams = {}): [number, number][] {
+export function quatrefoilVertices(params: BadgeQuatrefoilBaseParams = {}): [number, number][] {
   const cfg = { ...DEFAULTS, ...params };
   const radiusAt = quatrefoilRadius(cfg);
   const rot = (cfg.rotation * Math.PI) / 180;
@@ -118,7 +119,7 @@ export function quatrefoilVertices(params: QuatrefoilParams = {}): [number, numb
   return verts;
 }
 
-const Quatrefoil: BaseModule<QuatrefoilParams> = {
+const Quatrefoil: BaseModule<BadgeQuatrefoilBaseParams> = {
   build: (params, boxW, boxH) => polygonSampler(quatrefoilVertices(params), boxW, boxH),
   defaults: DEFAULTS,
   insets: { top: 10, right: 14, bottom: 10, left: 14 },

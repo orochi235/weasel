@@ -1,6 +1,7 @@
 import type { ShapeModule } from '../types';
 
-export interface StarburstParams {
+/** What `shapeParams` takes on a `starburst` badge. */
+export interface BadgeStarburstShapeParams {
   points?: number;
   outerR?: number;
   innerR?: number;
@@ -8,7 +9,7 @@ export interface StarburstParams {
   erosion?: number;
 }
 
-const DEFAULTS: Required<StarburstParams> = {
+const DEFAULTS: Required<BadgeStarburstShapeParams> = {
   points: 12,
   outerR: 48,
   innerR: 36,
@@ -52,7 +53,7 @@ function starburstPath(points: number, outerR: number, innerR: number, rotationD
   return d + ' Z';
 }
 
-const Starburst: ShapeModule<StarburstParams> = {
+const Starburst: ShapeModule<BadgeStarburstShapeParams> = {
   Component: ({ variant, focused, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const d = starburstPath(cfg.points, cfg.outerR, cfg.innerR, cfg.rotation, cfg.erosion);

@@ -1,12 +1,13 @@
 import type { ShapeModule } from '../types';
 
-export interface ReceiptParams {
+/** What `shapeParams` takes on a `receipt` badge. */
+export interface BadgeReceiptShapeParams {
   teeth?: number;
   tearDepth?: number;
   sideToTopRatio?: number;
 }
 
-const DEFAULTS: Required<ReceiptParams> = { teeth: 11, tearDepth: 4, sideToTopRatio: 3 };
+const DEFAULTS: Required<BadgeReceiptShapeParams> = { teeth: 11, tearDepth: 4, sideToTopRatio: 3 };
 
 function receiptPath(teeth: number, depth: number) {
   const N = Math.max(3, Math.floor(teeth));
@@ -29,7 +30,7 @@ function receiptPath(teeth: number, depth: number) {
 
 const BASE_TOP = 2;
 
-const Receipt: ShapeModule<ReceiptParams> = {
+const Receipt: ShapeModule<BadgeReceiptShapeParams> = {
   Component: ({ variant, focused, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const d = receiptPath(cfg.teeth, cfg.tearDepth);

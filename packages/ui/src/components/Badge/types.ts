@@ -25,6 +25,9 @@ export type BadgeVariant = 'outline' | 'solid' | 'subtle';
  *  inside a dense row, on the 2xs type step. */
 export type BadgeSize = 'xs' | 'sm' | 'md';
 
+/** A corner of a badge's box, as the corner its light comes from. */
+export type BadgeCorner = 'tl' | 'tr' | 'bl' | 'br';
+
 export interface ShapeRenderProps<P = Record<string, never>> {
   variant: BadgeVariant;
   focused: boolean;

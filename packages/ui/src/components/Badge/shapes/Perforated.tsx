@@ -2,17 +2,18 @@ import { useEffect, useId, useRef } from 'react';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
 
-export interface PerforatedParams {
+/** What `shapeParams` takes on a `perforated` badge. */
+export interface BadgePerforatedShapeParams {
   holeRadius?: number;
   holePitch?: number;
 }
 
-const DEFAULTS: Required<PerforatedParams> = { holeRadius: 3.5, holePitch: 11 };
+const DEFAULTS: Required<BadgePerforatedShapeParams> = { holeRadius: 3.5, holePitch: 11 };
 
 function PerforatedComponent({ variant, focused, params }: {
   variant: 'outline' | 'solid' | 'subtle';
   focused: boolean;
-  params: PerforatedParams;
+  params: BadgePerforatedShapeParams;
 }) {
   const cfg = { ...DEFAULTS, ...params };
   const maskId = useId();
@@ -63,7 +64,7 @@ function PerforatedComponent({ variant, focused, params }: {
 // Avoid unused warning while keeping useEffect imported elsewhere if needed in future.
 void useEffect;
 
-const Perforated: ShapeModule<PerforatedParams> = {
+const Perforated: ShapeModule<BadgePerforatedShapeParams> = {
   Component: PerforatedComponent,
   insets: { top: 2, right: 4, bottom: 2, left: 4 },
   stretches: true,

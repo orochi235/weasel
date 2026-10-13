@@ -1,11 +1,12 @@
 import type { ShapeModule } from '../types';
 
-export interface CrestParams {
+/** What `shapeParams` takes on a `crest` badge. */
+export interface BadgeCrestShapeParams {
   topInset?: number;
   pointDepth?: number;
 }
 
-const DEFAULTS: Required<CrestParams> = { topInset: 12, pointDepth: 100 };
+const DEFAULTS: Required<BadgeCrestShapeParams> = { topInset: 12, pointDepth: 100 };
 
 function crestPath(topInset: number, pointDepth: number) {
   const ti = Math.max(0, Math.min(topInset, 35));
@@ -23,7 +24,7 @@ function crestPath(topInset: number, pointDepth: number) {
   ].join(' ');
 }
 
-const Crest: ShapeModule<CrestParams> = {
+const Crest: ShapeModule<BadgeCrestShapeParams> = {
   Component: ({ variant, focused, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const d = crestPath(cfg.topInset, cfg.pointDepth);

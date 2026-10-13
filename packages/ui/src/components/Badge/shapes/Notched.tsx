@@ -1,13 +1,14 @@
 import type { ShapeModule } from '../types';
 
-export interface NotchedParams {
+/** What `shapeParams` takes on a `notched` badge. */
+export interface BadgeNotchedShapeParams {
   /** 0..1 fraction of max corner radius. */
   erosion?: number;
   /** rx/ry eccentricity of the corner arcs. */
   eccentricity?: number;
 }
 
-const DEFAULTS: Required<NotchedParams> = { erosion: 0.28, eccentricity: 1 };
+const DEFAULTS: Required<BadgeNotchedShapeParams> = { erosion: 0.28, eccentricity: 1 };
 
 function notchedPath(r: number, ecc: number) {
   const W = 100, H = 100;
@@ -27,7 +28,7 @@ function notchedPath(r: number, ecc: number) {
   ].join(' ');
 }
 
-const Notched: ShapeModule<NotchedParams> = {
+const Notched: ShapeModule<BadgeNotchedShapeParams> = {
   Component: ({ variant, focused, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const e = Math.max(0, Math.min(cfg.erosion, 1));
