@@ -1502,16 +1502,13 @@ only story runner in the repo.
   `dependencies`, so a consumer installs one copy and runs another. In the repo, aliases resolve
   both to one source, so no test can see it.
 
-- **(P3) tsconfig `paths` is still kept by hand, and wider than `exports`.**
-  `scripts/vite-aliases.test.ts` fails when the root `paths` sends an exported entry anywhere but
-  where `exports` does. Two things it does not cover. The root `paths` has wildcard keys
-  (`@weasel-js/geom/*`, `guides/*`, `renderer/*`, `labkit/*`, `forge/*`), so `tsc` resolves a
-  subpath no `exports` map publishes that vite refuses. And `packages/core/tsconfig.json` maps ten
-  siblings to source and leaves the others core imports — `animator`, `cursor`, `font`, `paint`,
-  `prefs`, `quantity`, `renderer`, `stroke`, `text`, and `text-dom` — to resolve to their built
-  `dist`; `tsup` reads that file for core's build, so widening it wants a look at what the
-  declaration build then pulls in. Generate both blocks from the module the dev aliases come from
-  (`scripts/lib/packageEntries.mjs`).
+- **(P3) core's tsconfig `paths` is still kept by hand.** The root `paths` is generated from every
+  package's `exports` (`npm run gen:tsconfig-paths`, held current by `scripts/vite-aliases.test.ts`).
+  `packages/core/tsconfig.json` still maps ten siblings to source by hand and leaves the others core
+  imports — `animator`, `cursor`, `font`, `paint`, `prefs`, `quantity`, `renderer`, `stroke`, `text`,
+  and `text-dom` — to resolve to their built `dist`; `tsup` reads that file for core's build, so
+  widening it wants a look at what the declaration build then pulls in. Generate it from
+  `scripts/lib/tsconfigPaths.mjs` too.
 
 - **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
   is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
