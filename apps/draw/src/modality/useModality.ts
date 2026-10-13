@@ -1,7 +1,7 @@
 /**
  * useModality — bootstraps the mode machine, decoration adapter, and scoping
  * dim for WeaselDraw. Wires them together and exposes the pieces that
- * App.tsx needs to plumb into <SceneCanvas>.
+ * the app plumbs into <SceneCanvas>.
  */
 import { useEffect, useMemo } from 'react';
 import {

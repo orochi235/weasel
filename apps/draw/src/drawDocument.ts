@@ -6,6 +6,7 @@ import type {
   TextStyle,
   TextVerticalAlign,
   Fill,
+  Scene,
 } from '@weasel-js/core';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
@@ -58,3 +59,5 @@ export function carriedData(data: WeaselDrawData | undefined): WeaselDrawData {
 }
 
 export type WeaselDrawLayer = 'default';
+
+export type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;

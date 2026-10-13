@@ -1,9 +1,4 @@
-import {
-  useActiveToolContext,
-  useScene,
-  useSelection,
-  type View
-} from '@weasel-js/core';
+import { type SelectionApi, useActiveToolContext, type View } from '@weasel-js/core';
 import { qty, zoom } from '@weasel-js/quantity';
 import {
   StatusBar,
@@ -12,30 +7,15 @@ import {
   StatusBarSpacer,
   ThemeSwitcher
 } from '@weasel-js/ui';
-import {
-  type ReactElement,
-  useEffect,
-  useState
-} from 'react';
+import type { ReactElement } from 'react';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
 import type { ActivePaint } from './ActiveSwatches';
 import { useColorModeControl } from './colorMode';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import type { DrawScene } from './drawDocument';
 import type { ModeMachine } from './modality';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
+import { useModeId } from './modality/useModeId';
 import { useColorContext } from './tools/colorContext';
-
-// ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
-// ─── Modality helpers ────────────────────────────────────────────────────────
-
-/** Subscribe to the mode registry and return the current mode id reactively. */
-export function useModeId(machine: ModeMachine): string {
-  const [id, setId] = useState(machine.registry.current().id);
-  useEffect(() => {
-    return machine.registry.subscribe(() => setId(machine.registry.current().id));
-  }, [machine]);
-  return id;
-}
 
 export function EditorStatusBar({
   scene,
@@ -43,8 +23,8 @@ export function EditorStatusBar({
   view,
   machine,
 }: {
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
-  selection: ReturnType<typeof useSelection>;
+  scene: DrawScene;
+  selection: SelectionApi;
   view: View;
   machine: ModeMachine;
 }): ReactElement {

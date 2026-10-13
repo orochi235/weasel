@@ -1,6 +1,7 @@
 import { useBooleansAdapter, useCreateOutlinesAdapter, useSelection } from '@weasel-js/core';
 import { useMemo } from 'react';
-import { drawBooleansAdapter, type DrawScene } from './booleansAdapter';
+import { drawBooleansAdapter } from './booleansAdapter';
+import type { DrawScene } from './drawDocument';
 import { drawOutlinesAdapter } from './outlinesAdapter';
 
 /** Publishes a `BooleansAdapter` as a dep so the kit's Pathfinder

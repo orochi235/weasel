@@ -1044,19 +1044,16 @@ only story runner in the repo.
 
 - **(P3) draw: two owners for "is a text edit open".** The kit's `useSceneTextEdit` holds
   `editingId`; the app's mode machine (`apps/draw/src/modality/machine.ts`) holds a `text-edit` mode
-  that says the same thing. Two effects with `prev` refs in `apps/draw/src/App.tsx` reconcile them in
-  each direction, and their comments record two shipped bugs from the split. Text cannot take the
+  that says the same thing. Two effects with `prev` refs in `apps/draw/src/useTextEditSession.ts` reconcile
+  them in each direction, and their comments record two shipped bugs from the split. Text cannot take the
   shape path editing has (`<SceneCanvas pathEdit>` reading the open path from the machine,
   `modality/pathEditHost.ts`) as it stands, because the session is real state inside the hook (the
   overlay, the caret, the pending commit): the hook needs an `onEnd` for the ends it decides itself
   (click-away, the node going away), and its `onDoubleClick` has to hand the hit and the caret seed
   to the machine instead of starting the edit. A double-click on a path is still acted on by both
   the kit's `enterPathEdit` binding and the app's `onDoubleClick` observer; they reach the same
-  machine call and the second is a no-op. No browser has driven path editing through the machine:
-  the tests are jsdom, which cannot hit-test a canvas.
-
-- **(P3) draw: `EditorWithSharedScene` in `apps/draw/src/App.tsx` is one 450-line component.** The
-  file is split by job; this component is what is left to split.
+  machine call and the second is a no-op. `apps/draw/src/App.browser.test.tsx` drives both modes
+  through the machine in a browser, and fails when either effect is removed.
 
 ---
 

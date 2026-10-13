@@ -6,8 +6,8 @@ import {
   UNION_OF_CHILDREN,
   unionOfChildren,
 } from '@weasel-js/core';
-import { type DrawScene, pathPaintAt, textSourceOf, worldPathOf } from './booleansAdapter';
-import { carriedData } from './drawDocument';
+import { pathPaintAt, textSourceOf, worldPathOf } from './booleansAdapter';
+import { carriedData, type DrawScene } from './drawDocument';
 
 /** The adapter the kit's `createOutlines` and `outlineStroke` actions convert
  *  text and strokes through. A source that becomes several paths becomes a

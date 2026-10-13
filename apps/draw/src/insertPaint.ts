@@ -1,5 +1,8 @@
-import { strokeWith, type InsertPaint, type PathFillRule } from '@weasel-js/core';
+import { strokeWith, type InsertPaint, type PathFillRule, useLatest } from '@weasel-js/core';
+import { useMemo } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
+import { usePref } from './prefs';
+import { useColorContext } from './tools/colorContext';
 
 const NEW_STROKE_WIDTH = 2;
 
@@ -22,4 +25,15 @@ export function activeInsertPaint(
       fillRule: fillRule(),
     };
   };
+}
+
+/** {@link activeInsertPaint} over the live swatches and the fill-rule preference. */
+export function useInsertPaint(): InsertPaint {
+  const colorsRef = useLatest(useColorContext());
+  const [pathFillRule] = usePref('drawing.pathFillRule');
+  const fillRuleRef = useLatest(pathFillRule);
+  return useMemo(
+    () => activeInsertPaint(() => colorsRef.current, () => (fillRuleRef.current === 'evenodd' ? 'evenodd' : 'nonzero')),
+    [colorsRef, fillRuleRef],
+  );
 }

@@ -44,7 +44,7 @@ function fakeHistory() {
 
 // ─── Reactive harness ─────────────────────────────────────────────────────────
 
-/** The canvas carries the same mode shortcuts App.tsx installs, so a window
+/** The canvas carries the same mode shortcuts Workspace.tsx installs, so a window
  *  keydown exercises the real exit route. */
 function MachineHarness({
   machine,

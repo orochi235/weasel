@@ -1,13 +1,12 @@
-import type { NodeId, Scene } from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { DEFAULT_BG_COLOR } from './docPersistence';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import type { DrawScene, WeaselDrawData } from './drawDocument';
 import { reportSvgWarnings } from './fileNotices';
 import type { PaperSizeKey } from './paperSizes';
 import { leafOfObj } from './svgImport';
 import { parsedToDoc, pickSvgFileNamed, type SceneDraft, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 
-type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 type OnWarn = (warning: ParseResult['warnings'][number]) => void;
 
 /** The document-level state an opened file sets, beside the scene it filled. */

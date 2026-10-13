@@ -9,13 +9,10 @@ import {
   pathInWorld,
   type PathPaint,
   pathPaintOf,
-  type Scene,
   type SelectionApi,
   type TextNodeSource,
 } from '@weasel-js/core';
-import { carriedData, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
-
-export type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 
 /** A text leaf as the kit's outline extraction reads it. */
 export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {

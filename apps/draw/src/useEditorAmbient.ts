@@ -1,0 +1,47 @@
+import { type Contribution, type SelectionApi, type SurfaceContribution, useLatest, type View } from '@weasel-js/core';
+import { useHudContribution } from '@weasel-js/hud/react';
+import { useMemo } from 'react';
+import { type AppCommands, appCommandsContribution } from './appCommands';
+import type { DrawScene } from './drawDocument';
+import { useRecording } from './recording/useRecording';
+import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
+import { colorContribution, useColorContext } from './tools/colorContext';
+
+export interface EditorAmbientArgs {
+  scene: DrawScene;
+  selection: SelectionApi;
+  /** The mode shortcuts, from `useCanvasModes`. */
+  modeKeys: Contribution;
+  grid: Pick<AppCommands, 'gridVisible' | 'toggleGrid' | 'snapToGrid' | 'toggleSnap'>;
+  view: View;
+  setView: (view: View) => void;
+  openPrefs: () => void;
+  openPalette: () => void;
+}
+
+/** Everything draw binds on the canvas whatever tool is active: the HUD, the mode keys, the
+ *  color keys, the app's own commands, and the input recorder. */
+export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContribution[] {
+  const { scene, selection, modeKeys, view, setView } = args;
+  const hudTool = useHudContribution();
+
+  const colorsRef = useLatest(useColorContext());
+  const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
+
+  const appCommands: AppCommands = {
+    ...args.grid,
+    canReleaseCompound: hasCompoundPath(scene, selection.current),
+    releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
+    openPrefs: args.openPrefs,
+    openPalette: args.openPalette,
+  };
+  const appCommandsRef = useLatest(appCommands);
+  const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
+
+  const recordingKeys = useRecording({ scene, view: () => view, setView });
+
+  return useMemo(
+    () => [hudTool, modeKeys, colorKeys, appKeys, recordingKeys],
+    [hudTool, modeKeys, colorKeys, appKeys, recordingKeys],
+  );
+}

@@ -58,7 +58,7 @@
 
 .wd-app .wd-sidebar.right {
   /* Width comes from --wd-right-width, set by the ResizeHandle drag in
-     App.tsx. Clamped here so CSS owns the floor/ceiling; the numbers match
+     Editor.tsx. Clamped here so CSS owns the floor/ceiling; the numbers match
      the min/max on the `ui.rightSidebarWidth` pref that stores the result. */
   width: clamp(200px, var(--wd-right-width, 260px), 600px);
   align-items: stretch;
@@ -107,7 +107,7 @@
 }
 
 /* Mode tint is painted by the kit's `workspaceTintLayer`
- * (see App.tsx) so it can leave the document page uncovered.
+ * (see Workspace.tsx) so it can leave the document page uncovered.
  * No CSS-side tint here. */
 
 .wd-canvas-host canvas {
