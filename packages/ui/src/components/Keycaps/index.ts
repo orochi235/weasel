@@ -5,6 +5,7 @@ export type { KeySequenceJoins, KeySequenceProps, KeySpec } from './Keycaps';
 export { keyGlyph } from './keyGlyph';
 export { keySpecsFromMods, keySpecFromKey, detectPlatform } from './keySpecsFromMods';
 export { keySpecsFromLegend } from './keySpecsFromLegend';
+export { ShortcutKeys } from './ShortcutKeys';
 export { keySpecsFromShortcut } from './keySpecsFromShortcut';
 export { keySpecsFromChord } from './keySpecsFromChord';
 export type {

@@ -50,7 +50,11 @@
 .aside { grid-column: 7; grid-row: 2 / -1; }
 .asideHandle { grid-column: 6; grid-row: 2 / -1; }
 /* The tree reads at the size of the fields in the pane beside it. */
-.treeArea, .storedArea, .shelfPane { min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); --wzl-tree-leading-size: 16px; }
+.treeArea, .storedArea, .shelfPane { min-height: 0; --wzl-tree-font-size: var(--wzl-font-size); --wzl-tree-leading-size: 16px; }
+.treeArea, .listBody { overflow: auto; }
+/* A titled list: the header keeps its place and the rows scroll under it, as the structure's do. */
+.listPane { display: flex; flex-direction: column; overflow: hidden; }
+.listBody { flex: 1; min-height: 0; }
 .treeArea { flex: 1; --wzl-tree-leaf-indent: var(--wzl-space-2); }
 /* A group's glyph folds it, and says it is open. */
 :is(.treeArea, .storedArea, .shelfPane) [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }
@@ -104,7 +108,7 @@
   /* Its own, not a gap of the column's: the row stays mounted while empty, and a gap would hold the pane off the top. */
   margin-block-end: var(--wzl-space-2);
 }
-/* Under the attributes and the preview: the export, and beside it the lists dragged from into the tree. */
+/* Under the attributes and the preview: the lists dragged from into the tree, and beside them the export. */
 .shelfHandle { grid-column: 3 / 6; grid-row: 3; }
 .shelf {
   grid-column: 3 / 6;

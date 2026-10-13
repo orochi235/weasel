@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { KeySequence, keySpecsFromLegend } from '../Keycaps';
+import { ShortcutKeys } from '../Keycaps';
 import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { actionLeaf, actionLeafKey, type EditorAction } from './editorActions';
 import type { PaletteDrag } from './Palette';
@@ -16,7 +16,7 @@ function toRows(actions: readonly EditorAction[]): TreeNode[] {
     label: nodeLabel(a.label, a.key),
     textValue: `${a.label} ${a.key}`,
     ...(a.icon != null ? { leading: a.icon } : {}),
-    ...(a.shortcut ? { trailing: <KeySequence keys={keySpecsFromLegend(a.shortcut)} joins="none" /> } : {}),
+    ...(a.shortcut ? { trailing: <ShortcutKeys legend={a.shortcut} /> } : {}),
   });
   const loose: TreeNode[] = [];
   const groups = new Map<string, TreeNode[]>();
