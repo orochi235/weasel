@@ -49,12 +49,12 @@ describe('animateLifecycle.insert', () => {
     const initial = new Map<string, RectPose>();
     const { base, insertNode, setPose } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateLifecycle(base as never, result.current, {
+    const wrapped = animateLifecycle(base, result.current, {
       enterFrom: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
       ms: 100,
     });
     act(() => {
-      wrapped.insertNode({ id: 'a', pose: { x: 10, y: 10, width: 20, height: 20 } } as never);
+      wrapped.insertNode({ id: 'a', pose: { x: 10, y: 10, width: 20, height: 20 } });
     });
     expect(insertNode).toHaveBeenCalledTimes(1);
     // First setPose call should have set the entry pose (width 0).
@@ -73,7 +73,7 @@ describe('animateLifecycle.remove', () => {
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
     const { base, removeNode, setPose } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateLifecycle(base as never, result.current, {
+    const wrapped = animateLifecycle(base, result.current, {
       exitTo: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
       ms: 100,
     });
@@ -93,7 +93,7 @@ describe('animateLifecycle.remove', () => {
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
     const { base, removeNode } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateLifecycle(base as never, result.current, {
+    const wrapped = animateLifecycle(base, result.current, {
       exitTo: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
       ms: 100,
     });
@@ -109,7 +109,7 @@ describe('animateLifecycle.remove', () => {
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
     const { base, removeNode } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
-    const wrapped = animateLifecycle(base as never, result.current, {
+    const wrapped = animateLifecycle(base, result.current, {
       exitTo: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
       ms: 100,
     });
@@ -130,13 +130,13 @@ describe('animateLifecycle over animateOnSetPose', () => {
     const applyOps = vi.fn();
     const { result } = renderHook(() => useAnimator(clock));
     // A wrapper between the two that knows nothing of either still carries the write through.
-    const gliding = { ...animateOnSetPose({ ...base, applyOps } as never, result.current, { ms: 100 }) };
-    const wrapped = animateLifecycle(gliding as never, result.current, {
+    const gliding = { ...animateOnSetPose({ ...base, applyOps }, result.current, { ms: 100 }) };
+    const wrapped = animateLifecycle(gliding, result.current, {
       enterFrom: (p: RectPose) => ({ ...p, x: -50 }),
       ms: 100,
     });
     act(() => {
-      wrapped.insertNode({ id: 'a', pose: { x: 10, y: 10, width: 20, height: 20 } } as never);
+      wrapped.insertNode({ id: 'a', pose: { x: 10, y: 10, width: 20, height: 20 } });
     });
     expect(applyOps).not.toHaveBeenCalled();
     expect(setPose.mock.calls).toEqual([['a', { x: -50, y: 10, width: 20, height: 20 }]]);

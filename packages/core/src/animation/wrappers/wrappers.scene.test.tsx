@@ -8,7 +8,6 @@ import { sceneToAdapter } from '../../canvas/sceneAdapter';
 import { useAnimator } from '@weasel-js/animator';
 import { animateLifecycle } from './animateLifecycle';
 import { animateOnSetPose } from './animateOnSetPose';
-import type { SceneAdapter } from '../../core/adapters/types';
 import type { Animator } from '@weasel-js/animator';
 
 function setup() {
@@ -26,7 +25,7 @@ function setup() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
   const shown = (id: string = a) => effectivePose(scene, scene.get(asNodeId(id))!);
-  const adapter = sceneToAdapter(scene) as unknown as SceneAdapter<{ id: string; pose?: RectPose }, RectPose>;
+  const adapter = sceneToAdapter(scene);
   return { animator: (): Animator => result.current, frame, scene, a, adapter, shown };
 }
 
@@ -83,7 +82,7 @@ describe('animateLifecycle over a scene', () => {
     const wrapped = animateLifecycle(adapter, animator(), {
       enterFrom: (p) => ({ ...p, width: 0, height: 0 }), ms: 100, easing: linear,
     });
-    act(() => { wrapped.insertNode(node('n', at(5, 20)) as never); });
+    act(() => { wrapped.insertNode(node('n', at(5, 20))); });
     expect(scene.get(asNodeId('n'))!.pose.width).toBe(20);
     expect(shown('n').width).toBeCloseTo(0);
     frame(0);

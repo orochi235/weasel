@@ -1004,16 +1004,15 @@ only story runner in the repo.
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
   need per-word `x` placement too, since `text-anchor` has no justify.
 
-- **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
-  have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
-  selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the
-  result in `animateOnSetPose` and `animateLifecycle` through two `as never` casts, hands that to
-  `useSelectTool` / `useTools`, and then calls `adapter.setPose` / `adapter.insertNode` from button
-  handlers, so those writes skip the op pipeline and undo. `<SceneCanvas>` should take the
-  wrappers itself (an `animate={{ setPose, lifecycle }}` option, or a `SurfaceContribution` that
-  wraps the adapter the canvas already builds), so the demo keeps `features={['pick', 'move']}` and
-  its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
-  canvas's adapter, so the seat has to say where a scene-level write gets animated.
+- **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
+  wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a
+  tool writes is animated; `apps/site/demos/AnimationDemo.tsx` wraps `useSceneAdapter(scene)` and
+  its buttons write through that. Wrapping the canvas's adapter would animate every op applied
+  through it, a drag's release, a resize, and an undo among them (read from `applyOps` in
+  `canvas/sceneAdapter.ts`, which hands each op the adapter it was called on; not run), so the
+  seat has to say which of those glide. It would still miss a button's `scene.setPose`, which
+  reaches no adapter: animating that needs the scene to report the write, as `onReflow` reports
+  a settle.
 
 - **(P3) draw warns of two route conflicts every time it loads, and both are a binding that
   declines through `enabled()` so the next one fires.** `findScopedConflicts`
