@@ -448,31 +448,6 @@ Priority tags:
 
 ### Timelines and rigging
 
-- **(P3) A view with its own `toPose` shows no pose override, a skinned path included** — a
-  scene slot's `toPose(node)` replaces the pose a node is painted at, so a drag in flight, a
-  rig's bound nodes, and a skinned path all show there as the document has them. The path is
-  the visible part: an override's `path` is in the scene's frame, and `sceneDerivedPathOf`
-  leaves it out for a `toPose` reader, as `sceneDepLookup` does for what derives through one.
-  Not built, because it is a choice about what `toPose` means, and fixing the path alone
-  would paint a bent path at the rest pose. The options:
-  - *`toPose` stays the document's view* (today; `SceneSlotConfig.toPose` says "committed
-    pose"). Nothing to build, and the entry closes with a sentence in `docs/concepts.md`.
-    A minimap or a second view drawn through `toPose` never shows motion.
-  - *`toPose` is handed the node as the scene shows it*, its `pose` the override's, and the
-    override's `path` is carried from the override's pose to the pose `toPose` answers: by
-    `descriptor.remapBounds` between the two boxes, or the pose frame's affine for a turned
-    one. Every override shows in every view, and a `toPose` that offsets or scales needs no
-    change. A `toPose` that ignores `node.pose` and places a node from its data alone gets
-    the bent path fitted into a box that did not move with it.
-  - *An override's `path` is kept relative to its `pose`*, as `data.path` is to a node's
-    pose, and every reader carries it through the pose it paints at. One rule for both
-    paths, at the cost of `pathInWorld` on every skinned path every frame in the common,
-    no-`toPose` case, and every writer and reader of `PoseOverride.path` changes.
-
-  Recommended: the second. A view exists to show the scene, an override is what the scene
-  is showing, and the cost lands only on a reader that passes a `toPose`. It needs the
-  pose `toPose` is called with settled first (`buildSceneLayer` and `scenePaintedPoseOf`
-  both call it with the stored node), which is the larger half of the work.
 - **(P3) `useRigNode` drops a running animation when the skeleton's joints change** — adding,
   removing, renaming, or reordering a joint makes a new `target` at the bind pose, since a pose
   target's axes are its joints in order. Carrying an animation across needs the animator to

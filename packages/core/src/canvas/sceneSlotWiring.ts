@@ -9,7 +9,7 @@
  */
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
+import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
 
@@ -39,6 +39,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose);
   return {
     ...slot,
+    ...(slot.toPose ? { toPose: sceneShownToPose(scene, slot.toPose) } : {}),
     drawOne: colorOverrides ? withColorOverrides(colorOverrides, derived) : derived,
     derivedPathOf,
     alphaFor: composeAlphaFor(scene, alphaFor),

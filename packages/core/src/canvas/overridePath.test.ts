@@ -3,16 +3,17 @@
  * document write. The rig's skinning is the writer; these pin each reader.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { polygonFromPoints, type Path } from '@weasel-js/geom';
+import { boundsOfPath, polygonFromPoints, type Path } from '@weasel-js/geom';
 import type { Fill } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
 import type { Node, RectPose } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { defaultDrawOne } from './defaultDrawOne';
-import { sceneDerivedPathOf, withDerivedPaths } from './derivedPath';
+import { sceneDepLookup, sceneDerivedPathOf, withDerivedPaths } from './derivedPath';
 import { findShapeSilhouette, shapeCoversPoint, type NodePaintCtx } from './NodeShape';
 import { pickWalk, scenePickSource } from './pickWalk';
+import { wireSceneSlotToScene } from './sceneSlotWiring';
 
 type Data = { path?: Path; fill?: Fill };
 
@@ -102,5 +103,55 @@ describe('a pose override path', () => {
     });
     expect(hit(60, -60)).toEqual([id]);
     expect(hit(90, 10)).toEqual([]);
+  });
+});
+
+describe('a slot with its own toPose', () => {
+  /** Paints every node 7 lower and twice as wide as it is handed it. */
+  const stretched = (n: Node<Data, 'main', RectPose>): RectPose =>
+    ({ ...n.pose, y: n.pose.y + 7, width: n.pose.width * 2 });
+  const CARRIED = { x: 0, y: -73, width: 140, height: 100 };
+
+  it('is handed the node at the pose an override shows it at', () => {
+    const { scene, id, plain } = makeScene();
+    scene.overrides.set(id, { pose: BENT_POSE });
+    const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne, toPose: stretched }, scene);
+    expect(slot.toPose!(scene.get(id)!)).toEqual(CARRIED);
+    expect(slot.toPose!(scene.get(plain)!)).toEqual({ x: 200, y: 7, width: 20, height: 10 });
+  });
+
+  it('hands the stored node itself when nothing overrides it', () => {
+    const { scene, plain } = makeScene();
+    const toPose = vi.fn((n: Node<Data, 'main', RectPose>) => n.pose);
+    wireSceneSlotToScene({ drawOne: defaultDrawOne, toPose }, scene).toPose!(scene.get(plain)!);
+    expect(toPose.mock.calls[0][0]).toBe(scene.get(plain));
+  });
+
+  it('paints an override path carried into the box toPose answers', () => {
+    const { scene, id } = makeScene();
+    scene.overrides.set(id, { pose: BENT_POSE, path: BENT });
+    const drawOne = vi.fn((
+      _n: Node<Data, 'main', RectPose>, _p: RectPose, _v: View, _ctx?: NodePaintCtx,
+    ): DrawCommand[] => []);
+    const slot = wireSceneSlotToScene({ drawOne, toPose: stretched }, scene);
+    const node = scene.get(id)!;
+    slot.drawOne(node, slot.toPose!(node), VIEW);
+    expect(boundsOfPath(drawOne.mock.calls[0][3]!.derivedPath!)).toMatchObject(CARRIED);
+    expect(boundsOfPath(slot.derivedPathOf!(node, slot.toPose!(node))!)).toMatchObject(CARRIED);
+  });
+
+  it('answers the override path itself when toPose leaves the box alone', () => {
+    const { scene, id } = makeScene();
+    scene.overrides.set(id, { pose: BENT_POSE, path: BENT });
+    const same = (n: Node<Data, 'main', RectPose>): RectPose => ({ ...n.pose });
+    expect(sceneDerivedPathOf(scene, same)(scene.get(id)!)).toBe(BENT);
+  });
+
+  it('answers the carried path as a dependency\'s path', () => {
+    const { scene, id } = makeScene();
+    scene.overrides.set(id, { pose: BENT_POSE, path: BENT });
+    const dep = sceneDepLookup(scene, stretched)(id)!;
+    expect(dep.pose).toEqual(CARRIED);
+    expect(boundsOfPath(dep.path!)).toMatchObject(CARRIED);
   });
 });

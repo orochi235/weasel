@@ -7,8 +7,9 @@
  * `effectivePose` has to be able to reach it.
  */
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
-import type { Path } from '@weasel-js/geom';
+import { boxToBox, transformPath, type Path } from '@weasel-js/geom';
 import { asNodeId } from 'core/scene/types';
+import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { definesFrame, derivedDepOf, effectivePose } from 'core/scene/effectivePose';
 import { composesFrames, composeWorldPose, type PoseAdapter } from 'core/scene/composeFrame';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
@@ -17,16 +18,65 @@ import type { SceneViewDrawOne } from './NodeShape';
 
 export { resolveDerivedPath } from 'core/scene/derivedPath';
 
+type ToPose<TData, TLayer extends string, TPose> = (node: Node<TData, TLayer, TPose>) => TPose;
+
+/** `node` as the scene shows it, its `pose` an override's or a derived one: the stored node
+ *  itself where the two agree. */
+function shownNode<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  node: Node<TData, TLayer, TPose>,
+): Node<TData, TLayer, TPose> {
+  const pose = effectivePose(scene, node);
+  return pose === node.pose ? node : { ...node, pose };
+}
+
+/** A slot's `toPose`, handed each node as the scene shows it, so a view drawn through one
+ *  shows a drag in flight and a rig's motion as every other view does. */
+export function sceneShownToPose<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  toPose: ToPose<TData, TLayer, TPose>,
+): ToPose<TData, TLayer, TPose> {
+  return (node) => toPose(shownNode(scene, node));
+}
+
+/** `path`, drawn for a node boxed at `from`, as it is drawn for that node boxed at `to`. A
+ *  pose that is not a box leaves the path where it is. */
+function carryPath(path: Path, from: unknown, to: unknown): Path {
+  if (!isRectPose(from) || !isRectPose(to)) return path;
+  if (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height) return path;
+  return transformPath(path, boxToBox(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height));
+}
+
 /**
- * `(node) => the pose it is painted at`: the slot's `toPose` if it has one,
- * else the scene's effective pose, folded through the parent chain when
+ * `(node) => the path its pose override shows it by`, in the frame the reader paints in: as
+ * the override has it, or under a `toPose` carried from the box the scene shows the node at
+ * to the box `toPose` answers.
+ */
+function sceneOverridePathOf<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  toPose?: ToPose<TData, TLayer, TPose>,
+): (node: Node<TData, TLayer, TPose>) => Path | undefined {
+  if (toPose === undefined) return (node) => scene.overrides.read(node.id)?.path;
+  return (node) => {
+    const path = scene.overrides.read(node.id)?.path;
+    if (path === undefined) return undefined;
+    const shown = shownNode(scene, node);
+    return carryPath(path, shown.pose, toPose(shown));
+  };
+}
+
+/**
+ * `(node) => the pose it is painted at`: the slot's `toPose` of the node as the scene shows
+ * it if it has one, else the scene's effective pose, folded through the parent chain when
  * the scene's composition makes a stored pose local to its container.
  */
 export function scenePaintedPoseOf<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
 ): (node: Node<TData, TLayer, TPose>) => TPose {
-  const local = toPose ?? ((node: Node<TData, TLayer, TPose>) => effectivePose(scene, node));
+  const local = toPose
+    ? sceneShownToPose(scene, toPose)
+    : (node: Node<TData, TLayer, TPose>) => effectivePose(scene, node);
   if (!composesFrames(scene.composition)) return local;
   const chain: PoseAdapter<TPose> = {
     getPose: (id) => {
@@ -60,6 +110,7 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
   const ctx: SlotLookup<TPose> = {
     at: scenePaintedPoseOf(scene, toPose) as (node: unknown) => TPose,
     slot,
+    shown: sceneOverridePathOf(scene, toPose) as (node: unknown) => Path | undefined,
     childrenOf: (id: NodeId) => scene.childrenOf(id),
     lookup: (id: NodeId) => {
       const node = scene.get(id);
@@ -72,6 +123,8 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
 interface SlotLookup<TPose> {
   at: (node: unknown) => TPose;
   slot: string | NodeMemoScope;
+  /** The path a pose override shows a node by, where it has one. */
+  shown: (node: unknown) => Path | undefined;
   childrenOf: (id: NodeId) => readonly NodeId[];
   lookup: (id: NodeId) => DerivedDep<TPose> | undefined;
 }
@@ -88,7 +141,7 @@ class SlotDep<TPose> implements DerivedDep<TPose> {
   }
 
   get path(): Path | null {
-    return resolveDerivedPath(
+    return this.ctx.shown(this.node) ?? resolveDerivedPath(
       this.node as never, this.ctx.lookup, this.ctx.childrenOf, this.ctx.slot,
     );
   }
@@ -105,10 +158,8 @@ export function showsComputedPath<TData, TLayer extends string, TPose>(
 
 /**
  * `(node) => the path it shows in place of its data's`: a pose override's `path`, else the
- * one it derives, read through {@link sceneDepLookup}.
- *
- * An override path is in the scene's own frame, so a reader painting through a `toPose` is
- * answered the derived path alone.
+ * one it derives, read through {@link sceneDepLookup}. A reader painting through a `toPose`
+ * is answered the override's path carried into the box its `toPose` answers.
  */
 export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -119,8 +170,8 @@ export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
   const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
   const derived = (node: Node<TData, TLayer, TPose>): Path | null =>
     resolveDerivedPath(node, depOf, childrenOf, slot);
-  if (toPose !== undefined) return derived;
-  return (node) => scene.overrides.read(node.id)?.path ?? derived(node);
+  const overridePathOf = sceneOverridePathOf(scene, toPose);
+  return (node) => overridePathOf(node) ?? derived(node);
 }
 
 const toPoseScopes = new WeakMap<object, { local?: NodeMemoScope; world?: NodeMemoScope }>();
@@ -159,9 +210,7 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
 ): SceneViewDrawOne<TData, TLayer, TPose> {
   const derivedPathOf = sceneDerivedPathOf(scene, toPose);
   return (node, pose, view, ctx) => {
-    if (toPose !== undefined ? node.dependsOn === undefined : !showsComputedPath(scene, node)) {
-      return drawOne(node, pose, view, ctx);
-    }
+    if (!showsComputedPath(scene, node)) return drawOne(node, pose, view, ctx);
     return drawOne(node, pose, view, { ...ctx, derivedPath: derivedPathOf(node) });
   };
 }
