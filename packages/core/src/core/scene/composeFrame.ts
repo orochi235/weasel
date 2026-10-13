@@ -11,11 +11,10 @@ export interface PoseAdapter<TPose> {
 }
 
 /**
- * The transforms a `compose` represents **exactly**. A parent transform wider
- * than its strategy's closure is rounded to the nearest pose — for `'rigid'`
- * that means an anisotropically scaled parent turns a rotated child into a
- * parallelogram, which `{x, y, width, height, rotation}` cannot hold, so the
- * shear is dropped.
+ * What a container's pose does to its children under a `compose`: nothing,
+ * an offset, or a whole frame. `'rigid'` is the frame: a container's rotation
+ * and its `transform` both reach its children, and a child's `transform`
+ * holds the skew or stretch its box and rotation cannot.
  */
 export type PoseClosure = 'identity' | 'translation' | 'rigid';
 

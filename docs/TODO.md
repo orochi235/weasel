@@ -197,8 +197,6 @@ Priority tags:
     (`effectivePose`), not its world pose, so text under a container whose pose is a frame is
     edited where it would sit without that container. It also scales by `view.scale.x` alone, so
     under non-uniform zoom the overlay is stretched wrong whatever the pose carries.
-  - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
-    transform and do not compose a container's into its children.
 
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
   per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
