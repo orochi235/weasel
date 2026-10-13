@@ -493,6 +493,12 @@ Priority tags:
   `loop: true`.** `tick` in `packages/animator/src/timeline/createTimeline.ts` fires every
   skipped lap's events under `loop: n` but none under `loop: true`, where `booking.ts` says
   crossings fire "nothing of the laps in between". Which of the two is meant is undecided.
+- **(P2) Undoing a flick leaves the node where it came to rest** — `records the whole flick as
+  one step once it comes to rest` in
+  `packages/core/src/animation/behaviors/momentum.targets.test.tsx` fails on a branch cut from
+  `599685677` that changes neither momentum nor the scene's history: the flick is one history
+  entry, and after `scene.undo()` the pose's `x` is still the rest value, not 0. Not run at
+  `599685677` itself.
 
 ### Timelines and rigging
 
