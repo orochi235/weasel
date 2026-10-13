@@ -40,10 +40,7 @@ import { useOptionalViewRegistry } from './viewRegistry';
 import { useCanvasSurface } from './useCanvasSurface';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
-import type { ToolCtx } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
-import type { Op } from 'core/ops/types';
-import { dispatchApplyBatch } from 'core/applyOps';
 import type { View } from 'core/viewport/view';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
@@ -57,11 +54,6 @@ import { useSceneLayerList } from './useSceneLayerList';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
-import type {
-  MoveAdapter,
-  ResizeAdapter,
-  RotateAdapter,
-} from 'core/adapters/types';
 import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
@@ -301,8 +293,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  - `DebugConfig` object: force on with that config, ignore URL.
    *
    * When enabled, the Canvas appends a screen-space `debug-overlay` layer and builds the
-   * sink it paints: the scene slot and each paint record into it, and the layer helpers, a
-   * tool's cursor ctx, and the ref handle's `getDebug` hand it to whatever else records.
+   * sink it paints: the scene slot and each paint record into it, and the layer helpers and
+   * the ref handle's `getDebug` hand it to whatever else records.
    */
   debug?: DebugConfig | false;
 
@@ -418,25 +410,19 @@ export type {
   CanvasHelpers,
 } from './useViewHelpers';
 
-function resolveToolsCursor(
-  tools: ToolsApi,
-  ctxBase?: () => Omit<ToolCtx, 'scratch'>,
-): ResolvedCursor | undefined {
+function resolveToolsCursor(tools: ToolsApi): ResolvedCursor | undefined {
   const id = tools.hotkeyEngaged ?? tools.active;
   const tool = id === null ? undefined : tools.registry[id];
   if (!tool?.cursor) return undefined;
   if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);
-  if (!ctxBase) return undefined;
-  // Function form. `ctx.scratch` is always null here: mid-gesture cursors are
-  // `Action.activeCursor`, applied imperatively by the hover pump. A tool that wants a
-  // cursor driven by its own state closes over its own ref.
   try {
-    const base = ctxBase();
-    return resolveCursorTier(tool.cursor({ ...base, scratch: null }));
+    return resolveCursorTier(tool.cursor());
   } catch {
     return undefined;
   }
 }
+
+const NO_SELECTION: SelectionApi['current'] = [];
 
 const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
 
@@ -595,7 +581,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }, [gateRef]);
 
   const {
-    viewRef, controlledView, setView, getView, subscribeView,
+    viewRef, setView, getView, subscribeView,
     adoptControlled, announceControlled, clearSubscribers,
   } = useCanvasView({
     view: viewProp, defaultView, onViewChange, viewBounds, dims: () => dimsRef.current, requestRedraw,
@@ -669,68 +655,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // registry, which is the single-view case.
   const viewRegistry = useOptionalViewRegistry();
 
-  // A noop adapter stands in when none is supplied.
-  const noopAdapter = useMemo(
-    () =>
-      ({
-        getPose: () => ({}) as TPose,
-        getNodes: () => [],
-      }) as unknown as MoveAdapter<TNode, TPose>
-        & ResizeAdapter<TNode, TPose>
-        & RotateAdapter<TNode, TPose>,
-    [],
-  );
-  const effectiveAdapter = (adapter ?? noopAdapter) as MoveAdapter<TNode, TPose>
-    & ResizeAdapter<TNode, TPose>
-    & RotateAdapter<TNode, TPose>;
-
-  // Canvas owns no selection state. A no-op fallback keeps all downstream reads safe without
-  // branching.
-  const noopSelection = useMemo<SelectionApi>(
-    () => ({
-      current: [],
-      get: () => [],
-      contains: () => false,
-      set: () => {},
-      add: () => {},
-      remove: () => {},
-      toggle: () => {},
-      clear: () => {},
-      applyClick: () => {},
-      adapterMethods: {
-        getSelection: () => [],
-        setSelection: () => {},
-      },
-    }),
-    [],
-  );
-  const effectiveSelection: SelectionApi = selection ?? noopSelection;
-
-  // Base ctx for the function form of `Tool.cursor`. The cursor is resolved during render, so
-  // the ctx carries this render's values; only `applyOps`, which a cursor function could call
-  // later, reads a ref.
-  const effectiveAdapterRef = useLatest(effectiveAdapter);
-  const clientToWorldRef = useLatest(clientToWorld);
-  const toolsCtxBase = () => {
-    const view = controlledView ?? viewRef.current;
-    const c = detached ? inputElement ?? null : canvasRef.current;
-    const rect = c ? c.getBoundingClientRect() : (typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect));
-    return {
-      worldX: 0,
-      worldY: 0,
-      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-      selection: effectiveSelection,
-      adapter: effectiveAdapter,
-      applyOps: (ops: Op[], label: string) => {
-        dispatchApplyBatch(effectiveAdapterRef.current, ops, label);
-      },
-      view,
-      setView,
-      canvasRect: rect,
-      debug: debugSink ?? undefined,
-    };
-  };
-
   // Read the ref at call time so the HUDs don't reinstall their useEffect on every render
   // when the prop identity changes.
   const pickEveryRef = useLatest(pickEvery);
@@ -749,12 +673,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
     [pickBestRef],
   );
+  const clientToWorldRef = useLatest(clientToWorld);
   const toWorldForHud = useCallback((clientX: number, clientY: number): [number, number] => {
     const el = canvasRef.current;
     if (!el) return [clientX, clientY];
     return toWorld(el, clientX, clientY, viewRef.current, clientToWorldRef.current);
   }, [clientToWorldRef, viewRef]);
-  const selectedIdsForWiring = effectiveSelection.current;
+  const selectedIdsForWiring = selection?.current ?? NO_SELECTION;
 
   // One view's overlay-aware state. A hook, so N views are N components each
   // calling it once — not a loop in this body.
@@ -993,11 +918,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
   }, [clearSubscribers]);
 
-  // Resolved during render, so it reads this render's view, not the ref's
-  // last committed one.
-  const toolsCursorTier = tools
-    ? resolveToolsCursor(tools, toolsCtxBase)
-    : undefined;
+  const toolsCursorTier = tools ? resolveToolsCursor(tools) : undefined;
   // A painted tool cursor gets `none` here and the layer draws it instead.
   const toolsCursor =
     toolsCursorTier === undefined

@@ -288,32 +288,22 @@ describe('Canvas tools mode', () => {
     expect(canvas.style.cursor).toBe('crosshair');
   });
 
-  it('resolves a function tool cursor against the view this render carries', () => {
-    const seen: number[] = [];
-    function Test({ scale }: { scale: number }) {
+  it('calls a function tool cursor on each render, so one reading its own state follows it', () => {
+    const state = { cursor: 'crosshair' };
+    function Test() {
       const tools = useTools({
         active: 't',
-        registry: {
-          t: defineTool({
-            id: 't',
-            cursor: (ctx) => {
-              seen.push(ctx.view.scale.x);
-              return 'crosshair';
-            },
-          }),
-        },
+        registry: { t: defineTool({ id: 't', cursor: () => state.cursor }) },
       });
-      return (
-        <Canvas
-          width={100} height={100} adapter={{} as never} layers={{}} tools={tools}
-          view={{ x: 0, y: 0, scale: { x: scale, y: scale } }}
-        />
-      );
+      return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
 
-    const { rerender } = render(<WeaselProvider><Test scale={1} /></WeaselProvider>);
-    rerender(<WeaselProvider><Test scale={3} /></WeaselProvider>);
-    expect(seen.at(-1)).toBe(3);
+    const { container, rerender } = render(<WeaselProvider><Test /></WeaselProvider>);
+    const canvas = container.querySelector('canvas')! as HTMLCanvasElement;
+    expect(canvas.style.cursor).toBe('crosshair');
+    state.cursor = 'grab';
+    rerender(<WeaselProvider><Test /></WeaselProvider>);
+    expect(canvas.style.cursor).toBe('grab');
   });
 
   it('hands a world-sized tool cursor to the painted layer and hides the native one', () => {

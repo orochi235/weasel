@@ -2,10 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defineTool } from './overlayBinding';
 import type { RenderLayer } from '../core/layers/render';
-import type { ToolCtx } from '@weasel-js/routing';
 import type { AnyTool, Tool } from './overlayBinding';
-
-const CTX = { scratch: null } as unknown as ToolCtx<null>;
 
 /**
  * `defineTool` used to be a compiler: it translated `initial` / `engaged`
@@ -29,17 +26,17 @@ describe('defineTool', () => {
   it('normalizes a string cursor to the function form', () => {
     const tool = defineTool<null>({ id: 'test', cursor: 'crosshair' });
     expect(typeof tool.cursor).toBe('function');
-    expect((tool.cursor as (c: ToolCtx<null>) => string)(CTX)).toBe('crosshair');
+    expect((tool.cursor as () => string)()).toBe('crosshair');
   });
 
   it('passes a function cursor through', () => {
     const tool = defineTool<null>({ id: 'test', cursor: () => 'grab' });
-    expect((tool.cursor as (c: ToolCtx<null>) => string)(CTX)).toBe('grab');
+    expect((tool.cursor as () => string)()).toBe('grab');
   });
 
   it('resolves to the empty string when no cursor is declared', () => {
     const tool = defineTool<null>({ id: 'test' });
-    expect((tool.cursor as (c: ToolCtx<null>) => string)(CTX)).toBe('');
+    expect((tool.cursor as () => string)()).toBe('');
   });
 
   it('forwards def.initScratch onto Tool.initScratch', () => {

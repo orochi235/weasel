@@ -1,5 +1,5 @@
 // src/tools/defineTool.ts
-import type { Tool, ToolCtx } from './types';
+import type { Tool } from './types';
 import type { ToolDef } from './routeTypes';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
@@ -37,11 +37,9 @@ export function defineTool<TScratch = void, TOverlay = KernelOverlay>(
 ): Tool<TScratch, TOverlay> {
   validateId(def.id, 'tool');
 
-  // Returns '' (not undefined) so the signature satisfies
-  // `Tool.cursor: (ctx) => CursorSpec`.
-  const resolveCursor = (ctx: ToolCtx<TScratch>): CursorSpec => {
+  const resolveCursor = (): CursorSpec => {
     if (def.cursor == null) return '';
-    return typeof def.cursor === 'function' ? def.cursor(ctx) : def.cursor;
+    return typeof def.cursor === 'function' ? def.cursor() : def.cursor;
   };
 
   return {

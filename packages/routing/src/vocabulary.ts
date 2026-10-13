@@ -98,8 +98,8 @@ export type HitShape =
 export type ViewportGestureKind = 'pan' | 'zoom';
 
 /**
- * Where a tool reports its internal hit math so the debug overlay can draw it.
- * Routing threads a sink through `ToolCtx` and never calls one.
+ * Where an action reports its hit math so the debug overlay can draw it. An
+ * action reaches the canvas's sink as its `debug` dep; routing never calls one.
  */
 export interface DebugSink {
   recordHitbox(id: string, kind: 'body' | 'handle' | 'rotation' | 'anchor', shape: HitShape): void;

@@ -1,4 +1,4 @@
-import type { ToolCtx, ToolKeybinding, ToolLifecycleCtx } from './types';
+import type { ToolKeybinding, ToolLifecycleCtx } from './types';
 import type { HotkeyTrigger, ToolPresentation } from '../contributions/types';
 
 import type { GestureBinding } from '../interactions/actions/binding';
@@ -61,7 +61,7 @@ export interface ToolDef<TScratch = void, TOverlay = KernelOverlay> {
   onActivate?:   (ctx: ToolLifecycleCtx<TScratch>) => void;
   /** Fires as the tool stops being live in either slot. */
   onDeactivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
-  cursor?: CursorSpec | ((ctx: ToolCtx<TScratch>) => CursorSpec);
+  cursor?: CursorSpec | (() => CursorSpec);
   /** Override the default scratch initializer. Default is `() => null`
    *  cast to `TScratch`, which works for tools whose scratch is fresh
    *  every gesture. Tools that need scratch identity to survive across

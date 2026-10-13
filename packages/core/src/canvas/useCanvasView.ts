@@ -31,8 +31,6 @@ export interface CanvasViewState {
    *  `adoptControlled` when controlled. A camera derived by a thunk is not
    *  kept here: read `getView`. */
   viewRef: MutableRefObject<View>;
-  /** The normalized `view` this render, when it is a value. */
-  controlledView: View | undefined;
   /** The imperative write. Controlled, it is forwarded to `onViewChange`
    *  instead of applied, and says so once per mount. */
   setView: (next: View | ((current: View) => View)) => void;
@@ -125,7 +123,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   const clearSubscribers = useCallback(() => { viewSubsRef.current.clear(); }, []);
 
   return {
-    viewRef, controlledView, setView, setViewFromInput, getView, subscribeView,
+    viewRef, setView, setViewFromInput, getView, subscribeView,
     adoptControlled, announceControlled, clearSubscribers,
   };
 }

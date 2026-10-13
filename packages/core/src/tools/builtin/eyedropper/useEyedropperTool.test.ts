@@ -39,7 +39,7 @@ describe('useEyedropperTool', () => {
     // `defineTool` wraps a string cursor in a resolver. jsdom draws no cursor,
     // so this checks the string handed to the host, not what renders.
     const cursor = typeof result.current.cursor === 'function'
-      ? result.current.cursor({} as never)
+      ? result.current.cursor()
       : result.current.cursor;
     expect(cursor).toMatch(/^url\("data:image\/svg\+xml,/);
     expect(cursor).toMatch(/, crosshair$/);
