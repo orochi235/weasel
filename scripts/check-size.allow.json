@@ -196,8 +196,8 @@
     "longestFunction": 126
   },
   "packages/labkit/src/annotations/store.ts": {
-    "lines": 470,
-    "longestFunction": 328
+    "lines": 464,
+    "longestFunction": 321
   },
   "packages/labkit/src/canvas/CanvasStack.tsx": {
     "longestFunction": 138
@@ -206,7 +206,7 @@
     "longestFunction": 223
   },
   "packages/labkit/src/clock/trialClock.ts": {
-    "longestFunction": 216
+    "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
     "longestFunction": 206
@@ -250,7 +250,7 @@
     "longestFunction": 237
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
-    "longestFunction": 258
+    "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
     "lines": 548,

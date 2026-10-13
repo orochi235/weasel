@@ -1,4 +1,5 @@
 import { useLatest, useVisibleRaf, watchDevicePixelRatio } from '@weasel-js/core';
+import { createEmitter } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { measureTiles, sameRects } from './measureTiles';
 import type { Box, Rect } from './rect';
@@ -97,7 +98,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const observer = useRef<ResizeObserver | null>(null);
   const lastDpr = useRef(0);
   const scopeEl = useRef<HTMLElement | null>(null);
-  const scopeListeners = useRef(new Set<() => void>());
+  const scopeChanged = useRef(createEmitter());
 
   // Held in a ref so a caller passing an inline closure does not re-create every
   // callback below on each render.
@@ -264,7 +265,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       scopeEl.current = el;
       needsMeasure.current = true;
       schedule();
-      for (const listener of scopeListeners.current) listener();
+      scopeChanged.current.emit();
     },
     [schedule],
   );
@@ -275,10 +276,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   }, []);
 
   const subscribeScope = useCallback((listener: () => void) => {
-    scopeListeners.current.add(listener);
-    return () => {
-      scopeListeners.current.delete(listener);
-    };
+    return scopeChanged.current.subscribe(listener);
   }, []);
 
   const containerRef = useCallback(

@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { createContext, useContext } from 'react';
 
 /** Where an undocked panel's DOM lives. The panel's *content* stays owned by
@@ -12,21 +13,15 @@ export interface PanelHostRegistry {
 
 export function createPanelHostRegistry(): PanelHostRegistry {
   const hosts = new Map<string, HTMLElement>();
-  const listeners = new Set<() => void>();
-  const notify = () => {
-    for (const fn of listeners) fn();
-  };
+  const changed = createEmitter();
   return {
     set: (key, el) => {
       if (el) hosts.set(key, el);
       else hosts.delete(key);
-      notify();
+      changed.emit();
     },
     get: (key) => hosts.get(key) ?? null,
-    subscribe: (fn) => {
-      listeners.add(fn);
-      return () => listeners.delete(fn);
-    },
+    subscribe: changed.subscribe,
   };
 }
 

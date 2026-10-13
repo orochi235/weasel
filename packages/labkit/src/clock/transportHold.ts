@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { TrialClock } from './trialClock';
 
 /** What a clock's transports keep between them: the speed and direction a
@@ -29,10 +30,10 @@ export function transportHoldOf(clock: TrialClock): TransportHoldStore {
     backward: clock.rate < 0,
     touched: false,
   };
-  const listeners = new Set<() => void>();
+  const changed = createEmitter();
   const replace = (next: TransportHold): void => {
     hold = next;
-    for (const listener of [...listeners]) listener();
+    changed.emit();
   };
   const store: TransportHoldStore = {
     get: () => hold,
@@ -42,12 +43,7 @@ export function transportHoldOf(clock: TrialClock): TransportHoldStore {
     touch: () => {
       if (!hold.touched) replace({ ...hold, touched: true });
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: changed.subscribe,
   };
   stores.set(clock, store);
   return store;

@@ -1,4 +1,5 @@
 import { useActionsRegistry } from '@weasel-js/core';
+import { createEmitter } from '@weasel-js/registry';
 import { createContext, useContext, useEffect } from 'react';
 import type { CameraView } from './CameraInput';
 
@@ -18,10 +19,8 @@ export interface CameraRegistry {
 /** An empty in-memory `CameraRegistry`. */
 export function createCameraRegistry(): CameraRegistry {
   const stacks = new Map<string, CameraView[]>();
-  const listeners = new Set<() => void>();
-  const notify = (): void => {
-    for (const l of listeners) l();
-  };
+  const changed = createEmitter();
+  const notify = changed.emit;
   return {
     register(key, camera) {
       const stack = stacks.get(key) ?? [];
@@ -41,12 +40,7 @@ export function createCameraRegistry(): CameraRegistry {
       };
     },
     get: (key) => stacks.get(key)?.at(-1) ?? null,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: changed.subscribe,
   };
 }
 
