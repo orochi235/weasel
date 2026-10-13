@@ -86,6 +86,8 @@
 }
 .paneTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
 .treeKey { font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
+/* A row with no glyph before its label. */
+.treeBare { padding-inline-start: 2px; }
 /* A setting the layout shown already points at. */
 .pointed { color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }

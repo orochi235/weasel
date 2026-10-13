@@ -26,10 +26,11 @@ export function toTreeNodes(node: SchemaNode, path: string | null, changed: Read
     const kids = childrenOf(child);
     // A layout's pointer reads as the setting it points at, and one that points at none as its key.
     const name = (over && isPrefLeaf(child) && child.kind === 'alias' ? drawnLeaf(over, child as PrefAlias)?.name : undefined) ?? child.name;
-    const label = nodeLabel(name, key);
+    const named = nodeLabel(name, key);
+    const label = changed.has(p) ? <span className={s.changed}>{named}</span> : named;
     return {
       id: p,
-      label: changed.has(p) ? <span className={s.changed}>{label}</span> : label,
+      label: isPrefLeaf(child) ? <span className={s.treeBare}>{label}</span> : label,
       textValue: name ? `${name} ${key}` : key,
       ...(child.description ? { tooltip: child.description } : {}),
       // Unset, a group is drawn by its depth: a page under the root, a section below that.
