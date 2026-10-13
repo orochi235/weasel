@@ -602,16 +602,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   of the old balance. What is left is a listening pass: the bus gain chosen by
   ear, or a compressor insert in its place.
 
-- **(P3) Trope-aware generative scoring: unheard, and with no demo.** `createScore`
+- **(P3) Trope-aware generative scoring: unheard.** `createScore`
   plays a mood on three axes (valence, tension, urgency) as bars written by
   `scoreBar` from `scoreParams`, and names the cue in force through `state()`
   and `onBar`. Every number in the mapping was chosen from the description of
-  the four cues and checked only as structure, on a fake audio context: the
-  thresholds between modes and harmonies, the tempo range, the envelopes, the
-  layer levels, and where each cue sits on the axes. Whether dread reads as
-  dread is a listening pass nobody has done. It also wants a demo that shows
-  the cue and its parameters beside the sliders, so a consumer can see which
-  device is being applied.
+  the four cues and checked only as structure: the thresholds between modes
+  and harmonies, the tempo range, the envelopes, the layer levels, and where
+  each cue sits on the axes. Whether dread reads as dread is a listening pass
+  nobody has done; the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays
+  each cue with its parameters beside the sliders, which is where to do it.
 
 - **(P3) AudioWorklet voices** — immune to main-thread jank. Moving only the
   scheduler's timer into a worklet would change nothing: it already runs off

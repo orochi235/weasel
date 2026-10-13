@@ -1,0 +1,83 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+}
+
+.cue {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wzl-space-5);
+  color: var(--wzl-fg-muted);
+}
+
+.cue strong {
+  color: var(--wzl-fg);
+  min-width: 13ch;
+}
+
+.weights {
+  display: flex;
+  gap: var(--wzl-space-8);
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+.weights div {
+  display: flex;
+  gap: var(--wzl-space-3);
+}
+
+.share {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  margin: 0;
+  min-width: 4ch;
+  text-align: end;
+  color: var(--wzl-fg);
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: 7ch 1fr 9ch 5ch;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-4) var(--wzl-space-4) 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}
+
+.range {
+  width: 100%;
+  margin: 0;
+}
+
+.value {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  text-align: end;
+  color: var(--wzl-fg);
+}
+
+.params {
+  grid-template-columns: 12ch 1fr;
+}
+
+.param {
+  display: contents;
+}
+
+.reading {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  white-space: pre;
+}
+
+.bar {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 26ch;
+  color: var(--wzl-fg-muted);
+}
+
+.pick[aria-pressed='true'] {
+  border-color: var(--wzl-accent);
+  background: var(--wzl-surface-sunken);
+}

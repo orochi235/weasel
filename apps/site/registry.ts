@@ -504,6 +504,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/AudioDemo.tsx',
   },
   {
+    id: 'score',
+    title: 'Generative score',
+    package: 'audio',
+    description: "`createScore` writes music continuously from a mood, a bar at a time, where a soundtrack would pick from clips. The mood is three numbers: valence, tension, and urgency. `scoreParams` resolves each axis to its own parameters (valence picks the mode, the register, and how wide a chord opens; tension the harmony and how many layers build up; urgency the tempo, the pulse, and how often the chord changes) and `scoreBar` writes one bar of pattern events from them, which the score books through a pattern player. `readScoreCue` names the scoring device a mood is nearest to (dread, investigation, wonder, or urgency) and weighs the others against it. These devices work on a listener without asking, so the score says which one it is applying: `onBar` reports the cue and every parameter behind the bar being booked, and that is what this page shows beside the sliders.",
+    hint: 'Press play, then pick a cue or move a slider: the change lands on the next bar line, in the sound and in the readouts together. Stopped, the roll shows the bar a mood builds up to.',
+    load: () => import('./demos/ScoreDemo').then((m) => m.ScoreDemo),
+    path: 'apps/site/demos/ScoreDemo.tsx',
+  },
+  {
     id: 'd3-sortable',
     title: 'd3 plugin: sortable bars',
     package: 'd3',
