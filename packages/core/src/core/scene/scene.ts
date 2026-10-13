@@ -20,6 +20,7 @@ import { createArrivalWindow } from './arrivalWindow';
 import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
 import { createNotifier } from './notifier';
+import { createOpTable } from './opTable';
 import { createRecorder } from './recorder';
 import { createEditMode } from './editMode';
 import { createSceneSelection } from './sceneSelection';
@@ -135,7 +136,12 @@ function buildScene<TData, TLayer extends string, TPose>(
 
   const generateId = options.generateId ?? defaultGenerateId;
 
-  const registered = new Map<string, RegisteredOp<unknown>>();
+  const ops = createOpTable({
+    skips: stale.skips,
+    // Only a replay is logged: a first apply is recorded by the entry it
+    // creates, and reverting it would leave that entry describing nothing.
+    applied: (kind, payload, reverted) => { if (!mode.records()) logApplied(kind, payload, reverted); },
+  });
 
   // Accessor for the adapter restored external ops apply against.
   let historyAdapterAccessor: (() => unknown) | null = null;
@@ -151,8 +157,8 @@ function buildScene<TData, TLayer extends string, TPose>(
     invalidateDependents,
   );
 
-  // The scene's undo/redo engine. Recorded ops are `makeOp` wrappers that
-  // close over their payloads, so the engine's adapter argument is unused.
+  // The scene's undo/redo engine. Its recorded ops close over their payloads,
+  // so the engine's adapter argument is unused.
   const history = createHistory(undefined, {
     selection: { get: selection.get, set: (ids) => selection.set(ids as readonly NodeId[]) },
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
@@ -163,7 +169,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   });
 
   function rebuildOp(name: string, args: unknown): Op | null {
-    if (registered.has(name)) return makeOp(name, args);
+    if (ops.handlers.has(name)) return ops.op(name, args);
     // Its writes are the scene's own, so it replays without an adapter.
     if (name === 'arrange') return stale.tolerant(createArrangeOp(args as ArrangeArgs, undefined, writePose));
     if (name === CARRY_OP) {
@@ -197,7 +203,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   }
 
   const appliedLog = createAppliedLog({
-    registered,
+    registered: ops.handlers,
     lifted: withLocksLifted,
     getSelection: selection.get,
     setSelection: selection.replace,
@@ -207,7 +213,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
   const { layoutRefs } = registerKitOps<TData, TLayer, TPose>({
     state,
-    register: (kind, handler) => { registered.set(kind, handler); },
+    register: ops.register,
     store,
     requireLayerIndex,
     rebuildLayerIndex,
@@ -216,65 +222,14 @@ function buildScene<TData, TLayer extends string, TPose>(
     narrowSelection: selection.narrow,
     clearOverride: overrides.clear,
   });
-
-  // ── Op execution (used by both kit mutations and consumer recordOp) ────
-  function runOp(kind: string, payload: unknown): void {
-    const handler = registered.get(kind);
-    if (!handler) throw new Error(`Scene: no registered op for kind "${kind}"`);
-    handler.apply(payload);
-  }
-
-  /** Bridge a registered scene op into an engine `Op`. `invert()` flips the
-   *  direction with the same payload, so undo replays `revert` and redo
-   *  replays `apply`. Handler lookup happens at apply time so re-registered
-   *  kinds take effect on replay, but existence is checked eagerly to fail
-   *  fast at the call site. */
-  function makeOp(kind: string, payload: unknown, dir: 'fwd' | 'rev' = 'fwd'): Op {
-    if (!registered.has(kind)) {
-      throw new Error(`Scene: no registered op for kind "${kind}"`);
-    }
-    return {
-      name: kind,
-      args: payload,
-      coalesceKey: coalesceKeyFor(kind, payload),
-      apply: () => {
-        const handler = registered.get(kind);
-        if (!handler) throw new Error(`Scene: no registered op for kind "${kind}"`);
-        if (stale.skips(kind, payload, dir === 'fwd')) return 'noop';
-        (dir === 'fwd' ? handler.apply : handler.revert)(payload);
-        // Only a replay logs here: a first apply is recorded by the entry it
-        // creates, and reverting it would leave that entry describing nothing.
-        if (!mode.records()) logApplied(kind, payload, dir === 'rev');
-        return undefined;
-      },
-      invert: () => makeOp(kind, payload, dir === 'fwd' ? 'rev' : 'fwd'),
-    };
-  }
-
-  /** Coalesce-grouping key. Kit ops are keyed by the node or layer they
-   *  address; a consumer kind only by the `coalesceKey` it declares. Keys
-   *  take effect only under `UseSceneOptions.coalesceWindowMs`. */
-  function coalesceKeyFor(kind: string, payload: unknown): string | undefined {
-    let token: string | undefined;
-    if (kind.startsWith('kit:')) {
-      if (payload === null || typeof payload !== 'object') return undefined;
-      const p = payload as { id?: unknown; layer?: unknown };
-      token =
-        typeof p.id === 'string' ? p.id
-        : typeof p.layer === 'string' ? p.layer
-        : undefined;
-    } else {
-      token = registered.get(kind)?.coalesceKey?.(payload);
-    }
-    return token === undefined ? undefined : `${kind}:${token}`;
-  }
+  for (const [kind, handler] of Object.entries(options.ops ?? {})) ops.register(kind, handler);
 
   const recorder = createRecorder({
     notifier,
     mode,
     engine: history,
-    runOp,
-    makeOp,
+    runOp: ops.run,
+    makeOp: ops.op,
     log: appliedLog,
     arrivals: arrivalWindow,
     selection: selection.get,
@@ -287,13 +242,6 @@ function buildScene<TData, TLayer extends string, TPose>(
    *  also reverts the scene writes of the op that threw partway. */
   function replay(step: () => void): void {
     atomically(() => withLocksLifted(() => stale.during(() => engineDriven(step))), () => true);
-  }
-
-  // Register consumer-supplied ops up front.
-  if (options.ops) {
-    for (const [k, h] of Object.entries(options.ops)) {
-      registered.set(k, h);
-    }
   }
 
   const { history: sceneHistory, methods: historyMethods } = createSceneHistory({
@@ -355,7 +303,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     withLocksLifted(() => {
       for (const spec of specs) {
         const payload = addPayload(spec);
-        runOp('kit:add', payload);
+        ops.run('kit:add', payload);
         patchNodeFunctions(spec, payload.id, null);
       }
     });
@@ -598,7 +546,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       if (kind.startsWith('kit:')) {
         throw new Error(`Scene: op kind "${kind}" is reserved (kit:* prefix)`);
       }
-      registered.set(kind, handler as RegisteredOp<unknown>);
+      ops.register(kind, handler as RegisteredOp<unknown>);
     },
 
     recordOp(op) {
