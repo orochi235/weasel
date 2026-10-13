@@ -2,7 +2,7 @@ import { scopesOf, type UnitScope } from '@weasel-js/quantity';
 import type { NodeId } from './types';
 
 /** What reading scopes needs of a scene. A `Scene` satisfies it. */
-interface ScopedScene {
+export interface ScopedScene {
   get(id: NodeId): { kind: string; parent: NodeId | null; units?: UnitScope } | undefined;
 }
 

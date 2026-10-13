@@ -82,7 +82,7 @@ export interface DerivedDep<TPose, TData = unknown, TLayer extends string = stri
 /** `F` with its parameters checked bivariantly, as a method's are, so that a
  *  `Scene<D, L, MyPose>` is a `Scene<unknown, string, unknown>`. A callback for
  *  an unrelated pose is still rejected; one for a narrower pose is not. */
-type Bivariant<F extends (...args: never[]) => unknown> = {
+export type Bivariant<F extends (...args: never[]) => unknown> = {
   method(...args: Parameters<F>): ReturnType<F>;
 }['method'];
 

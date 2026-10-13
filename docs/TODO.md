@@ -981,11 +981,10 @@ only story runner in the repo.
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
 
-- **(P2) The API reference build still reports 8 warnings.** `docs/conventions.md` says
-  `npx typedoc` reports none. Each is a documented export naming a type its barrel does not export:
-  - `Bivariant` (`packages/core/src/core/scene/types.ts`) and `ScopedScene`
-    (`core/scene/unitScopes.ts`): each needs `export` on its declaration and a line in core's
-    scene barrel.
+- **(P2) The API reference build still reports warnings: 8 at the last run, 6 if exporting
+  `Bivariant` and `ScopedScene` from core cleared theirs, which no build has confirmed.**
+  `docs/conventions.md` says `npx typedoc` reports none. Each is a documented export naming a type
+  its barrel does not export:
   - `CONSTRUCTORS` in geom's `typedArrayJson.ts`: `NumberTypedArray` is
     `InstanceType<(typeof CONSTRUCTORS)[TypedArrayTag]>`, so the reference names a private
     constant. Writing the union out by hand lists the nine array types twice.

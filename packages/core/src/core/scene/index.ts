@@ -6,6 +6,7 @@ export { SCENE_HISTORY_FORM } from './historyForm';
 export type { SerializedSceneHistory } from './historyForm';
 export type {
   AddLayerSpec,
+  Bivariant,
   ClipFromPoseFn,
   DerivedDep,
   DerivePathFn,
@@ -36,6 +37,7 @@ export type {
 export { createPoseOverrides } from './poseOverrides';
 export { reconcileSpecs } from './reconcileSpecs';
 export { sceneUnitScopes } from './unitScopes';
+export type { ScopedScene } from './unitScopes';
 export { SceneArrivalRefused } from './arrivals';
 export { definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';
