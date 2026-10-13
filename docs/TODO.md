@@ -339,14 +339,6 @@ Priority tags:
   left is one adapter contract and one default wiring, with every scene a tree rooted at one
   container, as `useScene`'s already is.
 
-- **(P3) `buildScene` in `packages/core/src/core/scene/scene.ts` is still over the function cap:
-  292 lines against 120.** The file is under its cap. What is left in the function is wiring: it
-  builds each module (`notifier.ts`, `editMode.ts`, `lockGuard.ts`, `nodeStore.ts`, `opTable.ts`,
-  `recorder.ts`, `outerOps.ts`, `historyFacade.ts`, `treeEdits.ts`, `fieldEdits.ts`, and the rest)
-  and hands each the others it reads, then assembles the `Scene` object and `loadState`. Splitting
-  it means grouping modules that are built together, such as the op table with its applied log
-  and recorder.
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.

@@ -70,9 +70,6 @@
   "packages/core/src/core/scene/renderOrder.ts": {
     "longestFunction": 164
   },
-  "packages/core/src/core/scene/scene.ts": {
-    "longestFunction": 292
-  },
   "packages/core/src/core/scene/types.ts": {
     "lines": 669
   },
