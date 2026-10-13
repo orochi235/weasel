@@ -71,6 +71,8 @@ export interface LaidOutCell {
    * Whether this code point can put ink on the page. False for a space and
    * for a code point no tier could serve — each of which still holds its
    * slot. A zero-advance combining mark is `true`: it inks without advancing.
+   * An emoji drawn as one color glyph inks from its cluster's closing code
+   * point, which holds the whole advance; the ones before it are `false`.
    *
    * A property of the character and the face, not of this call: it does not
    * change when a dynamic bake lands or the outline threshold is crossed. A

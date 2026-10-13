@@ -152,6 +152,37 @@ export class GLTextureCache {
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
+  /** Create a texture from premultiplied RGBA bytes that are a color: a page
+   *  of color glyphs. Mipmapped, as a font atlas must never be, because one is
+   *  drawn well below the size it was baked at. No-op if `id` already exists. */
+  uploadRGBA(id: string, width: number, height: number, data: Uint8Array): void {
+    if (this.map.has(id)) return;
+    const gl = this.gl;
+    const tex = gl.createTexture();
+    if (!tex) throw new Error(`GLTextureCache: createTexture failed for id="${id}"`);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.map.set(id, tex);
+    this.wraps.set(id, 'clamp');
+  }
+
+  /** Patch a rect of an existing RGBA texture with tightly-packed w×h texels. */
+  subImageRGBA(id: string, x: number, y: number, w: number, h: number, data: Uint8Array): void {
+    const tex = this.map.get(id);
+    if (!tex) throw new Error(`GLTextureCache: texture "${id}" not uploaded`);
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+
   bind(id: string, unit: number): void {
     const tex = this.map.get(id);
     if (!tex) throw new Error(`GLTextureCache: texture "${id}" not uploaded`);

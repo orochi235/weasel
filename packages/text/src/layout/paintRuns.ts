@@ -61,13 +61,16 @@ export interface LaidOutGroup {
   /** Gap between the request and the resolved match, for the renderer to fake. */
   synthetic: { bold: boolean; italic: boolean };
   /** Which glyph source this group binds: a baked MSDF atlas, the runtime
-   *  canvas-SDF dynamic atlas, or tessellated font outlines. */
-  source: 'atlas' | 'canvas' | 'outline';
-  /** Dynamic-atlas page index for 'canvas' groups; 0 for the others. */
+   *  canvas-SDF dynamic atlas, tessellated font outlines, or the dynamic
+   *  atlas's color pages, whose quads are emoji painted in their own colors. */
+  source: 'atlas' | 'canvas' | 'outline' | 'color';
+  /** Dynamic-atlas page index for 'canvas' and 'color' groups, each in its
+   *  own set of pages; 0 for the others. */
   page: number;
   /** The run's fill. It holds no paint — `null`, or a fill without one — only
    *  on an `'outline'` group carrying a stroke, since nothing else can put ink
-   *  down without a fill. */
+   *  down without a fill. A `'color'` group takes its opacity and nothing else
+   *  from it. */
   fill: Fill | null;
   /** Outline painted over the glyphs. Only ever set on an `'outline'` group —
    *  the SDF tiers have no geometry to stroke, which is why a stroke pulls its
@@ -117,6 +120,7 @@ export interface PaintedRuns {
  * glyph, so a face the resolver reports as atlas or canvas can still serve it.
  */
 export function glyphOutlineD(g: PlacedGlyph, run: ResolvedRun, minSize: number | undefined): string | null {
+  if (g.glyph?.color) return null;
   const { family, weight, style } = g.resolved.resolved;
   // An outline-only run has no atlas behind it. Every gate below trades one
   // rendering for another; here there is no other, so gating would paint
@@ -228,7 +232,7 @@ export function paintRuns(
         continue;
       }
       const quad = glyphQuad(g);
-      if (quad) groupFor(groups, g, run, g.resolved.source).quads.push(quad);
+      if (quad) groupFor(groups, g, run, g.glyph?.color ? 'color' : g.resolved.source).quads.push(quad);
     }
     for (const rule of lineDecorations(line.glyphs, runs, faceOf, rulePaint)) {
       const { run, ...rect } = rule;

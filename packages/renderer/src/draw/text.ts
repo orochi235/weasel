@@ -26,6 +26,7 @@ import type { ClipRect } from '../batchClip';
 import { SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { DrawContext, GlyphPaintKind } from './drawContext';
 import { drawTriangles } from './drawTriangles';
+import { drawColorGlyphs } from './colorGlyphs';
 import { applyClipTest } from './stencil';
 import { enterUncut, leaveUncut, flushForOwnDraw } from './clip';
 import { BATCH_MODEL, flushBatch } from './flushBatch';
@@ -95,6 +96,7 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
 
   for (const group of groups) {
     if (group.source === 'outline') drawTextOutlineGroup(ctx, group, dx, dy);
+    else if (group.source === 'color') drawColorGlyphs(ctx, group, dx, dy);
     else drawTextGroup(ctx, group, dx, dy);
   }
 

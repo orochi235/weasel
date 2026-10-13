@@ -255,6 +255,8 @@ describe('full pages', () => {
       subImageR8: (_id: string, x: number, y: number, w: number, h: number, data: Uint8Array) => {
         calls.push(`${x},${y} ${w}x${h} ${data[0]}`);
       },
+      uploadRGBA: () => {},
+      subImageRGBA: () => {},
     };
     for (let i = 0; i < 5; i++) face.requestGlyph(65 + i);
     syncDynamicPageTexture(sink, 0);

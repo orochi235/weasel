@@ -12,6 +12,10 @@
  * baked atlases. A char's advance is valid immediately (measureText); its
  * atlas rect fills in when the bake lands (width 0 / page -1 until then, so
  * layout advances the pen but emits no quad).
+ *
+ * An emoji is the one glyph kept as the canvas drew it: `requestCluster`
+ * rasterizes a whole grapheme cluster in its own colors onto a second set of
+ * pages, RGBA, that fill and empty with the field pages.
  */
 
 import type { FontStyle } from '../fontStyle';
@@ -19,27 +23,17 @@ import type { BmFont, BmFontChar } from '../FontAtlas';
 // `fallback.ts` imports nothing, so this edge cannot close a cycle; keep it
 // that way. (registerFont.ts imports both this module and fallback.ts.)
 import { getFontFallbackPolicy } from '../fallback';
-import { notifyGlyphBaked, notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
-import { ShelfPacker } from './shelfPack';
-import {
-  PAGE_SIZE, MAX_PAGES, blitToPage, clearPages, _resetPagesForTests,
-} from './dynamicPages';
-import { alphaToSdf } from './distanceTransform';
+import { notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
+import { PAGE_SIZE, MAX_PAGES, _resetPagesForTests } from './dynamicPages';
+import { dropBakes, onPagesEmptied, requestBake, _resetBakeQueueForTests } from './bakeQueue';
 import { familyKey, watchFontLoads } from './fontLoads';
-import {
-  createCanvasRasterizer, BAKE_SIZE,
-  type GlyphRasterizer, type RasterizedGlyph,
-} from './glyphRasterizer';
+import { createCanvasRasterizer, BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
 
 export { PAGE_SIZE, MAX_PAGES };
-export { syncDynamicPageTexture, dynamicPageTextureId, _getPagesForTests } from './dynamicPages';
-export const SDF_RADIUS = 8;
-export const SDF_CUTOFF = 0.5;
-/** How many glyphs the dynamic atlas will rasterize synchronously before
- *  deferring the rest to a later flush. Caps the frame cost of text that
- *  suddenly needs many new glyphs; the leftovers arrive a tick later and
- *  notify through `onGlyphReady`. */
-export const DEFAULT_BAKE_BUDGET = 16;
+export {
+  syncDynamicPageTexture, dynamicPageTextureId, syncColorPageTexture, colorPageTextureId, _getPagesForTests,
+} from './dynamicPages';
+export { SDF_RADIUS, SDF_CUTOFF, DEFAULT_BAKE_BUDGET, resetBakeBudget } from './bakeQueue';
 
 /** A face whose glyphs are rasterized on demand into a shared atlas page, rather than shipped as a prebuilt one. */
 export interface DynamicFace {
@@ -51,9 +45,18 @@ export interface DynamicFace {
   /** Char record for `cp`, measured on first request (advance always valid
    *  immediately; atlas rect fills in when the bake lands). */
   requestGlyph(cp: number): BmFontChar;
+  /**
+   * The color glyph the platform draws for the grapheme cluster `text`,
+   * measured on first request as `requestGlyph`'s is, or null when it draws
+   * none. Its record is marked `color` and its rect is on a color page. It is
+   * not in `font.charMap`, which holds one code point each.
+   */
+  requestCluster(text: string): BmFontChar | null;
 }
 
-interface PendingBake { char: BmFontChar; raster: RasterizedGlyph; }
+interface Face extends DynamicFace {
+  clusters: Map<string, BmFontChar | null>;
+}
 
 /** One family served by the dynamic canvas-SDF tier. See `listCanvasFonts`. */
 export interface CanvasFontEntry {
@@ -68,20 +71,19 @@ const canvasFamilies = new Set<string>();
 // Enrollment provenance; see `isCanvasFont`. Tracked here rather than in
 // fallback.ts so the two sets can only ever be mutated together.
 const autoEnrolledFamilies = new Set<string>();
-let faces = new Map<string, DynamicFace>();
-let packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
-let pending: PendingBake[] = [];
-let flushScheduled = false;
-let budget = DEFAULT_BAKE_BUDGET;
+let faces = new Map<string, Face>();
 let rasterizer: GlyphRasterizer | null = null;
-/** Glyphs measured since the frame began. */
-let asked = 0;
-/** False from an emptying of the pages until a frame asks for no new glyph
- *  with none waiting to bake: until what was on screen has baked again. */
-let settled = true;
-let reclaimScheduled = false;
 let stopWatchingLoads: (() => void) | null = null;
-const warned = new Set<string>();
+
+function forgetGlyphs(face: Face): void {
+  face.font.charMap.clear();
+  face.font.chars.length = 0;
+  face.clusters.clear();
+}
+
+onPagesEmptied(() => {
+  for (const face of faces.values()) forgetGlyphs(face);
+});
 
 function getRasterizer(): GlyphRasterizer {
   if (!rasterizer) rasterizer = createCanvasRasterizer();
@@ -190,33 +192,35 @@ export function getDynamicFace(
     kerningMap: new Map(),
   };
 
-  const face: DynamicFace = {
-    family, weight, style, font,
+  /** An unbaked record for a glyph the rasterizer placed at `left`, `top`. */
+  const record = (id: number, raster: { left: number; top: number; advance: number }): BmFontChar => ({
+    id, x: 0, y: 0, width: 0, height: 0,
+    xoffset: raster.left,
+    yoffset: font.common.base - raster.top,
+    xadvance: raster.advance,
+    page: -1,
+  });
+  const clusters = new Map<string, BmFontChar | null>();
+
+  const face: Face = {
+    family, weight, style, font, clusters,
     requestGlyph(cp: number): BmFontChar {
       const cached = font.charMap.get(cp);
       if (cached) return cached;
       const raster = r.rasterize(family, weight, style, cp);
-      const char: BmFontChar = {
-        id: cp, x: 0, y: 0, width: 0, height: 0,
-        xoffset: raster.left,
-        yoffset: font.common.base - raster.top,
-        xadvance: raster.advance,
-        page: -1,
-      };
+      const char = record(cp, raster);
       font.charMap.set(cp, char);
       font.chars.push(char);
-      asked++;
-      if (raster.width === 0 || raster.height === 0) {
-        char.page = 0; // blank glyph (space): nothing to bake
-        return char;
-      }
-      if (budget > 0) {
-        budget--;
-        bake(char, raster);
-      } else {
-        pending.push({ char, raster });
-        scheduleFlush();
-      }
+      requestBake(char, raster);
+      return char;
+    },
+    requestCluster(text: string): BmFontChar | null {
+      const cached = clusters.get(text);
+      if (cached !== undefined) return cached;
+      const raster = r.rasterizeColor?.(family, weight, style, text) ?? null;
+      const char: BmFontChar | null = raster && { ...record(text.codePointAt(0)!, raster), color: true };
+      clusters.set(text, char);
+      if (char && raster) requestBake(char, raster);
       return char;
     },
   };
@@ -227,15 +231,14 @@ export function getDynamicFace(
 }
 
 /** Read `face`'s metrics off the canvas, and forget the glyphs measured before. */
-function measureFace(face: DynamicFace): void {
+function measureFace(face: Face): void {
   const { font } = face;
   const metrics = getRasterizer().faceMetrics(face.family, face.weight, face.style);
   font.common.lineHeight = Math.round(metrics.ascent + metrics.descent);
   font.common.base = Math.round(metrics.ascent);
   // Unrounded, unlike `common`: layout places the baseline from these.
   font.faceMetrics = { ascent: metrics.ascent / BAKE_SIZE, descent: metrics.descent / BAKE_SIZE };
-  font.charMap.clear();
-  font.chars.length = 0;
+  forgetGlyphs(face);
 }
 
 /**
@@ -257,94 +260,14 @@ function refreshFamilies(families: readonly string[] | null): void {
   for (const face of faces.values()) {
     if (keys && !face.family.split(',').some((name) => keys.has(familyKey(name)))) continue;
     for (const char of face.font.chars) dropped.add(char);
+    for (const char of face.clusters.values()) if (char) dropped.add(char);
     measureFace(face);
     measured++;
   }
   if (measured === 0) return;
   // Their rects stay taken until the pages next fill and are emptied.
-  pending = pending.filter((job) => !dropped.has(job.char));
+  dropBakes(dropped);
   notifyGlyphReady();
-}
-
-function bake(char: BmFontChar, raster: RasterizedGlyph): void {
-  const spot = packer.alloc(raster.width, raster.height);
-  if (!spot) {
-    noRoom(raster);
-    return;
-  }
-  const sdf = alphaToSdf(raster.alpha, raster.width, raster.height, SDF_RADIUS, SDF_CUTOFF);
-  blitToPage(spot.page, spot.x, spot.y, raster.width, raster.height, sdf);
-  char.x = spot.x;
-  char.y = spot.y;
-  char.width = raster.width;
-  char.height = raster.height;
-  char.page = spot.page;
-}
-
-/** A glyph found no room, and stays invisible for the frame that asked. */
-function noRoom(raster: RasterizedGlyph): void {
-  if (!packer.fits(raster.width, raster.height)) {
-    warnOnce('weasel DynamicGlyphAtlas: a glyph is larger than a page and will not render.');
-  } else if (!settled) {
-    warnOnce(
-      `weasel DynamicGlyphAtlas: more glyphs are in use at once than its pages hold ` +
-      `(${MAX_PAGES} × ${PAGE_SIZE}²); the rest will not render.`);
-  } else if (!reclaimScheduled) {
-    reclaimScheduled = true;
-    setTimeout(reclaim, 0);
-  }
-}
-
-function warnOnce(message: string): void {
-  if (warned.has(message)) return;
-  warned.add(message);
-  console.warn(message);
-}
-
-/**
- * Empty every page and forget every glyph, so the text on screen bakes again
- * into the room that leaves. Run off a timer, never from `bake`: a frame part
- * drawn has already placed quads on the rects this gives away.
- */
-function reclaim(): void {
-  reclaimScheduled = false;
-  settled = false;
-  packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
-  pending = [];
-  clearPages();
-  for (const face of faces.values()) {
-    face.font.charMap.clear();
-    face.font.chars.length = 0;
-  }
-  notifyGlyphReady();
-}
-
-function scheduleFlush(): void {
-  if (flushScheduled) return;
-  flushScheduled = true;
-  setTimeout(flushPending, 0);
-}
-
-function flushPending(): void {
-  flushScheduled = false;
-  let n = 0;
-  while (pending.length > 0 && n < DEFAULT_BAKE_BUDGET) {
-    const job = pending.shift()!;
-    if (job.char.page !== -1) continue; // already baked
-    bake(job.char, job.raster);
-    n++;
-  }
-  if (pending.length > 0) scheduleFlush();
-  notifyGlyphBaked();
-}
-
-/** Reset the per-frame synchronous bake budget. Called by
- *  `WeaselRenderer.render()` at frame start; the headless
- *  `renderSceneToPixels` path passes Infinity so print never defers. */
-export function resetBakeBudget(n: number = DEFAULT_BAKE_BUDGET): void {
-  budget = n;
-  if (asked === 0 && pending.length === 0) settled = true;
-  asked = 0;
 }
 
 /** @internal test seam — inject a fake rasterizer (jsdom has no canvas
@@ -359,16 +282,9 @@ export function _resetDynamicFontsForTests(): void {
   autoEnrolledFamilies.clear();
   faces = new Map();
   _resetPagesForTests();
-  packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
-  pending = [];
-  flushScheduled = false;
-  asked = 0;
-  settled = true;
-  reclaimScheduled = false;
-  warned.clear();
+  _resetBakeQueueForTests();
   stopWatchingLoads?.();
   stopWatchingLoads = null;
-  budget = DEFAULT_BAKE_BUDGET;
   _clearGlyphReadySubscribers();
   rasterizer = null;
 }

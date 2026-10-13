@@ -1,6 +1,7 @@
 /**
  * The dynamic glyph atlas's pages: their CPU-side bytes, and bringing each
- * renderer's texture of one up to date.
+ * renderer's texture of one up to date. Two sets: distance fields, one byte a
+ * texel, and color glyphs, four.
  */
 
 import type { GlyphTextureSink } from '../textureSink';
@@ -15,79 +16,151 @@ interface DynamicPage {
   patches: { seq: number; x: number; y: number; w: number; h: number }[];
 }
 
-let pages: DynamicPage[] = [];
-
-/** Copy a `w`×`h` block of field bytes into page `pageIndex` at `(x, y)`. */
-export function blitToPage(
-  pageIndex: number, x: number, y: number, w: number, h: number, bytes: Uint8Array,
-): void {
-  while (pages.length <= pageIndex) {
-    pages.push({ data: new Uint8Array(PAGE_SIZE * PAGE_SIZE), version: 0, patches: [] });
-  }
-  const page = pages[pageIndex];
-  for (let row = 0; row < h; row++) {
-    page.data.set(bytes.subarray(row * w, (row + 1) * w), (y + row) * PAGE_SIZE + x);
-  }
-  page.version++;
-  page.patches.push({ seq: page.version, x, y, w, h });
+/** How one set of pages reaches a texture. */
+interface PageFormat {
+  /** Bytes per texel. */
+  channels: number;
+  idPrefix: string;
+  upload(cache: GlyphTextureSink, id: string, data: Uint8Array): void;
+  patch(cache: GlyphTextureSink, id: string, x: number, y: number, w: number, h: number, data: Uint8Array): void;
 }
 
-/** Zero every page. One whole-page patch stands in for all the patches before it. */
-export function clearPages(): void {
-  for (const page of pages) {
-    page.data.fill(0);
+class PageSet {
+  pages: DynamicPage[] = [];
+  // Per-GL-cache upload progress: last page version each cache has seen.
+  // WeakMap-keyed so disposed renderers don't pin anything.
+  private uploaded = new WeakMap<GlyphTextureSink, Map<number, number>>();
+
+  constructor(private readonly format: PageFormat) {}
+
+  textureId(page: number): string {
+    return `${this.format.idPrefix}${page}`;
+  }
+
+  /** Copy a `w`×`h` block of texels into page `pageIndex` at `(x, y)`. */
+  blit(pageIndex: number, x: number, y: number, w: number, h: number, bytes: Uint8Array | Uint8ClampedArray): void {
+    const n = this.format.channels;
+    while (this.pages.length <= pageIndex) {
+      this.pages.push({ data: new Uint8Array(PAGE_SIZE * PAGE_SIZE * n), version: 0, patches: [] });
+    }
+    const page = this.pages[pageIndex];
+    for (let row = 0; row < h; row++) {
+      page.data.set(bytes.subarray(row * w * n, (row + 1) * w * n), ((y + row) * PAGE_SIZE + x) * n);
+    }
     page.version++;
-    page.patches = [{ seq: page.version, x: 0, y: 0, w: PAGE_SIZE, h: PAGE_SIZE }];
+    page.patches.push({ seq: page.version, x, y, w, h });
   }
-}
 
-/** Texture-cache key for a dynamic page (parallel to `textureCacheKey`). */
-export function dynamicPageTextureId(page: number): string {
-  return `weasel-dyn-sdf-page-${page}`;
-}
-
-// Per-GL-cache upload progress: last page version each cache has seen.
-// WeakMap-keyed so disposed renderers don't pin anything.
-const uploadedVersions = new WeakMap<GlyphTextureSink, Map<number, number>>();
-
-/** Bring `cache`'s copy of page `pageIndex` up to date: full R8 upload the
- *  first time, `texSubImage2D` patches after. Returns false if the page
- *  doesn't exist yet. */
-export function syncDynamicPageTexture(cache: GlyphTextureSink, pageIndex: number): boolean {
-  const page = pages[pageIndex];
-  if (!page) return false;
-  const id = dynamicPageTextureId(pageIndex);
-  let seen = uploadedVersions.get(cache);
-  if (!seen) {
-    seen = new Map();
-    uploadedVersions.set(cache, seen);
+  /** Zero every page. One whole-page patch stands in for all the patches before it. */
+  clear(): void {
+    for (const page of this.pages) {
+      page.data.fill(0);
+      page.version++;
+      page.patches = [{ seq: page.version, x: 0, y: 0, w: PAGE_SIZE, h: PAGE_SIZE }];
+    }
   }
-  if (!cache.has(id)) {
-    cache.uploadR8(id, PAGE_SIZE, PAGE_SIZE, page.data);
+
+  /** Bring `cache`'s copy of page `pageIndex` up to date: a full upload the
+   *  first time, patches after. Returns false if the page doesn't exist yet. */
+  sync(cache: GlyphTextureSink, pageIndex: number): boolean {
+    const page = this.pages[pageIndex];
+    if (!page) return false;
+    const n = this.format.channels;
+    const id = this.textureId(pageIndex);
+    let seen = this.uploaded.get(cache);
+    if (!seen) {
+      seen = new Map();
+      this.uploaded.set(cache, seen);
+    }
+    if (!cache.has(id)) {
+      this.format.upload(cache, id, page.data);
+      seen.set(pageIndex, page.version);
+      return true;
+    }
+    const last = seen.get(pageIndex) ?? 0;
+    if (last >= page.version) return true;
+    for (const patch of page.patches) {
+      if (patch.seq <= last) continue;
+      const tight = new Uint8Array(patch.w * patch.h * n);
+      for (let row = 0; row < patch.h; row++) {
+        const src = ((patch.y + row) * PAGE_SIZE + patch.x) * n;
+        tight.set(page.data.subarray(src, src + patch.w * n), row * patch.w * n);
+      }
+      this.format.patch(cache, id, patch.x, patch.y, patch.w, patch.h, tight);
+    }
     seen.set(pageIndex, page.version);
     return true;
   }
-  const last = seen.get(pageIndex) ?? 0;
-  if (last >= page.version) return true;
-  for (const patch of page.patches) {
-    if (patch.seq <= last) continue;
-    const tight = new Uint8Array(patch.w * patch.h);
-    for (let row = 0; row < patch.h; row++) {
-      const src = (patch.y + row) * PAGE_SIZE + patch.x;
-      tight.set(page.data.subarray(src, src + patch.w), row * patch.w);
-    }
-    cache.subImageR8(id, patch.x, patch.y, patch.w, patch.h, tight);
-  }
-  seen.set(pageIndex, page.version);
-  return true;
 }
 
-/** @internal test seam — inspect CPU-side pages. */
+const fields = new PageSet({
+  channels: 1,
+  idPrefix: 'weasel-dyn-sdf-page-',
+  upload: (cache, id, data) => cache.uploadR8(id, PAGE_SIZE, PAGE_SIZE, data),
+  patch: (cache, id, x, y, w, h, data) => cache.subImageR8(id, x, y, w, h, data),
+});
+
+const colors = new PageSet({
+  channels: 4,
+  idPrefix: 'weasel-dyn-color-page-',
+  upload: (cache, id, data) => cache.uploadRGBA(id, PAGE_SIZE, PAGE_SIZE, data),
+  patch: (cache, id, x, y, w, h, data) => cache.subImageRGBA(id, x, y, w, h, data),
+});
+
+/** Copy a `w`×`h` block of field bytes into field page `pageIndex` at `(x, y)`. */
+export function blitToPage(
+  pageIndex: number, x: number, y: number, w: number, h: number, bytes: Uint8Array,
+): void {
+  fields.blit(pageIndex, x, y, w, h, bytes);
+}
+
+/** Copy a `w`×`h` block of premultiplied RGBA texels into color page `pageIndex` at `(x, y)`. */
+export function blitToColorPage(
+  pageIndex: number, x: number, y: number, w: number, h: number, rgba: Uint8ClampedArray,
+): void {
+  colors.blit(pageIndex, x, y, w, h, rgba);
+}
+
+/** Zero every page of both sets. */
+export function clearPages(): void {
+  fields.clear();
+  colors.clear();
+}
+
+/** Texture-cache key for a dynamic field page (parallel to `textureCacheKey`). */
+export function dynamicPageTextureId(page: number): string {
+  return fields.textureId(page);
+}
+
+/** Texture-cache key for a page of color glyphs. */
+export function colorPageTextureId(page: number): string {
+  return colors.textureId(page);
+}
+
+/** Bring `cache`'s copy of field page `pageIndex` up to date: full R8 upload
+ *  the first time, `texSubImage2D` patches after. Returns false if the page
+ *  doesn't exist yet. */
+export function syncDynamicPageTexture(cache: GlyphTextureSink, pageIndex: number): boolean {
+  return fields.sync(cache, pageIndex);
+}
+
+/** The same for a page of color glyphs, whose texels are premultiplied RGBA. */
+export function syncColorPageTexture(cache: GlyphTextureSink, pageIndex: number): boolean {
+  return colors.sync(cache, pageIndex);
+}
+
+/** @internal test seam — inspect CPU-side field pages. */
 export function _getPagesForTests(): readonly DynamicPage[] {
-  return pages;
+  return fields.pages;
+}
+
+/** @internal test seam — inspect CPU-side color pages. */
+export function _getColorPagesForTests(): readonly DynamicPage[] {
+  return colors.pages;
 }
 
 /** @internal test seam — forget every page. */
 export function _resetPagesForTests(): void {
-  pages = [];
+  fields.pages = [];
+  colors.pages = [];
 }

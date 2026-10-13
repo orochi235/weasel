@@ -338,12 +338,14 @@ Priority tags:
   and `write` should be handed the whole node, or the bar should show `start` / `end` as their own
   state instead of resolving them to an edge.
 
-- **(P2) Text: emoji paint as flat silhouettes, and multi-code-point emoji paint as their parts.**
-  The canvas tier keeps only the alpha channel (`packages/font/src/dynamic/glyphRasterizer.ts`), and
-  `layoutRuns` looks glyphs up one code point at a time, so `👍🏽` is a thumb plus a swatch, `🇨🇦` is
-  two letters, and `👨‍👩‍👧` is three people, all in the run's fill color. Needs glyph lookup by
-  grapheme cluster and a color (RGBA) atlas page drawn untinted for clusters with emoji
-  presentation. `LaidOutCell.clusterEnd` already marks where each cluster closes.
+- **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
+  tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs
+  above it: a 96px heading, or body text zoomed past 4x. A distance field has no such limit and
+  an emoji has no field, so it needs a second bake at the size it is drawn at, the way a vector
+  image re-rasterizes in power-of-two steps (`maybeReraster` in
+  `packages/renderer/src/images/imageCache.ts`). Separately, `textToPath` refuses text holding an
+  emoji with `no-outlines`, as it did when the emoji was an escalated canvas glyph (read from
+  `textToPath.ts`, not run).
 
 ---
 

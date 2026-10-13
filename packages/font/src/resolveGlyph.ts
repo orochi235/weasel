@@ -5,6 +5,7 @@
  * has no `.notdef` to draw.
  */
 import type { BmFont, BmFontChar } from './FontAtlas';
+import { hasEmojiPresentation } from './emojiCluster';
 import type { FontStyle } from './fontStyle';
 import { metricsOf, usableGlyph, type GlyphMetrics } from './glyphMetrics';
 import { warnMissingGlyph } from './glyphWarnings';
@@ -62,4 +63,28 @@ export function resolveGlyph(
   if (escalated) return escalated;
   if (warn) warnMissingGlyph(resolved.resolved.family, cp);
   return null;
+}
+
+/**
+ * The color glyph for a whole grapheme cluster with emoji presentation, in a
+ * run that asked for `(family, weight, style)` and resolved to `resolved`.
+ * The canvas tier is the only one that draws a cluster as one glyph or in its
+ * own colors, so it serves these whatever tier serves the run's text. Null for
+ * any other cluster, and where the canvas tier is not to be had or draws no
+ * color for this one: the cluster is then laid out code point by code point.
+ */
+export function resolveColorCluster(
+  resolved: ResolveResult,
+  family: string,
+  weight: number,
+  style: FontStyle,
+  cluster: string,
+): ResolvedGlyph | null {
+  if (!hasEmojiPresentation(cluster)) return null;
+  const tier = resolved.dynamicFace ? resolved : resolveGlyphFallback(family, weight, style);
+  const face = tier?.dynamicFace;
+  const metrics = tier && metricsOf(tier);
+  const glyph = face?.requestCluster(cluster);
+  if (!tier || !face || !metrics || !glyph) return null;
+  return { resolved: tier, metrics, advance: glyph.xadvance, font: face.font, glyph };
 }
