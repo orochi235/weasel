@@ -117,4 +117,25 @@ describe('timeline editing', () => {
     h.advance(70);
     expect(fired).toEqual(['a', 'b', 'c']);
   });
+
+  it('leaves a subscriber added during a notify for the next one', () => {
+    const h = harness();
+    const track: SampledTrack<number> = { kind: 'sampled', keys: [{ t: 0, value: 0 }], onTick: () => {} };
+    const tl = createTimeline(h.register, 1, { tracks: [track] });
+    const late = vi.fn();
+    const latePlayback = vi.fn();
+    let added = false;
+    tl.subscribe(() => {
+      if (added) return;
+      added = true;
+      tl.subscribe(late);
+    });
+    tl.subscribePlayback(() => { tl.subscribePlayback(latePlayback); });
+    tl.edit(() => {});
+    tl.setLoop(true);
+    expect(late).not.toHaveBeenCalled();
+    expect(latePlayback).not.toHaveBeenCalled();
+    tl.edit(() => {});
+    expect(late).toHaveBeenCalledTimes(1);
+  });
 });

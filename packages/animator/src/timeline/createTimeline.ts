@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { AnimationHandle } from '../types';
 import { createBooker } from './booking';
 import { createEventFirer } from './fireEvents';
@@ -54,12 +55,6 @@ function crossLaps(playhead: number, duration: number, loopsLeft: number, take: 
   for (let at = playhead, left = loopsLeft; at >= duration && left > 0; at -= duration, left -= 1) take(1);
 }
 
-function notify(set: Set<() => void>): void {
-  for (const cb of set) {
-    try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
-  }
-}
-
 /**
  * Create a timeline as a registered animator animation.
  *
@@ -92,9 +87,9 @@ export function createTimeline(
   let wantPaused = opts.autoplay === false;
   let wantScale = 1;
 
-  const subscribers = new Set<() => void>();
-  const playbackSubscribers = new Set<() => void>();
-  const playbackChanged = (): void => notify(playbackSubscribers);
+  const edited = createEmitter();
+  const playback = createEmitter();
+  const playbackChanged = playback.emit;
 
   const loopOpt = opts.loop ?? false;
   let loopsLeft = loopOpt === true ? Infinity : loopOpt === false ? 0 : loopOpt;
@@ -236,15 +231,9 @@ export function createTimeline(
       booker?.retract();
       rearm();
       sampleNow();
-      notify(subscribers);
+      edited.emit();
     },
-    subscribe(cb) {
-      subscribers.add(cb);
-      return () => { subscribers.delete(cb); };
-    },
-    subscribePlayback(cb) {
-      playbackSubscribers.add(cb);
-      return () => { playbackSubscribers.delete(cb); };
-    },
+    subscribe: edited.subscribe,
+    subscribePlayback: playback.subscribe,
   };
 }
