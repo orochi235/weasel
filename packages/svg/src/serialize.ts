@@ -7,7 +7,7 @@ import { escapeAttr, escapeText } from './xmlEscape';
 import type { FontRequest, Stroke, StrokeAlign } from '@weasel-js/core';
 import { isSolidPaint, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
 import type {
-  NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
+  SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
   ScreenLength,
 } from './types';
@@ -17,6 +17,8 @@ import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { anchorOffset, svgDirection } from './textAnchor';
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
+import { prettyXml } from './prettyXml';
+import { metaAttrsXml, metaElementsXml } from './serializeMeta';
 
 /**
  * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
@@ -53,17 +55,8 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
     }
   }
 
-  // documentMeta elements after <defs>, before geometry body.
-  let docMetaXml = '';
-  if (opts.documentMeta) {
-    for (const prefix of Object.keys(namespaces)) {
-      const bucket = opts.documentMeta[prefix];
-      if (!bucket?.elements) continue;
-      for (const [localName, list] of Object.entries(bucket.elements)) {
-        for (const el of list) docMetaXml += namespacedElementXml(prefix, localName, el);
-      }
-    }
-  }
+  // After <defs>, before the geometry.
+  const docMetaXml = metaElementsXml(opts.documentMeta, namespaces);
 
   const defsXml = registry.toDefsXml(opts.onWarn);
   // Once per message: a hundred inner-aligned strokes are one fact.
@@ -79,50 +72,8 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
     ? `<title>${escapeText(opts.title)}</title>`
     : '';
 
-  return `<svg ${rootAttrs.join(' ')}>${titleXml}${defsXml}${docMetaXml}${bodyXml}</svg>`;
-}
-
-function namespacedElementXml(prefix: string, localName: string, el: NamespacedElement): string {
-  const attrs: string[] = [];
-  for (const [name, value] of Object.entries(el.attrs)) {
-    attrs.push(`${name}="${escapeAttr(value)}"`);
-  }
-  const head = attrs.length > 0 ? `<${prefix}:${localName} ${attrs.join(' ')}>` : `<${prefix}:${localName}>`;
-  let body = '';
-  if (el.children) {
-    for (const [childName, list] of Object.entries(el.children)) {
-      for (const child of list) body += namespacedElementXml(prefix, childName, child);
-    }
-  } else if (el.text != null) {
-    body = escapeText(el.text);
-  }
-  return `${head}${body}</${prefix}:${localName}>`;
-}
-
-function metaAttrsXml(meta: NamespaceMeta | undefined, namespaces: Record<string, string>): string {
-  if (!meta) return '';
-  const parts: string[] = [];
-  for (const prefix of Object.keys(namespaces)) {
-    const bucket = meta[prefix];
-    if (!bucket?.attrs) continue;
-    for (const [name, value] of Object.entries(bucket.attrs)) {
-      parts.push(`${prefix}:${name}="${escapeAttr(value)}"`);
-    }
-  }
-  return parts.length > 0 ? ` ${parts.join(' ')}` : '';
-}
-
-function metaElementsXml(meta: NamespaceMeta | undefined, namespaces: Record<string, string>): string {
-  if (!meta) return '';
-  let out = '';
-  for (const prefix of Object.keys(namespaces)) {
-    const bucket = meta[prefix];
-    if (!bucket?.elements) continue;
-    for (const [localName, list] of Object.entries(bucket.elements)) {
-      for (const el of list) out += namespacedElementXml(prefix, localName, el);
-    }
-  }
-  return out;
+  const xml = `<svg ${rootAttrs.join(' ')}>${titleXml}${defsXml}${docMetaXml}${bodyXml}</svg>`;
+  return opts.pretty ? prettyXml(xml) : xml;
 }
 
 export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintServerRegistry): void {

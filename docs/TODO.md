@@ -1157,10 +1157,6 @@ only story runner in the repo.
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
   need per-word `x` placement too, since `text-anchor` has no justify.
 
-- **(P3) `SerializeOptions.pretty` does nothing.** `packages/svg/src/types.ts` declares it and
-  nothing in `packages/svg/src` reads it, so the serializer's output is the same either way.
-  Implement it or remove the option.
-
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
   selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the
