@@ -5,11 +5,29 @@ import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { getMarker, registerMarker } from '@weasel-js/stroke';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { DEFAULT_TEXT_STYLE, type TextStyle } from '@weasel-js/text';
+import { qty } from '@weasel-js/quantity';
 
 /** Colors the edit overlay reads, which are chrome rather than document. */
 type EditOverlayChrome = 'caretColor' | 'selectionBackground' | 'selectionColor';
 
 describe('defaultNodeProperties', () => {
+  it('shows every typed number to two places, where a drag or a scale leaves many', () => {
+    const typed: [string, PrefLeaf & { kind: 'number' }][] = [];
+    const walk = (at: unknown, key: string): void => {
+      if (!at || typeof at !== 'object') return;
+      const o = at as Record<string, unknown>;
+      if (o.kind === 'number' && o.control !== 'slider' && o.unit === undefined) typed.push([key, o as never]);
+      for (const [k, v] of Object.entries(o)) walk(v, k);
+    };
+    for (const e of defaultNodeProperties) walk(e.schema, e.name);
+    expect(typed.map(([key]) => key)).toEqual(expect.arrayContaining(['pose.x', 'pose.width', 'fontSize']));
+    for (const [key, leaf] of typed) {
+      if (!leaf.display) throw new Error(`${key} has no display`);
+      expect(qty(123.45678901234567, leaf.display).text).toBe('123.46');
+      expect(qty(40, leaf.display).text).toBe('40');
+    }
+  });
+
   it('stays in lockstep with KIT_SHAPE_KINDS', () => {
     expect(defaultNodeProperties.map((e) => e.name)).toEqual([...KIT_SHAPE_KINDS]);
   });

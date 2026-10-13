@@ -5,7 +5,7 @@ import { listMarkers, markerGeneration } from '@weasel-js/stroke';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import { resolveAlign, type TextAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
-import { ANGLE_RADIANS } from '@weasel-js/quantity';
+import { ANGLE_RADIANS, decimal } from '@weasel-js/quantity';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
@@ -14,6 +14,9 @@ export const rotationDegreesUnit: PrefNumberUnit = prefUnit(ANGLE_RADIANS, 'deg'
   precision: 1,
   suffix: '°',
 });
+
+/** How a typed number reads. The stored value keeps every digit a drag or a scale gave it. */
+const TWO_PLACES = decimal({ maxPlaces: 2, grouping: false });
 
 /** `Stroke.width` off a partly-typed stroke object, or `undefined`. */
 function strokeWidthOf(stroke: Record<string, unknown> | undefined): number | { px: number } | undefined {
@@ -131,10 +134,10 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
       layout: {
         name: 'Layout',
         members: {
-          'pose.x': { kind: 'number', name: 'X', description: 'Left edge, world units.', default: 0, pair: { with: 'pose.y', label: 'Position' } },
-          'pose.y': { kind: 'number', name: 'Y', description: 'Top edge, world units.', default: 0 },
-          'pose.width': { kind: 'number', name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: { with: 'pose.height', label: 'Size' } },
-          'pose.height': { kind: 'number', name: 'H', description: 'Height, world units.', default: 0, min: 0 },
+          'pose.x': { kind: 'number', display: TWO_PLACES, name: 'X', description: 'Left edge, world units.', default: 0, pair: { with: 'pose.y', label: 'Position' } },
+          'pose.y': { kind: 'number', display: TWO_PLACES, name: 'Y', description: 'Top edge, world units.', default: 0 },
+          'pose.width': { kind: 'number', display: TWO_PLACES, name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: { with: 'pose.height', label: 'Size' } },
+          'pose.height': { kind: 'number', display: TWO_PLACES, name: 'H', description: 'Height, world units.', default: 0, min: 0 },
           'pose.rotation': { kind: 'number', name: 'Rotation', description: 'Rotation about the box center.', default: 0, step: 1, unit: rotationDegreesUnit, absentIsDefault: true },
         },
       },
@@ -220,7 +223,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
                       name: 'Character',
                       members: {
                         fontFamily: { kind: 'font-family', name: 'Font', description: 'Registered font family.', absentIsDefault: true, default: 'sans-serif' },
-                        fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', absentIsDefault: true, default: 16, min: 1, step: 1, pair: { with: 'data.style.fontWeight', label: 'Size / weight' } },
+                        fontSize: { kind: 'number', display: TWO_PLACES, name: 'Size', description: 'Font size, world units.', absentIsDefault: true, default: 16, min: 1, step: 1, pair: { with: 'data.style.fontWeight', label: 'Size / weight' } },
                         fontWeight: { kind: 'font-weight', name: 'Weight', description: 'Font weight, from the faces the family has.', absentIsDefault: true, default: 400 },
                         // One row of segments, the strip every text editor
                         // draws: the slant, the three rules, then the two
@@ -231,7 +234,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
                         strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', absentIsDefault: true, default: false, control: 'toggle', icon: 'strikethrough', short: ['S'] },
                         overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', absentIsDefault: true, default: false, control: 'toggle', icon: 'overline', short: ['O'] },
                         script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, options: [{ value: 'super', label: 'Superscript', icon: 'superscript' }, { value: 'sub', label: 'Subscript', icon: 'subscript' }] },
-                        letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', absentIsDefault: true, default: 0, step: 0.1 },
+                        letterSpacing: { kind: 'number', display: TWO_PLACES, name: 'Tracking', description: 'Extra advance per glyph, world units.', absentIsDefault: true, default: 0, step: 0.1 },
                         textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', absentIsDefault: true, default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: ['–'] }, { value: 'uppercase', label: 'Uppercase', short: ['AA'] }, { value: 'lowercase', label: 'Lowercase', short: ['aa'] }, { value: 'capitalize', label: 'Capitalize', short: ['Aa'] }] },
                         fontVariantCaps: { kind: 'enum', name: 'Small caps', description: 'Draw lowercase letters as smaller capitals. The text itself is unchanged.', absentIsDefault: true, default: 'normal', control: 'toggle', options: [{ value: 'normal', label: 'Normal', short: ['–'] }, { value: 'small-caps', label: 'Small caps', short: ['Sc'] }] },
                       },
@@ -239,9 +242,9 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
                     paragraph: {
                       name: 'Paragraph',
                       members: {
-                        lineHeight: { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', absentIsDefault: true, default: 1.2, min: 0.5, step: 0.1 },
+                        lineHeight: { kind: 'number', display: TWO_PLACES, name: 'Leading', description: 'Line height as a multiple of font size.', absentIsDefault: true, default: 1.2, min: 0.5, step: 0.1 },
                         wrap: { kind: 'boolean', name: 'Wrap', description: 'Break lines between words at the box width.', absentIsDefault: true, default: false, control: 'switch' },
-                        tabSize: { kind: 'number', name: 'Tab size', description: 'Distance between tab stops, in spaces.', absentIsDefault: true, default: 8, min: 1, step: 1 },
+                        tabSize: { kind: 'number', display: TWO_PLACES, name: 'Tab size', description: 'Distance between tab stops, in spaces.', absentIsDefault: true, default: 8, min: 1, step: 1 },
                         direction: { kind: 'enum', name: 'Direction', description: 'Reading direction. Auto takes each paragraph\'s from its first strong character.', absentIsDefault: true, default: 'auto', control: 'toggle', options: [{ value: 'auto', label: 'Auto', short: ['Auto'] }, { value: 'ltr', label: 'Left to right', short: ['LTR'] }, { value: 'rtl', label: 'Right to left', short: ['RTL'] }] },
                         // Last, so the box's vertical alignment — a field of
                         // the node rather than of its style — follows it.
