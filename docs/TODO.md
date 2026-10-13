@@ -153,14 +153,6 @@ Priority tags:
 
 ## Viewport
 
-- **(P3) A controlled consumer's own `setState` cannot interrupt a glide.** Every view write that
-  goes through the canvas cancels the camera runner. A consumer who owns `view` in state and writes
-  it directly does not go through the canvas: the prop change arrives asynchronously, after the
-  runner has lowered the flag that distinguishes its own frames, so it is indistinguishable from
-  one. Comparing the incoming prop against the last value written would work only for consumers who
-  store the view by reference — one who normalizes or clamps it would have every frame of their own
-  glide canceled. Wants a real design.
-
 - **(P3) Views do not nest.** A view paints and routes the surface's own stack, never another view,
   and a loupe magnifies the canvas's camera — aimed over a `<CanvasView>` panel it shows and edits
   the canvas's world, not the panel's. Composing would mean a view's camera derived from the view
