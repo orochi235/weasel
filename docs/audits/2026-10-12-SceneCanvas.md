@@ -2,9 +2,9 @@
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
 > acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
 > A, C, and D except for the items still listed under them, which were checked against the code and are
-> written as found. F was checked and is written as found. J and N have landed and are deleted, and
-> H has landed except for the item still listed under it. Every other lettered section is unbuilt,
-> and its line numbers predate all of that work.
+> written as found. F, I, J, and N have landed and are deleted, F except for the item still listed
+> under it, and H has landed except for the item still listed under it. Every other lettered
+> section is unbuilt, and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
 > work it lists has merged; `docs/TODO.md` holds what is left.
 
@@ -85,32 +85,12 @@ Lines 757, 762-768, 1099, 1263-1333.
 
 ### F. View state mirror
 
-Checked against the code after the `Canvas.tsx` pass merged. Not built: it cannot be done inside
-SceneCanvas's own files.
+The mirror landed: `SceneCanvas/useCanvasCamera.ts` makes the one camera with `useCanvasView`,
+`<Canvas>` takes it as `viewState`, and every reader reads its `viewRef`.
 
-- **`currentViewRef` is a third copy of the view**, beside the `viewRef` `<Canvas>` holds through
-  `useCanvasView` and the prop. It has three writers: the seed from `view` / `defaultView`, an
-  insertion effect that adopts a controlled `view`, and a `subscribeView` subscription that starts
-  once the handle is attached.
-- **Readers:** `useSceneSelectTool`'s `getView`, hover's picker view, the rule inputs, the camera
-  channel's `get`, the test hook, the registrar (`currentViewRef`, for ingestion and the view deps),
-  and the mounter's `viewRef`. Each wants the view in effect, synchronously, and the first three are
-  read during or before the first commit, when the handle is still null.
-- **`handleViewChange` re-implements the controlled/uncontrolled fork.** Uncontrolled it calls the
-  handle's `setView`, which clamps to `viewBounds`. Controlled it calls `onViewChange` itself and
-  skips the clamp. It is the `view.set` dep and the camera channel's `set`, so every pan, zoom, and
-  animation frame goes through it.
-- **Why the handle is not enough.** Its `setView` is the imperative write: controlled, it warns once
-  per mount and forwards. Input needs `useCanvasView`'s `setViewFromInput`, which forwards without
-  the warning, and the handle does not publish it. Its `getView` answers nothing before mount.
-- **Smallest change:** `<Canvas>` publishes the input write (on the handle, or by taking a view
-  state made by a `useCanvasView` call one level up, in `SceneCanvasInner`). `handleViewChange`
-  becomes that call and the mirror becomes that hook's `viewRef`. Either is an edit to `Canvas.tsx`,
-  and the first adds a member to the public `CanvasExtensionApi`.
-- **What would change:** a controlled `<SceneCanvas view viewBounds>` would hand `onViewChange` a
-  clamped view where it now hands the raw one.
 - **`resolvedViewportZoom` and the three `enabled.has('view') ? … : false` props** belong in
-  `useViewportActions`, which should take `viewport` and the preset flag.
+  `useViewportActions`, which should take `viewport` and the preset flag. Left because they are
+  props of `StandardActionsRegistrar`, which section E replaces.
 
 ### G. Redraw subscriptions
 
@@ -138,10 +118,6 @@ palette's selection summary (`ui/CommandPalette/selectionSummary.ts`) prints the
 `classifyKind` in `ui/SelectionPanel/model.ts`, answers `'group'` for a container and the routing
 entry otherwise. Making these one needs a decision on what the palette should print.
 
-### I. Selection overlay prebuild
-
-Lines 1042-1079. `<Canvas>` builds the same layer with the same `poseById` handling (evidence, `Canvas.tsx:862-871`). The only addition here is merging `getSuppressedIds`, which the slot config already accepts (1058). Passing a merged config removes the `createSelectionOverlayLayer` import and the `descriptor` dependency.
-
 ### K. Dead or vestigial (grep-verified)
 
 - **`chromeSizes` (219-222).** Its only use is `handleHitRadius: chromeSizes.handle` (456), and `useSceneSelectTool`'s `selectTool` argument has no such field (`useSceneSelectTool.ts:92-104`). The `targetSizesPx` import goes with it.
@@ -152,7 +128,6 @@ Lines 1042-1079. `<Canvas>` builds the same layer with the same `poseById` handl
   - `useLatest(scene)` at 970 and 1232.
   - `useLatest(selection)` at 465 and 1233.
   - `liveToolsRef` (680) and `tools` (691) are the same expression.
-- **The outer `<>` at 1258 and 1344** is redundant.
 
 ### L. Not production component code
 
@@ -164,7 +139,7 @@ Lines 1042-1079. `<Canvas>` builds the same layer with the same `poseById` handl
 
 ### M. Pass-through props
 
-`shaders`, `flattenTolerance`, `backgroundFill`, `cursorCoordsHud`, `pickHud`, and `modalityHud` are destructured (186-192) only to be re-passed (1210-1222). They are still in `CanvasProps` and would ride `restProps`.
+`shaders`, `flattenTolerance`, and `backgroundFill` are destructured (186-192) only to be re-passed (1210-1222). They are still in `CanvasProps` and would ride `restProps`.
 
 Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`, `rotateOptions`, `snap`, `handleHitRadius`, `selectionOptions`, and `onBackgroundClick`, none of which `CanvasProps` declares (evidence, grep of `Canvas.tsx`).
 
@@ -175,7 +150,9 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 - `composedAlphaFor` and the layer gate.
 - The `useSceneAdapter`, `useSceneSelectTool`, and `useTools` calls.
 - Dispatcher creation.
-- `sceneSlot`, the preview and overlay layers, and `wiredLayers`.
+- The scene slot's and the selection overlay's layers (`useSceneSlotLayers`,
+  `useSelectionOverlayLayer`), the preview and overlay layers, and `wiredLayers`.
+- The camera (`useCanvasCamera`) and the dev HUDs (`DevHuds`).
 - `addView`, `mergedRef`, and `viewInputs`.
 - The `<Canvas>` element and the three `CanvasView` lists.
 
@@ -185,9 +162,8 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 |---|---|---|---|---|
 | `bakedScene` | 229 | init | `scene` | — |
 | `internalCanvasRef` | 247 | `mergedRef` | hover, `PointerPublisher`, registrar, mounter | Canvas → siblings (real) |
-| `canvasApiRef` | 250 | `mergedRef` | redraw effects, `handleViewChange`, path-edit setters, registrar, mounter, keybindings | Canvas → siblings (real) |
-| `canvasReady` | 253 | `mergedRef` | view subscription, 1331 | ref-attach timing |
-| `currentViewRef` | — | seed, insertion effect, subscription | select tool, hover, rule inputs, camera channel, test hook, registrar, mounter | Canvas-owned view read above Canvas |
+| `canvasApiRef` | 250 | `mergedRef` | redraw effects, the camera's redraw, the dev HUDs, path-edit setters, registrar, mounter, keybindings | Canvas → siblings (real) |
+| `canvasReady` | 253 | `mergedRef` | 1331 | ref-attach timing |
 | `selectionRef` | 465 | render | mounter | dependency array |
 | `layerPaintRef` | 501 | render | `layerIsPainted` | dependency array |
 | `liveToolsRef` | 680 | render | test hook | dependency array |
@@ -216,10 +192,10 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 1. Landed: path-edit state, mask, live path, and overlay to `features/paths` (A).
 2. Landed: chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
 3. Mounters become hooks, removing `getActionRef`, `actionsRegistryRef`, and the 37-prop call (E).
-4. One view channel shared with `<Canvas>` (F).
+4. Landed: one camera, made in SceneCanvas and handed to `<Canvas>` (F).
 5. Landed: ingestion hook (J).
 6. Landed: selection read-only view and kind labels to `core/selection` (H). The two kind classifiers stay two.
-7. Let `<Canvas>` build the selection overlay (I).
+7. Landed, the other way round: SceneCanvas builds the selection overlay and `<Canvas>` does not (I).
 8. Scene and overrides through `redrawOn` (G).
 9. Delete the dead items and pass-through destructures (K, M).
 
@@ -242,17 +218,13 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 - **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, or `insertTool` are unknown.
 ## From the Canvas.tsx pass
 
-Reported by the session that did `Canvas.tsx`, which has merged into this branch. The redundant
-`useLateContentRedraw` call and the mounter's second layer-claim conversion were checked and removed.
+Canvas findings 2, 3, and 8 landed here: the scene slot and the selection overlay are built in
+SceneCanvas, the dev HUDs are mounted by it, and the slot types are in `layerSlots.ts`.
 
-- **Item I is reversed.** Canvas's selection-overlay config branch is unreachable from production, so
-  SceneCanvas keeps its prebuild and Canvas's copy is deleted there. Do not do I. Not verified here.
-- **Item F** needs a change in `Canvas.tsx`; see F.
+- Canvas findings 1 and 4 (cursor resolution into routing; the `clientToWorld` prop the dispatcher
+  never sees) are not done. Neither was in this branch's scope.
 - `SceneCanvas/props.ts` may restate an old z-order. Verified there: `backgroundFill` sits beneath
   everything including the grid; `decorationLayer` sits above every slot and custom layer and beneath
   a tool's `'top'` overlays.
 - Canvas's `onFocus` / `onBlur` now receive the DOM `FocusEvent`, which reaches `SceneCanvasProps`
   through the `Omit`.
-- Canvas findings 1, 2, 3, 4, and 8 (cursor resolution into routing; `buildSceneLayers`,
-  `useSceneLayerList`, and the preview-id hide set into SceneCanvas; the three dev HUDs; slot types to
-  `layerSlots.ts`) are that session's, on top of main after `scene-splits` merges.

@@ -1484,16 +1484,24 @@ only story runner in the repo.
   +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
   observer that moves it has fired; it wants to wait on the position rather than read it once.
 
-- **(P3) `SceneCanvasInner` is one 788-line function.** It is most of the 944-line
+- **(P3) `SceneCanvasInner` is one 717-line function.** It is most of the 870-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
   owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
-  chrome-caps rule context, path editing, selection, ingestion, and the device profile landed
-  2026-10-12. Left open by the preset table and the rule context, and described in the audit:
+  chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, and
+  the layer slots landed 2026-10-12. `canvas/Canvas.tsx` is 783 lines, 467 of them `CanvasInner`,
+  after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas. Left open by the preset table and the rule context, and described in the audit:
   `selectTool.rotate === false` is still decided in three places that do not agree, and the
   `modifierHeld` condition can never match on a `<SceneCanvas>`, which always reports no modifier
   held. Left open by the selection pass: the kind label published with the selection and the routing
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
+
+- **(P3) A pre-built layer in `<SceneCanvas layers>`'s `scene` or `selectionOverlay` slot is not
+  painted.** Read, not run. `mergeLayersWithDefaults` spreads a `{ layer }` entry over the slot's
+  defaults; `useSceneSlotLayers` then builds nothing for the scene slot, and
+  `useSelectionOverlayLayer` builds its own overlay from what is left and never reads `layer`.
+  `LayersMap` types `selectionOverlay` as accepting a `CustomLayerEntry`, so the second one
+  typechecks. Either honor the entry in both hooks or take it out of the type.
 
 - **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
   together" and `<Canvas>` examples in concepts, and "Custom layers" in extending, pass `adapter` and
