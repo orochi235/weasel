@@ -84,10 +84,10 @@ describe('strokeToPath', () => {
 
   it('includes a marker head, and stops the line under it', () => {
     const plain = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: 4 });
-    const headed = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: 4, markerEnd: 'arrow' });
-    // The head is wider than the line it caps.
+    const headed = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: 4, markerEnd: 'diamond-hollow' });
     expect(boundsOfPath(headed).height).toBeGreaterThan(boundsOfPath(plain).height);
-    expect(boundsOfPath(headed).x + boundsOfPath(headed).width).toBeCloseTo(100, 3);
+    expect(pathContainsPoint(headed, 50, 0)).toBe(true);
+    expect(pathContainsPoint(headed, 92, 0)).toBe(false);
   });
 
   it('resolves round joins and caps on a curve that doubles back', () => {
