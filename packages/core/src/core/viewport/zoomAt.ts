@@ -16,6 +16,17 @@ function clampScale(scale: number, min: number, max: number): number {
   return scale < 0 ? -magnitude : magnitude;
 }
 
+/** Which axes a zoom scales. */
+export type ZoomAxis = 'both' | 'x' | 'y';
+
+/** `factor` held to one axis: the other axis's factor is 1, so `zoomAt` leaves
+ *  its scale and its translation where they were. */
+export function axisZoomFactor(factor: number, axis: ZoomAxis): ZoomFactor {
+  if (axis === 'x') return { x: factor, y: 1 };
+  if (axis === 'y') return { x: 1, y: factor };
+  return factor;
+}
+
 /**
  * Pure zoom primitive. Returns a new `View` whose `scale` is multiplied
  * by `factor` (per-axis, clamped) and whose translation is adjusted so

@@ -175,9 +175,6 @@ Priority tags:
   and misses a canvas in a shadow root or a second document. Not chosen yet.
 
 ---
-- **(P3) Wheel and keyboard zoom cannot be held to one axis.** `View.scale` is per axis and
-  `fitViewToBounds` has `stretch`, but `ViewportZoomOptions` (`viewportZoom.ts`) has no
-  `axis: 'both' | 'x' | 'y'`; only wheel pan and the hand tool take one.
 
 ## Paths & booleans
 
