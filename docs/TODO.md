@@ -980,11 +980,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) `PAGE_RULES` names 8 axe rules and turning them off removes 7.** Measured in the
-  2026-10-12 test audit: with `page: false` axe runs 7 fewer rules than with `page: true`, so one
-  id in `packages/forge/src/frame/a11y.ts` is not a rule axe runs by default. Which one is not
-  known.
-
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
