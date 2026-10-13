@@ -335,23 +335,32 @@ Priority tags:
   left is one adapter contract and one default wiring, with every scene a tree rooted at one
   container, as `useScene`'s already is.
 
-- **(P3) `packages/core/src/core/scene/scene.ts` is still 1,100 lines.** What is left in it is the
-  recording core (`makeOp`, `executeAndLog`, `applyBatchNow`, about 200 lines) and the public
-  `Scene` object's methods (about 580), and they share seven mutable variables: `batchDepth`,
-  `batchDirty`, `currentBatch`, `suppressRecording`, `untrackedDepth`, `selection`, and `version`.
-  Splitting them means putting those in one record the pieces close over, then cutting the methods
-  by what they edit: nodes, layers, selection, and history and batches.
+- **(P3) `packages/core/src/core/scene/scene.ts` is still over the size cap: 611 lines, 519 of them
+  `buildScene`.** What is left in that function is the node mutators (`add`, `removeMany`, `setPose`,
+  `setLayer`, `setLayout`, `move`, `reorder`, and the smaller ones, about 210 lines) and the wiring
+  of the modules that now own the rest: `notifier.ts`, `editMode.ts`, `sceneSelection.ts`,
+  `opTable.ts`, `recorder.ts`, `outerOps.ts`, `layerStack.ts`, and `historyFacade.ts`. Each mutator
+  checks its arguments against the lock guard, the layer stack, and the node store, then records, so
+  moving them out as they stand hands one module all of those at once. The wiring shrinks when the
+  entry below lands and `outerOps.ts` goes.
+
+- **(P3) `loadState` can leave a locked node selected.** It keeps the selected ids the loaded
+  snapshot still holds and does not ask whether a lock now covers them, so a selected node the
+  snapshot puts on a locked layer stays selected: `getSelection()` answers with it and `isLocked`
+  answers true. Every other selection write goes through `set` or `narrow` in `sceneSelection.ts`,
+  which drop locked ids; `loadState` uses `replace`, which does not.
 
 - **(P2) One recorded form for a scene edit.** Decided 2026-10-12: `scene.applyBatch` becomes a
   `scene.batch` that applies its ops and records the `kit:*` ops they caused, so the undo stack holds
   one kind of entry. Today it holds two: `scene.setPose` and its siblings record `kit:*` ops, and
-  `applyBatch` records the outer `Op` with the kit handlers' recording switched off. `suppressRecording`,
-  adapter binding (`setHistoryAdapter`), `scene.carry` and `carriedPoses.ts`, the two stale-replay
-  mechanisms, and the rollback nested inside `atomically` exist to keep the two in step. Needed first:
+  `applyBatch` records the outer `Op` with the kit handlers' recording switched off. The `engine`
+  driver in `editMode.ts`, adapter binding (`setHistoryAdapter`) and `scene.carry` with
+  `carriedPoses.ts` (both behind `outerOps.ts`), the two stale-replay mechanisms, and the rollback
+  nested inside `atomically` exist to keep the two in step. Needed first:
   the history engine recording already-applied ops in a way that still coalesces, and a home for ops
   that write non-scene state (`setSelection`, `setPath`, `setText`). `core/ops` stays for adapters that
   are not a scene. Serialized histories change shape, so draw's persisted undo history needs a break
-  or a migration. Do it after the entry above.
+  or a migration. Do it after the `scene.ts` entry above.
 
 - **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
   the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
