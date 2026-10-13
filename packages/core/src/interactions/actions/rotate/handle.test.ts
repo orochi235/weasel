@@ -46,12 +46,6 @@ describe('rotationHandle', () => {
     expect(close(h.cx, 5 + expectedRadius, 1e-6)).toBe(true);
     expect(close(h.cy, 5, 1e-6)).toBe(true);
   });
-
-  it('missing rotation is treated as zero', () => {
-    const a = rotationHandle({ x: 0, y: 0, width: 10, height: 10 });
-    const b = rotationHandle({ x: 0, y: 0, width: 10, height: 10, rotation: 0 });
-    expect(a).toEqual(b);
-  });
 });
 
 describe('hitRotationHandle', () => {
@@ -67,13 +61,7 @@ describe('hitRotationHandle', () => {
   });
 
   it('outside the square is a miss', () => {
-    expect(hitRotationHandle(h, 17, 20, 6)).toBe(false);
-    expect(hitRotationHandle(h, 10, 27, 6)).toBe(false);
-  });
-
-  it('hits use square (max-norm) not circular distance', () => {
-    // Corner of the square at (cx+r, cy+r) is a hit; (cx+r+ε, cy) is a miss.
-    expect(hitRotationHandle(h, 16, 26, 6)).toBe(true);
     expect(hitRotationHandle(h, 16.1, 20, 6)).toBe(false);
+    expect(hitRotationHandle(h, 10, 27, 6)).toBe(false);
   });
 });

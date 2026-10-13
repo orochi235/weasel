@@ -16,8 +16,6 @@ interface StubScene {
   composition: typeof IDENTITY_POSE_COMPOSITION;
   batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }>;
   get(id: NodeId): { pose: unknown; kind: 'leaf'; layer: string; data: unknown; parent: null } | undefined;
-  setPose(id: NodeId, pose: unknown): void;
-  batch<T>(label: string, fn: () => T): T;
   applyBatch(ops: unknown[], label: string, adapter: unknown): void;
 }
 
@@ -35,22 +33,6 @@ function makeStubScene(initial: Record<string, { pose: unknown }>): StubScene {
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };
-    },
-    setPose(id: NodeId, pose: unknown) {
-      poses.set(id, pose);
-    },
-    batch<T>(label: string, fn: () => T): T {
-      const ops: Array<{ id: string; pose: unknown }> = [];
-      const prevSet = this.setPose.bind(this);
-      const entry = { label, ops };
-      batchLog.push(entry);
-      this.setPose = (id: NodeId, pose: unknown) => {
-        ops.push({ id, pose });
-        poses.set(id, pose);
-      };
-      const result = fn();
-      this.setPose = prevSet;
-      return result;
     },
     // The commit path now emits transform ops through `commitOps` →
     // `scene.applyBatch` (no consumer `applyOps`). Mirror the real scene:
@@ -173,7 +155,7 @@ describe('rotateAction descriptor', () => {
     expect(scene.batchLog).toHaveLength(0);
   });
 
-  it('onEnd("commit") applies rotation via scene.batch and produces one undo entry', () => {
+  it('onEnd("commit") commits one batch labeled Rotate', () => {
     const invoker = getOngoingInvoker(rotateAction);
     // Node a: center = (125, 75). Pointer starts directly right → angle 0.
     const { scene, ...ctx } = makeCtx({
@@ -187,12 +169,9 @@ describe('rotateAction descriptor', () => {
     handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } });
     handle.onEnd!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } }, 'commit');
 
-    // Pose should have non-zero rotation after commit.
     const finalPose = scene.poses.get('a') as { rotation: number };
-    expect(typeof finalPose.rotation).toBe('number');
-    expect(finalPose.rotation).not.toBe(0);
+    expect(finalPose.rotation).toBeCloseTo(-Math.PI / 2);
 
-    // Exactly one batch entry named 'Rotate'.
     expect(scene.batchLog).toHaveLength(1);
     expect(scene.batchLog[0].label).toBe('Rotate');
   });
@@ -241,8 +220,7 @@ describe('rotateAction descriptor', () => {
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
     handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } });
     const preview = handle.previewPose!('a') as { rotation: number };
-    expect(typeof preview.rotation).toBe('number');
-    expect(preview.rotation).not.toBe(0);
+    expect(preview.rotation).toBeCloseTo(-Math.PI / 2);
     expect(Array.from(handle.previewIds!() ?? [])).toEqual(['a']);
     expect(scene.poses.get('a')).toEqual({ x: 100, y: 50, width: 50, height: 50, rotation: 0 });
 
@@ -284,11 +262,13 @@ describe('rotateAction descriptor', () => {
     handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 15, y: -5 } });
     handle.onEnd!({ ...(ctx as InvocationCtx), world: { x: 15, y: -5 } }, 'commit');
 
-    // Both nodes should be rotated.
-    const poseA = scene.poses.get('a') as { rotation: number };
-    const poseB = scene.poses.get('b') as { rotation: number };
-    expect(poseA.rotation).not.toBe(0);
-    expect(poseB.rotation).not.toBe(0);
+    // Each node turns a quarter and orbits the union center (15, 5).
+    const poseA = scene.poses.get('a') as { x: number; y: number; rotation: number };
+    const poseB = scene.poses.get('b') as { x: number; y: number; rotation: number };
+    expect(poseA.rotation).toBeCloseTo(-Math.PI / 2);
+    expect(poseB.rotation).toBeCloseTo(-Math.PI / 2);
+    expect([poseA.x + 5, poseA.y + 5]).toEqual([expect.closeTo(15), expect.closeTo(15)]);
+    expect([poseB.x + 5, poseB.y + 5]).toEqual([expect.closeTo(15), expect.closeTo(-5)]);
     expect(scene.batchLog).toHaveLength(1);
     expect(scene.batchLog[0].label).toBe('Rotate');
     // Both nodes should be in the same batch.
@@ -308,7 +288,7 @@ describe('rotateAction descriptor', () => {
     handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } });
     handle.onEnd!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } }, 'commit');
 
-    // Consumer hook owns the commit — scene.batch / applyBatch is not used.
+    // Consumer hook owns the commit — scene.applyBatch is not used.
     expect(applyOps).toHaveBeenCalledOnce();
     expect(scene.batchLog).toHaveLength(0);
 
@@ -322,7 +302,7 @@ describe('rotateAction descriptor', () => {
     expect(ops[0].args.id).toBe('a');
     // `from` is the pre-mutation pose (rotation 0), `to` carries the rotation.
     expect(ops[0].args.from).toEqual({ x: 100, y: 50, width: 50, height: 50, rotation: 0 });
-    expect(ops[0].args.to.rotation).not.toBe(0);
+    expect(ops[0].args.to.rotation).toBeCloseTo(-Math.PI / 2);
   });
 
   it('emits one op per selected node through applyOps (union-pivot)', () => {

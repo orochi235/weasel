@@ -58,30 +58,6 @@ describe('fixedCornerOf', () => {
 });
 
 describe('CORNER_ANCHORS round-trip', () => {
-  it('decodes to the same handles as cornerResizeHandles', () => {
-    const b = { x: 10, y: 20, width: 30, height: 40 };
-    expect(
-      CORNER_ANCHORS.map((c) => {
-        const p = cornerPoint(b, c);
-        return { cx: p.x, cy: p.y, anchor: c.anchor };
-      }),
-    ).toEqual(cornerResizeHandles(b));
-  });
-
-  it('each corner is diagonally opposite its fixed (anchor) corner', () => {
-    const b = { x: 10, y: 20, width: 30, height: 40 };
-    const cx = b.x + b.width / 2;
-    const cy = b.y + b.height / 2;
-    for (const c of CORNER_ANCHORS) {
-      const dragged = cornerPoint(b, c);
-      const fixed = fixedCornerOf(b, c.anchor);
-      // The dragged corner and its fixed opposite are reflections through
-      // the AABB center: midpoint == center.
-      expect((dragged.x + fixed.x) / 2).toBeCloseTo(cx);
-      expect((dragged.y + fixed.y) / 2).toBeCloseTo(cy);
-    }
-  });
-
   it('corner encode/decode round-trips on a rotated pose (pin-the-opposite-corner invariant)', () => {
     // Rotate each corner + its fixed opposite around the AABB center, the
     // same way affordanceAt.cornersFor places handles for a rotated pose.

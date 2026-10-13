@@ -67,15 +67,14 @@ describe('snapToContainer', () => {
 
   it('moving away from target before dwell cancels timer', () => {
     const target1: SnapTarget<Pose> = { parentId: 'box1', slotPose: { x: 2, y: 3 } };
-    const findTarget = vi.fn().mockReturnValueOnce(target1).mockReturnValue(null);
+    const findTarget = vi.fn().mockReturnValueOnce(target1).mockReturnValueOnce(null).mockReturnValue(target1);
     const b = snapToContainer<Pose>({ dwellMs: 500, findTarget });
     const ctx = makeCtx();
     b.onMove!(ctx, tt(1, 1));
     vi.advanceTimersByTime(200);
     b.onMove!(ctx, tt(10, 10));
     vi.advanceTimersByTime(500);
-    const r = b.onMove!(ctx, tt(10, 10));
-    expect(r?.snap ?? null).toBeNull();
+    expect(b.onMove!(ctx, tt(1, 1))).toBeUndefined();
   });
 
   it('onEnd emits [TransformOp, ReparentOp] when snapped to a new parent', () => {
@@ -84,10 +83,10 @@ describe('snapToContainer', () => {
     const ctx = makeCtx();
     b.onMove!(ctx, tt(1, 1));
     ctx.snap = target;
-    const ops = b.onEnd!(ctx, moveEnd());
-    expect(Array.isArray(ops)).toBe(true);
-    expect(ops!.length).toBe(2);
-    expect((ops![0] as any).label ?? '').toMatch(/move|Move/i);
+    const ops = b.onEnd!(ctx, moveEnd()) as any[];
+    expect(ops.map((op) => op.name)).toEqual(['transform', 'reparent']);
+    expect(ops[0].args).toMatchObject({ id: 'p1', to: { x: 2, y: 3 } });
+    expect(ops[1].args).toMatchObject({ id: 'p1', toParentId: 'box' });
   });
 
   it('onEnd emits only TransformOp when snapped target equals old parent', () => {

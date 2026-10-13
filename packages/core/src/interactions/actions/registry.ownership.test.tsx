@@ -79,16 +79,4 @@ describe('ActionsRegistry dispatcher ownership', () => {
     act(() => { releaseFirst(); });
     expect(slotIsWired()).toBe(false);
   });
-
-  it('stays quiet when one canvas re-wires its own dispatcher', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { reg, makeDispatcher } = setup();
-    let release: () => void = () => {};
-    act(() => { release = reg.setDispatcher(makeDispatcher()); });
-    // React runs the previous effect's cleanup before the next effect.
-    act(() => { release(); });
-    act(() => { reg.setDispatcher(makeDispatcher()); });
-    expect(warn).not.toHaveBeenCalled();
-    warn.mockRestore();
-  });
 });

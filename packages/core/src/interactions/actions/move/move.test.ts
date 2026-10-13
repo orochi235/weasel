@@ -52,8 +52,6 @@ interface StubScene {
   batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }>;
   children: Map<string, NodeId[]>;
   get(id: NodeId): { pose: unknown } | undefined;
-  setPose(id: NodeId, pose: unknown): void;
-  batch<T>(label: string, fn: () => T): T;
   applyBatch(ops: unknown[], label: string, adapter: unknown): void;
   childrenOf(id: NodeId): readonly NodeId[];
 }
@@ -82,23 +80,6 @@ function makeStubScene(
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id) };
-    },
-    setPose(id: NodeId, pose: unknown) {
-      poses.set(id, pose);
-    },
-    batch<T>(label: string, fn: () => T): T {
-      const ops: Array<{ id: string; pose: unknown }> = [];
-      const prevSet = this.setPose.bind(this);
-      const entry = { label, ops };
-      batchLog.push(entry);
-      // Intercept setPose calls inside the batch to record them.
-      this.setPose = (id: NodeId, pose: unknown) => {
-        ops.push({ id, pose });
-        poses.set(id, pose);
-      };
-      const result = fn();
-      this.setPose = prevSet;
-      return result;
     },
     // The translate-only commit path now emits transform ops through
     // `commitOps` → `scene.applyBatch` (no consumer `applyOps`). Mirror the
@@ -219,7 +200,7 @@ describe('moveAction descriptor', () => {
     expect(scene.batchLog).toHaveLength(0);
   });
 
-  it('onEnd("commit") applies final delta via scene.batch and produces one undo entry', () => {
+  it('onEnd("commit") commits one batch labeled Move', () => {
     const invoker = getOngoingInvoker(moveAction);
     const { scene, ...ctx } = makeCtx({
       selectionIds: ['a', 'b'],
