@@ -137,13 +137,11 @@ export function glyphOutlineD(g: PlacedGlyph, run: ResolvedRun, minSize: number 
 
 /**
  * The atlas quad for `g`, or null when it has nothing to sample: no atlas
- * record, a zero-advance or zero-area glyph, or a dynamic glyph not baked yet.
+ * record, a zero-area glyph, or a dynamic glyph not baked yet.
  */
 export function glyphQuad(g: PlacedGlyph): LaidOutQuad | null {
   const { font, glyph } = g;
-  if (font === null || glyph === null || g.advance === 0 || glyph.width === 0 || glyph.page < 0) {
-    return null;
-  }
+  if (font === null || glyph === null || glyph.width === 0 || glyph.page < 0) return null;
   const scale = g.fontSize / g.metrics.size;
   const x0 = g.x + glyph.xoffset * scale;
   // `yoffset` is measured from the line top in the atlas's own frame, so

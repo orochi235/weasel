@@ -104,8 +104,9 @@ Priority tags:
     painted-cursor write. One cursor sink beside `PaintedCursorState` would serve both.
 
 - **(P3) What the text layout split left.**
-  - `packages/text/src/layout/paintRuns.ts`: a zero-advance atlas glyph gets no quad, against the
-    `LaidOutCell.drawsInk` doc ("a combining mark inks without advancing").
+  - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
+    between two letters takes their pair's kerning away: `A`, U+0301, `B` sets the `B` where an
+    unkerned one goes. Seen in `combiningMarkQuad.test.ts`'s fixture, where the pair kerns by 1.
   - `paintRuns.ts`, `glyphOutlineD`: a code point no tier could serve still gets outline geometry
     above the outline threshold when the outline face has it, drawn on top of its neighbor.
   - No renderer-level test drives `fill: {}` through an SDF-tier draw; the no-ink rule is pinned
