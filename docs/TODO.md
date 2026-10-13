@@ -1099,10 +1099,13 @@ only story runner in the repo.
   with a gradient measures one program. A pattern fill still breaks the run; replace the variant
   with one, and count draws to pin the premise.
 
-- **(P3) `useHostAnchor.browser.test.tsx` failed once on the fleet.** "keeps following through a
-  second move" read 0 where it expected 140 in a full run on studio on 2026-10-12, at a commit
-  that changes nothing under `packages/core`; the same test passed in a full run of `main` the
-  same evening. Not reproduced, and not run alone.
+- **(P2) `useHostAnchor.browser.test.tsx` fails on the fleet about every other run.** Two full
+  runs on 2026-10-12 each failed one test in it, a different one each time: "keeps following
+  through a second move" read 0 where it expected 140 (studio), and "follows a host that a
+  collapsing sibling moves" left the panel 80px from its host (teitou). Neither commit changes
+  anything under `packages/core`, and the file passed in a full run of `main` the same evening.
+  Both are assertion failures after `settled()`, not timeouts, so the panel had not followed the
+  host by the time the test read it. Not reproduced, and not run alone.
 
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
   failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a
