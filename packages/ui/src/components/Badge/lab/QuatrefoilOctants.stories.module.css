@@ -6,7 +6,7 @@
 }
 
 .intro {
-  font-size: 12px;
+  font-size: var(--wzl-font-size-md);
   opacity: 0.7;
   margin: 0;
   max-width: 760px;
@@ -20,7 +20,7 @@
 }
 
 .sweepTitle {
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   opacity: 0.75;
@@ -42,10 +42,10 @@
 
 .plot {
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
+  border-radius: var(--wzl-radius-sm);
 }
 
 .cellLabel {
-  font-size: 9px;
+  font-size: var(--wzl-font-size-2xs);
   opacity: 0.7;
 }

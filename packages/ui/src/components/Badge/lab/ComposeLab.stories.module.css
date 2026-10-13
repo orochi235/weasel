@@ -23,7 +23,7 @@
   justify-content: center;
   padding: 16px;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 6px;
+  border-radius: var(--wzl-radius-md);
   overflow: hidden;
 }
 
@@ -52,13 +52,13 @@
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: var(--wzl-radius-md);
   background: rgba(127, 176, 105, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .sectionTitle {
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   opacity: 0.7;
@@ -66,12 +66,12 @@
 }
 
 .baseLabel {
-  font-size: 16px;
+  font-size: var(--wzl-font-size-lg);
   opacity: 0.7;
 }
 
 .baseSelect {
-  font-size: 27px;
+  font-size: var(--wzl-font-size-xl);
   padding: 4px 6px;
 }
 
@@ -89,13 +89,13 @@
   height: 22px;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: var(--wzl-radius-sm);
   cursor: pointer;
   background: transparent;
 }
 
 .labelInput {
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   padding: 2px 4px;
 }
 
@@ -107,7 +107,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: var(--wzl-font-size-sm);
   opacity: 0.7;
 }
 
@@ -122,7 +122,7 @@
 }
 
 .padTitle {
-  font-size: 10px;
+  font-size: var(--wzl-font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   opacity: 0.6;
@@ -146,7 +146,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: var(--wzl-radius-md);
   background: rgba(127, 176, 105, 0.18);
   border: 1px solid rgba(127, 176, 105, 0.45);
   box-shadow: 0 0 0 1px rgba(127, 176, 105, 0.15) inset, 0 6px 18px -8px rgba(127, 176, 105, 0.5);
@@ -159,7 +159,7 @@
 }
 
 .effectsTitle {
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   opacity: 0.85;
@@ -171,10 +171,10 @@
   gap: 4px;
 }
 
-.addSelect { font-size: 10px; }
+.addSelect { font-size: var(--wzl-font-size-sm); }
 
 .empty {
-  font-size: 10px;
+  font-size: var(--wzl-font-size-sm);
   opacity: 0.5;
   margin: 0;
 }
@@ -184,7 +184,7 @@
   grid-template-columns: 20px 1fr;
   gap: 6px;
   padding: 0;
-  border-radius: 4px;
+  border-radius: var(--wzl-radius-sm);
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-top: 2px solid transparent;
@@ -203,7 +203,7 @@
   background: rgba(255, 255, 255, 0.04);
   cursor: grab;
   user-select: none;
-  font-size: 14px;
+  font-size: var(--wzl-font-size-md);
   opacity: 0.5;
   writing-mode: vertical-rl;
   letter-spacing: 2px;
@@ -223,17 +223,17 @@
 }
 
 .ordinal {
-  font-size: 11px;
+  font-size: var(--wzl-font-size-2xs);
   opacity: 0.85;
 }
 
 .typeSelect {
-  font-size: 11px;
+  font-size: var(--wzl-font-size-sm);
   flex: 1;
 }
 
 .zone {
-  font-size: 9px;
+  font-size: var(--wzl-font-size-2xs);
   opacity: 0.6;
 }
 
@@ -255,12 +255,12 @@
   padding: 10px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
+  border-radius: var(--wzl-radius-md);
   cursor: pointer;
   min-width: 96px;
 }
 
 .presetName {
-  font-size: 10px;
+  font-size: var(--wzl-font-size-2xs);
   opacity: 0.7;
 }

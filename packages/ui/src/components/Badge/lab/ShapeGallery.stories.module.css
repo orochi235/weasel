@@ -11,12 +11,12 @@
 }
 
 .copied {
-  font-size: 10px;
+  font-size: var(--wzl-font-size-sm);
   opacity: 0.7;
 }
 
 .categoryTitle {
-  font-size: 12px;
+  font-size: var(--wzl-font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   opacity: 0.7;
@@ -35,7 +35,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  border-radius: 6px;
+  border-radius: var(--wzl-radius-md);
   background: rgba(255, 255, 255, 0.02);
   min-width: 0;
 }
@@ -48,7 +48,7 @@
 }
 
 .name {
-  font-size: 10px;
+  font-size: var(--wzl-font-size-sm);
   opacity: 0.85;
   text-align: center;
   display: flex;
@@ -58,9 +58,9 @@
 }
 
 .legacy {
-  font-size: 8px;
+  font-size: var(--wzl-font-size-2xs);
   padding: 1px 4px;
-  border-radius: 3px;
+  border-radius: var(--wzl-radius-sm);
   background: rgba(212, 165, 116, 0.18);
   color: #d4a574;
   letter-spacing: 0.08em;
