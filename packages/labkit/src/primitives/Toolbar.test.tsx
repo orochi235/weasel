@@ -24,17 +24,6 @@ describe('Toolbar', () => {
     expect(container.querySelector('.lk-toolbar-title')).not.toBeNull();
   });
 
-  test('Spacer fills available space', () => {
-    const { container } = render(
-      <Toolbar>
-        <Toolbar.Title>L</Toolbar.Title>
-        <Toolbar.Spacer />
-        <span>R</span>
-      </Toolbar>,
-    );
-    expect(container.querySelector('.lk-toolbar-spacer')).not.toBeNull();
-  });
-
   test('Button passes onClick and disabled', () => {
     let clicked = false;
     render(

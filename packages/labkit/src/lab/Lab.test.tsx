@@ -92,9 +92,26 @@ describe('<Lab>', () => {
   });
 
   it('resetTrial restores defaults', async () => {
-    await mountLab();
+    let store: LabStore | null = null;
+    function CaptureStore() {
+      store = useContext(LabStoreContext)?.store ?? null;
+      return null;
+    }
+    await renderSettled(
+      <Lab instruments={[stub]} defaultInstrument="Stub">
+        <CaptureLab>
+          <CaptureStore />
+        </CaptureLab>
+      </Lab>,
+    );
     const ws = labRef?.trials[0];
     if (!ws) throw new Error('no trial');
+    await act(async () => {
+      store?.getState().updateTrialConfig(ws.id, 'count', 5);
+      store?.getState().updateTrialState(ws.id, { value: 9 });
+    });
+    expect(labRef?.trials[0]?.config).toEqual({ count: 5 });
+    expect(labRef?.trials[0]?.state).toEqual({ value: 9 });
     await act(async () => labRef?.resetTrial(ws.id));
     const reset = labRef?.trials[0];
     expect(reset?.config).toEqual({ count: 0 });

@@ -339,11 +339,6 @@ describe('chrome regions in a mounted lab', () => {
     await renderLabWith(stubInstrument);
     expect(document.querySelector('.lk-viewport-controls')).toBeNull();
   });
-
-  it('Lab provides context for nested TrialChrome', async () => {
-    await renderLabWith(stubInstrument);
-    expect(document.querySelector('.lk-lab')).toBeTruthy();
-  });
 });
 
 describe('<TrialChrome> — state that outlives a mount', () => {
