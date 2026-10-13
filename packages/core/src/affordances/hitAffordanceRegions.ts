@@ -4,9 +4,12 @@
  */
 
 import type { View } from 'core/viewport/view';
-import { pxExtent, scaleDelta, screenAngleOf, standoff } from '@weasel-js/geom';
-import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import { poseRotationOf } from '@weasel-js/geom';
+import { scaleDelta, screenAngleOf, standoff } from '@weasel-js/geom';
+import type { ChromeState } from 'core/selection/chromeState';
+import {
+  angleOf, IDENTITY_TARGET, localToWorld, normalToWorld, pxExtentIn, targetTransformOf, worldToLocal,
+  type TargetTransform,
+} from 'core/geometry/targetFrame';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 
 /** What the walk found: the region, plus the ids needed to describe it. */
@@ -92,63 +95,12 @@ function regionDistance2(
 
 // ─── Transform helpers ──────────────────────────────────────────────────────
 
-/** Local↔world transform for an affordance target: a rotation around the AABB
- *  center. `identity` short-circuits the math when the target isn't rotated. */
-export interface TargetTransform {
-  /** Rotation pivot (AABB center) in world coords. */
-  cx: number;
-  cy: number;
-  /** cos(rotation) — 1 when identity. */
-  cos: number;
-  /** sin(rotation) — 0 when identity. */
-  sin: number;
-  identity: boolean;
-}
+export { angleOf, localToWorld, type TargetTransform };
 
-const IDENTITY_XF: TargetTransform = { cx: 0, cy: 0, cos: 1, sin: 0, identity: true };
-
+/** The frame `targetId`'s bounds are drawn in; identity for no target. */
 export function transformOf(state: ChromeState, targetId: string | null): TargetTransform {
-  if (targetId === null) return IDENTITY_XF;
-  const b: Bounds | null = state.boundsOf(targetId);
-  if (!b) return IDENTITY_XF;
-  // Pivot + angle come from the kit's one rotation convention.
-  const r = poseRotationOf(b);
-  if (!r) return IDENTITY_XF;
-  return {
-    cx: r.cx,
-    cy: r.cy,
-    cos: Math.cos(r.rotation),
-    sin: Math.sin(r.rotation),
-    identity: false,
-  };
-}
-
-/** A target transform's rotation in radians, for cursors baked at an angle. */
-export function angleOf(xf: TargetTransform): number {
-  return xf.identity ? 0 : Math.atan2(xf.sin, xf.cos);
-}
-
-/** local point → world point. */
-export function localToWorld(xf: TargetTransform, lx: number, ly: number): { x: number; y: number } {
-  if (xf.identity) return { x: lx, y: ly };
-  const dx = lx - xf.cx;
-  const dy = ly - xf.cy;
-  return {
-    x: xf.cx + xf.cos * dx - xf.sin * dy,
-    y: xf.cy + xf.sin * dx + xf.cos * dy,
-  };
-}
-
-/** world point → local point. */
-function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number; y: number } {
-  if (xf.identity) return { x: wx, y: wy };
-  const dx = wx - xf.cx;
-  const dy = wy - xf.cy;
-  // Inverse rotation: cos stays, sin negates.
-  return {
-    x: xf.cx + xf.cos * dx + xf.sin * dy,
-    y: xf.cy - xf.sin * dx + xf.cos * dy,
-  };
+  if (targetId === null) return IDENTITY_TARGET;
+  return targetTransformOf(state.boundsOf(targetId));
 }
 
 // ─── Shape resolution ───────────────────────────────────────────────────────
@@ -172,10 +124,11 @@ export function pointRegionFrame(
   const body = shape.cornerOf;
   if (body) {
     // The body in world units that spans four hit radii on screen, per axis.
-    const floor = pxExtent(SMALL_BODY_RADII * half, view.scale, angleOf(xf));
+    const floor = pxExtentIn(SMALL_BODY_RADII * half, view.scale, xf);
     // `v` runs a quarter turn on from `u` on screen, which is the target's +y
-    // only while the view keeps its handedness.
-    const vOut = body.outward.y * Math.sign(view.scale.x * view.scale.y);
+    // only while the view and the target's frame keep their handedness.
+    const [a, b, c, d] = xf.toWorld;
+    const vOut = body.outward.y * Math.sign(view.scale.x * view.scale.y * (a * d - b * c));
     if (body.width < floor.x) u[body.outward.x > 0 ? 0 : 1] = 0;
     if (body.height < floor.y) v[vOut > 0 ? 0 : 1] = 0;
   }
@@ -211,11 +164,7 @@ export function pointRegionAnchor(
 ): { x: number; y: number } {
   const a = localToWorld(xf, shape.x, shape.y);
   if (!shape.standoff) return a;
-  const n = shape.standoff.normal;
-  const wn = xf.identity
-    ? n
-    : { x: xf.cos * n.x - xf.sin * n.y, y: xf.sin * n.x + xf.cos * n.y };
-  return standoff(a, wn, shape.standoff.px, view.scale);
+  return standoff(a, normalToWorld(xf, shape.standoff.normal), shape.standoff.px, view.scale);
 }
 
 /**
@@ -226,13 +175,13 @@ export function pointRegionAnchor(
 export function annulusSemiAxes(
   shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
   view: View,
-  /** The target's rotation, which decides what a screen pixel is along each
-   *  of its axes. */
-  rotation = 0,
+  /** The target's frame, which decides what a screen pixel is along each of
+   *  its axes. */
+  xf: TargetTransform = IDENTITY_TARGET,
 ): { rx: number; ry: number } {
   const bandPx = shape.minBandPx ?? 0;
   if (bandPx === 0) return { rx: shape.rx, ry: shape.ry };
-  const band = pxExtent(bandPx, view.scale, rotation);
+  const band = pxExtentIn(bandPx, view.scale, xf);
   return {
     rx: Math.max(shape.rx, shape.innerWidth / 2 + band.x),
     ry: Math.max(shape.ry, shape.innerHeight / 2 + band.y),
@@ -248,7 +197,6 @@ function hitRegion(
   xf: TargetTransform,
   view: View,
 ): boolean {
-  const local = worldToLocal(xf, wx, wy);
   if (region.shape.kind === 'point') {
     // Square hit, not circular: the handle a `point` region paints is a
     // square, and a circle leaves its corners unclickable.
@@ -261,6 +209,8 @@ function hitRegion(
     const u = c * d.x + sn * d.y, v = -sn * d.x + c * d.y;
     return u >= f.u[0] && u <= f.u[1] && v >= f.v[0] && v <= f.v[1];
   }
+  const local = worldToLocal(xf, wx, wy);
+  if (!local) return false;
   if (region.shape.kind === 'annulus') {
     const s = region.shape;
     // Outside the inner-rect cutout?
@@ -269,7 +219,7 @@ function hitRegion(
       local.y >= s.innerY && local.y <= s.innerY + s.innerHeight;
     if (insideInner) return false;
     // Inside the outer ellipse? `((x-cx)/rx)² + ((y-cy)/ry)² ≤ 1`.
-    const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
+    const { rx, ry } = annulusSemiAxes(s, view, xf);
     if (rx <= 0 || ry <= 0) return false;
     const ex = (local.x - s.cx) / rx;
     const ey = (local.y - s.cy) / ry;

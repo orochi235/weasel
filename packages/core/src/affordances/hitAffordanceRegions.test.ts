@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { hitAffordanceRegions, annulusSemiAxes } from './hitAffordanceRegions';
+import { targetTransformOf } from 'core/geometry/targetFrame';
 import type { Affordance, AffordanceRegion } from './types';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
@@ -180,7 +181,7 @@ describe('hitAffordanceRegions', () => {
       };
       // A quarter turn lays the local y axis along screen x, where 24px is 6
       // world units; local x lands along screen y, where it is 24.
-      const r = annulusSemiAxes(shape, SQUISHED, Math.PI / 2);
+      const r = annulusSemiAxes(shape, SQUISHED, targetTransformOf({ x: 0, y: 0, width: 1, height: 1, rotation: Math.PI / 2 }));
       expect(r.rx).toBeCloseTo(74, 6);
       expect(r.ry).toBeCloseTo(56, 6);
     });
