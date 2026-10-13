@@ -60,6 +60,27 @@ describe('<ControlPanel> visibility and sections', () => {
 });
 
 describe('<ControlPanel> group descriptions', () => {
+  it('heads a group named as its section once, with the group’s rows under the section', () => {
+    const schema = resolveConfigSchema(
+      f.schema({
+        debug: f.group({ boxes: f.boolean(false) }).section('Debug').label('Debug'),
+        route: f.boolean(false).section('Debug'),
+        other: f.group({ depth: f.number(1) }).section('Debug').label('Other'),
+      }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={schema}
+        config={{ debug: { boxes: false }, route: false, other: { depth: 1 } }}
+        setConfig={vi.fn()}
+      />,
+    );
+    expect(screen.getAllByRole('heading', { name: 'Debug' })).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Other' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Boxes')).toBeInTheDocument();
+  });
+
   it('draws a named group’s describe() above its rows', () => {
     const schema = resolveConfigSchema(
       f.schema({

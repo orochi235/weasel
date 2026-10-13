@@ -16,6 +16,8 @@ export interface Rows {
   pack: ControlPack;
   layout: PropertyRowLayout | undefined;
   grid: PropertyListPack;
+  /** The words of the heading the rows are under, where a section drew one. */
+  heading?: string;
 }
 
 export const gridOf = (pack: ControlPack): PropertyListPack =>
@@ -26,5 +28,6 @@ export function sectionRows(section: SectionSpec, rows: Rows): Rows {
     pack: section.pack ?? rows.pack,
     layout: section.layout ?? rows.layout,
     grid: section.pack ? gridOf(section.pack) : rows.grid,
+    ...(typeof section.label === 'string' ? { heading: section.label } : {}),
   };
 }
