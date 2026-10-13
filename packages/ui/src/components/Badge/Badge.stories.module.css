@@ -4,13 +4,13 @@
 }
 
 .matrixHead {
-  font-size: 10px;
+  font-size: var(--wzl-font-size-2xs);
   text-transform: uppercase;
   opacity: 0.7;
 }
 
 .baselineText {
-  font-size: 14px;
+  font-size: var(--wzl-font-size-md);
   line-height: 1.6;
 }
 

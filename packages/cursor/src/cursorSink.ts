@@ -11,6 +11,7 @@
 import type { PaintedCursorState } from './paintedCursorState';
 import type { ResolvedCursor } from './resolve';
 
+/** The one writer of a surface's cursor: a base slot and an override slot that wins while set. */
 export interface CursorSink {
   /** The cursor shown while nothing overrides it, or null for none. `rest`
    *  is the CSS value shown then, the element's own cursor where it has one. */
@@ -19,6 +20,7 @@ export interface CursorSink {
   setOverride(cursor: ResolvedCursor | null): void;
 }
 
+/** What a {@link CursorSink} writes to: an element's `cursor` style and the painted-cursor state. */
 export interface CursorSinkTarget {
   /** The element whose `cursor` style is written, read at each write. */
   element: () => { style: { cursor: string } } | null | undefined;
