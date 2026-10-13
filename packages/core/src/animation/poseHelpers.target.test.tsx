@@ -7,8 +7,7 @@ import type { RectPose } from '../core/scene/types';
 import { sceneToAdapter } from '../canvas/sceneAdapter';
 import { moveGestureAdapter } from '../interactions/actions/move/gestureAdapter';
 import { useAnimator } from '@weasel-js/animator';
-import { springPose, tweenPose } from './poseHelpers';
-import type { SceneAdapter } from '../core/adapters/types';
+import { springPose, tweenPose, type PoseAnimationAdapter } from './poseHelpers';
 import type { Animator } from '@weasel-js/animator';
 
 function setup(options: Parameters<typeof sceneToAdapter>[1] = {}) {
@@ -25,7 +24,7 @@ function setup(options: Parameters<typeof sceneToAdapter>[1] = {}) {
   };
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-  const adapter = sceneToAdapter(scene, options as never) as unknown as SceneAdapter<{ id: string }, RectPose>;
+  const adapter = sceneToAdapter(scene, options as never) as unknown as PoseAnimationAdapter<RectPose>;
   const shown = () => effectivePose(scene, scene.get(a)!);
   return { animator: (): Animator => result.current, frame, scene, a, adapter, shown };
 }

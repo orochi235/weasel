@@ -17,8 +17,8 @@ export interface LifecycleAnimation<TPose> {
   geometry?: PoseDescriptor<TPose>;
 }
 
-/** The part of an adapter `animateLifecycle` reads and wraps. Any `SceneAdapter` is one, and so is
- *  the adapter `sceneToAdapter` and `useSceneAdapter` build. */
+/** The part of an adapter `animateLifecycle` reads and wraps. The adapter `sceneToAdapter` and
+ *  `useSceneAdapter` build is one. */
 export interface LifecycleAdapter<TNode extends { id: string }, TPose> extends PoseAnimationAdapter<TPose> {
   insertNode(node: TNode, index?: number): void;
   removeNode(id: string): void;

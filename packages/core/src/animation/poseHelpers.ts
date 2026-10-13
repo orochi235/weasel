@@ -7,13 +7,13 @@ import type {
 import type { Target } from '@weasel-js/animator';
 import { rewindingSpring, rewindingTween } from './rewind';
 
-/** The part of an adapter `tweenPose` and `springPose` use. Any `SceneAdapter` is one, and so is
- *  the adapter `sceneToAdapter` and `useSceneAdapter` build. */
+/** The part of an adapter `tweenPose` and `springPose` use. The adapter `sceneToAdapter` and
+ *  `useSceneAdapter` build is one. */
 export interface PoseAnimationAdapter<TPose> {
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
   applyOps?(ops: Op[], label: string): void;
-  /** See `SceneAdapter.poseTarget`. */
+  /** See `MoveAdapter.poseTarget`. */
   poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
 }
 
@@ -80,8 +80,8 @@ function recordTransformOp<TPose>(
  *
  * On an adapter with `poseTarget`, the destination is committed as the move starts. A
  * scene-backed adapter shows the travel through the scene's pose overrides, so the document
- * holds `to` throughout and nothing is written per frame; an `arrayAdapter` is written the
- * pose on screen each frame and `to` as the move ends. Moves on one node add: a
+ * holds `to` throughout and nothing is written per frame; a store with no overrides, behind
+ * `createWrittenPoseTarget`, is written the pose on screen each frame and `to` as the move ends. Moves on one node add: a
  * second `tweenPose` bends the first toward its own destination and cancels nothing. They share
  * the key `pose:<id>` for `cancelKey`, `pauseKey`, and `isActive`.
  *
