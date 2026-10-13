@@ -1532,8 +1532,9 @@ only story runner in the repo.
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
   summary prints the label, so making them one needs a decision on what it should say.
 
-- **(P3) `docs/concepts.md` and `docs/extending.md` teach API that is gone.** The "Putting it
-  together" and `<Canvas>` examples in concepts, and "Custom layers" in extending, pass `adapter` and
-  `selectionMode` to `<SceneCanvas>` and draw with a 2D `ctx.fillStyle`. The "Adapter" and "Gesture"
-  sections of concepts still describe per-action hooks, which `docs/taxonomy.md` contradicts. Each
-  needs rewriting against the current API, not trimming.
+- **(P3) `docs/concepts.md`'s "Adapter" section teaches per-action hooks.** It says every gesture
+  takes an adapter and that one struct is passed "to every hook", and calls `arrayAdapter` the
+  default for new apps; `docs/taxonomy.md`'s own "Adapter" entry lists the same per-action
+  interfaces. Both want rewriting around the scene `<SceneCanvas>` synthesizes an adapter from, once
+  "`arrayAdapter` as the default Canvas adapter" is settled. The examples rewritten 2026-10-13
+  ("Putting it together" in concepts, "Custom layers" in extending) have not been compiled.

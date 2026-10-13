@@ -138,32 +138,35 @@ its input routing and an `attach` that binds its registered layer.
 
 ## Custom layers
 
-The `layers` prop on `<Canvas>` is a tagged-discriminated map. Standard
-slot keys (`grid`, `scene`, `selectionOverlay`, …) take slot config;
-**any other key** is treated as a custom layer if its value carries a
-`.layer` field:
+The `layers` prop on `<SceneCanvas>` is a map of named slots. Standard slot
+keys (`grid`, `scene`, `selectionOverlay`, `cellHighlight`) take a slot config;
+**any other key** is a custom layer, and its value carries a `.layer` field:
 
-```ts
+```tsx
 import type { CustomLayerEntry, RenderLayer } from '@weasel-js/core';
 
-const hud: RenderLayer<unknown> = {
-  id: 'hud',
-  draw: (ctx) => {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(8, 8, 120, 24);
-    ctx.fillStyle = 'white';
-    ctx.fillText('HUD', 16, 24);
-  },
+const badge: RenderLayer<unknown> = {
+  id: 'badge',
+  label: 'Badge',
+  // Screen space: CSS pixels from the canvas's top-left, whatever the camera does.
+  space: 'screen',
+  draw: () => [
+    { kind: 'path', path: { kind: 'rect', x: 8, y: 8, width: 120, height: 24 }, fill: { paint: { color: 'rgba(0,0,0,0.6)' } } },
+  ],
 };
 
-<Canvas
+<SceneCanvas
+  scene={scene}
   layers={{
-    scene: { drawOne },
     selectionOverlay: { handles: true },
-    hud: { layer: hud, after: 'selectionOverlay' } satisfies CustomLayerEntry,
+    badge: { layer: badge, after: 'selectionOverlay' } satisfies CustomLayerEntry,
   }}
 />
 ```
+
+A layer's `draw` returns `DrawCommand`s; nothing in the kit hands a layer a 2D
+context. A layer with no `space` is in world space and must not apply the view
+transform itself.
 
 `after` and `before` reference a `StandardSlotName`. Omit both and the
 layer goes after every standard slot (the top of the stack). Multiple
@@ -179,6 +182,8 @@ exports: `createTextLayer`, `createPathLayer`, `createChildrenLayer`,
 
 The `grid` and `cellHighlight` slots take a pre-built layer, like any custom
 entry: `layers={{ grid: { layer: createGridLayer({ spacing: 20, bounds }) } }}`.
+`scene` and `selectionOverlay` take one too, in place of the layers the canvas
+would build from a config.
 
 `deps` opts a layer into command caching — see [concepts.md](./concepts.md#layer).
 
