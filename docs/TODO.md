@@ -1066,23 +1066,16 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P2) Six visual specs and one perf spec were edited in the 2026-10-12 test audit and have not
-  been run.** No browser was available to the audit. `tests/visual/params-labels.spec.ts` and
-  `panel-stances.spec.ts` mounted `Properties.module.css` raw, which has held only `@import` lines
-  since that sheet was split, and now read it through `readModuleCss`. `loupe.spec.ts` passed on an
-  empty lens and now also requires the scanline to cross the magnified rules. `insert.spec.ts`,
-  `gestures.spec.ts`, and `shape-tools.spec.ts` were retitled, and `tests/perf/draw-loop.spec.ts`
-  had comments corrected. Run the visual project and fix what the new assertions find.
+- **(P2) Three visual baselines were captured on macOS and have not been compared on CI.**
+  `insert-rect.png`, `gestures-drag-trace.png`, and `shape-tools-three-shapes.png` under
+  `tests/visual/` were written locally on 2026-10-13. Baselines belong to `visual-update.yml` on
+  ubuntu-22.04; dispatch it after the push and commit what it captures. `gestures.spec.ts` is the
+  likeliest to differ: its whole trace is 0.31% of the canvas, so it compares at
+  `maxDiffRatio: 0.0005`.
 
-- **(P3) Three visual baselines are of an empty canvas.** `tests/visual/insert.spec.ts`,
-  `gestures.spec.ts`, and `shape-tools.spec.ts` each screenshot the canvas at mount, before any
-  gesture, so none can catch a change to what its name says it covers. They are titled "mounts an
-  empty canvas" now. Drive one insert or shape drag in each and capture a baseline after it.
-
-- **(P3) `draw-loop`'s `alternating` variant no longer times a program switch.** Gradients join
-  the batched run now, so the variant in `tests/perf/draw-loop.spec.ts` that alternated a solid
-  with a gradient measures one program. A pattern fill still breaks the run; replace the variant
-  with one, and count draws to pin the premise.
+- **(P3) `draw-loop` reports negative frame times at 100 commands.** A run of
+  `tests/perf/draw-loop.spec.ts` on 2026-10-13 printed -0.15 ms for `scene` and -0.07 ms for
+  `rotated` in the 100-command row. Not investigated.
 
 - **(P2) `useHostAnchor.browser.test.tsx` fails on the fleet about every other run.** Two full
   runs on 2026-10-12 each failed one test in it, a different one each time: "keeps following
