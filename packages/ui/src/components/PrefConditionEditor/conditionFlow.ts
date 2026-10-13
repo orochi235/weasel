@@ -41,8 +41,9 @@ export interface ConditionFlowOptions {
   holds?: string;
 }
 
-/** The ids of `flow`'s first and last boxes. */
+/** The id of a flow's first box, which every path starts from. */
 export const CONDITION_FLOW_START = 'start';
+/** The id of a flow's last box, which a path reaches where the condition holds. */
 export const CONDITION_FLOW_END = 'end';
 
 /** A test's box: the pref by its name, and each comparison in the words a row's controls show. */
