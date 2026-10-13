@@ -37,10 +37,10 @@ export interface QuadtreeCell {
 }
 
 /** A `quadtree` layout, which also reports the cells it has given out. */
-export type QuadtreeStrategy<TPose> = LayoutStrategy<TPose> & {
+export interface QuadtreeStrategy<TPose> extends LayoutStrategy<TPose> {
   /** The cell each child holds, largest first: what a debug overlay draws. */
   cells(container: LayoutContainer, children: ReadonlyArray<LayoutChild<TPose>>): QuadtreeCell[];
-};
+}
 
 interface Cell {
   depth: number;

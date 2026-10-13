@@ -1,6 +1,7 @@
 import type { EffectModule } from '../bases/types';
 
-export interface ShadowEffectParams {
+/** What an effect of type `shadow` takes as `params`. */
+export interface BadgeShadowEffectParams {
   /** Offset in CSS px. */
   dx?: number;
   dy?: number;
@@ -8,9 +9,9 @@ export interface ShadowEffectParams {
   opacity?: number;
 }
 
-const DEFAULTS: Required<ShadowEffectParams> = { dx: 1, dy: 2, opacity: 0.28 };
+const DEFAULTS: Required<BadgeShadowEffectParams> = { dx: 1, dy: 2, opacity: 0.28 };
 
-const Shadow: EffectModule<ShadowEffectParams> = {
+const Shadow: EffectModule<BadgeShadowEffectParams> = {
   Component: ({ sampler, boxW, boxH, params }) => {
     const cfg = { ...DEFAULTS, ...params };
     const sx = 100 / boxW, sy = 100 / boxH;

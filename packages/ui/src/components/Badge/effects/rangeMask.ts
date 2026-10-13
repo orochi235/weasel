@@ -14,7 +14,8 @@ export function rangeMask(s: number, totalCss: number, range?: [number, number])
   return u >= a || u <= b ? 1 : 0;
 }
 
-export interface RangeMaskParams {
+/** The stretch of a badge's perimeter an effect is kept to. */
+export interface BadgeRangeMaskParams {
   /** Optional `[start, end]` as fractions of totalCss (0..1). Restricts the effect to a
    *  contiguous slice of the perimeter; `end < start` wraps around. */
   range?: [number, number];

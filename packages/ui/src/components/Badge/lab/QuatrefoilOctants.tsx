@@ -1,4 +1,4 @@
-import { quatrefoilRadius, type QuatrefoilParams } from '../bases/Quatrefoil';
+import { quatrefoilRadius, type BadgeQuatrefoilBaseParams } from '../bases/Quatrefoil';
 import s from './QuatrefoilOctants.stories.module.css';
 
 const STEPS = 96;
@@ -6,7 +6,7 @@ const OCTANT = Math.PI / 4;
 const AXIS = 75;
 
 interface Sweep {
-  param: keyof QuatrefoilParams;
+  param: keyof BadgeQuatrefoilBaseParams;
   values: number[];
   title?: string;
   format?: (v: number) => string;
@@ -29,7 +29,7 @@ const SWEEPS: Sweep[] = [
 ];
 
 /** One octant of the quatrefoil curve, from the cardinal axis (east) up to the diagonal. */
-function OctantCell({ params, label }: { params: QuatrefoilParams; label: string }) {
+function OctantCell({ params, label }: { params: BadgeQuatrefoilBaseParams; label: string }) {
   const radiusAt = quatrefoilRadius(params);
   const points = Array.from({ length: STEPS + 1 }, (_, i) => {
     const theta = (i / STEPS) * OCTANT;
@@ -63,7 +63,7 @@ export function QuatrefoilOctantSweeps() {
           <h3 className={s.sweepTitle}>{title ?? param}</h3>
           <div className={s.cells}>
             {values.map((v) => (
-              <OctantCell key={v} params={{ [param]: v } as QuatrefoilParams} label={`${param} = ${format ? format(v) : v}`} />
+              <OctantCell key={v} params={{ [param]: v } as BadgeQuatrefoilBaseParams} label={`${param} = ${format ? format(v) : v}`} />
             ))}
           </div>
         </section>

@@ -1,199 +1,42 @@
-import type { StorageAdapter } from '@weasel-js/storage';
-import { type ColorList, colorCount, type Theme } from '@weasel-js/theme';
+import { colorCount } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
-import {
-  type CSSProperties,
-  type ReactNode,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { useShallow } from 'zustand/react/shallow';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { labAnnotationTools } from '../annotations/toolMap';
-import { type CameraGestures, CameraGesturesContext } from '../canvas/cameraGestures';
+import { CameraGesturesContext } from '../canvas/cameraGestures';
 import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
-import {
-  LabAsideRegion,
-  LabFooterRegion,
-  LabHeaderRegion,
-  LabSidebarRegion,
-  labContributions,
-} from '../chrome/LabChrome';
-import type { LabContribution } from '../chrome/labTypes';
-import type { TrialContribution } from '../chrome/types';
+import { LabFooterRegion, LabHeaderRegion, labContributions } from '../chrome/LabChrome';
 import { ClockRegistryContext } from '../clock/clockRegistry';
-import type { ClockCapability } from '../clock/trialClock';
 import { useLabClocks } from '../clock/useLabClocks';
-import type { ConfigRule, ControlRenderer } from '../config/types';
-import type { InstrumentList } from '../instrument/types';
-import { Split } from '../primitives/Split';
 import { PersistenceContext } from '../state/Persistence';
-import type { LabDensity, LabMode, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
-import { usePersistedState } from '../state/usePersistedState';
-import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { interstellarTheme } from '../theme/interstellar';
-import type { TrialTool } from '../tools/types';
 import { Trial } from '../trial/Trial';
-import {
-  addTrial as addTrialOp,
-  cloneTrial as cloneTrialOp,
-  closeTrial as closeTrialOp,
-  reorderTrials as reorderTrialsOp,
-  resetTrial as resetTrialOp,
-  swapTrial as swapTrialOp,
-} from '../trial/trialOps';
 import { useLabFitWarning } from './fitCheck';
-import { type LabCommands, trialIdsOf } from './LabContext';
+import { trialIdsOf } from './LabContext';
 import { LabHeader, LabThemeSwitcher } from './LabHeader';
 import { LabPalette } from './LabPalette';
+import { LabPanes } from './LabPanes';
 import { LabProviders } from './LabProviders';
 import { LabShell } from './LabShell';
 import { LabSurface } from './LabSurface';
-import type { LabPage } from './LabSwitcher';
 import { LabZoom } from './LabZoom';
+import type { LabBaseProps, LabProps } from './labProps';
 import { buildNebula } from './nebula';
-import {
-  type OpenedLab,
-  openStoredLab,
-  openUnstoredLab,
-  type PresentationSeed,
-  presentStorageKey,
-} from './openLab';
+import { type OpenedLab, openStoredLab, openUnstoredLab, presentStorageKey } from './openLab';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
 import {
   labClassName,
   PresentationContext,
   type PresentationStart,
-  type PresentedTransportOptions,
   presentationStart,
   useLabPresentation,
 } from './presentation';
-import type { PresentationMessageOptions } from './presentationMessages';
+import { useStoreCommands } from './storeCommands';
 import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
-
-interface LabBaseProps {
-  /** May change while mounted. An instrument that is a different object from
-   *  the last render counts as replaced and its open trials' configs are
-   *  refilled, so hoist or memoize the list. */
-  instruments: InstrumentList;
-  defaultInstrument: string;
-  /** The instruments a lab with no trials opens, a trial of each, in order.
-   *  Default `[defaultInstrument]`. */
-  opening?: readonly string[];
-  /** The lab's own clock: one time that every trial whose instrument declares
-   *  `clock: 'lab'` plays on, and that `useTrialClock` falls back to outside
-   *  any trial. A stored lab keeps where it stands. Read once, at mount. */
-  clock?: ClockCapability;
-  mode?: LabMode;
-  /** How much room the lab's chrome takes. Default `'comfortable'`; a lab whose
-   *  window is the whole app, rather than a panel beside one, reads better at
-   *  `'roomy'`. The trials' own contents are unaffected. */
-  density?: LabDensity;
-  /** The theme the lab's chrome resolves against, applied at `mode` and
-   *  `density`. Default `interstellarTheme`; extend it rather than replace it to
-   *  keep the lab's look while changing a few tokens. */
-  theme?: Theme;
-  /** Rendered while a stored lab loads. Default: the lab's empty shell. */
-  fallback?: ReactNode;
-  /**
-   * Colors composing the interstellar theme's cosmic backdrop. Each becomes
-   * one radial-gradient blob on the dark void base, in a fixed spread of
-   * positions; extras wrap around. A theme ramp resolves against the lab's
-   * theme; a function list gives as many blobs as there are positions.
-   * Ignored unless the resolved mode is dark.
-   */
-  nebula?: ColorList;
-  title?: string;
-  /** Set as `document.title` while the lab is mounted. */
-  documentTitle?: string;
-  /** The project's other labs. Given two or more, the title becomes the way to
-   *  reach them — the same switcher `<LabShell>` renders, so a lab reached from
-   *  one is not a dead end. */
-  pages?: readonly LabPage[];
-  /** The path the switcher marks as open. Defaults to the current location. */
-  path?: string;
-  /** Rendered in the shell's footer, below the workspace. */
-  footer?: ReactNode;
-  /** Contributions added to every trial's chrome, after the instrument's own. */
-  chrome?: readonly TrialContribution[];
-  /** Contributions to the lab's own chrome — its header bar, its sidebar, its
-   *  tool rail and its footer — rather than to every trial's. Rendered after
-   *  `children` and `footer`, which stay the way a lab drops arbitrary content
-   *  into those same two boxes. Going from no sidebar contributions to some
-   *  remounts the workspace and every trial, dropping unpersisted trial state. */
-  labChrome?: readonly LabContribution[];
-  /** Built-in contribution ids to drop. Throws on an id that is not there. */
-  suppress?: readonly string[];
-  /** Whether a double-click on a trial also opens it in its lightbox, beside
-   *  the title bar's expand toggle every trial has. Off by default; a
-   *  function decides per trial, by its record. */
-  expandOnDoubleClick?: boolean | ((trial: TrialRecord) => boolean);
-  /** Offer the header's add-trial control. Default `true`; a lab that opens
-   *  trials some other way passes `false`. */
-  addTrial?: boolean;
-  /** Offer the header's zoom controls, which act on the focused trial's camera
-   *  and answer Mod+=, Mod+- and Mod+0. Default `true`. */
-  zoom?: boolean;
-  /** Render the lab's header bar: its title, add-trial and zoom controls,
-   *  header contributions and theme switcher. Default `true`; `false` drops
-   *  all of them, the zoom keys with the controls, for a lab embedded in a page
-   *  that frames it. `children` go in the header, so they go too. */
-  header?: boolean;
-  /** Tools offered lab-wide. A trial whose instrument declares none of its own
-   *  reflects and writes this slot. */
-  tools?: readonly TrialTool[];
-  /** Rules run over every instrument's config leaves, before labkit's own
-   *  inference — where a lab states a convention once instead of annotating
-   *  each field. Memoize or hoist. */
-  configRules?: readonly ConfigRule[];
-  /** Control overrides and app-defined kinds for every trial's settings panel.
-   *  Keys are config paths (checked first) or leaf kinds. Memoize or hoist. */
-  controls?: Record<string, ControlRenderer>;
-  children?: ReactNode;
-  /** Start presenting: one trial, opened on `seed`, without the lab's chrome or
-   *  its own. `?present` in the page's URL does the same. Read once, at mount.
-   *  A stored lab presents from its own records, under `storageKey` +
-   *  `':present'`, so an embed never shows or changes the full lab's trials. */
-  present?: boolean;
-  /** The trial a lab that starts presenting opens on. A store that already
-   *  holds a trial opened on this same seed keeps it; a changed seed replaces
-   *  it. Ignored unless the lab starts presenting. */
-  seed?: PresentationSeed;
-  /** Gestures every trial's camera takes, over its instrument's own one by
-   *  one — `{ wheel: false, pan: false }` lets the page scroll past an embed. */
-  gestures?: CameraGestures;
-  /** Play controls over a presented trial whose instrument declares a clock:
-   *  hidden in a box too narrow for them, answering Space and friends, and
-   *  replaying an ended run after a hold until a visitor touches them.
-   *  Default `true`; options say how narrow is too narrow. */
-  transport?: boolean | PresentedTransportOptions;
-  /** Start presenting as a still, for a poster to be taken of it: every clock
-   *  paused — at this many ms, or where it opens for `true` — with no play
-   *  controls, nothing read from or written to storage, and `lk-lab--still-ready`
-   *  on the lab's root once it has painted. `?still` and `?still=<ms>` in the
-   *  page's URL do the same. Read once, at mount. */
-  still?: boolean | number;
-  /** Whether a presented lab answers its host page's `labkit:play`,
-   *  `labkit:pause`, `labkit:seek` and `labkit:query` messages and posts its
-   *  `labkit:state` back. Default `true`; options name the lab and say which
-   *  origins it takes messages from. */
-  messages?: boolean | PresentationMessageOptions;
-}
-
-/** Props for `<Lab>`. With a `storageKey` the lab persists — to IndexedDB
- *  unless `storage` names another substrate — and both are read once, at
- *  mount. Without one, nothing persists. */
-export type LabProps = LabBaseProps &
-  (
-    | { storageKey?: undefined; storage?: undefined }
-    | { storageKey: string; storage?: StorageAdapter }
-  );
 
 function LabFallback({
   title,
@@ -224,67 +67,6 @@ function LabFallback({
         {null}
       </LabShell>
     </ThemeProvider>
-  );
-}
-
-/** The strip holding the sidebar beside the tool rail and workspace. Its own component
- *  because the width is a persisted value, and `LabRuntime` renders the
- *  persistence provider it reads from. */
-function LabPanes({
-  contributions,
-  children,
-}: {
-  contributions: readonly LabContribution[];
-  children: ReactNode;
-}) {
-  const surface = useSurfaceOptional();
-  const [sidebarWidth, setSidebarWidth] = usePersistedState<number | undefined>(
-    'lk-lab-sidebar-width',
-    undefined,
-    { scope: 'lab' },
-  );
-  const [asideWidth, setAsideWidth] = usePersistedState<number | undefined>(
-    'lk-lab-aside-width',
-    undefined,
-    { scope: 'lab' },
-  );
-  const main = contributions.some((c) => c.region === 'aside') ? (
-    <Split
-      className="lk-lab__panes"
-      side="end"
-      sidebarClassName="lk-lab__aside"
-      contentClassName="lk-lab__main"
-      label="Lab aside"
-      defaultWidth={320}
-      width={asideWidth}
-      onWidthChange={(w) => {
-        setAsideWidth(w);
-        surface?.invalidateRects();
-      }}
-      sidebar={<LabAsideRegion contributions={contributions} />}
-    >
-      {children}
-    </Split>
-  ) : (
-    children
-  );
-  if (!contributions.some((c) => c.region === 'sidebar')) return main;
-  return (
-    <Split
-      className="lk-lab__panes"
-      sidebarClassName="lk-lab__sidebar"
-      contentClassName="lk-lab__main"
-      label="Lab sidebar"
-      defaultWidth={260}
-      width={sidebarWidth}
-      onWidthChange={(w) => {
-        setSidebarWidth(w);
-        surface?.invalidateRects();
-      }}
-      sidebar={<LabSidebarRegion contributions={contributions} />}
-    >
-      {main}
-    </Split>
   );
 }
 
@@ -375,7 +157,6 @@ function LabRuntime({
   const clocks = useLabClocks(clock, opened.records);
   const [focusPick, setFocusPick] = useState<string | null>(null);
   const focusedTrialId = trialIds.find((id) => id === focusPick) ?? trialIds[0] ?? null;
-  const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
   const layout = useStore(store, (s) => s.layout);
   const undockedPanels = useStore(store, (s) => s.undockedPanels);
@@ -423,100 +204,14 @@ function LabRuntime({
     }
   }, [mode, store]);
 
-  const commands = useMemo<LabCommands>(() => {
-    const replaceTrials = (next: TrialRecord[]): void => {
-      const currentById = new Map(store.getState().trials.map((w) => [w.id, w]));
-      const merged = next.map((w) => currentById.get(w.id) ?? w);
-      store.setState({ trials: merged });
-    };
-    const replaceAndFocusAdded = (next: TrialRecord[]): void => {
-      const before = new Set(store.getState().trials.map((w) => w.id));
-      replaceTrials(next);
-      const added = next.find((w) => !before.has(w.id));
-      if (added) setFocusPick(added.id);
-    };
-
-    return {
-      instruments,
-      addTrial: (instrumentName, options) => {
-        replaceAndFocusAdded(
-          addTrialOp(store.getState().trials, instruments, instrumentName, options),
-        );
-      },
-      cloneTrial: (id) => {
-        replaceAndFocusAdded(cloneTrialOp(store.getState().trials, id));
-      },
-      closeTrial: (id) => {
-        const current = store.getState();
-        // A lab keeps its last trial; `closeTrialOp` is what says whether this is it.
-        if (closeTrialOp(current.trials, id) !== current.trials) current.removeTrial(id);
-      },
-      reorderTrials: (ids) => {
-        replaceTrials(reorderTrialsOp(store.getState().trials, ids));
-      },
-      swapTrial: (id, instrumentName, options) => {
-        const current = store.getState();
-        const next = swapTrialOp(current.trials, instruments, id, instrumentName, options);
-        if (next === current.trials) return;
-        const record = next[current.trials.findIndex((w) => w.id === id)] as TrialRecord;
-        // Written before the tile registers, which is when the grid reads it.
-        const { [id]: extent, ...layoutRest } = current.layout as TrialLayout;
-        if (extent) current.setLayout({ ...layoutRest, [record.id]: extent });
-        replaceTrials(next);
-        if (focusedTrialId === id) setFocusPick(record.id);
-      },
-      focusedTrialId,
-      focusTrial: (id) => setFocusPick(id),
-      resetTrial: (id) => {
-        const next = resetTrialOp(store.getState().trials, id, instruments);
-        const record = next.find((w) => w.id === id);
-        if (!record) return;
-        store.setState((s) => ({
-          trials: s.trials.map((w) => {
-            if (w.id !== id) return w;
-            const { auto: _pinnedNow, ...kept } = w;
-            const reset: TrialRecord = {
-              ...kept,
-              config: record.config,
-              state: record.state,
-              view: record.view,
-            };
-            if (record.auto) reset.auto = record.auto;
-            return reset;
-          }),
-        }));
-        const handle = clocks.get(id);
-        // The lab's clock is every trial's on it, so resetting one leaves it.
-        if (handle !== clocks.lab) handle?.reset();
-      },
-      savedSnapshots,
-      saveSnapshot: (trialId, name) => {
-        const taken = store.getState().savedSnapshots.filter((s) => s.trialId === trialId).length;
-        store.getState().saveSnapshot(trialId, name ?? `Snapshot ${taken + 1}`);
-      },
-      loadSnapshot: (trialId, snapshotId) => {
-        store.getState().loadSnapshot(snapshotId, trialId);
-      },
-      deleteSnapshot: (snapshotId) => {
-        store.getState().deleteSnapshot(snapshotId);
-      },
-      mode: modeValue,
-      setMode: (m) => {
-        store.getState().setMode(m);
-      },
-      configRules,
-      controls,
-    };
-  }, [
-    clocks,
+  const commands = useStoreCommands(store, {
     instruments,
+    clocks,
     focusedTrialId,
-    savedSnapshots,
-    modeValue,
-    store,
+    focus: setFocusPick,
     configRules,
     controls,
-  ]);
+  });
 
   // Only override the backdrop in dark, where there is one to override.
   // Setting a CSS custom property is the sanctioned use of inline style.

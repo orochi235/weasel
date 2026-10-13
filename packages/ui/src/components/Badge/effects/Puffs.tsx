@@ -1,19 +1,20 @@
 import type { EffectModule } from '../bases/types';
-import { rangeMask, type RangeMaskParams } from './rangeMask';
+import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
-export interface PuffsEffectParams extends RangeMaskParams {
+/** What an effect of type `puffs` takes as `params`. */
+export interface BadgePuffsEffectParams extends BadgeRangeMaskParams {
   bumpWidth?: number;
   puffiness?: number;
   irregularity?: number;
 }
 
-const DEFAULTS: Required<Omit<PuffsEffectParams, 'range'>> = {
+const DEFAULTS: Required<Omit<BadgePuffsEffectParams, 'range'>> = {
   bumpWidth: 18,
   puffiness: 10,
   irregularity: 0,
 };
 
-const Puffs: EffectModule<PuffsEffectParams> = {
+const Puffs: EffectModule<BadgePuffsEffectParams> = {
   offsetAt: (s, { params, phase, totalCss, perimeterAt }) => {
     const cfg = { ...DEFAULTS, ...params };
     const mask = rangeMask(s, totalCss, cfg.range);

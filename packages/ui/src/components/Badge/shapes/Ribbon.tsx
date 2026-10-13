@@ -1,19 +1,19 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
+import type { BadgeRibbonEnd } from '../bases/Ribbon';
 
-export type RibbonEnd = 'inward' | 'outward' | 'flat';
-
-export interface RibbonParams {
-  left?: RibbonEnd;
-  right?: RibbonEnd;
+/** What `shapeParams` takes on a `ribbon` badge. */
+export interface BadgeRibbonShapeParams {
+  left?: BadgeRibbonEnd;
+  right?: BadgeRibbonEnd;
   /** Taper depth in CSS px. The actual pointer width stays fixed regardless
    *  of badge width — the underlying base recomputes viewBox vertices at
    *  build time using the rendered box dimensions. */
   taperWidth?: number;
 }
 
-const DEFAULTS: Required<RibbonParams> = { left: 'inward', right: 'outward', taperWidth: 8 };
+const DEFAULTS: Required<BadgeRibbonShapeParams> = { left: 'inward', right: 'outward', taperWidth: 8 };
 
-const Ribbon: ShapeModule<RibbonParams> = {
+const Ribbon: ShapeModule<BadgeRibbonShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = { ...DEFAULTS, ...params };
     return { base: 'ribbon', baseParams: cfg };

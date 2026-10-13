@@ -1,6 +1,6 @@
 import { cssColorLiteral } from '@weasel-js/paint';
 import type { BadgeBase } from '../bases';
-import type { BadgeEffect, EffectSpec } from '../effects';
+import type { BadgeEffect, BadgeEffectSpec } from '../effects';
 import { defaultsOf } from '../shapeControls';
 import { BASE_LAB_CONTROLS, EFFECT_LAB_CONTROLS, isColorParam } from './controls';
 import type { LabPreset } from './presets';
@@ -84,7 +84,7 @@ export function moveEffectToGap(effects: readonly LabEffect[], id: number, gap: 
 }
 
 /** The lab's effect list as `<Badge effects>` takes it: a color control's hex string becomes a color literal. */
-export function effectSpecs(effects: readonly LabEffect[]): EffectSpec[] {
+export function effectSpecs(effects: readonly LabEffect[]): BadgeEffectSpec[] {
   return effects.map((e) => ({
     type: e.type,
     params: Object.fromEntries(

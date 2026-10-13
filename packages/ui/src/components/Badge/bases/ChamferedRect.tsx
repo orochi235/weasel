@@ -1,14 +1,15 @@
 import { polygonSampler } from './polygonSampler';
 import type { BaseModule } from './types';
 
-export interface ChamferedRectParams {
+/** What `baseParams` takes on a badge whose `base` is `chamfered-rect`. */
+export interface BadgeChamferedRectBaseParams {
   /** CSS px length of each 45° corner chamfer. */
   chamfer?: number;
 }
 
-const DEFAULTS: Required<ChamferedRectParams> = { chamfer: 6 };
+const DEFAULTS: Required<BadgeChamferedRectBaseParams> = { chamfer: 6 };
 
-const ChamferedRect: BaseModule<ChamferedRectParams> = {
+const ChamferedRect: BaseModule<BadgeChamferedRectBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
     const sx = 100 / boxW;

@@ -84,5 +84,5 @@ export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/n
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
 export {
   reviveTypedArrays, tagTypedArray, tagTypedArrays, typedArrayReplacer, untagTypedArray,
-  type NumberTypedArray, type TaggedTypedArray, type TypedArrayTag,
+  TYPED_ARRAY_CONSTRUCTORS, type NumberTypedArray, type TaggedTypedArray, type TypedArrayTag,
 } from './typedArrayJson';

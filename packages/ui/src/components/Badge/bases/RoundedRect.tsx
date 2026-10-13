@@ -1,6 +1,7 @@
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
 
-export interface RoundedRectParams {
+/** What `baseParams` takes on a badge whose `base` is `rounded-rect`. */
+export interface BadgeRoundedRectBaseParams {
   /** 0..1 fraction of the maximum corner rounding (1 = full pill / ellipse). */
   erosion?: number;
   /** Stretch the corner arcs horizontally vs vertically. 1 = circular at the badge's
@@ -11,9 +12,9 @@ export interface RoundedRectParams {
   pinch?: number;
 }
 
-const DEFAULTS: Required<RoundedRectParams> = { erosion: 0.16, eccentricity: 1, pinch: 0 };
+const DEFAULTS: Required<BadgeRoundedRectBaseParams> = { erosion: 0.16, eccentricity: 1, pinch: 0 };
 
-const RoundedRect: BaseModule<RoundedRectParams> = {
+const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
     const sx = 100 / boxW;

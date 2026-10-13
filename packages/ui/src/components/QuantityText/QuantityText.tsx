@@ -1,17 +1,14 @@
 import { present, presentRange, presentVector, type Display, type Presentation, type Quantity } from '@weasel-js/quantity';
 import s from './QuantityText.module.css';
 
-interface Shared {
+/** Props for {@link QuantityText}: one of `value`, `range`, and `vector`. */
+export type QuantityTextProps = {
   /** The display for a value that carries none of its own. */
   display?: Display;
   /** BCP 47 locale. Default `en-US`. */
   locale?: string;
   className?: string;
-}
-
-/** Props for {@link QuantityText}: one of `value`, `range`, and `vector`. */
-export type QuantityTextProps = Shared &
-  (
+} & (
     | { value: Quantity; range?: undefined; vector?: undefined }
     | {
         /** Both ends. A unit or percent sign they share is written once, after the second. */

@@ -1,7 +1,8 @@
 import type { EffectModule } from '../bases/types';
-import { rangeMask, type RangeMaskParams } from './rangeMask';
+import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
-export interface SpikesEffectParams extends RangeMaskParams {
+/** What an effect of type `spikes` takes as `params`. */
+export interface BadgeSpikesEffectParams extends BadgeRangeMaskParams {
   count?: number;
   length?: number;
   baseWidth?: number;
@@ -17,7 +18,7 @@ export interface SpikesEffectParams extends RangeMaskParams {
   cornerCompensation?: number;
 }
 
-const DEFAULTS: Required<Omit<SpikesEffectParams, 'range'>> = {
+const DEFAULTS: Required<Omit<BadgeSpikesEffectParams, 'range'>> = {
   count: 44,
   length: 8,
   baseWidth: 3,
@@ -28,7 +29,7 @@ const DEFAULTS: Required<Omit<SpikesEffectParams, 'range'>> = {
   cornerCompensation: 1,
 };
 
-const Spikes: EffectModule<SpikesEffectParams> = {
+const Spikes: EffectModule<BadgeSpikesEffectParams> = {
   offsetAt: (s, { params, phase, totalCss, perimeterAt }) => {
     const cfg = { ...DEFAULTS, ...params };
     const mask = rangeMask(s, totalCss, cfg.range);

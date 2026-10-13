@@ -2,7 +2,8 @@ import { useRef } from 'react';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
 
-export interface ShieldParams {
+/** What `shapeParams` takes on a `shield` badge. */
+export interface BadgeShieldShapeParams {
   pointDepth?: number;
   shoulderY?: number;
   curveTightness?: number;
@@ -10,7 +11,7 @@ export interface ShieldParams {
   erosion?: number;
 }
 
-const DEFAULTS: Required<ShieldParams> = {
+const DEFAULTS: Required<BadgeShieldShapeParams> = {
   pointDepth: 100,
   shoulderY: 55,
   curveTightness: 0.7,
@@ -20,7 +21,7 @@ const DEFAULTS: Required<ShieldParams> = {
 function ShieldComponent({ variant, focused, params }: {
   variant: 'outline' | 'solid' | 'subtle';
   focused: boolean;
-  params: ShieldParams;
+  params: BadgeShieldShapeParams;
 }) {
   const cfg = { ...DEFAULTS, ...params };
   const ref = useRef<SVGGElement>(null);
@@ -55,7 +56,7 @@ function ShieldComponent({ variant, focused, params }: {
   );
 }
 
-const Shield: ShapeModule<ShieldParams> = {
+const Shield: ShapeModule<BadgeShieldShapeParams> = {
   Component: ShieldComponent,
   insets: { top: 2, right: 8, bottom: 14, left: 8 },
   stretches: true,

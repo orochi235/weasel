@@ -9,7 +9,8 @@ import type { EffectModule } from '../bases/types';
  * alpha, and rim alpha — so one slider moves the whole surface along a
  * matte-to-mirror axis.
  */
-export interface MetalEffectParams {
+/** What an effect of type `metal` takes as `params`. */
+export interface BadgeMetalEffectParams {
   /** Base metal color. Defaults to a neutral steel; pass e.g. `'#c8a657'` for brass. */
   accent?: ColorSource;
   /** 0 = matte, 1 = mirror. Multiplies the brightness of the equator, gloss,
@@ -32,7 +33,7 @@ export interface MetalEffectParams {
   rimWidth?: number;     // CSS px
 }
 
-const DEFAULTS: Required<MetalEffectParams> = {
+const DEFAULTS: Required<BadgeMetalEffectParams> = {
   accent: cssColorLiteral('#aab3bd'), // neutral steel
   specularity: 0.6,
   equator: 50,
@@ -49,7 +50,7 @@ const DEFAULTS: Required<MetalEffectParams> = {
 
 const BEZEL_SAMPLES = 240;
 
-const Metal: EffectModule<MetalEffectParams> = {
+const Metal: EffectModule<BadgeMetalEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const bodyGradId = useId();
     const glossGradId = useId();

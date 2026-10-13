@@ -1,17 +1,19 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
 
-export type RibbonEnd = 'inward' | 'outward' | 'flat';
+/** How one end of a ribbon is cut: a notch in, a point out, or square. */
+export type BadgeRibbonEnd = 'inward' | 'outward' | 'flat';
 
-export interface RibbonParams {
-  left?: RibbonEnd;
-  right?: RibbonEnd;
+/** What `baseParams` takes on a badge whose `base` is `ribbon`. */
+export interface BadgeRibbonBaseParams {
+  left?: BadgeRibbonEnd;
+  right?: BadgeRibbonEnd;
   /** Taper depth in CSS px. Stays fixed regardless of badge width — viewBox
    *  vertices are computed at build time using `boxW`. */
   taperWidth?: number;
 }
 
-const DEFAULTS: Required<RibbonParams> = { left: 'inward', right: 'outward', taperWidth: 8 };
+const DEFAULTS: Required<BadgeRibbonBaseParams> = { left: 'inward', right: 'outward', taperWidth: 8 };
 
 interface SidePoints {
   top: [number, number];
@@ -19,7 +21,7 @@ interface SidePoints {
   bottom: [number, number];
 }
 
-function sidePoints(mode: RibbonEnd, xBaseVb: number, signVb: number, taperVb: number): SidePoints {
+function sidePoints(mode: BadgeRibbonEnd, xBaseVb: number, signVb: number, taperVb: number): SidePoints {
   switch (mode) {
     case 'flat':
       return { top: [xBaseVb, 0], mid: null, bottom: [xBaseVb, 100] };
@@ -38,7 +40,7 @@ function sidePoints(mode: RibbonEnd, xBaseVb: number, signVb: number, taperVb: n
   }
 }
 
-function sideInsetCss(mode: RibbonEnd, taperCss: number): number {
+function sideInsetCss(mode: BadgeRibbonEnd, taperCss: number): number {
   const t = Math.max(0, taperCss);
   switch (mode) {
     case 'flat':    return 4;
@@ -47,7 +49,7 @@ function sideInsetCss(mode: RibbonEnd, taperCss: number): number {
   }
 }
 
-const Ribbon: BaseModule<RibbonParams> = {
+const Ribbon: BaseModule<BadgeRibbonBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
     const taperCss = Math.max(0, cfg.taperWidth);

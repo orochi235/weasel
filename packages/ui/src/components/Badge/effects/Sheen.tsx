@@ -1,25 +1,25 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import type { BadgeCorner } from '../types';
 
-export type Corner = 'tl' | 'tr' | 'bl' | 'br';
-
-export interface SheenEffectParams {
-  lightFrom?: Corner;
+/** What an effect of type `sheen` takes as `params`. */
+export interface BadgeSheenEffectParams {
+  lightFrom?: BadgeCorner;
   /** Peak gradient opacity (0..1). */
   intensity?: number;
 }
 
-const DEFAULTS: Required<SheenEffectParams> = { lightFrom: 'tl', intensity: 0.22 };
+const DEFAULTS: Required<BadgeSheenEffectParams> = { lightFrom: 'tl', intensity: 0.22 };
 
 // Gradient runs from the shadow corner (0%) to the lit corner (100%).
-const FACE_COORDS: Record<Corner, { x1: string; y1: string; x2: string; y2: string }> = {
+const FACE_COORDS: Record<BadgeCorner, { x1: string; y1: string; x2: string; y2: string }> = {
   tl: { x1: '100%', y1: '100%', x2: '0%', y2: '0%' },
   tr: { x1: '0%', y1: '100%', x2: '100%', y2: '0%' },
   bl: { x1: '100%', y1: '0%', x2: '0%', y2: '100%' },
   br: { x1: '0%', y1: '0%', x2: '100%', y2: '100%' },
 };
 
-const Sheen: EffectModule<SheenEffectParams> = {
+const Sheen: EffectModule<BadgeSheenEffectParams> = {
   Component: ({ sampler, variant, params }) => {
     const gradId = useId();
     const clipId = useId();

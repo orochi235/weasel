@@ -1,4 +1,5 @@
 import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
+import { DELETED, createWriteQueue } from './writeQueue';
 
 /** One record changing, as a cache listener hears it. `value` is `undefined`
  *  for a delete. `local` changes were made through this cache; `remote` ones
@@ -58,7 +59,7 @@ export interface OwnedRecordCache extends RecordCache {
   stopWriting(): void;
 }
 
-/** Options for `createRecordCache` and `openRecords`. */
+/** Options for `openRecords`, and the part of `createRecordCache`'s the two share. */
 export interface RecordCacheOptions {
   storage: StorageAdapter;
   prefix: string;
@@ -74,33 +75,29 @@ export interface RecordCacheOptions {
   retryMaxMs?: number;
 }
 
-type CreateOptions = RecordCacheOptions & {
+/** Options for `createRecordCache`. */
+export interface CreateRecordCacheOptions extends RecordCacheOptions {
+  /** The records the cache opens holding, each a name and its value. Default none. */
   initial?: Iterable<[string, unknown]>;
+  /** False opens the cache with writing off for good. Default true. */
   writable?: boolean;
-};
-
-const DELETED = Symbol('deleted');
+}
 
 /** A cache holding `initial`, with nothing read from storage. */
-export function createRecordCache(options: CreateOptions): OwnedRecordCache {
+export function createRecordCache(options: CreateRecordCacheOptions): OwnedRecordCache {
   return buildCache(options, false).cache;
 }
 
 /** `startUnread` leaves the cache waiting on a first read: `cache.read()`
  *  makes it, and `failed` reports one made elsewhere that threw. */
 function buildCache(
-  options: CreateOptions,
+  options: CreateRecordCacheOptions,
   startUnread: boolean,
 ): { cache: OwnedRecordCache; failed: (error: unknown) => void } {
   const { storage, prefix } = options;
-  const debounceMs = options.debounceMs ?? 300;
-  const maxWaitMs = options.maxWaitMs ?? 1000;
   const retryMs = options.retryMs ?? 1000;
   const retryMaxMs = options.retryMaxMs ?? 30_000;
   const values = new Map<string, unknown>(options.initial ?? []);
-  const queued = new Map<string, unknown>();
-  // How many writes to each name are on their way to storage.
-  const inFlight = new Map<string, number>();
   const listeners = new Set<(changes: RecordChange[]) => void>();
   const overruledListeners = new Set<(changes: [string, unknown][]) => void>();
   // Two reasons writing is off. A read landing clears `unread`; nothing
@@ -109,17 +106,10 @@ function buildCache(
   let stopped = !(options.writable ?? true);
   const writable = (): boolean => !unread && !stopped;
   let closed = false;
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  let firstQueuedAt: number | null = null;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
-  const firstRetryWait = retryMs === false ? 0 : retryMs;
-  let retryWait = firstRetryWait;
+  let retryWait = retryMs === false ? 0 : retryMs;
   let reading: Promise<boolean> | null = null;
   let warned = false;
-  let writeRetryTimer: ReturnType<typeof setTimeout> | null = null;
-  let writeRetryWait = retryWait;
-  let writeWarned = false;
-  let sending: Promise<boolean> | null = null;
   let landed = (): void => {};
   const hasRead = new Promise<void>((resolve) => {
     if (startUnread) landed = resolve;
@@ -130,86 +120,17 @@ function buildCache(
     for (const listener of [...listeners]) listener(changes);
   };
 
-  const schedule = (): void => {
-    if (!writable() || closed) return;
-    const now = Date.now();
-    firstQueuedAt ??= now;
-    if (timer) clearTimeout(timer);
-    const wait = Math.max(0, Math.min(debounceMs, firstQueuedAt + maxWaitMs - now));
-    timer = setTimeout(() => {
-      timer = null;
-      void flush();
-    }, wait);
-  };
-
-  // One batch is on its way at a time. A rejected write is back in the queue
-  // before the next batch is taken, so a newer write to its record stands.
-  function flush(): Promise<boolean> {
-    if (timer) clearTimeout(timer);
-    timer = null;
-    firstQueuedAt = null;
-    // With nothing on its way the batch leaves in this tick, which a flush
-    // on `pagehide` depends on.
-    const mine = sending ? sending.then(send) : send();
-    sending = mine;
-    void mine.finally(() => {
-      if (sending === mine) sending = null;
-    });
-    return mine;
-  }
-
-  async function send(): Promise<boolean> {
-    if (queued.size === 0) return true;
-    if (!writable()) return false;
-    stopRetryingWrites();
-    const batch = [...queued];
-    queued.clear();
-    for (const [name] of batch) inFlight.set(name, (inFlight.get(name) ?? 0) + 1);
-    const landed = await Promise.all(
-      batch.map(async ([name, value]) => {
-        const key = prefix + name;
-        try {
-          if (value === DELETED) await storage.delete(key);
-          else await storage.set(key, value);
-          return true;
-        } catch (error) {
-          if (!writeWarned) {
-            writeWarned = true;
-            console.warn(`[storage] could not write "${key}"; trying again`, error);
-          }
-          // A write queued since is newer, and stands.
-          if (!queued.has(name) && !stopped) queued.set(name, value);
-          return false;
-        } finally {
-          const count = inFlight.get(name) ?? 1;
-          if (count > 1) inFlight.set(name, count - 1);
-          else inFlight.delete(name);
-        }
-      }),
-    );
-    if (landed.every(Boolean)) {
-      writeWarned = false;
-      writeRetryWait = firstRetryWait;
-      return true;
-    }
-    retryWrites();
-    return false;
-  }
-
-  function stopRetryingWrites(): void {
-    if (writeRetryTimer) clearTimeout(writeRetryTimer);
-    writeRetryTimer = null;
-  }
-
-  function retryWrites(): void {
-    stopRetryingWrites();
-    if (retryMs === false || closed || stopped || queued.size === 0) return;
-    writeRetryTimer = setTimeout(() => {
-      writeRetryTimer = null;
-      void flush();
-    }, writeRetryWait);
-    writeRetryWait = Math.min(writeRetryWait * 2, retryMaxMs);
-  }
+  const queue = createWriteQueue({
+    storage,
+    prefix,
+    debounceMs: options.debounceMs ?? 300,
+    maxWaitMs: options.maxWaitMs ?? 1000,
+    retryMs,
+    retryMaxMs,
+    writable,
+    closed: () => closed,
+    stopped: () => stopped,
+  });
 
   const applyRemote = (changes: StorageChange[]): void => {
     const applied: RecordChange[] = [];
@@ -217,7 +138,7 @@ function buildCache(
     for (const [key, value] of changes) {
       if (!key.startsWith(prefix)) continue;
       const name = key.slice(prefix.length);
-      if (queued.has(name) || inFlight.has(name)) {
+      if (queue.owns(name)) {
         overruled.push([name, value]);
         continue;
       }
@@ -278,7 +199,7 @@ function buildCache(
     stopEarly?.();
     // Skips every name with a write queued while unread, so those win.
     applyRemote([...listed, ...early]);
-    if (queued.size > 0) schedule();
+    if (queue.size > 0) queue.schedule();
     landed();
     return true;
   }
@@ -292,10 +213,10 @@ function buildCache(
   }
 
   const onPageHide = (): void => {
-    void flush();
+    void queue.flush();
   };
   const onVisibility = (): void => {
-    if (document.visibilityState === 'hidden') void flush();
+    if (document.visibilityState === 'hidden') void queue.flush();
   };
   if (typeof window !== 'undefined') {
     window.addEventListener('pagehide', onPageHide);
@@ -304,11 +225,11 @@ function buildCache(
 
   const remove = (name: string): void => {
     // An unread cache cannot tell what storage holds, so it queues the delete.
-    if (!unread && !values.has(name) && !queued.has(name)) return;
+    if (!unread && !values.has(name) && !queue.has(name)) return;
     values.delete(name);
-    queued.set(name, DELETED);
+    queue.add(name, DELETED);
     emit([{ name, value: undefined, origin: 'local' }]);
-    schedule();
+    queue.schedule();
   };
 
   const cache: OwnedRecordCache = {
@@ -322,9 +243,9 @@ function buildCache(
     set: (name, value) => {
       if (value === undefined) return remove(name);
       values.set(name, value);
-      queued.set(name, value);
+      queue.add(name, value);
       emit([{ name, value, origin: 'local' }]);
-      schedule();
+      queue.schedule();
     },
     delete: remove,
     subscribe: (listener) => {
@@ -333,15 +254,15 @@ function buildCache(
         listeners.delete(listener);
       };
     },
-    flush,
+    flush: queue.flush,
     read,
     whenRead: () => hasRead,
     close: async () => {
       if (closed) return;
       stopRetrying();
-      await flush();
+      await queue.flush();
       closed = true;
-      stopRetryingWrites();
+      queue.stopRetrying();
       unsubscribe?.();
       if (typeof window !== 'undefined') {
         window.removeEventListener('pagehide', onPageHide);
@@ -359,11 +280,8 @@ function buildCache(
     },
     stopWriting: () => {
       stopped = true;
-      queued.clear();
-      if (timer) clearTimeout(timer);
-      timer = null;
+      queue.discard();
       stopRetrying();
-      stopRetryingWrites();
       unsubscribe?.();
     },
   };

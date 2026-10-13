@@ -1,6 +1,7 @@
 import type { ShapeModule, ShapeComposeSpec } from '../types';
 
-export interface CoffinParams {
+/** What `shapeParams` takes on a `coffin` badge. */
+export interface BadgeCoffinShapeParams {
   headX?: number;
   headHalfHeight?: number;
   shoulderX?: number;
@@ -9,7 +10,7 @@ export interface CoffinParams {
   footHalfHeight?: number;
 }
 
-const DEFAULTS: Required<CoffinParams> = {
+const DEFAULTS: Required<BadgeCoffinShapeParams> = {
   headX: 6,
   headHalfHeight: 23,
   shoulderX: 33,
@@ -18,7 +19,7 @@ const DEFAULTS: Required<CoffinParams> = {
   footHalfHeight: 29,
 };
 
-const Coffin: ShapeModule<CoffinParams> = {
+const Coffin: ShapeModule<BadgeCoffinShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = { ...DEFAULTS, ...params };
     const hX = Math.max(0, Math.min(cfg.headX, 40));

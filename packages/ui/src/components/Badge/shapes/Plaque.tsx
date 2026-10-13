@@ -1,16 +1,15 @@
-import type { ShapeModule, ShapeComposeSpec } from '../types';
+import type { BadgeCorner, ShapeModule, ShapeComposeSpec } from '../types';
 
-export type PlaqueCorner = 'tl' | 'tr' | 'bl' | 'br';
-
-export interface PlaqueParams {
+/** What `shapeParams` takes on a `plaque` badge. */
+export interface BadgePlaqueShapeParams {
   bevelWidth?: number;
-  lightFrom?: PlaqueCorner;
+  lightFrom?: BadgeCorner;
   rivetRadius?: number;
   rivetInset?: number;
   sheenIntensity?: number;
 }
 
-const DEFAULTS: Required<PlaqueParams> = {
+const DEFAULTS: Required<BadgePlaqueShapeParams> = {
   bevelWidth: 6,
   lightFrom: 'tl',
   rivetRadius: 2.4,
@@ -18,7 +17,7 @@ const DEFAULTS: Required<PlaqueParams> = {
   sheenIntensity: 0.22,
 };
 
-const Plaque: ShapeModule<PlaqueParams> = {
+const Plaque: ShapeModule<BadgePlaqueShapeParams> = {
   compose: (params): ShapeComposeSpec => {
     const cfg = { ...DEFAULTS, ...params };
     return {
