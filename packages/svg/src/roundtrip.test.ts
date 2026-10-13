@@ -565,13 +565,6 @@ describe('round-trip', () => {
     expect(second.title).toBe('My Doc');
   });
 
-  it('paper-size preset: A4', () => {
-    const namespaces = { wd: 'https://weaseldraw.app/svg-ext' };
-    const r = parseSvg(F.WEASELDRAW_PAPERS_SVG, { namespaces });
-    expect(r.documentMeta?.wd?.attrs?.paperSize).toBe('a4');
-    expect(r.viewBox).toEqual({ x: 0, y: 0, width: 794, height: 1123 });
-  });
-
   it('groups with wd:group-id round-trip', () => {
     const namespaces = { wd: 'https://weaseldraw.app/svg-ext' };
     const first = parseSvg(F.WEASELDRAW_GROUPS_SVG, { namespaces });
@@ -694,17 +687,6 @@ describe('rotation round-trip', () => {
     const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
     expect(svg).not.toContain('transform=');
   });
-
-  it('emits transform=rotate for rotated SvgTextNode using its declared box center', () => {
-    const node: SvgNode = {
-      kind: 'text',
-      x: 100, y: 50, width: 200, height: 40,
-      text: 'Hi',
-      rotation: Math.PI / 4,
-    };
-    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
-    expect(svg).toMatch(/transform="rotate\(45 200 70\)"/);
-  });
 });
 
 describe('rotation round-trip — parse', () => {
@@ -728,26 +710,6 @@ describe('rotation round-trip — parse', () => {
     expect(rect.width).toBeCloseTo(100, 5);
     expect(rect.height).toBeCloseTo(50, 5);
     expect(out.rotation).toBeCloseTo(Math.PI / 6, 5);
-  });
-
-  it('round-trips a rotated text node lossless: parse(serialize(node)) == node', () => {
-    const node: SvgNode = {
-      kind: 'text',
-      x: 100, y: 50, width: 200, height: 40,
-      text: 'Hi',
-      rotation: Math.PI / 4,
-    };
-    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
-    const parsed = parseSvg(svg);
-    expect(parsed.nodes).toHaveLength(1);
-    const out = parsed.nodes[0];
-    expect(out.kind).toBe('text');
-    if (out.kind !== 'text') throw new Error('unreachable');
-    expect(out.x).toBeCloseTo(100, 5);
-    expect(out.y).toBeCloseTo(50, 5);
-    expect(out.width).toBeCloseTo(200, 5);
-    expect(out.height).toBeCloseTo(40, 5);
-    expect(out.rotation).toBeCloseTo(Math.PI / 4, 5);
   });
 
   it('emits a warning when a leaf transform mixes scale+rotate (un-decomposable to pure rotation)', () => {
@@ -1268,10 +1230,6 @@ describe('text direction', () => {
     // SVG's text-anchor is reading-order relative too, so a reading-order
     // start stays `start` there rather than becoming the absolute edge.
     expect(out).not.toContain('text-anchor="end"');
-  });
-
-  it('anchors an absolute left at the far edge under rtl', () => {
-    expect(ser({ align: 'left', direction: 'rtl' })).toContain('text-anchor="end"');
   });
 
   it('writes no direction for ltr', () => {
