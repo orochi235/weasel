@@ -68,11 +68,10 @@ describe('openPrefsSync', () => {
   });
 
   it('refuses, at compile time, an adapter that cannot', () => {
-    const never = () => {
+    const _uncalled = (): void => {
       // @ts-expect-error urlHashAdapter cannot list synchronously
       openPrefsSync(SCHEMA, { storage: urlHashAdapter, prefix: 'p.' });
     };
-    expect(never).toBeTypeOf('function');
   });
 
   it('stops persisting when a peer migrates the store past this build', async () => {
