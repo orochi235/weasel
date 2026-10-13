@@ -88,6 +88,20 @@ describe('registerBidi', () => {
     warn.mockRestore();
   });
 
+  it.each([
+    ['a byte order mark', [0x41, 0xfeff, 0x42]],
+    ['an Arabic comma', [0x41, 0x060c, 0x42]],
+    ['ornate parentheses', [0xfd3e, 0x41, 0x42, 0xfd3f]],
+  ])('says nothing about %s in left-to-right text', (_name, cps) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    layoutRuns([RUN(String.fromCodePoint(...cps))], OPTS);
+    // The premise: an engine leaves what it keeps in the order it was written.
+    const { order } = bidi.reorder(bidi.analyze(cps, 'auto'), 0, cps.length);
+    expect([...order]).toEqual([...order].sort((a, b) => a - b));
+    expect(warn.mock.calls.filter(([message]) => String(message).includes('right-to-left'))).toEqual([]);
+    warn.mockRestore();
+  });
+
   it('drops a layout cached before the engine arrived', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const runs = [RUN(HEBREW)];
