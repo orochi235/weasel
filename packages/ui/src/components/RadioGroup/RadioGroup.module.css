@@ -43,11 +43,12 @@
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border-strong);
   border-radius: 50%;
+  box-shadow: var(--wzl-bevel-sunken, none);
   transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
 .radio[data-focus-visible] .dot {
-  box-shadow: 0 0 0 2px var(--wzl-focus-ring);
+  box-shadow: var(--wzl-bevel-sunken, 0 0 0 0 transparent), 0 0 0 2px var(--wzl-focus-ring);
 }
 
 .radio[data-hovered]:not([data-disabled]) .dot {

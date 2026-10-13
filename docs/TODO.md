@@ -818,15 +818,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) The desktop themes bevel four things and have never been looked at.** Of `win9xTheme`
-  and `platinumTheme` (`@weasel-js/theme/themes/*`), only `Button`, the field frame,
-  `PropertyPanel`, and a `titlebar` frame read the `--wzl-bevel-*` hooks. Checkbox, radio, switch,
-  tabs, sliders, `ToggleBar` and the segmented control, menus and popovers, `Dialog`, toolbars,
-  and the tooltip take each theme's colors and corners and draw no bevel, so a screen of them
-  reads as flat gray. Each wants the matching hook read as a `var()` fallback, as
-  `field.module.css` does. The systems' own faces are named in the font stacks and not bundled; a
-  bundled lookalike needs a face whose license allows it. And nobody has seen either theme:
-  browser tests pin computed values only.
+- **(P3) The desktop themes bevel some controls and have never been looked at.** Under
+  `win9xTheme` and `platinumTheme` (`@weasel-js/theme/themes/*`), `Button`, the field frame,
+  `PropertyPanel`, a `titlebar` frame, the checkbox, the radio, the switch, menus and popovers,
+  `Dialog`, and the tooltip read the `--wzl-bevel-*` hooks. Tabs, sliders, `ToggleBar` and the
+  segmented control, and toolbars take each theme's colors and corners and draw no bevel. Each
+  wants the matching hook read as a `var()` fallback, as `field.module.css` does: a tab is
+  open along one edge, which no hook draws, and the slider and the segmented track set a
+  shadow per variant. The checkbox, radio, switch, and overlays keep their own 1px border
+  inside the bevel, where the field frame drops its border through `--wzl-field-border`. The
+  systems' own faces are named in the font stacks and not bundled; a bundled lookalike needs a
+  face whose license allows it. And nobody has seen either theme: browser tests pin computed
+  values only.
 
 - **(P2) A `ColorList` still holds CSS strings, not `ColorSource`s.** A `ColorList`
   (`packages/theme/src/colorList.ts`) is literal strings, a ramp, a generator, or
