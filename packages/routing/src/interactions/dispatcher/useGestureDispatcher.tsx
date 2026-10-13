@@ -4,7 +4,7 @@
  * them) and routes each event to the dispatcher for the view it landed in.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
+import { heldPointers, isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
 import { useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry } from '../actions/depRegistry';
@@ -120,7 +120,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const keys = keyboardInput(core);
     const pinch = webkitPinchInput(core);
     const ingest = ingestInput(core);
-    const hover = hoverCursorInput(core, () => cursorRef.current.painted?.(), () => pointer.heldCount(), () => cursorRef.current.sink?.());
+    const held = canvas ? heldPointers(canvas) : null;
+    const hover = hoverCursorInput(core, () => cursorRef.current.painted?.(), () => held?.count() ?? 0, () => cursorRef.current.sink?.());
     const pointer: PointerInput = pointerInput(core, {
       longPress: () => longPressRef.current,
       onClick: () => onClickRef.current,
@@ -188,6 +189,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // the way out, and `cancelAll` below is what ends the gestures.
       disposed = true;
       pointer.dispose();
+      held?.release();
       redraw.stop();
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };

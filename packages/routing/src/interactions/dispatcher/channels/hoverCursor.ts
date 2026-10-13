@@ -36,6 +36,7 @@ export interface HoverCursorInput {
 export function hoverCursorInput(
   core: DispatchCore,
   paintedCursor: () => PaintedCursorState | undefined,
+  /** Pointers down on the canvas with any button, `heldPointers`' count. */
   pointersHeld: () => number,
   /** The surface's own sink, which also holds its tool cursor. Without one
    *  the override is written to the canvas and removed when it clears. */

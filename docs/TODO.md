@@ -97,11 +97,6 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) What the pointer recognizer's extraction left.** Three `pointermove` hover channels
-  listen on one canvas element and each tracks "is a button down" its own way: the dispatcher's
-  hover pump (`channels/hoverCursor.ts`), `useSurfaceInput` in core's canvas, and
-  `PointerPublisher` in `PointerProviderIfRoot.tsx`.
-
 - **(P3) What the text layout split left.**
   - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
     between two letters takes their pair's kerning away: `A`, U+0301, `B` sets the `B` where an

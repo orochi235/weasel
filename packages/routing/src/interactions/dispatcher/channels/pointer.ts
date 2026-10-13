@@ -34,7 +34,6 @@ export interface PointerInput {
   onNativeDoubleClick(e: MouseEvent): void;
   /** Whether a touch or pen hold is in progress, firing its long-press if still pending. */
   takeNativeHold(): boolean;
-  heldCount(): number;
   /** Cancel every held pointer, each through its session, which reports once. */
   cancelHeld(): void;
   /** Drop every held pointer and timer without dispatching. */
@@ -200,7 +199,6 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       hold.routeToPress();
       return recognizer.takeHold();
     },
-    heldCount: () => recognizer.heldCount(),
     cancelHeld() {
       for (const session of [...sessions.values()]) session.cancel();
     },

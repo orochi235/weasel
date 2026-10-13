@@ -137,4 +137,5 @@ export { multiTouchGeometry, type MultiTouchGeometry, type Point } from './recog
 export { clickEvents, longPressEvents } from './recognizer/pressFacts';
 export type { PressFacts, ReleaseFacts } from './recognizer/pressFacts';
 export { CONTROL_SELECTOR, isInControlWithin } from './ui/controlTarget';
+export { heldPointers, type HeldPointers } from './ui/heldPointers';
 export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from './ui/keyOwner';
