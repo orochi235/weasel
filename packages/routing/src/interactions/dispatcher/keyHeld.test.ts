@@ -383,6 +383,53 @@ describe('keyHeld engagement', () => {
     expect(dispatcher.inFlight().size).toBe(2);
   });
 
+  it('one held key engages one tool when two bind it, and its release frees that tool', () => {
+    const aStart = vi.fn().mockReturnValue({ onEnd: () => {} });
+    const bStart = vi.fn().mockReturnValue({ onEnd: () => {} });
+    const aEngagedRun = vi.fn();
+    const bEngagedRun = vi.fn();
+
+    const channel = (id: string, phase: 'initial' | 'engaged') => [{ channel: id, phase }];
+    const registry = makeRegistry([
+      ongoingAction('a-held', { kind: 'key-held', key: ' ', phase: channel('toolA', 'initial') }, aStart),
+      ongoingAction('b-held', { kind: 'key-held', key: ' ', phase: channel('toolB', 'initial') }, bStart),
+      immediateAction('a-engaged', { kind: 'key', key: 'z', phase: channel('toolA', 'engaged') }, aEngagedRun),
+      immediateAction('b-engaged', { kind: 'key', key: 'q', phase: channel('toolB', 'engaged') }, bEngagedRun),
+    ]);
+    const toolOf = (id: string, held: string, engaged: string, key: string): Tool => ({
+      id,
+      eligibility: { focus: true },
+      bindings: [
+        { spec: { kind: 'key-held', key: ' ', phase: channel(id, 'initial') }, actionId: held },
+        { spec: { kind: 'key', key, phase: channel(id, 'engaged') }, actionId: engaged },
+      ],
+    });
+    const entriesById = new Map([
+      ['toolA', toolOf('toolA', 'a-held', 'a-engaged', 'z')],
+      ['toolB', toolOf('toolB', 'b-held', 'b-engaged', 'q')],
+    ]);
+    const dispatcher = createDispatcher();
+    const ctx = makeCtx({ actions: registry, activeToolId: 'toolA', hotkeyStack: ['toolB'], entriesById });
+
+    dispatcher.handleInput(keyHeldDown(' '), ctx);
+    // An autorepeat keydown must not hand the slot to the other tool.
+    dispatcher.handleInput(keyHeldDown(' '), ctx);
+    expect(aStart.mock.calls.length + bStart.mock.calls.length).toBe(1);
+    const [winnerRun, loserRun, winnerKey, loserKey] = aStart.mock.calls.length === 1
+      ? [aEngagedRun, bEngagedRun, 'z', 'q']
+      : [bEngagedRun, aEngagedRun, 'q', 'z'];
+
+    expect(dispatcher.handleInput(keyDown(winnerKey), ctx)).toBe('handled');
+    expect(winnerRun).toHaveBeenCalledOnce();
+    expect(dispatcher.handleInput(keyDown(loserKey), ctx)).toBe('unhandled');
+    expect(loserRun).not.toHaveBeenCalled();
+
+    expect(dispatcher.handleInput(keyHeldUp(' '), ctx)).toBe('handled');
+    expect(dispatcher.inFlight().size).toBe(0);
+    expect(dispatcher.handleInput(keyDown(winnerKey), ctx)).toBe('unhandled');
+    expect(winnerRun).toHaveBeenCalledOnce();
+  });
+
   it('two held keys produce independent channel engagements', () => {
     const spaceEngagedRun = vi.fn();
     const aEngagedRun = vi.fn();

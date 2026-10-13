@@ -19,12 +19,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) Two tools engaging on the same held key may share one dispatcher slot.** Read from the
-  code and never run: a key-held engagement is stored under `key-held-<key>`, so a second tool on
-  that key would overwrite the first's owner, and releasing the key would restore only one channel.
-  The only record of this was a comment on a skipped test that asserted nothing, deleted in the
-  2026-10-12 test audit. Write the test first; it either fails or retires this entry.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
