@@ -940,18 +940,12 @@ only story runner in the repo.
   again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
   fix belongs in windease; the workaround goes when it lands.
 
-- **(P3) A dev server serves no edit while macOS file events are not arriving, and only forge's says so.**
-  This is what "a forge dev server started with `WAKE_EXTRA` served the modules it started with" was,
-  measured 2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached
-  neither `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the
-  file itself fired at once; a forge server on `WAKE_EXTRA` served none of three edits; and
-  `packages/forge/src/vite/replacedFile.test.ts` failed both its tests. wake, `WAKE_EXTRA`, and the
-  worktree are not part of it. That the earlier sighting had this cause is inferred from the matching
-  symptom, not measured. forge now writes a file at startup and warns when no event comes back
-  (`packages/forge/src/vite/watchProbe.ts`). Left: the site and draw servers give no such warning;
-  the forge tests that wait on a real watcher (`replacedFile.test.ts`, the `FOLLOWS` polls in
-  `plugin.test.ts`) fail in this state and read as a regression; and what holds `fseventsd` there is
-  not known.
+- **(P3) What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
+  2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
+  `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file
+  itself fired at once, and a dev server served none of three edits. Every dev server in the repo
+  now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
+  and the one test that needs a real watcher skips. The cause needs the machine in that state.
 
 - **(P2) Confirm in forge that a hot update is no longer followed by a full reload.** wake set a
   new stamp on every hot update and the page kept the one it loaded with, so about three seconds
