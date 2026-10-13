@@ -5,7 +5,7 @@ import type { IconName } from './paths';
 import {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
-  HandIcon, UnknownIcon,
+  HandIcon, SliceIcon, UnknownIcon,
 } from './index';
 import s from './icons.stories.module.css';
 
@@ -21,7 +21,7 @@ export default meta;
 const TOOL_ICONS = {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
-  HandIcon, UnknownIcon,
+  HandIcon, SliceIcon, UnknownIcon,
 } as const;
 
 function ToolSheet({ size, proof }: { size: number; proof?: boolean }) {

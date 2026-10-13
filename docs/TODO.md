@@ -26,11 +26,6 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) The slice tool has no icon.** `useSliceTool` declares a label and a key but no
-  `presentation.icon`, so `ToolPalette` draws its placeholder `?`, as the Slice demo shows. It
-  wants a knife glyph in `packages/core/src/icons`, proofed the way "Drawing icons" in
-  `CLAUDE.md` says.
-
 - **(P3) Nothing reads a mode's `entry.trigger`.** Draw enters path-edit, isolation, and text-edit
   from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
   (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
