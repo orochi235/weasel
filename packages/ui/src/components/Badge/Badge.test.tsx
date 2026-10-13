@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { render, fireEvent, act, screen } from '@testing-library/react';
-import { Badge } from './Badge';
+import { Badge, type BadgeProps } from './Badge';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 
 describe('Badge', () => {
@@ -59,6 +59,28 @@ describe('Badge content slots', () => {
     const el = container.firstElementChild as HTMLElement;
     expect(el.style.getPropertyValue('--badge-inset-left')).toBe('4px');
     expect(el.style.getPropertyValue('--badge-inset-right')).toBe('4px');
+  });
+
+  // jsdom lays nothing out, so the content's size is stubbed: this pins that the insets take
+  // the composed outline into account, not that the content clears it on screen.
+  describe('on a base fitted to its content', () => {
+    const inset = (props: Partial<BadgeProps>) => {
+      const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockReturnValue({ width: 200, height: 14, left: 0, top: 0, right: 200, bottom: 14, x: 0, y: 0, toJSON: () => ({}) });
+      const { container } = render(<Badge base="quatrefoil" {...props}>a long enough label</Badge>);
+      rect.mockRestore();
+      return parseFloat((container.firstElementChild as HTMLElement).style.getPropertyValue('--badge-inset-left'));
+    };
+
+    it('pads further for a negative bloat', () => {
+      expect(inset({ bloat: -3 })).toBeGreaterThanOrEqual(inset({}) + 3);
+    });
+
+    it('pads further for an effect that cuts into the outline, and no further for one that does not', () => {
+      expect(inset({ effects: [{ type: 'bites', params: { biteRadius: 4 } }] })).toBeGreaterThan(inset({}) + 3);
+      expect(inset({ effects: [{ type: 'bevel' }] })).toBe(inset({}));
+      expect(inset({ bloat: 3 })).toBe(inset({}));
+    });
   });
 });
 
