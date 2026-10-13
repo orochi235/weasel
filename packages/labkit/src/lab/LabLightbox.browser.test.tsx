@@ -158,7 +158,11 @@ test('an expanded trial keeps its marks over it and takes new ones', async () =>
     </div>,
   );
   fireEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
-  const pane = document.querySelector('.lk-lightbox-lab-pane') as HTMLElement;
+  const pane = await waitFor(() => {
+    const found = document.querySelector<HTMLElement>('.lk-lightbox-lab-pane');
+    if (!found) throw new Error('the instrument pane has not mounted');
+    return found;
+  });
   await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
 
   await drawRect(pane.getBoundingClientRect());
