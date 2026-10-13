@@ -13,7 +13,8 @@ import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import { InputScope } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import { sceneFromJSON } from 'core/scene/scene';
-import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
+import { isSerializedScene } from 'core/scene/serialization';
+import type { Node, NodeId, Scene } from 'core/scene/types';
 import { readOnlySelection } from 'core/selection/readOnlySelection';
 import { usePublishSceneSelection } from 'core/selection/usePublishSceneSelection';
 import { useSelection, type UseSelectionOptions } from 'core/selection/useSelection';
@@ -164,13 +165,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // `scene` accepts either a live `Scene` or a `SerializedScene` JSON object. JSON is baked
   // once; later prop changes are ignored (use a `key` on `<SceneCanvas>` to force a fresh canvas).
-  const isSerialized = (s: unknown): boolean =>
-    typeof s === 'object' && s != null && (s as { version?: unknown }).version === 1
-      && Array.isArray((s as { nodes?: unknown }).nodes);
   const [bakedScene] = useState<Scene<TData, TLayer, TPose> | null>(
-    () => isSerialized(sceneInput)
-      ? sceneFromJSON(sceneInput as SerializedScene<TData, TLayer, TPose>, {})
-      : null,
+    () => (isSerializedScene<TData, TLayer, TPose>(sceneInput) ? sceneFromJSON(sceneInput, {}) : null),
   );
   const scene = bakedScene ?? (sceneInput as Scene<TData, TLayer, TPose>);
 

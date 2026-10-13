@@ -10,6 +10,15 @@ import type {
   AddNodeSpec, LayerRecord, Node, NodeId, SceneRegistry, SerializedLayer, SerializedNode, SerializedScene,
 } from './types';
 
+/** Whether `value` is a snapshot `specsFromSerialized` reads, as against a live scene. */
+export function isSerializedScene<TData, TLayer extends string, TPose>(
+  value: unknown,
+): value is SerializedScene<TData, TLayer, TPose> {
+  return typeof value === 'object' && value != null
+    && (value as { version?: unknown }).version === 1
+    && Array.isArray((value as { nodes?: unknown }).nodes);
+}
+
 /** What a snapshot is written from. */
 export interface SerializableState<TData, TLayer extends string, TPose> {
   nodes: Map<NodeId, Node<TData, TLayer, TPose>>;

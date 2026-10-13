@@ -31,8 +31,8 @@
     "longestFunction": 267
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 949,
-    "longestFunction": 797
+    "lines": 945,
+    "longestFunction": 792
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 254
