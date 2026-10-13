@@ -138,13 +138,6 @@ describe('createScheduler', () => {
     expect(h.armIntervals()).toEqual([25, 25, 25]);
   });
 
-  it('re-arms even when the pass fired nothing', () => {
-    const h = harness();
-    h.scheduler.start();
-    h.tick();
-    expect(h.armCount()).toBe(2);
-  });
-
   it('stops the timer on stop()', () => {
     const h = harness();
     h.scheduler.start();

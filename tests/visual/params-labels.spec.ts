@@ -9,9 +9,11 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import less from 'less';
+import { readModuleCss } from '../../packages/ui/src/testing/readModuleCss';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
+const PROPERTIES = readModuleCss(resolve(root, 'packages/ui/src/components/Properties/Properties.module.css'));
 
 const OVERRIDE =
   '.ovr { --wzl-params-label-case: none; --wzl-params-label-tracking: var(--wzl-tracking-none);' +
@@ -55,7 +57,7 @@ const measure = (page: import('@playwright/test').Page, scope: string) =>
 
 test.describe('params labels', () => {
   test('an inline slider row keeps its label on the leading edge', async ({ page }) => {
-    await mount(page, read('packages/ui/src/components/Properties/Properties.module.css'), `<div class="panel">${ROWS}</div>`);
+    await mount(page, PROPERTIES, `<div class="panel">${ROWS}</div>`);
     const rows = await measure(page, '.panel');
     // A stacked-row rule once packed an inline slider row's label against its track.
     expect(rows.find((r) => r.k === 'slider-inline')!.labelLeft).toBe(0);
@@ -63,16 +65,12 @@ test.describe('params labels', () => {
   });
 
   test('labels default to uppercase', async ({ page }) => {
-    await mount(page, read('packages/ui/src/components/Properties/Properties.module.css'), `<div class="panel">${ROWS}</div>`);
+    await mount(page, PROPERTIES, `<div class="panel">${ROWS}</div>`);
     for (const r of await measure(page, '.panel')) expect(r.transform, r.k).toBe('uppercase');
   });
 
   test('one declaration on an ancestor sets case, width and alignment beneath it', async ({ page }) => {
-    await mount(
-      page,
-      read('packages/ui/src/components/Properties/Properties.module.css'),
-      `<div class="ovr"><div class="panel">${ROWS}</div></div>`,
-    );
+    await mount(page, PROPERTIES, `<div class="ovr"><div class="panel">${ROWS}</div></div>`);
     const rows = await measure(page, '.ovr');
     for (const r of rows) expect(r.transform, r.k).toBe('none');
     for (const k of ['inline', 'slider-inline', 'checkbox']) {

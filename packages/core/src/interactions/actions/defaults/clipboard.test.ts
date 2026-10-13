@@ -8,7 +8,6 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import { buildDeleteOps } from './delete';
 
 function makeStubScene(ids: string[]) {
   const nodes = new Map<string, { id: NodeId; kind: 'leaf'; layer: string; pose: unknown; data: unknown; parent: null }>();
@@ -93,36 +92,6 @@ describe('clipboardCutAction (descriptor)', () => {
       clipboard, scene, selection: makeSelection([]),
     } as never);
     expect(clipboard.copy).not.toHaveBeenCalled();
-  });
-});
-
-describe('buildDeleteOps subtree collapsing (shared by delete + cut)', () => {
-  it('emits one op for a container selected alongside its children', () => {
-    // `removeNode` cascades; a second op for the child would throw mid-batch.
-    const nodes = new Map<string, { id: NodeId; kind: string; parent: NodeId | null }>([
-      ['g', { id: asNodeId('g'), kind: 'container', parent: null }],
-      ['a', { id: asNodeId('a'), kind: 'leaf', parent: asNodeId('g') }],
-      ['b', { id: asNodeId('b'), kind: 'leaf', parent: asNodeId('g') }],
-      ['loose', { id: asNodeId('loose'), kind: 'leaf', parent: null }],
-    ]);
-    const scene = {
-      get: (id: NodeId) => nodes.get(id),
-      childrenOf: (id: NodeId) => [...nodes.values()].filter((n) => n.parent === id).map((n) => n.id),
-      get roots() { return [...nodes.values()].filter((n) => n.parent == null).map((n) => n.id); },
-      // Subtree only — the stub has no `dependsOn`.
-      removalClosure: (want: readonly NodeId[]): NodeId[] => {
-        const out: NodeId[] = [];
-        const walk = (id: NodeId): void => {
-          if (out.includes(id)) return;
-          out.push(id);
-          for (const n of nodes.values()) if (n.parent === id) walk(n.id);
-        };
-        for (const id of want) walk(id);
-        return out;
-      },
-    };
-    const ops = buildDeleteOps(scene as never, ['g', 'a', 'b', 'loose'], 'Cut');
-    expect(ops).toHaveLength(2);
   });
 });
 

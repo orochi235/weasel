@@ -162,18 +162,6 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
     expect(read?.args.slice(0, 4)).toEqual([0, 0, 120, 40]);
   });
 
-  // Structural smoke only: compares recorded GL call NAMES, not byte output,
-  // under jsdom. Real byte determinism is covered by tests/visual/render-to-pixels.spec.ts.
-  it('same-context determinism: identical call sequences across runs', () => {
-    const run = () => {
-      const rec = makeGLRecorder();
-      const scene = fakeScene([leaf('r', RECT, { fill: { paint: { color: '#123456' } }, label: undefined })]);
-      renderSceneToPixels({ scene, sourceRect: RECT, scale: { x: 2, y: 1 }, background: '#ffffff', createCanvas: recorderFactory(rec) });
-      return rec.calls.map((c) => c.name).join(',');
-    };
-    expect(run()).toBe(run());
-  });
-
   it('flips rows: GL bottom-up becomes top-down output', () => {
     const rec = makeGLRecorder();
     // Wrap the recorder gl so readPixels fills each GL row y with byte value y.

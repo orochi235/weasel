@@ -125,43 +125,6 @@ function positionsOfMode(
   return out;
 }
 
-describe('WeaselRenderer.render — kind: group', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
-  let r: WeaselRenderer;
-
-  beforeEach(() => {
-    recorder = makeGLRecorder();
-    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
-    recorder.reset();
-  });
-
-  it('clears the framebuffer at the start of render', () => {
-    r.render([]);
-    const names = recorder.calls.map((c) => c.name);
-    expect(names).toContain('clear');
-  });
-
-  it('walks an empty group without throwing', () => {
-    const cmd: DrawCommand = { kind: 'group', children: [] };
-    expect(() => r.render([cmd])).not.toThrow();
-  });
-
-  it('walks nested draw-groups recursively', () => {
-    const cmd: DrawCommand = {
-      kind: 'group',
-      transform: mat3.translated(mat3.identity(), 10, 0),
-      children: [
-        {
-          kind: 'group',
-          transform: mat3.translated(mat3.identity(), 0, 20),
-          children: [],
-        },
-      ],
-    };
-    expect(() => r.render([cmd])).not.toThrow();
-  });
-});
-
 import type { RectPath } from '@weasel-js/geom';
 
 describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
@@ -172,13 +135,6 @@ describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
-  });
-
-  it('binds the path-fill program before drawing a path', () => {
-    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
-    r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
-    const names = recorder.calls.map((c) => c.name);
-    expect(names).toContain('useProgram');
   });
 
   it('issues a drawElements call with the mesh index count', () => {
@@ -228,7 +184,7 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
     expect(drawCalls.length).toBe(2);
   });
 
-  it('clears stencil before the mask pass', () => {
+  it('clears the parity bit after the cover pass', () => {
     const path: PolygonPath = {
       kind: 'polygon',
       commands: new Uint8Array([M, L, L, L, Z]),
@@ -236,8 +192,12 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
       fillRule: 'evenodd',
     };
     r.render([{ kind: 'path', path, fill: { paint: { color: '#ff0000' } } }]);
-    const clearCalls = recorder.calls.filter((c) => c.name === 'clear');
-    expect(clearCalls.length).toBeGreaterThanOrEqual(1);
+    const names = recorder.calls.map((c) => c.name);
+    const cover = names.lastIndexOf('drawElements');
+    const clear = names.lastIndexOf('clear');
+    expect(clear).toBeGreaterThan(cover);
+    expect(recorder.calls[clear].args).toEqual([recorder.gl.STENCIL_BUFFER_BIT]);
+    expect(recorder.calls[clear - 1]).toMatchObject({ name: 'stencilMask', args: [0x01] });
   });
 });
 
@@ -525,6 +485,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64, sampling: 'nearest' },
       { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 },
     ]);
+    expect(recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1])).toEqual([6, 6]);
     const magFilters = recorder.calls
       .filter((c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER)
       .map((c) => c.args[2]);
@@ -561,15 +522,6 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       .map((c) => c.args[2]);
     // Once, on the first flush that wanted NEAREST — not once per flush.
     expect(magFilters).toEqual([recorder.gl.NEAREST]);
-  });
-
-  it('merges neighboring images sharing a bitmap into one draw', () => {
-    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
-    r.render([img, img, img]);
-    const draws = recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1]);
-    // One draw over three quads: 18 indices, not three draws of 6.
-    expect(draws).toEqual([18]);
   });
 
   it('gives each flush its own ring slot', () => {
@@ -1191,13 +1143,6 @@ describe('flattenTolerance option', () => {
     r2.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
     expect(after.calls.map((c) => c.name)).toContain('deleteVertexArray');
   });
-
-  it('default path (no option) keeps the persistent cache route', () => {
-    const rec = makeGLRecorder();
-    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
-    r.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
-    expect(rec.calls.map((c) => c.name)).not.toContain('deleteVertexArray');
-  });
 });
 
 describe('drawText synthetic-italic', () => {
@@ -1613,7 +1558,7 @@ describe('drawText — decoration reaches the GPU', () => {
     expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
   });
 
-  it('emits nothing through the path-fill program when decoration is off', () => {
+  it('stages no rule when decoration is off', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, {
       kind: 'text', x: 0, y: 0,

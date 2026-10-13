@@ -60,10 +60,14 @@ describe('reorder ops round-trip through History.serialize()', () => {
   it('a batch mixing a reorder with a named op keeps both', () => {
     const a = adapter();
     const h = createHistory(a.self);
-    h.applyOps([createReorderOp({ ids: ['a'], direction: 'front' })], 'Bring to front');
+    h.applyOps([
+      createReorderOp({ ids: ['a'], direction: 'front' }),
+      createMoveToIndexOp({ ids: ['d'], parentId: null, index: 0 }),
+    ], 'Shuffle');
+    expect(a.order()).toEqual(['d', 'b', 'c', 'a']);
     const snap = h.serialize();
     expect(snap.droppedEntries).toBe(0);
-    expect(snap.undoStack[0].forwardOps.map((o) => o.name)).toEqual(['reorder']);
+    expect(snap.undoStack[0].forwardOps.map((o) => o.name)).toEqual(['reorder', 'moveToIndex']);
   });
 
   it.each([

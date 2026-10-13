@@ -71,6 +71,15 @@ export interface CanvasExtensionApi {
    * Read live: the value is the one the next paint uses.
    */
   getSurfaceRect(): { x: number; y: number; width: number; height: number };
+  /**
+   * A client point in this canvas's world: through the `clientToWorld`
+   * override when the canvas was given one, and through {@link element}'s
+   * rect and the current view otherwise. It is the conversion the canvas
+   * makes for hover and for its registered layers' hit-tests, so a point
+   * converted here lands where the canvas says it does. Before the canvas
+   * mounts there is nothing to measure and the point comes back unchanged.
+   */
+  clientToWorld(clientX: number, clientY: number): [number, number];
   requestRedraw(): void;
   /**
    * Run `fn` after every paint, on the frame that painted — for chrome that

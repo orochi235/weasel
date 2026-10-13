@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  easeIn, easeInOut, easeOut, linear, SPRING_PRESETS,
+  easeIn, easeInOut, easeOut, linear,
   EASINGS,
   easeInBack, easeOutBack, easeInElastic, easeOutElastic,
   easeInBounce, easeOutBounce,
@@ -58,17 +58,6 @@ describe('EASINGS bag', () => {
       expect(a).toBeLessThanOrEqual(1 + 1e-9);
       expect(b).toBeGreaterThanOrEqual(-1e-9);
       expect(b).toBeLessThanOrEqual(1 + 1e-9);
-    }
-  });
-});
-
-describe('SPRING_PRESETS', () => {
-  it('exposes the four named presets with positive scalars', () => {
-    for (const name of ['gentle', 'wobbly', 'stiff', 'slow'] as const) {
-      const p = SPRING_PRESETS[name];
-      expect(p.stiffness).toBeGreaterThan(0);
-      expect(p.damping).toBeGreaterThan(0);
-      expect(p.mass).toBeGreaterThan(0);
     }
   });
 });

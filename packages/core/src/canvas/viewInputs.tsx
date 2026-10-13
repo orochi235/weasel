@@ -1,6 +1,6 @@
 /**
  * What {@link useViewHelpers} needs that belongs to the surface rather than to
- * one view: the adapter, the geometry, the bounds resolver and the tools.
+ * one view: the adapter, the geometry and the bounds resolver.
  *
  * These are read during a view's render, so they travel as context rather than
  * on the `SurfaceHandle`, which is not attached until an effect runs.
@@ -23,7 +23,7 @@ export type { ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
  * the asking view's own dispatcher, not from here.
  */
 export interface SurfaceViewInputs
-  extends Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry' | 'tools'> {
+  extends Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry'> {
   /** A node's box for chrome, drawn under `view` — the camera of the view
    *  asking, since a node on a parallax plane lands somewhere else in each. */
   boundsOf: ((id: string, view?: View | null) => Bounds | null) | undefined;

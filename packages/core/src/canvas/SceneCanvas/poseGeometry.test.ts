@@ -1,10 +1,10 @@
 /**
- * Tests for the `<SceneCanvas>`-internal pose-shape dispatcher. Three
- * helpers — `isPathLike`, `aabbOfPose`, `poseContains` — route between
- * path-pose math and rect-pose math depending on the pose's `kind` tag.
+ * Tests for the `<SceneCanvas>`-internal pose-shape dispatcher: `aabbOfPose`
+ * and `poseContains` route between path-pose math and rect-pose math
+ * depending on the pose's `kind` tag.
  */
 import { describe, it, expect } from 'vitest';
-import { isPathLike, aabbOfPose, poseContains, poseContainsRotated } from './poseGeometry';
+import { aabbOfPose, poseContains, poseContainsRotated } from './poseGeometry';
 import {
   PATH_M,
   PATH_L,
@@ -19,26 +19,6 @@ const tri: PolygonPath = {
   coords: new Float32Array([0, 0, 10, 0, 5, 10]),
   fillRule: 'nonzero',
 };
-
-describe('isPathLike', () => {
-  it('accepts polygon poses', () => {
-    expect(isPathLike(tri)).toBe(true);
-  });
-
-  it('accepts rect-kind poses', () => {
-    expect(isPathLike({ kind: 'rect', x: 0, y: 0, width: 1, height: 1 })).toBe(true);
-  });
-
-  it('rejects plain rect poses (no `kind` field)', () => {
-    expect(isPathLike({ x: 0, y: 0, width: 1, height: 1 })).toBe(false);
-  });
-
-  it('rejects nullish and primitives', () => {
-    expect(isPathLike(null)).toBe(false);
-    expect(isPathLike(undefined)).toBe(false);
-    expect(isPathLike(0)).toBe(false);
-  });
-});
 
 describe('aabbOfPose', () => {
   it('returns path AABB for polygon poses', () => {
@@ -92,14 +72,6 @@ describe('poseContainsRotated', () => {
   it('misses inside the AABB but outside the rotated body', () => {
     // (75, 50): inside AABB, outside the 90°-rotated thin strip.
     expect(poseContains(rotated, 75, 50)).toBe(true);
-    expect(poseContainsRotated(rotated, 75, 50)).toBe(false);
-  });
-
-  it('sources rotation from pose.rotation — matching the renderer', () => {
-    // The render wrap reads pose.rotation directly, so the hit-test must too:
-    // a rotated pose hit-tests rotated whether or not a resize descriptor is
-    // wired. (Previously this branch depended on an injected getRotation.)
-    expect(poseContainsRotated(rotated, 50, 75)).toBe(true);
     expect(poseContainsRotated(rotated, 75, 50)).toBe(false);
   });
 

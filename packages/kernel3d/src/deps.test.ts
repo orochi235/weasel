@@ -9,9 +9,10 @@ import {
   type ViewportSource,
   type Footprint,
 } from './deps';
-import { createCamera, cameraEye } from './camera';
-import { dot, len, sub, type Vec3 } from '@weasel-js/geom/3d';
+import { createCamera, cameraEye, cameraViewProjection } from './camera';
+import { add, dot, len, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { pose3 } from './pose3';
+import { projectAabbToScreen } from './screen';
 import {
   boundsOfTestNode, createTestScene, type TestScene,
 } from './testScene';
@@ -87,23 +88,26 @@ describe('createNodeAtPoint', () => {
     const scene = createTestScene();
     const vp = viewport();
     const pick = createNodeAtPoint(world(scene, () => vp));
+    const { target } = vp.camera;
+    const sphere = idsOf(scene)[1];
+    // Past the sphere on the center ray, and last in render order.
     const behind = scene.add({
       kind: 'leaf',
       layer: 'solids',
-      pose: pose3({ x: 0, y: 0.5, z: -40 }),
+      pose: pose3(add(target, scale(sub(target, cameraEye(vp.camera)), 2))),
       data: {},
     });
-    expect(pick(CENTER)).not.toBe(behind);
+    expect(pick(CENTER)).toBe(sphere);
+    expect(pick(CENTER, [sphere])).toBe(behind);
   });
 
-  it('follows the camera: orbiting changes what is under the cursor', () => {
+  it('follows the camera: retargeting changes what is under the cursor', () => {
     const scene = createTestScene();
     let vp = viewport();
     const pick = createNodeAtPoint(world(scene, () => vp));
-    const before = pick(CENTER);
-    vp = { ...vp, camera: createCamera({ distance: 12, pitch: 1.5, target: { x: 0, y: 0.5, z: 0 } }) };
-    const after = pick({ x: WIDTH / 2, y: HEIGHT - 20 });
-    expect(before).not.toBe(after);
+    expect(pick(CENTER)).toBe(idsOf(scene)[1]);
+    vp = { ...vp, camera: createCamera({ distance: 12, pitch: 0.4, target: { x: -2.2, y: 0.5, z: 0 } }) };
+    expect(pick(CENTER)).toBe(idsOf(scene)[0]);
   });
 
   it('picks nothing when the camera casts no ray', () => {
@@ -152,21 +156,33 @@ describe('createAreaSelect', () => {
 });
 
 describe('createInsert', () => {
-  it('stands a new box on the ground plane under the drag rectangle', () => {
-    const scene = createTestScene();
-    const before = idsOf(scene).length;
-    const insert = createInsert({ viewport, mint: mintBox(scene) });
+  it('mints from the ground-plane footprint under the drag rectangle', () => {
+    const vp = viewport();
+    const seen: Footprint[] = [];
+    const insert = createInsert({
+      viewport: () => vp,
+      mint: (footprint) => {
+        seen.push(footprint);
+        return 'minted' as NodeId;
+      },
+    });
+    const drag = { x: 480, y: 340, width: 120, height: 120 };
 
-    const id = insert.commit(
-      { x: 300, y: 300, width: 120, height: 120 },
-      { kind: 'rect' } as never,
-    );
+    expect(insert.commit(drag, { kind: 'rect' } as never)).toBe('minted');
+    insert.commit({ ...drag, width: 240 }, { kind: 'rect' } as never);
 
-    expect(id).not.toBeNull();
-    expect(idsOf(scene)).toHaveLength(before + 1);
-    const pose = scene.get(id!)!.pose;
-    // Standing on y=0 means the center sits half its height up.
-    expect(pose.position.y).toBeCloseTo(pose.scale.y / 2, 6);
+    const [narrow, wide] = seen;
+    expect(narrow!.center.y).toBe(0);
+    const at = projectAabbToScreen(
+      { min: narrow!.center, max: narrow!.center },
+      cameraViewProjection(vp.camera, WIDTH / HEIGHT),
+      { x: 0, y: 0, width: WIDTH, height: HEIGHT },
+    )!;
+    expect(at.x).toBeGreaterThan(drag.x);
+    expect(at.x).toBeLessThan(drag.x + drag.width);
+    expect(at.y).toBeGreaterThan(drag.y);
+    expect(at.y).toBeLessThan(drag.y + drag.height);
+    expect(wide!.width).toBeGreaterThan(narrow!.width);
   });
 
   it('returns null when the rectangle points at the sky', () => {

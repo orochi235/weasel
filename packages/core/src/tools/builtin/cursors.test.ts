@@ -17,12 +17,6 @@ describe('builtin tool cursors', () => {
     expect(css).toMatch(/, crosshair$/);
   });
 
-  it('keeps a keyword available for the pen tool while it hints a close', () => {
-    // usePenTool swaps to 'pointer' when closing the subpath is the next click;
-    // that hint is about routing, not about the tool, so it stays a keyword.
-    expect(cursorFor('pen', { fallback: 'crosshair' })).not.toBe('pointer');
-  });
-
   it('declares a hotspot on every tool cursor', () => {
     // A cursor with no hotspot silently acts from its top-left corner.
     for (const name of ['pencil', 'pen', 'eyedropper'] as const) {

@@ -95,6 +95,41 @@ describe('selectable={false}', () => {
   });
 });
 
+describe('selectable={false}: the selection the kit holds', () => {
+  it('ignores every mutator', () => {
+    const { scene, seen } = mount(false, true);
+    act(() => seen.own!.set([A]));
+    const none = { shift: false, meta: false, ctrl: false };
+    act(() => {
+      seen.dep!.add(B);
+      seen.dep!.remove(A);
+      seen.dep!.toggle(B);
+      seen.dep!.clear();
+      seen.dep!.applyClick(B, none);
+    });
+    expect(scene.getSelection()).toEqual([A]);
+  });
+
+  it('still reads, through every reader', () => {
+    const { seen } = mount(false, true);
+    act(() => seen.own!.set([A]));
+    expect(seen.dep!.current).toEqual([A]);
+    expect(seen.dep!.get()).toEqual([A]);
+    expect(seen.dep!.contains(A)).toBe(true);
+    expect(seen.dep!.contains(B)).toBe(false);
+    expect(seen.dep!.adapterMethods.getSelection()).toEqual([A]);
+  });
+
+  it('is one object, and one set of adapter methods, across renders', () => {
+    const { seen } = mount(false, true);
+    const first = seen.dep!;
+    const methods = first.adapterMethods;
+    act(() => seen.own!.set([A]));
+    expect(seen.dep).toBe(first);
+    expect(seen.dep!.adapterMethods).toBe(methods);
+  });
+});
+
 describe('selectable (default)', () => {
   it('the adapter and the dep both write', () => {
     const { scene, seen } = mount(true);
@@ -141,9 +176,10 @@ describe('click policy is the selection’s mode', () => {
     expect(shiftClickB('internal-multi')).toEqual([A, B]);
   });
 
-  it('the canvas takes no click policy of its own', () => {
-    const scene = makeScene();
-    // @ts-expect-error — the selection owns click policy
-    render(<SceneCanvas<D, L, P> scene={scene} width={200} height={200} selectionMode="multi" />);
-  });
 });
+
+void function selectionModeIsNotAProp() {
+  const scene = makeScene();
+  // @ts-expect-error — the selection owns click policy
+  return <SceneCanvas<D, L, P> scene={scene} width={200} height={200} selectionMode="multi" />;
+};

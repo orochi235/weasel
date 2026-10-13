@@ -6,9 +6,9 @@ import type { Tool } from '../../overlayBinding';
 
 describe('useHandTool', () => {
   it('the drag params thunk reads the committed options, not an abandoned render\'s', () => {
-    let tool = null as Tool<unknown> | null;
+    let tool = null as Tool | null;
     function Probe({ axis }: { axis: 'x' | 'y' }) {
-      tool = useHandTool({ axis }) as Tool<unknown>;
+      tool = useHandTool({ axis }) as Tool;
       return null;
     }
     renderThenAbandon<'x' | 'y'>('x', 'y', (axis) => <Probe axis={axis} />);

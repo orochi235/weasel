@@ -5,8 +5,8 @@
  * produces numbers that say nothing about a GPU.
  *
  * The variants:
- *   - `alternating` — solid and linear-gradient alternating, so consecutive
- *     commands need different programs.
+ *   - `alternating` — solid and linear-gradient alternating. Both join one
+ *     batched run, so this prices the gradient fill, not a program switch.
  *   - `stacked` — every rect at the same spot: the same number of draw calls
  *     over a fraction of the fragments.
  *   - `scene` — each command in its own group, which is what `buildSceneTree`
@@ -49,8 +49,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
 
   const { rows, glRenderer, gradientRamps, gcAvailable } = await page.evaluate(
     async ({ root, sweep, variants }) => {
-      const base = `/weasel/@fs${root}/packages/core/src`;
-      const { WeaselRenderer } = await import(/* @vite-ignore */ `${base}/renderer/WeaselRenderer.ts`);
+      const { WeaselRenderer } = await import(/* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`);
       const { frameMs } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`);
 
       const W = 800;
@@ -197,8 +196,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   console.log(lines.join('\n'));
 
   expect(errors).toEqual([]);
-  // A gradient that silently draws nothing would read as a free fill kind and
-  // make the program-switch comparison meaningless.
+  // A gradient that silently draws nothing would read as a free fill kind.
   expect(gradientRamps, 'gradient fill did not ramp').toBe(true);
   for (const v of VARIANTS) {
     const gr = rows.filter((r) => r.variant === v).sort((a, b) => a.n - b.n);

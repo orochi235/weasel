@@ -57,7 +57,6 @@ describe('pick tolerance converts against the camera the point came from', () =>
       adapter: undefined,
       geometry: AUTO_POSE_DESCRIPTOR as never,
       boundsOf: undefined,
-      tools: undefined,
       selectionApi: { current: [], get: () => [], set: () => {} } as never,
       pickBest: (_wx: number, _wy: number, view?: { scale: { x: number; y: number } } | null) => {
         seen.push(view);

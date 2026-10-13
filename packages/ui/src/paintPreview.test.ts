@@ -64,7 +64,10 @@ describe('paintPreviewCss', () => {
     })!;
     expect(lch).not.toBe(rgb);
     // Both ends agree; the middle is where the spaces part.
-    expect(lch.includes('#ff0000ff 0.0%')).toBe(rgb.includes('#ff0000ff 0.0%'));
+    for (const css of [lch, rgb]) {
+      expect(css).toContain('#ff0000 0.0%');
+      expect(css).toContain('#0000ff 100.0%');
+    }
     expect(lch).toContain('50.0%');
   });
 });

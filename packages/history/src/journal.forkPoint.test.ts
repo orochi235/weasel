@@ -31,6 +31,11 @@ describe('forkedAtEntryId', () => {
     expect(j.forkedAtEntryId).toBe(frontier);
   });
 
+  it('carries the targetId it was begun with', () => {
+    const parent = createHistory({ values: [] as number[] });
+    expect(parent.beginJournal({ label: 's', targetId: 'foo' }).targetId).toBe('foo');
+  });
+
   it('subsequent parent ops do not change a journal\'s forkedAtEntryId', () => {
     const adapter = { values: [] as number[] };
     const parent = createHistory(adapter);

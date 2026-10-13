@@ -13,7 +13,7 @@ import { ResolutionWidget } from './ToolkitBuilder';
 const isAnchor = hitPredicate((hit: unknown): boolean =>
   (hit as { kind?: string } | undefined)?.kind === 'anchor');
 
-const TOOLS: readonly Tool<unknown>[] = [
+const TOOLS: readonly Tool[] = [
   {
     id: 'select',
     eligibility: { focus: true },

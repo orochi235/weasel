@@ -1,17 +1,7 @@
-/**
- * SceneCanvas scoping props, tested at their seams without rendering:
- *
- *   1. alpha  — when `cfg.alphaFor(id)` returns < 1, `buildSceneLayer` must wrap
- *               the node's commands in a `{ kind: 'group', alpha }` command.
- *
- *   2. hit    — an `isPointerInteractive` guard around `makeGetNodeAtPoint`'s
- *               result. The guard is restated in this file, so these cases do
- *               not exercise SceneCanvas's own.
- */
-
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { render, act } from '@testing-library/react';
 import { buildSceneLayer } from './Canvas';
-import { makeGetNodeAtPoint } from './getNodeAtPoint';
+import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -114,47 +104,35 @@ describe('buildSceneLayer — alphaFor', () => {
   });
 });
 
-describe('getNodeAtPoint — isPointerInteractive filter', () => {
-  it('returns null for ids where isPointerInteractive returns false', () => {
-    const { bId } = makeScene();
-
-    // pickEvery always returns bId (simulates the cursor over node 'b')
-    const pickEvery = (_wx: number, _wy: number) => bId;
-
-    const baseGetNodeAtPoint = makeGetNodeAtPoint(pickEvery);
-
-    // The filter SceneCanvas applies when isPointerInteractive is supplied:
-    const isPointerInteractive = (id: string) => id !== bId;
-
-    const getNodeAtPoint = (wx: number, wy: number) => {
-      const hit = baseGetNodeAtPoint(wx, wy);
-      if (hit == null) return null;
-      if (isPointerInteractive(hit.id) === false) return null;
-      return hit;
-    };
-
-    // Clicking anywhere returns null because bId is non-interactive
-    expect(getNodeAtPoint(5, 5)).toBeNull();
+describe('SceneCanvas isPointerInteractive', () => {
+  beforeAll(() => {
+    const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
+    proto.getContext = vi.fn(() => null);
+    proto.setPointerCapture = vi.fn();
+    proto.releasePointerCapture = vi.fn();
   });
 
-  it('returns the hit when isPointerInteractive returns true for the hit id', () => {
-    const { aId } = makeScene();
+  it('reports a click on a rejected node as a miss and still reports its neighbor', () => {
+    const scene = createScene<TData, TLayer, typeof POSE>({ systemLayers: [{ id: 'bg' }] });
+    const aId = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    const bId = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 20, y: 0, width: 10, height: 10 }, data: { label: 'b' } });
+    const onClick = vi.fn();
+    const { container } = render(
+      <SceneCanvas
+        features={['pick']} scene={scene} layers={{}} width={200} height={200}
+        isPointerInteractive={(id) => id !== bId}
+        onClick={onClick}
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    const click = (x: number, y: number) => act(() => {
+      canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+      canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+    });
 
-    const pickEvery = (_wx: number, _wy: number) => aId;
-    const baseGetNodeAtPoint = makeGetNodeAtPoint(pickEvery);
-
-    // aId IS interactive
-    const isPointerInteractive = (_id: string) => true;
-
-    const getNodeAtPoint = (wx: number, wy: number) => {
-      const hit = baseGetNodeAtPoint(wx, wy);
-      if (hit == null) return null;
-      if (isPointerInteractive(hit.id) === false) return null;
-      return hit;
-    };
-
-    const hit = getNodeAtPoint(5, 5);
-    expect(hit).not.toBeNull();
-    expect(hit!.id).toBe(aId);
+    click(5, 5);
+    expect(onClick.mock.calls[0]![0]).toMatchObject({ id: aId });
+    click(25, 5);
+    expect(onClick.mock.calls[1]![0]).toBeNull();
   });
 });

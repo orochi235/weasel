@@ -13,7 +13,7 @@ const EMPTY_SURFACE: ToolSurface = {
   outputs: { cursor: false, overlay: false },
 };
 const EMPTY_CAPS = {
-  initScratch: false, onActivate: false, onDeactivate: false,
+  onActivate: false, onDeactivate: false,
 };
 
 const NODES: readonly TreeCategoryNode[] = [

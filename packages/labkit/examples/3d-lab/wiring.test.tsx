@@ -166,23 +166,4 @@ describe('the dispatcher over a 3D viewport', () => {
 
     expect(harness.camera.current.yaw).toBeCloseTo(before.yaw, 6);
   });
-
-  it('reaches the orbit action through the registry, not by being called directly', () => {
-    const start = vi.spyOn(
-      orbitAction.invoker as { start: (...args: never[]) => unknown },
-      'start',
-    );
-    const harness = harnessOf();
-    const { getByTestId } = mount(harness, 'orbit');
-    const pane = getByTestId('pane');
-
-    act(() => {
-      fire(pane, 'pointerdown', { clientX: 100, clientY: 100 });
-      fire(pane, 'pointermove', { clientX: 200, clientY: 160 });
-      fire(pane, 'pointerup', { clientX: 200, clientY: 160 });
-    });
-
-    expect(start).toHaveBeenCalled();
-    start.mockRestore();
-  });
 });

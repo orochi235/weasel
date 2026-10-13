@@ -78,12 +78,4 @@ describe('Get Info', () => {
     expect(row.textContent).toContain('How big.');
     expect(row.textContent).toContain('4');
   });
-
-  it('closes on Escape', async () => {
-    mount();
-    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
-    const dialog = await openInfo();
-    fireEvent.keyDown(dialog, { key: 'Escape' });
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  });
 });

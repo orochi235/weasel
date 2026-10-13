@@ -246,14 +246,6 @@ describe('MIGRATIONS', () => {
     expect(MIGRATIONS).toHaveLength(CURRENT_DOCUMENT_VERSION);
   });
 
-  it('indexes migrateV0toV1 at position 0', () => {
-    expect(MIGRATIONS[0]).toBe(migrateV0toV1);
-  });
-
-  it('indexes migrateV1toV2 at position 1', () => {
-    expect(MIGRATIONS[1]).toBe(migrateV1toV2);
-  });
-
   it('walks a version-0 document all the way to trials', () => {
     const outcome = runMigrations(
       { version: 0, workspaces: [{ id: 'w1' }] },
@@ -362,6 +354,5 @@ describe('version 3 to version 4', () => {
       mode: 'auto',
     };
     expect(migrateV3toV4(doc)).toEqual({ ...doc, version: 4 });
-    expect(MIGRATIONS[3]).toBe(migrateV3toV4);
   });
 });

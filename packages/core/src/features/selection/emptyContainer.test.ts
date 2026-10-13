@@ -30,8 +30,4 @@ describe('composeSelectionPose — containers with no leaves', () => {
     const r = resolver({ outer: ['grp', 'leaf'], grp: [] }, ['outer', 'grp']);
     expect(r('outer')).toEqual({ x: 10, y: 20, width: 4, height: 6 });
   });
-
-  it('leaves a plain leaf untouched', () => {
-    expect(resolver({}, [])('leaf')).toEqual(STORED.leaf);
-  });
 });

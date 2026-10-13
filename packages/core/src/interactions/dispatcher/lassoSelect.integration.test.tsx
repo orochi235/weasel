@@ -64,15 +64,15 @@ function RegisterLassoSelectDep({ dep }: { dep: LassoSelectDep }) {
   return null;
 }
 
-function RegisterLassoSelect({ override }: { override?: boolean } = {}) {
+function RegisterLassoSelect() {
   const registry = useActionsRegistry();
-  if (registry && (override || !registry.list().find((a) => a.id === 'lassoSelect'))) {
+  if (registry && !registry.list().find((a) => a.id === 'lassoSelect')) {
     registry.register({ ...lassoSelectAction, enabled: () => true });
   }
   return null;
 }
 
-function buildHarness(dep: LassoSelectDep, shiftHeld = false) {
+function buildHarness(dep: LassoSelectDep) {
   function Harness() {
     const ref = useRef<HTMLCanvasElement | null>(null);
     return (
@@ -87,7 +87,6 @@ function buildHarness(dep: LassoSelectDep, shiftHeld = false) {
       </DepRegistryProvider>
     );
   }
-  void shiftHeld;
   return Harness;
 }
 

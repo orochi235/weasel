@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, beforeAll, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { prefLeaves, type PrefGroup, VERSION_RECORD } from '@weasel-js/prefs';
+import { prefLeaves, VERSION_RECORD } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import {
   LEGACY_PREFS_KEY,
@@ -34,11 +34,6 @@ beforeAll(() => {
 });
 
 describe('PREFS', () => {
-  it('assigns to PrefGroup without a cast', () => {
-    const asGroup: PrefGroup = PREFS;
-    expect(asGroup.children.view).toBeDefined();
-  });
-
   it('stores the panel map under the custom data kind', () => {
     expect(PREFS.children.ui.children.panels.kind).toBe('data');
   });
@@ -194,12 +189,6 @@ describe('draw validators', () => {
   it('reads a non-string last tool as the default', () => {
     const store = openDrawPrefs(createMemoryAdapter(new Map([[`${PREFS_PREFIX}tools.lastTool`, 5]])));
     expect(store.get('tools.lastTool')).toBe('select');
-  });
-
-  it('passes a data pref through as stored', () => {
-    const panels = { layers: { hidden: true } };
-    const store = openDrawPrefs(createMemoryAdapter(new Map([[`${PREFS_PREFIX}ui.panels`, panels]])));
-    expect(store.get('ui.panels')).toEqual(panels);
   });
 });
 

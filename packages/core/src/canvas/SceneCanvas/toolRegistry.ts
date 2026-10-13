@@ -1,14 +1,14 @@
-import type { AnyTool } from 'tools/overlayBinding';
+import type { Tool } from 'tools/overlayBinding';
 import { featureToolIds, type BaseFeature } from './features';
 import { IS_DEV } from './isDev';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 
 /** The patch form of `<SceneCanvas tools>`: per id, `true` mounts that
  *  built-in, `false` leaves it out, and a tool adds or replaces one. */
-export type ToolsPatch = Record<string, AnyTool | true | false>;
+export type ToolsPatch = Record<string, Tool | true | false>;
 
 /** One tool per built-in id, mounted or not. */
-export type BuiltinTools = Record<BuiltinToolId, AnyTool>;
+export type BuiltinTools = Record<BuiltinToolId, Tool>;
 
 export interface ResolveToolRegistryArgs {
   builtins: BuiltinTools;
@@ -29,9 +29,9 @@ export interface ResolveToolRegistryArgs {
  * asked for in; a patch tool replaces a mounted one where it stands, and any
  * other is appended in patch order. That order is the palette's.
  */
-export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, AnyTool> {
+export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
   const { builtins, defaultTools = [], enabled, patch, dev = IS_DEV } = args;
-  const registry: Record<string, AnyTool> = {};
+  const registry: Record<string, Tool> = {};
   const preset = featureToolIds(enabled);
   for (const id of BUILTIN_TOOL_IDS) {
     const patched = patch?.[id];

@@ -283,21 +283,6 @@ describe('useKeybindings', () => {
     expect(ids(result.current)).toContain('tool.activate');
   });
 
-  it('disable: true also skips tool.offhand registration', () => {
-    const select = defineTool({ id: 'select' });
-    const hand   = defineTool({ id: 'hand' });
-    const { result } = renderHook(() => {
-      const tools = useTools({ active: 'select', registry: { select, hand } });
-      useKeybindings(tools, { disable: true });
-      const reg = useActionsRegistry();
-      return reg?.list() ?? [];
-    }, { wrapper: makeWrapper('select') });
-
-    const ids = result.current.map((a) => a.id);
-    expect(ids).not.toContain('tool.offhand');
-    expect(ids).not.toContain('tool.activate');
-  });
-
   it('skips when focus is in an editable element', () => {
     const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
     const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
@@ -402,12 +387,6 @@ describe('useKeybindings', () => {
       act(() => press('p'));
       expect(result.current.active).toBe('select');
       act(() => { modes.setMode('draw'); });
-      act(() => press('p'));
-      expect(result.current.active).toBe('pen');
-    });
-
-    it('every tool stays activatable when no gate is supplied', () => {
-      const { result } = setup();
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
     });

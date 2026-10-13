@@ -39,7 +39,7 @@ describe('useEyedropperTool', () => {
     // `defineTool` wraps a string cursor in a resolver. jsdom draws no cursor,
     // so this checks the string handed to the host, not what renders.
     const cursor = typeof result.current.cursor === 'function'
-      ? result.current.cursor({} as never)
+      ? result.current.cursor()
       : result.current.cursor;
     expect(cursor).toMatch(/^url\("data:image\/svg\+xml,/);
     expect(cursor).toMatch(/, crosshair$/);
@@ -55,7 +55,6 @@ describe('useEyedropperTool', () => {
     // The `pointerDown` claim gate is gone: it existed only to beat the other
     // dispatch pipeline's select tool to the press.
     expect(result.current.bindings?.some((b) => b.spec.kind === 'pointerDown')).toBe(false);
-    expect((result.current.def as any)?.initial).toBeUndefined();
   });
 
   it('the pick action is eligibility-gated on samples-color', () => {
@@ -145,7 +144,7 @@ describe('useEyedropperTool', () => {
   it('picks through the committed callbacks, not an abandoned render\'s', () => {
     const committed = vi.fn();
     const abandoned = vi.fn();
-    let tool = null as Tool<null> | null;
+    let tool = null as Tool | null;
     function Probe({ onPick }: { onPick: (c: string | null) => void }) {
       tool = useEyedropperTool({ onPick, colorOf: () => '#abc' });
       return null;

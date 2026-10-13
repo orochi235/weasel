@@ -117,7 +117,7 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
 
   // Pull live tool defs out of the registry + ambient slots. Both groups
   // get reflected — ambient is where resize / rotate / wheel-zoom live.
-  const toolDefs = useMemo<readonly ToolDef<unknown>[]>(() => {
+  const toolDefs = useMemo<readonly ToolDef[]>(() => {
     void toolsSig;
     const tools = toolsRef.current;
     if (!tools) return [];
@@ -127,11 +127,11 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
       ...(tools.ambient as unknown as Slot[]),
     ];
     const seen = new Set<string>();
-    const out: ToolDef<unknown>[] = [];
+    const out: ToolDef[] = [];
     for (const t of all) {
       if (seen.has(t.id)) continue;
       seen.add(t.id);
-      if (t.def) out.push(t.def as ToolDef<unknown>);
+      if (t.def) out.push(t.def as ToolDef);
     }
     return out;
   }, [toolsSig]);
@@ -143,11 +143,11 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
     const tools = toolsRef.current;
     if (!tools) return [];
     const seen = new Set<string>();
-    const out: Tool<unknown>[] = [];
+    const out: Tool[] = [];
     for (const t of [...Object.values(tools.registry), ...tools.ambient]) {
       if (seen.has(t.id)) continue;
       seen.add(t.id);
-      out.push(t as Tool<unknown>);
+      out.push(t as Tool);
     }
     return out;
   }, [toolsSig]);
@@ -224,7 +224,7 @@ function ToolsWidget({
   slots,
   actions,
 }: {
-  defs: readonly ToolDef<unknown>[];
+  defs: readonly ToolDef[];
   slots: { registry: readonly string[]; ambient: readonly string[] };
   actions: readonly Action[];
 }): ReactElement {
@@ -436,7 +436,7 @@ export function ResolutionWidget({
 }: {
   /** Live `Tool`s off the `ToolsApi`, each carrying the declared eligibility
    *  that decides which scope tier its bindings assemble at. */
-  tools: readonly Tool<unknown>[];
+  tools: readonly Tool[];
   actions: readonly Action[];
   activeToolId: string;
 }): ReactElement {

@@ -58,10 +58,7 @@ describe('viewportZoomAction descriptor', () => {
   it('each binding declares a params.kind', () => {
     const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
     const kinds = bindings.map((b) => b.opts.params.kind);
-    expect(kinds).toContain('wheel');
-    expect(kinds).toContain('in');
-    expect(kinds).toContain('out');
-    expect(kinds).toContain('reset');
+    expect(kinds.slice().sort()).toEqual(['in', 'out', 'pinch', 'reset', 'wheel', 'wheel']);
   });
 });
 
@@ -208,10 +205,8 @@ describe('viewportZoomAction invoker', () => {
   });
 
   it('is a no-op when view dep is absent', () => {
-    const mockSet = vi.fn();
     const invoker = getImmediateInvoker(viewportZoomAction);
     expect(() => invoker.run({}, { kind: 'in' })).not.toThrow();
-    expect(mockSet).not.toHaveBeenCalled();
   });
 
   it('legacy bridge (undefined params) defaults to zoom-in', () => {

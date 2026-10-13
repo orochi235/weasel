@@ -179,8 +179,9 @@ describe('nudgeUpAction (magnitude param)', () => {
     expect(scene.batchLog).toHaveLength(0);
   });
 
-  it('enabled always returns SelectionRequired', () => {
+  it('enabled returns SelectionRequired until something is selected', () => {
     expect(nudgeUpAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+    expect(nudgeUpAction.enabled!({ selection: { get: () => ['a'] } } as never)).toBe(true);
   });
 });
 

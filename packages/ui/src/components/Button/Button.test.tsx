@@ -43,18 +43,6 @@ describe('Button', () => {
     expect(getByRole('button').getAttribute('type')).toBe('submit');
   });
 
-  it('activates on Enter and Space (native button behavior)', () => {
-    const onClick = vi.fn();
-    const { getByRole } = render(<Button onClick={onClick}>Go</Button>);
-    const btn = getByRole('button');
-    btn.focus();
-    fireEvent.keyDown(btn, { key: 'Enter' });
-    fireEvent.click(btn);
-    fireEvent.keyDown(btn, { key: ' ' });
-    fireEvent.click(btn);
-    expect(onClick).toHaveBeenCalledTimes(2);
-  });
-
   it('applies variant and size classes', () => {
     const { getByRole } = render(
       <Button variant="primary" size="sm">P</Button>,

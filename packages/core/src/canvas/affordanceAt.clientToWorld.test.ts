@@ -1,11 +1,11 @@
 /**
- * `buildAffordanceAt` / `buildClassifyTarget` hit-test correctly at non-unit
+ * `buildAffordanceAt` hit-tests correctly at non-unit
  * scale and non-zero pan, fed through a local copy of the client → world
  * conversion.
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildAffordanceAt, buildClassifyTarget, type AnchorState } from './affordanceAt';
+import { buildAffordanceAt, type AnchorState } from './affordanceAt';
 import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 
 function clientToWorld(
@@ -22,97 +22,6 @@ function clientToWorld(
 
 /** Identity view — hit radii are screen px, so scale 1 makes them world px. */
 const UNIT_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-
-describe('clientToWorld formula', () => {
-  it('identity transform: scale=1, pan=0 — worldX equals screenX', () => {
-    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const rect = { left: 0, top: 0 };
-    expect(clientToWorld(50, 30, rect, view)).toEqual({ x: 50, y: 30 });
-  });
-
-  it('scale=2, pan=0 — client coords are halved in world space', () => {
-    const view = { x: 0, y: 0, scale: { x: 2, y: 2 } };
-    const rect = { left: 0, top: 0 };
-    expect(clientToWorld(100, 80, rect, view)).toEqual({ x: 50, y: 40 });
-  });
-
-  it('scale=2, pan=(10,5) — world origin shifted by pan', () => {
-    const view = { x: 10, y: 5, scale: { x: 2, y: 2 } };
-    const rect = { left: 0, top: 0 };
-    expect(clientToWorld(100, 80, rect, view)).toEqual({ x: 60, y: 45 });
-  });
-
-  it('rect offset: canvas is not at viewport origin', () => {
-    // Canvas starts at CSS (20, 30). clientX=70, clientY=80 → screenX=50, screenY=50.
-    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const rect = { left: 20, top: 30 };
-    expect(clientToWorld(70, 80, rect, view)).toEqual({ x: 50, y: 50 });
-  });
-
-  it('round-trip: worldToScreen → clientToWorld recovers original world point', () => {
-    const view = { x: 10, y: 5, scale: { x: 2, y: 3 } };
-    const rect = { left: 0, top: 0 };
-    const worldX = 25, worldY = 15;
-    // screen = (worldX - view.x) * scale
-    const screenX = (worldX - view.x) * view.scale.x;
-    const screenY = (worldY - view.y) * view.scale.y;
-    const recovered = clientToWorld(screenX, screenY, rect, view);
-    expect(recovered.x).toBeCloseTo(worldX);
-    expect(recovered.y).toBeCloseTo(worldY);
-  });
-});
-
-describe('buildClassifyTarget at scale=2 with non-zero pan', () => {
-  const view = { x: 0, y: 0, scale: { x: 2, y: 2 } };
-  const rect = { left: 0, top: 0 };
-
-  // One node at world (10,10,30,30), selected.
-  const selection = ['node-1'];
-  const pickBest = (wx: number, wy: number): string | null => {
-    if (wx >= 10 && wx <= 40 && wy >= 10 && wy <= 40) return 'node-1';
-    return null;
-  };
-
-  const classify = buildClassifyTarget(() => selection, pickBest);
-
-  it('client (50,50) → world (25,25) → "selected-body"', () => {
-    const wp = clientToWorld(50, 50, rect, view);
-    expect(classify(wp).body).toBe('selected-body');
-  });
-
-  it('client (120,120) → world (60,60) → "empty"', () => {
-    const wp = clientToWorld(120, 120, rect, view);
-    expect(classify(wp).body).toBe('empty');
-  });
-
-  it('client (20,20) → world (10,10) → body boundary → "selected-body"', () => {
-    const wp = clientToWorld(20, 20, rect, view);
-    expect(classify(wp).body).toBe('selected-body');
-  });
-});
-
-describe('buildClassifyTarget with canvas at non-zero rect offset', () => {
-  const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-  const rect = { left: 100, top: 50 };
-
-  const selection = ['node-1'];
-  const pickBest = (wx: number, wy: number): string | null => {
-    if (wx >= 0 && wx <= 50 && wy >= 0 && wy <= 50) return 'node-1';
-    return null;
-  };
-
-  const classify = buildClassifyTarget(() => selection, pickBest);
-
-  it('client (125, 75) → world (25,25) → "selected-body"', () => {
-    const wp = clientToWorld(125, 75, rect, view);
-    expect(classify(wp).body).toBe('selected-body');
-  });
-
-  it('client (200, 150) → world (100,100) → "empty"', () => {
-    const wp = clientToWorld(200, 150, rect, view);
-    expect(classify(wp).body).toBe('empty');
-  });
-});
 
 describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
   const view = { x: 0, y: 0, scale: { x: 2, y: 2 } };

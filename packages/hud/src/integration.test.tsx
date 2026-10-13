@@ -8,9 +8,6 @@ import { useHud, useHudContribution } from './react';
 import type { ClaimableGesture } from '@weasel-js/core';
 import type { HudPointerEvent, Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { resolveTheme, weaselTheme } from '@weasel-js/theme';
-
-const defaultResolved = resolveTheme(weaselTheme, { mode: 'dark' });
 
 interface HarnessApi {
   press: ReturnType<typeof vi.fn<() => void>>;
@@ -148,29 +145,6 @@ describe('weasel-hud integration', () => {
     expect(api.press).not.toHaveBeenCalled();
   });
 
-  it('draws from the theme it is handed, not from CSS on the canvas element', async () => {
-    const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
-    const { container } = await mount(apiOut);
-
-    // The pre-Plan-B HUD read this back through getComputedStyle. It no longer
-    // does, deliberately: the resolved theme is the single input, which is what
-    // lets a HUD drawn headlessly be themed the same way a browser one is.
-    const canvas = container.querySelector('canvas')!;
-    canvas.style.setProperty('--wzl-surface-raised', '#abcdef');
-
-    let btn!: ReturnType<NonNullable<typeof apiOut.hudRef.current>['button']>;
-    act(() => { btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
-
-    const themed = { ...defaultResolved, '--wzl-surface-raised': '#abcdef' };
-    const withTheme = btn.draw({ dims: { width: 200, height: 200 }, defaultFont: 'x', color: () => '#000000', tokens: themed });
-    const themedBody = withTheme.find((c) => c.kind === 'path') as { fill: { paint: { color: string } } };
-    expect(themedBody.fill.paint.color).toBe('#abcdef');
-
-    const withoutTheme = btn.draw({ dims: { width: 200, height: 200 }, defaultFont: 'x', color: () => '#000000', tokens: defaultResolved });
-    const plainBody = withoutTheme.find((c) => c.kind === 'path') as { fill: { paint: { color: string } } };
-    expect(plainBody.fill.paint.color).not.toBe('#abcdef');
-    expect(plainBody.fill.paint.color).toBe(defaultResolved['--wzl-surface-raised']);
-  });
 });
 
 describe('a HUD window is reachable while a drawing tool is active', () => {

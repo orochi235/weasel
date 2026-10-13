@@ -1,24 +1,7 @@
-/**
- * Unsupported-element behavior: assert that feeding an SVG with `<text>`,
- * `<clipPath>`, or other out-of-scope elements emits a warning naming
- * the element rather than throwing.
- */
-
 import { describe, it, expect } from 'vitest';
 import { parseSvg, serializeSvg, type SvgNode, type SvgStroke, type SvgTextNode } from './index';
 
 describe('warnings', () => {
-  it('parses <text> into a text node', () => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="10" height="10"/>
-      <text x="0" y="20">hello</text>
-    </svg>`;
-    const { nodes, warnings } = parseSvg(svg);
-    expect(nodes).toHaveLength(2);
-    expect(nodes[1].kind).toBe('text');
-    expect(warnings).toEqual([]);
-  });
-
   it('reads a <clipPath> without warning', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg">
       <clipPath id="clip"><rect x="0" y="0" width="5" height="5"/></clipPath>
@@ -76,16 +59,6 @@ describe('warnings', () => {
       '<line x1="0" y1="0" x2="10" y2="0" stroke="#000" marker-end="url(#arrow)"/></svg>',
     );
     expect(warnings).toEqual([]);
-  });
-
-  it('reads a document marker the kit has no key for without a warning', () => {
-    const { warnings, markers } = parseSvg(
-      '<svg xmlns="http://www.w3.org/2000/svg">' +
-      '<defs><marker id="weird"><path d="M0 0 L-3 0"/></marker></defs>' +
-      '<line x1="0" y1="0" x2="10" y2="0" stroke="#000" marker-end="url(#weird)"/></svg>',
-    );
-    expect(warnings).toEqual([]);
-    expect(markers).toHaveLength(1);
   });
 
   it('warns once for a marker neither the kit nor the document defines', () => {

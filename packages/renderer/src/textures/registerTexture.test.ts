@@ -45,11 +45,6 @@ describe('registerTexture', () => {
     expect(textureRegistry.entries().map((e) => [e.key, e.value.source])).toEqual([[h.id, img]]);
   });
 
-  it('ids are stable — same handle object as returned', () => {
-    const h = registerTexture(makeImageStub());
-    expect(getTexture(h.id)).not.toBeNull();
-  });
-
   it('unregisterTexture drops the entry and reports whether there was one', () => {
     const h = registerTexture(makeImageStub());
     expect(unregisterTexture(h)).toBe(true);

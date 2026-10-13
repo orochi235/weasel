@@ -62,7 +62,7 @@ export const Diff: Story = {
 export const InRunningText: Story = {
   render: () => (
     <p style={{ maxWidth: 320, lineHeight: 1.6 }}>
-      The dep resolves to <Code>(ctx: ToolCtx, bounds: Rect, params: Readonly&lt;Record&lt;string, unknown&gt;&gt;) =&gt; SceneNode | null</Code>{' '}
+      The dep commits through <Code>(bounds: {'{'} x: number; y: number; width: number; height: number {'}'}, extras: InsertExtras) =&gt; NodeId | null</Code>{' '}
       and is overridden with <Code status="accent">useDepSource('insert', …)</Code>.
     </p>
   ),

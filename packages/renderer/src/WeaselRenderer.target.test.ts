@@ -9,12 +9,6 @@ describe('WeaselRenderer stencil requirement', () => {
       .toThrow(/stencil/i);
   });
 
-  it('constructs against a context that has one', () => {
-    const { gl } = makeGLRecorder({ contextAttributes: { stencil: true } });
-    expect(() => new WeaselRenderer({ gl, width: 100, height: 100, dpr: 1 }))
-      .not.toThrow();
-  });
-
   it('constructs when the context reports no attributes at all', () => {
     // A stub that answers `undefined` must not be read as "no stencil": only an
     // explicit `stencil: false` is. Every non-browser harness passes one of these.

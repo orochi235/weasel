@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CURSOR_HALO_WIDTH, haloFitsInBox } from './types';
+import { haloFitsInBox } from './types';
 import type { CursorGlyph } from './types';
 
 const glyph = (box: number, d: string): CursorGlyph => ({
@@ -17,10 +17,6 @@ describe('haloFitsInBox', () => {
   it('rejects ink whose halo would be clipped by the viewBox', () => {
     // Flush with the edge: the outer 1.3 units of halo fall outside the box.
     expect(haloFitsInBox(glyph(24, 'M 0 0 L 24 0 L 24 24 L 0 24 Z'))).toBe(false);
-  });
-
-  it('exposes the halo width the check is derived from', () => {
-    expect(CURSOR_HALO_WIDTH).toBe(2.6);
   });
 
   it('reads an arc by its radii, not by its flags', () => {

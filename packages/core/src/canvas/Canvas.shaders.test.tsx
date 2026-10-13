@@ -1,7 +1,7 @@
 /**
  * Shaders passed at mount must reach the renderer, which is built on the
  * first painted frame — later than any effect on the mounting commit.
- * Canvas.test.tsx can only smoke-test this: its ambient getContext stub has
+ * Canvas.glSmoke.test.tsx can only smoke-test this: its ambient getContext stub has
  * no WebGL2 methods, so no renderer is ever built there.
  */
 

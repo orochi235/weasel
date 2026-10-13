@@ -216,7 +216,7 @@ describe('event crossing lateness', () => {
     expect(late).toEqual([40]);
   });
 
-  it('never reports a negative lateness across a multi-lap skip', () => {
+  it('measures a multi-lap skip against the lap the playhead lands in', () => {
     const h = harness();
     const late: number[] = [];
     createTimeline(h.register, 1, {
@@ -226,6 +226,6 @@ describe('event crossing lateness', () => {
     });
     h.advance(60);
     h.advance(1060);
-    expect(late.every((v) => v >= 0)).toBe(true);
+    expect(late).toEqual([10, 10]);
   });
 });

@@ -1,7 +1,6 @@
 /**
  * `DebugSink`, `HitShape` and `HandleKind` are declared in
- * `@weasel-js/routing` — `ToolCtx.debug` carries a sink, so routing has to
- * name the type. Re-exported here, beside the overlay that reads one.
+ * `@weasel-js/routing`. Re-exported here, beside the overlay that reads one.
  */
 import type { DebugSink, HitShape, HandleKind, View, ViewportGestureKind } from '@weasel-js/routing';
 export type { DebugSink, HitShape, HandleKind, ViewportGestureKind };

@@ -284,11 +284,16 @@ describe('FloatingPanel persistence', () => {
   });
 
   it('forgets its placement with no provider above it', () => {
+    const first = renderPanel(<FloatingPanel persist="legend">x</FloatingPanel>);
+    fireEvent.pointerDown(first.panel, { clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(first.panel, { clientX: 140, clientY: 60 });
+    fireEvent.pointerUp(first.panel);
+    expect(first.panel.style.top).not.toBe('248px');
+    first.unmount();
+
     const { panel } = renderPanel(<FloatingPanel persist="legend">x</FloatingPanel>);
-    fireEvent.pointerDown(panel, { clientX: 100, clientY: 100 });
-    fireEvent.pointerMove(panel, { clientX: 140, clientY: 160 });
-    fireEvent.pointerUp(panel);
-    expect(localStorage.length).toBe(0);
+    expect(panel.style.left).toBe('12px');
+    expect(panel.style.top).toBe('248px');
   });
 });
 

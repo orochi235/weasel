@@ -88,6 +88,7 @@ describe('useSimulation alpha decay', () => {
     expect(result.current.isSettled()).toBe(true);
     expect(onEnd).toHaveBeenCalledTimes(1);
     expect(result.current.alpha()).toBeLessThan(DEFAULT_ALPHA_MIN);
+    expect(clock.pendingCount()).toBe(0);
   });
 
   it('alphaTarget > 0 keeps the sim warm (never settles)', () => {
@@ -431,26 +432,6 @@ describe('useSimulation lifecycle', () => {
     expect(onEnd).not.toHaveBeenCalled();
     // 5 ticks of friction-only integration: vx *= 0.6 each tick
     expect(n.vx).toBeCloseTo(10 * 0.6 ** 5, 4);
-  });
-
-  it('onEnd fires exactly once on natural settle', () => {
-    const clock = makeClock();
-    const onEnd = vi.fn();
-    const { result } = renderHook(() =>
-      useSimulation({
-        nodes: [node('a')],
-        onEnd,
-        requestFrame: clock.requestFrame,
-        cancelFrame: clock.cancelFrame,
-      }),
-    );
-    for (let i = 0; i < 500; i++) {
-      if (result.current.isSettled()) break;
-      act(() => clock.frame());
-    }
-    expect(onEnd).toHaveBeenCalledTimes(1);
-    // No more frames pending after settle.
-    expect(clock.pendingCount()).toBe(0);
   });
 
   it('onEnd fires again on re-settle after restart', () => {

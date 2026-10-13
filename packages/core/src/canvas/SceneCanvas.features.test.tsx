@@ -136,9 +136,11 @@ describe('a bare <SceneCanvas>', () => {
     expect(pressed).toHaveBeenCalledTimes(1);
   });
 
-  it('does nothing on Escape', () => {
-    const { tools } = mount();
-    expect(() => key('Escape')).not.toThrow();
+  it('keeps the selection on Escape', () => {
+    const { seen, tools, id } = mount();
+    act(() => seen.selection!.set([id]));
+    key('Escape');
+    expect(seen.selection!.get()).toEqual([id]);
     expect(tools().active).toBe(null);
   });
 });

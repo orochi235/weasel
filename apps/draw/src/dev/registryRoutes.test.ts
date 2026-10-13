@@ -3,8 +3,8 @@ import type { ToolDef } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { collectDeclaredRoutes } from './registryProbe';
 
-function toolDef(bindings: unknown[]): ToolDef<unknown> {
-  return { id: 'probe', bindings } as unknown as ToolDef<unknown>;
+function toolDef(bindings: unknown[]): ToolDef {
+  return { id: 'probe', bindings } as unknown as ToolDef;
 }
 
 function routesOf(specs: unknown[]): readonly string[] {

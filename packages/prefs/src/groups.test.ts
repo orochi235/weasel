@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefLeaves, prefSectionLeaves } from './helpers';
 import type { PrefObject } from './schema';
@@ -56,6 +56,6 @@ describe('PrefGroup and PrefSection', () => {
       // @ts-expect-error a heading inside an object leaf is a section
       children: { view: NESTED.children.view },
     };
-    expect(style.kind).toBe('object');
+    expectTypeOf(style).toEqualTypeOf<PrefObject>();
   });
 });

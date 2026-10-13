@@ -7,8 +7,7 @@ describe('clearSelectionAction (descriptor)', () => {
     expect(clearSelectionAction.label).toBe('Clear selection');
   });
 
-  it('has no defaultBinding or defaultBinding (fires only via Tool.bindings)', () => {
-    expect(clearSelectionAction.defaultBinding).toBeUndefined();
+  it('has no defaultBinding (fires only via Tool.bindings)', () => {
     expect(clearSelectionAction.defaultBinding).toBeUndefined();
   });
 

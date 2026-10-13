@@ -7,8 +7,7 @@ describe('enterTextEditAction (descriptor)', () => {
     expect(enterTextEditAction.label).toBe('Enter text edit');
   });
 
-  it('has no defaultBinding or defaultBinding (fires only via Tool.bindings)', () => {
-    expect(enterTextEditAction.defaultBinding).toBeUndefined();
+  it('has no defaultBinding (fires only via Tool.bindings)', () => {
     expect(enterTextEditAction.defaultBinding).toBeUndefined();
   });
 

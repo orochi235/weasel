@@ -109,16 +109,4 @@ describe('remapRotatedLeaf', () => {
     expect(twice.width).toBeCloseTo(once.width, 12);
     expect(twice.height).not.toBeCloseTo(once.height, 2);
   });
-
-  it('does not drift across the frames of one drag', () => {
-    // `resize/frame.ts` remaps from the gesture's `startPoses` on every move, never
-    // from the previous preview, so the one approximate quantity is computed
-    // once from the origin however many times the pointer moves.
-    const p = leaf({ rotation: 0.4 });
-    const end: Bounds = { x: 0, y: 0, width: 300, height: 100 };
-    const frames = [150, 200, 260, 300].map(
-      (width) => remapRotatedLeaf(p, SRC, { x: 0, y: 0, width, height: 100 }),
-    );
-    expect(frames[frames.length - 1].height).toBeCloseTo(remapRotatedLeaf(p, SRC, end).height, 12);
-  });
 });

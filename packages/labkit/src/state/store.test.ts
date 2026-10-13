@@ -159,9 +159,11 @@ describe('save/load/delete snapshots', () => {
     });
     s.getState().saveSnapshot('w1', 'snap1');
     s.getState().updateTrialState('w1', { n: 99 });
+    s.getState().updateTrialConfig('w1', 'x', 9);
     const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     s.getState().loadSnapshot(snapId, 'w1');
-    expect((s.getState().trials[0]?.state as { n: number } | undefined)?.n).toBe(5);
+    expect(s.getState().trials[0]?.state).toEqual({ n: 5 });
+    expect(s.getState().trials[0]?.config).toEqual({ x: 1 });
   });
 
   it('loadSnapshot restores the auto paths the trial had when saved', () => {
@@ -241,8 +243,10 @@ describe('save/load/delete snapshots', () => {
     s.getState().setTrialInstrument('w1', 'B');
     const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const before = s.getState().trials[0];
     s.getState().loadSnapshot(snapId, 'w1');
     expect(warn).toHaveBeenCalled();
+    expect(s.getState().trials[0]).toBe(before);
     warn.mockRestore();
   });
 

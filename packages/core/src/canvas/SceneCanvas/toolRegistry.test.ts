@@ -3,7 +3,7 @@ import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import type { BaseFeature } from './features';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
-import type { AnyTool } from 'tools/overlayBinding';
+import type { Tool } from 'tools/overlayBinding';
 
 // A kind the resolver has never heard of, so the tests below can only pass by
 // reading the table.
@@ -13,7 +13,7 @@ vi.mock('core/shapeKinds', async (importOriginal) => {
   return { ...real, SHAPE_KINDS, KIT_SHAPE_KINDS: real.shapeKindsWhere(SHAPE_KINDS, 'tool') };
 });
 
-const tool = (id: string): AnyTool => ({ id, eligibility: { focus: true } }) as AnyTool;
+const tool = (id: string): Tool => ({ id, eligibility: { focus: true } }) as Tool;
 const builtins = Object.fromEntries(BUILTIN_TOOL_IDS.map((id) => [id, tool(id)])) as BuiltinTools;
 const presets = (...on: BaseFeature[]): ReadonlySet<BaseFeature> => new Set(on);
 const NONE = presets();

@@ -133,17 +133,6 @@ describe('useDragRect', () => {
     expect(result.current.isActive).toBe(false);
   });
 
-  it('start while active replaces state silently (no onCancel, no onEnd)', () => {
-    const onCancel = vi.fn();
-    const onEnd = vi.fn();
-    const { result } = renderHook(() => useDragRect({ onCancel, onEnd }));
-    act(() => result.current.start(0, 0, NO_MODS));
-    act(() => result.current.start(50, 50, NO_MODS));
-    expect(onCancel).not.toHaveBeenCalled();
-    expect(onEnd).not.toHaveBeenCalled();
-    expect(result.current.overlay?.start).toEqual({ x: 50, y: 50 });
-  });
-
   it('cancel with no active gesture is a no-op', () => {
     const onCancel = vi.fn();
     const onGestureEnd = vi.fn();

@@ -1,8 +1,10 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { RotatedPose } from '@weasel-js/core';
 import { PointSnapDemo } from '../PointSnapDemo';
 
 beforeAll(() => {
+  window.history.replaceState(null, '', '/?test=1');
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
     setPointerCapture: (...args: unknown[]) => void;
@@ -14,17 +16,32 @@ beforeAll(() => {
 });
 afterEach(cleanup);
 
+/** The world position of the rotated rect's bottom-right corner. */
+function bottomRight() {
+  const p = window.__weaselTest!.getScene().nodes.find((n) => n.id === 'a')!.pose as RotatedPose;
+  const cos = Math.cos(p.rotation ?? 0), sin = Math.sin(p.rotation ?? 0);
+  const hw = p.width / 2, hh = p.height / 2;
+  return { x: p.x + hw + hw * cos - hh * sin, y: p.y + hh + hw * sin + hh * cos };
+}
+
 describe('PointSnapDemo', () => {
-  // No readout of the pose, so this only proves the presets mount and take a drag.
-  it('mounts and takes a drag without throwing', () => {
+  it('lands a dragged corner of the rotated rect on a grid point', () => {
     const { container } = render(<PointSnapDemo />);
     const canvas = container.querySelector('canvas')!;
     canvas.getBoundingClientRect = () => ({
       left: 0, top: 0, x: 0, y: 0, width: 400, height: 300, right: 400, bottom: 300, toJSON: () => ({}),
     }) as DOMRect;
-    for (const [type, x, y] of [['pointerdown', 210, 130], ['pointermove', 230, 150], ['pointermove', 260, 180], ['pointerup', 260, 180]] as const) {
+    const start = bottomRight();
+    expect(start.x).toBeCloseTo(238.3, 1);
+    expect(start.y).toBeCloseTo(180.98, 1);
+
+    for (const [type, x, y] of [
+      ['pointerdown', start.x, start.y], ['pointermove', 250, 190], ['pointermove', 263, 197], ['pointerup', 263, 197],
+    ] as const) {
       act(() => { canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 })); });
     }
-    expect(container.querySelector('canvas')).not.toBeNull();
+    const end = bottomRight();
+    expect(end.x).toBeCloseTo(260, 3);
+    expect(end.y).toBeCloseTo(200, 3);
   });
 });

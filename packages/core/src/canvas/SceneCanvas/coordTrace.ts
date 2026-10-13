@@ -1,3 +1,4 @@
+import type { View } from 'core/viewport/view';
 import { IS_DEV } from './isDev';
 
 // ---------------------------------------------------------------------------
@@ -28,8 +29,31 @@ if (COORD_DEV && typeof window !== 'undefined') {
   (window as unknown as { __weaselCoordLog__: CoordTraceEntry[] }).__weaselCoordLog__ = coordTrace;
 }
 
-export function recordCoordTrace(entry: CoordTraceEntry): void {
+function recordCoordTrace(entry: CoordTraceEntry): void {
   if (!COORD_DEV) return;
   coordTrace.push(entry);
   if (coordTrace.length > COORD_TRACE_LIMIT) coordTrace.shift();
+}
+
+/** Record one conversion against the rect and view it was made under. A null
+ *  `canvas` or a missing `view` records the identity fallback. */
+export function traceConversion(
+  clientX: number,
+  clientY: number,
+  canvas: HTMLElement | null,
+  view: View | null | undefined,
+  world: { x: number; y: number },
+): void {
+  if (!COORD_DEV) return;
+  if (!canvas || !view) {
+    recordCoordTrace({ ts: Date.now(), clientX, clientY, rect: null, view: null, world, fallback: true });
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  recordCoordTrace({
+    ts: Date.now(), clientX, clientY,
+    rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+    view: { x: view.x, y: view.y, scaleX: view.scale.x, scaleY: view.scale.y },
+    world, fallback: false,
+  });
 }

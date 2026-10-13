@@ -86,13 +86,6 @@ describe('areaSelectAction descriptor', () => {
     expect(handle).toEqual({});
   });
 
-  it('start returns a handle with onMove and onEnd when dep is present', () => {
-    const invoker = getOngoingInvoker(areaSelectAction);
-    const handle = invoker.start(makeCtx(), undefined);
-    expect(typeof handle.onMove).toBe('function');
-    expect(typeof handle.onEnd).toBe('function');
-  });
-
   it('onMove does not call dep methods', () => {
     const invoker = getOngoingInvoker(areaSelectAction);
     const dep = makeAreaSelectDep();

@@ -23,28 +23,28 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 1118,
-    "longestFunction": 646
+    "lines": 1022,
+    "longestFunction": 584
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 413,
+    "lines": 412,
     "longestFunction": 267
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 1166,
-    "longestFunction": 998
+    "lines": 944,
+    "longestFunction": 788
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
-    "longestFunction": 276
+    "longestFunction": 254
   },
   "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
-    "longestFunction": 223
+    "longestFunction": 216
   },
   "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
     "longestFunction": 134
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 687
+    "lines": 673
   },
   "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
     "longestFunction": 198
@@ -60,9 +60,6 @@
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 162
-  },
-  "packages/core/src/canvas/useViewHelpers.ts": {
-    "longestFunction": 146
   },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 236
@@ -105,8 +102,8 @@
     "lines": 580
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
-    "lines": 689,
-    "longestFunction": 461
+    "lines": 684,
+    "longestFunction": 456
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
     "longestFunction": 124

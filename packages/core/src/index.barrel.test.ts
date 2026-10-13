@@ -86,21 +86,25 @@ describe('kit barrel parity', () => {
   });
 });
 
-describe('scene postProcess exports', () => {
-  it('SceneSlotConfig.postProcess signature is expressible with barrel types only', () => {
-    // Type-level check (enforced by `tsc --noEmit`, not at runtime): the hook
-    // and every type in its signature — DrawCommand, View, Dims — are
-    // reachable from the public barrel, so consumers can annotate a
-    // postProcess implementation without internal imports.
-    type Cfg = Barrel.SceneSlotConfig<{ id: string }, unknown>;
-    const hook: NonNullable<Cfg['postProcess']> = (
-      cmds: Barrel.DrawCommand[],
-      _view: Barrel.View,
-      _dims: Barrel.Dims,
-    ) => cmds;
-    expect(typeof hook).toBe('function');
-  });
-});
+// Checked by the typecheck, not at runtime: a consumer can annotate a
+// postProcess hook and a pose-override helper from the barrel's types alone.
+type Cfg = Barrel.SceneSlotConfig<{ id: string }, unknown>;
+const hook: NonNullable<Cfg['postProcess']> = (
+  cmds: Barrel.DrawCommand[],
+  _view: Barrel.View,
+  _dims: Barrel.Dims,
+) => cmds;
+void hook;
+type Pose = { x: number; y: number; width: number; height: number };
+const bump = (
+  overrides: Barrel.PoseOverrides<Pose>,
+  id: Barrel.NodeId,
+  entry: Barrel.PoseOverride<Pose>,
+) => {
+  overrides.set(id, entry);
+  overrides.commit();
+};
+void bump;
 
 describe('registry-unification exports (ActiveToolContext)', () => {
   it('exposes the ActiveToolContext value exports on the main barrel', () => {
@@ -120,30 +124,12 @@ describe('registry-unification exports (DepRegistry + dispatcher)', () => {
   });
 });
 
-describe('ephemeral pose override exports', () => {
-  it('PoseOverrides is expressible with barrel types only', () => {
-    // Type-level check (enforced by `tsc --noEmit`): a consumer can annotate a
-    // frame-loop helper against the public barrel without internal imports.
-    type Pose = { x: number; y: number; width: number; height: number };
-    const bump = (
-      overrides: Barrel.PoseOverrides<Pose>,
-      id: Barrel.NodeId,
-      entry: Barrel.PoseOverride<Pose>,
-    ) => {
-      overrides.set(id, entry);
-      overrides.commit();
-    };
-    expect(typeof bump).toBe('function');
-  });
-});
-
 describe('camera animation barrel surface', () => {
-  it('exports the camera runner and its interpolator, and no longer exports useViewTween', () => {
+  it('exports the camera runner and its interpolator', () => {
     const b = Barrel as Record<string, unknown>;
     expect(typeof b.useViewAnimation).toBe('function');
     expect(typeof b.interpolateView).toBe('function');
     expect(b.VIEW_ANIMATION_KEY).toBe('view');
-    expect('useViewTween' in b).toBe(false);
   });
 });
 

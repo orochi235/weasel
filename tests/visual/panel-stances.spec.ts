@@ -7,6 +7,7 @@ import { expect, type Page, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readModuleCss } from '../../packages/ui/src/testing/readModuleCss';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
@@ -42,7 +43,7 @@ async function mount(page: Page, mode: 'dark' | 'light') {
   await page.setContent(
     `<!doctype html><html data-wzl-theme="weasel" data-wzl-mode="${mode}" data-wzl-density="comfortable">
      <head><style>${read('packages/theme/src/generated/tokens.css')}</style>
-     <style>${read('packages/ui/src/components/Properties/Properties.module.css')}</style>
+     <style>${readModuleCss(resolve(root, 'packages/ui/src/components/Properties/Properties.module.css'))}</style>
      <style>${read('packages/ui/src/components/MotifFrame/MotifFrame.module.css')}</style>
      <style>${read('packages/ui/src/components/MotifFrame/motifs/rule.module.css')}</style>
      <style>${read('packages/ui/src/components/MotifFrame/motifs/stereo.module.css')}</style>
@@ -160,12 +161,6 @@ for (const mode of ['dark', 'light'] as const) {
       const l = await looks(page);
       expect(l.pinned.borderStyle).toBe('dotted');
       expect(l.aside.borderStyle).toBe('solid');
-    });
-
-    test(`screenshot, ${mode}`, async ({ page }) => {
-      await page.setViewportSize({ width: 780, height: 900 });
-      await mount(page, mode);
-      await page.screenshot({ path: resolve(root, `test-results/panel-stances-${mode}.png`), fullPage: true });
     });
   });
 }

@@ -133,17 +133,18 @@ itself, not because of which argument a consumer passed it in.
 
 ### Tool
 
-A `Tool<TScratch>` is the **focus-declaring case** of a Contribution: it adds
+A `Tool` is the **focus-declaring case** of a Contribution: it adds
 the fields that only mean something for a mode the user switches into —
-`initScratch`, `onActivate`/`onDeactivate`, the preview hooks, a `cursor`
-closing over its own scratch. The lifecycle pair brackets the time a tool is
-*live* — in the active slot, held by its `hotkey`, or both — and receives only
-`{ scratch }`. Distinct from [Gesture hooks](#gesture) in that a
+`onActivate`/`onDeactivate`, a `cursor`. A tool publishes no
+preview of its own: what a gesture proposes comes from the in-flight action's
+handle (see [Gesture overlay](#gesture-overlay)). The lifecycle pair brackets the time a tool is
+*live* — in the active slot, held by its `hotkey`, or both — and takes no
+argument: a tool that keeps state between gestures closes over it. Distinct from [Gesture hooks](#gesture) in that a
 Tool is a stateful mode while a gesture hook is a direct binding to a pointer
 interaction. See `packages/routing/src/tools/types.ts`.
 
 Not every entry is a Tool. `@weasel-js/hud` contributes bindings and actions and
-declares `claimed`; it has no scratch, no palette icon, and nothing to preview.
+declares `claimed`; it has no lifecycle, no palette icon, and nothing to preview.
 `isTool(entry)` is the test — `focus` or `offhand` eligibility — and the focus
 hooks run only for entries it passes. So "tool" names only what a user picks from
 a palette or holds on a key. Anything that holds every kind of entry takes
@@ -233,9 +234,7 @@ kit never reads or writes scene state directly; it asks the adapter for poses, h
 results, and writes mutations back through `Op` application. Adapter interfaces are
 narrow and structural: `MoveAdapter`, `ResizeAdapter`, `RotateAdapter`,
 `AreaSelectAdapter`, `InsertAdapter`, `OrderedAdapter`. A single struct satisfying
-all of them at once is the common pattern. The opaque `adapter: unknown` on
-[`ToolCtx`](#toolctx-gesturecontext) is the same concept but intentionally
-untyped at the tool layer; tools cast it when they need a specific facet. See
+all of them at once is the common pattern. See
 `packages/core/src/core/adapters/types.ts` and `docs/adapters.md`.
 
 ### Op
@@ -444,8 +443,8 @@ which do not exist yet. See `packages/core/src/interactions/gestures/types.ts` f
 
 `SnapStrategy<TPose>` — a pluggable point-snap policy with one method:
 `snap(pose, ctx): TPose | null`. Returns the snapped pose or `null` to skip.
-Passed through the action layer (e.g. the `resizePolicy` dep's `pointSnap`) or
-via the `ToolCtx` snap field to tools. World-space point snapping for insertion
+Passed through the action layer (e.g. the `resizePolicy` dep's `pointSnap`).
+World-space point snapping for insertion
 is the `snap` dep — see `SnapDep` in `interactions/actions/depSchema.ts`. Core
 owns the contract and `OriginProjection`, which adapts non-rect poses (e.g.
 `Path`) so a strategy can read and write the correct origin — see
@@ -586,7 +585,7 @@ A feature that ships as one installable unit is a `SurfaceContribution`
 
 ### Chrome state
 
-The `ChromeState` object built once per Canvas render and passed to every affordance's `render` and `hitTest` call. Source of truth for selection ids, derived bounds (overlay-aware), multi-union AABB (lazy), and modifier flags. Read-only; affordances dispatch gestures via their drag channel's `ToolCtx`, not through `ChromeState`. See `packages/core/src/core/selection/chromeState.ts`.
+The `ChromeState` object built once per Canvas render and passed to every affordance's `render` and `hitTest` call. Source of truth for selection ids, derived bounds (overlay-aware), multi-union AABB (lazy), and modifier flags. Read-only: an affordance changes nothing through it. Its hit is a claim, and the binding that claim routes to runs the action. See `packages/core/src/core/selection/chromeState.ts`.
 
 ### Hook
 
@@ -782,21 +781,17 @@ to render in-flight chrome. Two separate surfaces:
   scene-node silhouettes, painted by `usePreviewGhostLayer` through the scene
   slot's own `drawOne`.
 
-### ToolCtx / GestureContext
+### GestureContext / InvocationCtx
 
-Distinct context shapes that appear at different layers:
-
-- **`ToolCtx<TScratch>`** — the per-event context injected into every tool channel
-  handler by `<Canvas>`. Carries `worldX/Y`, `modifiers`, `selection`, an opaque
-  `adapter`, `applyBatch`, `view`, `setView`, `canvasRect`, and `scratch` (the
-  tool's per-gesture mutable store). See `packages/routing/src/tools/types.ts`.
+Distinct context shapes that appear at different layers. A tool receives
+neither: it declares bindings, and its `cursor` function takes no argument.
 
 - **`GestureContext<TPose>`** — the per-frame context passed to
   [Behavior](#behavior) methods. Carries `draggedIds`, `origin`, `current` (live
   pose map), `snap`, `modifiers`, `pointer`, `frames` (stored pose to world and back),
   `adapter` (typed as `MoveAdapter`),
-  and `scratch` (per-gesture key/value store). More gesture-specific than
-  `ToolCtx`. See `packages/core/src/interactions/gestures/types.ts`.
+  and `scratch` (per-gesture key/value store). See
+  `packages/core/src/interactions/gestures/types.ts`.
 
 - **`InvocationCtx`** — the per-invocation context the dispatcher hands to an
   Action invoker: `world`, `screen`, `modifiers`, `deps`, and gesture-kind

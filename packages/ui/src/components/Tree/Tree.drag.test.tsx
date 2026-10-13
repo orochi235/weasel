@@ -176,8 +176,9 @@ describe('Tree — drag to reorder', () => {
     const { row } = setup({ onMove: undefined });
     press(row('Zed'), 80);
     move(10);
-    release(10);
     expect(screen.getByRole('treeitem', { name: 'Zed' })).not.toHaveAttribute('data-dragging');
+    expect(screen.getAllByText('Zed')).toHaveLength(1);
+    release(10);
   });
 
   it('moves a node before another across parents', () => {

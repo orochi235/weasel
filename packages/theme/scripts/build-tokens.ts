@@ -11,11 +11,7 @@ import { generateTokens } from '../src/engine';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const THEMES_DIR = resolve(here, '../themes');
-// Overridable so the determinism check can generate into a temp dir instead of
-// rewriting the committed files other tests are reading from concurrently.
-const OUT_DIR = process.env.WZL_TOKENS_OUT_DIR
-  ? resolve(process.env.WZL_TOKENS_OUT_DIR)
-  : resolve(here, '../src/generated');
+const OUT_DIR = resolve(here, '../src/generated');
 
 const definitions: ThemeDefinition[] = readdirSync(THEMES_DIR)
   .filter((f) => f.endsWith('.json'))

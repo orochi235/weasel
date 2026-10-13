@@ -8,6 +8,7 @@ import { render, act } from '@testing-library/react';
 import React from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { NodeId, SceneCanvasApi } from '@weasel-js/core';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '../react';
 import type { Hud } from '../hud';
 import { createLoupe, type LoupeHandle } from './createLoupe';
@@ -182,12 +183,24 @@ describe('a loupe that paints through a view but takes no input', () => {
   it('paints the canvas stack through the lens camera', async () => {
     const m = await mount();
     const loupe = await openLoupe(m, 'view');
+    const rect = loupe.window.contentRect;
     const cmds = loupe.window.content!({
       data: {}, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims: { width: 400, height: 400 },
-      rect: loupe.window.contentRect, defaultFont: 'D', color: () => '#000000', tokens: {} as never,
+      rect, defaultFont: 'D', color: () => '#000000', tokens: {} as never,
     });
     // The backdrop, then the view's clipped group.
     expect(cmds.map((c) => c.kind)).toEqual(['path', 'group']);
+    expect(cmds[1]).toMatchObject({ clip: { width: rect.w, height: rect.h } });
+    const scales: number[] = [];
+    const walk = (list: readonly DrawCommand[]) => {
+      for (const c of list) {
+        if (c.kind !== 'group') continue;
+        if (c.transform) scales.push(c.transform[0]!);
+        walk(c.children);
+      }
+    };
+    walk((cmds[1] as GroupDrawCommand).children);
+    expect(scales).toContain(4);
   });
 });
 

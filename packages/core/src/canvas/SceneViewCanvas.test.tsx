@@ -9,7 +9,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { createRef, useRef } from 'react';
+import { createRef } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { createScene } from 'core/scene/scene';
 import type { Node, Scene } from 'core/scene/types';
@@ -305,28 +305,6 @@ describe('<SceneViewCanvas>', () => {
     // No inline style at all on the canvas — sizing is via width/height
     // attributes (drawing buffer) and the className (CSS).
     expect(canvas.getAttribute('style')).toBeNull();
-  });
-
-  it('coexists with a consumer-attached ref via useRef for pointer listeners', () => {
-    // Smoke check: a consumer can route their own ref through canvasRef and
-    // still see the same element. Mirrors the typical "attach my own
-    // pointer listener" pattern the spec describes.
-    const scene = makeScene();
-    function Consumer() {
-      const myRef = useRef<HTMLCanvasElement | null>(null);
-      return (
-        <SceneViewCanvas
-          scene={scene}
-          view={identityView}
-          width={50}
-          height={50}
-          drawOne={drawOne}
-          canvasRef={myRef}
-        />
-      );
-    }
-    const { container } = render(<Consumer />);
-    expect(container.querySelector('canvas')).not.toBeNull();
   });
 });
 

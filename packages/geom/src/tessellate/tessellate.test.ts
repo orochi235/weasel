@@ -17,10 +17,10 @@ describe('tessellate (RectPath)', () => {
     expect(mesh.requiresStencil).toBeFalsy();
   });
 
-  it('handles negative width/height by emitting the rect as-is (caller responsibility to normalize)', () => {
+  it('emits a negative-size rect as given, without normalizing it', () => {
     const path: RectPath = { kind: 'rect', x: 0, y: 0, width: -10, height: -10 };
     const mesh = tessellate(path);
-    expect(mesh.vertices.length).toBe(8);
+    expect(Array.from(mesh.vertices)).toEqual([0, 0, -10, 0, -10, -10, 0, -10]);
     expect(mesh.indices.length).toBe(6);
   });
 });
@@ -159,17 +159,6 @@ describe('tessellate (PolygonPath, evenodd)', () => {
     expect(mesh.vertices.length).toBe(16);
     expect(mesh.indices.length).toBe(12);
     expect(Array.from(mesh.indices)).toEqual([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]);
-  });
-
-  it('does not set requiresStencil for nonzero (uses earcut)', () => {
-    const path: PolygonPath = {
-      kind: 'polygon',
-      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
-      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
-      fillRule: 'nonzero',
-    };
-    const mesh = tessellate(path);
-    expect(mesh.requiresStencil).toBeFalsy();
   });
 });
 

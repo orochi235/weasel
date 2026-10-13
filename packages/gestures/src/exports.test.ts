@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
 import * as barrel from './index';
 import type { InputEvent } from './ui/inputEvent';
 import type { GestureSpec } from './ui/spec';
@@ -11,14 +11,8 @@ describe('package exports', () => {
     }
   });
 
-  it('names every arm of the InputEvent and GestureSpec unions', () => {
-    // A missing arm is a compile error here, not a runtime one: each variable
-    // is typed from the barrel and assigned a value of that union arm.
-    const longPress: LongPressEvent = { kind: 'longpress', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
-    const spec: LongPressSpec = { kind: 'longPress' };
-    const asEvent: InputEvent = longPress;
-    const asSpec: GestureSpec = spec;
-    expect(asEvent.kind).toBe('longpress');
-    expect(asSpec.kind).toBe('longPress');
+  it('exports the long-press event and spec as arms of their unions', () => {
+    expectTypeOf<LongPressEvent>().toMatchTypeOf<InputEvent>();
+    expectTypeOf<LongPressSpec>().toMatchTypeOf<GestureSpec>();
   });
 });

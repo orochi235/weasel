@@ -70,10 +70,6 @@ describe('forge vite plugin', () => {
     rmSync(root, { recursive: true, force: true, maxRetries: 3 });
   });
 
-  it('resolves its virtual modules', async () => {
-    expect((await server.pluginContainer.resolveId('virtual:forge/index.js'))?.id).toBe('\0virtual:forge/index.js');
-  });
-
   it('indexes every story file, each in source order', async () => {
     expect((await loadIndex()).map((e) => e.id)).toEqual(['ui-a--second', 'ui-a--first', 'ui-b--only']);
   });

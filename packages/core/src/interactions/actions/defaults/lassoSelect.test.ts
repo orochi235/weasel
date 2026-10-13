@@ -133,14 +133,6 @@ describe('lassoSelectAction descriptor', () => {
     expect(handle2.overlay!()).toBeNull();
   });
 
-  it('start returns handle with onMove and onEnd when dep is present', () => {
-    const invoker = getOngoingInvoker(lassoSelectAction);
-    const dep = makeLassoSelectDep();
-    const handle = invoker.start(makeCtx(dep), undefined);
-    expect(typeof handle.onMove).toBe('function');
-    expect(typeof handle.onEnd).toBe('function');
-  });
-
   it('onEnd(commit) calls hitTestLasso with accumulated vertices and sets selection', () => {
     const invoker = getOngoingInvoker(lassoSelectAction);
     const dep = makeLassoSelectDep(['nodeA', 'nodeB']);

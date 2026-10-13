@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { UnknownIcon } from '@weasel-js/core';
-import type { AnyTool, ToolsApi } from '@weasel-js/core';
+import type { Tool, ToolsApi } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
@@ -11,8 +11,8 @@ import { formatShortcut, type ShortcutInput } from './formatShortcut';
 const DEFAULT_GROUP_ORDER = ['select', 'shape', 'draw', 'type', 'view'] as const;
 const MISC = 'misc';
 
-function partitionByGroup(list: AnyTool[]): Map<string, AnyTool[]> {
-  const groups = new Map<string, AnyTool[]>();
+function partitionByGroup(list: Tool[]): Map<string, Tool[]> {
+  const groups = new Map<string, Tool[]>();
   for (const tool of list) {
     const g = tool.presentation?.group ?? MISC;
     const bucket = groups.get(g) ?? [];
@@ -23,7 +23,7 @@ function partitionByGroup(list: AnyTool[]): Map<string, AnyTool[]> {
 }
 
 function orderedGroupKeys(
-  groups: Map<string, AnyTool[]>,
+  groups: Map<string, Tool[]>,
   groupOrder: readonly string[],
 ): string[] {
   const seen = new Set(groups.keys());
@@ -45,10 +45,10 @@ function orderedGroupKeys(
   return ordered;
 }
 
-function resolveIcon(tool: AnyTool): ReactNode {
+function resolveIcon(tool: Tool): ReactNode {
   const rawIcon = tool.presentation?.icon;
   if (rawIcon == null) return <UnknownIcon />;
-  if (typeof rawIcon === 'function') return rawIcon(undefined);
+  if (typeof rawIcon === 'function') return rawIcon();
   return rawIcon;
 }
 

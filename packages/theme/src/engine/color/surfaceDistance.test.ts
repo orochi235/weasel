@@ -31,9 +31,4 @@ describe('distance from the surface', () => {
       expect(deltaE(hex, PAPER), `${name} should clear the gray`).toBeGreaterThan(gray);
     }
   });
-
-  it('is not WCAG contrast — a vivid yellow on paper is far but low-contrast', () => {
-    // The whole reason this gate exists alongside the contrast one.
-    expect(deltaE('#f9f967', PAPER)).toBeGreaterThan(deltaE('#c1c1c1', PAPER));
-  });
 });

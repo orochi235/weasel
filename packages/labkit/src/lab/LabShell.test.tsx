@@ -76,9 +76,4 @@ describe('LabShell', () => {
     render(<LabShell title="t">x</LabShell>);
     expect(document.title).toBe('before');
   });
-
-  test('always applies lk-root class', () => {
-    const { container } = render(<LabShell title="t">x</LabShell>);
-    expect(container.querySelector('.lk-root')).not.toBeNull();
-  });
 });

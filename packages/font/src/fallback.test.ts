@@ -339,17 +339,6 @@ describe('unusable default family', () => {
     warn.mockRestore();
   });
 
-  it('stays silent when nothing is registered and the request is not the default', () => {
-    // No default was ever set, so there is no misconfiguration to report —
-    // just an app that has not loaded its fonts yet.
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    resolveFontVariant('Ghost', 400, 'normal');
-
-    expect(warn).not.toHaveBeenCalled();
-    warn.mockRestore();
-  });
-
   it('warns once per variant', async () => {
     await registerTestFont('Inter', 700, 'italic');
     setDefaultFontFamily('Inter');

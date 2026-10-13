@@ -27,7 +27,7 @@ export interface UseLassoToolOptions extends UseLassoSelectOptions {
  *  The legacy `useLassoSelect` hook is removed — all gesture
  *  state, overlay rendering, and selection commit live in
  *  `lassoSelectAction` (see `src/interactions/actions/defaults/lassoSelect.ts`). */
-export function useLassoTool(options: UseLassoToolOptions = {}): Tool<undefined> {
+export function useLassoTool(options: UseLassoToolOptions = {}): Tool {
   const paramsRef = useLatest<{ mode: LassoHitMode; minVertexSpacing?: number }>({
     mode: options.mode ?? 'intersect',
     ...(options.minVertexSpacing !== undefined ? { minVertexSpacing: options.minVertexSpacing } : {}),
@@ -35,7 +35,7 @@ export function useLassoTool(options: UseLassoToolOptions = {}): Tool<undefined>
   const { behaviors } = options;
 
   return useMemo(() => {
-    return defineTool<undefined>({
+    return defineTool({
       id: 'lasso',
       capabilities: ['creates-selection'],
       hookName: 'useLassoTool',

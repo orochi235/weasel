@@ -164,11 +164,13 @@ describe('tree', () => {
     expect(result.has('lonely')).toBe(true);
   });
 
-  it('makes a root out of every node of an all-cycle component', () => {
-    const graph = graphOf({ a: [0, 0], b: [200, 0] }, [['a', 'b'], ['b', 'a']]);
+  it('makes one root for an all-cycle component and ranks the rest below it', () => {
+    const boxes = { a: [0, 0], b: [200, 0] } as const;
+    const graph = graphOf(boxes, [['a', 'b'], ['b', 'a']]);
     const { roots } = forestOf(graph, 'x');
     expect(roots.map((n) => n.id)).toEqual(['a']);
-    expect(tree(graph).size).toBeGreaterThanOrEqual(0);
+    const result = tree(graph);
+    expect(at(boxes, result, 'b').y - at(boxes, result, 'a').y).toBe(40 + DEFAULT_RANK_GAP);
   });
 
   it('moves nothing on a second run', () => {

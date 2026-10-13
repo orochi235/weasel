@@ -27,11 +27,11 @@ export interface UseImageToolOptions extends InsertToolOptions {
  * `'image'` case, not the tool. `src` is baked into the binding's `params`
  * so the insert dep can stamp it onto the new node.
  */
-export function useImageTool(options: UseImageToolOptions): Tool<null> {
+export function useImageTool(options: UseImageToolOptions): Tool {
   const { src, label = 'Image', preview = 'bitmap', behaviors } = options;
   return useMemo(
     () =>
-      defineTool<null>({
+      defineTool({
         id: 'image',
         capabilities: ['creates-shapes'],
         hookName: 'useImageTool',

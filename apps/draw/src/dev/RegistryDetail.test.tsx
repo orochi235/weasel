@@ -26,7 +26,7 @@ describe('RegistryDetail', () => {
         outputs: { cursor: true, overlay: false },
       },
       capabilities: {
-        initScratch: false, onActivate: false, onDeactivate: false,
+        onActivate: false, onDeactivate: false,
       },
     };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);

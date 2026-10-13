@@ -3,18 +3,16 @@
  * `getGestureVersion()` — the in-flight gesture surface consumers read
  * through `helpersRef`.
  *
- * Two sources feed the bounds: tool-published previews (`Tool.previewIds` /
- * `previewPose` / `previewBounds`) and the `GestureSource` `<SceneCanvas>`
- * wires from the gesture dispatcher. Both are stubbed here — the dispatcher's
- * own half is covered in `SceneCanvas/dispatcherGestureBounds.test.ts`.
+ * The bounds come from the `GestureSource` and `previewPoseExtra` that
+ * `<SceneCanvas>` wires from the gesture dispatcher's in-flight handles. Both
+ * are stubbed here — the dispatcher's own half is covered in
+ * `SceneCanvas/dispatcherGestureBounds.test.ts`.
  */
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import React from 'react';
 import { Canvas, type CanvasHelpers } from './Canvas';
 import type { GestureSource } from './gestureBounds';
-import type { AnyTool } from '../tools/overlayBinding';
-import type { ToolsApi } from '../tools/overlayBinding';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -43,23 +41,6 @@ const adapter = {
   setSelected: () => {},
 };
 
-/** Minimal ToolsApi carrying one tool — Canvas only reads the slots and
- *  `getActiveOverlays()`. */
-function toolsWith(tool: Partial<AnyTool>): ToolsApi {
-  const t = { id: 'stub', ...tool } as AnyTool;
-  return {
-    active: 'stub',
-    setActive: () => {},
-    hotkeyEngaged: null,
-    engageHotkey: () => {},
-    disengageHotkey: () => {},
-    ambient: [],
-    registry: { stub: t },
-    has: (id: string) => id === 'stub',
-    getActiveOverlays: () => [],
-  };
-}
-
 /** A GestureSource with only the parts a given test cares about. */
 function sourceOf(parts: Partial<GestureSource>): GestureSource {
   return {
@@ -73,9 +54,18 @@ function sourceOf(parts: Partial<GestureSource>): GestureSource {
   };
 }
 
+/** An in-flight handle previewing `poses`, as `<SceneCanvas>` wires one: its
+ *  ids through the gesture source, its poses through `previewPoseExtra`. */
+function previewing(poses: Record<string, Pose | null>, parts: Partial<GestureSource> = {}) {
+  return {
+    gestureSource: sourceOf({ ids: () => Object.keys(poses), ...parts }),
+    previewPoseExtra: (id: string) => poses[id] ?? null,
+  };
+}
+
 function renderHelpers(props: {
-  tools?: ToolsApi;
   gestureSource?: GestureSource;
+  previewPoseExtra?: (id: string) => unknown;
 }): CanvasHelpers<Pose> {
   const helpersRef: React.MutableRefObject<CanvasHelpers<Pose> | null> = { current: null };
   render(
@@ -85,8 +75,8 @@ function renderHelpers(props: {
       layers={{}}
       adapter={adapter as never}
       helpersRef={helpersRef as never}
-      tools={props.tools}
       gestureSource={props.gestureSource}
+      previewPoseExtra={props.previewPoseExtra}
     />,
   );
   return helpersRef.current!;
@@ -104,12 +94,7 @@ describe('CanvasHelpers.getGestureBounds', () => {
   });
 
   it('mid-move on one node: equals that node\'s preview bounds, not its committed box', () => {
-    const helpers = renderHelpers({
-      tools: toolsWith({
-        previewIds: () => ['a'],
-        previewPose: (id) => (id === 'a' ? { x: 50, y: 60, width: 10, height: 10 } : null),
-      }),
-    });
+    const helpers = renderHelpers(previewing({ a: { x: 50, y: 60, width: 10, height: 10 } }));
     expect(helpers.getGestureBounds()).toEqual({ x: 50, y: 60, width: 10, height: 10 });
   });
 
@@ -118,12 +103,7 @@ describe('CanvasHelpers.getGestureBounds', () => {
       a: { x: 0, y: 0, width: 10, height: 10 },
       b: { x: 90, y: 40, width: 10, height: 10 },
     };
-    const helpers = renderHelpers({
-      tools: toolsWith({
-        previewIds: () => ['a', 'b'],
-        previewPose: (id) => poses[id] ?? null,
-      }),
-    });
+    const helpers = renderHelpers(previewing(poses));
     expect(helpers.getGestureBounds()).toEqual({ x: 0, y: 0, width: 100, height: 50 });
   });
 
@@ -145,13 +125,10 @@ describe('CanvasHelpers.getGestureBounds', () => {
   });
 
   it('insert and move in flight together: the union of both', () => {
-    const helpers = renderHelpers({
-      tools: toolsWith({
-        previewIds: () => ['a'],
-        previewPose: (id) => (id === 'a' ? { x: 0, y: 0, width: 10, height: 10 } : null),
-      }),
-      gestureSource: sourceOf({ bounds: () => [{ x: 200, y: 150, width: 20, height: 20 }] }),
-    });
+    const helpers = renderHelpers(previewing(
+      { a: { x: 0, y: 0, width: 10, height: 10 } },
+      { bounds: () => [{ x: 200, y: 150, width: 20, height: 20 }] },
+    ));
     expect(helpers.getGestureBounds()).toEqual({ x: 0, y: 0, width: 220, height: 170 });
   });
 
@@ -175,37 +152,20 @@ describe('CanvasHelpers.getGestureBounds', () => {
   });
 
   it('folds a rotated preview by its rotated extent and reports no rotation', () => {
-    const helpers = renderHelpers({
-      tools: toolsWith({
-        previewIds: () => ['a'],
-        previewBounds: () => ({ x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 4 }),
-      }),
-    });
+    const helpers = renderHelpers(previewing({
+      a: { x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 4 },
+    }));
     const b = helpers.getGestureBounds()!;
     expect(b.width).toBeCloseTo(10 * Math.SQRT2, 5);
     expect('rotation' in b).toBe(false);
   });
 
   it('skips in-flight ids that resolve to no preview at all', () => {
-    const helpers = renderHelpers({
-      tools: toolsWith({
-        previewIds: () => ['a', 'ghost-with-no-pose'],
-        previewPose: (id) => (id === 'a' ? { x: 1, y: 1, width: 2, height: 2 } : null),
-      }),
-    });
+    const helpers = renderHelpers(previewing({
+      a: { x: 1, y: 1, width: 2, height: 2 },
+      'ghost-with-no-pose': null,
+    }));
     expect(helpers.getGestureBounds()).toEqual({ x: 1, y: 1, width: 2, height: 2 });
-  });
-
-  it('reports the gesture, not the document — committed nodes are excluded', () => {
-    // `b` sits at (100,100) in the adapter and is never previewed; it must not
-    // appear in the union.
-    const helpers = renderHelpers({
-      tools: toolsWith({
-        previewIds: () => ['a'],
-        previewPose: (id) => (id === 'a' ? { x: 0, y: 0, width: 10, height: 10 } : null),
-      }),
-    });
-    expect(helpers.getGestureBounds()).toEqual({ x: 0, y: 0, width: 10, height: 10 });
   });
 });
 

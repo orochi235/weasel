@@ -39,7 +39,7 @@ describe('FpsMeter', () => {
       raf?.(16.67);
       raf?.(33.34);
     });
-    expect(rate().textContent).toMatch(/^\d+$/);
+    expect(rate().textContent).toBe('60');
 
     vi.unstubAllGlobals();
   });

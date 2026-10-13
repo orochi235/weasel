@@ -12,9 +12,9 @@ describe('aabbOfPose', () => {
   });
 
   it('scales before translating', () => {
-    const box = aabbOfPose(pose3({ x: 0, y: 0, z: 0 }, { x: 4, y: 1, z: 1 }));
-    expect(box.max.x - box.min.x).toBeCloseTo(4, 9);
-    expect(box.max.y - box.min.y).toBeCloseTo(1, 9);
+    const box = aabbOfPose(pose3({ x: 10, y: 2, z: 0 }, { x: 4, y: 1, z: 1 }));
+    expect(box.min).toEqual({ x: 8, y: 1.5, z: -0.5 });
+    expect(box.max).toEqual({ x: 12, y: 2.5, z: 0.5 });
   });
 
   it('widens under rotation — an AABB cannot be oriented', () => {

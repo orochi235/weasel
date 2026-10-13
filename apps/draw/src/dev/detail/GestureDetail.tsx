@@ -141,7 +141,7 @@ export function PhaseOutputDetail({
   const blurb = entry.id === 'overlay'
     ? 'Render layer emitted while the tool is active. Only `initial.overlay` is read by the runtime today.'
     : entry.id === 'cursor'
-      ? 'CSS cursor the tool declares (string or scratch-aware thunk).'
+      ? 'CSS cursor the tool declares (string or thunk).'
       : 'Modal-claim predicate. When true, the dispatcher routes every `pointerdown` to this tool and bypasses affordance hit-tests.';
   return (
     <div>

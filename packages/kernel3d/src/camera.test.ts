@@ -56,8 +56,7 @@ describe('orbitBy', () => {
 
   it('leaves the eye off the up axis at full pitch, so lookAt stays defined', () => {
     const eye = cameraEye(orbitBy(createCamera({ distance: 5 }), 0, 10));
-    const horizontal = Math.hypot(eye.x, eye.z);
-    expect(horizontal).toBeGreaterThan(0);
+    expect(Math.hypot(eye.x, eye.z)).toBeCloseTo(5 * Math.cos(MAX_PITCH), 9);
   });
 
   it('does not move the target or the distance', () => {
@@ -75,11 +74,8 @@ describe('dollyBy', () => {
   });
 
   it('clamps to a usable range rather than letting the camera reach the target', () => {
-    const near = dollyBy(createCamera({ distance: 10 }), 0.0001);
-    expect(near.distance).toBeGreaterThan(0);
-    const far = dollyBy(createCamera({ distance: 10 }), 10000);
-    expect(Number.isFinite(far.distance)).toBe(true);
-    expect(far.distance).toBeLessThan(10000 * 10);
+    expect(dollyBy(createCamera({ distance: 10 }), 0.0001).distance).toBe(0.5);
+    expect(dollyBy(createCamera({ distance: 10 }), 10000).distance).toBe(500);
   });
 });
 

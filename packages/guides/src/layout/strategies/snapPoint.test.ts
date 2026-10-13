@@ -12,6 +12,12 @@ const dragged = (pose: P) => ({
   sourceContainerId: null as string | null,
 });
 
+const applied = (op: { apply: (adapter: never) => void }): Array<{ id: string; pose: P }> => {
+  const calls: Array<{ id: string; pose: P }> = [];
+  op.apply({ setPose: (id: string, pose: P) => calls.push({ id, pose }) } as never);
+  return calls;
+};
+
 describe('snapPoint', () => {
   it('childPoses returns identity', () => {
     const layout = snapPoint<P>({ pattern: 'corners' });
@@ -92,14 +98,14 @@ describe('snapPoint', () => {
     const ops = layout.commitDrop(container, [], dragged({ x: 30, y: 30 }), targets[0]);
     expect(ops).toHaveLength(1);
     expect(ops[0].label).toBe('Snap drop');
-    expect(typeof ops[0].apply).toBe('function');
-    expect(typeof ops[0].invert).toBe('function');
+    expect(applied(ops[0])).toEqual([{ id: 'd', pose: { x: 50, y: 50 } }]);
   });
 
-  it('commitDrop with null target emits free-space drop', () => {
+  it('commitDrop with null target leaves the child where it was dropped', () => {
     const layout = snapPoint<P>({ pattern: 'corners' });
     const ops = layout.commitDrop(container, [], dragged({ x: 30, y: 30 }), null);
     expect(ops).toHaveLength(1);
+    expect(applied(ops[0])).toEqual([{ id: 'd', pose: { x: 30, y: 30 } }]);
   });
 
   it('default snap is nearestWithin with the configured tolerance', () => {

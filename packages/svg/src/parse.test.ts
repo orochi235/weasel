@@ -107,13 +107,16 @@ describe('paint inheritance', () => {
   });
 
   it('reads fill-opacity from style and from ancestor', () => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg">
+    const inherited = firstPath(`<svg xmlns="http://www.w3.org/2000/svg">
       <g fill="#ff0000" fill-opacity="0.5">
         <path d="M0,0 L1,0 L1,1 Z"/>
       </g>
-    </svg>`;
-    const path = firstPath(svg);
-    expect(path.fill).toMatchObject({ kind: 'solid', color: '#ff0000', opacity: 0.5 });
+    </svg>`);
+    expect(inherited.fill).toMatchObject({ kind: 'solid', color: '#ff0000', opacity: 0.5 });
+    const styled = firstPath(`<svg xmlns="http://www.w3.org/2000/svg">
+      <path style="fill-opacity:0.25" fill="#ff0000" d="M0,0 L1,0 L1,1 Z"/>
+    </svg>`);
+    expect(styled.fill).toMatchObject({ kind: 'solid', color: '#ff0000', opacity: 0.25 });
   });
 });
 

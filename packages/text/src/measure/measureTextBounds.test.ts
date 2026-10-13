@@ -32,6 +32,7 @@ describe('measureTextBounds', () => {
     await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     const b = measureTextBounds('', { fontFamily: 'inter', fontSize: 32 });
     expect(b.width).toBe(0);
+    expect(b.height).toBe(0);
   });
 
   it('width grows with text length and height is positive', async () => {

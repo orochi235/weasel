@@ -24,11 +24,6 @@ describe('useScene — trivial overload', () => {
     expect(a?.data).toBe(A);
   });
 
-  it('uses item.id as the NodeId', () => {
-    const { result } = renderHook(() => useScene({ items: [A] }));
-    expect(result.current.get(asNodeId('a'))).toBeDefined();
-  });
-
   it('starts with empty undo history (initial items are not undoable)', () => {
     const { result } = renderHook(() => useScene({ items: [A, B] }));
     expect(result.current.canUndo()).toBe(false);
@@ -87,16 +82,20 @@ describe('useScene — trivial overload', () => {
 
 describe('useScene — full overload still works', () => {
   it('passes through systemLayers/initial/ops to createScene', () => {
+    let bumps = 0;
     const { result } = renderHook(() =>
       useScene<{ label: string }, 'a' | 'b'>({
         systemLayers: [{ id: 'a' }, { id: 'b' }],
         initial: [
           { kind: 'leaf', layer: 'a', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } },
         ],
+        ops: { 'app:bump': { apply: () => { bumps++; }, revert: () => { bumps--; } } },
       }),
     );
     expect(result.current.layers).toHaveLength(2);
     expect(result.current.roots).toHaveLength(1);
+    act(() => { result.current.recordOp({ kind: 'app:bump', payload: null }); });
+    expect(bumps).toBe(1);
   });
 });
 

@@ -303,12 +303,4 @@ describe('long-press haptics', () => {
     expect(fired).toEqual(['test.longPress']);
     expect(vibrate).not.toHaveBeenCalled();
   });
-
-  it('fires without error where the Vibration API is absent', () => {
-    delete (navigator as { vibrate?: unknown }).vibrate;
-    const c = mount(['longPress']);
-    down(c);
-    advance(500);
-    expect(fired).toEqual(['test.longPress']);
-  });
 });

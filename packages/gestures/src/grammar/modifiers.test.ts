@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
 import { mods, type ModifierCombo } from './modifiers';
 
 describe('mods() helper', () => {
@@ -30,13 +30,9 @@ describe('mods() helper', () => {
     expect(mods('shift', 'shift')).toBe('shift');
   });
 
-  it('ModifierCombo type accepts only valid keys', () => {
-    const valid: ModifierCombo[] = [
-      'default',
-      'mod', 'shift', 'alt',
-      'mod+shift', 'mod+alt', 'shift+alt',
-      'mod+shift+alt',
-    ];
-    expect(valid).toHaveLength(8);
+  it('ModifierCombo rejects an out-of-order combo and an unknown key', () => {
+    expectTypeOf<'mod+shift'>().toMatchTypeOf<ModifierCombo>();
+    expectTypeOf<'shift+mod'>().not.toMatchTypeOf<ModifierCombo>();
+    expectTypeOf<'ctrl'>().not.toMatchTypeOf<ModifierCombo>();
   });
 });

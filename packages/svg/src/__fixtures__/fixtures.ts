@@ -102,12 +102,6 @@ export const WEASELDRAW_MINIMAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" x
   <text x="120" y="160" dominant-baseline="text-before-edge" data-weasel-width="60" data-weasel-height="20" font-size="16" font-family="sans-serif" fill="#000000">Hello</text>
 </svg>`;
 
-/** Same shape as WEASELDRAW_MINIMAL_SVG but with the A4 preset, to prove
- *  the paper-size enum round-trips for non-default values. */
-export const WEASELDRAW_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 794 1123" width="794" height="1123" wd:paperSize="a4" wd:units="px">
-  <path d="M 10 10 L 50 10 L 50 50 L 10 50 Z" fill="#000000" stroke="none"/>
-</svg>`;
-
 export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 200 100">
   <text x="100" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" letter-spacing="1.5" text-decoration="underline line-through" wd:line-height="1.4">Styled</text>
 </svg>`;

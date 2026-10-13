@@ -354,41 +354,6 @@ describe('<MinimapCanvas>', () => {
     expect(ref.current).toBe(container.querySelector('canvas'));
   });
 
-  it('fit="scene" with a multi-node scene matches computeFitView output', () => {
-    const scene = makeScene();
-    const mainView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const onChange = vi.fn();
-    const { container } = render(
-      <MinimapCanvas
-        scene={scene}
-        mainView={mainView}
-        mainViewDims={{ width: 400, height: 300 }}
-        onMainViewChange={onChange}
-        width={100}
-        height={100}
-        drawOne={drawOne}
-      />,
-    );
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-    canvas.releasePointerCapture = vi.fn();
-    canvas.hasPointerCapture = vi.fn().mockReturnValue(true);
-
-    const fitView = computeFitView(scene, { width: 100, height: 100 }, 'scene', identityPoseBounds);
-
-    // A click at the exact minimap center should recenter mainView on the
-    // center of the fit rect (i.e., the scene's union AABB center). Scene
-    // union here is (0,0,200,200) so center is (100, 100).
-    fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 50, y: 50 }));
-    const got = onChange.mock.calls[0][0] as View;
-    const expectedWorldX = fitView.x + 50 / fitView.scale.x;
-    const expectedWorldY = fitView.y + 50 / fitView.scale.y;
-    expect(expectedWorldX).toBeCloseTo(100, 6);
-    expect(expectedWorldY).toBeCloseTo(100, 6);
-    expect(got.x).toBeCloseTo(expectedWorldX - 200, 6);
-    expect(got.y).toBeCloseTo(expectedWorldY - 150, 6);
-  });
-
   it('recenters on a finite point when a custom fit returns a zero scale', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const onChange = vi.fn();
@@ -459,13 +424,13 @@ function paintedXs(): number[] {
 describe('<MinimapCanvas> — pose overrides', () => {
   const mainView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-  function renderMinimap(scene: Scene<D, L, P>) {
+  function renderMinimap(scene: Scene<D, L, P>, onChange: (view: View) => void = () => {}) {
     return render(
       <MinimapCanvas
         scene={scene}
         mainView={mainView}
         mainViewDims={{ width: 200, height: 200 }}
-        onMainViewChange={() => {}}
+        onMainViewChange={onChange}
         width={100}
         height={100}
         drawOne={drawOne}
@@ -529,11 +494,12 @@ describe('<MinimapCanvas> — pose overrides', () => {
   it('leaves the fit view on document poses, so framing does not thrash', async () => {
     const scene = makeScene();
     const first = scene.roots[0];
-    renderMinimap(scene);
-    const fitBefore = computeFitView(
-      scene, { width: 100, height: 100 }, 'scene',
-      identityPoseBounds,
-    );
+    const onChange = vi.fn();
+    const { container } = renderMinimap(scene, onChange);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+    canvas.releasePointerCapture = vi.fn();
+    canvas.hasPointerCapture = vi.fn().mockReturnValue(true);
 
     await act(async () => {
       scene.overrides.set(first, { pose: { x: 5000, y: 0, width: 100, height: 100 } });
@@ -541,11 +507,11 @@ describe('<MinimapCanvas> — pose overrides', () => {
       await frame();
     });
 
-    const fitAfter = computeFitView(
-      scene, { width: 100, height: 100 }, 'scene',
-      identityPoseBounds,
-    );
-    expect(fitAfter).toEqual(fitBefore);
+    // A press at the minimap's center lands on the document's center, world (100, 100).
+    fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 50, y: 50 }));
+    const got = onChange.mock.calls[0][0] as View;
+    expect(got.x).toBeCloseTo(100 - 100, 6);
+    expect(got.y).toBeCloseTo(100 - 100, 6);
   });
 });
 

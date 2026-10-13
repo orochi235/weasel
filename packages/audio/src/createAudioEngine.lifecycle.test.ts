@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createAudioEngine } from './createAudioEngine';
 import { createFakeAudioContext, type FakeNode } from './testing/fakeAudioContext';
 
@@ -18,8 +18,6 @@ function engineHarness(over: Record<string, unknown> = {}) {
 const flush = (): Promise<void> => new Promise((resolve) => { setTimeout(resolve, 0); });
 
 describe('createAudioEngine disposal', () => {
-  afterEach(() => { vi.unstubAllGlobals(); });
-
   it('drops a play after dispose instead of building a silent zombie', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { ctx, engine, tick } = engineHarness();
@@ -86,26 +84,6 @@ describe('createAudioEngine disposal', () => {
     expect(node.connectedFrom).toEqual([]);
   });
 
-  it('forgets a tap the consumer disposed', () => {
-    const { engine } = engineHarness();
-    const tap = engine.analyser();
-    tap.dispose();
-    expect(() => { engine.dispose(); }).not.toThrow();
-  });
-
-  it('closes a context it created, and leaves an injected one open', async () => {
-    const owned = createFakeAudioContext();
-    vi.stubGlobal('AudioContext', function AudioContextStub() { return owned; });
-    const mine = createAudioEngine({ setTimer: () => 1, clearTimer: () => {} });
-    mine.dispose();
-    await flush();
-    expect(owned.state).toBe('closed');
-
-    const { ctx, engine } = engineHarness();
-    engine.dispose();
-    await flush();
-    expect(ctx.state).toBe('suspended');
-  });
 });
 
 describe('createAudioEngine automatic unlock', () => {

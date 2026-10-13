@@ -5,7 +5,6 @@ import { SceneCanvas } from './SceneCanvas';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
-import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
 
 type Layer = 'main';
 interface Data { label: string }
@@ -29,39 +28,13 @@ describe('SceneCanvas — override repaint', () => {
   });
 });
 
-describe('SceneCanvas — paint kind repaint', () => {
-  it('requests a redraw when a paint kind registers, as a lazily loaded one does on landing', async () => {
-    const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
-    const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas ref={ref} width={100} height={100} scene={scene} layers={{}} />);
-
-    const requestRedraw = vi.spyOn(ref.current!, 'requestRedraw');
-    let off = () => {};
-    await act(async () => {
-      off = registerPaintKind({ ...getPaintKind('solid')!, id: 'test-late' });
-    });
-    off();
-
-    expect(requestRedraw).toHaveBeenCalled();
-  });
-});
-
-describe('SceneCanvas — override alpha composition', () => {
+describe('buildSceneViewCommands — override alpha composition', () => {
   it('composes the override alpha with a consumer alphaFor exactly once', () => {
     const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'leaf', layer: 'main', pose: POSE, data: { label: 'a' } });
     scene.overrides.set(id, { alpha: 0.5 });
-
-    // The composed function SceneCanvas hands to the scene slot. Asserting it
-    // here (rather than through GL) keeps the test on the contract: consumer
-    // alpha times override alpha, one multiplication.
     const consumerAlphaFor = (_id: string) => 0.4;
-    const composed = (nodeId: string) =>
-      consumerAlphaFor(nodeId) * (scene.overrides.get(nodeId as never)?.alpha ?? 1);
 
-    expect(composed(id)).toBeCloseTo(0.2);
-
-    // And the headless path agrees with it.
     const alphas: number[] = [];
     const collect = (cmd: unknown): void => {
       const g = cmd as { alpha?: number; children?: unknown[] };

@@ -94,4 +94,32 @@ describe('useDeviceProfile', () => {
       `true|true|1|${COARSE_TARGET_SCALE}`,
     );
   });
+
+  // A listener count on the double stands in for the real cost: every reader
+  // watching the device for itself.
+  it('a reader under a provider watches nothing of its own, and still follows it', () => {
+    const h = makeMatchMedia({ '(pointer: coarse)': false, '(hover: hover)': true });
+    vi.stubGlobal('matchMedia', h.mm);
+    const { rerender } = render(
+      <DeviceProfileProvider>
+        <Probe />
+        <DeviceProfileProvider value={{ dpr: 2 }}><Probe /></DeviceProfileProvider>
+      </DeviceProfileProvider>,
+    );
+    expect(h.listenerCount('(pointer: coarse)')).toBe(1);
+    expect(h.listenerCount('(hover: hover)')).toBe(1);
+    expect(h.listenerCount('(resolution: 1dppx)')).toBe(1);
+
+    act(() => { h.fire('(pointer: coarse)', true); });
+    expect(screen.getAllByTestId('out').map((el) => el.textContent)).toEqual([
+      `true|true|1|${COARSE_TARGET_SCALE}`,
+      `true|true|2|${COARSE_TARGET_SCALE}`,
+    ]);
+
+    // Outside any provider a reader watches for itself.
+    rerender(<Probe />);
+    expect(h.listenerCount('(pointer: coarse)')).toBe(1);
+    act(() => { h.fire('(pointer: coarse)', false); });
+    expect(screen.getByTestId('out').textContent).toBe('false|true|1|1');
+  });
 });

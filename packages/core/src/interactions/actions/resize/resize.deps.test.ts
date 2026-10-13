@@ -18,7 +18,6 @@ import type {
 } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './geometry';
-import { ROTATED_POSE_DESCRIPTOR } from './geometry';
 import { clampMinSize } from './behaviors/clampMinSize';
 import { circle, CIRCLE_POSE_DESCRIPTOR } from 'core/geometry/circlePose.fixture';
 
@@ -270,36 +269,6 @@ describe('resizeAction — expandIds via resizePolicy dep', () => {
 });
 
 describe('resizeAction — geometry via poseDescriptor dep', () => {
-  it('uses geometry.getBounds + remapBounds when projecting poses', () => {
-    const invoker = getOngoing(resizeAction);
-    const initial: RotatedPose = { x: 0, y: 0, width: 100, height: 100, rotation: 0 };
-    const ctx = makeCtx({
-      selectionIds: ['a'],
-      sceneNodes: { a: { pose: initial } },
-      anchor: ANCHOR_BR,
-      start: { x: 100, y: 100 },
-      deps: {
-        resizePolicy: {
-          constraints: [],
-          pointSnap: [],
-          expandIds: (ids: string[]) => ids,
-        },
-        // `ROTATED_POSE_DESCRIPTOR` preserves the `rotation` field on
-        // `remapBounds`, which proves the descriptor was actually consulted.
-        poseDescriptor: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<unknown>,
-      },
-    });
-    const handle = invoker.start(ctx, undefined);
-    handle.onMove!({
-      ...ctx,
-      drag: { start: { x: 100, y: 100 }, current: { x: 120, y: 110 }, delta: { x: 20, y: 10 } },
-    });
-    const preview = handle.previewPose!('a') as RotatedPose;
-    expect(preview.rotation).toBe(0);
-    expect(preview.width).toBeCloseTo(120);
-    expect(preview.height).toBeCloseTo(110);
-  });
-
   it('falls back to RECT_POSE_DESCRIPTOR identity when dep is absent', () => {
     const invoker = getOngoing(resizeAction);
     const ctx = makeCtx({

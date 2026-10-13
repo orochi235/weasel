@@ -85,11 +85,11 @@ describe('Badge interactive', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it('renders focus path when focus-visible matches', () => {
-    const { container } = render(<Badge onClick={() => {}}>x</Badge>);
-    const btn = container.firstElementChild as HTMLButtonElement;
-    fireEvent.focus(btn);
-    expect(btn.getAttribute('data-focused')).toBe('true');
+  it('draws the shape\'s focus path while it holds focus', () => {
+    const { container } = render(<Badge shape="notched" onClick={() => {}}>x</Badge>);
+    expect(container.querySelector('.badge-focus')).toBeNull();
+    fireEvent.focus(container.firstElementChild as HTMLButtonElement);
+    expect(container.querySelector('.badge-focus')).not.toBeNull();
   });
 });
 

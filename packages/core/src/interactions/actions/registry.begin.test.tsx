@@ -102,14 +102,19 @@ describe('ActionsRegistry.begin', () => {
   it('returns a working control for an ongoing action', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;
-    act(() => { reg.register(ongoing('drag')); });
+    const onMove = vi.fn();
+    const onEnd = vi.fn();
+    const drag: Action = { id: 'drag', label: 'drag', invoker: { timing: 'ongoing', start: () => ({ onMove, onEnd }) } };
+    act(() => { reg.register(drag); });
     const d = createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) });
     act(() => { reg.setDispatcher(d); });
     let ctrl: UiOngoingControl | null = null;
     act(() => { ctrl = reg.begin('drag', { foo: 'bar' }); });
     expect(ctrl).not.toBeNull();
-    expect(typeof ctrl!.update).toBe('function');
-    expect(typeof ctrl!.end).toBe('function');
+    act(() => { ctrl!.update({ foo: 'baz' }); });
+    expect(onMove).toHaveBeenCalledTimes(1);
+    expect(onMove.mock.calls[0][0].params).toEqual({ foo: 'baz' });
     act(() => { ctrl!.end('commit'); });
+    expect(onEnd).toHaveBeenCalledWith(expect.anything(), 'commit');
   });
 });

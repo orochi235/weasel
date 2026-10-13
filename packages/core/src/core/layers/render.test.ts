@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer } from './render';
-import type { DrawCommand } from '@weasel-js/renderer';
+import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 
 describe('drawLayers', () => {
   it('returns concatenated DrawCommands from each visible layer in order', () => {
@@ -76,27 +76,9 @@ describe('drawLayers', () => {
   it('wraps world-space layer output in a group with viewToMat3 transform', () => {
     const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => [cmd] };
-    const out = drawLayers([a], null, {}, undefined, { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 10, height: 10 });
-    expect(out.length).toBe(1);
-    expect(out[0].kind).toBe('group');
-    const group = out[0] as { kind: 'group'; transform?: number[]; children: DrawCommand[] };
-    // viewToMat3 for { x: 5, y: 7, scale: { x: 2, y: 2 } } produces a non-identity affine.
-    expect(group.transform).toBeDefined();
-    expect(group.children).toEqual([cmd]);
-  });
-
-  it('treats unset space as world (auto-wraps)', () => {
-    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
-    const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => [cmd] }; // no `space`
-    const out = drawLayers([a], null, {}, undefined, undefined, { width: 10, height: 10 });
-    expect(out[0].kind).toBe('group');
-  });
-
-  it('passes screen-space layer output through unchanged', () => {
-    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
-    const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', draw: () => [cmd] };
-    const out = drawLayers([a], null, {}, undefined, undefined, { width: 10, height: 10 });
-    expect(out).toEqual([cmd]);
+    const view = { x: 5, y: 7, scale: { x: 2, y: 2 } };
+    const out = drawLayers([a], null, {}, undefined, view, { width: 10, height: 10 });
+    expect(out).toEqual([{ kind: 'group', transform: viewToMat3(view), children: [cmd] }]);
   });
 
   it('does not emit an empty group when a world-space layer returns no commands', () => {

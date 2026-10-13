@@ -26,22 +26,14 @@ export function useToolLifecycle(opts: ToolLifecycleOptions): void {
   const prevActiveRef = useRef(active);
   const entriesRef = useLatest(opts.entriesById);
   const onSwitchRef = useLatest(opts.onSwitch);
-  const scratchRef = useRef(new Map<string, unknown>());
 
   const fire = useCallback((id: string, hook: 'onActivate' | 'onDeactivate'): void => {
-    const scratches = scratchRef.current;
     const tool = entriesRef.current.get(id);
-    if (!tool || !isTool(tool)) {
-      scratches.delete(id);
-      return;
-    }
-    if (hook === 'onActivate' || !scratches.has(id)) scratches.set(id, tool.initScratch?.());
-    const scratch = scratches.get(id);
-    if (hook === 'onDeactivate') scratches.delete(id);
+    if (!tool || !isTool(tool)) return;
     const fn = tool[hook];
     if (!fn) return;
     try {
-      fn({ scratch });
+      fn();
     } catch (err) {
       console.error(`weasel: tool "${id}".${hook} threw`, err);
     }

@@ -27,8 +27,8 @@ afterEach(() => {
 });
 
 function setup(initialActiveTool = 'alpha') {
-  const alpha = defineTool<null>({ id: 'alpha', bindings: [] });
-  const beta = defineTool<null>({ id: 'beta', bindings: [] });
+  const alpha = defineTool({ id: 'alpha', bindings: [] });
+  const beta = defineTool({ id: 'beta', bindings: [] });
   let tools: ReturnType<typeof useTools> | null = null;
   function Harness() {
     const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });

@@ -131,13 +131,6 @@ describe('Workshop', () => {
     expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
   });
 
-  it('gives a story trial with no viewport no status bar', async () => {
-    location.hash = '#/x--a';
-    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
-    const trial = await screen.findByRole('region', { name: 'Trial X > A' });
-    expect(trial.querySelector('.lk-status-bar')).toBeNull();
-  });
-
   it('sends a lab-wide global chosen in the toolbar to every open frame, and keeps a trial’s pin over it', async () => {
     const globals = {
       mode: {

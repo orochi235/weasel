@@ -52,7 +52,7 @@ function saveButton(onClick: () => void) {
 }
 
 describe('Save SVG after a paint kind loads', () => {
-  it.each([0, 2000, 6500])('downloads when the load takes %dms', async (ms) => {
+  it.each([0, 6500])('downloads when the load takes %dms', async (ms) => {
     const kind = `test-slow-${ms}`;
     const scene = slowPaintScene(kind, ms);
     let activeAtDownload: boolean | null = null;

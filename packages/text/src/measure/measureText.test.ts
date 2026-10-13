@@ -118,21 +118,12 @@ describe('measureText — tracking', () => {
     ]);
   });
 
-  it('leaves untracked text where it was', () => {
-    const ctx = makeCtx();
-    const style = { ...DEFAULT_TEXT_STYLE, letterSpacing: 0 };
-    expect(measureText(ctx, 'the quick brown', 100, style).lines).toEqual([
-      'the quick', 'brown',
-    ]);
-  });
-
   it('counts trailing tracking, as CSS does', () => {
-    // 'abcde' = 50px of glyphs + 5 * 2 tracking = 60. At maxWidth 59 it must
-    // not fit; the trailing unit is part of the inline box.
+    // 'ab cd' is 50px of glyphs + 5 * 2 tracking = 60, the last unit trailing.
     const ctx = makeCtx();
     const style = { ...DEFAULT_TEXT_STYLE, letterSpacing: 2 };
-    expect(measureText(ctx, 'abcde fg', 59, style).lines).toEqual(['abcde', 'fg']);
-    expect(measureText(ctx, 'abcde fg', 60, style).lines).toEqual(['abcde', 'fg']);
+    expect(measureText(ctx, 'ab cd', 60, style).lines).toEqual(['ab cd']);
+    expect(measureText(ctx, 'ab cd', 59, style).lines).toEqual(['ab', 'cd']);
   });
 });
 

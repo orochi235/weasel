@@ -75,12 +75,6 @@ export const Edge = story({ isolate: 'asserts placement against the window edge'
     for (const line of tests) expect(line).not.toContain(file);
   });
 
-  // vitest imports a test file with a cache-busting query, so a static self-import would evaluate it a second time.
-  it('takes the module from its own URL rather than a static self-import', async () => {
-    const code = await transformer({ stories: ['apps/**/*.stories.tsx'] })(source, `${ROOT}/apps/x/Counter.stories.tsx`);
-    expect(code).not.toMatch(/import \* as \w+ from "\.\/Counter\.stories\.tsx"/);
-  });
-
   it('sizes the browser page to the story’s viewport through vitest’s page', async () => {
     const code = await transformer({ stories: ['*.stories.tsx'] })(source, `${ROOT}/a.stories.tsx`);
     expect(code).toContain(`import { page as __forge_page } from "vitest/browser";`);

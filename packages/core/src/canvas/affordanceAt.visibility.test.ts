@@ -80,13 +80,4 @@ describe('buildAffordanceAt visibility gating', () => {
     // The anchor-state thunk should NOT have been called: the gate fires first.
     expect(anchorStateThunk).not.toHaveBeenCalled();
   });
-
-  it('omitting getIsVisible defaults to always-visible (backward-compat)', () => {
-    const fn = buildAffordanceAt({
-      getChromeState: () => makeState(),
-      getView: () => VIEW,
-    });
-    const hit = fn({ x: 0, y: 0 });
-    expect(hit?.kind).toBe('handle:top-left');
-  });
 });

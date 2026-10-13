@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { MultiSelectDemo } from '../MultiSelectDemo';
 
 beforeAll(() => {
+  window.history.replaceState(null, '', '/?test=1');
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
     setPointerCapture: (...args: unknown[]) => void;
@@ -14,10 +15,13 @@ beforeAll(() => {
 });
 afterEach(cleanup);
 
+function origin(id: string) {
+  const { x, y } = window.__weaselTest!.getScene().nodes.find((n) => n.id === id)!.pose as { x: number; y: number };
+  return { x, y };
+}
+
 describe('MultiSelectDemo', () => {
-  // The demo has no readout of its selection, so this only proves the preset
-  // mounts and takes a click, a shift-click, and a drag.
-  it('mounts and takes a click, a shift-click, and a drag without throwing', () => {
+  it('adds to the selection on a shift-click and drags the selection as one', () => {
     const { container } = render(<MultiSelectDemo />);
     const canvas = container.querySelector('canvas')!;
     canvas.getBoundingClientRect = () => ({
@@ -28,7 +32,11 @@ describe('MultiSelectDemo', () => {
     });
     fire('pointerdown', 75, 65); fire('pointerup', 75, 65);
     fire('pointerdown', 180, 100, { shiftKey: true }); fire('pointerup', 180, 100, { shiftKey: true });
+    expect(window.__weaselTest!.getSelection()).toEqual(['a', 'b']);
+
     fire('pointerdown', 75, 65); fire('pointermove', 95, 65); fire('pointermove', 120, 90); fire('pointerup', 120, 90);
-    expect(container.querySelector('canvas')).not.toBeNull();
+    expect(origin('a')).toEqual({ x: 85, y: 65 });
+    expect(origin('b')).toEqual({ x: 195, y: 95 });
+    expect(origin('c')).toEqual({ x: 250, y: 50 });
   });
 });

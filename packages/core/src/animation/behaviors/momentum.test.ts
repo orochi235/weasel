@@ -54,7 +54,8 @@ describe('momentum', () => {
     beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     ctx.pointer = { worldX: 20, worldY: 0, clientX: 20, clientY: 0 };
     beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
-    expect(ctx.scratch['momentum.samples']).toBeDefined();
+    const samples = ctx.scratch['momentum.samples'] as { x: number; y: number }[];
+    expect(samples.map((s) => s.x)).toEqual([0, 10, 20]);
   });
 
   it('suppresses default commit and fires decay when release velocity exceeds threshold', () => {

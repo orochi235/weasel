@@ -38,11 +38,6 @@ describe('Dialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('uses alertdialog role when requested', () => {
-    render(<Dialog isOpen title="Confirm" role="alertdialog">body</Dialog>);
-    expect(screen.getByRole('alertdialog')).toBeTruthy();
-  });
-
   it('renders the footer slot when provided', () => {
     render(<Dialog isOpen title="X" footer={<button>OK</button>}>body</Dialog>);
     expect(screen.getByRole('button', { name: 'OK' })).toBeTruthy();

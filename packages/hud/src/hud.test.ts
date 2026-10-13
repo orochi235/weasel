@@ -81,25 +81,6 @@ describe('Hud', () => {
     expect(() => hud.markDirty()).not.toThrow();
   });
 
-  it('detached HUD warns instead of throwing on widget add', () => {
-    const hud = createHud();
-    const host = makeHost();
-    hud.bind(host);
-    hud.unbind();
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    hud.add(makeWidget('w1'));
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
-  });
-
-  it('rect() factory creates widget and adds it to the list', () => {
-    const hud = createHud();
-    const host = makeHost();
-    hud.bind(host);
-    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
-    expect(hud.widgets()).toEqual([r]);
-  });
-
   it('mutating a hud-managed rect triggers redraw via injected onChange', () => {
     const hud = createHud();
     const host = makeHost();

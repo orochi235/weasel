@@ -131,9 +131,8 @@ describe('reorderForwardAction (descriptor)', () => {
   });
 
   it('invoker.run with distance "extreme" moves selection to front', () => {
-    // roots: ['a', 'b', 'c'] — b selected — result after bringToFront: ['a', 'c', 'b']
     const scene = makeScene(['a', 'b', 'c']);
-    const selection = makeSelection(['b']);
+    const selection = makeSelection(['a']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
       stubDeps({ selection, scene }),
@@ -141,15 +140,12 @@ describe('reorderForwardAction (descriptor)', () => {
     );
 
     expect(scene.applyBatch).toHaveBeenCalledOnce();
-    // bringToFront(['a','b','c'], ['b']) → ['a','c','b'] — same result for a
-    // single item; only the one changed slot re-stamps under live order.
-    expect(scene.reorder).toHaveBeenCalledWith(asNodeId('c'), 1);
-    expect(scene.reorder).toHaveBeenCalledTimes(1);
+    expect(scene.roots).toEqual(['b', 'c', 'a']);
   });
 
   it('invoker.run defaults to "adjacent" when params is undefined', () => {
     const scene = makeScene(['a', 'b', 'c']);
-    const selection = makeSelection(['b']);
+    const selection = makeSelection(['a']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
       stubDeps({ selection, scene }),
@@ -157,6 +153,7 @@ describe('reorderForwardAction (descriptor)', () => {
     );
 
     expect(scene.applyBatch).toHaveBeenCalledOnce();
+    expect(scene.roots).toEqual(['b', 'a', 'c']);
   });
 
   it('invoker.run is a no-op on empty selection', () => {
@@ -249,9 +246,8 @@ describe('reorderBackwardAction (descriptor)', () => {
   });
 
   it('invoker.run with distance "extreme" moves selection to back', () => {
-    // roots: ['a', 'b', 'c'] — b selected — sendToBack → ['b', 'a', 'c']
     const scene = makeScene(['a', 'b', 'c']);
-    const selection = makeSelection(['b']);
+    const selection = makeSelection(['c']);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
       stubDeps({ selection, scene }),
@@ -259,12 +255,12 @@ describe('reorderBackwardAction (descriptor)', () => {
     );
 
     expect(scene.applyBatch).toHaveBeenCalledOnce();
-    expect(scene.reorder).toHaveBeenCalledWith(asNodeId('b'), 0);
+    expect(scene.roots).toEqual(['c', 'a', 'b']);
   });
 
   it('invoker.run defaults to "adjacent" when params is undefined', () => {
     const scene = makeScene(['a', 'b', 'c']);
-    const selection = makeSelection(['b']);
+    const selection = makeSelection(['c']);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
       stubDeps({ selection, scene }),
@@ -272,6 +268,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     );
 
     expect(scene.applyBatch).toHaveBeenCalledOnce();
+    expect(scene.roots).toEqual(['a', 'c', 'b']);
   });
 
   it('invoker.run is a no-op on empty selection', () => {

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -7,11 +7,15 @@ import { generateTokens } from './tokens';
 
 const pkg = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const weasel = JSON.parse(readFileSync(resolve(pkg, 'themes/weasel.json'), 'utf8')) as ThemeDefinition;
+const definitions = readdirSync(resolve(pkg, 'themes'))
+  .filter((f) => f.endsWith('.json'))
+  .sort()
+  .map((f) => JSON.parse(readFileSync(resolve(pkg, 'themes', f), 'utf8')) as ThemeDefinition);
 const committed = (file: string) => readFileSync(resolve(pkg, 'src/generated', file), 'utf8');
 
 describe('generateTokens', () => {
   it('produces the committed files from themes/', () => {
-    const result = generateTokens([weasel]);
+    const result = generateTokens(definitions);
     if (!result.ok) throw new Error(result.problems.join('\n'));
     for (const file of ['tokens.css', 'themes.ts', 'manifest.ts'] as const) expect(result.files[file]).toBe(committed(file));
   });

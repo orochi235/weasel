@@ -43,7 +43,7 @@ describe('useDropZone', () => {
     expect(result.current).toBe(first);
   });
 
-  it('attaches and detaches from element via ref callback', () => {
+  it('stops taking drops once the ref callback is called with null', () => {
     const onOver = vi.fn();
     const onDrop = vi.fn();
     const { result } = renderHook(() =>
@@ -56,10 +56,25 @@ describe('useDropZone', () => {
     const el = document.createElement('div');
     document.body.appendChild(el);
     result.current(el);
-    // Attaching alone shouldn't fire callbacks.
-    expect(onOver).not.toHaveBeenCalled();
-    // Detach
     result.current(null);
+
+    const fromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(el);
+    const { result: handle } = renderHook(() =>
+      useDragHandle(() => ({ kind: 'item', ids: ['x'] })),
+    );
+    const source = document.createElement('div');
+    document.body.appendChild(source);
+    handle.current.onPointerDown({
+      pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0,
+      currentTarget: source, target: source,
+    } as unknown as React.PointerEvent<HTMLElement>);
+    firePointer('pointermove', { clientX: 30, clientY: 0 });
+    firePointer('pointerup', { clientX: 30, clientY: 0 });
+    expect(onOver).not.toHaveBeenCalled();
+    expect(onDrop).not.toHaveBeenCalled();
+
+    fromPoint.mockRestore();
+    document.body.removeChild(source);
     document.body.removeChild(el);
   });
 });
@@ -72,22 +87,23 @@ describe('useDragHandle', () => {
   });
 
   it('ignores non-primary mouse buttons', () => {
-    const { result } = renderHook(() =>
-      useDragHandle(() => ({ kind: 'item', ids: ['a'] })),
-    );
+    const getPayload = vi.fn(() => ({ kind: 'item', ids: ['a'] }));
+    const { result } = renderHook(() => useDragHandle(getPayload));
     const target = document.createElement('div');
     document.body.appendChild(target);
     const fakeReact = {
       pointerType: 'mouse',
       button: 2,
+      pointerId: 1,
       clientX: 0,
       clientY: 0,
       currentTarget: target,
       target,
     } as unknown as React.PointerEvent<HTMLElement>;
     result.current.onPointerDown(fakeReact);
-    // No pointermove listener installed -> firing the event is a no-op.
     firePointer('pointermove', { clientX: 100, clientY: 100 });
+    expect(getPayload).not.toHaveBeenCalled();
+    firePointer('pointercancel', {});
     document.body.removeChild(target);
   });
 

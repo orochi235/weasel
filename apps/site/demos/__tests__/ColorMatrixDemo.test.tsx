@@ -7,10 +7,14 @@ describe('ColorMatrixDemo', () => {
     const { container } = render(<ColorMatrixDemo />);
     expect(container.querySelector('canvas')).toBeTruthy();
   });
-  it('preset clicks do not throw', () => {
+  it('presses the preset that was clicked and releases the one before it', () => {
     const { getAllByText } = render(<ColorMatrixDemo />);
-    const sepias = getAllByText('Sepia');
-    fireEvent.click(sepias[0]);
-    fireEvent.click(getAllByText('Identity')[0]);
+    const sepia = getAllByText('Sepia')[0];
+    const identity = getAllByText('Identity')[0];
+    fireEvent.click(sepia);
+    expect(sepia.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(identity);
+    expect(identity.getAttribute('aria-pressed')).toBe('true');
+    expect(sepia.getAttribute('aria-pressed')).toBe('false');
   });
 });

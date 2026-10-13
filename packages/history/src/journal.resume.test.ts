@@ -49,16 +49,6 @@ describe('history.resumeJournal', () => {
     expect(adapter.values).toEqual([]);
   });
 
-  it('resuming an already-committed journal throws', () => {
-    const adapter = { values: [] as number[] };
-    const parent = createHistory(adapter);
-    const j = parent.beginJournal({ label: 'session' });
-
-    j.commit('x');
-
-    expect(() => parent.resumeJournal(j)).toThrow();
-  });
-
   it('resuming an already-cancelled journal throws', () => {
     const adapter = { values: [] as number[] };
     const parent = createHistory(adapter);

@@ -86,11 +86,6 @@ describe('SceneScrollerDemo', () => {
     }
   });
 
-  it('builds the level out of scene nodes rather than draw commands', () => {
-    // The point of the demo: the world is in the tree, not in a layer closure.
-    expect(tileNodes(WORLD).length).toBeGreaterThan(100);
-  });
-
   it('runs frames without throwing', async () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     render(<SceneScrollerDemo />);

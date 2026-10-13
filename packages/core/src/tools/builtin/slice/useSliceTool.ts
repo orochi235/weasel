@@ -41,7 +41,7 @@ const VERTEX_RADIUS_PX = 3;
  * Every cut goes to the `slice` dep, which decides what it does to the scene.
  * `<SceneCanvas>` publishes one that cuts every path the cut crosses.
  */
-export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
+export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
   const scratchRef = useRef<SliceScratch>({ points: [] });
   const optsRef = useLatest({ closeHitRadius: options.closeHitRadius ?? 8 });
 
@@ -202,7 +202,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
   }), [live]);
 
   const { keybinding } = options;
-  return useMemo(() => defineTool<null>({
+  return useMemo(() => defineTool({
     id: 'slice',
     capabilities: ['edits-page'],
     hookName: 'useSliceTool',

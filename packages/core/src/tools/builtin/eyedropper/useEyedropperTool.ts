@@ -37,7 +37,7 @@ export interface UseEyedropperToolOptions {
  * The node under the click comes from the `nodeAtPoint` dep, so an
  * eyedropper in a consumer that never registered that dep samples nothing.
  */
-export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
+export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
   const onPickRef = useLatest(opts.onPick);
   const colorOfRef = useLatest(opts.colorOf);
 
@@ -73,7 +73,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
     const hotkey =
       opts.hotkey === null ? undefined : (opts.hotkey ?? 'alt');
 
-    return defineTool<null>({
+    return defineTool({
       id: 'eyedropper',
       capabilities: ['samples-color'],
       hookName: 'useEyedropperTool',

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createDeleteOp } from './delete';
 import { rebuildOp } from './registry';
 
@@ -137,13 +137,13 @@ describe('createDeleteOp', () => {
   });
 
   it('leaves the subtree empty when the adapter cannot enumerate children', () => {
-    const flat = {
-      removeNode: () => {},
-      insertNode: () => {},
-    };
-    const op = createDeleteOp<Obj>({ node: leaf('a', 1), index: 0 });
+    const flat = { removeNode: () => {}, insertNode: vi.fn() };
+    const node = leaf('a', 1);
+    const op = createDeleteOp<Obj>({ node, index: 0 });
     op.apply(flat as never);
-    expect(() => op.invert().apply(flat as never)).not.toThrow();
+    expect((op.args as { cascaded?: unknown }).cascaded).toBeUndefined();
+    op.invert().apply(flat as never);
+    expect(flat.insertNode.mock.calls).toEqual([[node, 0]]);
   });
 });
 

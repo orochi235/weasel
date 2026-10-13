@@ -6,7 +6,7 @@ import {
   usePublishSelection,
 } from './SelectionContext';
 import type { NodeId } from '../vocabulary';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 const asNodeId = (id: string): NodeId => id as NodeId;
 
@@ -63,27 +63,11 @@ describe('SelectionContextProvider re-render gating', () => {
     expect(result.current!.selection).toBe(selectionRef);
   });
 
-  it('does re-render consumers when kinds change while ids stay equal', () => {
-    let renders = 0;
-    function Probe() {
-      renders++;
-      const ctx = useSelectionContext();
-      return <span data-kinds={ctx?.kinds?.join(',') ?? ''} />;
-    }
+  it('publishes a kind change while the ids stay equal', () => {
     const { result } = renderHook(() => useSelectionContext(), { wrapper: wrap });
-    render(
-      <SelectionContextProvider>
-        <Probe />
-      </SelectionContextProvider>,
-    );
-    const baseline = renders;
     act(() => result.current!.publishSelection([asNodeId('a')], ['rect']));
     act(() => result.current!.publishSelection([asNodeId('a')], ['path']));
-    // A kind change with a stable id list should still propagate. We can't
-    // count exact renders across separate trees, but the publishing tree's
-    // own consumer should now see the latest kinds.
     expect(result.current!.kinds).toEqual(['path']);
-    expect(renders).toBeGreaterThanOrEqual(baseline);
   });
 });
 
@@ -142,55 +126,6 @@ describe('usePublishSelection', () => {
     }
     // Must not throw.
     expect(() => render(<Publisher />)).not.toThrow();
-  });
-
-  it('does not refire the publish effect when the ids array changes identity but not content', () => {
-    const publishCalls = 0;
-    function CountingProvider({ children }: { children: ReactNode }) {
-      const [state, setState] = useState<{
-        selection: readonly NodeId[];
-        kinds: readonly (string | undefined)[] | undefined;
-      }>({ selection: [], kinds: undefined });
-      // Wrap the real provider but instrument by counting publishSelection calls.
-      // We can't intercept the real one cleanly, so this test instead checks
-      // the parent re-render path: usePublishSelection serializes ids+kinds
-      // and uses that as the effect dep, so identity-only changes should not
-      // refire the effect.
-      void state; void setState; void publishCalls;
-      return <SelectionContextProvider>{children}</SelectionContextProvider>;
-    }
-    function Publisher({ ids }: { ids: NodeId[] }) {
-      // Always pass a fresh array reference with the same contents.
-      usePublishSelection([...ids]);
-      return null;
-    }
-    function Reader({ onChange }: { onChange: (sel: readonly NodeId[]) => void }) {
-      const ctx = useSelectionContext();
-      onChange(ctx?.selection ?? []);
-      return null;
-    }
-    let observedSelections = 0;
-    let lastSel: readonly NodeId[] = [];
-    const onChange = (sel: readonly NodeId[]) => {
-      if (sel !== lastSel) { observedSelections++; lastSel = sel; }
-    };
-    const { rerender } = render(
-      <CountingProvider>
-        <Publisher ids={[asNodeId('a')]} />
-        <Reader onChange={onChange} />
-      </CountingProvider>,
-    );
-    const after1 = observedSelections;
-    rerender(
-      <CountingProvider>
-        <Publisher ids={[asNodeId('a')]} />
-        <Reader onChange={onChange} />
-      </CountingProvider>,
-    );
-    // Identity-different but content-equal array: the provider's
-    // last-serialized guard should suppress the state update, so the Reader's
-    // observed selection reference should not change.
-    expect(observedSelections).toBe(after1);
   });
 });
 

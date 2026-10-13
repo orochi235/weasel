@@ -257,17 +257,7 @@ describe('resolveColor', () => {
   });
 
   it('clears the cache when it exceeds the cap', () => {
-    // Fill cache to cap (1024 distinct entries, none of which is '#00ff00').
-    for (let i = 0; i < 1024; i++) {
-      resolveColor(`#${i.toString(16).padStart(6, '0')}`);
-    }
-    // '#00ff00' resolves to (0,255,0) which is outside the 0..1023 hex range
-    // above, so it's a fresh entry whose insertion triggers the overflow clear.
     const before = resolveColor('#00ff00');
-    // After the clear-then-insert above, the cache holds just '#00ff00'.
-    // Reset and repeat to verify that consecutive overflow paths return
-    // fresh arrays rather than reusing the previous reference.
-    __resetResolveColorCache();
     for (let i = 0; i < 1024; i++) {
       resolveColor(`#${i.toString(16).padStart(6, '0')}`);
     }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint } from './mat3';
+import { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox } from './mat3';
 import { approxEq } from './scalar';
 
 const closePt = (got: [number, number], ex: [number, number]) => {
@@ -39,9 +39,6 @@ describe('mat3', () => {
     closePt(applyToPoint(m, 0, 0), [100, 200]);
     closePt(applyToPoint(m, 10, 10), [130, 260]);
     closePt(applyToPoint(m, 5, 5), [115, 230]);
-  });
-  it('rotateAboutPoint leaves the pivot fixed', () => {
-    closePt(applyToPoint(rotateAboutPoint(4, 4, 1.1), 4, 4), [4, 4]);
   });
 });
 

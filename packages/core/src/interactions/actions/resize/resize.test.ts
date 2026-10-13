@@ -290,38 +290,6 @@ describe('resizeAction descriptor', () => {
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
   });
 
-  it('onEnd commit writes final preview pose to scene and clears previews', () => {
-    const invoker = getOngoingInvoker(resizeAction);
-    const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });
-    const ctx: InvocationCtx = {
-      world: { x: 100, y: 100 },
-      screen: { x: 100, y: 100 },
-      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({
-        selection: { get: () => ['a' as NodeId] },
-        scene,
-      }),
-      drag: {
-        start: { x: 100, y: 100 },
-        current: { x: 100, y: 100 },
-        delta: { x: 0, y: 0 },
-        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'], anchor: { x: 'min', y: 'min' } },
-      },
-    };
-
-    const handle = invoker.start(ctx, undefined);
-    handle.onMove!({
-      ...ctx,
-      drag: { start: { x: 100, y: 100 }, current: { x: 130, y: 120 }, delta: { x: 30, y: 20 } },
-    });
-    handle.onEnd!({ ...ctx }, 'commit');
-
-    const pose = scene.poses.get('a') as RectPose;
-    expect(pose.width).toBeCloseTo(130);
-    expect(pose.height).toBeCloseTo(120);
-    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
-  });
-
   it('onEnd commit with no applyOps routes through scene.applyBatch (one undo entry)', () => {
     const invoker = getOngoingInvoker(resizeAction);
     const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });

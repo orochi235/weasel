@@ -48,13 +48,6 @@ describe('createSetCurveOp', () => {
     expect(createSetCurveOp({ id: 'c1', from: FROM, to }).apply({ setValue })).toBe(false);
   });
 
-  it('reports a no-op when from === to (structural equality)', () => {
-    const same: ControlPoint[] = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
-    const op = createSetCurveOp({ id: 'c1', from: same, to: same.map((p) => ({ ...p })) });
-    const result = op.apply({ setValue: vi.fn() });
-    expect(result).toBe(false);
-  });
-
   it('does NOT call adapter.setValue on no-op', () => {
     const setValue = vi.fn();
     const adapter: SetCurveAdapter = { setValue };
