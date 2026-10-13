@@ -1,18 +1,17 @@
 /**
- * The scene every consumer migrated to world poses is checked against.
+ * A test scene where local and world poses differ.
  *
- * It exists because **under `IDENTITY_POSE_COMPOSITION` a local pose and a
- * world pose are the same value**, so a test written against a default scene
- * passes whether or not the consumer composes. Anything asserting that a
- * consumer reads world coordinates has to run against a scene where the two
- * differ, and this is that scene.
+ * **Under `IDENTITY_POSE_COMPOSITION` a local pose and a world pose are the
+ * same value**, so a test written against a default scene passes whether or
+ * not the consumer composes. Anything asserting that a consumer reads world
+ * coordinates has to run against this one.
  *
  * Shape: a container turned 90° holding two children at non-zero local
- * offsets, one of them turned again. The right angle is deliberate — it makes
- * every expected coordinate an integer, so a wrong answer is obvious rather
- * than nearly right.
+ * offsets, one of them turned again. The right angle makes every expected
+ * coordinate an integer.
  */
 import { createScene } from 'core/scene/scene';
+import { RIGID_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 
 export interface FrameFixtureData {
@@ -50,9 +49,12 @@ export const FRAME_FIXTURE_LOCAL: Record<string, RectPose> = {
   b: { x: 40, y: 60, width: 40, height: 20, rotation: Math.PI / 2 },
 };
 
-export function makeFrameFixture(): Scene<FrameFixtureData, FrameFixtureLayer, RectPose> {
+export function makeFrameFixture(
+  composition: PoseComposition<RectPose> = RIGID_POSE_COMPOSITION,
+): Scene<FrameFixtureData, FrameFixtureLayer, RectPose> {
   const scene = createScene<FrameFixtureData, FrameFixtureLayer, RectPose>({
     systemLayers: [{ id: 'main' }],
+    composition,
   });
   scene.add({
     id: FRAME_FIXTURE_IDS.group,

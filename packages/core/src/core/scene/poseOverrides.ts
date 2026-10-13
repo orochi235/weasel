@@ -1,6 +1,8 @@
+import type { Path } from '@weasel-js/geom';
 import { createEmitter } from '@weasel-js/registry';
 import { kit, last, mix, mul, patch } from '@msb235/blits';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
+import { createPoseHold } from './poseHold';
 import type { NodeId, PoseOverride, PoseOverrides } from './types';
 
 /** What the table's voice says about a node it holds no entry for. */
@@ -9,14 +11,12 @@ const NOTHING: PoseOverride<never> = Object.freeze({});
 /**
  * Build a {@link PoseOverrides} map.
  *
- * `getNode` resolves an id to the node object the painter memo is keyed on —
- * the only thing this module needs from the scene, and the reason it doesn't
- * import one. `onInvalidate` lets the scene invalidate derived nodes from the
- * same chokepoint.
+ * `getNode` resolves an id to the node object the painter memo is keyed on.
+ * `onInvalidate` lets the scene invalidate derived nodes from the same
+ * chokepoint.
  *
  * What `read` answers is a blits mix folded per node. The entries a writer
- * `set`s are one voice on it, and the nodes holding an entry are the mix's
- * reach: a node outside it is never probed.
+ * `set`s are one voice on it, and a node holding no entry is never probed.
  */
 export function createPoseOverrides<TPose>(
   getNode: (id: NodeId) => { data?: unknown } | undefined,
@@ -27,13 +27,13 @@ export function createPoseOverrides<TPose>(
   let generation = 0;
 
   const folded = mix<NodeId, PoseOverride<TPose>>(
-    kit<PoseOverride<TPose>>({ pose: last<NonNullable<TPose>>(), alpha: mul() }),
+    kit<PoseOverride<TPose>>({ pose: last<NonNullable<TPose>>(), alpha: mul(), path: last<Path>() }),
   );
   folded.cue({
     patch: patch<NodeId, PoseOverride<TPose>>(
       0,
       (_phase, id) => entries.get(id) ?? (NOTHING as PoseOverride<TPose>),
-      { writes: ['pose', 'alpha'] },
+      { writes: ['pose', 'alpha', 'path'] },
     ),
   });
   // Mix time only has to move between publishes, so a probe after one never
@@ -62,7 +62,7 @@ export function createPoseOverrides<TPose>(
     folded.drop(id);
   }
 
-  return {
+  const table: PoseOverrides<TPose> = {
     set(id, entry) {
       entries.set(id, entry);
       invalidate(id);
@@ -113,5 +113,7 @@ export function createPoseOverrides<TPose>(
     getGeneration() {
       return generation;
     },
+    hold: () => createPoseHold(table),
   };
+  return table;
 }

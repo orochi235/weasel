@@ -382,7 +382,7 @@ describe('SelectionPanel', () => {
 });
 
 /**
- * The `paint` leaf addresses a whole `FillStyle`. The `color` leaf can't:
+ * The `paint` leaf addresses a whole `Paint`. The `color` leaf can't:
  * pointed at `…fill.color` it reads `undefined` off a gradient, shows its
  * own default, and writes a hybrid `{ fill: 'gradient', stops, color }` that
  * the renderer's structural `'color' in paint` checks paint flat solid.
@@ -406,7 +406,7 @@ describe('SelectionPanel — paint leaf', () => {
                 kind: 'paint',
                 name: 'Color',
                 description: 'Text color.',
-                default: { fill: 'solid', color: '#000000ff' },
+                default: { kind: 'solid', color: '#000000ff' },
                 alpha: true,
               },
             },
@@ -440,7 +440,7 @@ describe('SelectionPanel — paint leaf', () => {
   }
 
   it('shows a solid fill as its color', () => {
-    renderPaint({ fill: 'solid', color: '#ff0000ff' });
+    renderPaint({ kind: 'solid', color: '#ff0000ff' });
     expect(screen.getByLabelText('Color')).toHaveValue('#ff0000');
   });
 
@@ -477,7 +477,7 @@ describe('SelectionPanel — paint leaf', () => {
     // not a solid". Now that the leaf previews a gradient as a gradient it
     // means mixed and nothing else.
     const { container } = renderPaint({
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }],
@@ -495,7 +495,7 @@ describe('SelectionPanel — paint leaf', () => {
         kind: 'leaf',
         layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
-        data: { kind: 'text', style: { fill: { fill: 'solid', color } } },
+        data: { kind: 'text', style: { fill: { kind: 'solid', color } } },
       });
     }
     const { container } = render(
@@ -511,7 +511,7 @@ describe('SelectionPanel — paint leaf', () => {
 
   it('writes a whole solid fill, never a color grafted onto a gradient', () => {
     const scene = sceneWithFill({
-      fill: 'radial-gradient',
+      kind: 'radial-gradient',
       center: { x: 0, y: 0 },
       radius: 1,
       stops: [{ offset: 0, color: '#000000ff' }],
@@ -566,10 +566,10 @@ describe('SelectionPanel — object leaf', () => {
                 default: '#000000ff',
                 block: true,
                 fromScalar: (v: unknown) => ({
-                  paint: { fill: 'solid', color: typeof v === 'string' ? v : '#000000ff' },
+                  paint: { kind: 'solid', color: typeof v === 'string' ? v : '#000000ff' },
                 }),
                 children: {
-                  paint: { kind: 'paint', name: 'Color', description: '', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
+                  paint: { kind: 'paint', name: 'Color', description: '', default: { kind: 'solid', color: '#000000ff' }, alpha: true },
                   width: { kind: 'number', name: 'Width', description: '', default: 1, min: 0, step: 0.5 },
                   cap: { kind: 'enum', name: 'Cap', description: '', default: 'butt', options: [{ value: 'butt', label: 'Butt' }, { value: 'round', label: 'Round' }] },
                 },
@@ -655,7 +655,7 @@ describe('SelectionPanel — object leaf', () => {
                   kind: 'object',
                   name: 'Stroke',
                   description: '',
-                  default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
+                  default: { paint: { kind: 'solid', color: '#000000ff' }, width: 1 },
                   children: {
                     cap: {
                       kind: 'enum', name: 'Cap', description: '', default: 'butt', control: 'toggle',
@@ -693,12 +693,12 @@ describe('SelectionPanel — object leaf', () => {
 
     it('lights no segment when the object omits that field', () => {
       // The stroke exists, so the leaf is not absent — but `cap` within it is.
-      renderToggle({ paint: { fill: 'solid', color: '#000000ff' }, width: 3 });
+      renderToggle({ paint: { kind: 'solid', color: '#000000ff' }, width: 3 });
       expect(checkedLabels()).toEqual([]);
     });
 
     it('still lights the segment the node does hold', () => {
-      renderToggle({ paint: { fill: 'solid', color: '#000000ff' }, width: 3, cap: 'round' });
+      renderToggle({ paint: { kind: 'solid', color: '#000000ff' }, width: 3, cap: 'round' });
       expect(checkedLabels()).toEqual(['Round']);
     });
 
@@ -747,7 +747,7 @@ describe('SelectionPanel — object leaf', () => {
                   kind: 'object',
                   name: 'Stroke',
                   description: '',
-                  default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
+                  default: { paint: { kind: 'solid', color: '#000000ff' }, width: 1 },
                   children: {
                     dash: {
                       kind: 'enum', name: 'Style', description: '', default: 'solid', control: 'toggle',
@@ -796,7 +796,7 @@ describe('SelectionPanel — object leaf', () => {
         .map((b) => b.getAttribute('aria-label'));
 
     const strokeOfWidth = (width: number, dash?: number[]) => ({
-      paint: { fill: 'solid', color: '#000000ff' }, width, ...(dash ? { dash } : {}),
+      paint: { kind: 'solid', color: '#000000ff' }, width, ...(dash ? { dash } : {}),
     });
 
     it('reads an absent dash as solid', () => {
@@ -818,7 +818,7 @@ describe('SelectionPanel — object leaf', () => {
       const scene = renderDash(strokeOfWidth(4));
       fireEvent.click(screen.getByLabelText('Dashed'));
       expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
-        paint: { fill: 'solid', color: '#000000ff' }, width: 4, dash: [12, 8],
+        paint: { kind: 'solid', color: '#000000ff' }, width: 4, dash: [12, 8],
       });
     });
 
@@ -826,7 +826,7 @@ describe('SelectionPanel — object leaf', () => {
       const scene = renderDash(strokeOfWidth(4, [12, 8]));
       fireEvent.click(screen.getByLabelText('Solid'));
       const stroke = scene.get(asNodeId('p'))?.data.stroke as Record<string, unknown>;
-      expect(stroke).toEqual({ paint: { fill: 'solid', color: '#000000ff' }, width: 4 });
+      expect(stroke).toEqual({ paint: { kind: 'solid', color: '#000000ff' }, width: 4 });
       expect('dash' in stroke).toBe(false);
     });
 
@@ -908,10 +908,10 @@ describe('SelectionPanel — object leaf', () => {
                 kind: 'object',
                 name: 'Stroke',
                 description: '',
-                default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
+                default: { paint: { kind: 'solid', color: '#000000ff' }, width: 1 },
                 block: true,
                 children: {
-                  paint: { kind: 'paint', name: 'Color', description: '', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
+                  paint: { kind: 'paint', name: 'Color', description: '', default: { kind: 'solid', color: '#000000ff' }, alpha: true },
                   width: { kind: 'number', name: 'Width', description: '', default: 1, min: 0, step: 0.5 },
                   cap: { kind: 'enum', name: 'Cap', description: '', default: 'butt', options: [{ value: 'butt', label: 'Butt' }, { value: 'round', label: 'Round' }] },
                 },
@@ -938,7 +938,7 @@ describe('SelectionPanel — object leaf', () => {
       fireEvent.change(width, { target: { value: '3' } });
       fireEvent.blur(width);
       expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
-        paint: { fill: 'solid', color: '#000000ff' },
+        paint: { kind: 'solid', color: '#000000ff' },
         width: 3,
       });
     });
@@ -964,7 +964,7 @@ describe('SelectionPanel — object leaf', () => {
     fireEvent.change(width, { target: { value: '7' } });
     fireEvent.blur(width);
     expect(scene.get(asNodeId('p'))?.data.stroke).toEqual({
-      paint: { fill: 'solid', color: '#ff0000ff' },
+      paint: { kind: 'solid', color: '#ff0000ff' },
       width: 7,
     });
   });
@@ -1025,7 +1025,7 @@ describe('SelectionPanel — object leaf', () => {
     // `Stroke.paint` is required. A nested paint writes one field of its
     // parent, so offering None here would produce `{ ...stroke, paint: null }`
     // — an invalid Stroke. Dropping the stroke is the parent's edit to make.
-    renderStroke(sceneWithStroke({ paint: { fill: 'solid', color: '#00ff00ff' }, width: 4 }));
+    renderStroke(sceneWithStroke({ paint: { kind: 'solid', color: '#00ff00ff' }, width: 4 }));
     expect(screen.queryByRole('radio', { name: 'None' })).toBeNull();
     expect(screen.getByRole('radio', { name: 'Solid' })).toBeInTheDocument();
   });
@@ -1035,7 +1035,7 @@ describe('SelectionPanel — object leaf', () => {
     // gets the whole editor rather than a chip that can only degrade it.
     const { container } = renderStroke(sceneWithStroke({
       paint: {
-        fill: 'linear-gradient',
+        kind: 'linear-gradient',
         from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
         stops: [{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }],
       },

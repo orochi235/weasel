@@ -1,5 +1,5 @@
 import { type ConfigField, withValueAtPath } from '@weasel-js/labkit';
-import { isBuiltinPref, type PrefLeaf, type PrefNumberUnit, type PrefObject, type PrefSection, prefSectionLeaves, resolvePrefUnit } from '@weasel-js/prefs';
+import { isBuiltinPref, prefDisplayBounds, type PrefLeaf, type PrefNumber, type PrefNumberUnit, type PrefObject, type PrefSection, prefSectionLeaves, resolvePrefUnit } from '@weasel-js/prefs';
 
 /** A leaf of a node's property schema, paired with the dotted node path it
  *  edits (`pose.x`, `data.fill`): its own key, whatever sections it sits under. */
@@ -31,36 +31,15 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
   if (!isBuiltinPref(leaf)) return null;
   switch (leaf.kind) {
     case 'number': {
-      const n = leaf as PrefLeaf & {
-        default: number;
-        min?: number;
-        max?: number;
-        step?: number;
-        control?: string;
-        unit?: PrefNumberUnit;
-      };
+      const n = leaf as PrefNumber;
       const toDisplay = n.unit ? resolvePrefUnit(n.unit).toDisplay : (v: number) => v;
-      const bounded = n.min !== undefined && n.max !== undefined;
-      if (bounded && n.control !== 'input') {
-        return {
-          key: path,
-          label,
-          type: 'slider',
-          default: toDisplay(n.default),
-          min: toDisplay(n.min as number),
-          max: toDisplay(n.max as number),
-          step: n.step,
-        };
+      // The bounds in the unit shown: the step as a distance, and the lower end first.
+      const { min, max, step } = prefDisplayBounds(n);
+      const stepped = n.step === undefined ? undefined : step;
+      if (min !== undefined && max !== undefined && n.control !== 'input') {
+        return { key: path, label, type: 'slider', default: toDisplay(n.default), min, max, step: stepped };
       }
-      return {
-        key: path,
-        label,
-        type: 'number',
-        default: toDisplay(n.default),
-        min: n.min === undefined ? undefined : toDisplay(n.min),
-        max: n.max === undefined ? undefined : toDisplay(n.max),
-        step: n.step,
-      };
+      return { key: path, label, type: 'number', default: toDisplay(n.default), min, max, step: stepped };
     }
     case 'boolean':
       return { key: path, label, type: 'checkbox', default: leaf.default as boolean };
@@ -121,12 +100,15 @@ export function prefDefaults(schema: PrefSection): Record<string, unknown> {
 
 /** The stored form of a value the panel holds in display form: a number
  *  leaves its display unit (the panel edits degrees, the node stores radians),
- *  and an enum option goes through the leaf's `encoding` (a dash style is
- *  stored as lengths, no marker as no field). `siblings` is the object the
+ *  and an enum option or a boolean goes through the leaf's `encoding` (a dash
+ *  style is stored as lengths, no marker as no field). `siblings` is the object the
  *  leaf is a field of — a dash preset is a multiple of the sibling `width`.
  *  `undefined` means the field is removed. */
 export function decodePrefValue(leaf: PrefLeaf, value: unknown, siblings?: Record<string, unknown>): unknown {
   if (isBuiltinPref(leaf) && leaf.kind === 'enum' && leaf.encoding && typeof value === 'string') {
+    return leaf.encoding.write(value, siblings);
+  }
+  if (isBuiltinPref(leaf) && leaf.kind === 'boolean' && leaf.encoding && typeof value === 'boolean') {
     return leaf.encoding.write(value, siblings);
   }
   const unit = (leaf as { unit?: PrefNumberUnit }).unit;

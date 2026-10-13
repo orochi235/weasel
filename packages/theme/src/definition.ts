@@ -68,7 +68,8 @@ export interface ScaleDef {
   readonly describe?: Readonly<Record<string, string>>;
 }
 
-interface SemanticCommon {
+/** What every semantic rule may carry beside the way it derives its value. */
+export interface SemanticCommon {
   readonly type?: string;
   readonly description?: string;
   /** Audited, never applied. */

@@ -1,4 +1,4 @@
-import { prefUnit, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
+import { prefUnit, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefLeaf, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';
@@ -104,6 +104,22 @@ function markerLeaf(leaf: Omit<PrefEnum, 'kind' | 'options' | 'default' | 'contr
   };
 }
 
+/** `data.fill` is a whole `Fill`, so it is an object leaf, as the stroke is.
+ *  Its field is a `paint` leaf, not a `color` one, because a color control
+ *  would read `undefined` off a gradient and write a bare string over it.
+ *  `block` for the same reason every stroke field is: the kind bar and the
+ *  per-kind editor want the width a 64px label column takes. */
+const FILL_LEAF: PrefLeaf = {
+  kind: 'object',
+  name: 'Fill',
+  description: 'Fill paint.',
+  default: { paint: { kind: 'solid', color: '#000000ff' } },
+  block: true,
+  children: {
+    paint: { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
+  },
+};
+
 /** Build the standard shape schema — Layout (pose box + rotation) +
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
  *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
@@ -143,12 +159,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
         // reader is looking at.
         name: '',
         members: {
-          // A `paint` leaf, not a `color` one: `data.fill` is the tagged
-          // `FillStyle` union, so a color control pointed at it would read
-          // `undefined` off a gradient and write a bare string over it.
-          // `block` for the same reason every stroke field is: the kind bar
-          // and the per-kind editor want the width a 64px label column takes.
-          'data.fill': { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true, block: true },
+          'data.fill': FILL_LEAF,
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.
@@ -156,7 +167,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
             kind: 'object',
             name: 'Stroke',
             description: 'Stroke paint and line geometry.',
-            default: { paint: { fill: 'solid', color: '#000000ff' }, width: 1 },
+            default: { paint: { kind: 'solid', color: '#000000ff' }, width: 1 },
             block: true,
             children: {
               // Every row is `block`: under a heading already reading STROKE,
@@ -166,7 +177,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
               // Unpaired: the paint field is a whole paint editor — a kind bar
               // over a per-kind body — and cannot share a row with a slider.
               width: { kind: 'number', name: 'Width', description: 'Stroke width, world units.', absentIsDefault: true, default: 1, min: 0, max: 20, step: 0.5, control: 'slider', icon: 'strokeWidth', block: true },
-              paint: { kind: 'paint', name: 'Paint', description: 'Stroke paint.', default: { fill: 'solid', color: '#000000ff' }, alpha: true, block: true },
+              paint: { kind: 'paint', name: 'Paint', description: 'Stroke paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
               // Three options each: a segmented control shows every one at
               // once where a select shows the current one and hides the rest
               // behind a click.

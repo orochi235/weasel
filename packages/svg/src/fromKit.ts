@@ -9,7 +9,10 @@ import {
   DEFAULT_SHAPE_FILL,
   fillInPoseFrame,
   pathInPoseFrame,
-  type FillStyle,
+  pathThroughPoseFrame,
+  poseFrameOf,
+  poseLinearOf,
+  type Paint,
   type ImageNodeData,
   type Path,
   type PoseLinear,
@@ -17,10 +20,13 @@ import {
   type StyledRun,
   type TextStyle,
   type TextVerticalAlign,
+  type Fill,
 } from '@weasel-js/core';
+import { mapFillPaint } from './fillPaint';
 import type {
   SvgGroupNode, SvgImageNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
+import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 
 /** A leaf's box: where it is drawn, and the frame its box-relative paints
  *  resolve against. */
@@ -30,7 +36,8 @@ export interface SvgKitPose {
   width: number;
   height: number;
   rotation?: number;
-  /** Read for text and image leaves only; a path leaf's is not written. */
+  /** Carried onto a text or image node. A path node has nowhere to hold it,
+   *  so a path leaf's is baked into its geometry with its rotation. */
   transform?: PoseLinear;
 }
 
@@ -38,7 +45,7 @@ export interface SvgKitPose {
  *  `svgNodesToKitDrafts` writes. */
 export interface SvgKitLeafData {
   path?: Path;
-  fill?: FillStyle | null;
+  fill?: Fill | null;
   stroke?: Stroke | null;
   text?: string;
   style?: TextStyle;
@@ -50,9 +57,9 @@ export interface SvgKitLeafData {
 /** A kit paint as an `SvgPaint`. `null` is `fill="none"`; a box-relative
  *  gradient or pattern is resolved into `box`, since the geometry it paints
  *  is written already placed there. */
-export function svgPaintFromKit(fill: FillStyle | null, box: SvgKitPose): SvgPaint {
+export function svgPaintFromKit(fill: Paint | null, box: SvgKitPose): SvgPaint {
   if (fill === null) return { kind: 'none' };
-  if (fill.fill === undefined || fill.fill === 'solid') {
+  if (fill.kind === undefined || fill.kind === 'solid') {
     return { kind: 'solid', color: fill.color, ...(fill.opacity != null ? { opacity: fill.opacity } : {}) };
   }
   return { kind: 'gradient', paint: fillInPoseFrame(fill, box) };
@@ -106,7 +113,7 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
   if (!run.fill && !run.stroke) return run;
   return {
     ...run,
-    ...(run.fill ? { fill: fillInPoseFrame(run.fill, box) } : {}),
+    ...(run.fill ? { fill: mapFillPaint(run.fill, (p) => fillInPoseFrame(p, box)) } : {}),
     ...(run.stroke ? { stroke: strokeInPoseFrame(run.stroke, box) } : {}),
   };
 }
@@ -117,7 +124,9 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
  * draws.
  *
  * A path with no `fill` takes `kit:path`'s fallback: the default shape fill
- * when it has no stroke, and no fill when it has one.
+ * when it has no stroke, and no fill when it has one. Under a pose `transform`
+ * its stroke width takes the uniform part of the stretch, as `parseSvg` reads
+ * a stroke under a skewed element.
  */
 export function svgLeafFromKit(
   data: SvgKitLeafData,
@@ -131,7 +140,7 @@ export function svgLeafFromKit(
     if (data.style) node.style = data.style;
     if (data.runs) node.runs = data.runs.map((r) => runInPoseFrame(r, pose));
     if (data.verticalAlign) node.verticalAlign = data.verticalAlign;
-    if (data.fill !== undefined) node.fill = data.fill && fillInPoseFrame(data.fill, pose);
+    if (data.fill !== undefined) node.fill = data.fill && mapFillPaint(data.fill, (p) => fillInPoseFrame(p, pose));
     if (data.stroke) node.stroke = strokeInPoseFrame(data.stroke, pose);
     if (pose.rotation) node.rotation = pose.rotation;
     if (pose.transform) node.transform = pose.transform;
@@ -143,10 +152,15 @@ export function svgLeafFromKit(
   const node: SvgPathNode = {
     kind: 'path',
     path: pathInPoseFrame(data.path, pose),
-    fill: svgPaintFromKit(fill, pose),
+    fill: svgPaintFromKit(fill?.paint ?? null, pose),
   };
   if (stroke) node.stroke = stroke;
-  if (pose.rotation) node.rotation = pose.rotation;
+  const frame = poseLinearOf(pose) && poseFrameOf(pose);
+  if (frame) {
+    node.path = pathThroughPoseFrame(node.path, pose);
+    node.fill = paintThroughMatrix(node.fill, frame);
+    if (stroke) node.stroke = strokeThroughMatrix(stroke, frame);
+  } else if (pose.rotation) node.rotation = pose.rotation;
   return node;
 }
 
@@ -199,6 +213,9 @@ export function svgNodesFromKit<TId extends string>(
         if (child) children.push(child);
       }
       const g: SvgGroupNode = { kind: 'group', children };
+      // What a container draws is what it clips to; see `SvgSceneDraft`.
+      const clip = (node.data as SvgKitLeafData | null)?.path;
+      if (clip) g.clip = pathThroughPoseFrame(pathInPoseFrame(clip, node.pose), node.pose);
       return group ? group(id, g) : g;
     }
     return leaf ? leaf(id, node) : svgLeafFromKit(node.data as SvgKitLeafData, node.pose);

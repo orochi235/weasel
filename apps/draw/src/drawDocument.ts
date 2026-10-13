@@ -1,12 +1,11 @@
 import type {
-  FillStyle,
   ImageNodeData,
   Path,
-  PoseComposition,
   Stroke,
   StyledRun,
   TextStyle,
-  TextVerticalAlign
+  TextVerticalAlign,
+  Fill,
 } from '@weasel-js/core';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
@@ -18,10 +17,6 @@ import type {
 export interface WeaselDrawPose {
   x: number; y: number; width: number; height: number; rotation?: number;
 }
-
-/** How a container's pose composes into its children's. The canvas and the
- *  SVG export both read it; absent, every stored pose is already world. */
-export const DRAW_POSE_COMPOSITION: PoseComposition<WeaselDrawPose> | undefined = undefined;
 
 /** Data stored on every leaf — kit-native shape consumed by PATH_PAINTER
  *  and the text painter. Tools synthesized by `defaultTools={BUILTIN_TOOL_IDS}`
@@ -42,13 +37,24 @@ export interface WeaselDrawData {
   verticalAlign?: TextVerticalAlign;
   /** The node's paint — solid, gradient or pattern. `null` is an explicit
    *  "no fill"; absent takes the painter's default. */
-  fill?: FillStyle | null;
+  fill?: Fill | null;
   /** The whole stroke — paint, width, dash, cap, join, align. */
   stroke?: Stroke | null;
   /** A dropped bitmap, a dropped SVG kept whole, or an imported `<image>` —
    *  what the `kit:image` painter draws. */
   image?: ImageNodeData['image'];
   label?: string;
+}
+
+const CONTENT_KEYS: ReadonlySet<string> = new Set<keyof WeaselDrawData>([
+  'path', 'text', 'style', 'runs', 'verticalAlign', 'fill', 'stroke', 'image',
+]);
+
+/** What a node made from `data`'s node keeps of it: everything but the content
+ *  and the paint, which the new node has its own of. */
+export function carriedData(data: WeaselDrawData | undefined): WeaselDrawData {
+  if (!data) return {};
+  return Object.fromEntries(Object.entries(data).filter(([key]) => !CONTENT_KEYS.has(key)));
 }
 
 export type WeaselDrawLayer = 'default';

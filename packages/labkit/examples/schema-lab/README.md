@@ -22,10 +22,10 @@ stored in radians and edited in degrees through the leaf's `unit`.
 
 An `object` leaf — `data.stroke`, whose value is a whole `Stroke` — flattens
 into one field per child, addressed under it (`data.stroke.width`). Its
-`paint` child has no labkit control to map onto: `FillStyle` is a tagged
+`paint` child has no labkit control to map onto: `Paint` is a tagged
 union, and a color swatch would write a solid over a gradient, so it is
-dropped rather than approximated. `data.fill` is a `paint` leaf and goes the
-same way.
+dropped rather than approximated. `data.fill` is an `object` leaf too, a
+`Fill` whose one field is its `paint`, and goes the same way.
 
 ## Stroke
 

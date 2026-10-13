@@ -1,22 +1,9 @@
 /**
- * Geometry contract test — apps/draw mirror.
- *
- * Where the kit-level mirror (`src/interactions/actions/__tests__/
- * geometryContract.test.ts`) drives the action descriptors directly, this
- * mirror exercises them THROUGH the public `@weasel-js/core` surface using the
- * EXACT apps/draw conventions:
- *
- *   - `WeaselDrawPose` = a bare AABB `{x,y,width,height,rotation?}` with NO
- *     `kind` field (`App.tsx:110`).
- *   - geometry lives in `WeaselDrawData.path` (`App.tsx:118`).
- *   - the SceneCanvas geometry source is `pathInWorld(data.path, node.pose)`
- *     (`App.tsx:939-940`).
- *   - apps/draw wires NO `poseDescriptor` on `<SceneCanvas>` (`App.tsx:1401`),
- *     so the actions read the kit's `AUTO_POSE_DESCRIPTOR` — which, because the
- *     pose has no `kind`, takes the rect branch and rewrites the pose AABB.
- *
- * Each case asserts the content follows the frame: resize, move and rotate map
- * `pathInWorld(data.path, pose)` the same way they map the pose itself.
+ * Drives the resize, move, and rotate actions through the public `@weasel-js/core`
+ * surface using apps/draw's conventions: a bare AABB pose with no `kind`, geometry
+ * in `data.path`, and no `poseDescriptor`, so the actions take
+ * `AUTO_POSE_DESCRIPTOR`'s rect branch. Each case asserts the content follows the
+ * frame.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -37,14 +24,12 @@ import {
   pathIntersect,
   pathSubtract,
   splitPathBySegment,
+  createPoseOverrides,
+  IDENTITY_POSE_COMPOSITION,
 } from '@weasel-js/core';
 import type {
   Path, ResizeAnchor, InvocationCtx, OngoingInvoker, Action, Op, PoseOverrides,
 } from '@weasel-js/core';
-
-// ---------------------------------------------------------------------------
-// apps/draw node model (verbatim from App.tsx)
-// ---------------------------------------------------------------------------
 
 interface WeaselDrawPose {
   x: number;
@@ -62,7 +47,6 @@ interface DrawNode {
   data: WeaselDrawData;
 }
 
-/** apps/draw's geometry source (App.tsx:939-940). */
 function geometryOf(node: DrawNode): Path {
   return node.data.path;
 }
@@ -74,14 +58,10 @@ function nodeFromPath(id: string, path: Path): DrawNode {
   return { id, pose: { x: b.x, y: b.y, width: b.width, height: b.height, rotation: 0 }, data: { path } };
 }
 
-// ---------------------------------------------------------------------------
-// Stub scene + op commit (apps/draw routes commits through its own history,
-// i.e. the `applyOps` consumer hook — mirror that).
-// ---------------------------------------------------------------------------
-
 interface StubScene {
   poses: Map<string, WeaselDrawPose>;
   overrides: PoseOverrides<unknown>;
+  composition: typeof IDENTITY_POSE_COMPOSITION;
   datas: Map<string, WeaselDrawData>;
   get(id: string): { pose: WeaselDrawPose; data: WeaselDrawData; kind: 'leaf'; layer: string; parent: null } | undefined;
   setPose(id: string, pose: WeaselDrawPose): void;
@@ -90,25 +70,10 @@ interface StubScene {
   roots: string[];
 }
 
-/** The ephemeral override table the `Scene` contract requires. The ongoing
- *  actions publish each gesture frame here, so a scene stand-in that omits it
- *  throws mid-drag. Nothing in this file reads it back — it exists so the
- *  stub honors the contract. */
+/** The ongoing actions publish each gesture frame to the override table, so a
+ *  scene stand-in that omits it throws mid-drag. */
 function stubOverrides(): PoseOverrides<unknown> {
-  const entries = new Map<string, { pose?: unknown; alpha?: number }>();
-  let generation = 0;
-  return {
-    set: (id, entry) => { entries.set(id as string, entry); generation++; },
-    get: (id) => entries.get(id as string),
-    read: (id) => entries.get(id as string),
-    has: (id) => entries.has(id as string),
-    ids: () => [...entries.keys()] as never,
-    clear: (id) => { entries.delete(id as string); generation++; },
-    clearAll: () => { entries.clear(); generation++; },
-    commit: () => { generation++; },
-    subscribe: () => () => {},
-    getGeneration: () => generation,
-  } as PoseOverrides<unknown>;
+  return createPoseOverrides<unknown>(() => undefined);
 }
 
 function makeStubScene(node: DrawNode): StubScene {
@@ -118,6 +83,7 @@ function makeStubScene(node: DrawNode): StubScene {
     poses,
     datas,
     overrides: stubOverrides(),
+    composition: IDENTITY_POSE_COMPOSITION,
     roots: [node.id],
     get(id) {
       if (!poses.has(id)) return undefined;
@@ -143,18 +109,12 @@ function ongoing(action: Action): OngoingInvoker {
 }
 
 function baseDeps(scene: StubScene, id: string) {
-  // No `poseDescriptor` dep, matching apps/draw's <SceneCanvas> (App.tsx:1401):
-  // the actions fall back to AUTO_POSE_DESCRIPTOR's rect branch.
   return {
     selection: { get: () => [id] },
     scene,
     applyOps: applyOpsTo(scene),
   };
 }
-
-// ---------------------------------------------------------------------------
-// Op drivers (resize / move / rotate — all public descriptors)
-// ---------------------------------------------------------------------------
 
 function driveResize(scene: StubScene, id: string, anchor: ResizeAnchor, start: { x: number; y: number }, dx: number, dy: number): void {
   const ctx = {
@@ -192,10 +152,6 @@ function driveRotate(scene: StubScene, id: string, radians: number): void {
   handle.onEnd!(ctx, 'commit');
 }
 
-// ---------------------------------------------------------------------------
-// World-geometry assertions (same as kit mirror)
-// ---------------------------------------------------------------------------
-
 function worldCoords(path: Path): number[] {
   if (path.kind === 'rect') {
     return [path.x, path.y, path.x + path.width, path.y, path.x + path.width, path.y + path.height, path.x, path.y + path.height];
@@ -230,10 +186,6 @@ function boxToBoxMap(src: { x: number; y: number; width: number; height: number 
   const sy = src.height === 0 ? 1 : dst.height / src.height;
   return (x: number, y: number): [number, number] => [dst.x + (x - src.x) * sx, dst.y + (y - src.y) * sy];
 }
-
-// ---------------------------------------------------------------------------
-// Factories (apps/draw mint sites: shapes, booleans, slice — all into data.path)
-// ---------------------------------------------------------------------------
 
 function penPath(): Path {
   return new PathBuilder().moveTo(0, 0).curveTo(10, 40, 60, 40, 80, 0).lineTo(80, 60).curveTo(60, 90, 20, 90, 0, 60).close().build();

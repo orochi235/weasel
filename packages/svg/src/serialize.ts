@@ -1,31 +1,26 @@
 /**
- * Serialize a `SvgNode[]` tree to an SVG document string. Every leaf is
- * emitted as a `<path>` (even shapes that started as `<rect>` etc.) —
- * lossless geometry round-trip beats round-tripping the element-kind
- * label. Gradient paints are gathered into a single `<defs>` block.
+ * Serialize a `SvgNode[]` tree to an SVG document string. Every path leaf is
+ * emitted as a `<path>`, even shapes that started as `<rect>` etc.
  */
 
 import { escapeAttr, escapeText } from './xmlEscape';
-import type { FontRequest, Path, Stroke, StrokeAlign } from '@weasel-js/core';
-import {
-  boundsOfPath, poseFrameOf, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
-} from '@weasel-js/core';
+import type { FontRequest, Stroke, StrokeAlign } from '@weasel-js/core';
+import { isSolidPaint, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
 import type {
-  Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
+  NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
   ScreenLength,
 } from './types';
-import { IDENTITY_MATRIX } from './types';
 import { serializePathD } from './path-serializer';
-import { formatMatrix, multiply, trimNumber } from './transform';
+import { formatMatrix, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { anchorOffset, svgDirection } from './textAnchor';
 import { boxTransformAttr } from './placeBox';
+import { computeBounds, pathBounds } from './serializeBounds';
 
 /**
- * Walk the tree and produce an SVG document string. The root `<svg>`'s
- * `viewBox` is taken from `opts.viewBox` if supplied, otherwise computed
- * as a tight bounding box around every leaf.
+ * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
+ * supplied, otherwise a tight bounding box around every leaf.
  */
 export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): string {
   const registry = new PaintServerRegistry();
@@ -36,9 +31,8 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
   const namespaces = opts.namespaces ?? {};
 
   const rootAttrs: string[] = [`xmlns="http://www.w3.org/2000/svg"`];
-  // Declared before the caller's namespaces and only when something needs it,
-  // so a document of ordinary paints carries no trace of it. The paint pre-pass
-  // above has already seen every paint, so this answer is final.
+  // Only when something needs it, so a document of ordinary paints carries no
+  // trace of it. The pre-pass above has seen every paint, so this answer is final.
   if (registry.usesPrivateNamespace() && namespaces[WEASEL_NS_PREFIX] == null) {
     rootAttrs.push(`xmlns:${WEASEL_NS_PREFIX}="${WEASEL_NS}"`);
   }
@@ -81,9 +75,6 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
   };
   const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn)).join('');
 
-  // `<title>` goes immediately inside `<svg>` per SVG-spec convention; it's
-  // an accessibility hook and (for our purposes) a stable place to round-trip
-  // the user-visible document title.
   const titleXml = opts.title && opts.title.length > 0
     ? `<title>${escapeText(opts.title)}</title>`
     : '';
@@ -144,28 +135,26 @@ export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintS
       if (n.stroke && n.stroke.paint.kind === 'gradient') registry.register(n.stroke.paint.paint);
       registerMarkers(n.stroke, registry);
     } else if (n.kind === 'text') {
-      // Text paints flow through `style` / `runs` rather than a top-level
-      // SvgPaint, so register direct FillStyle references when present. This
-      // pre-pass is load-bearing: `<defs>` is emitted before the body, so a
-      // paint first seen while writing an element would be referenced by an
+      // This pre-pass is load-bearing: `<defs>` is emitted before the body, so
+      // a paint first seen while writing an element would be referenced by an
       // id that no definition backs.
-      registerTextPaint(n.fill, registry);
+      registerTextPaint(n.fill?.paint, registry);
       registerTextPaint(n.stroke?.paint, registry);
       registerMarkers(n.stroke, registry);
       for (const run of n.runs ?? []) {
-        registerTextPaint(run.fill, registry);
+        registerTextPaint(run.fill?.paint, registry);
         registerTextPaint(run.stroke?.paint, registry);
       }
     }
   }
 }
 
-/** Register one text paint if it is a paint server rather than a colour. */
+/** Register one text paint if it is a paint server rather than a color. */
 function registerTextPaint(
-  paint: import('@weasel-js/core').FillStyle | null | undefined,
+  paint: import('@weasel-js/core').Paint | null | undefined,
   registry: PaintServerRegistry,
 ): void {
-  if (paint && !('color' in paint)) registry.register(paint);
+  if (paint && !isSolidPaint(paint)) registry.register(paint);
 }
 
 /** Mint a `<defs>` id for every marker a stroke names, before the body is
@@ -180,6 +169,13 @@ function registerMarkers(stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'mar
 type Warn = (message: string) => void;
 
 function nodeXml(
+  node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+): string {
+  const xml = kindXml(node, registry, namespaces, warn);
+  return node.hidden ? xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`) : xml;
+}
+
+function kindXml(
   node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
 ): string {
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn);
@@ -198,12 +194,12 @@ function warnStrokeAlign(align: StrokeAlign | undefined, warn: Warn): void {
 
 /**
  * Emit an `<image>`. `preserveAspectRatio="none"` is unconditional: the node
- * carries a literal box and nothing else, so letting a viewer letterbox it
- * would place the pixels somewhere the model never said.
+ * carries a literal box, and a viewer letterboxing it would place the pixels
+ * somewhere the model never said.
  *
  * A source rect or a flip takes the cropped form described on `SvgImageNode`.
- * The nested `<svg>` cannot carry the rotation itself — SVG 1.1 gives it no
- * `transform` — so the rotation, opacity and meta go on the wrapping `<g>`.
+ * SVG 1.1 gives the nested `<svg>` no `transform`, so the rotation, opacity,
+ * and meta go on the wrapping `<g>`.
  */
 function imageXml(node: SvgImageNode, namespaces: Record<string, string>): string {
   const box = `x="${trimNumber(node.x)}" y="${trimNumber(node.y)}"`
@@ -255,8 +251,6 @@ function groupXml(
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
-  // `metaAttrs` already starts with a leading space (or is empty), so we
-  // can splice it after the existing attr list without extra logic.
   const head = attrs.length > 0
     ? `<g ${attrs.join(' ')}${metaAttrs}>`
     : `<g${metaAttrs}>`;
@@ -270,8 +264,7 @@ function pathXml(
   const attrs: string[] = [`d="${serializePathD(node.path)}"`];
   const fillAttrs = paintAttrs(node.fill, 'fill', registry);
   for (const a of fillAttrs) attrs.push(a);
-  // Emit fill-rule only when it diverges from SVG's default ('nonzero').
-  // RectPath has no fillRule field — only PolygonPath carries one.
+  // Only when it diverges from SVG's default ('nonzero').
   if (node.path.kind === 'polygon' && node.path.fillRule === 'evenodd') {
     attrs.push(`fill-rule="evenodd"`);
   }
@@ -323,36 +316,27 @@ function opacityAttr(name: string, v: number | undefined): string[] {
 }
 
 /**
- * Attributes for a kit `Stroke` — the shape text carries, whose `paint` is a
- * `FillStyle` rather than an `SvgPaint`. Text strokes ride inside
- * `TextStyle` / `StyledRun` rather than as a node-level `SvgStroke`, because
- * that is where the kit's text model puts them.
- *
- * Absent, unpainted, or zero-width emits nothing at all: unstroked text should
- * not carry a `stroke` attribute, and SVG's own default (`none`) already says
- * so.
- */
-/**
- * `stroke-width`, plus `vector-effect` when the width is in screen pixels.
- *
- * A `{ px }` width means "this thickness once rendered, whatever the view is
- * doing", which is exactly what `non-scaling-stroke` says — so the number goes
- * out unresolved and the attribute carries the unit. There is no accumulated
- * transform scale here to resolve it against, and picking one would bake a
- * single zoom level into the document.
+ * `stroke-width`, plus `vector-effect="non-scaling-stroke"` when the width is
+ * in screen pixels: the number goes out unresolved, since resolving it would
+ * bake a single zoom level into the document.
  */
 function strokeWidthAttrs(width: ScreenLength): string[] {
   if (typeof width === 'number') return [`stroke-width="${trimNumber(width)}"`];
   return [`stroke-width="${trimNumber(width.px)}"`, 'vector-effect="non-scaling-stroke"'];
 }
 
+/**
+ * Attributes for a kit `Stroke` — the shape text carries, whose `paint` is a
+ * `Paint` rather than an `SvgPaint`. Absent, unpainted, or zero-width
+ * emits nothing at all.
+ */
 function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry, warn: Warn): string[] {
   const paint = stroke?.paint;
   if (!stroke || !paint) return [];
   const width = stroke.width ?? 1;
   if (!((typeof width === 'object' ? width.px : width) > 0)) return [];
   warnStrokeAlign(stroke.align, warn);
-  const attrs: string[] = [`stroke="${'color' in paint ? escapeAttr(paint.color) : registry.ref(paint)}"`];
+  const attrs: string[] = [`stroke="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`];
   attrs.push(...opacityAttr('stroke-opacity', paint.opacity));
   attrs.push(...strokeWidthAttrs(width));
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
@@ -379,7 +363,7 @@ function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry, warn: 
   warnStrokeAlign(stroke.align, warn);
   // `SvgStroke.opacity` and the paint's own `opacity` are two models of one
   // SVG attribute, and parse fills in both. Emitting each would write
-  // `stroke-opacity` twice, which is not well-formed XML at all.
+  // `stroke-opacity` twice, which is not well-formed XML.
   const attrs = paintAttrs(stroke.paint, 'stroke', registry, false);
   attrs.push(...strokeWidthAttrs(stroke.width));
   attrs.push(...opacityAttr('stroke-opacity', stroke.opacity ?? svgPaintOpacity(stroke.paint)));
@@ -410,65 +394,10 @@ function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry, warn: 
 }
 
 /**
- * Tight bounding box around everything the tree draws, in the root's
- * coordinates — the fallback `viewBox` when the caller supplies none. A
- * node's `rotation` and a group's `transform` both move ink, so both are
- * applied here; a box taken from unrotated geometry crops the document.
- */
-function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: number; height: number } {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  const visit = (n: SvgNode, ctm: Matrix): void => {
-    if (n.kind === 'group') {
-      const childCtm = n.transform ? multiply(ctm, n.transform) : ctm;
-      n.children.forEach((c) => visit(c, childCtm));
-      return;
-    }
-    const b = n.kind === 'text' || n.kind === 'image'
-      ? { minX: n.x, minY: n.y, maxX: n.x + n.width, maxY: n.y + n.height }
-      : pathBounds(n.path);
-    const frame = n.kind === 'path' ? null : poseFrameOf(n);
-    const local = frame ? multiply(ctm, frame)
-      : n.rotation ? rotateAboutCenter(ctm, b, n.rotation) : ctm;
-    for (const [x, y] of corners(b)) {
-      const px = local[0] * x + local[2] * y + local[4];
-      const py = local[1] * x + local[3] * y + local[5];
-      if (px < minX) minX = px;
-      if (py < minY) minY = py;
-      if (px > maxX) maxX = px;
-      if (py > maxY) maxY = py;
-    }
-  };
-  nodes.forEach((n) => visit(n, IDENTITY_MATRIX));
-  if (!Number.isFinite(minX)) {
-    return { x: 0, y: 0, width: 0, height: 0 };
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
-function corners(b: { minX: number; minY: number; maxX: number; maxY: number }): [number, number][] {
-  return [[b.minX, b.minY], [b.maxX, b.minY], [b.maxX, b.maxY], [b.minX, b.maxY]];
-}
-
-/** `ctm` composed with the same `rotate(angle cx cy)` the element emits. */
-function rotateAboutCenter(
-  ctm: Matrix,
-  b: { minX: number; minY: number; maxX: number; maxY: number },
-  angle: number,
-): Matrix {
-  const cx = (b.minX + b.maxX) / 2;
-  const cy = (b.minY + b.maxY) / 2;
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-  return multiply(ctm, [c, s, -s, c, cx - cx * c + cy * s, cy - cx * s - cy * c]);
-}
-
-/**
- * Emit a `<text>` element. `x` is the `text-anchor` point, per the SVG spec:
- * the box's left edge, center or right edge as its alignment resolves. Uses
- * `dominant-baseline="text-before-edge"` so `y` matches weasel's top-of-box
- * pose; stashes the explicit width/height (which native SVG text doesn't
- * model) in `data-weasel-*` attributes so they round-trip through the parser
- * losslessly.
+ * Emit a `<text>` element. `x` is the `text-anchor` point: the box's left
+ * edge, center, or right edge as its alignment resolves.
+ * `dominant-baseline="text-before-edge"` makes `y` the top of the box, and
+ * the width and height, which SVG text doesn't model, go in `data-weasel-*`.
  */
 function textXml(
   node: SvgTextNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
@@ -497,9 +426,8 @@ function textXml(
   if (direction === 'rtl' || style?.direction === 'ltr') attrs.push(`direction="${direction}"`);
   if (style?.align != null || direction === 'rtl') {
     // `text-anchor` is reading-order relative in SVG exactly as `start` / `end`
-    // are here, so the two relative values pass straight through and only the
-    // absolute pair has to be turned into an edge the reader resolves the same
-    // way. Under `ltr` this collapses to what it always wrote.
+    // are here, so only the absolute pair has to be turned into an edge the
+    // reader resolves the same way.
     const align = style?.align ?? 'left';
     // SVG text does not wrap, so every line written closes its paragraph and
     // a justified node draws at its start edge. `data-weasel-align` keeps the
@@ -535,16 +463,14 @@ function textXml(
     warn(`text aligned to the ${node.verticalAlign} of its box is written top-aligned: SVG text has`
       + ' no box, so other readers draw it at the top (weasel reads the alignment back)');
   }
-  // Note: `lineHeight` is NOT emitted here. The bridge layer (svgInterop)
-  // lifts it into `meta.wd.attrs['line-height']`, which `metaAttrsXml`
-  // below emits as `wd:line-height="..."`. There is no compat write of
-  // `data-weasel-line-height` — per the SVG-native plan's Migration section,
-  // no installed base exists to compat against.
-  if (node.fill === null) {
-    attrs.push('fill="none"');
-  } else if (node.fill) {
-    attrs.push(`fill="${'color' in node.fill ? escapeAttr(node.fill.color) : registry.ref(node.fill)}"`);
-    attrs.push(...opacityAttr('fill-opacity', node.fill.opacity));
+  // `lineHeight` is NOT emitted here: a caller that wants it carries it in `meta`.
+  if (node.fill !== undefined) {
+    const paint = node.fill?.paint;
+    if (!paint) attrs.push('fill="none"');
+    else {
+      attrs.push(`fill="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`);
+      attrs.push(...opacityAttr('fill-opacity', paint.opacity));
+    }
   }
   for (const a of coreStrokeAttrs(node.stroke, registry, warn)) attrs.push(a);
   if (node.opacity != null && node.opacity !== 1) {
@@ -562,10 +488,9 @@ function textXml(
 }
 
 /**
- * The face whose metrics size `run`'s script, when the writer reads them: a
- * run that overrode only the rise has no `baseline-shift` keyword left to
- * carry the preset's size, so the size is spelled out from the face it
- * renders in. `undefined` for every other run.
+ * The face whose metrics size `run`'s script, for a run that overrode only
+ * the rise and so must spell the preset's size out. `undefined` for every
+ * other run.
  */
 export function scriptSizeFace(
   run: import('@weasel-js/core').StyledRun, style: SvgTextNode['style'],
@@ -589,13 +514,11 @@ function runXml(
   if (run.fontVariantCaps) attrs.push(`font-variant="${run.fontVariantCaps}"`);
   if (run.fontFamily) attrs.push(`font-family="${escapeAttr(run.fontFamily)}"`);
   // A percentage `font-size` is relative to the parent's, which is what
-  // `fontScale` means; an absolute `fontSize` wins over it here as it does in
-  // the runs model.
+  // `fontScale` means; an absolute `fontSize` wins over it.
   //
   // `baseline-shift="super"` carries the preset's *size* as well as its rise,
-  // so a run that overrode only the rise has no keyword left to say the size
-  // with and must spell it out — without this the superscript comes back
-  // full-size at a raised baseline.
+  // so a run that overrode only the rise must spell the size out, or the
+  // superscript comes back full-size at a raised baseline.
   const face = scriptSizeFace(run, style);
   const presetScale = face && run.script
     ? scriptMetricsFor(face.family, face.weight, face.style)[run.script].size
@@ -610,21 +533,18 @@ function runXml(
   } else if (run.script) {
     attrs.push(`baseline-shift="${run.script}"`);
   }
-  // Unlike the node-level style guard above, a run-level `0` is a meaningful
-  // *override* (distinct from "inherit the node's letterSpacing") per the
-  // runs model's additive-flags contract — emit it whenever it's set.
+  // Unlike at node level, a run-level `0` is an override, not "inherit the
+  // node's letterSpacing", so it is emitted whenever set.
   if (run.letterSpacing != null) {
     attrs.push(`letter-spacing="${trimNumber(resolveScreenLength(run.letterSpacing, 1))}"`);
   }
   const runDecoration = textDecorationValue(run.underline, run.strikethrough, run.overline);
   if (runDecoration) attrs.push(`text-decoration="${runDecoration}"`);
-  if (run.fill === null) attrs.push('fill="none"');
-  else if (run.fill) {
-    if ('color' in run.fill) {
-      attrs.push(`fill="${escapeAttr(run.fill.color)}"`);
-    } else {
-      attrs.push(`fill="${registry.ref(run.fill)}"`);
-    }
+  if (run.fill !== undefined) {
+    const paint = run.fill?.paint;
+    if (!paint) attrs.push('fill="none"');
+    else if (isSolidPaint(paint)) attrs.push(`fill="${escapeAttr(paint.color)}"`);
+    else attrs.push(`fill="${registry.ref(paint)}"`);
   }
   for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
   // `none` included: on a run it overrides a transform the node would pass down.
@@ -633,11 +553,8 @@ function runXml(
   return `${head}${escapeText(run.text)}</tspan>`;
 }
 
-/**
- * Combine the decoration flags into an SVG `text-decoration` value —
- * `"underline line-through"` when both are set, a single token when only
- * one is, or `null` (omit the attribute) when none is set.
- */
+/** The flags as an SVG `text-decoration` value, or `null` when none is set. */
+
 function textDecorationValue(
   underline: boolean | undefined,
   strikethrough: boolean | undefined,
@@ -649,9 +566,3 @@ function textDecorationValue(
   if (overline) tokens.push('overline');
   return tokens.length > 0 ? tokens.join(' ') : null;
 }
-
-function pathBounds(path: Path): { minX: number; minY: number; maxX: number; maxY: number } {
-  const b = boundsOfPath(path);
-  return { minX: b.x, minY: b.y, maxX: b.x + b.width, maxY: b.y + b.height };
-}
-

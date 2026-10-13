@@ -5,7 +5,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
-import { registerPaintKind, getPaintKind } from 'renderer/paintKinds';
+import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
 
 type Layer = 'main';
 interface Data { label: string }

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
-import type { Animator, TimelineHandle } from '@weasel-js/core';
+import { bindClip } from '@weasel-js/animator';
+import type { Animator, EventBookingHandle, TimelineHandle } from '@weasel-js/animator';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { MOVE_SPEED } from './physics';
 import { playSound, registerSounds, type PcmSoundName, type SoundName } from './sfx';
 import { CLIPS } from './clips';
-import { footstepTrack } from './footsteps';
+import { FOOTSTEPS, STEP } from './footsteps';
 import type { GameRefs, WorldHooks } from './world';
 
 /** A footfall pair spanning a time-scale change is still accelerating, not
@@ -90,45 +91,45 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   }, []);
 
   useEffect(() => {
+    // Booked ahead of its frame, at the time on the engine's clock the foot lands. Returning the
+    // voices lets a pause or a change of run speed retract a step that has not sounded yet.
+    const step = (when: number): EventBookingHandle | void => {
+      const a = audio.current;
+      const s = stepStats.current;
+      const scale = runScale.current;
+      s.count++;
+      if (!a || a.engine.state() !== 'running') {
+        s.lastAt = 0;
+        return;
+      }
+      // While the player is still accelerating, the scale at this footfall
+      // differs from the one recorded at the last — skip those pairs so the
+      // spread reflects steady-state scheduling, not a changing run speed.
+      if (s.lastAt && Math.abs(scale - s.lastScale) <= JITTER_SCALE_TOLERANCE) {
+        const expected = (CLIPS.run.duration / 2) / Math.max(scale, 0.01);
+        s.spread = Math.max(s.spread, Math.abs(when - s.lastAt - expected));
+      }
+      const prev = { lastAt: s.lastAt, lastScale: s.lastScale };
+      s.lastAt = when;
+      s.lastScale = scale;
+      const voices = playSound(a.engine, a.sounds, 'step', { bus: 'sfx', gain: 0.35, when });
+      // A jump or a change of run speed retracts a step that has not
+      // sounded; it is booked again wherever the cycle next reaches it.
+      return {
+        stop: () => {
+          for (const v of voices) v.stop();
+          s.count--;
+          Object.assign(s, prev);
+        },
+      };
+    };
     const handle = animator.timeline({
+      ...bindClip(FOOTSTEPS, { event: (name) => (name === STEP ? { book: step } : undefined) }),
       loop: true,
       autoplay: true,
       // Steps book against the engine's clock once there is one. Before the
       // unlock gesture nothing sounds, and the timeline resyncs when it swaps.
       booking: { clock: { now: () => audio.current?.engine.now() ?? performance.now() } },
-      tracks: [
-        footstepTrack((_authoredT, when) => {
-          const a = audio.current;
-          const s = stepStats.current;
-          const scale = runScale.current;
-          s.count++;
-          if (!a || a.engine.state() !== 'running') {
-            s.lastAt = 0;
-            return;
-          }
-          // While the player is still accelerating, the scale at this footfall
-          // differs from the one recorded at the last — skip those pairs so the
-          // spread reflects steady-state scheduling, not a changing run speed.
-          if (s.lastAt && Math.abs(scale - s.lastScale) <= JITTER_SCALE_TOLERANCE) {
-            const expected = (CLIPS.run.duration / 2) / Math.max(scale, 0.01);
-            s.spread = Math.max(s.spread, Math.abs(when - s.lastAt - expected));
-          }
-          const prev = { lastAt: s.lastAt, lastScale: s.lastScale };
-          s.lastAt = when;
-          s.lastScale = scale;
-          const voices = playSound(a.engine, a.sounds, 'step', { bus: 'sfx', gain: 0.35, when });
-          // A jump or a change of run speed retracts a step that has not
-          // sounded; it is booked again wherever the cycle next reaches it.
-          return {
-            stop: () => {
-              for (const v of voices) v.stop();
-              s.count--;
-              Object.assign(s, prev);
-            },
-          };
-        }),
-      ],
-      duration: CLIPS.run.duration,
     });
     runCycle.current = handle;
     handle.pause();

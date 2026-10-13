@@ -79,6 +79,10 @@ describe('findThemeTokenFallbacks', () => {
     expect(run('packages/ui/a.css', '.x { color: var(--wzl-fg); width: var(--wzl-swatch-size, 28px); }')).toEqual([]);
   });
 
+  it('leaves core alone, which draws on a page that may load no theme', () => {
+    expect(run('packages/core/src/canvas/hud.module.css', '.x { z-index: var(--wzl-fg, 900); }')).toEqual([]);
+  });
+
   it('leaves TS alone, where SVG markup may render outside the document', () => {
     expect(run('packages/ui/icons.ts', 'const p = `<path stroke="var(--wzl-fg, #eee)"/>`;')).toEqual([]);
   });

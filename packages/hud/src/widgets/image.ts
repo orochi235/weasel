@@ -1,4 +1,5 @@
 import { createRevision } from '../widget';
+import type { ClaimableGesture } from '@weasel-js/core';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, ImageDrawCommand } from '@weasel-js/core/renderer';
 
@@ -21,6 +22,9 @@ export interface ImageOptions {
   flipY?: boolean;
   /** Injected by Hud factories to trigger redraw on mutation. */
   onChange?: () => void;
+  /** Gestures this widget consumes. Default `[]`: decoration, which a press
+   *  falls through. Listing some makes it a scrim over what lies beneath. */
+  claims?: readonly ClaimableGesture[];
   /** Injected by Hud factories. Called from dispose() to remove this widget
    *  from its HUD's list. No-op for bare-factory consumers. */
   removeFromHud?: () => void;
@@ -31,6 +35,8 @@ export interface ImageWidget extends Widget {
   setImage(image: ImageBitmap): void;
   setBounds(b: WidgetBounds): void;
   setHidden(hidden: boolean): void;
+  /** Replace the gestures this widget consumes; `[]` returns it to decoration. */
+  setClaims(claims: readonly ClaimableGesture[]): void;
   /** Sample a sub-rectangle of the bitmap; `undefined` restores the whole
    *  bitmap. Together with `setFlip`, this is how a sprite animation advances
    *  without rebuilding the widget. */
@@ -49,6 +55,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
   let image = opts.image;
   let hidden = false;
+  let claims = opts.claims ?? [];
   let source = opts.source;
   let flipX = opts.flipX;
   let flipY = opts.flipY;
@@ -89,7 +96,8 @@ export function createImage(opts: ImageOptions): ImageWidget {
       if (hidden) return false;
       return x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
     },
-    claims: [],
+    get claims() { return claims; },
+    setClaims(c) { assertNotDisposed(); claims = c; rev.changed(); },
     onPointer(_evt: HudPointerEvent): void {},
     dispose() {
       if (disposed) return;

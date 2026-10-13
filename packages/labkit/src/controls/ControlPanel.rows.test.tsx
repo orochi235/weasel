@@ -21,6 +21,24 @@ describe('<ControlPanel> rows', () => {
     expect(screen.getByLabelText('Count')).toHaveValue('3');
   });
 
+  it('draws a paired leaf with no partner beside it as a row of its own, under its own name', () => {
+    const schema = resolveConfigSchema(
+      f.schema({
+        x: f.number(10).label('X').pair({ with: 'y', label: 'Offset' }),
+        scale: f.number(1).label('Scale'),
+        y: f.number(20).label('Y'),
+      }),
+      [],
+    );
+    const { container } = render(
+      <ControlPanel schema={schema} config={{ x: 10, y: 20, scale: 1 }} setConfig={vi.fn()} />,
+    );
+    expect(screen.queryByText('Offset')).toBeNull();
+    expect(container.querySelector('.lk-pair-cell')).toBeNull();
+    expect(screen.getByLabelText('X')).toHaveValue('10');
+    expect(screen.getByLabelText('Y')).toHaveValue('20');
+  });
+
   it('keeps a paired list on a row that opens it', () => {
     const schema = resolveConfigSchema(
       f.schema({

@@ -6,19 +6,15 @@
  * reaches through a `PlaneMap` that changes with the camera. An editing action
  * pairs the pointer with the pose it edits, so the two have to be in one world.
  *
- * `inPlane` is that one place: it wraps an action so its input is carried into
- * the plane of the layer it edits before the action reads it — pointer, drag,
- * trail, affordance pivot, and the camera it converts screen pixels through —
- * and so the chrome it publishes back comes out in the camera's world. A dep
- * that answers in world points (`nodeAtPoint`, `snap`) is the surface's, so it
- * keeps speaking the camera's world and the seam converts at its boundary.
- * The action sees the plane only as `view.plane()`, which it hands its snap
- * behaviors so they can bring the camera's guides and grid into the plane.
+ * `inPlane` wraps an action so its input is carried into the plane of the
+ * layer it edits before the action reads it, and the chrome it publishes back
+ * comes out in the camera's world. A dep that answers in world points
+ * (`nodeAtPoint`, `snap`) keeps speaking the camera's world, and the seam
+ * converts at its boundary.
  *
  * A selection can span planes. The edit is measured in one of them, and a
- * node on another is carried into it as the gesture starts
- * (`planeOf` at press, inverted) and back out through `planeOf` as it is now,
- * so each node ends where it was drawn relative to the pointer.
+ * node on another is carried into it as the gesture starts and back out
+ * through `planeOf` as it is now.
  *
  * The map is read afresh on every call: a camera panning under a held drag, or
  * a plane whose factors are being animated, moves the node with the pointer.
@@ -39,9 +35,8 @@ import type { NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
 
 type Point = { x: number; y: number };
 
-/** Which scene layer an invocation edits, read once as it starts, from its
- *  deps and — for a drag — the affordance it grabbed. `undefined` means none:
- *  the action runs in the camera's world. */
+/** Which scene layer an invocation edits, read once as it starts. `undefined`
+ *  means none: the action runs in the camera's world. */
 export type EditedLayerOf = (deps: ActionDeps, affordance?: AffordanceHit) => string | undefined;
 
 const layerOfNode = (deps: ActionDeps, id: string | null | undefined): string | undefined =>
@@ -90,9 +85,8 @@ export function carryPose<P>(d: PoseDescriptor<P>, pose: P, m: PlaneMap | null):
  *  names. An action in a scene with no `parallax` layer, or invoked with no
  *  scene or view to read a plane from, runs exactly as it would unwrapped.
  *
- *  An ongoing action's drag is carried as a whole. An immediate one's world
- *  point is `params.worldX` / `params.worldY`, the dispatcher's convention for
- *  a click; it is carried when present. */
+ *  An immediate action's world point is `params.worldX` / `params.worldY`,
+ *  the dispatcher's convention for a click; it is carried when present. */
 export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A {
   const inner = action.invoker;
   if (!inner) return action;
@@ -201,9 +195,8 @@ function livePlane(
     override('snap', { point: (p: Point) => toPlane(map(), snap.point(fromPlane(map(), p))) } as SnapDep);
   }
 
-  // The drag's origin, fixed in the plane at the moment it was pressed: where
-  // the pointer went down on the node is where the node was grabbed, whatever
-  // the camera does after.
+  // The drag's origin, fixed in the plane at the moment it was pressed,
+  // whatever the camera does after.
   const start0 = pressedAt ? toPlane(map(), pressedAt) : null;
   const trail = trailCarrier();
 

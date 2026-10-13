@@ -4,42 +4,24 @@ import { meanScale } from '@weasel-js/geom';
 import { normalizeZoom, warnInvalidView } from './zoomBounds';
 
 /**
- * `View` is declared in `@weasel-js/routing` — the dispatcher and every
- * viewport action are typed in it. Re-exported here, where core's own call
- * sites have always named it.
- *
- * Core holds the invariant behind the shape: every view the kit keeps is
- * total, so each `scale` axis is finite with a magnitude of at least
- * `ZOOM_FLOOR` and `x` / `y` are finite. A negative axis is a flipped one
- * (y-up), not a degenerate one, and keeps its sign. Canvases, views and
- * animations pass what they are given through {@link normalizeView}, so
- * screen/world conversion never divides by zero.
- *
- * `scale` is always a 2-vector. Input convenience types {@link ZoomFactor}
- * and {@link ZoomBound} let callers pass a scalar when they want both axes
- * treated the same.
+ * Every view the kit keeps is total: each `scale` axis is finite with a
+ * magnitude of at least `ZOOM_FLOOR` and `x` / `y` are finite. A negative
+ * axis is a flipped one (y-up), not a degenerate one, and keeps its sign.
+ * Canvases, views, and animations pass what they are given through
+ * {@link normalizeView}, so screen/world conversion never divides by zero.
  */
 export type { View };
 
-/**
- * Input convenience for zoom primitives. A `number` is treated as a
- * uniform factor applied to both axes; a `{x, y}` vector applies
- * per-axis factors.
- */
+/** A zoom factor: a `number` applies to both axes, a `{x, y}` vector per axis. */
 export type ZoomFactor = number | { x: number; y: number };
 
-/**
- * Input convenience for zoom-clamp ranges. A `number` is applied as the
- * same bound on both axes; a `{x, y}` vector applies per-axis bounds.
- */
+/** A zoom-clamp bound: a `number` applies to both axes, a `{x, y}` vector per axis. */
 export type ZoomBound = number | { x: number; y: number };
 
 /**
- * Bridge `View` into the legacy `ViewTransform` shape so chrome can keep
- * calling `worldToScreen` / `screenToWorld`. `View` and `ViewTransform`
- * use opposite sign conventions for the translation half (`view.x` is
- * camera position; `panX` is canvas translation), so the adapter flips
- * the sign and multiplies by per-axis scale.
+ * Bridge `View` into the legacy `ViewTransform` shape. The two use opposite
+ * sign conventions for the translation half: `view.x` is camera position;
+ * `panX` is canvas translation.
  */
 export function viewToTransform(view: View): ViewTransform {
   // `+ 0` coerces `-0 → 0` without swallowing NaN (matches viewToMat3).
@@ -54,9 +36,6 @@ export function viewToTransform(view: View): ViewTransform {
  * How far `view` is zoomed in, as one number — the geometric mean of its two
  * axes, so a uniform view reports its own scale and a stretched one reports
  * the scale that covers the same area.
- *
- * What a `RuleCtx` carries, because the only rule that asks about the
- * viewport asks for a threshold rather than a camera.
  */
 export function viewZoom(view: View): number {
   return meanScale(view.scale);

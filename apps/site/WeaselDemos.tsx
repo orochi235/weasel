@@ -3,6 +3,8 @@ import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
 import { PageBoundary } from './PageBoundary';
+import { TAGLINE } from './FrontPage/tagline';
+import { VersionPill } from './FrontPage/VersionPill';
 import { Wordmark } from './FrontPage/Wordmark';
 import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
 
@@ -28,10 +30,9 @@ function formatRelativeOrIso(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 import { InlineMarkdown } from './InlineMarkdown';
-import { CommandPalette, useCommandPaletteShortcut } from './CommandPalette/CommandPalette';
+import { CommandPalette } from '@weasel-js/ui';
+import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';
-import { VERSION } from '@weasel-js/core';
-import { buildTitle } from '../shared/buildInfo';
 
 function readHash(): string {
   if (window.location.hash === `#${DEMOS_ID}`) return DEMOS[0].id;
@@ -80,9 +81,9 @@ export function WeaselDemos() {
               aria-label="weasel home"
               onClick={(e) => { e.preventDefault(); goFront(); }}
             ><Wordmark /></a>
-            <span className="ckd-sidebar-version" title={buildTitle()}>v{VERSION}</span>
+            <VersionPill className="ckd-sidebar-version" />
           </h1>
-          <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
+          <p>{TAGLINE}</p>
           <p><a href="./api/">API reference →</a></p>
           <p><a href="./docs/ui/forge/">Component workshop →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>

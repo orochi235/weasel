@@ -8,26 +8,26 @@ import {
   type DrawCommand,
   type RenderLayer,
   type CommandFill,
-  resolveUnit,
-  type UnitSystem,
-  type UnitValue,
+  resolveAxes,
+  type PlaneUnits,
+  type PlaneValue,
 } from '@weasel-js/core';
 
 /** Options for `createCellHighlightLayer`. */
 export interface CellHighlightLayerOpts {
   /** Cell size in world units (matches the grid's `spacing`). */
-  spacing: UnitValue;
+  spacing: PlaneValue;
   /** Optional unit system for resolving tagged `spacing` values. */
-  unitSystem?: UnitSystem;
+  unitSystem?: PlaneUnits;
   /** Origin the cell grid is anchored to, in world units. Defaults to (0,0). */
   origin?: () => { x: number; y: number };
   /** Cell to highlight, or `null` to skip drawing. */
   getCell: () => { col: number; row: number } | null;
-  /** FillStyle strategy for the filled cell. Defaults to a soft green. */
+  /** Fill for the highlighted cell. Defaults to a soft green. */
   fill?: CommandFill;
 }
 
-const DEFAULT_FILL: CommandFill = { fill: 'solid', color: 'rgba(127,176,105,0.15)' };
+const DEFAULT_FILL: CommandFill = { paint: { kind: 'solid', color: 'rgba(127,176,105,0.15)' } };
 
 /** Build a `RenderLayer` that fills a single grid cell — typically a snap-target preview. */
 export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLayer<unknown> {
@@ -38,14 +38,14 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
     draw: () => {
       const cell = opts.getCell();
       if (!cell) return [];
-      const spacing = resolveUnit(opts.spacing, opts.unitSystem);
+      const spacing = resolveAxes(opts.spacing, opts.unitSystem);
       const o = opts.origin ? opts.origin() : { x: 0, y: 0 };
-      const x = o.x + cell.col * spacing;
-      const y = o.y + cell.row * spacing;
+      const x = o.x + cell.col * spacing.x;
+      const y = o.y + cell.row * spacing.y;
       const children: DrawCommand[] = [
         {
           kind: 'path',
-          path: { kind: 'rect', x, y, width: spacing, height: spacing },
+          path: { kind: 'rect', x, y, width: spacing.x, height: spacing.y },
           fill,
         },
       ];

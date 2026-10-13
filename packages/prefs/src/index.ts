@@ -18,22 +18,28 @@ export {
 } from './helpers';
 export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
 export {
-  checkPrefCondition,
-  checkPrefConditions,
   isPrefCondition,
   mapPrefConditionPaths,
   prefConditionHolds,
   prefConditionPaths,
+  prefConditionReadsItem,
   prefIsEnabled,
   prefIsShown,
   type PrefCondition,
-  type PrefConditionProblem,
+  type PrefConditionReader,
   type PrefConditionValue,
-  type PrefSchemaConditionProblem,
   type PrefTest,
 } from './condition';
 export {
+  checkPrefCondition,
+  checkPrefConditions,
+  type PrefConditionProblem,
+  type PrefConditionSite,
+  type PrefSchemaConditionProblem,
+} from './conditionCheck';
+export {
   applyPrefConditions,
+  applyPrefEntryConditions,
   PREF_ENTRY,
   PREF_SCOPE,
   prefJudge,
@@ -44,10 +50,15 @@ export {
   type PrefConditionJudge,
   type PrefConditionsApplied,
   type PrefConditionsOptions,
+  type PrefEntry,
+  type PrefEntryApplied,
   type PrefScope,
+  type PrefScopeAtOptions,
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
-export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
+export { prefSchemaHolding } from './holding';
+export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
+export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
 export type { PrefLabel, PrefSeparator } from './label';
 export { prefObjectBase, prefObjectWithField } from './object';
 export type { PrefList } from './list';
@@ -70,6 +81,7 @@ export {
   type PrefNumberUnit,
   type ResolvedPrefUnit,
 } from './unit';
+export { pairRuns, type PairRun } from './pair';
 export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
 export {
   isBuiltinPref,

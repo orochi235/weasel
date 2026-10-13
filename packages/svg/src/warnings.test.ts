@@ -111,7 +111,7 @@ describe('serializeSvg says what SVG 1.1 cannot carry', () => {
     kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
     fill: { kind: 'none' }, stroke,
   });
-  const black = { fill: 'solid' as const, color: '#000000' };
+  const black = { kind: 'solid' as const, color: '#000000' };
 
   it('warns once for a path stroke aligned off its edge, however many share it', () => {
     const stroke: SvgStroke = { paint: { kind: 'solid', color: '#000' }, width: 2, align: 'inner' };

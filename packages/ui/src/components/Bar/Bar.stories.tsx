@@ -149,3 +149,32 @@ export const Conditions: Story = {
     );
   },
 };
+
+const DIALOG: PrefGroup = {
+  name: 'Preferences',
+  children: {
+    view: {
+      name: 'View',
+      children: {
+        grid: { kind: 'boolean', name: 'Grid', description: 'Draws the grid.', control: 'toggle', default: true },
+        spacing: { kind: 'number', name: 'Spacing', description: 'Disabled while Grid is off.', default: 8, min: 1, enableIf: { path: 'view.grid' } },
+      },
+    },
+  },
+};
+const alias = (of: string): PrefGroup['children'][string] => ({ kind: 'alias', name: '', description: '', default: undefined, of });
+const SHORTCUTS: PrefGroup = { name: 'View', as: 'bar', children: { grid: alias('view.grid'), spacing: alias('view.spacing') } };
+
+/** `over`: a bar of aliases into another schema, the one a preferences dialog is drawn from. Each cell is that
+ *  schema's leaf, reads and writes its path, and follows its conditions: Spacing is disabled while Grid is off. */
+export const AliasesIntoAnotherSchema: Story = {
+  args: { label: 'View' },
+  render: function OverStory(args) {
+    const [values, setValues] = useState<Record<string, unknown>>({ 'view.grid': true, 'view.spacing': 8 });
+    return (
+      <div className={s.strip}>
+        <Bar {...args} schema={SHORTCUTS} over={DIALOG} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
+      </div>
+    );
+  },
+};

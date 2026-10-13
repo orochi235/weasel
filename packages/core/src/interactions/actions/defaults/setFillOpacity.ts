@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Fill } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import { paintWithAlpha, solid, DEFAULT_FILL_COLOR } from '../../../util/paint';
 
@@ -13,7 +13,7 @@ import { paintWithAlpha, solid, DEFAULT_FILL_COLOR } from '../../../util/paint';
  */
 export const setFillOpacityAction: Action & { requires: string[] } = createPaintAction<
   number,
-  FillStyle,
+  Fill,
   'fill'
 >({
   id: 'setFillOpacity',
@@ -21,5 +21,5 @@ export const setFillOpacityAction: Action & { requires: string[] } = createPaint
   dataKey: 'fill',
   initialState: (pick) => pick<number>('alpha01') ?? 1,
   readParams: (_prev, params) => (params?.alpha01 as number | undefined) ?? null,
-  merge: (prev, alpha01) => paintWithAlpha(prev ?? solid(DEFAULT_FILL_COLOR), alpha01),
+  merge: (prev, alpha01) => ({ ...prev, paint: paintWithAlpha(prev?.paint ?? solid(DEFAULT_FILL_COLOR), alpha01) }),
 });

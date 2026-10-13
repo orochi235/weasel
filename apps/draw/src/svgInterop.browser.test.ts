@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
-import { asPaint, registerPaintKindLoader } from '@weasel-js/core';
+import { asPaint, IDENTITY_POSE_COMPOSITION, registerPaintKindLoader } from '@weasel-js/core';
 import { downloadSvg } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
 
@@ -17,16 +17,19 @@ function slowPaintScene(id: string, ms: number) {
   disposers.push(registerPaintKindLoader(id, async () => {
     await new Promise((r) => setTimeout(r, ms));
     return {
-      id, label: id, seed: () => asPaint({ fill: id }), colorOf: () => '#123456',
+      id, label: id, seed: () => asPaint({ kind: id }), colorOf: () => '#123456',
       toSvg: (defId: string) => `<linearGradient id="${defId}" data-kind="${id}"/>`,
     };
   }));
   const rect = {
     id: 'a', kind: 'leaf', layer: 'default', parent: null,
     pose: { x: 0, y: 0, width: 10, height: 10 },
-    data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: asPaint({ fill: id }) },
+    data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: asPaint({ kind: id }) } },
   };
-  return { roots: ['a'], get: (n: string) => (n === 'a' ? rect : undefined), childrenOf: () => [] } as never;
+  return {
+    roots: ['a'], get: (n: string) => (n === 'a' ? rect : undefined), childrenOf: () => [],
+    composition: IDENTITY_POSE_COMPOSITION,
+  } as never;
 }
 
 /** How long past the load a download may take to arrive. */

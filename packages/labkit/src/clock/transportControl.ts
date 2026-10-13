@@ -78,7 +78,8 @@ export function transportControl(
     },
     seek(ms) {
       if (!scrubs) return;
-      clock.seek(passStart + Math.min(Math.max(ms, 0), clock.duration));
+      if (ms >= clock.duration) clock.seek((clock.pass + 1) * clock.duration, 'end');
+      else clock.seek(passStart + Math.max(ms, 0));
     },
   };
   return control;

@@ -54,7 +54,7 @@ describe('svgNodesToKitDrafts', () => {
     expect(d.parentId).toBeNull();
     expect(d.pose).toEqual({ x: 10, y: 20, width: 30, height: 40 });
     expect(d.data.path).toEqual({ kind: 'rect', x: 10, y: 20, width: 30, height: 40 });
-    expect(d.data.fill).toEqual({ color: '#ff0000' });
+    expect(d.data.fill).toEqual({ paint: { color: '#ff0000' } });
     expect(d.data.stroke).toBeUndefined();
   });
 
@@ -103,21 +103,21 @@ describe('svgNodesToKitDrafts', () => {
     const drafts = svgNodesToKitDrafts([{
       kind: 'text', x: 5, y: 6, width: 100, height: 20,
       text: 'hi there',
-      fill: { fill: 'solid', color: '#ff00ff' },
-      stroke: { paint: { fill: 'solid', color: '#0000ff' }, width: 2 },
+      fill: { paint: { kind: 'solid', color: '#ff00ff' } },
+      stroke: { paint: { kind: 'solid', color: '#0000ff' }, width: 2 },
       runs: [{ text: 'hi ' }, { text: 'there', bold: true }],
     } as SvgNode], seq());
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
-    expect(d.data.fill).toEqual({ fill: 'solid', color: '#ff00ff' });
-    expect(d.data.stroke).toEqual({ paint: { fill: 'solid', color: '#0000ff' }, width: 2 });
+    expect(d.data.fill).toEqual({ paint: { kind: 'solid', color: '#ff00ff' } });
+    expect(d.data.stroke).toEqual({ paint: { kind: 'solid', color: '#0000ff' }, width: 2 });
     expect(d.data.runs).toEqual([{ text: 'hi ' }, { text: 'there', bold: true }]);
   });
 
   it("keeps a text node's fill=none as an explicit null", () => {
     const drafts = svgNodesToKitDrafts([{
       kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'hi', fill: null,
-      stroke: { paint: { fill: 'solid', color: '#000' }, width: 1 },
+      stroke: { paint: { kind: 'solid', color: '#000' }, width: 1 },
     } as SvgNode], seq());
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
@@ -127,15 +127,15 @@ describe('svgNodesToKitDrafts', () => {
   it("rebases a text node's userSpaceOnUse gradient onto its own box", () => {
     const drafts = svgNodesToKitDrafts([{
       kind: 'text', x: 10, y: 20, width: 100, height: 40, text: 'hi',
-      fill: {
-        fill: 'linear-gradient', units: 'world',
+      fill: { paint: {
+        kind: 'linear-gradient', units: 'world',
         from: { x: 10, y: 20 }, to: { x: 110, y: 20 },
         stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
-      },
+      } },
     } as SvgNode], seq());
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
-    const fill = d.data.fill as { units: string; from: { x: number }; to: { x: number } };
+    const fill = (d.data.fill as { paint: { units: string; from: { x: number }; to: { x: number } } }).paint;
     expect(fill.units).toBe('bounds');
     expect(fill.from.x).toBeCloseTo(0);
     expect(fill.to.x).toBeCloseTo(1);
@@ -188,9 +188,9 @@ describe('svgNodesToKitDrafts', () => {
     expect(drafts.indexOf(g)).toBeLessThan(drafts.indexOf(a));
   });
 
-  it('carries a bounds-relative gradient fill through as a FillStyle', () => {
+  it('carries a bounds-relative gradient fill through as a Paint', () => {
     const paint = {
-      fill: 'linear-gradient', units: 'bounds',
+      kind: 'linear-gradient', units: 'bounds',
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
     };
@@ -199,7 +199,7 @@ describe('svgNodesToKitDrafts', () => {
     })], seq());
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
-    expect(d.data.fill).toEqual(paint);
+    expect(d.data.fill).toEqual({ paint });
   });
 
   it('normalizes a userSpaceOnUse gradient against the leaf box', () => {
@@ -209,7 +209,7 @@ describe('svgNodesToKitDrafts', () => {
       fill: {
         kind: 'gradient',
         paint: {
-          fill: 'linear-gradient', units: 'world',
+          kind: 'linear-gradient', units: 'world',
           from: { x: 20, y: 40 }, to: { x: 30, y: 40 },
           stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
         },
@@ -218,7 +218,7 @@ describe('svgNodesToKitDrafts', () => {
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
     expect(d.data.fill).toMatchObject({
-      units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      paint: { units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } },
     });
   });
 
@@ -228,7 +228,7 @@ describe('svgNodesToKitDrafts', () => {
         paint: {
           kind: 'gradient',
           paint: {
-            fill: 'linear-gradient',
+            kind: 'linear-gradient',
             units: 'bounds',
             from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
             stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
@@ -240,7 +240,7 @@ describe('svgNodesToKitDrafts', () => {
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
     expect(d.data.stroke).toMatchObject({
-      paint: { fill: 'linear-gradient' },
+      paint: { kind: 'linear-gradient' },
       width: 2,
     });
   });
@@ -277,7 +277,7 @@ describe('svgNodesToKitDrafts', () => {
         paint: {
           kind: 'gradient',
           paint: {
-            fill: 'linear-gradient',
+            kind: 'linear-gradient',
             units: 'world',
             from: { x: 20, y: 40 }, to: { x: 30, y: 40 },
             stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
@@ -449,14 +449,14 @@ describe('svgNodesToKitDrafts — opacity', () => {
 
   it('keeps fill-opacity on a solid fill', () => {
     const data = leafOf(doc('<rect width="10" height="10" fill="#ff0000" fill-opacity="0.5"/>'));
-    expect(data.fill).toEqual({ color: '#ff0000', opacity: 0.5 });
+    expect(data.fill).toEqual({ paint: { color: '#ff0000', opacity: 0.5 } });
   });
 
   it("folds a path's element opacity into its fill and stroke", () => {
     const data = leafOf(doc(
       '<rect width="10" height="10" fill="#ff0000" fill-opacity="0.5" stroke="#000000" opacity="0.5"/>',
     ));
-    expect(data.fill).toEqual({ color: '#ff0000', opacity: 0.25 });
+    expect(data.fill).toEqual({ paint: { color: '#ff0000', opacity: 0.25 } });
     expect((data.stroke as { paint: unknown }).paint).toEqual({ color: '#000000', opacity: 0.5 });
   });
 
@@ -465,13 +465,13 @@ describe('svgNodesToKitDrafts — opacity', () => {
       + '<rect width="10" height="10" fill="#ff0000"/>'
       + '<image href="a.png" width="10" height="10" opacity="0.5"/>'
       + '</g></g>');
-    expect(leafOf(svg, 0).fill).toEqual({ color: '#ff0000', opacity: 0.25 });
+    expect(leafOf(svg, 0).fill).toEqual({ paint: { color: '#ff0000', opacity: 0.25 } });
     expect((leafOf(svg, 1).image as { opacity: number }).opacity).toBe(0.125);
   });
 
   it("gives text with an element opacity the default fill at that opacity", () => {
     const data = leafOf(doc('<text x="0" y="20" opacity="0.5">hi</text>'));
-    expect(data.fill).toEqual({ ...DEFAULT_TEXT_STYLE.fill, opacity: 0.5 });
+    expect(data.fill).toEqual({ paint: { ...DEFAULT_TEXT_STYLE.fill!.paint, opacity: 0.5 } });
   });
 
   it("leaves text with fill=none unfilled under an element opacity", () => {
@@ -509,7 +509,7 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
       leaf: (id, { data, pose }, source) => ({ id, tag: source.meta?.app?.attrs?.tag, fill: data.fill, w: pose.width }),
     });
     expect(drafts[0]).toMatchObject({
-      kind: 'leaf', id: 'd1', data: { id: 'd1', tag: 't', fill: { color: '#ff0000', opacity: 0.5 }, w: 10 },
+      kind: 'leaf', id: 'd1', data: { id: 'd1', tag: 't', fill: { paint: { color: '#ff0000', opacity: 0.5 } }, w: 10 },
     });
   });
 

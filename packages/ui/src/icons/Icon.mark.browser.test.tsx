@@ -1,7 +1,8 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { Icon } from './Icon';
-import type { IconName, MarkIconName } from './paths';
+import type { MarkIconName } from './groups';
+import type { IconName } from './paths';
 
 afterEach(cleanup);
 

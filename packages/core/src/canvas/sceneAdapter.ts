@@ -1,16 +1,7 @@
 /**
  * Synthesize a `<Canvas>`-compatible adapter from a `Scene` primitive.
- *
- * The Scene owns nodes/poses/parenting and auto-records ops on every mutation.
- * `<SceneCanvas>` calls `sceneToAdapter(scene)` and forwards the result to
- * `<Canvas>`'s `adapter` prop. Selection and hit-testing are not part of the
- * Scene model — Canvas's internal `useSelection` and pose-derived pickEvery
- * cover those.
- *
- * Pose semantics match the rest of the kit: `getPose` / `setPose` return /
- * write **local** coordinates (relative to parent). The Scene stores pose on
- * each node directly; world composition (when needed) is the renderer's job
- * via `composeWorldPose`, not the adapter's.
+ * `getPose` / `setPose` return / write **local** coordinates (relative to
+ * parent); world composition is the renderer's job via `composeWorldPose`.
  */
 import { useMemo } from 'react';
 import type {
@@ -30,8 +21,7 @@ import type { LayoutStrategy } from '../layout/types';
 import type { Op } from 'core/ops/types';
 import type { Node, Scene } from 'core/scene/types';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
-import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
-import { pickability } from 'core/scene/pickability';
+import { sceneMutators } from 'core/scene/sceneMutators';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
 import { hitTestArea, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
@@ -43,10 +33,10 @@ import {
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { composeWorldPose, frameAtOrAbove, type PoseComposition } from 'core/scene/composePose';
+import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
-import { containerCascade, descendantsOf } from './poseCascade';
+import { cascadingSetPose, containerCascade } from './poseCascade';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -81,14 +71,12 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & LayerEnumerableAdapter<TLayer>
   & ReorderAdapter
   & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>
-  // Tighten the parts that are optional on the underlying adapter contracts
-  // but unconditionally provided by a scene-backed adapter. Anything that
-  // routes scene mutations through this adapter (kit InsertOps, hierarchical
-  // hooks like useNest, etc.) can rely on these being present.
+  // Optional on the underlying adapter contracts, but unconditionally
+  // provided by a scene-backed adapter.
   & {
       getParent(id: string): string | null;
       /** The node's pose with every ancestor's frame folded in. Equal to
-       *  `getPose` unless a `poseComposition` is configured. */
+       *  `getPose` unless the scene composes poses. */
       getWorldPose(id: string): TPose;
       /** Whether `id`'s pose is a frame its children are expressed in — see
        *  `definesFrame`. */
@@ -104,6 +92,8 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       setData(id: string, data: TData): void;
       /** Swap a container's layout — what a `setLayout` op writes through. */
       setLayout(id: string, layout: LayoutStrategy<TPose> | string | null): void;
+      /** Move a node to another layer — what a `setLayer` op writes through. */
+      setLayer(id: string, layer: TLayer): void;
       getRemovalClosure(ids: readonly string[]): string[];
       applyOps(ops: Op[], label?: string): void;
       snapshotSelection(ids: string[]): ClipboardSnapshot;
@@ -127,11 +117,9 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   } | null;
   /** Layer to place inserted nodes on. Defaults to the trivial-form layer. */
   insertLayer?: TLayer;
-  /** Selection source for `AreaSelectAdapter.getSelection` / `setSelection`.
-   *  Pass the result of `useSelection()` (or its `adapterMethods`). When
-   *  omitted, `getSelection` returns `[]` and `setSelection` is a noop —
-   *  fine for read-only or selection-less canvases, but the marquee gesture
-   *  won't update any external selection state. */
+  /** Selection source: the result of `useSelection()` (or its
+   *  `adapterMethods`). When omitted, `getSelection` returns `[]` and
+   *  `setSelection` is a noop, so the marquee gesture updates nothing. */
   selection?: SceneAdapterSelection;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
@@ -143,21 +131,17 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   layouts?:
     | Record<string, LayoutStrategy<TPose>>
     | ((containerId: string) => LayoutStrategy<TPose> | null);
-  /** When true, `setPose` on a container translates every descendant by the
-   *  same delta, through the pose descriptor. Scene v1 stores absolute poses,
-   *  so without it children stay behind. */
-  cascadeContainerPose?: boolean;
-  /** How a child's stored pose folds into its parent's frame. Omit for the
-   *  absolute-pose model, where a parent contributes no transform. Supplying a
-   *  composing strategy makes a container's pose a **frame**: rotating the
-   *  container rotates its contents, and `setPose` on it must not also
-   *  translate them, so it cannot be combined with `cascadeContainerPose`. */
-  poseComposition?: PoseComposition<TPose>;
 }
 
 /** Derive the adapter for a scene. Reads go straight to the scene; writes are
  *  ops applied through its history, so anything done through the adapter is
- *  undoable. */
+ *  undoable.
+ *
+ *  Moving a container carries its contents either way the scene composes
+ *  poses. Under a frame (`scene.composition`) the one pose written moves them.
+ *  Under the absolute-pose model `setPose` on a container translates every
+ *  descendant by the same delta, and a batch that poses descendants too undoes
+ *  exactly only when it goes through this adapter's `applyOps`. */
 export function sceneToAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
@@ -181,21 +165,14 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       p, dx, dy, node === undefined ? d : poseDescriptorForNode(d, node),
     );
 
-  const composition = options.poseComposition;
-  const composes = composition !== undefined && composition.closure !== 'identity';
-  const pickOpts: ScenePickSourceOptions<unknown> = composition
-    ? { poseComposition: composition as PoseComposition<unknown> }
-    : {};
+  const composition = scene.composition;
+  const composes = composesFrames(composition);
+  const pickOpts: ScenePickSourceOptions<unknown> = {};
   // The asking view's layer gate and camera, over the adapter's own options.
   const pickOptsFor = (view: RegionPickView | undefined): ScenePickSourceOptions<unknown> =>
-    (view ? { ...pickOpts, ...regionPickOptions(view, undefined, undefined) } : pickOpts);
-  if (composes && options.cascadeContainerPose) {
-    throw new Error(
-      'sceneToAdapter: poseComposition and cascadeContainerPose contradict each other. ' +
-      'Under a composing strategy a child\'s pose is already relative to its parent, so ' +
-      'the cascade would move every descendant twice. Drop cascadeContainerPose.',
-    );
-  }
+    (view ? { ...pickOpts, ...regionPickOptions(view, undefined) } : pickOpts);
+
+  const cascade = composes ? null : { setPose: cascadingSetPose(scene, d) };
 
   const clipboardEnv: SceneClipboardEnv<TData, TLayer, TPose> = {
     scene,
@@ -207,9 +184,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   };
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
-    getNode(id) {
-      return scene.get(asNodeId(id));
-    },
+    ...sceneMutators(scene),
+    // What is shown, where the mutators' other users read the document:
+    // visible layers only, and the effective pose.
     getNodes() {
       const visible = visibleLayers();
       const out: Node<TData, TLayer, TPose>[] = [];
@@ -224,87 +201,28 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       if (!n) throw new Error(`sceneToAdapter: unknown node "${id}"`);
       return effectivePose(scene, n);
     },
-    getParent(id) {
-      const n = scene.get(asNodeId(id));
-      return n?.parent ?? null;
-    },
     definesFrame(id) {
       const n = scene.get(asNodeId(id));
       return n === undefined || definesFrame(n);
     },
     getWorldPose(id) {
       if (!composes) return adapter.getPose(id);
-      return composeWorldPose(adapter, id, composition!.compose);
+      return composeWorldPose(adapter, id, composition.compose);
     },
     // Only present when it would do something: the render walk skips the fold
     // entirely when this is absent, which is the absolute-pose path.
-    ...(composes ? { composePose: composition!.compose } : {}),
-    setPose(id, pose) {
-      // Container cascade (opt-in): under scene v1's absolute-pose semantics,
-      // moving a container needs to translate every descendant by the same
-      // delta so children visually stay attached. The whole cascade lands as
-      // one scene.batch so undo collapses to a single step.
-      if (options.cascadeContainerPose) {
-        const node = scene.get(asNodeId(id));
-        if (node && node.kind === 'container') {
-          const g = poseDescriptorForNode(d, node);
-          const before = g.getBounds(node.pose);
-          const after = g.getBounds(pose);
-          const dx = after.x - before.x;
-          const dy = after.y - before.y;
-          if (dx !== 0 || dy !== 0) {
-            const descIds = descendantsOf(scene, asNodeId(id));
-            scene.batch('move container', () => {
-              scene.setPose(asNodeId(id), pose);
-              for (const cid of descIds) {
-                const cn = scene.get(cid);
-                if (!cn) continue;
-                scene.setPose(cid, translate(cn.pose, dx, dy, cn));
-              }
-            });
-            return;
-          }
-        }
-      }
-      scene.setPose(asNodeId(id), pose);
-    },
+    ...(composes ? { composePose: composition.compose } : {}),
+    ...(cascade ? { setPose: (id: string, pose: TPose) => cascade.setPose(asNodeId(id), pose) } : {}),
     poseTarget(id, descriptor) {
-      if (!options.cascadeContainerPose || scene.get(asNodeId(id))?.kind !== 'container') {
+      if (cascade === null || scene.get(asNodeId(id))?.kind !== 'container') {
         return scenePoseTarget(scene, id, descriptor ?? d);
       }
       // Its descendants hold poses of their own: a commit moves them, and they are shown beside it.
-      const cascade = containerCascade(scene, asNodeId(id), d, (pose) => adapter.setPose(id, pose));
-      return scenePoseTarget(scene, id, descriptor ?? d, cascade);
+      const carried = containerCascade(scene, asNodeId(id), d, (pose) => adapter.setPose(id, pose));
+      return scenePoseTarget(scene, id, descriptor ?? d, carried);
     },
-    setParent(id, parentId) {
-      scene.move(asNodeId(id), parentId === null ? null : asNodeId(parentId));
-    },
-    getChildren(id) {
-      // Reorder ops call this with parentId === null to mean "root siblings."
-      // The kit's existing callers always pass a string, so this widening is
-      // additive — falls through to scene.childrenOf for the typed path and
-      // returns scene.roots for the null path.
-      if (id === null) return [...scene.roots];
-      return [...scene.childrenOf(asNodeId(id))];
-    },
-    setChildOrder(parentId, ids) {
-      // Batched reorder: each scene.reorder call is its own kit:move log
-      // entry, but scene.batch wraps them into one undo unit + one notify.
-      scene.batch('Reorder', () => {
-        for (let i = 0; i < ids.length; i++) {
-          // Skip ids that are already in the target slot to avoid useless
-          // log entries.
-          const current = parentId === null
-            ? scene.roots
-            : scene.childrenOf(asNodeId(parentId));
-          if (current[i] === ids[i]) continue;
-          scene.reorder(asNodeId(ids[i]), i);
-        }
-      });
-    },
-    getLayers() {
-      return scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax }));
-    },
+    getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
+    subscribeLayers: (listener) => scene.subscribe(listener),
     getLayout(id) {
       const declared = scene.layoutOf(asNodeId(id));
       if (declared !== null || !options.layouts) return declared;
@@ -312,12 +230,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         ? options.layouts(id)
         : options.layouts[id] ?? null;
     },
-    // Unified applyOps: when a label is supplied the ops are wrapped in a
-    // batch checkpoint (history-aware path used by Move/Resize/Rotate/Insert/
-    // Delete tools). When a journal is active (via scene's getActiveJournal
-    // option), scene.applyBatch routes to the journal instead of recording a
-    // new parent-history entry. Without a label the ops are applied transiently
-    // via applyOpsTo (AreaSelectAdapter contract — no checkpoint).
+    // With a label the ops are one batch checkpoint; without one they are
+    // applied transiently, with no checkpoint (the AreaSelectAdapter contract).
     applyOps(ops: Op[], label?: string) {
       if (label !== undefined) {
         scene.applyBatch(ops, label, this);
@@ -325,42 +239,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         applyOpsTo(this, ops);
       }
     },
-    // Node-mutation surface used by kit InsertOps / DeleteOps (e.g.
-    // useNest wrapping the selection in a new container node, or its
-    // inverse). Re-adds via the full structural spec so the round-trip
-    // survives undo/redo; removes by id.
-    insertNode(node: Node<TData, TLayer, TPose>, index?: number) {
-      scene.add({
-        kind: node.kind,
-        layer: node.layer,
-        pose: node.pose,
-        data: node.data,
-        id: node.id,
-        ...(index !== undefined ? { index } : {}),
-        ...(node.parent !== null ? { parent: node.parent } : {}),
-        // Derivation travels with the node, or undo of a delete brings an
-        // edge back as a static path that never follows its endpoints again.
-        ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
-        ...pickability(node),
-        ...fnFieldsOfNode(node),
-      });
-    },
-    removeNode(id: string) {
-      scene.remove(asNodeId(id));
-    },
-    setData(id: string, data: TData) {
-      scene.update(asNodeId(id), { data });
-    },
-    setLayout(id: string, layout: LayoutStrategy<TPose> | string | null) {
-      scene.setLayout(asNodeId(id), layout);
-    },
-    getRemovalClosure(ids: readonly string[]): string[] {
-      return [...scene.removalClosure(ids.map(asNodeId))];
-    },
-    // AreaSelectAdapter surface — included unconditionally so plain
-    // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the
-    // marquee gesture. `applyOps` (above) dispatches transiently when called
-    // without a label, matching the AreaSelectAdapter contract.
     getSelection,
     setSelection,
     // The live marquee's and lasso's own hit-tests. Containers come back:
@@ -384,17 +262,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         { includeContainers: true },
       );
     },
-    // commitInsert (gesture-time leaf insert) is opt-in: present only when
-    // `options.commitInsert` is. The full insertNode/removeNode mutators
-    // above are always present so kit-side InsertOp / DeleteOp round-trip
-    // through scene.add / scene.remove regardless.
-    //
-    // Contract: this is a pure factory — it constructs a Node spec but does
-    // NOT touch the scene. `useInsert`'s onEnd dispatches an `InsertOp`
-    // whose apply() calls `adapter.insertNode` → `scene.add`, which is the
-    // sole insertion path. Calling `scene.add` here too would double-insert,
-    // and the second add throws on id collision (silently dropping the
-    // gesture's pointer-up cleanup and breaking the next drag).
+    // A pure factory: it constructs a Node spec but does NOT touch the scene.
+    // The `InsertOp` → `adapter.insertNode` → `scene.add` path is the sole
+    // insertion path. Calling `scene.add` here too would double-insert, and
+    // the second add throws on id collision.
     ...(options.commitInsert
       ? {
           commitInsert: (bounds: { x: number; y: number; width: number; height: number }) => {
@@ -443,12 +314,12 @@ export function useSceneAdapter<TData, TLayer extends string, TPose>(
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
 ): SceneCanvasAdapter<TData, TLayer, TPose> {
   const {
-    selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition,
+    selection, commitInsert, insertLayer, layouts, poseDescriptor,
   } = options;
   return useMemo(
     () => sceneToAdapter(scene, {
-      selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition,
+      selection, commitInsert, insertLayer, layouts, poseDescriptor,
     }),
-    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor, cascadeContainerPose, poseComposition],
+    [scene, selection, commitInsert, insertLayer, layouts, poseDescriptor],
   );
 }

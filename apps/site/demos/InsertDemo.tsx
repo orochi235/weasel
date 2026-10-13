@@ -5,10 +5,11 @@ import {
   useScene,
   useTools,
 } from '@weasel-js/core';
+import type { Fill } from '@weasel-js/core';
 
 // Per-shape data the kit's insert dep mints: `{ path, fill }` (see
 // `useInsertDepSource`). Pose is plain `{ x, y, width, height }`.
-interface RectData { path: unknown; fill: string }
+interface RectData { path: unknown; fill: Fill }
 interface RectPose { x: number; y: number; width: number; height: number }
 
 const W = 400, H = 300;

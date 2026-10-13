@@ -10,9 +10,7 @@ import { useInsertionEffect, useRef } from 'react';
  * interrupted by a more urgent update), and the value that render computed
  * would stay behind for the next event to read. This writes from
  * `useInsertionEffect`, so only a render that commits ever lands, and it lands
- * before any layout effect in that commit runs — a sibling's or a child's
- * `useLayoutEffect`, or a synchronous paint one of them triggers, already sees
- * it.
+ * before any layout effect in that commit runs.
  *
  * Don't read `.current` during render expecting this render's value: until the
  * commit it holds the previous committed one (on mount, this first `value`).

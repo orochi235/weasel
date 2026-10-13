@@ -1,14 +1,7 @@
 /**
- * Visual regression spec: boolean-ops demo.
- *
- * Captures the canvas grid and asserts pixel diff vs the committed baseline.
- *
- * Interaction sequence:
- *   1. Initial mount — capture static six-panel scene.
- *
- * Notes: Static after mount. Multi-canvas grid; tolerance bumped to 5% to
- * cover evenodd-stencil-edge differences on multi-contour boolean results,
- * matching `compound-paths.spec.ts`.
+ * Visual regression spec: boolean-ops demo, static after mount. Tolerance
+ * bumped to 5% to cover evenodd-stencil-edge differences on multi-contour
+ * boolean results, matching `compound-paths.spec.ts`.
  */
 import { test } from '@playwright/test';
 import { resolve } from 'node:path';

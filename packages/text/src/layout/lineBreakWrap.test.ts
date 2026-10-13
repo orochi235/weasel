@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { layoutRuns, type LayoutRunsOpts } from './layoutRuns';
+import { layoutRuns } from './layoutRuns';
+import type { LayoutRunsOpts } from './layoutOpts';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 // FIXTURE_FONT at fontSize 32 (scale 1) — A 23, B 22, A→B kerning -1, space
@@ -26,7 +27,7 @@ beforeEach(async () => {
 
 const RUN = (text: string): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-  fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+  fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
 

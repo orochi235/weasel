@@ -4,7 +4,7 @@ import { serializeSvg } from './serialize';
 import type { SvgNode } from './types';
 
 const CONIC = {
-  fill: 'conic-gradient' as const,
+  kind: 'conic-gradient' as const,
   center: { x: 0.5, y: 0.5 },
   angle: 0.25,
   stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],

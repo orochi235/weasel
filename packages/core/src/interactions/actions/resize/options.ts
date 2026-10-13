@@ -25,32 +25,19 @@ export interface UseResizeOptions<TPose> {
   /** Fired once per `onGestureStart`: `true` when the resize wrote to the
    *  document, `false` on cancel, a behavior abort, or no change. */
   onGestureEnd?: (committed: boolean) => void;
-  /** Optional: expand the incoming id into leaf ids before pose lookups.
-   *  Used for group expansion: when the
-   *  gesture is started against a group id, the kit
-   *  resizes by computing the union AABB of the leaves' origin bounds,
-   *  running the compute pipeline on that union rect (group bounds), and
-   *  remapping each leaf via `geometry.remapBounds(leaf, originGroupBounds,
-   *  proposedGroupBounds)`.
-   *
-   *  When `expandIds` is omitted or returns the original single id, the
-   *  gesture takes the single-leaf path (the leaf's own bounds become both
-   *  the origin and the target of the same `remapBounds` call).
-   *
-   *  Called once at `start()`. Returning `[]` aborts the gesture cleanly. */
+  /** Expand the incoming id into leaf ids, for resizing a group: the kit
+   *  resizes the union AABB of the leaves' bounds and remaps each leaf into
+   *  the result. Called once at `start()`. Returning `[]` aborts the gesture
+   *  cleanly. */
   expandIds?: (ids: string[]) => string[];
   /** Behaviors that operate on world-space anchor points. Fire after
-   *  `behaviors[]` (bounds-frame). Each behavior receives a `PointSnapContext`
-   *  with world-space frame points and returns at most one `PointSnapResult`;
-   *  the hook back-solves the local pose so the chosen frame's world point
-   *  lands on the snap target. First non-null result wins. */
+   *  `behaviors[]`. The first non-null `PointSnapResult` wins, and the pose
+   *  is back-solved so the chosen frame's world point lands on the snap
+   *  target. */
   pointSnapBehaviors?: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never;
   /** Per-node resizability predicate. Returns `false` for nodes that should
-   *  never show resize handles (and thus can't start a resize gesture) — e.g.
-   *  fixed-footprint icons, locked layers. `<SceneCanvas>` folds this over the
-   *  current selection into the `selectionResizable` rule-ctx flag, so the
-   *  default `selection.resize-handles` chrome rule hides handles whenever any
-   *  selected node is non-resizable (which also disables the affordance, since
-   *  visible==hittable). Default: every node resizable. */
+   *  never show resize handles (and thus can't start a resize gesture). The
+   *  handles hide whenever any selected node is non-resizable. Default: every
+   *  node resizable. */
   resizable?: (id: string) => boolean;
 }

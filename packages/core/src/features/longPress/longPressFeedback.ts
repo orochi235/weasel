@@ -8,7 +8,7 @@
 import type { LongPressState } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
 import { ellipsePath, polylineFromPoints, type Path } from '@weasel-js/geom';
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { CanvasExtensionApi } from '../../canvas/canvasExtension';
 import type { ContributionDepReader, SurfaceContribution } from '../../canvas/surfaceContribution';
 import { accentColorOf } from '../../canvas/accentColor';

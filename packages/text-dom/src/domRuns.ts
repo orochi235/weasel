@@ -1,21 +1,16 @@
 /**
- * Pure DOM ↔ `StyledRun[]` serializers for the contenteditable overlay
- * used by `useTextEdit`. The overlay's children are a flat sequence of
- * `<span data-run>` elements, each carrying one run's text and inline
- * styles. Newlines inside a run are literal `\n` characters; the overlay
- * has `white-space: pre-wrap` so they render as line breaks. The browser
- * breaks at no other UAX #14 hard break, so each of those is written as a
+ * DOM ↔ `StyledRun[]` serializers for the contenteditable overlay: a flat
+ * sequence of `<span data-run>` elements, one per run. The browser breaks at
+ * `\n` and at no other UAX #14 hard break, so each of those is written as a
  * `<span data-break>` holding a `\n` in its place — one character for one,
  * which keeps DOM offsets equal to source offsets.
  *
- * A small-caps run is the one exception to one text node per span: its
- * lowercase letters sit in `<span data-small-caps>` pieces, uppercased and
- * sized at the scale the canvas draws them with, since a browser's own
- * synthesis uses a fixed factor of its own. The pieces are presentation
- * only — `domToRuns` reads straight through them.
+ * A small-caps run's lowercase letters sit in `<span data-small-caps>` pieces,
+ * uppercased and sized at the scale the canvas draws them with, since a
+ * browser's own synthesis uses a fixed factor of its own.
  */
 
-import type { FillStyle } from '@weasel-js/paint';
+import { isSolidPaint, type Fill, type Paint } from '@weasel-js/paint';
 import {
   DEFAULT_TEXT_STYLE, isHardLineBreak, numericWeight, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
@@ -26,9 +21,9 @@ import { BLOCK_TAGS } from './domOffsets';
 
 export { charOffsetToDomPosition, domPositionToCharOffset } from './domOffsets';
 
-function solidColor(p: FillStyle | null | undefined): string | null {
+function solidColor(p: Paint | null | undefined): string | null {
   if (!p) return null;
-  if ('color' in p) return p.color;
+  if (isSolidPaint(p)) return p.color;
   return null;
 }
 
@@ -36,7 +31,7 @@ function solidColor(p: FillStyle | null | undefined): string | null {
  *  pattern, or `null` for no fill. */
 const FILL_ATTR = 'data-fill';
 
-interface StyleState {
+export interface StyleState {
   bold: boolean;
   italic: boolean;
   underline: boolean;
@@ -58,7 +53,7 @@ interface StyleState {
 
 const TRANSFORMS: ReadonlySet<string> = new Set(['none', 'uppercase', 'lowercase', 'capitalize']);
 
-const EMPTY_STYLE: StyleState = {
+export const EMPTY_STYLE: StyleState = {
   bold: false,
   italic: false,
   underline: false,
@@ -67,12 +62,9 @@ const EMPTY_STYLE: StyleState = {
 };
 
 /**
- * Parse a CSS `letter-spacing` value into world units. `runsToDom` only ever
- * writes `px`, but paste is a live path into the contenteditable and CSSOM
- * keeps whatever unit the pasted markup used. Any other unit is still
- * numerically coerced — `parseFloat` reads the leading digits — but flagged,
- * since e.g. `0.1em` silently becomes `0.1` world units, off by a factor of
- * the font size. Mirrors `parseLetterSpacing` in the SVG reader.
+ * Parse a CSS `letter-spacing` value into world units. Pasted markup can carry
+ * a unit other than `px`; it is read as its bare number and flagged, since
+ * `0.1em` becomes `0.1` world units, off by a factor of the font size.
  */
 function parseLetterSpacing(raw: string): number | undefined {
   const n = parseFloat(raw);
@@ -96,7 +88,7 @@ function cssFontVariant(el: HTMLElement): FontVariantCaps | undefined {
   return v === 'small-caps' || v === 'normal' ? v : undefined;
 }
 
-function styleStateFromElement(el: Element, parent: StyleState): StyleState {
+export function styleStateFromElement(el: Element, parent: StyleState): StyleState {
   if (isSmallCapsPiece(el)) return parent;
   const next: StyleState = { ...parent };
   const tag = el.tagName;
@@ -105,9 +97,8 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     next.fontWeight = undefined;
   }
   if (tag === 'I' || tag === 'EM') next.italic = true;
-  // `runsToDom` never emits these, but a browser contenteditable can (Cmd+U
-  // runs the native `underline` command, which produces `<u>` in Chrome), so
-  // read them for the same reason `<b>`/`<i>` are read.
+  // `runsToDom` never emits these, but a browser contenteditable can: Cmd+U
+  // runs the native `underline` command, which produces `<u>` in Chrome.
   if (tag === 'U') next.underline = true;
   if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL') next.strikethrough = true;
   if (tag === 'SUP') next.script = 'super';
@@ -130,26 +121,19 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     const fs = el.style.fontStyle;
     if (fs === 'italic') next.italic = true;
     if (fs === 'normal') next.italic = false;
-    // Decoration accumulates down the tree — unlike `font-weight`/`font-style`
-    // above, `text-decoration` does not inherit, it *propagates*, and a
-    // descendant cannot cancel what an ancestor drew. So OR the flags in
-    // rather than overwriting: `<u><span style="text-decoration: line-through">`
-    // renders both lines, and that is a reachable shape here, since `runsToDom`
-    // emits the span and an unintercepted Cmd+U supplies the `<u>`. An explicit
-    // `none` contributes no tokens and cancels nothing.
+    // `text-decoration` does not inherit, it *propagates*, and a descendant
+    // cannot cancel what an ancestor drew — so OR the flags in rather than
+    // overwriting, and an explicit `none` cancels nothing.
     //
     // A declaration block carrying only the longhand serializes the shorthand
-    // as `''` (the shorthand needs the full set), and browsers and pasted HTML
-    // both produce that, so fall back to `text-decoration-line`.
+    // as `''`, so fall back to `text-decoration-line`.
     const td = el.style.textDecoration || el.style.textDecorationLine;
     if (td && !td.includes('none')) {
       next.underline ||= td.includes('underline');
       next.strikethrough ||= td.includes('line-through');
       next.overline ||= td.includes('overline');
     }
-    // A percentage is `fontScale`'s own spelling — CSS resolves it against the
-    // parent, which is exactly what the field means. Any other unit is an
-    // absolute size.
+    // A percentage is `fontScale`; any other unit is an absolute size.
     if (el.style.fontSize) {
       const size = parseFloat(el.style.fontSize);
       if (Number.isFinite(size)) {
@@ -212,15 +196,15 @@ function styleEquals(a: StyleState, b: StyleState): boolean {
   );
 }
 
-function toRun(text: string, style: StyleState): StyledRun {
+export function toRun(text: string, style: StyleState): StyledRun {
   const run: StyledRun = { text };
   if (style.bold) run.bold = true;
   if (style.italic) run.italic = true;
   if (style.fontWeight != null) run.fontWeight = style.fontWeight;
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
-  if (style.fillJson !== undefined) run.fill = JSON.parse(style.fillJson) as FillStyle | null;
-  else if (style.color != null) run.fill = { fill: 'solid', color: style.color };
+  if (style.fillJson !== undefined) run.fill = JSON.parse(style.fillJson) as Fill | null;
+  else if (style.color != null) run.fill = { paint: { kind: 'solid', color: style.color } };
   // `letterSpacing: 0` is a meaningful override (it cancels node-level
   // tracking for this run), so test for presence, not truthiness.
   if (style.letterSpacing != null) run.letterSpacing = style.letterSpacing;
@@ -251,8 +235,8 @@ function restoreBreak(el: Element): string {
 /**
  * Append `text` to `parent` as the overlay sets it: a hard break the browser
  * would not break at becomes a `<span data-break>` holding a `\n`, carrying
- * the original's code as hex for `domToRuns` to restore. A CR that opens a
- * CRLF is left as it is — the LF breaks, and the CR draws nothing.
+ * the original's code as hex. A CR that opens a CRLF is left as it is — the
+ * LF breaks, and the CR draws nothing.
  */
 export function appendOverlayText(parent: Node, text: string): void {
   let from = 0;
@@ -303,7 +287,6 @@ export function domToRuns(parent: HTMLElement): StyledRun[] {
     visit(child, EMPTY_STYLE);
   }
 
-  // Coalesce adjacent fragments with identical style.
   const runs: StyledRun[] = [];
   let i = 0;
   while (i < fragments.length) {
@@ -362,10 +345,8 @@ function writeSmallCaps(span: HTMLElement, text: string, transform: TextTransfor
 }
 
 /**
- * Build a flat sequence of `<span data-run>` children from `runs`, replacing
- * any existing children of `parent`. `base` is the node's style, which a run
- * inheriting small caps needs to be split by; without it the kit defaults
- * stand in.
+ * Replace `parent`'s children with one `<span data-run>` per run. `base` is
+ * the node's style, which a run inheriting small caps is split by.
  */
 export function runsToDom(
   runs: readonly StyledRun[],
@@ -405,7 +386,7 @@ export function runsToDom(
       });
       span.setAttribute('data-font-family', run.fontFamily);
     }
-    const color = solidColor(run.fill);
+    const color = solidColor(run.fill?.paint);
     if (color != null) span.style.color = color;
     else if (run.fill !== undefined) span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
     // Black, as an unfilled node edits in: no CSS color leaves it legible.
@@ -419,17 +400,13 @@ export function runsToDom(
     if (run.overline) decorations.push('overline');
     if (decorations.length > 0) span.style.textDecoration = decorations.join(' ');
     if (run.script != null) span.style.verticalAlign = run.script;
-    // The one run field with no CSS spelling: `vertical-align` takes a length
-    // or a percentage of the *line height*, and this is a fraction of the
-    // parent's font size. An attribute keeps the round-trip exact; the canvas
-    // underneath is what actually draws the run at its offset.
+    // No CSS spelling: `vertical-align` takes a length or a percentage of the
+    // *line height*, and this is a fraction of the parent's font size.
     if (run.baselineShift != null) {
       span.setAttribute('data-baseline-shift', String(run.baselineShift));
     }
     // World units — the overlay's own node-level tracking is screen-scaled,
-    // but a run override is stored as-is so the round-trip is lossless. CSS
-    // `letter-spacing` is inherited and a child declaration *replaces* the
-    // inherited value, so this composes with the overlay's rather than adding.
+    // but a run override is stored as-is so the round-trip is lossless.
     if (run.letterSpacing != null) span.style.letterSpacing = `${run.letterSpacing}px`;
     // CSS draws the transform, so the span's text stays the source and the
     // caret-offset walkers below need no map.
@@ -469,10 +446,9 @@ function piecesMatch(span: HTMLElement, transform: TextTransform): boolean {
 }
 
 /**
- * Put every run span's small-caps pieces back where its text now needs them —
- * typing lands a letter in whichever piece holds the caret, not the one its
- * case belongs in. Returns whether anything was rewritten, which moves the
- * DOM selection: the caller restores it by character offset.
+ * Put every run span's small-caps pieces back where its text now needs them.
+ * Returns whether anything was rewritten, which moves the DOM selection: the
+ * caller restores it by character offset.
  */
 export function normalizeSmallCaps(parent: HTMLElement): boolean {
   let changed = false;

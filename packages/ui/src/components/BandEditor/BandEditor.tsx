@@ -12,13 +12,15 @@ import {
   type ReactNode,
 } from 'react';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 import { decimal, qty, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
 import { retagBands, untag } from './retag';
-import { isTextEntry, pct } from './track';
+import { pct } from './track';
 import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
+import { DraftGhost, type DraftGhostAt } from './DraftGhost';
 import { Ruler } from './Ruler';
 import { SeamHandle } from './SeamHandle';
 import {
@@ -84,8 +86,7 @@ export interface BandEditorProps<T, F extends Quantity = number> {
 type Draft<T> = {
   bands: Band<T>[];
   range?: [number, number];
-  /** Where the dragged thing started, in domain units: a line, or a band's span. */
-  ghost: { at: number } | { from: number; to: number };
+  ghost: DraftGhostAt;
 };
 
 const SEAM_DISPLAY = decimal();
@@ -97,15 +98,13 @@ function keepData<T>(_at: number, from: T): T {
 /**
  * Divides a numeric axis into contiguous bands and lets you drag the seams
  * between them. Each band carries a payload the consumer supplies and
- * renders through `renderBand`; the control itself knows nothing about what
- * a band means.
+ * renders through `renderBand`.
  *
  * The range is always fully covered — N bands, N−1 interior seams, no gaps and
- * no overlaps — so editing is editing a sorted list of seam positions. Seams
- * clamp at their neighbours rather than crossing, which means a drag can
- * never destroy a band: removal is only ever the explicit `x` / `Delete`
- * merge. The first band is doubly exceptional, its left edge pinned to `min`
- * and its body immovable, and it has no left neighbour to merge into.
+ * no overlaps. Seams clamp at their neighbors rather than crossing, so a drag
+ * can never destroy a band: removal is only ever the explicit `x` / `Delete`
+ * merge. The first band has its left edge pinned to `min` and its body
+ * immovable, and it has no left neighbor to merge into.
  *
  * | Gesture | Effect |
  * |---|---|
@@ -114,12 +113,10 @@ function keepData<T>(_at: number, from: T): T {
  * | right-click a band, or `l` | lock or unlock it |
  * | drag a band body | move both its seams, preserving its span |
  * | click the ruler | split the band under the pointer |
- * | `x` / `Delete` | merge the selected band into its left neighbour |
+ * | `s` | split the selected band at the middle of its drawn span |
+ * | `x` / `Delete` | merge the selected band into its left neighbor |
  * | click a band | select it |
  * | `←` `→` on a focused seam | move it by one step; `shift` for ten |
- *
- * `scale` defaults to `'log'`, because the interesting part of a width axis
- * is usually its narrow end.
  */
 export function BandEditor<T, F extends Quantity = number>(props: BandEditorProps<T, F>): ReactElement {
   const {
@@ -271,26 +268,36 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (typeof e.button === 'number' && e.button > 0) return;
     e.preventDefault();
-    const at = fromUnit(unitAt(e.clientX));
+    splitAt(fromUnit(unitAt(e.clientX)));
+  };
+
+  const splitAt = (at: number): boolean => {
     const next = splitBands(committed, at, min, max, splitBand);
-    if (next === committed) return;
+    if (next === committed) return false;
     onChange(next);
     // The new band takes the next index, so a selection to its right moves up one to stay on its band.
     const split = committed.filter((b) => b.from < at).length - 1;
     if (selectedIndex !== null && selectedIndex !== undefined && selectedIndex > split) onSelect?.(selectedIndex + 1);
+    return true;
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    if (e.key !== 'x' && e.key !== 'Delete' && e.key !== 'l') return;
+    if (e.key !== 'x' && e.key !== 'Delete' && e.key !== 'l' && e.key !== 's') return;
     // `x` is a bare letter and Cmd/Ctrl+X is cut: neither may be swallowed
     // when the keystroke belongs to something a consumer put in a band.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (isTextEntry(e.target)) return;
+    if (isEditableTarget(e.target) || focusedControlOwnsKey(e.nativeEvent)) return;
     if (selectedIndex === null || selectedIndex === undefined) return;
     if (e.key === 'l') {
       if (!props.onRangeChange) return;
       e.preventDefault();
       onChange(toggleLock(committed, selectedIndex));
+      return;
+    }
+    if (e.key === 's') {
+      // The middle of the band as drawn, so on a log scale the halves look equal.
+      const [from, to] = bandBounds(committed, selectedIndex, min, max);
+      if (splitAt(fromUnit((toUnit(from) + toUnit(to)) / 2))) e.preventDefault();
       return;
     }
     const next = mergeBand(committed, selectedIndex);
@@ -370,18 +377,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
           );
         })}
         {props.onRangeChange && edgeHandle('max')}
-        {draft && (
-          <div
-            className={'at' in draft.ghost ? s.seamGhost : s.bandGhost}
-            data-band-ghost=""
-            aria-hidden="true"
-            style={
-              ('at' in draft.ghost
-                ? { '--be-at': pct(toUnit(draft.ghost.at)) }
-                : { '--be-from': pct(toUnit(draft.ghost.from)), '--be-to': pct(toUnit(draft.ghost.to)) }) as Record<string, string> as CSSProperties
-            }
-          />
-        )}
+        {draft && <DraftGhost ghost={draft.ghost} toUnit={toUnit} />}
       </div>
     </div>
   );

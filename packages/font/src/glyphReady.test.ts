@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
-  subscribeGlyphReady, glyphGeneration, notifyGlyphReady,
+  subscribeGlyphReady, glyphGeneration, faceGeneration, notifyGlyphReady, notifyGlyphBaked,
 } from './glyphReady';
 
 describe('glyphGeneration', () => {
@@ -25,6 +25,18 @@ describe('glyphGeneration', () => {
     expect(glyphGeneration()).toBe(start + 2);
   });
 
+  it('tells a bake landing from a change to the faces', () => {
+    const cb = vi.fn();
+    const unsubscribe = subscribeGlyphReady(cb);
+    const [glyphs, faces] = [glyphGeneration(), faceGeneration()];
+    notifyGlyphBaked();
+    expect([glyphGeneration(), faceGeneration()]).toEqual([glyphs + 1, faces]);
+    notifyGlyphReady();
+    expect([glyphGeneration(), faceGeneration()]).toEqual([glyphs + 2, faces + 1]);
+    expect(cb).toHaveBeenCalledTimes(2);
+    unsubscribe();
+  });
+
   it('still drives push subscribers', () => {
     const cb = vi.fn();
     const unsubscribe = subscribeGlyphReady(cb);
@@ -34,5 +46,19 @@ describe('glyphGeneration', () => {
     } finally {
       unsubscribe();
     }
+  });
+
+  it('runs the subscribers after one that throws, and does not throw into the notifier', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const later = vi.fn();
+    const stopFirst = subscribeGlyphReady(() => {
+      throw new Error('boom');
+    });
+    const stopLater = subscribeGlyphReady(later);
+    expect(() => notifyGlyphReady()).not.toThrow();
+    expect(later).toHaveBeenCalledTimes(1);
+    stopFirst();
+    stopLater();
+    error.mockRestore();
   });
 });

@@ -5,50 +5,56 @@
  * undoable batch; the replacement takes the text node's slot, so stacking
  * order is unchanged.
  */
-import { boundsOfPath, type PolygonPath, type Rect } from '@weasel-js/geom';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
-import { createInsertOp } from 'core/ops/create';
-import { createDeleteOp } from 'core/ops/delete';
-import { createSetSelectionOp } from 'core/ops/select';
-import { locateChild } from 'core/ops/slot';
-import { unionBounds } from 'core/geometry/unionBounds';
+import type { Mat3, Path, Rect } from '@weasel-js/geom';
+import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import { dispatchApplyBatch } from 'core/applyOps';
-import {
-  textToPathsByPaint, TextOutlinesError, type TextNodeSource, type TextPaintPath,
-} from '@weasel-js/text';
+import { textToPathsByPaint, TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
+import { replaceWithPaths, type PaintedPath } from './replaceWithPaths';
 
-/** What a path minted by Create Outlines must carry — see
+/** What a path minted by an outline action must carry — see
  *  {@link CreateOutlinesAdapter.createPathNode}. */
-export interface OutlinePathSpec {
-  /** The fill these glyphs wear, resolved: their run's, else the node's,
-   *  else the default text fill. `null` is no fill. */
-  fill: FillStyle | null;
-  /** The stroke they wear, resolved the same way; absent for none. */
-  stroke?: Stroke;
-  /** The parent the path goes under: the text's own, or the container
-   *  minted to hold a multi-paint text's paths. */
+export interface OutlinePathSpec extends PathPaint {
+  /** The parent the path goes under: the source's own, or the container
+   *  minted to hold a source's several paths. */
   parent: string | null;
 }
 
-/** What `applyCreateOutlines` reads and writes through. */
+/** What `applyCreateOutlines` and `applyOutlineStroke` read and write through. */
 export interface CreateOutlinesAdapter {
   getSelection(): readonly NodeId[] | readonly string[];
   /** The text node behind `id`, or `undefined` for anything else. */
   getTextSource(id: NodeId): TextNodeSource | undefined;
   /**
-   * Mint one path node of text node `sourceId`'s outlines. `path` is in world
-   * space. The node must wear `spec`'s fill and stroke — a text whose runs
-   * differ in paint gets one path per paint — and sit under `spec.parent`.
-   * The kit places it; only the consumer knows its data shape.
+   * Optional: the world-space path of the path node behind `id`, and the
+   * paint it wears. Outline Stroke reads both, and passes over a node that
+   * lacks either.
    */
-  createPathNode(path: PolygonPath, sourceId: NodeId, spec: OutlinePathSpec): { id: string };
+  getWorldPath?(id: NodeId): Path | undefined;
+  getPaint?(id: NodeId): PathPaint | undefined;
   /**
-   * Mint the container that holds a multi-paint text's paths, under `parent`.
+   * Optional: the frame the node behind `id` draws its stroke in, as the
+   * matrix taking that frame to world (`poseFrameOf`); null or absent for a
+   * node drawn straight. Outline Stroke skews and stretches a world-width
+   * stroke with it. Without it every stroke is outlined in world.
+   */
+  getStrokeFrame?(id: NodeId): Mat3 | null | undefined;
+  /**
+   * Mint one path node of node `sourceId`'s outlines. `path` is in world
+   * space. The node must wear `spec`'s fill and stroke — a text whose runs
+   * differ in paint gets one path per paint, and a filled node whose stroke
+   * is outlined gets one for the fill and one for the stroke — and sit under
+   * `spec.parent`. The kit places it; only the consumer knows its data shape,
+   * so anything else of the source's `data` worth keeping is the adapter's to
+   * copy: onto this path when it stands alone in the source's slot, onto the
+   * container when `createContainerNode` minted one.
+   */
+  createPathNode(path: Path, sourceId: NodeId, spec: OutlinePathSpec): { id: string };
+  /**
+   * Mint the container that holds one source's several paths, under `parent`.
    * `bounds` is the world envelope of the paths. The kit puts the container in
-   * the text's slot and the paths inside it, in the text's order. Without
-   * this, the paths are laid flat in that slot instead.
+   * the source's slot and the paths inside it, back to front. Without this,
+   * the paths are laid flat in that slot instead.
    */
   createContainerNode?(sourceId: NodeId, spec: { parent: string | null; bounds: Rect }): { id: string };
   /** Full node for `id`, so undo restores the text node whole. Without it the
@@ -83,7 +89,7 @@ export type CreateOutlinesResult =
  */
 export function applyCreateOutlines(adapter: CreateOutlinesAdapter): CreateOutlinesResult {
   const sel = [...adapter.getSelection()] as NodeId[];
-  const converted: { id: NodeId; paths: TextPaintPath[] }[] = [];
+  const converted: { id: NodeId; paths: PaintedPath[] }[] = [];
   try {
     for (const id of sel) {
       const text = adapter.getTextSource(id);
@@ -97,47 +103,6 @@ export function applyCreateOutlines(adapter: CreateOutlinesAdapter): CreateOutli
   }
   if (converted.length === 0) return { kind: 'noop', reason: 'no-text' };
 
-  const ops: Op[] = [];
-  const replaced = new Map<NodeId, string[]>();
-  // Replacements in the same parent are inserted top slot first, so an
-  // earlier one widening the sibling list cannot shift a later one's index.
-  const located = converted.map((c) => ({ ...c, at: locateChild(adapter, c.id) }));
-  const order = [...located].sort((a, b) => (b.at?.index ?? -1) - (a.at?.index ?? -1));
-  for (const { id, paths, at } of order) {
-    const node = adapter.getNode?.(id) ?? { id };
-    const index = at?.index ?? -1;
-    const parent = at?.parentId ?? adapter.getParent?.(id) ?? null;
-    const place = (created: { id: string }, i: number) =>
-      createInsertOp(index >= 0 ? { node: created, index: index + i } : { node: created });
-    ops.push(createDeleteOp({ node, index }));
-
-    const container = paths.length > 1
-      ? adapter.createContainerNode?.(id, { parent, bounds: envelope(paths) })
-      : undefined;
-    if (container) {
-      ops.push(place(container, 0));
-      for (const p of paths) {
-        ops.push(createInsertOp({ node: adapter.createPathNode(p.path, id, specOf(p, container.id)) }));
-      }
-      replaced.set(id, [container.id]);
-    } else {
-      const created = paths.map((p) => adapter.createPathNode(p.path, id, specOf(p, parent)));
-      created.forEach((n, i) => ops.push(place(n, i)));
-      replaced.set(id, created.map((n) => n.id));
-    }
-  }
-  ops.push(createSetSelectionOp({
-    from: sel,
-    to: sel.flatMap((id) => (replaced.get(id) ?? [id]) as NodeId[]),
-  }));
-  dispatchApplyBatch(adapter, ops, 'Create Outlines');
+  const replaced = replaceWithPaths(adapter, sel, converted, 'Create Outlines');
   return { kind: 'applied', resultIds: converted.flatMap((c) => replaced.get(c.id)!) };
-}
-
-function specOf(p: TextPaintPath, parent: string | null): OutlinePathSpec {
-  return p.stroke !== undefined ? { fill: p.fill, stroke: p.stroke, parent } : { fill: p.fill, parent };
-}
-
-function envelope(paths: readonly TextPaintPath[]): Rect {
-  return unionBounds(paths.map((p) => boundsOfPath(p.path)))!;
 }

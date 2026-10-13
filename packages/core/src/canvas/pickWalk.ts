@@ -1,11 +1,6 @@
 /**
- * The one hit-test walk.
- *
- * Four walks used to answer this question — two point queries, two area
- * queries — over the same tree with the same gates. They drifted three times
- * without a failing test, because nothing held them to each other. Everything
- * that decides whether a node *can* be hit lives here now; a query supplies
- * only the shape test and the clip predicate for its own region.
+ * The one hit-test walk. Everything that decides whether a node *can* be hit lives here; a
+ * query supplies only the shape test and the clip predicate for its own region.
  *
  * The gates, in the order the walk applies them:
  *   1. containers, when the query does not want them
@@ -23,10 +18,10 @@
 
 import type { Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
+import { adapterDerivedPathOf, type DerivingAdapter } from './adapterDerivedPath';
 import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf } from './derivedPath';
-import type { PoseComposition } from 'core/scene/composePose';
+import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { clipCarrier } from './planeClips';
@@ -71,10 +66,7 @@ export interface PickSource<TPose> {
   /** Whether the node is locked — painted, but not something a pointer can
    *  take. Omit for a source with no lock concept. */
   isLocked?(node: PickCandidate<TPose>): boolean;
-  /** The path a node computes from its dependencies' poses, or null when it
-   *  derives nothing. Only a scene-backed source can answer — deriving needs
-   *  the dependencies' poses — so a bare adapter omits it, and every derived
-   *  node there keeps answering from its own (placeholder) pose. */
+  /** The path a node computes from its dependencies, or null for none. */
   derivedPathOf?(node: PickCandidate<TPose>): Path | null;
   /** How the asking view's world maps into a parallax layer's, or null for a
    *  layer that moves with the camera. Omit for a source with no planes. */
@@ -142,11 +134,9 @@ export function pickWalk<TPose>(
   const isLocked = q.includeLocked === true ? undefined : src.isLocked;
   const out: string[] = [];
 
-  // Resolving a container's clip means `clipFromPose` or a silhouette build,
-  // which is the expensive half; the predicate against it is cheap. So the
-  // *path* is memoized per container for the walk and the predicate re-runs
-  // per candidate — `clipAdmits` needs the candidate, and caching its answer
-  // per container would answer the wrong question for an area query.
+  // Resolving a container's clip is the expensive half, so the *path* is memoized per
+  // container for the walk. The predicate re-runs per candidate: caching its answer per
+  // container would answer the wrong question for an area query.
   const clipPath = new Map<string, Path | null>();
   // A clip is in its container's plane; the query is in the candidate's.
   const carry = clipCarrier(src.planeOf ?? null);
@@ -206,10 +196,6 @@ export function pickWalk<TPose>(
 
   return out;
 }
-
-// ---------------------------------------------------------------------------
-// Sources
-// ---------------------------------------------------------------------------
 
 /** Answers `Scene.isLocked` from the layer records and parent links alone,
  *  so a partial scene stand-in works too. Null when nothing is locked, which
@@ -277,11 +263,6 @@ export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
    *  which is `layerVisibility` and `layerOrder` on top of the scene's own
    *  `visible` flag. Consulted after the scene's flag, never instead of it. */
   layerIsPainted?: (layer: string) => boolean;
-  /** How a child's stored pose folds into its parent's frame. Needed because
-   *  picking tests where a node is drawn, and under a composing strategy that
-   *  is not where its own pose says. Ignored when `getPose` already answers in
-   *  world coordinates. */
-  poseComposition?: PoseComposition<TPose>;
   /** The asking view's camera. With it, a layer carrying `parallax` is picked
    *  through its plane; without it, every layer is taken to move with the
    *  camera. */
@@ -296,11 +277,8 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   const locked = lockedNodeTest(scene as never);
   const { getPose, alphaOf, layerIsPainted } = opts;
 
-  // Resolved once per walk rather than once per candidate: a scene with
-  // nothing faded has nothing to say about alpha, and asking it per node is a
-  // Map lookup on a linear scan that has no other reason to touch the
-  // override table. Needs enumeration — a partial scene stand-in carrying
-  // only `read` falls back to reading per node.
+  // Resolved once per walk rather than once per candidate. Needs enumeration — a
+  // partial scene stand-in carrying only `read` falls back to reading per node.
   let faded: Set<string> | null = null;
   const enumerable = typeof scene.overrides?.ids === 'function';
   if (!alphaOf && enumerable) {
@@ -316,8 +294,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 
   // A composing strategy makes a node's own pose local, so picking folds the
   // parent chain the same way the render walk does: one definition of both.
-  const composition = opts.poseComposition;
-  const paintedPoseOf = scenePaintedPoseOf(scene, undefined, composition);
+  const paintedPoseOf = scenePaintedPoseOf(scene);
   const poseOf = getPose
     ? (node: PickCandidate<TPose>) => getPose(node.id)
     : (node: PickCandidate<TPose>) => paintedPoseOf(node as never);
@@ -337,11 +314,11 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     };
   };
 
-  const sceneDerivedPath = getPose ? null : sceneDerivedPathOf(scene, undefined, composition);
+  const sceneDerivedPath = getPose ? null : sceneDerivedPathOf(scene);
   const derivedPathOf = (node: PickCandidate<TPose>): Path | null => {
     const n = node as unknown as Node<TData, TLayer, TPose>;
-    if (n.dependsOn === undefined) return null;
-    return sceneDerivedPath ? sceneDerivedPath(n) : resolveDerivedPath(n, depOf, childrenOf);
+    if (!sceneDerivedPath) return n.dependsOn === undefined ? null : resolveDerivedPath(n, depOf, childrenOf);
+    return showsComputedPath(scene, n) ? sceneDerivedPath(n) : null;
   };
 
   const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;
@@ -432,6 +409,7 @@ export function adapterPickSource<TPose>(
   const worldPose = (id: string): TPose =>
     (typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id));
 
+  const derived = typeof adapter.getNode === 'function' ? adapterDerivedPathOf(adapter as DerivingAdapter<TPose>) : null;
   const nodeOf = (id: string): PickCandidate<TPose> => {
     const raw = hier.getNode(id) as Partial<PickCandidate<TPose>>;
     return { ...raw, id, pose: worldPose(id) } as PickCandidate<TPose>;
@@ -463,6 +441,7 @@ export function adapterPickSource<TPose>(
     ...(gates.layerIsPainted ? { layerIsPainted: gates.layerIsPainted } : {}),
     ...(gates.planeOf ? { planeOf: gates.planeOf } : {}),
     poseOf: (node) => worldPose(node.id),
+    ...(derived ? { derivedPathOf: (node: PickCandidate<TPose>) => derived(node.id) } : {}),
     parentsOf(node) {
       const chain: PickCandidate<TPose>[] = [];
       let cur = parents.get(node.id);

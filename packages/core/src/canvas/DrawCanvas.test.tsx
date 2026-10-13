@@ -5,8 +5,8 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { registerPaintKind, getPaintKind } from 'renderer/paintKinds';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { makeMatchMedia } from '../core/device/testing/matchMedia';
 import { DrawCanvas } from './DrawCanvas';
 
@@ -15,7 +15,8 @@ const resizeMock = vi.fn<(dims: { width: number; height: number; dpr: number }) 
 const ctorSpy = vi.fn<(opts: { width: number; height: number; dpr: number }) => void>();
 const disposeMock = vi.fn();
 
-vi.mock('../renderer/WeaselRenderer', () => ({
+vi.mock('@weasel-js/renderer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
   WeaselRenderer: class {
     constructor(opts: { width: number; height: number; dpr: number }) { ctorSpy(opts); }
     render(commands: DrawCommand[]): void { renderMock(commands); }
@@ -41,7 +42,7 @@ const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 const rect = (color: string): DrawCommand => ({
   kind: 'path',
   path: { kind: 'rect', x: 1, y: 2, width: 3, height: 4 },
-  fill: { fill: 'solid', color },
+  fill: { paint: { kind: 'solid', color } },
 });
 
 const lastFrame = () => renderMock.mock.calls.at(-1)![0];
@@ -58,7 +59,7 @@ describe('<DrawCanvas>', () => {
   it('puts the background beneath the view, covering the whole surface', () => {
     render(
       <DrawCanvas
-        width={40} height={20} background={{ fill: 'solid', color: '#fff' }}
+        width={40} height={20} background={{ kind: 'solid', color: '#fff' }}
         view={{ x: 5, y: 0, scale: { x: 2, y: 2 } }} draw={[rect('#f00')]}
       />,
     );
@@ -66,21 +67,21 @@ describe('<DrawCanvas>', () => {
     expect(bg).toEqual({
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 40, height: 20 },
-      fill: { fill: 'solid', color: '#fff' },
+      fill: { paint: { kind: 'solid', color: '#fff' } },
     });
     expect(Array.from((group as GroupDrawCommand).transform!)).toEqual([2, 0, 0, 0, 2, 0, -10, 0, 1]);
   });
 
   it('resolves a bounds-relative background against the surface', () => {
     const background = {
-      fill: 'linear-gradient' as const,
+      kind: 'linear-gradient' as const,
       from: { x: 0, y: 0 }, to: { x: 1, y: 1 },
       stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
       units: 'bounds' as const,
     };
     render(<DrawCanvas width={40} height={20} background={background} draw={[]} />);
     const [bg] = lastFrame();
-    expect((bg as { fill: unknown }).fill).toMatchObject({ units: 'local', to: { x: 40, y: 20 } });
+    expect((bg as { fill: unknown }).fill).toMatchObject({ paint: { units: 'local', to: { x: 40, y: 20 } } });
   });
 
   it('repaints on the next frame when its commands change', async () => {

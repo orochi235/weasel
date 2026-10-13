@@ -34,11 +34,21 @@ export function prefAliasTarget(
   }
 }
 
+/**
+ * What an alias is called wherever one is drawn or named: its own name, else
+ * that of `target`, the leaf it shows, else `Alias` for one that shows
+ * nothing.
+ */
+export function prefAliasName(alias: PrefAlias, target?: PrefLeaf): string {
+  if (alias.name !== '') return alias.name;
+  return target === undefined ? 'Alias' : target.name;
+}
+
 /** A leaf drawn through an alias: the target, under the alias's own name and description where it gives them. */
 export function prefAliasedLeaf(alias: PrefAlias, target: PrefLeaf): PrefLeaf {
   return {
     ...target,
-    name: alias.name === '' ? target.name : alias.name,
+    name: prefAliasName(alias, target),
     description: alias.description === '' ? target.description : alias.description,
   };
 }

@@ -39,11 +39,10 @@ function distributeSelection(
   axis: DistributeAxis,
   mode: DistributeMode,
   geom: PoseDescriptor<unknown>,
-  poseComposition: unknown,
 ): void {
   const ids = selection.get();
   if (ids.length < 3) return;
-  const frame = scenePoseFrame(scene, poseComposition);
+  const frame = scenePoseFrame(scene);
 
   const items = ids.map((id) => {
     const pose = frame.world(id);
@@ -69,7 +68,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     icon: ICON_FOR[axis],
     group: 'distribute',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor', 'poseComposition'],
+    requires: ['selection', 'scene', 'poseDescriptor'],
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',
@@ -78,7 +77,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         const scene = deps.scene;
         if (!selection || !scene) return;
         const mode = (params?.mode as DistributeMode | undefined) ?? 'centers';
-        distributeSelection(selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition);
+        distributeSelection(selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor));
       },
     } satisfies ImmediateInvoker,
     // Deps-aware, matching `distributeSelection`'s own `ids.length < 3` guard:

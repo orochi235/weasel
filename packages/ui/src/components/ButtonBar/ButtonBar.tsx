@@ -18,7 +18,7 @@ export type ButtonBarItem<V extends string | number = string> = {
 /** Segment height and type scale for an {@link ButtonBar}. */
 export type ButtonBarSize = 'sm' | 'md';
 /** Visual treatment of an {@link ButtonBar}. */
-export type ButtonBarVariant = 'default' | 'minimal';
+export type ButtonBarVariant = 'default' | 'minimal' | 'flat';
 
 /** Props for {@link ButtonBar}. */
 export type ButtonBarProps<V extends string | number = string> = {

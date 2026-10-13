@@ -25,6 +25,7 @@ function setup(over: Partial<AppCommands> = {}) {
     canReleaseCompound: true,
     releaseCompound: vi.fn(),
     openPrefs: vi.fn(),
+    openPalette: vi.fn(),
     ...over,
   };
   const scene = createScene<{ kind: 'rect' }, 'main', { x: number; y: number; width: number; height: number }>(
@@ -71,6 +72,12 @@ describe('draw app commands', () => {
     expect(t.commands.openPrefs).toHaveBeenCalledOnce();
   });
 
+  it('mod+K opens the command palette', () => {
+    const t = setup();
+    t.key({ key: 'k', code: 'KeyK', ctrlKey: true });
+    expect(t.commands.openPalette).toHaveBeenCalledOnce();
+  });
+
   it('draws grid and snap as toggles that show their state, and fires on click', () => {
     const t = setup({ gridVisible: true });
     const grid = screen.getByRole('button', { name: 'Show grid' });
@@ -86,6 +93,12 @@ describe('draw app commands', () => {
     setup({ canReleaseCompound: false });
     const release = screen.getByRole('button', { name: 'Release compound path' }) as HTMLButtonElement;
     expect(release.disabled || release.getAttribute('aria-disabled') === 'true').toBe(true);
+  });
+
+  it('offers the command palette as a button', () => {
+    const t = setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Commands' }));
+    expect(t.commands.openPalette).toHaveBeenCalledOnce();
   });
 
   it('offers Preferences as a button', () => {

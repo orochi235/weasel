@@ -1,23 +1,16 @@
 /**
- * Geometry contract test (Spec 1 §4 / Spec 2 — the RED gate).
- *
- * Parametrized FACTORIES × OPS. Each node carries the **geometry-in-data**
- * convention apps/draw uses: a bare-AABB pose `{x,y,width,height,rotation?}`
- * (no `kind`) plus the real geometry in `data.path`. World geometry is the
- * canonical `pathInWorld(geometryOf(node), node.pose)`.
+ * Geometry contract test, parametrized FACTORIES × OPS. Each node carries the
+ * **geometry-in-data** convention apps/draw uses: a bare-AABB pose
+ * `{x,y,width,height,rotation?}` (no `kind`) plus the real geometry in
+ * `data.path`.
  *
  * The contract: after any transform op, the node's WORLD geometry must be the
  * affine image of the before-geometry under the SAME map applied to the pose,
  * and `boundsOfPath(afterWorld) ≈ aabbOf(after.pose)` — the contents must keep
- * filling the pose box. The anchor bug violates this for polygon-content nodes:
- * resize (and flip) scale/mirror the pose AABB while `data.path` is untouched,
- * so the contents tear loose from the frame.
- *
- * This test is EXPECTED TO FAIL today (red) for polygon-content factories under
- * resize/flip. It turns green when Spec 2's data-aware projection fix lands.
- * Do NOT weaken the assertions to make it pass; do NOT implement the fix here.
+ * filling the pose box.
  */
 
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
@@ -44,15 +37,11 @@ import {
 import type { Path } from '@weasel-js/geom';
 import { splitPathBySegment } from '@weasel-js/geom/booleans';
 
-import { resizeAction } from '../defaults/resize';
+import { resizeAction } from '../resize/action';
 import { moveAction } from '../move/action';
-import { rotateAction } from '../defaults/rotate';
+import { rotateAction } from '../rotate/action';
 import { nudgeRightAction } from '../defaults/nudge';
 import { flipAction } from '../defaults/flip';
-
-// ---------------------------------------------------------------------------
-// Test node model — geometry-in-data (the apps/draw convention)
-// ---------------------------------------------------------------------------
 
 interface AABBPose {
   x: number;
@@ -70,9 +59,7 @@ interface TestNode {
   data: DrawData;
 }
 
-/** The geometry accessor — mirrors apps/draw's SceneCanvas geometry source
- *  (`App.tsx`: `data.path ? pathInWorld(data.path, node.pose) : undefined`).
- *  Returns the STORED path; `pathInWorld(geometryOf(n), n.pose)` is the world
+/** The STORED path; `pathInWorld(geometryOf(n), n.pose)` is the world
  *  geometry the contract asserts on. */
 function geometryOf(node: TestNode): Path {
   return node.data.path;
@@ -84,9 +71,7 @@ function aabbOf(pose: AABBPose): { x: number; y: number; width: number; height: 
 }
 
 /** Build a geometry-in-data node from a stored path. The pose's AABB is the
- *  path's own bounds at construction (path stored in world coords initially,
- *  pose AABB coincident — exactly how apps/draw mints booleans/slice/shape
- *  nodes). */
+ *  path's own bounds at construction. */
 function nodeFromPath(id: string, path: Path): TestNode {
   const b = boundsOfPath(path);
   return {
@@ -96,13 +81,10 @@ function nodeFromPath(id: string, path: Path): TestNode {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Stub scene + op application (mirrors resize.test.ts / nudge.test.ts harness)
-// ---------------------------------------------------------------------------
-
 interface StubScene {
   poses: Map<string, AABBPose>;
   overrides: PoseOverrides<unknown>;
+  composition: typeof IDENTITY_POSE_COMPOSITION;
   datas: Map<string, DrawData>;
   get(id: NodeId): { pose: AABBPose; data: DrawData; kind: 'leaf'; layer: string; parent: null } | undefined;
   setPose(id: NodeId, pose: AABBPose): void;
@@ -119,6 +101,7 @@ function makeStubScene(node: TestNode): StubScene {
     poses,
     datas,
     overrides: createPoseOverrides<unknown>((id) => (poses.has(id as string) ? { } : undefined)),
+    composition: IDENTITY_POSE_COMPOSITION,
     roots: [node.id as NodeId],
     get(id: NodeId) {
       if (!poses.has(id as string)) return undefined;
@@ -142,9 +125,7 @@ function makeStubScene(node: TestNode): StubScene {
   return scene;
 }
 
-/** Adapter that writes each committed op's pose / data back to the stub scene.
- *  The `setData` method lets a committed `setData` op (emitted by the opt-in
- *  geometryProjection seam) update the data the test reads from. */
+/** Adapter that writes each committed op's pose / data back to the stub scene. */
 function applyOpsTo(scene: StubScene): (ops: Op[], label: string) => void {
   const adapter = {
     setPose(id: string, pose: unknown) {
@@ -158,10 +139,6 @@ function applyOpsTo(scene: StubScene): (ops: Op[], label: string) => void {
     for (const op of ops) op.apply(adapter);
   };
 }
-
-// ---------------------------------------------------------------------------
-// Op drivers — drive the REAL action descriptors over the stub scene
-// ---------------------------------------------------------------------------
 
 const baseModifiers = { alt: false, ctrl: false, meta: false, shift: false };
 
@@ -181,10 +158,9 @@ function baseDeps(scene: StubScene, id: string) {
     selection: { get: () => [id as NodeId] },
     scene,
     applyOps: applyOpsTo(scene),
-    // Mirror apps/draw's real consumer: a flip / resize / move / nudge of a
-    // geometry-in-data node ALSO rewrites its `data.path` via the affine the
-    // pose underwent. This is the only way an asymmetric shape's contents
-    // mirror under flip-x (a bare-AABB pose flip is identity).
+    // Rewrites `data.path` via the affine the pose underwent: the only way an
+    // asymmetric shape's contents mirror under flip-x (a bare-AABB pose flip
+    // is identity).
     geometryProjection: {
       transform: (node: { data: unknown }, m: import('@weasel-js/geom').Mat3) => {
         const data = node.data as { path: Path } | undefined;
@@ -266,10 +242,6 @@ function driveFlipX(scene: StubScene, id: string): void {
   immediate(flipAction).run(baseDeps(scene, id), { axis: 'x' });
 }
 
-// ---------------------------------------------------------------------------
-// World-geometry assertions
-// ---------------------------------------------------------------------------
-
 /** Flat [x,y,...] of a path's coords in world space. Rect promoted to corners. */
 function worldCoords(path: Path): number[] {
   if (path.kind === 'rect') {
@@ -288,9 +260,8 @@ function mapCoords(coords: number[], m: (x: number, y: number) => [number, numbe
   return out;
 }
 
-/** Sort a flat coord stream into a canonical point order so two descriptions
- *  of the SAME point set compare equal regardless of vertex/winding order
- *  (a mirror or rotation re-labels vertices but preserves the set). */
+/** Sort a flat coord stream into a canonical point order: a mirror or
+ *  rotation re-labels vertices but preserves the set. */
 function sortedPoints(coords: number[]): number[] {
   const pts: [number, number][] = [];
   for (let i = 0; i < coords.length; i += 2) pts.push([coords[i], coords[i + 1]]);
@@ -298,9 +269,7 @@ function sortedPoints(coords: number[]): number[] {
   return pts.flat();
 }
 
-/** Compare two coord streams as point SETS (order-independent). Catches
- *  "contents are the unchanged/un-mapped shape" — the anchor bug — without
- *  false reds from vertex re-labeling under mirror/rotation. */
+/** Compare two coord streams as point SETS (order-independent). */
 function expectSamePointSet(actual: number[], expected: number[]): void {
   const a = sortedPoints(actual);
   const e = sortedPoints(expected);
@@ -319,10 +288,6 @@ function expectRectClose(
   expect(a.width).toBeCloseTo(b.width, 1);
   expect(a.height).toBeCloseTo(b.height, 1);
 }
-
-// ---------------------------------------------------------------------------
-// Factories — every node is geometry-in-data (bare AABB pose + data.path)
-// ---------------------------------------------------------------------------
 
 function penPath(): Path {
   return new PathBuilder()
@@ -366,21 +331,14 @@ const FACTORIES: { name: string; polygonContent: boolean; make: () => TestNode }
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Ops — each describes the affine map applied to the pose, and drives the
-// real action. `expectedMap(before, after)` returns the world-space affine the
-// CONTENTS must follow (same map as the pose's frame change).
-// ---------------------------------------------------------------------------
-
 interface OpCase {
   name: string;
   drive: (scene: StubScene, id: string, before: TestNode) => void;
   /** The affine map the contents must follow, derived from before/after pose. */
   expectedMap: (before: TestNode, after: TestNode) => (x: number, y: number) => [number, number];
   /** Whether the contents' world AABB must equal the pose AABB after the op.
-   *  True for resize/move/nudge/flip; FALSE for rotate (a rotated shape's
-   *  axis-aligned world bounds legitimately exceed the unrotated pose AABB —
-   *  the rotation is stored on the pose, not baked into the AABB). */
+   *  FALSE for rotate: a rotated shape's axis-aligned world bounds
+   *  legitimately exceed the unrotated pose AABB. */
   fillsPoseBox: boolean;
 }
 
@@ -419,14 +377,12 @@ const OPS: OpCase[] = [
     name: 'resize-flip-y',
     drive: (scene, id, before) => {
       // Fix top-left, drag the bottom-right corner UP past the top edge:
-      // the box flips vertically with a signed height of -40 (the WeaselDraw
-      // flip-corruption repro: an unselectable negative-extent node).
+      // the box flips vertically with a signed height of -40.
       const p = before.pose;
       driveResize(scene, id, { x: 'min', y: 'min' }, { x: p.x + p.width, y: p.y + p.height }, 0, -(p.height + 40));
     },
-    // The contents follow the SIGNED box→box map (mirror). The committed pose
-    // must come out normalized — asserted via fillsPoseBox against the world
-    // bounds, plus the explicit non-negative-extent check in the test body.
+    // The contents follow the SIGNED box→box map (mirror); the committed pose
+    // must come out normalized.
     expectedMap: (before) => boxToBoxMap(aabbOf(before.pose), { x: before.pose.x, y: before.pose.y, width: before.pose.width, height: -40 }),
     fillsPoseBox: true,
   },
@@ -471,10 +427,6 @@ const OPS: OpCase[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// The parametrized contract
-// ---------------------------------------------------------------------------
-
 describe('geometry contract (kit-level) — transforms move contents, not just the frame', () => {
   for (const f of FACTORIES) {
     for (const op of OPS) {
@@ -502,8 +454,6 @@ describe('geometry contract (kit-level) — transforms move contents, not just t
         expectSamePointSet(worldCoords(afterWorld), expected);
 
         // (2) contents must keep filling the pose box (no tear-loose).
-        //     Skipped for rotate: a rotated shape's axis-aligned world bounds
-        //     legitimately exceed the unrotated pose AABB.
         if (op.fillsPoseBox) {
           expectRectClose(boundsOfPath(afterWorld), aabbOf(afterNode.pose));
           // (3) with a geometryProjection wired, the data absorbs any mirror,

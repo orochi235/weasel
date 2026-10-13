@@ -1,30 +1,4 @@
-/**
- * Pick the topmost id from a body-hit list, using whatever signal the
- * adapter exposes.
- *
- * Why this exists: `pickEvery` returns every id whose body covers the pointer.
- * Naively taking `ids[0]` makes containers swallow clicks on their children
- * (the container's bounds also cover the hit point, and demo iteration
- * order tends to put parents before children). This helper resolves the
- * ambiguity in a way that's correct by default for the common parent/child
- * case, while remaining a no-op for the trivial single-hit case.
- *
- * Resolution rules (in order):
- *
- * 1. **Empty / single hit.** Return `null` / the lone id.
- * 2. **Parent/child collapse.** When `adapter.getParent` is present, drop
- *    any id in the hit set that is an ancestor of another id in the hit
- *    set. After the collapse, if exactly one id remains, return it.
- * 3. **Sibling z-order.** When the adapter exposes `compareZ` or `getZIndex`,
- *    the survivors of the collapse are ranked by it and the highest wins.
- *    This composes with step 2 rather than replacing it: a child still beats
- *    its own ancestor regardless of what z the two report.
- * 4. **Tiebreaker.** Return the LAST id in the (collapsed) array. Scenes
- *    walked forward (`renderOrder()`, `Object.keys`, `for of items`) come
- *    back bottom-first by convention, so "last" gives the topmost. A caller
- *    that z-sorts topmost-first and exposes neither z hook should resolve
- *    before calling — this helper doesn't try to detect that.
- */
+/** The signals `pickTopMostHit` ranks a hit list by. All optional. */
 export interface PickTopMostHitAdapter {
   getParent?: (id: string) => string | null;
   /** Paint depth of `id`; higher draws later, so higher wins a hit. Ids the
@@ -38,7 +12,11 @@ export interface PickTopMostHitAdapter {
 
 /** Reduce a set of hit ids to the single one a click should act on: drop any
  *  id that is an ancestor of another in the set, then take the topmost of what
- *  remains. */
+ *  remains. A child beats its own ancestor regardless of what z the two report.
+ *
+ *  With no z signal the LAST id wins: scenes walked forward come back
+ *  bottom-first by convention. A caller that z-sorts topmost-first and exposes
+ *  neither z hook should resolve before calling. */
 export function pickTopMostHit(
   ids: readonly string[],
   adapter: PickTopMostHitAdapter | undefined | null,

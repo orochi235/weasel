@@ -3,10 +3,9 @@
  *
  * A port is declared as an `AffordanceRegion`, so the kit's own region walk
  * supplies the hit-test, the screen-pixel hit radius, the cursor and the
- * exclusive claim that keeps a port drag out of the select tool's hands. That
- * is the "visible chrome is always hittable" rule doing the work: the walk runs
- * on every pointerdown before any tool sees the event, so a port answers
- * whatever tool happens to be active.
+ * exclusive claim that keeps a port drag out of the select tool's hands. The
+ * walk runs on every pointerdown before any tool sees the event, so a port
+ * answers whatever tool happens to be active.
  *
  * Two things about this are easy to get wrong, and both fail silently.
  *
@@ -23,10 +22,10 @@ import type {
   Affordance,
   AffordanceRegion,
   ChromeState,
-  CommandFill,
   CommandStroke,
   CursorSpec,
   PoseDescriptor,
+  CommandFill,
 } from '@weasel-js/core';
 import { portsOf } from './ports';
 import type { DiagramNodeLike, DiagramNodeReader } from './trait';

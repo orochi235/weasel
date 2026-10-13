@@ -108,14 +108,14 @@ function styleOf(c: Case): TextStyle {
 
 const boxHeight = (c: Case): number => c.fontSize * 1.2 * (c.justifyLines ?? 1);
 
-const WHITE = { fill: 'solid' as const, color: '#ffffff' };
+const WHITE = { kind: 'solid' as const, color: '#ffffff' };
 
 function renderCanvas(c: Case, dpr: number): RasterImage {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
     kind: 'leaf', layer: 'main',
     pose: { x: c.x, y: c.y, width: 200, height: boxHeight(c) },
-    data: { text: c.text ?? TEXT, style: styleOf(c), fill: WHITE },
+    data: { text: c.text ?? TEXT, style: styleOf(c), fill: { paint: WHITE } },
   });
   return renderSceneToPixels({
     scene,
@@ -150,7 +150,7 @@ function Editor({ c }: { c: Case }) {
     container: host,
     getText: () => c.text ?? TEXT,
     getStyle: () => ({ ...styleOf(c), caretColor: 'transparent' }),
-    getPaint: () => ({ fill: WHITE }),
+    getPaint: () => ({ fill: { paint: WHITE } }),
     getScreenPose: () => poseOf(c),
     setText: () => {},
   });

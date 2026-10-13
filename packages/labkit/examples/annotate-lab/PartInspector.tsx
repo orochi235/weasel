@@ -5,11 +5,8 @@
  *
  * The instrument owns the picture and nothing else: it declares which element
  * takes marks, which config keys move them, and how big its content is, and
- * labkit provides the palette, the overlay, the store, the hook and the
- * camera. Circle a defect, change `angle`, and `isStale` answers that the mark
- * no longer describes the picture underneath it; change `shading` and it
- * still does. Wheel or drag the empty well and the marks ride along. The
- * overview in the corner shows the whole part, with linked cursors both ways.
+ * labkit provides the palette, the overlay, the store, the hook, and the
+ * camera.
  *
  * Refs are held per trial because `targets()` is called with the trial's
  * state and config, not from inside a component, and every trial of this

@@ -1,22 +1,15 @@
 /**
  * Refuse any changeset bump above `patch` unless it is explicitly signed off.
  *
- * `patch` is the only bump automation may choose on its own. `minor` and
- * `major` are releases someone decided to make, and each needs a marker in the
- * changeset body naming the level it approves:
+ * `minor` and `major` each need a marker in the changeset body naming the
+ * level it approves:
  *
  *     <!-- bump-approved: minor: <who> — <why> -->
  *     <!-- bump-approved: major: <who> — <why> -->
  *
  * The level is part of the marker so that approving a `minor` does not
- * silently authorize a later edit to `major`.
- *
- * Why this exists: every published package is in one changesets `fixed` group,
- * so a single bump anywhere moves every package. weasel reached 1.0.0 on
- * 2026-08-12 by accident that way — two `major` changesets sat in
- * `.changeset/` for days until a release about something else consumed them.
- *
- * Run: node scripts/check-changeset-bumps.mjs
+ * silently authorize a later edit to `major`. Every published package is in
+ * one changesets `fixed` group, so a single bump anywhere moves every package.
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -40,8 +33,7 @@ if (!existsSync(DIR)) {
 
 // Changesets 3.x moves a changeset into `.changeset/pre/` once a prerelease
 // has consumed it. Those still decide the version every later prerelease
-// computes, so a bump hiding in there is exactly the case this guard exists
-// for — scan both.
+// computes, so scan both.
 const PRE_DIR = join(DIR, 'pre');
 const mds = (dir) =>
   existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md') : [];

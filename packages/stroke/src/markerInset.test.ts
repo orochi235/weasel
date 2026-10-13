@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { markerInset, resolveMarkerSize, markerKeyOf, strokeInsets } from './markerInset';
 import type { Stroke } from '@weasel-js/paint';
 
-const BASE: Stroke = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+const BASE: Stroke = { paint: { kind: 'solid', color: '#000' }, width: 2 };
 
 describe('marker inset resolution', () => {
   it('reads the key from either reference form', () => {

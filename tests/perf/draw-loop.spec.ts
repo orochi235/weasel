@@ -1,37 +1,21 @@
 /**
  * Renderer draw loop: frame cost against commands per frame, under real GL.
  *
- * The vitest benches in `tests/perf/bench/` cannot reach this — the draw loop needs a WebGL2
- * context, so it runs in a browser, driven by Playwright. Check what you are
- * measuring on before reading anything into a number: the spec logs the
- * unmasked GL renderer, and a software backend (SwiftShader) produces numbers
- * that say nothing about a GPU.
+ * The spec logs the unmasked GL renderer: a software backend (SwiftShader)
+ * produces numbers that say nothing about a GPU.
  *
- * What it separates:
- *   - **Cost per command, across scene sizes.** Reported per step so a change
- *     in character is visible rather than averaged away.
- *   - **Program switches.** The same count runs twice — one fill kind
- *     throughout, then solid and linear-gradient alternating so consecutive
- *     commands need different programs. Switching was the suspected cliff and
- *     is not: alternating measures *cheaper* per command, because only the
- *     solid half is expensive.
- *   - **Overdraw.** A `stacked` variant puts every rect at the same spot: the
- *     same number of draw calls over a fraction of the fragments. It costs the
- *     same, so the loop is bound by per-draw work, not fill rate.
- *   - **Tree shape.** A `scene` variant wraps each command in its own group,
- *     which is what `buildSceneTree` emits and therefore what the app actually
- *     renders. A flat array is the easier thing to build and the thing no
- *     consumer sends; measuring only that reported a rect-batching win of
- *     ~1,400x that `SceneCanvas` did not get any of.
+ * The variants:
+ *   - `alternating` — solid and linear-gradient alternating, so consecutive
+ *     commands need different programs.
+ *   - `stacked` — every rect at the same spot: the same number of draw calls
+ *     over a fraction of the fragments.
+ *   - `scene` — each command in its own group, which is what `buildSceneTree`
+ *     emits and therefore what the app actually renders.
  *
- * **Each cell is the median of single frames, one per task**, the way a frame
- * loop draws them. This spec used to time a block of frames in one task and
- * divide, against a 100 us clock and per-frame times it read as bimodal; both
- * came from drawing many frames in one task, which `lib/frameTiming.ts`
- * explains, and the page is now cross-origin isolated for a finer clock.
+ * Each cell is the median of single frames, one per task, the way a frame loop
+ * draws them (`lib/frameTiming.ts`).
  *
- * This reports; it does not gate. `tests/perf/README.md` explains why this
- * repo does not put timing thresholds on shared runners.
+ * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
 import { metric, startRun } from './lib/result';
@@ -46,10 +30,8 @@ const SWEEP = [{ n: 100 }, { n: 400 }, { n: 1600 }, { n: 3200 }];
 
 const VARIANTS = ['solid', 'alternating', 'stacked', 'scene', 'rotated', 'meshes', 'stroked'] as const;
 
-/** Measured in this order, reported in the order above. `alternating` outweighs
- *  the rest of the sweep put together, and the cell measured right after it
- *  paid for collecting its garbage — so it goes last, where what it leaves
- *  behind lands on nothing. */
+/** Measured in this order, reported in the order above. `alternating` goes
+ *  last: the cell measured right after it pays for collecting its garbage. */
 const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'rotated', 'meshes', 'stroked', 'alternating'] as const;
 
 test.setTimeout(300_000);
@@ -88,9 +70,9 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
       const renderer = new WeaselRenderer({ gl, canvas, width: W, height: H, dpr: 1 });
       const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
-      const solidFill = (i: number) => ({ fill: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
+      const solidFill = (i: number) => ({ kind: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
       const gradFill = {
-        fill: 'linear-gradient' as const,
+        kind: 'linear-gradient' as const,
         from: { x: 100, y: 100 }, to: { x: 200, y: 200 },
         stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
       };
@@ -123,7 +105,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
             path: variant === 'meshes'
               ? octagon(x + 18, y + 18, 18)
               : { kind: 'rect', x, y, width: 36, height: 36 },
-            fill: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i),
+            fill: { paint: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i) },
           };
           if (variant === 'stroked') cmd.stroke = { width: 2, paint: { color: '#222222' } };
           if (variant === 'rotated') {
@@ -145,11 +127,9 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
       }
 
       /**
-       * Collect what the previous cell left behind first, so a major GC of the
-       * whole sweep's garbage does not land inside this one. Needs
-       * --js-flags=--expose-gc, which the perf config passes. The first frames
-       * at a new count pay one-off costs — collection, re-optimization — so
-       * more of them go untimed than `frameMs` skips by default.
+       * Collects what the previous cell left behind first, so a major GC does
+       * not land inside this one. The first frames at a new count pay one-off
+       * costs, so more of them go untimed than `frameMs` skips by default.
        */
       async function measure(n: number, variant: string): Promise<number> {
         const cmds = build(n, variant);
@@ -167,7 +147,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         renderer.render([{
           kind: 'path',
           path: { kind: 'rect', x: 100, y: 100, width: 100, height: 100 },
-          fill: gradFill,
+          fill: { paint: gradFill },
         }], identity);
         gl.finish();
         const a = new Uint8Array(4);

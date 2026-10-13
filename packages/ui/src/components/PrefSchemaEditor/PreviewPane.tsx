@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type RefObject } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
-import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { DragGhost } from '../DragGhost';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
@@ -37,22 +37,37 @@ export interface PreviewPaneProps {
   ghost?: PreviewGhost | null;
   /** The root files nothing onto pages, as a layout's does not: what sits directly under it is drawn, not left out as unplaced. */
   pageless?: boolean;
-  /** The leaf at a value path, where an alias is not of one in `schema`: a layout's pointers name settings in its dialog. */
-  leafAt?: (path: string) => PrefLeaf | undefined;
+  /** The schema an alias is of a leaf in, where that is not `schema`: a layout's pointers name settings in its dialog. */
+  over?: SchemaRoot;
+  /** The host's own drawing of the schema, shown in place of the editor's. It takes no drop and marks no selection. */
+  hosted?: ReactNode;
 }
 
 /**
  * The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section,
  * and a toolbar for a group drawn as a bar.
  */
-export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless, leafAt }: PreviewPaneProps) {
-  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} />;
-  if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} leafAt={leafAt} />;
-  return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} leafAt={leafAt} />;
+export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless, over, hosted }: PreviewPaneProps) {
+  if (hosted !== undefined && hosted !== null && hosted !== false) {
+    return (
+      <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
+        <PaneHeader title="Live preview" />
+        <div className={s.previewHosted}>{hosted}</div>
+      </section>
+    );
+  }
+  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} over={over} />;
+  if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} over={over} />;
+  return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} over={over} />;
 }
 
 /** A root drawn as a bar: the toolbar itself on a stage, run either way. */
-function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, leafAt }: GroupPreviewProps) {
+/** `how` with its range named as the editor names nodes, less any path that names none. */
+function rangeIn(how: PrefSelectHow, treePath: (path: string) => string | null | undefined): PrefSelectHow {
+  return how.range ? { ...how, range: how.range.flatMap((path) => treePath(path) ?? []) } : how;
+}
+
+function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, over }: GroupPreviewProps) {
   const [vertical, setVertical] = useState(false);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
   const marked = useMemo(() => selected.map((p) => keysOf(p).join('.')), [selected]);
@@ -63,8 +78,8 @@ function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRe
       </PaneHeader>
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown}>
         <PrefsForm className={s.previewBar} schema={schema} values={NO_VALUES} renderers={renderers} orientation={vertical ? 'vertical' : 'horizontal'}
-          showHidden showEmpty markHidden drop={drop} selected={marked} leafAt={leafAt}
-          onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
+          showHidden showEmpty markHidden drop={drop} selected={marked} over={over}
+          onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
           onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
         <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
       </div>
@@ -83,7 +98,7 @@ interface GroupPreviewProps {
   onStagePointerDown?(e: PointerEvent): void;
   ghost?: PreviewGhost | null;
   pageless?: boolean;
-  leafAt?: (path: string) => PrefLeaf | undefined;
+  over?: SchemaRoot;
 }
 
 /** What follows the pointer while the form draws the dragged node nowhere. */
@@ -94,7 +109,7 @@ function PreviewDragGhost({ ghost, stageRef, drop, renderers }: Pick<GroupPrevie
   );
 }
 
-function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless = false, leafAt }: GroupPreviewProps) {
+function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless = false, over }: GroupPreviewProps) {
 
   const [showHidden, setShowHidden] = useState(true);
   const size = useEditorSize('previewWidth');
@@ -109,12 +124,12 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
       </PaneHeader>
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-w': `${size.value}px` } as CSSProperties}>
       <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
-        schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden} leafAt={leafAt}
+        schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden} over={over}
         // An empty group is drawn too: it is somewhere to drop into.
         showEmpty markHidden drop={drop}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
         selected={marked}
-        onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
+        onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle {...size} min={360} max={900} ariaLabel="Resize preview" />
       <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
@@ -146,12 +161,13 @@ function sceneOf(schema: PrefSection): PreviewScene {
   return scene;
 }
 
-function SectionPreview({ schema, renderers, selected, onSelect, onDefaults }: {
+function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, over }: {
   schema: PrefSection;
   renderers?: Record<string, PropertyRenderer>;
   selected: readonly string[];
   onSelect?: (path: string | null, how: PrefSelectHow) => void;
   onDefaults(edits: readonly DefaultEdit[]): void;
+  over?: SchemaRoot;
 }) {
   // Each leaf's value as the node was seeded, which is no value for a key outside `pose` and `data`: only what an edit changed is a new default.
   const [scene, seeded] = useMemo(() => {
@@ -173,10 +189,10 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults }: {
       <PaneHeader title="Live preview" />
       <div className={s.previewPanel}>
         <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
-          renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden
+          renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden over={over}
           onSelect={onSelect && ((path, how) => {
             const at = treePathOfPanel(schema, path);
-            if (at !== null) onSelect(at, how);
+            if (at !== null) onSelect(at, rangeIn(how, (row) => treePathOfPanel(schema, row)));
           })} />
       </div>
     </section>

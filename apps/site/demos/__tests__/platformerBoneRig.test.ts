@@ -2,15 +2,18 @@ import {
   composeRigidPose,
   createScene,
   mat3,
-  resolveSkeleton,
   RIGID_POSE_COMPOSITION,
   sceneToAdapter,
 } from '@weasel-js/core';
-import type { Pose, RectPose } from '@weasel-js/core';
+import { resolveSkeleton } from '@weasel-js/animator';
+import type { RectPose } from '@weasel-js/core';
+import type { Clip, ClipSampledTrack, Pose } from '@weasel-js/animator';
 import { describe, expect, it } from 'vitest';
 import { boneLocalPoses } from '../platformer/boneRig';
 import { boneId, boneNodes, type WorldData, type WorldLayer } from '../platformer/sceneWorld';
 import { FALL, HURT, IDLE, JUMP, POLE, RUN } from '../platformer/clips';
+
+const keyPose = (clip: Clip, i: number): Pose => (clip.tracks[0] as ClipSampledTrack).keys[i].value as Pose;
 import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from '../platformer/skeleton';
 
 /**
@@ -91,13 +94,13 @@ function corners(p: RectPose): number[] {
 }
 
 const POSES: Array<[string, Pose]> = [
-  ['idle', IDLE.keys[0].value],
-  ['run 0', RUN.keys[0].value],
-  ['run 1', RUN.keys[1].value],
-  ['jump', JUMP.keys[0].value],
-  ['fall', FALL.keys[0].value],
-  ['hurt', HURT.keys[0].value],
-  ['pole', POLE.keys[0].value],
+  ['idle', keyPose(IDLE, 0)],
+  ['run 0', keyPose(RUN, 0)],
+  ['run 1', keyPose(RUN, 1)],
+  ['jump', keyPose(JUMP, 0)],
+  ['fall', keyPose(FALL, 0)],
+  ['hurt', keyPose(HURT, 0)],
+  ['pole', keyPose(POLE, 0)],
 ];
 
 describe('boneLocalPoses', () => {
@@ -127,8 +130,8 @@ describe('boneLocalPoses', () => {
 
   it('mirrors about the root rather than translating', () => {
     const at = { x: 100, y: 50 };
-    const right = composedWorld(boneLocalPoses(RUN.keys[0].value, at, 1));
-    const left = composedWorld(boneLocalPoses(RUN.keys[0].value, at, -1));
+    const right = composedWorld(boneLocalPoses(keyPose(RUN, 0), at, 1));
+    const left = composedWorld(boneLocalPoses(keyPose(RUN, 0), at, -1));
     for (const [name, r] of right) {
       const l = left.get(name)!;
       const rcx = r.x + r.width / 2;
@@ -143,18 +146,19 @@ describe('the bone nodes as the canvas composes them', () => {
   it('resolves each bone to the world pose the flattened rig gave it', () => {
     const scene = createScene<WorldData, WorldLayer, RectPose>({
       systemLayers: [{ id: 'tiles' }, { id: 'entities' }, { id: 'player' }],
+      composition: RIGID_POSE_COMPOSITION,
     });
     for (const spec of boneNodes()) scene.add(spec);
 
     const at = { x: 137.5, y: 62.25 };
-    const pose = RUN.keys[1].value;
+    const pose = keyPose(RUN, 1);
     for (const [name, local] of boneLocalPoses(pose, at, -1)) {
       scene.setPose(boneId(name), local);
     }
 
-    // The adapter is what `<SceneCanvas poseComposition>` builds, so this is
-    // the composition the canvas applies rather than a re-derivation of it.
-    const adapter = sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+    // The adapter is what `<SceneCanvas>` builds, so this is the composition
+    // the canvas applies rather than a re-derivation of it.
+    const adapter = sceneToAdapter(scene);
     const expected = flattenedWorld(pose, at, -1);
     for (const [name, want] of expected) {
       const got = adapter.getWorldPose(boneId(name)) as RectPose;

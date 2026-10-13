@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import { PaintField } from './PaintField';
 
 const meta: Meta<typeof PaintField> = {
@@ -11,8 +11,8 @@ export default meta;
 
 type Story = StoryObj<typeof PaintField>;
 
-const LINEAR: FillStyle = {
-  fill: 'linear-gradient',
+const LINEAR: Paint = {
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 1 },
   stops: [
@@ -23,8 +23,8 @@ const LINEAR: FillStyle = {
   interpolate: 'oklch',
 };
 
-const CONIC: FillStyle = {
-  fill: 'conic-gradient',
+const CONIC: Paint = {
+  kind: 'conic-gradient',
   center: { x: 0.5, y: 0.5 },
   angle: 0,
   stops: [
@@ -37,8 +37,8 @@ const CONIC: FillStyle = {
 
 /** A property row is the slot this control was shaped for: a fixed label
  *  column and a narrow control column. */
-function Row({ label, initial }: { label: string; initial: FillStyle | null }) {
-  const [paint, setPaint] = useState<FillStyle | null>(initial);
+function Row({ label, initial }: { label: string; initial: Paint | null }) {
+  const [paint, setPaint] = useState<Paint | null>(initial);
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: 8, width: 260 }}>
       <span style={{ flex: '0 0 90px', fontSize: 12 }}>{label}</span>
@@ -52,7 +52,7 @@ function Row({ label, initial }: { label: string; initial: FillStyle | null }) {
 export const InAPropertyRow: Story = {
   render: () => (
     <div style={{ display: 'grid', gap: 8, padding: 16 }}>
-      <Row label="Solid" initial={{ fill: 'solid', color: '#7a5af5ff' }} />
+      <Row label="Solid" initial={{ kind: 'solid', color: '#7a5af5ff' }} />
       <Row label="Linear (OKLCh)" initial={LINEAR} />
       <Row label="Conic" initial={CONIC} />
       <Row label="No paint" initial={null} />

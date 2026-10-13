@@ -34,39 +34,27 @@ export interface CanvasViewHelpers<TPose> {
    * in flight.
    *
    * This reports the *gesture*, not the document: committed content the
-   * gesture isn't touching is excluded, so a consumer that wants the union
-   * with the rest of the scene still walks its own ids through
-   * `getEffectiveBounds`. It exists because every other lookup here is keyed
-   * by node id, which can't answer "where is the shape the user is drawing
-   * right now" — a drag-to-insert has no id until pointer-up.
-   *
-   * Select-only gestures are deliberately excluded: a marquee or lasso has
-   * geometry but proposes no content, and a consumer sizing itself to the
-   * gesture must not grow because the user swept a selection rectangle.
+   * gesture isn't touching is excluded. Select-only gestures are excluded
+   * too: a marquee or lasso has geometry but proposes no content.
    *
    * The result is a plain AABB — never rotated. Rotated parts are folded in
-   * by their rotated extent (a union of several oriented boxes has no single
-   * orientation to report).
+   * by their rotated extent.
    */
   getGestureBounds(): Bounds | null;
   /**
-   * Subscribe to the gesture layer's change signal — the other half of the
-   * `useSyncExternalStore` contract for everything on this object that moves
-   * during a drag (`getEffectivePose`, `getEffectiveBounds`,
+   * Subscribe to the gesture layer's change signal, for everything on this
+   * object that moves during a drag (`getEffectivePose`, `getEffectiveBounds`,
    * `getGestureBounds`). Returns an unsubscribe.
    *
    * Fires once per dispatcher pump: gesture start, every pointermove that
    * reaches an in-flight handle, end, and cancel — plus UI-driven ongoing
-   * actions (a slider bound to an ongoing action pumps the same way). It
-   * fires on the pump, not on a diff: a pump that changed nothing observable
-   * still notifies, so don't hang expensive work directly off the callback.
+   * actions. It fires on the pump, not on a diff: a pump that changed nothing
+   * observable still notifies, so don't hang expensive work directly off the
+   * callback.
    *
    * It does **not** cover committed scene edits (subscribe to the scene for
-   * those) or previews a consumer's own tool publishes from React state
-   * (that tool re-renders on its own).
-   *
-   * Without a gesture source wired — a bare `<Canvas>` — this is a no-op
-   * subscription that never fires.
+   * those) or previews a consumer's own tool publishes from React state.
+   * Without a gesture source wired — a bare `<Canvas>` — it never fires.
    */
   subscribeGestures(fn: () => void): () => void;
   /**
@@ -84,9 +72,8 @@ export interface CanvasViewHelpers<TPose> {
    * no gesture source reports, forever.
    */
   getGestureVersion(): number;
-  /** Returns the live ChromeState built once per render. Affordances and
-   *  custom layers that need overlay-aware selection state (selection ids,
-   *  bounds, multi-union AABB, modifier flags) read from this. */
+  /** The live ChromeState built once per render: overlay-aware selection
+   *  state for affordances and custom layers. */
   getChromeState(): ChromeState;
   /**
    * Everything publishing an in-flight preview for this view, in resolution
@@ -106,11 +93,7 @@ export interface CanvasViewHelpers<TPose> {
   /**
    * Chrome-caps visibility predicate, keyed by chrome id. Overlay layers and
    * affordances call it per element to decide whether to draw / hit-test.
-   *
-   * The rule table is the surface's; the context it resolves against is this
-   * view's selection, camera and in-flight action — so the predicate belongs
-   * here rather than on {@link CanvasSurfaceHelpers}. Unwired, it is the
-   * universal `() => true`.
+   * Unwired, it is the universal `() => true`.
    */
   getIsVisible(): (id: string) => boolean;
 }
@@ -120,17 +103,13 @@ export interface CanvasViewHelpers<TPose> {
  * context, one debug sink, however many views are drawn on it.
  */
 export interface CanvasSurfaceHelpers {
-  /** Active debug sink, when `<Canvas debug=...>` is enabled. Layers that
-   *  want to participate in `hitboxes`/`bounds`/etc. visualization can
-   *  call into this from their `draw` callback. Returns `null` when
-   *  debug is off — no-op for production renders. */
+  /** Active debug sink, when `<Canvas debug=...>` is enabled, for layers to
+   *  call from their `draw` callback. `null` when debug is off. */
   getDebug(): DebugSink | null;
 }
 
-/** Live overlay-aware lookups exposed to custom layers via `helpersRef`.
- *  What a layer receives as its `data` argument, unchanged: the two halves
- *  are split so a per-view set can be built independently of the surface's,
- *  not to make layers ask for one. */
+/** Live overlay-aware lookups exposed to custom layers via `helpersRef`, and
+ *  what a layer receives as its `data` argument. */
 export interface CanvasHelpers<TPose> extends CanvasViewHelpers<TPose>, CanvasSurfaceHelpers {
   /**
    * The view this draw is for: a `<CanvasView>` id, or `null` for the
@@ -179,14 +158,6 @@ export interface ViewHelpersBundle<TPose> {
   }>;
 }
 
-/**
- * Build one view's overlay-aware state: its chrome and the lookups its layers
- * draw and hit-test against.
- *
- * This is a hook, so it runs once per component. That is the point — N views
- * cannot be a loop inside one component, but they can be N components each
- * calling this once.
- */
 /** The composed pose when the adapter resolves one, its stored pose otherwise.
  *  Adapters predating `getWorldPose` are absolute-pose, where the two agree. */
 function worldPoseOf<TPose>(
@@ -196,6 +167,11 @@ function worldPoseOf<TPose>(
   return typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id);
 }
 
+/**
+ * Build one view's overlay-aware state: its chrome and the lookups its layers
+ * draw and hit-test against. A canvas with N views mounts N components each
+ * calling this once.
+ */
 export function useViewHelpers<TPose>(
   opts: UseViewHelpersOpts<TPose>,
 ): ViewHelpersBundle<TPose> {
@@ -242,8 +218,7 @@ export function useViewHelpers<TPose>(
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
 
   // The live overlay a gesture proposes for `id`: the active tool's published
-  // preview first, then the dispatcher's preview extras. `null` when nothing
-  // is mid-gesture — callers fall through to committed state.
+  // preview first, then the dispatcher's preview extras.
   const previewToolPose = useCallback((id: string): TPose | null => {
     if (tools) {
       const p = firstPreviewPose(tools, id);
@@ -289,11 +264,8 @@ export function useViewHelpers<TPose>(
       multiActive,
       effectiveBoundsOf: boundsWithPreview,
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-      // Rotation-capability predicate. Reads the committed pose (gestures
-      // don't change descriptor capability) and asks the geometry. Absent
-      // adapter / unknown ids fall back to `true` so the affordance stays
-      // visible — preserves pre-existing behavior for consumers that wire
-      // bounds without an adapter.
+      // Absent adapter / unknown ids fall back to `true` so the affordance
+      // stays visible for consumers that wire bounds without an adapter.
       canRotate: (id) => {
         if (!geometry.supportsRotation) return true;
         const pose = committedPoseOf(id);
@@ -312,18 +284,14 @@ export function useViewHelpers<TPose>(
     },
     getEffectiveBounds: boundsWithPreview,
     getGestureBounds: (): Bounds | null => {
-      // In-flight ids come from both preview sources the ghost layer walks:
-      // tool-published `previewIds()` and the dispatcher's in-flight handles
-      // (via `gestureSource.ids()`). Using the same sets keeps this from
-      // disagreeing with what the user sees ghosted.
+      // The same id sets the ghost layer walks, so this cannot disagree with
+      // what the user sees ghosted.
       const ids = aggregatePreviewIds(tools);
       const extraIds = gestureSource?.ids();
       if (extraIds) for (const id of extraIds) ids.add(id);
 
       const parts: (Bounds | null)[] = [];
       for (const id of ids) parts.push(previewToolBounds(id));
-      // Nascent inserts have no id to look up — they arrive as ready-made
-      // world AABBs.
       const extraBounds = gestureSource?.bounds();
       if (extraBounds) for (const b of extraBounds) parts.push(b);
       return unionAABB(parts);

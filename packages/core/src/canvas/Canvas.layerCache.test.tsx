@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { Canvas } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();
@@ -29,7 +29,7 @@ function makeLayer(draw: () => void, withDeps: boolean): RenderLayer<unknown> {
     ...(withDeps ? { deps: () => ['stable'] } : {}),
     draw: () => {
       draw();
-      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } }];
+      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } }];
     },
   };
 }

@@ -1,20 +1,12 @@
 /**
- * Tests for SceneCanvas scoping props: alphaFor and isPointerInteractive.
+ * SceneCanvas scoping props, tested at their seams without rendering:
  *
- * Test strategy: jsdom cannot run WebGL so we cannot verify GPU output pixels.
- * Instead we test the two seams directly:
+ *   1. alpha  — when `cfg.alphaFor(id)` returns < 1, `buildSceneLayer` must wrap
+ *               the node's commands in a `{ kind: 'group', alpha }` command.
  *
- *   1. alpha  — `buildSceneLayer` is exported and unit-tested against its
- *               DrawCommand output. When `cfg.alphaFor(id)` returns < 1, the
- *               per-node commands must be wrapped in a `{ kind: 'group', alpha }`
- *               command so the renderer applies the multiplier.
- *
- *   2. hit    — `makeGetNodeAtPoint` is the factory SceneCanvas uses for the
- *               dispatcher's hit-test function. SceneCanvas wraps the produced
- *               function with an `isPointerInteractive` guard; the guard must
- *               suppress hits for non-interactive ids (return null).
- *
- * Both are pure-TS, no React rendering required.
+ *   2. hit    — an `isPointerInteractive` guard around `makeGetNodeAtPoint`'s
+ *               result. The guard is restated in this file, so these cases do
+ *               not exercise SceneCanvas's own.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -22,11 +14,7 @@ import { buildSceneLayer } from './Canvas';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
-import type { DrawCommand } from '../renderer';
-
-// ---------------------------------------------------------------------------
-// Shared fixtures
-// ---------------------------------------------------------------------------
+import type { DrawCommand } from '@weasel-js/renderer';
 
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -45,10 +33,6 @@ function makeScene() {
   return { scene, adapter, aId, bId };
 }
 
-// ---------------------------------------------------------------------------
-// Test 1: alphaFor is wired into the scene-render slot
-// ---------------------------------------------------------------------------
-
 describe('buildSceneLayer — alphaFor', () => {
   it('wraps dimmed-node commands in a group with the specified alpha', () => {
     const { adapter, aId, bId } = makeScene();
@@ -59,7 +43,7 @@ describe('buildSceneLayer — alphaFor', () => {
     const layer = buildSceneLayer(
       {
         drawOne: () => [
-          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'red' } },
+          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'red' } } },
         ],
         alphaFor,
       },
@@ -75,13 +59,7 @@ describe('buildSceneLayer — alphaFor', () => {
     const viewGroup = out[0] as { kind: string; children: DrawCommand[] };
     expect(viewGroup.kind).toBe('group');
 
-    // The hierarchical path yields: bgLayer group > [aEntry, bEntry]
-    // aEntry: drawn without alpha wrapping (alpha === 1 → no wrapper)
-    // bEntry: drawn wrapped in { kind: 'group', alpha: 0.3, children: [...] }
-    //
-    // buildSceneTree wraps each node's commands in a container group;
-    // the alpha wrapper is injected INSIDE that container as the sole child.
-    // Walk the tree and collect every { kind: 'group', alpha: <number> } node.
+    // Collect every { kind: 'group', alpha: <number> } node, at any depth.
     function collectAlphaGroups(cmds: DrawCommand[]): { alpha: number }[] {
       const result: { alpha: number }[] = [];
       for (const cmd of cmds) {
@@ -110,7 +88,7 @@ describe('buildSceneLayer — alphaFor', () => {
     const layer = buildSceneLayer(
       {
         drawOne: () => [
-          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'blue' } },
+          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: 'blue' } } },
         ],
         alphaFor: () => 1,
       },
@@ -135,10 +113,6 @@ describe('buildSceneLayer — alphaFor', () => {
     expect(hasAlphaGroup(out)).toBe(false);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Test 2: isPointerInteractive blocks hit-test results
-// ---------------------------------------------------------------------------
 
 describe('getNodeAtPoint — isPointerInteractive filter', () => {
   it('returns null for ids where isPointerInteractive returns false', () => {

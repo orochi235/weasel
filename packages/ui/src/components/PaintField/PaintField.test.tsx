@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
-import { asPaint, registerPaintKind, type FillStyle } from '@weasel-js/core';
+import { asPaint, registerPaintKind, type Paint } from '@weasel-js/core';
 import { PaintField } from './PaintField';
 
-const GRADIENT: FillStyle = {
-  fill: 'linear-gradient',
+const GRADIENT: Paint = {
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 },
   to: { x: 1, y: 0 },
   stops: [
@@ -22,7 +22,7 @@ describe('PaintField', () => {
 
   it('labels a kind registered after it mounted', () => {
     render(
-      <PaintField value={asPaint({ fill: 'noise', color: '#112233ff' })} onChange={() => {}} aria-label="Fill" />,
+      <PaintField value={asPaint({ kind: 'noise', color: '#112233ff' })} onChange={() => {}} aria-label="Fill" />,
     );
     expect(screen.getByRole('button', { name: /Fill/ })).toHaveTextContent('noise');
     let dispose = (): void => {};
@@ -30,7 +30,7 @@ describe('PaintField', () => {
       dispose = registerPaintKind({
         id: 'noise',
         label: 'Noise',
-        seed: (color) => asPaint({ fill: 'noise', color }),
+        seed: (color) => asPaint({ kind: 'noise', color }),
         colorOf: (paint) => (paint as unknown as { color?: string }).color,
       });
     });
@@ -58,7 +58,7 @@ describe('PaintField', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0][0]).toMatchObject({
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 1, y: 0 },
       stops: [

@@ -26,7 +26,7 @@ const shifted = (p: RectPose): RectPose => ({ ...p, x: p.x + OFFSET.dx, y: p.y +
 /** Copy `ids`, paste them back into the same scene, and return the pasted
  *  nodes keyed by their source id's label. */
 function copyPaste(scene: S, ids: string[]): Map<string, Node<D, 'main', RectPose>> {
-  const adapter = sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION });
+  const adapter = sceneToAdapter(scene);
   const created = adapter.commitPaste(adapter.snapshotSelection(ids), OFFSET);
   const out = new Map<string, Node<D, 'main', RectPose>>();
   for (const n of created) {
@@ -46,7 +46,7 @@ function copyPaste(scene: S, ids: string[]): Map<string, Node<D, 'main', RectPos
 }
 
 const worldOf = (scene: S, id: string): RectPose =>
-  sceneToAdapter(scene, { poseComposition: RIGID_POSE_COMPOSITION }).getWorldPose(id);
+  sceneToAdapter(scene).getWorldPose(id);
 
 describe('clipboard under a container frame', () => {
   it('pastes a frame container without offsetting its children twice', () => {
@@ -57,7 +57,10 @@ describe('clipboard under a container frame', () => {
   });
 
   it('pastes an envelope that still derives, with its children where they were drawn', () => {
-    const scene = createScene<D, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<D, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      composition: RIGID_POSE_COMPOSITION,
+    });
     const frame = scene.add({
       id: asNodeId('frame'), kind: 'container', layer: 'main', data: { label: 'frame' },
       pose: { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2 },

@@ -3,6 +3,7 @@ import { forEachSegment, PATH_M, PATH_L, PATH_Z, PATH_C, PATH_Q } from '../comma
 import { pointInPolygon } from '../polyline';
 import { rectToContour } from '../box';
 import type { Path, PolygonPath, RectPath } from '../path';
+import { fillsOpenSubpaths } from '../openFill';
 import {
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubicWithArcLen,
@@ -44,7 +45,26 @@ interface FlattenedContours {
   anchorT: number[];
 }
 
+/** The contours a fill covers: all of them, or only those a `Z` closed. */
 function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
+  const closed = new Set<number>();
+  const all = flattenContours(p, tolerance, closed);
+  if (fillsOpenSubpaths(p)) return all;
+  const kept: FlattenedContours = { coords: [], contourStarts: [], anchorA: [], anchorB: [], anchorT: [] };
+  all.contourStarts.forEach((start, c) => {
+    if (!closed.has(c)) return;
+    const end = c + 1 < all.contourStarts.length ? all.contourStarts[c + 1] : all.coords.length / 2;
+    kept.contourStarts.push(kept.coords.length / 2);
+    kept.coords.push(...all.coords.slice(start * 2, end * 2));
+    kept.anchorA.push(...all.anchorA.slice(start, end));
+    kept.anchorB.push(...all.anchorB.slice(start, end));
+    kept.anchorT.push(...all.anchorT.slice(start, end));
+  });
+  return kept;
+}
+
+/** Flatten every contour, noting in `closed` the index of each one a `Z` ends. */
+function flattenContours(p: PolygonPath, tolerance: number, closed: Set<number>): FlattenedContours {
   const { commands, coords } = p;
   const out: number[] = [];
   const anchorA: number[] = [];
@@ -126,6 +146,7 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
         break;
       }
       case PATH_Z:
+        closed.add(contourStarts.length - 1);
         // The pen returns to the subpath start (forEachSegment does that); the
         // anchor it carries has to follow, or a curve after the Z interpolates
         // from the wrong end.
@@ -155,9 +176,6 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   //     with the smallest positive whose polygon contains its first vertex.
   //   - Each (positive, [its holes]) group is earcut'd independently;
   //     triangles concatenated.
-  // Authors mostly write disjoint-positives-with-same-winding; the previous
-  // implementation passed every subsequent contour as a hole, which broke
-  // those (a duck with body+head+beak, a hamburglar with brim+crown+cape).
   // Using shoelace sign relative to the first contour avoids guessing about
   // screen-down vs math-up axis conventions.
 
@@ -200,10 +218,9 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     };
   }
 
-  // Group each opposite-wound contour with the smallest positive that
-  // contains its first vertex. Orphans (opposite-wound but not inside any
-  // positive) get promoted to independent positives — author probably
-  // intended them as separate shapes with inconsistent winding.
+  // Orphans (opposite-wound but not inside any positive) get promoted to
+  // independent positives — author probably intended them as separate shapes
+  // with inconsistent winding.
   const holesByPositive = new Map<number, number[]>();
   const orphanPositives: number[] = [];
   for (const n of negatives) {

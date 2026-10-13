@@ -1,4 +1,5 @@
-import type { FillStyle, Track } from '@weasel-js/core';
+import type { Track } from '@weasel-js/animator';
+import type { Paint } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import {
   Badge,
@@ -320,8 +321,8 @@ function FieldsAndPickers() {
   const [rate, setRate] = useState(1);
   const [width, setWidth] = useState(6);
   const [color, setColor] = useState('#b08adbff');
-  const [gradient, setGradient] = useState<FillStyle>({
-    fill: 'linear-gradient',
+  const [gradient, setGradient] = useState<Paint>({
+    kind: 'linear-gradient',
     from: { x: 0.1, y: 0.1 },
     to: { x: 0.9, y: 0.9 },
     stops: [
@@ -329,7 +330,7 @@ function FieldsAndPickers() {
       { offset: 1, color: '#f4c43c' },
     ],
   });
-  const [paint, setPaint] = useState<FillStyle | null>({ fill: 'solid', color: '#b08adb' });
+  const [paint, setPaint] = useState<Paint | null>({ kind: 'solid', color: '#b08adb' });
   return (
     <Section title="Fields & pickers">
       <Cell label="Input">

@@ -1,30 +1,14 @@
 /**
- * Typed keys for the gesture/behavior scratch store.
- *
- * Gestures expose `ctx.scratch: Record<string, unknown>` as a per-gesture
- * mutable bag that behaviors use to stash state across `onDown` / `onMove`
- * / `onEnd` calls. The store is `unknown`-valued because behaviors are
- * tool-agnostic — a single behavior may run under different tools with
- * different scratch shapes. Without a typing convention every read site
- * has to `(ctx.scratch as <some shape>)[KEY]`, and a writer changing the
- * shape can silently break readers with no compile-time signal.
- *
- * `ScratchKey<T>` is a phantom-typed string that carries its payload type
- * via a branded interface. `getScratch` and `setScratch` use the brand to
- * narrow / constrain at the typing layer; at runtime the key is just its
- * underlying string and the store remains a plain `Record`.
+ * Typed keys for the gesture/behavior scratch store, `ctx.scratch`.
+ * `ScratchKey<T>` carries its payload type at the typing layer; at runtime
+ * the key is just its underlying string and the store remains a plain `Record`.
  *
  * @example
  * ```ts
- * // Module-level (or behavior-level) constant, shared by writer + reader:
+ * // Module-level constant, shared by writer + reader:
  * const LASSO_VERTICES = scratchKey<readonly { x: number; y: number }[]>('lasso.vertices');
- *
- * // Writer (a tool's onMove):
  * setScratch(ctx.scratch, LASSO_VERTICES, vertices);
- *
- * // Reader (a behavior's onEnd):
  * const vertices = getScratch(ctx.scratch, LASSO_VERTICES) ?? [];
- * //    ^?  readonly { x: number; y: number }[] | undefined
  * ```
  */
 
@@ -42,13 +26,9 @@ export interface ScratchKey<T> {
 export type ScratchStore = Record<string, unknown>;
 
 /**
- * Make a typed scratch key. Use module-level constants so the same key
- * is shared by writer and reader.
- *
- * Namespace the name by behavior or feature to avoid collisions
- * (`'behavior.field'` is a good convention). Two keys with the same
- * `name` refer to the same slot at runtime — the type parameter is a
- * compile-time contract, not a uniqueness guarantee.
+ * Make a typed scratch key. Two keys with the same `name` refer to the same
+ * slot at runtime — the type parameter is a compile-time contract, not a
+ * uniqueness guarantee — so namespace the name (`'behavior.field'`).
  */
 export function scratchKey<T>(name: string): ScratchKey<T> {
   return { name };

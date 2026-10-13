@@ -6,22 +6,21 @@ import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import {
-  composeRectPose,
   createReflowTransition,
-  decomposeRectPose,
   createScene,
-  type DepSchema,
   effectivePose,
   moveAction,
-  useAnimator,
   type InvocationCtx,
   type LayoutDep,
   type NodeId,
   type OngoingHandle,
   type OngoingInvoker,
+  type PoseComposition,
+  RECT_POSE_COMPOSITION,
   type RectPose,
   type ReflowTransition,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import { tileGrid } from './tileGrid';
 
 type Drag = { start: { x: number; y: number }; current: { x: number; y: number }; delta: { x: number; y: number } };
@@ -29,7 +28,7 @@ type Drag = { start: { x: number; y: number }; current: { x: number; y: number }
 const box = (x: number, y = 0, w = 50, h = 100): RectPose => ({ x, y, width: w, height: h });
 
 /** A two-cell row `C` holding `a` and `b`, and a transition on a manual clock. */
-function setup() {
+function setup(composition?: PoseComposition<RectPose>) {
   const cbs: ((t: number) => void)[] = [];
   let clock = 0;
   const { result } = renderHook(() => useAnimator({
@@ -41,7 +40,10 @@ function setup() {
     clock = t;
     act(() => { for (const cb of cbs.splice(0)) cb(t); });
   };
-  const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<object, 'main', RectPose>({
+    systemLayers: [{ id: 'main' }],
+    ...(composition ? { composition } : {}),
+  });
   const C = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(0, 0, 100, 100) });
   const a = scene.add({ kind: 'leaf', parent: C, layer: 'main', data: {}, pose: box(0) });
   const b = scene.add({ kind: 'leaf', parent: C, layer: 'main', data: {}, pose: box(50) });
@@ -116,18 +118,14 @@ describe('moveAction under a reflow transition', () => {
   });
 
   it('starts the glide in the frame of the container the child landed in', () => {
-    const { scene, a, frame, ctx, where, layout } = setup();
+    const { scene, a, frame, ctx, where, layout } = setup(RECT_POSE_COMPOSITION);
     const D = scene.add({ kind: 'container', layer: 'main', data: {}, pose: box(200, 0, 100, 100) });
     const grid = layout.getLayout(scene.get(a)!.parent as string);
     layout.getLayout = (id) => (id === D || id === scene.get(a)?.parent ? grid : null);
-    const local = (c: InvocationCtx): InvocationCtx => {
-      c.deps.poseComposition = { compose: composeRectPose, decompose: decomposeRectPose } as DepSchema['poseComposition'];
-      return c;
-    };
-    const h = (moveAction.invoker as OngoingInvoker).start(local(ctx()), {}) as OngoingHandle;
+    const h = (moveAction.invoker as OngoingInvoker).start(ctx(), {}) as OngoingHandle;
     // Released 15 past D's second cell, which sits at 50 in D's frame.
-    h.onMove!(local(ctx(drag(25, 290))));
-    act(() => { h.onEnd!(local(ctx(drag(25, 290))), 'commit'); });
+    h.onMove!(ctx(drag(25, 290)));
+    act(() => { h.onEnd!(ctx(drag(25, 290)), 'commit'); });
     expect(scene.get(a)!.parent).toBe(D);
     expect(scene.get(a)!.pose.x).toBe(50);
     expect(where(a).x).toBe(65);

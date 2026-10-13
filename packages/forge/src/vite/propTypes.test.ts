@@ -32,7 +32,13 @@ export interface ChipProps extends Shared {
   onPress?: () => void;
   style?: { color: string };
   mixed?: 'auto' | number;
+  first?: 'loud';
+  tone?: 'quiet' | 'loud';
+  weight?: Weight;
+  either?: Exclude<'quiet' | 'loud' | 'off', 'off'>;
 }
+type Heavy = 'bold' | 'black';
+type Weight = 'thin' | Heavy | ('loud');
 export const Chip = (_props: ChipProps) => null;
 export class Legacy { constructor(public props: { open: boolean }) {} }
 `,
@@ -68,12 +74,22 @@ export default { component: Wrapped };
   it('gives a control to each boolean, string, number and string-union prop, and to nothing else', () => {
     const table = reader.read(at('chip.stories.ts'));
     expect(table?.argTypes).toEqual({
+      tone: { options: expect.any(Array) },
+      weight: { options: expect.any(Array) },
+      either: { options: expect.any(Array) },
       size: { options: expect.arrayContaining(['sm', 'md']) },
       count: { control: { type: 'number' } },
       disabled: { control: { type: 'boolean' } },
       label: { control: { type: 'text' }, description: 'Shown beside the glyph.' },
     });
     expect(table?.argTypes.size?.options).toHaveLength(2);
+  });
+
+  it("lists a union's options in the order the type is written in, through an alias too", () => {
+    const { tone, weight, either } = reader.read(at('chip.stories.ts'))?.argTypes ?? {};
+    expect(tone?.options).toEqual(['quiet', 'loud']);
+    expect(weight?.options).toEqual(['thin', 'bold', 'black', 'loud']);
+    expect([...(either?.options ?? [])].sort()).toEqual(['loud', 'quiet']);
   });
 
   it('names every file a prop is declared in, an inherited one included', () => {

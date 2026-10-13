@@ -1,20 +1,10 @@
 /**
- * `<SceneCanvas>` — `<Canvas>` wired to a `Scene` primitive.
+ * `<SceneCanvas>` — `<Canvas>` wired to a `Scene` primitive. Bare, it only renders: behavior
+ * comes from the `features` presets (`canvas/SceneCanvas/features.ts`), each of which turns on
+ * its own actions, tools, ambient bindings, and chrome.
  *
- * Synthesizes a `MoveAdapter & ResizeAdapter & RotateAdapter & AreaSelectAdapter`
- * from the passed `scene` (via `sceneToAdapter`) and an internal `useTools`.
- * Bare, it only renders: behavior comes from the `features` presets
- * (`canvas/SceneCanvas/features.ts`), each of which registers its own actions,
- * tools, ambient bindings and chrome.
- *
- * If a consumer needs custom tools (e.g. `select` + `insert`), they can pass
- * `tools={useTools(...)}` directly and SceneCanvas forwards it as-is — the
- * internal tool registry is ignored in that case.
- *
- * Cascade: `Scene` stores absolute poses, so dragging a container has to
- * translate its descendants in the live overlay and again at commit. The move
- * action walks `scene.childrenOf` for both — see `cascadeIds` in
- * `interactions/actions/move/action.ts`.
+ * A consumer needing custom tools can pass `tools={useTools(...)}` and SceneCanvas forwards it
+ * as-is — the internal tool registry is ignored in that case.
  */
 import type { PolygonPath } from '@weasel-js/geom';
 import { getActiveModeFor } from '@weasel-js/modes';
@@ -27,19 +17,12 @@ import type { InsertAdapter } from 'core/adapters/types';
 import { sceneFromJSON } from 'core/scene/scene';
 import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
-import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import { rectFromPlane } from 'core/viewport/parallax';
 import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
-import { normalizeView, viewZoom, type View } from 'core/viewport/view';
-import type { RuleCtx } from 'features/chrome-caps';
-import {
-  DEFAULT_ALLOWED_CAPABILITIES,
-  buildChromeCtx,
-  never,
-  resolveVisibility,
-  useHoverTracking,
-} from 'features/chrome-caps';
+import { normalizeView, type View } from 'core/viewport/view';
+import { never, useHoverTracking } from 'features/chrome-caps';
+import { useChromeCaps, type ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
 import {
   acquireKitContentHandlers,
   itemsFromFiles,
@@ -47,7 +30,6 @@ import {
   type IngestItem
 } from 'features/ingestion';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
-import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import {
   createSelectionOverlayLayer,
   rotationBadgeOf,
@@ -60,14 +42,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type React from 'react';
 import { forwardRef, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
-import { useHandTool } from 'tools/builtin/hand';
-import type { PenScratch } from 'tools/builtin/pen';
-import {
-  selectionMoveContribution,
-  selectionResizeContribution,
-  selectionRotateContribution,
-} from 'tools/builtin/select';
-import { targetSizesPx } from '../core/device/targets';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { createNodeRouting } from '../core/scene/NodeRouting';
 import { dwarn } from '../debug';
@@ -76,7 +50,7 @@ import type { DebugConfig } from '../debug/types';
 import { createLongPressFeedbackContribution } from '../features/longPress/longPressFeedback';
 import type { ReflowTransition } from '../layout/types';
 import { installTestHookIfRequested, releaseTestHook } from '../test-hook/install';
-import type { AnyTool, Contribution, Tool } from '../tools/overlayBinding';
+import type { Contribution } from '../tools/overlayBinding';
 import { useTools, type ToolsApi } from '../tools/overlayBinding';
 import type { LayersMap, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
 import { Canvas } from './Canvas';
@@ -85,22 +59,22 @@ import { GestureDispatcherMounter } from './SceneCanvas/GestureDispatcherMounter
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { StandardActionsRegistrar } from './SceneCanvas/StandardActionsRegistrar';
 import { ToolKeybindingsMounter } from './SceneCanvas/ToolKeybindingsMounter';
-import { COORD_DEV, coordTrace, type CoordTraceEntry } from './SceneCanvas/coordTrace';
 import { inferredNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import { createDispatcherPreviewSources, createGestureSource } from './SceneCanvas/dispatcherGestureBounds';
 import {
   featureActionIds,
-  resolveFeatures
+  featureAmbient,
+  featureChromeRules,
+  resolveFeatures,
+  type FeatureBindingOptions,
 } from './SceneCanvas/features';
-import { IS_DEV } from './SceneCanvas/isDev';
 import {
-  NON_SHAPE_BUILTIN_TOOLS,
   mergeLayersWithDefaults,
   type BridgeAdapter,
-  type BuiltinToolId,
   type SceneCanvasProps,
 } from './SceneCanvas/props';
-import { useBuiltinShapeTools } from './SceneCanvas/useBuiltinShapeTools';
+import { useBuiltinTools } from './SceneCanvas/useBuiltinTools';
+import type { ToolsPatch } from './SceneCanvas/toolRegistry';
 import { contributionEntries } from './SceneCanvas/useContributionRoles';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
@@ -117,19 +91,13 @@ import { composeAlphaFor, wireSceneSlotToScene } from './sceneSlotWiring';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { useHitObserver } from './useHitObserver';
 import { useLateContentRedraw } from './useLateContentRedraw';
-import { ViewInputsProvider, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
+import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
 import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
 export { SCENE_CANVAS_FEATURES } from './SceneCanvas/features';
 export type { Feature } from './SceneCanvas/features';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export { defaultDrawOne } from './defaultDrawOne';
 export { rotateAroundAABBCenter } from './poseRotation';
-// ---------------------------------------------------------------------------
-// Dev-only coord trace
-// ---------------------------------------------------------------------------
-if (COORD_DEV && typeof window !== 'undefined') {
-  (window as unknown as { __weaselCoordLog__: CoordTraceEntry[] }).__weaselCoordLog__ = coordTrace;
-}
 
 /** `<SceneCanvas debug>` minus the flag only SceneCanvas reads. */
 function canvasDebug(debug: (DebugConfig & { slops?: boolean }) | false): DebugConfig | false {
@@ -138,16 +106,15 @@ function canvasDebug(debug: (DebugConfig & { slops?: boolean }) | false): DebugC
   return rest;
 }
 
-/** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
- *  / `active` / `registry`; the patch record shape has none of those. */
-/** Stable empty `Set` so `getSuppressedSelectionIds` doesn't allocate
- *  a fresh empty Set on every read — selection-overlay's `draw` runs
- *  every frame. */
+/** Stable empty `Set`: selection-overlay's `draw` reads `getSuppressedSelectionIds` every
+ *  frame. */
 const EMPTY_ID_SET: ReadonlySet<string> = new Set();
 const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set();
 
+/** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
+ *  / `active` / `registry`; the patch record shape has none of those. */
 function isToolsApi(
-  tools: ToolsApi | Record<string, AnyTool | true | false>,
+  tools: ToolsApi | ToolsPatch,
 ): tools is ToolsApi {
   return typeof (tools as ToolsApi).setActive === 'function';
 }
@@ -161,14 +128,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     geometry,
     poseDescriptor,
     selectTool: selectToolOpts,
-    insertTool,
     insertNodeFactories,
     insertPaint,
     ingestion,
     layouts,
     layoutDropTarget,
     reflowTransition,
-    poseComposition,
     geometryProjection,
     routing,
     selection: selectionProp,
@@ -189,18 +154,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     viewport,
     layers,
     actions,
-    actionDefaults,
+    actionDefaults: _actionDefaults,
     describeKind,
     animator,
     views: viewDescriptors,
     children,
-    shaders,
-    flattenTolerance,
-    backgroundFill,
-    cursorCoordsHud,
-    pickHud,
     debug,
-    modalityHud,
     alphaFor,
     layerVisibility,
     layerOrder,
@@ -209,6 +168,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onClick,
     chromeVisibility,
     modes,
+    pathEdit,
     getFocused: getFocusedProp,
     device,
     ...rest
@@ -216,25 +176,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
 
-  // Resolved once here and provided to the subtree, so overlays, affordances
-  // and consumer chrome all read the same object rather than each running
-  // their own media queries.
   const deviceProfile = useDeviceProfile(device);
 
-  // How big grabbable chrome is for this pointer type. Paint (the selection
-  // overlay), hit-test (`buildAffordanceAt`) and the slops debug overlay all
-  // resolve from this one object — a size read from the base constants
-  // directly is unscaled, and a coarse pointer then paints chrome it cannot
-  // grab.
-  const chromeSizes = useMemo(
-    () => targetSizesPx(deviceProfile.targetScale),
-    [deviceProfile.targetScale],
-  );
-
-  // `scene` accepts either a live `Scene` or a `SerializedScene` JSON
-  // object. JSON is baked once via useState init; subsequent renders
-  // ignore prop changes (use a `key` prop on `<SceneCanvas>` to force a
-  // fresh canvas).
+  // `scene` accepts either a live `Scene` or a `SerializedScene` JSON object. JSON is baked
+  // once; later prop changes are ignored (use a `key` on `<SceneCanvas>` to force a fresh canvas).
   const isSerialized = (s: unknown): boolean =>
     typeof s === 'object' && s != null && (s as { version?: unknown }).version === 1
       && Array.isArray((s as { nodes?: unknown }).nodes);
@@ -257,12 +202,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Internal canvas ref so the dispatcher can attach its input listeners
   // even when the consumer passes their own forwarded ref.
   const internalCanvasRef = useRef<HTMLElement | null>(null);
-  // Holds the full `CanvasExtensionApi` so we can call `requestRedraw` after
-  // dispatcher-side gesture pumps. Without this, dispatcher-only actions
-  // (marquee, lasso, anything driven solely by `useGestureDispatcher`) never
-  // trigger a re-paint between pointerdown and pointerup — the legacy tools
-  // dispatcher's `onGestureChange` only fires for legacy `tool.drag.*` hooks,
-  // which the migrated actions don't provide.
+  // Holds the full `CanvasExtensionApi` so dispatcher-side gesture pumps can call
+  // `requestRedraw`.
   const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
   // Set from the merged ref callback, so effects needing the handle key off it
   // instead of assuming when React attaches it.
@@ -273,10 +214,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return () => dlog('scene-canvas', 'unmount');
   }, []);
 
-  // Content-handler registration: the kit's defaults are refcounted (they
-  // stay registered while ANY SceneCanvas is mounted — see
-  // `acquireKitContentHandlers`); consumer handlers from the `ingestion`
-  // prop live for this canvas's lifetime.
+  // The kit's default content handlers are refcounted across mounted SceneCanvases; consumer
+  // handlers from the `ingestion` prop live for this canvas's lifetime.
   const consumerHandlers = ingestion?.handlers;
   useEffect(() => {
     const disposers = [acquireKitContentHandlers()];
@@ -284,11 +223,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return () => disposers.forEach((d) => d());
   }, [consumerHandlers]);
 
-  // Animator subscription: when an animator is provided, request a redraw
-  // on every active frame so consumer `drawOne` functions reading
-  // `animator.colorOverrides` (or any other non-scene channel the
-  // animator may mutate) reflect the latest values. The animator only
-  // ticks while animations are active, so idle frames don't repaint.
+  // Redraw on every active animator frame so `drawOne` functions reading
+  // `animator.colorOverrides` (or any other non-scene channel) reflect the latest values.
+  // The animator only ticks while animations are active.
   useEffect(() => {
     if (!animator) return;
     const unsubscribe = animator.onTick(() => {
@@ -308,13 +245,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     canvasApiRef.current?.requestRedraw?.();
   }), [scene]);
 
-  // A scene write repaints; it does not re-render this component. The layers
-  // read the scene at paint time and `contentVersion` is a getter, so nothing
-  // here needs a commit to draw the new content. Chrome rendering node data as
-  // DOM subscribes for itself — `useScene`'s default, `SelectionPanel`, the
-  // panels an app hangs beside the canvas — which is what lets a host driving
-  // poses from a frame loop take `useScene(…, { subscribe: false })` and
-  // actually get it.
+  // A scene write repaints; it does not re-render this component. The layers read the scene
+  // at paint time and `contentVersion` is a getter. Chrome rendering node data as DOM
+  // subscribes for itself, which is what lets a host driving poses from a frame loop take
+  // `useScene(…, { subscribe: false })`.
   useEffect(() => scene.subscribe(() => {
     canvasApiRef.current?.requestRedraw?.();
   }), [scene]);
@@ -370,11 +304,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return { ...base, animate: animatedZoom === true ? {} : animatedZoom };
   }, [viewportZoomProp, animatedZoom]);
 
-  // Selection: caller-supplied wins; otherwise build from selectionOptions.
-  // Hooks always run unconditionally — when a caller supplies `selection`,
-  // the internally-built one is unused but the hook still fires.
-  // Bound to the scene, so the selection an edit was made under rides on the
-  // scene's history entries and undo can put it back.
+  // Caller-supplied selection wins; the internally-built one is then unused. Bound to the
+  // scene, so the selection an edit was made under rides on the scene's history entries and
+  // undo can put it back.
   const derivedSelectionOptions = useMemo<UseSelectionOptions>(
     () => ({ scene, ...(selectionOptions ?? {}) }),
     [scene, selectionOptions],
@@ -408,9 +340,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
   }, [baseSelection, selectable, readOnlyAdapterMethods]);
 
-  // Publish the current selection (with optional per-id kind labels) into any
-  // surrounding `<SelectionContextProvider>` so non-canvas UI can read it.
-  // No-op when no provider is in scope.
+  // Publish the current selection (with optional per-id kind labels) into any surrounding
+  // `<SelectionContextProvider>`. No-op when no provider is in scope.
   const currentSelection = selection.current;
   const selectionKinds = useMemo<readonly (string | undefined)[] | undefined>(() => {
     if (currentSelection.length === 0) return undefined;
@@ -433,51 +364,37 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   }, [currentSelection, scene, describeKind]);
   usePublishSelection(currentSelection, selectionKinds);
 
-  // Path-editing edit-mode state. Owned here so it's reachable from both:
-  //   - the `pathEditingOverlay` chrome layer wired below
-  //   - `useEditAnchorsDepSource`, mounted in the child StandardActionsRegistrar
-  // The state stays empty until `enterPathEditAction` (double-click on a
-  // selected polygon) sets it, and clears on `exitPathEditAction` (Escape).
-  // Until then, the chrome doesn't draw and the gesture doesn't route to
-  // `editAnchorsAction` — both gate on `editingId !== ''`.
+  // Path-editing edit-mode state. Stays empty until `enterPathEditAction` sets it, and clears
+  // on `exitPathEditAction`; the chrome and `editAnchorsAction` both gate on `editingId !== ''`.
   const [pathEditingId, setPathEditingId] = useState<string>('');
   const pathEditingIdRef = useLatest(pathEditingId);
+  const pathEditRef = useLatest(pathEdit);
   // `anchorEditingAllowed` is declared below (it needs `getActiveModeRef`);
   // hold it in a ref so `effectivePathEditingId` — used by consumers
   // declared both above and below that point — can read it lazily.
   const anchorEditingAllowedRef = useRef<(() => boolean) | undefined>(undefined);
   /**
-   * The edit target, masked by whether the host still permits anchor
-   * editing.
+   * The edit target, masked by whether the host still permits anchor editing. Every surface
+   * that cares reads this rather than the raw state, so leaving path-edit mode tears all of
+   * them down at once, by any route — a host's own mode machine can leave the mode without
+   * running `exitPathEditAction`.
    *
-   * Every surface that cares — the overlay layer, the `editingAnchors`
-   * rule input, the selection-overlay suppression set, the select tool's
-   * extend-click lock — reads this rather than the raw state. Leaving
-   * path-edit mode therefore tears all of them down at once, by any route.
-   * That matters because `exitPathEditAction` is not the only way out:
-   * a host's own mode machine can leave the mode without running it
-   * (`apps/draw` binds Escape to one), and before this the raw id stayed
-   * set — inert anchor squares kept drawing over the shape and the
-   * selection outline stayed suppressed.
-   *
-   * Masking rather than clearing on purpose: the mode can change without
-   * re-rendering this component, so there is no reliable moment to write
-   * state. Read-time masking cannot go stale.
+   * Masking rather than clearing on purpose: the mode can change without re-rendering this
+   * component, so there is no reliable moment to write state.
    */
   const effectivePathEditingId = useCallback((): string => {
+    if (pathEditRef.current) return pathEditRef.current.editingId() ?? '';
     const allowed = anchorEditingAllowedRef.current;
     if (allowed && !allowed()) return '';
     return pathEditingIdRef.current;
-  }, [pathEditingIdRef]);
-  // Anchor selection + in-flight marquee. Both are per-frame inputs to
-  // the overlay's draw(), never to a React render, so they live in refs
-  // and request a repaint directly. Holding them in state would re-render
-  // the whole SceneCanvas subtree on every pointermove of a marquee drag.
+  }, [pathEditingIdRef, pathEditRef]);
+  // Anchor selection + in-flight marquee are per-frame inputs to the overlay's draw(), never
+  // to a React render, so they live in refs and request a repaint directly.
   const selectedAnchorsRef = useRef<ReadonlySet<number>>(EMPTY_ANCHOR_SELECTION);
   const anchorMarqueeRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   const editAnchorsExternalState = useMemo(() => ({
     getEditingId: () => effectivePathEditingId(),
-    setEditingId: (id: string | null) => setPathEditingId(id ?? ''),
+    setEditingId: (id: string | null) => (pathEditRef.current ? pathEditRef.current.setEditingId(id) : setPathEditingId(id ?? '')),
     getSelectedAnchors: () => selectedAnchorsRef.current,
     setSelectedAnchors: (next: ReadonlySet<number>) => {
       selectedAnchorsRef.current = next;
@@ -488,33 +405,22 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       anchorMarqueeRef.current = rect;
       canvasApiRef.current?.requestRedraw?.();
     },
-  }), [effectivePathEditingId]);
+  }), [effectivePathEditingId, pathEditRef]);
 
-  // Apply the handle-size fallback here so useSceneSelectTool always receives
-  // a concrete radius even when the caller omits selectTool entirely.
   const selectToolWithDefaults = useMemo(() => ({
-    handleHitRadius: chromeSizes.handle,
     // Shift-click belongs to the anchor selection while a path is being
     // anchor-edited; see `UseSelectToolOptions.extendClickLocked`.
     extendClickLocked: () => effectivePathEditingId() !== '',
-    // `selectionAllowed` used to sit here, hand-checking the active mode for
-    // `creates-selection` because the tool's pointerDown classifier was a
-    // phase-table route and `Action.eligible` was never evaluated on that
-    // pipeline (audit 3.4). The classifier is now `select.pick`, which
-    // declares that capability itself — one rule, evaluated in one place.
     ...selectToolOpts,
-  }), [selectToolOpts, chromeSizes.handle, effectivePathEditingId]);
+  }), [selectToolOpts, effectivePathEditingId]);
 
-  // Stable ref to the live selection; updated every render so the affordanceAt
-  // and classifyTarget thunks (which live in an effect closure) always read
-  // the latest selection without causing re-renders.
+  // The affordanceAt and classifyTarget thunks live in an effect closure and read the latest
+  // selection through this.
   const selectionRef = useLatest(selection);
 
-  // Build a per-instance NodeRouting registry. When `routing` is unset, fall
-  // back to `inferredNodeRouting` (data-shape inference: `data.text` →
-  // `'text'`, `data.path` → `'path'`, `data.image` → `'image'`). Pass an
-  // explicit `routing={[]}` to opt out entirely — the classifier becomes
-  // undefined and every hit comes back as `kind: 'unknown'`.
+  // Per-instance NodeRouting registry. Unset `routing` falls back to `inferredNodeRouting`;
+  // an explicit `routing={[]}` opts out — the classifier becomes undefined and every hit
+  // comes back as `kind: 'unknown'`.
   const kindClassifier = useMemo(() => {
     const effective = routing === undefined ? inferredNodeRouting : routing;
     if (effective.length === 0) return undefined;
@@ -523,11 +429,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return (data: TData) => registry.classify(data);
   }, [routing]);
 
-  // Node id → routing-trait kind, for the body classifier. Reusing the routing
-  // registry here is what makes `target: 'kind:text'` on a binding speak the
-  // same vocabulary as `Hit.kind` and the routing tables, rather than a second
-  // one invented for bindings. Undefined when `routing={[]}` opts out, which
-  // leaves every `kind:` target form unmatchable.
+  // Node id → routing-trait kind, for the body classifier, so `target: 'kind:text'` on a
+  // binding speaks the same vocabulary as `Hit.kind` and the routing tables. Undefined when
+  // `routing={[]}` opts out, which leaves every `kind:` target form unmatchable.
   const kindOfNode = useMemo(() => {
     if (!kindClassifier) return undefined;
     return (id: string): string | undefined => {
@@ -536,11 +440,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
   }, [kindClassifier, scene]);
 
-  // The painted alpha of a node in this view: the caller's `alphaFor`
-  // (scoping-dim, and anything else a consumer fades) times any per-node
-  // override alpha. `<Canvas>` has no scene, so the override half is folded
-  // in here — and the pick path reads the same number the painter does, or a
-  // node faded to nothing stays clickable.
+  // The painted alpha of a node in this view: the caller's `alphaFor` times any per-node
+  // override alpha. The pick path reads the same number the painter does, or a node faded
+  // to nothing stays clickable.
   const composedAlphaFor = useMemo(
     () => composeAlphaFor(scene, alphaFor),
     [scene, alphaFor],
@@ -560,18 +462,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ? layerIsPainted
     : undefined;
 
-  // Under a frame a child's pose is already relative, so cascading a container
-  // move would carry every descendant a second time.
-  const framed = poseComposition !== undefined && poseComposition.closure !== 'identity';
   const adapter = useSceneAdapter(scene, {
     // `adapterMethods` is memoized; `selection` itself is a fresh object each render.
     selection: selection.adapterMethods,
     poseDescriptor: descriptor as PoseDescriptor<TPose>,
-    commitInsert: insertTool?.create,
-    insertLayer: insertTool?.layer,
     layouts,
-    poseComposition,
-    cascadeContainerPose: !framed,
   });
 
   const {
@@ -595,12 +490,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Read through a ref by the chrome layers, which are built once.
   const planeOfNodeRef = useLatest(internalPlaneOfNode);
 
-  // Resolved through the select tool's own single-hit picker, so `onClick`,
-  // `onDoubleClick`, hover, and tool routing all name the node a click selects.
-  //
-  // When isPointerInteractive is supplied, the result is filtered: ids for
-  // which the predicate returns false cause getNodeAtPoint to return null,
-  // suppressing pointer events for non-interactive nodes (e.g. scoping-dim).
+  // Resolved through the select tool's own single-hit picker, so `onClick`, `onDoubleClick`,
+  // hover, and tool routing all name the node a click selects. A hit whose id
+  // `isPointerInteractive` rejects comes back null.
   const getNodeAtPoint = useMemo(() => {
     if (!internalPickBest) return undefined;
     const nodeResolver = (id: string) => {
@@ -608,7 +500,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const node = adapter.getNode(id);
       if (!node) return null;
       const kind = kindClassifier ? kindClassifier(node.data) : 'unknown';
-      return { kind, pose: adapter.getWorldPose(id), data: node };
+      return { kind };
     };
     const base = makeGetNodeAtPoint(internalPickBest, nodeResolver);
     if (!isPointerInteractive) return base;
@@ -630,61 +522,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [featuresKey, hasViewport],
   );
 
-  const inertiaEnabled = !!viewport?.inertia;
-  const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
-  // `inertia: true` means "on with kit defaults", so an enabled-but-objectless
-  // config still has to reach the tool — an empty object, not `undefined`,
-  // which the tool reads as off.
-  const handToolInertia = inertiaEnabled
-    ? {
-        friction: inertiaObj?.friction,
-        minSpeed: inertiaObj?.minSpeed,
-        boundary: inertiaObj?.boundary,
-        bounds: inertiaObj?.bounds,
-      }
-    : undefined;
-  // useHandTool must always be called (rules of hooks); it is a no-op when
-  // viewport is absent — the tool is simply not added to the registry.
-  const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
-
-  // Built-ins to mount: what `defaultTools` lists, plus the tool each preset
-  // brings — `select` the select tool, `view` the hand.
-  const baseRequestedTools: readonly BuiltinToolId[] = [
-    ...(defaultTools ?? []),
-    ...(enabled.has('select') ? ['select' as const] : []),
-    ...(enabled.has('view') ? ['hand' as const] : []),
-  ];
-
-  // Patch-form `tools` extras with value `true` widen the requested set
-  // ("pull in this built-in"). Computed here so the rest of the if-ladder
-  // treats them identically to ids that came in via `defaultTools`.
-  const KNOWN_BUILTIN_IDS: ReadonlySet<BuiltinToolId> = new Set<BuiltinToolId>([
-    ...NON_SHAPE_BUILTIN_TOOLS, ...KIT_SHAPE_KINDS,
-  ]);
-  const toolsPatchExtras = (() => {
-    if (!toolsProp || isToolsApi(toolsProp)) return null;
-    return toolsProp;
-  })();
-  const trueIds = new Set<BuiltinToolId>();
-  if (toolsPatchExtras) {
-    for (const [id, value] of Object.entries(toolsPatchExtras)) {
-      if (value !== true) continue;
-      if (!KNOWN_BUILTIN_IDS.has(id as BuiltinToolId)) {
-        if (IS_DEV) {
-          console.warn(`[SceneCanvas] tools.${id}=true is not a known built-in id; ignoring`);
-        }
-        continue;
-      }
-      trueIds.add(id as BuiltinToolId);
-    }
-  }
-  const wants = (id: BuiltinToolId): boolean =>
-    baseRequestedTools.includes(id) || trueIds.has(id);
-
-  // Synthesize the shape/lasso/text/clone tools — always called per React
-  // rules-of-hooks; only registered below when requested. Per-tool options
-  // (lasso mode, clone-selection) thread through `toolOptions`.
-  const shapeTools = useBuiltinShapeTools({ options: toolOptions });
+  // Takeover form: only when toolsProp is the full ToolsApi shape.
+  const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
+  const internalRegistry = useBuiltinTools({
+    select: internalSelect,
+    enabled,
+    defaultTools,
+    patch: toolsProp && !isToolsApi(toolsProp) ? toolsProp : null,
+    toolOptions,
+    inertia: viewport?.inertia,
+  });
 
   const defaultLongPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);
   const feedbackOpt = longPress?.feedback ?? true;
@@ -694,48 +541,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [ambient, pressFeedback],
   );
 
-  const internalRegistry: Record<string, AnyTool> = {};
-  if (wants('select')) internalRegistry.select = internalSelect;
-  // `hand` stays in the registry (not ambient) so its H keybinding and its
-  // Space hold both apply.
-  if (wants('hand')) internalRegistry.hand = handTool;
-  // Shape / lasso / text tools — registry entries with built-in
-  // keybindings (R/E/G/N/L/T) routed via `useKeybindings`.
-  if (wants('rect'))    internalRegistry.rect    = shapeTools.rect;
-  if (wants('ellipse')) internalRegistry.ellipse = shapeTools.ellipse;
-  if (wants('line'))    internalRegistry.line    = shapeTools.line;
-  if (wants('polygon')) internalRegistry.polygon = shapeTools.polygon;
-  if (wants('star'))    internalRegistry.star    = shapeTools.star;
-  if (wants('pen'))     internalRegistry.pen     = shapeTools.pen;
-  if (wants('pencil'))  internalRegistry.pencil  = shapeTools.pencil;
-  if (wants('lasso'))   internalRegistry.lasso   = shapeTools.lasso;
-  if (wants('text'))    internalRegistry.text    = shapeTools.text;
-
-  // Patch-form `tools` prop: merge extras / overrides / omissions into the
-  // internal registry. `false` drops a bundled tool; `true` is already
-  // accounted for above via the `wants()` expansion; `AnyTool` adds or
-  // replaces (dev-only warning on replace). Takeover form (full `ToolsApi`)
-  // is handled below via `toolsProp ?? internalTools`.
-  const toolsPatch = toolsPatchExtras;
-  if (toolsPatch) {
-    for (const [id, value] of Object.entries(toolsPatch)) {
-      if (value === false) {
-        delete internalRegistry[id];
-      } else if (value === true) {
-        // Already pulled in via the `wants()`-driven if-ladder above.
-        continue;
-      } else {
-        if (IS_DEV && id in internalRegistry) {
-          console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
-        }
-        internalRegistry[id] = value;
-      }
-    }
-  }
-
-  // Takeover form: only when toolsProp is the full ToolsApi shape.
-  const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
-
   const internalTools = useTools({
     active: initialActiveTool ?? ('select' in internalRegistry ? 'select' : null),
     registry: internalRegistry,
@@ -743,54 +548,20 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(modes ? { modes } : {}),
   });
 
-  // Auto-wire keybindings against whichever registry is live.
-  //
-  // Both calls fire unconditionally (rules of hooks); the inactive one is
-  // silenced via the hook's own `disable` option:
-  //   - internal registry: disabled whenever the consumer passed `tools=`.
-  //   - consumer registry: disabled when `tools=` was omitted (nothing to
-  //     bind) or when the consumer opted out via `enableKeybindings={false}`.
-  //
-  // The `enableKeybindings` opt-out also silences the internal wiring, so
-  // a consumer relying entirely on the internal tools can take over with
-  // their own `useKeybindings(...)` call. The fallback `useTools` passed
-  // to the second call when `toolsProp` is absent is a render-stable empty
-  // stand-in just to keep the call site valid; it never actually fires
-  // because `disable` is true on that branch.
-  const liveToolsRef = useLatest<ToolsApi | null>(toolsTakeover ?? internalTools);
-  const getActiveModeRef = useLatest(getActiveMode);
-  //
-  // `isToolEligible` mirrors `eligibleForMode` (packages/modes) — the same
-  // predicate `ToolPalette` uses to grey a button out. Without a mode
-  // registry every tool stays activatable.
-  const isToolEligible = useCallback((toolId: string): boolean => {
-    const getMode = getActiveModeRef.current;
-    if (!getMode) return true;
-    const registry = liveToolsRef.current?.registry;
-    const caps = registry?.[toolId]?.eligibility.capabilities ?? [];
-    if (caps.length === 0) return false;
-    const allowed = getMode().allowedCapabilities;
-    for (const c of caps) if (allowed.has(c)) return true;
-    return false;
-  }, [getActiveModeRef, liveToolsRef]);
-
-
   const tools = toolsTakeover ?? internalTools;
+  const liveToolsRef = useLatest<ToolsApi | null>(tools);
+  const getActiveModeRef = useLatest(getActiveMode);
 
-  // The selection's own ambient bindings: `move`, `resize` and `rotate`. They
-  // are not tools and sit outside `tools`, so they apply under a takeover too.
-  const selectionMoveOptions = useMemo(
-    () => ({ move: internalMoveOptions }),
-    [internalMoveOptions],
-  );
+  // The presets' ambient bindings. They are not tools and sit outside `tools`,
+  // so they apply under a takeover too.
   const rotateOptions = selectToolOpts?.rotate || undefined;
-  // Handles first: a handle sits over the selected body, so the move binding
-  // matches a handle drag too, and a tie goes to whichever is first.
-  const featureContributions = useMemo<Contribution[]>(() => [
-    ...(enabled.has('resize') ? [selectionResizeContribution()] : []),
-    ...(enabled.has('rotate') ? [selectionRotateContribution({ rotate: rotateOptions })] : []),
-    ...(enabled.has('move') ? [selectionMoveContribution(selectionMoveOptions)] : []),
-  ], [enabled, selectionMoveOptions, rotateOptions]);
+  const featureContributions = useMemo<Contribution[]>(
+    () => featureAmbient(enabled, {
+      move: internalMoveOptions as FeatureBindingOptions['move'],
+      rotate: rotateOptions as FeatureBindingOptions['rotate'],
+    }),
+    [enabled, internalMoveOptions, rotateOptions],
+  );
 
   // Kit-standard actions to register: every preset's own, plus whichever a
   // tool or contribution on this canvas binds — a tool brings the actions it
@@ -808,45 +579,28 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return KIT_STANDARD_ACTION_IDS.filter((id) => !include.has(id));
   }, [enabled, tools, featureContributions]);
 
-  // Surface the resolved ToolsApi to the introspection callback (the
-  // toolkit-builder dev surface uses this to walk `tools.registry` for
-  // its live route table). Fires whenever the `tools` identity changes,
-  // which is stable across most renders thanks to useTools' useMemo.
+  // Surface the resolved ToolsApi to the introspection callback whenever the `tools`
+  // identity changes.
   const onToolsCreatedRef = useLatest(onToolsCreated);
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools, onToolsCreatedRef]);
 
-  // `onDoubleClick` used to be backed by a native `dblclick` listener on the
-  // canvas, which made it a THIRD independent definition of "double click"
-  // alongside the tool dispatcher's 300ms/8px `dblTap` and the gesture
-  // dispatcher's 600ms/8px synthesized event — so which double-click
-  // behaviors a consumer got depended on the millisecond gap between the two
-  // clicks. The other two are gone; this now observes the gesture
-  // dispatcher's single definition and resolves the hit with the same
-  // `getNodeAtPoint` picker the rest of the canvas uses.
-  //
-  // It rides the dispatcher as an OBSERVER rather than an Action binding
-  // because the prop is a notification, not a behavior: as a binding it would
-  // lose first-match-wins to `enterPathEdit` on every body hit and silently
-  // stop firing.
+  // Rides the gesture dispatcher as an OBSERVER rather than an Action binding because the
+  // prop is a notification, not a behavior: as a binding it would lose first-match-wins to
+  // `enterPathEdit` on every body hit and silently stop firing.
   const getNodeAtPointRef = useLatest(getNodeAtPoint);
   const onDoubleClickObserver = useHitObserver(onDoubleClick, getNodeAtPointRef);
   const onClickObserver = useHitObserver(onClick, getNodeAtPointRef);
 
-  // (Legacy `gestures` prop removed alongside the consumer-facing action
-  // hooks; undo/redo and friends now register via the Actions Registry.)
-
-  // Merge caller-supplied layers with kit defaults. When `layers` is omitted
-  // the result is the full default set (scene + selectionOverlay). Partial
-  // configs deep-merge; `null` slot values suppress a default explicitly.
+  // When `layers` is omitted the result is the full default set (scene + selectionOverlay).
+  // Partial configs deep-merge; `null` slot values suppress a default explicitly.
   const mergedLayers = useMemo(
     () => mergeLayersWithDefaults(layers, deviceProfile.targetScale),
     [layers, deviceProfile.targetScale],
   );
 
-  // `selectTool.rotate === false` disables rotation: drop the `rotate` action
-  // (its rotation-handle chrome is hidden via effectiveChromeVisibility above).
-  // A consumer-supplied `rotate` override still wins; `actions === null`
-  // (all defaults disabled) is left untouched.
+  // `selectTool.rotate === false` disables rotation: drop the `rotate` action. A
+  // consumer-supplied `rotate` override still wins; `actions === null` (all defaults
+  // disabled) is left untouched.
   const resolvedActions = useMemo<ActionsProp | undefined>(() => {
     if (selectToolOpts?.rotate !== false) return actions;
     if (actions === null) return null;
@@ -860,11 +614,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // StandardActionsRegistrar once it has the registry in scope.
   const getActionRef = useRef<((id: string) => Action | undefined) | null>(null);
 
-  // Shared `Dispatcher` instance — created once per `<SceneCanvas>` and
-  // threaded to both the gesture-dispatcher mounter (which pumps input
-  // events into it) and the preview-ghost layer (which walks its
-  // `getInFlightHandles()` for dispatcher-side gesture previews). Lazy
-  // ref init keeps identity stable across renders without an effect.
+  // One `Dispatcher` per `<SceneCanvas>`, shared by the gesture-dispatcher mounter (which
+  // pumps input events into it) and the preview-ghost layer (which walks its in-flight
+  // handles).
   const dispatcherRef = useRef<Dispatcher | null>(null);
   if (!dispatcherRef.current) {
     dispatcherRef.current = createDispatcher({
@@ -893,32 +645,23 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       scene,
       alphaFor,
       animator?.colorOverrides,
-      poseComposition,
     );
-  }, [mergedLayers.scene, alphaFor, scene, animator, poseComposition]);
+  }, [mergedLayers.scene, alphaFor, scene, animator]);
 
-  // Preview-ghost layer: renders in-flight gesture poses on top of the
-  // committed scene using the scene slot's `drawOne`, from whichever view's
-  // preview sources the draw envelope carries. It takes the scene-wired slot,
-  // so a ghosted derived node still resolves its path.
+  // Renders in-flight gesture poses on top of the committed scene using the scene slot's
+  // `drawOne`. It takes the scene-wired slot, so a ghosted derived node still resolves its path.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
     scene,
     sceneSlot,
     dispatcher,
   });
 
-  // Dispatcher-driven chrome overlays — marquee rect + lasso polyline +
-  // any other `OngoingHandle.overlay()` shapes the in-flight actions
-  // publish. Screen-space; slotted after the preview-ghost so chrome
-  // paints on top of any displaced ghost silhouettes.
+  // Marquee rect, lasso polyline, and any other `OngoingHandle.overlay()` shapes. Slotted
+  // after the preview-ghost so chrome paints on top of displaced ghost silhouettes.
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
-  // Chrome-caps hover tracking: last-hovered NodeId fed into `ChromeCtx.hover`.
-  // The hook attaches its own pointermove/leave listeners on the element
-  // `mergedRef` hands it and
-  // caches the topmost-id from `getNodeAtPoint` on a ref. No re-renders.
-
-  const getNodeAtPointRefForHover = useLatest(getNodeAtPoint);
+  // Chrome-caps hover tracking: the last-hovered NodeId fed into `RuleCtx.hover`, cached
+  // on a ref with no re-renders.
   const { getHover, canvasRef: trackHoverOn } = useHoverTracking({
     // One lookup, not a client→world thunk beside a picker: the point and the
     // camera its tolerance converts against have to come from the same view.
@@ -935,7 +678,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const reg = target?.id != null
         ? surfaceViewRegistry?.list().find((r) => r.id === target.id)
         : undefined;
-      const hit = getNodeAtPointRefForHover.current?.(
+      const hit = getNodeAtPointRef.current?.(
         x, y, reg ? { scale: view.scale, layerIsPainted: reg.layerIsPainted } : view,
       );
       return hit ? { id: hit.id as NodeId } : null;
@@ -943,101 +686,50 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     enabled: chromeVisibility !== undefined,
   });
 
-  // Stable refs for the live selection / view / focus / suppression sources
-  // that feed `buildChromeCtx`. The resolver factory below closes over these
-  // and is called per draw / per hitTest from Canvas.
-  const selectionForCapsRef = useLatest(selection.current as readonly NodeId[]);
-  const getFocusedPropRef = useLatest(getFocusedProp);
-  // Selection chrome belongs to the presets that turn it on: the outline to
-  // `outline`, each handle to the preset that binds it. `never` also takes a handle out of
-  // hit-testing, so a hidden handle cannot be grabbed.
-  //
   // `selectable={false}` suppresses the marquee / lasso chrome by default:
   // every selection write no-ops then, so the select tool's
   // empty-drag binding still CLAIMS the gesture (keeping it from falling
   // through to other ambient drag actions like insert) but paints nothing.
   // An explicit consumer rule for either id still wins.
-  const effectiveChromeVisibility = useMemo(() => {
+  const chromeRules = useMemo(() => {
     // Kit defaults first; consumer `chromeVisibility` spread last so it wins.
-    const defaults: import('features/chrome-caps').VisibilityRules = {};
-    if (!enabled.has('outline')) defaults['selection.outline'] = never;
-    if (!enabled.has('resize')) defaults['selection.resize-handles'] = never;
-    if (!enabled.has('rotate')) defaults['selection.rotation-handle'] = never;
+    const defaults = featureChromeRules(enabled);
     if (!selectable) {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;
     }
-    // `selectTool.rotate === false` hides the rotation handle (its action is
-    // also dropped below) so a non-rotatable consumer fully opts out.
+    // `selectTool.rotate === false` hides the rotation handle (`resolvedActions`
+    // drops its action) so a non-rotatable consumer fully opts out.
     if (selectToolOpts?.rotate === false) defaults['selection.rotation-handle'] = never;
-    if (Object.keys(defaults).length === 0) return chromeVisibility;
     return { ...defaults, ...chromeVisibility };
   }, [chromeVisibility, selectable, selectToolOpts?.rotate, enabled]);
-  const chromeVisibilityRef = useLatest(effectiveChromeVisibility);
-  // Read through a ref for the same reason as the others here:
-  // `buildCurrentRuleCtx` is a stable `useCallback`, and adding the profile to
-  // its deps would rebuild it whenever a media query changes.
-  const deviceProfileRef = useLatest(deviceProfile);
-  // Per-node resizability predicate from `selectTool.resize.resizable`, folded
-  // over the live selection into the `selectionResizable` rule-ctx flag below.
-  const resizablePredRef = useLatest(selectToolOpts?.resize?.resizable);
 
-  // The visibility predicate factory passed to <Canvas>. Called fresh per
-  // draw / hitTest; builds ChromeCtx from the live refs and resolves
-  // against the merged rule table. Returns the universal predicate when
-  // no consumer overrides are present AND no hover tracking is needed —
-  // letting the kit's defaults still gate paint without forcing every
-  // legacy consumer onto chrome-caps.
-  /** Build the live RuleCtx — selection + view + modifiers + mode + capabilities
-   *  + active action. Consumed by chrome-caps' resolver and the dispatcher's
-   *  eligibility filter so both see the same view of the world. */
-  const buildRuleCtxFor = useCallback((inputs: ViewRuleInputs) => {
-    const sel = inputs.selection;
-    // No mode registry wired → behave as normal mode, capabilities included.
-    // An empty set here would make every `capability:` rule false and hide
-    // the chrome those rules gate. See DEFAULT_ALLOWED_CAPABILITIES.
-    const modeInfo = getActiveModeRef.current?.()
-      ?? { id: 'normal', allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES };
-    const ctx = buildChromeCtx({
-      focused: getFocusedPropRef.current ? getFocusedPropRef.current() : true,
-      selection: sel,
-      multiActive: sel.length > 1,
-      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      action: inputs.action,
-      hover: getHover(),
-      view: inputs.view,
-    });
-    // buildChromeCtx returns a ChromeCtx (legacy shape); resolveVisibility
-    // accepts both ChromeCtx and RuleCtx and supplies defaults when mode/
-    // allowedCapabilities are absent. We attach them inline so the
-    // mode-gated default rules can read them.
-    // `selectionResizable`: true only when every selected node is resizable
-    // (per `selectTool.resize.resizable`); undefined when no predicate is
-    // supplied → the `resizable:` selector treats it as resizable (back-compat).
-    const resizablePred = resizablePredRef.current;
-    const selectionResizable = resizablePred
-      ? sel.every((id) => resizablePred(id as string))
-      : undefined;
-    return {
-      ...ctx,
-      zoom: viewZoom(inputs.view),
-      mode: modeInfo.id,
-      allowedCapabilities: modeInfo.allowedCapabilities,
-      selectionResizable,
-      editingAnchors: effectivePathEditingId() !== '',
-      device: deviceProfileRef.current,
-    };
-  }, [getHover, effectivePathEditingId, getActiveModeRef, getFocusedPropRef, resizablePredRef, deviceProfileRef]);
+  const chromeCaps = useChromeCaps({
+    rules: chromeRules,
+    getMode: getActiveMode,
+    getFocused: getFocusedProp,
+    getHover,
+    resizable: selectToolOpts?.resize?.resizable,
+    editingAnchors: () => effectivePathEditingId() !== '',
+    device: deviceProfile,
+  });
 
+  // The selection as of the last commit, which is what the painted chrome was
+  // built from; `selection.current` can be a live getter that is ahead of it.
+  const committedSelectionRef = useLatest(selection.current as readonly NodeId[]);
   /** The surface's own view zero. */
   const currentRuleInputs = useCallback((): ViewRuleInputs => ({
-    selection: selectionForCapsRef.current,
+    selection: committedSelectionRef.current,
     view: currentViewRef.current,
     action: dispatcher.getActiveAction(),
-  }), [dispatcher, selectionForCapsRef]);
-  const buildCurrentRuleCtx = useCallback(
-    () => buildRuleCtxFor(currentRuleInputs()),
-    [buildRuleCtxFor, currentRuleInputs],
+  }), [dispatcher, committedSelectionRef]);
+  const getIsVisibleForCanvas = useCallback(
+    (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
+    [chromeCaps, currentRuleInputs],
+  );
+  const getRuleCtxForCanvas = useCallback(
+    () => chromeCaps.ruleCtx(currentRuleInputs()),
+    [chromeCaps, currentRuleInputs],
   );
 
   // Anchor editing survives only as long as the active mode permits it.
@@ -1056,52 +748,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     anchorEditingAllowedRef.current = anchorEditingAllowed;
   });
 
-  /** The chrome-caps answers for one view: the surface's rule table evaluated
-   *  against that view's selection, camera and in-flight action. */
-  const chromeCaps = useMemo(() => ({
-    ruleCtx: (inputs: ViewRuleInputs) =>
-      (getActiveModeRef.current ? buildRuleCtxFor(inputs) as RuleCtx : undefined),
-    isVisible: (inputs: ViewRuleInputs) => resolveVisibility(
-      chromeVisibilityRef.current,
-      buildRuleCtxFor(inputs) as Parameters<typeof resolveVisibility>[1],
-    ),
-  }), [buildRuleCtxFor, getActiveModeRef, chromeVisibilityRef]);
-
-  const getIsVisibleForCanvas = useCallback(
-    (): ((id: string) => boolean) => chromeCaps.isVisible(currentRuleInputs()),
-    [chromeCaps, currentRuleInputs],
-  );
-
-  // Pen preview overlay — reads the pen tool's persistent scratch and draws
-  // the in-progress path (anchors, handles, rubber-band, close hint). Only
-  // wired when the pen tool is actually registered; otherwise null.
-  const wantsPen = wants('pen');
-  const penPreviewLayer = useMemo(
-    () => (wantsPen
-      ? createPenPreviewLayer({ penTool: shapeTools.pen as Tool<PenScratch> })
-      : null),
-    [shapeTools.pen, wantsPen],
-  );
-
-  // Bump the canvas's redraw whenever edit-mode changes — the chrome layer
-  // reads `editingId` via a ref, so without an explicit redraw signal a
-  // dirty-render canvas (no animation in flight) sits with stale frames
-  // and the user sees no chrome until something else triggers a paint.
+  // The chrome layer reads `editingId` via a ref, so an edit-mode change needs an explicit
+  // redraw.
   useEffect(() => {
     canvasApiRef.current?.requestRedraw?.();
   }, [pathEditingId]);
 
-  // Path-editing overlay — anchor squares, tangent lines, control-point
-  // dots for the polygon currently in edit mode. Reads the same state the
-  // dep does, so chrome appears exactly when (and only when) the gesture
-  // path is also active.
-  //
-  // `getPose` walks the dispatcher's in-flight handles first so the chrome
-  // tracks the live `previewPose` while editAnchorsAction is dragging; only
-  // falls back to the committed scene pose between gestures. This is what
-  // makes the dragged anchor / handle move under the cursor instead of
-  // staying pinned to its committed position until the drag commits.
-  const sceneRefForOverlay = useLatest(scene);
+  const sceneRef = useLatest(scene);
   const slopsOn = debug !== undefined && debug !== false && debug.slops === true;
   const selectionOverlayCfg = mergedLayers.selectionOverlay as
     | SelectionOverlaySlotConfig<TPose> | null | undefined;
@@ -1122,19 +775,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
-  // Resolve the live (preview-aware) world polygon for `id`. Reads from
-  // the dispatcher's in-flight handles first — whichever handle owns
-  // the gesture (editAnchors anchor-drag, move-the-whole-path, etc.)
-  // contributes the previewPose / previewData that we'd otherwise
-  // dispatch separately. Synthesizes a (pose, data) pair and routes it
-  // through `resolveEditablePathOf` so chrome and slops viz follow
-  // *any* in-flight gesture that previews state for the editing id.
+  // The live (preview-aware) world polygon for `id`: whichever in-flight handle previews
+  // state for the id contributes its previewPose / previewData, so chrome and slops viz
+  // follow any in-flight gesture.
   const livePathFor = (
     id: string,
     previews: readonly GesturePreviewSource[],
     view: View,
   ): PolygonPath | null => {
-    const node = sceneRefForOverlay.current?.get(id as never);
+    const node = sceneRef.current?.get(id as never);
     if (!node) return null;
     let pose = node.pose as unknown;
     let data = node.data as unknown;
@@ -1185,8 +834,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return id ? new Set([id]) : EMPTY_ID_SET;
   }, [effectivePathEditingId]);
 
-  // Selection overlay — constructed here (scene-aware) per main's seam refactor.
-  // Layered on top: path-edit suppression from HEAD's branch.
   const selectionOverlayLayer = useMemo(() => {
     const selCfg = mergedLayers.selectionOverlay as
       | SelectionOverlaySlotConfig<TPose>
@@ -1228,29 +875,19 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       : mergedLayers.selectionOverlay === null ? null : undefined,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
-    ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(slopsOn ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, slopsOn, slopsLayer]);
+  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, slopsOn, slopsLayer]);
 
-  // Standard-action deps: closures over the live scene / selection / adapter
-  // so the resolved actions always read current state. `useStandardActions`
-  // stabilizes via refs internally — these closures are passed every render
-  // but the registered Action descriptors are not re-registered.
-  // `CanvasExtensionApi.ingest` — imperative entry into the same
-  // content-handler pipeline OS drop / clipboard paste hit. Routed through
-  // `registry.trigger('ingest', …)` so the action's `requires` deps
-  // (insert, ingestion, …) are resolved exactly as on the dispatcher path.
+  // `CanvasExtensionApi.ingest` is routed through `registry.trigger('ingest', …)` so the
+  // action's `requires` deps are resolved exactly as on the dispatcher path.
   // `StandardActionsRegistrar` stashes the registry into this ref.
   const actionsRegistryRef = useRef<ActionsRegistry | null>(null);
 
-  // Clipboard-paste ctx for the kit weasel-JSON content handler
-  // (`IngestCtx.clipboard`). Built from THIS canvas's synthesized adapter so
-  // OS-arriving pastes re-materialize through the same `commitPaste` path
-  // `useClipboardOps` uses. Absent (⇒ the handler declines) when the
-  // consumer set `ingestion.clipboard.enabled: false` or the adapter lacks
-  // `commitPaste` (always present on the synthesized adapter; guarded for
-  // future adapter overrides).
+  // Clipboard-paste ctx for the kit weasel-JSON content handler, built from THIS canvas's
+  // adapter so OS-arriving pastes re-materialize through the same `commitPaste` path
+  // `useClipboardOps` uses. Absent (⇒ the handler declines) when the consumer set
+  // `ingestion.clipboard.enabled: false` or the adapter lacks `commitPaste`.
   const ingestionClipboardReviver = ingestion?.clipboard?.reviver;
   const ingestionClipboardEnabled = ingestion?.clipboard?.enabled !== false;
   const ingestionClipboardOmitted = useLatest(ingestion?.clipboard?.onOmitted);
@@ -1267,17 +904,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const items: IngestItem[] = (input as (File | IngestItem)[]).map((entry) =>
         entry instanceof File ? itemsFromFiles([entry])[0] : entry,
       );
-      if (items.length === 0) return;
+      if (items.length === 0) return false;
       if (!actionsRegistryRef.current) {
         // The registry is stashed by a descendant effect — a consumer calling
         // ingest() from its own ref callback / layout effect lands here.
         dwarn('ingest', 'CanvasExtensionApi.ingest called before the action registry mounted — call ignored. Defer to an effect or event handler.');
-        return;
+        return false;
       }
-      actionsRegistryRef.current.trigger('ingest', {
-        items,
-        ...(point ? { worldX: point.x, worldY: point.y } : {}),
-      });
+      const params = { items, ...(point ? { worldX: point.x, worldY: point.y } : {}) };
+      const ran = actionsRegistryRef.current.trigger('ingest', params);
+      if (!ran) dwarn('ingest', 'CanvasExtensionApi.ingest ran nothing: this canvas has no `ingest` action. Add `ingest` to `features`.');
+      return ran;
     },
     [],
   );
@@ -1294,10 +931,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
   }, [surfaceViewRegistry]);
 
-  // Merge the forwarded ref with our internalCanvasRef so the dispatcher can
-  // read the canvas element even when the consumer also forwards a ref.
-  // The handle exposed to consumers extends the primitive's with `ingest`
-  // (SceneCanvas-only — it needs the action stack).
+  // Merge the forwarded ref with our internalCanvasRef so the dispatcher can read the canvas
+  // element. The consumer's handle extends the primitive's with `ingest`, which needs the
+  // action stack.
   const mergedRef = useCallback(
     (node: CanvasExtensionApi | null) => {
       internalCanvasRef.current = node?.element ?? null;
@@ -1357,10 +993,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // `subscribeGestures()` — Canvas has no dispatcher of its own.
       gestureSource={gestureSource}
       previewPoseExtra={previewPoseExtra}
-      backgroundFill={backgroundFill}
-      cursorCoordsHud={cursorCoordsHud}
-      pickHud={pickHud}
-      modalityHud={modalityHud}
       {...(debug !== undefined ? { debug: canvasDebug(debug) } : {})}
       pickBest={internalPickBest}
       contentVersion={scene.getVersion}
@@ -1368,35 +1000,21 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       layerOrder={layerOrder}
       {...(viewProp !== undefined ? { view: viewProp } : { defaultView })}
       onViewChange={notifyViewChange}
-      shaders={shaders}
-      flattenTolerance={flattenTolerance}
-      // onBackgroundClick is intentionally NOT wired here. The `clearSelection`
-      // action binding in the select tool handles "click on empty background clears
-      // selection" for all SceneCanvas consumers. Wiring a separate background-click
-      // callback would interfere with the gesture dispatcher (which handles lasso,
-      // marquee, etc.) since tools.dispatcher.hasActiveGesture() only covers the
-      // legacy tool channel, not the gesture dispatcher channel.
       {...(redrawOn ? { redrawOn } : {})}
       {...restProps}
     />
   );
 
   // Test hook: opt-in via ?test=1, never in production builds. See src/test-hook.
-  const testHookSceneRef = useLatest(scene);
-  const testHookSelectionRef = useLatest(selection);
-
   useEffect(() => {
-    // Call-site gate: in a consumer's production build, esbuild/webpack/Vite
-    // constant-fold `process.env.NODE_ENV` to `"production"` and DCE this
-    // block, dropping the test-hook references. Same dev-only pattern as
-    // React's invariant warnings. Gating only inside `installTestHookIfRequested`
-    // is not enough — a called function can't be tree-shaken even if its body
-    // is dead, so the gate must sit at the call site too.
+    // The gate must sit at the call site: a consumer's production build constant-folds
+    // `process.env.NODE_ENV` and drops this block, but a called function can't be
+    // tree-shaken even if its body is dead.
     if (process.env.NODE_ENV !== 'production') {
       const hook = installTestHookIfRequested({
-        getScene: () => testHookSceneRef.current as never,
+        getScene: () => sceneRef.current as never,
         getSelectionIds: () =>
-          (testHookSelectionRef.current?.current as readonly string[] | undefined) ?? [],
+          (selectionRef.current?.current as readonly string[] | undefined) ?? [],
         getView: () => currentViewRef.current,
         getActiveToolId: () => liveToolsRef.current?.active ?? null,
       });
@@ -1406,99 +1024,95 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       }
     }
     return undefined;
-  }, [testHookSceneRef, testHookSelectionRef, liveToolsRef]);
+  }, [sceneRef, selectionRef, liveToolsRef]);
 
   return (
     <DeviceProfileProvider value={device}>
       <ViewInputsProvider value={viewInputs}>
-        <>
-          <PointerProviderIfRoot>
-            <>
-              {canvas}
-              <PointerPublisher canvasRef={internalCanvasRef} />
-              <StandardActionsRegistrar
-                selection={selection}
-                scene={scene}
-                adapter={adapter as unknown as BridgeAdapter}
-                actionDefaults={actionDefaults}
-                actions={resolvedActions}
-                excludeActions={standardActionsExclude}
-                currentViewRef={currentViewRef}
-                onViewChange={handleViewChange}
-                resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-                poseDescriptor={descriptor}
-                geometryProjection={geometryProjection}
-                dispatcher={dispatcher}
-                getActionRef={getActionRef}
-                pickEvery={internalPickEvery}
-                layerIsPainted={viewLayerGate}
-                alphaOf={alphaFor ? composedAlphaFor : undefined}
-                viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
-                viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
-                viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
-                viewportRecenter={viewport?.recenter}
-                viewAnimation={viewAnimation}
-                editAnchorsExternalState={editAnchorsExternalState}
-                anchorEditingAllowed={anchorEditingAllowed}
-                layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
-                layoutDropTarget={layoutDropTarget}
-                reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
-                poseComposition={poseComposition as SceneCanvasProps<unknown, string, unknown>['poseComposition']}
-                insertNodeFactories={insertNodeFactories}
-                insertPaint={insertPaint}
-                snapPoint={toolOptions?.snapPoint}
-                canvasRef={internalCanvasRef}
-                canvasApiRef={canvasApiRef}
-                ingestionResolveSrc={ingestion?.resolveSrc}
-                ingestionSvg={ingestion?.svg}
-                ingestionClipboard={ingestionClipboard}
-                actionsRegistryRef={actionsRegistryRef}
-              />
-              <GestureDispatcherMounter
-                canvasRef={internalCanvasRef}
-                canvasApiRef={canvasApiRef}
-                tools={tools}
-                contributions={featureContributions}
-                enabled={enableGestureDispatcher}
-                keyboard={enableKeybindings}
-                claimKeys={claimKeys}
-                selectionRef={selectionRef}
-                boundsOf={internalBoundsOf}
-                planeOfNode={internalPlaneOfNode}
-                pickEvery={internalPickEvery}
-                pickBest={internalPickBest}
-                kindOfNode={kindOfNode}
-                viewRef={currentViewRef}
-                dispatcher={dispatcher}
-                getIsVisibleForCanvas={getIsVisibleForCanvas}
-                getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
-                targetScale={deviceProfile.targetScale}
-                handleHitRadius={selectToolOpts?.handleHitRadius}
-                rotationBadge={rotationBadge}
-                chromeAffordancesRef={chromeAffordancesRef}
-                onDoubleClick={onDoubleClickObserver}
-                onClick={onClickObserver}
-                longPress={longPress}
-              />
-              <ToolKeybindingsMounter
-                internalTools={internalTools}
-                toolsTakeover={toolsTakeover ?? undefined}
-                enableKeybindings={enableKeybindings}
-                isToolEligible={isToolEligible}
-                canvasApi={canvasReady ? canvasApiRef.current : null}
-                versionCheck={versionCheck}
-              />
-              {viewDescriptors?.map((v, i) => (
-                <CanvasView key={v.id} {...v} order={v.order ?? i} />
-              ))}
-              {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
-                <CanvasView key={`contribution:${v.id}`} {...v} />
-              ))}
-              {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
-              {children}
-            </>
-          </PointerProviderIfRoot>
-        </>
+        <PointerProviderIfRoot>
+          <>
+            {canvas}
+            <PointerPublisher canvasRef={internalCanvasRef} />
+            <StandardActionsRegistrar
+              selection={selection}
+              scene={scene}
+              adapter={adapter as unknown as BridgeAdapter}
+              actions={resolvedActions}
+              excludeActions={standardActionsExclude}
+              currentViewRef={currentViewRef}
+              onViewChange={handleViewChange}
+              resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+              poseDescriptor={descriptor}
+              geometryProjection={geometryProjection}
+              dispatcher={dispatcher}
+              getActionRef={getActionRef}
+              pickEvery={internalPickEvery}
+              layerIsPainted={viewLayerGate}
+              alphaOf={alphaFor ? composedAlphaFor : undefined}
+              viewportPanEnabled={enabled.has('view') ? (viewport?.pan ?? true) : false}
+              viewportZoom={enabled.has('view') ? resolvedViewportZoom : false}
+              viewportPinchZoom={enabled.has('view') ? (viewport?.pinchZoom ?? true) : false}
+              viewportRecenter={viewport?.recenter}
+              viewAnimation={viewAnimation}
+              editAnchorsExternalState={editAnchorsExternalState}
+              anchorEditingAllowed={anchorEditingAllowed}
+              layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+              layoutDropTarget={layoutDropTarget}
+              reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
+              insertNodeFactories={insertNodeFactories}
+              insertPaint={insertPaint}
+              snapPoint={toolOptions?.snapPoint}
+              canvasRef={internalCanvasRef}
+              canvasApiRef={canvasApiRef}
+              ingestionResolveSrc={ingestion?.resolveSrc}
+              ingestionSvg={ingestion?.svg}
+              ingestionClipboard={ingestionClipboard}
+              actionsRegistryRef={actionsRegistryRef}
+            />
+            <GestureDispatcherMounter
+              canvasRef={internalCanvasRef}
+              canvasApiRef={canvasApiRef}
+              tools={tools}
+              contributions={featureContributions}
+              enabled={enableGestureDispatcher}
+              keyboard={enableKeybindings}
+              claimKeys={claimKeys}
+              selectionRef={selectionRef}
+              boundsOf={internalBoundsOf}
+              planeOfNode={internalPlaneOfNode}
+              pickEvery={internalPickEvery}
+              pickBest={internalPickBest}
+              kindOfNode={kindOfNode}
+              viewRef={currentViewRef}
+              dispatcher={dispatcher}
+              getIsVisibleForCanvas={getIsVisibleForCanvas}
+              getRuleCtx={getRuleCtxForCanvas}
+              targetScale={deviceProfile.targetScale}
+              handleHitRadius={selectToolOpts?.handleHitRadius}
+              rotationBadge={rotationBadge}
+              chromeAffordancesRef={chromeAffordancesRef}
+              onDoubleClick={onDoubleClickObserver}
+              onClick={onClickObserver}
+              longPress={longPress}
+            />
+            <ToolKeybindingsMounter
+              internalTools={internalTools}
+              toolsTakeover={toolsTakeover ?? undefined}
+              enableKeybindings={enableKeybindings}
+              modes={modes}
+              canvasApi={canvasReady ? canvasApiRef.current : null}
+              versionCheck={versionCheck}
+            />
+            {viewDescriptors?.map((v, i) => (
+              <CanvasView key={v.id} {...v} order={v.order ?? i} />
+            ))}
+            {contributionEntries(tools).flatMap((e) => e.views ?? []).map((v) => (
+              <CanvasView key={`contribution:${v.id}`} {...v} />
+            ))}
+            {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
+            {children}
+          </>
+        </PointerProviderIfRoot>
       </ViewInputsProvider>
     </DeviceProfileProvider>
   );

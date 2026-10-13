@@ -36,11 +36,10 @@ const SCHEMA: PrefGroup = {
 };
 
 describe('prefRailItems', () => {
-  it('lists every level, each entry followed by its own, a nested group as a section of the page that holds it', () => {
+  it('lists a page, then the sections directly on it, and no section inside one of those', () => {
     expect(prefRailItems(SCHEMA).map((i) => [i.path, i.depth, i.page])).toEqual([
       ['canvas', 0, 'canvas'],
       ['canvas.snapping', 1, 'canvas'],
-      ['canvas.snapping.wrap', 2, 'canvas'],
       ['io', 0, 'io'],
     ]);
   });
@@ -89,14 +88,12 @@ describe('PrefsForm rail layout', () => {
     expect(screen.queryByRole('textbox', { name: 'Author' })).not.toBeInTheDocument();
   });
 
-  it('draws a section nested in a section on the same page, with an entry of its own', async () => {
-    const user = userEvent.setup();
+  it('draws a section nested in a section on the same page, with no entry of its own', () => {
     renderRail();
     expect(screen.getByRole('region', { name: 'Wrapping' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Wrapping/ }));
-    expect(screen.getByRole('button', { name: /Wrapping/ })).toHaveAttribute('aria-current', 'location');
-    expect(screen.getByRole('button', { name: /Canvas/ })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Wrap at edge' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Wrapping/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Snapping/ })).toBeInTheDocument();
   });
 
   it('switches panes when a top-level entry is chosen', async () => {

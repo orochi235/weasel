@@ -81,7 +81,8 @@ describe('effectiveSections', () => {
     const sections = effectiveSections(['rect'], entries);
     expect(sections.map((s) => s.name)).toEqual(['Layout', 'Appearance']);
     const layout = sections[0];
-    expect(layout.rows.map((r) => r.label)).toEqual(['Position', 'Size']);
+    // Its partner absent, W is a row of its own under its own name.
+    expect(layout.rows.map((r) => r.label)).toEqual(['Position', 'W']);
     expect(layout.rows[0].leaves.map((l) => l.path)).toEqual(['pose.x', 'pose.y']);
   });
 
@@ -120,15 +121,15 @@ describe('aggregateValue', () => {
   });
 
   it('reads equal objects and arrays held separately as one value', () => {
-    const a = leaf('a', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2] });
-    const b = leaf('b', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2] });
-    expect(aggregateValue([a, b], 'data.fill')).toEqual({ fill: 'solid', color: '#f00' });
+    const a = leaf('a', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2] });
+    const b = leaf('b', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2] });
+    expect(aggregateValue([a, b], 'data.fill')).toEqual({ kind: 'solid', color: '#f00' });
     expect(aggregateValue([a, b], 'data.dash')).toEqual([4, 2]);
   });
 
   it('still reports objects and arrays that differ anywhere as MIXED', () => {
-    const a = leaf('a', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2], stops: [{ at: 0 }] });
-    const b = leaf('b', { kind: 'rect', fill: { fill: 'solid', color: '#0f0' }, dash: [4, 2, 1], stops: [{ at: 1 }] });
+    const a = leaf('a', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2], stops: [{ at: 0 }] });
+    const b = leaf('b', { kind: 'rect', fill: { kind: 'solid', color: '#0f0' }, dash: [4, 2, 1], stops: [{ at: 1 }] });
     expect(aggregateValue([a, b], 'data.fill')).toBe(MIXED);
     expect(aggregateValue([a, b], 'data.dash')).toBe(MIXED);
     expect(aggregateValue([a, b], 'data.stops')).toBe(MIXED);
@@ -150,14 +151,14 @@ describe('kindBreakdown', () => {
 });
 
 describe('nested node paths', () => {
-  const node = leaf('n', { style: { fontSize: 18, fill: { color: '#f00' } } }, { x: 1, y: 0 });
+  const node = leaf('n', { style: { fontSize: 18, fill: { paint: { color: '#f00' } } } }, { x: 1, y: 0 });
 
   it('reads a three-segment path', () => {
     expect(nodeValueAt(node, 'data.style.fontSize')).toBe(18);
   });
 
   it('reads a four-segment path', () => {
-    expect(nodeValueAt(node, 'data.style.fill.color')).toBe('#f00');
+    expect(nodeValueAt(node, 'data.style.fill.paint.color')).toBe('#f00');
   });
 
   it('returns undefined for a missing intermediate segment', () => {

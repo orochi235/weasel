@@ -1,0 +1,29 @@
+.top {
+  display: flex;
+  gap: var(--wzl-space-6);
+  align-items: flex-start;
+}
+
+.code {
+  margin: 0;
+  padding: var(--wzl-space-4);
+  width: 320px;
+  height: 260px;
+  box-sizing: border-box;
+  resize: none;
+  font: 11px/1.4 ui-monospace, Menlo, monospace;
+  background: #17110d;
+  color: #e8dcc8;
+  border: 1px solid #4a3b2c;
+  border-radius: 4px;
+}
+
+.error {
+  color: #e06c75;
+  font-size: 12px;
+}
+
+.editor {
+  max-height: 150px;
+  overflow: auto;
+}

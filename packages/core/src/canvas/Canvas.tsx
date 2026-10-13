@@ -1,27 +1,22 @@
 /**
- * Low-level WebGL surface + viewport + pointer routing primitive.
- * Composes layers into a single GL render pass, applies a view transform,
- * routes pointer/keyboard events to the supplied `tools.dispatcher`, and
- * exposes scene-agnostic slot props (`backgroundFill`, `cursorCoordsHud`,
- * `pickHud`).
+ * Low-level WebGL surface + viewport primitive. Composes layers into a single GL render pass,
+ * applies a view transform, and delivers hover to the layers that ask for it. It routes no
+ * gesture: `<SceneCanvas>` mounts the gesture dispatcher on this same element. Canvas owns NO
+ * scene-shaped state — selection, picking, kind registry, scene-aware overlays all live in
+ * `<SceneCanvas>`, which wraps it.
  *
- * Canvas owns NO scene-shaped state — selection, picking, kind registry,
- * scene-aware overlays — all live in `<SceneCanvas>` (the public consumer
- * entry point) which wraps `<Canvas>`.
- *
- * The `layers` prop is a map keyed by slot name. Standard slots render at a
- * canonical position; custom entries (any other key, value carrying `.layer`)
- * insert at `after`/`before` an existing slot, defaulting to the top.
+ * The `layers` prop is a map keyed by slot name. Standard slots render at a canonical position;
+ * custom entries (any other key, value carrying `.layer`) insert at `after`/`before` an existing
+ * slot, defaulting to the top.
  *
  * @internal
  * @deprecated Bare `<Canvas>` is not a supported consumer surface.
- *   Use `<SceneCanvas>` instead. Re-promotion is tracked in
- *   `docs/TODO.md`.
+ *   Use `<SceneCanvas>` instead.
  */
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
 import { buildSceneLayers, type CanvasAdapter, type SceneSlotConfig } from './buildSceneLayer';
 
@@ -40,10 +35,10 @@ import type { ToolsApi } from '../tools/overlayBinding';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
+import { useSurfaceInput } from './useSurfaceInput';
 import { useCanvasView } from './useCanvasView';
 import { useOptionalViewRegistry } from './viewRegistry';
-import { useFrameLoop } from './useFrameLoop';
-import { useRedrawOn } from './useRedrawOn';
+import { useCanvasSurface } from './useCanvasSurface';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from '@weasel-js/routing';
@@ -54,12 +49,12 @@ import type { View } from 'core/viewport/view';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
   drawLayers, isLayerPainted,
-  type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
+  type Dims, type LayerCommandCache, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
-import { viewToMat3, type ShaderProgramHandle } from '../renderer';
-import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
+import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
+import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
+import { shaderKeyOf } from './canvasRenderer';
 import { useSceneLayerList } from './useSceneLayerList';
-import { getProgramSource, programSourceRegistry } from '../renderer/shaders/registerProgram';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -75,10 +70,7 @@ import {
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { CanvasDebugSink, DebugConfig } from '../debug/types';
-import { parseDebugFlags } from '../debug/parseDebugFlags';
-import { createDebugSink } from '../debug/createDebugSink';
-import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
-import { frameStatsOf } from '../debug/frameStats';
+import { beginDebugFrame, useDebugSink } from '../debug/useDebugSink';
 
 const alwaysVisible = (_id: string): boolean => true;
 import { resolveCursorTier } from '@weasel-js/cursor';
@@ -86,7 +78,6 @@ import type { ResolvedCursor } from '@weasel-js/cursor';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
-import { commandFill } from 'renderer/patterns/commandPaint';
 
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { CursorCoordsHud } from './CursorCoordsHud';
@@ -147,13 +138,9 @@ export type LayersMap<
 };
 
 /**
- * Props for `<Canvas>` — the low-level WebGL surface + viewport +
- * pointer routing primitive.
- *
- * Canvas is scene-agnostic. It owns the GL surface, view state, pointer/
- * keyboard dispatch, and slot composition. It does NOT own selection state,
- * picking logic, kind registries, or scene-aware overlays — those belong in
- * `<SceneCanvas>`.
+ * Props for `<Canvas>`. Canvas is scene-agnostic: it owns the GL surface, view state, hover
+ * delivery, and slot composition, and not gesture dispatch, selection state, picking logic,
+ * kind registries, or scene-aware overlays.
  */
 export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
   /** CSS-pixel width. */
@@ -162,10 +149,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   height: number;
 
   /** Drawing-buffer density (device pixels per CSS pixel). When omitted the
-   *  canvas reads `window.devicePixelRatio` per paint — the long-standing
-   *  screen behavior. Supplying it makes density an explicit parameter, the
-   *  same contract the headless `renderSceneToPixels` path follows (that
-   *  path never reads ambient density at all). */
+   *  canvas reads `window.devicePixelRatio` per paint. */
   dpr?: number;
 
   /** Flatness tolerance for curve tessellation, in world units. Forwarded to
@@ -198,18 +182,10 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   redrawOn?: readonly RedrawSource[];
 
   /**
-   * Combined adapter for scene-slot rendering, bounds computation, and
-   * move/resize/rotate gesture math. Optional — bare-Canvas consumers that
-   * don't need a scene slot may omit it.
-   *
-   * Canvas threads this adapter into layer factories and gesture hooks. The
-   * type is the move/resize/rotate intersection plus the *optional* scene-tree
-   * methods (`getLayers`/`getNode`/`getChildren`) — present on a hierarchical
-   * `SceneCanvasAdapter`, absent on flat adapters. The `buildSceneLayer` path
-   * feature-detects them at draw time.
-   *
-   * `<SceneCanvas>` synthesizes this from a `Scene`; bare-`<Canvas>` consumers
-   * must supply it explicitly when using the scene or selection-overlay slots.
+   * Adapter the scene slot draws from and pose and bounds lookups read. Required only for the
+   * scene or selection-overlay slots. The scene-tree
+   * methods (`getLayers`/`getNode`/`getChildren`) are optional — present on a hierarchical
+   * `SceneCanvasAdapter`, absent on flat adapters — and feature-detected at draw time.
    */
   adapter?: CanvasAdapter<TNode, TPose>;
 
@@ -217,52 +193,37 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   layers: LayersMap<TNode, TPose>;
 
   /**
-   * Current selection state. Canvas is a pure pass-through — it owns no
-   * selection state of its own. When absent, Canvas behaves as if nothing is
-   * selected: no selection chrome, no select-on-click, no clear-on-background.
-   *
-   * `<SceneCanvas>` always supplies this from its internal `useSelection`.
-   * Bare-`<Canvas>` consumers may omit it for non-selection use cases (e.g.
-   * force-graph renderers or read-only viewers).
+   * Current selection state; Canvas owns none of its own and never writes it. When absent,
+   * Canvas behaves as if nothing is selected: no selection chrome.
    */
   selection?: SelectionApi;
 
 
   /**
-   * How to read and rewrite a pose. Drives the default `boundsOf` fallback and
-   * the selection-overlay bounds.
-   * Defaults to the rect identity (`AUTO_POSE_DESCRIPTOR`).
-   *
-   * This is a math helper, not a scene-shaped concern — it converts a pose
-   * value to an AABB and extracts rotation for the selection chrome. Bare-
-   * Canvas consumers that use a non-rect pose type should supply this.
+   * How to read and rewrite a pose. Drives the default `boundsOf` fallback and the
+   * selection-overlay bounds. Defaults to the rect identity (`AUTO_POSE_DESCRIPTOR`); supply
+   * one for a non-rect pose type.
    */
   poseDescriptor?: PoseDescriptor<TPose>;
 
-  // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   /**
-   * Used by `PickHud` to display the list of ids under the cursor.
-   * NOT used for tool routing — see `getNodeAtPoint` for that.
-   * `<SceneCanvas>` passes its internal pick function here so the HUD
-   * stays in sync with the scene's actual hit-test order.
+   * Used by `PickHud` to display the list of ids under the cursor. Canvas routes no input
+   * with it.
    */
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
   /**
-   * Override for committed bounds lookup. When supplied, takes precedence over
-   * the `poseDescriptor`-derived fallback. Used by the selection overlay, the
-   * multi-select union AABB, and `helpersRef.getEffectiveBounds`. Optional —
-   * bare-Canvas consumers that use a custom bounds shape should supply this;
-   * `<SceneCanvas>` derives it from its scene adapter and passes it via the
-   * scene-slot layer config rather than this prop.
+   * Override for committed bounds lookup, taking precedence over the `poseDescriptor`-derived
+   * fallback. Used by the selection overlay, the multi-select union AABB, and
+   * `helpersRef.getEffectiveBounds`.
    */
   boundsOf?: (id: string) => Bounds | null;
   /** Bounds of `id` drawn at an in-flight pose — how chrome boxes a preview.
    *  Defaults to the `poseDescriptor`'s box of that pose. */
   boundsOfPose?: (id: string, pose: TPose) => Bounds | null;
   /**
-   * Custom pointer-to-world coordinate transform. When supplied, overrides the
-   * default `(clientX - canvasRect.left) / scale + pan` calculation. Useful
-   * for consumers that apply an additional CSS transform to the canvas element.
+   * Custom pointer-to-world coordinate transform, overriding the default canvas-rect
+   * calculation. Useful for consumers that apply an additional CSS transform to the canvas
+   * element.
    */
   clientToWorld?: (canvas: HTMLElement, cx: number, cy: number) => [number, number];
 
@@ -284,30 +245,31 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   inputElement?: HTMLElement | null;
 
-  // --- Visuals / DOM passthrough ---
+  /** Class for the `<canvas>` this component renders. Under `paintInto` it
+   *  renders none, and the input element is the caller's to style. */
   className?: string;
+  /** Inline style for the `<canvas>` this component renders; a tool's cursor
+   *  is merged over it. Not applied under `paintInto`, where only that cursor
+   *  is written, onto the input element. */
   style?: React.CSSProperties;
+  /** Tab order of the `<canvas>` this component renders. Default 0, so the
+   *  canvas is focusable. Not applied under `paintInto`: whether the input
+   *  element can take focus is the caller's to decide. */
   tabIndex?: number;
-  /** Fired when the canvas element gains focus. The canvas is focusable by
-   *  default (`tabIndex` 0), so consumers driving focus-dependent chrome —
-   *  a focus ring, a "keyboard shortcuts active" hint — need to observe it. */
-  onFocus?: React.FocusEventHandler<HTMLCanvasElement>;
-  /** Fired when the canvas element loses focus. */
-  onBlur?: React.FocusEventHandler<HTMLCanvasElement>;
+  /** Fired when the element input comes from gains focus: the canvas, or
+   *  under `paintInto` the `inputElement`. Called with the DOM event. */
+  onFocus?: (event: FocusEvent) => void;
+  /** Fired when that element loses focus. */
+  onBlur?: (event: FocusEvent) => void;
   /**
-   * When `true` (default), the canvas element receives focus on `pointerdown`
-   * so keyboard events (tool hotkeys, undo/redo) are captured without a
-   * separate click-to-focus step. Set to `false` for canvases embedded inside
-   * a larger focus-managed layout where auto-focus would steal focus from
-   * sibling inputs.
+   * When `true` (default), the canvas element receives focus on `pointerdown` so keyboard
+   * events are captured without a separate click-to-focus step. Set to `false` where
+   * auto-focus would steal focus from sibling inputs.
    */
   autoFocusOnPointerDown?: boolean;
 
-  /** Opt-in keyboard-driven actions wired against the canvas's effective
-   *  selection. Each key turns the action on; values may be `true` (defaults)
-   *  or a config dict. Omitting a key leaves the action unbound. */
-  /** Tool primitive substrate. Pointer/keyboard/wheel events are routed
-   *  through `tools.dispatcher`. */
+  /** The tool set. Canvas reads the active tool's cursor, its overlays, and
+   *  its in-flight preview ids and poses; it dispatches nothing to a tool. */
   tools?: import('../tools/overlayBinding').ToolsApi;
 
   /** Controlled viewport. When supplied, Canvas does not own the value —
@@ -320,25 +282,16 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  uncontrolled modes. */
   onViewChange?: (next: View) => void;
   /**
-   * Optional world-space rect that constrains pan. When supplied, every
-   * `setView` call passes through `clampView(next, viewBounds, {width, height})`
-   * before commit, keeping the visible rect inside `viewBounds`. If the visible
-   * rect is larger than the bounds along an axis (zoomed out past extent), that
-   * axis is centered. Has no effect on `scale`.
-   *
-   * A viewport concern, not scene-shaped. Consumers that want the pan to stay
-   * inside a document page boundary should wire this with the page dimensions.
+   * Optional world-space rect that constrains pan: every `setView` passes through `clampView`
+   * before commit, keeping the visible rect inside `viewBounds`. An axis where the visible
+   * rect is larger than the bounds is centered. Has no effect on `scale`.
    */
   viewBounds?: { x: number; y: number; width: number; height: number };
   /**
-   * Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
-   * render. Custom layers can read it from inside their `draw` closure to
-   * reflect in-flight gestures (move/resize/rotate) instead of the committed
-   * scene. Both lookups apply when an id is in the active overlay; otherwise
-   * they fall back to the adapter.
-   *
-   * Useful for custom layers that render scene content outside of the standard
-   * slot system and need to stay in sync with gesture previews.
+   * Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every render. Custom
+   * layers can read it from inside their `draw` closure to reflect in-flight gestures
+   * (move/resize/rotate) instead of the committed scene; an id outside the active overlay
+   * falls back to the adapter.
    */
   helpersRef?: React.MutableRefObject<CanvasHelpers<TPose> | null>;
 
@@ -348,9 +301,9 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  - `false`: force off, ignore URL.
    *  - `DebugConfig` object: force on with that config, ignore URL.
    *
-   * When enabled, the Canvas appends a screen-space `debug-overlay` layer
-   * at the top of the layer stack and threads a `DebugSink` into every
-   * interaction hook so they record hit math + handle positions.
+   * When enabled, the Canvas appends a screen-space `debug-overlay` layer and builds the
+   * sink it paints: the scene slot and each paint record into it, and the layer helpers, a
+   * tool's cursor ctx, and the ref handle's `getDebug` hand it to whatever else records.
    */
   debug?: DebugConfig | false;
 
@@ -359,116 +312,76 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   debugSinkRef?: React.MutableRefObject<CanvasDebugSink | null>;
 
   /**
-   * Custom shader programs to compile on the renderer. Each handle must come
-   * from a module-level `registerProgram()` call. Compiled once per handle id
-   * on first render (or on context restore). Pass a stable reference (e.g.
-   * defined at module scope) — the array is read at renderer init time.
-   * Re-registering one of these ids with new source repaints the canvas, and
-   * the renderer recompiles it for that frame.
+   * Shader programs to compile before the frame that first draws them; one
+   * not named here compiles on that frame. Each handle comes from a
+   * module-level `registerProgram()`. The array is read at each paint and
+   * registered again when its ids change, so a handle added after mount is
+   * picked up. Re-registering one of these ids with new source repaints the
+   * canvas, and the renderer recompiles it for that frame.
    */
   shaders?: ShaderProgramHandle[];
 
   /**
-   * Extra source of ids whose committed paint should be suppressed during the
-   * current frame (in addition to those reported by the tools' `previewIds()`).
-   *
-   * Wired by `<SceneCanvas>` to expose the new gesture-dispatcher's in-flight
-   * handles: as legacy hooks are removed from tools, the
-   * source-hide for move/clone/etc. needs to follow the preview-ghost layer
-   * onto the dispatcher's `OngoingHandle.previewIds()`. Optional — bare
-   * `<Canvas>` consumers don't need to wire it.
+   * Extra source of ids whose committed paint should be suppressed during the current frame,
+   * in addition to those reported by the tools' `previewIds()`. `<SceneCanvas>` wires it to
+   * the gesture dispatcher's in-flight handles.
    */
   previewIdsExtra?: () => Iterable<string> | null;
 
   /**
-   * Extra preview-pose lookup checked after the active tool's `previewPose`
-   * misses. Wired by `<SceneCanvas>` to expose the gesture-dispatcher's
-   * in-flight `OngoingHandle.previewPose(id)` so selection chrome (resize/
-   * rotation handles, AABB outline) tracks the ghost during dispatcher-driven
-   * drags. Returns `null` / `undefined` when no preview is in flight.
+   * Extra preview-pose lookup checked after the active tool's `previewPose` misses, so
+   * selection chrome tracks the ghost during dispatcher-driven drags. Returns `null` /
+   * `undefined` when no preview is in flight.
    */
   previewPoseExtra?: (id: string) => unknown;
 
   /**
-   * In-flight gesture state `<Canvas>` can't see for itself. Backs the
-   * `getGestureBounds` / `subscribeGestures` / `getGestureVersion` trio on
-   * `helpersRef`; wired by `<SceneCanvas>` from the gesture dispatcher
-   * (`createGestureSource`). Leaving it unwired is fine — those three then
+   * In-flight gesture state `<Canvas>` can't see for itself. Backs the `getGestureBounds` /
+   * `subscribeGestures` / `getGestureVersion` trio on `helpersRef`. Unwired, those three
    * report "no gesture in flight" and never fire.
    */
   gestureSource?: GestureSource;
 
   /**
-   * FillStyle applied to the full canvas surface behind the scene. Accepts the
-   * kit's `FillStyle` union (solid / pattern / linear-gradient / radial-gradient /
-   * conic-gradient) so consumers don't have to author a background node just to
-   * colorize the canvas.
-   *
-   * Rendered as a screen-space layer slotted before `'scene'` — independent of
-   * pan / zoom. Canvas owns this layer; `<SceneCanvas>` forwards its own
-   * `backgroundFill` prop verbatim so consumer apps see no breaking change.
+   * Fill for the full canvas surface, drawn as a screen-space layer beneath every other
+   * layer, the grid and anything anchored before it included — independent of pan / zoom.
    */
-  backgroundFill?: FillStyle;
+  backgroundFill?: Paint;
 
-  /**
-   * Dev HUD: when true, mounts a fixed-position widget showing live cursor
-   * coords in both viewport (client) and canvas (world) frames. Useful for
-   * diagnosing pointer-coord drift / pan-zoom misalignment without
-   * instrumenting events.
-   */
+  /** Dev HUD: a fixed-position widget showing live cursor coords in both viewport (client)
+   *  and canvas (world) frames. */
   cursorCoordsHud?: boolean;
 
-  /**
-   * Dev HUD: when true, mounts a fixed-position widget just below the
-   * cursor-coords HUD listing the ids returned by `pickEvery(world)` under
-   * the cursor. Useful for diagnosing hit-test order and container/leaf
-   * overlap during select-tool work.
-   */
+  /** Dev HUD: a fixed-position widget listing the ids `pickEvery(world)` returns under the
+   *  cursor. */
   pickHud?: boolean;
 
   /**
-   * Dev HUD: mounts a fixed-position widget below the pick HUD reporting
-   * the active modality mode, the active-slot tool, and the hotkey stack.
-   * Pass `true` to enable with no mode (renders `—` for the mode line —
-   * useful until the modality machine is wired). Pass an object to supply
-   * the current mode id.
+   * Dev HUD: a fixed-position widget reporting the active modality mode, the active-slot
+   * tool, and the hotkey stack. `true` renders `—` for the mode line; pass an object to
+   * supply the current mode id.
    */
   modalityHud?: boolean | { modeId?: string };
 
-  /**
-   * Optional single-best hit resolver for the `pickHud` — the id this point
-   * would select on a bare click. When omitted the HUD skips the bold-best
-   * highlight. `<SceneCanvas>` forwards its `internalPickBest` here so the
-   * HUD shows the same best-candidate SceneCanvas would pick.
-   */
+  /** Single-best hit resolver for the `pickHud` — the id this point would select on a bare
+   *  click. When omitted the HUD skips the bold-best highlight. */
   pickBest?: (worldX: number, worldY: number) => string | null;
 
 
   /**
-   * Optional mode-owned decoration layer. When supplied, Canvas inserts it
-   * between the scene-render slot and the tool-overlay slot so decoration
-   * draw commands (e.g. path-edit anchor dots) paint above scene content but
-   * below tool overlays (drag rects, etc.).
-   *
-   * Slot ordering: scene → (scoping mask) → **decoration** → tool overlay → chrome.
-   *
-   * Wired by the modality machine after it activates a mode whose
-   * `ModeDefinition` supplies a `paint()` factory. Omitting this prop is a
-   * no-op — existing consumers are unaffected.
+   * Mode-owned decoration layer (e.g. path-edit anchor dots). Composed as a `decorationLayer`
+   * entry in `layers` with no anchor, which this prop replaces: it paints above every slot
+   * and every other custom layer, and beneath a tool's `'top'` overlays. A tool's
+   * selection-anchored overlays sit beneath it too while there is selection chrome to anchor
+   * them; with that slot empty they fall to the tail and paint above it.
    */
   decorationLayer?: RenderLayer<unknown>;
 
   /**
-   * Chrome-caps visibility resolver. When supplied, Canvas:
-   *   - exposes the predicate on `helpersForLayers.getIsVisible` so
-   *     custom layers (notably `composeAffordanceLayer`) can gate
-   *     paint by chrome id;
-   *   - threads it into the affordance-pipeline `HitTestContext.isVisible`
-   *     so the same gate applies to hit-testing.
-   *
-   * Called fresh per draw / per hitTest, so the consumer can return a
-   * predicate that closes over per-frame `ChromeCtx`. Omit to leave
-   * every chrome element visible (pre-chrome-caps behavior).
+   * Chrome-caps visibility resolver. Exposed on `helpersForLayers.getIsVisible` so custom
+   * layers (notably `composeAffordanceLayer`) can gate paint by chrome id, and threaded into
+   * hit-testing so the same gate applies there. Called fresh per draw / per hitTest. Omit to
+   * leave every chrome element visible.
    */
   getIsVisible?: () => (id: string) => boolean;
 
@@ -495,10 +408,9 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   layerOrder?: string[];
 
   /**
-   * Runs of consecutive layers that composite as one — the surface for
-   * blurring the world while the chrome above it stays sharp. Members are
-   * named by layer id, and a layer in no group draws exactly as it did
-   * before. See {@link LayerGroup}.
+   * Runs of consecutive layers that composite as one — the surface for blurring the world
+   * while the chrome above it stays sharp. Members are named by layer id. See
+   * {@link LayerGroup}.
    */
   layerGroups?: readonly LayerGroup[];
 }
@@ -518,14 +430,9 @@ function resolveToolsCursor(
   if (!tool?.cursor) return undefined;
   if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);
   if (!ctxBase) return undefined;
-  // Function form: invoke at render time with the live base ctx.
-  //
-  // `ctx.scratch` is always null here. It used to be the tool-routing
-  // dispatcher's in-flight gesture scratch, which is how `grab` became
-  // `grabbing` and how select swapped to `move` — mid-gesture cursors are now
-  // `Action.activeCursor`, applied imperatively by the hover pump. A tool that
-  // wants a cursor driven by its own state closes over its own ref (the pen
-  // does, for its close-path hint).
+  // Function form. `ctx.scratch` is always null here: mid-gesture cursors are
+  // `Action.activeCursor`, applied imperatively by the hover pump. A tool that wants a
+  // cursor driven by its own state closes over its own ref.
   try {
     const base = ctxBase();
     return resolveCursorTier(tool.cursor({ ...base, scratch: null }));
@@ -534,9 +441,10 @@ function resolveToolsCursor(
   }
 }
 
-/** Stable empty map, so an omitted `layerVisibility` doesn't remake the paint
- *  effect's deps every render. */
 const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
+
+/** The origin a canvas-local point is measured from. */
+const CANVAS_ORIGIN = { left: 0, top: 0 };
 
 /** Client coords to world, through the `clientToWorld` prop when one is
  *  supplied and the canvas rect otherwise. Every pointer path in this file
@@ -564,7 +472,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     contentVersion,
     syncPaint = false,
     redrawOn,
-    adapter: adapterProp,
+    adapter,
     layers: layersMap,
     selection,
     boundsOf,
@@ -604,30 +512,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     layerGroups,
   } = props;
 
-  // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
-  // `false` forces off. Keyed on content, so a config written inline does not
-  // rebuild the sink, and lose what it has recorded, on every render.
-  const debugKey = debugProp === undefined ? undefined : JSON.stringify(debugProp);
-  const resolvedDebugConfig = useMemo<DebugConfig | null>(() => {
-    if (debugKey !== undefined) return (JSON.parse(debugKey) as DebugConfig | false) || null;
-    if (typeof window === 'undefined') return null;
-    return parseDebugFlags(window.location.search);
-  }, [debugKey]);
+  const { sink: debugSink, overlay: debugOverlay, frameStats, getDebug } = useDebugSink(debugProp);
 
-  // Lazily build one sink per Canvas mount (per resolved config).
-  const debugSink = useMemo<CanvasDebugSink | null>(() => {
-    if (resolvedDebugConfig === null) return null;
-    return createDebugSink(resolvedDebugConfig);
-  }, [resolvedDebugConfig]);
-  const committedDebugSinkRef = useLatest(debugSink);
-  const getDebug = useCallback(() => committedDebugSinkRef.current, [committedDebugSinkRef]);
-
-  const adapter = adapterProp;
-
-  // The element input comes from and every client→world conversion measures.
-  // Normally the `<canvas>` this component renders; under `paintInto` it is
-  // the caller's `inputElement` instead — nothing downstream of here asks
-  // which of the two it is holding, because nothing downstream needs a canvas.
+  // The element input comes from and every client→world conversion measures: the `<canvas>`
+  // this component renders, or under `paintInto` the caller's `inputElement`.
   const canvasRef = useRef<HTMLElement | null>(null);
   // The `<canvas>` this component rendered, if it rendered one. `paint` is the
   // only thing that needs a real canvas, for `getContext`.
@@ -654,16 +542,16 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Read by `hitTestExtras`, which is built once and must see live values.
   const helpersForLayersRef = useRef<CanvasHelpers<TPose> | null>(null);
   const dimsRef = useLatest({ width, height });
-  const getIsVisibleRef = useLatest(getIsVisible);
-  const layerVisibilityRef = useLatest(layerVisibility);
-  const layerOrderRef = useLatest(layerOrder);
+  // Which layers reach the screen, and which chrome within them: asked by the
+  // paint and by every hit-test.
+  const gateRef = useLatest({ getIsVisible, layerVisibility, layerOrder });
 
   // React does not drive the paint; the frame loop does. The thunk defers to
   // `paint` below, which needs inputs this render has not computed yet.
   const paintRef = useRef<() => boolean>(() => false);
-  const { requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume } = useFrameLoop(
+  const { lease, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume } = useCanvasSurface(
     useCallback(() => paintRef.current(), []),
-    { syncPaint, target: canvasRef },
+    { syncPaint, target: canvasRef, dpr: dprProp, redrawOn, shaders },
   );
 
   const contentVersionRef = useLatest(contentVersion);
@@ -683,12 +571,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
   }, []);
 
-  // Hit-test registered layers topmost-first. Registration order is draw
-  // order, so the last-registered layer is on top and gets first refusal —
-  // the reverse of the Set's iteration order.
-  //
-  // `<SceneCanvas>` folds this into its `affordanceAt` thunk. Canvas can't do
-  // that itself: it has the layers but not the dispatcher.
+  // Hit-test registered layers topmost-first: registration order is draw order, so the
+  // last-registered layer gets first refusal. `<SceneCanvas>` folds this into its
+  // `affordanceAt` thunk; Canvas has the layers but not the dispatcher.
   const hitTestExtrasIn = useCallback((
     worldX: number,
     worldY: number,
@@ -698,9 +583,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     only?: readonly RenderLayer<unknown>[],
   ) => {
     const layers = [...extrasRef.current].reverse();
-    const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
-    const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
-    const order = layerOrderRef.current;
+    const gate = gateRef.current;
+    const isVisible = gate.getIsVisible?.() ?? alwaysVisible;
+    const visibility = gate.layerVisibility ?? NO_LAYER_VISIBILITY;
+    const order = gate.layerOrder;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
       if (only && !only.includes(layer)) continue;
@@ -709,12 +595,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
-  }, [getIsVisibleRef, layerOrderRef, layerVisibilityRef]);
+  }, [gateRef]);
 
   const {
     viewRef, controlledView, setView, getView, subscribeView,
     adoptControlled, announceControlled, clearSubscribers,
-  } = useCanvasView({ view: viewProp, defaultView, onViewChange, viewBounds, dimsRef, requestRedraw });
+  } = useCanvasView({
+    view: viewProp, defaultView, onViewChange, viewBounds, dims: () => dimsRef.current, requestRedraw,
+  });
 
   const hitTestExtras = useCallback((
     worldX: number,
@@ -777,11 +665,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
        paintedCursor, getDebug]);
 
-  // Created on the first paint, rebuilt when the paint target moves, and
-  // freed on unmount.
-  const lease = useCanvasRenderer();
-  useRedrawOnRestore(lease, requestRedraw);
-  useRedrawOnDensityChange(requestRedraw, dprProp);
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
 
   // Views registered on this surface — declared as `views` descriptors or
@@ -789,9 +672,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // registry, which is the single-view case.
   const viewRegistry = useOptionalViewRegistry();
 
-  // Internal hooks always run (rules of hooks). They consult a noop adapter
-  // when none is supplied; their controllers are then unused because the
-  // gesture wiring below only enables move/resize when `adapter` is present.
+  // A noop adapter stands in when none is supplied.
   const noopAdapter = useMemo(
     () =>
       ({
@@ -806,9 +687,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     & ResizeAdapter<TNode, TPose>
     & RotateAdapter<TNode, TPose>;
 
-  // Canvas owns no selection state. The `selection` prop is the sole source.
-  // When absent, behave as if no selection exists (no chrome, no overlay).
-  // A no-op fallback keeps all downstream reads safe without branching.
+  // Canvas owns no selection state. A no-op fallback keeps all downstream reads safe without
+  // branching.
   const noopSelection = useMemo<SelectionApi>(
     () => ({
       current: [],
@@ -829,10 +709,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   );
   const effectiveSelection: SelectionApi = selection ?? noopSelection;
 
-  // Base ctx for the function form of `Tool.cursor` — the last consumer of
-  // `ToolCtx` now that the tool-routing dispatcher is gone. The cursor is
-  // resolved during render, so the ctx carries this render's values; only
-  // `applyOps`, which a cursor function could call later, reads a ref.
+  // Base ctx for the function form of `Tool.cursor`. The cursor is resolved during render, so
+  // the ctx carries this render's values; only `applyOps`, which a cursor function could call
+  // later, reads a ref.
   const effectiveAdapterRef = useLatest(effectiveAdapter);
   const clientToWorldRef = useLatest(clientToWorld);
   const toolsCtxBase = () => {
@@ -855,10 +734,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
   };
 
-  // Stable wrappers for HUD props — read the ref at call time so the HUDs
-  // don't reinstall their useEffect on every render when the prop identity
-  // changes (e.g. when SceneCanvas re-renders with a new lambda reference).
-  // pickEvery and pickBest are HUD-only.
+  // Read the ref at call time so the HUDs don't reinstall their useEffect on every render
+  // when the prop identity changes.
   const pickEveryRef = useLatest(pickEvery);
   const pickBestRef = useLatest(pickBest);
   const stablePickEveryForHud = useCallback(
@@ -880,11 +757,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (!el) return [clientX, clientY];
     return toWorld(el, clientX, clientY, viewRef.current, clientToWorldRef.current);
   }, [clientToWorldRef, viewRef]);
-  // Selection-driven action gestures (delete/nudge/undoRedo/duplicate) used
-  // to be wired here via legacy hooks. They now go through the Actions
-  // Registry / dispatcher path; consumers register them via the kit's
-  // standard descriptors (see `useStandardActions`).
-
   const selectedIdsForWiring = effectiveSelection.current;
 
   // One view's overlay-aware state. A hook, so N views are N components each
@@ -904,46 +776,20 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     gestureSource,
     previewPoseExtra,
     previewIdsExtra,
-    getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
+    getIsVisible: () => gateRef.current.getIsVisible?.() ?? alwaysVisible,
   });
-
-  // The affordance-layer hit-test used to be wired into the tool-routing
-  // dispatcher from here, so its pointerdown could walk tool overlays
-  // top-down. `<SceneCanvas>` now composes the equivalent walk into the
-  // `affordanceAt` thunk it hands `useGestureDispatcher` — over registered
-  // layers via `hitTestExtras` above, and over selection chrome itself.
 
   const surfaceHelpers: CanvasSurfaceHelpers = {
     getDebug: () => debugSink,
   };
   const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, ...surfaceHelpers, viewId: null };
 
-  // Pointer-pressed flag. The only thing `<Canvas>` still needs to know about
-  // pointer state: `onUncapturedMove` means "hover", so it stands down while a
-  // button is held. Everything else about pointer input — thresholds, click and
-  // double-click synthesis, drag handles, the document-level backstop for a
-  // release that lands off-canvas — belongs to `useGestureDispatcher`, which
-  // attaches its own listeners to this same element.
-  const pointerDownRef = useRef(false);
+  const backgroundLayer = useMemo(
+    () => (backgroundFill ? createBackgroundFillLayer(backgroundFill) : undefined),
+    [backgroundFill],
+  );
 
-  // Background-fill layer: screen-space, emits a single full-canvas rect with
-  // the configured FillStyle. Drawn beneath every other layer.
-  // Independent of pan / zoom — backgrounds are canvas chrome, not world content.
-  const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
-    if (!backgroundFill) return null;
-    return {
-      id: 'scene-background-fill',
-      label: 'Background fill',
-      space: 'screen',
-      draw: (_data, _view, dims) => {
-        const rect = { x: 0, y: 0, width: dims.width, height: dims.height };
-        const fill = commandFill(backgroundFill, rect);
-        return fill ? [{ kind: 'path', path: { kind: 'rect', ...rect }, fill }] : [];
-      },
-    };
-  }, [backgroundFill]);
-
-  const { key: sceneLayersKey, sync: syncSceneLayers } = useSceneLayerList(adapter);
+  const sceneLayersKey = useSceneLayerList(adapter);
   const layers = useMemo<RenderLayer<unknown>[]>(() => {
     const standardLayers: Partial<
       Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>
@@ -999,10 +845,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     }
 
     const out: RenderLayer<unknown>[] = composeOrderedLayers(
-      layersMap, standardLayers, sceneLayers, backgroundLayer ?? undefined,
+      decorationLayer ? { ...layersMap, decorationLayer: { layer: decorationLayer } } : layersMap,
+      standardLayers, sceneLayers, backgroundLayer,
     );
-    // Decoration layer: above scene, below tool overlay (per slot ordering doc).
-    if (decorationLayer) out.push(decorationLayer);
     if (tools) {
       placeToolOverlays(out, standardLayers.selectionOverlay, tools.getActiveOverlays);
     }
@@ -1023,7 +868,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // itself. Published by reference and read at draw time.
   const surfaceLayersRef = useLatest<readonly RenderLayer<unknown>[]>(layers);
   useEffect(() => {
-    viewRegistry?.attachSurface({
+    return viewRegistry?.attachSurface({
       origin: () => {
         const c = canvasRef.current;
         if (!c) return { left: 0, top: 0 };
@@ -1038,33 +883,26 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       hitTestExtras: hitTestExtrasIn,
       claimsAbove: (x, y) => {
         const view = viewRef.current;
-        return hitTestExtrasIn(
-          view.x + x / view.scale.x, view.y + y / view.scale.y,
-          view, dimsRef.current, helpersForLayersRef.current,
-        ) !== null;
+        const [worldX, worldY] = clientToWorldHelper(x, y, CANVAS_ORIGIN, view);
+        return hitTestExtrasIn(worldX, worldY, view, dimsRef.current, helpersForLayersRef.current) !== null;
       },
     });
   }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef]);
 
-  // Append the debug overlay layer at the very top of the stack when debug
-  // is enabled. The layer reads from `debugSink.snapshot()` and paints in
-  // screen space.
   const layersWithDebug = useMemo(() => {
     // Views paint through the surface's own stack, so they sit above it and
     // below both the debug overlay and externally-registered layers.
     const withViews = viewRegistry
       ? [...layers, ...viewRegistry.list().filter((r) => r.paint).map((r) => r.layer as RenderLayer<unknown>)]
       : layers;
-    const base = debugSink && resolvedDebugConfig
-      ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
-      : withViews;
+    const base = debugOverlay ? [...withViews, debugOverlay] : withViews;
     // The cursor goes last: it is the one thing that is always in front of
     // everything, including a consumer's own registered layers.
     return [...base, ...extrasRef.current, paintedCursorLayer];
     // extrasVersion drives re-reads of extrasRef when layers are registered/detached;
     // viewRegistryVersion does the same for registered views.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, debugSink, resolvedDebugConfig, extrasVersion, viewRegistry, viewRegistryVersion,
+  }, [layers, debugOverlay, extrasVersion, viewRegistry, viewRegistryVersion,
       paintedCursorLayer]);
 
   useEffect(() => {
@@ -1074,18 +912,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     return () => { for (const off of offs) off(); };
   }, [layersWithDebug, requestRedraw]);
 
-  useRedrawOn(redrawOn, requestRedraw);
-
-  const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
+  const shaderIdKey = shaderKeyOf(shaders);
 
   // Everything the paint, hit-testing and the view registry read that a React
   // render owns. `useLatest` and the insertion effect below publish committed
   // renders only, ahead of every layout effect in the commit, any of which may
   // ask for a sync paint.
   const paintInputs = {
-    layers: layersWithDebug, width, height, debugSink,
-    frameStats: resolvedDebugConfig?.fps === true,
-    dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
+    layers: layersWithDebug, width, height, debugSink, frameStats,
+    dpr: dprProp, layerGroups, shaders,
     flattenTolerance,
   };
   const paintInputsRef = useLatest(paintInputs);
@@ -1101,24 +936,16 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const paint = useCallback((): boolean => {
     const c = paintTargetRef.current ?? ownCanvasRef.current;
-    if (!c || syncSceneLayers()) return false;
+    if (!c) return false;
     const rect = paintRectRef.current;
     const {
-      layers: paintLayers, width: w, height: h, debugSink: sink, frameStats,
-      dpr: dprIn, layerVisibility: vis, layerOrder: order,
+      layers: paintLayers, width: w, height: h, debugSink: sink, frameStats: timed,
+      dpr: dprIn,
       flattenTolerance: paintFlattenTolerance,
       layerGroups: groups, shaders: paintShaders,
     } = paintInputsRef.current;
 
-    // Clear sink at the top of every paint so per-frame records don't leak.
-    sink?.beginFrame();
-    if (sink) {
-      for (let i = 0; i < paintLayers.length; i++) {
-        const layer = paintLayers[i];
-        if (layer.id === 'debug-overlay') continue;
-        sink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
-      }
-    }
+    const debugFrame = beginDebugFrame(sink, timed, paintLayers);
 
     const renderer = lease.bind(c, { width: w, height: h, dpr: dprIn }, {
       tile: rect,
@@ -1129,8 +956,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (!renderer) return false;
 
     const view = viewRef.current;
-    const spans: LayerDrawSpan[] | undefined = sink && frameStats ? [] : undefined;
-    const paintT0 = spans ? performance.now() : 0;
+    const { layerVisibility: vis, layerOrder: order } = gateRef.current;
+    const spans = debugFrame?.time();
     const commands = drawLayers(
       paintLayers,
       helpersForLayersRef.current,
@@ -1144,10 +971,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       spans,
     );
     renderer.render(commands, viewToMat3(view), spans ? { spans } : undefined);
-    if (sink && spans) sink.recordFrame(frameStatsOf(spans, renderer.lastFrameStats(), performance.now() - paintT0));
+    debugFrame?.end(renderer.lastFrameStats());
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
-  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef, syncSceneLayers, viewRef]);
+  }, [contentVersionRef, gateRef, lease, paintInputsRef, paintRectRef, paintTargetRef, viewRef]);
   useInsertionEffect(() => {
     paintRef.current = paint;
   });
@@ -1173,18 +1000,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       clearSubscribers();
     };
   }, [clearSubscribers]);
-
-  useEffect(() => {
-    if (!shaderIdKey) return;
-    const ids = shaderIdKey.split('|');
-    let seen = ids.map(getProgramSource);
-    return programSourceRegistry.subscribe(() => {
-      const now = ids.map(getProgramSource);
-      const changed = now.some((src, i) => src !== seen[i]);
-      seen = now;
-      if (changed) requestRedraw();
-    });
-  }, [shaderIdKey, requestRedraw]);
 
   // Resolved during render, so it reads this render's view, not the ref's
   // last committed one.
@@ -1214,51 +1029,24 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paintedCursor, toolsPaintedKey]);
 
-  // The four pointer handlers, for whichever element takes input: JSX props on
-  // the `<canvas>` this component renders, listeners on the caller's when
-  // detached.
-  const layersForMoveRef = useLatest(layersWithDebug);
-  const press = useCallback((el: HTMLElement): void => {
-    if (autoFocusOnPointerDown) el.focus();
-    pointerDownRef.current = true;
-  }, [autoFocusOnPointerDown]);
-  const release = useCallback((): void => { pointerDownRef.current = false; }, []);
-  const hover = useCallback((el: HTMLElement, e: PointerEvent): void => {
-    if (pointerDownRef.current) return;
-    const view = viewRef.current;
-    const [worldX, worldY] = toWorld(el, e.clientX, e.clientY, view, clientToWorldRef.current);
-    const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
-    // Same gate as `hitTestExtrasIn`: a layer nobody can see takes no input.
-    for (const layer of layersForMoveRef.current) {
-      if (!layer.onUncapturedMove || !isLayerPainted(layer, visibility, layerOrderRef.current)) continue;
-      layer.onUncapturedMove(worldX, worldY, e, view, dimsRef.current);
-    }
-  }, [clientToWorldRef, dimsRef, layerOrderRef, layerVisibilityRef, layersForMoveRef, viewRef]);
-  const leave = useCallback((): void => {
-    pointerDownRef.current = false;
-    for (const layer of layersForMoveRef.current) layer.onUncapturedLeave?.();
-  }, [layersForMoveRef]);
-  useEffect(() => {
-    if (!detached || !inputElement) return;
-    const el = inputElement;
-    const onDown = (): void => press(el);
-    const onMove = (e: PointerEvent): void => hover(el, e);
-    const onUp = release;
-    const onLeave = leave;
-    const onMenu = (e: Event): void => e.preventDefault();
-    el.addEventListener('pointerdown', onDown);
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerup', onUp);
-    el.addEventListener('pointerleave', onLeave);
-    el.addEventListener('contextmenu', onMenu);
-    return () => {
-      el.removeEventListener('pointerdown', onDown);
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerup', onUp);
-      el.removeEventListener('pointerleave', onLeave);
-      el.removeEventListener('contextmenu', onMenu);
-    };
-  }, [detached, inputElement, press, hover, release, leave]);
+  useSurfaceInput(canvasRef, {
+    focusOnPress: autoFocusOnPointerDown,
+    onFocus,
+    onBlur,
+    onHover: (el, e) => {
+      const view = viewRef.current;
+      const [worldX, worldY] = toWorld(el, e.clientX, e.clientY, view, clientToWorld);
+      const visibility = layerVisibility ?? NO_LAYER_VISIBILITY;
+      // Same gate as `hitTestExtrasIn`: a layer nobody can see takes no input.
+      for (const layer of layersWithDebug) {
+        if (!layer.onUncapturedMove || !isLayerPainted(layer, visibility, layerOrder)) continue;
+        layer.onUncapturedMove(worldX, worldY, e, view, { width, height });
+      }
+    },
+    onLeave: () => {
+      for (const layer of layersWithDebug) layer.onUncapturedLeave?.();
+    },
+  });
 
   // The cursor is a tool's, but under `paintInto` it has no element of ours to
   // sit on. Written imperatively rather than by the caller, so a tool's cursor
@@ -1313,34 +1101,17 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         tabIndex={tabIndex}
         className={className}
         style={effectiveStyle}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        onPointerDown={(e) => press(e.currentTarget)}
-        onPointerMove={(e) => hover(e.currentTarget, e.nativeEvent)}
-        onPointerUp={release}
-        onPointerLeave={leave}
-        // Suppress the browser's default right-click menu over the canvas.
-        // Canvases are interaction surfaces; the browser's context menu
-        // (Save Image / Inspect Element / etc.) is almost never what the
-        // user wants, and right-click is a useful gesture surface that
-        // tools may consume. Consumers using right-click for their own
-        // gestures should add their own onContextMenu handler — calling
-        // `e.preventDefault()` is the no-op default; calling something
-        // else still works (this handler runs before the default menu).
-        onContextMenu={(e) => e.preventDefault()}
       />
       {huds}
     </>
   );
 }
 
-/**
- * Forward-ref'd `<canvas>` wrapper. Generic over the object and pose types —
- * TypeScript will infer them from the `adapter` (or `move`/`resize`) prop.
- */
+/** Forward-ref'd `<canvas>` wrapper. Generic over the object and pose types, inferred from
+ *  the `adapter` prop. */
 export const Canvas = forwardRef(CanvasInner) as <
   TNode extends { id: string } = { id: string },
-  TPose = TNode,
+  TPose = unknown,
 >(
   props: CanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;

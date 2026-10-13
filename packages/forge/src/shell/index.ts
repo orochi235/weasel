@@ -5,10 +5,16 @@ export { type MountedWorkshop, type MountWorkshopOptions, mountWorkshop } from '
 export { StoryGlobalsContext } from './StoryGlobalsContext';
 export { StoryTrial, type StoryTrialProps } from './StoryTrial';
 export { TrialHost, type TrialHostProps } from './TrialHost';
-export { type StoryRegistry, useStoryRegistry } from './useStoryRegistry';
+export { type StoryRegistry, type StoryRegistryOptions, useStoryRegistry } from './useStoryRegistry';
+export type { StoryChanges } from './storyChanges';
+export type { IndexEntry } from '../story/types';
+export type { CssVarReport } from '../protocol/messages';
+export type { DescribedEntry, DescribedShape, SchemaDescription, SectionDescription } from '../protocol/schema';
+export type { Libraries } from '../story/library';
 export {
   type A11yOutcome,
   type TrialFrame,
+  type TrialFrameCalls,
   type TrialFrames,
   TrialFramesContext,
   useTrialFrame,

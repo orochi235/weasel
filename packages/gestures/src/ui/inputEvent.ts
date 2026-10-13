@@ -1,8 +1,4 @@
-/**
- * Keyboard/pointer modifier flags carried by every {@link InputEvent} arm.
- * Factored out so the four booleans are documented once instead of repeated
- * on all twelve event shapes.
- */
+/** Keyboard/pointer modifier flags carried by every {@link InputEvent} arm. */
 export interface EventModifiers {
   altKey: boolean;
   ctrlKey: boolean;
@@ -21,14 +17,9 @@ export type BodyTarget = 'empty' | 'selected-body' | 'unselected-body';
 /**
  * Semantic kind of the node body under the point — `'text'`, `'rect'`, or an
  * app's own `'app:note'`. Companion to {@link BodyTarget}, which says only how
- * the body relates to the selection; this says *what it is*. Read by
- * `matchTarget` to resolve the `kind:<k>` / `kind:<k>:selected` TargetSpec
- * forms.
- *
- * Supplied by the same `classifyTarget` thunk that supplies `bodyTarget`, and
- * absent for the same reasons plus one more: the thunk hit a body whose kind
- * the scene can't name. An absent `bodyKind` makes every `kind:` form
- * no-match, never a wildcard.
+ * the body relates to the selection. Supplied by the same `classifyTarget`
+ * thunk; an absent `bodyKind` makes every `kind:` form no-match, never a
+ * wildcard.
  */
 export type BodyKind = string;
 
@@ -36,10 +27,6 @@ export type BodyKind = string;
  * What a scene hit-test found under a point — the shape a `classifyTarget`
  * thunk returns, and the source of both {@link BodyTarget} and
  * {@link BodyKind} on the events the matcher sees.
- *
- * One thunk returns both halves rather than two thunks returning one each:
- * the two answers come from the same hit-test, and splitting them would cost
- * a second pick on every pointer event.
  */
 export interface BodyClassification {
   /** How the hit body relates to the current selection. */
@@ -120,14 +107,10 @@ export interface PointerSampleStylus {
 }
 
 /**
- * Which physical pointer a sample came from.
- *
- * Carried by every pointer-kind event so the dispatcher can key in-flight
- * gesture handles per pointer (`pointer-<pointerId>`) instead of funneling
- * mouse, each touch, and the stylus into one slot. Optional because
- * synthesized events (tests, programmatic drags, the hover pump's
- * `resolveOnly` probe) have no originating `PointerEvent`; those all key to
- * the same default slot, which is the pre-`pointerId` behavior.
+ * Which physical pointer a sample came from, so the dispatcher can key
+ * in-flight gesture handles per pointer. Optional because synthesized events
+ * (tests, programmatic drags, the hover pump's `resolveOnly` probe) have no
+ * originating `PointerEvent`; those all key to the same default slot.
  */
 export interface PointerIdentity {
   /** `PointerEvent.pointerId` from the originating DOM event. */
@@ -138,21 +121,17 @@ export interface PointerIdentity {
 export interface PointerDownEvent extends EventModifiers, PointerSampleStylus, PointerIdentity {
   kind: 'pointerdown';
   /**
-   * Which of the two dispatches this press produces.
-   *
-   * A physical pointerdown is dispatched twice, for two different audiences:
+   * Which of the two dispatches this press produces. A physical pointerdown
+   * is dispatched twice:
    *
    * - `'press'` — emitted immediately, at down time. Matches `pointerDown`
-   *   specs only. This is the dispatch that lets a binding act *before* the
-   *   gesture is classified (select applies the selection here, so
-   *   press-and-hold highlights without waiting for a release).
+   *   specs only.
    * - omitted — the copy the dispatcher buffers and flushes once movement
    *   crosses the drag threshold. Matches `drag` specs only, and is what
    *   opens a drag handle.
    *
    * The split is what keeps one press from firing both a `pointerDown` and a
-   * `drag` binding. Synthetic probes (the hover pump's `resolveOnly`) leave it
-   * omitted, so drag prediction is unaffected.
+   * `drag` binding.
    */
   stage?: 'press';
   target?: unknown;
@@ -203,8 +182,6 @@ export interface ClickEvent extends EventModifiers {
   /**
    * World-space coordinates of the click, derived via the `clientToWorld`
    * thunk supplied to the dispatcher. Absent when the thunk isn't wired.
-   * Forwarded into action params so click invokers can act on the click's
-   * position without their own pointer-listener plumbing.
    */
   x?: number;
   y?: number;
@@ -218,23 +195,18 @@ export interface ClickEvent extends EventModifiers {
   /**
    * World-space coordinates of the *press* that opened this click, as opposed
    * to `x`/`y`, which are the release. The two differ by up to the
-   * drag threshold (`DRAG_THRESHOLD_PX`, in screen pixels).
-   *
-   * Actions that place geometry at the click want this one — a click's
-   * location reads as where the user put the pointer down, and pinning to the
-   * press point keeps a snapped coordinate stable against the small drift
-   * between press and release. Absent when the `clientToWorld` thunk isn't
-   * wired, same as `x`/`y`.
+   * drag threshold (`DRAG_THRESHOLD_PX`, in screen pixels). Actions that place
+   * geometry at the click want this one: pinning to the press point keeps a
+   * snapped coordinate stable against the drift between press and release.
+   * Absent when the `clientToWorld` thunk isn't wired, same as `x`/`y`.
    */
   pressX?: number;
   pressY?: number;
   /**
    * Affordance the *press* landed on, carried forward from the pointerdown
-   * exactly like {@link ClickEvent.bodyTarget} is. A click's target is
-   * whatever the press hit — chrome doesn't move out from under a pointer
-   * between down and up — and without this a `kindOf` target on a click spec
-   * would receive the raw DOM element while the same predicate on a drag spec
-   * receives the affordance.
+   * like {@link ClickEvent.bodyTarget} is. Without this a `kindOf` target on
+   * a click spec would receive the raw DOM element while the same predicate
+   * on a drag spec receives the affordance.
    */
   affordance?: unknown;
   bodyTarget?: BodyTarget;
@@ -271,6 +243,19 @@ export interface ContextMenuEvent extends EventModifiers {
   bodyKind?: BodyKind;
 }
 
+/** A move of a pointer with no button pressed. Matched by `hover` specs. */
+export interface HoverEvent extends EventModifiers {
+  kind: 'hover';
+  /** World-space position of the pointer. */
+  x: number;
+  y: number;
+  clientX?: number;
+  clientY?: number;
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
+}
+
 /** A press held past the long-press threshold without moving. */
 export interface LongPressEvent extends EventModifiers {
   kind: 'longpress';
@@ -297,16 +282,14 @@ export interface MultiTouchEvent extends EventModifiers {
    * which is the space `zoomAt` anchors in. Not client coords, and not world:
    * calling `clientToWorld` on it subtracts the canvas origin a second time.
    *
-   * Populated by `useGestureDispatcher` on the pointermove-pump of a running
-   * multitouch handle (updated each frame). Absent on the initial
-   * pointerdown-triggered multitouch event.
+   * Present on the event a finger landing produces and on each move of a
+   * running gesture; absent on the one that ends it.
    */
   centroid?: { x: number; y: number };
   /**
    * Distance between the two primary pointers, in CSS pixels. A distance is
    * origin-free, so it reads the same in client and canvas-local space.
-   * Populated on move-pump events alongside `centroid`. Absent on the initial
-   * event.
+   * Present and absent alongside `centroid`.
    */
   spread?: number;
   /**
@@ -351,15 +334,13 @@ export interface PasteEvent extends EventModifiers {
 }
 
 /**
- * Normalized input-event shape consumed by the pure matcher. Built by the
- * React seam (`useGestureDispatcher`) from DOM events. Pump-only events
+ * Normalized input-event shape consumed by the pure matcher. Pump-only events
  * ({@link PointerMoveEvent}, {@link PointerUpEvent}, {@link PointerCancelEvent})
  * ride in the same union so the dispatcher's `handleInput` signature stays
  * uniform; the matcher itself never matches them.
  *
  * The `affordance?` field on {@link PointerDownEvent} is widened to `unknown`
  * in this package — the kit narrows it back to `AffordanceHit` at consumption.
- * This keeps `@weasel-js/gestures` free of any kit-affordance type.
  */
 export type InputEvent =
   | KeyEvent
@@ -368,6 +349,7 @@ export type InputEvent =
   | PinchEvent
   | PointerDownEvent
   | PointerMoveEvent
+  | HoverEvent
   | PointerUpEvent
   | PointerCancelEvent
   | ClickEvent

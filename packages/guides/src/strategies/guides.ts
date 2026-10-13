@@ -34,10 +34,7 @@ export interface GuideSnapOptions<TPose> {
  * same axis, the closest wins.
  *
  * Pair with `useGuides` for storage and `createGuidesLayer` for rendering.
- *
- * **Composition:** combining with `gridSnapStrategy` is left to the
- * consumer in v1 — typically by picking one based on a modifier key, or
- * by stacking two move/resize/insert behaviors in priority order.
+ * Combining with `gridSnapStrategy` is left to the consumer.
  */
 export function guideSnapStrategy<TPose extends { x: number; y: number }>(
   getGuides: () => readonly Guide[],

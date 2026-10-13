@@ -36,7 +36,7 @@ export {
 } from './fallback';
 export type { FontFallbackPolicy } from './fallback';
 
-export { subscribeGlyphReady, glyphGeneration } from './glyphReady';
+export { subscribeGlyphReady, glyphGeneration, faceGeneration } from './glyphReady';
 
 export { cssFontFamily, cssFontFamilyLoading } from './domFace';
 export { cssFamilyName } from './cssFamily';
@@ -44,6 +44,7 @@ export { cssFamilyName } from './cssFamily';
 export {
   registerCanvasFont,
   unregisterCanvasFont,
+  refreshCanvasFont,
   isCanvasFont,
   listCanvasFonts,
   syncDynamicPageTexture,
@@ -52,7 +53,7 @@ export {
   DEFAULT_BAKE_BUDGET,
 } from './dynamic/dynamicAtlas';
 
-export type { CanvasFontEntry } from './dynamic/dynamicAtlas';
+export type { CanvasFontEntry, DynamicFace } from './dynamic/dynamicAtlas';
 
 export {
   registerFontOutlines,
@@ -73,6 +74,11 @@ export type {
   OutlineFaceInfo,
 } from './outline/outlineRegistry';
 export type { OutlineFace, OutlineParser } from './outline/OutlineFace';
+export { metricsOf } from './glyphMetrics';
+export type { GlyphMetrics } from './glyphMetrics';
+export { glyphIn, resolveGlyph } from './resolveGlyph';
+export type { ResolvedGlyph } from './resolveGlyph';
+export { warnNoMetrics } from './glyphWarnings';
 export type { FontStyle } from './fontStyle';
 export {
   enableLocalFontOutlines,

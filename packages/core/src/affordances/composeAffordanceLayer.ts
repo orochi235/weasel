@@ -1,5 +1,5 @@
 import type { RenderLayer } from 'core/layers/render';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
@@ -30,18 +30,10 @@ import type {
  * @experimental
  * Bundle a list of Affordances into a single RenderLayer.
  *
- * Each affordance declares interactive regions in target-local coordinates;
- * this layer composes each target's bounds transform (rotation around the
- * AABB center, when present) once per region for both paint and hit-test.
+ * Paint order matches array order (first → last = bottom → top). Hit-test walks affordances in
+ * reverse and stops at the first that claims the point; within it the nearest region wins.
  *
- * FillStyle order matches array order (first → last = bottom → top). Hit-test
- * walks affordances in reverse (top → bottom) and stops at the first that
- * claims the point; within it the nearest region wins (see
- * `hitAffordanceRegions`).
- *
- * `decorate(state, view)` runs *after* a given affordance's regions for
- * paint only — useful for leader lines and other purely-visual chrome that
- * don't fit the region model.
+ * `decorate(state, view)` runs *after* a given affordance's regions, for paint only.
  */
 export function composeAffordanceLayer(
   id: string,
@@ -80,10 +72,8 @@ export function composeAffordanceLayer(
       }
       return out;
     },
-    // The walk itself lives in `hitAffordanceRegions` so this layer and
-    // `buildAffordanceAt` share one implementation rather than two that can
-    // drift. This wrapper lifts the region's declared cursor and claim onto
-    // the binding, the way `buildAffordanceAt` lifts them onto `AffordanceHit`.
+    // The walk lives in `hitAffordanceRegions` so this layer and `buildAffordanceAt` share one
+    // implementation. This wrapper lifts the region's declared cursor and claim onto the binding.
     hitTest: (wx, wy, data, view, _dims, isVisible): LayerHit | null => {
       const state = asChromeState(data);
       if (!state) return null;
@@ -102,11 +92,7 @@ export function composeAffordanceLayer(
   };
 }
 
-// ─── Data unwrappers ────────────────────────────────────────────────────────
-
-// `draw` is called by Canvas with `CanvasHelpers` and by tests with a bare
-// `ChromeState`. Tests stay terse this way, and production gets the live
-// debug sink via the same channel.
+// `draw` is called by Canvas with `CanvasHelpers` and by tests with a bare `ChromeState`.
 function asChromeState(data: unknown): ChromeState {
   const maybe = data as { getChromeState?: () => ChromeState };
   if (typeof maybe?.getChromeState === 'function') return maybe.getChromeState();
@@ -119,9 +105,8 @@ function asDebugSink(data: unknown): DebugSink | null {
   return null;
 }
 
-/** Pull a chrome-caps visibility predicate off the data envelope when
- *  present. When absent (legacy callers / tests passing bare state),
- *  every affordance renders — preserves pre-chrome-caps behavior. */
+/** The chrome-caps visibility predicate off the data envelope. When absent (tests passing
+ *  bare state), every affordance renders. */
 function asIsVisible(data: unknown): ((id: string) => boolean) | null {
   const maybe = data as { getIsVisible?: () => (id: string) => boolean };
   if (typeof maybe?.getIsVisible === 'function') return maybe.getIsVisible();
@@ -150,11 +135,8 @@ function recordRegionHitbox(
     return;
   }
   if (region.shape.kind === 'annulus') {
-    // Approximate the annulus visualization as the outer ellipse's AABB.
-    // The DebugSink's hitbox primitives don't model ring shapes; the
-    // always-visible dev paint (`paint.kind === 'annulus'`) draws the
-    // actual ring. Consumers that want a precise debug overlay can match
-    // against the affordance id and render the annulus themselves.
+    // Approximated as the outer ellipse's AABB: the DebugSink's hitbox primitives don't
+    // model ring shapes.
     const s = region.shape;
     const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
     const c = localToWorld(xf, s.cx, s.cy);
@@ -182,8 +164,6 @@ function recordRegionHitbox(
   });
 }
 
-// ─── FillStyle ──────────────────────────────────────────────────────────────────
-
 function paintRegion(
   region: AffordanceRegion,
   xf: TargetTransform,
@@ -195,8 +175,7 @@ function paintRegion(
   const paint = region.paint!;
   if (paint.kind === 'square') {
     if (region.shape.kind !== 'point') {
-      // 'square' only makes sense over a point shape. Silently skip — a
-      // future paint variant can cover rect outlines.
+      // 'square' only makes sense over a point shape.
       return;
     }
     // Same frame the hit-test reads, at the paint's own size.
@@ -229,9 +208,8 @@ function paintRegion(
   if (paint.kind === 'annulus') {
     if (region.shape.kind !== 'annulus') return; // type mismatch — silent skip
     const s = region.shape;
-    // Convert the screen-px inset to target-local units so it visually
-    // matches at any zoom. `localToWorld` is rotation+translation (no
-    // scale), so target-local units equal world units for ring math.
+    // The screen-px inset in target-local units, so it visually matches at any zoom.
+    // `localToWorld` is rotation+translation (no scale), so target-local units equal world units.
     const insetLocal = pxExtent(paint.insetPx ?? 0, view.scale, angleOf(xf));
     // Same `minBandPx` clamp the hit-test applies, so the ring you can see is
     // the ring you can grab.
@@ -275,18 +253,15 @@ function annulusCommand(
   // Expanded inner rect (still in target-local coords).
   const rectHW = shape.innerWidth / 2 + insetLocal.x;
   const rectHH = shape.innerHeight / 2 + insetLocal.y;
-  // Each petal exists only when the corresponding rect edge actually
-  // intersects the ellipse interior — otherwise the rect already
-  // extends past the ellipse on that axis and there's no band to show.
+  // A petal exists only when its rect edge intersects the ellipse interior — otherwise the
+  // rect already extends past the ellipse on that axis.
   const haveTopBottom = rectHH < ry;
   const haveLeftRight = rectHW < rx;
   if (!haveTopBottom && !haveLeftRight) return null;
   const xT = haveTopBottom ? rx * Math.sqrt(1 - (rectHH / ry) ** 2) : 0;
   const yR = haveLeftRight ? ry * Math.sqrt(1 - (rectHW / rx) ** 2) : 0;
 
-  // Sampling density per petal arc — line segments are visually clean
-  // for the rotate-band band thickness and avoid the cubic-Bézier
-  // sub-arc bookkeeping. 24 is smooth at typical zooms.
+  // Line segments per petal arc; 24 is smooth at typical zooms.
   const SAMPLES = 24;
   const cmds: number[] = [];
   const localPts: { x: number; y: number }[] = [];
@@ -299,9 +274,8 @@ function annulusCommand(
       cmds.push(PATH_L);
       localPts.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
     }
-    // PATH_Z closes back to the move-to point along the rect edge — both
-    // endpoints share the rect-edge coord by construction, so the
-    // closing segment IS the chord.
+    // PATH_Z closes along the rect edge: both endpoints share the rect-edge coord by
+    // construction, so the closing segment IS the chord.
     cmds.push(PATH_Z);
   }
 
@@ -362,10 +336,8 @@ function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): Cus
     const hh = Math.hypot(rx * xf.sin, ry * xf.cos);
     return { x: c.x - hw, y: c.y - hh, width: 2 * hw, height: 2 * hh };
   }
-  // Rect: map the rect's origin and far corner; width/height under rotation
-  // describe the AABB of the rotated rect, which is what custom-paint
-  // consumers most often want. Affordances needing exact rotated geometry
-  // can read `local` + reapply rotation themselves via `view`/`state`.
+  // Rect: under rotation, width/height describe the AABB of the rotated rect. Affordances
+  // needing exact rotated geometry can read `local` and reapply the rotation themselves.
   const r = region.shape;
   const a = localToWorld(xf, r.x, r.y);
   const b = localToWorld(xf, r.x + r.width, r.y);

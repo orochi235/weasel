@@ -20,8 +20,7 @@ once — a layout pass, a pre-warm — runs it to settle and reads the answer.
 
 Forces are pluggable functions matching **d3-force's protocol**, so d3-force's
 bundled forces (`forceManyBody`, `forceLink`, `forceCenter`, …) work here
-without translation. That compatibility is deliberate — don't invent a parallel
-force signature.
+without translation. Don't invent a parallel force signature.
 
 ## The kit doesn't write to your scene
 

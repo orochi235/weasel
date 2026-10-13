@@ -66,7 +66,9 @@ describe('usePersistedState', () => {
     expect(shown()).toBe('shape');
     act(() => screen.getByText('set tab').click());
     act(() => screen.getByText('append tab').click());
-    expect(shown()).toBe('color+');
+    // The hook subscribes in an effect, which under load can still be pending
+    // when `findBy` returns; it re-reads the record once it does subscribe.
+    await waitFor(() => expect(shown()).toBe('color+'));
     first.unmount();
     await waitFor(() => expect(backing.get(`${P}value:lab:tab`)).toBe('color+'));
 
@@ -120,6 +122,6 @@ describe('usePersistedState', () => {
       await createMemoryAdapter(backing).set(`${P}value:lab:tab`, 'from elsewhere');
       await new Promise((r) => setTimeout(r, 0));
     });
-    expect(shown()).toBe('from elsewhere');
+    await waitFor(() => expect(shown()).toBe('from elsewhere'));
   });
 });

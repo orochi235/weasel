@@ -1,40 +1,16 @@
 /**
- * WeaselDraw — minimum-viable editor built against the post-purge kit
- * surface.
- *
- * Shape:
- *   - `<SceneCanvas features={['draw']} defaultTools={BUILTIN_TOOL_IDS}>` provides every built-in tool
- *     (select / hand / rect / ellipse / line / polygon / star / pencil /
- *     lasso / text / clone) plus the resize / rotate affordances.
- *   - `useScene` owns the document tree; pose is `{x,y,width,height,rotation?}`
- *     and data is the kit-native `{path, fill, stroke?, text?}`
- *     shape consumed by PATH_PAINTER / kit:text. Both are what the bundled
- *     shape-tool `create` defaults already produce, so no per-tool overrides.
- *   - The Actions Registry (auto-mounted by SceneCanvas via
- *     `useStandardActions`) handles undo/redo, delete, duplicate, nudge,
- *     align/distribute, reorder, flip, group/ungroup, clipboard. The
- *     CommandBar renders them from the registry; the keyboard reaches them
- *     through the dispatcher.
- *   - `<ColorContextProvider>` holds the active fill/stroke; selection
- *     mutations go through `scene.update` so they're undoable.
- *   - `<CommandBar>` takes handlers only for draw's own buttons — file,
- *     view toggles, preferences.
- *   - `<ActiveSwatches>` is the fill/stroke widget; clicks open a native
- *     color picker via the existing component implementation.
- *   - Local-storage round-trip: the scene and its undo stacks are saved 300 ms
- *     after each change by an effect in `App`.
+ * WeaselDraw's editor: one `<SceneCanvas features={['draw']}>` with every built-in tool over a
+ * `useScene` document, saved to local storage 300 ms after each change.
  */
 import {
   ActiveToolContextProvider,
   asNodeId,
   buildSceneViewCommands,
   BUILTIN_TOOL_IDS,
-  contrastLineColor,
   DEFAULT_STROKE_COLOR,
   defaultCommitAdapter,
   defaultDrawOne,
   fitViewToBounds,
-  type RangeStyle,
   type RenderLayer,
   SceneCanvas,
   type SceneCanvasApi,
@@ -49,14 +25,17 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
+  CharacterOptions,
+  CommandPalette,
   createRecentColorsStore,
+  isCharacterChrome,
   RecentColorsProvider,
   ResizeHandle,
   SceneGradientHandles,
   Sidebar,
+  ToastRegion,
   ToolPalette
 } from '@weasel-js/ui';
 import {
@@ -66,7 +45,7 @@ import {
 } from 'react';
 
 import type { SceneCanvasHit } from '@weasel-js/core';
-import { effectiveRangeStyle, patchRangeStyle, useSliceTool } from '@weasel-js/core';
+import { useSliceTool } from '@weasel-js/core';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { type ActivePaint, ActiveSwatches } from './ActiveSwatches';
 import type { PaperSizeKey } from './CommandBar';
@@ -75,19 +54,25 @@ import { PreferencesModal } from './PreferencesModal';
 import { type AppCommands, appCommandsContribution } from './appCommands';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { loadDoc, PAPER_PRESETS, saveDoc } from './docPersistence';
+import { reportSessionSave } from './fileNotices';
+import { showFirstRunNotice } from './firstRunNotice';
 import { disableMachineFontOutlines, enableMachineFontOutlines } from './fonts';
-import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
+import { dispatchDoubleClickEntry, modalityShortcuts, modePathEdit } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { useModality } from './modality/useModality';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { clipboardJsonReviver, serializeReplacer } from './persistence';
 import { PREFS, usePref } from './prefs';
+import { useRecording } from './recording/useRecording';
 import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 import { writeSession } from './sessionStore';
 import { colorContribution, useColorContext } from './tools/colorContext';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
-import { CharacterOptions, TextEditDepPublisher } from './ui/CharacterOptions';
+import { TextEditDepPublisher } from './TextEditDepPublisher';
+import { toolEnumSources } from './registry/toolEnumSource';
+import { useGrid } from './useGrid';
+import { useLastTool } from './useLastTool';
 
 // Bounds for the sidebar drag come from the pref that stores the result, so
 // the handle and the Preferences number field can't drift apart. app.css
@@ -100,37 +85,23 @@ import { RightSidebar } from './RightSidebar';
 import { Toolbar } from './Toolbar';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import './app.css';
-import { DRAW_POSE_COMPOSITION, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
-import { TEXT_CHROME_CLASS } from './paintRenderers';
+import { type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { activeInsertPaint } from './insertPaint';
+import { reportPasteOmissions } from './pasteOmissions';
 import { HISTORY_KEY, loadHistory, loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
-// ─── Document / scene shapes ────────────────────────────────────────────────
-/** The grid's pitch in world units: what the grid layer draws and what snap rounds to. */
-const GRID_SPACING = 20;
 const RECENT_COLORS_KEY = 'weaseldraw:recent-colors';
 
-// Draw's full ingestion config: SVG unpack + clipboard revival.
-// OS-dropped / pasted SVG files import as real scene nodes (the kit's
-// `unpack` path) rather than a single embedded-image node — WeaselDraw's
-// leaf data IS the kit-native `{path, fill, stroke}` painter shape, so
-// unpacked nodes render and edit like any other object. `clipboard.reviver`
-// revives typed-array node data (Uint8Array/Float32Array path commands)
-// carried by weasel-JSON clipboard payloads — via `clipboardJsonReviver`,
-// the JSON-reviver adapter over the same `reviveSnapshot` walk that scene
-// persistence uses (the walker itself is NOT `(key, value)`-shaped; see
-// persistence.ts). Module const: SceneCanvas keys its dep wiring off the
-// prop identity.
-const DRAW_INGESTION = { svg: { unpack: unpackSvgFiles }, clipboard: { reviver: clipboardJsonReviver } };
-/** Seed fill for a fresh document. Intentionally a friendly blue rather than
- *  the kit's white `DEFAULT_FILL_COLOR` — a new shape lands visible against
- *  the white page instead of disappearing into it. Keep distinct from the
- *  kit default on purpose. */
+// OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
+// node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
+// payloads. Module const: SceneCanvas keys its dep wiring off the prop identity.
+const DRAW_INGESTION = {
+  svg: { unpack: unpackSvgFiles },
+  clipboard: { reviver: clipboardJsonReviver, onOmitted: reportPasteOmissions },
+};
+/** Seed fill for a fresh document: a blue rather than the kit's white `DEFAULT_FILL_COLOR`,
+ *  so a new shape lands visible against the white page. */
 const INITIAL_FILL_COLOR = '#7ab8d4ff';
-// ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
-// ─── Modality helpers ────────────────────────────────────────────────────────
-// ─── Helpers ────────────────────────────────────────────────────────────────
-// ─── Outer App: install the color context so swatches + actions resolve ─────
-
 export function App(): ReactElement {
   const [initialScene] = useState(loadInitial);
   const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
@@ -139,31 +110,19 @@ export function App(): ReactElement {
   });
   const selection = useSelection({ mode: 'multi', scene });
 
-  // Bootstrap the mode machine, decorations, and scoping dim. useModality
-  // wires the journal accessor on the scene via
-  // `scene.setActiveJournalAccessor` once the machine is constructed —
-  // no ref dance needed at this layer.
   const modality = useModality(scene);
 
-  // Restored external-op history entries (nudges, drags, action commits)
-  // replay against this adapter after a reload. `defaultCommitAdapter` is the
-  // same scene-backed adapter the default actions bind at live commit time —
-  // it carries the scene-owned op-apply surface, where the canvas adapter
-  // lacks `setData` and `setLayer` (a restored nudge's geometry-projection
-  // setData op would fail against it). Lazy accessor: wiring order vs the
-  // boot-time restoreHistory doesn't matter.
+  // Restored external-op history entries replay against this adapter after a reload. It has to be
+  // `defaultCommitAdapter`: the canvas adapter lacks `setData` and `setLayer`, so a restored
+  // nudge's geometry-projection setData op would fail against it.
   useEffect(() => {
     const a = defaultCommitAdapter(scene);
     scene.setHistoryAdapter(() => a);
     return () => scene.setHistoryAdapter(null);
   }, [scene]);
 
-  // Restore the persisted undo stacks once on mount (modality history, then
-  // the scene's own history). Scene state is already in place — it's restored
-  // synchronously at scene construction via `initial: loadInitial()` — so the
-  // restored entries' inverts land on the correct adapter state. `restoredRef`
-  // then unblocks the persist effect so it can't clobber the saved history
-  // with the empty initial stack first.
+  // Restore the persisted undo stacks once on mount. `restoredRef` then unblocks the persist
+  // effect so it can't clobber the saved history with the empty initial stack first.
   const restoredRef = useRef(false);
   useEffect(() => {
     const snap = loadHistory();
@@ -183,26 +142,26 @@ export function App(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist on every commit. The 300ms debounce coalesces drag bursts so
-  // we hit localStorage at most a few times per second. Scene and history go
-  // under separate keys (mirroring the doc key) so a shape migration of one
-  // never disturbs the other. A page going away mid-debounce writes at once.
+  // Persist on every commit, debounced 300ms to coalesce drag bursts. Scene and history go under
+  // separate keys so a shape migration of one never disturbs the other. A page going away
+  // mid-debounce writes at once.
   const pendingSaveRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     const save = (): void => {
       pendingSaveRef.current = null;
       if (!restoredRef.current) return;
       try {
-        writeSession(
+        reportSessionSave(writeSession(
           localStorage,
           [LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer)],
           [
             [HISTORY_KEY, JSON.stringify(modality.history.serialize(), serializeReplacer)],
             [SCENE_HISTORY_KEY, JSON.stringify(scene.serializeHistory(), serializeReplacer)],
           ],
-        );
+        ));
       } catch {
-        // Persistence is best-effort.
+        // No store at all, or a scene that will not serialize.
+        reportSessionSave(false);
       }
     };
     pendingSaveRef.current = save;
@@ -231,8 +190,6 @@ export function App(): ReactElement {
   );
 }
 
-// ─── Editor variant that consumes the lifted scene/selection ────────────────
-
 function EditorWithSharedScene({
   scene,
   selection,
@@ -243,6 +200,8 @@ function EditorWithSharedScene({
   modality: ReturnType<typeof useModality>;
 }): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  useLastTool(tools);
+  const prefSources = useMemo(() => toolEnumSources(tools), [tools]);
   const actionsReg = useActionsRegistry();
   const colors = useColorContext();
   // On-canvas gradient handles edit one node's one paint; which paint is the
@@ -251,14 +210,12 @@ function EditorWithSharedScene({
   const soleSelectedId = selectedIds.length === 1 ? selectedIds[0] : null;
   const [initialDoc] = useState(loadDoc);
   const [paperSize, setPaperSize] = useState<PaperSizeKey>(initialDoc.paperSize);
-  const [gridVisible, setGridVisible] = useState(false);
-  const [snapToGrid, setSnapToGrid] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => showFirstRunNotice(), []);
 
-  // Right-sidebar width. The pref is the durable value; `dragWidth` shadows it
-  // for the duration of a drag so a pointer-rate stream of samples doesn't
-  // schedule a prefs write per frame. Cleared on commit, which hands ownership
-  // back to the pref in the same render.
+  // `dragWidth` shadows the pref for the duration of a drag so a pointer-rate stream of samples
+  // doesn't schedule a prefs write per frame.
   const [prefWidth, setPrefWidth] = usePref('ui.rightSidebarWidth');
   const [dragWidth, setDragWidth] = useState<number | null>(null);
 
@@ -272,11 +229,8 @@ function EditorWithSharedScene({
       return;
     }
     void enableMachineFontOutlines().catch((err: unknown) => {
-      // A refusal is the user's answer, so put the switch back to match it.
-      // Anything else — no API in this browser, a transient failure — leaves
-      // the preference alone: it is a standing wish that costs nothing to
-      // keep, and flipping it off would make the user re-express it on a
-      // browser that might support this next time.
+      // A refusal is the user's answer, so put the switch back to match it. Anything else — no
+      // API in this browser, a transient failure — leaves the preference alone.
       if (err instanceof DOMException && err.name === 'NotAllowedError') {
         setMachineOutlines(false);
         return;
@@ -297,8 +251,6 @@ function EditorWithSharedScene({
   const [docSelected, setDocSelected] = useState<boolean>(false);
 
   // Doc-target selection is mutually exclusive with scene-node selection.
-  // Whenever the kit selection becomes non-empty, drop the doc-target flag
-  // so the Properties panel reverts to node properties.
   if (selection.current.length > 0 && docSelected) setDocSelected(false);
 
   // Persist the document with the same 300ms debounce as the scene.
@@ -307,7 +259,6 @@ function EditorWithSharedScene({
     return () => clearTimeout(id);
   }, [filename, backgroundColor, paperSize]);
 
-  // ── Mode id + breadcrumb state ────────────────────────────────────────────
   const modeId = useModeId(modality.machine);
 
   // Re-read on every render; `modeId` changing is what re-renders us, and the
@@ -333,44 +284,36 @@ function EditorWithSharedScene({
       if (id === undefined || rest.length > 0) return null;
       return (scene.get(id)?.data as { path?: unknown } | undefined)?.path != null ? id : null;
     },
-    startPathEdit: (): void => { actionsReg?.trigger('enterPathEdit'); },
+    selection: (): readonly string[] => selection.get(),
   });
   const modalityKeys = useMemo(() => modalityShortcuts(modality.machine, {
     pathToEdit: () => pathEditEntry.current.pathToEdit(),
-    startPathEdit: () => pathEditEntry.current.startPathEdit(),
+    selection: () => pathEditEntry.current.selection(),
   }), [modality.machine, pathEditEntry]);
 
-  // ── Modality SceneCanvas callbacks ────────────────────────────────────────
+  // The path being anchor-edited is the path-edit mode's target, read from the machine.
+  const pathEdit = useMemo(() => modePathEdit(
+    modality.machine,
+    (id) => (scene.get(asNodeId(id))?.data as WeaselDrawData | undefined)?.path?.kind === 'polygon',
+  ), [modality.machine, scene]);
+
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
 
-  // TODO(modality): wire non-normal-mode background-click composition
-  // (text-edit commit, isolation scoped-clear) through `handleBackgroundClick`
-  // from `./modality` once we have a non-leaky hook into the dispatcher.
-  // SceneCanvas's `onBackgroundClick` prop is intentionally omitted because
-  // it would race with the gesture-dispatcher channel (marquee, lasso). For
-  // normal mode the select tool's `clearSelection` action already handles
-  // background clicks; soft modes exit via Esc and strict modes via the
-  // breadcrumb's commit/cancel buttons in the interim.
-
   const paper = PAPER_PRESETS[paperSize];
 
-  // Workspace host: the canvas fills the entire `.wd-canvas-host` area
-  // (diagonal stripes); the document page is drawn as a world-space layer.
-  // Track host CSS dims so we can size the canvas + fit the page on mount /
-  // paper-size change.
+  // The canvas fills the whole `.wd-canvas-host` workspace; the document page is drawn as a
+  // world-space layer.
   const hostRef = useRef<HTMLDivElement | null>(null);
   const hostDims = useCanvasSize(hostRef);
 
-  // Lifted view state (controlled SceneCanvas). Refit-to-page runs on initial
-  // host-dims sample and on every paperSize change; we deliberately do NOT
-  // refit on subsequent host resizes — that would hijack the user's pan/zoom.
+  // Refit-to-page runs on the first host-dims sample and on every paperSize change, deliberately
+  // not on later host resizes — that would hijack the user's pan/zoom.
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const lastFitPaperRef = useRef<PaperSizeKey | null>(null);
-  // Stable recenter thunk wired into SceneCanvas.viewport.recenter so Cmd-0
-  // refits the page into the workspace. Reads live host dims + paper size
-  // through refs so the callback identity stays constant for SceneCanvas.
+  // Wired into `viewport.recenter` so Cmd-0 refits the page. Reads through refs so the callback
+  // identity stays constant for SceneCanvas.
   const hostDimsRef = useLatest(hostDims);
   const paperRef = useLatest(paper);
   const recenter = useCallback(() => {
@@ -391,10 +334,8 @@ function EditorWithSharedScene({
     recenter();
   }, [paperSize, hostDims.width, hostDims.height, paper.width, paper.height, recenter]);
 
-  // Document-page layer — a single world-space rect at {0,0,paper.width,paper.height}
-  // filled with the doc's backgroundColor. Replaces the kit-level backgroundFill
-  // (which painted the entire canvas), so the workspace stripes show everywhere
-  // outside the page.
+  // The document page: a world-space rect filled with the doc's backgroundColor, so the workspace
+  // stripes show everywhere outside it.
   const paperLayer = useMemo<RenderLayer<unknown>>(() => ({
     id: 'paper',
     label: 'Paper',
@@ -402,15 +343,12 @@ function EditorWithSharedScene({
     draw: () => [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: paper.width, height: paper.height },
-      fill: { fill: 'solid', color: backgroundColor },
+      fill: { paint: { kind: 'solid', color: backgroundColor } },
     }],
   }), [paper.width, paper.height, backgroundColor]);
 
-  // What the loupe magnifies: the page and the scene on top of it, the same
-  // two the canvas paints. The page layer goes in as itself — the loupe draws
-  // its sources through `drawOneLayer`, so a world-space one gets the lens's
-  // inner view. The scene half projects inside `buildSceneViewCommands`, which
-  // is what `space: 'screen'` says about it.
+  // What the loupe magnifies: the page and the scene on top of it. The scene half projects inside
+  // `buildSceneViewCommands`, which is what `space: 'screen'` says about it.
   const loupeSource = useMemo<RenderLayer<unknown>[]>(() => [
     paperLayer,
     {
@@ -424,20 +362,26 @@ function EditorWithSharedScene({
   const hudTool = useHudContribution();
   const colorsRef = useLatest(colors);
   const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
+  const [pathFillRule] = usePref('drawing.pathFillRule');
+  const fillRuleRef = useLatest(pathFillRule);
+  const insertPaint = useMemo(
+    () => activeInsertPaint(() => colorsRef.current, () => (fillRuleRef.current === 'evenodd' ? 'evenodd' : 'nonzero')),
+    [colorsRef, fillRuleRef],
+  );
+  const grid = useGrid(paper, backgroundColor);
   const appCommands: AppCommands = {
-    gridVisible,
-    toggleGrid: () => setGridVisible(!gridVisible),
-    snapToGrid,
-    toggleSnap: () => setSnapToGrid(!snapToGrid),
+    ...grid.commands,
     canReleaseCompound: hasCompoundPath(scene, selection.current),
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
     openPrefs: () => setPrefsOpen(true),
+    openPalette: () => setPaletteOpen(true),
   };
   const appCommandsRef = useLatest(appCommands);
   const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
+  const recordingKeys = useRecording({ scene, view: () => view, setView });
   const ambient = useMemo(
-    () => [hudTool, modalityKeys, colorKeys, appKeys],
-    [hudTool, modalityKeys, colorKeys, appKeys],
+    () => [hudTool, modalityKeys, colorKeys, appKeys, recordingKeys],
+    [hudTool, modalityKeys, colorKeys, appKeys, recordingKeys],
   );
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
@@ -453,41 +397,22 @@ function EditorWithSharedScene({
 
   const sliceTool = useSliceTool();
 
-  // ── In-place text editing ─────────────────────────────────────────────────
-  // The contenteditable overlay lives inside `.wd-canvas-host` (the workspace),
-  // which is the positioning context it needs. It tracks pan/zoom through the
-  // canvas mounted inside that host, so no view is passed.
-  //
-  // `hostRef.current` is null on the first render and populated by the time
-  // the ResizeObserver's first sample re-renders (which is also when the
-  // canvas mounts), so the overlay always has a container before an edit can
-  // start.
+  // The contenteditable overlay lives inside `.wd-canvas-host`, the positioning context it needs.
+  // `hostRef.current` is null on the first render and populated by the time the canvas mounts, so
+  // the overlay always has a container before an edit can start.
   const textEdit = useSceneTextEdit(scene, hostRef.current, {
-    // Clicking into the character bar must not end the edit it is editing.
-    // The bar's dropdowns render in a portal under <body>, so they are not in
-    // the bar's subtree and `closest` alone misses them — picking a font
-    // ended the session, and the style patch then landed on nothing. Kit
-    // overlays carry `data-weasel-overlay` for exactly this question.
-    isEditorChrome: (el) =>
-      el.closest(`.${TEXT_CHROME_CLASS}`) !== null
-      || el.closest('[data-weasel-overlay]') !== null,
+    isEditorChrome: isCharacterChrome,
     // Escape out of a text edit keeps the text, as in every comparable
     // editor; losing a paragraph to a stray key is the worse failure.
     escape: 'commit',
   });
 
-  // Keep the mode and the edit session in lockstep. The session can end
-  // several ways — click-away commit, Escape, the node going away — and only
-  // some of them run through the machine. Without this the breadcrumb kept
-  // claiming `text-edit` after the editor was gone, which is the same
-  // mode-vs-session split that left double-click with no editor at all.
+  // Keep the mode and the edit session in lockstep: the session can end several ways — click-away
+  // commit, Escape, the node going away — and only some of them run through the machine.
   //
-  // Keyed on the session *ending* (a non-null id going null), not on the
-  // steady state "mode on, no session": the machine and `startEdit` are
-  // driven by the same double-click but publish through different
-  // subscriptions, so there is a render in between where the mode is live and
-  // the session isn't. Reading that as "finished" exits the mode the instant
-  // it's entered.
+  // Keyed on the session *ending* (a non-null id going null), not on "mode on, no session": the
+  // machine and `startEdit` publish through different subscriptions, so there is a render in
+  // between where the mode is live and the session isn't.
   const prevEditingIdRef = useRef<string | null>(null);
   useEffect(() => {
     const prev = prevEditingIdRef.current;
@@ -495,10 +420,8 @@ function EditorWithSharedScene({
     if (prev == null || textEdit.editingId != null) return;
     if (modeId === 'text-edit') modality.machine.exitMode();
 
-    // An edit that ends with no text leaves a node that paints nothing and
-    // still picks: a full-size invisible rectangle over the canvas, which is
-    // most of why text picking felt haunted. Every editor discards an empty
-    // text box on commit; so do we, and as a history entry so it's undoable.
+    // An edit that ends with no text leaves a node that paints nothing and still picks, so
+    // discard it — as a history entry, so it's undoable.
     const nid = asNodeId(prev);
     const node = scene.get(nid);
     if (node && node.kind === 'leaf') {
@@ -511,9 +434,8 @@ function EditorWithSharedScene({
     }
   }, [modeId, textEdit.editingId, modality.machine, scene]);
 
-  // ...and the same seam from the other side: the mode can end while the
-  // editor is still mounted (the breadcrumb's exit), which would leave it
-  // over the canvas swallowing keystrokes. Commit it, as Escape does.
+  // The mode can also end while the editor is still mounted (the breadcrumb's exit), which would
+  // leave it over the canvas swallowing keystrokes. Commit it, as Escape does.
   const prevModeIdRef = useRef<string>(modeId);
   useEffect(() => {
     const prev = prevModeIdRef.current;
@@ -523,24 +445,8 @@ function EditorWithSharedScene({
     }
   }, [modeId, textEdit]);
 
-  // What the options bar displays. The node's own style resolved first, the
-  // range (or the run the caret sits in) over it, and last what is armed for
-  // the next keystroke — which is what the user will see themselves type.
-  const editingNode = textEdit.editingId != null
-    ? scene.get(asNodeId(textEdit.editingId))
-    : undefined;
-  const barStyle: RangeStyle = effectiveRangeStyle(
-    patchRangeStyle(textEdit.rangeStyle ?? {}, textEdit.pendingStyle),
-    textEdit.nodeStyle ?? editingNode?.data.style,
-    { fill: editingNode?.data.fill, stroke: editingNode?.data.stroke },
-  );
-
-  const onCharacterPatch = textEdit.applyStyleToSelection;
-
-  // The overlay draws the node being edited, so the scene layer must not draw
-  // it too — otherwise every keystroke shows against the pre-edit glyphs.
-  // Composed over the modality scoping dim rather than replacing it: both are
-  // per-node alpha, and an isolation-dimmed node can also be the one editing.
+  // The overlay draws the node being edited, so the scene layer must not draw it too. Composed
+  // over the modality scoping dim: an isolation-dimmed node can also be the one editing.
   const scopingAlphaFor = modality.scopingDim.alphaFor;
   const editingId = textEdit.editingId;
   const alphaFor = useCallback(
@@ -561,16 +467,6 @@ function EditorWithSharedScene({
     intensity: 0.4,
   }), [modality.machine, paper.width, paper.height]);
 
-  const gridLayer = useMemo(() => createGridLayer({
-    spacing: GRID_SPACING,
-    bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
-    accentEvery: 5,
-    style: {
-      line:   { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.06) }, width: 1 },
-      accent: { paint: { fill: 'solid', color: contrastLineColor(backgroundColor, 0.14) }, width: 1 },
-    },
-  }), [paper.width, paper.height, backgroundColor]);
-
   const redrawOnScoping = useMemo(() => [modality.scopingDim], [modality.scopingDim]);
 
   return (
@@ -582,19 +478,17 @@ function EditorWithSharedScene({
         paperSize={paperSize}
         setPaperSize={setPaperSize}
         filename={filename}
+        setFilename={setFilename}
         backgroundColor={backgroundColor}
         setBackgroundColor={setBackgroundColor}
         onClearJournalCache={() => modality.machine.clearJournalCache()}
       />
-      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} registryEnumSources={prefSources} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {/* Permanently reserved, never mounted on demand: the canvas is sized
           to the workspace, so appearing mid-edit would resize it under the
           caret. Empty until a text edit is in progress. */}
-      <CharacterOptions
-        className={TEXT_CHROME_CLASS}
-        style={textEdit.editingId != null ? barStyle : undefined}
-        onPatch={onCharacterPatch}
-      >
+      <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection}>
         {canvasReady && (
           <LoupeControls canvasRef={canvasRef} source={loupeSource} />
         )}
@@ -611,14 +505,9 @@ function EditorWithSharedScene({
           )}
           <ActiveSwatches />
         </Sidebar>
-        {/* Two things have to happen on a double-click into text, and they
-            come from different places: `onDoubleClick` on SceneCanvas drives
-            the modality machine into `text-edit` (breadcrumb, scoping dim),
-            while the kit's own handler starts the edit *session* that mounts
-            the contenteditable overlay and seeds the caret at the clicked
-            glyph. Binding only the first flipped the mode with no editor
-            under it — the node looked selected and refused to take a
-            keystroke. */}
+        {/* A double-click into text does two things from different places: `onDoubleClick` on
+            SceneCanvas drives the modality machine into `text-edit`, while the kit's handler here
+            starts the edit session that mounts the contenteditable overlay. */}
         <div
           className="wd-canvas-host"
           ref={hostRef}
@@ -643,31 +532,24 @@ function EditorWithSharedScene({
             view={view}
             onViewChange={setView}
             scene={scene}
-            poseComposition={DRAW_POSE_COMPOSITION}
             selection={selection}
             defaultTools={BUILTIN_TOOL_IDS}
             tools={{ slice: sliceTool, opacityScrub: opacityScrubTool }}
             ingestion={DRAW_INGESTION}
-            // Pick on the drawn shape, not the bounding box. In a drawing app
-            // the pose rect is an implementation detail: clicking the blank
-            // right half of a text box, or the notch of a star, should reach
-            // whatever is behind it — which is what every other editor does.
+            insertPaint={insertPaint}
+            // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
+            // text box, or the notch of a star, should reach whatever is behind it.
             geometry={{ picking: 'shape' }}
             viewport={{ pinchZoom: true, recenter }}
             cursorCoordsHud
             pickHud
             modalityHud
             onToolsCreated={setTools}
-            selectTool={snapToGrid ? { snap: gridSnapStrategy<WeaselDrawPose>(GRID_SPACING) } : undefined}
-            toolOptions={snapToGrid ? {
-              snapPoint: (p) => ({
-                x: Math.round(p.x / GRID_SPACING) * GRID_SPACING,
-                y: Math.round(p.y / GRID_SPACING) * GRID_SPACING,
-              }),
-            } : undefined}
+            selectTool={grid.snap ? { snap: grid.snap } : undefined}
+            toolOptions={grid.snapPoint ? { snapPoint: grid.snapPoint } : undefined}
             layers={{
               paper: { layer: paperLayer, before: 'grid' },
-              ...(gridVisible ? { grid: { layer: gridLayer } } : {}),
+              ...(grid.layer ? { grid: { layer: grid.layer } } : {}),
               modeTint: { layer: workspaceTint, after: 'grid' },
             }}
             decorationLayer={modality.decorationLayer}
@@ -676,6 +558,7 @@ function EditorWithSharedScene({
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
             onDoubleClick={onDoubleClick}
             modes={modality.machine.registry}
+            pathEdit={pathEdit}
             geometryProjection={{
               transform: (node, m) => {
                 const data = node.data as WeaselDrawData;
@@ -689,6 +572,8 @@ function EditorWithSharedScene({
             <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
           )}
+          {/* In the workspace, not the viewport: a fixed region sits outside the theme and over the status bar. */}
+          {hostRef.current && <ToastRegion portalContainer={hostRef.current} />}
           <SceneGradientHandles
             scene={scene}
             containerRef={hostRef}

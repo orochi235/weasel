@@ -9,15 +9,16 @@ import {
   SceneCanvas,
   WeaselProvider,
   sceneToAdapter,
-  useAnimator,
   useScene,
   useSelection,
   useSelectTool,
   useTools,
   useVelocityTracker,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import { createGridLayer } from '@weasel-js/guides';
-import type { AnimationInfo, Animator, LiveAnimation, MoveBehavior, PhysicsHandle } from '@weasel-js/core';
+import type { MoveBehavior } from '@weasel-js/core';
+import type { AnimationInfo, Animator, LiveAnimation, PhysicsHandle } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import styles from './AnimationDemo.module.css';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -60,23 +61,21 @@ function nearestGridCell(p: Vec2): Vec2 {
   };
 }
 
-function AnimationDemoInner({ animator }: { animator: Animator }) {
+export function AnimationCards({ animator }: { animator: Animator }) {
   const scene = useScene<Card>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const nextId = useRef(1);
 
   // Per-card visual effects (multiplicative scale + alpha). Read by drawOne,
-  // mutated by breathing-loop / stagger-fade onTick. A ref so onTick writes
-  // don't churn React state, paired with a tick counter to nudge re-renders
-  // when SceneCanvas isn't already redrawing from pose changes.
+  // mutated by breathing-loop / stagger-fade onTick. A ref, so a tick renders
+  // nothing: the canvas repaints on the animator's own frames (`redrawOn`).
   const effects = useRef<Map<string, { scale: number; alpha: number }>>(new Map());
   const getEffect = (id: string) => {
     let e = effects.current.get(id);
     if (!e) { e = { scale: 1, alpha: 1 }; effects.current.set(id, e); }
     return e;
   };
-  const [, bumpTick] = useState(0);
-  const tick = () => bumpTick(t => (t + 1) & 0xffff);
+  const redrawOn = useMemo(() => [{ subscribe: (repaint: () => void) => animator.onTick(repaint) }], [animator]);
 
   // --- Time-scale + pause ---
   const [timeScale, setTimeScaleState] = useState(1);
@@ -181,14 +180,12 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
         e.scale = v;
         // alpha pulse alongside scale — subtle glow effect.
         e.alpha = 0.85 + (v - 1.0) * 2.5;
-        tick();
       },
     });
     return () => {
       handle.cancel();
       const e = effectsMap.get(id);
       if (e) { e.scale = 1; e.alpha = 1; }
-      tick();
     };
   }, [breathingFocus, animator]);
 
@@ -216,7 +213,6 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
       onTick: (v, id) => {
         const e = getEffect(id);
         e.alpha = v;
-        tick();
       },
     });
   };
@@ -252,6 +248,7 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
         selection={selection}
         tools={tools}
         selectTool={selectToolOpts}
+        redrawOn={redrawOn}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => {
@@ -265,7 +262,7 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
               return [{
                 kind: 'path',
                 path: { kind: 'rect', x: cx - w / 2, y: cy - h / 2, width: w, height: h },
-                fill: { color: (n.data as Card).color, opacity: e.alpha },
+                fill: { paint: { color: (n.data as Card).color, opacity: e.alpha } },
               }];
             },
           },
@@ -388,7 +385,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
             drawOne: (n, p): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: n.data.color },
+              fill: { paint: { color: n.data.color } },
             }],
           },
           selectionOverlay: { handles: false },
@@ -444,7 +441,7 @@ export function AnimationDemo() {
   const animator = useAnimator();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <WeaselProvider isolate><AnimationDemoInner animator={animator} /></WeaselProvider>
+      <WeaselProvider isolate><AnimationCards animator={animator} /></WeaselProvider>
       <AnimatorWatch animator={animator} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span style={{ opacity: 0.7 }}>

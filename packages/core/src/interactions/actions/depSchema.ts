@@ -1,25 +1,7 @@
 /**
- * `DepSchema` and every dep value type it names.
- *
- * The schema is a plain `export interface` declared here, not an
- * augmentation — see `depRegistry.tsx` for why. Consumer apps add their own
+ * `DepSchema` and every dep value type it names. Consumer apps add their own
  * entries by declaration-merging against `'@weasel-js/core'` in their own
- * files; `apps/draw`'s `color` and the 3D lab's `camera3d` are the two
- * worked examples.
- *
- * ## Improvisation notes
- *
- * - **`view`**: No `ViewApi` interface existed. A minimal `{ get(): View;
- *   set(v: View): void }` is defined here, since grown optional `recenter`,
- *   `hostSize` and camera-animation members.
- *
- * - **`scene`**: `Scene<TData, TLayer, TPose>` is a generic interface with no
- *   canonical "erased" alias. We use `Scene<unknown, string, unknown>` as the
- *   dep-schema entry; actions that need a typed scene should narrow at the
- *   call site. A future phase may introduce a `SceneApi` alias once the common
- *   subset stabilises.
- *
- * @see docs/superpowers/specs/2026-05-16-registry-unification-design.md
+ * files.
  */
 
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -54,10 +36,9 @@ export interface ViewApi {
    *  Absent or null: the same world. */
   planeOf?(layer: string): PlaneMap | null;
   /** Optional recenter callback. When wired, `viewportZoomAction`'s `reset`
-   *  branch (Cmd-0) calls this instead of resetting to identity — letting
-   *  consumers re-fit the page (or other reference bounds) into the workspace.
-   *  Return the target `View` to let the action animate there; return nothing
-   *  to keep dispatching the view yourself. */
+   *  branch (Cmd-0) calls this instead of resetting to identity. Return the
+   *  target `View` to let the action animate there; return nothing to keep
+   *  dispatching the view yourself. */
   recenter?(): View | void;
   /** Optional canvas-local host dimensions (CSS px). When wired,
    *  `viewportZoomAction`'s keyboard branches (Cmd+= / Cmd+-) anchor at the
@@ -88,22 +69,10 @@ export interface ViewApi {
 export type HitTestView = RegionPickView;
 
 /**
- * Adapter dep for `areaSelectAction`.
- *
- * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>` via AABB
- * overlap over scene nodes. Consumers with custom hit-testing override this
- * dep entry in their own registrar.
- */
-/**
- * Topmost-node-at-world-point dep, consumed by `moveAction` for
- * reparent-on-drop and available to any action that needs a single-best
- * pick. Mirrors the same hit-test plumbing `<SceneCanvas>` feeds to the
- * tool dispatcher; consumers with custom hit-testing override here.
- *
- * `exclude` is iterated once per call and treated as a set membership
- * test — the dep walks hits front-to-back and returns the first id not
- * in the exclude set. Pass moving-node roots + their descendants when
- * the caller wants to ignore the nodes it's manipulating.
+ * Topmost-node-at-world-point dep, for any action that needs a single-best
+ * pick. The dep walks hits front-to-back and returns the first id not in
+ * `exclude`. Pass moving-node roots + their descendants when the caller
+ * wants to ignore the nodes it's manipulating.
  */
 export type NodeAtPointDep = (
   point: { x: number; y: number },
@@ -126,26 +95,20 @@ export interface AreaSelectDep {
 }
 
 /**
- * Adapter dep for `editAnchorsAction`.
+ * Adapter dep for `editAnchorsAction`: narrow read/write access to the
+ * editable polygon of a single node, so anchor-edit actions need not know
+ * whether it lives directly on the node's pose (`pose.kind === 'polygon'`)
+ * or on `node.data.path`.
  *
- * Provides narrow read/write access to the editable polygon for a single
- * node. Consumers register this dep so anchor-edit actions can read/write
- * the polygon WITHOUT knowing whether it lives directly on the node's
- * pose (`pose.kind === 'polygon'`) or on `node.data.path` (the kit's
- * built-in pen-tool default, also WeaselDraw's shape).
- *
- * Note on live previews: in-flight edit state is surfaced through the
- * dispatcher's standard `OngoingHandle.previewIds/previewPose/previewData`
- * triple (not this dep), so chrome and preview-ghost stay in lock-step
- * via one source of truth.
+ * In-flight edit state is surfaced through the dispatcher's
+ * `OngoingHandle.previewIds/previewPose/previewData` triple, not this dep.
  */
 export interface EditAnchorsDep {
   /** Id of the node currently being edited. Empty string means no node is
    *  currently in edit mode — the chrome and gesture both opt out. */
   editingId: string;
   /** Enter/exit edit mode for a specific node. Pass `null` (or an empty
-   *  string) to exit. `enterPathEditAction` and `exitPathEditAction` call
-   *  this; consumers can call it directly to drive edit mode programmatically. */
+   *  string) to exit. */
   setEditingId(id: string | null): void;
   /** Returns the COMMITTED editable polygon in world coordinates, or
    *  null if this node has no editable polygon. Does NOT consult in-
@@ -154,16 +117,12 @@ export interface EditAnchorsDep {
   getEditablePath(id: string): unknown;
   /** Returns where the polygon is stored — `'pose'` when `node.pose`
    *  IS the polygon, `'data'` when it lives on `node.data.path` with a
-   *  rect pose, or `null` when the node has no editable polygon. The
-   *  action uses this to know which preview-ghost axis to populate
-   *  (`previewPose` only / `previewData` + `previewPose` for data.path). */
+   *  rect pose, or `null` when the node has no editable polygon. */
   getStorageKind(id: string): 'pose' | 'data' | null;
   /** Returns the node's raw `pose` and `data` so storage-aware actions
    *  can capture origin state at gesture-start and synthesize a matching
-   *  `previewPose` / `previewData` during `onMove`. Used by
-   *  `editAnchorsAction` for the data.path branch (rect pose + data
-   *  carrying extra fields like fill / stroke that must be preserved
-   *  through the preview). Returns null when the node is gone. */
+   *  `previewPose` / `previewData` during `onMove`. Returns null when the
+   *  node is gone. */
   getNodeShape(id: string): { pose: unknown; data: unknown } | null;
   /** Commit `worldPath` as the new value for `id`. Implementation routes
    *  to setPose (when pose IS the polygon) or batched setPose+update
@@ -186,30 +145,22 @@ export interface EditAnchorsDep {
    * it is cleared whenever `editingId` changes, and any edit that
    * renumbers anchors (insert, delete) is responsible for leaving it
    * coherent. Empty means "no anchor selected" — the keyboard actions
-   * (nudge, delete) no-op rather than acting on all anchors, matching
-   * Illustrator.
+   * (nudge, delete) no-op rather than acting on all anchors.
    */
   selectedAnchors: ReadonlySet<number>;
   /** Replace the anchor selection. Pass an empty iterable to clear. */
   setSelectedAnchors(next: Iterable<number>): void;
 
-  /**
-   * In-flight anchor-marquee rect in world coords, or null when no
-   * marquee drag is active. Written by `marqueeAnchorsAction` and read by
-   * the path-editing overlay — the same "ongoing action owns the preview,
-   * chrome just draws it" split the move/resize ghosts use.
-   */
+  /** In-flight anchor-marquee rect in world coords, or null when no
+   *  marquee drag is active. */
   marquee: { x: number; y: number; width: number; height: number } | null;
   /** Set or clear the in-flight marquee rect. */
   setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
 }
 
 /**
- * Adapter dep for `lassoSelectAction`.
- *
- * Provides polygon-lasso hit-testing + selection read/write.
- * Consumers that don't implement `hitTestLasso` can omit it; the action
- * falls back to a bounding-box AABB test via `hitTestArea`.
+ * Adapter dep for `lassoSelectAction`: polygon-lasso hit-testing +
+ * selection read/write.
  */
 export interface LassoSelectDep {
   /**
@@ -251,10 +202,7 @@ export interface SvgIngestOptions {
    *  ```
    *
    *  It is injected rather than flagged on with `true` because the SVG parser
-   *  lives in `@weasel-js/svg`, which depends on this package — core importing
-   *  it back would make the two mutually dependent and unpublishable
-   *  separately. Passing the function keeps the parser out of core's bundle
-   *  for consumers who never unpack. */
+   *  lives in `@weasel-js/svg`, which depends on this package. */
   unpack?: SvgUnpacker;
 }
 
@@ -287,11 +235,7 @@ export interface ClipboardIngestCtx {
   onOmitted?: (omitted: PasteOmission[]) => void;
 }
 
-/**
- * Dep for the `ingest` action (external-content ingestion).
- * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>` via
- * `useIngestionDepSource` — canvas rect + current view.
- */
+/** Dep for the `ingest` action (external-content ingestion). */
 export interface IngestionDep {
   /** Visible canvas area in world coordinates. */
   viewportWorldRect(): { x: number; y: number; width: number; height: number };
@@ -342,26 +286,17 @@ export type InsertExtras =
   | { kind: string; [extra: string]: unknown };
 
 /**
- * World-space point snapping — grid, guides, or any consumer rule.
- *
- * Sourced by `<SceneCanvas>` from its `toolOptions.snapPoint`. Actions apply
- * it to the coords they ingest so the live preview and the committed
- * geometry agree; `insertAction` snaps the drag's start and current point.
- *
- * Optional: when the dep is absent, actions treat it as identity.
+ * World-space point snapping — grid, guides, or any consumer rule. Actions
+ * apply it to the coords they ingest so the live preview and the committed
+ * geometry agree.
  */
 export interface SnapDep {
   /** Snap a world-space point. Return `p` unchanged to opt out. */
   point(p: { x: number; y: number }): { x: number; y: number };
 }
 
-/**
- * Adapter dep for `insertAction`.
- *
- * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>`. The `extras`
- * carry the active tool's kind + per-kind geometry. Callers
- * that need typed data must supply a richer `insert` dep.
- */
+/** Adapter dep for `insertAction`. The `extras` carry the active tool's kind
+ *  + per-kind geometry. */
 export interface InsertDep {
   /**
    * Materialise a new node from the given drag-rect bounds and typed
@@ -395,20 +330,12 @@ export interface InsertLive {
 }
 
 /**
- * Adapter dep for `resizeAction`.
- *
- * Carries the behavior-shaping options the legacy `useResize` hook
- * exposed through `UseResizeOptions`: bounds-frame behaviors (e.g.
+ * Adapter dep for `resizeAction`: bounds-frame behaviors (e.g.
  * `lockAspectWithModifier`), world-space anchor-point snap behaviors (e.g.
  * `@weasel-js/guides`' `pointSnapToGrid`), and group-expansion (`expandIds`).
  *
- * Optional in `DepSchema`: when absent, `resizeAction` falls back to
- * identity defaults (no behaviors, identity expandIds). Consumers wire the
- * dep via `useDepSource('resizePolicy', ...)` from any descendant of
- * `<DepRegistryProvider>` / `<SceneCanvas>`.
- *
  * The generic is erased to `unknown` at the schema entry; consumers cast at
- * the call site (mirrors the `scene` entry's convention).
+ * the call site.
  */
 export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
   /** Bounds-frame constraints. Constrained to `TPose extends Bounds` since
@@ -454,10 +381,7 @@ export interface LayoutDep {
  * ```
  */
 export interface TextEditDep {
-  /**
-   * Begin editing the node with `id`. Activates the contenteditable overlay
-   * managed by `useTextEdit` / `useSceneTextEdit`.
-   */
+  /** Begin editing the node with `id`. */
   startEdit(id: string, opts?: { caret?: number | 'all' }): void;
   /**
    * Optional predicate: returns `true` when the node with `id` is a text node.
@@ -520,39 +444,22 @@ declare module '@weasel-js/routing' {
     scene: Scene<unknown, string, unknown>;
     /** Undo/redo history bound to the current scene. */
     history: History;
-    /**
-     * Area-select dep — AABB hit-test + selection read/write.
-     *
-     * Sourced from `<SceneCanvas>` via AABB overlap over all scene
-     * nodes. Override per-consumer for custom hit-testing (e.g. contain-mode,
-     * lock-aware filtering).
-     */
+    /** Area-select dep — AABB hit-test + selection read/write. Override
+     *  per-consumer for custom hit-testing (e.g. contain-mode). */
     areaSelect: AreaSelectDep;
-    /**
-     * Topmost node at a world-space point. Sourced by `<SceneCanvas>` from
-     * the same picker that feeds the tool dispatcher's `getNodeAtPoint`.
-     * Optional: actions that read this (e.g. `moveAction` reparent-on-drop)
-     * fall back to a no-op when the dep isn't registered.
-     */
+    /** Topmost node at a world-space point. Optional: actions that read this
+     *  (e.g. `moveAction` reparent-on-drop) fall back to a no-op when the dep
+     *  isn't registered. */
     nodeAtPoint?: NodeAtPointDep;
-    /**
-     * Insert dep — node factory for drag-to-insert.
-     *
-     * Sourced from `<SceneCanvas>`. The `kind` param comes from
-     * the active binding's `opts.params.kind`. Override per-consumer to
-     * provide a typed node factory (e.g. with custom data payloads).
-     */
+    /** Insert dep — node factory for drag-to-insert. Override per-consumer to
+     *  provide a typed node factory (e.g. with custom data payloads). */
     insert: InsertDep;
     /** Where `insertAction` keeps its gesture in flight, so
      *  `insert.adjustRotation` reaches the one in its own input scope.
      *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
     insertLive?: InsertLive;
-    /**
-     * Snap dep — world-space point snapping (grid / guides).
-     *
-     * Sourced by `<SceneCanvas>` from `toolOptions.snapPoint`. Optional:
-     * absent means no snapping (identity).
-     */
+    /** Snap dep — world-space point snapping (grid / guides). Sourced by
+     *  `<SceneCanvas>` from `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;
     /**
      * The canvas's debug sink — the one tools reach as `ToolCtx.debug`.
@@ -560,29 +467,14 @@ declare module '@weasel-js/routing' {
      * Actions report what they did here, and the overlay draws it.
      */
     debug?: DebugSink;
-    /**
-     * Lasso-select dep — polygon hit-test + selection read/write.
-     *
-     * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>`.
-     * Falls back to AABB hit-test when `hitTestLasso` is absent.
-     */
+    /** Lasso-select dep — polygon hit-test + selection read/write. */
     lassoSelect: LassoSelectDep;
-    /**
-     * Edit-anchors dep — narrow read/write of one polygon's path pose.
-     *
-     * Sourced from consumer. Wraps `getPose`/`setPose`/`applyOps`
-     * for the currently-being-edited polygon node.
-     *
-     * The `editAnchorsAction` requires this dep to be registered when anchor
-     * editing is active. If absent, `start` returns an empty handle (no-op).
-     */
+    /** Edit-anchors dep — narrow read/write of one polygon's path. If
+     *  absent, `editAnchorsAction`'s `start` returns an empty handle (no-op). */
     editAnchors: EditAnchorsDep;
     /**
-     * Text-edit dep — activates the in-place text editing overlay.
-     *
-     * Sourced from consumer via `useTextEdit` / `useSceneTextEdit`.
-     * The `enterTextEditAction` requires this dep to be registered by the text
-     * tool when text editing is available.
+     * Text-edit dep — activates the in-place text editing overlay. Sourced
+     * from consumer via `useTextEdit` / `useSceneTextEdit`.
      *
      * The optional `isTextNode` predicate guards against entering edit mode on
      * non-text nodes. A binding can pre-filter instead with a
@@ -592,12 +484,9 @@ declare module '@weasel-js/routing' {
     textEdit: TextEditDep;
     /**
      * Resize-policy dep — bounds constraints, point-snap behaviors and
-     * group expansion for `resizeAction`.
-     *
-     * Optional: when omitted, `resizeAction` falls back to identity defaults
-     * (no constraints, no snap, identity expandIds).
-     * Consumers wire via `useDepSource('resizePolicy', ...)` or the
-     * `useResizePolicy` helper.
+     * group expansion for `resizeAction`. Optional: when omitted,
+     * `resizeAction` falls back to identity defaults. Consumers wire via
+     * `useDepSource('resizePolicy', ...)` or the `useResizePolicy` helper.
      */
     resizePolicy?: ResizePolicy<unknown>;
     /**
@@ -610,10 +499,7 @@ declare module '@weasel-js/routing' {
      * Booleans adapter — read selection ids, fetch world-space `Path`s,
      * compare z-order, and mint result nodes for Pathfinder ops.
      *
-     * Consumers wire via `useBooleansAdapter(adapter)` (a thin wrapper
-     * around `useDepSource('booleansAdapter', ...)`). The descriptor's
-     * `enabled` predicate reads `deps.selection` for the count check; the
-     * invoker reads `deps.booleansAdapter` to execute the op.
+     * Consumers wire via `useBooleansAdapter(adapter)`.
      */
     booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
     /**
@@ -623,12 +509,8 @@ declare module '@weasel-js/routing' {
      * in both its `enabled` predicate and its invoker.
      */
     createOutlinesAdapter?: import('./outlines/createOutlines').CreateOutlinesAdapter;
-    /**
-     * Gesture dispatcher control surface — exposes `cancelAll(reason)` so
-     * actions that need to abort an in-flight handle (Escape cancels a
-     * drag, etc.) can do so. Sourced by `<SceneCanvas>` from the
-     * dispatcher instance it already owns.
-     */
+    /** Gesture dispatcher control surface, so an action can abort an
+     *  in-flight handle (Escape cancels a drag, etc.). */
     dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };
     /**
      * Layout-strategy lookup. Sourced by `<SceneCanvas>` from `layouts`.
@@ -642,14 +524,8 @@ declare module '@weasel-js/routing' {
      * Optional: when absent, `sliceAction` is a no-op.
      */
     slice?: SliceDep;
-    /**
-     * Clipboard dep — the imperative surface `useClipboardOps` returns.
-     *
-     * Published by the consumer (`useDepSource('clipboard', …)` from under
-     * `<SceneCanvas>`), because `useClipboardOps` needs an adapter and a
-     * selection reader only the consumer has. Feeds `clipboard.copy` /
-     * `clipboard.cut`; both no-op when the dep is absent.
-     */
+    /** Clipboard dep; see {@link ClipboardDep}. `clipboard.copy` and
+     *  `clipboard.cut` both no-op when it is absent. */
     clipboard?: ClipboardDep;
     /**
      * Optional consumer commit hook. When present, `moveAction` (and other
@@ -659,19 +535,8 @@ declare module '@weasel-js/routing' {
      * When absent, commits fall back to `scene.applyBatch`.
      */
     applyOps?: (ops: Op[], label: string) => void;
-    /** Optional pose-composition strategy for hierarchical (local-pose) scenes.
-     *  When absent, defaults to IDENTITY (absolute-pose: nodes store world
-     *  coords). Local-pose consumers supply { compose: composeRectPose,
-     *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
-    poseComposition?: import('core/scene/composePose').PoseComposition<unknown>;
     /**
      * Ingestion dep — canvas viewport rect + consumer file→src resolver.
-     *
-     * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>` via
-     * `useIngestionDepSource`. Feeds `ingestAction` with the world-space
-     * viewport rect for paste-placement and image fit-clamping, and forwards
-     * the consumer's optional `resolveSrc` seam.
-     *
      * Optional: when absent, the `ingest` action no-ops (there is no
      * placement geometry to work with).
      */
@@ -684,9 +549,8 @@ declare module '@weasel-js/routing' {
      * `null` for nodes with no data-held geometry.
      *
      * Strictly opt-in: when absent (or when `transform` returns null), the kit
-     * emits only the pose op and leaves `data` untouched. apps/draw wires this
-     * to mirror `data.path` through `transformPath`. Rotate intentionally never
-     * consults this seam (rotation lives on the pose, baked at render).
+     * emits only the pose op and leaves `data` untouched. Rotate intentionally
+     * never consults this seam (rotation lives on the pose, baked at render).
      */
     geometryProjection?: GeometryProjection;
     /**

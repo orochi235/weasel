@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
-import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefCondition, PrefGroup, PrefLeaf, PrefList } from '@weasel-js/prefs';
 import { PrefConditionEditor } from './PrefConditionEditor';
 
 afterEach(cleanup);
@@ -16,14 +16,14 @@ const SCHEMA: PrefGroup = { name: 'Root', children: {
 } };
 
 /** The editor over a condition it holds, with what it last wrote in `seen.value` and how often in `seen.writes`. */
-function Live({ start, seen }: { start?: PrefCondition; seen: { value?: PrefCondition; writes: number } }) {
+function Live({ start, seen, schema = SCHEMA }: { start?: PrefCondition; seen: { value?: PrefCondition; writes: number }; schema?: PrefGroup }) {
   const [value, setValue] = useState<PrefCondition | undefined>(start);
   seen.value = value;
-  return <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={value} onChange={(next) => { seen.writes++; setValue(next); }} />;
+  return <PrefConditionEditor aria-label="Shown if" schema={schema} value={value} onChange={(next) => { seen.writes++; setValue(next); }} />;
 }
-const open = (start?: PrefCondition) => {
+const open = (start?: PrefCondition, schema?: PrefGroup) => {
   const seen: { value?: PrefCondition; writes: number } = { writes: 0 };
-  render(<Live start={start} seen={seen} />);
+  render(<Live start={start} seen={seen} schema={schema} />);
   return seen;
 };
 
@@ -95,10 +95,27 @@ describe('PrefConditionEditor', () => {
     expect(offered(row(1), /comparison/)).toEqual(['is above', 'is at least', 'is below', 'is at most', 'is', 'is not']);
     pick(row(1), /comparison/, 'is at most');
     expect(seen.value).toEqual({ path: 'view.step', atMost: 4 });
-    const box = within(row(1)).getByRole('textbox', { name: 'Condition 1 value' });
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
     fireEvent.change(box, { target: { value: '12' } });
     fireEvent.blur(box);
     expect(seen.value).toEqual({ path: 'view.step', atMost: 12 });
+  });
+
+  it('shows a number with a display unit in that unit, reads one typed in it, and writes the stored number', () => {
+    const turn = {
+      kind: 'number', name: 'Turn', description: '', default: 0,
+      unit: { toDisplay: (r: number) => (r * 180) / Math.PI, fromDisplay: (d: number) => (d * Math.PI) / 180, suffix: '°', accepts: { turn: 360 } },
+    } as PrefLeaf;
+    const seen = open({ path: 'turn', above: Math.PI }, { name: 'Root', children: { turn } });
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
+    expect(box).toHaveValue('180');
+    expect(row(1)).toHaveTextContent('°');
+    fireEvent.change(box, { target: { value: '90°' } });
+    fireEvent.blur(box);
+    expect((seen.value as { above: number }).above).toBeCloseTo(Math.PI / 2, 10);
+    fireEvent.change(box, { target: { value: '0.5turn' } });
+    fireEvent.blur(box);
+    expect((seen.value as { above: number }).above).toBeCloseTo(Math.PI, 10);
   });
 
   it('starts a row pointed at another pref over at that pref\'s kind', () => {
@@ -181,5 +198,62 @@ describe('PrefConditionEditor exclude', () => {
       value={{ path: 'view.units', is: 'mm' }} onChange={() => {}} />);
     expect(within(row(1)).getByRole('button', { name: /pref/ })).toHaveTextContent('Units');
     expect(within(row(1)).getByRole('button', { name: /comparison/ })).toHaveTextContent('is');
+  });
+});
+
+describe('PrefConditionEditor inside an entry', () => {
+  const mode = { kind: 'enum', name: 'Mode', description: '', default: 'ease', options: [{ value: 'ease', label: 'Ease' }, { value: 'hold', label: 'Hold' }] } as PrefLeaf;
+  const phases = {
+    kind: 'list', name: 'Phases', description: '', default: [],
+    item: { kind: 'object', name: 'Phase', description: '', default: {}, children: { mode, length: { kind: 'number', name: 'Length', description: '', default: 0 } } },
+  } as PrefList;
+  const schema: PrefGroup = { name: 'Root', children: { mode: { ...mode, name: 'Mode' }, phases } };
+
+  function Entry({ start, seen }: { start?: PrefCondition; seen: { value?: PrefCondition } }) {
+    const [value, setValue] = useState<PrefCondition | undefined>(start);
+    seen.value = value;
+    return <PrefConditionEditor aria-label="Enabled if" schema={schema} entryOf={phases} value={value} onChange={setValue} />;
+  }
+  const openEntry = (start?: PrefCondition) => {
+    const seen: { value?: PrefCondition } = {};
+    render(<Entry start={start} seen={seen} />);
+    return seen;
+  };
+  const group = () => screen.getByRole('group', { name: 'Enabled if' });
+
+  it('offers the entry\'s own fields first, each named as the entry\'s, and then the root prefs', () => {
+    openEntry();
+    expect(offered(group(), /Add a condition/)).toEqual(['Mode this Phase: mode', 'Length this Phase: length', 'Mode mode', 'Phases phases']);
+  });
+
+  it('writes a test that reads from the entry for a field of it, and one that reads the root for a root pref', () => {
+    const seen = openEntry();
+    pick(group(), /Add a condition/, 'Mode this Phase: mode');
+    expect(seen.value).toEqual({ from: 'item', path: 'mode', is: 'ease' });
+    pick(group(), /Add a condition/, 'Mode mode');
+    expect(seen.value).toEqual({ all: [{ from: 'item', path: 'mode', is: 'ease' }, { path: 'mode', is: 'ease' }] });
+  });
+
+  it('draws a test of the entry on its own field, and keeps reading the entry through an edit', () => {
+    const seen = openEntry({ from: 'item', path: 'mode', is: 'hold' });
+    expect(within(row(1)).getByRole('button', { name: /pref/ })).toHaveTextContent('this Phase: mode');
+    expect(row(1)).not.toHaveAttribute('data-invalid');
+    pick(row(1), /comparison/, 'is not');
+    expect(seen.value).toEqual({ from: 'item', path: 'mode', isNot: 'hold' });
+    pick(row(1), /pref/, 'Length this Phase: length');
+    expect(seen.value).toEqual({ from: 'item', path: 'length', above: 0 });
+    const box = within(row(1)).getByRole('spinbutton', { name: 'Condition 1 value' });
+    fireEvent.change(box, { target: { value: '3' } });
+    fireEvent.blur(box);
+    expect(seen.value).toEqual({ from: 'item', path: 'length', above: 3 });
+  });
+
+  it('says what is wrong with a test of the entry where there is no entry, or no such field', () => {
+    openEntry({ from: 'item', path: 'gone' });
+    expect(row(1)).toHaveAttribute('data-invalid');
+    expect(row(1)).toHaveTextContent('no leaf holds a value at "gone" in the entry');
+    cleanup();
+    open({ from: 'item', path: 'mode' });
+    expect(row(1)).toHaveTextContent('"mode" is read from an entry, and this is inside no list or map');
   });
 });

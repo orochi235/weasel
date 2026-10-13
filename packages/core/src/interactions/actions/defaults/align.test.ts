@@ -1,3 +1,4 @@
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
 import { stubDeps } from '../testUtils';
 import {
@@ -22,6 +23,7 @@ function makeScene(poses: Record<string, Pose>) {
   const scene = {
     get: (id: string) => ({ pose: current[id], id: asNodeId(id), children: [] }),
     overrides: createPoseOverrides<Pose>(() => undefined),
+    composition: IDENTITY_POSE_COMPOSITION,
     setPose,
     batch: vi.fn((_label: string, fn: () => void) => fn()),
     nodes: new Map(), roots: [], layers: [],

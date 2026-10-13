@@ -9,7 +9,7 @@ import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 
@@ -19,14 +19,14 @@ const drawOne = (node: { data: Kind }, p: RectPose): DrawCommand[] => node.data 
   ? [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill: { fill: 'solid', color: '#ff0000' },
+    fill: { paint: { kind: 'solid', color: '#ff0000' } },
   }]
   : [{
     kind: 'text', x: p.x, y: p.y, align: 'left',
     style: { fontFamily: 'lazy-inter', fontSize: 32 },
     runs: [{
       text: 'Hi', fontFamily: 'lazy-inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-      fill: { fill: 'solid', color: '#ffffff' }, letterSpacing: 0,
+      fill: { paint: { kind: 'solid', color: '#ffffff' } }, letterSpacing: 0,
       underline: false, strikethrough: false, overline: false, baselineShift: 0,
     }],
   } as DrawCommand];

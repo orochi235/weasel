@@ -1,12 +1,6 @@
 /**
  * The kit's built-in shape kinds — one table, every other spelling derived.
  *
- * Lives in `core/` rather than beside the shape tools because both layers ask
- * questions of the same set: the interactions layer decides whether
- * `insertAction` can paint a live preview for a kind, and the canvas layer
- * decides which shape tools `useBuiltinShapeTools` mounts and what
- * `BUILTIN_TOOL_IDS` / `defaultNodeRouting` / `defaultNodeProperties` enumerate.
- *
  * This module imports nothing on purpose: `useBuiltinShapeTools` imports the
  * package barrel, so anything barrel-reachable that needs these lists at
  * module-evaluation time must not route through it.
@@ -20,8 +14,7 @@ export interface ShapeKindDescriptor {
   readonly tool: boolean;
   /** `insertAction` emits an `insertPreview` overlay for this kind, and the
    *  dispatcher overlay layer knows how to draw it. Kinds without one still
-   *  commit; they just have no live drag preview (`pen` and `lasso` don't
-   *  route through `insertAction` at all). */
+   *  commit; they just have no live drag preview. */
   readonly insertPreview: boolean;
 }
 
@@ -51,11 +44,7 @@ export type ShapeKindsWhere<T, F extends keyof ShapeKindDescriptor> = {
   [K in keyof T]: T[K] extends Record<F, true> ? K : never;
 }[keyof T];
 
-/**
- * Built-in shape tool ids handled by `useBuiltinShapeTools`. Each maps to a
- * kit tool hook + a default `create` that produces a leaf node compatible
- * with `PATH_PAINTER`.
- */
+/** Built-in shape tool ids handled by `useBuiltinShapeTools`. */
 export type BuiltinShapeToolId = ShapeKindsWhere<typeof SHAPE_KINDS, 'tool'>;
 
 /** The insert kinds the kit's dispatcher overlay layer knows how to render.
@@ -76,8 +65,6 @@ export function shapeKindInfo(kind: string): ShapeKindDescriptor | undefined {
   return (SHAPE_KINDS as Record<string, ShapeKindDescriptor>)[kind];
 }
 
-/** Runtime, iterable list of the shape-tool ids in `BuiltinShapeToolId`.
- *  Surfaced so consumers (e.g. the Bundle Inspector) can enumerate the
- *  builtin shape kinds without re-encoding the union. */
+/** Runtime, iterable list of the shape-tool ids in `BuiltinShapeToolId`. */
 export const KIT_SHAPE_KINDS: readonly BuiltinShapeToolId[] =
   shapeKindsWhere(SHAPE_KINDS, 'tool') as BuiltinShapeToolId[];

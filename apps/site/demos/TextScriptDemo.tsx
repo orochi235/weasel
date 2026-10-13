@@ -18,7 +18,7 @@ const row = (y: number, fontSize: number, runs: StyledRun[]): Row => ({ y, fontS
 const liveRuns = (shift?: number, scale?: number): StyledRun[] => [
   { text: 'live ' },
   {
-    text: 'shifted', script: 'super', fill: ACCENT,
+    text: 'shifted', script: 'super', fill: { paint: ACCENT },
     ...(shift !== undefined ? { baselineShift: shift } : {}),
     ...(scale !== undefined ? { fontScale: scale } : {}),
   },
@@ -41,7 +41,7 @@ const ROWS = [
     { text: '1' }, { text: 'st', script: 'super' },
     { text: ', 2' }, { text: 'nd', script: 'super' },
     { text: ', 3' }, { text: 'rd', script: 'super' },
-    { text: '   footnote' }, { text: '7', script: 'super', fill: ACCENT },
+    { text: '   footnote' }, { text: '7', script: 'super', fill: { paint: ACCENT } },
   ]),
 
   // All three decorations at once, so their offsets read against each other
@@ -62,9 +62,7 @@ const ROWS = [
     { text: ' takes its rules along' },
   ]),
 
-  // Three sizes on one baseline. Before the line sank a single baseline deep
-  // enough for all of them, each run hung from the line *top* at its own
-  // ascent, and the small ones floated up level with the big one's cap.
+  // Three sizes on one baseline.
   row(196, 40, [
     { text: 'big ' },
     { text: 'small ', fontScale: 0.4 },
@@ -76,20 +74,18 @@ const ROWS = [
 const LIVE_Y = 252, LIVE_SIZE = 34;
 
 const drawRow = ({ y, fontSize, runs }: Row) => textCommandFromRuns(
-  24, y, runs, { fontSize } as TextStyle, undefined, undefined, undefined, { fill: INK },
+  24, y, runs, { fontSize } as TextStyle, undefined, undefined, undefined, { fill: { paint: INK } },
 );
 
 /**
  * Superscript, subscript, and the two primitives underneath them.
  *
- * `script: 'super' | 'sub'` is a preset, not a mechanism of its own: it
- * supplies a `baselineShift` and a `fontScale`. The sliders override each half
- * on the last row while leaving the other alone, which is the whole of what
- * overriding half a preset means.
+ * `script: 'super' | 'sub'` is a preset, not a mechanism of its own: it supplies a
+ * `baselineShift` and a `fontScale`. The sliders override each half on the last row while
+ * leaving the other alone.
  *
- * Watch the *other* rows while you drag. They do not move: a shift displaces
- * its own run and deliberately does not feed back into the line's baseline or
- * its height, so a superscript rides the line rather than reflowing it.
+ * The *other* rows do not move while you drag: a shift displaces its own run and deliberately
+ * does not feed back into the line's baseline or its height.
  */
 export function TextScriptDemo() {
   // The preset is the face's own OS/2 metrics once its atlas has loaded, and
@@ -142,7 +138,7 @@ export function TextScriptDemo() {
         width={W}
         height={H}
         className="ckd-canvas"
-        background={{ fill: 'solid', color: '#ffffff' }}
+        background={{ kind: 'solid', color: '#ffffff' }}
         draw={commands}
       />
     </div>

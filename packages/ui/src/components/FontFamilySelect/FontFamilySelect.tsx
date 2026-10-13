@@ -32,26 +32,16 @@ function unregisteredLabel(family: string, weight: number, style: 'normal' | 'it
  *
  * **What it offers.** Both tiers that can actually paint: `listFonts()` for
  * families with a baked atlas, and `listCanvasFonts()` for families the
- * dynamic canvas-SDF tier will serve. Offer what will render, invent
- * nothing — and `listCanvasFonts` reports service rather than membership,
- * so a family auto-enrolled under a policy that is no longer in force
- * doesn't appear.
+ * dynamic canvas-SDF tier will serve.
  *
  * **What it does with a value it can't offer.** Nothing about the model
- * stops a node from naming a family that was never registered — a pasted
- * node, an imported SVG, a document from a session that loaded more fonts.
- * The control keeps that value visible as its own entry and names what is
- * actually painting instead, read structurally off
- * `resolveFontVariant().substituted`. Dropping the value would silently
- * rewrite the document on the next edit; showing it bare would claim a font
- * is in use that isn't.
+ * stops a node from naming a family that was never registered. The control
+ * keeps that value visible as its own entry and names what is actually
+ * painting instead. Dropping the value would silently rewrite the document on
+ * the next edit; showing it bare would claim a font is in use that isn't.
  */
 export function FontFamilySelect(props: FontFamilySelectProps) {
   const { value, mixed = false, onChange, weight = 400, fontStyle = 'normal', className } = props;
-  // Both tiers that actually render: families with a baked atlas, and
-  // families the dynamic canvas-SDF tier will serve. Neither list is a guess
-  // — `listCanvasFonts` reports what the registry will really route, so a
-  // family reaches this menu only if it can paint.
   const baked = listFonts();
   const canvas = listCanvasFonts().filter((c) => !baked.some((f) => f.family === c.family));
   const available = [...baked.map((f) => f.family), ...canvas.map((c) => c.family)];

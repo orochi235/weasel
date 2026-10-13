@@ -1,8 +1,12 @@
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useSyncExternalStore } from 'react';
 import { Transport } from '../passthrough/weasel-ui';
 import { useTrialClock, useTrialClockHandle } from './hooks';
 import { transportControl } from './transportControl';
+import { type TransportHold, transportHoldOf } from './transportHold';
 import { useTransportKeys } from './useTransportKeys';
+
+const NO_SUBSCRIBE = () => () => {};
+const NO_HOLD: TransportHold = { speed: 1, backward: false, touched: false };
 
 /** Props for `<TrialTransport>`. */
 export interface TrialTransportProps {
@@ -13,7 +17,7 @@ export interface TrialTransportProps {
    *  page, except in a field or on another control. Default `false`. */
   keys?: boolean;
   /** Play a run that has ended again from the start after this many ms, until
-   *  anyone touches the transport. Omitted, an ended run stays ended. */
+   *  anyone works the clock from a transport. Omitted, an ended run stays ended. */
   replay?: number;
   /** How a speed reads, shown and spoken. Default a multiplier, `0.5x`. */
   formatRate?: (rate: number) => string;
@@ -38,25 +42,22 @@ export function TrialTransport({
   const [, frame] = useReducer((n: number) => n + 1, 0);
   useEffect(() => handle?.onFrame(frame), [handle]);
 
-  const [held, hold] = useState(() => ({
-    speed: Math.abs(clock?.rate ?? 0) || 1,
-    backward: (clock?.rate ?? 0) < 0,
-  }));
-  const [touched, setTouched] = useState(false);
-  const touch = (): void => setTouched(true);
-  const control = clock ? transportControl(clock, held, hold) : null;
+  const hold = clock ? transportHoldOf(clock) : null;
+  const held = useSyncExternalStore(hold?.subscribe ?? NO_SUBSCRIBE, () => hold?.get() ?? NO_HOLD);
+  const touch = (): void => hold?.touch();
+  const control = clock && hold ? transportControl(clock, held, hold.set) : null;
   const root = useRef<HTMLDivElement | null>(null);
   useTransportKeys(root, control, keys, touch);
 
   const ended = clock?.ended ?? false;
   useEffect(() => {
-    if (replay === undefined || touched || !ended || !clock?.seekable) return;
+    if (replay === undefined || held.touched || !ended || !clock?.seekable) return;
     const id = setTimeout(() => {
       clock.seek(0);
       clock.rate = held.speed;
     }, replay);
     return () => clearTimeout(id);
-  }, [replay, touched, ended, clock, held.speed]);
+  }, [replay, held.touched, ended, clock, held.speed]);
 
   if (!clock || !control) return null;
   const touching =

@@ -2,25 +2,19 @@
  * Where a mesh stops being cheaper to batch than to draw on its own.
  *
  * `MAX_BATCHED_MESH_VERTICES` and `MAX_BATCHED_MESH_VERTICES_IN_RUN` in
- * `packages/core/src/renderer/draw.ts` decide it, for a mesh arriving with no
+ * `packages/renderer/src/draw.ts` decide it, for a mesh arriving with no
  * run open and with one. A batched mesh is copied into the run and uploaded
  * again every frame; one drawn alone sits in the persistent mesh cache and
  * costs a draw call, plus the flush of whatever run was open before it. This
  * times both at each rung of a vertex-count ladder by moving both caps
- * (`meshBatching`) around each frame, so the two sides run the same commands
- * through the same renderer, interleaved sample by sample.
+ * (`meshBatching`) around each frame.
  *
  * Two shapes of frame, each `K` meshes:
  *
  *   - `interleaved` — a rect before every mesh. A mesh drawn alone also
- *                     closes the rect's run, so this is the case the cap meets
- *                     in a scene of mixed shapes.
+ *                     closes the rect's run.
  *   - `meshes`      — meshes alone. Drawn alone, nothing else is flushed, so
  *                     this is the break-even at its most favorable to batching.
- *
- * Every mesh is a convex polygon of `v` points, tessellated once and held:
- * `getMesh` keys on the path's identity. Draw calls per frame are read from
- * `lastFrameStats` in an untimed pass, which is also what shows the cap moved.
  *
  * `WEASEL_PERF_VERTS` overrides the ladder (comma-separated vertex counts).
  *
@@ -103,8 +97,8 @@ test('mesh batch: where batching a mesh stops paying', async ({ page, browser, b
       }).__meshReport;
 
       const base = `/weasel/@fs${root}`;
-      const { WeaselRenderer, tessellate } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
-      const { meshBatching } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/draw.ts`);
+      const { WeaselRenderer, tessellate } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
+      const { meshBatching } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/draw.ts`);
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
       const defaults = { ...meshBatching };
 
@@ -146,10 +140,10 @@ test('mesh batch: where batching a mesh stops paying', async ({ page, browser, b
             out.push({
               kind: 'path',
               path: { kind: 'rect', x: x - R - 6, y: y - R - 6, width: 8, height: 8 },
-              fill: { fill: 'solid', color: '#222222' },
+              fill: { paint: { kind: 'solid', color: '#222222' } },
             });
           }
-          out.push({ kind: 'path', path: ngon(x, y, n), fill: { fill: 'solid', color: COLORS[i % COLORS.length] } });
+          out.push({ kind: 'path', path: ngon(x, y, n), fill: { paint: { kind: 'solid', color: COLORS[i % COLORS.length] } } });
         }
         return out;
       }
@@ -230,8 +224,6 @@ test('mesh batch: where batching a mesh stops paying', async ({ page, browser, b
     },
     { root: repoRoot, w: W, h: H, k: K, verts: VERTS, runs: RUNS, shapes: [...SHAPES], modes: [...MODES] },
   );
-
-  // ─── report ────────────────────────────────────────────────────────────
 
   const med = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
   const frames = (n: number, s: Shape, m: Mode) =>

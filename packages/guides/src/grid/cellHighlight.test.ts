@@ -41,16 +41,16 @@ describe('createCellHighlightLayer', () => {
     });
   });
 
-  it('honors a custom solid FillStyle fill', () => {
+  it('honors a custom solid Paint fill', () => {
     const layer = createCellHighlightLayer({
       spacing: 10,
       getCell: () => ({ col: 0, row: 0 }),
-      fill: { fill: 'solid', color: '#123456' },
+      fill: { paint: { kind: 'solid', color: '#123456' } },
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     expect(tree[0]).toMatchObject({
       kind: 'path',
-      fill: { fill: 'solid', color: '#123456' },
+      fill: { paint: { kind: 'solid', color: '#123456' } },
     });
   });
 
@@ -66,5 +66,14 @@ describe('createCellHighlightLayer', () => {
       kind: 'path',
       path: { kind: 'rect', x: 24, y: 12, width: 12, height: 12 },
     });
+  });
+
+  it('sizes the cell by each axis of a per-axis spacing', () => {
+    const layer = createCellHighlightLayer({
+      spacing: { x: 20, y: 5 },
+      getCell: () => ({ col: 2, row: 3 }),
+    });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200 });
+    expect(tree[0]).toMatchObject({ path: { kind: 'rect', x: 40, y: 15, width: 20, height: 5 } });
   });
 });

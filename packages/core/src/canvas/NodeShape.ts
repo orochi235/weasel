@@ -1,37 +1,12 @@
 /**
- * NodeShape — the **shape trait's** registry. Each trait of a node
- * (shape, routing, label, icon, affordances, …) is its own registry;
- * this one holds the per-kind `paint` + `silhouette` (and future
- * fields) used by `defaultDrawOne`, clipping, non-rect hit-testing,
- * and lasso/area-select.
+ * NodeShape — the **shape trait's** registry: the per-kind `paint` + `silhouette` used by
+ * `defaultDrawOne`, clipping, non-rect hit-testing, and lasso/area-select. Teaching the kit
+ * about a new kind of shape goes through this registry rather than by overriding `drawOne`.
  *
- * Teaching the kit about a new kind of shape goes through this registry
- * rather than by overriding `drawOne`. Overrides are still possible but
- * shouldn't be the default seam: most consumers want the same dispatch
- * logic, just extended with their own shape kinds (images, custom paths,
- * SVG fragments, etc.).
- *
- * Built-in entries (`kit:text`, `kit:path`, `kit:rect-fallback`) are
- * registered at module load. Consumer entries added via
- * `registerNodeShape` join the chain; the first entry whose
- * `matches` predicate returns true paints the node. Every built-in but
- * `kit:derived` additionally requires a rect-shaped pose — a scene whose
- * poses are some other shape matches none of them, and paints through a
- * consumer painter or not at all.
- *
- * Two priority tiers:
- *   - `'high'` — checked before all `'normal'` entries. Use this to
- *     override a kit built-in for a specific data shape (e.g. a custom
- *     text renderer that wins over `kit:text`).
- *   - `'normal'` (default) — appended after the built-ins.
- *
- * Within a tier, entries run in registration order. Each
- * `registerNodeShape` call returns a disposer that removes the
- * entry — useful for tests, for plugin lifecycles, and for swapping
- * implementations at runtime.
- *
- * See `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md`
- * for the trait taxonomy.
+ * The first entry whose `matches` predicate returns true paints the node: `'high'` entries
+ * first, then the built-ins, then `'normal'` ones, in registration order within a tier. Every
+ * built-in but `kit:derived` additionally requires a rect-shaped pose — a scene whose poses are
+ * some other shape matches none of them, and paints through a consumer painter or not at all.
  */
 import { glyphGeneration } from '@weasel-js/font';
 import {
@@ -45,8 +20,8 @@ import type { Node } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewport/screenSlop';
 import type { View } from 'core/viewport/view';
-import type { VertexColorChannel } from '../animation/colorRegistry';
-import type { DrawCommand } from '../renderer';
+import type { VertexColorChannel } from '@weasel-js/animator';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER } from './nodeShapes/derivedPainter';
 import { IMAGE_PAINTER } from './nodeShapes/imagePainter';
 import { derivesPath } from './nodeShapes/memo';
@@ -56,11 +31,9 @@ import { RECT_FALLBACK_PAINTER } from './nodeShapes/rectFallbackPainter';
 import { SHAPE_PAINTER } from './nodeShapes/shapePainter';
 import { TEXT_PAINTER } from './nodeShapes/textPainter';
 
-/** Optional per-call paint context, threaded through `defaultDrawOne`'s third
- *  argument. Lets a rendering entry point override ambient environment reads
- *  — the headless `renderSceneToPixels` path supplies its own bitmap resolver
- *  here so consumers reuse their own decode caches. Custom painters may
- *  ignore it entirely. */
+/** Optional per-call paint context, threaded through `defaultDrawOne`'s third argument. Lets
+ *  a rendering entry point override ambient environment reads; custom painters may ignore it
+ *  entirely. */
 export interface NodePaintCtx {
   /** Override bitmap resolution for image nodes. When set it is authoritative:
    *  the global `imageCache` is not consulted, and an `undefined` result
@@ -72,9 +45,9 @@ export interface NodePaintCtx {
    *  view when absent. Lets a painter size resolution-dependent work, such as
    *  re-rasterizing an SVG image; one that has no such work ignores it. */
   pixelScale?: number;
-  /** The node's derived path, resolved by the scene-aware `drawOne` wrapper
-   *  before painting: `paint` has no scene handle, and deriving needs the
-   *  dependencies' poses. **Absent** for a node that derives from nothing —
+  /** The node's derived path, resolved before painting by the `drawOne`
+   *  wrapper of whichever scene or adapter is drawn: `paint` has no handle on
+   *  either, and deriving needs the dependencies' poses. **Absent** for a node that derives from nothing —
    *  the wrapper hands such a node the caller's own ctx untouched. `null`
    *  means the node derives but has nothing to draw. */
   derivedPath?: Path | null;
@@ -115,20 +88,15 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  painters also require a rect-shaped pose, since their geometry reads
    *  `x`/`y`/`width`/`height` off it. */
   matches(node: Node<TData, string, TPose>): boolean;
-  /** Emits the draw commands for the node's primary visual. `ctx` is an
-   *  optional per-call paint context (see `NodePaintCtx`); painters that
-   *  don't need it can keep a two-argument signature.
+  /** Emits the draw commands for the node's primary visual.
    *
    *  **The returned array belongs to the painter.** Callers must treat it as
    *  immutable and copy before appending — a painter is free to memoize its
-   *  command list (`kit:shape` and `kit:path` do), and an in-place `push`
-   *  would grow that list on every frame. `defaultDrawOne` copies before
-   *  adding its label overlay for exactly this reason. */
+   *  command list, and an in-place `push` would grow that list on every frame. */
   paint(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodePaintCtx): DrawCommand[];
-  /** Optional: derive the node's silhouette path from its pose.
-   *  Used by clipping (when the container has no explicit
-   *  `clipFromPose`), by non-rect hit-testing, and by lasso/area-select.
-   *  Painters whose visual has no meaningful closed silhouette (e.g. text)
+  /** Optional: the node's silhouette path from its pose. Used by clipping (when the
+   *  container has no explicit `clipFromPose`), by non-rect hit-testing, and by
+   *  lasso/area-select. Painters whose visual has no meaningful closed silhouette
    *  leave this undefined. */
   silhouette?(
     node: Node<TData, string, TPose>,
@@ -139,14 +107,9 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  and how wide the outline is. Read by picking, so that an unfilled shape
    *  is grabbable by its outline rather than by its empty middle.
    *
-   *  This is declared separately from `paint` rather than read back off the
-   *  emitted draw commands because picking runs on every pointer move, and
-   *  `paint` is allowed to be expensive (`kit:text` lays out glyphs). Keep it
-   *  to cheap field reads.
-   *
-   *  Painters that leave it undefined are treated as {@link DEFAULT_INK} —
-   *  the pre-`ink` behavior, where the whole silhouette interior is grabbable
-   *  and the outline adds nothing.
+   *  Picking runs on every pointer move, so keep it to cheap field reads.
+   *  Painters that leave it undefined are treated as {@link DEFAULT_INK}: the
+   *  whole silhouette interior is grabbable and the outline adds nothing.
    *
    *  `ctx.scale` carries the view scale so a `{ px }` stroke width resolves to
    *  world units; without it a screen-pixel width is read as world units. */
@@ -244,23 +207,13 @@ export function registerNodeShape<TData, TPose>(
   };
 }
 
-// ─── Per-node shape memo ────────────────────────────────────────────────────
-
 /**
- * Slot names for the two things picking asks per node per pointer move: which
- * painter matches, and that painter's silhouette path. Both go through
- * {@link nodeMemo}, so they invalidate on `data` (and, for the silhouette,
- * `pose`) reference changes and on a painter registration.
+ * Slot names for what picking asks per node per pointer move: which painter matches, and that
+ * painter's silhouette path. Both go through {@link nodeMemo}, so they invalidate on `data`
+ * (and, for the silhouette, `pose`) reference changes and on a painter registration.
  *
- * Worth memoizing because both are hot and neither is free. `findNodeShape`
- * runs every registered painter's `matches` predicate; `silhouette` *builds*
- * a path — `pathForShape` allocates a fresh `Float32Array` for every ellipse,
- * polygon and star. Picking runs on every pointermove through both the
- * hover-cursor pump and `classifyTarget`, so that's two rebuilds per move per
- * node under the pointer, and shape-accurate picking is now the default.
- *
- * Separate slots rather than one entry: they mostly invalidate together, but
- * not always, and a shared entry would force the stricter key on both.
+ * Separate slots rather than one entry: they mostly invalidate together, but not always, and a
+ * shared entry would force the stricter key on both.
  */
 const PAINTER_SLOT = 'shape:painter';
 const PAINTER_SLOT_NONRECT = 'shape:painter:nonrect';
@@ -269,9 +222,8 @@ const PAINTER_SLOT_DERIVED_NONRECT = 'shape:painter:derived:nonrect';
 const SILHOUETTE_SLOT = 'shape:silhouette';
 const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
 
-/** Find the painter that will render `node` — first match in priority
- *  order. Returns undefined if no painter (including the built-in
- *  fallback) accepts the node. */
+/** The painter that will render `node` — first match in priority order — or undefined if
+ *  none accepts it. */
 export function findNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
@@ -303,17 +255,13 @@ function matchNodeShape<TData, TPose>(
   return undefined;
 }
 
-/** Find the painter for `node` and ask it for the node's silhouette path,
- *  in **world** coords. Returns null if no painter matches, or the matching
- *  painter has no `silhouette` method, or the method returns null. Used by
- *  clipping, generic non-rect hit-testing and lasso/area-select — anywhere
- *  the kit needs the "closed boundary" of whatever this kind of node draws as.
+/** The silhouette path of `node`, in **world** coords, or null if no painter matches or the
+ *  matching painter has none.
  *
  *  Painters return their silhouette in the pose's local (unrotated) frame;
  *  this bakes the pose's frame (`poseFrameOf`: its rotation and `transform`)
  *  on top, so clips/area-select of a turned or skewed node use the boundary
- *  the renderer draws. (`paint()` is unaffected — the render wrap applies
- *  the frame, not the silhouette, so nothing is applied twice.) */
+ *  the renderer draws. */
 export function findShapeSilhouette<TData, TPose>(
   node: Node<TData, string, TPose>,
   pose: TPose,
@@ -371,12 +319,8 @@ export function findShapeBounds<TData, TPose>(
 export interface ShapeCoversPointOptions {
   /** Extra grab distance around the outline: **world** units as a number,
    *  or screen pixels under a view scale (`{ px, scale }`), which is measured
-   *  on screen and so stays exact under non-uniform zoom.
-   *
-   *  Without slop a hairline is a mathematically zero-width target: the
-   *  stroke of a 1px outline is half a world unit wide at scale 1, which no
-   *  one can hit. Defaults to `0` so a caller that hasn't thought about the
-   *  view still gets exact geometry rather than a wrong guess. */
+   *  on screen and so stays exact under non-uniform zoom. Defaults to `0`,
+   *  where a hairline is too thin a target to hit. */
   tolerance?: PickSlop;
   /** View scale, passed to the painter's `ink`, and what a screen reach is
    *  read at under a world `tolerance`. Defaults to 1. */
@@ -389,29 +333,15 @@ export interface ShapeCoversPointOptions {
 }
 
 /**
- * Does the shape `node` actually paints cover the world point?
+ * Does the shape `node` actually paints cover the world point? Asks the painter's silhouette,
+ * the same boundary used for clipping and area-select, rather than the pose rect.
  *
- * The pose rect says a node covers its whole bounding box. That is wrong for
- * everything that is not a rectangle: the concave notch of a star, the corner
- * outside an ellipse, the blank right half of a text box. This asks the
- * painter's silhouette instead, which is the same boundary used for clipping
- * and area-select, so "what you can click" and "what is drawn" answer
- * together.
+ * The ink counts too: a shape whose interior isn't filled is grabbable along its outline and
+ * not through its empty middle. The outline's grab width is the stroke's half-width plus
+ * `tolerance`.
  *
- * "What is drawn" includes the *ink*, not just the boundary. A shape whose
- * interior isn't filled — an outlined rect, a pencil stroke, a bare line — is
- * grabbable along its outline and not through its empty middle, which is the
- * opposite of what a fill test alone answers. The outline's grab width is the
- * stroke's half-width plus `tolerance`.
- *
- * A painter with no `silhouette`, or one that returns `null` for this node
- * (`kit:text` does, for a node with no non-blank lines), reports `true` —
- * "no opinion", leaving the caller's own AABB test as the answer. Callers
- * should keep that AABB test as a cheap pre-filter; this is the refinement,
- * not a replacement.
- *
- * Rotation is already baked by `findShapeSilhouette`, so the point is in
- * plain world coordinates.
+ * A painter with no `silhouette`, or one that returns `null` for this node, reports `true` —
+ * "no opinion" — so callers should keep their own AABB test as a pre-filter.
  */
 export function shapeCoversPoint<TData, TPose>(
   node: Node<TData, string, TPose>,
@@ -425,20 +355,16 @@ export function shapeCoversPoint<TData, TPose>(
   const ink = findShapeInk(node, pose, { scale: opts.scale }) ?? DEFAULT_INK;
   const inside = pathContainsPoint(sil, x, y);
   if (ink.filled && inside) return true;
-  // The stroke reaches a different distance on each side, so which side the
-  // point is on picks the reach. `tolerance` widens it to something a pointer
-  // can actually land on, and also makes a filled shape grabbable a few pixels
-  // outside its edge — which is what every editor does and what makes
-  // edge-dragging feel possible.
+  // The stroke reaches a different distance on each side, so which side the point is on
+  // picks the reach. `tolerance` also makes a filled shape grabbable a few pixels outside
+  // its edge.
   const slop = widenSlop(opts.tolerance, (inside ? ink.insetPx : ink.outsetPx) ?? 0, opts.scale);
   const { extra, opts: hit } = slopForStrokeHit(slop);
   const reach = (inside ? ink.inset : ink.outset) + extra;
   return (reach > 0 || hasSlop(slop)) && strokeHitTest(sil, x, y, reach, hit);
 }
 
-/** Snapshot of the current painters in evaluation order — `'high'` tier
- *  first, then `'normal'`. Useful for debugging which painter handles a
- *  given node. */
+/** The current painters in evaluation order — `'high'` tier first, then `'normal'`. */
 export function getNodeShapes(): readonly NodeShapeEntry[] {
   ensureBuiltIns();
   return [...PAINTERS.high, ...PAINTERS.normal];
@@ -450,13 +376,9 @@ export function _resetShapePaintersForTests(): void {
   PAINTERS.normal.length = 0;
   builtInsRegistered = false;
   ensureBuiltIns();
-  // Swapping the painter set out from under a node invalidates anything
-  // memoized against the old one. (`registerNodeShape` already bumps, but the
-  // clearing above happens without one.)
+  // `registerNodeShape` already bumps, but the clearing above happens without one.
   bumpNodeMemoGeneration();
 }
-
-// ─── Built-in painters ─────────────────────────────────────────────────
 
 function registerBuiltInShapePainters(): void {
   registerNodeShape(TEXT_PAINTER);

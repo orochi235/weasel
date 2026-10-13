@@ -55,10 +55,6 @@ export const ALWAYS: Rule = { all: [] };
 /** A rule that never passes. `any` of nothing is false. */
 export const NEVER: Rule = { any: [] };
 
-// ───────────────────────────────────────────────────────────────────────────
-// Type guards
-// ───────────────────────────────────────────────────────────────────────────
-
 export function isAllRule(r: Rule): r is { all: readonly Rule[] } {
   return typeof r === 'object' && r !== null && 'all' in r;
 }
@@ -74,10 +70,6 @@ export function isWhenRule(r: Rule): r is { when: (ctx: RuleCtx) => boolean } {
 export function isSelector(r: Rule): r is Selector {
   return !isAllRule(r) && !isAnyRule(r) && !isNotRule(r) && !isWhenRule(r);
 }
-
-// ───────────────────────────────────────────────────────────────────────────
-// Evaluator
-// ───────────────────────────────────────────────────────────────────────────
 
 function checkSelection(s: NonNullable<Selector['selection']>, ctx: RuleCtx): boolean {
   if (s.empty !== undefined && (ctx.selection.length === 0) !== s.empty) return false;
@@ -136,20 +128,11 @@ function evaluateSelector(s: Selector, ctx: RuleCtx): boolean {
   return true;
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Rendering
-// ───────────────────────────────────────────────────────────────────────────
-
-/** Deepest nesting `describeRule` will walk before giving up. `Rule` is plain
- *  data and can't be cyclic by construction, so this is only a backstop that
- *  makes termination unconditional — no rule anyone writes gets near it. */
+/** Deepest nesting `describeRule` will walk before giving up: a backstop that
+ *  makes termination unconditional. */
 const MAX_RULE_DEPTH = 10;
 
-/**
- * Render a selector's value side. Handles the shapes {@link Selector} allows:
- * primitives, `{ not }` / `{ in }` wrappers, capability arrays (which AND, so
- * they join with `+`), and the multi-field `selection` object.
- */
+/** Render a selector's value side. Capability arrays AND, so they join with `+`. */
 function describeValue(value: unknown, depth: number): string {
   if (depth > MAX_RULE_DEPTH) return '…';
   if (value === null || typeof value !== 'object') return String(value);
@@ -174,9 +157,7 @@ function describeAt(rule: Rule, depth: number): string {
   if (isAllRule(rule)) return `all(${rule.all.map((r) => describeAt(r, depth + 1)).join(', ')})`;
   if (isAnyRule(rule)) return `any(${rule.any.map((r) => describeAt(r, depth + 1)).join(', ')})`;
   if (isNotRule(rule)) return `not(${describeAt(rule.not, depth + 1)})`;
-  // `when` is the one arm with nothing to introspect — its predicate is a
-  // closure. The function's name is all a reader gets, which is itself an
-  // argument for reaching for a declarative selector instead.
+  // `when`'s predicate is a closure, so the function's name is all a reader gets.
   if (isWhenRule(rule)) return `when(${rule.when.name || 'ƒ'})`;
   return describeSelector(rule, depth);
 }
@@ -192,8 +173,7 @@ function describeAt(rule: Rule, depth: number): string {
  * { when: function hasPath() { … } }         → when(hasPath)
  * ```
  *
- * Never throws and always terminates — unlike `JSON.stringify`, which throws
- * on a cyclic value and renders the `when` arm as a useless `{}`.
+ * Never throws and always terminates.
  */
 export function describeRule(rule: Rule): string {
   return describeAt(rule, 0);
@@ -210,17 +190,13 @@ export function evaluate(rule: Rule, ctx: RuleCtx): boolean {
 }
 
 /**
- * Composable eligibility predicate with a fluent surface. Carries its
- * underlying `Rule` tree at `.rule` so the dispatcher's eligibility filter and
- * the chrome resolver can introspect and share trees.
- *
- * Callable form `cond(ctx)` evaluates the tree against ctx. The fluent methods
- * return new Conditions wrapping new trees.
+ * Composable eligibility predicate with a fluent surface. `cond(ctx)`
+ * evaluates its `Rule` tree, carried at `.rule`; the fluent methods return new
+ * Conditions wrapping new trees.
  *
  * **Chain semantics: strict left-to-right, no precedence.** `a.and(b).or(c)` is
- * `(a && b) || c`; `a.or(b).and(c)` is `(a || b) && c`. Mix `.and` and `.or`
- * only when you mean left-to-right evaluation. For grouped disjunction, name
- * the subexpression or use the top-level `or(...)`.
+ * `(a && b) || c`; `a.or(b).and(c)` is `(a || b) && c`. For grouped
+ * disjunction, name the subexpression or use the top-level `or(...)`.
  */
 export interface Condition {
   (ctx: RuleCtx): boolean;

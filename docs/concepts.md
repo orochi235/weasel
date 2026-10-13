@@ -4,9 +4,8 @@ The mental model behind `@weasel-js/core`. Read this before writing code.
 
 ## `<Canvas>`
 
-> `<Canvas>` is `@internal` and no longer exported from the public barrel.
-> Consumers use `<SceneCanvas>`, which mounts it. It's described here because
-> the two split responsibilities and the seam is worth understanding.
+> `<Canvas>` is `@internal` and not exported from the public barrel.
+> Consumers use `<SceneCanvas>`, which mounts it.
 
 A single `<canvas>` element wired up: it owns DPR setup, layer composition,
 and the pointer-event router. Drop in an adapter and a `layers` map and you
@@ -25,7 +24,7 @@ registry and the scene-aware overlays live in `<SceneCanvas>`.
 />
 ```
 
-Behavior isn't configured through controller-override props — there are none.
+There are no controller-override props.
 Move, resize, rotate, insert and area-select are actions in the Actions
 Registry; you change what they do by binding different gestures to them, by
 passing behaviors through a binding's `opts`, or by registering your own
@@ -60,9 +59,8 @@ differs is what it takes to bring the DOM along:
   paint lands, which is not a version any scene has; treat it as "nothing
   painted yet" rather than comparing it.
 
-  This is what makes `useScene(…, { subscribe: false })` mean what it says: a
-  host driving poses from a frame loop pays no render per write, because the
-  canvas no longer forces one behind its back.
+  So under `useScene(…, { subscribe: false })` a host driving poses from a
+  frame loop pays no render per write.
 
 For readouts and panels either skew is invisible. Reading the drawing buffer
 back outside a paint can likewise see the previous frame; `subscribeFrame()`
@@ -79,7 +77,7 @@ transition deliberately and nothing forces it to catch up, so that DOM can
 diverge from the canvas without bound, and nothing warns — React exposes no way
 to ask whether the current render is a transition. Render that DOM outside the
 transition, gated on `getPaintedVersion()` when it must be in lockstep, or set
-`syncPaint` for the old whole-cloth guarantee.
+`syncPaint`.
 
 ## What `<SceneCanvas>` turns on
 
@@ -140,9 +138,6 @@ inset lives and whether it's interactive:
   must live as pixels in the main canvas, e.g. for a screenshot-stable
   minimap or a print-included overview.
 
-Detached variants are the right default when the minimap belongs in a
-panel; `createViewportLayer` stays as the canonical superimposed primitive.
-
 With no scene at all, **`<DrawCanvas>`** paints a `DrawCommand` list (or a
 function returning one) onto the same kind of detached surface: sized in CSS
 pixels, DPR-correct, repainting behind the visibility gate. It is for drawing
@@ -183,7 +178,7 @@ function App() {
 }
 ```
 
-Both are separate `<canvas>` elements with their own GL context, so they can sit anywhere in the page — a sidebar, a floating panel. A view *inside* the main canvas is a `<CanvasView>` instead.
+A view *inside* the main canvas is a `<CanvasView>` instead.
 
 ## Adapter
 
@@ -215,18 +210,20 @@ rect-flavored math (resize, area-select, snap origin) still works.
 
 `getPose` / `setPose` are **local-coordinate** — relative to the object's
 parent — and `getWorldPose` is the composed reading that rendering, picking and
-chrome consume. The two are the same value unless a `poseComposition` is
-configured: by default a parent groups its children and imposes no transform,
-so every node's stored pose is already world. Pass
-`<SceneCanvas poseComposition={RIGID_POSE_COMPOSITION}>` to make a container's
-pose a frame, so rotating it rotates its contents. See
+chrome consume. The two are the same value unless the scene composes poses: by
+default a parent groups its children and imposes no transform, so every node's
+stored pose is already world. Pass
+`useScene({ composition: RIGID_POSE_COMPOSITION })` to make a container's pose
+a frame, so rotating it rotates its contents and moving it writes one pose. The
+scene holds the strategy as `scene.composition`, and the canvas, the adapter,
+the layout pass, picking, and every built-in action read it from there. See
 `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
 
 ## Pose override
 
 A node's **pose** is document state: undoable, serialized, the answer to "where
 is this". A pose **override** is the same value for one frame — `scene.overrides`
-holds a per-node `{ pose?, alpha? }` that the render and hit-test paths read
+holds a per-node `{ pose?, alpha?, path? }` that the render and hit-test paths read
 through, and that history and `toJSON()` never see. A 60 Hz camera, a drag
 preview, a physics settle and an animation tween all want this: motion that is
 not an edit.
@@ -240,7 +237,7 @@ entry.pose.x = simulation.x;      // mutate in place — no allocation
 scene.overrides.commit();         // publish
 ```
 
-`commit()` is not bookkeeping. The painter memo keys on pose *reference*, so an
+The painter memo keys on pose *reference*, so an
 in-place mutation without a commit paints the previous frame and reports no
 error. `commit()` drops the pose-keyed memo slots of every overridden node.
 
@@ -272,21 +269,34 @@ Two on one target combine, by two rules:
 - **A hold stands in.** `animator.hold({ target, value, weight })` shows a value
   in place of the committed one: a drag preview, a timeline's sampled track, a
   rig clip. Several holds on a target are alternatives, mixed by weight; weights
-  short of 1 leave the rest to the committed value; offsets add on top. On an
+  short of 1 leave the rest to the committed value. On an
   angle axis the holds meet at their average direction by weight, so two turn the
-  short way toward each other. A hold given `axes` holds only those, so an arm
-  solved by IK sits beside the clips holding the rest of a rig
-  (`jointAxes(skeleton, names)`).
+  short way toward each other. A hold given `axes` holds only those, each by
+  the target's name for it or by index: `axes: ['y']` on a point, and a rig's joints by name, so
+  an arm solved by IK sits beside the clips holding the rest of a rig.
+- **A hold covers the committed value on its way too.** The move a destination
+  makes in the committed value is behind the hold, by the hold's weight on each
+  axis: `tween({ target, to })` under a full hold shows nothing, and under one at
+  0.5 shows half its travel, with no jump as it starts. What an animation shows
+  apart from that move rides on top of the hold at full: a coast, a spring pushed
+  where it stands, and a `from` away from the committed value, such as a recoil
+  over a rig clip.
 
 Leaving never moves the value on screen: a canceled animation commits where it
-was, and so does a released hold unless told not to. One canceled under a hold,
-which stands in front of the committed value, keeps what it had left on screen
+was, and so does a released hold unless told not to. A hold released that way
+takes with it the share it covered of each move behind it, so a tween under a
+full hold stays where the hold put the value and does not then play out. What
+was riding on top of a hold when its animation stopped stays on screen
 beside the hold; it is committed when the target's last hold goes, or taken up by
 the next animation given a destination. Under one `cancelKey` a new
 animation still interrupts the old, and a spring starts at the velocity of what
 it interrupts; `interrupt: false` shares the key and adds. When something else
 writes the committed value mid-flight, call `target.stop({ commit: false })` so
 the writer wins.
+
+A pose move can follow an undo instead: `tweenPose` and `springPose` given
+`rewind: true` travel back to where they began when the move is undone mid-flight,
+and forward again if it is redone on the way.
 
 What is built on it:
 
@@ -297,15 +307,107 @@ What is built on it:
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
 | Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |
+| Many like values | a row of `createTargetTable({ axes })` | any of the above primitives, on `table.target(row)` |
 
 A pose animation over a scene therefore writes the document once, at its start,
 and shows its travel through a pose override. An `arrayAdapter` has no overrides,
 so its array is written the pose on screen each frame while the target keeps the
 committed pose. The values are computed by blits
-(`@msb235/blits`), behind `packages/core/src/animation/engine/`; no blits type is
+(`@msb235/blits`), behind `packages/animator/src/engine/`; no blits type is
 public. blits clocks the voices and sums them; how a target's holds share it is
 folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
-cover some axes and turn an angle. A target is moved by one animator at a time.
+cover some axes and turn an angle. blits stays a repository of its own, not a
+`@weasel-js` package. A target is moved by one animator at a time.
+
+Thousands of like values go in a **target table**, where a target apiece would
+cost a read apiece:
+
+```ts
+const dots = createTargetTable({ axes: 2 });          // each row is [x, y]
+const row = dots.add([10, 20]);
+animator.tween({ target: dots.target(row), to: [300, 40], ms: 400 });
+// after each frame, every row's value on screen, back to back:
+upload(dots.shown);
+```
+
+A row is a target like any other. Its committed value lives in `table.committed`,
+and the animator fills `table.shown` for every moving row in one pass over flat
+arrays, about 3 ns a row. `shown` is a `Float64Array` unless the table is made with
+`shown: Float32Array`, for a painter that uploads it as it stands.
+
+A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
+writes the value's `axisCount` axes into a buffer and builds no value. Axes that
+define `add` and `write` let a read skip the array of axes as well; the ones the
+kit supplies all do.
+
+## Clip
+
+A timeline's tracks hold functions and live targets, so a timeline is not data. A
+**clip** is one that is: `{ version: 1, tracks, duration? }`, with keys, easings by
+built-in name or bezier points, and a name wherever the live timeline holds a
+function or a target.
+
+| In a live track | In a clip | Resolved by |
+|---|---|---|
+| `target` | `target: 'pose:box'` | `ClipBinder.target(name)` |
+| `interpolate` | `interpolate: 'oklab'` | `ClipBinder.interpolate[name]` |
+| a function `weight` | `weight: 'fade'` | `ClipBinder.weight(name)` |
+| `axes`, by name or by index | `axes: ['armL', 'foreL']` | nothing: the track's target answers its own names |
+| an event's `fire` and `book` | `name`, with `data` | `ClipBinder.event(name, data)` |
+| a function easing | its built-in name, or `{ bezier }` | nothing: both are data |
+| a typed array in a key's value, as a `Path` has | `{ __ta: 'f32', data: [...] }` | nothing: `bindClip` reads it back |
+
+`bindClip(clip, binder)` answers what `animator.timeline` takes, and `toClip` reads a
+live timeline back, an edited one included, because a live track keeps its names
+(`targetName`, `interpolateName`, `weightName`, an event's `name`). `sceneClipTargets(scene, { rigs })`
+is the binder's `target` for a scene: `pose:<node id>` and `rig:<name>`. A track over
+part of a rig names joints as its `axes`, so it holds the same joints after the skeleton's order
+changes. A target whose axes have no names takes `axes` as numbers. A track that
+moves something else gets a target of its own from `createTarget`; a clip holds no
+`onTick`.
+
+## Rig and skin
+
+A **rig** is a `Skeleton`, joints in a parent chain, bound to scene nodes by
+`bindRig` or `useRig`. Its pose is one animation target, `rig.target`, and each
+frame it writes what that target shows through pose overrides. It moves nodes in
+two ways:
+
+| Option | What follows a joint | What the rig writes |
+|---|---|---|
+| `bindings` | A whole node, rigidly | The override's `pose` |
+| `skins` | Each point of a path, by weight | The override's `path`, and its `pose` as that path's bounds |
+
+A **skin** is one weight array per joint name, indexed by point: every coordinate
+pair of the path's `coords`, curve handles included. Each point goes where each of
+its joints' motions since the bind pose would carry it, averaged by weight
+(`skinPath`, in `@weasel-js/animator` with the rest of the scene-free rig code), so one outline flexes at a joint where bound nodes hinge. The fill,
+the stroke, picking, and the selection box all read the bent path. `autoSkin`
+makes a skin from each point's distance to the bones; a joint with no child gets
+no weight, so a limb needs an end joint.
+
+A rig can also live in the scene. A node holds the skeleton in `data.skeleton`,
+its joints relative to that node's box, and the nodes under it hold `data.skin`
+or name a `data.joint` to ride whole. `useRigNode` binds from those and binds
+again when they change, and `useBoneTool` and `useWeightTool` edit them on the
+canvas, one scene op per edit.
+
+The blend runs on the CPU over the path's own points, and the renderer is handed a
+new path each frame the rig moves. It is not done on the tessellated mesh or in a
+vertex shader, because a stroke is a ribbon rebuilt from the path and picking reads
+a path, so this is the route where everything a node shows agrees.
+The blend itself is about 1% of the cost and tessellation is the rest:
+measured in Node on a closed loop of cubic segments with a 3px round-joined
+stroke, 24 anchors cost 0.13 µs to blend, 7.9 µs to tessellate the fill, and 18.1 µs
+to rebuild the stroke, and 200 anchors cost 1.03, 71.0, and 72.2.
+
+Before relying on it:
+
+- The rest path is read when the rig is bound, and the tools edit the rig as it
+  rests.
+- A container clips its children to its box unless `clipFromPose` says otherwise,
+  so a rig node whose paths bend past its box sets `clipFromPose: () => null`.
+- Inserting or deleting a point on a skinned path does not renumber its weights.
 
 ## Descriptor
 
@@ -336,7 +438,7 @@ interface Op {
 
 Constructors live under `packages/core/src/core/ops/`: `createTransformOp`,
 `createInsertOp`, `createDeleteOp`, `createSetSelectionOp`,
-`createBringForwardOp`, etc. Every gesture and action hook produces ops on
+`createReorderOp`, etc. Every gesture and action hook produces ops on
 commit; `dispatchApplyBatch(adapter, ops, label)` calls
 `adapter.applyBatch?.(ops, label)` if available, otherwise applies each op
 directly against the adapter.
@@ -377,8 +479,7 @@ A `RenderLayer<TData>` is a named draw function. The `layers` prop on
 `<Canvas>` is a map of slot name → config:
 
 - **Standard slots** (canonical order): `grid`, `cellHighlight`, `scene`,
-  `moveOverlay`, `resizeOverlay`, `selectionOverlay`, `insertOverlay`,
-  `areaSelectOverlay`. Pass slot config (`{ drawOne, ... }` for `scene`,
+  `selectionOverlay`. Pass slot config (`{ drawOne, ... }` for `scene`,
   `{ spacing, bounds }` for `grid`, etc.) or `null` to suppress.
 - **Custom layers**: any other key. Value is `{ layer, after?, before? }`
   with a `RenderLayer` and an optional anchor slot for ordering.
@@ -394,7 +495,7 @@ See [extending.md](./extending.md) for custom-layer details.
 
 **Hit-test channel.** Layers may declare an optional `hitTest(worldX, worldY, data, view, dims): AffordanceBinding | null`, consulted on pointerdown. Registered layers are walked top-down (last-registered first) by `CanvasExtensionApi.hitTestExtras`; `<SceneCanvas>` folds that walk — plus its own selection chrome — into the `affordanceAt` thunk it hands the gesture dispatcher. A hit reaches actions as an `AffordanceHit` (kind `layer:<id>` for a registered layer, carrying whatever the layer resolved as its `payload`), and the layer's owner claims the gesture with a binding whose `target` predicate matches that kind. This is how chrome stays hittable regardless of which tool is active — see `@weasel-js/hud` for the worked example.
 
-**Command caching.** A layer may declare `deps?: (data, view, dims) => readonly unknown[]`. When a `LayerCommandCache` is supplied to `drawLayers` (Canvas owns one), a layer whose deps come back `Object.is`-equal to the previous call reuses its previous `DrawCommand[]` instead of calling `draw` again. A layer without `deps` rebuilds every frame — the existing behavior. This skips rebuilding the command tree, not GPU dispatch — every layer is still submitted to the renderer each frame regardless of caching.
+**Command caching.** A layer may declare `deps?: (data, view, dims) => readonly unknown[]`. When a `LayerCommandCache` is supplied to `drawLayers` (Canvas owns one), a layer whose deps come back `Object.is`-equal to the previous call reuses its previous `DrawCommand[]` instead of calling `draw` again. A layer without `deps` rebuilds every frame. This skips rebuilding the command tree, not GPU dispatch — every layer is still submitted to the renderer each frame regardless of caching.
 
 Returned command trees must be treated as immutable: a cached tree is handed to the renderer again on later frames, so mutating one you previously returned corrupts the cache silently rather than erroring. World-space layers are protected against a stale `view` — `drawLayers` computes the `viewToMat3(view)` group wrap fresh outside the cache — but screen-space (`space: 'screen'`) layers are not; if `draw` reads `view` or `dims`, include them in `deps`. And an `id` must name the same logical layer across frames, since the cache is keyed on it.
 
@@ -402,7 +503,7 @@ Returned command trees must be treated as immutable: a cached tree is handed to 
 
 A reusable factory primitive that produces a `{ render, hitTest? }` triple. Tools that own chrome (selection handles, rotation handle, anchor dots) compose affordances rather than reimplementing the render + hit-test logic inline. The kit ships `createCornerResizeAffordance` and `createRotationAffordance`; both read state from a kit-built `ChromeState` object so the affordance code stays pure (no React, no scene access).
 
-The point of the abstraction: **visible chrome is hittable independent of the active tool.** Without affordances, each tool's overlay rendered handles but each tool had to hit-test those handles itself. With affordances, the hit-test walk runs once per pointerdown and the result rides the gesture as `InvocationCtx.drag.affordance`; a corner-handle drag fires the resize action even when a non-select tool is active. A hit is a claim, and a claim of `strength: 'exclusive'` bars every binding whose target doesn't consult the affordance — so chrome is never mistaken for a body pick and the gesture reaches whatever owns it, without each tool having to decline chrome by hand.
+**Visible chrome is hittable independent of the active tool.** The hit-test walk runs once per pointerdown and the result rides the gesture as `InvocationCtx.drag.affordance`; a corner-handle drag fires the resize action even when a non-select tool is active. A hit is a claim, and a claim of `strength: 'exclusive'` bars every binding whose target doesn't consult the affordance — so chrome is never mistaken for a body pick and the gesture reaches whatever owns it, without each tool having to decline chrome by hand.
 
 ## Interaction
 
@@ -410,8 +511,7 @@ Everything the user does to the scene is an **interaction**. The kit splits
 interactions into two kinds:
 
 - **Gestures** — pointer-driven, with a start/move/end lifecycle. They live
-  under `packages/core/src/interactions/gestures/`. Each one returns a controller with a
-  live `overlay` so the in-flight state can render between frames.
+  under `packages/core/src/interactions/gestures/`.
 - **Actions** — discrete, one-shot mutations that don't have a drag phase.
   They live under `packages/core/src/interactions/actions/`. Most are keybinding-driven
   (Esc, Cmd+A, Cmd+D, arrows, Cmd+Z), but they're really just functions
@@ -424,8 +524,7 @@ Same adapter, same op pipeline, same undo history. The split is about
 
 A **gesture** is a pointer-driven interaction with a start/move/end
 lifecycle. Move, resize, rotate, insert, area-select, clone, and
-edit-anchors are all gestures. Each takes an adapter and an options object
-that includes a `behaviors` array.
+edit-anchors are all gestures.
 
 A **behavior** is a small composable extension that refines the in-flight
 pose and/or supplies commit ops:
@@ -450,7 +549,8 @@ makes a move, resize or rotate commit without a history entry unless
 
 Built-in behaviors: `snap(strategy)`, `snapToContainer(...)`,
 `snapBackOrDelete(...)` for move; `clampMinSize` and `lockAspectWithModifier`
-for resize; `cloneByAltDrag()` for clone. Grid and guide snapping —
+for resize. A clone drag takes the move behaviors that only reshape the
+translation (`snap(strategy)`), as `CloneBehavior`. Grid and guide snapping —
 `snapToGrid`, `snapToGuides`, `gridSnapStrategy`, the alignment behaviors —
 are in `@weasel-js/guides`. Marquee area-select is unconditional — it is
 `areaSelectAction`'s built-in behavior, not an opt-in one.
@@ -510,7 +610,7 @@ them:
   `defaultBinding` is a `BoundGesture[]` of `key-held` specs, each carrying
   `opts.params.toolId`. On `start` the invoker pushes the tool id onto the
   active-tool context's hotkey stack; `onEnd` pops it. The dispatcher's
-  existing `inFlightOwners` machinery advances the channel through the same
+  `inFlightOwners` machinery advances the channel through the same
   `[initial]` → `[engaged]` → `[initial]` lifecycle that drag uses. Build
   entries with `buildToolOffhandBindings(specs)`.
 
@@ -650,12 +750,12 @@ return (
 
 ## System registries
 
-The kit maintains several **registry** data structures — keyed lookups that map string identifiers to kit-managed objects like fonts, tools, ops, and shader programs. Each registry has a distinct scope, lifecycle, and mutability story; they are catalogued here so the pattern is visible to contributors extending the kit.
+The kit maintains several **registry** data structures — keyed lookups that map string identifiers to kit-managed objects like fonts, tools, ops, and shader programs. Each registry has a distinct scope, lifecycle, and mutability story.
 
 | Registry | Keyed by | Scope | Mutability | Where it lives | Reflection | Used by |
 |---|---|---|---|---|---|---|
 | **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global reflectable in `registerFont.ts` | `fontRegistry`; `listFonts()`; `listFontWeights(family)` | `WeaselRenderer`, text layout |
-| **Font outlines** | `family\|weight\|style` | App (module) lifetime | Runtime-mutable; register / unregister | Module-global reflectable in `outline/outlineRegistry.ts` | `fontOutlineRegistry` (notifies on load-state changes too); `listFontOutlines()` | `layoutRuns` (above the size threshold) |
+| **Font outlines** | `family\|weight\|style` | App (module) lifetime | Runtime-mutable; register / unregister | Module-global reflectable in `outline/outlineRegistry.ts` | `fontOutlineRegistry` (notifies on load-state changes too); `listFontOutlines()` | `paintRuns` (above the size threshold) |
 | **Tools** | Tool id string | Component lifetime, pinned at `useTools` call | Constructor-fixed (registry reference is live, but entries are set at hook call) | Hook return (`ToolsApi.registry`) in `packages/routing/src/tools/useTools.ts` | Implicitly — `registry` field is enumerable | Gesture dispatcher, tool palette UI |
 | **Ops** | Op kind string (`kit:*` reserved) | Scene lifetime | Constructor-fixed via `ops` option; runtime additions via `scene.registerOp()` | Internal `Map` inside `createScene` closure | No | `Scene.undo()`, `Scene.redo()`, `scene.recordOp()` |
 | **Op factories** | Op name string | App (module) lifetime | Runtime-mutable; newest replaces | Module-global reflectable in `core/ops/registry.ts` | `opFactoryRegistry`; `registeredOpNames()` | `History.restore()` rebuilding serialized ops |
@@ -665,7 +765,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 | **Easings** | Easing name string | Module lifetime | Frozen (compile-time constant) | Named export `EASINGS` in `easings.ts` | Implicitly — plain object, enumerable by key | `useAnimator`, animation hooks |
 | **Shader programs (source)** | Program id string | Module lifetime | Runtime-mutable; dev-mode allows replacement, prod throws on duplicate | Module-global reflectable in `registerProgram.ts` | `programSourceRegistry` | `WeaselRenderer.registerProgram()` |
 | **Shader programs (compiled)** | Program id string | Renderer lifetime | Runtime-mutable; rebuilt on GL context restore | `Map` on each `WeaselRenderer` instance | No | `draw.ts` dispatch, `kind: 'shader'` draw commands |
-| **Paint kinds** | `FillStyle` discriminant | App (module) lifetime | Runtime-mutable; `registerPaintKind` returns a disposer; overrides stack; a kind with a loader registers on first lookup | Module-global reflectable in `core/paintKinds.ts` | `paintKindRegistry`; `listPaintKinds()`, `listGradientKinds()`; `usePaintKinds()`, `useGradientKinds()`, `usePaintKind(id)` in React | `draw.ts` fill dispatch, `fillInPoseFrame`, `<defs>` emit, `PaintInput`'s and `GradientEditor`'s kind bars, `switchGradientKind` |
+| **Paint kinds** | `Paint` discriminant | App (module) lifetime | Runtime-mutable; `registerPaintKind` returns a disposer; overrides stack; a kind with a loader registers on first lookup | Module-global reflectable in `core/paint/paintKinds.ts` | `paintKindRegistry`; `listPaintKinds()`, `listGradientKinds()`; `usePaintKinds()`, `useGradientKinds()`, `usePaintKind(id)` in React | `draw.ts` fill dispatch, `fillInPoseFrame`, `<defs>` emit, `PaintInput`'s and `GradientEditor`'s kind bars, `switchGradientKind` |
 | **Stroke markers** | Marker id string | App (module) lifetime | Runtime-mutable; `registerMarker` returns a disposer; overrides stack | Module-global reflectable in `@weasel-js/stroke` | `markerRegistry`; `listMarkers()` | Stroke end-cap drawing, `markerCommandCache` |
 | **Textures** | Auto-assigned `tex_N` id | App (module) lifetime | Runtime-mutable; append-only, no unregister in v1 | Module-global reflectable in `registerTexture.ts` | `textureRegistry` | `GLTextureCache`, `kind: 'shader'` uniform binding |
 | **Canvas layers** | Slot name string | Component lifetime, fixed at render | Constructor-fixed (prop value at render time) | `LayersMap` prop on `<Canvas>` / `<SceneCanvas>` | Implicitly — `Object.entries` over the prop | `<Canvas>` layer compositor |
@@ -675,7 +775,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 
 **Font outlines** (`packages/font/src/outline/outlineRegistry.ts`) are a *third glyph tier*, not a fourth font registry: they never resolve a family on their own, they only replace how an already-resolved glyph is painted. Above `OUTLINE_MIN_SCREEN_PX` on-screen pixels, a face with registered outlines renders as tessellated geometry — exact at any zoom, and an ordinary path, so it takes gradient and pattern fills. Deliberately a flat `family|weight|style` map with **no** fallback chain: substituting a nearby variant would paint the wrong weight at the right advances, which looks worse than the distance field it replaced, so a miss declines and falls back down the tier ladder (outlines → canvas SDF → baked atlas) instead.
 
-The ladder's ordering rule is worth stating once: **each tier answers only "can I paint this glyph, right now?"** Loading is asynchronous everywhere (`fetch` for a URL, `queryLocalFonts` behind a permission for machine faces), so a tier that cannot answer yet answers `null` and the next one draws. `subscribeGlyphReady` (`packages/font/src/glyphReady.ts`) is the shared signal that a later frame can do better — both the deferred SDF bakes and the outline loads fire it, and `<SceneCanvas>` subscribes once.
+The ladder's ordering rule: **each tier answers only "can I paint this glyph, right now?"** Loading is asynchronous everywhere (`fetch` for a URL, `queryLocalFonts` behind a permission for machine faces), so a tier that cannot answer yet answers `null` and the next one draws. `subscribeGlyphReady` (`packages/font/src/glyphReady.ts`) is the shared signal that a later frame can do better — both the deferred SDF bakes and the outline loads fire it, and `<SceneCanvas>` subscribes once.
 
 **Tools** (`packages/routing/src/tools/useTools.ts`) — the `registry` prop passed to `useTools` is held in a ref so new object references re-read cleanly each render. Tools not in `registry` can still appear in the `ambient` array (always-on tools); `ToolsApi.has(id)` checks both.
 
@@ -685,23 +785,23 @@ The ladder's ordering rule is worth stating once: **each tier answers only "can 
 
 **Actions** (`packages/routing/src/interactions/actions/ActionsProvider.tsx`) — the only registry backed by React context. Entries are owned by components (registered in `useEffect`, cleaned up on unmount). `register()` returns its own release; registrants for one id stack, newest live, so hot-module replacement doesn't orphan stale entries.
 
-**Easings** (`packages/geom/src/easings.ts`, re-exported by core) — not a registry in the dynamic sense; `EASINGS` is a frozen `as const` object. It appears here because it fits the "keyed lookup" pattern and is consumed the same way by animation pickers and demos. `SPRING_PRESETS` follows the same shape for the four named spring curves.
+**Easings** (`packages/geom/src/easings.ts`, re-exported by core) — not a registry in the dynamic sense; `EASINGS` is a frozen `as const` object. `SPRING_PRESETS` follows the same shape for the four named spring curves.
 
 **Shader programs** split across two levels. The module-level source registry (`registerProgram.ts`) is GL-context-agnostic and shared across all renderers. Each `WeaselRenderer` instance maintains its own compiled-program registry (`programRegistry`), rebuilt from source on GL context restore. This mirrors the font registry pattern: fonts store `ImageBitmap` at module scope; each renderer's `GLTextureCache` handles the per-context upload.
 
-**Paint kinds** (`packages/core/src/renderer/paintKinds.ts`) are what make `FillStyle` open: a registered kind draws, converts between the bounds and pose frames, and serializes with no kit edits. The entry is one object, but its slots are consumed in three packages, so each layer consults the registry for a kind it does not recognize and otherwise runs its own branch — a built-in kind's render slot lives in the GL renderer and its serialize slot in `@weasel-js/svg`, neither importable from core without inverting a package dependency.
+**Paint kinds** (`packages/core/src/core/paint/paintKinds.ts`) are what make `Paint` open: a registered kind draws, converts between the bounds and pose frames, and serializes with no kit edits. The entry is one object, but its slots are consumed in three places — the renderer keeps its own registry (`renderer/paintKinds.ts`) of the draw slots alone, and `registerPaintKind` hands every entry to it — so each layer consults the registry for a kind it does not recognize and otherwise runs its own branch — a built-in kind's render slot lives in the GL renderer and its serialize slot in `@weasel-js/svg`, neither importable from core without inverting a package dependency.
 
 A kind can also load on demand. `registerPaintKindLoader(id, load)` declares one whose code stays out of the bundle until something looks it up: the first `getPaintKind` miss starts `load`, which resolves with the entry, and the registry registers it. Until then the kind is unknown everywhere — the renderer draws nothing for its fills — and the registration's change notice is what `<SceneCanvas>` repaints on, the same way a late image or glyph repaints it. `mesh-gradient` is the kit's own lazily loaded kind; importing anything from `@weasel-js/core/mesh` registers it synchronously instead. A lazily loaded module must import nothing from core that the root barrel also reaches: esbuild with code splitting loads every module a dynamic chunk shares with an entry's graph along with that entry, so core's build rebuilds each such module as one self-contained file (`LAZY_KINDS` in `packages/core/vite.config.ts`), and `npm run check:treeshake` bundles with both esbuild and rolldown. `warmPaintKinds(kinds?)` loads ahead of the first frame, and a synchronous path that cannot wait for a load — `renderSceneToPixels`, `serializeSvg` — needs it awaited first. A headless render also draws no text from a font atlas still loading, so it awaits `warmRender({ render: args })`, which builds the render's commands the way the render will, reads off them the faces and paint kinds they draw with (`renderNeeds`), and loads only those — an unrelated font that fails to load cannot fail the capture.
 
-`FillStyle` itself stays a closed union — opening its discriminant would widen every built-in member and break the narrowing the kit's own branches depend on — so a registered kind declares its own interface and passes it through `asPaint`. The render slot is `bind` rather than `draw` because a caller owning its own stencil state (an inner/outer-aligned stroke, an even-odd fill) has to issue its own draw call. A kind's shader goes through the ordinary `registerProgram` source registry — declared on the entry as `programs`, which registering the kind registers — and compiles into each renderer on first use, so a kind registered after a renderer exists still paints.
+`Paint` itself stays a closed union — opening its discriminant would widen every built-in member and break the narrowing the kit's own branches depend on — so a registered kind declares its own interface and passes it through `asPaint`. The render slot is `bind` rather than `draw` because a caller owning its own stencil state (an inner/outer-aligned stroke, an even-odd fill) has to issue its own draw call. A kind's shader goes through the ordinary `registerProgram` source registry — declared on the entry as `programs`, which registering the kind registers — and compiles into each renderer on first use, so a kind registered after a renderer exists still paints.
 
-**Textures** (`packages/core/src/renderer/textures/registerTexture.ts`) — entries are keyed by auto-assigned opaque ids (`tex_N`), not caller-chosen names, so collision is impossible. The `TextureHandle` returned by `registerTexture()` is what callers pass as a `ShaderUniform` value. No unregister in v1; texture lifetime is the app lifetime.
+**Textures** (`packages/renderer/src/textures/registerTexture.ts`) — entries are keyed by auto-assigned opaque ids (`tex_N`), not caller-chosen names, so collision is impossible. The `TextureHandle` returned by `registerTexture()` is what callers pass as a `ShaderUniform` value. No unregister in v1; texture lifetime is the app lifetime.
 
 **Canvas layers** — the `LayersMap` prop is not a traditional registry but fits the pattern: it maps string slot names to layer configs, the compositor enumerates them at render time, and custom entries declare ordering via `before?` / `after?` anchors. Scope is per-`<Canvas>` instance; the map is treated as immutable for a given render pass.
 
 The kit deliberately does not unify these into one shape. The lifecycles differ enough — module-global vs. scene-scoped vs. React-context vs. component-prop — that a single registry abstraction would either over-constrain the complex cases (fonts' variant fallback, ops' `kit:*` reservation) or bloat the simple ones (easings, spring presets).
 
-What they do share is the reflection concern: enumerating entries for a debug overlay, and noticing when two registrants claimed one key. That part is `createReflectable<V>()` (`@weasel-js/registry`, re-exported from core): a keyed store a registry embeds and writes through, which hands out a read-only `Reflection` — `get`, `has`, `entries()`, `subscribe`, `getVersion`. `entries()` returns the same frozen array until the next change, so the whole surface drops straight into `useSyncExternalStore`. Each entry carries the live value, the registrant's `source` when it named one (built-ins register as `'kit'`), and `shadowed` — the registrants it displaced, oldest first, which is the conflict report. Two write verbs match the two override semantics the registries already had: `push` stacks and returns a release that uncovers what it displaced (paint kinds, markers), and `set` replaces in place like `Map.set` (fonts, programs, op factories, modes). Validation, lookup fallbacks and lifecycle stay in the registry.
+What they do share is the reflection concern: enumerating entries for a debug overlay, and noticing when two registrants claimed one key. That part is `createReflectable<V>()` (`@weasel-js/registry`, re-exported from core): a keyed store a registry embeds and writes through, which hands out a read-only `Reflection` — `get`, `has`, `entries()`, `subscribe`, `getVersion`. `entries()` returns the same frozen array until the next change, so the whole surface drops straight into `useSyncExternalStore`. Each entry carries the live value, the registrant's `source` when it named one (built-ins register as `'kit'`), and `shadowed` — the registrants it displaced, oldest first, which is the conflict report. Each registrant is one frozen object for as long as it is registered, the live one reported as the entry's `live`, so the owner can remove any one of them with `release(key, registrant)`. Two write verbs: `push` stacks and returns a release that uncovers what it displaced (paint kinds, markers), and `set` replaces in place like `Map.set` (fonts, programs, op factories, modes). Validation, lookup fallbacks and lifecycle stay in the registry.
 
 Registries that don't embed it, and why:
 

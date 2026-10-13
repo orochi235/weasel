@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath, type Path } from '@weasel-js/geom';
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
-import { ColorOverrideRegistry } from '../../animation/colorRegistry';
+import type { CommandStroke, CommandFill } from '@weasel-js/paint';
+import { ColorOverrideRegistry } from '@weasel-js/animator';
 
 // createPathLayer emits raw world-space PathDrawCommands. The viewToMat3
 // wrap is applied at drawLayers orchestration time, not in the layer itself
@@ -11,7 +11,7 @@ import { ColorOverrideRegistry } from '../../animation/colorRegistry';
 describe('createPathLayer', () => {
   it('emits one path command per visible node', () => {
     const path: Path = rectPath(0, 0, 10, 10);
-    const fill: CommandFill = { fill: 'solid', color: '#fff' };
+    const fill: CommandFill = { paint: { kind: 'solid', color: '#fff' } };
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
       getPath: () => path,
@@ -28,7 +28,7 @@ describe('createPathLayer', () => {
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
       getPath: () => path,
-      getFill: () => ({ fill: 'solid', color: '#f00' }),
+      getFill: () => ({ paint: { kind: 'solid', color: '#f00' } }),
       isHidden: (n) => n.id === 'b',
     });
     const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
@@ -48,7 +48,7 @@ describe('createPathLayer', () => {
 
   it('passes stroke through when getStroke returns a stroke', () => {
     const path: Path = rectPath(0, 0, 10, 10);
-    const stroke: CommandStroke = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+    const stroke: CommandStroke = { paint: { kind: 'solid', color: '#000' }, width: 2 };
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }],
       getPath: () => path,
@@ -72,7 +72,7 @@ describe('createPathLayer — getVertexColors', () => {
     const cmd = out[0] as any;
     expect(cmd.vertexColors).toEqual(colors);
     // Placeholder fill is synthesized so the renderer's gate passes.
-    expect(cmd.fill).toEqual({ color: '#ffffff' });
+    expect(cmd.fill).toEqual({ paint: { color: '#ffffff' } });
   });
 
   it('explicit fill from getFill wins over the synthesized placeholder', () => {
@@ -80,12 +80,12 @@ describe('createPathLayer — getVertexColors', () => {
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }],
       getPath: () => path,
-      getFill: () => ({ color: '#abcdef', opacity: 0.5 }),
+      getFill: () => ({ paint: { color: '#abcdef', opacity: 0.5 } }),
       getVertexColors: () => [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1],
     });
     const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
     const cmd = out[0] as any;
-    expect(cmd.fill).toEqual({ color: '#abcdef', opacity: 0.5 });
+    expect(cmd.fill).toEqual({ paint: { color: '#abcdef', opacity: 0.5 } });
   });
 
   it('warns and drops colors when the array length does not match 4 × anchor count (dev mode)', () => {
@@ -111,7 +111,7 @@ describe('createPathLayer — getVertexColors', () => {
       id: 'L1',
       getNodes: () => [{ id: 'wrong' }],
       getPath: () => path,
-      getFill: () => ({ color: '#f00' }), // Explicit fill so node is rendered despite bad colors
+      getFill: () => ({ paint: { color: '#f00' } }), // Explicit fill so node is rendered despite bad colors
       getVertexColors: () => [1, 0, 0, 1],
     });
     layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });

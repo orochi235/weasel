@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandFill } from '@weasel-js/paint';
+import type { CommandPaint } from '@weasel-js/paint';
 import type { ResolvedRun } from '@weasel-js/text';
 import { FIXTURE_FONT, registerFont } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { _resetPaintKindsForTests, getPaintKind, registerPaintKindLoader } from 'renderer/paintKinds';
+import { _resetPaintKindsForTests, getPaintKind, registerPaintKindLoader } from 'core/paint/paintKinds';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { RectPose } from 'core/scene/composePose';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { warmRender } from './renderSceneToPixels';
 import { renderNeeds } from './renderNeeds';
 
@@ -21,14 +21,14 @@ afterEach(() => {
   _resetFontRegistryForTests();
 });
 
-function run(fontFamily: string, fontWeight = 400, fontStyle: 'normal' | 'italic' = 'normal', fill?: CommandFill): ResolvedRun {
+function run(fontFamily: string, fontWeight = 400, fontStyle: 'normal' | 'italic' = 'normal', fill?: CommandPaint): ResolvedRun {
   return {
     text: 'Hi', fontFamily, fontSize: 12, fontWeight, fontStyle,
-    fill: fill ?? { fill: 'solid', color: '#000' },
+    fill: { paint: fill ?? { kind: 'solid', color: '#000' } },
   } as ResolvedRun;
 }
 
-const mesh = { fill: 'mesh-gradient', patches: [] } as unknown as CommandFill;
+const mesh = { kind: 'mesh-gradient', patches: [] } as unknown as CommandPaint;
 
 /** Text in two families, and a mesh fill two groups down. */
 const COMMANDS: DrawCommand[] = [
@@ -37,7 +37,7 @@ const COMMANDS: DrawCommand[] = [
     kind: 'group',
     children: [{
       kind: 'group',
-      children: [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }, fill: mesh }],
+      children: [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }, fill: { paint: mesh } }],
     }],
   },
 ];
@@ -88,7 +88,7 @@ describe('renderNeeds', () => {
   it('reads the paint of a stroke and of a text run', () => {
     const needs = renderNeeds([
       { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, stroke: { paint: mesh } },
-      { kind: 'text', x: 0, y: 0, style: {} as never, runs: [run('serif', 400, 'normal', { fill: 'late' } as never)] },
+      { kind: 'text', x: 0, y: 0, style: {} as never, runs: [run('serif', 400, 'normal', { kind: 'late' } as never)] },
     ]);
     expect(needs.paintKinds).toEqual(['mesh-gradient', 'late']);
   });

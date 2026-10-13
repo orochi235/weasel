@@ -12,8 +12,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
-import { layoutRuns } from './layoutRuns';
-import type { LayoutRunsOpts } from './layoutRuns';
+import { layoutAndPaint } from './testing/layoutAndPaint';
+import type { LayoutRunsOpts } from './layoutOpts';
 import type { BidiResolver } from './bidiSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
@@ -44,7 +44,7 @@ beforeEach(async () => {
 
 const RUN = (text: string): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-  fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+  fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
 
@@ -53,7 +53,7 @@ const OPTS: LayoutRunsOpts = {
 };
 /** Cell indices sorted by where they were painted, left to right. */
 const visual = (text: string, opts = OPTS) => {
-  const out = layoutRuns([RUN(text)], opts);
+  const out = layoutAndPaint([RUN(text)], opts);
   const cells = out.lines[0].cells;
   return cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x);
 };
@@ -76,14 +76,14 @@ describe('layoutRuns with the real bidi engine', () => {
   });
 
   it('keeps cells in logical order while x is not', () => {
-    const out = layoutRuns([RUN('אב')], OPTS);
+    const out = layoutAndPaint([RUN('אב')], OPTS);
     const cells = out.lines[0].cells;
     expect(cells.map((c) => c.cp)).toEqual([0x05d0, 0x05d1]);
     expect(cells[0].x).toBeGreaterThan(cells[1].x);
   });
 
   it('reports an odd level on right-to-left cells', () => {
-    const out = layoutRuns([RUN('אב')], OPTS);
+    const out = layoutAndPaint([RUN('אב')], OPTS);
     expect(out.lines[0].cells.every((c) => c.level % 2 === 1)).toBe(true);
   });
 
@@ -95,7 +95,7 @@ describe('layoutRuns with the real bidi engine', () => {
   });
 
   it('gives every code point a cell whichever way the line reads', () => {
-    const out = layoutRuns([RUN('אב 25')], OPTS);
+    const out = layoutAndPaint([RUN('אב 25')], OPTS);
     expect(out.lines[0].cells).toHaveLength(5);
   });
 });
@@ -104,7 +104,7 @@ describe('L4 — mirroring', () => {
   it('paints a bracket as its mirror inside a right-to-left run', () => {
     // The fixture atlas has no bracket glyphs, so the observable is the cell's
     // code point rather than a quad: '(' opening a Hebrew phrase reads as ')'.
-    const out = layoutRuns([RUN('א(ב')], OPTS);
+    const out = layoutAndPaint([RUN('א(ב')], OPTS);
     const bracket = out.lines[0].cells[1];
     expect(bracket.level % 2).toBe(1);
     expect(bracket.cp).toBe(0x29);
@@ -124,19 +124,19 @@ describe('L4 — mirroring', () => {
     await registerFont('half', {}, '/half.json', '/half.png');
     global.fetch = prior;
 
-    const out = layoutRuns([{ ...RUN('א(ב'), fontFamily: 'half' }], OPTS);
+    const out = layoutAndPaint([{ ...RUN('א(ב'), fontFamily: 'half' }], OPTS);
     expect(out.lines[0].cells[1].cp).toBe(0x29);
     expect(out.groups.filter((g) => g.source === 'atlas')).toEqual([]);
     expect(out.groups.find((g) => g.source === 'canvas')!.quads).toHaveLength(3);
   });
 
   it('leaves a bracket alone in a left-to-right run', () => {
-    const out = layoutRuns([RUN('A(B')], OPTS);
+    const out = layoutAndPaint([RUN('A(B')], OPTS);
     expect(out.lines[0].cells[1].cp).toBe(0x28);
   });
 
   it('does not mirror with no engine, even in Hebrew', () => {
-    const out = layoutRuns([RUN('א(ב')], { ...OPTS, bidi: undefined });
+    const out = layoutAndPaint([RUN('א(ב')], { ...OPTS, bidi: undefined });
     expect(out.lines[0].cells[1].cp).toBe(0x28);
   });
 });
@@ -144,7 +144,7 @@ describe('L4 — mirroring', () => {
 describe('paragraphs', () => {
   /** Cell indices of `line`, sorted by where they were painted. */
   const visualOf = (text: string, line: number, opts: LayoutRunsOpts = OPTS) => {
-    const cells = layoutRuns([RUN(text)], opts).lines[line].cells;
+    const cells = layoutAndPaint([RUN(text)], opts).lines[line].cells;
     return { cells, order: cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x) };
   };
 
@@ -182,20 +182,20 @@ describe('paragraphs', () => {
 
 describe('characters the engine removes', () => {
   it('keeps a zero-width joiner between its neighbors in a left-to-right line', () => {
-    const cells = layoutRuns([RUN('AB‍C')], OPTS).lines[0].cells;
+    const cells = layoutAndPaint([RUN('AB‍C')], OPTS).lines[0].cells;
     expect(cells[2].x).toBeGreaterThanOrEqual(cells[1].x + cells[1].advance);
     expect(cells[2].x).toBeLessThanOrEqual(cells[3].x);
   });
 
   it('keeps one between its neighbors in a right-to-left line', () => {
     // Logical א ZWJ ב ג paints, left to right, as ג ב ZWJ א.
-    const cells = layoutRuns([RUN('א‍בג')], OPTS).lines[0].cells;
+    const cells = layoutAndPaint([RUN('א‍בג')], OPTS).lines[0].cells;
     expect(cells[1].x).toBeGreaterThanOrEqual(cells[2].x + cells[2].advance);
     expect(cells[1].x).toBeLessThanOrEqual(cells[0].x);
   });
 
   it('places one opening the line at the line\'s start', () => {
-    const cells = layoutRuns([RUN('‍AB')], OPTS).lines[0].cells;
+    const cells = layoutAndPaint([RUN('‍AB')], OPTS).lines[0].cells;
     expect(cells[0].x).toBeLessThanOrEqual(cells[1].x);
   });
 });
@@ -204,14 +204,14 @@ describe('a wrapped right-to-left line', () => {
   const RTL: LayoutRunsOpts = { ...OPTS, direction: 'rtl', align: 'right' };
   /** A box that fits `אבג ` and part of the next word, so the text wraps once. */
   const boxFor = (text: string): number => {
-    const cells = layoutRuns([RUN(text)], { ...RTL, maxWidth: Infinity }).lines[0].cells;
+    const cells = layoutAndPaint([RUN(text)], { ...RTL, maxWidth: Infinity }).lines[0].cells;
     return cells.slice(0, 4).reduce((w, c) => w + c.advance, 0) + cells[4].advance / 2;
   };
 
   it('hangs the space that ends it off the left, with its ink flush right', () => {
     const text = 'אבג דהו';
     const maxWidth = boxFor(text);
-    const out = layoutRuns([RUN(text)], { ...RTL, maxWidth });
+    const out = layoutAndPaint([RUN(text)], { ...RTL, maxWidth });
     expect(out.lines).toHaveLength(2);
     const [word, space] = [out.lines[0].cells.slice(0, 3), out.lines[0].cells[3]];
     expect(space.cp).toBe(32);
@@ -224,13 +224,13 @@ describe('a wrapped right-to-left line', () => {
 
   it('starts its ink at the left edge when aligned left', () => {
     const text = 'אבג דהו';
-    const out = layoutRuns([RUN(text)], { ...RTL, align: 'left', maxWidth: boxFor(text) });
+    const out = layoutAndPaint([RUN(text)], { ...RTL, align: 'left', maxWidth: boxFor(text) });
     const word = out.lines[0].cells.slice(0, 3);
     expect(Math.min(...word.map((c) => c.x))).toBeCloseTo(0, 6);
   });
 
   it('still hangs a trailing space off the right in a left-to-right paragraph', () => {
-    const out = layoutRuns([RUN('AB CD')], { ...OPTS, align: 'right', maxWidth: 400 });
+    const out = layoutAndPaint([RUN('AB CD')], { ...OPTS, align: 'right', maxWidth: 400 });
     const cells = out.lines[0].cells;
     expect(cells[4].x + cells[4].advance).toBeCloseTo(400, 6);
   });

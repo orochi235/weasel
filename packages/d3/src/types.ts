@@ -1,4 +1,5 @@
-import type { Animator, NodeId, PoseDescriptor } from '@weasel-js/core';
+import type { NodeId, PoseDescriptor } from '@weasel-js/core';
+import type { Animator } from '@weasel-js/animator';
 
 /**
  * Configuration for a `d3Bind` binding: how data keys map to scene nodes, and

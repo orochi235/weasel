@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { GradientFill } from '@weasel-js/core';
+import type { GradientPaint } from '@weasel-js/core';
 import { GradientHandles } from './GradientHandles';
+import { handleHalf } from '../../handles';
 
 const STOPS = [
   { offset: 0, color: '#000000' },
@@ -31,8 +32,8 @@ function drag(label: string, to: { x: number; y: number }): void {
 }
 
 describe('GradientHandles', () => {
-  const linear: GradientFill = {
-    fill: 'linear-gradient',
+  const linear: GradientPaint = {
+    kind: 'linear-gradient',
     from: { x: 0, y: 0 },
     to: { x: 50, y: 0 },
     stops: STOPS,
@@ -45,6 +46,13 @@ describe('GradientHandles', () => {
     expect(screen.getByLabelText('Gradient end')).toHaveAttribute('cx', '110');
   });
 
+  it('sizes its handles from the handle-size token a mesh corner uses', () => {
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={() => {}} width={400} height={300} />);
+    for (const label of ['Gradient start', 'Gradient end']) {
+      expect(Number(screen.getByLabelText(label).getAttribute('r'))).toBe(handleHalf('--wzl-handle-size-lg'));
+    }
+  });
+
   it('maps a dragged endpoint back into gradient space', () => {
     const onChange = vi.fn();
     render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
@@ -52,7 +60,7 @@ describe('GradientHandles', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0][0]).toMatchObject({
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 100, y: 50 },
       units: 'local',
@@ -135,8 +143,8 @@ describe('GradientHandles', () => {
     expect(onChange.mock.calls[0][0]).toMatchObject({ from: { x: 20, y: 20 } });
   });
 
-  const radial: GradientFill = {
-    fill: 'radial-gradient', center: { x: 50, y: 50 }, radius: 25, stops: STOPS,
+  const radial: GradientPaint = {
+    kind: 'radial-gradient', center: { x: 50, y: 50 }, radius: 25, stops: STOPS,
   };
 
   it('derives a radial radius from the distance dragged, in gradient space', () => {
@@ -144,7 +152,7 @@ describe('GradientHandles', () => {
     render(<GradientHandles value={radial} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
     // Screen (230, 120) is local (110, 50) — 60 from the center at (50, 50).
     drag('Gradient radius', { x: 230, y: 120 });
-    expect(onChange.mock.calls[0][0]).toMatchObject({ fill: 'radial-gradient', radius: 60 });
+    expect(onChange.mock.calls[0][0]).toMatchObject({ kind: 'radial-gradient', radius: 60 });
   });
 
   it('never commits a zero radius, which would divide by zero in the shader', () => {
@@ -155,8 +163,8 @@ describe('GradientHandles', () => {
     expect(onChange.mock.calls[0][0].radius).toBeGreaterThan(0);
   });
 
-  const conic: GradientFill = {
-    fill: 'conic-gradient', center: { x: 50, y: 50 }, angle: 0, stops: STOPS,
+  const conic: GradientPaint = {
+    kind: 'conic-gradient', center: { x: 50, y: 50 }, angle: 0, stops: STOPS,
   };
 
   it('derives a conic angle from the arm direction', () => {

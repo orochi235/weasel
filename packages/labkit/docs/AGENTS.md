@@ -14,6 +14,7 @@ A map of the library so agents can find what they need quickly.
 | `<Lightbox>`, `useLightbox`, `useLightboxControl`, `<LightboxLayers>` | `src/lightbox/` |
 | The lab body and its shared surface's layers | `src/lab/LabSurface.tsx` |
 | Presentation mode: `usePresentation`, `?present`, the seed and its store, the refit and the play controls | `src/lab/presentation.tsx`, `src/lab/openLab.ts`, `src/lab/presentation.less`, `src/lab/PresentedTransport.tsx`, `src/trial/useViewPlacement.ts` |
+| A still for a poster (`<Lab still>`, `?still`), and the host page's `postMessage` play and pause | `src/lab/still.ts`, `src/lab/presentationMessages.ts`, `src/clock/transportHold.ts` |
 | `<Toolbar>` + subcomponents | `src/primitives/Toolbar.tsx` |
 | `<StatusBar>`, `<StatusBarItem>`, `<StatusBarSpacer>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |
@@ -166,7 +167,9 @@ plays once (`loop: false`) unless declared otherwise; `start` opens it elsewhere
   running: `seek` throws, and so does a negative rate. Reset still returns it
   to 0. Making such an instrument seekable is blits' job, from a history the
   client supplies — not a labkit checkpoint-and-replay. Scrubbing never
-  discards a recorded future.
+  discards a recorded future. The one place labkit runs such a clock itself is
+  a still at a time: with a `step` declared, `useStill` plays it forward that
+  many ms a frame, nothing shown, before the still says it is ready.
 - **`clock.mix`** is how a blits-driven instrument stays seekable: labkit makes
   one mix per trial and keeps its mix time at `elapsed`, `sync`ing it forward
   on a host clock of its own and `seek`ing it back, once a frame, before any
@@ -210,6 +213,20 @@ visible from the code:
   with `keys` and a 3 s `replay`, laid over the bottom of the stage. The
   presented trial is a size container, so `@container (width < 480px)` hides
   them in a narrow embed. `<Lab transport={false}>` leaves them off.
+- **The speed a pause comes back to belongs to the clock, not to a transport**
+  (`clock/transportHold.ts`), with whether anyone has worked the clock by
+  hand. Every `<TrialTransport>` over a clock and the message channel read the
+  one store, so a host page's play resumes at the speed the lab's own controls
+  were left on, and a host's message stops the replay as a click does.
+- **Messages are taken from the window around the lab or the lab's own, and
+  no other** (`lab/presentationMessages.ts`): a frame inside an instrument
+  cannot work the clock. State goes out to `'*'`, since a lab cannot know its
+  embedder's origin; it carries nothing but where the clock stands.
+- **A still pauses its clocks as they register, in a layout effect**
+  (`lab/still.ts`), which is before the frame loop's first sync, so a clock
+  declared playing never advances. It opens unstored whatever `storageKey`
+  says. `lk-lab--still-ready` waits for the fonts and then three frames; the
+  browser test fails at one.
 
 ## When to use what
 

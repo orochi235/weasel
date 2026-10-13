@@ -99,7 +99,8 @@ export interface ViewRegistry {
   readonly resolver: ViewResolver;
   /** The hosting surface, or `null` before one attaches. */
   surface(): SurfaceHandle | null;
-  attachSurface(handle: SurfaceHandle): void;
+  /** Returns a detach, which leaves a handle attached since alone. */
+  attachSurface(handle: SurfaceHandle): () => void;
 }
 
 const ViewRegistryContext = createContext<ViewRegistry | null>(null);
@@ -146,7 +147,10 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
         return () => { listenersRef.current.delete(fn); };
       },
       surface: () => surfaceRef.current,
-      attachSurface: (handle) => { surfaceRef.current = handle; },
+      attachSurface: (handle) => {
+        surfaceRef.current = handle;
+        return () => { if (surfaceRef.current === handle) surfaceRef.current = null; };
+      },
     };
   }, []);
 

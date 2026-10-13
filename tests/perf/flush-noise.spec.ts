@@ -1,23 +1,11 @@
 /**
- * Where the run-to-run spread in a per-flush figure came from, kept as the
- * probe that found it. Every phase draws the same frame of 512 one-rect
- * flushes (`rect-cmbreak`) beside a frame of one batch (`rect-plain`).
+ * Probes the run-to-run spread in a per-flush figure. Every phase draws the same
+ * frame of 512 one-rect flushes (`rect-cmbreak`) beside a frame of one batch
+ * (`rect-plain`).
  *
- * The answer, on teitou 2026-10-04: frames drawn back to back in one task slow
- * down after about eight, by 4–10x, in plateaus that move from round to round
- * and with occasional stalls of seconds. Frames drawn one per task do not. The
- * perf specs time one frame per task now — see `lib/frameTiming.ts`.
- *
- *   - `block`: the old method, a block of frames in one task, repeated.
- *   - `yield`: single frames, k per task between yields — the phase that shows
- *     the eight-frame budget.
- *   - `warm`: segments of frames after idle gaps of different lengths.
- *   - `split`: one frame at a time, `render()` and `finish()` timed apart.
- *   - `short`: median of short blocks, each ending in a finish.
- *   - `mech`: single frames with uploads, draws, or both dropped, and with a
- *     ring of 4096 slots.
- *   - `cpu`: the GPU process's command decode, wall against thread time.
- *   - `trace`, `stall`: Chromium traces of blocks, and of the slowest frames.
+ * Frames drawn back to back in one task slow down after about eight, by 4–10x,
+ * with occasional stalls of seconds. Frames drawn one per task do not, which is
+ * why the perf specs time one frame per task — see `lib/frameTiming.ts`.
  *
  * `WEASEL_NOISE_PHASES` picks phases (comma-separated). This page is not
  * cross-origin isolated, so single frames read at 100 us. This reports; it does
@@ -120,8 +108,14 @@ test('flush noise: which side of the command buffer the spread lives on', async 
 
   const header = await page.evaluate(async ({ root, n }) => {
     const { WeaselRenderer } = await import(
-      /* @vite-ignore */ `/weasel/@fs${root}/packages/core/src/renderer/index.ts`
+      /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
     );
+    // A solid's color matrix is mapped on the CPU and does not break its
+    // run; `rect-cmbreak` times the break, so this turns that off.
+    const { colorFolding } = await import(
+      /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/draw.ts`
+    );
+    colorFolding.enabled = false;
     const W = 800; const H = 600;
     const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
     const canvas = document.createElement('canvas');
@@ -135,7 +129,7 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     const leaf = (i: number) => ({
       kind: 'path',
       path: { kind: 'rect', x: px(i), y: py(i), width: 36, height: 36 },
-      fill: { fill: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' },
+      fill: { paint: { kind: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' } },
     });
     const cm = (i: number) => {
       const b = i % 2 === 0 ? 0.002 : 0.004;

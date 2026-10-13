@@ -1,22 +1,13 @@
 /**
- * Resize a text node's pose to fit its content. Pure helper — does not own
- * scene state. Call it whenever the text, style, or relevant axis changes,
- * and write the returned pose back through your adapter.
- *
- * Two modes:
+ * Resize a text node's pose to fit its content.
  *
  *   - `axis: 'height'` (default): keep `pose.width`, recompute `height` as
  *     the block height plus optional vertical padding — wrapped at the width
- *     inside the horizontal padding when the style declares `wrap`. The
- *     common case for column-layout text — chat bubbles, sticky notes.
- *
+ *     inside the horizontal padding when the style declares `wrap`.
  *   - `axis: 'both'`: ignore wrapping; recompute both `width` (longest
  *     `\n`-split line) and `height` (line count × line height) plus padding.
- *     For badges and inline labels where the rect hugs the text on both
- *     axes. Newlines are still respected.
  *
- * `pose.x` / `pose.y` are preserved. The caller picks the anchor — if you
- * want a different growth direction (e.g. anchor bottom-right), adjust
+ * `pose.x` / `pose.y` are preserved; for a different growth direction, adjust
  * `x` / `y` after calling.
  */
 

@@ -39,11 +39,12 @@ export function ListLeaf({
       newEntry={() => item.default}
       renderEntry={(held, set, name, i) => {
         const entry = prefListEntry(pref, held);
+        const { item: drawn, ...conditions } = entryConditions(ctx, `${ctx.path}.${i}`, item, entry);
         return renderItem(
           {
             path: `${ctx.path}.${i}`,
             ...(ctx.fields ? { fields: ctx.fields } : {}),
-            pref: item,
+            pref: drawn,
             value: entry,
             mixed: false,
             unset: entry === undefined,
@@ -52,7 +53,7 @@ export function ListLeaf({
             update: (fn) => set(fn(entry)),
             valueAt: ctx.valueAt,
             selectionKey: ctx.selectionKey,
-            ...entryConditions(ctx, `${ctx.path}.${i}`),
+            ...conditions,
           },
           name,
         );

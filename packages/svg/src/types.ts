@@ -1,44 +1,31 @@
 /**
- * Public types for `@weasel-js/svg`. The package exposes a flat,
- * discriminated-union node model (`SvgNode`) that mirrors the SVG element
- * tree but uses weasel-native leaf data (`Path`, `FillStyle`) for geometry and
- * paint.
- *
- * Parsing collapses every `transform="..."` onto its descendants' geometry,
- * so the `SvgNode` tree returned from `parseSvg` never has a non-identity
- * group transform. Consumers may still construct groups with explicit
- * transforms before serializing, in which case the serializer emits a
- * single `matrix(a b c d e f)` on the `<g>`.
+ * Public types for `@weasel-js/svg`: a node model (`SvgNode`) that mirrors
+ * the SVG element tree but uses weasel-native leaf data (`Path`, `Paint`)
+ * for geometry and paint.
  */
 
 import { identity, type Mat3 } from '@weasel-js/geom';
 import type { SvgMediaEnvironment } from './media';
 import type {
-  Path, FillStyle, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
+  Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
+  Fill,
 } from '@weasel-js/core';
 
 /**
- * Opaque pass-through bag for namespaced XML content.
+ * Opaque pass-through bag for namespaced XML content. The package does not
+ * interpret it; attributes and child elements in a *declared* XML namespace
+ * round-trip losslessly through parse → serialize.
  *
- * weasel-svg does not interpret the contents — it only ensures that any
- * attributes or child elements in a *declared* XML namespace round-trip
- * losslessly through parse → serialize. Consumers (e.g. an app-specific
- * bridge layer) hang their domain semantics off this structure.
- *
- * Keyed by namespace prefix (the prefix is a write-time choice; the URI
- * is the canonical identifier and is supplied via `ParseOptions.namespaces`
- * / `SerializeOptions.namespaces`).
+ * Keyed by namespace prefix. The URI is the canonical identifier and is
+ * supplied via `ParseOptions.namespaces` / `SerializeOptions.namespaces`.
  */
 export interface NamespaceMeta {
   [prefix: string]: {
     /** Local-name → string-value map for attributes in this namespace. */
     attrs?: Record<string, string>;
-    /**
-     * Child elements in this namespace, keyed by local name. Each entry
-     * is an array because a namespace can host multiple sibling elements
-     * with the same tag (e.g. `<wd:layer/><wd:layer/>`).
-     */
+    /** Child elements in this namespace, keyed by local name. An array
+     *  because siblings can share a tag. */
     elements?: Record<string, NamespacedElement[]>;
   };
 }
@@ -55,38 +42,32 @@ export interface NamespacedElement {
 
 /**
  * 2x3 affine matrix in SVG's `matrix(a b c d e f)` order, mapping
- * `[x', y'] = [a*x + c*y + e, b*x + d*y + f]`.
- *
- * The same order the kernel's affine tier uses, so this is that type under
- * the name the SVG spec gives it — not a parallel one. An `SvgGroupNode`'s
- * transform and a geom `Mat3` are interchangeable without a conversion.
+ * `[x', y'] = [a*x + c*y + e, b*x + d*y + f]`. It is geom's `Mat3`, so the
+ * two are interchangeable without a conversion.
  */
 export type Matrix = Mat3;
 
-/** Re-exported so this package's own stroke widths are namable beside the
- *  rest of the SVG model. It is core's type; there is no second one. */
+/** Core's type, re-exported. */
 export type { ScreenLength };
 
-/** Identity matrix — useful as a default in tests / constructors. */
+/** The identity matrix. */
 export const IDENTITY_MATRIX: Matrix = identity();
 
 /**
- * FillStyle description in the SVG sense — either explicit `none`, a solid
- * color, or a reference to a weasel-native gradient `FillStyle`. Solid colors
- * are normalized to `#rrggbb` strings; opacity is carried separately so
- * `fill-opacity` and `stroke-opacity` round-trip cleanly.
+ * A paint in the SVG sense: explicit `none`, a solid color, or a weasel-native
+ * gradient `Paint`. Solid colors are normalized to `#rrggbb` strings, with
+ * opacity carried separately.
  */
 export type SvgPaint =
   | { kind: 'none' }
   | { kind: 'solid'; color: string; opacity?: number }
-  | { kind: 'gradient'; paint: FillStyle };
+  | { kind: 'gradient'; paint: Paint };
 
 /** Stroke description: a paint plus structural line parameters. */
 export interface SvgStroke {
   paint: SvgPaint;
   /** World units, or `{ px }` for a width that holds its rendered thickness
-   *  however the document is scaled — SVG's `vector-effect="non-scaling-stroke"`.
-   *  Literally the kit's own unit, not a second spelling of it. */
+   *  however the document is scaled — SVG's `vector-effect="non-scaling-stroke"`. */
   width: ScreenLength;
   opacity?: number;
   /** `stroke-linecap`. Default per SVG spec is `'butt'`. */
@@ -114,10 +95,8 @@ export interface SvgStroke {
 }
 
 /**
- * Leaf node: a path geometry plus fill/stroke. All other v1 shapes
- * (`<rect>`, `<ellipse>`, etc.) are lowered to this representation on
- * parse — `<rect>` uses weasel's `RectPath` fast-path subtype when
- * possible, everything else becomes a `PolygonPath`.
+ * Leaf node: a path geometry plus fill/stroke. Other shapes (`<rect>`,
+ * `<ellipse>`, etc.) are lowered to this on parse.
  */
 export interface SvgPathNode {
   kind: 'path';
@@ -130,15 +109,18 @@ export interface SvgPathNode {
    *  center of the underlying `path` geometry. Emitted as SVG
    *  `transform="rotate(angleDegrees cx cy)"`. */
   rotation?: number;
+  /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
+   *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
+   *  back as `display="none"`. */
+  hidden?: boolean;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
 
 /**
- * Group node: an SVG `<g>`. On parse, `transform` is always omitted (any
- * `transform` attribute is collapsed onto descendants' geometry). On
- * serialize, a non-identity `transform` is emitted as
- * `matrix(a b c d e f)`.
+ * Group node: an SVG `<g>`. Parsing collapses any `transform` attribute onto
+ * the descendants' geometry, so a parsed group never has one. On serialize, a
+ * non-identity `transform` is emitted as `matrix(a b c d e f)`.
  */
 export interface SvgGroupNode {
   kind: 'group';
@@ -151,22 +133,22 @@ export interface SvgGroupNode {
    *  unions them and a `Path` holds one outline. */
   clip?: Path;
   opacity?: number;
+  /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
+   *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
+   *  back as `display="none"`. */
+  hidden?: boolean;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
 
 /**
- * Text leaf node. Mirrors the kit's `TextPose` shape — a bounding box plus
- * text content, optional rich-text `runs` (per-range styling), and an
- * optional `TextStyle` for the node-wide defaults.
+ * Text leaf node: a bounding box plus text content, optional per-range
+ * `runs`, and an optional `TextStyle` for the node-wide defaults.
  *
- * Note on SVG text geometry: native `<text>` flows from a baseline; it
- * doesn't have width/height attributes. The serializer emits
- * `dominant-baseline="text-before-edge"` so `y` is the top of the text
- * box, plus `data-weasel-width` / `data-weasel-height` so weasel's
- * explicit box dimensions round-trip losslessly. External SVG text
- * (lacking the data-* attrs) imports with the width the kit's text layout
- * measures — an em-based estimate when no registered font can — and
+ * Native `<text>` has no width or height, so the serializer writes the box
+ * as `data-weasel-width` / `data-weasel-height`. External SVG text, lacking
+ * them, imports with the width the kit's text layout measures — an em-based
+ * estimate when no registered font can — and
  * `height = fontSize * lineHeight * (lineCount || 1)`.
  *
  * `x` here is always the box's left edge. In the SVG it is the
@@ -180,24 +162,23 @@ export interface SvgTextNode {
   height: number;
   /** Plain text. When `runs` is set, `runsToPlainText(runs)` must equal `text`. */
   text: string;
-  /** Optional per-range styling — same shape as `TextPose.runs`. */
+  /** Per-range styling. */
   runs?: StyledRun[];
-  /** Node-wide typography. Defaults applied at render time via `resolveTextStyle`. */
+  /** Node-wide typography. */
   style?: TextStyle;
   /** Where the laid-out text sits inside the box — `kit:text`'s
    *  `data.verticalAlign`. SVG text has no box to align in, so this rides in
    *  `data-weasel-vertical-align` and other readers draw the text top-aligned. */
   verticalAlign?: TextVerticalAlign;
   /**
-   * Node-wide glyph paint, the `FillStyle` / `Stroke` a kit text node holds
-   * in `data.fill` / `data.stroke`. Not `SvgPaint`, which is the path
-   * nodes' shape — a text paint reaches the renderer through the runs, and
-   * `StyledRun.fill` / `.stroke` override these per range.
+   * Node-wide glyph paint, as the kit's `Fill` / `Stroke` rather than
+   * the path nodes' `SvgPaint`. `StyledRun.fill` / `.stroke` override these
+   * per range.
    *
    * `null` is SVG's `fill="none"`: outline-only text, painted by its stroke
    * alone. Absent takes the default black.
    */
-  fill?: FillStyle | null;
+  fill?: Fill | null;
   stroke?: Stroke;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
@@ -210,6 +191,10 @@ export interface SvgTextNode {
    *  With one, the element is written with its whole frame as a
    *  `transform="matrix(...)"`. */
   transform?: PoseLinear;
+  /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
+   *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
+   *  back as `display="none"`. */
+  hidden?: boolean;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -217,16 +202,14 @@ export interface SvgTextNode {
 /**
  * Raster-image leaf — an SVG `<image>`. `href` is the element's `href` (or
  * legacy `xlink:href`) verbatim: an external URL or a `data:` URI. The
- * package neither fetches nor decodes it, so an external URL round-trips as
- * a reference and only resolves when something downstream loads it.
+ * package neither fetches nor decodes it.
  *
  * SVG's `preserveAspectRatio` is not modeled; the box is taken literally.
  *
  * With a `source` rect or a flip, the element is written as a `<g
  * data-weasel-image>` holding a nested `<svg>` viewport at the box, whose
  * `viewBox` is the source window over a unit-square `<image>` — plain SVG 1.1,
- * which any reader crops and mirrors the same way, and which `parseSvg` reads
- * back as one image node.
+ * which `parseSvg` reads back as one image node.
  */
 export interface SvgImageNode {
   kind: 'image';
@@ -255,21 +238,24 @@ export interface SvgImageNode {
    *  With one, the element is written with its whole frame as a
    *  `transform="matrix(...)"`. */
   transform?: PoseLinear;
+  /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
+   *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
+   *  back as `display="none"`. */
+  hidden?: boolean;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
 
-/** Discriminated-union node — the leaf of the public tree. */
+/** Any node of a parsed SVG tree. */
 export type SvgNode = SvgPathNode | SvgGroupNode | SvgTextNode | SvgImageNode;
 
 /** Options for {@link parseSvg}. */
 export interface ParseOptions {
   /**
    * Map of prefix → URI for XML namespaces the caller wants surfaced.
-   * Attributes / child elements in any declared namespace are collected
+   * Attributes and child elements in a declared namespace are collected
    * into `SvgNode.meta` (per element) or `ParseResult.documentMeta` (root).
-   * Undeclared namespaces are preserved in the DOM but not promoted into
-   * the structured `meta` bag; they are silently dropped at serialize time.
+   * Content in an undeclared namespace is dropped.
    */
   namespaces?: Record<string, string>;
   /**
@@ -280,6 +266,12 @@ export interface ParseOptions {
    * those defaults.
    */
   media?: Partial<SvgMediaEnvironment>;
+  /**
+   * Keep `display="none"` and `visibility="hidden"` content, each node marked
+   * `hidden`, so a file's hidden layers survive the import. By default it is
+   * left out, as a renderer leaves it out.
+   */
+  keepHidden?: boolean;
 }
 
 /** Output of {@link parseSvg}. */
@@ -287,11 +279,7 @@ export interface ParseResult {
   nodes: SvgNode[];
   /** Non-fatal notices (unsupported elements, unrecognized attributes). */
   warnings: string[];
-  /**
-   * Opaque per-document bag for declared namespaces. Holds root-level
-   * namespaced attributes (`documentMeta.<prefix>.attrs`) and namespaced
-   * root children (`documentMeta.<prefix>.elements`).
-   */
+  /** The root's namespaced attributes and children, for declared namespaces. */
   documentMeta?: NamespaceMeta;
   /** Root `viewBox` attribute, parsed from `"x y width height"`. */
   viewBox?: { x: number; y: number; width: number; height: number };
@@ -312,10 +300,7 @@ export interface ParseResult {
 
 /** Options for {@link serializeSvg}. */
 export interface SerializeOptions {
-  /**
-   * Override the root `viewBox`. When omitted, the serializer computes
-   * a tight bounding box from the supplied nodes.
-   */
+  /** The root `viewBox`. Default: a tight bounding box around the nodes. */
   viewBox?: { x: number; y: number; width: number; height: number };
   /**
    * Called for what the document cannot carry the way weasel draws it: a
@@ -329,24 +314,18 @@ export interface SerializeOptions {
   width?: number;
   /** Emit `height="..."` on the root `<svg>`. */
   height?: number;
-  /**
-   * Emit `<title>...</title>` as the first child of the root `<svg>`. The
-   * value is XML-escaped on output. Empty strings are skipped.
-   */
+  /** Emit `<title>` as the first child of the root `<svg>`. Empty strings are skipped. */
   title?: string;
   /**
-   * Map of prefix → URI for XML namespaces to declare on the root
-   * `<svg>`. The serializer reads `documentMeta[prefix]` and
-   * `node.meta[prefix]` to write the actual attributes and elements.
+   * Map of prefix → URI for XML namespaces to declare on the root `<svg>`.
+   * Only `documentMeta` and `node.meta` entries under a declared prefix are written.
    */
   namespaces?: Record<string, string>;
   /**
-   * Opaque per-document namespaced extras. Each `<prefix>.attrs` becomes
-   * `<prefix>:<name>="..."` attributes on the root `<svg>`. Each
-   * `<prefix>.elements[localName]` becomes `<prefix>:<localName>...>`
-   * children placed immediately before any geometry.
+   * Per-document namespaced extras: `attrs` go on the root `<svg>`, and
+   * `elements` become children placed immediately before any geometry.
    */
   documentMeta?: NamespaceMeta;
-  /** Pretty-print with newlines + indentation. Default `false`. */
   pretty?: boolean;
+
 }

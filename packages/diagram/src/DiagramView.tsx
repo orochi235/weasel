@@ -7,7 +7,7 @@ import {
   useScene,
   useSelection,
   WeaselProvider,
-  type FillStyle,
+  type Paint,
   type RectPose,
   type SceneCanvasApi,
   type View,
@@ -79,7 +79,7 @@ export interface DiagramViewProps {
    *  Default 16. */
   fitPadding?: number;
   /** What the canvas paints behind the diagram. Unset, it is transparent. */
-  background?: FillStyle;
+  background?: Paint;
   /** The view, controlled. Set it and the initial fit is skipped; pair it
    *  with `onViewChange` or panning does nothing. */
   view?: View;

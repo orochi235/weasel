@@ -1,24 +1,14 @@
 /**
- * Pose rotation helpers — extracted from `SceneCanvas` so the kit can apply
- * the auto-rotation wrap around EVERY per-node `drawOne` (consumer-supplied
- * or default), not only around the default painter's output.
- *
- * Without this, consumers who supply a custom `drawOne` get no rotation
- * visualization even though selection chrome (which reads `pose.rotation`
- * directly) does rotate — the rect sits still while its chrome spins.
- *
- * `wrapWithPoseRotation` is applied by `wrapNodeOutput` in both scene walks —
- * `buildSceneLayer` (main canvas) and `buildSceneViewCommands` (detached
- * renders) — and directly by `usePreviewGhostLayer.buildSubtree` (in-flight
- * preview), so every code path produces rotated geometry uniformly.
+ * Pose rotation helpers. The kit applies the rotation wrap around EVERY
+ * per-node `drawOne` (consumer-supplied or default), so a custom painter's
+ * output turns with its selection chrome.
  */
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { poseFrameOf } from '@weasel-js/geom';
 import { rotateAboutPoint, mat3, type GlMat3 } from '@weasel-js/geom';
 
 /** Rotation by `rotation` about `(cx, cy)` as the render-tree's column-major
- *  3×3 affine. Composes on the kernel's `rotateAboutPoint` (single owner of the
- *  rotate-about-point math); this only reshapes 6→9 for the WebGL upload. */
+ *  3×3 affine. */
 export function rotationMatrixAbout(cx: number, cy: number, rotation: number): GlMat3 {
   return mat3.fromAffine(rotateAboutPoint(cx, cy, rotation));
 }
@@ -33,13 +23,8 @@ export function rotateAroundAABBCenter(
 
 /** Wrap a per-node draw-command list in a group carrying the pose's frame
  *  (`poseFrameOf`): its `rotation`, its `transform`, or both, about the AABB
- *  center, matching the rotation-handle math, `pathInWorld`, and picking so
- *  chrome and geometry stay aligned.
- *
- *  No-ops when `cmds` is empty, when the pose has neither field, or when any
- *  of the AABB fields are missing (the wrap requires a center to turn about).
- *  Painters / consumers that need different semantics (e.g. pivot at origin)
- *  should still wrap themselves. */
+ *  center. No-ops when `cmds` is empty, when the pose has neither field, or
+ *  when any of the AABB fields are missing. */
 export function wrapWithPoseRotation(
   cmds: DrawCommand[],
   pose: unknown,

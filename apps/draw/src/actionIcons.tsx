@@ -276,3 +276,22 @@ export function StrokeIcon() {
   );
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Input recording — the ring and the triangle of a tape deck.
+// ──────────────────────────────────────────────────────────────────────────
+
+export function RecordIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <circle cx="10" cy="10" r="5" />
+    </svg>
+  );
+}
+
+export function PlayRecordingIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M7 5 L15 10 L7 15 Z" strokeLinejoin="round" />
+    </svg>
+  );
+}

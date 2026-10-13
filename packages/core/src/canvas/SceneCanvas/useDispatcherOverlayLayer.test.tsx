@@ -11,13 +11,10 @@ import type {
   DrawCommand,
   ImageDrawCommand,
   PathDrawCommand,
-} from '../../renderer';
+} from '@weasel-js/renderer';
 import { polylineFromPoints, PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
-import {
-  __setImageLoaderForTests,
-  _resetImageCacheForTests,
-  getImageBitmap,
-} from 'renderer/images/imageCache';
+import { getImageBitmap } from '@weasel-js/renderer';
+import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';

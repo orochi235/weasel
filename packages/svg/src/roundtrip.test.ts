@@ -307,7 +307,7 @@ describe('round-trip', () => {
     expect(t.style?.fontWeight).toBe(700);
     expect(t.style?.fontStyle).toBe('italic');
     expect(t.style?.align).toBe('center');
-    expect(t.fill).toEqual({ fill: 'solid', color: '#b03030' });
+    expect(t.fill).toEqual({ paint: { kind: 'solid', color: '#b03030' } });
     expect(t.style?.letterSpacing).toBe(1.5);
     expect(t.style?.underline).toBe(true);
     expect(t.style?.strikethrough).toBe(true);
@@ -352,7 +352,7 @@ describe('round-trip', () => {
     if (t.kind !== 'text') throw new Error('expected text');
 
     expect(t.stroke).toEqual({
-      paint: { fill: 'solid', color: '#c0392b' },
+      paint: { kind: 'solid', color: '#c0392b' },
       width: 3,
       join: 'round',
       cap: 'round',
@@ -362,7 +362,7 @@ describe('round-trip', () => {
     // The run overrides colour and width and inherits nothing else — a run's
     // stroke replaces the node's rather than merging with it.
     expect(t.runs?.[1].stroke).toEqual({
-      paint: { fill: 'solid', color: '#1e90ff' },
+      paint: { kind: 'solid', color: '#1e90ff' },
       width: 1.5,
     });
 
@@ -391,7 +391,7 @@ describe('round-trip', () => {
       text: 'grad',
       stroke: {
         paint: {
-          fill: 'linear-gradient',
+          kind: 'linear-gradient',
           from: { x: 0, y: 0 },
           to: { x: 1, y: 0 },
           stops: [
@@ -801,7 +801,7 @@ describe('letter-spacing / text-decoration', () => {
     const node = {
       id: 't1', kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'ab',
       runs: [{ text: 'a', fill: null }, { text: 'b' }],
-      fill: { fill: 'solid', color: '#ff0000' },
+      fill: { kind: 'solid', color: '#ff0000' },
     } as unknown as SvgNode;
     const out = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
     expect(out).toContain('<tspan fill="none">a</tspan>');

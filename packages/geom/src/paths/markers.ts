@@ -1,16 +1,9 @@
 /**
  * Ergonomic builders for tiny shape paths used by chrome / overlays / markers.
- *
- * These don't expand the `DrawCommand` union — they all return `PolygonPath`,
- * which `PathDrawCommand.path` already accepts. The wins are:
- *   - One place owns the math (`circlePath`'s segment loop, `squarePath`'s
- *     corner unrolling), so consumers don't reinvent it.
- *   - Default segment counts can be tuned in one place if "circles look
- *     facety" feedback ever surfaces.
+ * They all return `PolygonPath`.
  *
  * Not appropriate for *user-drawn* shapes (those have a pose and live in the
- * scene). Use these for selection chrome, anchor markers, rubber-band rects,
- * and similar transient/decorative geometry.
+ * scene).
  */
 
 import { rectToContour } from '../box';
@@ -20,8 +13,7 @@ import type { PolygonPath } from '../path';
 /**
  * N-segment polygon approximation of a circle. Default 32 segments → max
  * radial deviation of ≈0.005·r (≈0.05 px at r=10). Bump higher for large
- * filled circles where the facets become visible; the default is fine for
- * the handle-dot / anchor-dot scale we use everywhere.
+ * filled circles where the facets become visible.
  */
 export function circlePath(cx: number, cy: number, r: number, segments = 32): PolygonPath {
   const cmds = new Uint8Array(segments + 1);
@@ -64,9 +56,8 @@ export function rectMarkerPath(x: number, y: number, width: number, height: numb
 
 /**
  * Axis-aligned rounded rectangle. Top-left at (x, y); `r` is clamped to half
- * the shorter side. Each corner is `cornerSamples` line segments, matching
- * `circlePath`'s polygonal approximation — the default 8 gives the same
- * angular resolution as `circlePath`'s 32.
+ * the shorter side. Each corner is `cornerSamples` line segments — the
+ * default 8 gives the same angular resolution as `circlePath`'s 32.
  */
 export function roundRectPath(
   x: number,

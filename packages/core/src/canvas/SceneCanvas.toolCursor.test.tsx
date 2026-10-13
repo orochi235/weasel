@@ -4,7 +4,7 @@ import { render, cleanup } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { defineTool } from '../tools/overlayBinding';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { color: string };
 type L = 'main';

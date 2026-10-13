@@ -93,7 +93,7 @@ export function CanvasViewDemo() {
               drawOne: (n, p): DrawCommand[] => [{
                 kind: 'path',
                 path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: n.data.color },
+                fill: { paint: { color: n.data.color } },
               }],
             },
           }}

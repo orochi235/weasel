@@ -1,11 +1,6 @@
 /**
- * ActiveToolContext — runtime selection state for tools.
- *
- * Holds the currently active tool id and a hotkey stack (tools held active
- * temporarily, e.g. space-for-hand). Read by the gesture dispatcher to
- * determine which tool's bindings are in scope; written by tool-switching
- * actions (`tool.activate`) and offhand hotkey actions (`tool.offhand`),
- * both parametric on `params.toolId`.
+ * ActiveToolContext — the currently active tool id and a hotkey stack (tools
+ * held active temporarily, e.g. space-for-hand).
  *
  * The state hangs on the same scope tree as the actions and dep registries:
  * every canvas's input scope owns a tool of its own unless it joins a yoke,
@@ -158,18 +153,15 @@ export function useActiveToolContext(): ActiveToolContextValue {
 
 /**
  * Like `useActiveToolContext`, but returns `null` when no
- * `<ActiveToolContextProvider>` is in scope instead of throwing. Used by
- * `useStandardActions` to preserve its silent-no-op contract when no provider
- * is present.
+ * `<ActiveToolContextProvider>` is in scope instead of throwing.
  */
 export function useOptionalActiveToolContext(): ActiveToolContextValue | null {
   return useNodeValue(useContext(ActiveToolContext));
 }
 
 /**
- * Conditional `<ActiveToolContextProvider>` wrapper. Mounts a provider only
- * when no parent provider is in scope — otherwise renders children unwrapped
- * so `<WeaselProvider>` defers to the host's existing scope.
+ * Mounts an `<ActiveToolContextProvider>` only when no parent provider is in
+ * scope; otherwise renders children unwrapped.
  */
 export function ActiveToolContextProviderIfRoot({
   children,

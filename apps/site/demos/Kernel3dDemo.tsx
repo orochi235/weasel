@@ -107,7 +107,7 @@ function solidsLayer(camera: Camera3d, scene: Scene3d<Solid, 'solids'>): RenderL
           out.push({
             kind: 'path',
             path: polygon(pts as { x: number; y: number }[], true),
-            fill: solid(hex(data.rgb, 0.45 + 0.65 * lit)),
+            fill: { paint: solid(hex(data.rgb, 0.45 + 0.65 * lit)) },
             stroke: { paint: EDGE, width: { px: 1 } },
           });
         }

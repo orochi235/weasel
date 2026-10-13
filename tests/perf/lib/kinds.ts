@@ -1,14 +1,12 @@
 /**
  * One draw command per renderer command kind, shared by the perf specs.
  *
- * Imported *by the page*, not by the Node side of a spec: the specs already
- * pull the renderer over vite's `@fs` route, and this rides the same one. It
- * therefore imports nothing — a bare-specifier import here would need the
- * package's tsconfig aliases, which the browser does not have.
+ * Imported *by the page* over vite's `@fs` route, so it imports nothing: a
+ * bare-specifier import here would need the package's tsconfig aliases, which
+ * the browser does not have.
  *
  * Every builder takes an index and returns a leaf at a position derived from
- * it, so the same index means the same place whatever the kind, and a frame
- * that mixes kinds spreads them the way a frame of one kind does.
+ * it, so the same index means the same place whatever the kind.
  */
 
 const PATH_M = 0;
@@ -31,9 +29,9 @@ export interface KindResources {
 export type LeafBuilder = (i: number) => unknown;
 
 /**
- * Every kind the draw loop dispatches differently. `solid`, `gradient`, `image`
+ * Every kind the draw loop dispatches differently. `solid`, `gradient`, `image`,
  * and `text` stage into one batch; the rest each flush it and bind their own
- * program, texture or stencil state, which is what makes a boundary cost anything.
+ * program, texture, or stencil state.
  */
 export const KIND_IDS = [
   'solid', 'gradient', 'pattern', 'image', 'text', 'shader', 'vcolor', 'stencil', 'clip',
@@ -50,14 +48,14 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
   const py = (i: number) => 20 + ((i * 53) % (H - 160));
 
   const solidPaint = (i: number) => ({
-    fill: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633',
+    kind: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633',
   });
 
   const rectPath = (i: number, size = 36) => ({
     kind: 'rect' as const, x: px(i), y: py(i), width: size, height: size,
   });
 
-  const solid = (i: number) => ({ kind: 'path', path: rectPath(i), fill: solidPaint(i) });
+  const solid = (i: number) => ({ kind: 'path', path: rectPath(i), fill: { paint: solidPaint(i) } });
 
   const gradient = (i: number) => {
     const x = px(i);
@@ -68,9 +66,11 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
       // Anchored to the rect: a gradient whose ramp falls outside the shape it
       // fills is a solid fill wearing a gradient's cost profile.
       fill: {
-        fill: 'linear-gradient' as const,
-        from: { x, y }, to: { x: x + 36, y: y + 36 },
-        stops: [{ offset: 0, color: '#204080' }, { offset: 1, color: '#f0b040' }],
+        paint: {
+          kind: 'linear-gradient' as const,
+          from: { x, y }, to: { x: x + 36, y: y + 36 },
+          stops: [{ offset: 0, color: '#204080' }, { offset: 1, color: '#f0b040' }],
+        },
       },
     };
   };
@@ -78,7 +78,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
   const patternFill = (i: number) => ({
     kind: 'path',
     path: rectPath(i),
-    fill: { fill: 'pattern' as const, pattern, origin: { x: i % 8, y: i % 8 } },
+    fill: { paint: { kind: 'texture' as const, texture: pattern, origin: { x: i % 8, y: i % 8 } } },
   });
 
   const image = (i: number) => ({
@@ -98,11 +98,11 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     runs: [{
       text: LABELS[i % LABELS.length],
       fontFamily: 'sans-serif', fontSize: 16, fontWeight: 400, fontStyle: 'normal',
-      fill: { fill: 'solid', color: i % 2 ? '#222222' : '#0b5' },
+      fill: { paint: { kind: 'solid', color: i % 2 ? '#222222' : '#0b5' } },
       letterSpacing: 0, underline: false, strikethrough: false, baselineShift: 0,
     }],
     align: 'left',
-    style: { fontFamily: 'sans-serif', fontSize: 16, fill: { color: '#222222' } },
+    style: { fontFamily: 'sans-serif', fontSize: 16, fill: { paint: { color: '#222222' } } },
   });
 
   const shaderPanel = (i: number) => ({
@@ -124,7 +124,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     return {
       kind: 'path',
       path: rectPath(i),
-      fill: { fill: 'solid' as const, color: '#ffffff' },
+      fill: { paint: { kind: 'solid' as const, color: '#ffffff' } },
       vertexColors: colors,
     };
   };
@@ -149,7 +149,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
         coords: c,
         fillRule: 'evenodd',
       },
-      fill: solidPaint(i),
+      fill: { paint: solidPaint(i) },
     };
   };
 

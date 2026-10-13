@@ -5,11 +5,8 @@
  * cannot see the other half: `wrapNodeOutput` turns the painter's output about
  * that pose's center, so a composed pose that is right in the walk and wrong in
  * the wrap produces correct numbers and a visibly wrong picture. This reads the
- * geometry the renderer would actually draw.
- *
- * A framebuffer check would be better still and needs a browser; this is the
- * closest a unit test gets, and it is a proxy — see `tests/visual/` for the
- * real thing.
+ * geometry the renderer would actually draw; it is a proxy for a framebuffer
+ * check, which needs a browser.
  */
 import { describe, expect, it } from 'vitest';
 import { buildSceneViewCommands } from './sceneViewRender';
@@ -21,9 +18,9 @@ import {
   type FrameFixtureData,
   type FrameFixtureLayer,
 } from 'core/scene/frameFixture';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import type { RectPose } from 'core/scene/types';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -37,7 +34,7 @@ function drawnCorners(cmds: readonly DrawCommand[], wanted: string): [number, nu
       if (cmd.kind === 'group') {
         const own = cmd.transform as unknown as number[] | undefined;
         walk(cmd.children, own ? (m ? (mat3.multiply(m as never, own as never) as unknown as number[]) : own) : m);
-      } else if (cmd.kind === 'path' && cmd.path.kind === 'rect' && (cmd.fill as { color?: string } | undefined)?.color === wanted) {
+      } else if (cmd.kind === 'path' && cmd.path.kind === 'rect' && (cmd.fill?.paint as { color?: string } | undefined)?.color === wanted) {
         const { x, y, width, height } = cmd.path;
         for (const [px, py] of [[x, y], [x + width, y], [x + width, y + height], [x, y + height]]) {
           out.push(m ? (mat3.apply(m as never, px, py) as [number, number]) : [px, py]);
@@ -54,19 +51,18 @@ const drawPoseBox = (node: { id: string }, pose: RectPose): DrawCommand[] => [
   {
     kind: 'path',
     path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-    fill: { color: node.id },
+    fill: { paint: { color: node.id } },
   },
 ];
 
 function cornersFor(compose: boolean, id: string): [number, number][] {
-  const scene = makeFrameFixture();
+  const scene = compose
+    ? makeFrameFixture()
+    : makeFrameFixture(IDENTITY_POSE_COMPOSITION as PoseComposition<RectPose>);
   const cmds = buildSceneViewCommands<FrameFixtureData, FrameFixtureLayer, RectPose>(
     scene,
     VIEW,
     drawPoseBox as never,
-    undefined,
-    undefined,
-    compose ? RIGID_POSE_COMPOSITION : undefined,
   );
   return drawnCorners(cmds, id);
 }

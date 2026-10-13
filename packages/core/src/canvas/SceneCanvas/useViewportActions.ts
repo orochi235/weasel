@@ -1,19 +1,12 @@
 /**
- * `useViewportActions` — register the `viewport.pan`, `viewport.zoom` and
- * `viewport.pinchZoom` action descriptors from SceneCanvas's `viewport` prop.
+ * Registers the wheel pan, zoom, and pinch zoom actions from SceneCanvas's
+ * `viewport` prop.
  *
- * All three need the `view` dep that only SceneCanvas publishes via
- * `useViewDepSource`. `pan` and `zoom` live outside `KIT_STANDARD_DESCRIPTORS`
- * entirely and are registered here; `pinchZoom` is in that list (bare
- * `useStandardActions` consumers get it too), so this hook only re-registers a
- * clamp-configured one over it, or takes it away.
- *
- * Defaults: all three ON when omitted. Pass `pan: false` / `zoom: false` /
- * `pinchZoom: false` on the `viewport` prop to disable. Disabling mutes rather
- * than unregisters, so a sibling canvas sharing the registry keeps its own.
- *
- * Runs after `useStandardActions` in the same component, so the registry's
- * last-writer-wins ordering resolves the `pinchZoom` overlap.
+ * Wheel pan and zoom are registered only here. `pinchZoom` is also a kit
+ * standard action, so this hook re-registers a configured one over it, or
+ * mutes it — muting rather than unregistering, so a sibling canvas sharing the
+ * registry keeps its own. That overlap is why this must run after
+ * `useStandardActions`.
  */
 import { useEffect } from 'react';
 import { useActionsRegistry } from '@weasel-js/routing/react';
@@ -46,9 +39,8 @@ export function useViewportActions(args: {
   const reg = useActionsRegistry();
   const regRef = useLatest(reg);
 
-  // Serialize the object configs so the effect re-runs when their fields change
-  // (object identity isn't stable across renders for inline literals).
-  // JSON.stringify drops function-valued fields, so changing only
+  // Serialized so the effect re-runs when a config's fields change, not its
+  // identity. JSON.stringify drops function-valued fields, so changing only
   // `animate.easing` does not re-register — pass a stable easing.
   const panKey = typeof pan === 'object' ? JSON.stringify(pan) : String(pan);
   const zoomKey = typeof zoom === 'object' ? JSON.stringify(zoom) : String(zoom);

@@ -39,8 +39,11 @@ const external = (id: string) =>
 // not, so a lazy kind importing core's color math would load with any import
 // of core. The copy duplicates only stateless code, and must stay that way:
 // a second copy of a registry would register into nothing.
-const LAZY_KINDS = ['renderer/meshPaint/lazyKind'];
-const REGISTRY_STATE = /packages\/registry\/|renderer\/paintKinds\.|shaders\/registerProgram\./;
+const LAZY_KINDS = ['core/paint/meshKindLazy'];
+// Of the renderer's dist only `mesh.js` may be bundled: a shared chunk beside it
+// would be one the renderer's index also loads, registries included.
+const REGISTRY_STATE =
+  /packages\/registry\/|core\/paint\/paintKinds\.|packages\/renderer\/(src\/(paintKinds|shaders\/registerProgram)\.|dist\/(?!mesh\.))/;
 
 function selfContainedLazyKinds(): Plugin {
   return {

@@ -14,9 +14,10 @@ import {
   resolvePaletteColor,
   type ColorLiteral,
   type CommandStroke,
-  type FillStyle,
+  type Fill,
+  type Paint,
   type Palette,
-  type SolidFill,
+  type SolidPaint,
   type Stroke,
 } from '@weasel-js/paint';
 import { getAlpha01 } from './color';
@@ -58,13 +59,13 @@ export const GHOST_STROKE: string = cycleFill(0);
 
 /**
  * A solid paint from a color string — the authoring shorthand for the one
- * shape a node's `data.fill` (and a `Stroke.paint`) may take.
+ * shape a `Fill.paint` or a `Stroke.paint` may take.
  *
  * An alpha channel in `color` moves to `opacity`, because that is where every
  * paint kind carries its alpha; leaving it in the hex too would multiply the
  * two in the renderer.
  */
-export function solid(color: string): SolidFill {
+export function solid(color: string): SolidPaint {
   const a = getAlpha01(color);
   const rgb = color.length === 9 && color.startsWith('#') ? color.slice(0, 7) : color;
   return a === 1 ? { color: rgb } : { color: rgb, opacity: a };
@@ -72,18 +73,18 @@ export function solid(color: string): SolidFill {
 
 /** A solid stroke of `color` at `width` world units. Authoring shorthand for
  *  `{ paint: solid(color), width }`. */
-export function strokeOf(color: string, width = 1): CommandStroke & { paint: SolidFill } {
+export function strokeOf(color: string, width = 1): CommandStroke & { paint: SolidPaint } {
   return { paint: solid(color), width };
 }
 
 /** A stroke painted with `paint` at `width` world units — `strokeOf`'s sibling
  *  for a gradient or pattern, which has no color to pass. */
-export function strokeWith(paint: FillStyle, width = 1): Stroke {
+export function strokeWith(paint: Paint, width = 1): Stroke {
   return { paint, width };
 }
 
-/** The kit's default node paint — what a shape with no declared fill paints. */
-export const DEFAULT_SHAPE_FILL: FillStyle = { color: '#888' };
+/** The kit's default node fill — what a shape with no declared fill paints. */
+export const DEFAULT_SHAPE_FILL: Fill & { paint: Paint } = { paint: { color: '#888' } };
 
 /**
  * The 0..1 alpha a paint paints at.
@@ -91,12 +92,12 @@ export const DEFAULT_SHAPE_FILL: FillStyle = { color: '#888' };
  * Every paint kind carries its alpha in `opacity` — that is the one slot a
  * gradient or a pattern has, so it is the slot all of them use.
  */
-export function paintAlpha(paint: FillStyle | undefined): number {
+export function paintAlpha(paint: Paint | undefined): number {
   return paint?.opacity ?? 1;
 }
 
 /** `paint` painting at `alpha01` (clamped to 0..1). */
-export function paintWithAlpha(paint: FillStyle, alpha01: number): FillStyle {
+export function paintWithAlpha(paint: Paint, alpha01: number): Paint {
   return { ...paint, opacity: Math.max(0, Math.min(1, alpha01)) };
 }
 
@@ -108,7 +109,7 @@ export function paintWithAlpha(paint: FillStyle, alpha01: number): FillStyle {
  * a swatch means "paint this color". An alpha channel in `color` wins;
  * without one, the paint's existing opacity carries over.
  */
-export function paintWithColor(paint: FillStyle | undefined, color: string): FillStyle {
+export function paintWithColor(paint: Paint | undefined, color: string): Paint {
   const next = solid(color);
   const explicitAlpha = color.length === 9 && color.startsWith('#');
   if (explicitAlpha || paint === undefined) return next;

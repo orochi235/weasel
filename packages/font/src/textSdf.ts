@@ -2,22 +2,14 @@
  * The GLSL that turns an atlas sample into glyph coverage, and the constants
  * naming which kind of atlas a sample came from.
  *
- * Not a program: text has no program of its own any more. Glyphs stage into
- * the renderer's batch alongside solid geometry and image quads, and the batch
- * shader pastes this in — which is why what lives here is a snippet rather
- * than a vertex and fragment pair. The two channel layouts a glyph atlas can
- * have are the part that belongs to this package, so they stay here.
+ * Not a program: glyphs stage into the renderer's batch alongside solid
+ * geometry and image quads, and the batch shader pastes this in.
  *
- * MSDF channel layout: msdf-bmfont-xml writes R, G and B as independent
+ * MSDF channel layout: msdf-bmfont-xml writes R, G, and B as independent
  * signed-distance fields covering different edge directions, and the true
- * field is their median — which recovers a sharp outline while averaging out
- * single-channel aliasing. The runtime canvas bake writes one channel that
- * *is* the field. Both encode the edge at 0.5, which is what lets one
- * threshold serve them.
- *
- * The single-channel bake rounds corners away from its bake size, mildest near
- * it. `glyphRasterizer.ts` carries the measurements and the reason neither a
- * larger bake nor extra taps would improve the small-text end.
+ * field is their median. The runtime canvas bake writes one channel that *is*
+ * the field. Both encode the edge at 0.5, which is what lets one threshold
+ * serve them.
  */
 
 import type { FontStyle } from './fontStyle';
@@ -33,30 +25,24 @@ export const GLYPH_MODE_R8 = 2;
  * Glyph coverage from one atlas sample, as GLSL for a program to paste in.
  *
  * `mode` says which field the sample carries: `GLYPH_MODE_MSDF` takes the
- * median of R,G,B, `GLYPH_MODE_R8` reads `.r` alone. A caller whose fragment
- * is not a glyph at all still calls this and discards the result — see below.
+ * median of R,G,B, `GLYPH_MODE_R8` reads `.r` alone.
  *
- * The antialiasing band has to be one *screen* pixel wide, so it is measured
- * from how fast the atlas moves under the fragment: `fieldPerUv` is how far
- * the field runs per unit of texture coordinate on each axis (see
+ * The antialiasing band has to be one *screen* pixel wide: `fieldPerUv` is how
+ * far the field runs per unit of texture coordinate on each axis (see
  * `glyphFieldScale`), and the screen derivatives of `uv` turn that into field
- * units per screen pixel — one quantity folding in font size, zoom and DPR.
+ * units per screen pixel.
  *
- * Not `fwidth(field)`, which it was until 2026-09-29: that is the field's
- * slope only where the field is a straight ramp. Across a stem narrower than a
- * pixel — a 12px superscript's, minified 4x off the atlas — the two columns of
- * a 2x2 quad sample either side of the ridge at equal values, the derivative
- * reads flat, the band collapses to the floor, and the stem is thresholded
- * away. The derivative of `uv` is constant across a glyph quad, so it cannot
- * do that. Nor a constant band, which was 0.05 until 2026-07-29 and right at
- * one scale only. The `max()` floor keeps a degenerate derivative from
- * collapsing the band.
+ * Not `fwidth(field)`: that is the field's slope only where the field is a
+ * straight ramp. Across a stem narrower than a pixel the two columns of a 2x2
+ * quad sample either side of the ridge at equal values, the derivative reads
+ * flat, and the stem is thresholded away. The derivative of `uv` is constant
+ * across a glyph quad, so it cannot do that. Nor a constant band, which is
+ * right at one scale only.
  *
  * **Nothing here branches, and the caller must not branch around it.**
  * A derivative in non-uniform control flow is undefined, so it has to
- * be taken before anything selects on paint mode. That is why a merged program
- * runs the glyph math on fragments that are not glyphs, and it is why the two
- * fields are selected with a `mix` rather than an `if`.
+ * be taken before anything selects on paint mode. A merged program therefore
+ * runs the glyph math on fragments that are not glyphs and discards the result.
  *
  * `synthBold` shifts the threshold to thicken strokes where the resolver fell
  * back from a missing bold variant to the regular atlas.

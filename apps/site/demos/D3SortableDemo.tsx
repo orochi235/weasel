@@ -4,9 +4,9 @@ import {
   SceneCanvas,
   WeaselProvider,
   useScene,
-  useAnimator,
   easeInOutCubic,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 const W = 600, H = 400;
@@ -138,7 +138,7 @@ function D3SortableDemoInner() {
             drawOne: (n, p): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { fill: 'solid', color: n.data.color },
+              fill: { paint: { kind: 'solid', color: n.data.color } },
               stroke: { paint: { color: '#222' }, width: 1.5 },
             }],
           },

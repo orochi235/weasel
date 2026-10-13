@@ -23,10 +23,8 @@ import type { ActiveToolContextValue } from './interactions/actions/activeToolCo
  * keyed on.
  *
  * It declares one entry, `activeTool`, because the value and the action that
- * requires it (`tool.offhand`) are both routing's. Routing knows that an
- * action names its dependencies and that the registry resolves them at
- * invocation time; it does not know what a selection, a scene, or a viewport
- * is. Whoever supplies those merges them in:
+ * requires it (`tool.offhand`) are both routing's. Whoever supplies the rest
+ * merges them in:
  *
  * ```ts
  * declare module '@weasel-js/routing' {
@@ -35,12 +33,7 @@ import type { ActiveToolContextValue } from './interactions/actions/activeToolCo
  * ```
  *
  * `@weasel-js/core` merges the kit's own deps this way and re-exports
- * `DepSchema`, so a consumer adds its own against `'@weasel-js/core'` and
- * never has to know this module exists. The merge carries through the
- * re-export in both directions — `scripts/smoke-consumer-bundle.mjs` asserts
- * it against the published `.d.ts`, which is where it once broke: a
- * cross-module augmentation stops merging when `rollup-plugin-dts` flattens
- * both files into one chunk.
+ * `DepSchema`, so a consumer adds its own against `'@weasel-js/core'`.
  */
 export interface DepSchema {
   /** Currently active tool id + hotkey-hold stack. */
@@ -110,7 +103,7 @@ export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand'
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
 export {
-  pointerGestureId, recordModeSwitch, createDispatcher,
+  multiTouchGestureId, pointerGestureId, recordModeSwitch, createDispatcher,
 } from './interactions/dispatcher/dispatcher';
 export type {
   ModeSwitchLogEntry, TraceLogEntry, DispatcherContext, UiOngoingControl,
@@ -155,15 +148,15 @@ export { isTool } from './tools/types';
 
 // ─── route grammar reflection ─────────────────────────────────────────────
 export * from './tools/routing';
-export { reportRouteConflicts } from './tools/routing/reflection/conflicts';
+export { reportRouteConflicts, type ToolScopes } from './tools/routing/reflection/conflicts';
 
 // ─── input plumbing ───────────────────────────────────────────────────────
-export { activatesFocusedControl, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
+export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 export type { KeyBinding } from './interactions/keyHelpers';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
-  INGEST_STRING_MIMES, itemsFromFiles, itemsFromDataTransfer, itemsFromClipboardData,
+  INGEST_STRING_MIMES, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';

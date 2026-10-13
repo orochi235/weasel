@@ -8,9 +8,8 @@ import { act, render } from '@testing-library/react';
 import { StrictMode, type ReactElement } from 'react';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
-import { makeGLRecorder, type GLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { SceneViewCanvas } from './SceneViewCanvas';
-import { MinimapCanvas } from './MinimapCanvas';
 import { DrawCanvas } from './DrawCanvas';
 import { Canvas } from './Canvas';
 import { defaultDrawOne } from './defaultDrawOne';
@@ -72,21 +71,11 @@ describe('detached canvas renderer lifetime', () => {
     );
   });
 
-  it('<MinimapCanvas> deletes its programs, buffers and textures on unmount', () => {
-    expectFreedOnUnmount(
-      <MinimapCanvas
-        scene={makeScene()} mainView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
-        mainViewDims={{ width: 400, height: 300 }} onMainViewChange={() => {}}
-        width={100} height={100} drawOne={defaultDrawOne}
-      />,
-    );
-  });
-
   it('<DrawCanvas> deletes its programs, buffers and textures on unmount', () => {
     expectFreedOnUnmount(
       <DrawCanvas
         width={40} height={20}
-        draw={[{ kind: 'path', path: { kind: 'rect', x: 1, y: 2, width: 3, height: 4 }, fill: { fill: 'solid', color: '#f00' } }]}
+        draw={[{ kind: 'path', path: { kind: 'rect', x: 1, y: 2, width: 3, height: 4 }, fill: { paint: { kind: 'solid', color: '#f00' } } }]}
       />,
     );
   });

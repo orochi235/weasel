@@ -2,8 +2,10 @@ import { Icon, type IconProps } from './Icon';
 
 export { Icon, isFillable } from './Icon';
 export type { IconProps } from './Icon';
-export { ICON_FILLS, ICON_GROUPS, ICON_PATHS, MARK_ICONS } from './paths';
-export type { FillableIconName, IconName, MarkIconName } from './paths';
+export { ICON_GROUPS, MARK_ICONS } from './groups';
+export type { MarkIconName } from './groups';
+export { ICON_FILLS, ICON_PATHS } from './paths';
+export type { FillableIconName, IconName } from './paths';
 
 // Tool glyphs live in @weasel-js/core because core needs them for
 // `Tool.presentation.icon` defaults and cannot depend on this package.
@@ -91,6 +93,8 @@ export const PageIcon = (p: IconProps) => <Icon name="page" {...p} />;
 export const LockIcon = (p: IconProps) => <Icon name="lock" {...p} />;
 /** Unlock: an open padlock. */
 export const UnlockIcon = (p: IconProps) => <Icon name="unlock" {...p} />;
+/** Bolt: a lightning bolt, for what is worked out and not set by hand. */
+export const BoltIcon = (p: IconProps) => <Icon name="bolt" {...p} />;
 /** Visible: an eye. */
 export const VisibleIcon = (p: IconProps) => <Icon name="visible" {...p} />;
 /** Hidden: an eye struck through. */

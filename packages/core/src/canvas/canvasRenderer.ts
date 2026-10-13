@@ -1,20 +1,16 @@
 /**
- * The one renderer lifetime in core. Every on-screen surface — `<Canvas>`,
- * `<SceneViewCanvas>`, `<MinimapCanvas>`, `<DrawCanvas>` — holds its
- * `WeaselRenderer` through a `leaseCanvasRenderer` lease (the detached ones via
- * `useCanvasRenderer`): created on first paint, resized when the surface's
- * size or density changes, rebuilt when the surface moves to another element,
- * and freed on release.
+ * The one renderer lifetime in core. Every on-screen surface holds its
+ * `WeaselRenderer` through a `leaseCanvasRenderer` lease.
  *
  * A lease holds its own renderer, so several can share one element: each
  * tenant painting a `tile` of a shared buffer gets a renderer of its own on
  * the element's one context. Release frees only what that renderer created;
  * the context itself is never lost.
  */
-import { WeaselRenderer, type RenderOptions } from '../renderer/WeaselRenderer';
+import { WeaselRenderer, type RenderOptions } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
-import type { ShaderProgramHandle } from '../renderer/shaders/registerProgram';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { ShaderProgramHandle } from '@weasel-js/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 
 /** The live renderers painting into each element, across every lease. */
@@ -71,12 +67,11 @@ export interface CanvasRendererLease {
     options?: CanvasRenderOptions,
   ): boolean;
   /** The renderer that paints `canvas` at `size`, ready to render: created on
-   *  first use, resized, and given this paint's tile, tolerance and shaders.
+   *  first use, resized, and given this paint's tile, tolerance, and shaders.
    *  Frees the previous renderer first if the surface moved to another
    *  element, or between owning it whole and painting a tile of it. `null`
    *  where no WebGL2 context is available (jsdom, a failed context creation,
-   *  or a context that is lost for now), so a caller can skip building a frame
-   *  nobody will see. */
+   *  or a context that is lost for now). */
   bind(canvas: HTMLCanvasElement, size: CanvasPaintSize, options?: CanvasPaintOptions): WeaselRenderer | null;
   /** Run `fn` when the canvas gets a lost context back, after the renderer
    *  has rebuilt itself on it. Nothing repaints a restored buffer on its own.
@@ -103,7 +98,8 @@ interface Held {
   shaderKey: string;
 }
 
-const shaderKeyOf = (shaders: readonly ShaderProgramHandle[] | undefined): string =>
+/** Identifies a set of custom programs by their ids, in order. */
+export const shaderKeyOf = (shaders: readonly ShaderProgramHandle[] | undefined): string =>
   shaders?.map((h) => h.id).join('|') ?? '';
 
 function registerShaders(renderer: WeaselRenderer, shaders: readonly ShaderProgramHandle[] | undefined): void {
@@ -236,8 +232,8 @@ const CANVAS_LEASES: WeakMap<HTMLCanvasElement, CanvasRendererLease> = new WeakM
 
 /**
  * Paint `canvas` through a lease held for the element itself, for callers
- * with no component lifetime of their own (`renderSceneToCanvas`). The
- * renderer lives until `releaseCanvasRenderer(canvas)`.
+ * with no component lifetime of their own. The renderer lives until
+ * `releaseCanvasRenderer(canvas)`.
  */
 export function paintCanvas(
   canvas: HTMLCanvasElement,

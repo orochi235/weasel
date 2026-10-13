@@ -12,7 +12,7 @@ import { tessellate } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from '@weasel-js/stroke';
 // Relative: core's `renderer/` tree has no bare path mapping (nothing inside
 // core imports it by one), so there is no alias to lean on here.
-import { getMesh, _resetCacheForTests } from 'renderer/cache/cache';
+import { getMesh, _resetCacheForTests } from '@weasel-js/renderer/test-seams';
 import { curvyPath, rectPath } from './fixtures';
 
 const CURVE_COUNTS = [8, 64, 512];
@@ -60,7 +60,7 @@ group('mesh cache — hit vs miss (64 cubics)', (bench) => {
 });
 
 group('tessellateStroke — curve count', (bench) => {
-  const stroke = { paint: { fill: 'solid' as const, color: '#000' }, width: 4 };
+  const stroke = { paint: { kind: 'solid' as const, color: '#000' }, width: 4 };
   for (const n of CURVE_COUNTS) {
     const path = paths.get(n)!;
     bench(`${n} cubics`, () => {

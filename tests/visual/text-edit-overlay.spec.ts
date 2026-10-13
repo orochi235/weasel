@@ -7,8 +7,7 @@
  * on its own.
  *
  * Node `t6` from apps/site/demos/textDemoScene.ts: world box (30, 130) 540 wide,
- * fontSize 16. Every expectation is computed from the view the canvas reports,
- * so the exact zoom a wheel step lands on does not matter.
+ * fontSize 16.
  */
 import { test, expect, type Page } from '@playwright/test';
 

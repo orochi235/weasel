@@ -1,5 +1,6 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { checkPrefConditions } from './condition';
+import { checkPrefConditions } from './conditionCheck';
 import { recordValue, stampRecord } from './stamp';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, prefSectionLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
 import type { PrefList } from './list';
@@ -155,7 +156,7 @@ export function createPrefsStore<S extends PrefGroup>(
     return tree;
   };
 
-  const listeners = new Set<(changes: PrefChange[]) => void>();
+  let changed = createEmitter<[PrefChange[]]>();
   const stopCache = cache.subscribe((changes) => {
     const records = changes.filter((c) => c.name !== VERSION_RECORD);
     if (records.length === 0) return;
@@ -164,7 +165,7 @@ export function createPrefsStore<S extends PrefGroup>(
     if (mine.length > 0) snapshot = null;
     const now = current();
     const out = mine.map((c): PrefChange => ({ path: c.name, value: now.byPath.get(c.name), origin: c.origin }));
-    for (const listener of [...listeners]) listener(out);
+    changed.emit(out);
   });
 
   return {
@@ -189,12 +190,7 @@ export function createPrefsStore<S extends PrefGroup>(
     values: () => current().tree,
     unset: () => current().unset,
     stored: () => (storedTree ??= buildStored()),
-    subscribe: (listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: (listener) => changed.subscribe(listener),
     get writable() {
       return cache.writable;
     },
@@ -204,7 +200,7 @@ export function createPrefsStore<S extends PrefGroup>(
     close: async () => {
       onClose?.();
       stopCache();
-      listeners.clear();
+      changed = createEmitter();
       await cache.close();
     },
   };

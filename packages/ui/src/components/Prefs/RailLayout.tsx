@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { isPrefLeaf, prefGroupIsPage, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefGroupIsPage, type PrefGroup } from '@weasel-js/prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { useScrollSpy } from '../../useScrollSpy';
 import { dropDrawnPath, withDrop } from './drop';
@@ -10,7 +10,7 @@ import type { PrefsFormProps } from './PrefsForm';
 import { PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
 import type { WalkCtx } from './PrefsRow';
-import { looseEntryName, prefGroupNests, prefGroupOpensPage, prefRailItems, prefRailParent } from './schema';
+import { looseEntryName, prefGroupNests, prefGroupOpensPage, prefPageHasOwn, prefRailAbove, prefRailItems, prefRailParent } from './schema';
 import { pathWithin, type SelectionRoot } from './selection';
 import s from './Prefs.module.css';
 
@@ -46,7 +46,7 @@ export function RailLayout(props: PrefsFormProps & {
   // A page with nothing of its own opens the first entry under it.
   while (root !== null && open !== '' && !hasOwn(paneGroup(root, open, schema.name))) {
     const under = open;
-    const first = items.find((i) => prefRailParent(i.path) === under);
+    const first = items.find((i) => prefRailAbove(items, i.path) === under);
     if (first === undefined) break;
     open = first.path;
   }
@@ -56,7 +56,7 @@ export function RailLayout(props: PrefsFormProps & {
     () => items.filter((i) => i.page === open && i.path !== open).map((i) => i.path),
     [items, open],
   );
-  const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds, covered: stuckAbove });
+  const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds });
 
   const show = (path: string): void => {
     if (props.section === undefined) setUncontrolled(path);
@@ -76,22 +76,22 @@ export function RailLayout(props: PrefsFormProps & {
   useLayoutEffect(toTop, [open]);
 
   // A section's entry chosen on a page that is not open: scrolled to once its page has drawn.
-  const awaited = useRef<string | null>(null);
+  const awaited = useRef<{ path: string; page: string } | null>(null);
   const reach = (path: string): void => {
     const home = items.find((i) => i.path === path)?.page ?? open;
     if (home === open) {
       spy.scrollTo(path);
       return;
     }
-    awaited.current = path;
+    awaited.current = { path, page: home };
     show(home);
   };
   const arrive = useRef(spy.scrollTo);
   useEffect(() => { arrive.current = spy.scrollTo; });
   useEffect(() => {
-    const path = awaited.current;
+    const section = awaited.current;
     awaited.current = null;
-    if (path !== null && path.startsWith(`${open}.`)) arrive.current(path);
+    if (section !== null && section.page === open) arrive.current(section.path);
   }, [open]);
 
   // The page holding the selection: the deepest page it is or lies under, else the loose leaves.
@@ -119,7 +119,7 @@ export function RailLayout(props: PrefsFormProps & {
   // A page being dragged stays the open one, drawn where it would land.
   const page = dropDrawnPath(drop, open);
   const whole = drawn === null ? null : paneGroup(drawn, page, schema.name);
-  const group = useMemo(() => (page !== '' && whole !== null ? ownOf(whole) : whole), [page, whole]);
+  const group = useMemo(() => (whole === null ? null : ownOf(whole)), [whole]);
 
   return (
     <div className={[s.railLayout, className].filter(Boolean).join(' ')} data-across={props.rowsAcross === 2 ? 2 : undefined} {...formAttrs(drop)}
@@ -151,18 +151,6 @@ export function RailLayout(props: PrefsFormProps & {
   );
 }
 
-/** How far below the pane's top the heading stuck there ends while a section inside another is at it: the heading
- *  of the section it lies in, which sticks inside the pane's padding. */
-function stuckAbove(section: HTMLElement): number {
-  for (let at = section.parentElement; at !== null; at = at.parentElement) {
-    const title = at.querySelector(':scope > [data-pref-sticky]');
-    if (title === null) continue;
-    const pane = at.closest('[data-pref-scroll]');
-    return title.getBoundingClientRect().height + (pane === null ? 0 : parseFloat(getComputedStyle(pane).paddingTop) || 0);
-  }
-  return 0;
-}
-
 /**
  * The group a rail path opens. The empty path is the root's loose leaves,
  * which belong to no group of their own and are handed back as one named for
@@ -188,24 +176,19 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
   return node ?? null;
 }
 
-const isOwn = (child: PrefLeaf | PrefGroup): boolean => isPrefLeaf(child) || !prefGroupOpensPage(child);
+const hasOwn = (group: PrefGroup | null): boolean => group !== null && prefPageHasOwn(group);
 
-/** Whether a group has anything a page of its own would draw: a leaf, or a group that opens no page itself. */
-function hasOwn(group: PrefGroup | null): boolean {
-  return group !== null && Object.values(group.children).some(isOwn);
-}
-
-/** A group cut down to what its own page draws: itself and its sections, less each group in them that opens a page
- *  of its own. The group itself when that is all of it. */
+/** A group cut down to what its own page draws: itself, its sections, and its fragments, less each group in them
+ *  that opens a page of its own. The group itself when that is all of it. */
 function ownOf(group: PrefGroup): PrefGroup {
   let cut = false;
   const children: PrefGroup['children'] = {};
   for (const [key, child] of Object.entries(group.children)) {
-    if (!isOwn(child)) {
+    if (!isPrefLeaf(child) && prefGroupOpensPage(child)) {
       cut = true;
       continue;
     }
-    const own = isPrefLeaf(child) || !prefGroupNests(child) ? child : ownOf(child);
+    const own = isPrefLeaf(child) || !(prefGroupNests(child) || child.as === 'fragment') ? child : ownOf(child);
     if (own !== child) cut = true;
     children[key] = own;
   }

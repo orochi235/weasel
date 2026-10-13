@@ -1,0 +1,117 @@
+.list {
+  display: grid;
+  /* A track list, for a container that knows it is too narrow for two columns:
+     `minmax(0, 1fr)` stacks every row, and a full-width row still spans. */
+  grid-template-columns: var(--wzl-prop-columns, 1fr 1fr);
+  column-gap: var(--wzl-prop-column-gap, 16px);
+  row-gap: var(--wzl-prop-row-gap, 4px);
+  align-items: stretch;
+  /* Read from the container-level name so a density set further up is not
+     shadowed by this declaration. */
+  --wzl-field-h: var(--wzl-prop-field-h, var(--wzl-control-h-sm));
+  --wzl-field-pad-x: var(--wzl-prop-field-pad-x, 6px);
+  /* A kit `<Select>` in a row is a field like any other, and its trigger reads
+     its height from a standalone control's token rather than the panel's. */
+  --wzl-select-h: var(--wzl-field-h);
+}
+
+/* Default packing: only color rows pair, everything else spans full width.
+   Scoped to NOT apply in pairs mode (otherwise this 0,2,0 selector beats the
+   pairs override below, which is only 0,1,0). */
+.list:not(.listPairs) > :not(.rowColor) {
+  grid-column: 1 / -1;
+}
+
+/* `pack="pairs"` flips that: every row auto-places into the 2-col grid two
+   per row, and explicit full-width children opt in via the span helper class. */
+.listPairs > * {
+  min-width: 0;
+}
+
+.listPairs > .span,
+.listPairs > .subpanel,
+.listPairs > h3 {
+  grid-column: 1 / -1;
+}
+
+/* `pack="one-up"` gives every row the full width, color rows included — the
+   one packing a palette can be built from. */
+.listOneUp > * {
+  grid-column: 1 / -1;
+}
+
+/* ── density ────────────────────────────────────────────────────────
+   `normal` states its values rather than omitting them, so a group can go back
+   to the default inside a tighter panel. */
+
+.densityTight {
+  --wzl-prop-row-gap: 2px;
+  --wzl-prop-subpanel-row-gap: 2px;
+  --wzl-prop-column-gap: 8px;
+  --wzl-prop-panel-pad: 10px 12px;
+  --wzl-prop-panel-title-gap: 8px;
+  --wzl-prop-group-pad: 4px 8px 6px;
+  --wzl-prop-group-title-gap: 2px;
+  --wzl-prop-field-h: 18px;
+  --wzl-prop-field-pad-x: 5px;
+}
+
+.densityNormal {
+  --wzl-prop-row-gap: 4px;
+  --wzl-prop-subpanel-row-gap: 3px;
+  --wzl-prop-column-gap: 16px;
+  --wzl-prop-panel-pad: 14px 16px;
+  --wzl-prop-panel-title-gap: 12px;
+  --wzl-prop-group-pad: 6px 10px 8px;
+  --wzl-prop-group-title-gap: 4px;
+  --wzl-prop-field-h: 20px;
+  --wzl-prop-field-pad-x: 6px;
+}
+
+.densityRoomy {
+  --wzl-prop-row-gap: 8px;
+  --wzl-prop-subpanel-row-gap: 7px;
+  --wzl-prop-column-gap: 20px;
+  --wzl-prop-panel-pad: 18px 20px;
+  --wzl-prop-panel-title-gap: 16px;
+  --wzl-prop-group-pad: 10px 14px 12px;
+  --wzl-prop-group-title-gap: 6px;
+  --wzl-prop-field-h: 24px;
+  --wzl-prop-field-pad-x: 8px;
+}
+
+/* ── align ──────────────────────────────────────────────────────────
+   Where an inline row's label and control sit on the row's cross axis.
+
+   Two names, because a color row aligns twice: its items within their grid row,
+   and the whole grid within the row's box. They agree except at `baseline`,
+   which `align-content` does not take — there the grid goes to the top and the
+   items find the label's baseline inside it.
+
+   A row whose label and control are both one line of text reads a third:
+   centering two runs of different sizes leaves their baselines apart, so there
+   `center` means `baseline`. */
+
+.alignStart {
+  --wzl-prop-row-align: start;
+  --wzl-prop-row-align-content: start;
+  --wzl-prop-row-align-text: start;
+}
+
+.alignCenter {
+  --wzl-prop-row-align: center;
+  --wzl-prop-row-align-content: center;
+  --wzl-prop-row-align-text: baseline;
+}
+
+.alignEnd {
+  --wzl-prop-row-align: end;
+  --wzl-prop-row-align-content: end;
+  --wzl-prop-row-align-text: end;
+}
+
+.alignBaseline {
+  --wzl-prop-row-align: baseline;
+  --wzl-prop-row-align-content: start;
+  --wzl-prop-row-align-text: baseline;
+}

@@ -8,12 +8,10 @@ interface DeleteAdapter<TNode> extends OrderedReader {
   /** Subtree reads, used to snapshot the cascade before it runs. Optional
    *  — a flat adapter has neither, and a delete there is a single node. */
   getNode?(id: string): TNode | undefined;
-  /** Every id `removeNode` would take with this one. Optional: a store whose
-   *  removal cascades along nothing but the subtree needs no such answer, and
-   *  `getChildren` is enough. A store that cascades further — the kit's scene
-   *  takes a deleted node's dependents too — must answer here, or the nodes it
-   *  cascades away are absent from the snapshot and undo brings back the named
-   *  node alone. */
+  /** Every id `removeNode` would take with this one. A store whose removal
+   *  cascades past the subtree — the kit's scene takes a deleted node's
+   *  dependents too — must answer here, or those nodes are absent from the
+   *  snapshot and undo does not bring them back. */
   getRemovalClosure?(ids: readonly string[]): readonly string[];
 }
 
@@ -29,18 +27,15 @@ export interface DeleteArgs<TNode extends { id: string }> {
   label?: string;
   /** Sibling ordinal the node occupies at the moment of delete. Sugar for
    *  `slot: { index }`, and only a seed: `apply` re-observes the node's full
-   *  slot through the adapter and that observation supersedes this. Kept
-   *  because it is the whole story for a flat adapter with no `getChildren`,
-   *  where nothing can be observed. */
+   *  slot through the adapter, where it can, and that supersedes this. */
   index?: number;
   /** Full slot, anchor included. Written by `apply`; supersedes `index`. */
   slot?: SiblingSlot;
   /** Everything `removeNode` takes, `node` itself included — its subtree, and
-   *  whatever else the adapter cascades. An inverse that re-inserts `node`
-   *  alone brings a container back empty and leaves every dependent deleted.
-   *  Ordered so a node's parent precedes it, which is the order they have to
-   *  be re-inserted in. Captured on apply; mirrored into the serialized args so
-   *  a rebuilt op can invert without having run. */
+   *  whatever else the adapter cascades. Ordered so a node's parent precedes
+   *  it, which is the order they have to be re-inserted in. Captured on apply;
+   *  mirrored into the serialized args so a rebuilt op can invert without
+   *  having run. */
   cascaded?: PlacedNode<TNode>[];
 }
 
@@ -55,13 +50,12 @@ function indexIn(a: OrderedReader, parentId: string | null, id: string): number 
  * Returns `null` when the adapter can't enumerate, which leaves any previously
  * captured snapshot in place rather than clobbering it with an empty one.
  *
- * The order is the whole point. A cascade unlinks several disjoint subtrees, so
- * the captured set is walked as a forest: a node whose parent is not also going
- * is a detach root, and each one is emitted — ascending sibling index first, so
- * every slot still means what it meant — followed by its captured descendants
- * preorder. The closure's own order will not do: it reaches a dependent before
- * the parent it sits under whenever that parent is in the closure as a
- * dependent too, and re-inserting a child under a parent that is not back yet
+ * A cascade unlinks several disjoint subtrees, so the captured set is walked
+ * as a forest: a node whose parent is not also going is a detach root, and
+ * each one is emitted — ascending sibling index first, so every slot still
+ * means what it meant — followed by its captured descendants preorder. The
+ * closure's own order will not do: it can reach a dependent before the parent
+ * it sits under, and re-inserting a child under a parent that is not back yet
  * puts it in the wrong place.
  */
 function captureCascade<TNode extends { id: string }>(

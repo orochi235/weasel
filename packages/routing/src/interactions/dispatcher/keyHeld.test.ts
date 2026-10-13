@@ -3,13 +3,6 @@
  * hold/release, sticky engagement under mid-hold modifier presses, mid-hold
  * modifier hot-swap of [engaged] routes, and independent simultaneous holds
  * on different keys.
- *
- * The dispatcher's existing `inFlightOwners` machinery (the same path that
- * drag uses) already implements these invariants — these tests pin that
- * behavior so refactors of the dispatcher don't silently regress it.
- *
- * Uses an inline harness mirroring dispatcher.test.ts conventions (no React,
- * no DOM).
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -20,10 +13,6 @@ import type { Action } from '../actions/action';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { Tool } from '../../tools/types';
 import type { InputEvent } from './matcher';
-
-// ---------------------------------------------------------------------------
-// Harness helpers (mirrors dispatcher.test.ts conventions)
-// ---------------------------------------------------------------------------
 
 function makeRegistry(actions: Action[]): ActionsRegistry {
   const map = new Map(actions.map((a) => [a.id, a]));
@@ -72,11 +61,9 @@ function makeTool(
   return { tool, entriesById: new Map([[toolId, tool]]) };
 }
 
-/** Minimal ongoing action. Default mock returns a non-empty handle
- *  (`{ onEnd: () => {} }`) so the dispatcher records it as engaged — an
- *  empty `{}` would now fall through to the next match. Tests that want
- *  to exercise the decline-and-fall-through path should pass a startFn
- *  that returns `{}` explicitly. */
+/** Minimal ongoing action. The default mock returns a non-empty handle so the
+ *  dispatcher records it as engaged — an empty `{}` falls through to the next
+ *  match. */
 function ongoingAction(
   id: string,
   spec: Action['defaultBinding'],
@@ -158,19 +145,8 @@ function pointerDown(
 }
 
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 describe('keyHeld engagement', () => {
-  // -------------------------------------------------------------------------
-  // Scenario 1: keydown advances channel, keyup restores it
-  // -------------------------------------------------------------------------
   it('advancing channel: [initial] keyHeld starts an ongoing handle; [engaged] route fires during hold', () => {
-    // Register:
-    //   Tool "myTool" with:
-    //     [initial] key-held(Space) → ongoingAction 'space-held'
-    //     [engaged] key → immediateAction 'engaged-key'
     const engagedRun = vi.fn();
     // Non-empty handle so the dispatcher records the engagement.
     const engageStart = vi.fn().mockReturnValue({ onEnd: () => {} });
@@ -212,9 +188,6 @@ describe('keyHeld engagement', () => {
     expect(engagedRun).toHaveBeenCalledOnce();
   });
 
-  // -------------------------------------------------------------------------
-  // Scenario 2: keyup restores channel to initial
-  // -------------------------------------------------------------------------
   it('disengage restores channel: [engaged] route no longer fires after keyup', () => {
     const engagedRun = vi.fn();
     const onEnd = vi.fn();
@@ -257,9 +230,6 @@ describe('keyHeld engagement', () => {
     expect(engagedRun).not.toHaveBeenCalled();
   });
 
-  // -------------------------------------------------------------------------
-  // Scenario 3: [engaged] click fires during hold window
-  // -------------------------------------------------------------------------
   it('[engaged] click route fires during the hold window', () => {
     const clickRun = vi.fn();
     const engageStart = vi.fn().mockReturnValue({ onEnd: () => {} });
@@ -312,9 +282,6 @@ describe('keyHeld engagement', () => {
     expect(clickRun).not.toHaveBeenCalled();
   });
 
-  // -------------------------------------------------------------------------
-  // Scenario 4: Sticky engagement — modifier press mid-hold does NOT disengage
-  // -------------------------------------------------------------------------
   it('sticky engagement: Shift press mid-hold does not end the hold', () => {
     const onEnd = vi.fn();
     const engageStart = vi.fn().mockReturnValue({ onEnd });
@@ -355,20 +322,12 @@ describe('keyHeld engagement', () => {
     expect(onEnd).not.toHaveBeenCalled();
     expect(dispatcher.inFlight().size).toBe(1);
 
-    // [engaged] routes still fire (hold is active).
-    // Use shift-qualified event since shift is now held — but use an unmodified
-    // route so we can test with or without shift being matched. We check that
-    // the 'z' key still fires assuming the route matches (it has phase:engaged, no shift).
-    // The test proves the channel didn't disengage.
-    // We'll call keyup(Space) now and assert onEnd fires.
+    // Only releasing Space ends it.
     dispatcher.handleInput(keyHeldUp(' '), ctx);
     expect(onEnd).toHaveBeenCalledWith(expect.anything(), 'commit');
     expect(dispatcher.inFlight().size).toBe(0);
   });
 
-  // -------------------------------------------------------------------------
-  // Scenario 5: Mid-hold modifier hot-swaps which [engaged] route matches
-  // -------------------------------------------------------------------------
   it('mid-hold modifier hot-swap: different [engaged] routes match with/without shift', () => {
     const dragNoShiftStart = vi.fn().mockReturnValue({ onEnd: () => {} });
     const dragShiftStart = vi.fn().mockReturnValue({ onEnd: () => {} });
@@ -424,9 +383,6 @@ describe('keyHeld engagement', () => {
     expect(dispatcher.inFlight().size).toBe(2);
   });
 
-  // -------------------------------------------------------------------------
-  // Scenario 6: Two simultaneously held keys, independent engagements
-  // -------------------------------------------------------------------------
   it('two held keys produce independent channel engagements', () => {
     const spaceEngagedRun = vi.fn();
     const aEngagedRun = vi.fn();
@@ -532,11 +488,6 @@ describe('keyHeld engagement', () => {
   // key, that's `key-held-<key>`. Two tools both engaging on the same key
   // alias to one slot; whichever engages second overwrites the first's
   // owner, and releasing the key only restores one channel.
-  //
-  // No real consumer exercises this today (Hand is the only built-in
-  // held-trigger tool and owns Space exclusively). If a future requirement
-  // needs per-(tool, key) granularity, this skip becomes the failing test
-  // that drives a secondary-index addition to the dispatcher.
   // -------------------------------------------------------------------------
   it.skip('two tools both holding Space engage independently', () => {
     // Intentionally unimplemented — see comment above.

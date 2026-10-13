@@ -1,24 +1,18 @@
 /**
  * The kit's weasel-JSON clipboard content handler.
  *
- * Consumes `application/x-weasel-clipboard+json` payloads (either MIME
- * spelling — Chromium's async-clipboard API round-trips custom formats with
- * a `web ` prefix — plus `text/plain` that sniffs as the wire format, plus
+ * Consumes `application/x-weasel-clipboard+json` payloads in either MIME
+ * spelling (Chromium's async-clipboard API round-trips custom formats with
+ * a `web ` prefix), `text/plain` that sniffs as the wire format, and
  * `text/plain` SVG carrying the wire format embedded in a `<metadata>`
- * element: Chromium's DOM paste event exposes ONLY `text/plain`, and draw
- * puts metadata-bearing SVG there so draw→draw paste keeps full JSON
- * fidelity) and replays them as a paste through the hosting canvas's
- * adapter: parse →
- * `commitPaste` (fresh ids, cascade offset) → one undoable batch of
- * `InsertOp`s + a selection op. Mirrors `useClipboardOps.paste`'s op
- * construction exactly so OS-arriving pastes and in-memory pastes are
- * indistinguishable in history.
+ * element (Chromium's DOM paste event exposes ONLY `text/plain`). It replays
+ * them as a paste through the hosting canvas's adapter, mirroring
+ * `useClipboardOps.paste`'s op construction exactly so OS-arriving pastes
+ * and in-memory pastes are indistinguishable in history.
  *
- * Declines (leaving the event un-acted-on) when `ctx.clipboard` is absent
- * (consumer disabled it, or the adapter lacks `commitPaste`) or the payload
- * fails to parse. Note `runIngest` consumes items at *match* time, so
- * "leave it for other handlers" is the sniff's job: non-weasel `text/plain`
- * never matches and flows on to lower-priority handlers untouched.
+ * Declines when `ctx.clipboard` is absent or the payload fails to parse.
+ * `runIngest` consumes items at *match* time, so "leave it for other
+ * handlers" is the sniff's job: non-weasel `text/plain` never matches.
  */
 import type { NodeId } from 'core/scene/types';
 import type { ClipboardSnapshot } from 'core/adapters/types';
@@ -56,6 +50,7 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
       || item.mime === WEASEL_CLIPBOARD_MIME_WEB
       || (item.mime === 'text/plain'
         && (sniffWeaselClipboardText(item.text) || isMetadataBearingSvg(item.text)))),
+  types: [WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, 'text/plain'],
   handle(items, ctx: IngestCtx) {
     const clipboard = ctx.clipboard;
     if (!clipboard) {
@@ -83,10 +78,8 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
       dwarn('clipboard', 'weasel payload unusable — declining (see prior warning if the parse threw)');
       return;
     }
-    // Shared paste recipe (offset → commitPaste → InsertOps + selection op)
-    // so OS-arriving pastes match useClipboardOps.paste exactly. `ctx.point`
-    // is null for paste, so no dropPoint is threaded — the cascade offset is
-    // the placement.
+    // `ctx.point` is null for paste, so no dropPoint is threaded — the
+    // cascade offset is the placement.
     const snapshot: ClipboardSnapshot = { items: nodes };
     const result = materializePaste(clipboard.adapter, snapshot, {
       currentSelection: ctx.selection.get(),
@@ -95,8 +88,7 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
     if (!result) return;
     ctx.applyOps(result.ops, 'Paste');
     ctx.selection.set(result.newIds as NodeId[]);
-    // Flag the shared event ctx so kit:svg's text/plain fallback declines the
-    // SVG flavor of this same copy (draw writes weasel-JSON + SVG together).
+    // So kit:svg's text/plain fallback declines the SVG flavor of this copy.
     // WARNING: do not add an `await` earlier in this handle — the flag must
     // be written before lower-priority handlers' microtasks run.
     ctx.consumedWeaselPayload = true;

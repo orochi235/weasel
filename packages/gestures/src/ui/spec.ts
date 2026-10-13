@@ -1,30 +1,18 @@
-/**
- * GestureSpec — describes the form of a user input event that can fire an action.
- *
- * Used by `Action.defaultBinding` (the action's preferred gesture) and by
- * `GestureBinding.spec` (a tool's binding table entry). The dispatcher matches
- * incoming input events against registered specs to determine which action to
- * invoke.
- *
- * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md` § "Types".
- */
+/** GestureSpec — describes the form of a user input event that can fire an action. */
 
 /** Optional modifier-key requirement for a gesture spec.
  *
- *  Matching semantics (strict): an omitted modifier field means the
- *  modifier MUST NOT be held — i.e., a bare `{ kind: 'key', key: 'Escape' }`
- *  matches only unmodified Escape, NOT Cmd+Escape. A `true` means the
- *  modifier MUST be held; `false` is the same as omitted (must be absent).
- *  This mirrors today's `KeyBinding` matcher and keeps conflict detection
- *  coherent.
+ *  Matching is strict: an omitted modifier field means the modifier MUST NOT
+ *  be held — a bare `{ kind: 'key', key: 'Escape' }` matches only unmodified
+ *  Escape, NOT Cmd+Escape. A `true` means the modifier MUST be held; `false`
+ *  is the same as omitted.
  *
  *  `mod` is a platform-aware shorthand: matches `metaKey` on mac, `ctrlKey`
- *  elsewhere (mirrors `KeyBinding.mod`).
+ *  elsewhere.
  *
  *  Every modifier additionally accepts `'optional'`, meaning "held or not,
- *  both acceptable" — the explicit opt-in for loose matching, used by
- *  actions like nudge whose step size depends on shift but whose firing
- *  does not.
+ *  both acceptable" — used by actions like nudge whose step size depends on
+ *  shift but whose firing does not.
  */
 export type ModSpec = Partial<{
   alt: boolean | 'optional';
@@ -69,10 +57,8 @@ export function bodyPredicate(
   );
 }
 
-/** Target selector for click and drag gesture specs. String forms are sugar
- *  for the kit-owned object-kind registry (TODO.md Tier 1 follow-up); until
- *  that ships, consumers can pass `{ kindOf: predicate }` to classify hits
- *  themselves.
+/** Target selector for click and drag gesture specs. Consumers can pass
+ *  `{ kindOf: predicate }` to classify hits themselves.
  *
  *  Adding a form here is a compile error in `parseTargetSpec` until
  *  `TargetSpecForm` grows a matching variant — which is in turn a compile
@@ -87,19 +73,16 @@ export type TargetSpec =
   | { kindOf: TargetPredicate };
 
 /** Phase qualifier on a gesture spec. Restricts when the spec matches based
- *  on per-tool gesture-lifecycle state.
+ *  on per-tool gesture-lifecycle state. When omitted, matches in any phase.
  *
- *  Shorthand forms (most common case — gate on the binding's own tool):
+ *  Shorthand forms gate on the binding's own tool:
  *    `'engaged'` → `[{ channel: '&', phase: 'engaged' }]`  // self mid-gesture
  *    `'initial'` → `[{ channel: '&', phase: 'initial' }]`  // self idle
  *    `'*'`       → `[{ channel: '&', phase: '*' }]`        // either self phase
  *
  *  Array form for explicit channel:phase atoms — e.g. `[{ channel: 'rect',
  *  phase: 'engaged' }]` for "when the rect tool is mid-gesture, regardless of
- *  which scope I'm in." See the v3 route grammar in
- *  `@weasel-js/gestures/grammar` for the full lattice.
- *
- *  When omitted, matches in any phase (preserves pre-phase behavior). */
+ *  which scope I'm in." */
 export type PhaseSpec = 'initial' | 'engaged' | '*' | readonly import('../grammar/routeGrammar').PhaseAtom[];
 
 /** Single-keystroke gesture (keydown). */
@@ -128,10 +111,8 @@ export interface KeyHeldSpec {
   phase?: PhaseSpec;
 }
 
-/** Wheel-event gesture. `direction` filters by deltaY sign; default `'*'`.
- *  - `'up'`   → matches only deltaY < 0
- *  - `'down'` → matches only deltaY > 0
- *  - `'*'`    → matches either sign (default; universal-wildcard convention) */
+/** Wheel-event gesture. `direction` filters by deltaY sign: `'up'` matches
+ *  only deltaY < 0, `'down'` only deltaY > 0, and the default `'*'` either. */
 export interface WheelSpec {
   kind: 'wheel';
   direction?: 'up' | 'down' | '*';
@@ -141,10 +122,9 @@ export interface WheelSpec {
 }
 
 /** Pinch reported as a scale factor about a focal point (WebKit
- *  `gesturechange`). `direction` filters by the sample's scale; default `'*'`.
- *  - `'out'` → fingers spreading, scale > 1
- *  - `'in'`  → fingers closing, scale < 1
- *  A touchscreen pinch is {@link MultiTouchSpec}, not this. */
+ *  `gesturechange`). `direction` filters by the sample's scale: `'out'` is
+ *  scale > 1, `'in'` is scale < 1; default `'*'`. A touchscreen pinch is
+ *  {@link MultiTouchSpec}, not this. */
 export interface PinchSpec {
   kind: 'pinch';
   direction?: 'in' | 'out' | '*';
@@ -163,9 +143,7 @@ export interface ClickSpec {
 }
 
 /** Double-click: two `click` events within 600ms and 8px of each other.
- *  Synthesized by `useGestureDispatcher`; emitted AFTER the second
- *  `click`. Bindings that want to handle a double-click should declare
- *  this kind rather than chasing two `click` events. */
+ *  Synthesized by `useGestureDispatcher`; emitted AFTER the second `click`. */
 export interface DoubleClickSpec {
   kind: 'doubleClick';
   target?: TargetSpec;
@@ -193,13 +171,10 @@ export interface DragSpec {
 
 /**
  * Bare pointer press, matched at down time — before the dispatcher knows
- * whether the gesture will become a click or a drag.
- *
- * Reach for this only when the effect must be visible while the button is
- * still held. Selection is the motivating case: pressing an unselected node
- * highlights it immediately, and the drag that may follow then starts from an
- * already-correct selection. Anything that can wait for the release belongs on
- * a `click` spec, which does not fire on a press that turns into a drag.
+ * whether the gesture will become a click or a drag. Reach for this only when
+ * the effect must be visible while the button is still held; anything that
+ * can wait for the release belongs on a `click` spec, which does not fire on
+ * a press that turns into a drag.
  *
  * A matching binding does NOT own the gesture: the same press goes on to open
  * a drag or synthesize a click as usual. Bind an immediate action here, not an
@@ -213,16 +188,30 @@ export interface PointerDownSpec {
 }
 
 /**
+ * The pointer moving over the surface with no button pressed. Fires on every
+ * such move; a held pointer's moves belong to its drag and fire nothing here.
+ *
+ * A hover binding claims nothing. Every live binding that matches the move
+ * runs, not only the best one, and the move still reaches the hover-cursor
+ * pump. There is no press to own, so bind an immediate action, not an ongoing
+ * one. Its params carry `worldX` / `worldY`, `clientX` / `clientY`,
+ * `affordance`, `bodyTarget`, and `mods`.
+ */
+export interface HoverSpec {
+  kind: 'hover';
+  target?: TargetSpec;
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
+/**
  * Press held past the long-press threshold without crossing the drag
  * threshold. Synthesized by `useGestureDispatcher` from the pointer stream.
- *
- * Fires for `touch` and `pen` pointers only. A mouse held still for half a
- * second is an ordinary slow click, and firing on it would produce a context
- * menu nobody asked for.
+ * Fires for `touch` and `pen` pointers only: a mouse held still is an
+ * ordinary slow click.
  *
  * When a long-press matches no binding, the dispatcher re-dispatches it as a
- * `contextmenu` event — so `contextMenu` bindings work under a finger with no
- * consumer changes, while `longPress` stays independently bindable.
+ * `contextmenu` event, so `contextMenu` bindings work under a finger.
  */
 export interface LongPressSpec {
   kind: 'longPress';
@@ -269,9 +258,7 @@ export interface PasteSpec {
   phase?: PhaseSpec;
 }
 
-/** The full union of supported gesture spec kinds. New invocation forms
- *  (two-stage, modal-dialog) extend this union without touching
- *  the `Action` type. */
+/** The full union of supported gesture spec kinds. */
 export type GestureSpec =
   | KeySpec
   | KeyHeldSpec
@@ -282,6 +269,7 @@ export type GestureSpec =
   | ContextMenuSpec
   | DragSpec
   | PointerDownSpec
+  | HoverSpec
   | LongPressSpec
   | MultiTouchSpec
   | MultiTouchTapSpec

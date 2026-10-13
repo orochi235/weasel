@@ -257,3 +257,62 @@ describe('useSelection — identity', () => {
     expect(committed.at(-1)!.get()).toEqual([a]);
   });
 });
+
+describe('useSelection range', () => {
+  const d = asNodeId('d');
+  const SHIFT = { ...NO_MODS, shift: true };
+  const META = { ...NO_MODS, meta: true };
+  const order = () => [a, b, c, d];
+
+  it('ranges from the last pressed id over the order it is given', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'meta', range: 'shift', order }));
+    act(() => result.current.applyClick(b, NO_MODS));
+    act(() => result.current.applyClick(d, SHIFT));
+    expect(result.current.current).toEqual([b, c, d]);
+  });
+
+  it('keeps its anchor through a range, so the next one swings from the same end', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'meta', range: 'shift', order }));
+    act(() => result.current.applyClick(c, NO_MODS));
+    act(() => result.current.applyClick(d, SHIFT));
+    act(() => result.current.applyClick(a, SHIFT));
+    expect(result.current.current).toEqual([a, b, c]);
+  });
+
+  it('moves the anchor to a toggled id', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'meta', range: 'shift', order }));
+    act(() => result.current.applyClick(a, NO_MODS));
+    act(() => result.current.applyClick(c, META));
+    act(() => result.current.applyClick(d, SHIFT));
+    expect(result.current.current).toEqual([c, d]);
+  });
+
+  it('anchors on the last id of a selection something else set', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'meta', range: 'shift', order }));
+    act(() => result.current.set([d, b]));
+    act(() => result.current.applyClick(c, SHIFT));
+    expect(result.current.current).toEqual([b, c]);
+  });
+
+  it('walks a scene in the order it paints when handed no order', () => {
+    const scene = createScene<object, 'main'>({ systemLayers: [{ id: 'main' }] });
+    const box = { x: 0, y: 0, width: 1, height: 1 };
+    const ids = [0, 1, 2, 3].map(() => scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box }));
+    const { result } = renderHook(() => useSelection({ scene, mode: 'multi', extend: 'meta', range: 'shift' }));
+    act(() => result.current.applyClick(ids[3]!, NO_MODS));
+    act(() => result.current.applyClick(ids[1]!, SHIFT));
+    expect(result.current.current).toEqual([ids[1], ids[2], ids[3]]);
+  });
+
+  it('replaces on the range key when there is no order to walk', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'meta', range: 'shift', initial: [a] }));
+    act(() => result.current.applyClick(c, SHIFT));
+    expect(result.current.current).toEqual([c]);
+  });
+
+  it('does not range unless a range key is named', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', order, initial: [a] }));
+    act(() => result.current.applyClick(c, SHIFT));
+    expect(result.current.current).toEqual([a, c]);
+  });
+});

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import type { PaintSlot } from '../GradientEditor';
 import { FillStrokeSwatch } from './FillStrokeSwatch';
 
@@ -12,13 +12,13 @@ export default meta;
 
 type Story = StoryObj<typeof FillStrokeSwatch>;
 
-const solid = (color: string): FillStyle => ({ fill: 'solid', color });
+const solid = (color: string): Paint => ({ kind: 'solid', color });
 const DEFAULTS = { fill: solid('#ffffffff'), stroke: solid('#000000ff') };
 
-function Live({ initial }: { initial: { fill: FillStyle | null; stroke: FillStyle | null } }) {
+function Live({ initial }: { initial: { fill: Paint | null; stroke: Paint | null } }) {
   const [paints, setPaints] = useState(initial);
   const [focused, setFocused] = useState<PaintSlot>('fill');
-  const set = (slot: PaintSlot, paint: FillStyle | null) =>
+  const set = (slot: PaintSlot, paint: Paint | null) =>
     setPaints((p) => ({ ...p, [slot]: paint }));
   return (
     <FillStrokeSwatch
@@ -52,7 +52,7 @@ export const Gradient: Story = {
     <Live
       initial={{
         fill: {
-          fill: 'linear-gradient',
+          kind: 'linear-gradient',
           from: { x: 0, y: 0 },
           to: { x: 1, y: 1 },
           stops: [

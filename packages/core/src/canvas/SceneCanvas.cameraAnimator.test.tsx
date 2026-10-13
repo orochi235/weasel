@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import type { Animator } from '../animation/types';
+import type { Animator } from '@weasel-js/animator';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
 import { createScene } from 'core/scene/scene';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 const built = new Set<Animator>();
 
-vi.mock('../animation/useAnimator', async (importOriginal) => {
-  const real = await importOriginal<typeof import('../animation/useAnimator')>();
+vi.mock('@weasel-js/animator', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@weasel-js/animator')>();
   return {
     ...real,
     useAnimator: (...args: Parameters<typeof real.useAnimator>) => {

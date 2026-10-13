@@ -1,19 +1,11 @@
 /**
- * The one answer to "how big is the thing this in-flight insert is making".
- *
- * A drag-to-insert has no scene node until commit, so three surfaces have to
- * size the nascent shape themselves: `useDispatcherOverlayLayer` (paints the
- * preview), `canvas/deps/insert` (poses the committed node) and
- * `dispatcherGestureBounds` (reports the gesture's world AABB to `<Canvas>`).
- * They all resolve it here.
+ * The one answer to "how big is the thing this in-flight insert is making",
+ * shared by the preview paint, the commit, and the gesture's reported bounds.
  *
  * The drag AABB alone is NOT the answer. `insertAction` hands over an
- * `extras` payload that can carry richer geometry than the drag rect —
- * a polygon's center+radius, a pencil's sample trail, a line's endpoints —
- * and where it does, that geometry is the shape. A centered Alt-drag
- * produces a `d`-wide drag rect around a `d√2` circumradius; a pencil that
- * loops back to its start produces a zero-area drag rect around a trail that
- * swept the page.
+ * `extras` payload that can carry richer geometry than the drag rect, and
+ * where it does, that geometry is the shape: a pencil that loops back to its
+ * start produces a zero-area drag rect around a trail that swept the page.
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';

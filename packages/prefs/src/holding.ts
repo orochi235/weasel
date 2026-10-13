@@ -55,3 +55,24 @@ export function prefLeafHolding(schema: PrefGroup | PrefSection, path: string): 
   }
   return isPrefLeaf(node) ? { leaf: node } : undefined;
 }
+
+/**
+ * The schema that answers for the value at `path`: `schema` where a leaf of
+ * it describes that value, else `over`, the schema `schema` is drawn over.
+ * So a path both hold is `schema`'s. Every reader of a condition's paths
+ * that takes a second schema asks here which one to read.
+ */
+export function prefSchemaHolding(
+  schema: PrefGroup | PrefSection, path: string, over?: PrefGroup | PrefSection,
+): PrefGroup | PrefSection {
+  return over === undefined || prefLeafHolding(schema, path) !== undefined ? schema : over;
+}
+
+/**
+ * The leaf describing the value at `path` inside one entry of a list or a
+ * map whose `item` this is; the empty path is the entry itself. `within` is
+ * a path inside the entry too, empty for the entry.
+ */
+export function prefLeafHoldingIn(item: PrefLeaf, path: string): PrefHeld | typeof UNSEEN | undefined {
+  return path === '' ? { leaf: item } : insideLeaf(item, path, '');
+}

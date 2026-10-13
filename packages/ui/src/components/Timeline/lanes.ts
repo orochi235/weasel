@@ -1,4 +1,4 @@
-import type { SampledTrack, Track } from '@weasel-js/core';
+import type { SampledTrack, Track } from '@weasel-js/animator';
 
 export interface LaneRow {
   /** Stable across re-renders and edits: the dotted index path. */

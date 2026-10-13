@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PathDrawCommand } from '../../renderer';
+import type { PathDrawCommand } from '@weasel-js/renderer';
 import {
   composeSelectionPose,
   createSelectionOverlayLayer,
@@ -479,7 +479,7 @@ describe('createSelectionOverlayLayer.draw', () => {
       getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 4 }),
       handles: false,
-      outline: { paint: { fill: 'solid', color: '#000' }, width: 2, pad: 0 },
+      outline: { paint: { kind: 'solid', color: '#000' }, width: 2, pad: 0 },
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 4, y: 1 } }, DIMS);
     const c = ((tree[0] as PathDrawCommand).path as { coords: ArrayLike<number> }).coords;

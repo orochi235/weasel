@@ -68,7 +68,7 @@ export const Shape: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: solid('#7fb069'),
+      fill: { paint: solid('#7fb069') },
       stroke: { ...strokeOf('#1c1c1c', 6), cap: 'round', join: 'bevel' },
     },
   },
@@ -80,7 +80,7 @@ export const ImportedDash: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: solid('#7fb069'),
+      fill: { paint: solid('#7fb069') },
       stroke: { ...strokeOf('#1c1c1c', 6), dash: [9, 2, 2, 2] },
     },
   },
@@ -92,7 +92,7 @@ export const Text: Story = {
   args: {
     data: {
       text: 'The quick brown fox',
-      fill: solid('#1c1c1c'),
+      fill: { paint: solid('#1c1c1c') },
       style: { fontSize: 18, fontFamily: 'sans-serif', fontWeight: 500, align: 'center', lineHeight: 1.4 },
     },
   },
@@ -110,7 +110,7 @@ export const GradientFillPaint: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: gradientForBounds('linear-gradient', UNIT_BOX, RAMP, 'bounds'),
+      fill: { paint: gradientForBounds('linear-gradient', UNIT_BOX, RAMP, 'bounds') },
       stroke: strokeOf('#1c1c1c', 4),
     },
   },
@@ -122,7 +122,7 @@ export const GradientStrokePaint: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: solid('#7fb069'),
+      fill: { paint: solid('#7fb069') },
       stroke: {
         ...strokeOf('#1c1c1c', 6),
         paint: gradientForBounds('radial-gradient', UNIT_BOX, RAMP, 'bounds'),
@@ -136,7 +136,7 @@ export const PatternFillPaint: Story = {
   args: {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
-      fill: { fill: 'pattern', pattern: { tile: 'crosshatch', color: '#7fb069ff', size: 8 }, units: 'bounds' },
+      fill: { paint: { kind: 'crosshatch', color: '#7fb069ff', size: 8, units: 'bounds' } },
       stroke: strokeOf('#1c1c1c', 4),
     },
   },
@@ -215,6 +215,35 @@ export const Conditions: Story = {
     return (
       <div className={s.narrow}>
         <SelectionPanel scene={scene} selection={selection} properties={CONDITIONED_PROPERTIES} routing={SECTIONED_ROUTING} />
+      </div>
+    );
+  },
+};
+
+const CARD: PrefSection = {
+  name: 'Card',
+  members: {
+    'data.rounded': { kind: 'boolean', name: 'Rounded', description: 'Enables the radius.', default: false } as PrefLeaf,
+    'data.radius': { ...field('Radius'), enableIf: { path: 'data.rounded' } },
+    'data.title': field('Title', 'string'),
+  },
+};
+const pointer = (of: string): PrefLeaf => ({ kind: 'alias', name: '', description: '', default: undefined, of });
+const CORNERS: PrefSection = {
+  name: 'Card',
+  members: { corners: { name: 'Corners', members: { 'layout.rounded': pointer('data.rounded'), 'layout.radius': pointer('data.radius') } } },
+};
+const CORNERS_PROPERTIES: NodePropertiesEntry[] = [{ name: 'card', schema: CORNERS }];
+
+/** `over`: a panel drawn from a layout of aliases into another schema, the one that holds the kind's settings.
+ *  Each row is that schema's leaf, reads and writes its path on the node, and follows its conditions: Radius is
+ *  disabled while Rounded is off. */
+export const AliasesIntoAnotherSchema: Story = {
+  render: function OverStory() {
+    const scene = useMemo(() => sceneWith({ text: '', rounded: true, radius: 6 } as Data), []);
+    return (
+      <div className={s.narrow}>
+        <SelectionPanel scene={scene} selection={selection} properties={CORNERS_PROPERTIES} routing={SECTIONED_ROUTING} over={CARD} />
       </div>
     );
   },

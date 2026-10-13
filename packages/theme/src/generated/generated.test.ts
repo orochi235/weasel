@@ -49,7 +49,7 @@ describe('generated themes.ts', () => {
 
   it('carries the token groups labkit contributed', () => {
     expect(dark['--wzl-space-md']).toBe('12px');
-    expect(dark['--wzl-z-modal']).toBe('30');
+    expect(dark['--wzl-z-modal']).toBe('1000');
     expect(dark['--wzl-swatch-fuchsia']).toBe('#f641f7');
     expect(dark['--wzl-backdrop']).toBe('none');
     // Mode-invariant: the swatch set does not flip.

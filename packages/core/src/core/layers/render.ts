@@ -1,26 +1,22 @@
-import { viewToMat3, type DrawCommand } from '../../renderer';
-import type { Effect } from '../../renderer/effects/types';
+import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
+import type { Effect } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
+import { groupMembership, wrapGroup, type LayerGroup } from './layerGroup';
+
+export type { LayerGroup };
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-/**
- * Canvas size in CSS pixels — passed to `draw` for layers that anchor to
- * canvas edges (e.g. the debug overlay's layer-list panel). The GL backend
- * supplies it explicitly so layers don't have to know about DPR.
- */
+/** Canvas size in CSS pixels, so layers don't have to know about DPR. */
 export interface Dims {
   width: number;
   height: number;
 }
 
 /**
- * What a layer's `draw` threw, and which layer threw it.
- *
- * A `draw` runs on the frame loop, so a throw that escapes it surfaces as an
- * uncaught `requestAnimationFrame` error on the window and takes the whole
- * frame with it — every other layer included. One broken layer painting
- * nothing, named in the console, is the lesser wrong.
+ * What a layer's `draw` threw, and which layer threw it. A throw that escaped
+ * the frame loop would take the whole frame with it, every other layer
+ * included.
  */
 export interface LayerDrawFailure {
   layerId: string;
@@ -35,52 +31,6 @@ function reportLayerFailure({ layerId, error }: LayerDrawFailure): void {
   );
 }
 
-/**
- * Several consecutive layers composited as one.
- *
- * A layer's own `effects` run over that layer alone, which is the wrong
- * picture whenever a pass reads neighboring pixels: `blur(A over B)` is not
- * `blur(A) over blur(B)`, and it costs a buffer and a pass chain per layer. A
- * group draws its members into one buffer, runs one chain over it, and
- * composites the result back once.
- *
- * Membership is by `RenderLayer.id` — the same names `layerOrder` and
- * `layerVisibility` use, not the `layers` map's slot keys.
- *
- * Only *consecutive* members share a buffer, because anything drawn between
- * two members has to land between them. A group whose members are separated in
- * the render order is drawn as one bracket per run, with a warning: the
- * picture is right, the declaration almost certainly is not.
- *
- * This is a render-stack bracket, not a scene `ContainerNode` — it holds no
- * ids, survives no reload, and nothing in the scene knows about it.
- */
-export interface LayerGroup {
-  /** Names the group in warnings; not a layer id and never drawn. */
-  id: string;
-  /**
-   * Member layer ids. Order here is ignored — the render order decides.
-   *
-   * A name claims that layer and every layer under it in the `:` namespace, so
-   * `'scene'` covers the `scene:<layerId>` layers a scene with declared layers
-   * draws as — the same set `before`/`after: 'scene'` anchors against. The
-   * separator is required: `'scene'` does not reach `scenery`. A name matching
-   * no layer being drawn is warned about rather than ignored.
-   */
-  layers: readonly string[];
-  /**
-   * Passes over the group's combined pixels, in order. A thunk is re-read on
-   * every frame, so an animating radius costs no React render; an array is
-   * read once per frame either way.
-   */
-  effects?: readonly Effect[] | ((view: View, dims: Dims) => readonly Effect[]);
-  /** Opacity applied to the group's composited result, not to each member. */
-  alpha?: number;
-  /** 4×5 color matrix (row-major, 20 numbers) applied to the composited
-   *  result. See `GroupDrawCommand.colorMatrix`. */
-  colorMatrix?: number[];
-}
-
 /** One layer's memoized output, keyed by layer id. Owned by the canvas that
  *  calls `drawLayers`, not by `drawLayers` itself — the function is pure. */
 export type LayerCommandCache = Map<
@@ -88,11 +38,6 @@ export type LayerCommandCache = Map<
   { deps: readonly unknown[]; cmds: DrawCommand[] }
 >;
 
-/**
- * A single named render sub-layer within a canvas renderer.
- *
- * @template TData - The data object passed to each draw call.
- */
 /** Something outside React whose changes a paint reads — a mode registry, a
  *  scoping lookup. A notification repaints the canvas; the listener takes no
  *  arguments and the returned function unsubscribes. */
@@ -101,9 +46,7 @@ export interface RedrawSource {
 }
 
 /** The `subscribe` for a layer that draws `sources`: it notifies whenever any
- *  of them does. A thunk is read when the subscription is made. Every layer
- *  that draws other layers declares this, so wrapping never silences what
- *  repaints a source. */
+ *  of them does. A thunk is read when the subscription is made. */
 export function subscribeToSources(
   sources: readonly { subscribe?: RedrawSource['subscribe'] }[]
     | (() => readonly { subscribe?: RedrawSource['subscribe'] }[]),
@@ -115,8 +58,12 @@ export function subscribeToSources(
   };
 }
 
-/** One layer of a canvas: `draw` turns `data` and the view into draw commands;
- *  the other fields control caching, visibility, coordinate space and hit-testing. */
+/**
+ * One layer of a canvas: `draw` turns `data` and the view into draw commands;
+ * the other fields control caching, visibility, coordinate space and hit-testing.
+ *
+ * @template TData - The data object passed to each draw call.
+ */
 export interface RenderLayer<TData> {
   /** Unique identifier used in visibility maps and ordering arrays. When a
    *  cache is in use, an id must identify the same logical layer across
@@ -125,17 +72,8 @@ export interface RenderLayer<TData> {
   /** Human-readable name for UI toggles. */
   label: string;
   /**
-   * Emit a DrawCommand tree for the GL backend to dispatch.
-   *
-   * For world-space layers (the default), emit commands in WORLD COORDS —
-   * `drawLayers` automatically wraps them in `{ kind: 'group', transform:
-   * viewToMat3(view), ... }` before handing them to the renderer. Do NOT
-   * apply the view transform yourself.
-   *
-   * For screen-space layers (`space: 'screen'`), emit commands in CSS-pixel
-   * coords directly; `drawLayers` passes them through unchanged. If part
-   * of a screen-space layer's output needs to track the view, wrap that
-   * subset manually with `viewToMat3(view)`.
+   * Emit a DrawCommand tree, in the coordinates `space` names. A world-space
+   * layer must NOT apply the view transform itself.
    */
   draw: (data: TData, view: View, dims: Dims) => DrawCommand[];
   /**
@@ -153,15 +91,10 @@ export interface RenderLayer<TData> {
    * `deps` if `draw` reads them.
    */
   deps?: (data: TData, view: View, dims: Dims) => readonly unknown[];
-  /**
-   * Whether the layer is shown when no explicit visibility entry exists.
-   * Defaults to `true` when absent.
-   */
+  /** Whether the layer is shown when no explicit visibility entry exists.
+   *  Defaults to `true` when absent. */
   defaultVisible?: boolean;
-  /**
-   * When true, the layer is always drawn regardless of the visibility map.
-   * Useful for layers that must never be hidden (e.g. base grid).
-   */
+  /** When true, the layer is always drawn regardless of the visibility map. */
   alwaysOn?: boolean;
   /**
    * Coordinate space the layer draws in.
@@ -178,38 +111,28 @@ export interface RenderLayer<TData> {
   /**
    * Where the layer learns that state `draw` reads, outside the scene and the
    * props, has changed. The canvas painting it subscribes while the layer is
-   * mounted and repaints on every notification, so a layer reading a mode
-   * registry needs no consumer code to follow a mode switch.
+   * mounted and repaints on every notification.
    */
   subscribe?: RedrawSource['subscribe'];
   /**
    * Full-screen passes run over this layer's own pixels before it joins the
-   * frame — a blur here blurs the world and leaves the HUD drawn above it
-   * sharp, which is the thing a CSS `filter` on the `<canvas>` cannot do.
-   *
-   * Costs nothing while empty: the renderer allocates no offscreen buffer
-   * until a layer actually declares one. See `GroupDrawCommand.effects` for
-   * what a pass may read, and {@link LayerGroup} to run one chain over
-   * several layers at once instead of one chain each.
+   * frame. See `GroupDrawCommand.effects` for what a pass may read, and
+   * {@link LayerGroup} to run one chain over several layers at once.
    */
   effects?: readonly Effect[];
   /**
    * Optional hit-test for **consumer-attached** layers.
    *
    * Only layers registered through `CanvasExtensionApi.registerLayer` are
-   * hit-tested: `hitTestExtras` walks them last-registered-first on
-   * pointerdown, and `<SceneCanvas>` folds the result into its `affordanceAt`
-   * thunk ahead of the kit's own selection chrome. First non-null result
-   * wins; null means "I don't claim this hit, try the next layer."
+   * hit-tested, last-registered-first, ahead of the kit's own selection
+   * chrome. First non-null result wins; null means "I don't claim this hit,
+   * try the next layer."
    *
    * Layers that reach the draw stack some other way — a `Tool.overlay`, an
    * entry in the `layers` map — are painted but never hit-tested, so defining
-   * `hitTest` on one has no effect. (The kit's own chrome doesn't need it: it
-   * goes through `buildAffordanceAt`.)
+   * `hitTest` on one has no effect.
    *
-   * Coordinates are world-space. The `data` arg is the layer's
-   * configured data slot (same as `draw`); `view` and `dims` mirror
-   * `draw`'s arguments.
+   * Coordinates are world-space.
    */
   hitTest?: (
     worldX: number,
@@ -223,11 +146,9 @@ export interface RenderLayer<TData> {
     isVisible?: (id: string) => boolean,
   ) => import('../../affordances/types').LayerHit | null;
   /**
-   * Called on every pointermove when no gesture is currently captured.
-   * Lets layers (e.g. HUD widgets) track hover state without participating
-   * in the drag pipeline. Coords are world-space; the layer is responsible
-   * for any further conversion (e.g. world→screen for screen-space layers)
-   * and for its own throttling.
+   * Called on every pointermove when no gesture is currently captured, so a
+   * layer can track hover state. Coords are world-space, and the layer does
+   * its own throttling.
    */
   onUncapturedMove?: (
     worldX: number,
@@ -236,10 +157,7 @@ export interface RenderLayer<TData> {
     view: View,
     dims: Dims,
   ) => void;
-  /**
-   * Called when the cursor leaves the canvas element. Lets layers clear
-   * any hover state they're holding.
-   */
+  /** Called when the cursor leaves the canvas element. */
   onUncapturedLeave?: () => void;
 }
 
@@ -261,24 +179,12 @@ function clockMs(): number {
  * Walk visible layers and concatenate their emitted DrawCommand arrays into
  * one flat list, ready to feed to `WeaselRenderer.render(commands)`.
  *
- * Visibility resolution order:
- *   1. `alwaysOn` — always drawn, ignores visibility map.
- *   2. Explicit entry in `visibility` map — overrides default.
- *   3. `layer.defaultVisible` — falls back to `true` when absent.
- *
- * Transform composition: world-space layers (the default; `space` unset or
- * `'world'`) have their commands wrapped in a `kind: 'group'` with
- * `viewToMat3(view)` before they reach the renderer. Screen-space layers
- * (`space: 'screen'`) pass through unchanged.
- *
  * A layer whose `draw` throws is dropped for the frame and reported through
  * `onLayerError` — the rest of the frame still paints.
  *
  * `groups` brackets runs of consecutive layers so they composite as one — see
- * `LayerGroup`. A layer named by no group is emitted exactly as it was before
- * groups existed, and a frame that declares none allocates nothing.
- *
- * `spans`, when passed, receives one {@link LayerDrawSpan} per layer drawn.
+ * `LayerGroup`. `spans`, when passed, receives one {@link LayerDrawSpan} per
+ * layer drawn.
  */
 export function drawLayers<TData>(
   layers: RenderLayer<TData>[],
@@ -293,9 +199,6 @@ export function drawLayers<TData>(
   spans?: LayerDrawSpan[],
 ): DrawCommand[] {
   const layerById = new Map(layers.map((l) => [l.id, l]));
-  const sequence = order
-    ? order.map((id) => layerById.get(id)).filter((l): l is RenderLayer<TData> => l !== undefined)
-    : layers;
   const v = view ?? IDENTITY_VIEW;
   const out: DrawCommand[] = [];
 
@@ -318,17 +221,11 @@ export function drawLayers<TData>(
     run = null;
   };
 
-  for (const layer of sequence) {
-    // `order` is already applied by `sequence`; passing it again would be a
-    // second, redundant lookup for the same answer.
-    if (!isLayerVisible(layer, visibility)) continue;
-
+  for (const layer of paintedLayers(layers, visibility, order)) {
     const t0 = spans ? clockMs() : 0;
     const cmds = drawOneLayer(layer, data, v, dims, cache, onLayerError);
     const buildMs = spans ? clockMs() - t0 : 0;
-    // A layer that painted nothing neither joins a run nor breaks one. Letting
-    // it break one would split a group over a debug overlay that is switched
-    // on but currently empty.
+    // A layer that painted nothing neither joins a run nor breaks one.
     if (cmds.length === 0) {
       spans?.push({ id: layer.id, start: out.length, end: out.length, buildMs });
       continue;
@@ -362,79 +259,6 @@ export function drawLayers<TData>(
 }
 
 /**
- * Layer id → the group that owns it.
- *
- * A member name claims the layer of that exact id and every layer under it in
- * the `:` namespace, so `'scene'` claims the whole split scene slot. First
- * claim wins across groups, so a second one is a declaration bug rather than a
- * silent reassignment; the same group naming a layer twice — `['scene',
- * 'scene:tiles']` — is redundant, not a conflict, and passes quietly.
- */
-function groupMembership(
-  groups: readonly LayerGroup[] | undefined,
-  layerIds: Iterable<string>,
-): Map<string, LayerGroup> | null {
-  if (!groups || groups.length === 0) return null;
-  const stack = [...layerIds];
-  const byLayer = new Map<string, LayerGroup>();
-  for (const group of groups) {
-    for (const name of group.layers) {
-      let matched = false;
-      for (const id of stack) {
-        if (id !== name && !id.startsWith(`${name}:`)) continue;
-        matched = true;
-        const claimed = byLayer.get(id);
-        if (claimed === group) continue;
-        if (claimed) {
-          console.warn(
-            `[weasel] layer "${id}" is claimed by layer groups "${claimed.id}" and ` +
-            `"${group.id}"; it stays in "${claimed.id}".`,
-          );
-          continue;
-        }
-        byLayer.set(id, group);
-      }
-      if (!matched) {
-        console.warn(
-          `[weasel] layer group "${group.id}" names "${name}", which matches no layer ` +
-          'being drawn, so it groups nothing. Check the id against the layer stack — a ' +
-          'scene with declared layers draws as "scene:<layerId>", which "scene" covers.',
-        );
-      }
-    }
-  }
-  return byLayer;
-}
-
-/**
- * Put one run of a group's commands under its shared compositing.
- *
- * No transform: every member already carries its own space wrap, so a second
- * one here would apply the view twice to world layers and once to screen ones.
- * A group that composites plainly gets no wrapper at all — an extra group
- * command that changes nothing is still a push and a pop per frame.
- */
-function wrapGroup(
-  group: LayerGroup,
-  children: DrawCommand[],
-  view: View,
-  dims: Dims,
-): DrawCommand[] {
-  const declared = typeof group.effects === 'function'
-    ? group.effects(view, dims)
-    : group.effects;
-  const effects = declared && declared.length > 0 ? declared : undefined;
-  if (!effects && group.alpha === undefined && group.colorMatrix === undefined) return children;
-  return [{
-    kind: 'group',
-    ...(effects ? { effects } : {}),
-    ...(group.alpha !== undefined ? { alpha: group.alpha } : {}),
-    ...(group.colorMatrix !== undefined ? { colorMatrix: group.colorMatrix } : {}),
-    children,
-  }];
-}
-
-/**
  * Resolve one layer's visibility: `alwaysOn` wins, then an explicit entry in
  * `visibility`, then `defaultVisible`, defaulting to shown.
  */
@@ -448,22 +272,37 @@ export function isLayerVisible<TData>(
 }
 
 /**
- * Does this layer reach the screen at all — both gates, in the order
- * `drawLayers` applies them.
+ * Does this layer reach the screen at all — membership of
+ * {@link paintedLayers}, asked of one layer.
  *
  * **A listed `order` is the whole list**, so omission from it drops a layer
  * that `visibility` would have shown, and `alwaysOn` does not rescue it.
- * Hit-testing asks this, not `isLayerVisible`: a layer that is not painted
- * but still claims pointer events is a pointer landing on nothing the user
- * can see.
+ * Hit-testing asks this, not `isLayerVisible`.
  */
 export function isLayerPainted<TData>(
   layer: RenderLayer<TData>,
   visibility: Record<string, boolean>,
-  order: string[] | undefined,
+  order: readonly string[] | undefined,
 ): boolean {
   if (order && !order.includes(layer.id)) return false;
   return isLayerVisible(layer, visibility);
+}
+
+/**
+ * The layers that reach the screen, in the order they are drawn: `order`
+ * sequences them and drops what it leaves out, then `visibility` drops what is
+ * hidden. What `drawLayers` paints, and what a view narrows its stack with.
+ */
+export function paintedLayers<TData>(
+  layers: readonly RenderLayer<TData>[],
+  visibility: Record<string, boolean>,
+  order: readonly string[] | undefined,
+): RenderLayer<TData>[] {
+  if (!order) return layers.filter((l) => isLayerVisible(l, visibility));
+  const byId = new Map(layers.map((l) => [l.id, l]));
+  return order
+    .map((id) => byId.get(id))
+    .filter((l): l is RenderLayer<TData> => l !== undefined && isLayerVisible(l, visibility));
 }
 
 /**
@@ -471,14 +310,11 @@ export function isLayerPainted<TData>(
  * world-space output wrapped in a `viewToMat3(view)` group, screen-space
  * output passed through.
  *
- * Anything rendering layers through a view — the canvas itself, a viewport
- * node's inner pass — goes through here. A second copy of this rule that
- * forgets the wrap draws world content at raw world coords, which looks
- * plausible at the identity view and wrong everywhere else.
+ * Anything rendering layers through a view goes through here.
  *
  * A `draw` that throws yields no commands, and `onLayerError` is told which
  * layer it was. The layer's cache entry goes with it, so the next frame is a
- * real re-attempt rather than a stale tree served under fresh deps.
+ * real re-attempt.
  */
 export function drawOneLayer<TData>(
   layer: RenderLayer<TData>,

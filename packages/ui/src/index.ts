@@ -27,6 +27,7 @@ export * from './components/ThemeSwitcher';
 export * from './components/OptionsBar';
 export * from './components/ButtonBar';
 export * from './components/ToolOptionsBar';
+export * from './components/CharacterOptions';
 export * from './components/Bar';
 export * from './components/PaintInput';
 export * from './components/PaintField';
@@ -46,6 +47,7 @@ export * from './components/Properties';
 // The factories' bare names (`rule`, `tab`, …) are too generic for the root barrel; they come
 // from `@weasel-js/ui/components/MotifFrame`, and here only as `motifs.rule`.
 export {
+  DefaultMotif,
   type FrameParts,
   type HeadingParts,
   type Motif,
@@ -94,6 +96,7 @@ export * from './components/Plot2D';
 export * from './components/CurveEditor';
 export * from './components/PointPlotter';
 export * from './components/ColorField';
+export * from './components/CommandPalette';
 export * from './components/TokenPanel';
 export * from './components/GradientEditor';
 export * from './components/BandEditor';

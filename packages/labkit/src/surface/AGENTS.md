@@ -14,6 +14,8 @@ than a few 3D tiles have to share one surface.
 |---|---|
 | `rect.ts` | The `Rect` and `Box` types |
 | `composeRects.ts` | Tile boxes into surface-relative rects; both are viewport-relative, so it is a subtraction |
+| `clip.ts` | `clipToAncestors` — a tile's box cut by every ancestor that clips its overflow |
+| `measureTiles.ts` | Every tile's rect and its visible part, measured in one pass |
 | `deviceRect.ts` | `toDeviceRect` — y-flip and device-grid snapping for a GL viewport |
 | `useTiledSurface.ts` | ResizeObserver, dirty set, rAF coalescing, DPR, re-tile clears |
 | `SurfaceContext.ts` | Carries the handle down |
@@ -41,6 +43,17 @@ draw has to know where it is drawing relative to a surface that may have resized
 under it. It runs before this frame's painters, and what it invalidates paints
 in the same frame: a buffer the owner just resized is blank, and every tile owes
 a repaint.
+
+## A rect is where a tile is, not how much of it shows
+
+A tenant's pixels and its chrome live on the surface, outside whatever clips the
+tile's element, so a tile panned out of its stage would be drawn over the trial
+beside it. A frame carries `visible` beside `rects`, keyed alike: each rect cut by
+every ancestor that clips its overflow, zero-sized when nothing shows. Scissor and
+position chrome by `visible`; place the drawing against `rects`. A change to
+either re-tiles. `<Stage>` re-measures when its viewport resizes; a host that
+resizes some other clipping element without moving a tile calls
+`invalidateRects()`.
 
 ## A tile id is scoped to its trial
 

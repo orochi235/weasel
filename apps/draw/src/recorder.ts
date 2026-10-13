@@ -1,26 +1,8 @@
-/** Input recorder for WeaselDraw.
- *
- *  Captures pointer / wheel / keyboard events on `document` in the capture
- *  phase so we see them before any app handler can stopPropagation. Each
- *  event is reduced to a serializable `RecordedEvent` carrying just the
- *  fields the replay path needs to synthesize an equivalent native event.
- *
- *  Listeners are only attached between `start()` and `stop()` — when no
- *  recording is in flight, this module is inert and does not interfere
- *  with normal app interaction.
- *
- *  v1 of the format bundles a `SceneSnapshot` taken at `start()` time so a
- *  recording is self-contained: replay can restore the baseline scene
- *  before firing the first event.
+/** Input recorder for WeaselDraw. Captures pointer and wheel events on the surface it is given
+ *  (or on `document`), and keyboard events on `document`, in the capture phase so we see them
+ *  before any app handler can stopPropagation. Listeners are only attached between `start()`
+ *  and `stop()`.
  */
-
-import type { SerializedHistory } from '@weasel-js/history';
-import type { Obj } from './svgObj';
-
-/** Per-document metadata bundled into a recording's baseline snapshot. */
-export interface Document {
-  size: { width: number; height: number };
-}
 
 export interface View {
   x: number;
@@ -28,32 +10,22 @@ export interface View {
   scale: { x: number; y: number };
 }
 
-/** Self-contained baseline scene captured at `start()` time so replay can
- *  restore the scene before firing the first recorded event. (Formerly lived
- *  in the now-removed IndexedDB `sceneStore`; the recorder is its sole
- *  consumer.) */
+/** Self-contained baseline captured at `start()` time so replay can restore
+ *  the scene and the camera before firing the first recorded event. */
 export interface SceneSnapshot {
-  version: 1;
-  items: Obj[];
-  doc: Document;
+  version: 2;
+  /** The scene as `scene.toJSON()` gives it, already through the JSON
+   *  replacer that persistence uses, so it survives `JSON.stringify`. */
+  scene: unknown;
   view: View;
-  /** Optional — older snapshots predate selection persistence. */
-  selection?: string[];
-  /** Optional — older snapshots predate history persistence. */
-  history?: SerializedHistory;
 }
 
-/** Controls how aggressively the recorder samples pointermove. Other event
- *  types (down/up/cancel/wheel/key) are always captured regardless.
+/** How aggressively the recorder samples pointermove. Other event types are always captured.
  *
- *  - `gesture-only` (default) — pointermove only between pointerdown and
- *    the matching pointerup/pointercancel. Idle drift between gestures is
- *    dropped, which typically removes 70–90% of all recorded events with
- *    no replay-quality impact (idle moves don't influence app state).
- *  - `full` — every pointermove, including idle drift. Use for replaying
- *    hover behaviors or debugging an out-of-gesture surface.
- *  - `events-only` — no pointermove at all. Use for action-level replay
- *    where only down/up/key/wheel matter; loses gesture trajectory. */
+ *  - `gesture-only` (default) — pointermove only between pointerdown and the matching
+ *    pointerup/pointercancel.
+ *  - `full` — every pointermove, including idle drift. Use for replaying hover behaviors.
+ *  - `events-only` — no pointermove at all; loses gesture trajectory. */
 export type RecordingProfile = 'gesture-only' | 'full' | 'events-only';
 
 /** Bitmask values used in `RecordedEvent.m`. OR together; absent / zero
@@ -74,10 +46,8 @@ export interface RecordedEvent {
   key?: string;
   deltaX?: number;
   deltaY?: number;
-  /** Modifier bitmask: `MOD_ALT | MOD_CTRL | MOD_META | MOD_SHIFT`. Omitted
-   *  when no modifiers were held. Replaces the four separate booleans for
-   *  byte-size; the booleans remain readable on legacy recordings for
-   *  backward-compat. */
+  /** Modifier bitmask: `MOD_ALT | MOD_CTRL | MOD_META | MOD_SHIFT`. Omitted when no
+   *  modifiers were held. */
   m?: number;
   /** @deprecated Use `m` (bitmask). Retained for forward-compat with
    *  pre-bitmask recordings. */
@@ -90,17 +60,13 @@ export interface RecordedEvent {
   shiftKey?: boolean;
   pointerType?: string;
   pointerId?: number;
-  /** Selector-like target hint. EventTargets aren't serializable; we
-   *  classify into three buckets so replay can route to the right node:
-   *  the canvas element, the document, or "other" (unknown — replay
-   *  falls back to the canvas). */
+  /** EventTargets aren't serializable, so the target is classified: the canvas element, the
+   *  document, or "other" (replay falls back to the canvas). */
   target: 'canvas' | 'document' | 'other';
 }
 
-/** Decode a `RecordedEvent`'s modifier state into the four flags the DOM
- *  event constructors expect. Reads from `m` (bitmask) when present, else
- *  falls back to the deprecated boolean fields so legacy recordings still
- *  replay correctly. */
+/** A `RecordedEvent`'s modifier state as the four flags the DOM event constructors expect.
+ *  Falls back to the deprecated boolean fields so legacy recordings still replay. */
 export function decodeModifiers(rec: Pick<RecordedEvent, 'm' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>): {
   altKey: boolean;
   ctrlKey: boolean;
@@ -127,17 +93,14 @@ export interface Recording {
   version: 1;
   /** ISO timestamp; useful when looking at a saved file. Not used by replay. */
   startedAt: string;
-  /** Profile this recording was captured with. Replay treats them all
-   *  identically — the field is metadata for debugging file size /
-   *  faithfulness questions later. Optional for forward-compat with
-   *  recordings saved before profiles existed. */
+  /** Profile this recording was captured with. Metadata only: replay treats them all
+   *  identically. */
   profile?: RecordingProfile;
   /** Viewport size at record time. Replay can sanity-check that coordinates
    *  are within plausible range against the current viewport. */
   viewport: { w: number; h: number };
-  /** Baseline scene captured at `start()`. Replay can restore this before
-   *  firing the first event so the recording is self-contained. May be null
-   *  if the caller didn't pass a snapshot fn (e.g. record against live scene). */
+  /** Baseline scene captured at `start()`, for replay to restore before the first event.
+   *  Null if the caller didn't pass a snapshot fn. */
   scene: SceneSnapshot | null;
   events: RecordedEvent[];
 }
@@ -147,11 +110,8 @@ export interface Recorder {
     snapshotScene?: () => SceneSnapshot | null;
     /** Sampling strategy; default `'gesture-only'`. See `RecordingProfile`. */
     profile?: RecordingProfile;
-    /** Minimum spacing in ms between captured pointermove events. Default
-     *  16 (≈60Hz). Set to `0` to disable throttling and record every
-     *  move (useful for high-fidelity gesture replay or debugging). The
-     *  first pointermove inside a gesture is always captured regardless
-     *  of throttle so threshold-crossing info isn't lost. */
+    /** Minimum spacing in ms between captured pointermove events. Default 16 (≈60Hz); `0`
+     *  records every move. The first pointermove inside a gesture is always captured. */
     throttleMs?: number;
   }): void;
   stop(): Recording;
@@ -162,7 +122,12 @@ const POINTER_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel
 const KEY_TYPES = ['keydown', 'keyup'] as const;
 
 export function createRecorder(opts: {
-  canvas: () => HTMLCanvasElement | null;
+  canvas: () => Element | null;
+  /** Where pointer and wheel input is heard. Defaults to `document`; given the
+   *  canvas, a press on the app's own chrome is not part of the recording. */
+  surface?: () => EventTarget | null;
+  /** A key the host handles itself, such as the one that stops the recording. */
+  skipKey?: (e: KeyboardEvent) => boolean;
   /** Monotonic millisecond clock; defaults to `performance.now`. Injecting one
    *  lets tests drive the pointermove throttle without racing wall time. */
   clock?: () => number;
@@ -186,6 +151,7 @@ export function createRecorder(opts: {
   // Per-listener function references so removal pairs precisely with addition.
   // Each handler is bound once at `start()` and torn down at `stop()`.
   let listeners: Array<{
+    on: EventTarget;
     type: RecordedEvent['type'];
     fn: (e: Event) => void;
   }> = [];
@@ -199,9 +165,8 @@ export function createRecorder(opts: {
 
   const now = (): number => clock() - startTime;
 
-  /** Build the modifier subset of a `RecordedEvent` as a single bitmask.
-   *  Returns `{ m }` when any modifier is held, an empty object otherwise so
-   *  the spread omits the field entirely (no `:0` in the JSON). */
+  /** Returns an empty object when no modifier is held, so the spread omits the field
+   *  entirely (no `:0` in the JSON). */
   const modifiers = (
     e: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
   ): { m?: number } => {
@@ -222,10 +187,8 @@ export function createRecorder(opts: {
       const t = now();
       if (throttleMs > 0 && t - lastMoveT < throttleMs) return;
       lastMoveT = t;
-      // Pointermove inside a gesture: `button`/`buttons`/`pointerType`/
-      // `pointerId` don't change from the matching pointerdown, so we omit
-      // them. Replay reconstitutes via the down event (`?? defaults` in
-      // `buildPointerEvent`).
+      // `button`/`buttons`/`pointerType`/`pointerId` don't change from the matching
+      // pointerdown, so a move omits them; replay reconstitutes via the down event.
       events.push({
         type,
         t,
@@ -238,8 +201,7 @@ export function createRecorder(opts: {
     }
     if (type === 'pointerdown') {
       activeDowns.add(pe.pointerId);
-      // Let the first pointermove of every new gesture through, even if it
-      // fires immediately after this pointerdown — threshold-crossing info
+      // Let the first pointermove of every new gesture through — threshold-crossing info
       // is the most replay-relevant move.
       lastMoveT = -Infinity;
     }
@@ -276,6 +238,7 @@ export function createRecorder(opts: {
   const handleKey = (type: 'keydown' | 'keyup') => (e: Event): void => {
     if (!active) return;
     const ke = e as KeyboardEvent;
+    if (opts.skipKey?.(ke)) return;
     events.push({
       type,
       t: now(),
@@ -307,12 +270,13 @@ export function createRecorder(opts: {
 
       // Build & attach listeners. Capture phase + non-passive so we see
       // events before app handlers, including ones that might preventDefault.
+      const surface = opts.surface?.() ?? document;
       listeners = [];
-      for (const t of POINTER_TYPES) listeners.push({ type: t, fn: handlePointer(t) });
-      listeners.push({ type: 'wheel', fn: handleWheel });
-      for (const t of KEY_TYPES) listeners.push({ type: t, fn: handleKey(t) });
-      for (const { type, fn } of listeners) {
-        document.addEventListener(type, fn, { capture: true, passive: false });
+      for (const t of POINTER_TYPES) listeners.push({ on: surface, type: t, fn: handlePointer(t) });
+      listeners.push({ on: surface, type: 'wheel', fn: handleWheel });
+      for (const t of KEY_TYPES) listeners.push({ on: document, type: t, fn: handleKey(t) });
+      for (const { on, type, fn } of listeners) {
+        on.addEventListener(type, fn, { capture: true, passive: false });
       }
     },
     stop() {
@@ -326,8 +290,8 @@ export function createRecorder(opts: {
           events: [],
         };
       }
-      for (const { type, fn } of listeners) {
-        document.removeEventListener(type, fn, { capture: true } as EventListenerOptions);
+      for (const { on, type, fn } of listeners) {
+        on.removeEventListener(type, fn, { capture: true } as EventListenerOptions);
       }
       listeners = [];
       active = false;

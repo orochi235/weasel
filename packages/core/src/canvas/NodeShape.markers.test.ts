@@ -16,7 +16,7 @@ function nodeWith(stroke: unknown) {
 
 describe('markers on a path node', () => {
   it('emits only the stroke command when no marker is set', () => {
-    const node = nodeWith({ paint: { fill: 'solid', color: '#000' }, width: 2 });
+    const node = nodeWith({ paint: { kind: 'solid', color: '#000' }, width: 2 });
     const cmds = findNodeShape(node)!.paint!(node, POSE as never, {} as never);
     expect(cmds).toHaveLength(1);
   });
@@ -24,16 +24,16 @@ describe('markers on a path node', () => {
   // The renderer draws the head, where the view scale a `{ px }` size needs
   // is known; a painter only passes the marker through on its stroke.
   it('leaves the marker on the stroke for the renderer to draw', () => {
-    const node = nodeWith({ paint: { fill: 'solid', color: '#000' }, width: 2, markerEnd: 'arrow' });
+    const node = nodeWith({ paint: { kind: 'solid', color: '#000' }, width: 2, markerEnd: 'arrow' });
     const cmds = findNodeShape(node)!.paint!(node, POSE as never, {} as never);
     expect(cmds).toHaveLength(1);
     expect((cmds[0] as { stroke?: { markerEnd?: unknown } }).stroke?.markerEnd).toBe('arrow');
   });
 
   it('reaches past the path end for hit-testing', () => {
-    const plain = nodeWith({ paint: { fill: 'solid', color: '#000' }, width: 2 });
+    const plain = nodeWith({ paint: { kind: 'solid', color: '#000' }, width: 2 });
     const marked = nodeWith({
-      paint: { fill: 'solid', color: '#000' }, width: 2, markerEnd: 'arrow',
+      paint: { kind: 'solid', color: '#000' }, width: 2, markerEnd: 'arrow',
     });
     const inkOf = (n: unknown) =>
       findNodeShape(n as never)!.ink!(n as never, POSE as never, { scale: 1 } as never);
@@ -43,8 +43,8 @@ describe('markers on a path node', () => {
   // An open head stops the ribbon nowhere, but its arms still paint past the
   // line, and visible chrome is hittable.
   it.each(['arrow-open', 'bar'])('covers the painted extent of %s, which insets nothing', (key) => {
-    const plain = nodeWith({ paint: { fill: 'solid', color: '#000' }, width: 2 });
-    const marked = nodeWith({ paint: { fill: 'solid', color: '#000' }, width: 2, markerEnd: key });
+    const plain = nodeWith({ paint: { kind: 'solid', color: '#000' }, width: 2 });
+    const marked = nodeWith({ paint: { kind: 'solid', color: '#000' }, width: 2, markerEnd: key });
     const inkOf = (n: unknown) =>
       findNodeShape(n as never)!.ink!(n as never, POSE as never, { scale: 1 } as never)!.outset;
     // arrow-open's arms reach 2.867 units back, bar's 1.5 across; both carry a
@@ -57,7 +57,7 @@ describe('markers on a path node', () => {
   // scale, beside the world reach of the world-width line it caps.
   it('reaches a { px } marker size in screen pixels', () => {
     const node = nodeWith({
-      paint: { fill: 'solid', color: '#000' }, width: 2,
+      paint: { kind: 'solid', color: '#000' }, width: 2,
       markerEnd: { key: 'arrow', size: { px: 8 } },
     });
     const ink = (scale: number) => findNodeShape(node)!.ink!(node, POSE as never, { scale } as never)!;
@@ -79,7 +79,7 @@ function derivedNodeWith(stroke: unknown) {
 }
 
 describe('markers on a derived path', () => {
-  const STROKE = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+  const STROKE = { paint: { kind: 'solid', color: '#000' }, width: 2 };
   const paint = (node: unknown) =>
     findNodeShape(node as never)!.paint!(node as never, POSE as never, { derivedPath: LINE } as never);
 

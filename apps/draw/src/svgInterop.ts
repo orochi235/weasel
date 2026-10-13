@@ -1,19 +1,14 @@
 /**
- * Bridge between WeaselDraw's `Obj` discriminated union (`PathObj |
- * TextObj | ImageObj`, discriminated by `tool`) and `@weasel-js/svg`'s
- * `SvgNode` discriminated union, layered over the package's own
- * `svgNodesFromKit` / `svgNodesToKitDrafts` walks. What it adds is the `wd:`
- * namespace. An `Obj` exists only in transit between a file and the scene:
- * `leafToObj` in `svgExport.ts` makes one, `leafOfObj` in `svgImport.ts`
- * unmakes one, and the scene never stores it.
+ * Bridge between WeaselDraw's `Obj` union and `@weasel-js/svg`'s `SvgNode`, layered over the
+ * package's own `svgNodesFromKit` / `svgNodesToKitDrafts` walks. What it adds is the `wd:`
+ * namespace. An `Obj` exists only in transit between a file and the scene; the scene never
+ * stores it.
  *
- * `tool` and `params` ride on `meta.wd.attrs` under the local names
- * `tool`, `params-sides`, `params-points`, `params-ratio`. On import, a
- * missing or unknown `wd:tool` falls back to `tool: 'rect'` when the
- * path-then-rect detector fired, else `tool: 'imported'`.
+ * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
+ * `params-points`, `params-ratio`.
  */
 
-import type { FillStyle, TextStyle } from '@weasel-js/core';
+import type { Fill, TextStyle } from '@weasel-js/core';
 import {
   svgImageFromKit,
   svgLeafFromKit,
@@ -32,23 +27,20 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
+import { downloadBlob, pickFile } from './fileIO';
+import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 
 /**
- * The `wd:` XML namespace, used to ride WeaselDraw-specific metadata
- * (paper-size, group-id, line-height, future: layers, parametric origin)
- * on top of standard SVG. weasel-svg has no knowledge of this URI — it
- * only knows the prefix → URI mapping we pass it via parse / serialize
- * options. All semantics live in this file.
- *
- * The URI does not need to resolve; it's a stable identifier only.
+ * The `wd:` XML namespace, carrying WeaselDraw-specific metadata on top of standard SVG.
+ * weasel-svg only knows the prefix → URI mapping we pass it via parse / serialize options.
+ * The URI does not need to resolve.
  */
 export const SWILL_NS = 'https://weaseldraw.app/svg-ext';
 export const SWILL_NAMESPACES = { wd: SWILL_NS } as const;
 
-/** Paper-size enum keys we round-trip via `wd:paperSize`. Must match the
- *  keys of WeaselDraw's `PAPER_PRESETS`. */
-export type WeaselDrawPaperSize = 'letter' | 'a4' | 'legal';
+/** The paper-size key round-tripped via `wd:paperSize`. */
+export type WeaselDrawPaperSize = PaperSizeKey;
 
 /** WeaselDraw's notion of the on-disk document, distilled to the bits
  *  svgInterop needs to write the root `<svg>` correctly. */
@@ -83,12 +75,8 @@ function isBackgroundNode(n: SvgNode): n is SvgPathNode {
   return n.kind === 'path' && n.meta?.wd?.attrs?.role === 'background';
 }
 
-/**
- * Build {@link SerializeOptions} from a WeaselDraw doc. Encodes the
- * WeaselDraw-specific paper-size enum + `units` under the `wd:`
- * namespace; standard `viewBox` / `width` / `height` / `<title>` come
- * through as plain SVG fields.
- */
+/** {@link SerializeOptions} for a WeaselDraw doc: the paper-size enum and `units` go under the
+ *  `wd:` namespace. */
 export function docToSerializeOptions(doc: WeaselDrawDoc): SerializeOptions {
   return {
     viewBox: { x: 0, y: 0, width: doc.size.width, height: doc.size.height },
@@ -107,12 +95,8 @@ export function docToSerializeOptions(doc: WeaselDrawDoc): SerializeOptions {
   };
 }
 
-/**
- * Interpret a {@link ParseResult} as a partial WeaselDraw doc patch.
- * The paper-size enum is only set when the source declares a value we
- * recognize (`letter` | `a4` | `legal`); other values are dropped so the
- * caller keeps whatever default it had.
- */
+/** A {@link ParseResult} as a partial doc patch. `paperSize` is only set when the source
+ *  declares a value we recognize. */
 export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
   const out: ParsedDocPatch = {};
   if (parsed.title != null) out.title = parsed.title;
@@ -120,18 +104,14 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
     out.size = { width: parsed.viewBox.width, height: parsed.viewBox.height };
   }
   const ps = parsed.documentMeta?.wd?.attrs?.paperSize;
-  if (ps === 'letter' || ps === 'a4' || ps === 'legal') out.paperSize = ps;
+  if (isPaperSize(ps)) out.paperSize = ps;
   const bg = parsed.nodes.find(isBackgroundNode);
   if (bg?.fill.kind === 'solid') out.backgroundColor = bg.fill.color;
   return out;
 }
 
-/**
- * Build the `wd:` attribute bag for an Obj: always emits `tool`, and
- * — for polygon/star PathObjs with `params` set — also `params-sides` /
- * `params-points` / `params-ratio`. Returns an empty-keyed object when
- * there is nothing to write; the caller decides whether to attach it.
- */
+/** The `wd:` attribute bag for an Obj: always `tool`, plus `params-sides` / `params-points` /
+ *  `params-ratio` for polygon/star PathObjs with `params` set. */
 function encodeWdAttrs(o: Obj): Record<string, string> {
   const attrs: Record<string, string> = { tool: o.tool };
   if (o.tool !== 'text' && o.tool !== 'image' && o.params) {
@@ -147,12 +127,8 @@ const PATH_TOOL_VALUES = new Set<string>([
   'rect', 'ellipse', 'polygon', 'star', 'line', 'pen', 'pencil', 'imported',
 ]);
 
-/**
- * Resolve the import-side `tool` (and optional `params`) for a `<path>`
- * being lifted back into an Obj. Falls back per the migration rule: if
- * no recognized `wd:tool` is present, infer `tool: 'rect'` when the
- * rect-detector fired (`pathKind === 'rect'`), else `tool: 'imported'`.
- */
+/** The import-side `tool` (and optional `params`) for a `<path>`. With no recognized `wd:tool`,
+ *  infers `rect` when the rect-detector fired (`pathKind === 'rect'`), else `imported`. */
 function decodePathToolAndParams(
   attrs: Record<string, string> | undefined,
   pathKind: 'rect' | 'polygon',
@@ -205,7 +181,7 @@ export function objToSvgNode(o: Obj): SvgNode {
   const node: SvgPathNode = {
     kind: 'path',
     path: o.path,
-    fill: svgPaintFromKit(o.fill, o),
+    fill: svgPaintFromKit(o.fill?.paint ?? null, o),
   };
   const stroke = svgStrokeFromKit(o.stroke, o);
   if (stroke) node.stroke = stroke;
@@ -214,28 +190,24 @@ export function objToSvgNode(o: Obj): SvgNode {
   return node;
 }
 
-/** Plain AABB the import attaches to a container draft (and `objToSvgNode`
- *  poses already carry). Matches WeaselDraw's `WeaselDrawPose` minus the
- *  optional `rotation` — containers never rotate. */
+/** Plain AABB the import attaches to a container draft: `WeaselDrawPose` minus `rotation` —
+ *  containers never rotate. */
 export interface RectBounds { x: number; y: number; width: number; height: number }
 
 /**
- * One node the importer wants the scene to materialize. The list is
- * ordered parent-before-child so the caller can `scene.add` each draft in
- * turn, resolving `parentId` against the ids it has already inserted.
+ * One node the importer wants the scene to materialize. The list is ordered parent-before-child
+ * so the caller can `scene.add` each draft in turn, resolving `parentId` against the ids it has
+ * already inserted.
  *
- *   - `leaf`    — an `Obj` (path/text/image); the caller lowers it to the scene's
- *                 `{pose, data}` shape exactly as it does for root leaves.
- *   - `container` — an SVG `<g>`. Carries the union-AABB of its leaf
- *                 descendants as `pose` so resize handles land sensibly,
- *                 mirroring the kit `group` action's container pose.
+ * A `container` is an SVG `<g>`; its `pose` is the union-AABB of its leaf descendants. A clipped
+ * `<g>` carries its clip in `data` and the clip's box as `pose`.
  *
- * `id` is the draft's stable identity (from `wd:group-id` for containers,
- * or the leaf `Obj.id`); the caller maps it to the minted `NodeId`.
+ * `id` comes from `wd:group-id` for containers, or the leaf `Obj.id`; the caller maps it to the
+ * minted `NodeId`.
  */
 export type SceneDraft =
   | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj }
-  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds };
+  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData };
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
@@ -283,12 +255,9 @@ function kitLeafToObj(
 }
 
 /**
- * Lower a parsed SVG to a flat, parent-before-child list of
- * {@link SceneDraft}s the caller can replay into the scene graph — the kit's
- * `svgNodesToKitDrafts`, with each leaf lifted into an `Obj` and each `<g>`
- * keeping its `wd:group-id` as its container id so round-trips are stable.
- *
- * Handed the whole `ParseResult`, it registers the document's markers too.
+ * A parsed SVG as a flat, parent-before-child list of {@link SceneDraft}s. Each `<g>` keeps its
+ * `wd:group-id` as its container id so round-trips are stable. Handed the whole `ParseResult`,
+ * it registers the document's markers too.
  */
 export function svgNodesToSceneDrafts(
   input: ParseResult | readonly SvgNode[],
@@ -301,18 +270,14 @@ export function svgNodesToSceneDrafts(
     { leaf: kitLeafToObj },
   );
   return drafts.map((d): SceneDraft => (d.kind === 'container'
-    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose }
+    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose, data: d.data }
     : { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data }));
 }
 
 /**
- * The scene the exporter walks: the kit tree `svgNodesFromKit` reads, plus
- * how this app lowers a leaf.
- *
- *   - `objOf(id)` — the leaf's `Obj`, or `undefined` to skip (e.g. a leaf
- *     with no drawable data).
- *   - `isPainted(id)` — false for a node on a hidden layer, which is skipped
- *     along with everything under it. Omit it and everything is emitted.
+ * The scene the exporter walks: the kit tree `svgNodesFromKit` reads, plus how this app lowers a
+ * leaf. `objOf` returns `undefined` to skip a leaf. `isPainted` is false for a node on a hidden
+ * layer, which is skipped along with everything under it.
  */
 export interface SceneSource extends SvgKitTree<string> {
   objOf(id: string): Obj | undefined;
@@ -320,16 +285,13 @@ export interface SceneSource extends SvgKitTree<string> {
 }
 
 /**
- * Walk a scene's container tree and emit an `SvgNode[]`. Every container
- * becomes an `SvgGroupNode` stamped with `meta.wd.attrs['group-id']` = its
- * scene id, so the structure round-trips back through
- * {@link svgNodesToSceneDrafts}. Every leaf becomes the result of
- * {@link objToSvgNode}.
+ * A scene's container tree as `SvgNode[]`. Every container becomes a group stamped with
+ * `meta.wd.attrs['group-id']` = its scene id, so the structure round-trips back through
+ * {@link svgNodesToSceneDrafts}.
  *
- * `roots`, when supplied, walks exactly those ids (in the given order)
- * instead of `source.roots` — used for a selection-subset export (see
- * `selectionToSvgString` in `svgExport.ts`). A hidden node is skipped either
- * way: a selection naming one still must not export it.
+ * `roots`, when supplied, walks exactly those ids (in the given order) instead of
+ * `source.roots`. A hidden node is skipped either way: a selection naming one still must not
+ * export it.
  */
 export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]): SvgNode[] {
   return svgNodesFromKit(source, {
@@ -344,61 +306,20 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
 }
 
 /** SVG's initial `fill`, for a path that names none. */
-const DEFAULT_IMPORT_FILL: FillStyle = { color: '#000000' };
+const DEFAULT_IMPORT_FILL: Fill = { paint: { color: '#000000' } };
 
 /** Trigger a browser download of `svg` as a file named `filename`. */
 export function downloadSvg(svg: string, filename: string): void {
-  const blob = new Blob([svg], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // Defer revoke so the click has time to start the download.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), filename);
 }
 
-/**
- * Pop a hidden file input; resolve with the chosen file's text (or null
- * if the user cancelled). Single-shot — the input is created and removed
- * per invocation so there's no accumulated DOM cruft.
- */
-export function pickSvgFile(): Promise<string | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.svg,image/svg+xml';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-    let resolved = false;
-    const cleanup = (): void => {
-      if (input.parentNode) input.parentNode.removeChild(input);
-    };
-    input.addEventListener('change', () => {
-      const file = input.files?.[0];
-      if (!file) {
-        if (!resolved) { resolved = true; resolve(null); }
-        cleanup();
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (!resolved) { resolved = true; resolve(String(reader.result ?? '')); }
-        cleanup();
-      };
-      reader.onerror = () => {
-        if (!resolved) { resolved = true; resolve(null); }
-        cleanup();
-      };
-      reader.readAsText(file);
-    });
-    // Fallback: if the picker is dismissed without firing change, give up.
-    input.addEventListener('cancel', () => {
-      if (!resolved) { resolved = true; resolve(null); }
-      cleanup();
-    });
-    input.click();
-  });
+/** Pick an SVG file; resolve with its name and text, or null if the user cancelled. */
+export async function pickSvgFileNamed(): Promise<{ name: string; text: string } | null> {
+  const file = await pickFile('.svg,image/svg+xml');
+  if (!file) return null;
+  try {
+    return { name: file.name, text: await file.text() };
+  } catch {
+    return null;
+  }
 }

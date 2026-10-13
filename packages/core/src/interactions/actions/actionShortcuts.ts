@@ -1,8 +1,6 @@
 /**
  * Project an action's keyboard bindings into the shape a shortcut chip
- * renders from (`formatShortcut` / `formatShortcutParts` in
- * `@weasel-js/ui`). Palette and menu surfaces show what an action answers
- * to; the dispatcher reads the specs themselves.
+ * renders from (`formatShortcut` / `formatShortcutParts` in `@weasel-js/ui`).
  */
 import type { GestureSpec } from '../gestures/spec';
 import type { Action } from '@weasel-js/routing';
@@ -22,17 +20,13 @@ export interface ActionShortcut {
  * The chip form of a single gesture spec, or `undefined` when the spec has
  * none.
  *
- * Two kinds of collapsing, both because a binding list is written for a
- * matcher rather than for a reader:
- *
  * - A spec's `key` may list spellings of one keycap (`['[', '{']` — the
  *   shifted bracket reports as `'{'`). The first is the shortcut's name.
  * - A modifier declared `'optional'` matches held or unheld, so it isn't
  *   part of what the user has to press.
  *
  * Non-keyboard specs (drag, wheel, click) have no chip form. Neither does a
- * *required* `ctrl` or `meta` — nothing in the kit declares one, and the
- * display shape carries only `mod`.
+ * *required* `ctrl` or `meta`: the display shape carries only `mod`.
  */
 export function keySpecShortcut(spec: GestureSpec): ActionShortcut | undefined {
   if (spec.kind !== 'key' && spec.kind !== 'key-held') return undefined;

@@ -8,7 +8,8 @@
  * width only when the style declares `wrap`; otherwise a line runs as long as
  * its text, whichever of them is asking.
  */
-import type { LaidOutRuns, LayoutRunsOpts } from './layoutRuns';
+import type { LayoutRunsOpts } from './layoutOpts';
+import type { LaidOutRuns } from './layoutRuns';
 import { cachedLayoutRuns } from './layoutCache';
 import { resolveTextStyle, type ResolvedTextStyle } from '../textStyle';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';

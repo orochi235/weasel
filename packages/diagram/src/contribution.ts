@@ -2,17 +2,14 @@
  * The plugin as a `Contribution` bundle — one object a consumer hands to
  * `<SceneCanvas ambient={…}>`.
  *
- * **Ambient, not a tool.** Connect is not a mode the author enters: a port is
- * grabbable whatever tool is active, which is the same reason `@weasel-js/hud`
- * ships `eligibility: { claimed: true }`. `claimed` is what makes the bundle
- * live for a press the port layer's affordance claimed, and dormant otherwise.
+ * **Ambient, not a tool.** A port is grabbable whatever tool is active:
+ * `claimed` makes the bundle live for a press the port layer's affordance
+ * claimed, and dormant otherwise.
  *
  * **The layer is not in here, on purpose.** `Contribution.overlay` is painted
  * and never hit-tested — only `CanvasExtensionApi.registerLayer` gets a
- * `hitTest` call. Shipping the port layer as an overlay would paint every port
- * and make none of them grabbable, which is exactly the state this arc started
- * from. {@link diagramPorts} hands back the bundle and the layer together so
- * the two cannot be wired half-way.
+ * `hitTest` call — so the port layer as an overlay would paint every port and
+ * make none of them grabbable. {@link diagramPorts} hands back both.
  */
 import type { Contribution, RenderLayer } from '@weasel-js/core';
 import {

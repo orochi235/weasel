@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  isGradientFill,
+  isGradientPaint,
   sampleGradientStops,
   withGradientKind,
   gradientGeometry,
@@ -8,7 +8,7 @@ import {
 } from './gradient';
 import { srgbU8ToOklab, oklabToOklch } from './colorSpaces';
 import { resolveColor } from './color';
-import type { GradStop, GradientFill } from './paint';
+import type { GradStop, GradientPaint } from './paint';
 
 const BW: GradStop[] = [
   { offset: 0, color: '#000000' },
@@ -76,7 +76,7 @@ describe('sampleGradientStops', () => {
 describe('gradientGeometry', () => {
   it('reads a linear gradient as midpoint, half-length and direction', () => {
     const g = gradientGeometry({
-      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 100, y: 0 }, stops: BW,
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 100, y: 0 }, stops: BW,
     });
     expect(g.center).toEqual({ x: 50, y: 0 });
     expect(g.radius).toBe(50);
@@ -85,8 +85,8 @@ describe('gradientGeometry', () => {
 });
 
 describe('withGradientKind', () => {
-  const linear: GradientFill = {
-    fill: 'linear-gradient',
+  const linear: GradientPaint = {
+    kind: 'linear-gradient',
     from: { x: 0, y: 0 },
     to: { x: 100, y: 0 },
     stops: BW,
@@ -107,7 +107,7 @@ describe('withGradientKind', () => {
 
   it('keeps the center fixed when going linear → radial', () => {
     const radial = withGradientKind(linear, 'radial-gradient');
-    expect(radial).toMatchObject({ fill: 'radial-gradient', center: { x: 50, y: 0 }, radius: 50 });
+    expect(radial).toMatchObject({ kind: 'radial-gradient', center: { x: 50, y: 0 }, radius: 50 });
   });
 
   it('round-trips linear → radial → linear back to the original segment', () => {
@@ -116,20 +116,20 @@ describe('withGradientKind', () => {
   });
 
   it('loses segment direction through radial, which stores no angle, but keeps center and length', () => {
-    const vertical: GradientFill = {
-      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 80 }, stops: BW,
+    const vertical: GradientPaint = {
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 80 }, stops: BW,
     };
     const back = withGradientKind(withGradientKind(vertical, 'radial-gradient'), 'linear-gradient');
-    if (back.fill !== 'linear-gradient') throw new Error('unreachable');
+    if (back.kind !== 'linear-gradient') throw new Error('unreachable');
     expect(back).toMatchObject({ from: { x: -40, y: 40 }, to: { x: 40, y: 40 } });
   });
 
   it('preserves direction and center through conic, which stores an angle but no length', () => {
-    const vertical: GradientFill = {
-      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 80 }, stops: BW,
+    const vertical: GradientPaint = {
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0, y: 80 }, stops: BW,
     };
     const back = withGradientKind(withGradientKind(vertical, 'conic-gradient'), 'linear-gradient');
-    if (back.fill !== 'linear-gradient') throw new Error('unreachable');
+    if (back.kind !== 'linear-gradient') throw new Error('unreachable');
     expect(back.from.x).toBeCloseTo(0);
     expect(back.to.x).toBeCloseTo(0);
     expect(back.to.y).toBeGreaterThan(back.from.y);
@@ -138,15 +138,15 @@ describe('withGradientKind', () => {
 
   it('carries the angle into a conic gradient', () => {
     const conic = withGradientKind(linear, 'conic-gradient');
-    expect(conic).toMatchObject({ fill: 'conic-gradient', center: { x: 50, y: 0 }, angle: 0 });
+    expect(conic).toMatchObject({ kind: 'conic-gradient', center: { x: 50, y: 0 }, angle: 0 });
   });
 
   it('gives a conic gradient a usable arm, so conic → linear is not degenerate', () => {
-    const conic: GradientFill = {
-      fill: 'conic-gradient', center: { x: 10, y: 10 }, angle: 0, stops: BW,
+    const conic: GradientPaint = {
+      kind: 'conic-gradient', center: { x: 10, y: 10 }, angle: 0, stops: BW,
     };
     const asLinear = withGradientKind(conic, 'linear-gradient');
-    if (asLinear.fill !== 'linear-gradient') throw new Error('unreachable');
+    if (asLinear.kind !== 'linear-gradient') throw new Error('unreachable');
     expect(Math.hypot(asLinear.to.x - asLinear.from.x, asLinear.to.y - asLinear.from.y)).toBeGreaterThan(0);
   });
 });
@@ -156,7 +156,7 @@ describe('gradientForBounds', () => {
 
   it('spans a linear gradient across the box, left to right', () => {
     expect(gradientForBounds('linear-gradient', bounds, BW, 'local')).toMatchObject({
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 10, y: 45 },
       to: { x: 110, y: 45 },
       units: 'local',
@@ -165,7 +165,7 @@ describe('gradientForBounds', () => {
 
   it('centers a radial gradient and sizes it to the larger side', () => {
     expect(gradientForBounds('radial-gradient', bounds, BW)).toMatchObject({
-      fill: 'radial-gradient',
+      kind: 'radial-gradient',
       center: { x: 60, y: 45 },
       radius: 50,
     });
@@ -173,7 +173,7 @@ describe('gradientForBounds', () => {
 
   it('centers a conic gradient at zero angle', () => {
     expect(gradientForBounds('conic-gradient', bounds, BW)).toMatchObject({
-      fill: 'conic-gradient',
+      kind: 'conic-gradient',
       center: { x: 60, y: 45 },
       angle: 0,
     });
@@ -181,13 +181,13 @@ describe('gradientForBounds', () => {
 });
 
 describe('conic conversions respect the unit system', () => {
-  const conicIn = (units: GradientFill['units']): GradientFill => ({
-    fill: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0, stops: BW, units,
+  const conicIn = (units: GradientPaint['units']): GradientPaint => ({
+    kind: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0, stops: BW, units,
   });
 
   it('keeps a bounds conic → radial inside its own box', () => {
     const radial = withGradientKind(conicIn('bounds'), 'radial-gradient');
-    if (radial.fill !== 'radial-gradient') throw new Error('unreachable');
+    if (radial.kind !== 'radial-gradient') throw new Error('unreachable');
     // A pixel-flavored default here would be fifty times the box.
     expect(radial.radius).toBeLessThanOrEqual(1);
     expect(radial.radius).toBeGreaterThan(0);
@@ -195,7 +195,7 @@ describe('conic conversions respect the unit system', () => {
 
   it('keeps a bounds conic → linear inside its own box', () => {
     const linear = withGradientKind(conicIn('bounds'), 'linear-gradient');
-    if (linear.fill !== 'linear-gradient') throw new Error('unreachable');
+    if (linear.kind !== 'linear-gradient') throw new Error('unreachable');
     for (const p of [linear.from, linear.to]) {
       expect(p.x).toBeGreaterThanOrEqual(-0.01);
       expect(p.x).toBeLessThanOrEqual(1.01);
@@ -204,24 +204,24 @@ describe('conic conversions respect the unit system', () => {
 
   it('still uses a pixel-scale arm for a gradient in absolute units', () => {
     const radial = withGradientKind(conicIn('world'), 'radial-gradient');
-    if (radial.fill !== 'radial-gradient') throw new Error('unreachable');
+    if (radial.kind !== 'radial-gradient') throw new Error('unreachable');
     expect(radial.radius).toBeGreaterThan(1);
   });
 });
 
-describe('isGradientFill', () => {
+describe('isGradientPaint', () => {
   const stops = [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }];
 
   it('accepts all three gradient kinds', () => {
-    expect(isGradientFill({ fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops })).toBe(true);
-    expect(isGradientFill({ fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 1, stops })).toBe(true);
-    expect(isGradientFill({ fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops })).toBe(true);
+    expect(isGradientPaint({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops })).toBe(true);
+    expect(isGradientPaint({ kind: 'radial-gradient', center: { x: 0, y: 0 }, radius: 1, stops })).toBe(true);
+    expect(isGradientPaint({ kind: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops })).toBe(true);
   });
 
   it('rejects everything else, absence included', () => {
-    expect(isGradientFill({ fill: 'solid', color: '#f00' })).toBe(false);
-    expect(isGradientFill(null)).toBe(false);
-    expect(isGradientFill(undefined)).toBe(false);
+    expect(isGradientPaint({ kind: 'solid', color: '#f00' })).toBe(false);
+    expect(isGradientPaint(null)).toBe(false);
+    expect(isGradientPaint(undefined)).toBe(false);
   });
 });
 
@@ -266,8 +266,8 @@ describe('interpolation space', () => {
   });
 
   it('survives a kind switch, which rebuilds the paint field by field', () => {
-    const linear: GradientFill = {
-      fill: 'linear-gradient',
+    const linear: GradientPaint = {
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: RB, units: 'bounds', interpolate: 'oklch',
     };

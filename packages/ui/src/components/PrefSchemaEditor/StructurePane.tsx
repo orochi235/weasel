@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
@@ -8,15 +8,14 @@ import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
-import { ResizeHandle } from '../ResizeHandle';
-import { ActionList } from './ActionList';
-import { useEditorSize } from './editorPrefs';
 import type { EditorAction } from './editorActions';
 import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
 import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
+import { ShelfLists } from './Shelf';
+import { StoredArea } from './StoredArea';
 import { UnplacedTree } from './UnplacedTree';
 import { toTreeNodes } from './structureRows';
 import { stillUnplaced } from './unplaced';
@@ -51,9 +50,11 @@ export interface StructurePaneProps {
   onExpandedChange: Dispatch<SetStateAction<Set<string>>>;
   /** Where in the editor's bar the pane draws the tools that add and remove nodes; `null` until the bar is up. */
   toolSlot: HTMLElement | null;
+  /** Where in the editor's shelf the pane draws the lists dragged from into the tree; `null` until the shelf is up. */
+  shelfSlot: HTMLElement | null;
   /** Nodes the schema does not hold yet, listed under the tree with what it holds on no page, to be dragged into it. */
   unplaced?: PrefGroup;
-  /** The actions the host has, listed under the tree to be dragged into it as prefs that fire them. */
+  /** The actions the host has, listed in the shelf to be dragged into the tree as prefs that fire them. */
   actions?: readonly EditorAction[];
   /** Somewhere else a drag from this pane may end: the live preview. */
   outside?: DropOutside;
@@ -64,7 +65,8 @@ export interface StructurePaneProps {
   /** The schema takes no edit: no tool adds or removes, and nothing is dropped here. Its rows can still be dragged out. */
   readOnly?: boolean;
   /** The dialog a layout's pointers name settings in. Given, the schema is a layout: what sits directly under its
-   *  root is a row of it and not unplaced, a pointer's row is named as its setting, and nothing adds a pref or a page. */
+   *  root is a row of it and not unplaced, a pointer's row is named as its setting, and nothing adds a pref or a page.
+   *  Its settings are listed in the shelf, to be dragged into the tree as pointers. */
   over?: SchemaRoot;
   /** What a host draws on a node's row before its kind, by the node's path in this tree. */
   rowMark?: (path: string) => ReactNode;
@@ -113,7 +115,7 @@ function aliasTargetOf(schema: SchemaRoot, selected: readonly string[], lead: st
   return { parentPath: parent, index: sibs.indexOf(keyOf(lead)) + 1 };
 }
 
-export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, shelfSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
   const pageless = over !== undefined;
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
@@ -128,8 +130,6 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     [nodes, sought],
   );
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
-  const unplacedSize = useEditorSize('unplacedHeight');
-  const actionsSize = useEditorSize('actionsHeight');
   const treeArea = useRef<HTMLDivElement | null>(null);
   const unplacedArea = useRef<HTMLDivElement | null>(null);
   const [unplacing, setUnplacing] = useState(false);
@@ -295,26 +295,12 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       />
       </div>
       {(unplaced !== undefined || holdsPages(schema, pageless)) && (
-        <>
-          <ResizeHandle orientation="horizontal" invert {...unplacedSize} min={60} max={600}
-            ariaLabel="Resize unplaced" />
-          <div className={s.storedArea} ref={unplacedArea} data-drop={unplacing || undefined} style={{ '--stored-h': `${unplacedSize.value}px` } as CSSProperties}>
-            <PaneHeader title="Unplaced" />
-            <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
-              selected={selected} onPick={onPick} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-          </div>
-        </>
+        <StoredArea title="Unplaced" size="unplacedHeight" areaRef={unplacedArea} dropping={unplacing}>
+          <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
+            selected={selected} onPick={onPick} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+        </StoredArea>
       )}
-      {actions !== undefined && actions.length > 0 && (
-        <>
-          <ResizeHandle orientation="horizontal" invert {...actionsSize} min={60} max={600}
-            ariaLabel="Resize actions" />
-          <div className={s.storedArea} style={{ '--stored-h': `${actionsSize.value}px` } as CSSProperties}>
-            <PaneHeader title="Actions" />
-            <ActionList actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-          </div>
-        </>
-      )}
+      <ShelfLists slot={shelfSlot} over={readOnly ? undefined : over} layout={schema} actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
     </section>
   );
 }

@@ -37,6 +37,14 @@ function makeAdapter() {
 }
 
 describe('useBooleans', () => {
+  it('trim dispatches one batch and inserts a piece per source', () => {
+    const h = makeAdapter();
+    const { result } = renderHook(() => useBooleans(h.adapter));
+    act(() => { result.current.trim(); });
+    expect(h.state.batches.map((b) => b.label)).toEqual(['Trim']);
+    expect(h.state.inserted).toHaveLength(2);
+  });
+
   it('returns five callables — one per op', () => {
     const { adapter } = makeAdapter();
     const { result } = renderHook(() => useBooleans(adapter));

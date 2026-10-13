@@ -16,10 +16,10 @@ export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionShortcuts, keySpecShortcut } from '../interactions/actions/actionShortcuts';
 export type { ActionShortcut } from '../interactions/actions/actionShortcuts';
 export { moveAction } from '../interactions/actions/move/action';
-export { resizeAction } from '../interactions/actions/defaults/resize';
-export { rotateAction } from '../interactions/actions/defaults/rotate';
+export { resizeAction } from '../interactions/actions/resize/action';
+export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
-export { insertAction } from '../interactions/actions/defaults/insert';
+export { insertAction } from '../interactions/actions/insert/action';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
 export { cloneAction } from '../interactions/actions/defaults/clone';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
@@ -99,7 +99,6 @@ export {
   type UseResizePolicyOptions,
 } from '../canvas/deps/resizePolicy';
 export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
-export { usePoseCompositionDepSource } from '../canvas/deps/poseComposition';
 export { CORNER_ANCHORS, cornerPoint } from '../interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge } from '../interactions/actions/resize/cornerHandles';
 export { useSliceDep, useSliceDepSource } from '../canvas/deps/slice';
@@ -135,6 +134,7 @@ export type {
   ModifierState,
   PointerState,
   GestureContext,
+  GestureFrames,
   SnapStrategy,
   ActionBehavior,
   BehaviorMoveResult,

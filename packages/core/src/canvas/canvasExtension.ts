@@ -4,11 +4,11 @@ import type { View } from '../core/viewport/view';
 import type { IngestItem } from '@weasel-js/routing';
 import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
 import type { PaintedCursorState } from '@weasel-js/cursor';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
-import type { Target } from '../animation/target';
-import type { Animator } from '../animation/types';
+import type { Target } from '@weasel-js/animator';
+import type { Animator } from '@weasel-js/animator';
 
 /**
  * A view added through {@link SceneCanvasApi.addView}.
@@ -25,17 +25,19 @@ export interface CanvasViewHandle {
 }
 
 /**
+ * A `<CanvasView>`'s camera, as its `cameraRef` receives it: the members a
+ * canvas's own handle carries for its camera, with the same contract. A camera
+ * derived by a thunk reads fresh but tells no subscriber when it moves;
+ * subscribe to the canvas it derives from.
+ * @experimental
+ */
+export type CanvasViewCamera = Pick<CanvasExtensionApi, 'getView' | 'setView' | 'subscribeView'>;
+
+/**
  * The **base imperative ref handle** shared by the canvas components. For
  * `<SceneCanvas>` refs use {@link SceneCanvasApi} (this type plus the
- * scene-level surfaces, e.g. a non-optional `ingest`):
+ * scene-level surfaces, e.g. a non-optional `ingest`).
  *
- * ```tsx
- * const ref = useRef<SceneCanvasApi>(null);
- * <SceneCanvas ref={ref} … />;
- * ref.current?.element?.focus();
- * ```
- *
- * This is a deliberately small, supported consumer surface — not internal.
  * Consumers use `element` for focus / screenshots / `getBoundingClientRect`;
  * plugin packages (e.g. `@weasel-js/hud`) additionally use `requestRedraw`
  * and `registerLayer` to attach externally-owned draw layers.
@@ -135,20 +137,15 @@ export interface CanvasExtensionApi {
    * world-space point. Returns the id of the layer that claimed the point and
    * whatever its `hitTest` resolved, or `null` when none did.
    *
-   * `<SceneCanvas>` folds this into the `affordanceAt` thunk it hands the
-   * gesture dispatcher — ahead of the kit's own selection chrome, since
-   * registered layers draw on top — so a hit surfaces to actions as an
-   * `AffordanceHit` with kind `layer:<id>` and the hit's `initialScratch`
-   * as its `payload`. `owner` is set to the layer id, and `cursor` /
-   * `strength` carry through from the hit when the layer sets them.
-   * A layer's owner binds a `kindOf` predicate on that kind to claim the
-   * gesture; see `@weasel-js/hud` for the worked example.
+   * `<SceneCanvas>` folds this into the gesture dispatcher's hit-test ahead of
+   * the kit's own selection chrome, so a hit surfaces to actions as an
+   * `AffordanceHit` with kind `layer:<id>`, the hit's `initialScratch` as its
+   * `payload`, `owner` set to the layer id, and `cursor` / `strength` carried
+   * through. A layer's owner binds a `kindOf` predicate on that kind to claim
+   * the gesture.
    *
    * `frame` names the camera and surface size the point is expressed against.
-   * Omit it for the canvas's own view — the only case until a caller routes
-   * input to a viewport node, where the point is in that node's inner world
-   * and a layer resolving screen-pixel tolerances needs its view and rect
-   * size rather than the canvas's.
+   * Omit it for the canvas's own view.
    */
   hitTestExtras(
     worldX: number,
@@ -162,10 +159,15 @@ export interface CanvasExtensionApi {
    *  anchor; omitted → handlers use their point-less policy (the kit image
    *  handler centers on the viewport).
    *
+   *  Returns whether the canvas had an `ingest` action to hand the items to.
+   *  `false` means nothing will be inserted: there were no items, or the
+   *  canvas lacks the `ingest` preset. Handlers run after it returns, so
+   *  `true` does not say one of them accepted the content.
+   *
    *  Optional because ingestion needs the SceneCanvas action stack — the
    *  handle is always populated on `<SceneCanvas>` refs, absent on the
    *  bare-primitive handle. */
-  ingest?(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+  ingest?(input: File[] | IngestItem[], point?: { x: number; y: number }): boolean;
   /** Add a view to the canvas from outside React. See
    *  {@link SceneCanvasApi.addView}; absent on the bare-primitive handle,
    *  which hosts no views. */
@@ -180,7 +182,7 @@ export interface CanvasExtensionApi {
  * @public
  */
 export interface SceneCanvasApi extends CanvasExtensionApi {
-  ingest(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+  ingest(input: File[] | IngestItem[], point?: { x: number; y: number }): boolean;
   /**
    * Glide the camera to `to` rather than jumping there — a fit-to-selection, a
    * recenter, a scripted tour. A thunk receives the pending target when an

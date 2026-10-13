@@ -14,7 +14,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerFont, registerFontOutlines, registerCanvasFont } from '@weasel-js/font';
 import { layoutTextPose, type TextStyle } from '@weasel-js/text';
-import { useTextEdit, type TextEditScreenPose } from './useTextEdit';
+import { useTextEdit } from './useTextEdit';
+import type { TextEditScreenPose } from './textEditTypes';
 import { overlayReady } from './testing/overlayReady';
 import metricsUrl from '../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../assets/fonts/inter/inter.png?url';
@@ -26,6 +27,8 @@ interface Case {
   name: string; family: string; fontSize: number; text: string;
   /** Seed the overlay from runs rather than plain text. */
   runs?: boolean;
+  /** Centered, so the overlay is as tall as its lines and no taller. */
+  centered?: boolean;
 }
 
 const styleOf = (c: Case): TextStyle => ({ fontFamily: c.family, fontSize: c.fontSize, lineHeight: 1.2, wrap: true });
@@ -69,7 +72,9 @@ function Editor({ c, caret }: { c: Case; caret: number }) {
     getText: () => c.text,
     ...(c.runs ? { getRuns: () => [{ text: c.text }], setRuns: () => {} } : {}),
     getStyle: () => ({ ...styleOf(c), caretColor: 'transparent' }),
-    getScreenPose: (): TextEditScreenPose => ({ ...BOX, fontSize: c.fontSize, zoom: 1 }),
+    getScreenPose: (): TextEditScreenPose => ({
+      ...BOX, fontSize: c.fontSize, zoom: 1, ...(c.centered ? { verticalAlign: 'center' as const } : {}),
+    }),
     setText: (_id, text) => { committed.push(text); },
   });
   commitEdit = commit;
@@ -148,5 +153,43 @@ describe('edit overlay line breaks', () => {
       const typed = `${c.text.slice(0, at)}X${c.text.slice(at)}`;
       expect(committed.map((t) => JSON.stringify(t))).toEqual([JSON.stringify(typed)]);
     });
+  }
+
+  // A trailing break opens no line on the canvas or in a browser, and Chromium
+  // adds its caret holder only where the text does not already end in one.
+  for (const runs of [false, true]) {
+    const from = runs ? ', seeded from runs' : '';
+
+    for (const ending of ['\n', '\n\n', '\u2028']) {
+      const c: Case = { name: `trailing ${JSON.stringify(ending)}${from}`, family: 'Inter', fontSize: 20, text: `one${ending}`, runs, centered: true };
+
+      it(`is as tall as the canvas's lines for ${JSON.stringify(c.text)}${from}`, async () => {
+        const lines = layoutTextPose({ ...BOX, text: c.text, style: styleOf(c) }).laid.lines.length;
+        const overlay = await openOverlay(c);
+        expect(overlay.offsetHeight / (c.fontSize * 1.2)).toBeCloseTo(lines, 1);
+      });
+    }
+
+    const KEYS: Array<[text: string, caret: number, keys: string, committed: string]> = [
+      ['one\n', 1, 'X', 'oXne\n'],
+      ['one\n\n', 1, 'X', 'oXne\n\n'],
+      ['one\u2028', 1, 'X', 'oXne\u2028'],
+      ['one\n', 4, '{Shift>}{Enter}{/Shift}', 'one\n\n'],
+      // The caret past a trailing break sits at the end of the line before it.
+      ['one\n', 4, '{Backspace}', 'on\n'],
+      ['one\n', 4, 'd', 'oned\n'],
+      ['one', 3, '{Shift>}{Enter}{/Shift}', 'one\n'],
+      ['one', 3, '{Shift>}{Enter}{/Shift}{Shift>}{Enter}{/Shift}', 'one\n\n'],
+      ['one\ntwo', 7, '{Backspace}{Backspace}{Backspace}', 'one\n'],
+    ];
+    for (const [text, caret, keys, want] of KEYS) {
+      it(`commits ${JSON.stringify(want)} for ${JSON.stringify(text)} after ${keys} at ${caret}${from}`, async () => {
+        committed = [];
+        await openOverlay({ name: `keys ${text} ${keys}${from}`, family: 'Inter', fontSize: 20, text, runs }, caret);
+        await userEvent.keyboard(keys);
+        flushSync(() => commitEdit());
+        expect(committed.map((t) => JSON.stringify(t))).toEqual([JSON.stringify(want)]);
+      });
+    }
   }
 });

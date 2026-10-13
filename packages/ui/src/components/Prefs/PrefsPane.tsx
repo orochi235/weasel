@@ -1,10 +1,11 @@
 import { Fragment, type ReactNode, type RefObject } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
-import { BarLayout, groupBarNodes, type BarOrientation } from '../Bar/BarLayout';
+import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
-import { pathWithin, selectionAttrs, useHeldTab } from './selection';
+import { aliasOfNothing } from './PrefWords';
+import { pathWithin, selectionAttrs, tabAttrs, useHeldTab } from './selection';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsPane}. */
@@ -28,8 +29,8 @@ type Entry = [key: string, child: PrefLeaf | PrefGroup];
 const join = (path: string, key: string): string => (path === '' ? key : `${path}.${key}`);
 
 /**
- * One rail section's settings: the group's own leaves, then its nested groups,
- * each drawn as its `as` says.
+ * One rail page's settings: the group's leaves and nested groups in schema order,
+ * each group drawn as its `as` says.
  *
  * Nothing here draws a panel unless a group asks for one. The rail is the
  * layout's structure, and a card inside a dialog that already has a border
@@ -41,10 +42,6 @@ export function PrefsPane(props: PrefsPaneProps) {
   const entries = Object.entries(group.children);
   // Whatever hides it, a page is drawn apart from what it sits in, so it carries the mark itself.
   const marked = ctx.hidden?.has(path) === true;
-  // A fragment's rows are rows among the leaves', not a block after them.
-  const inRows = ([, child]: Entry): boolean => isPrefLeaf(child) || child.as === 'fragment';
-  const leaves = entries.filter(inRows);
-  const groups = entries.filter((entry) => !inRows(entry));
 
   return (
     // A hidden page is marked whole: its heading and its rows share no element but this one.
@@ -56,11 +53,26 @@ export function PrefsPane(props: PrefsPaneProps) {
         )}
       </div>
       <Fragment key={pageKey}>
-        {leaves.length > 0 && <div className={s.rows}>{paneChildren(ctx, leaves, path, 0)}</div>}
-        {paneChildren(ctx, groups, path, 0)}
+        {paneRuns(entries).map((run) =>
+          run.rows
+            ? <div key={run.entries[0]![0]} className={s.rows}>{paneChildren(ctx, run.entries, path, 0)}</div>
+            : paneChildren(ctx, run.entries, path, 0))}
       </Fragment>
     </div>
   );
+}
+
+/** A page's children in schema order, cut where rows give way to a group that draws a block of its own or back.
+ *  A fragment's rows are rows among the leaves'. */
+function paneRuns(entries: readonly Entry[]): Array<{ rows: boolean; entries: Entry[] }> {
+  const runs: Array<{ rows: boolean; entries: Entry[] }> = [];
+  for (const entry of entries) {
+    const rows = isPrefLeaf(entry[1]) || entry[1].as === 'fragment';
+    const last = runs.at(-1);
+    if (last?.rows === rows) last.entries.push(entry);
+    else runs.push({ rows, entries: [entry] });
+  }
+  return runs;
 }
 
 /**
@@ -92,7 +104,7 @@ export function paneChildren(
       // carries the mark a hidden fragment has no box for.
       const inner = marksHidden(ctx.hidden, p) ? { ...ctx, hidden: new Set([...ctx.hidden!].filter((at) => at !== p)) } : ctx;
       out.push(
-        <div key={key} className={s.fragment} {...selectionAttrs(p, { selected: ctx.selected })}>
+        <div key={key} className={s.fragment} data-pref-fragment="" {...selectionAttrs(p, { selected: ctx.selected })}>
           {paneChildren(inner, Object.entries(child.children), p, depth, box)}
         </div>,
       );
@@ -111,8 +123,8 @@ export function paneChildren(
   return out;
 }
 
-/** A nested group inside a pane, named by `data-spy-section` for the rail entry that scrolls to it. A section
- *  inside another indents. */
+/** A nested group inside a pane. One directly on the page is named by `data-spy-section` for the rail entry that
+ *  scrolls to it; a section inside another indents and has no entry. */
 function PaneSection({ ctx, group, path, depth, box }: {
   ctx: WalkCtx;
   group: PrefGroup;
@@ -124,7 +136,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
   return (
     <section
       className={depth === 0 ? s.paneSection : s.paneSubsection}
-      data-spy-section={path}
+      data-spy-section={depth === 0 ? path : undefined}
       {...selectionAttrs(path, ctx)}
       aria-label={group.name}
     >
@@ -152,25 +164,32 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
   depth: number;
   orientation?: BarOrientation;
 }) {
+  // The leaf an alias shows stands in its place, so the bar names its cell and its popover for that leaf.
+  const shown = (node: BarLeafNode): BarLeafNode => {
+    const drawn = shownLeaf(ctx, node.leaf);
+    return drawn?.at === undefined ? node : { path: node.path, at: drawn.at, leaf: drawn.pref };
+  };
   return (
     <BarLayout
       framed
       orientation={orientation}
       rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
       label={group.name === '' ? undefined : group.name}
-      nodes={groupBarNodes(group, path, (inner, at) => (
+      nodes={shownBarNodes(groupBarNodes(group, path, (inner, at) => (
         <div className={s.rows}>{paneChildren(ctx, Object.entries(inner.children), at, depth + 1)}</div>
-      ))}
+      )), shown)}
       cells={(leaves) =>
-        leaves.flatMap(({ path: at, leaf }) => {
-          const shown = shownLeaf(ctx, leaf);
-          if (!shown) return [];
-          const { renderCtx } = prefRenderContext(ctx, at, shown.pref, shown.at);
+        leaves.flatMap(({ path: own, leaf, at }): Array<{ path: string; content: ReactNode }> => {
+          // An alias still here shows nothing, or is a renderer's to draw.
+          const drawn = at === undefined ? shownLeaf(ctx, leaf) : { pref: leaf, at };
+          // A wiring fault, shown where it sits as a row shows it.
+          if (!drawn) return [{ path: own, content: <span className={s.unrenderable}>{aliasOfNothing(leaf as PrefAlias)}</span> }];
+          const { renderCtx } = prefRenderContext(ctx, own, drawn.pref, drawn.at);
           const content = renderPrefControl(renderCtx, ctx.renderers, undefined, 'bar');
-          return content == null ? [] : [{ path: at, content }];
+          return content == null ? [] : [{ path: own, content }];
         })
       }
-      row={({ path: at, leaf }) => <PrefRow ctx={ctx} path={at} pref={leaf} />}
+      row={({ path: own, leaf, at }) => <PrefRow ctx={ctx} path={own} pref={leaf} at={at} />}
       attrs={(at, leaf) => selectionAttrs(at, ctx, leaf)}
     />
   );
@@ -211,8 +230,7 @@ function PaneTabs({ ctx, tabs, depth, box }: {
       tabs={tabs.map(([p, g]) => ({
         id: p,
         name: g.name,
-        // The open tab's mark is its panel's, so a selection is drawn once.
-        attrs: selectionAttrs(p, p === open ? { hidden: ctx.hidden } : ctx),
+        attrs: tabAttrs(p, ctx, p === open),
         panelAttrs: selectionAttrs(p, ctx),
         content: (
           <>

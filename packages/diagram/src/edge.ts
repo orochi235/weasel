@@ -2,18 +2,14 @@
  * `DiagramEdge` — a connection between two participants.
  *
  * An edge is an ordinary leaf scene node with `dependsOn: [from, to]` and a
- * `derivePath` that runs a **router**. Making it a scene node rather than a
- * plugin-owned render layer is the load-bearing choice: it buys selection,
- * hit-testing, hover, styling, z-order, SVG export, undo and copy/paste
- * without implementing any of them. The cost is that an edge costs what a node
- * costs — right for diagrams of tens to hundreds of edges, wrong for a
- * 10k-edge force graph, which keeps its render layer.
+ * `derivePath` that runs a **router**. Being a scene node rather than a
+ * plugin-owned render layer buys selection, hit-testing, hover, styling,
+ * z-order, SVG export, undo, and copy/paste. The cost is that an edge costs
+ * what a node costs — right for tens to hundreds of edges, wrong for a
+ * 10k-edge force graph.
  *
  * **Author-dragged waypoints are data on the edge and the router routes
- * through them.** Manual control never authors the path; it authors
- * constraints on the path. That is what keeps derived geometry and hand-tuning
- * compatible — a moved endpoint still re-routes, through the waypoints the
- * author put there.
+ * through them**, so a moved endpoint still re-routes.
  *
  * Arrowheads are not here. They are stroke markers, the same
  * `markerStart` / `markerEnd` any other stroke carries.
@@ -63,8 +59,7 @@ export interface RouteRequest {
 }
 
 /** A router returns the points the edge runs through, `from.point` first and
- *  `to.point` last. Turning those into a `Path` is `edgePath`'s job, so a
- *  router never has to know about path encodings. */
+ *  `to.point` last. */
 export type Router = (req: RouteRequest) => readonly Vec2[];
 
 /** The straight run between the two ends, through any waypoints. */
@@ -77,8 +72,7 @@ export const straight: Router = (req) => [req.from.point, ...req.waypoints, req.
  * A leg is one elbow where the two ends face different axes and two where they
  * face the same one, turning at the midpoint of the axis they share. Arriving
  * along the port's own facing is what makes the arrowhead point *into* the
- * shape — a route that lands on a west-facing port from above puts its marker
- * across the corner, which reads as aimed at nothing.
+ * shape.
  */
 export const orthogonal: Router = (req) => {
   const stops = [req.from.point, ...req.waypoints, req.to.point];
@@ -120,8 +114,7 @@ export const orthogonal: Router = (req) => {
   return out;
 };
 
-/** Which axis a port faces. A port with no facing counts as horizontal, which
- *  is the leave-rightward default the router has always taken. */
+/** Which axis a port faces. A port with no facing counts as horizontal. */
 function isHorizontal(normal: Vec2 | null | undefined): boolean {
   return Math.abs(normal?.x ?? 1) >= Math.abs(normal?.y ?? 0);
 }
@@ -130,12 +123,8 @@ function isHorizontal(normal: Vec2 | null | undefined): boolean {
  * A smooth route, sampled into points.
  *
  * Each leg is a cubic that leaves along the departing end's normal and arrives
- * against the receiving one's, which is what makes a bezier edge read as
- * plugged into its port rather than aimed at it. The rule is `portCurvePoints`
- * in `@weasel-js/geom`, which states it over loose components so the 3D kernel
- * can route by the same one. Sampled rather than emitted as curve commands so
- * every router returns the same thing; `edgePath` is free to emit curves later
- * without changing the contract.
+ * against the receiving one's. Sampled rather than emitted as curve commands so
+ * every router returns the same thing.
  */
 export const bezier: Router = (req) => {
   const stops = [req.from.point, ...req.waypoints, req.to.point];
@@ -179,8 +168,7 @@ export function diagramEdgeOf(node: { data: unknown }): DiagramEdge | null {
  * other end most directly.
  *
  * "Facing" rather than "nearest": a port on the far side of a wide node can be
- * closer in a straight line than the one pointing at the target, and an edge
- * that leaves through its own node reads as a bug however short it is.
+ * closer in a straight line than the one pointing at the target.
  */
 export function resolveEnd<TPose>(
   end: EdgeEnd,
@@ -229,9 +217,7 @@ export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
  * router is handed that rule's point outside the node as one.
  *
  * Returns `null` — nothing to draw — when the node is not an edge, when either
- * dependency is gone, or when an endpoint offers no ports at all. A dangling
- * edge painting a line to the origin is worse than a dangling edge painting
- * nothing.
+ * dependency is gone, or when an endpoint offers no ports at all.
  */
 export function edgeDerivePath<TPose>(
   opts: EdgeRouteOptions<TPose> = {},

@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react';
-import { asPaint, type ColorSpace, type FillStyle } from '@weasel-js/core';
-import { isMeshGradientFill, type MeshGradientFill } from '@weasel-js/core/mesh';
+import { asPaint, type ColorSpace, type Paint } from '@weasel-js/core';
+import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { ColorField } from '../ColorField';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import { paintPreviewCss } from '../../paintPreview';
@@ -15,12 +15,12 @@ const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
 /** Props for {@link MeshEditor}. `onInput` fires throughout a gesture and
  *  `onChange` once at its end. */
 export interface MeshEditorProps {
-  value: MeshGradientFill;
-  /** Emitted as a `FillStyle`, which is what every paint control passes
-   *  around — `FillStyle`'s discriminant stays closed over the built-in
+  value: MeshGradientPaint;
+  /** Emitted as a `Paint`, which is what every paint control passes
+   *  around — `Paint`'s discriminant stays closed over the built-in
    *  members, so a registered kind's own shape only travels through it. */
-  onInput?: (next: FillStyle) => void;
-  onChange: (next: FillStyle) => void;
+  onInput?: (next: Paint) => void;
+  onChange: (next: Paint) => void;
   /** Show the sRGB / OKLab / OKLCh switch. Default true. */
   spaceSwitch?: boolean;
   className?: string;
@@ -41,7 +41,7 @@ export function MeshEditor(props: MeshEditorProps): ReactElement {
   const { value, onInput, onChange, spaceSwitch = true, className } = props;
   const space = value.interpolate ?? 'rgb';
 
-  const withCorner = (patchIndex: number, corner: number, color: string): FillStyle => asPaint({
+  const withCorner = (patchIndex: number, corner: number, color: string): Paint => asPaint({
     ...value,
     patches: value.patches.map((patch, i) => {
       if (i !== patchIndex) return patch;
@@ -94,13 +94,13 @@ export function MeshEditor(props: MeshEditorProps): ReactElement {
 
 /** One patch as a swatch: the paint with the other patches taken out, so a
  *  multi-patch mesh shows which row belongs to which part of it. */
-function previewOf(value: MeshGradientFill, patchIndex: number): string | undefined {
+function previewOf(value: MeshGradientPaint, patchIndex: number): string | undefined {
   return paintPreviewCss(
-    { ...value, patches: [value.patches[patchIndex]] } as unknown as FillStyle,
+    { ...value, patches: [value.patches[patchIndex]] } as unknown as Paint,
   );
 }
 
 /** Narrowing for a consumer rendering this behind a kind switch. */
-export function isMeshPaint(fill: FillStyle | null | undefined): fill is FillStyle & MeshGradientFill {
-  return isMeshGradientFill(fill);
+export function isMeshPaint(fill: Paint | null | undefined): fill is Paint & MeshGradientPaint {
+  return isMeshGradientPaint(fill);
 }

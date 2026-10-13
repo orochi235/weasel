@@ -38,9 +38,6 @@ function parseColorUncached(input: string): [number, number, number, number] {
 
   const lower = s.toLowerCase();
 
-  // Named colors and `transparent` are checked before fn() forms because the
-  // fn() regexes won't match them anyway and the lookup is cheaper than a
-  // failed regex match.
   const named = NAMED_COLORS[lower];
   if (named !== undefined) return named;
 
@@ -60,12 +57,8 @@ const RESOLVE_COLOR_CACHE_CAP = 1024;
 const resolveColorCache = new Map<string, readonly [number, number, number, number]>();
 
 /** Cached `parseColor`. Use this from renderer hot paths (per-frame draw
- *  callbacks, gradient ramp builds) so repeated color strings — which are
- *  common when many objects share a fill — don't re-tokenize each frame.
- *
- *  Cache is keyed by input-string identity, capped at ~1024 entries, and
- *  cleared wholesale on overflow (no LRU tracking — simple is fine since
- *  the working set in any one app is typically much smaller than the cap). */
+ *  callbacks, gradient ramp builds). The cache is capped at ~1024 entries and
+ *  cleared wholesale on overflow. */
 export function resolveColor(input: string): readonly [number, number, number, number] {
   const hit = resolveColorCache.get(input);
   if (hit) return hit;

@@ -11,9 +11,9 @@ import {
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { solid, strokeOf } from '../util/paint';
-import { pathContainsPoint, type PolygonPath } from '@weasel-js/geom';
+import { pathContainsPoint, pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 /** Serve FIXTURE_FONT (glyphs 'A' and 'B') to `registerFont`. */
 function stubFontFetch(): void {
@@ -183,26 +183,26 @@ describe('kit:text painter — rich runs', () => {
   // silently doing nothing.
   describe('kit-native paint fields', () => {
     it('paints the glyphs from data.fill', () => {
-      const [cmd] = paintText({ text: 'hi', fill: solid('#7fb069') });
+      const [cmd] = paintText({ text: 'hi', fill: { paint: solid('#7fb069') } });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
       expect(text.runs.every((r) => r.fill)).toEqual(true);
-      expect(text.runs[0].fill).toEqual(solid('#7fb069'));
+      expect(text.runs[0].fill).toEqual({ paint: solid('#7fb069') });
     });
 
     it('falls back to the default black with no data.fill', () => {
       const [cmd] = paintText({ text: 'hi' });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs[0].fill).toEqual({ fill: 'solid', color: '#000' });
+      expect(text.runs[0].fill).toEqual({ paint: { kind: 'solid', color: '#000' } });
     });
 
     it('a run fill overrides the node fill', () => {
       const [cmd] = paintText({
         text: 'ab',
-        fill: solid('#7fb069'),
-        runs: [{ text: 'a' }, { text: 'b', fill: solid('#d4a574') }],
+        fill: { paint: solid('#7fb069') },
+        runs: [{ text: 'a' }, { text: 'b', fill: { paint: solid('#d4a574') } }],
       });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs.map((r) => r.fill)).toEqual([solid('#7fb069'), solid('#d4a574')]);
+      expect(text.runs.map((r) => r.fill)).toEqual([{ paint: solid('#7fb069') }, { paint: solid('#d4a574') }]);
     });
 
     it('forwards data.verticalAlign onto the command, alongside the box height', () => {
@@ -401,9 +401,20 @@ describe('shapeCoversPoint', () => {
     // An ellipse inscribed in its pose: the pose corner is inside the rect but
     // outside the drawn shape.
     const pose = { x: 0, y: 0, width: 100, height: 100 };
-    const n = { ...node({ shape: 'ellipse', fill: solid('#000') }), pose };
+    const n = { ...node({ shape: 'ellipse', fill: { paint: solid('#000') } }), pose };
     expect(shapeCoversPoint(n, pose, 50, 50)).toBe(true);
     expect(shapeCoversPoint(n, pose, 2, 2)).toBe(false);
+  });
+
+  it('covers the inside of a filled open path, and only the line of an unfilled one', () => {
+    const path = pathFromD('M0 0 L100 0 L100 100');
+    const pose = { x: 0, y: 0, width: 100, height: 100 };
+    const filled = { ...node({ path, fill: { paint: solid('#f00') }, stroke: null }), pose };
+    expect(shapeCoversPoint(filled, pose, 75, 25)).toBe(true);
+    expect(shapeCoversPoint(filled, pose, 25, 75)).toBe(false);
+    const line = { ...node({ path, fill: null, stroke: strokeOf('#000', 2) }), pose };
+    expect(shapeCoversPoint(line, pose, 75, 25)).toBe(false);
+    expect(shapeCoversPoint(line, pose, 50, 0)).toBe(true);
   });
 
   it('answers true when the painter has no silhouette', () => {
@@ -434,14 +445,14 @@ describe('data.stroke is a whole Stroke', () => {
 
   it('reaches kit:shape the same way', () => {
     const stroke = { paint: { color: '#0f0' }, width: 4, dash: [2, 2] };
-    expect(strokeCmdOf({ shape: 'ellipse', fill: solid('#fff'), stroke })).toEqual(stroke);
+    expect(strokeCmdOf({ shape: 'ellipse', fill: { paint: solid('#fff') }, stroke })).toEqual(stroke);
   });
 
   it('bakes a bounds-relative stroke gradient onto the pose box, as a fill is baked', () => {
     // Left unbaked, the paint would reach the renderer in `'bounds'` fractions
     // describing a frame that no longer exists — the pose is already in the path.
     const paint = {
-      fill: 'linear-gradient' as const,
+      kind: 'linear-gradient' as const,
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
       units: 'bounds' as const,
@@ -454,8 +465,8 @@ describe('data.stroke is a whole Stroke', () => {
   });
 
   it('skips a null stroke on kit:shape, the same as kit:path does', () => {
-    expect(strokeCmdOf({ shape: 'rect', fill: solid('#fff'), stroke: null })).toBeUndefined();
-    expect(strokeCmdOf({ path: RECT, fill: solid('#fff'), stroke: null })).toBeUndefined();
+    expect(strokeCmdOf({ shape: 'rect', fill: { paint: solid('#fff') }, stroke: null })).toBeUndefined();
+    expect(strokeCmdOf({ path: RECT, fill: { paint: solid('#fff') }, stroke: null })).toBeUndefined();
   });
 });
 
@@ -463,17 +474,17 @@ describe('kit:rect-fallback resolves its fill for the renderer', () => {
   it('bakes a bounds-relative gradient onto the pose box, as kit:shape does', () => {
     const pose = { x: 10, y: 0, width: 100, height: 100 };
     const fill = {
-      fill: 'linear-gradient' as const,
+      kind: 'linear-gradient' as const,
       from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
       units: 'bounds' as const,
     };
-    const n = { ...node({ fill }), pose };
+    const n = { ...node({ fill: { paint: fill } }), pose };
     const shape = findNodeShape(n)!;
     expect(shape.id).toBe('kit:rect-fallback');
-    const [cmd] = shape.paint(n, pose) as { fill: { units: string; to: { x: number } } }[];
-    expect(cmd.fill.units).toBe('local');
-    expect(cmd.fill.to.x).toBe(110);
+    const [cmd] = shape.paint(n, pose) as { fill: { paint: { units: string; to: { x: number } } } }[];
+    expect(cmd.fill.paint.units).toBe('local');
+    expect(cmd.fill.paint.to.x).toBe(110);
   });
 });
 

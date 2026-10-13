@@ -5,34 +5,35 @@
  * may import the mesh module, or it would register before the test starts.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import {
-  _resetPaintKindsForTests, getPaintKind, paintKindRegistry, warmPaintKinds,
-} from 'renderer/paintKinds';
+  _resetPaintKindsForTests, getPaintKind, paintKindRegistry,
+} from 'core/paint/paintKinds';
+import { warmPaintKinds } from '@weasel-js/renderer';
 import type { RectPose } from 'core/scene/composePose';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 /** One straight-edged patch over the 64×48 output, green on the left, blue on
  *  the right, in the space the command's coordinates are in. */
-function meshFill(): FillStyle {
+function meshFill(): Paint {
   const corners = [{ x: 0, y: 0 }, { x: 64, y: 0 }, { x: 64, y: 48 }, { x: 0, y: 48 }];
   const points = corners.flatMap((a, i) => {
     const b = corners[(i + 1) % 4];
     return [a, { x: a.x + (b.x - a.x) / 3, y: a.y + (b.y - a.y) / 3 }, { x: a.x + (2 * (b.x - a.x)) / 3, y: a.y + (2 * (b.y - a.y)) / 3 }];
   });
   return {
-    fill: 'mesh-gradient',
+    kind: 'mesh-gradient',
     patches: [{ points, colors: ['#00ff00ff', '#0000ffff', '#0000ffff', '#00ff00ff'] }],
     units: 'world',
-  } as unknown as FillStyle;
+  } as unknown as Paint;
 }
 
 const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-  fill: meshFill(),
+  fill: { paint: meshFill() },
 } as DrawCommand];
 
 function render(): RasterImage {

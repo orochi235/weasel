@@ -18,9 +18,25 @@ const GROUPS: DataGroup[] = [
   { id: 'health', members: ['probe', 'score', 'report'], label: 'health' },
 ];
 
+const DATA = { edges: EDGES, groups: GROUPS };
+
+/** The nodes where the layered layout puts them. Laid out once: a layout in
+ *  `groupSpecs` would run again on every drag and take the drag back. */
+export const START: DataNode[] = (() => {
+  const laidOut = diagramScene({ nodes: NODES, ...DATA }, { font: FONT });
+  return NODES.map((n) => {
+    const { x, y } = laidOut.find((s) => s.id === n.id)!.pose;
+    return { ...n, at: { x, y } };
+  });
+})();
+
+export function groupSpecs(nodes: readonly DataNode[]) {
+  return diagramScene({ nodes: [...nodes], ...DATA }, { layout: 'none', font: FONT });
+}
+
 export function DiagramGroupsDemo() {
-  const [nodes, setNodes] = useState(NODES);
-  const specs = useMemo(() => diagramScene({ nodes, edges: EDGES, groups: GROUPS }, { font: FONT }), [nodes]);
+  const [nodes, setNodes] = useState(START);
+  const specs = useMemo(() => groupSpecs(nodes), [nodes]);
   const view = useRef<DiagramViewApi>(null);
   return (
     <div className="ckd-stack">

@@ -1,0 +1,167 @@
+/**
+ * Runs measured code point by code point: which glyph serves each one, how
+ * far it advances, and the kerning before it. Nothing here knows about lines.
+ */
+import {
+  glyphIn, metricsOf, resolveFontVariant, resolveGlyph, warnNoMetrics,
+  type BmFont, type BmFontChar, type GlyphMetrics, type ResolveResult,
+} from '@weasel-js/font';
+import { graphemeEnds } from '../measure/graphemes';
+import type { ResolvedRun } from '../runs/resolveRuns';
+import { isHardLineBreak } from './lineBreak/lineBreaks';
+import type { TabStop } from './tabStops';
+
+/** One code point of the runs, measured. Widths are world units. */
+export interface Entry {
+  /** Index of its run in the runs measured. */
+  run: number;
+  cp: number;
+  /** The glyph's own size, which small caps sets below its run's. */
+  fontSize: number;
+  /** The size it holds its line at: its run's, or the larger size a shrunken
+   *  run inherited. */
+  lineSize: number;
+  /** How far its run is raised off the line's baseline. */
+  baselineShift: number;
+  /** UTF-16 span of the source character it was drawn from. */
+  srcIndex: number;
+  srcEnd: number;
+  clusterEnd: boolean;
+  /** The tier serving the glyph, which is not its run's when the code point
+   *  escalated, and that tier's metrics. */
+  resolved: ResolveResult;
+  metrics: GlyphMetrics;
+  /** The atlas to sample and the glyph's record in it; null on the outline
+   *  tier and for a slot with nothing to draw. */
+  font: BmFont | null;
+  glyph: BmFontChar | null;
+  advance: number;
+  /** Its run's `letterSpacing` when it closes a grapheme cluster, else 0. */
+  tracking: number;
+  /** The kerning gap between the entry before it and this one. */
+  kerningBefore: number;
+  /** Set on a tab, whose `advance` is known only once its line is. */
+  tab?: TabStop;
+  /** See `LaidOutCell.drawsInk`. */
+  drawsInk: boolean;
+}
+
+/**
+ * Measure every code point of `runs`, in order. Kerning pairs across run
+ * boundaries, in the left glyph's face and at its size. A run whose face has
+ * no metrics contributes no entries but still takes up its source offsets.
+ */
+export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entry[] {
+  const entries: Entry[] = [];
+  /** The entry the next one kerns against; none across a break, a tab, or a
+   *  run with no metrics. */
+  let prev: Entry | undefined;
+  let srcIndex = 0;
+
+  runs.forEach((run, runIndex) => {
+    const resolved = resolveFontVariant(run.fontFamily, run.fontWeight, run.fontStyle);
+    const metrics = metricsOf(resolved);
+    if (!metrics) {
+      // Laying out as nothing is indistinguishable from empty text downstream,
+      // so this is the only signal a consumer ever gets.
+      warnNoMetrics(run.fontFamily, run.fontWeight, run.fontStyle);
+      srcIndex += run.srcMap?.length ?? run.text.length;
+      prev = undefined;
+      return;
+    }
+    const runBase = srcIndex;
+    const map = run.srcMap;
+    const clusterEnds = new Set(graphemeEnds(run.text));
+    let at = 0;
+
+    for (const ch of run.text) {
+      const cp = ch.codePointAt(0)!;
+      const fontSize = run.sizeMap ? run.sizeMap[at] : run.fontSize;
+      const clusterEnd = clusterEnds.has(at + ch.length);
+      // World units, deliberately not scaled by fontSize: the same tracking
+      // opens the same gap whatever size the run is set at.
+      const tracking = clusterEnd ? run.letterSpacing : 0;
+      // A transformed run draws characters its source does not have; each
+      // takes the source span of the character it was mapped from.
+      const srcStart = map ? runBase + map.starts[at] : runBase + at;
+      const srcEnd = map ? runBase + map.ends[at] : runBase + at + ch.length;
+      at += ch.length;
+      srcIndex = map ? runBase + map.length : srcEnd;
+
+      const kerningBefore = prev
+        ? prev.metrics.kernOf(prev.cp, cp) * (prev.fontSize / prev.metrics.size)
+        : 0;
+      // A slot with nothing in it: no glyph, no width, and none of the
+      // tracking or kerning a width would carry.
+      const blank: Entry = {
+        run: runIndex, cp, fontSize,
+        lineSize: Math.max(run.fontSize, run.strutSize ?? 0),
+        // Optional on the authored run type; absent, every y would go NaN.
+        baselineShift: run.baselineShift ?? 0,
+        srcIndex: srcStart, srcEnd, clusterEnd,
+        resolved, metrics, font: null, glyph: null,
+        advance: 0, tracking: 0, kerningBefore: 0, drawsInk: false,
+      };
+
+      if (isHardLineBreak(cp)) {
+        entries.push(blank);
+        prev = undefined;
+      } else if (cp === 9 || cp === 32) {
+        // A face with no space still gets one wide enough to part words.
+        const space = metrics.advanceOf(32);
+        const advance = space !== null ? space * (fontSize / metrics.size) : fontSize * 0.25;
+        if (cp === 9) {
+          entries.push({ ...blank, tab: { stop: tabSize * (advance + run.letterSpacing), min: advance / 2 } });
+          prev = undefined;
+        } else {
+          // Its record in the run's own tier, for an atlas that draws one. It
+          // never escalates: a face without a space still parts words.
+          const own = glyphIn(resolved, 32);
+          prev = {
+            ...blank, font: own?.font ?? null, glyph: own?.glyph ?? null,
+            advance, tracking, kerningBefore,
+          };
+          entries.push(prev);
+        }
+      } else {
+        const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp);
+        // An escalated code point is served in another tier's units, so its
+        // scale is its own.
+        prev = hit ? {
+          ...blank,
+          resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph,
+          advance: hit.advance * (fontSize / hit.metrics.size),
+          tracking, kerningBefore, drawsInk: true,
+        } : blank;
+        entries.push(prev);
+      }
+    }
+  });
+  return entries;
+}
+
+/**
+ * One line's entries with each bracket in a right-to-left stretch painting as
+ * its mirror (UAX #9 L4). `levels` holds the line's resolved level per entry.
+ *
+ * The outline tier reads the code point directly; the atlas tiers need the
+ * other glyph looked up, which may come from another tier, and a face without
+ * it keeps the unmirrored one. The advance stays the one the wrap measured.
+ */
+export function mirrorEntries(
+  entries: readonly Entry[],
+  levels: readonly number[],
+  mirror: (cp: number) => number | null,
+  runs: readonly ResolvedRun[],
+): Entry[] {
+  return entries.map((entry, pos) => {
+    if (levels[pos] % 2 === 0) return entry;
+    const cp = mirror(entry.cp);
+    if (cp === null || cp === entry.cp) return entry;
+    if (entry.font === null) return { ...entry, cp };
+    const run = runs[entry.run];
+    const hit = resolveGlyph(entry.resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp, false);
+    if (!hit) return entry;
+    return { ...entry, cp, resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph };
+  });
+}

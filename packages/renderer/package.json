@@ -1,0 +1,73 @@
+{
+  "name": "@weasel-js/renderer",
+  "version": "1.9.4",
+  "description": "A WebGL2 renderer for draw commands: batched path fills and strokes, MSDF and outline text, images and sprites, gradients, patterns, registered shader programs, and full-screen effects. No scene graph, no React.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./mesh": {
+      "import": "./dist/mesh.js",
+      "types": "./dist/mesh.d.ts"
+    },
+    "./patterns-builtin": {
+      "import": "./dist/patterns-builtin.js",
+      "types": "./dist/patterns-builtin.d.ts"
+    },
+    "./testing/glRecorder": {
+      "import": "./dist/testing/glRecorder.js",
+      "types": "./dist/testing/glRecorder.d.ts"
+    },
+    "./testing/vertexUploads": {
+      "import": "./dist/testing/vertexUploads.js",
+      "types": "./dist/testing/vertexUploads.d.ts"
+    },
+    "./test-seams": {
+      "import": "./dist/test-seams.js",
+      "types": "./dist/test-seams.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@weasel-js/geom": "1.9.4",
+    "@weasel-js/paint": "1.9.4",
+    "@weasel-js/registry": "1.9.4",
+    "@weasel-js/stroke": "1.9.4",
+    "@weasel-js/text": "1.9.4"
+  },
+  "peerDependencies": {
+    "@weasel-js/font": "1.9.4"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/renderer"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

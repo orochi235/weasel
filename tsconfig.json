@@ -41,11 +41,14 @@
       // (the package's `types` pointed at src, so node resolution found the
       // source anyway); now that they point at `dist`, a missing entry makes
       // `npm run typecheck` silently depend on a prior `npm run build`.
+      // scripts/vite-aliases.test.ts fails when an entry here and a package's
+      // `exports` disagree about which source file a specifier is.
       "@weasel-js/ui": ["./packages/ui/src/index.ts"],
       "@weasel-js/ui/components/*": ["./packages/ui/src/components/*/index.ts"],
       "@weasel-js/svg": ["./packages/svg/src/index.ts"],
       "@weasel-js/d3": ["./packages/d3/src/index.ts"],
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],
+      "@weasel-js/diagram/layout": ["./packages/diagram/src/layout.entry.ts"],
       "@weasel-js/guides": ["./packages/guides/src/index.ts"],
       "@weasel-js/guides/*": ["./packages/guides/src/*"],
       "@weasel-js/hud": ["./packages/hud/src/index.ts"],
@@ -66,9 +69,13 @@
       "@weasel-js/text-dom/testing/*": ["./packages/text-dom/src/testing/*"],
       "@weasel-js/stroke": ["./packages/stroke/src/index.ts"],
       "@weasel-js/stroke/test-seams": ["./packages/stroke/src/test-seams.ts"],
+      "@weasel-js/renderer": ["./packages/renderer/src/index.ts"],
+      "@weasel-js/renderer/*": ["./packages/renderer/src/*"],
       "@weasel-js/theme": ["./packages/theme/src/index.ts"],
       "@weasel-js/theme/react": ["./packages/theme/src/react.tsx"],
       "@weasel-js/theme/engine": ["./packages/theme/src/engine.ts"],
+      "@weasel-js/theme/themes/*": ["./packages/theme/src/themes/*"],
+      "@weasel-js/theme/testing/*": ["./packages/theme/src/testing/*"],
       "@weasel-js/theme/tokens.css": ["./packages/theme/src/generated/tokens.css"],
       "@weasel-js/gestures": ["./packages/gestures/src/index.ts"],
       "@weasel-js/history": ["./packages/history/src/index.ts"],
@@ -89,6 +96,9 @@
       "@weasel-js/audio": ["./packages/audio/src/index.ts"],
       "@weasel-js/audio/testing/*": ["./packages/audio/src/testing/*"],
       "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],
+      "@weasel-js/parallax": ["./packages/parallax/src/index.ts"],
+      "@weasel-js/animator": ["./packages/animator/src/index.ts"],
+      "@weasel-js/minimap": ["./packages/minimap/src/index.ts"],
       "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
       // The two passthrough entries don't sit where their specifier says, so
       // they need explicit mappings ahead of the wildcard.
@@ -96,6 +106,8 @@
       "@weasel-js/labkit/weasel-canvas": ["./packages/labkit/src/passthrough/weasel-canvas.ts"],
       "@weasel-js/labkit/*": ["./packages/labkit/src/*"],
       "@weasel-js/forge": ["./packages/forge/src/index.ts"],
+      "@weasel-js/forge/preview-api": ["./packages/forge/src/csf/shims/preview-api.ts"],
+      "@weasel-js/forge/play": ["./packages/forge/src/test/play.ts"],
       "@weasel-js/forge/*": ["./packages/forge/src/*"],
       "core/*": ["./packages/core/src/core/*"],
       "features/*": ["./packages/core/src/features/*"],
@@ -103,7 +115,6 @@
       "interactions/*": ["./packages/core/src/interactions/*"],
       "tools/*": ["./packages/core/src/tools/*"],
       "canvas/*": ["./packages/core/src/canvas/*"],
-      "renderer/*": ["./packages/core/src/renderer/*"],
       "debug/*": ["./packages/core/src/debug/*"]
     }
   },
@@ -112,7 +123,7 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, the rest of tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
+  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/animator/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/minimap/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
   // Browser tests are typechecked by packages/tsconfig.json, which says why.
   "exclude": ["node_modules", "dist", "**/*.browser.test.ts", "**/*.browser.test.tsx"]
 }

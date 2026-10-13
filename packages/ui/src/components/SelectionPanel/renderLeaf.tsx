@@ -10,7 +10,7 @@ import { entryConditions } from '../Prefs/entry';
 import { MapEditor } from '../Prefs/MapEditor';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { PrefMixed } from '../Prefs/PrefMixed';
-import { prefDrawsNoControl, PrefWords } from '../Prefs/PrefWords';
+import { aliasOfNothing, prefDrawsNoControl, PrefWords } from '../Prefs/PrefWords';
 import { UnionPicker } from '../Prefs/UnionPicker';
 import { renderBarLeaf, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyControl } from '../Properties/PropertyField';
@@ -29,6 +29,27 @@ export interface RenderBuiltinOptions {
    *  what rules "none" out for a nested paint. */
   nested?: boolean;
   surface?: LeafSurface;
+}
+
+/** What the entry at `key` of the map `ctx` draws is told: one value of its own, under the conditions over that entry. */
+function mapEntryContext(
+  ctx: PropertyRenderContext, map: PrefMap, key: string, held: unknown, set: (next: unknown) => void,
+): PropertyRenderContext {
+  const { item, ...conditions } = entryConditions(ctx, `${ctx.path}.${key}`, map.item, held);
+  return {
+    ...ctx,
+    ...conditions,
+    path: `${ctx.path}.${key}`,
+    pref: item,
+    value: held,
+    mixed: false,
+    unset: held === undefined,
+    siblings: undefined,
+    each: [held],
+    eachSiblings: undefined,
+    setValue: set,
+    update: (fn) => set(fn(held)),
+  };
 }
 
 export function renderBuiltin(
@@ -77,20 +98,7 @@ export function renderBuiltin(
         onChange={setValue}
         disabled={ctx.disabled}
         renderValue={(held, set, name, key) => {
-          const item: PropertyRenderContext = {
-            ...ctx,
-            ...entryConditions(ctx, `${ctx.path}.${key}`),
-            path: `${ctx.path}.${key}`,
-            pref: map.item,
-            value: held,
-            mixed: false,
-            unset: held === undefined,
-            siblings: undefined,
-            each: [held],
-            eachSiblings: undefined,
-            setValue: set,
-            update: (fn) => set(fn(held)),
-          };
+          const item = mapEntryContext(ctx, map, key, held, set);
           const custom = renderers?.[map.item.kind];
           return custom ? custom(item) : renderBuiltin(item, name, renderers, within);
         }}
@@ -126,8 +134,7 @@ export function renderBuiltin(
   if (prefDrawsNoControl(pref)) return <PrefWords pref={pref} />;
   if (pref.kind === 'alias') {
     // The panel draws a resolved alias as its target, so one that reaches here points at nothing.
-    const of = (pref as PrefAlias).of;
-    return <span className={s.unrenderable}>(alias: no pref at {of === '' ? 'an empty path' : of})</span>;
+    return <span className={s.unrenderable}>{aliasOfNothing(pref as PrefAlias)}</span>;
   }
   const field = leafField(ctx, nested);
   if (field === null) {

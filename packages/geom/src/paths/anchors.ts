@@ -108,10 +108,12 @@ function foldClosingCurve(sub: PenAnchor[]): void {
  *   - Both adjacent handles absent → straight L segment.
  *   - Either handle present → C segment, with missing handles defaulting to
  *     the anchor point itself (degenerate but valid; renders as a near-line).
+ * Given `like`, the path being reshaped, the result keeps its fill rules.
  */
 export function anchorsToPath(
   anchors: PenAnchor[][],
   closed: boolean[],
+  like?: PolygonPath,
 ): PolygonPath {
   const b = new PathBuilder();
   for (let s = 0; s < anchors.length; s++) {
@@ -143,7 +145,8 @@ export function anchorsToPath(
       b.close();
     }
   }
-  return b.build();
+  const built = b.build();
+  return like ? { ...like, commands: built.commands, coords: built.coords } : built;
 }
 
 const SMOOTH_THRESHOLD = 0.001;

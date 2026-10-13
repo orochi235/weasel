@@ -6,10 +6,10 @@ import { effectivePose } from '../core/scene/effectivePose';
 import type { RectPose } from '../core/scene/types';
 import { sceneToAdapter } from '../canvas/sceneAdapter';
 import { moveGestureAdapter } from '../interactions/actions/move/gestureAdapter';
-import { useAnimator } from './useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { springPose, tweenPose } from './poseHelpers';
 import type { SceneAdapter } from '../core/adapters/types';
-import type { Animator } from './types';
+import type { Animator } from '@weasel-js/animator';
 
 function setup(options: Parameters<typeof sceneToAdapter>[1] = {}) {
   const cbs: ((t: number) => void)[] = [];
@@ -168,9 +168,9 @@ describe('springPose on a scene', () => {
   });
 });
 
-describe('a container under cascadeContainerPose', () => {
+describe('a container whose scene composes nothing', () => {
   function family() {
-    const s = setup({ cascadeContainerPose: true });
+    const s = setup();
     const box = s.scene.add({ kind: 'container', layer: 'main', pose: at(0), data: {} });
     const child = s.scene.add({ kind: 'leaf', layer: 'main', pose: at(5), data: {}, parent: box });
     const shownX = (id: typeof box): number => effectivePose(s.scene, s.scene.get(id)!).x;

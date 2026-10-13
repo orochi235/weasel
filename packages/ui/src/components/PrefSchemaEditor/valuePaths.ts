@@ -1,4 +1,4 @@
-import { isPrefCondition, isPrefLeaf, isPrefSection, mapPrefConditionPaths, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefCondition, isPrefLeaf, isPrefSection, mapPrefConditionPaths, PREF_ENTRY, type PrefLeaf } from '@weasel-js/prefs';
 import { childrenOf, innerOf, joinPath, keysOf, nodeAt, pathOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
 /**
@@ -49,27 +49,34 @@ export function valueMove(root: SchemaRoot, from: string, to: string): ValueMove
   return node && isPrefSection(node) ? null : [valuePathOf(root, from), valuePathOf(root, to)];
 }
 
+const under = (at: string, key: string): string => (at === '' ? key : `${at}.${key}`);
+
 /**
  * `root` with `fn` applied to every node, a list's or a map's entry and a union's variants among them; the same
- * object where none changed.
+ * object where none changed. `fn` is told the value path of the entry the node is drawn in, its step written `*`
+ * (`'phases.*'`): the item's own for the item, and `undefined` outside every list and map.
  */
-function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode) => SchemaNode): R {
-  const each = <M extends ChildMap>(kids: M): M => {
-    const mapped = Object.fromEntries(Object.entries(kids).map(([key, kid]) => [key, go(kid)]));
+function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: string | undefined) => SchemaNode): R {
+  /** `at(key, kid)` is the value path of each kid. */
+  const each = <M extends ChildMap>(kids: M, at: (key: string, kid: SchemaNode) => string, entry: string | undefined): M => {
+    const mapped = Object.fromEntries(Object.entries(kids).map(([key, kid]) => [key, go(kid, at(key, kid), entry)]));
     return Object.keys(kids).every((key) => mapped[key] === kids[key]) ? kids : (mapped as M);
   };
-  const go = (node: SchemaNode): SchemaNode => {
-    let self = fn(node);
+  const go = (node: SchemaNode, at: string, entry: string | undefined): SchemaNode => {
+    let self = fn(node, entry);
     const { item, variants } = innerOf(node);
-    const entry = item && go(item);
-    if (entry !== item) self = { ...self, item: entry } as SchemaNode;
-    const shapes = variants && each(variants);
+    const itemAt = under(at, PREF_ENTRY);
+    const held = item && go(item, itemAt, itemAt);
+    if (held !== item) self = { ...self, item: held } as SchemaNode;
+    // A variant's fields are read at the union's own path.
+    const shapes = variants && each(variants, () => at, entry);
     if (shapes !== variants) self = { ...self, variants: shapes } as SchemaNode;
     const kids = childrenOf(node);
-    const mapped = kids && each(kids);
+    // A section's key is a heading, and no part of the paths under it.
+    const mapped = kids && each(kids, (key, kid) => (isPrefSection(kid) ? at : under(at, key)), entry);
     return mapped === kids ? self : withChildren(self, mapped!);
   };
-  return go(root) as R;
+  return go(root, '', undefined) as R;
 }
 
 /** `path` where `moves` leave it: a moved value path, or one under it, goes where that went. */
@@ -99,18 +106,25 @@ function rebasedLeaf(leaf: PrefLeaf, moves: readonly ValueMove[]): PrefLeaf {
  * `root` with every value path a node holds to a leaf followed through `moves`: the paths a `showIf` or an
  * `enableIf` reads, on a leaf, a group, a section, or anything inside a list's entry or a union's variants, and a
  * leaf's own (an alias's `of`, a pair's `with`, a `field`
- * leaf's default).
+ * leaf's default). A path a condition reads from its entry (`from: 'item'`) follows a move of that field of the
+ * entry, which a move names with `*` for the entry's step (`'phases.*.mode'`), and nothing outside the entry.
  */
 export function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyArray<ValueMove | null>): R {
   const live = moves.filter((m): m is ValueMove => m !== null && m[0] !== m[1]);
   if (live.length === 0) return root;
-  return mapNodes(root, (node) => {
+  return mapNodes(root, (node, entry) => {
+    const inEntry = (path: string): string => {
+      if (entry === undefined || path === '') return path;
+      const base = rebased(entry, live);
+      const to = rebased(`${entry}.${path}`, live);
+      return to.startsWith(`${base}.`) ? to.slice(base.length + 1) : path;
+    };
     let next: SchemaNode = isPrefLeaf(node) ? rebasedLeaf(node, live) : node;
     for (const field of ['showIf', 'enableIf'] as const) {
       const held = node[field];
       // Anything else that sits where a condition goes is left for the check that reports it.
       if (!isPrefCondition(held)) continue;
-      const followed = mapPrefConditionPaths(held, (path) => rebased(path, live));
+      const followed = mapPrefConditionPaths(held, (path, from) => (from === 'item' ? inEntry(path) : rebased(path, live)));
       if (followed !== held) next = { ...next, [field]: followed } as SchemaNode;
     }
     return next;

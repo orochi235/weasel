@@ -3,28 +3,26 @@
  *
  * Text below `OUTLINE_MIN_SCREEN_PX` draws off the distance-field atlas and
  * text above it draws as tessellated outlines, so the same node changes tier
- * as the view zooms. A paint is measured in world space either way, which is
- * what the tier checks pin: the same world point reads the same color on
- * either side of the threshold.
+ * as the view zooms.
  *
  * The batch checks are pixel probes rather than a baseline because a
- * screenshot cannot see which draw a pixel came from — see the batch trap in
- * the repo's CLAUDE.md.
+ * screenshot cannot see which draw a pixel came from.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Fill, Paint } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
-import { resolveFillPattern } from 'renderer/patterns/resolveSpec';
-import { meshFromStops } from 'renderer/meshPaint/meshPaint';
-import 'renderer/meshPaint/register';
-import { asPaint, registerPaintKind, type PaintKindEntry } from 'renderer/paintKinds';
+import { resolveFillPattern } from '@weasel-js/renderer';
+import { meshFromStops } from '@weasel-js/renderer/mesh';
+import 'core/paint/registerMesh';
+import { registerPaintKind } from 'core/paint/paintKinds';
+import { asPaint, type PaintKindEntry } from 'core/paint/paintKindEntry';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import { defaultDrawOne } from './defaultDrawOne';
-import { registerEffect } from '../renderer/effects/types';
-import type { DrawCommand } from '../renderer/DrawCommand';
-import { OUTLINE_MIN_SCREEN_PX } from '../renderer/draw';
+import { registerEffect } from '@weasel-js/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
+import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/renderer';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';
@@ -40,13 +38,13 @@ const SOURCE = { x: 0, y: 0, width: 112, height: 52 };
 const SDF_SCALE = (OUTLINE_MIN_SCREEN_PX / FONT_SIZE) * 0.92;
 const OUTLINE_SCALE = (OUTLINE_MIN_SCREEN_PX / FONT_SIZE) * 1.08;
 
-interface TextData { text: string; style: object; fill: FillStyle }
+interface TextData { text: string; style: object; fill: Fill }
 
-function renderNode(fill: FillStyle, scale: number): RasterImage {
+function renderNode(fill: Paint, scale: number): RasterImage {
   const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({
     kind: 'leaf', layer: 'main', pose: POSE,
-    data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill },
+    data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: { paint: fill } },
   });
   return renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: scale, y: scale } });
 }
@@ -91,24 +89,23 @@ function rgbDistance(p: number[], q: number[]): number {
 
 /** Red on the left of the box, blue on the right, in the box's own units —
  *  what the paint panel writes. */
-const GRADIENT: FillStyle = {
-  fill: 'linear-gradient',
+const GRADIENT: Paint = {
+  kind: 'linear-gradient',
   from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
   stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1, color: '#0000ffff' }],
   units: 'bounds',
 };
 
 /** Wide white stripes on a transparent ground, in the box's units. */
-const PATTERN: FillStyle = {
-  fill: 'pattern',
-  pattern: { tile: 'hatch', color: '#ffffff', size: 16, lineWidth: 6 },
+const PATTERN: Paint = {
+  kind: 'hatch', color: '#ffffff', size: 16, lineWidth: 6,
   units: 'bounds',
 };
 
 async function loadOutlines(): Promise<void> {
   // Outlines load on first use, so a render is what starts the fetch.
   for (let i = 0; i < 100 && outlineStatus(FAMILY) !== 'ready'; i++) {
-    renderNode({ fill: 'solid', color: '#ffffff' }, OUTLINE_SCALE);
+    renderNode({ kind: 'solid', color: '#ffffff' }, OUTLINE_SCALE);
     await new Promise((r) => setTimeout(r, 20));
   }
   expect(outlineStatus(FAMILY)).toBe('ready');
@@ -151,7 +148,7 @@ describe('a gradient on decorated text', () => {
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       kind: 'leaf', layer: 'main', pose: POSE,
-      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: GRADIENT },
+      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: { paint: GRADIENT } },
     });
     const img = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: 1, y: 1 } });
     // The underline is the lowest row lit at both ends of the text — no glyph
@@ -172,7 +169,7 @@ describe('a gradient on decorated text', () => {
 describe('a pattern on text', () => {
   it('shows the stripes on atlas-tier text rather than a flat color', () => {
     const img = renderNode(PATTERN, SDF_SCALE);
-    const mask = renderNode({ fill: 'solid', color: '#ffffff' }, SDF_SCALE);
+    const mask = renderNode({ kind: 'solid', color: '#ffffff' }, SDF_SCALE);
     const ink = sharedInk(mask, SDF_SCALE, mask, SDF_SCALE);
     expect(ink.length).toBeGreaterThan(100);
     const alphas = ink.map(([x, y]) => pixelAt(img, x, y, SDF_SCALE)[3]);
@@ -182,8 +179,8 @@ describe('a pattern on text', () => {
   });
 
   it('puts the stripes in the same place on either side of the threshold', () => {
-    const maskSdf = renderNode({ fill: 'solid', color: '#ffffff' }, SDF_SCALE);
-    const maskOutline = renderNode({ fill: 'solid', color: '#ffffff' }, OUTLINE_SCALE);
+    const maskSdf = renderNode({ kind: 'solid', color: '#ffffff' }, SDF_SCALE);
+    const maskOutline = renderNode({ kind: 'solid', color: '#ffffff' }, OUTLINE_SCALE);
     const sdf = renderNode(PATTERN, SDF_SCALE);
     const outline = renderNode(PATTERN, OUTLINE_SCALE);
     const ink = sharedInk(maskSdf, SDF_SCALE, maskOutline, OUTLINE_SCALE);
@@ -196,30 +193,29 @@ describe('a pattern on text', () => {
 });
 
 describe('texture-painted atlas text in a batched frame', () => {
-  const run = (text: string, fill: FillStyle) => ({
+  const run = (text: string, fill: Paint) => ({
     text, fontFamily: FAMILY, fontSize: FONT_SIZE, fontWeight: 400, fontStyle: 'normal',
-    fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
+    fill: { paint: fill }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
   const WORLD_STRIPES = resolveFillPattern({
-    fill: 'pattern',
-    pattern: { tile: 'hatch', color: '#ffffff', size: 16, lineWidth: 6 },
+    kind: 'hatch', color: '#ffffff', size: 16, lineWidth: 6,
     units: 'world',
   })!;
 
   it('draws in painter order between staged solids, and leaves solid text beside it solid', () => {
     const commands: DrawCommand[] = [
       // Under the text: staged before it, so its run has to drain first.
-      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#ff0000' } },
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { paint: { color: '#ff0000' } } },
       {
         kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
-        runs: [run('HH', WORLD_STRIPES), run('HH', { fill: 'solid', color: '#ffff00' })],
+        runs: [run('HH', WORLD_STRIPES), run('HH', { kind: 'solid', color: '#ffff00' })],
       } as DrawCommand,
       // Over the right half of the text: staged after it, so it must land on top.
-      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { color: '#00ff00' } },
+      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { paint: { color: '#00ff00' } } },
     ];
     const img = renderCommands(commands);
     const mask = renderCommands([
-      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#000000' } },
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { paint: { color: '#000000' } } },
       {
         kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
         runs: [run('HH', { color: '#ffffff' }), run('HH', { color: '#ffffff' })],
@@ -262,7 +258,7 @@ const MESH = asPaint(meshFromStops([
 /** A kind the kit knows nothing about: red left of world x = 56 and blue
  *  right of it, from a program only it registers. */
 const SPLIT_X = 56;
-const SPLIT = asPaint({ fill: 'test-split' });
+const SPLIT = asPaint({ kind: 'test-split' });
 const SPLIT_KIND: PaintKindEntry = {
   id: 'test-split',
   label: 'Split',
@@ -312,9 +308,9 @@ describe('a registered paint kind on text', () => {
   beforeAll(() => registerPaintKind(SPLIT_KIND));
 
   /** Solid ink in the left and right fifths of the text, at `scale`. */
-  function sides(fill: FillStyle, scale: number, floor?: number): { left: number[][]; right: number[][] } {
+  function sides(fill: Paint, scale: number, floor?: number): { left: number[][]; right: number[][] } {
     const img = renderNode(fill, scale);
-    const mask = renderNode({ fill: 'solid', color: '#ffffff' }, scale);
+    const mask = renderNode({ kind: 'solid', color: '#ffffff' }, scale);
     const ink = sharedInk(mask, scale, mask, scale, floor);
     const at = ([x, y]: [number, number]) => pixelAt(img, x, y, scale);
     return {
@@ -360,7 +356,7 @@ describe('a registered paint kind on text', () => {
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       kind: 'leaf', layer: 'main', pose: POSE,
-      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: SPLIT },
+      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE, underline: true }, fill: { paint: SPLIT } },
     });
     const img = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: 1, y: 1 } });
     const inked = (x: number, y: number) => pixelAt(img, x, y + 0.5, 1)[3] >= 128;
@@ -374,11 +370,11 @@ describe('a registered paint kind on text', () => {
   });
 
   it('draws in painter order between staged solids and under a clip, leaving solid text beside it solid', () => {
-    const run = (text: string, fill: FillStyle) => ({
+    const run = (text: string, fill: Paint) => ({
       text, fontFamily: FAMILY, fontSize: FONT_SIZE, fontWeight: 400, fontStyle: 'normal',
-      fill, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
+      fill: { paint: fill }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
     });
-    const text = (a: FillStyle, b: FillStyle) => ({
+    const text = (a: Paint, b: Paint) => ({
       kind: 'text', x: 4, y: 4, align: 'left', style: { fontFamily: FAMILY, fontSize: FONT_SIZE },
       runs: [run('HH', a), run('HH', b)],
     }) as DrawCommand;
@@ -386,16 +382,16 @@ describe('a registered paint kind on text', () => {
     // the stencil the glyphs are tested against with it.
     const CLIP_BOTTOM = 30;
     const img = renderCommands([
-      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#00ffff' } },
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { paint: { color: '#00ffff' } } },
       {
         kind: 'group',
         clip: { kind: 'rect', x: 0, y: 0, width: 112, height: CLIP_BOTTOM },
-        children: [text(SPLIT, { fill: 'solid', color: '#ffff00' })],
+        children: [text(SPLIT, { kind: 'solid', color: '#ffff00' })],
       } as DrawCommand,
-      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { color: '#00ff00' } },
+      { kind: 'path', path: { kind: 'rect', x: 84, y: 0, width: 28, height: 52 }, fill: { paint: { color: '#00ff00' } } },
     ]);
     const mask = renderCommands([
-      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { color: '#000000' } },
+      { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 112, height: 52 }, fill: { paint: { color: '#000000' } } },
       text({ color: '#ffffff' }, { color: '#ffffff' }),
     ]);
     const px = (x: number, y: number) => pixelAt(img, x + 0.5, y + 0.5, 1).join();
@@ -438,7 +434,7 @@ void main() { outColor = texture(u_source, v_uv).bgra; }
     const scene = createScene<TextData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({
       kind: 'leaf', layer: 'main', pose: POSE,
-      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: SPLIT },
+      data: { text: TEXT, style: { fontFamily: FAMILY, fontSize: FONT_SIZE }, fill: { paint: SPLIT } },
     });
     const plain = renderSceneToPixels({ scene, sourceRect: SOURCE, scale: { x: SDF_SCALE, y: SDF_SCALE } });
     const img = renderSceneToPixels({

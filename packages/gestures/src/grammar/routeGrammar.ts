@@ -14,9 +14,7 @@
  *   sigil       = '+' | '?'                            -- ! @ # $ % ^ & * reserved as id-prefix
  *   modName     = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta'
  *
- * Shorthand: a bare phaseValue (no `:`) implies channel `&` ("this tool's
- * own phase"). `[engaged]` ≡ `[&:engaged]`; `[*]` ≡ `[&:*]`. The truly-loose
- * form (any channel, any phase) is `[*:*]`.
+ * The truly-loose form (any channel, any phase) is `[*:*]`.
  *
  * Examples:
  *   [initial] click => empty +shift            -- self idle
@@ -28,8 +26,6 @@
  */
 import { getGestureDescriptor, isKnownGestureName, type GestureName } from './gestures';
 import type { RoutePhase } from '../ui/phase';
-
-// ─── Channel + phase atoms ────────────────────────────────────────────────
 
 /** Channel reference for a phase atom. `'&'` = the binding's own tool;
  *  `'*'` = any tool; otherwise a registered tool id. */
@@ -58,15 +54,11 @@ export const RESERVED_ID_NAMES: ReadonlySet<string> = new Set([
   'initial', 'engaged',
 ]);
 
-// ─── v3 grammar types ──────────────────────────────────────────────────────
-
 /** v3 modifier requirement on a single modifier key. Absent from a
  *  `ParsedModifiers` map means "must not be held" (the strict default). */
 export type ModRequirement = 'required' | 'optional';
 
-/** Canonical modifier names accepted in the modSlot, in canonical order.
- *  Single source of truth: the {@link ModifierKey} type and the runtime
- *  validator (`MOD_NAME_SET`) are both derived from this tuple. */
+/** Canonical modifier names accepted in the modSlot, in canonical order. */
 export const VALID_MOD_NAMES = ['mod', 'shift', 'alt', 'ctrl', 'meta'] as const;
 
 /** A single modifier name accepted in the modSlot. */
@@ -225,9 +217,6 @@ function parsePhaseAtom(raw: string, input: string): PhaseAtom {
     throw new Error(`invalid route (unknown phase "${phase}" in "${raw}"): ${input}`);
   }
   if (channel !== '&' && channel !== '*') {
-    // Named tool channel. Reject the reserved-id-name keywords (they'd
-    // shadow the bare-phase shorthand on parse) and the sigil prefixes
-    // (reserved as future grammar surface).
     if (RESERVED_ID_NAMES.has(channel)) {
       throw new Error(`invalid route (channel "${channel}" is a reserved phase keyword): ${input}`);
     }
@@ -248,18 +237,12 @@ export function formatPhaseAtom(a: PhaseAtom): string {
 
 /** Visual-collapse pass: given a list of route strings, fold pairs that
  *  differ ONLY in `shift` presence (one has `+shift`, the other doesn't,
- *  everything else identical) into a single route with `?shift`. Useful
- *  for inspector / palette displays that want to show "Cmd+[" and
- *  "Cmd+Shift+[" as one Cmd+?Shift+[ chip rather than two rows.
+ *  everything else identical) into a single route with `?shift`.
  *
  *  Preserves input order — the first member of each fold-pair holds the
- *  position; the second is dropped. Routes that don't have a `+shift`
- *  vs absent twin pass through unchanged. Does NOT fold other modifier
+ *  position; the second is dropped. Does NOT fold other modifier
  *  pairs (alt/ctrl/meta/mod) — those tend to carry meaning across the
- *  same key (e.g., Cmd+Z vs Cmd+Shift+Z are usually two distinct
- *  actions, but Cmd+] vs Cmd+Shift+] is more often parametric variation
- *  of one action). Open the helper if a use case for the other
- *  modifiers shows up.
+ *  same key.
  */
 export function collapseShiftPairs(routes: readonly string[]): string[] {
   if (routes.length < 2) return [...routes];

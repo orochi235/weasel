@@ -49,19 +49,21 @@ export function ListLeaf({
       {...shared}
       value={entries}
       newEntry={() => item.default}
-      renderEntry={(entry, set, name, i) =>
-        renderItem({
-          ...entryConditions(ctx, `${ctx.path}.${i}`),
+      renderEntry={(entry, set, name, i) => {
+        const value = prefListEntry(pref, entry);
+        const { item: drawn, ...conditions } = entryConditions(ctx, `${ctx.path}.${i}`, item, value);
+        return renderItem({
+          ...conditions,
           path: `${ctx.path}.${i}`,
-          pref: { ...item, name },
-          value: prefListEntry(pref, entry),
+          pref: { ...drawn, name },
+          value,
           setValue: set,
           // An entry is not pinned on its own: it shares the state of its list.
           auto: ctx.auto,
           setAuto: ctx.setAuto,
           ...(ctx.fields ? { fields: ctx.fields } : {}),
-        })
-      }
+        });
+      }}
     />
   );
 }

@@ -3,7 +3,7 @@ import { nativeSvgKind, nativeSvgSpace } from './index';
 
 describe('what SVG carries natively', () => {
   it('has a paint server for solids, the two SVG gradients and patterns, and nothing else', () => {
-    for (const kind of ['solid', 'linear-gradient', 'radial-gradient', 'pattern']) {
+    for (const kind of ['solid', 'linear-gradient', 'radial-gradient', 'hatch', 'crosshatch', 'dots', 'chunks', 'texture']) {
       expect(nativeSvgKind(kind)).toBe(true);
     }
     for (const kind of ['conic-gradient', 'mesh-gradient', 'noise']) {

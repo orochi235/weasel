@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
-import { gradientForBounds, type FillStyle } from '@weasel-js/core';
+import { gradientForBounds, type Paint } from '@weasel-js/core';
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { PropertyControl } from './PropertyField';
@@ -10,7 +10,7 @@ import { PropertyControl } from './PropertyField';
 
 afterEach(cleanup);
 
-const PAINTS: [string, FillStyle][] = [
+const PAINTS: [string, Paint][] = [
   ['solid', { color: '#3a86ff' }],
   ['gradient', gradientForBounds('linear-gradient', { x: 0, y: 0, width: 1, height: 1 }, [{ offset: 0, color: '#3a86ff' }, { offset: 1, color: '#ff3b7f' }], 'bounds')],
 ];
@@ -24,7 +24,7 @@ function strengths(root: Element): number[] {
   });
 }
 
-function measure(paint: FillStyle, disabled: boolean): { height: number; drawn: number[] } {
+function measure(paint: Paint, disabled: boolean): { height: number; drawn: number[] } {
   const { container, unmount } = render(
     <div>
       <PropertyControl kind="paint" control="inline" name="Fill" value={paint} disabled={disabled} onChange={() => {}} />

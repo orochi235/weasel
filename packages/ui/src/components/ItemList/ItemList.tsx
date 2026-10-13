@@ -14,6 +14,7 @@ import {
 import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
 import { assignRef } from '@weasel-js/react';
 import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
+import { useRemovedRowFocus } from '../../useRemovedRowFocus';
 import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';
 
@@ -38,9 +39,8 @@ export interface ItemListRow {
   /** Consumer classes for states this component has no opinion about. */
   className?: string;
   /** Handlers and data attributes for this row's element. `data-*` is
-   *  spelled out because `HTMLAttributes` does not admit it, and every
-   *  consumer here marks its rows up with one. A handler here runs before the
-   *  list's own, and `preventDefault()` in it keeps the list out. */
+   *  spelled out because `HTMLAttributes` does not admit it. A handler here
+   *  runs before the list's own, and `preventDefault()` in it keeps the list out. */
   rowProps?: HTMLAttributes<HTMLDivElement> & Record<`data-${string}`, unknown>;
 }
 
@@ -99,19 +99,12 @@ const ROLES: Record<Mode, { container: string; row: string }> = {
 };
 
 /**
- * The row chrome behind a sidebar list — layers, history, anything that is a
- * flat column of selectable rows in a panel.
+ * The row chrome behind a sidebar list — anything that is a flat column of
+ * selectable rows in a panel.
  *
- * It owns the container, the row box, the empty state, the list's semantics
- * and its keyboard; what a row *means* stays with the consumer. History dims
- * its redo entries and rules a line under the current one; a layer list drags
- * to reorder and leads each row with a swatch. Both reach that through
- * `className` and `rowProps` rather than through options here, so this does
- * not grow a flag per consumer.
- *
- * Rows are one height and one inset for every list, which is the point: two
- * panels stacked in the same sidebar have to agree, and they did not while
- * each owned a private copy of the same CSS.
+ * It owns the container, the row box, the empty state, the list's semantics,
+ * and its keyboard; what a row *means* stays with the consumer, through
+ * `className` and `rowProps`.
  *
  * **Semantics.** The role follows what the list can do:
  * - nothing to select or activate → `list` / `listitem`, and no row is focusable;
@@ -126,8 +119,8 @@ const ROLES: Record<Mode, { container: string; row: string }> = {
  * Enter/Space activate, carrying modifiers so Shift+Space is Shift+click, and
  * Alt+Up/Down call `onNudge`. In a multi-select list with `onSelectRange`,
  * Shift+Up/Down and Shift+Home/End move focus and report the rows from the
- * anchor — the row last focused or activated other than by a range — to it. In a grid, Right steps from the row into its
- * controls, Left and Escape step back; the controls leave the tab order.
+ * anchor to it. In a grid, Right steps from the row into its controls, Left
+ * and Escape step back; the controls leave the tab order.
  */
 export const ItemList = forwardRef(function ItemList(
   {
@@ -158,6 +151,8 @@ export const ItemList = forwardRef(function ItemList(
   const anchor = useRef<string | null>(null);
   /** The row a range move is focusing, whose focus must not re-anchor. */
   const extending = useRef<string | null>(null);
+
+  const { rowRef } = useRemovedRowFocus<HTMLDivElement>(rows, (id) => targets.current.get(id)?.focus());
 
   const stopId = rows.some((r) => r.id === focusId)
     ? focusId
@@ -303,16 +298,7 @@ export const ItemList = forwardRef(function ItemList(
     >
       {overlay}
       {ghost && container ? (
-        <DragGhost at={ghost} from={container}>
-          {rows
-            .filter((row) => ghost.ids.includes(row.id))
-            .map((row) => (
-              <div key={row.id} className={[s.row, row.selected && s.selected].filter(Boolean).join(' ')}>
-                {row.leading}
-                <span className={s.label}>{row.label}</span>
-              </div>
-            ))}
-        </DragGhost>
+        <DragGhost at={ghost} from={container}><GhostRows rows={rows} ids={ghost.ids} /></DragGhost>
       ) : null}
       {rows.map((row, i) => {
         const tabIndex = interactive ? (row.id === stopId ? 0 : -1) : undefined;
@@ -334,7 +320,10 @@ export const ItemList = forwardRef(function ItemList(
             {...row.rowProps}
             role={roles.row}
             aria-selected={selection && mode !== 'list' ? !!row.selected : undefined}
-            ref={mode === 'listbox' ? targetRef(row.id) : undefined}
+            ref={(el) => {
+              rowRef(row.id)(el);
+              if (mode === 'listbox') targetRef(row.id)(el);
+            }}
             tabIndex={mode === 'listbox' ? tabIndex : row.rowProps?.tabIndex}
             onKeyDown={interactive ? onKeyDown(row, i) : row.rowProps?.onKeyDown}
             onClick={interactive ? onClick(row, i) : row.rowProps?.onClick}
@@ -358,6 +347,18 @@ export const ItemList = forwardRef(function ItemList(
     </div>
   );
 });
+
+/** The dragged rows as the ghost draws them: leading and label, no controls. */
+function GhostRows({ rows, ids }: { rows: readonly ItemListRow[]; ids: readonly string[] }) {
+  return rows
+    .filter((row) => ids.includes(row.id))
+    .map((row) => (
+      <div key={row.id} className={[s.row, row.selected && s.selected].filter(Boolean).join(' ')}>
+        {row.leading}
+        <span className={s.label}>{row.label}</span>
+      </div>
+    ));
+}
 
 function modsOf(e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): PressModifiers {
   return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };

@@ -1,14 +1,14 @@
 /**
  * Map between SVG `<linearGradient>` / `<radialGradient>` elements and
- * weasel's `FillStyle` gradient variants. Definitions are indexed by id
+ * weasel's `Paint` gradient variants. Definitions are indexed by id
  * wherever in the document they appear, and looked up when a `fill` /
  * `stroke` attribute references one as `url(#id)`. On serialize, we
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import { getPaintKind, getMarker, resolveMarkerSize } from '@weasel-js/core';
+import { getPaintKind, getMarker, isPatternPaint, isTileKind, resolveMarkerSize } from '@weasel-js/core';
 import type {
-  FillStyle, GradStop, GradientUnits, MarkerEntry, MarkerPaint, MarkerRef, Path, ScreenLength,
+  Paint, GradStop, PaintUnits, MarkerEntry, MarkerPaint, MarkerRef, Path, ScreenLength,
 } from '@weasel-js/core';
 import { ownProp, ownValue } from './cascade';
 import { readProperty } from './properties';
@@ -20,7 +20,7 @@ import { collectElementsByTag, type ElementTable } from './elements';
 import { serializePathD } from './path-serializer';
 
 /** Collected gradient definitions, keyed by element id. */
-export type GradientTable = Map<string, FillStyle>;
+export type GradientTable = Map<string, Paint>;
 
 /**
  * The namespace weasel's own paint servers are written in, and the prefix they
@@ -41,11 +41,11 @@ export const WEASEL_NS_PREFIX = 'wzl';
  *  linear and radial gradients, and patterns. Any other kind is written in
  *  weasel's namespace with a fallback color, which other renderers paint flat. */
 export function nativeSvgKind(kind: string): boolean {
-  return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'pattern';
+  return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'texture' || isTileKind(kind);
 }
 
-function hasNativeSvgForm(paint: FillStyle): boolean {
-  return nativeSvgKind(paint.fill ?? 'solid');
+function hasNativeSvgForm(paint: Paint): boolean {
+  return nativeSvgKind(paint.kind ?? 'solid');
 }
 
 /**
@@ -83,7 +83,7 @@ function readInterpolate(el: Element, elements: ElementTable): 'oklab' | 'oklch'
 
 /** Whether any gradient in the document names a space SVG cannot, so the root
  *  has to declare the namespace the attribute is written in. */
-function usesInterpolateAttr(paint: FillStyle): boolean {
+function usesInterpolateAttr(paint: Paint): boolean {
   const space = (paint as { interpolate?: string }).interpolate;
   return !nativeSvgSpace(space) && INTERPOLATE_SPACES.has(space!);
 }
@@ -212,7 +212,7 @@ function applyAlpha(hex: string, alpha: number): string {
   return `${hex}${a.toString(16).padStart(2, '0')}`;
 }
 
-/** SVG `gradientUnits` → the kit's `GradientUnits`. SVG's default is
+/** SVG `gradientUnits` → the kit's `PaintUnits`. SVG's default is
  *  `objectBoundingBox`, which is what the attribute defaults above assume
  *  (`x2="1"`, `r="0.5"`), so the two have to be read together. */
 function readGradientUnits(el: Element, elements: ElementTable): 'bounds' | 'world' {
@@ -273,14 +273,14 @@ function coord(
 
 function readLinearGradient(
   el: Element, elements: ElementTable, onWarn?: (m: string) => void,
-): FillStyle | null {
+): Paint | null {
   warnGradientTransform(el, elements, onWarn);
   warnUnmodeled(el, elements, onWarn);
   const units = readGradientUnits(el, elements);
   const at = (name: string, axis: LengthAxis, fraction: number): number =>
     coord(el, elements, name, axis, fraction, units, onWarn);
   return {
-    fill: 'linear-gradient',
+    kind: 'linear-gradient',
     from: { x: at('x1', 'x', 0), y: at('y1', 'y', 0) },
     to: { x: at('x2', 'x', 1), y: at('y2', 'y', 0) },
     stops: inheritedStops(el, elements, onWarn),
@@ -291,14 +291,14 @@ function readLinearGradient(
 
 function readRadialGradient(
   el: Element, elements: ElementTable, onWarn?: (m: string) => void,
-): FillStyle | null {
+): Paint | null {
   warnGradientTransform(el, elements, onWarn);
   warnUnmodeled(el, elements, onWarn);
   const units = readGradientUnits(el, elements);
   const at = (name: string, axis: LengthAxis, fraction: number): number =>
     coord(el, elements, name, axis, fraction, units, onWarn);
   return {
-    fill: 'radial-gradient',
+    kind: 'radial-gradient',
     center: { x: at('cx', 'x', 0.5), y: at('cy', 'y', 0.5) },
     radius: at('r', 'other', 0.5),
     stops: inheritedStops(el, elements, onWarn),
@@ -309,10 +309,10 @@ function readRadialGradient(
 
 function readConicGradient(
   el: Element, elements: ElementTable, onWarn?: (m: string) => void,
-): FillStyle | null {
+): Paint | null {
   warnGradientTransform(el, elements, onWarn);
   return {
-    fill: 'conic-gradient',
+    kind: 'conic-gradient',
     center: {
       x: num(inheritedAttr(el, elements, 'cx'), 0.5),
       y: num(inheritedAttr(el, elements, 'cy'), 0.5),
@@ -333,7 +333,7 @@ function readConicGradient(
  * parse is dropped with a warning rather than guessed at: a mesh missing a
  * patch is visibly wrong, where a mesh holding an invented one is not.
  */
-function readMeshGradient(el: Element, onWarn?: (m: string) => void): FillStyle | null {
+function readMeshGradient(el: Element, onWarn?: (m: string) => void): Paint | null {
   const patches: { points: { x: number; y: number }[]; colors: string[] }[] = [];
   for (let i = 0; i < el.children.length; i++) {
     const child = el.children[i];
@@ -357,23 +357,23 @@ function readMeshGradient(el: Element, onWarn?: (m: string) => void): FillStyle 
   if (patches.length === 0) return null;
   const space = el.getAttribute('interpolate') ?? el.getAttributeNS(WEASEL_NS, 'interpolate');
   return {
-    fill: 'mesh-gradient',
+    kind: 'mesh-gradient',
     patches,
     units: el.getAttribute('gradientUnits') === 'objectBoundingBox' ? 'bounds' : 'world',
     ...(space === 'oklab' || space === 'oklch' ? { interpolate: space } : {}),
-  } as unknown as FillStyle;
+  } as unknown as Paint;
 }
 
 /**
  * Pre-pass that assigns stable serialization ids to the paint servers —
  * gradients and patterns — used by any leaf in the tree. We key on object
- * identity so two leaves sharing the exact same `FillStyle` reference reuse
+ * identity so two leaves sharing the exact same `Paint` reference reuse
  * one `<defs>` entry; structurally equal but distinct objects get separate
  * ids.
  */
 export class PaintServerRegistry {
-  private byPaint = new Map<FillStyle, string>();
-  private order: FillStyle[] = [];
+  private byPaint = new Map<Paint, string>();
+  private order: Paint[] = [];
   private counter = 0;
 
   // Marker defs referenced by any stroke, by `<defs>` id in first-use order.
@@ -389,10 +389,10 @@ export class PaintServerRegistry {
   private clips: Path[] = [];
   private clipIds = new Map<Path, string>();
 
-  register(paint: FillStyle): string {
+  register(paint: Paint): string {
     const existing = this.byPaint.get(paint);
     if (existing) return existing;
-    const id = paint.fill === 'pattern' ? `pat${this.counter++}` : `grad${this.counter++}`;
+    const id = isPatternPaint(paint) ? `pat${this.counter++}` : `grad${this.counter++}`;
     this.byPaint.set(paint, id);
     this.order.push(paint);
     return id;
@@ -405,7 +405,7 @@ export class PaintServerRegistry {
    * the reference takes the fallback instead of dropping the fill, which is
    * the difference between a flat shape and a vanished one.
    */
-  ref(paint: FillStyle): string {
+  ref(paint: Paint): string {
     const id = this.register(paint);
     if (hasNativeSvgForm(paint)) return `url(#${id})`;
     return `url(#${id}) ${paintFallback(paint)}`;
@@ -413,7 +413,7 @@ export class PaintServerRegistry {
 
   /** The paint kind of each registered paint, once, in first-use order. */
   paintKinds(): string[] {
-    return [...new Set(this.order.map((paint) => paint.fill ?? 'solid'))];
+    return [...new Set(this.order.map((paint) => paint.kind ?? 'solid'))];
   }
 
   /** Whether any registered paint serializes outside SVG's own vocabulary, so
@@ -496,7 +496,7 @@ function defaultMarkerXml(
 ): string {
   const name = key ?? id;
   const unit = size === undefined ? 1 : resolveMarkerSize({ key: name, size }, 1);
-  const path = entry.path({ size: unit, stroke: { paint: { fill: 'solid', color: '#000' } } });
+  const path = entry.path({ size: unit, stroke: { paint: { kind: 'solid', color: '#000' } } });
   const d = serializePathD(path);
   const fill = markerPaintAttrs('fill', entry.fill, id, onWarn);
   const outline = entry.outline
@@ -534,7 +534,7 @@ function markerPaintAttrs(
 ): string {
   if (paint === 'none') return `${attr}="none"`;
   if (paint === undefined || paint === 'line') return `${attr}="context-stroke"`;
-  if ('color' in paint && (paint.fill === undefined || paint.fill === 'solid')) {
+  if ('color' in paint && (paint.kind === undefined || paint.kind === 'solid')) {
     return paint.opacity != null && paint.opacity !== 1
       ? `${attr}="${paint.color}" ${attr}-opacity="${trimNumber(paint.opacity)}"`
       : `${attr}="${paint.color}"`;
@@ -547,28 +547,28 @@ function markerPaintAttrs(
  *  own `toSvg`, else nothing plus a warning. The referencing element already
  *  carries `fill="url(#id)"`, so a silent omission is a dangling reference and
  *  the shape vanishes in a viewer. */
-function paintServerXml(id: string, paint: FillStyle, onWarn?: (m: string) => void): string {
-  if (paint.fill === 'pattern') return patternXml(id, paint, onWarn);
+function paintServerXml(id: string, paint: Paint, onWarn?: (m: string) => void): string {
+  if (isPatternPaint(paint)) return patternXml(id, paint, onWarn);
   const builtin = gradientXml(id, paint);
   if (builtin) return builtin;
-  const kind = getPaintKind(paint.fill);
+  const kind = getPaintKind(paint.kind);
   const custom = kind?.toSvg?.(id, paint);
   if (custom) return custom;
   onWarn?.(kind
-    ? `${paint.fill} fill has no vector form — omitted from <defs>`
-    : `${paint.fill} fill is not registered — omitted from <defs>; a kind loaded on demand needs \`await warmSvg(nodes)\` before a synchronous export`);
+    ? `${paint.kind} fill has no vector form — omitted from <defs>`
+    : `${paint.kind} fill is not registered — omitted from <defs>; a kind loaded on demand needs \`await warmSvg(nodes)\` before a synchronous export`);
   return '';
 }
 
-/** `GradientUnits` → SVG `gradientUnits`. `'screen'` (the kit's default, and
+/** `PaintUnits` → SVG `gradientUnits`. `'screen'` (the kit's default, and
  *  a viewport-fixed wash) has no SVG analog at all; it lowers to user space,
  *  which at least puts the paint somewhere the geometry is. */
-function gradientUnitsAttr(units: GradientUnits | undefined): string {
+function gradientUnitsAttr(units: PaintUnits | undefined): string {
   return units === 'bounds' ? 'objectBoundingBox' : 'userSpaceOnUse';
 }
 
-function gradientXml(id: string, paint: FillStyle): string {
-  if (paint.fill === 'linear-gradient') {
+function gradientXml(id: string, paint: Paint): string {
+  if (paint.kind === 'linear-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     return (
       `<linearGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
@@ -577,7 +577,7 @@ function gradientXml(id: string, paint: FillStyle): string {
       `${interpolateAttr(paint.interpolate)}>${stops}</linearGradient>`
     );
   }
-  if (paint.fill === 'conic-gradient') {
+  if (paint.kind === 'conic-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     const P = WEASEL_NS_PREFIX;
     return (
@@ -587,7 +587,7 @@ function gradientXml(id: string, paint: FillStyle): string {
       `${interpolateAttr(paint.interpolate)}>${stops}</${P}:conicGradient>`
     );
   }
-  if (paint.fill === 'radial-gradient') {
+  if (paint.kind === 'radial-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     return (
       `<radialGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
@@ -604,8 +604,8 @@ function gradientXml(id: string, paint: FillStyle): string {
  * when the paint has no single color to name — nothing painted is at least
  * honest, where an invented black is not.
  */
-function paintFallback(paint: FillStyle): string {
-  const color = getPaintKind(paint.fill)?.colorOf(paint);
+function paintFallback(paint: Paint): string {
+  const color = getPaintKind(paint.kind)?.colorOf(paint);
   if (!color) return 'none';
   // Whoever reads the fallback is by definition an older renderer, so the
   // packed alpha comes off rather than riding out as an 8-digit hex.

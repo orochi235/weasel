@@ -102,6 +102,37 @@ describe('moveGestureAdapter', () => {
   });
 });
 
+describe('moveAction — a behavior that deletes the dragged node', () => {
+  it('brings the node\'s dependents back on undo', () => {
+    const { scene, leaf } = fixture();
+    const edge = scene.add({
+      kind: 'leaf', layer: 'main', data: { color: '#00f' }, pose: { x: 0, y: 0, width: 1, height: 1 }, dependsOn: [leaf],
+    });
+    const base = {
+      world: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { selection: { get: () => [leaf as NodeId] }, scene },
+    };
+    const inv = moveAction.invoker;
+    if (!inv || inv.timing !== 'ongoing') throw new Error('expected ongoing invoker');
+    const handle = inv.start(base as unknown as InvocationCtx, {
+      behaviors: [{ onEnd: () => [createDeleteOp({ node: scene.get(leaf)! })] }],
+    });
+    const moved = {
+      ...base,
+      drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 3 }, delta: { x: 5, y: 3 } },
+    } as unknown as InvocationCtx;
+    handle.onMove!(moved);
+    handle.onEnd!(moved, 'commit');
+    expect(scene.get(leaf)).toBeUndefined();
+    expect(scene.get(edge)).toBeUndefined();
+
+    scene.undo();
+    expect(scene.get(leaf)).toBeDefined();
+    expect(scene.get(edge)).toBeDefined();
+  });
+});
+
 describe('moveGestureAdapter sibling order', () => {
   it('restores a deleted node to its original slot on undo', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });

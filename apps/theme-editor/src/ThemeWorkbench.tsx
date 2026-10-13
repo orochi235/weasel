@@ -180,20 +180,22 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           </div>
         }
       >
-        <div role="alert" className={styles.status}>
-          <p>
-            {stored.name} does not derive: {error}
-          </p>
-          <div className={styles.statusActions}>
-            {baseHash === null ? (
-              <Button size="sm" onClick={onDiscard}>Discard this unsaved theme</Button>
-            ) : (
-              <Button size="sm" onClick={reload}>Discard the draft and reload from disk</Button>
-            )}
+        <div className={styles.deadDraft}>
+          <div role="alert" className={styles.status}>
+            <p>
+              {stored.name} does not derive: {error}
+            </p>
+            <div className={styles.statusActions}>
+              {baseHash === null ? (
+                <Button size="sm" onClick={onDiscard}>Discard this unsaved theme</Button>
+              ) : (
+                <Button size="sm" onClick={reload}>Discard the draft and reload from disk</Button>
+              )}
+            </div>
           </div>
+          {reloadError && <p role="status" className={styles.status}>{reloadError}</p>}
+          <PinRepair draft={draft} error={error ?? ''} onChange={history.update} />
         </div>
-        {reloadError && <p role="status" className={styles.status}>{reloadError}</p>}
-        <PinRepair draft={draft} error={error ?? ''} onChange={history.update} />
       </LabShell>
     );
   }

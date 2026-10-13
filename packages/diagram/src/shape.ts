@@ -1,25 +1,20 @@
 /**
- * The painter for a node whose trait names an `outline`.
- *
- * Registered the way every other trait's renderer is — a `NodeShapeEntry` with
- * a `matches` over the node's data — so a diagram body is picked, clipped and
- * area-selected by the same walk as everything else, and a participant that
+ * The painter for a node whose trait names an `outline`. A participant that
  * already had a look of its own (a text block, an image, a path) keeps it by
  * naming no outline at all.
  *
  * Rows are **not** painted here. A built body's rows are ordinary scene nodes
- * under the container, so the kit's own text painter draws them and text
- * editing, selection and styling work on them without a special case.
+ * under the container, so the kit's own text painter draws them.
  */
 import {
   commandFill,
   commandStroke,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
-  type FillStyle,
   type NodeShapeEntry,
   type PoseDescriptor,
   type Stroke,
+  type Fill,
 } from '@weasel-js/core';
 import { outlinePath } from './outline';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
@@ -34,7 +29,7 @@ export interface DiagramShapeOptions<TPose> {
   /** Reads the box the outline is built in. Default `RECT_POSE_DESCRIPTOR`. */
   geometry?: PoseDescriptor<TPose>;
   /** Painted when the node's data declares neither. */
-  defaultFill?: FillStyle | null;
+  defaultFill?: Fill | null;
   defaultStroke?: Stroke | null;
 }
 
@@ -52,7 +47,7 @@ export function diagramShape<TPose>(
     paint: (node, pose) => {
       const outline = outlineOf(node);
       if (outline === undefined) return [];
-      const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null };
+      const d = node.data as { fill?: Fill | null; stroke?: Stroke | null };
       const box = geometry.getBounds(pose);
       const declaredFill = d.fill === undefined ? opts.defaultFill : d.fill;
       const declaredStroke = d.stroke === undefined ? opts.defaultStroke : d.stroke;

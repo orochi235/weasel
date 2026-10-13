@@ -1,6 +1,6 @@
 /**
  * WeaselDraw's own commands (the grid and snap toggles, Release compound
- * path, Preferences) as actions the gesture dispatcher routes and the command
+ * path, Preferences, the command palette) as actions the gesture dispatcher routes and the command
  * bar draws from the registry. Each reads the live `appCommands` dep.
  */
 
@@ -8,7 +8,7 @@
 import './depSchemaAugmentation';
 
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/core';
-import { GridIcon, SnapIcon } from '@weasel-js/ui';
+import { GridIcon, SearchIcon, SnapIcon } from '@weasel-js/ui';
 import { ReleaseCompoundIcon, SettingsIcon } from '../actionIcons';
 
 /** What the app's own commands read and do. */
@@ -21,6 +21,7 @@ export interface AppCommands {
   canReleaseCompound: boolean;
   releaseCompound(): void;
   openPrefs(): void;
+  openPalette(): void;
 }
 
 const read = (deps?: ActionDeps): AppCommands | undefined => deps?.appCommands;
@@ -76,9 +77,20 @@ export const preferencesAction: AppAction = {
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.openPrefs() },
 };
 
+export const commandsAction: AppAction = {
+  id: 'app.commands',
+  label: 'Commands',
+  icon: () => <SearchIcon />,
+  group: 'app',
+  defaultBinding: { kind: 'key', key: 'k', mods: { mod: true } },
+  requires: ['appCommands'],
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.openPalette() },
+};
+
 export const appActions: Action[] = [
   toggleGridAction,
   toggleSnapAction,
   releaseCompoundAction,
   preferencesAction,
+  commandsAction,
 ];

@@ -101,12 +101,12 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
       const body: PathDrawCommand = {
         kind: 'path',
         path: { kind: 'rect', x, y, width: w, height: h },
-        fill: { fill: 'solid', color: bodyColor },
+        fill: { paint: { kind: 'solid', color: bodyColor } },
       };
       const text = textCommandFromRuns(
         x + 8, // 8px left padding
         y,
-        [{ text: label, fill: { fill: 'solid', color: textColor } }],
+        [{ text: label, fill: { paint: { kind: 'solid', color: textColor } } }],
         {
           fontFamily: opts.fontFamily ?? ctx.defaultFont,
           fontSize,

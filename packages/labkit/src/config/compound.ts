@@ -78,10 +78,14 @@ export class UnionNode<T> extends BaseNode<T> {
   readonly kind = 'union';
 }
 
-type Fields = Readonly<Record<string, ConfigNode>>;
-type FieldValues<S extends Fields> = { -readonly [K in keyof S]: NodeValue<S[K]> };
-type Variants = Readonly<Record<string, ConfigNode<object> & { readonly kind: 'object' }>>;
-type VariantValues<Tag extends string, V extends Variants> = {
+/** The fields of an `f.object`, by key. */
+export type Fields = Readonly<Record<string, ConfigNode>>;
+/** The value of an `f.object`: each field's own value, under its key. */
+export type FieldValues<S extends Fields> = { -readonly [K in keyof S]: NodeValue<S[K]> };
+/** The variants of an `f.union`, by the tag value that picks each. */
+export type Variants = Readonly<Record<string, ConfigNode<object> & { readonly kind: 'object' }>>;
+/** The value of an `f.union`: one variant's value, carrying its key under the tag field. */
+export type VariantValues<Tag extends string, V extends Variants> = {
   [K in keyof V & string]: { [P in Tag]: K } & NodeValue<V[K]>;
 }[keyof V & string];
 

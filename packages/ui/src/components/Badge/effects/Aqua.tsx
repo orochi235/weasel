@@ -1,29 +1,22 @@
+import type { ColorSource } from '@weasel-js/paint';
+import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
 /**
- * Aqua-glass treatment — composes onto any badge silhouette by walking the
- * sampler's perimeter and painting four layered sub-effects in one pass:
+ * Aqua-glass treatment — composes onto any badge silhouette: a body gradient,
+ * a specular gloss clipped to the body, a bezel highlight, and a rim outline.
+ * The bezel strokes perimeter segments whose outward normal points up
+ * (`ny < 0`) — normal-aware, not bbox-aligned, which is what makes it work on
+ * arbitrary silhouettes.
  *
- *  1. Body gradient    — vertical tint that runs translucent-top through a
- *                        bright equator band into a dark base.
- *  2. Specular gloss   — upper-hemisphere white-fade clipped to the body.
- *  3. Bezel highlight  — bright stroke along perimeter segments whose
- *                        outward normal points up (`ny < 0`). On a pill that's
- *                        the upper half; on a hex it's the three top edges;
- *                        on a starburst it's the upward tips. Normal-aware,
- *                        not bbox-aligned, which is what makes it work on
- *                        arbitrary silhouettes.
- *  4. Rim outline      — faint dark stroke along the full perimeter.
- *
- * For the *truly* translucent look (with backdrop-filter blur reading the
- * surface behind the badge), use this with `variant="outline"` so the badge's
- * own flat fill doesn't paint behind the gradient, and set
+ * For the *truly* translucent look, use this with `variant="outline"` so the
+ * badge's own flat fill doesn't paint behind the gradient, and set
  * `backdrop-filter: blur(...)` on the host element via CSS.
  */
 export interface AquaEffectParams {
   /** Body tint. Defaults to `var(--badge-edge)` so the badge's color drives it. */
-  accent?: string;
+  accent?: ColorSource;
   /** Stop opacities along the body gradient (0..1). */
   topAlpha?: number;
   upperAlpha?: number;
@@ -48,7 +41,7 @@ export interface AquaEffectParams {
 }
 
 const DEFAULTS: Required<AquaEffectParams> = {
-  accent: 'var(--badge-edge)',
+  accent: { ref: '--badge-edge' },
   topAlpha: 0.45,
   upperAlpha: 0.7,
   equator: 52,
@@ -71,8 +64,10 @@ const Aqua: EffectModule<AquaEffectParams> = {
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
+    const css = useColorCss();
     if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
     const cfg = { ...DEFAULTS, ...params };
+    const accent = css(cfg.accent);
 
     // Walk the perimeter and collect contiguous runs where the outward normal
     // points up (ny < 0) — those segments will get the bezel highlight.
@@ -116,25 +111,23 @@ const Aqua: EffectModule<AquaEffectParams> = {
     // Stroke widths in CSS px → viewBox units. The badge SVG is 100×100 with
     // preserveAspectRatio="none", so use the larger inverse-scale to keep
     // the stroke from getting too thin in either axis.
-    const sx = 100 / boxW;
-    const sy = 100 / boxH;
-    const widthScale = Math.max(sx, sy);
+    const widthScale = Math.max(100 / boxW, 100 / boxH);
     const bezelWidthVb = cfg.bezelWidth * widthScale;
     const rimWidthVb = cfg.rimWidth * widthScale;
 
     const equatorLo = Math.max(0, cfg.equator - cfg.equatorSpread);
     const equatorHi = Math.min(100, cfg.equator + cfg.equatorSpread * 1.6);
-    const equatorBrightColor = `color-mix(in srgb, ${cfg.accent} ${cfg.equatorTint}%, white)`;
-    const baseColor = `color-mix(in srgb, ${cfg.accent} ${cfg.baseTint}%, black)`;
+    const equatorBrightColor = `color-mix(in srgb, ${accent} ${cfg.equatorTint}%, white)`;
+    const baseColor = `color-mix(in srgb, ${accent} ${cfg.baseTint}%, black)`;
 
     return (
       <>
         <defs>
           <linearGradient id={bodyGradId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: cfg.accent, stopOpacity: cfg.topAlpha }} />
-            <stop offset={`${equatorLo}%`} style={{ stopColor: cfg.accent, stopOpacity: cfg.upperAlpha }} />
+            <stop offset="0%" style={{ stopColor: accent, stopOpacity: cfg.topAlpha }} />
+            <stop offset={`${equatorLo}%`} style={{ stopColor: accent, stopOpacity: cfg.upperAlpha }} />
             <stop offset={`${cfg.equator}%`} style={{ stopColor: equatorBrightColor, stopOpacity: 1 }} />
-            <stop offset={`${equatorHi}%`} style={{ stopColor: cfg.accent, stopOpacity: 1 }} />
+            <stop offset={`${equatorHi}%`} style={{ stopColor: accent, stopOpacity: 1 }} />
             <stop offset="100%" style={{ stopColor: baseColor, stopOpacity: 1 }} />
           </linearGradient>
           <linearGradient id={glossGradId} x1="0%" y1="0%" x2="0%" y2={`${cfg.glossExtent}%`}>

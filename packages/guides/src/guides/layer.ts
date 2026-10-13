@@ -83,8 +83,8 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
   const format = opts.gapLabels === false ? null
     : typeof opts.gapLabels === 'function' ? opts.gapLabels
     : (n: number) => String(Math.round(n));
-  const stroke: CommandStroke = { paint: { fill: 'solid', color }, width: lineWidth };
-  const gapStroke: CommandStroke = { paint: { fill: 'solid', color: gapColor }, width: lineWidth };
+  const stroke: CommandStroke = { paint: { kind: 'solid', color }, width: lineWidth };
+  const gapStroke: CommandStroke = { paint: { kind: 'solid', color: gapColor }, width: lineWidth };
 
   return {
     id: opts.id ?? 'guides',
@@ -127,11 +127,11 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
         const w = text.length * LABEL_CHAR_W + LABEL_PAD_X * 2;
         const left = (x0 + x1) / 2 - w / 2;
         const top = (y0 + y1) / 2 - LABEL_H / 2;
-        out.push({ kind: 'path', path: rectPath(left, top, w, LABEL_H), fill: { fill: 'solid', color: gapColor } });
+        out.push({ kind: 'path', path: rectPath(left, top, w, LABEL_H), fill: { paint: { kind: 'solid', color: gapColor } } });
         out.push(textCommandFromRuns(
           left + LABEL_PAD_X,
           top + 2,
-          [{ text, fill: { fill: 'solid', color: '#fff' } }],
+          [{ text, fill: { paint: { kind: 'solid', color: '#fff' } } }],
           LABEL_FONT,
         ));
       }

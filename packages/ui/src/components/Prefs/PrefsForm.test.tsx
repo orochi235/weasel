@@ -207,7 +207,7 @@ describe('PrefsForm — union-valued leaves', () => {
             kind: 'paint',
             name: 'Fill',
             description: 'Fill paint.',
-            default: { fill: 'solid', color: '#000000ff' },
+            default: { kind: 'solid', color: '#000000ff' },
           },
           stroke: {
             kind: 'object',
@@ -216,10 +216,10 @@ describe('PrefsForm — union-valued leaves', () => {
             default: '#000000ff',
             block: true,
             fromScalar: (v: unknown) => ({
-              paint: { fill: 'solid', color: typeof v === 'string' ? v : '#000000ff' },
+              paint: { kind: 'solid', color: typeof v === 'string' ? v : '#000000ff' },
             }),
             children: {
-              paint: { kind: 'paint', name: 'Stroke color', description: '', default: { fill: 'solid', color: '#000000ff' } },
+              paint: { kind: 'paint', name: 'Stroke color', description: '', default: { kind: 'solid', color: '#000000ff' } },
               width: { kind: 'number', name: 'Stroke width', description: '', default: 1, min: 0 },
             },
           },
@@ -240,7 +240,7 @@ describe('PrefsForm — union-valued leaves', () => {
   };
 
   it('renders a paint leaf as a paint field instead of the no-renderer placeholder', () => {
-    renderUnion({ appearance: { fill: { fill: 'solid', color: '#ff0000ff' } } });
+    renderUnion({ appearance: { fill: { kind: 'solid', color: '#ff0000ff' } } });
     expect(screen.getByRole('button', { name: 'Fill' })).toHaveTextContent('Solid');
     expect(screen.queryByText('(paint: no renderer)')).toBeNull();
   });
@@ -249,7 +249,7 @@ describe('PrefsForm — union-valued leaves', () => {
     const onChange = renderUnion({
       appearance: {
         fill: {
-          fill: 'linear-gradient',
+          kind: 'linear-gradient',
           from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
           stops: [{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }],
         },
@@ -260,7 +260,7 @@ describe('PrefsForm — union-valued leaves', () => {
     fireEvent.input(stop, { target: { value: '#112233' } });
     fireEvent.blur(stop);
     expect(onChange).toHaveBeenCalledWith('appearance.fill', expect.objectContaining({
-      fill: 'linear-gradient',
+      kind: 'linear-gradient',
       from: { x: 0, y: 0 },
       to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#112233ff' }, { offset: 1, color: '#ffffffff' }],
@@ -268,7 +268,7 @@ describe('PrefsForm — union-valued leaves', () => {
   });
 
   it('writes a whole solid paint rather than a bare color', () => {
-    const onChange = renderUnion({ appearance: { fill: { fill: 'solid', color: '#000000ff' } } });
+    const onChange = renderUnion({ appearance: { fill: { kind: 'solid', color: '#000000ff' } } });
     openPaint('Fill');
     const input = screen.getByLabelText('Fill', { selector: 'input[type="color"]' });
     fireEvent.input(input, { target: { value: '#112233' } });

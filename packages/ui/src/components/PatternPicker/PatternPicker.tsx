@@ -2,7 +2,12 @@ import { useId, type CSSProperties, type ReactElement } from 'react';
 import {
   composePatternTransform,
   decomposePatternTransform,
-  type FillStyle,
+  isTilePaint,
+  seedTile,
+  TILE_KINDS,
+  type PatternPaint,
+  type TileKind,
+  type TilePaint,
   type TilePatternSpec,
 } from '@weasel-js/core';
 import { unit } from '@weasel-js/quantity';
@@ -11,11 +16,6 @@ import { UnitField } from '../NumberField';
 import { ToggleBar } from '../ToggleBar';
 import f from '../field.module.css';
 import s from './PatternPicker.module.css';
-
-/** The `pattern` member of the paint union. */
-export type PatternFill = Extract<FillStyle, { fill: 'pattern' }>;
-
-const TILES: readonly TilePatternSpec['tile'][] = ['hatch', 'crosshatch', 'dots', 'chunks'];
 
 /** Tile sizes the picker offers, coarse enough that each reads as a
  *  distinct texture rather than a nudge. */
@@ -42,7 +42,7 @@ function toDegrees(rad: number): number {
 
 /** `value` with its transform's rotation replaced, the transform dropped when
  *  nothing is left of it. */
-function withRotation(value: PatternFill, degrees: number): PatternFill {
+function withRotation(value: PatternPaint, degrees: number): PatternPaint {
   const parts = decomposePatternTransform(value.transform);
   const [a, b, c, d] = composePatternTransform({ ...parts, rotation: (degrees * Math.PI) / 180 });
   const { transform: _drop, ...rest } = value;
@@ -50,38 +50,24 @@ function withRotation(value: PatternFill, degrees: number): PatternFill {
   return identity ? rest : { ...rest, transform: [a, b, c, d] };
 }
 
-/** The spec a pattern paint carries, if it carries one. A consumer-built
- *  `TextureHandle` has no spec, so the picker shows no tile selected and
- *  replaces it wholesale on the next click. */
-function specOf(fill: PatternFill): TilePatternSpec | null {
-  return 'tile' in fill.pattern ? fill.pattern : null;
-}
-
-/**
- * A pattern seeded from a color. `units: 'bounds'` anchors the tile to the
- * node's box, so the texture travels with the shape.
- */
+/** A tile paint seeded from a color, at one of the picker's sizes. */
 export function seedPattern(
-  tile: TilePatternSpec['tile'],
+  tile: TileKind,
   from: string,
   size: number = DEFAULT_TILE_SIZE,
-): PatternFill {
-  const spec: TilePatternSpec = { tile, color: from, size };
-  // `chunks` is a scatter over a ground rather than a line texture; without a
-  // background it reads as loose specks on whatever sits beneath.
-  if (tile === 'chunks') spec.bg = '#00000000';
-  return { fill: 'pattern', pattern: spec, units: 'bounds' };
+): TilePaint {
+  return { ...seedTile(tile, from), size };
 }
 
 /** Props for {@link PatternPicker}. */
 export interface PatternPickerProps {
   /** The pattern paint being edited. */
-  value: PatternFill;
+  value: PatternPaint;
   /** The color new tiles are seeded with — the paint's own, normally. */
   color: string;
   /** Committed value: one call per click. A tile pick, a size change and a
    *  committed rotation are each a complete gesture, so there is no `onInput`. */
-  onChange: (next: PatternFill) => void;
+  onChange: (next: PatternPaint) => void;
   className?: string;
 }
 
@@ -95,37 +81,38 @@ export interface PatternPickerProps {
  */
 export function PatternPicker(props: PatternPickerProps): ReactElement {
   const { value, color, onChange, className } = props;
-  const spec = specOf(value);
-  const size = spec?.size ?? DEFAULT_TILE_SIZE;
+  // A `texture` paint names no tile, so the picker shows none selected and
+  // replaces it wholesale on the next click.
+  const tile = isTilePaint(value) ? value : null;
+  const size = tile?.size ?? DEFAULT_TILE_SIZE;
   const rotationId = useId();
 
-  const pick = (tile: TilePatternSpec['tile']): void => {
-    const seeded = seedPattern(tile, color, size);
+  const pick = (kind: TileKind): void => {
+    const seeded = seedPattern(kind, color, size);
     onChange(value.transform ? { ...seeded, transform: value.transform } : seeded);
   };
 
   const resize = (nextSize: number): void => {
-    if (!spec) return;
-    onChange({ ...value, pattern: { ...spec, size: nextSize } });
+    if (!tile) return;
+    onChange({ ...tile, size: nextSize });
   };
 
   return (
     <div className={[s.root, className].filter(Boolean).join(' ')}>
       <div className={s.grid}>
-        {TILES.map((tile) => {
-          const preview: TilePatternSpec = { tile, color, size: PREVIEW_SIZE };
-          if (tile === 'chunks') preview.bg = '#00000000';
-          const selected = spec?.tile === tile;
+        {TILE_KINDS.map((kind) => {
+          const preview: TilePatternSpec = { ...seedTile(kind, color), size: PREVIEW_SIZE };
+          const selected = tile?.kind === kind;
           return (
             <button
-              key={tile}
+              key={kind}
               type="button"
               className={[s.swatch, selected && s.swatchActive].filter(Boolean).join(' ')}
               style={{ ['--tile-preview' as string]: tilePreviewCssUrl(preview) } as CSSProperties}
-              title={tile}
-              aria-label={tile}
+              title={kind}
+              aria-label={kind}
               aria-pressed={selected}
-              onClick={() => pick(tile)}
+              onClick={() => pick(kind)}
             />
           );
         })}

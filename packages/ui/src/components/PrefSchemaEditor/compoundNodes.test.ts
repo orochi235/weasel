@@ -94,14 +94,14 @@ describe('what a leaf and an entry may be', () => {
 });
 
 describe('the attributes of a list and of a typed leaf', () => {
-  it('lists an entry\'s name, its default, and its kind\'s own attributes', () => {
-    expect(Object.keys(attributeSchema(nodeAt(ROOT, 'phases')!).entry)).toEqual(['name', 'default', 'min', 'max', 'step', 'unit', 'control', 'endless']);
+  it('lists an entry\'s name, its default, its kind\'s own attributes, and what enables it', () => {
+    expect(Object.keys(attributeSchema(nodeAt(ROOT, 'phases')!).entry)).toEqual(['name', 'default', 'min', 'max', 'step', 'unit', 'control', 'endless', 'enableIf']);
     expect(attributeSchema(nodeAt(ROOT, 'loose')!).entry).toEqual({});
   });
 
-  it('lists only a typed entry\'s name and default, the default drawn by the type\'s own control', () => {
+  it('lists only a typed entry\'s name, default, and what enables it, the default drawn by the type\'s own control', () => {
     const { entry } = attributeSchema(nodeAt(withEntry(ROOT, 'phases', Stop), 'phases')!);
-    expect(Object.keys(entry)).toEqual(['name', 'default']);
+    expect(Object.keys(entry)).toEqual(['name', 'default', 'enableIf']);
     expect(entry.default).toMatchObject({ kind: 'object', name: 'Default', children: Stop.children });
   });
 

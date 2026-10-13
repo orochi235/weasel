@@ -1,18 +1,18 @@
 /**
  * `RenderLayer` that fills/strokes `Path` instances. Mirrors the shape of
  * `createTextLayer`: caller hands over a `getNodes()` enumerator and a
- * `getPath(node)` lookup; the layer iterates and renders. CommandFill and
+ * `getPath(node)` lookup; the layer iterates and renders. Fill and
  * stroke are looked up per node so consumers can keep the path geometry
  * separate from the visual style record (the typical scene-graph layout).
  */
 
-import { type DrawCommand } from '../../renderer';
-import { type CommandFill, type CommandStroke } from '@weasel-js/paint';
+import { type DrawCommand } from '@weasel-js/renderer';
+import { type CommandStroke, type CommandFill } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { type Path, countPathAnchors } from '@weasel-js/geom';
-import type { ColorOverrideRegistry } from '../../animation/colorRegistry';
+import type { ColorOverrideRegistry } from '@weasel-js/animator';
 
-const PLACEHOLDER_FILL: CommandFill = { color: '#ffffff' };
+const PLACEHOLDER_FILL: CommandFill = { paint: { color: '#ffffff' } };
 const PLACEHOLDER_STROKE: CommandStroke = { paint: { color: '#ffffff' }, width: 1 };
 
 
@@ -22,7 +22,7 @@ export interface CreatePathLayerOpts<T> {
   label?: string;
   getNodes: () => readonly T[];
   getPath: (node: T) => Path;
-  /** Per-node fill paint. Return `null`/`undefined` to skip filling. */
+  /** Per-node fill. Return `null`/`undefined` to skip filling. */
   getFill?: (node: T) => CommandFill | null | undefined;
   /** Per-node stroke. Return `null`/`undefined` to skip stroking. */
   getStroke?: (node: T) => CommandStroke | null | undefined;

@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand, GroupDrawCommand } from '../../renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import type { Dispatcher } from '@weasel-js/routing';
@@ -32,7 +32,7 @@ function drawOne(_node: Node<Data, 'main', Pose>, pose: Pose, _view: View): Draw
   return [{
     kind: 'path',
     path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-    fill: { color: '#000' },
+    fill: { paint: { color: '#000' } },
   }];
 }
 

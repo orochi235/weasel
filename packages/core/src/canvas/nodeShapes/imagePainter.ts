@@ -6,8 +6,8 @@ import type { NodeShapeEntry } from 'canvas/NodeShape';
 import type { Node, RectPose } from 'core/scene/types';
 import {
   getImageBitmap, imageStatus, type ImageNodeData, type ImageRasterSize,
-} from 'renderer/images/imageCache';
-import type { DrawCommand } from '../../renderer';
+} from '@weasel-js/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { paintsPose, poseBoxBounds } from './poseBox';
 
 // ─── Built-in painters ─────────────────────────────────────────────────

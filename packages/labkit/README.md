@@ -20,7 +20,6 @@ npm i @weasel-js/labkit @weasel-js/core
 does not ship its own copy: core keeps its content handlers, paint kinds, shape
 painters and markers in module-global registries, and two copies means anything
 registered through one is invisible to the other — a blank canvas with no error.
-Installing it alongside is what guarantees there is exactly one.
 
 React 19 is a peer dependency too (`react` and `react-dom`, `^19.0.0`). One
 stylesheet import covers everything labkit draws, including the theme tokens and
@@ -99,6 +98,50 @@ controls hide in a box narrower than 480px — `<Lab transport={{ minWidth: 760
 }}>` moves that line. `<Lab transport={false}>` leaves them off;
 `<TrialTransport>` is the same controls for any lab chrome.
 
+A host page with a play control of its own reaches the lab by `postMessage`,
+in a frame or in the page itself. A presented lab answers these, and posts its
+state to the window around it as it starts, on every change, and when asked —
+never per frame:
+
+```ts
+const lab = iframe.contentWindow; // `window` for a <Lab present> in this page
+lab.postMessage({ type: 'labkit:play' }, origin); // an ended run starts over
+lab.postMessage({ type: 'labkit:pause' }, origin);
+lab.postMessage({ type: 'labkit:seek', time: 1200 }, origin); // ms into the pass
+lab.postMessage({ type: 'labkit:query' }, origin); // ask for the state
+
+window.addEventListener('message', ({ data }) => {
+  if (data?.type !== 'labkit:state') return;
+  // { clock, playing, ended, time, duration, rate, seekable }
+  button.textContent = data.playing ? 'Pause' : 'Play';
+});
+```
+
+`<Lab transport={false}>` leaves the lab's own controls off for a page that
+draws its own. `<Lab messages={{ name: 'hero' }}>` names a lab on a page with
+several: a message carrying `lab: 'hero'` reaches only it, and its state says
+`lab: 'hero'`. `messages={{ origins: [...] }}` says which origins it takes
+messages from, and `messages={false}` turns the channel off. The types are
+`PresentationCommand` and `PresentationState`.
+
+`<Lab still>`, or `?still` in the URL, presents the lab held still for a
+poster: every clock paused where it opens — `still={1200}` or `?still=1200`
+holds them 1200 ms in — with no play controls and nothing read from or written
+to storage, so it shows the `seed` in anyone's browser. The lab's root gains
+`lk-lab--still-ready` once that frame has been drawn, which is what a capture
+waits for:
+
+```ts
+await page.goto('https://example.com/lab.html?still=1200');
+await page.locator('.lk-lab--still-ready').waitFor();
+await page.locator('.lk-lab').screenshot({ path: 'poster.png', omitBackground: true });
+```
+
+A clock that is not seekable is run forward to the time before the still is
+ready, `step` ms a frame, when its declaration names a `step`; without one it
+stays where it opens. Whatever an instrument animates off the clock or loads on
+its own is the instrument's to settle.
+
 `gestures` on `<Lab>` decides what the trials' cameras take — `{ pan, wheel:
 'plain' | 'mod' | false, pinch, tap }`, over each instrument's own
 `canvas.gestures` / `stage.gestures` — and whatever they leave reaches the page:
@@ -113,14 +156,14 @@ above it.
 `f.schema` states the config once — values, types and controls — and the trial
 renders the settings panel from it. `render` returns the instrument's own DOM;
 returning `null` alongside `canvas` means the canvas layers are the whole
-picture. `storage` keeps open trials and their state across reloads.
+picture.
 
 A value is addressed by its path: `bins` above sits at `config.bins` and is
 written as `setConfig('bins', 40)`. `f.group` nests one —
 `paper: f.group({ width: f.number(210) })` puts the value at
 `config.paper.width` and addresses it as `'paper.width'`, in `setConfig`, in a
-control override, and anywhere else a path is taken. `.section('Advanced')` is
-the other thing and only looks like it: it puts a heading over sibling rows and
+control override, and anywhere else a path is taken. `.section('Advanced')`
+only puts a heading over sibling rows and
 leaves their paths alone.
 
 A stored config missing something its schema has since gained — a whole nested
@@ -154,8 +197,8 @@ addTrial('demo', { gap: auto });
 `.auto(fn)` attaches a resolver: the instrument reads the computed value rather
 than writing `?? compute()` itself, and the ghosted control has a real number to
 draw. Without one, an auto field simply reads `undefined`. `.initial(auto)`
-opens the field auto instead of pinned at its default. **`.manual()` is the one
-worth knowing about** — it opts a field out entirely, no dot and no gesture,
+opens the field auto instead of pinned at its default. `.manual()`
+opts a field out entirely, no dot and no gesture,
 which is what you want for a value the instrument cannot receive as `undefined`,
 like a color going straight to a uniform.
 
@@ -361,8 +404,7 @@ import { toDeviceRect, useSurfaceTile, useTiledSurface } from '@weasel-js/labkit
 
 A trial's `view` is opaque to labkit — persisted, restored on Reset and handed
 to the instrument without being read into — so a 3D lab stores an orbit there.
-Both cameras ship independently of `CanvasStack`: `useOrbit` for a 3D view,
-`usePanZoom` for a 2D one over a `ViewTransform`. See `src/surface/AGENTS.md`
+See `src/surface/AGENTS.md`
 for the contract and the traps.
 
 ## Subpath exports
@@ -377,7 +419,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/primitives` | Toolbar, Sidebar, StatusBar, Legend, FloatingPanel, meters |
 | `/chrome` | Regions, contribution types, built-in contributions |
 | `/controls` | `<ControlPanel>` and the config field types |
-| `/canvas` | `<CanvasStack>`, coordinate helpers, `usePanZoom`, `useOrbit` |
+| `/canvas` | `<CanvasStack>`, `<Stage>`, `<CameraInput>`, coordinate helpers |
 | `/layers` | `<LayerList>` from `@weasel-js/ui`, and the layers capability types |
 | `/loupe` | `<TrialLoupe>`, the magnifier an instrument mounts in its content; the trial offers a Loupe toggle while one is mounted. Not in the root barrel |
 | `/overview` | `<TrialOverview>`, a floating panel showing a trial's whole content. Not in the root barrel |

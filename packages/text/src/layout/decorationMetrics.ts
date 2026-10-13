@@ -1,4 +1,6 @@
 import type { FaceMetrics, FaceRuleMetrics } from '@weasel-js/font';
+import type { ResolvedRun } from '../runs/resolveRuns';
+import type { PlacedGlyph } from './layoutRuns';
 
 /** The three text decoration rules, in the order every tier paints them. */
 export type DecorationKind = 'underline' | 'strikethrough' | 'overline';
@@ -59,4 +61,77 @@ export function decorationRule(
   const m = decorationMetrics(face)[kind];
   const y0 = baselineY + fontSize * m.offset;
   return { y0, y1: y0 + fontSize * m.thickness };
+}
+
+/** One rule drawn across a stretch of a line. */
+export interface DecorationRule {
+  kind: DecorationKind;
+  x0: number; y0: number; x1: number; y1: number;
+  /** The run that opened the stretch. Every run in it paints its rules alike. */
+  run: number;
+}
+
+/**
+ * The decoration rules of one line, in visual order; within a stretch,
+ * underline then strikethrough then overline.
+ *
+ * `glyphs` is the whole line in visual order. A rule runs across adjacent
+ * glyphs whose runs agree on which rules to draw, on the size, face and
+ * baseline that place them, and on `paintOf`: the identity of the paint a
+ * run's rules wear, or null for a run that draws none. It is built from pen
+ * positions rather than ink, so it covers the spaces, tracking and kerning
+ * inside the stretch, and two alike runs join without a seam.
+ */
+export function lineDecorations(
+  glyphs: readonly PlacedGlyph[],
+  runs: readonly ResolvedRun[],
+  faceOf: (run: number) => FaceMetrics | undefined,
+  paintOf: (run: number) => string | null,
+): DecorationRule[] {
+  interface Stretch {
+    run: number;
+    style: ResolvedRun;
+    face: FaceMetrics | undefined;
+    paint: string;
+    baselineY: number;
+    x0: number;
+    x1: number;
+  }
+  const rules: DecorationRule[] = [];
+  let open: Stretch | null = null;
+  const close = (): void => {
+    const s = open;
+    open = null;
+    if (!s || s.x1 <= s.x0) return;
+    for (const kind of DECORATION_KINDS) {
+      if (!s.style[kind]) continue;
+      // The run's size, not the glyph's: a small-caps word is one rule.
+      const { y0, y1 } = decorationRule(kind, s.baselineY, s.style.fontSize, s.face);
+      rules.push({ kind, x0: s.x0, y0, x1: s.x1, y1, run: s.run });
+    }
+  };
+
+  for (const g of glyphs) {
+    const style = runs[g.run];
+    const paint = paintOf(g.run);
+    if (paint === null || !DECORATION_KINDS.some((kind) => style[kind])) {
+      close();
+      continue;
+    }
+    const face = faceOf(g.run);
+    const joins = open !== null
+      && DECORATION_KINDS.every((kind) => open!.style[kind] === style[kind])
+      && open.style.fontSize === style.fontSize
+      && open.face === face
+      && open.baselineY === g.baselineY
+      && open.paint === paint;
+    if (joins) {
+      open!.x1 = g.x + g.step;
+    } else {
+      close();
+      open = { run: g.run, style, face, paint, baselineY: g.baselineY, x0: g.x, x1: g.x + g.step };
+    }
+  }
+  close();
+  return rules;
 }

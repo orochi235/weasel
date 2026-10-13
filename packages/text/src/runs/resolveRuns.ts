@@ -1,37 +1,19 @@
 /**
  * Apply node-level `ResolvedTextStyle` defaults to each `StyledRun`,
- * producing a fully-resolved run with every styling field set. Downstream
- * layout and draw never re-resolve defaults — `ResolvedRun` is the
- * canonical shape the renderer consumes.
+ * producing a `ResolvedRun` with every styling field set.
  *
- * `bold`/`italic` toggles on a run are folded into `fontWeight`/`fontStyle`:
- * `bold: true` → fontWeight 700, `italic: true` → fontStyle 'italic'. A run's
- * own numeric `fontWeight` is the primitive `bold` is a preset over, so it
- * wins over both the flag and the node weight.
- * Explicit `fontFamily` / `fontSize` / `fill` / `letterSpacing` on the run
- * override the node-level value (`letterSpacing: 0` on a run is an override,
- * not an absence — it zeroes inherited tracking).
+ * `bold`/`italic` on a run fold into `fontWeight`/`fontStyle`; a run's own
+ * numeric `fontWeight` wins over both the flag and the node weight.
+ * `letterSpacing: 0` on a run is an override, not an absence — it zeroes
+ * inherited tracking. The decorations are *additive*: a run can turn one on
+ * but never off, so they resolve as `run.x || style.x`.
  *
- * `underline` / `strikethrough` / `overline` are *additive*, like
- * `bold`/`italic`: a run can turn a decoration on but never off, so they
- * resolve as `run.x || style.x` and not `run.x ?? style.x`. See the header of
- * `runs/rangeStyle.ts` for why the model collapses the tri-state.
- *
- * `script` is folded the same way the toggles are, into the two primitives it
- * is a preset over: `baselineShift` and `fontScale`. Both come out as one
- * world-unit `baselineShift` and a final `fontSize`, so layout never learns
- * that superscripts exist — it places a run against a baseline and an offset.
- *
- * `textTransform` is applied here too, so `text` is what gets drawn. When a
- * transform changes a length, `srcMap` says which source characters each
- * drawn one came from; see `textTransform.ts`.
- *
- * `fontVariantCaps: 'small-caps'` is applied after it, over the transformed
- * text: lowercase becomes capitals, and `sizeMap` gives those their smaller
- * size. See `smallCaps.ts`.
+ * `script` folds into the two primitives it is a preset over, and comes out
+ * as one world-unit `baselineShift` and a final `fontSize`. `textTransform`
+ * is applied here, then small caps over the transformed text.
  */
 
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { faceMetricsOf, resolveFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
 import type { StyledRun } from '../runs';
@@ -61,7 +43,7 @@ export interface ResolvedRun {
   /** `null` is an explicit no-fill: the glyphs are painted by `stroke` alone,
    *  which only the outline tier can do. Nothing is emitted for a run with
    *  neither. */
-  fill: FillStyle | null;
+  fill: Fill | null;
   /** Outline over this run's glyphs, or absent for none. Painted only on the
    *  outline tier — a distance field has no geometry to stroke. */
   stroke?: Stroke;
@@ -75,11 +57,8 @@ export interface ResolvedRun {
   overline: boolean;
   /**
    * How far this run sits off the line's shared baseline, in world units;
-   * positive raises. 0 for ordinary text.
-   *
-   * Already multiplied out against the inherited font size, and already
-   * carrying whatever `script` asked for — layout adds it to a baseline and
-   * asks nothing about where it came from.
+   * positive raises. 0 for ordinary text. Already carries whatever `script`
+   * asked for.
    */
   baselineShift: number;
   /**
@@ -98,11 +77,8 @@ export type ScriptPreset = Readonly<{ size: number; shift: number }>;
  * What `script: 'super'` and `script: 'sub'` expand to for a face that states
  * no script metrics of its own, as fractions of the inherited font size:
  * `size` scales it, `shift` raises (positive) or lowers (negative) the
- * baseline.
- *
- * These are Adobe's defaults — InDesign and Illustrator ship 58.3% size and
- * 33.3% position for both. A face that carries `OS/2` script metrics uses
- * those instead; {@link scriptMetricsFor} is what a run actually gets.
+ * baseline. These are Adobe's defaults. A face that carries `OS/2` script
+ * metrics uses those instead; {@link scriptMetricsFor} is what a run gets.
  */
 export const SCRIPT_METRICS: Readonly<Record<'super' | 'sub', ScriptPreset>> = Object.freeze({
   super: Object.freeze({ size: 0.583, shift: 0.333 }),
@@ -128,10 +104,8 @@ export function scriptMetrics(face?: FaceMetrics): Readonly<Record<'super' | 'su
 
 /**
  * The script presets a run set in `(family, weight, style)` gets — resolved
- * through the font registry exactly as layout resolves the run, so a
- * character panel, an SVG export and the DOM edit overlay read the numbers
- * the canvas draws with. Override either half per run with `baselineShift` /
- * `fontScale`.
+ * through the font registry exactly as layout resolves the run. Override
+ * either half per run with `baselineShift` / `fontScale`.
  */
 export function scriptMetricsFor(
   family: string,
@@ -195,8 +169,7 @@ export function resolveRuns(
     const shiftEm = run.baselineShift ?? script?.shift ?? 0;
     const scale = run.fontScale ?? script?.size ?? 1;
     const relative = run.fontSize === undefined && scale !== 1;
-    // An absolute size wins over a relative one; naming both is a consumer
-    // saying "this size exactly", which a multiplier cannot improve on.
+    // An absolute size wins over a relative one.
     const fontSize = run.fontSize !== undefined
       ? resolveScreenLength(run.fontSize, viewScale)
       : style.fontSize * scale;

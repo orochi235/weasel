@@ -3,7 +3,7 @@ import { act, render, renderHook } from '@testing-library/react';
 import { Suspense, createElement, startTransition, useState } from 'react';
 import { Hang } from '@weasel-js/react/testing/abandonRender';
 import { overlayTop, useTextEdit } from './useTextEdit';
-import type { UseTextEditOptions } from './useTextEdit';
+import type { UseTextEditOptions } from './textEditTypes';
 import { SMALL_CAPS_SCALE, type StyledRun } from '@weasel-js/text';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { MIXED } from '@weasel-js/text';
@@ -332,7 +332,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getPaint: () => ({ fill: { fill: 'pattern', pattern: { id: 'test-tex' } } as const }),
+      getPaint: () => ({ fill: { paint: { kind: 'texture', texture: { id: 'test-tex' } } } } as const),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -344,7 +344,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getPaint: () => ({ fill: { fill: 'solid', color: '#ff0000' } as const }),
+      getPaint: () => ({ fill: { paint: { kind: 'solid', color: '#ff0000' } } } as const),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -356,7 +356,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getPaint: () => ({ fill: { fill: 'solid', color: '#3366cc' } as const }),
+      getPaint: () => ({ fill: { paint: { kind: 'solid', color: '#3366cc' } } } as const),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -369,7 +369,7 @@ describe('useTextEdit', () => {
     const opts = {
       ...h.opts,
       getStyle: () => ({ caretColor: '#ff00ff' }),
-      getPaint: () => ({ fill: { fill: 'solid', color: '#000' } as const }),
+      getPaint: () => ({ fill: { paint: { kind: 'solid', color: '#000' } } } as const),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -381,7 +381,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getPaint: () => ({ fill: { fill: 'pattern', pattern: { id: 'test-tex' } } as const }),
+      getPaint: () => ({ fill: { paint: { kind: 'texture', texture: { id: 'test-tex' } } } } as const),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -393,7 +393,7 @@ describe('useTextEdit', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getPaint: () => ({ fill: { fill: 'solid', color: '#3366cc' } as const }),
+      getPaint: () => ({ fill: { paint: { kind: 'solid', color: '#3366cc' } } } as const),
     };
     const { result } = renderHook(() => useTextEdit(opts));
     act(() => result.current.startEdit('a'));
@@ -675,7 +675,9 @@ function placeCaretAtChar(overlay: HTMLElement, charOffset: number): void {
 }
 
 // jsdom implements no contenteditable editing, so it never fires `beforeinput`
-// on its own — typing into the overlay silently does nothing.
+// on its own, and does nothing for one the hook leaves to the browser. This
+// stands in for that default: the text goes into the caret's text node and an
+// `input` follows. `overlayTyping.browser.test.tsx` types with real keys.
 function dispatchBeforeInput(overlay: HTMLElement, data: string): void {
   const ev = new InputEvent('beforeinput', {
     inputType: 'insertText',
@@ -683,7 +685,12 @@ function dispatchBeforeInput(overlay: HTMLElement, data: string): void {
     bubbles: true,
     cancelable: true,
   });
-  overlay.dispatchEvent(ev);
+  if (!overlay.dispatchEvent(ev)) return;
+  const range = window.getSelection()!.getRangeAt(0);
+  const node = range.startContainer as Text;
+  node.insertData(range.startOffset, data);
+  window.getSelection()!.collapse(node, range.startOffset + data.length);
+  overlay.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data, bubbles: true }));
 }
 
 describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {
@@ -815,6 +822,20 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     act(() => dispatchBeforeInput(overlay, 'X'));
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'aXbc' }]);
+  });
+
+  it('reports the style a control shows: node, then range, then what is armed', async () => {
+    const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'a', italic: true }, { text: 'b' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    expect(result.current.effectiveStyle).toBeNull();
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await placeCaretAndSettle(overlay, 1);
+    expect(result.current.effectiveStyle).toMatchObject({ fontSize: 16, italic: true, bold: false });
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    expect(result.current.effectiveStyle).toMatchObject({ fontSize: 16, italic: true, bold: true });
+    act(() => result.current.commit());
+    expect(result.current.effectiveStyle).toBeNull();
   });
 
   it('toggling the same styling twice disarms it', () => {

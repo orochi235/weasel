@@ -1,4 +1,4 @@
-import type { DrawCommand, GroupDrawCommand } from '../renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';
@@ -8,12 +8,8 @@ import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/p
 import { scenePlaneOf } from './pickWalk';
 import { clipCarrier, planeTransform } from './planeClips';
 
-/**
- * The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter`
- * satisfies this; flat (non-hierarchical) adapters don't. Canvas exposes these
- * as *optional* methods on `CanvasProps.adapter` (see `OptionalSceneHierarchy`)
- * and feature-detects them at draw time.
- */
+/** The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter` satisfies
+ *  this; flat (non-hierarchical) adapters don't. */
 export interface HierarchicalAdapter<TNode, TPose> {
   getLayers(): readonly { id: string; visible: boolean; parallax?: ParallaxOpts }[];
   getNode(id: string): TNode | undefined;
@@ -44,30 +40,20 @@ function wrapInClips(
 }
 
 /**
- * Walk the adapter's scene tree once and emit each node's own paint into the
- * bucket for **that node's own `layer`** — not its parent's. So a child whose
- * `layer` differs from its parent (e.g. a planting tagged into a top-most
- * `plantings` layer while remaining a scene child of its container) draws in
- * its own layer's pass, on top of every container body, while staying a tree
- * child for hit-testing / move / reparent.
+ * Walk the adapter's scene tree once and emit each node's own paint into the bucket for
+ * **that node's own `layer`** — not its parent's. So a child whose `layer` differs from its
+ * parent draws in its own layer's pass while staying a tree child for hit-testing / move /
+ * reparent. Output is one group per visible layer, in adapter (`getLayers`) order.
  *
- * Output is one group per visible layer, in adapter (`getLayers`) order.
+ * `drawOne` returns world-coord commands. Because a node may be drawn outside its parent's
+ * group, the tree nesting cannot carry geometry as renderer state; the walk folds each node's
+ * pose into its parent's frame on the way down and hands the painter a **world** pose. Clips
+ * are accumulated the same way — each in its container's plane, carried into the plane of the
+ * node it clips. With no `composePose` on the adapter the fold is the identity.
  *
- * **Positioning** is world-space: `drawOne` returns world-coord commands (the
- * caller wraps the whole thing in the view transform). Because a node may be
- * drawn outside its parent's group, the tree nesting cannot carry geometry as
- * renderer state; instead the walk folds each node's pose into its parent's
- * frame on the way down and hands the painter a **world** pose. Clips are
- * accumulated the same way and are world-space for the same reason — each in
- * its container's plane, carried into the plane of the node it clips.
- *
- * With no `composePose` on the adapter the fold is the identity, every node
- * paints at its stored pose, and this is the absolute-pose behavior the kit
- * shipped before frames existed.
- *
- * A layer carrying `parallax` is a plane: its painters and its cull see the
- * view derived for it, and its group carries the transform from its world to
- * the camera's, so the caller's single camera wrap still lands it right.
+ * A layer carrying `parallax` is a plane: its painters and its cull see the view derived for
+ * it, and its group carries the transform from its world to the camera's, so the caller's
+ * single camera wrap still lands it right.
  */
 export function buildSceneTree<
   TNode extends { id: string; layer: string },
@@ -77,13 +63,11 @@ export function buildSceneTree<
   drawOne: (obj: TNode, pose: TPose, view: View) => DrawCommand[],
   view: View,
   /** When set, only nodes on this layer paint (others are still walked for
-   *  ancestor clips) and only this layer's group is returned. Used to render
-   *  scene layers as separate, individually-orderable canvas slots. */
+   *  ancestor clips) and only this layer's group is returned. */
   forLayer?: string,
-  /** The path a container computes from its dependencies' poses. Only a
-   *  scene-backed caller can answer — deriving needs the dependencies' poses —
-   *  so the bare-adapter path omits it and a derived container contributes no
-   *  clip there, exactly as before. */
+  /** The path a container computes from its dependencies' poses: the scene's
+   *  lookup, or `adapterDerivedPathOf` for an adapter with no scene. Left out,
+   *  a derived container contributes no clip. */
   derivedPathOf?: (node: TNode, pose: TPose) => Path | null,
   /** True for a node whose paint cannot be seen — see `paintMissesView`. Its
    *  painter is not called; its clip and its children are walked as usual. */
@@ -128,10 +112,7 @@ export function buildSceneTree<
         // Explicit per-node clip wins — no fallback to the painter silhouette.
         clip = maybeContainer.clipFromPose(pose);
       } else {
-        // No explicit clip → fall back to the painter silhouette for the
-        // container's shape kind. Built-ins give rect-fallback containers
-        // their own AABB as a clip; consumer painters can provide arbitrary
-        // closed shapes (ellipse, polygon, …) without per-node wiring.
+        // No explicit clip → the painter silhouette for the container's shape kind.
         clip = findShapeSilhouette(
           node as unknown as Node<unknown, string, TPose>,
           pose,
@@ -141,9 +122,8 @@ export function buildSceneTree<
       if (clip) ownClips = [...ancestorClips, { path: clip as Path, layer: node.layer }];
     }
 
-    // Emit this node's own paint into its own layer's bucket, clipped by the
-    // accumulated chain (ancestors + own). Every node emits a wrapper group
-    // even with empty paint, keeping the per-node tree shape stable.
+    // Every node emits a wrapper group even with empty paint, keeping the per-node tree
+    // shape stable.
     if (bucket) {
       bucket.push(ownClips.length > 0 ? wrapInClips(self, ownClips, node.layer, carry) : { kind: 'group', children: self });
     }

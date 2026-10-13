@@ -1,29 +1,19 @@
 /**
- * Range-addressed styling over `StyledRun[]`. The panel addresses node paths;
- * a caret addresses a character range — these are the functions for the
- * second case. Pure and React-free so the semantics are unit-testable, the
- * same split `SelectionPanel` makes between `model.ts` and its component.
+ * Range-addressed styling over `StyledRun[]`.
  *
  * Character offsets index the concatenated run text (`runsToPlainText`), and
- * a range is half-open: `[start, end)`. Ranges are clamped, never wrapped —
- * a negative `start` clamps to 0, an `end` past the text clamps to its
- * length, and a collapsed or inverted range (`start >= end`) is empty.
- * Offsets are UTF-16 code units, as everywhere else in this feature, so a
- * boundary can bisect a surrogate pair (`[1, 2)` over `'a👍b'` splits the
- * thumbs-up into lone surrogates). A caret-derived range never does this.
+ * a range is half-open: `[start, end)`. Ranges are clamped, never wrapped,
+ * and a collapsed or inverted range (`start >= end`) is empty. Offsets are
+ * UTF-16 code units, so a boundary can bisect a surrogate pair.
  *
  * **Run-level flags are additive over the node's `TextStyle`: a run can
  * turn `bold` / `italic` / `underline` / `strikethrough` on, never off.**
  * So a flag is stored only when true, and absent reads as `false`. A run
  * that must be lighter than a bold node says so with its own numeric
  * `fontWeight`, which `bold` is a preset over (see {@link supersededKey}).
- * For the boolean decorations there is no such primitive: both levels are
- * booleans, so a tri-state
- * (`true` / `false` / inherit) is expressible and we are collapsing it by
+ * The decorations have no such primitive, and the tri-state is collapsed by
  * choice, to keep one canonical form per styling. Resolution must therefore
- * read decorations as `run.underline || style.underline` — a `??` would
- * make "select a word in an underlined node, hit U to turn it off" look
- * supported by the type while this file discards the `false` that expresses it.
+ * read decorations as `run.underline || style.underline`, not `??`.
  *
  * Copies here are shallow: a `fill` object is shared by reference between
  * the input runs, the patch, every run the patch touched, and the value
@@ -43,10 +33,7 @@ export type RangeStyle = {
   [K in Exclude<keyof StyledRun, 'text'>]?: StyledRun[K] | Mixed;
 };
 
-/**
- * What `applyStyleToRange` writes. `text` is deliberately not part of it —
- * this is a styling operation, not an edit.
- */
+/** What `applyStyleToRange` writes. */
 export type RunStylePatch = Partial<Omit<StyledRun, 'text'>>;
 
 /** Every key of a run that carries styling — i.e. everything but `text`. */
@@ -71,12 +58,9 @@ const STYLE_KEYS = [
   'fontVariantCaps',
 ] as const satisfies readonly StyleKey[];
 
-// Every function here iterates STYLE_KEYS, so a key missing from the list is
-// invisible: `applyStyleToRange` would drop it when patching a run and
-// `sameStyle` would merge two runs that differ in it, silently discarding
-// one value. `satisfies` only checks the entries that ARE listed, so this
-// assertion checks the other direction — adding a key to `StyledRun`
-// without adding it here is a compile error.
+// A key missing from STYLE_KEYS is invisible to every function here.
+// `satisfies` only checks the entries that ARE listed, so this makes adding a
+// key to `StyledRun` without adding it here a compile error.
 type MissingStyleKey = Exclude<StyleKey, (typeof STYLE_KEYS)[number]>;
 type AssertNoMissingStyleKey = [MissingStyleKey] extends [never] ? true : never;
 const STYLE_KEYS_ARE_EXHAUSTIVE: AssertNoMissingStyleKey = true;
@@ -92,10 +76,8 @@ const FLAG_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>([
 ]);
 
 /**
- * Structural equality over the JSON-ish values a run can hold. This assumes
- * `FillStyle` stays acyclic and plain — every member of the union is data
- * (`TextureHandle` is `{ id }`, so patterns compare by id, which is right).
- * A fill that grew a cyclic field would recurse forever.
+ * Structural equality over the JSON-ish values a run can hold. Assumes
+ * `Paint` stays acyclic and plain: a cyclic field would recurse forever.
  */
 function deepEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
@@ -141,9 +123,8 @@ function totalLength(runs: readonly StyledRun[]): number {
  * The styling shared by every run overlapping `[start, end)`: a concrete
  * value where the range agrees, `MIXED` where it doesn't. Keys no run
  * in range sets are absent (they inherit the node's `TextStyle`) — except
- * the additive flags, which read as `false` rather than `undefined` since a
- * run cannot un-set them. An empty range reads as `{}`. A reported `fill`
- * is the run's own object, not a copy — treat it as immutable.
+ * the additive flags, which read as `false`. An empty range reads as `{}`.
+ * A reported `fill` is the run's own object, not a copy.
  */
 export function styleAtRange(
   runs: readonly StyledRun[],
@@ -192,17 +173,8 @@ export function styleAtRange(
 }
 
 /**
- * Does any run carry styling of its own? Per the additive-flags contract
- * above, absent and `false` are the same state — "no run-level override" —
- * so an array that is nothing but text reads as `false`, whether it came
- * from a plain-text edit or from styling that was toggled back off.
- *
- * This is how the commit path tells "the edit produced run styling" from
- * "the edit produced text", which is the question that decides whether a
- * node grows a `runs` array. Iterating `STYLE_KEYS` rather than the run's
- * own keys is what keeps it honest as `StyledRun` grows: a new styleable
- * key is a compile error at `STYLE_KEYS` until it's listed, and then this
- * sees it for free.
+ * Does any run carry styling of its own? A flag stored as `false` counts as
+ * none, so runs whose styling was toggled back off read as `false`.
  */
 export function runsCarryStyling(runs: readonly StyledRun[]): boolean {
   return runs.some((run) =>
@@ -249,11 +221,8 @@ function patchRun(run: StyledRun, patch: RunStylePatch): StyledRun {
   for (const key of STYLE_KEYS) {
     if (!(key in patch)) continue;
     const value = patch[key];
-    // Per the additive-flags contract at the top of the file, `false` is not
-    // a storable state — it means "no run-level override", same as
-    // `undefined`. Deleting keeps one canonical form (coalescing already
-    // treats absent and `false` as equal, so this isn't what makes runs
-    // merge — it's what keeps the stored shape from drifting).
+    // `false` is not a storable state — it means "no run-level override",
+    // same as `undefined`. Deleting keeps one canonical form.
     if (value === undefined || value === false) delete next[key];
     else (next as unknown as Record<string, unknown>)[key] = value;
   }
@@ -275,14 +244,12 @@ function coalesceRuns(runs: readonly StyledRun[]): StyledRun[] {
 /**
  * Write `patch` over `[start, end)`, splitting runs at the boundaries and
  * coalescing neighbors that end up identical. A patch value of `undefined`
- * or `false` deletes the key instead of storing it — see the additive-flags
- * contract at the top of the file.
+ * or `false` deletes the key instead of storing it.
  *
- * Returns a new array of new runs; neither the input array nor its runs are
- * mutated (though a nested `fill` is shared by reference). Normalization —
- * merging identical neighbors, dropping empty runs — applies to the whole
- * array, not just the patched span, and to every call, including one whose
- * range is empty and so patches nothing.
+ * Returns a new array of new runs (though a nested `fill` is shared by
+ * reference). Normalization — merging identical neighbors, dropping empty
+ * runs — applies to the whole array, not just the patched span, and to every
+ * call, including one whose range is empty.
  */
 export function applyStyleToRange(
   runs: readonly StyledRun[],
@@ -292,8 +259,6 @@ export function applyStyleToRange(
 ): StyledRun[] {
   const lo = Math.max(0, start);
   const hi = Math.min(totalLength(runs), end);
-  // A collapsed caret is the common call, so it takes the same normalization
-  // as any other range rather than a laxer copy-only path.
   if (!(lo < hi)) return coalesceRuns(runs);
 
   const out: StyledRun[] = [];

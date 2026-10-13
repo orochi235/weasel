@@ -1,20 +1,20 @@
 import type { InvocationCtx } from '@weasel-js/routing';
+import { pointerStateOf } from '../pointerState';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { effectivePose } from 'core/scene/effectivePose';
-import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
+import type { NodeId, Scene } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
-import {
-  composeWorldPose,
-  frameAtOrAbove,
-  type PoseComposition,
-} from 'core/scene/composePose';
+import { composesFrames, composeWorldPose, frameAtOrAbove } from 'core/scene/composePose';
 import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
 import { invertPlane, planeOf } from '../planeInput';
+import { sceneGestureFrames } from '../gestureFrames';
+import { scenePoseFrame } from '../poseFrame';
+import { translateTargets } from '../selectionSubtree';
 import type { MoveGestureAdapter } from './gestureAdapter';
 import { catchGliding } from './layout/glide';
-import type { MoveReaders } from './session';
+import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 
 /** Start pose of each root and descendant, the descendants in walk order, and
  *  the offsets of any caught mid-glide. */
@@ -66,25 +66,26 @@ export function captureStartPoses(
 /** Which ids ride a moving frame, and the world poses of the rest that sit under one. */
 export function captureFrames(
   scene: Scene<unknown, string, unknown>,
+  ids: readonly NodeId[],
   startPoses: ReadonlyMap<NodeId, unknown>,
-  pc: PoseComposition<unknown>,
 ): { carried: Set<NodeId>; frames: Map<NodeId, { world: unknown; frameWorld: unknown }> } {
   const carried = new Set<NodeId>();
   const frames = new Map<NodeId, { world: unknown; frameWorld: unknown }>();
-  if (pc.closure !== 'identity') {
-    const poseAdapter = scenePoseAdapter(scene);
-    for (const id of startPoses.keys()) {
-      const frame = frameAtOrAbove(poseAdapter, scene.get(id)?.parent ?? null);
-      if (frame === null) continue;
-      if (startPoses.has(asNodeId(frame))) {
-        carried.add(id);
-        continue;
-      }
-      frames.set(id, {
-        world: composeWorldPose(poseAdapter, id as string, pc.compose),
-        frameWorld: composeWorldPose(poseAdapter, frame, pc.compose),
-      });
+  const pc = scene.composition;
+  if (!composesFrames(pc)) return { carried, frames };
+  const written = new Set(translateTargets(scene, scenePoseFrame(scene), ids));
+  const poseAdapter = scenePoseAdapter(scene);
+  for (const id of startPoses.keys()) {
+    if (!written.has(id)) {
+      carried.add(id);
+      continue;
     }
+    const frame = frameAtOrAbove(poseAdapter, scene.get(id)?.parent ?? null);
+    if (frame === null) continue;
+    frames.set(id, {
+      world: composeWorldPose(poseAdapter, id as string, pc.compose),
+      frameWorld: composeWorldPose(poseAdapter, frame, pc.compose),
+    });
   }
   return { carried, frames };
 }
@@ -115,10 +116,11 @@ export function capturePlaneRefs(
 
 export function buildGestureContext(
   ctx: InvocationCtx,
+  scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
   startPoses: ReadonlyMap<NodeId, unknown>,
   adapter: MoveGestureAdapter<unknown>,
-  readers: MoveReaders,
+  readers: GestureReaders,
 ): GestureContext<unknown> {
   const origin = new Map<string, unknown>();
   for (const [id, pose] of startPoses) origin.set(id as string, pose);
@@ -128,9 +130,10 @@ export function buildGestureContext(
     current: new Map(origin),
     snap: null,
     modifiers: { ...ctx.modifiers },
-    pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+    pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    frames: sceneGestureFrames(scene, ctx.deps.view),
     adapter: adapter as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

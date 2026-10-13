@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { applyBooleanOp, type BooleanOp } from '../booleans/booleans';
+import type { BooleanStrokes } from '../booleans/operands';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
@@ -10,6 +11,8 @@ import {
   ExcludeIcon,
   DivideIcon,
   CropIcon,
+  TrimIcon,
+  MergeIcon,
 } from './icons/booleanIcons';
 
 const ID_FOR: Record<BooleanOp, string> = {
@@ -19,6 +22,8 @@ const ID_FOR: Record<BooleanOp, string> = {
   exclude: 'pathfinder.exclude',
   divide: 'pathfinder.divide',
   crop: 'pathfinder.crop',
+  trim: 'pathfinder.trim',
+  merge: 'pathfinder.merge',
 };
 
 const LABEL_FOR: Record<BooleanOp, string> = {
@@ -28,6 +33,8 @@ const LABEL_FOR: Record<BooleanOp, string> = {
   exclude: 'Exclude',
   divide: 'Divide',
   crop: 'Crop',
+  trim: 'Trim',
+  merge: 'Merge',
 };
 
 const ICON_FOR: Record<BooleanOp, ReactNode> = {
@@ -37,7 +44,12 @@ const ICON_FOR: Record<BooleanOp, ReactNode> = {
   exclude: <ExcludeIcon />,
   divide: <DivideIcon />,
   crop: <CropIcon />,
+  trim: <TrimIcon />,
+  merge: <MergeIcon />,
 };
+
+/** What a stroked operand gives the built-in Pathfinder actions. */
+const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
 
 // ---------------------------------------------------------------------------
 // Static descriptors
@@ -50,7 +62,7 @@ function makePathfinderAction(op: BooleanOp): Action {
     icon: ICON_FOR[op],
     group: 'pathfinder',
     eligible: { capability: 'creates-shapes' },
-    requires: ['selection', 'booleansAdapter'],
+    requires: ['selection', 'booleansAdapter', 'view'],
     // No default keybindings — there's no industry-standard chord set for
     // boolean ops. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -58,7 +70,8 @@ function makePathfinderAction(op: BooleanOp): Action {
       run: (deps) => {
         const adapter = deps.booleansAdapter;
         if (!adapter) return;
-        const result = applyBooleanOp(adapter, op);
+        const scale = deps.view?.get().scale;
+        const result = applyBooleanOp(adapter, op, { strokes: PATHFINDER_STROKES, ...(scale ? { scale } : {}) });
         if (result.kind === 'failed') console.warn(`[pathfinder] ${result.error.message}`);
       },
     } satisfies ImmediateInvoker,
@@ -82,4 +95,8 @@ export const pathfinderExcludeAction   = makePathfinderAction('exclude');
 export const pathfinderDivideAction    = makePathfinderAction('divide');
 /** @experimental Static descriptor for pathfinder-crop. */
 export const pathfinderCropAction      = makePathfinderAction('crop');
+/** @experimental Static descriptor for pathfinder-trim. */
+export const pathfinderTrimAction      = makePathfinderAction('trim');
+/** @experimental Static descriptor for pathfinder-merge. */
+export const pathfinderMergeAction     = makePathfinderAction('merge');
 

@@ -6,7 +6,8 @@ import type { FlatTokens, RawToken } from './dtcg/types';
 import { themeAxes } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 
-interface DtcgDocument {
+/** What `loadDTCG` reads: a `toDTCG` export, or a document shaped like one. */
+export interface DtcgDocument {
   name?: unknown;
   defaultMode?: unknown;
   extends?: Theme | null;

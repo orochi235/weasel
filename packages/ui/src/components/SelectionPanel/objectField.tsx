@@ -5,8 +5,7 @@
 import type { ReactNode } from 'react';
 import { prefObjectBase, prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import { Icon } from '../../icons/Icon';
-import { ICON_PATHS, type IconName } from '../../icons/paths';
+import { namedGlyph } from '../../icons/namedGlyph';
 import { absentValue, MIXED, sharedValue } from './model';
 import type { LeafCell } from './cells';
 import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
@@ -67,6 +66,7 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
     disabledAt: ctx.disabledAt,
     hidden: ctx.hidden === true || ctx.hiddenAt?.(childPath) === true,
     hiddenAt: ctx.hiddenAt,
+    entryAt: ctx.entryAt,
   };
 }
 
@@ -92,11 +92,11 @@ function renderField(
   // already carries `name` as its accessible name, which leaves the
   // glyph decorative.
   const unlabeled = pairs.has(childCtx.path) || child.block === true;
-  const glyph = unlabeled && child.icon && child.icon in ICON_PATHS;
+  const glyph = unlabeled ? namedGlyph(child.icon) : undefined;
   if (!glyph) return rendered;
   return (
     <span className={s.namedField}>
-      <Icon name={child.icon as IconName} size={14} />
+      {glyph}
       {rendered}
     </span>
   );

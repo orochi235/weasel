@@ -1,11 +1,7 @@
 /**
- * NodeRoutingEntry — a routing-trait classifier entry.
- *
- * The kit consults `NodeRouting` (the routing trait's registry)
- * to derive a kind string for each scene node. Other traits (shape,
- * label, icon, …) are independent registries — fields like `label`
- * or `icon` are NOT future additions to this interface. See:
- * `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md`.
+ * A routing-trait classifier entry. Other traits (shape, label, icon, …)
+ * are independent registries — fields like `label` or `icon` do NOT belong
+ * on this interface.
  */
 export interface NodeRoutingEntry {
   /** Unique kind name. Routing tables key on this string. Consumer-defined;
@@ -17,21 +13,9 @@ export interface NodeRoutingEntry {
 }
 
 /**
- * NodeRouting — the **routing trait's** registry. Each trait of a
- * node (shape, routing, label, icon, affordances, …) is its own
- * registry; this one answers "what routing-kind string does this
- * node's data map to?" The result flows into declarative tool-routing
+ * The **routing trait's** registry: answers "what routing-kind string does
+ * this node's data map to?" The result flows into declarative tool-routing
  * tables (`{ target: 'rect', actionId: 'move' }`).
- *
- * Other traits (shape painters, future label/icon/propertyRows
- * registries) are their own registries — they are NOT optional
- * fields on `NodeRoutingEntry`. See:
- * `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md`.
- *
- * Instances are constructed by `<SceneCanvas>` from its `routing` prop
- * and used to classify each hit node's `data` into a `kind` string when
- * building `getNodeAtPoint`. Direct use from consumer code is supported
- * but not required for the common SceneCanvas flow.
  */
 export interface NodeRouting {
   /** Register a kind. Order matters: first match wins during `classify`.
@@ -46,9 +30,8 @@ export interface NodeRouting {
   list(): readonly NodeRoutingEntry[];
 }
 
-/** Build a registry of per-node-kind routing entries, which decide how a node
- *  kind is drawn, hit-tested and serialized. Registering a duplicate kind name
- *  throws. */
+/** Build a registry of per-node-kind routing entries. Registering a duplicate
+ *  kind name throws. */
 export function createNodeRouting(): NodeRouting {
   const entries: NodeRoutingEntry[] = [];
   const byName = new Map<string, NodeRoutingEntry>();

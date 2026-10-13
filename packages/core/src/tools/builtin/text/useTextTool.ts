@@ -70,7 +70,8 @@ const flag = (name: string, icon: string) =>
  * Keyed by {@link StyledRun} field, so a host reads values out of a
  * `RangeStyle` and writes a `RunStylePatch` back with no name mapping of its
  * own. `script` is a preset over `baselineShift` and `fontScale`, so all three
- * are here and naming either primitive overrides that half.
+ * are here and naming either primitive overrides that half. `noFill` is the one
+ * key that is not a field: on, it is `fill: null`.
  */
 useTextTool.options = {
   name: 'Text',
@@ -163,6 +164,14 @@ useTextTool.options = {
       description: 'Ink for the range.',
       alpha: true,
       default: '#000000',
+    },
+    noFill: {
+      kind: 'boolean',
+      name: 'No fill',
+      description: 'Draw the range with no fill.',
+      icon: 'paintNone',
+      control: 'toggle',
+      default: false,
     },
   },
 } satisfies PrefGroup;

@@ -9,11 +9,10 @@
  * Advances and kerning are rewritten from the font itself: msdf-bmfont-xml
  * rounds `xadvance` to whole pixels at the bake size and reads no GPOS
  * extension lookups, so text laid out from its numbers drifts from the same
- * face set by a browser — 2.8px over "Hxgd" at 72px for Inter.
+ * face set by a browser.
  *
- * The font's ascent and descent, underline, strikeout and script metrics go
- * in a top-level `faceMetrics` block, which BMFont has no slot for, derived
- * by the same function the outline tier reads them with.
+ * The font's ascent and descent, underline, strikeout, and script metrics go
+ * in a top-level `faceMetrics` block, which BMFont has no slot for.
  */
 import generateBMFont from 'msdf-bmfont-xml';
 import * as opentype from 'opentype.js';

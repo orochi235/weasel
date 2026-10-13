@@ -1,6 +1,6 @@
 # @weasel-js/paint
 
-Paint vocabulary for weasel: `FillStyle`, `Stroke`, gradients, dashes. Plain
+Paint vocabulary for weasel: `Paint`, `Stroke`, gradients, dashes. Plain
 data — nothing here draws anything.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
@@ -16,9 +16,9 @@ npm install @weasel-js/paint
 ## Usage
 
 ```ts
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Fill, Stroke } from '@weasel-js/paint';
 
-const fill: FillStyle = { color: '#c0ffee' };
+const fill: Fill = { paint: { color: '#c0ffee' } };
 const stroke: Stroke = { paint: { color: '#000' }, width: 2, join: 'round' };
 ```
 

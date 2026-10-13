@@ -2,7 +2,7 @@ import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
 import { dropSlot, isDropPath } from './drop';
-import { prefRailParent, type PrefRailItem } from './schema';
+import { prefRailAbove, prefRailParent, type PrefRailItem } from './schema';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsRail}. */
@@ -52,7 +52,10 @@ export interface PrefsRailProps {
 export function PrefsRail(props: PrefsRailProps) {
   const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts, dropInto } = props;
   const foldable = props.foldable === true;
-  const holds = (path: string): boolean => section === path || (path !== '' && section.startsWith(`${path}.`));
+  const holds = (path: string): boolean => {
+    for (let at: string | null = section; at !== null; at = prefRailAbove(items, at)) if (at === path) return true;
+    return false;
+  };
   // Folds the reader set by hand, by entry; any other entry is unfolded only while the open group is it or under it.
   const [folds, setFolds] = useState<ReadonlyMap<string, boolean>>(new Map());
   const [lastSection, setLastSection] = useState(section);
@@ -65,10 +68,10 @@ export function PrefsRail(props: PrefsRailProps) {
     !foldable || showCounts === true || (folds.get(path) ?? holds(path));
   const fold = (path: string, open: boolean): void => setFolds(new Map(folds).set(path, open));
 
-  const parentOf = (item: PrefRailItem): string | null => (item.depth === 0 ? null : prefRailParent(item.path));
+  const parentOf = (item: PrefRailItem): string | null => (item.depth === 0 ? null : prefRailAbove(items, item.path));
   const nests = new Set(items.map(parentOf));
   const shown = items.filter((item) => {
-    for (let at = parentOf(item); at !== null; at = prefRailParent(at)) if (!unfolded(at)) return false;
+    for (let at = parentOf(item); at !== null; at = prefRailAbove(items, at)) if (!unfolded(at)) return false;
     return true;
   });
 

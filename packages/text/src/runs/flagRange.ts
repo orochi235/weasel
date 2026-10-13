@@ -3,15 +3,10 @@
  *
  * Run flags are additive over the node's `TextStyle` — a run turns `bold` /
  * `italic` / `underline` / `strikethrough` on, never off (see the contract at
- * the top of `rangeStyle.ts`). So "select a word inside an underlined node and
- * hit U" is unrepresentable by the stored shape, and the character bar can
- * only refuse.
- *
- * This resolves it by rewriting rather than by widening the model: clear the
- * flag on the node, and set it on every run *outside* the range. The rendered
- * result is identical and the edit becomes expressible, with `StyledRun`
- * unchanged — so nothing a document can already contain changes meaning, which
- * matters while the flags are heading for a persisted format.
+ * the top of `rangeStyle.ts`). This resolves it by rewriting rather than by
+ * widening the model: clear the flag on the node, and set it on every run
+ * *outside* the range. The rendered result is identical, with `StyledRun`
+ * unchanged.
  *
  * The alternative was a tri-state run flag (`true` / `false` / inherit). It
  * cannot cover `italic`: that is a boolean on a run but `fontStyle` on the
@@ -32,7 +27,7 @@ import type { RunStylePatch } from './rangeStyle';
 export type FlagKey = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'overline';
 
 /** The result of toggling a style flag over a text range: the rewritten runs
- *  and node style, and whether the change could be made at all. */
+ *  and node style. */
 export interface SetFlagResult {
   runs: StyledRun[];
   style: TextStyle;

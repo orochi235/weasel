@@ -18,19 +18,20 @@ import {
   modeLabel,
   type ModeDefinition,
 } from '@weasel-js/modes';
+import type { Fill } from '@weasel-js/core';
 import { modeShortcuts } from '@weasel-js/routing';
 import { ToolPalette } from '@weasel-js/ui';
 import styles from './ModesDemo.module.css';
 
 const W = 620, H = 340;
 
-interface Shape { id: string; x: number; y: number; width: number; height: number; fill: { color: string }; label: string }
+interface Shape { id: string; x: number; y: number; width: number; height: number; fill: Fill; label: string }
 
 const SHAPES: Shape[] = [
-  { id: 'a', x: 70,  y: 70,  width: 120, height: 90,  fill: { color: '#7fb069' }, label: 'a' },
-  { id: 'b', x: 250, y: 110, width: 110, height: 110, fill: { color: '#d4a574' }, label: 'b' },
-  { id: 'c', x: 420, y: 60,  width: 130, height: 80,  fill: { color: '#a48bd4' }, label: 'c' },
-  { id: 'd', x: 400, y: 200, width: 90,  height: 80,  fill: { color: '#7ab8d4' }, label: 'd' },
+  { id: 'a', x: 70,  y: 70,  width: 120, height: 90,  fill: { paint: { color: '#7fb069' } }, label: 'a' },
+  { id: 'b', x: 250, y: 110, width: 110, height: 110, fill: { paint: { color: '#d4a574' } }, label: 'b' },
+  { id: 'c', x: 420, y: 60,  width: 130, height: 80,  fill: { paint: { color: '#a48bd4' } }, label: 'c' },
+  { id: 'd', x: 400, y: 200, width: 90,  height: 80,  fill: { paint: { color: '#7ab8d4' } }, label: 'd' },
 ];
 
 const MODES: readonly ModeDefinition[] = [
@@ -122,7 +123,7 @@ export function ModesDemo() {
       const r = node.pose as Rect;
       return textCommandFromRuns(
         r.x, r.y + r.height + 6,
-        [{ text: `${Math.round(r.width)} × ${Math.round(r.height)}`, fill: solid(INK) }],
+        [{ text: `${Math.round(r.width)} × ${Math.round(r.height)}`, fill: { paint: solid(INK) } }],
         { fontFamily: 'ui-monospace, monospace', fontSize: 11 },
       );
     }));

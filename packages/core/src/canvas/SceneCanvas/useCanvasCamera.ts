@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAnimator } from '../../animation/useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { useViewAnimationOn, type ViewAnimationApi, type ViewChannel } from 'core/viewport/useViewAnimation';
 import type { SceneCanvasApi } from '../canvasExtension';
 

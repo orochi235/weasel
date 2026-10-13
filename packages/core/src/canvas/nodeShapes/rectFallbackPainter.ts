@@ -1,7 +1,7 @@
-import type { FillStyle } from '@weasel-js/paint';
+import type { Fill } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import type { RectPose } from 'core/scene/types';
-import { commandFill } from 'renderer/patterns/commandPaint';
+import { commandFill } from '@weasel-js/renderer';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { resolveNodeFill } from './nodePaint';
 import { paintsPose, poseBoxBounds } from './poseBox';
@@ -15,7 +15,7 @@ export const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:rect-fallback',
   matches: (node) => paintsPose(node.pose),
   paint: (node, pose) => {
-    const d = node.data as { fill?: FillStyle | null } | null;
+    const d = node.data as { fill?: Fill | null } | null;
     const p = pose;
     const declared = resolveNodeFill(d?.fill, DEFAULT_SHAPE_FILL);
     const fill = declared && commandFill(declared, p);

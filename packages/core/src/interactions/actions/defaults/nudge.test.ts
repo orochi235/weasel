@@ -1,3 +1,4 @@
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
 import {
   nudgeUpAction,
@@ -33,6 +34,7 @@ function makeStubScene(initial: Record<string, Pose>) {
   return {
     poses,
     batchLog,
+    composition: IDENTITY_POSE_COMPOSITION,
     renderOrder: () => [...poses.keys()].map((id) => asNodeId(id)),
     childrenOf: () => [],
     get(id: string) {

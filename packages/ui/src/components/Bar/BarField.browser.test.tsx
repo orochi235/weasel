@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
+import { BarActionButton } from './BarAction';
 import { BarField } from './BarField';
 import { useStoryFields } from './barStoryFields';
 
@@ -59,4 +60,18 @@ test('no bar cell carries a class its stylesheet does not define', () => {
   const { getByTestId } = render(<Strip />);
   const named = [...getByTestId('strip').querySelectorAll('[class]')].map((el) => el.getAttribute('class')!);
   expect(named.filter((cls) => /\bundefined\b/.test(cls))).toEqual([]);
+});
+
+test('every disabled bar cell dims by the same amount', () => {
+  const { getByRole } = render(
+    <>
+      <BarActionButton label="Bold" disabled onPress={() => {}} />
+      <BarField kind="string" control="textarea" name="Notes" value="" disabled onChange={() => {}} />
+      <BarField kind="number" name="Size" value={12} disabled onChange={() => {}} />
+    </>,
+  );
+  const dim = (el: Element) => getComputedStyle(el).opacity;
+  expect(dim(getByRole('button', { name: 'Bold' }))).toBe('0.5');
+  expect(dim(getByRole('button', { name: 'Notes' }))).toBe('0.5');
+  expect(dim(document.querySelector('[data-bar-label]')!)).toBe('0.5');
 });

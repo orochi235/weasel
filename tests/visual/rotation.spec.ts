@@ -1,36 +1,12 @@
 /**
- * Visual regression spec: rotated shapes in WeaselDraw.
+ * Visual regression spec: rect, text, and polygon shapes in WeaselDraw render
+ * rotated about their unrotated AABB center.
  *
- * Asserts that rect, text, and polygon shapes render rotated about their
- * unrotated AABB center, exercising the wrapWithRotation helper wired into
- * the rect / text / path render layers in `apps/draw/src/App.tsx`.
- *
- * Interaction sequence:
- *   1. Open the WeaselDraw app shell.
- *   2. Use the dev-only `window.__wdDebug.replaceScene` hook to seed
- *      three rotated shapes.
- *   3. Capture each shape's region after the scene paints.
- *
- * Baseline capture (CI):
- *   PNG baselines must be generated on the project's pinned CI runner
- *   (Ubuntu 24.04, Playwright pinned via package-lock.json). See
- *   CONTRIBUTING.md "Updating baselines" — run `gh workflow run
- *   visual-update.yml` to produce baselines, then download the artifact
- *   and commit the PNGs alongside this spec.
- *
- * Rig caveat:
- *   This spec targets the WeaselDraw app, served on Vite's dev server
- *   for WeaselDraw (`ports.draw` in `scripts/dev-ports.json`). The visual
- *   rig's `playwright.config.ts` currently boots
- *   only the kit-demos vite config; running this spec requires
- *   either pointing the rig at the WeaselDraw vite config or adding a
- *   second webServer entry. That integration is part of T2.11 baseline
- *   capture in the CI workflow, not local pixel comparison.
- *
- *   Until then, this file documents the test surface and `__wdDebug`
- *   contract that the renderer must satisfy. The `__wdDebug` hook itself
- *   is wired up in a future task (T2.10 wiring lives in `main.tsx`); this
- *   spec asserts the renderer contract once the hook exists.
+ * Skipped everywhere today. It targets the WeaselDraw dev server
+ * (`ports.draw` in `scripts/dev-ports.json`), and the visual rig's
+ * `playwright.config.ts` boots only the kit-demos vite config. The dev-only
+ * `window.__wdDebug.replaceScene` hook it seeds through does not exist yet
+ * either.
  */
 import { test, expect } from '@playwright/test';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };

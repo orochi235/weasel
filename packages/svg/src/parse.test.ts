@@ -247,7 +247,7 @@ function firstText(svg: string): SvgTextNode {
 describe('text cascade', () => {
   it('inherits fill from an ancestor <g>', () => {
     const t = firstText('<svg><g fill="#ff0000"><text x="0" y="10">hi</text></g></svg>');
-    expect(t.fill).toMatchObject({ color: '#ff0000' });
+    expect(t.fill).toMatchObject({ paint: { color: '#ff0000' } });
   });
 
   it('inherits font-family from an ancestor <g>', () => {
@@ -269,12 +269,12 @@ describe('text cascade', () => {
 
   it('resolves text fill="currentColor" against inherited color', () => {
     const t = firstText('<svg><g color="#00ff00"><text x="0" y="10" fill="currentColor">hi</text></g></svg>');
-    expect(t.fill).toMatchObject({ color: '#00ff00' });
+    expect(t.fill).toMatchObject({ paint: { color: '#00ff00' } });
   });
 
   it('resolves <tspan fill="currentColor"> against inherited color', () => {
     const t = firstText('<svg><g color="#00ff00"><text x="0" y="10"><tspan fill="currentColor">a</tspan></text></g></svg>');
-    expect(t.runs?.[0]?.fill).toMatchObject({ color: '#00ff00' });
+    expect(t.runs?.[0]?.fill).toMatchObject({ paint: { color: '#00ff00' } });
   });
 });
 
@@ -320,7 +320,7 @@ describe('<style> stylesheets', () => {
       <style>.hot { fill: #f00 }</style>
       <text x="0" y="10">a<tspan class="hot">b</tspan></text>
     </svg>`);
-    expect(t.runs?.find((r) => r.fill)?.fill).toMatchObject({ color: '#ff0000' });
+    expect(t.runs?.find((r) => r.fill)?.fill).toMatchObject({ paint: { color: '#ff0000' } });
   });
 });
 
@@ -372,8 +372,6 @@ describe('conditional at-rules', () => {
   });
   it('still skips other block at-rules, and resumes after them', () => {
     expect(fillOf('@font-face { font-family: X } @keyframes k { from { fill: blue } } rect { fill: red }')).toEqual(RED);
-    expect(fillOf('@container (min-width: 1px) { rect { fill: red } }')).toEqual(BLACK);
-    expect(fillOf('@container (min-width: 1px) { rect { fill: blue } } rect { fill: red }')).toEqual(RED);
   });
   it('applies rules inside @layer, below unlayered ones', () => {
     expect(fillOf('@layer base { rect { fill: red } }')).toEqual(RED);

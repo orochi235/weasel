@@ -4,11 +4,12 @@ import { ALPHA_EXT, type RawToken, type TokenValue } from '../../dtcg/types.ts';
 import { themeAxes } from '../../resolveTheme.ts';
 import type { Theme } from '../../theme.ts';
 
-type Group = Record<string, unknown> & { $type: string };
+/** A DTCG group: tokens of one `$type`, by name. */
+export type DtcgGroup = Record<string, unknown> & { $type: string };
 
 interface Layer {
-  primitives: Record<string, Group>;
-  modes: Record<string, Record<string, Group>>;
+  primitives: Record<string, DtcgGroup>;
+  modes: Record<string, Record<string, DtcgGroup>>;
 }
 
 const REF = /^\{([^}.]+)\}$/;
@@ -17,8 +18,8 @@ const REF = /^\{([^}.]+)\}$/;
 export interface DtcgExport {
   readonly name: string;
   readonly defaultMode?: string;
-  readonly primitives: Record<string, Group>;
-  readonly modes: Record<string, Record<string, Group>>;
+  readonly primitives: Record<string, DtcgGroup>;
+  readonly modes: Record<string, Record<string, DtcgGroup>>;
   readonly $extensions?: { readonly [AXES_EXT]?: DtcgAxesExtension };
 }
 
@@ -29,10 +30,8 @@ export interface DtcgExport {
  *
  * DTCG has one variant dimension, so the plain groups hold mode, with every
  * other axis at its default value: what a tool that ignores extensions reads.
- * The other values travel under `$extensions["com.weasel.axes"]` (see
- * `DtcgAxesExtension`), one override layer per combination of non-default values
- * some token actually varies by — axes that vary independently cost one layer
- * per value, not their cross-product.
+ * The other values travel under `$extensions["com.weasel.axes"]`, one override
+ * layer per combination of non-default values some token actually varies by.
  */
 export function toDTCG(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);
@@ -57,7 +56,7 @@ export function toDTCG(theme: Theme): DtcgExport {
     return type === undefined ? value : `{${type}.${target}}`;
   };
 
-  const put = (into: Record<string, Group>, name: string, t: RawToken) => {
+  const put = (into: Record<string, DtcgGroup>, name: string, t: RawToken) => {
     into[t.type] ??= { $type: t.type };
     into[t.type][name] = {
       $value: alias(t.value),

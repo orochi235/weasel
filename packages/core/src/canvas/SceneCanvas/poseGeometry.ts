@@ -1,13 +1,10 @@
 /**
- * Pose-shape helpers shared by `<SceneCanvas>` internals.
- *
- * Every bounds read goes through a `PoseDescriptor`, defaulting to
- * `AUTO_POSE_DESCRIPTOR` (path descriptor for `{kind:'polygon'|'rect'}` poses,
- * rect descriptor for everything else). Used by hit-test, marquee and bounds
- * extraction, so a consumer-supplied descriptor reaches all three.
+ * Pose-shape helpers shared by `<SceneCanvas>` internals. Every bounds read goes through a
+ * `PoseDescriptor`, defaulting to `AUTO_POSE_DESCRIPTOR`, so a consumer-supplied descriptor
+ * reaches hit-test, marquee, and bounds extraction alike.
  */
 import type { Bounds } from 'tools/builtin/select';
-import { applyToPoint, pointInPath, strokeHitTest } from '@weasel-js/geom';
+import { applyToPoint, pointInPath, strokeHitTest, type Mat3 } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'core/geometry/autoPoseDescriptor';
 import { poseFrameInverseOf, poseFrameOf, poseLinearOf } from '@weasel-js/geom';
@@ -22,9 +19,8 @@ export function aabbOfPose<TPose>(
   return descriptor.getBounds(pose);
 }
 
-/** Screen-px slop applied to the stroke-distance hit-test for paths. Catches
- *  fingertip-imprecision around thin lines / curves without depending on the
- *  stroke's actual rendered width (which the hit-test layer doesn't know). */
+/** Default slop for the stroke-distance hit-test on paths, in world units. Independent of
+ *  the stroke's rendered width, which the hit-test layer doesn't know. */
 const DEFAULT_PATH_STROKE_SLOP = 4;
 
 /** A containment slop: `reach` world units the caller knows the ink extends
@@ -38,8 +34,7 @@ export interface PoseSlop extends ScreenSlop {
  * @param tolerance - Grab slop. A number is **world** units and grows the
  *   AABB test and the path stroke-distance test alike; a {@link PoseSlop}
  *   is measured on screen, from `reach` world units out. Defaults to
- *   {@link DEFAULT_PATH_STROKE_SLOP} for path-like poses (the historical
- *   fixed slop) and to `0` for rect poses, whose edges were never fuzzy.
+ *   {@link DEFAULT_PATH_STROKE_SLOP} for path-like poses and to `0` for rect poses.
  */
 export function poseContains<TPose>(
   pose: TPose,
@@ -48,22 +43,21 @@ export function poseContains<TPose>(
   tolerance?: number | PoseSlop,
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): boolean {
-  return containsInFrame(pose, wx, wy, tolerance, descriptor, 0);
+  return containsInFrame(pose, wx, wy, tolerance, descriptor, null, false);
 }
 
 /**
  * Containment for `<SceneCanvas>`'s default `pickEvery`. When the pose has a
  * frame (`poseFrameOf`: a rotation, a `transform`, or both), takes the query
  * point back through it and tests in the pose's own box frame, mirroring the
- * renderer's wrap so the click target matches the drawn shape. This covers
- * rect-shaped poses and `kind:'rect'`/polygon poses that carry an AABB. A pose
- * with no frame tests directly, and one whose `transform` is singular draws
- * nothing and contains nothing.
+ * renderer's wrap so the click target matches the drawn shape. A pose with no
+ * frame tests directly, and one whose `transform` is singular draws nothing and
+ * contains nothing.
  *
  * Rotation comes from the descriptor when one is supplied, and otherwise from
- * `pose.rotation`, the convention the renderer reads. A world `tolerance` is
- * measured in the pose's own frame, so a `transform` stretches it with the
- * node.
+ * `pose.rotation`, the convention the renderer reads. A `tolerance` is a
+ * distance in world or on screen whatever the frame; only a `PoseSlop`'s
+ * `reach` is in the pose's own frame, where the stroke it stands for is drawn.
  */
 export function poseContainsRotated<TPose>(
   pose: TPose,
@@ -73,33 +67,39 @@ export function poseContainsRotated<TPose>(
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): boolean {
   const framed = descriptor === AUTO_POSE_DESCRIPTOR ? pose : framedBounds(pose, descriptor);
-  if (!poseFrameOf(framed)) return containsInFrame(pose, wx, wy, tolerance, descriptor, 0);
+  const frame = poseFrameOf(framed);
+  if (!frame) return containsInFrame(pose, wx, wy, tolerance, descriptor, null, false);
   const back = poseFrameInverseOf(framed);
   if (!back) return false;
   const [lx, ly] = applyToPoint(back, wx, wy);
-  const rotation = (framed as { rotation?: number }).rotation ?? 0;
-  return containsInFrame(pose, lx, ly, tolerance, descriptor, rotation);
+  return containsInFrame(pose, lx, ly, tolerance, descriptor, frame, poseLinearOf(framed) !== null);
 }
 
-/** `(x, y)` is in the pose's own frame, which reaches world by `rotation`. */
+const WORLD_SCALE = { x: 1, y: 1 };
+
+/** `(x, y)` is in the pose's own frame, which reaches world by `frame`.
+ *  `stretched` is whether that frame changes lengths: it carries a `transform`. */
 function containsInFrame<TPose>(
   pose: TPose,
   x: number,
   y: number,
   tolerance: number | PoseSlop | undefined,
   descriptor: PoseDescriptor<unknown>,
-  rotation: number,
+  frame: Mat3 | null,
+  stretched: boolean,
 ): boolean {
   const pathLike = isPathLike(pose);
-  const reach = tolerance === undefined
-    ? (pathLike ? DEFAULT_PATH_STROKE_SLOP : 0)
-    : typeof tolerance === 'number' ? tolerance : (tolerance.reach ?? 0);
-  const screen = typeof tolerance === 'object' ? tolerance : undefined;
-  const { opts } = slopForStrokeHit(screen, rotation);
+  const world = typeof tolerance === 'object' ? undefined
+    : tolerance ?? (pathLike ? DEFAULT_PATH_STROKE_SLOP : 0);
+  // A world distance is not one in a stretched frame, so it is tested through
+  // the frame, as a screen slop is: at a scale of one.
+  const throughFrame = stretched && world !== undefined && world > 0;
+  const reach = throughFrame ? 0 : world ?? (tolerance as PoseSlop).reach ?? 0;
+  const screen = throughFrame ? { px: world, scale: WORLD_SCALE }
+    : typeof tolerance === 'object' ? tolerance : undefined;
+  const { opts } = slopForStrokeHit(screen, frame);
   if (pathLike) {
-    // Precise inside-filled-region OR within-stroke-slop. Replaces the old
-    // "AABB-conservative-fallback" path that returned true anywhere inside
-    // the path's bounding box (which over-picked on open / non-convex paths).
+    // Inside the filled region, or within stroke slop.
     if (pointInPath(pose, x, y)) return true;
     return strokeHitTest(pose, x, y, reach, opts);
   }

@@ -4,11 +4,7 @@ import { createSelectionStore, intentOf, select, type SelectionStore as Store } 
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
-/**
- * `SelectionApi`, `SelectionMode` and `SelectionExtendKey` are declared in
- * `@weasel-js/routing` — the `selection` dep and half the kit's actions are
- * typed in them. Re-exported here, beside the hook that returns one.
- */
+/** Declared in `@weasel-js/routing`; re-exported here, beside the hook that returns one. */
 import type { SelectionApi, SelectionMode, SelectionExtendKey } from '@weasel-js/routing';
 export type { SelectionApi, SelectionMode, SelectionExtendKey };
 
@@ -22,6 +18,14 @@ export interface UseSelectionOptions {
   mode?: SelectionMode;
   /** Default `'shift'`. Ignored in single-mode. */
   extend?: SelectionExtendKey;
+  /** The key that selects everything from the last pressed id to this one,
+   *  along `order`. Absent, nothing ranges. It beats `extend` when both name
+   *  one key, so give them different keys. Ignored in single-mode. */
+  range?: SelectionExtendKey;
+  /** The sequence a range walks: a layer panel's rows, a timeline's tracks.
+   *  Default is the order the `scene` paints in, back to front; with neither,
+   *  the range key replaces. */
+  order?: () => Iterable<NodeId>;
   /** Default `[]`. */
   initial?: readonly NodeId[];
   /** Keep the selection on this store rather than in the hook, so every
@@ -31,19 +35,20 @@ export interface UseSelectionOptions {
   scene?: SelectionStore;
   /** When `true`, every mutator (`set`/`add`/`remove`/`toggle`/`clear`/
    *  `applyClick`) is a no-op — selection stays at whatever `initial`
-   *  pinned it to. Useful for demos that exist to showcase a single
-   *  pre-selected node and don't want a
-   *  stray click to deselect. */
+   *  pinned it to. */
   lock?: boolean;
 }
 
+/** The order a store paints its nodes in, when it is a scene and has one. */
+function paintOrderOf(store: SelectionStore): (() => Iterable<NodeId>) | undefined {
+  const { renderOrder } = store as { renderOrder?: () => Iterable<NodeId> };
+  return typeof renderOrder === 'function' ? () => renderOrder.call(store) : undefined;
+}
+
 /**
- * Default implementation of the `getSelection` / `setSelection` adapter
- * contract every action hook (delete, duplicate, nudge, group, ...) requires.
- *
  * Owns selection state, exposes a click-policy helper (single vs multi with
- * an extend key), and pre-builds the two adapter methods consumers otherwise
- * hand-roll in every demo:
+ * an extend key), and pre-builds the `getSelection` / `setSelection` adapter
+ * methods:
  *
  * ```tsx
  * const selection = useSelection({ mode: 'multi' });
@@ -56,7 +61,7 @@ export interface UseSelectionOptions {
  * `selection.current`.
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
-  const { mode = 'single', extend = 'shift', initial = [], lock = false, scene } = opts;
+  const { mode = 'single', extend = 'shift', initial = [], lock = false, scene, range, order } = opts;
   // Without a `scene` the hook still keeps its ids in a store, so `get()` reads one store either
   // way and a write is visible before the re-render it causes.
   const [local] = useState(() => createSelectionStore<NodeId>([...initial]));
@@ -77,7 +82,8 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
     }
   }, [scene]);
 
-  const optsRef = useLatest({ mode, extend, lock });
+  const optsRef = useLatest({ mode, extend, lock, range, order });
+  const anchorRef = useRef<NodeId | null>(null);
 
   return useMemo<SelectionApi>(() => {
     const get = (): NodeId[] => store.getSelection() as NodeId[];
@@ -105,8 +111,17 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
       clear() { set([]); },
       contains: (id) => get().includes(id),
       applyClick(id, modifiers) {
-        const { mode: m, extend: key } = optsRef.current;
-        set([...select({ ids: get(), anchor: null }, id, intentOf(modifiers, { mode: m, toggle: key })).ids]);
+        const { mode: m, extend: key, range: rangeKey, order: walk = paintOrderOf(store), lock: locked } = optsRef.current;
+        if (locked) return;
+        const ids = get();
+        // A selection something else set — a marquee, an undo — ranges from its last id.
+        const anchor = anchorRef.current !== null && ids.includes(anchorRef.current)
+          ? anchorRef.current
+          : (ids.at(-1) ?? null);
+        const intent = intentOf(modifiers, { mode: m, toggle: key, range: rangeKey });
+        const next = select({ ids, anchor }, id, intent, intent === 'range' && walk ? { order: [...walk()] } : {});
+        anchorRef.current = next.anchor;
+        set([...next.ids]);
       },
       adapterMethods: {
         getSelection: () => get(),

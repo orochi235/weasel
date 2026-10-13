@@ -12,9 +12,9 @@ export type ScaleEditResult =
   | { readonly ok: true; readonly definition: ThemeDefinition }
   | { readonly ok: false; readonly message: string };
 
-type Holder = Record<string | number, unknown>;
+export type Holder = Record<string | number, unknown>;
 
-interface Slot {
+export interface Slot {
   readonly holder: Holder;
   readonly key: string | number;
   /** Where the slot is, for a message: `scales.font-size.base`, `seeds.ui-base.compact`. */
@@ -39,27 +39,29 @@ export function selectionFor(axes: AxisDefs, globals: Globals): Selection {
   return out;
 }
 
-class EditError extends Error {}
+export class EditError extends Error {}
+
+/** `holder[key]` followed through its per-axis branches to the one `selection` reads. */
+export function branchOf(holder: Holder, key: string | number, where: string, selection: Selection): Slot {
+  let slot: Slot = { holder, key, where };
+  for (let value = holder[key]; isByAxis(value); value = slot.holder[slot.key]) {
+    const axis = value.by;
+    const picked = selection[axis];
+    if (picked === undefined || picked === 'by' || !(picked in value)) {
+      throw new EditError(`${slot.where} differs by ${axis}, and which ${axis} this trial shows is not known`);
+    }
+    slot = { holder: value as unknown as Holder, key: picked, where: `${slot.where}.${picked}` };
+  }
+  return slot;
+}
 
 /** Follows a param through its per-axis branches and `{seeds.name}` references to the number that defines it. */
 function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, where: string, selection: Selection, depth = 0): Slot {
   if (depth > 16) throw new EditError(`${where} references itself`);
-  let h = holder;
-  let k = key;
-  let w = where;
-  let value = h[k];
-  while (isByAxis(value)) {
-    const axis = value.by;
-    const picked = selection[axis];
-    if (picked === undefined || picked === 'by' || !(picked in value)) {
-      throw new EditError(`${w} differs by ${axis}, and which ${axis} this trial shows is not known`);
-    }
-    h = value as unknown as Holder;
-    k = picked;
-    w = `${w}.${picked}`;
-    value = h[k];
-  }
-  if (typeof value === 'number') return { holder: h, key: k, where: w };
+  const slot = branchOf(holder, key, where, selection);
+  const { holder: h, key: k, where: w } = slot;
+  const value = h[k];
+  if (typeof value === 'number') return slot;
   if (typeof value === 'string') {
     const ref = SEED_REF.exec(value);
     if (!ref) throw new EditError(`${w} is "${value}", which is not a number or a seed`);
@@ -73,18 +75,10 @@ function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, whe
 
 /** The factor list the selection reads, through any per-axis branches. */
 function factorsOf(holder: Holder, where: string, selection: Selection): { list: Holder; where: string } {
-  let value = holder.factors;
-  let w = `${where}.factors`;
-  while (isByAxis(value)) {
-    const picked = selection[value.by];
-    if (picked === undefined || !(picked in value)) {
-      throw new EditError(`${w} differs by ${value.by}, and which ${value.by} this trial shows is not known`);
-    }
-    w = `${w}.${picked}`;
-    value = (value as unknown as Holder)[picked];
-  }
-  if (!Array.isArray(value)) throw new EditError(`${w} is not a list`);
-  return { list: value as unknown as Holder, where: w };
+  const slot = branchOf(holder, 'factors', `${where}.factors`, selection);
+  const value = slot.holder[slot.key];
+  if (!Array.isArray(value)) throw new EditError(`${slot.where} is not a list`);
+  return { list: value as unknown as Holder, where: slot.where };
 }
 
 const kindOf = (scale: Holder): TokenScaleRule['kind'] | null =>

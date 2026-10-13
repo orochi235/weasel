@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import { ColorOverrideRegistry } from '../animation/colorRegistry';
+import { ColorOverrideRegistry } from '@weasel-js/animator';
 import { pathFromD, countPathAnchors } from '@weasel-js/geom';
 import { defaultDrawOne } from './defaultDrawOne';
 import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { solid, strokeOf } from '../util/paint';
-import type { DrawCommand, PathDrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const POSE = { x: 0, y: 0, width: 100, height: 40 };
@@ -52,7 +52,7 @@ describe('animated vertex colors on default-painted nodes', () => {
     const { scene, id } = strokedScene();
     const registry = new ColorOverrideRegistry();
     registry.set(id, 'stroke', RED);
-    const cmds = buildSceneViewCommands(scene, VIEW, defaultDrawOne, undefined, undefined, undefined, undefined, registry);
+    const cmds = buildSceneViewCommands(scene, VIEW, defaultDrawOne, undefined, undefined, undefined, registry);
     expect(bodyOf(cmds).stroke?.vertexColors).toEqual(RED);
   });
 
@@ -98,7 +98,7 @@ describe('animated vertex colors on default-painted nodes', () => {
       kind: 'leaf',
       layer: 'main',
       pose: POSE,
-      data: { path: pathFromD('M0 0 L100 0 L50 40 Z'), fill: solid('#fff'), vertexColors: RAINBOW },
+      data: { path: pathFromD('M0 0 L100 0 L50 40 Z'), fill: { paint: solid('#fff') }, vertexColors: RAINBOW },
     });
     const registry = new ColorOverrideRegistry();
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, registry);

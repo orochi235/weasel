@@ -11,16 +11,10 @@ export interface CanvasSizeSnapshot extends CanvasSize {
 /** Track a container's content-rect size via `ResizeObserver`, and density via
  *  the ambient `DeviceProfile`.
  *
- *  This hook is the screen path's designated ambient-density source —
- *  rendering code should take density as a parameter (cf.
- *  `renderSceneToPixels`, `renderSceneToCanvas`'s `dpr`) rather than reading
- *  `window.devicePixelRatio` inline.
- *
  *  Density deliberately does NOT come from a `window.devicePixelRatio` read
  *  inside the resize callback: that only refreshes when the element resizes,
  *  so dragging a window to a different-density display without resizing it
- *  left the snapshot stale. The profile watches a re-armed resolution media
- *  query instead. */
+ *  leaves the snapshot stale. */
 export function useCanvasSize(containerRef: RefObject<HTMLElement | null>): CanvasSizeSnapshot {
   const { dpr } = useDeviceProfile();
   const [size, setSize] = useState<CanvasSize>({ width: 0, height: 0 });

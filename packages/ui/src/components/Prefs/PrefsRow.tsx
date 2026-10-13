@@ -1,10 +1,10 @@
 import { type ReactNode } from 'react';
 import {
-  prefAliasedLeaf,
-  prefAliasTarget,
+  prefAliasName,
   prefValueAtPath,
   type PrefAction,
   type PrefAlias,
+  type PrefAliasTargets,
   type PrefLeaf,
   type PrefMap,
   type PrefUnion,
@@ -13,9 +13,9 @@ import {
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton } from './PrefActionButton';
 import { PrefMixed } from './PrefMixed';
-import { prefDrawsNoControl, PrefWords } from './PrefWords';
+import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';
 import { rowWidthOf } from './compound';
-import { entryConditions } from './entry';
+import { entryConditions, type EntryAt } from './entry';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
@@ -26,6 +26,7 @@ import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
+import { withCommitPolicy } from './commitPolicy';
 import { selectionAttrs } from './selection';
 import s from './Prefs.module.css';
 
@@ -59,6 +60,8 @@ export interface PrefRenderContext {
   hidden?: boolean;
   /** Whether the field at a path under this leaf's is one a `showIf` hides, in a form given `markHidden`. */
   hiddenAt?: (path: string) => boolean;
+  /** An entry of a list or a map under this leaf, as the conditions that read the entry leave it. */
+  entryAt?: EntryAt;
 }
 
 /**
@@ -73,6 +76,7 @@ export type PrefRenderer = ((ctx: PrefRenderContext) => ReactNode) & {
   wide?: boolean;
 };
 
+/** What a prefs form hands every row it draws: the values, the callbacks, and how the form is set up. */
 export interface WalkCtx {
   values: unknown;
   onChange: (path: string, value: unknown) => void;
@@ -83,8 +87,8 @@ export interface WalkCtx {
   inheritHint?: (path: string) => string | undefined;
   canInherit?: (path: string) => boolean;
   fields?: readonly PrefFieldChoice[];
-  /** The leaf whose value lives at a path, anywhere in the form's schema: what an alias is resolved against. */
-  leafAt?: (path: string) => PrefLeaf | undefined;
+  /** The schema the form's aliases point into, as its conditions leave it: what an alias row is drawn from. */
+  targets?: PrefAliasTargets;
   /** Paths of the rows whose labels are drawn as changed. */
   changed?: ReadonlySet<string>;
   /** Paths of the rows and groups the form marks as selected. */
@@ -97,6 +101,8 @@ export interface WalkCtx {
   disabled?: ReadonlySet<string>;
   /** Paths of the leaves, fields, and groups a failed `showIf` hides, in a form that draws them marked. */
   hidden?: ReadonlySet<string>;
+  /** Answers the conditions that read an entry of a list or a map, for that entry. */
+  entryAt?: EntryAt;
 }
 
 /**
@@ -105,21 +111,21 @@ export interface WalkCtx {
  */
 export function shownLeaf(ctx: WalkCtx, pref: PrefLeaf): { pref: PrefLeaf; at?: string } | null {
   if (pref.kind !== 'alias' || ctx.renderers?.alias) return { pref };
-  const alias = pref as PrefAlias;
-  const target = prefAliasTarget(alias, ctx.leafAt ?? (() => undefined));
-  return target ? { pref: prefAliasedLeaf(alias, target.leaf), at: target.path } : null;
+  const shown = ctx.targets?.shown(pref as PrefAlias);
+  return shown ? { pref: shown.leaf, at: shown.path } : null;
 }
 
-export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
-  const shown = shownLeaf(ctx, pref);
+/** A leaf's row. `at` says `pref` is already the leaf an alias at `path` shows, and where its value lives. */
+export function PrefRow({ ctx, path, pref, at }: { ctx: WalkCtx; path: string; pref: PrefLeaf; at?: string }) {
+  const shown = at === undefined ? shownLeaf(ctx, pref) : { pref, at };
   if (shown) return <LeafRow ctx={ctx} path={path} pref={shown.pref} at={shown.at} />;
   const alias = pref as PrefAlias;
   // An alias of nothing is a wiring fault, shown where it sits and not dropped from the form.
   return (
     <div className={s.rowSlot} {...selectionAttrs(path, ctx, true)}>
-      <PropertyRow label={alias.name === '' ? 'Alias' : alias.name} description={alias.description} className={s.row}
+      <PropertyRow label={prefAliasName(alias)} description={alias.description} className={s.row}
         hint={marksHidden(ctx.hidden, path) ? <HiddenBadge /> : undefined}>
-        <span className={s.unrenderable}>(alias: no pref at {alias.of === '' ? 'an empty path' : alias.of})</span>
+        <span className={s.unrenderable}>{aliasOfNothing(alias)}</span>
       </PropertyRow>
     </div>
   );
@@ -138,6 +144,8 @@ export function prefRenderContext(
   const stored = prefValueAtPath(ctx.values, from);
   const mixed = ctx.mixed?.has(from) ?? false;
   const { onAutoChange } = ctx;
+  const inside = at === undefined ? undefined : ctx.targets;
+  const entryAt = inside?.entryAt ?? ctx.entryAt;
   const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
   const renderCtx: PrefRenderContext = {
     path,
@@ -153,8 +161,10 @@ export function prefRenderContext(
     },
     ...(ctx.fields ? { fields: ctx.fields } : {}),
     disabled: ctx.disabled?.has(own) ?? false,
-    disabledAt: (at) => ctx.disabled?.has(at) ?? false,
-    ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: (at: string) => ctx.hidden!.has(at) } : {}),
+    // The row answers by the form's own schema, at its own path; what is inside an alias's by its target's.
+    disabledAt: inside?.disabledAt ?? ((at) => ctx.disabled?.has(at) ?? false),
+    ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: inside?.hiddenAt ?? ((at: string) => ctx.hidden!.has(at)) } : {}),
+    ...(entryAt ? { entryAt } : {}),
   };
   return { renderCtx, toggles };
 }
@@ -274,12 +284,13 @@ function renderBuiltin(
         value={value}
         onChange={setValue}
         disabled={ctx.disabled}
-        renderValue={(held, set, name, key) =>
-          renderPrefControl(
-            { ...ctx, ...entryConditions(ctx, `${ctx.path}.${key}`), path: `${ctx.path}.${key}`, pref: { ...map.item, name }, value: held, setValue: set },
+        renderValue={(held, set, name, key) => {
+          const { item, ...conditions } = entryConditions(ctx, `${ctx.path}.${key}`, map.item, held);
+          return renderPrefControl(
+            { ...ctx, ...conditions, path: `${ctx.path}.${key}`, pref: { ...item, name }, value: held, setValue: set },
             renderers,
-          )
-        }
+          );
+        }}
       />
     );
   }
@@ -316,14 +327,8 @@ function rowIsGroup(
   return field !== null && controlIsGroup(field);
 }
 
-/**
- * A leaf as one control's props, writing the way a form stores: what was
- * settled on, a number once it is entered and a color once its gesture ends.
- * Null for a leaf that is not one control.
- */
+/** A leaf as one control's props, writing when a form writes. Null for a leaf that is not one control. */
 function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined): PropertyControlProps | null {
   const field = prefFieldProps(ctx.pref, { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled });
-  return field?.kind === 'number' || field?.kind === 'color' ? { ...field, onInput: settledOnly } : field;
+  return field && withCommitPolicy(field, 'form');
 }
-
-const settledOnly = (): void => {};

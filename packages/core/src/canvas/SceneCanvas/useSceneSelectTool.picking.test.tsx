@@ -15,8 +15,9 @@ import { useSceneAdapter } from 'canvas/sceneAdapter';
 import { asNodeId } from 'core/scene/types';
 import { useSceneSelectTool } from './useSceneSelectTool';
 import { rectPath, linePath } from '@weasel-js/geom';
+import type { Fill } from '@weasel-js/paint';
 
-interface Item { shape?: string; fill?: string; color?: string; stroke?: unknown }
+interface Item { shape?: string; fill?: Fill; color?: string; stroke?: unknown }
 type Pose = { x: number; y: number; width: number; height: number };
 
 const NODES: UseSceneOptions<Item, 'default', Pose>['initial'] = [
@@ -35,7 +36,7 @@ const NODES: UseSceneOptions<Item, 'default', Pose>['initial'] = [
     kind: 'leaf',
     layer: 'default',
     pose: { x: 0, y: 0, width: 100, height: 100 },
-    data: { shape: 'ellipse', fill: '#000' },
+    data: { shape: 'ellipse', fill: { paint: { color: '#000' } } },
   },
 ];
 

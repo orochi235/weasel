@@ -1,36 +1,28 @@
 import type { ChromeState } from 'core/selection/chromeState';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
-import type { CommandFill, CommandStroke } from '@weasel-js/paint';
+import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ClaimableGesture } from '@weasel-js/gestures';
 
 /**
  * @experimental
- * A single interactive piece of chrome. Pure functions; the kit composes
- * multiple affordances into a single RenderLayer per tool via
- * `composeAffordanceLayer`.
- *
- * Affordances declare interactive regions in a target's *local* frame.
- * The framework (`composeAffordanceLayer`) composes the target's bounds
- * transform (rotation around the AABB center, when present) for both paint
- * and hit-test, so the affordance never touches rotation, view.scale, or
- * world↔screen math.
+ * A single interactive piece of chrome. Affordances declare interactive regions in a target's
+ * *local* frame; `composeAffordanceLayer` composes the target's bounds transform (rotation
+ * around the AABB center, when present) for both paint and hit-test, so the affordance never
+ * touches rotation, view.scale, or world↔screen math.
  */
 export interface Affordance {
   /** Stable id for debug overlays + visibility maps. */
   id: string;
 
-  /** Enumerate this affordance's interactive regions. Each region lives in
-   *  some target id's local frame (or in the world frame when `targetId`
-   *  is `null`). Returning `[]` means "no chrome for this state" (no
-   *  selection, multi-mode disabled, etc.). */
+  /** This affordance's interactive regions. Each lives in some target id's local frame (or
+   *  the world frame when `targetId` is `null`). `[]` means no chrome for this state. */
   regions(state: ChromeState): readonly AffordanceRegion[];
 
-  /** Optional non-interactive decoration (e.g., a leader line drawn from
-   *  a bounds edge to a handle — visual only, not draggable). Receives
-   *  raw state + view because the decoration may live outside any single
-   *  target's local frame. Most affordances leave this undefined. */
+  /** Optional non-interactive decoration (e.g., a leader line from a bounds edge to a
+   *  handle). Receives raw state + view because it may live outside any single target's
+   *  local frame. */
   decorate?(state: ChromeState, view: View): DrawCommand[];
 }
 
@@ -60,12 +52,8 @@ export interface AffordanceRegion<TScratch = unknown> {
    *    `normal`, measured along that normal as it lands on screen — for
    *    chrome that floats a fixed distance off an edge at any zoom.
    *  - `rect`  — axis-aligned rect (target rotation applies).
-   *  - `annulus` — outer ellipse minus inner rect cutout. Used for
-   *    invisible zones that sit *around* the AABB (e.g. rotate-on-
-   *    hover band). The outer ellipse is defined by world-space
-   *    semi-axes `rx` / `ry` around `(cx, cy)`; the inner rect is the
-   *    same target-local rect that defines the AABB. Hit-test:
-   *    inside outer ellipse AND outside inner rect. */
+   *  - `annulus` — outer ellipse minus inner rect cutout, for zones that sit *around* the
+   *    AABB (e.g. a rotate-on-hover band). */
   shape:
     | {
         kind: 'point';
@@ -98,11 +86,8 @@ export interface AffordanceRegion<TScratch = unknown> {
          *  `innerHalfExtent + pxExtent(minBandPx, view.scale)` on each axis
          *  for both paint and hit-test.
          *
-         *  This exists because the clamp has to know the view and the
-         *  affordance doesn't: `ChromeState` carries no scale. Expressing the
-         *  floor in world units instead (which is what the rotate ring used
-         *  to do) makes the band shrink on screen as you zoom in, until the
-         *  ring around a small shape is too thin to hover. */
+         *  In screen pixels because the clamp has to know the view and the affordance
+         *  doesn't: `ChromeState` carries no scale. */
         minBandPx?: number;
       };
 
@@ -111,9 +96,7 @@ export interface AffordanceRegion<TScratch = unknown> {
    *  warp under zoom or non-uniform scale). Omit for hit-only regions.
    *
    *  - `square` — small fixed-size square (only valid over `point` shapes).
-   *  - `annulus` — fill + stroke the annulus ring (only valid over
-   *    `annulus` shapes). Uses even-odd fill rule to punch the inner-rect
-   *    cutout.
+   *  - `annulus` — fill + stroke the annulus ring (only valid over `annulus` shapes).
    *  - `custom` — emit arbitrary draw commands; receives a {@link CustomPaintContext}. */
   paint?:
     | { kind: 'square';   sizePx: number;  fill?: CommandFill; stroke?: CommandStroke }
@@ -128,9 +111,7 @@ export interface AffordanceRegion<TScratch = unknown> {
    *  `<affordanceId>:<regionId>`. */
   hitKind?: string;
 
-  /** Cursor to show while hovering this region. Read by the hover-cursor
-   *  pump in `useGestureDispatcher` via `AffordanceHit.cursor`, which
-   *  `buildAffordanceAt` fills in from the region the walk landed on. */
+  /** Cursor to show while hovering this region. */
   cursor?: CursorSpec;
 
   /** `'exclusive'` bars every binding whose target doesn't consult the
@@ -142,17 +123,13 @@ export interface AffordanceRegion<TScratch = unknown> {
   /** Which gestures an exclusive claim bars. Omitted bars all of them. */
   claimedKinds?: readonly ClaimableGesture[];
 
-  /** Drag binding produced when this region is hit. Lazily called so
-   *  affordances don't pay binding-construction cost on every paint frame —
-   *  state snapshots (e.g., capturing per-leaf poses at click time) belong
-   *  inside `bind()`, not inside `regions()`. */
+  /** Drag binding produced when this region is hit. Called lazily, so state snapshots
+   *  (e.g., capturing per-leaf poses at click time) belong inside `bind()`, not inside
+   *  `regions()`. */
   bind(): AffordanceBinding<TScratch>;
 }
 
-/** Context passed to a region's `paint.kind === 'custom'` draw callback.
- *  Provides both the world-space anchor (already transformed) and the
- *  original local shape, for affordances that want to do additional
- *  geometry themselves. */
+/** Context passed to a region's `paint.kind === 'custom'` draw callback. */
 export interface CustomPaintContext {
   /** World-space mapping of `shape`. For `point`, only `x`/`y` are set.
    *  For `rect`, all four fields are set. */
@@ -165,33 +142,19 @@ export interface CustomPaintContext {
 
 /**
  * @experimental
- * Result of an affordance hit — what the region computed about itself.
- *
- * `initialScratch` is the payload: what the region already knows (which
- * corner, which target id) so the action that picks up the drag doesn't
- * re-derive it. `<SceneCanvas>` reads it out of the layer hit-test and packs
- * it into `AffordanceHit`, which flows to the matching action through
- * `InvocationCtx.drag.affordance`.
- *
- * This used to also carry a `drag: DragChannel` naming the handlers the
- * tool-routing dispatcher should wire up. Every implementation supplied a
- * no-op stub that claimed, because the real routing had already moved to
- * bindings; the field went with that dispatcher.
+ * Result of an affordance hit. `initialScratch` is what the region already knows (which
+ * corner, which target id) so the action that picks up the drag doesn't re-derive it. It
+ * reaches the matching action through `InvocationCtx.drag.affordance`.
  */
 export interface AffordanceBinding<TScratch = unknown> {
   initialScratch?: TScratch;
 }
 
 /**
- * The fields `buildAffordanceAt` lifts out of a region's `initialScratch`
- * when it turns a region hit into an `AffordanceHit`.
- *
- * Scratch is otherwise opaque — whatever the affordance wants to hand the
- * action that picks up the drag. These few names are the exception: they mean
- * the same thing to every affordance, and the actions that consume them
- * (`resizeAction`, `rotateAction`) read them off `AffordanceHit` rather than
- * out of scratch. An affordance that doesn't set them simply produces a hit
- * without those fields.
+ * The fields `buildAffordanceAt` lifts out of a region's `initialScratch` when it turns a
+ * region hit into an `AffordanceHit`. Scratch is otherwise opaque; these names mean the same
+ * thing to every affordance. An affordance that doesn't set them produces a hit without
+ * those fields.
  */
 export interface CommonAffordanceScratch {
   /** The node (or `MULTI_RESIZE_TARGET_ID`) this chrome acts on. Becomes
@@ -207,19 +170,16 @@ export interface CommonAffordanceScratch {
 }
 
 /**
- * What a **registered layer's** `hitTest` returns. Extends `AffordanceBinding`
- * so existing implementations keep typechecking; the added fields are how a
- * consumer's own chrome says the things kit chrome says through
- * `AffordanceRegion` — which cursor to show, and whether it owns the point
- * outright.
+ * What a **registered layer's** `hitTest` returns. The added fields are how a consumer's own
+ * chrome says the things kit chrome says through `AffordanceRegion` — which cursor to show,
+ * and whether it owns the point outright.
  */
 export interface LayerHit<TScratch = unknown> extends AffordanceBinding<TScratch> {
   /** Cursor while the pointer is over this hit. Reaches the hover-cursor
    *  pump as `AffordanceHit.cursor`, the same path kit chrome uses. */
   cursor?: CursorSpec;
-  /** `'exclusive'` bars every binding whose target doesn't consult the
-   *  affordance. Omitted means `'shared'` — today's behavior. Same name and
-   *  meaning as `AffordanceHit.strength`, which it becomes. */
+  /** `'exclusive'` bars every binding whose target doesn't consult the affordance. Omitted
+   *  means `'shared'`. Becomes `AffordanceHit.strength`. */
   strength?: 'exclusive' | 'shared';
   /** Which gestures an exclusive claim bars. Omitted bars all of them. */
   claimedKinds?: readonly ClaimableGesture[];

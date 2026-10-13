@@ -1,1 +1,1 @@
-export { cloneByAltDrag } from './behaviors';
+export type { CloneBehavior, CloneBehaviorResult } from '../../gestures/types';

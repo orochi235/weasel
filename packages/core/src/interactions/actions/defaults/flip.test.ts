@@ -1,3 +1,4 @@
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
 import { flipAction } from './flip';
 import { asNodeId } from 'core/scene/types';
@@ -32,6 +33,7 @@ function makeStubScene(initial: Record<string, Pose>) {
     poses,
     batchLog,
     overrides: createPoseOverrides<Pose>(() => undefined),
+    composition: IDENTITY_POSE_COMPOSITION,
     renderOrder: () => [...poses.keys()].map((id) => asNodeId(id)),
     get(id: string) {
       if (!poses.has(id as string)) return undefined;

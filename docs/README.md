@@ -8,10 +8,10 @@ Read in roughly this order:
 
 - [concepts.md](./concepts.md) — the mental model: `<Canvas>`, adapters,
   poses, ops, gestures, selection, layers, tools.
-- [hooks.md](./hooks.md) — the hook surface, plus the action table and default
+- [hooks.md](./hooks.md) — the hook surface (state primitives, drag
+  primitives, and viewport helpers), plus the action table and default
   keybindings. Interactions are action descriptors reached by gesture
-  bindings, not per-interaction hooks; what's left here is state primitives,
-  drag primitives, and viewport helpers.
+  bindings, not per-interaction hooks.
 - [adapters.md](./adapters.md) — adapter shape, the structural-typing trick
   (one struct satisfies all the narrow per-hook adapters), and `arrayAdapter`
   as the default.
@@ -31,5 +31,4 @@ For working code, the `apps/site/` directory has runnable consumers
 with `npm run dev:kit` from the repo root (port 33451, or 33421 when that is taken; every dev server's
 port is in `scripts/dev-ports.json`).
 
-`docs/specs/` and `docs/TODO.md` are internal — design notes and open work. They are not part of the
-user-facing reference.
+`docs/specs/` and `docs/TODO.md` are internal: design notes and open work.

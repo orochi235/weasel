@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 const W = 720;
 const H = 360;
@@ -56,7 +56,7 @@ export function ColorMatrixDemo() {
     const drawPalette = (offsetX: number): DrawCommand[] => BASE_PALETTE.map((p) => ({
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: offsetX + p.x - p.r, y: p.y - p.r, width: p.r * 2, height: p.r * 2 },
-      fill: { color: p.color },
+      fill: { paint: { color: p.color } },
     }));
     return {
       id: 'color-matrix-stack',

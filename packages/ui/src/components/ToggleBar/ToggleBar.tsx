@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import s from './ToggleBar.module.css';
+import s from '../segmentedControl.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -17,7 +17,8 @@ export type ToggleBarSize = 'sm' | 'md';
 /** Visual treatment of a {@link ToggleBar}. */
 export type ToggleBarVariant = 'default' | 'minimal' | 'flat';
 
-type CommonProps = {
+/** What a {@link ToggleBar} takes whichever selection mode it is in. */
+export type ToggleBarCommonProps = {
   ariaLabel?: string;
   className?: string;
   height?: number;
@@ -35,32 +36,23 @@ type CommonProps = {
  * accepts `mixedValues`.
  */
 export type ToggleBarProps<V extends string | number = string> =
-  | (CommonProps & {
+  | (ToggleBarCommonProps & {
       mode?: 'single';
       items: readonly ToggleBarItem<V>[];
       value: V | null;
       onChange: (next: V | null) => void;
       allowDeselect?: boolean;
     })
-  | (CommonProps & {
+  | (ToggleBarCommonProps & {
       mode: 'multiple';
       items: readonly ToggleBarItem<V>[];
       value: readonly V[];
       /**
        * Values that are neither on nor off — the sources this bar
        * aggregates disagree (a text range that is bold in part of it, a
-       * multi-selection whose nodes differ). Rendered `aria-pressed="mixed"`,
-       * the ARIA tri-state a toggle button actually has, rather than
-       * `SelectionPanel`'s reduced-opacity-plus-`title` workaround for
-       * `Switch`, which has no indeterminate state to render.
-       *
-       * `value` wins where the two lists overlap, so a caller that can't
-       * cheaply keep them disjoint doesn't get an ambiguous segment.
-       *
-       * Clicking a mixed segment turns it fully **on**, matching the
-       * everywhere-else convention (and `toggleFlagInRange`'s rule for a
-       * partially-styled text range) that a mixed toggle resolves toward
-       * the affirmative rather than clearing.
+       * multi-selection whose nodes differ). Rendered `aria-pressed="mixed"`.
+       * `value` wins where the two lists overlap. Clicking a mixed segment
+       * turns it fully on.
        */
       mixedValues?: readonly V[];
       onChange: (next: V[]) => void;
@@ -85,8 +77,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   };
 
   /** Mixed only in multiple mode, and only where `value` doesn't already
-   *  claim the segment. Single mode has nothing to be mixed about — its
-   *  aggregate is one value or none. */
+   *  claim the segment. */
   const isMixed = (value: V): boolean => {
     if (mode !== 'multiple') return false;
     const mixed = (props as { mixedValues?: readonly V[] }).mixedValues;
@@ -120,9 +111,6 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
 
   const roving = useRovingTabIndex({
     itemSelector: `.${s.segment}`,
-    // Single mode is a radiogroup: the tab stop is the current value, and
-    // arrow keys move the selection with the focus. Multiple mode is a set of
-    // independent toggles — focus alone moves, and Space/Enter flips.
     tabStopIndex: selectedIndex >= 0 ? selectedIndex : undefined,
     onNavigate: mode === 'single'
       ? (index) => (props.onChange as (n: V | null) => void)(items[index].value)
@@ -142,6 +130,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     s.root,
     size && s[`size_${size}`],
     variant && s[`variant_${variant}`],
+    variant === 'minimal' && s.minimalBoxed,
     className,
   ].filter(Boolean).join(' ');
 

@@ -1,16 +1,10 @@
 /**
  * `useInsertDepSource` — wires the `insert` dep consumed by `insertAction`.
  *
- * Provides kit-side kind→data factories for the 6 builtin shape kinds
- * (`rect`, `ellipse`, `line`, `polygon`, `star`, `pencil`). Acceptable because
- * these kinds are kit-shipped tools; a future phase can expose a
- * `nodeFactories` prop for consumer-defined kinds.
- *
- * `line`, `polygon`, `star` and `pencil` receive the drag AABB from the
- * insertAction invoker, but `extras` may carry richer geometry (endpoints,
- * center+radius+rotation, point trail). `insertPreviewExtent` resolves the
- * two into the node's real extent — the same resolution the live preview
- * and the reported gesture bounds use.
+ * `line`, `polygon`, `star`, and `pencil` receive the drag AABB from the insertAction invoker,
+ * but `extras` may carry richer geometry (endpoints, center+radius+rotation, point trail).
+ * `insertPreviewExtent` resolves the two into the node's real extent — the same resolution the
+ * live preview and the reported gesture bounds use.
  */
 import { useRef } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
@@ -27,10 +21,11 @@ import {
   linePath,
   polygonFromPoints,
   schneiderFit,
+  type PathFillRule,
   type PolygonPath,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 
 interface OpsApplier {
@@ -58,21 +53,38 @@ export type InsertNodeFactory = (
  * The paint a kit-built shape is inserted with. `kind` is the shape being
  * built and `seq` counts this canvas's inserts from 1. A key left out stays
  * off the node, so its painter's default applies; `null` is "none". A pencil
- * trail too short to fit is built as a rect and asks as one.
+ * trail too short to fit is built as a rect and asks as one. A line and an
+ * open pen path are inserted unfilled: a fill given to either is dropped.
+ * `fillRule` is the rule a path that carries one is built with, where the
+ * kit's own is nonzero; a rect or an ellipse has none to set.
  *
  * It paints only the shapes the kit builds: an `InsertNodeFactory` owns its
  * node's whole `data`. See `SceneCanvas`'s `insertPaint` prop.
  */
-export type InsertPaint = (kind: string, seq: number) => { fill?: FillStyle | null; stroke?: Stroke | null };
+export type InsertPaint = (kind: string, seq: number) => {
+  fill?: Fill | null;
+  stroke?: Stroke | null;
+  fillRule?: PathFillRule;
+};
+
+function paintKeys({ fill, stroke }: ReturnType<InsertPaint>): { fill?: Fill | null; stroke?: Stroke | null } {
+  return { ...(fill !== undefined ? { fill } : {}), ...(stroke !== undefined ? { stroke } : {}) };
+}
+
+function withFillRule(data: unknown, rule: PathFillRule | undefined): unknown {
+  const path = (data as { path?: object } | undefined)?.path;
+  if (rule === undefined || path === undefined || !('fillRule' in path)) return data;
+  return { ...(data as object), path: { ...path, fillRule: rule } };
+}
 
 /** The default {@link InsertPaint}: the next color of the kit palette, as a
- *  fill on a closed shape, a fill and a stroke on a line or a pen path, and a
- *  stroke alone on a pencil trail. */
+ *  fill on a closed shape, a fill and a stroke on a pen path, and a stroke
+ *  alone on a line or a pencil trail. */
 export const paletteInsertPaint: InsertPaint = (kind, seq) => {
   const color = cycleFill(seq);
-  if (kind === 'pencil') return { stroke: strokeOf(color, 2) };
-  if (kind === 'line' || kind === 'path') return { fill: solid(color), stroke: strokeOf(color, 2) };
-  return { fill: solid(color) };
+  if (kind === 'line' || kind === 'pencil') return { stroke: strokeOf(color, 2) };
+  if (kind === 'path') return { fill: { paint: solid(color) }, stroke: strokeOf(color, 2) };
+  return { fill: { paint: solid(color) } };
 };
 
 export function useInsertDepSource(
@@ -101,19 +113,16 @@ export function useInsertDepSource(
         const kind = extras.kind;
         const seq = ++insertSeqRef.current;
         const id = sc.mintId();
-        const painted = (as: string = kind): { fill?: FillStyle | null; stroke?: Stroke | null } => {
-          const { fill, stroke } = paintRef.current(as, seq);
-          return { ...(fill !== undefined ? { fill } : {}), ...(stroke !== undefined ? { stroke } : {}) };
-        };
+        let asked: ReturnType<InsertPaint> | undefined;
+        const painted = (as: string = kind) => paintKeys(asked = paintRef.current(as, seq));
 
         // The nascent node's extent — drag AABB reconciled with whatever
         // richer geometry `extras` carries.
         const extent = insertPreviewExtent({ shape: kind, bounds, extras });
         const pose: unknown = extent.bounds;
 
-        // Consumer factory wins over the kit default for this kind (and is the
-        // only way to insert consumer-defined kinds like `text`). It owns the
-        // node's data + optional pose; the dep still supplies id/layer/op.
+        // Consumer factory wins over the kit default for this kind. It owns the node's
+        // data + optional pose; the dep still supplies id/layer/op.
         const factory = factoriesRef.current?.[kind];
         if (factory) {
           const built = factory(bounds, extras);
@@ -129,7 +138,7 @@ export function useInsertDepSource(
 
         switch (geom.kind) {
           case 'line':
-            data = { path: linePath(geom.a, geom.b), ...painted() };
+            data = { path: linePath(geom.a, geom.b), ...painted(), fill: null };
             break;
           case 'polygon':
             data = {
@@ -157,11 +166,9 @@ export function useInsertDepSource(
           case 'box':
             switch (kind) {
               case 'rect':
-                // Geometry-in-local-frame: the rect path lives at the origin and
-                // the pose carries position. `pathInPoseFrame` rebases a rect path
-                // onto the pose box regardless of the stored coords, so origin vs.
-                // duplicated-pose-coords render identically — don't double-count
-                // the position. (#13)
+                // The rect path lives at the origin and the pose carries position:
+                // `pathInPoseFrame` rebases a rect path onto the pose box, so don't
+                // double-count the position.
                 data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), ...painted() };
                 break;
               case 'ellipse':
@@ -173,11 +180,10 @@ export function useInsertDepSource(
                 break;
               }
               case 'text': {
-                // The built-in `useTextTool` drags an empty text box you then type
-                // into (edit is entered via `enterTextEdit`), so `extras` carries
-                // no content and `text` defaults to `''`. The kit:text painter
-                // matches on `data.text != null` and applies style defaults at
-                // render time, so a bare `{ text }` is a complete, editable node.
+                // The built-in text tool drags an empty text box you then type into, so
+                // `extras` carries no content. The kit:text painter matches on
+                // `data.text != null` and applies style defaults at render time, so a bare
+                // `{ text }` is a complete, editable node.
                 const e = extras as Partial<{ text: string }>;
                 data = { text: e.text ?? '' };
                 break;
@@ -201,6 +207,7 @@ export function useInsertDepSource(
             break;
         }
 
+        data = withFillRule(data, asked?.fillRule);
         return {
           id,
           ops: [createInsertOp({ node: { id, kind: 'leaf', layer, pose, data } as unknown as { id: string }, label: `Insert ${kind}` })],

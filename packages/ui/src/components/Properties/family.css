@@ -1,0 +1,43 @@
+/* Authored against a border-box reset (labkit's `.lk-root *`). weasel-ui has no
+   global reset, so the family restates it over its own subtrees. */
+.panel,
+.list,
+.row,
+.group,
+.subpanel,
+.panel *,
+.list *,
+.row *,
+.group *,
+.subpanel * {
+  box-sizing: border-box;
+}
+
+/* A panel is chrome: a drag across it should move a slider, not paint a
+   selection over its labels. What the family shows as a value stays copyable,
+   and a field stays one — Safari carries `none` into an input's caret. */
+.panel,
+.list,
+.row,
+.group,
+.subpanel {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Opted in with `selectable` (a debug panel's default): the whole family lets
+   text select, reaching past each member's own `none`. */
+.panel[data-selectable='true'],
+.panel[data-selectable='true'] :is(.panel, .list, .row, .group, .subpanel, .card, .cardList) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.readout,
+.readoutInput,
+.row input:not([type='range']):not([type='checkbox']):not([type='radio']),
+.row textarea,
+.row [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}

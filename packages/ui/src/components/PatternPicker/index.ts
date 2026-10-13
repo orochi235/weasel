@@ -1,1 +1,1 @@
-export { PatternPicker, seedPattern, type PatternPickerProps, type PatternFill } from './PatternPicker';
+export { PatternPicker, seedPattern, type PatternPickerProps } from './PatternPicker';

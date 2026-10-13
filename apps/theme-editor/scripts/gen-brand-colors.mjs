@@ -32,11 +32,9 @@ function oklab(hex) {
 }
 
 /**
- * Near-neutral, by chroma rather than channel spread.
- *
- * Spread gets this wrong at the ends: LEGO's Black is a blue-black whose
- * channels differ by 25 while its chroma is under 0.02, so a spread test keeps
- * it. A categorical palette wants hues; neutrals are the theme ramp's job.
+ * Near-neutral, by chroma rather than channel spread: LEGO's Black is a
+ * blue-black whose channels differ by 25 while its chroma is under 0.02, so a
+ * spread test keeps it.
  */
 function isNeutral(hex) {
   const [L, a, b] = oklab(hex);

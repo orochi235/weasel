@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefCondition, PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { comparisonOf, comparisonsFor, conditionLeaves, conditionParts, joinCondition, printCondition, testOf, withComparison } from './conditionRows';
+import type { PrefCondition, PrefGroup, PrefLeaf, PrefList, PrefSection } from '@weasel-js/prefs';
+import { comparisonOf, comparisonsFor, conditionLeaves, conditionParts, joinCondition, leafKey, leafOf, printCondition, testOf, withComparison } from './conditionRows';
 
 const flag: PrefLeaf = { kind: 'boolean', name: 'On', description: '', default: false };
 const count: PrefLeaf = { kind: 'number', name: 'Count', description: '', default: 0 };
@@ -50,6 +50,21 @@ describe('the leaves a condition may read', () => {
   });
 });
 
+describe('a list and a map', () => {
+  const stops = { kind: 'list', name: 'Stops', description: '', default: [], item: count } as PrefLeaf;
+  const weights = { kind: 'map', name: 'Weights', description: '', default: {}, item: count } as PrefLeaf;
+
+  it('are offered, each with is set as its one comparison', () => {
+    const root: PrefGroup = { name: 'Root', children: { stops, weights } };
+    expect(conditionLeaves(root).map((l) => l.path)).toEqual(['stops', 'weights']);
+    for (const leaf of [stops, weights]) {
+      expect(comparisonsFor(leaf)).toEqual(['set']);
+      expect(testOf({ path: 'at', leaf })).toEqual({ path: 'at' });
+      expect(comparisonOf({ path: 'at' }, leaf)).toBe('set');
+    }
+  });
+});
+
 describe('the comparisons a leaf\'s kind offers', () => {
   it('offers on and off for a boolean, the three choices for an enum, the orderings for a number, and set for the rest', () => {
     expect(comparisonsFor(flag)).toEqual(['on', 'off']);
@@ -77,12 +92,46 @@ describe('the comparisons a leaf\'s kind offers', () => {
   });
 
   it('starts a test of a leaf at its kind\'s first comparison, and keeps one moved to a leaf that takes it', () => {
-    expect(testOf('on', flag)).toEqual({ path: 'on', is: true });
-    expect(testOf('mode', mode)).toEqual({ path: 'mode', is: 'a' });
-    expect(testOf('count', count)).toEqual({ path: 'count', above: 0 });
-    expect(testOf('title', title)).toEqual({ path: 'title' });
-    expect(testOf('count2', count, { path: 'count', atMost: 3 })).toEqual({ path: 'count2', atMost: 3 });
-    expect(testOf('mode', mode, { path: 'count', atMost: 3 })).toEqual({ path: 'mode', is: 'a' });
-    expect(testOf('mode', mode, { path: 'other', is: 'zzz' })).toEqual({ path: 'mode', is: 'a' });
+    expect(testOf({ path: 'on', leaf: flag })).toEqual({ path: 'on', is: true });
+    expect(testOf({ path: 'mode', leaf: mode })).toEqual({ path: 'mode', is: 'a' });
+    expect(testOf({ path: 'count', leaf: count })).toEqual({ path: 'count', above: 0 });
+    expect(testOf({ path: 'title', leaf: title })).toEqual({ path: 'title' });
+    expect(testOf({ path: 'count2', leaf: count }, { path: 'count', atMost: 3 })).toEqual({ path: 'count2', atMost: 3 });
+    expect(testOf({ path: 'mode', leaf: mode }, { path: 'count', atMost: 3 })).toEqual({ path: 'mode', is: 'a' });
+    expect(testOf({ path: 'mode', leaf: mode }, { path: 'other', is: 'zzz' })).toEqual({ path: 'mode', is: 'a' });
+  });
+});
+
+describe('the entry a condition\'s node is drawn in', () => {
+  const phase = { kind: 'object', name: 'Phase', description: '', default: {}, children: { mode, count } } as PrefLeaf;
+  const phases = { kind: 'list', name: 'Phases', description: '', default: [], item: phase } as PrefList;
+  const root: PrefGroup = { name: 'Root', children: { mode, phases } };
+
+  it('offers its own fields first, read from the entry, and then the schema\'s leaves', () => {
+    expect(conditionLeaves(root, phases).map(({ path, from }) => [path, from])).toEqual([
+      ['mode', 'item'], ['count', 'item'], ['mode', undefined], ['phases', undefined],
+    ]);
+    expect(conditionLeaves(root).map(({ path, from }) => [path, from])).toEqual([['mode', undefined], ['phases', undefined]]);
+  });
+
+  it('tells a field of the entry from a root pref at the same path', () => {
+    const leaves = conditionLeaves(root, phases);
+    const [inEntry, , atRoot] = leaves;
+    expect(leafKey(inEntry!)).not.toBe(leafKey(atRoot!));
+    expect(leafOf(leaves, { from: 'item', path: 'mode', is: 'a' })).toBe(inEntry);
+    expect(leafOf(leaves, { path: 'mode', is: 'a' })).toBe(atRoot);
+  });
+
+  it('starts, moves, and re-compares a test without losing where it reads from', () => {
+    const [inEntry, entryCount, atRoot] = conditionLeaves(root, phases);
+    expect(testOf(inEntry!)).toEqual({ from: 'item', path: 'mode', is: 'a' });
+    expect(testOf(entryCount!, { path: 'other', atMost: 3 })).toEqual({ from: 'item', path: 'count', atMost: 3 });
+    expect(testOf(atRoot!, { from: 'item', path: 'mode', is: 'b' })).toEqual({ path: 'mode', is: 'b' });
+    expect(withComparison({ from: 'item', path: 'mode', is: 'b' }, mode, 'isNot')).toEqual({ from: 'item', path: 'mode', isNot: 'b' });
+    expect(withComparison({ from: 'item', path: 'count', above: 1 }, count, 'atMost')).toEqual({ from: 'item', path: 'count', atMost: 1 });
+  });
+
+  it('prints a test of the entry apart from one of the root', () => {
+    expect(printCondition({ any: [{ from: 'item', path: 'mode', is: 'a' }, { path: 'mode', is: 'b' }] })).toBe("entry's mode is 'a' or mode is 'b'");
   });
 });

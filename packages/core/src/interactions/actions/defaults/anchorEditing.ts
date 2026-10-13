@@ -2,12 +2,6 @@
  * Anchor-editing Actions beyond the drag itself — the keyboard and
  * marquee half of path editing.
  *
- * These were previously only reachable through the pen tool's private
- * edit mode, which no consumer could actually enter (its `getPathObj`
- * hook needed a `pose.kind` that no kit-created node has). Porting them
- * onto the Action layer puts them behind the same `editAnchors` dep,
- * `edits-anchors` capability, and undo path as `editAnchorsAction`.
- *
  * ## Why these don't collide with their node-level counterparts
  *
  * Each has a node-level twin bound to the same gesture: `deleteAction`
@@ -48,13 +42,7 @@ import { selectionAfterAnchorPress } from './editAnchors';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 
-// ---------------------------------------------------------------------------
-// Shared plumbing
-// ---------------------------------------------------------------------------
-
-/** Screen-pixel radius for "this click landed on an anchor". Matches the
- *  affordance hit radius closely enough that anything the user can see as
- *  an anchor marker is cuttable. */
+/** Screen-pixel radius for "this click landed on an anchor". */
 const ANCHOR_CLICK_PX = 10;
 
 /** `ANCHOR_CLICK_PX` in world units through the view; with no view, one
@@ -104,29 +92,16 @@ function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisabledReason
   return true;
 }
 
-// ---------------------------------------------------------------------------
-// selectAnchor
-// ---------------------------------------------------------------------------
-
 /**
  * Click an anchor to select it; Shift-click to toggle it in or out of the
  * selection. Clicking away from every anchor clears the anchor selection.
  *
- * ## Why this is a click action and not part of the drag
- *
- * The obvious home for "pressing an anchor selects it" is
- * `editAnchorsAction.start`, since that's the handler that receives the
- * anchor affordance. It can't live there: the dispatcher only dispatches
- * a drag binding once the pointer crosses the drag threshold, so a press
- * that never moves never reaches `start` at all. Verified in the running
- * app — down/up on an anchor logs a bare `click`, and down/move-3px/up
- * logs the same; only a real drag logs `pointerdown → editAnchors`.
- *
+ * A click action and not part of `editAnchorsAction.start`: the dispatcher
+ * only dispatches a drag binding once the pointer crosses the drag
+ * threshold, so a press that never moves never reaches `start` at all.
  * Clicks, in turn, carry no affordance (the dispatcher attaches those to
  * `pointerdown` only), so this resolves the anchor from the click's world
- * coords — the same thing `insertPathAnchorAction` does for segments.
- * `editAnchorsAction` still syncs the selection when a drag begins on an
- * unselected anchor, so drag-without-clicking-first behaves too.
+ * coords.
  *
  * **Non-modal caveat:** `useSelectTool` binds `clearSelection` to
  * `{ click, target: 'empty', mods: {} }` at active scope, which outranks
@@ -160,8 +135,7 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
       const additive = params?.additive === true;
       if (hit === -1) {
         // Missed every anchor. A bare click clears; a shift-click leaves
-        // the selection alone so a stray miss mid-multi-select doesn't
-        // undo the work.
+        // the selection alone.
         if (!additive) dep.setSelectedAnchors([]);
         return;
       }
@@ -171,17 +145,9 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
   enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
 }, editingLayer);
 
-// ---------------------------------------------------------------------------
-// nudgeAnchors
-// ---------------------------------------------------------------------------
-
 /**
- * Move the selected anchors by one step. Shift multiplies the step, same
- * as node nudging.
- *
- * Every keystroke is its own history entry, matching node nudge — hold an
- * arrow down and undo walks back one step at a time rather than
- * collapsing the run.
+ * Move the selected anchors by one step. Shift multiplies the step. Every
+ * keystroke is its own history entry.
  */
 function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: string[] } {
   return {
@@ -217,10 +183,6 @@ export const nudgeAnchorsDownAction  = makeNudgeAnchorsAction('down');
 export const nudgeAnchorsLeftAction  = makeNudgeAnchorsAction('left');
 export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
 
-// ---------------------------------------------------------------------------
-// deleteAnchors
-// ---------------------------------------------------------------------------
-
 /**
  * Delete the selected anchors, refitting the surrounding curve through
  * each gap so the path keeps its shape.
@@ -254,19 +216,12 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
   enabled: requiresAnchorSelection,
 };
 
-// ---------------------------------------------------------------------------
-// cutPathAtAnchor (scissors)
-// ---------------------------------------------------------------------------
-
 /**
- * Open a closed subpath at the alt+shift-clicked anchor — the scissors
- * operation the pen tool used to own.
+ * Open a closed subpath at the alt+shift-clicked anchor.
  *
  * Bound to Alt+Shift+click rather than plain Alt+click so it doesn't
  * collide with `insertPathAnchorAction`, which is already Alt+click on
- * the same path. Both are "alt-click surgery on the edited path"; the
- * extra modifier picks which one, instead of the two actions racing on an
- * identical binding where only one could ever win.
+ * the same path.
  *
  * No-ops on an open subpath: there's nothing to cut.
  */
@@ -287,9 +242,8 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
       const worldPath = worldPathOf(dep);
       if (!worldPath) return;
 
-      // Find the anchor under the click. Clicks carry no affordance (only
-      // pointerdown does), so this resolves the hit itself — the same
-      // approach insertPathAnchorAction takes for segments.
+      // Clicks carry no affordance (only pointerdown does), so this resolves
+      // the hit itself.
       const nearest = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
       if (nearest === -1) return;
 
@@ -327,18 +281,13 @@ function nearestAnchorIndex(
   return best;
 }
 
-// ---------------------------------------------------------------------------
-// marqueeAnchors
-// ---------------------------------------------------------------------------
-
 /**
  * Rubber-band select anchors by dragging on empty canvas while a path is
  * in edit mode.
  *
  * Shift adds to the existing anchor selection instead of replacing it.
  * The in-flight rect goes on the `editAnchors` dep so the path-editing
- * overlay can draw it — same "ongoing action owns the state, chrome
- * draws it" split the move ghosts and the node marquee use.
+ * overlay can draw it.
  */
 export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'marqueeAnchors',
@@ -351,8 +300,7 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
     start(ctx: InvocationCtx): OngoingHandle {
       const dep = depOf(ctx.deps);
       // Not editing → decline so the dispatcher falls through to the
-      // node-level areaSelect. This is what keeps non-modal consumers
-      // (no eligibility filtering) behaving normally.
+      // node-level areaSelect.
       if (!dep) return {};
       const worldPath = worldPathOf(dep);
       if (!worldPath) return {};
@@ -387,10 +335,6 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
   },
   enabled: () => true,
 }, editingLayer);
-
-// ---------------------------------------------------------------------------
-// Local geometry helper
-// ---------------------------------------------------------------------------
 
 /** Flat indices of `path`'s anchors inside `rect`. */
 function anchorsOfPathInRect(

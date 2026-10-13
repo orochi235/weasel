@@ -1,22 +1,7 @@
 /**
- * `useResizePolicy` — wires the `resizePolicy` dep consumed
- * by `resizeAction`.
- *
- *   - `constraints`   — bounds-frame constraints (e.g. `lockAspectWithModifier`).
- *   - `pointSnap`     — world-space anchor-point snap behaviors.
- *   - `expandIds`     — group-expansion at gesture start.
- *   - `label`, `transient`, `onGestureStart`, `onGestureEnd` — the commit's
- *     history label and recording, and the gesture's lifecycle callbacks.
- *
- * Every field is optional; omitted fields fall back to kit defaults
- * (`DEFAULT_RESIZE_BEHAVIORS` — shift = aspect lock; pass `[]` to disable —
- * then `[]`, `ids => ids`).
- *
- * Built once per render and stabilised by `useDepSource` (which reads via a
- * ref internally), so callers can pass fresh closures without triggering
- * re-registration.
- *
- * @see ResizePolicy — the dep schema entry.
+ * Wires the `resizePolicy` dep consumed by `resizeAction`. Omitted
+ * `constraints` default to `DEFAULT_RESIZE_BEHAVIORS` (shift = aspect lock);
+ * pass `[]` to disable.
  */
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';

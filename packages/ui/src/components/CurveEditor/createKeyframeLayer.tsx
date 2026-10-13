@@ -8,7 +8,8 @@
  * them, so the two do not share curve maths.
  */
 import type { ReactNode } from 'react';
-import { cubicBezierEasing, resolveEasing, type EasingFn, type Keyframe } from '@weasel-js/core';
+import { cubicBezierEasing, resolveEasing } from '@weasel-js/core';
+import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { handleHalf } from '../../handles';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
@@ -22,7 +23,7 @@ type Bezier = readonly [number, number, number, number];
 /** A gesture in flight. The committed keys hold still underneath it. */
 export type KeyframeDrag =
   | { kind: 'key'; index: number; t: number; value: number }
-  | { kind: 'handle'; segment: number; bezier: Bezier };
+  | { kind: 'handle'; segment: number; bezier: readonly [number, number, number, number] };
 
 /**
  * The state a keyframe layer owns, held by the consumer and round-tripped
@@ -63,7 +64,7 @@ const KEY_HIT_PX = 8;
 const HANDLE_HIT_PX = 8;
 const CURVE_HIT_PX = 6;
 const KEY_HALF = handleHalf('--wzl-handle-size');
-const HANDLE_RADIUS = 3.5;
+const HANDLE_RADIUS = handleHalf('--wzl-handle-dot-size-sm');
 const SHIFT_MULTIPLIER = 10;
 const HANDLE_STEP = 0.01;
 

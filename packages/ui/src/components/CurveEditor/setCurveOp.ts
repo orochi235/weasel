@@ -1,12 +1,8 @@
 import type { Op } from '@weasel-js/core';
 import type { ControlPoint } from './CurveEditor';
 
-/**
- * The adapter contract for {@link createSetCurveOp}. Consumers wire
- * this to whatever state container holds the curve's value — typically
- * a small callback that calls a React state setter or dispatches a
- * Redux/Zustand action.
- */
+/** The adapter contract for {@link createSetCurveOp}. Consumers wire this
+ *  to whatever state container holds the curve's value. */
 export interface SetCurveAdapter {
   setValue(id: string, next: readonly ControlPoint[]): void;
 }
@@ -33,10 +29,8 @@ export interface CreateSetCurveOpArgs {
  *       'Edit easing',
  *     );
  *
- * The op's `apply(adapter)` calls `adapter.setValue(id, to)`. `invert()`
- * returns a mirror op with `from`/`to` swapped. When `from` and `to`
- * are structurally equal, `apply` returns `false` so history can skip
- * the entry — same convention as `createSetPathOp`.
+ * When `from` and `to` are structurally equal, `apply` returns `false`
+ * so history can skip the entry.
  */
 export function createSetCurveOp(args: CreateSetCurveOpArgs): Op {
   const { id, from, to, label, coalesceKey } = args;

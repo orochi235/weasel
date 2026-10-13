@@ -4,22 +4,17 @@
  * Seeded from where the nodes already are rather than from a fresh random
  * scatter: an author who has arranged half a diagram gets that arrangement
  * relaxed, not replaced. There is no RNG in it at all — two coincident nodes
- * are separated along a golden-angle spiral keyed to their index, which is what
- * a random jiggle is for elsewhere.
+ * are separated along a golden-angle spiral keyed to their index.
  *
- * The integrator is the kit's own `createSimulation`, the same one
- * `useSimulation` runs a frame at a time. Only the forces are local, and they
- * are the naive O(n²) kind — right for the tens-to-hundreds of nodes an
- * edge-per-scene-node diagram is already sized for, wrong for a 10k-node graph,
- * which wants d3-force's Barnes–Hut through `useSimulation` and its own render
- * layer.
+ * The forces are the naive O(n²) kind — right for tens to hundreds of nodes,
+ * wrong for a 10k-node graph.
  *
  * **This is the one layout that is not idempotent.** A relaxation re-run from
  * its own output keeps relaxing; `direction` means nothing to it. Pins and the
  * `tolerance` option are what keep a second pass from scrambling a settled
  * diagram.
  */
-import { createSimulation, type SimulationForce, type SimulationNode } from '@weasel-js/core/math';
+import { createSimulation, type SimulationForce, type SimulationNode } from '@weasel-js/simulation';
 import type { Graph } from './graph';
 import { groupCohesion, separateGroups } from './forceGroups';
 import {
@@ -127,9 +122,9 @@ function links(
  * Push overlapping boxes apart along whichever axis they overlap least.
  *
  * Charge alone is not enough: it treats a node as a point, so two wide boxes
- * whose centers are a comfortable distance apart still cover each other. This
- * works on the box, and it is not scaled by alpha — an overlap at the end of
- * the run is exactly as wrong as one at the start.
+ * whose centers are a comfortable distance apart still cover each other. Not
+ * scaled by alpha — an overlap at the end of the run is exactly as wrong as
+ * one at the start.
  */
 function separateBoxes(bodies: readonly ForceBody[], padding: number): SimulationForce<ForceBody> {
   return () => {
@@ -169,10 +164,6 @@ function gravity(bodies: readonly ForceBody[], at: { x: number; y: number }, str
 
 /**
  * The bodies and the force list, wound up and ready to tick.
- *
- * Shared by the one-shot `force` below and the live relaxation in `live.ts`,
- * which ticks it a frame at a time. Two copies of a force list drift, and the
- * only thing that would say so is the arrangement they produce.
  */
 export interface ForceRelaxation {
   bodies: ForceBody[];
@@ -207,8 +198,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
       hh: node.bounds.height / 2,
     };
     // A pin is the integrator's own `fx`/`fy`, not a filter applied after the
-    // fact: a pinned node has to hold its neighbors while they relax, not be
-    // put back once they have finished relaxing around where it wasn't.
+    // fact: a pinned node has to hold its neighbors while they relax.
     if (pinned.has(node.id)) {
       body.fx = body.x;
       body.fy = body.y;

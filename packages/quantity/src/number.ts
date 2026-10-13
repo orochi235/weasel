@@ -1,14 +1,10 @@
 import { entryScale, type UnitEntry } from './units';
 
 /**
- * Display-formatter for numbers. Use this anywhere a number is shown to
- * a user. The whole point: negative values get prefixed with the real
- * MINUS SIGN (U+2212) instead of the ASCII HYPHEN-MINUS (U+002D) that
- * `toLocaleString` and template literals produce by default.
- *
- * U+2212 is the same visual width as `+` and reads as a sign rather
- * than a hyphen — columns of signed numbers align cleanly and the
- * glyph doesn't get confused with a bullet or list dash.
+ * The real MINUS SIGN (U+2212), which display formatting uses instead of the
+ * ASCII HYPHEN-MINUS (U+002D) that `toLocaleString` and template literals
+ * produce. It is the same visual width as `+`, so columns of signed numbers
+ * align.
  */
 export const MINUS_SIGN = '−';
 
@@ -203,7 +199,7 @@ const SPELLINGS: readonly (readonly string[])[] = [
   ['ft', "'", '′', '’'],
 ];
 
-function withSpellings(units: Readonly<UnitTable>): Readonly<UnitTable> {
+export function withSpellings(units: Readonly<UnitTable>): Readonly<UnitTable> {
   let out: UnitTable | undefined;
   for (const group of SPELLINGS) {
     const known = group.find((n) => units[n] !== undefined);

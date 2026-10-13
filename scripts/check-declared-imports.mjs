@@ -2,15 +2,9 @@
  * Every module a published package imports must be one its manifest declares.
  *
  * An undeclared import passes everything inside the monorepo, where hoisting
- * resolves it. Published, a bundling build inlines the module (kernel3d shipped
- * its own copy of React that way) and a per-module build leaves a specifier a
- * clean install cannot resolve. The consumer smoke test cannot see either: it
- * packs every sibling into one tree.
- *
- * Checks non-test source under each published package's `src/` against its
- * `dependencies`, `peerDependencies`, and `optionalDependencies`.
- *
- * Run: node scripts/check-declared-imports.mjs
+ * resolves it. Published, a bundling build inlines the module and a per-module
+ * build leaves a specifier a clean install cannot resolve. The consumer smoke
+ * test cannot see either: it packs every sibling into one tree.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';

@@ -4,23 +4,12 @@
  * walking the *built* module closure of each entry and failing on a React
  * specifier anywhere in it.
  *
- * Reading the sources cannot answer this. `@weasel-js/core/math` re-exports
- * nine leaf modules that each import only numbers, and its first build still
- * pulled a megabyte of canvas and `react` — one of those leaves reached this
- * package's own barrel, and `splitting: true` put the result in a chunk the
- * entry then imported. The emitted graph is the only thing that knows.
+ * Reading the sources cannot answer this: a leaf that reaches its package's
+ * own barrel lands, under `splitting: true`, in a chunk the entry then imports.
+ * The emitted graph is the only thing that knows.
  *
  * Run after a build. A missing entry file is a failure, not a skip: that is
  * what a stale or partial build looks like.
- *
- * **Watched to fail before it was trusted**, both ways, since a green check
- * against broken code is the failure this repo keeps re-learning. Pointed at
- * `core/dist/index.js` it names `react, react/jsx-runtime` across 29 modules
- * and exits 1. Pointed at `diagram/dist/index.js` — whose own externals are
- * `@weasel-js/core`, `@weasel-js/core/math` and `react` — it reports
- * `react/jsx-runtime` too, which it can only have reached by following the
- * sibling through its `exports` map. That second one is the case the first
- * draft of this script got wrong.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
@@ -41,6 +30,10 @@ const ENTRIES = [
   {
     file: 'packages/simulation/dist/index.js',
     why: 'the integrator; the frame-loop hook lives behind @weasel-js/simulation/react',
+  },
+  {
+    file: 'packages/renderer/dist/index.js',
+    why: 'draw commands to pixels; a paint kind\'s editor is registered in core',
   },
   {
     file: 'packages/prefs/dist/index.js',
@@ -68,12 +61,8 @@ function specifiersIn(source) {
 
 /**
  * Resolves a sibling workspace specifier to the built file its `exports` map
- * names, or `null` for anything outside the kit.
- *
- * Following these is the entire point. The first version of this script
- * stopped at the package boundary and passed `@weasel-js/diagram/layout` —
- * whose one external was `@weasel-js/core`, the React barrel. A check that
- * reports the barrel as merely 'external' is a check that cannot fail.
+ * names, or `null` for anything outside the kit. A walk that stops at the
+ * package boundary reports the React barrel as merely external and cannot fail.
  */
 function resolveWorkspace(spec) {
   const m = /^@weasel-js\/([^/]+)(?:\/(.+))?$/.exec(spec);

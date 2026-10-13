@@ -1,0 +1,65 @@
+import { useCallback, useEffect, useRef } from 'react';
+import { useLatest } from '@weasel-js/react';
+import type { Contribution } from '../contributions/types';
+import { isTool } from './types';
+
+export interface ToolLifecycleOptions {
+  entriesById: ReadonlyMap<string, Contribution<unknown>>;
+  /** The active tool's id, and the tools held on a hotkey, as the input scope reports them. */
+  active: string | null;
+  hotkeyStack: readonly string[];
+  /** The active tool changed. */
+  onSwitch?: () => void;
+}
+
+/**
+ * Runs each tool's `onActivate` / `onDeactivate` around the time it is live:
+ * holding the active slot, or sitting in the hotkey stack.
+ *
+ * `onSwitch` runs between the outgoing tools' `onDeactivate` and the incoming
+ * tools' `onActivate`, so whatever it ends is over before the new tool hears
+ * it is live.
+ */
+export function useToolLifecycle(opts: ToolLifecycleOptions): void {
+  const { active, hotkeyStack } = opts;
+  const liveRef = useRef<ReadonlySet<string>>(new Set());
+  const prevActiveRef = useRef(active);
+  const entriesRef = useLatest(opts.entriesById);
+  const onSwitchRef = useLatest(opts.onSwitch);
+  const scratchRef = useRef(new Map<string, unknown>());
+
+  const fire = useCallback((id: string, hook: 'onActivate' | 'onDeactivate'): void => {
+    const scratches = scratchRef.current;
+    const tool = entriesRef.current.get(id);
+    if (!tool || !isTool(tool)) {
+      scratches.delete(id);
+      return;
+    }
+    if (hook === 'onActivate' || !scratches.has(id)) scratches.set(id, tool.initScratch?.());
+    const scratch = scratches.get(id);
+    if (hook === 'onDeactivate') scratches.delete(id);
+    const fn = tool[hook];
+    if (!fn) return;
+    try {
+      fn({ scratch });
+    } catch (err) {
+      console.error(`weasel: tool "${id}".${hook} threw`, err);
+    }
+  }, [entriesRef]);
+
+  useEffect(() => {
+    const prev = liveRef.current;
+    const next = new Set<string>(active === null ? hotkeyStack : [active, ...hotkeyStack]);
+    liveRef.current = next;
+    for (const id of prev) if (!next.has(id)) fire(id, 'onDeactivate');
+    if (prevActiveRef.current !== active) onSwitchRef.current?.();
+    prevActiveRef.current = active;
+    for (const id of next) if (!prev.has(id)) fire(id, 'onActivate');
+  });
+
+  useEffect(() => () => {
+    const live = liveRef.current;
+    liveRef.current = new Set();
+    for (const id of live) fire(id, 'onDeactivate');
+  }, [fire]);
+}

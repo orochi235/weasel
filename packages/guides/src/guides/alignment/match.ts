@@ -58,9 +58,8 @@ function bestAxis(
  * from the aligned siblings to the box being dragged.
  *
  * `worldTolerance` is per axis because a screen-pixel tolerance is not one
- * world distance under non-uniform zoom — and each axis here is matched by a
- * distance along that axis alone, so there is an exact answer rather than an
- * approximation. Pass the same number twice for a world-space tolerance.
+ * world distance under non-uniform zoom. Pass the same number twice for a
+ * world-space tolerance.
  */
 export function matchAlignment(
   bounds: Bounds,

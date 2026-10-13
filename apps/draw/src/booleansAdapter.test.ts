@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyBooleanOp, asNodeId, createScene, rectPath, type NodeId } from '@weasel-js/core';
+import { applyBooleanOp, asNodeId, createScene, pathFromD, rectPath, type NodeId } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { drawBooleansAdapter } from './booleansAdapter';
 
@@ -72,5 +72,62 @@ describe('drawBooleansAdapter', () => {
     const [id] = result.kind === 'applied' ? result.resultIds : [];
     const node = scene.get(asNodeId(id));
     expect(node?.kind === 'leaf' ? node.data.fill : 'missing').toBeNull();
+  });
+});
+
+describe('drawBooleansAdapter on an op that keeps its pieces apart', () => {
+  it('paints each cropped piece like the source it was cut from, not like the mask', () => {
+    const { scene, adapter } = setup();
+    scene.update(asNodeId('a'), { data: { path: rectPath(0, 0, 10, 10), fill: { paint: { color: '#f00' } } } });
+    scene.update(asNodeId('b'), { data: { path: rectPath(0, 0, 10, 10), fill: { paint: { color: '#00f' } } } });
+    scene.setSelection([asNodeId('a'), asNodeId('b')]);
+    const result = applyBooleanOp(adapter, 'crop');
+    const [id] = result.kind === 'applied' ? result.resultIds : [];
+    expect(scene.get(asNodeId(id!))?.data.fill).toEqual({ paint: { color: '#f00' } });
+  });
+});
+
+describe('drawBooleansAdapter result data', () => {
+  it('takes its topmost source\'s label and paint, whatever order the sources were selected in', () => {
+    const { scene, adapter } = setup();
+    scene.update(asNodeId('a'), { data: { path: rectPath(0, 0, 10, 10), fill: { paint: { color: '#0f0' } }, label: 'under' } });
+    scene.update(asNodeId('b'), { data: { path: rectPath(0, 0, 10, 10), fill: { paint: { color: '#f00' } }, label: 'over' } });
+    scene.setSelection([asNodeId('b'), asNodeId('a')]);
+    const result = applyBooleanOp(adapter, 'union');
+    const [id] = result.kind === 'applied' ? result.resultIds : [];
+    expect(scene.get(asNodeId(id!))!.data).toMatchObject({ label: 'over', fill: { paint: { color: '#f00' } } });
+  });
+
+  it('keeps the label when the topmost source\'s stroke became the result\'s shape', () => {
+    const { scene, adapter } = setup();
+    scene.update(asNodeId('b'), {
+      data: { path: rectPath(0, 0, 10, 10), fill: null, stroke: { paint: { color: '#f00' }, width: 2 }, label: 'ring' },
+    });
+    scene.setSelection([asNodeId('a'), asNodeId('b')]);
+    const result = applyBooleanOp(adapter, 'union', { strokes: 'unfilled' });
+    const [id] = result.kind === 'applied' ? result.resultIds : [];
+    const { data } = scene.get(asNodeId(id!))!;
+    expect(data).toMatchObject({ label: 'ring', fill: { paint: { color: '#f00' } } });
+    expect(data.stroke).toBeUndefined();
+  });
+});
+
+describe('drawBooleansAdapter with strokes counted', () => {
+  it('fills a result in its topmost source\'s stroke paint, and does not stroke it again', () => {
+    const { scene, adapter } = setup();
+    scene.add({
+      id: asNodeId('line'), kind: 'leaf', layer: 'default', parent: asNodeId('g'),
+      pose: { x: -5, y: 5, width: 30, height: 0 },
+      data: { path: pathFromD('M0 0 L30 0'), stroke: { paint: { color: '#f00' }, width: 4 } },
+    });
+    scene.setSelection([asNodeId('a'), asNodeId('line')]);
+
+    const result = applyBooleanOp(adapter, 'union', { strokes: 'unfilled' });
+
+    const [id] = result.kind === 'applied' ? result.resultIds : [];
+    const made = scene.get(asNodeId(id!))!;
+    expect(made.data.fill).toEqual({ paint: { color: '#f00' } });
+    expect(made.data.stroke).toBeUndefined();
+    expect(made.pose).toMatchObject({ x: -5, width: 30 });
   });
 });

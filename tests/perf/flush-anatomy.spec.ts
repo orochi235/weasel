@@ -1,25 +1,19 @@
 /**
  * What a batch flush spends outside the draw.
  *
- * `clip-cost.spec.ts` prices one flush through the renderer. This strips that
- * flush one GL call at a time to say where the price goes. Every variant
- * renders the same frame — `N` one-rect groups whose color matrices alternate,
- * so each closes the run and `flushBatch` runs `N` times with one rect apiece —
- * through the real `WeaselRenderer`. A variant drops calls by replacing methods
- * on the live context with no-ops, so the calls measured are whatever
- * `flushBatch` issues today, and a call added to it shows up in the `flush`
- * row without anything here changing.
+ * Every variant renders the same frame — `N` one-rect groups whose color
+ * matrices alternate, so each closes the run and `flushBatch` runs `N` times
+ * with one rect apiece — through the real `WeaselRenderer`. A variant drops
+ * calls by replacing methods on the live context with no-ops.
  *
  * Removals are cumulative: each row drops one more thing than the row above,
- * so the delta between adjacent rows is that thing's cost. Read the deltas,
- * not the absolute rows. A dropped call is not replaced, so the lower rows
- * draw from stale state; that is what makes them a floor, and the paint probe
+ * so the delta between adjacent rows is that thing's cost. A dropped call is
+ * not replaced, so the lower rows draw from stale state, and the paint probe
  * only checks they still draw.
  *
  * A method dropped only for some arguments (`bindVertexArray(null)`,
  * `disable(STENCIL_TEST)`) is wrapped rather than replaced, which adds a JS
- * call to the calls it keeps — a few tens of nanoseconds, below the noise of a
- * row.
+ * call to the calls it keeps.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -31,18 +25,13 @@ import { dirname, resolve } from 'node:path';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-/** Flushes per frame. Each carries one rect — the shape a broken run has, and
- *  the one that makes the per-flush overhead the whole cost. */
+/** Flushes per frame, each carrying one rect. */
 const N = 512;
 
 const RUNS = rounds(3);
 
-/**
- * Each row drops one more call than the row above. `drops` names what this
- * row no longer does, so the delta from the previous row prices exactly that.
- * `rule` is evaluated in the page: a method name, and optionally the first
- * argument that marks the calls to drop.
- */
+/** `rule` is evaluated in the page: a method name, and optionally the first
+ *  argument that marks the calls to drop. */
 const VARIANTS = [
   { id: 'flush',        drops: '— the full flushBatch sequence', rule: null },
   { id: '-unbind',      drops: 'bindVertexArray(null) after the draw', rule: { method: 'bindVertexArray', arg0: null } },
@@ -107,11 +96,17 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
       }).__flushReport;
 
       const { WeaselRenderer } = await import(
-        /* @vite-ignore */ `/weasel/@fs${root}/packages/core/src/renderer/index.ts`
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
       );
       const { timeInterleaved } = await import(
         /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`
       );
+      // A solid's color matrix is mapped on the CPU and no longer breaks its
+      // run; this spec times the break, so it turns that off.
+      const { colorFolding } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/draw.ts`
+      );
+      colorFolding.enabled = false;
 
       const W = 800;
       const H = 600;
@@ -144,7 +139,7 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
           children: [{
             kind: 'path',
             path: { kind: 'rect', x: px(i), y: py(i), width: 36, height: 36 },
-            fill: { fill: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' },
+            fill: { paint: { kind: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' } },
           }],
         });
       }

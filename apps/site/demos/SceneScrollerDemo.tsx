@@ -4,14 +4,13 @@ import {
   SceneCanvas,
   WeaselProvider,
   blur,
-  createParallaxLayer,
-  createSlew,
   defaultDrawOne,
   rectPath,
   textCommandFromRuns,
-  useAnimator,
   useScene,
 } from '@weasel-js/core';
+import { createSlew, useAnimator } from '@weasel-js/animator';
+import { createParallaxLayer } from '@weasel-js/parallax';
 import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
@@ -67,6 +66,10 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
   const scene = useScene<WorldData, WorldLayer, RectPose>({
     systemLayers: [{ id: 'tiles' }, { id: 'entities' }, { id: 'player' }],
+    // The player's eleven bones are a parented chain, so a bone's pose is
+    // local to the bone it hangs off. Everything else in this scene is a
+    // root, where local and world are the same value.
+    composition: RIGID_POSE_COMPOSITION,
     initial: useMemo(
       () => [
         ...tileNodes(WORLD),
@@ -129,7 +132,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
   useEffect(() => animator.keepAlive(), [animator]);
 
-  const player = useMemo(() => createPlayerPose(animator), [animator]);
+  const player = useMemo(() => createPlayerPose(animator, scene), [animator, scene]);
   useEffect(() => () => player.dispose(), [player]);
 
   useEffect(() => {
@@ -195,11 +198,11 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       draw: (): DrawCommand[] => {
         const g = game.current;
         const style = { fontFamily: 'sans-serif', fontSize: 14 };
-        const paint = { fill: 'solid' as const, color: COLORS.hud };
+        const paint = { kind: 'solid' as const, color: COLORS.hud };
         return [
-          textCommandFromRuns(12, 22, [{ text: `♥ ${Math.max(g.lives, 0)}`, fill: paint }], style),
-          textCommandFromRuns(72, 22, [{ text: `◆ ${g.score} / ${g.coins.length}`, fill: paint }], style),
-          textCommandFromRuns(190, 22, [{ text: `${g.elapsed.toFixed(1)}s`, fill: paint }], style),
+          textCommandFromRuns(12, 22, [{ text: `♥ ${Math.max(g.lives, 0)}`, fill: { paint: paint } }], style),
+          textCommandFromRuns(72, 22, [{ text: `◆ ${g.score} / ${g.coins.length}`, fill: { paint: paint } }], style),
+          textCommandFromRuns(190, 22, [{ text: `${g.elapsed.toFixed(1)}s`, fill: { paint: paint } }], style),
         ];
       },
     };
@@ -215,7 +218,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         const box = (x: number, y: number, w: number, h: number, color: string): DrawCommand => ({
           kind: 'path',
           path: rectPath(x - w / 2, y - h / 2, w, h),
-          stroke: { width: 1 / CAM_SCALE, paint: { fill: 'solid', color } },
+          stroke: { width: 1 / CAM_SCALE, paint: { kind: 'solid', color } },
         });
         return [
           box(g.player.body.x, g.player.body.y, BODY_W, BODY_H, COLORS.debugPlayer),
@@ -291,10 +294,6 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        // The player's eleven bones are a parented chain, so a bone's pose is
-        // local to the bone it hangs off. Everything else in this scene is a
-        // root, where local and world are the same value.
-        poseComposition={RIGID_POSE_COMPOSITION}
         selectable={false}
         animator={animator}
         ref={canvas}

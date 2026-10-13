@@ -1,18 +1,15 @@
 /** What the dispatcher reads straight off an input event. */
+import type { IngestItem } from '@weasel-js/gestures';
 import type { InputEvent } from './matcher';
 
 /**
  * Modifier flags as an immediate invoker sees them, in the kit's
  * `ModifierState` spelling rather than the DOM's `*Key` one.
  *
- * Ongoing invokers read modifiers off `InvocationCtx`; immediate ones get only
- * `(deps, params)`, so pointer-driven immediate actions need them merged into
- * params the same way wheel deltas already are. Most actions should still
- * express modifier semantics as separate bindings with `opts.params` — that is
- * what makes them visible to conflict detection and the inspector. This is for
- * the cases where the modifier is data rather than a route, e.g. select
- * forwarding the press's modifiers into `SelectionApi.applyClick`, which
- * resolves them against the host's configured extend key.
+ * Most actions should still express modifier semantics as separate bindings
+ * with `opts.params` — that is what makes them visible to conflict detection
+ * and the inspector. This is for the cases where the modifier is data rather
+ * than a route.
  */
 export function modifiersOf(e: {
   altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean;
@@ -25,6 +22,7 @@ export function modifiersOf(e: {
 export function worldPointOf(event: InputEvent): { x: number; y: number } | undefined {
   switch (event.kind) {
     case 'pointerdown':
+    case 'hover':
     case 'longpress':
     case 'click':
     case 'doubleclick':
@@ -32,5 +30,79 @@ export function worldPointOf(event: InputEvent): { x: number; y: number } | unde
       return event.x !== undefined && event.y !== undefined ? { x: event.x, y: event.y } : undefined;
     default:
       return undefined;
+  }
+}
+
+/** What a drop or a paste brings, for `Action.enabled`'s `carried` argument.
+ *  Undefined for every other event. */
+export function carriedBy(event: InputEvent): { items: readonly IngestItem[] } | undefined {
+  return event.kind === 'drop' || event.kind === 'paste' ? { items: event.items } : undefined;
+}
+
+/**
+ * The params an immediate invoker runs with: what the event carries, under the
+ * binding's own `resolved` params. An immediate invoker gets `(deps, params)`
+ * and no `InvocationCtx`, so this is where it reads deltas and positions.
+ */
+export function immediateParams(
+  event: InputEvent,
+  resolved: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  switch (event.kind) {
+    case 'wheel':
+      return {
+        deltaX: event.deltaX, deltaY: event.deltaY,
+        clientX: event.clientX, clientY: event.clientY,
+        affordance: event.affordance,
+        ...resolved,
+      };
+    case 'pinch':
+      return {
+        scale: event.scale, rotation: event.rotation,
+        clientX: event.clientX, clientY: event.clientY,
+        affordance: event.affordance,
+        ...resolved,
+      };
+    case 'click':
+    case 'doubleclick':
+      return {
+        worldX: event.x, worldY: event.y,
+        affordance: event.affordance,
+        // The press point too: an action that places geometry at the click wants it.
+        ...(event.kind === 'click' ? { pressX: event.pressX, pressY: event.pressY } : {}),
+        mods: modifiersOf(event),
+        ...resolved,
+      };
+    // Only a `stage: 'press'` pointerdown reaches an immediate invoker: the
+    // buffered copy matches `drag` specs, which are ongoing.
+    case 'pointerdown':
+    case 'contextmenu':
+    case 'longpress':
+      return {
+        worldX: event.x, worldY: event.y,
+        affordance: event.affordance,
+        bodyTarget: event.bodyTarget,
+        mods: modifiersOf(event),
+        ...resolved,
+      };
+    case 'hover':
+      return {
+        worldX: event.x, worldY: event.y,
+        clientX: event.clientX, clientY: event.clientY,
+        affordance: event.affordance,
+        bodyTarget: event.bodyTarget,
+        mods: modifiersOf(event),
+        ...resolved,
+      };
+    case 'drop':
+    case 'paste':
+      return {
+        items: event.items,
+        via: event.kind,
+        ...(event.kind === 'drop' && event.x !== undefined ? { worldX: event.x, worldY: event.y } : {}),
+        ...resolved,
+      };
+    default:
+      return resolved;
   }
 }

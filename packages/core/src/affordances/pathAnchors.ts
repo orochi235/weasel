@@ -1,12 +1,4 @@
-/**
- * Path anchor + control-handle affordances.
- *
- * These were the last piece of selection chrome whose geometry lived only
- * inside `canvas/affordanceAt.ts`'s hand-written classifier. Expressing them
- * as regions puts every kit affordance behind one hit-test walk, which is
- * what lets `AffordanceRegion.cursor` and nearest-region picking apply here
- * too rather than only to the chrome that happened to be declarative already.
- */
+/** Path anchor + control-handle affordances. */
 
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
@@ -15,12 +7,8 @@ import type { PolygonPath } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 
 /**
- * Live anchor-editing state, read fresh on every hit-test.
- *
- * Anchors are not derivable from `ChromeState` — they come off the editable
- * path behind whatever the consumer's `editAnchors` dep exposes — so this
- * thunk is the seam. It's called on every pointer event, so it must be cheap
- * (O(1) field reads); enumeration happens inside `regions()`.
+ * Live anchor-editing state. The thunk that returns it is called on every
+ * pointer event, so it must be cheap (O(1) field reads).
  */
 export interface AnchorState {
   /** Id of the path currently in anchor-edit mode, or `null`. Control handles
@@ -38,9 +26,7 @@ export interface PathAnchorAffordanceOptions {
   cursor?: CursorSpec;
 }
 
-/** What an anchor hit hands to the action that follows: which path, which
- *  anchor, and whether the grab was on the anchor itself or one of its two
- *  control points. */
+/** What an anchor hit hands to the action that follows. */
 export interface AnchorScratch extends CommonAffordanceScratch {
   /** Node id of the path the anchor belongs to. */
   targetId: string;
@@ -57,11 +43,9 @@ export const PATH_ANCHOR_CHROME_ID = 'path-edit.anchors';
  * Anchor + control affordances for the selected paths, bottom → top.
  *
  * Returns **two** affordances rather than one so that a control handle beats
- * an anchor regardless of which is nearer — the same preference `hitAnchor`
- * encodes, and the same one the rendering has (controls draw on top). Within
- * each of the two, nearest wins. They deliberately share one id: chrome-caps
- * gates anchor editing as a single piece of chrome, and splitting the id
- * would invent a visibility rule nothing asked for.
+ * an anchor regardless of which is nearer, the way controls draw on top.
+ * Within each of the two, nearest wins. They deliberately share one id:
+ * chrome-caps gates anchor editing as a single piece of chrome.
  *
  * Order matters — spread this into an affordance list in the returned order.
  */
@@ -93,10 +77,8 @@ export function createPathAnchorAffordances(
     hitKind: string,
   ): AffordanceRegion => ({
     id,
-    // Anchor coordinates are already in the path's own space, which for an
-    // editable path is world space — the pose rotation that `targetId` would
-    // introduce is baked into the coords. Anchoring to `null` keeps the
-    // framework from applying it twice.
+    // Anchor coordinates are already world space, pose rotation baked in.
+    // Anchoring to `null` keeps the framework from applying it twice.
     targetId: null,
     shape: { kind: 'point', x, y, hitRadiusPx: hitRadius },
     hitKind,
@@ -112,8 +94,7 @@ export function createPathAnchorAffordances(
       for (const { id, path } of editablePaths(state)) {
         // `editAnchorsAction` edits whatever path the dep says is in edit
         // mode, ignoring which one was hit — so once a path IS being edited,
-        // only its own anchors may claim the press. The overlay paints only
-        // that path's anchors too.
+        // only its own anchors may claim the press.
         if (editingId !== null && id !== editingId) continue;
         for (const a of enumerateAnchors(path)) {
           out.push(point(

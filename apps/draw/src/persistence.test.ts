@@ -114,7 +114,7 @@ describe('persistence — clipboard JSON reviver', () => {
     const parsed = JSON.parse('{"weaselClipboard":1,"nodes":[{"id":"a","fill":"#fff"}]}', clipboardJsonReviver) as {
       nodes: Array<{ fill: unknown }>;
     };
-    expect(parsed.nodes[0].fill).toEqual({ color: '#fff' });
+    expect(parsed.nodes[0].fill).toEqual({ paint: { color: '#fff' } });
   });
 });
 
@@ -165,6 +165,12 @@ describe('persistence — scene snapshot → node specs', () => {
     const coords = (specs[0].data as { coords: unknown }).coords;
     expect(coords).toBeInstanceOf(Float32Array);
   });
+  it('revives a typed array under any key, not only a path\'s', () => {
+    const data = { weights: new Float32Array([0.25, 0.75]), nested: [{ ids: new Uint8Array([3, 4]) }] };
+    const revived = reviveTypedArrays(JSON.parse(JSON.stringify(data, serializeReplacer)) as typeof data);
+    expect(revived.weights).toBeInstanceOf(Float32Array);
+    expect(revived).toEqual(data);
+  });
   it('keeps an image node\'s data through the JSON hop', () => {
     const image = { src: 'data:image/png;base64,iVBORw0KGgo=', opacity: 0.5, source: { x: 0, y: 0, width: 0.5, height: 1 }, flipY: true };
     const json = JSON.parse(JSON.stringify({
@@ -179,7 +185,7 @@ describe('persistence — scene snapshot → node specs', () => {
 
 // `collapse WeaselDraw's own fill and stroke onto the kit shapes` (7af35c53,
 // 2026-08-26) dropped `WeaselDrawData`'s `fill?: string` / `stroke?: string` /
-// `strokeWidth?: number` in favor of the kit's `FillStyle` and `Stroke`
+// `strokeWidth?: number` in favor of the kit's `Paint` and `Stroke`
 // objects, and took every reader's tolerance for the string forms with them.
 // Nothing converted the documents already in localStorage, so a scene saved
 // before that date reached the renderer with `fill: '#7ab8d4'` and threw
@@ -197,12 +203,12 @@ describe('persistence — legacy string paint migration', () => {
   });
   const dataOf = (data: Data): Data => nodeSpecsFromSnapshot(sceneOf(data))[0].data as Data;
 
-  it('turns a string fill into a solid FillStyle', () => {
-    expect(dataOf({ fill: '#7ab8d4' }).fill).toEqual({ color: '#7ab8d4' });
+  it('turns a string fill into a solid Fill', () => {
+    expect(dataOf({ fill: '#7ab8d4' }).fill).toEqual({ paint: { color: '#7ab8d4' } });
   });
 
   it('moves a string fill\'s hex alpha to opacity, as `solid` does', () => {
-    expect(dataOf({ fill: '#7ab8d480' }).fill).toEqual({ color: '#7ab8d4', opacity: 128 / 255 });
+    expect(dataOf({ fill: '#7ab8d480' }).fill).toEqual({ paint: { color: '#7ab8d4', opacity: 128 / 255 } });
   });
 
   it('turns a string stroke and its sibling strokeWidth into one Stroke', () => {
@@ -219,17 +225,62 @@ describe('persistence — legacy string paint migration', () => {
     expect(dataOf({ fill: 'none', stroke: 'none' })).toMatchObject({ fill: null, stroke: null });
   });
 
-  // The trap: `FillStyle` discriminates on a `fill` key whose value is the
-  // string `'solid'` / `'linear-gradient'` / …, so "a string under `fill`"
-  // alone would mangle every current paint into `{ color: 'solid' }`.
-  it('leaves a current object paint alone, discriminant and all', () => {
-    const fill = { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
+  it('moves a paint\'s tag from `fill` to `kind` rather than reading it as a color', () => {
+    const old = { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
+    const { kind: kind, ...rest } = old;
+    expect(dataOf({ fill: structuredClone(old) }).fill).toEqual({ paint: { kind, ...rest } });
+    expect(dataOf({ fill: { kind: 'solid', color: '#abc' } }).fill).toEqual({ paint: { kind: 'solid', color: '#abc' } });
+  });
+
+  it('lifts a pattern paint\'s tile into the paint, as its kind', () => {
+    const old = { kind: 'hatch', color: '#a840a2', size: 10, units: 'bounds' };
+    expect(dataOf({ fill: old }).fill).toEqual({ paint: { kind: 'hatch', color: '#a840a2', size: 10, units: 'bounds' } });
+  });
+
+  it('turns a pattern paint holding a texture handle into a texture paint', () => {
+    const old = { kind: 'texture', texture: { id: 'tex_1' }, origin: { x: 1, y: 2 } };
+    expect(dataOf({ fill: old }).fill).toEqual({ paint: { kind: 'texture', texture: { id: 'tex_1' }, origin: { x: 1, y: 2 } } });
+  });
+
+  it('wraps a paint held directly under `fill` in a Fill', () => {
+    const gradient = { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#fff' }] };
+    expect(dataOf({ fill: structuredClone(gradient) }).fill).toEqual({ paint: gradient });
+    expect(dataOf({ fill: { color: '#abc' } }).fill).toEqual({ paint: { color: '#abc' } });
+    expect(dataOf({ fill: { kind: 'hatch', color: '#abc' } }).fill).toEqual({ paint: { kind: 'hatch', color: '#abc' } });
+  });
+
+  it('leaves a Fill alone, and the paint inside it', () => {
+    const fill = { paint: { kind: 'solid', color: '#abc' } };
     expect(dataOf({ fill: structuredClone(fill) }).fill).toEqual(fill);
-    expect(dataOf({ fill: { fill: 'solid', color: '#abc' } }).fill).toEqual({ fill: 'solid', color: '#abc' });
+    expect(dataOf({ fill: {} }).fill).toEqual({});
+  });
+
+  it('keeps an explicit no-fill as null', () => {
+    expect(dataOf({ fill: null }).fill).toBeNull();
+  });
+
+  it('wraps only what sits under `fill`: a stroke keeps its paint where it is', () => {
+    const stroke = { paint: { color: '#0a3654' }, width: 2 };
+    expect(dataOf({ stroke: structuredClone(stroke) }).stroke).toEqual(stroke);
+  });
+
+  it('leaves an SVG gradient paint under `fill` alone', () => {
+    const fill = { kind: 'gradient', paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [] } };
+    expect(dataOf({ fill: structuredClone(fill) }).fill).toEqual(fill);
   });
 
   it('migrates a text node\'s style fill, which carried the same string', () => {
-    expect(dataOf({ text: 'hi', style: { fill: '#112233' } }).style).toEqual({ fill: { color: '#112233' } });
+    expect(dataOf({ text: 'hi', style: { fill: '#112233' } }).style).toEqual({ fill: { paint: { color: '#112233' } } });
+  });
+
+  it('wraps the fill of a text style and of each run', () => {
+    const data = dataOf({
+      text: 'hi',
+      style: { fill: { color: '#112233' } },
+      runs: [{ text: 'h', fill: { color: '#f00' } }, { text: 'i', fill: null }],
+    });
+    expect(data.style).toEqual({ fill: { paint: { color: '#112233' } } });
+    expect(data.runs).toEqual([{ text: 'h', fill: { paint: { color: '#f00' } } }, { text: 'i', fill: null }]);
   });
 
   // The scene is only half of it: the undo stack persists its own copies of
@@ -248,13 +299,13 @@ describe('persistence — legacy string paint migration', () => {
       undoStack: { forwardOps: { args: { from: Data; to: Data } }[] }[];
     };
     const args = snap.undoStack[0].forwardOps[0].args;
-    expect(args.from).toEqual({ fill: { color: '#7ab8d4' }, stroke: { paint: { color: '#0a3654' }, width: 2 } });
-    expect(args.to).toEqual({ fill: { color: '#ff0000' } });
+    expect(args.from).toEqual({ fill: { paint: { color: '#7ab8d4' } }, stroke: { paint: { color: '#0a3654' }, width: 2 } });
+    expect(args.to).toEqual({ fill: { paint: { color: '#ff0000' } } });
   });
 
   it('still revives typed arrays — both passes run', () => {
     const data = dataOf({ fill: '#7ab8d4', coords: [1.5, 2.5] });
     expect(data.coords).toBeInstanceOf(Float32Array);
-    expect(data.fill).toEqual({ color: '#7ab8d4' });
+    expect(data.fill).toEqual({ paint: { color: '#7ab8d4' } });
   });
 });

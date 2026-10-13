@@ -4,6 +4,7 @@ import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-j
 import { useInsertDepSource } from './insert';
 import type { Scene } from 'core/scene/types';
 import { pathFromD } from '@weasel-js/geom';
+import { pathPaintOf } from '../nodeShapes/nodePaint';
 
 function makeScene(): Scene<unknown, string, unknown> {
   let minted = 0;
@@ -108,11 +109,11 @@ describe('useInsertDepSource', () => {
     dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'line' });
     const data = (call: number) => applyOps.mock.calls[call][0][0].args.node.data;
     expect(data(0)).toEqual({ path: expect.anything(), fill: null, stroke: { paint: { color: '#f00' }, width: 1 } });
-    expect(data(1)).toEqual({ path: expect.anything(), stroke: { paint: { color: '#00f' }, width: 3 } });
+    expect(data(1)).toEqual({ path: expect.anything(), fill: null, stroke: { paint: { color: '#00f' }, width: 3 } });
     expect(paint.mock.calls.map(([kind, seq]) => [kind, seq])).toEqual([['rect', 1], ['line', 2]]);
   });
 
-  it('cycles the palette when no `paint` is given: a fill on a shape, a stroke as well on a line, a stroke alone on a pencil trail', () => {
+  it('cycles the palette when no `paint` is given: a fill on a shape, a stroke alone on a line or a pencil trail', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;
     function Wire() {
@@ -132,8 +133,27 @@ describe('useInsertDepSource', () => {
     const keys = (call: number) => Object.keys(applyOps.mock.calls[call][0][0].args.node.data).sort();
     expect(keys(0)).toEqual(['fill', 'path']);
     expect(keys(1)).toEqual(['fill', 'path', 'stroke']);
+    expect(applyOps.mock.calls[1][0][0].args.node.data.fill).toBeNull();
     expect(keys(2)).toEqual(['path', 'stroke']);
     expect(applyOps.mock.calls[1][0][0].args.node.data.stroke.width).toBe(2);
+  });
+
+  it('leaves a line unfilled whatever the `paint` option gives it, so an action reading its paint finds a stroke alone', () => {
+    const applyOps = vi.fn();
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(makeScene(), { applyOps }, undefined, () => ({ fill: { paint: { color: '#0f0' } }, stroke: { paint: { color: '#00f' }, width: 3 } }));
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    (reg.get as any)('insert').commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'line' });
+    const { data } = applyOps.mock.calls[0][0][0].args.node;
+    expect(pathPaintOf(data)).toEqual({ fill: null, stroke: { paint: { color: '#00f' }, width: 3 } });
   });
 
   it('inserts a pen path as kind=path: filled and stroked when closed, stroke alone when open', () => {

@@ -16,6 +16,7 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
+    "@weasel-js/animator": "1.9.4",
     "@weasel-js/core": "1.9.4"
   },
   "peerDependenciesMeta": {

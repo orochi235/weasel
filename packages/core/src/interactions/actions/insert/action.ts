@@ -1,0 +1,83 @@
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '@weasel-js/routing';
+import { resolveParams } from '@weasel-js/routing';
+import { shapeKindInfo } from 'core/shapeKinds';
+import type { KitInsertShape } from 'core/shapeKinds';
+import { runBehaviorSettled } from '../gestureLifecycle';
+import { inPlane, insertLayer } from '../planeInput';
+import { cancelInsert, commitInsert } from './commit';
+import { nextFrame } from './frame';
+import type { InsertLiveGesture } from './live';
+import { beginInsert } from './session';
+import { insertKind, insertShape } from './shape';
+
+/**
+ * @experimental
+ * Drag-to-insert. The node `kind` is read from `opts.params.kind`.
+ *
+ * Grid snapping comes from the optional `snap` dep, applied to the drag's
+ * start and current point (never to freehand pencil samples). Behaviors from
+ * the binding's `opts.behaviors` (`InsertBehavior[]`) run over the two points
+ * after that; on release the first answer wins (`null` aborts, `Op[]` commits
+ * in place of the insert).
+ *
+ * The new node has no scene id until commit, so the live preview is the
+ * `overlay()` surface with `kind: 'insertPreview'`. A consumer-defined kind
+ * the kit cannot draw skips the preview and still commits on release.
+ */
+export const insertAction: Action & { requires: string[] } = inPlane({
+  id: 'insert',
+  label: 'Insert',
+  group: 'insert',
+  eligible: { capability: 'creates-shapes' },
+  requires: ['insert', 'insertLive', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view'],
+  invoker: {
+    timing: 'ongoing',
+    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+      const begun = beginInsert(ctx, opts);
+      if (!begun) return {};
+      const { session, readers } = begun;
+      let frame = begun.frame;
+      const gesture: InsertLiveGesture = { open: true, userRotation: 0 };
+      const live = ctx.deps.insertLive;
+      if (live) live.gesture = gesture;
+
+      return {
+        kind: 'insert',
+        onMove(moveCtx: InvocationCtx): void {
+          frame = nextFrame(session, readers, frame, moveCtx);
+        },
+        overlay(): OngoingOverlay | null {
+          if (!gesture.open) return null;
+          // Resolve params on every overlay() so thunked params (polygon
+          // sides ticking via ArrowUp mid-drag) reflect in the live preview.
+          const resolved = resolveParams(session.opts?.params);
+          if (!shapeKindInfo(insertKind(resolved))?.insertPreview) return null;
+          const { bounds, extras, start } = insertShape(resolved, frame, frame.points, gesture.userRotation);
+          return {
+            kind: 'insertPreview',
+            shape: extras.kind as KitInsertShape,
+            bounds,
+            extras,
+            // Anchor dot at the click point: radial shapes have no vertex
+            // there, and in center mode it marks the growth axis.
+            anchorPoint: { x: start.x, y: start.y },
+          };
+        },
+        onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          gesture.open = false;
+          if (live?.gesture === gesture) live.gesture = null;
+          let committed = false;
+          try {
+            if (reason === 'cancel') cancelInsert(session);
+            else committed = commitInsert(session, frame, endCtx.drag?.points ?? frame.points, gesture.userRotation);
+          } finally {
+            runBehaviorSettled(session.behaviors, session.gestureCtx, committed);
+          }
+        },
+      };
+    },
+  },
+  /** Insert needs no selection; anything but `true` blocks dispatcher-routed inserts. */
+  enabled: () => true as const,
+}, insertLayer);

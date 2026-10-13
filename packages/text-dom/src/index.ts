@@ -4,7 +4,8 @@
  * screen pose and a style and knows nothing about a scene graph or a renderer.
  */
 
-export { useTextEdit, TEXT_EDIT_FONT_HOLD } from './useTextEdit';
+export { useTextEdit } from './useTextEdit';
+export { TEXT_EDIT_FONT_HOLD } from './textEditTypes';
 export type {
   StyleToggle,
   TextEditScreenPose,
@@ -14,5 +15,5 @@ export type {
   StartEditOptions,
   UseTextEditOptions,
   UseTextEditReturn,
-} from './useTextEdit';
-export { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
+} from './textEditTypes';
+export { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset, type OverlayRunBase } from './domRuns';

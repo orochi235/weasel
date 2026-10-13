@@ -8,19 +8,19 @@ const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, { mode: 'dark' });
 describe('label widget', () => {
   it('uses sensible defaults for fontSize when omitted', () => {
     const l = createLabel({ id: 'l', x: 0, y: 0, text: 'x' });
-    const cmds = l.draw({ dims: { width: 100, height: 100 }, defaultFont: 'Default', toneAt: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
+    const cmds = l.draw({ dims: { width: 100, height: 100 }, defaultFont: 'Default', color: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
     expect((cmds[0] as { style: { fontSize: number } }).style.fontSize).toBe(13);
   });
 
   it('uses ctx.defaultFont when no fontFamily is supplied (label never passes one)', () => {
     const l = createLabel({ id: 'l', x: 0, y: 0, text: 'x' });
-    const cmds = l.draw({ dims: { width: 100, height: 100 }, defaultFont: 'Default', toneAt: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
+    const cmds = l.draw({ dims: { width: 100, height: 100 }, defaultFont: 'Default', color: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
     expect((cmds[0] as { style: { fontFamily: string } }).style.fontFamily).toBe('Default');
   });
 
   it('respects overrides when provided', () => {
     const l = createLabel({ id: 'l', x: 0, y: 0, text: 'x', fontSize: 20 });
-    const cmds = l.draw({ dims: { width: 100, height: 100 }, defaultFont: 'D', toneAt: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
+    const cmds = l.draw({ dims: { width: 100, height: 100 }, defaultFont: 'D', color: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
     expect((cmds[0] as { style: { fontSize: number } }).style.fontSize).toBe(20);
   });
 
@@ -29,11 +29,11 @@ describe('label widget', () => {
     const customTokens = { ...DEFAULT_RESOLVED_TOKENS, '--wzl-fg': '#abcdef' };
     const cmds = l.draw({
       dims: { width: 100, height: 100 },
-      defaultFont: 'Default', toneAt: () => '#000000',
+      defaultFont: 'Default', color: () => '#000000',
       tokens: customTokens,
     });
     const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
-    expect(fill).toEqual({ fill: 'solid', color: '#abcdef' });
+    expect(fill).toEqual({ paint: { kind: 'solid', color: '#abcdef' } });
   });
 
   it('respects explicit color when supplied (theme overridden)', () => {
@@ -41,10 +41,10 @@ describe('label widget', () => {
     const customTokens = { ...DEFAULT_RESOLVED_TOKENS, '--wzl-fg': '#abcdef' };
     const cmds = l.draw({
       dims: { width: 100, height: 100 },
-      defaultFont: 'D', toneAt: () => '#000000',
+      defaultFont: 'D', color: () => '#000000',
       tokens: customTokens,
     });
     const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
-    expect(fill).toEqual({ fill: 'solid', color: '#ff0000' });
+    expect(fill).toEqual({ paint: { kind: 'solid', color: '#ff0000' } });
   });
 });

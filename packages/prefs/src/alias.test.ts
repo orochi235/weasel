@@ -1,6 +1,6 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
+import { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefHoldsValue, prefLeafAt } from './helpers';
 import type { PrefPath } from './paths';
@@ -68,5 +68,15 @@ describe('an alias in a store', () => {
 
   it('is not a path a store reads', () => {
     expectTypeOf<PrefPath<typeof SCHEMA>>().toEqualTypeOf<'view.grid'>();
+  });
+});
+
+describe('what an alias is called', () => {
+  it('is its own name, else that of the leaf it shows, else Alias for one that shows nothing', () => {
+    const grid = SCHEMA.children.view.children.grid;
+    expect(prefAliasName(alias('view.grid', 'Grid, again'), grid)).toBe('Grid, again');
+    expect(prefAliasName(alias('view.grid'), grid)).toBe('Show grid');
+    expect(prefAliasName(alias('view.gone'))).toBe('Alias');
+    expect(prefAliasName(alias('view.gone', 'Lost'))).toBe('Lost');
   });
 });

@@ -46,9 +46,16 @@ export function debugSnapshotArgs<TData, TLayer extends string, TPose>(
 ): RenderSceneToPixelsArgs<TData, TLayer, TPose> {
   const { view, size, debug, config, pixelRatio = 1, ...rest } = args;
   const overlay = buildDebugOverlayCommands(debug, config, view, size);
+  const width = size.width / Math.abs(view.scale.x);
+  const height = size.height / Math.abs(view.scale.y);
   return {
     ...rest,
-    sourceRect: { x: view.x, y: view.y, width: size.width / view.scale.x, height: size.height / view.scale.y },
+    sourceRect: {
+      x: view.scale.x < 0 ? view.x - width : view.x,
+      y: view.scale.y < 0 ? view.y - height : view.y,
+      width,
+      height,
+    },
     scale: { x: view.scale.x * pixelRatio, y: view.scale.y * pixelRatio },
     overlay: pixelRatio === 1
       ? overlay

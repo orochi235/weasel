@@ -93,7 +93,7 @@ export function withCoord(path: PolygonPath, coordIndex: number, x: number, y: n
   const next = new Float32Array(path.coords);
   next[coordIndex] = x;
   next[coordIndex + 1] = y;
-  return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
+  return { ...path, coords: next };
 }
 
 /** Translate anchor `anchorIndex` AND its attached control handles
@@ -128,5 +128,5 @@ export function translateAnchor(
     next[a.controlOut.coordIndex] += dx;
     next[a.controlOut.coordIndex + 1] += dy;
   }
-  return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
+  return { ...path, coords: next };
 }

@@ -1,30 +1,10 @@
 /**
- * Per-tool integration smoke tests for `<SceneCanvas>`.
+ * Per-tool integration smoke tests for `<SceneCanvas>`: each mounts a minimal
+ * scene with the tool under test active, fires pointer events, and asserts the
+ * scene-side effect, so a silently broken dispatch path fails here.
  *
- * These tests catch end-to-end regressions where a tool's dispatch path is
- * silently broken — the kind of bug that the insert-dep
- * gap caused: shape-tool drags doing nothing in real demos because tests only
- * exercised callback-level behavior.
- *
- * ## Strategy
- *
- * Each test mounts `<SceneCanvas>` with a minimal scene and the tool under
- * test as active, fires pointer events at canvas-relative coords, and asserts
- * the expected scene-side effect (node added / moved / selection changed /
- * view panned).
- *
- * ## jsdom constraints
- *
- * - `getBoundingClientRect()` returns all-zeros → clientX == worldX at
- *   scale=1, view.x=0.
- * - Pointer events are fired on the canvas element obtained from `container`.
- *
- * ## Skipped tests
- *
- * - `useStarTool` (drag-insert) — star tool ships without a default
- *   keybinding, so there's no way for the harness to activate it via
- *   keydown. Enable once a keybinding is added or once the harness can
- *   activate tools by another route.
+ * Under jsdom `getBoundingClientRect()` returns all-zeros, so clientX == worldX
+ * at scale=1, view.x=0.
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
@@ -37,17 +17,9 @@ import type { ActionDisabledReason } from '@weasel-js/routing';
 import { defaultNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import type { NodeRoutingEntry } from '../core/scene/NodeRouting';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 type D = { kind: string; path?: unknown; fill?: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
-
-// ---------------------------------------------------------------------------
-// jsdom canvas setup
-// ---------------------------------------------------------------------------
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -68,10 +40,6 @@ beforeAll(() => {
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
-
-// ---------------------------------------------------------------------------
-// Scene helpers
-// ---------------------------------------------------------------------------
 
 /** One rect node at {x:100, y:100, width:80, height:60}. */
 function makeScene(): Scene<D, L, P> {
@@ -102,10 +70,6 @@ function nodeCount(scene: Scene<D, L, P>): number {
   for (const _ of scene.renderOrder()) n++;
   return n;
 }
-
-// ---------------------------------------------------------------------------
-// Gesture helpers
-// ---------------------------------------------------------------------------
 
 function pd(canvas: HTMLCanvasElement, x: number, y: number, opts: PointerEventInit = {}) {
   canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1, ...opts }));
@@ -138,10 +102,6 @@ function getCanvas(container: HTMLElement): HTMLCanvasElement {
 
 /** move action needs enabled: () => true to bypass SelectionRequired placeholder. */
 const FORCE_ENABLED: { enabled: () => true | ActionDisabledReason } = { enabled: () => true };
-
-// ---------------------------------------------------------------------------
-// useSelectTool — move: drag selected body translates node pose
-// ---------------------------------------------------------------------------
 
 describe('useSelectTool smoke', () => {
   it('move: drag on selected body translates node via scene.applyBatch("Move")', () => {
@@ -312,17 +272,7 @@ describe('useSelectTool smoke', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Clone (alt-drag) — routed via useSelectTool's own binding
-//
-// useSelectTool declares:
-//   { kind: 'drag', target: 'selected-body', mods: { alt: true }, actionId: 'clone' }
-// The dispatcher matches active-slot bindings, so alt-drag on a selected body
-// hits cloneAction without a separate clone tool needing to be on the hotkey
-// stack. The node is at (100,100,80,60); dragging from its center (140,130)
-// with altKey satisfies both target + mods constraints.
-// ---------------------------------------------------------------------------
-
+// Alt-drag clones through the select tool's own binding; there is no clone tool.
 describe('clone smoke (alt-drag via select tool)', () => {
   it('alt-drag on selected body fires cloneAction → scene.applyBatch("Clone")', () => {
     const scene = makeScene();
@@ -360,9 +310,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
   });
 
   // Illustrator behavior: alt-drag on a node clones it whether or not it was
-  // pre-selected. Without the unselected-body clone binding, alt-drag on a
-  // node with empty initial selection routes to areaSelect (or nothing) and
-  // no Clone batch fires.
+  // pre-selected.
   it('alt-drag on UNSELECTED body fires cloneAction → scene.applyBatch("Clone")', () => {
     const scene = makeScene();
     const countBefore = nodeCount(scene);
@@ -395,17 +343,6 @@ describe('clone smoke (alt-drag via select tool)', () => {
     batchSpy.mockRestore();
   });
 });
-
-// ---------------------------------------------------------------------------
-// useHandTool — drag pans the viewport (view.x / view.y change)
-//
-// The hand tool's primary gesture binding is:
-//   bindings: [{ spec: { kind: 'drag' }, actionId: 'viewport.dragPan' }]
-// This fires when the hand tool is the ACTIVE tool in the dispatcher context.
-//
-// useKeybindings attaches to `document` for tool-switch keydowns, so we
-// fire H on `document` to switch the active tool to 'hand'.
-// ---------------------------------------------------------------------------
 
 describe('useHandTool smoke', () => {
   it('drag while hand tool active pans the viewport (view changes)', () => {
@@ -453,19 +390,8 @@ describe('useHandTool smoke', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Shape tool smoke tests
-//
-// Each test activates the tool via its keybinding, then drags on empty space.
-// The kit-side insert dep (wired in SceneCanvas's StandardActionsRegistrar)
-// commits a node via insertAction → adapter.applyOps.
-//
-// Line / polygon / star / pencil currently receive AABB bounds from the
-// insertAction invoker (richer geometry capture is handled separately). The
-// assertions below reflect the stub output (a rect-shaped node), not the
-// future shape.
-// ---------------------------------------------------------------------------
-
+// Each shape-tool test activates the tool via its keybinding, then drags on
+// empty space.
 describe('useRectTool smoke', () => {
   it('drag-empty inserts a rect node', () => {
     const scene = emptyScene();
@@ -598,9 +524,8 @@ describe('usePolygonTool smoke', () => {
 });
 
 describe('useStarTool smoke', () => {
-  // The star tool has no built-in keybinding (see useStarTool.tsx — "No default
-  // keybinding"). Re-enable once a keybinding is added, or rework the harness
-  // to set the active tool by a non-keyboard route.
+  // The star tool has no built-in keybinding. Re-enable once one is added, or
+  // rework the harness to set the active tool by a non-keyboard route.
   it.skip('drag-empty inserts a star node [TODO: star tool has no default keybinding]', () => {
     const scene = emptyScene();
     const { container } = render(
@@ -666,13 +591,6 @@ describe('usePencilTool smoke', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Per-kind geometry assertions
-//
-// Each test asserts the inserted node carries the tool's TRUE per-kind
-// geometry — proving the AABB inscription stubs are gone.
-// ---------------------------------------------------------------------------
-
 describe('insert geometry uses tool params, not AABB', () => {
   it('line tool: inserted node uses actual drag endpoints (not AABB diagonal)', () => {
     const scene = emptyScene();
@@ -691,8 +609,7 @@ describe('insert geometry uses tool params, not AABB', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: '\\', code: 'Backslash' }));
     });
     // Drag from bottom-left to top-right — the AABB diagonal would slope
-    // the opposite way, so this is a tight check that endpoints (not bounds
-    // corners) reach the factory.
+    // the opposite way.
     act(() => { drag(canvas, 10, 200, 150, 50); });
 
     expect(nodeCount(scene)).toBe(1);
@@ -723,10 +640,8 @@ describe('insert geometry uses tool params, not AABB', () => {
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'g', code: 'KeyG' }));
     });
-    // Default sides=6. Each vertex is one moveTo/lineTo command → 6 anchor
-    // commands + one close. Without the fix, the AABB-inscription path also
-    // produced 6 vertices, so we instead bump sides via ArrowUp mid-gesture
-    // and assert the count changes.
+    // An AABB-inscribed hexagon also has the default 6 sides, so bump sides
+    // via ArrowUp mid-gesture.
     act(() => {
       pd(canvas, 50, 50);
       pm(canvas, 200, 200);
@@ -739,11 +654,8 @@ describe('insert geometry uses tool params, not AABB', () => {
     expect(nodeCount(scene)).toBe(1);
     const id = firstId(scene);
     const node = scene.get(id) as { data: { path: { commands: Uint8Array } } };
-    // 6 default + 2 ArrowUp = 8 sides. Each vertex emits one M/L command,
-    // plus a trailing Z close — 9 commands total. (If ArrowUp doesn't reach
-    // the tool in jsdom, this falls back to 7 = 6 sides + Z. Either way,
-    // the asserting that we get the parametric polygon (not a hardcoded
-    // hexagon) is the point — accept 7 or 9.)
+    // 8 sides is 9 commands: one M/L per vertex plus a trailing Z. If ArrowUp
+    // doesn't reach the tool in jsdom, this falls back to 7 = 6 sides + Z.
     const len = node.data.path.commands.length;
     expect([7, 9]).toContain(len);
   });
@@ -846,9 +758,9 @@ describe('useLassoTool smoke', () => {
     expect(selectionState).toContain(id);
   });
 
-  /** Triangle lasso (20,20) → (320,20) → (20,320) over three rects: one
-   *  inside it, one straddling the hypotenuse (x + y = 340), and one inside
-   *  the triangle's bounding box but wholly past the hypotenuse. */
+  /** Triangle lasso over three rects: one inside it, one straddling the
+   *  hypotenuse (x + y = 340), and one inside the triangle's bounding box but
+   *  wholly past the hypotenuse. */
   function triangleLasso(mode?: 'centers' | 'intersect' | 'enclosed') {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const ids = {} as Record<'inside' | 'straddle' | 'outside', NodeId>;
@@ -911,16 +823,10 @@ describe('useLassoTool smoke', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// SceneCanvas — routing prop
-// ---------------------------------------------------------------------------
-
 describe('SceneCanvas — routing prop', () => {
   // The routing prop feeds the node-kind classifier `SceneCanvas` builds into
-  // `getNodeAtPoint`. These used to read the classification off `ctx.target`
-  // inside a probe tool's `pointer.onDown` route — a phase-table channel. The
-  // surviving consumer of that same picker is the `onDoubleClick` observer,
-  // which reports `{ id, kind }`, so that's what they read now.
+  // `getNodeAtPoint`. These read the kind off the `onDoubleClick` observer,
+  // which reports `{ id, kind }` from that same picker.
   function Harness(props: {
     scene: Scene<D, L, P>;
     id: NodeId;
@@ -976,16 +882,9 @@ describe('SceneCanvas — routing prop', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// onDoubleClick — routed through the dispatcher's synthesized doubleclick
-// ---------------------------------------------------------------------------
-
 describe('SceneCanvas onDoubleClick', () => {
-  // The prop used to be backed by a native `dblclick` listener, which made it
-  // a third independent definition of "double click" alongside the tool
-  // dispatcher's 300ms/8px dblTap and the gesture dispatcher's 600ms/8px
-  // synthesized event. It now rides the dispatcher's definition, so these
-  // tests exercise two real clicks rather than a synthetic `dblclick`.
+  // The prop rides the dispatcher's synthesized double click, not a native
+  // `dblclick` listener, so these tests fire two real clicks.
   it('fires with the hit node on two quick clicks on a body', () => {
     const scene = makeScene();
     const id = firstId(scene);
@@ -1054,16 +953,9 @@ describe('SceneCanvas onDoubleClick', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Uncoordinated keydown fan-out (audit §4)
-// ---------------------------------------------------------------------------
-
 describe('keydown fan-out: polygon ArrowUp vs nudge', () => {
-  // The audit derived this from code paths but did not observe it: with the
-  // polygon tool active and a non-empty selection, ArrowUp is claimed by the
-  // tool's phase-table route (bump side count) AND matched by `nudge.up` on
-  // the interactions dispatcher. Two listeners, no arbitration — the tool
-  // route's `claim()` never reaches the DOM as preventDefault/stopPropagation.
+  // With the polygon tool active and a non-empty selection, ArrowUp matches
+  // both the tool's side-count binding and `nudge.up`.
   it('ArrowUp with polygon active does not also nudge the selection', () => {
     const scene = makeScene();
     const id = firstId(scene);
@@ -1094,12 +986,9 @@ describe('keydown fan-out: polygon ArrowUp vs nudge', () => {
     const after = scene.get(id)?.pose as P;
     expect(after.y).toBe(before.y);
   });
-  // The other half: ArrowUp must still DO its job. `polygon.adjustSides` was
-  // registered by the tool hook via `useAction`, which runs above the
-  // ActionsProvider and silently no-op'd — so the binding pointed at an
-  // unregistered id and neither the arrow keys nor the documented
-  // wheel-during-drag adjustment did anything. `ToolDef.actions` +
-  // <ToolActionsMounter> fixed that; this pins it.
+  // The other half: ArrowUp must still DO its job. A tool hook that registers
+  // `polygon.adjustSides` with `useAction` runs above the ActionsProvider and
+  // silently no-ops, leaving the binding pointing at an unregistered id.
   it('ArrowUp with polygon active changes the committed side count', () => {
     const scene = emptyScene();
     const { container } = render(

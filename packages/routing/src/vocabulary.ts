@@ -1,20 +1,11 @@
 /**
  * The primitives the routing surface is typed in.
  *
- * Routing decides which action a gesture runs. To do that it has to name a
- * viewport, a rect, a node id and a selection — but it never constructs,
- * projects or renders any of them. So they are declared here as structural
- * interfaces with no dependencies, and `@weasel-js/core` re-exports each from
- * the path its own call sites have always used. Same arrangement as `Op`,
- * which is declared in `@weasel-js/history` and re-exported by
- * `core/ops/types`. The selection click policy's own vocabulary comes from
- * `@weasel-js/select`, where the rules that read it live.
- *
- * Authority for the *behavior* behind each of these stays in core: `View` is
- * what `core/viewport` maintains, `SelectionApi` is what `useSelection`
- * returns, `DeviceProfile` is what `resolveDeviceProfile` detects. Changing
- * one of these shapes is a change to core's contract that happens to be
- * spelled here.
+ * Routing has to name a viewport, a rect, a node id, and a selection, but it
+ * never constructs, projects, or renders any of them. So they are declared
+ * here as structural interfaces with no dependencies, and `@weasel-js/core`
+ * re-exports each. The behavior behind them stays in core: changing one of
+ * these shapes is a change to core's contract that happens to be spelled here.
  */
 
 import type { View } from '@weasel-js/geom';
@@ -62,6 +53,7 @@ export interface SelectionApi {
    * Apply a click to the selection per the configured mode/extend key.
    * - `single`: replaces selection with `[id]`, regardless of modifiers.
    * - `multi`: with the extend key held, toggles `id` in/out of the selection;
+   *   with the range key held, selects from the last pressed id through `id`;
    *   otherwise replaces with `[id]`.
    */
   applyClick(id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): void;

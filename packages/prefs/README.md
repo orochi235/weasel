@@ -19,6 +19,11 @@ repair stored values that no longer fit the schema without writing them back.
 live in `@weasel-js/prefs/react`, so the main entry never loads React.
 `usePrefsValues` returns the pieces `@weasel-js/ui`'s `PrefsForm` takes.
 
+`usePrefsStore(schema, { storage, prefix })` gives a component a store of its
+own: open from its first render, closed with its writes sent when it unmounts.
+It takes an adapter that reads synchronously, and components naming the same
+`storage` and `prefix` share one store.
+
 ## Ranges
 
 A number leaf's range is one scale: the low end is the least of what its label

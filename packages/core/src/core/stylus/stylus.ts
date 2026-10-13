@@ -2,18 +2,13 @@ import { clientToWorld } from 'core/viewport/clientToWorld';
 /**
  * Stylus / Pencil pointer-event helpers.
  *
- * Most stylus information (pressure, tilt, altitude/azimuth) is already on
- * the standard `PointerEvent`. These helpers normalize the surface across
- * browsers, fill in sensible defaults for non-stylus inputs, and provide
- * a coalesced-event iterator so tools can opt into high-frequency samples
- * (Apple Pencil reports up to ~240Hz; most browsers coalesce those samples
- * into per-frame `pointermove` events whose intermediate states are only
- * accessible via `getCoalescedEvents()`).
+ * These normalize the standard `PointerEvent` stylus fields across browsers,
+ * fill in defaults for non-stylus inputs, and provide a coalesced-event
+ * iterator for high-frequency samples.
  *
- * Apple-specific note: `pointerType: 'pen'` covers Apple Pencil on iPad
- * Safari. The barrel-double-tap (Pencil 2) and barrel-squeeze (Pencil
- * Pro) gestures are NOT exposed to web pages — they remain
- * UIKit-only via `UIPencilInteraction`.
+ * `pointerType: 'pen'` covers Apple Pencil on iPad Safari. The
+ * barrel-double-tap (Pencil 2) and barrel-squeeze (Pencil Pro) gestures are
+ * NOT exposed to web pages.
  */
 
 /** Normalized snapshot of stylus state at a single pointer sample. */
@@ -51,10 +46,7 @@ export interface PressureToWidthOptions {
   /** Width returned at pressure 1. Default 6. */
   maxWidth?: number;
   /** Response curve exponent applied to pressure before lerping
-   *  (`p ** gamma`). 1 = linear; >1 emphasizes light touches (sharper
-   *  thin → thick transition); <1 emphasizes heavy touches. Default 1.6,
-   *  a small bias toward heavy strokes that matches typical pencil feel
-   *  without crushing the dynamic range. */
+   *  (`p ** gamma`). 1 = linear. Default 1.6. */
   gamma?: number;
 }
 
@@ -64,9 +56,8 @@ export interface PressureToWidthOptions {
  * `width(p) = minWidth + (maxWidth - minWidth) × p^gamma`
  *
  * Mouse / non-stylus inputs report `pressure === 0` (no button) or `0.5`
- * (button held); callers that don't want uniform 0.5-pressure widths on
- * mouse input should gate on `pointerType === 'pen'` upstream and feed a
- * constant width on the non-stylus path.
+ * (button held); gate on `pointerType === 'pen'` upstream to give them a
+ * constant width instead.
  */
 export function pressureToWidth(
   pressure: number,
@@ -82,9 +73,6 @@ export function pressureToWidth(
 
 /** Extract a normalized stylus snapshot from any PointerEvent. Pure. */
 export function getStylusData(e: PointerEvent): StylusData {
-  // `altitudeAngle` / `azimuthAngle` are Pointer Events level 3 — only
-  // present in newer browsers. Read defensively so the helper degrades
-  // gracefully on older runtimes.
   const ext = e as PointerEvent & {
     altitudeAngle?: number;
     azimuthAngle?: number;
@@ -128,16 +116,9 @@ export interface CoalescedCtx {
 
 /**
  * Iterate coalesced sub-events of a `pointermove`, yielding a
- * `PointerSample` per sub-event with world coords already derived.
- *
- * Browsers that batch high-frequency samples (Apple Pencil, drawing
- * tablets) expose them through `event.getCoalescedEvents()`. Pen / pencil
- * tools should iterate them for smooth strokes; mouse tools usually only
- * need the parent event and can ignore this.
- *
- * Fallback: when `getCoalescedEvents` is unavailable or returns an empty
- * list, the parent event itself is yielded once so callers don't drop
- * samples on older browsers.
+ * `PointerSample` per sub-event with world coords already derived. When
+ * `getCoalescedEvents` is unavailable or returns an empty list, the parent
+ * event itself is yielded once.
  */
 export function forEachCoalesced(
   event: PointerEvent,

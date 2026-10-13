@@ -12,8 +12,8 @@ import {
   type NodeRoutingEntry,
   type ToolDef,
   type ToolsApi,
-  type FillStyle,
   BUILTIN_TOOL_IDS,
+  type Fill,
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
@@ -31,26 +31,20 @@ interface ProbeProps {
   onSnapshot(s: RegistrySnapshot): void;
 }
 
-interface ShapeData { fill: FillStyle }
+interface ShapeData { fill: Fill }
 interface ShapePose { x: number; y: number; width: number; height: number }
 
-/** Mounts a hidden SceneCanvas with the exhaustive tool bundle and lets the
- *  canvas auto-wire its built-in actions (delete / undoRedo / nudge / escape
- *  / selectAll / clipboard / etc.) into the surrounding `ActionsProvider`.
- *  Calls `onSnapshot` with the resulting tool/action lists on every change.
- *
- *  Hidden but kept in the layout tree so the hooks remain alive across
- *  re-renders of the inspector UI. */
+/** Mounts a hidden SceneCanvas with the exhaustive tool bundle, lets it auto-wire its built-in
+ *  actions into the surrounding `ActionsProvider`, and calls `onSnapshot` with the resulting
+ *  tool/action lists on every change. */
 export function RegistryProbe({ onSnapshot }: ProbeProps) {
   const scene = useScene<ShapeData, 'default', ShapePose>({
     systemLayers: [{ id: 'default' }],
     initial: [],
   });
 
-  // `onToolsCreated` fires every render because `useTools` synthesizes a new
-  // ToolsApi object literal each render. Track only the structural signature
-  // (registry tool ids) — that's all this probe needs — to avoid a render
-  // loop. Identity-tracking via plain useState would loop forever.
+  // `onToolsCreated` fires every render because `useTools` synthesizes a new ToolsApi literal
+  // each render. Track only the structural signature (registry tool ids) to avoid a render loop.
   const [toolsRegistrySig, setToolsRegistrySig] = useState<string>('');
   const toolsRef = useRef<ToolsApi | null>(null);
   const handleToolsCreated = (api: ToolsApi) => {
@@ -61,15 +55,11 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   const tools = toolsRef.current;
   const reg = useActionsRegistry();
 
-  // `reg.list()` returns a new array each call, but the registry itself is a
-  // stable context value — and re-rendering when tools change is enough to
-  // refresh the action list (action registration fires in effects that run
-  // after the initial render).
+  // `reg.list()` returns a new array each call; re-rendering when tools change is enough to
+  // refresh the action list.
   const actionsList = reg ? reg.list() : [];
 
-  // Stable signature of registered action ids; used to gate memoization of
-  // the tool-entries derivation so binding-route citations refresh exactly
-  // when the action set changes (action object identity is unstable). */
+  // Action object identity is unstable, so memoization keys on the sorted ids instead.
   const actionsSig = actionsList.map((a) => a.id).sort().join(',');
   const actionsByID = useMemo(() => {
     const m = new Map<string, unknown>();
@@ -81,9 +71,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   const toolEntries: readonly ToolEntry[] = useMemo(() => {
     if (!tools) return [];
     void toolsRegistrySig;
-    // Union of registry (active/hotkey) + ambient slots — both groups are
-    // built-in tools the canvas mounted. Ambient holds resize / rotate /
-    // wheel-zoom etc., so omitting them misses ~3 tools per bundle.
+    // Registry and ambient slots both — ambient holds resize / rotate / wheel-zoom.
     type Slot = { id: string; def?: unknown; cursor?: unknown; bindings?: unknown; overlay?: unknown };
     const tagged: Array<{ slot: 'registry' | 'ambient'; t: Slot }> = [
       ...Object.values(tools.registry).map((t) => ({ slot: 'registry' as const, t })),
@@ -113,9 +101,6 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           kind: 'tool',
           id: t.id,
           label: def?.presentation?.label ?? t.id,
-          // hookName lives on the def (reflection escape hatch). Each
-          // builtin hook sets `hookName: 'useFooTool'` on its `defineTool`
-          // spec; the inspector reads it off the def — no parallel map.
           hookName: def?.hookName,
           cursor: typeof t.cursor === 'string' ? t.cursor : undefined,
           routes,
@@ -138,9 +123,6 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           callbacks,
         };
       });
-    // `actionsByID` is derived from actionsList; we re-enter the memo when
-    // its signature changes (actionsSig) so binding-route citations refresh
-    // as actions register.
   }, [tools, toolsRegistrySig, actionsByID]);
 
   const actionEntries: readonly ActionEntry[] = actionsList.map((a): ActionEntry => ({
@@ -183,25 +165,14 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
 }
 
 
-/** Every route a tool declares, in declaration order: phase-table routes
- *  (`def.initial` / `def.engaged`) first, then binding routes. Built-in tools
- *  route most gestures through bindings now — without folding them in, the
- *  inspector would show tools with empty / vestigial route lists.
+/** Every route a tool declares, in declaration order. Routes are not de-duped: several bindings
+ *  legitimately format to the same string while dispatching to different actions — select
+ *  declares three predicate-target drags (resize / rotate / move) and the grammar renders every
+ *  one of them `[*:*] drag => predicate`.
  *
- *  Phase-table routes are de-duped on the formatted string (they come out of
- *  `buildActionRegistry`, which can emit the same signature twice). Binding
- *  routes are NOT: several bindings legitimately format to the same string
- *  while dispatching to different actions — select declares three
- *  predicate-target drags (resize / rotate / move) and the grammar renders
- *  every one of them `[*:*] drag => predicate`. Collapsing those hid two real
- *  routes and mislabeled the third.
- *
- *  `bindings` is read off the runtime `Tool`, not off `def`, because that's
- *  what the dispatcher reads. `defineTool` copies `def.bindings` onto the
- *  Tool it returns, but a hook is free to attach bindings to the returned
- *  Tool instead of declaring them in the def (`useSelectTool` does exactly
- *  that — it spreads the defineTool result and appends `bindings`). Reading
- *  `def.bindings` alone missed every one of those. */
+ *  `bindings` is read off the runtime `Tool`, not off `def`, because that's what the dispatcher
+ *  reads: a hook is free to attach bindings to the returned Tool instead of declaring them in
+ *  the def. */
 export function collectDeclaredRoutes(
   def: ToolDef<unknown>,
   bindings: ToolDef<unknown>['bindings'],
@@ -209,15 +180,9 @@ export function collectDeclaredRoutes(
   actionsByID: ReadonlyMap<string, unknown>,
 ): readonly DeclaredRoute[] {
   const out: DeclaredRoute[] = [];
-  // Bindings are the whole surface. This used to walk the phase tables via
-  // `buildActionRegistry(def)` first and append bindings after — which is
-  // why select reported 6 routes when it declared 14: the phase walk was
-  // blind to `Tool.bindings`, and by the end that was where nearly every
-  // route lived.
   for (const { route, actionId } of bindingRouteRefs(bindings ?? def.bindings)) {
-    // Bindings are plain object literals, so the source-tag plugin has no
-    // function to tag. Cite the action's invoker instead — that's the code
-    // that actually runs when the route fires.
+    // Bindings are plain object literals, so the source-tag plugin has no function to tag.
+    // Cite the action's invoker instead.
     out.push({ route, actionId, source: bestActionHandlerSource(actionsByID.get(actionId)) });
   }
   return out;
@@ -236,10 +201,9 @@ function bindingRouteRefs(
   return out;
 }
 
-/** Pick the most relevant source-tagged function on an Action: prefer the
- *  invoker methods in dispatch order (start → run → move → end → cancel),
- *  fall back to `enabled`. Returns undefined when no member is tagged
- *  (prod builds, or files outside the Vite plugin's include set). */
+/** The most relevant source-tagged function on an Action: the invoker methods in dispatch
+ *  order, then `enabled`. Undefined when no member is tagged (prod builds, or files outside
+ *  the Vite plugin's include set). */
 function bestActionHandlerSource(action: unknown): CallbackSource | undefined {
   if (!action || typeof action !== 'object') return undefined;
   const a = action as { enabled?: unknown; invoker?: Record<string, unknown> };
@@ -273,11 +237,7 @@ const CHANNEL_FOR_KIND: Readonly<Record<string, string>> = {
 
 /** Boolean-only digest of a tool's input surface: which gesture kinds its
  *  bindings declare, and what it emits. Route signatures carry the per-target
- *  detail; this is the at-a-glance row.
- *
- *  Was `summarizePhase(def.initial)` — a walk over the phase tables, which
- *  meant it reported nothing at all for a tool whose whole surface was
- *  `Tool.bindings`. That was most of them by the end. */
+ *  detail; this is the at-a-glance row. */
 function summarizeSurface(tool: { bindings?: readonly { spec: { kind: string } }[]; cursor?: unknown; overlay?: unknown }): ToolSurface {
   const gestures: Record<string, boolean> = {
     click: false, doubleClick: false, pointerDown: false, drag: false,
@@ -311,10 +271,8 @@ function snapshotEnabled(
   }
 }
 
-/** `ToolPresentation.icon` is `ReactNode | (scratch?) => ReactNode`. Tools
- *  in `src/tools/builtin/*` pass `createElement(SomeIcon)`, so the value is
- *  already a renderable element. For the thunk form we invoke with
- *  `undefined` scratch — the inspector has no live gesture state to feed in. */
+/** The thunk form is invoked with `undefined` scratch — the inspector has no live gesture
+ *  state to feed in. */
 function renderPresentationIcon(icon: unknown): ReactNode | undefined {
   if (icon === undefined || icon === null) return undefined;
   if (typeof icon === 'function') {

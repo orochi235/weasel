@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
 import { buildSceneTree } from './buildSceneTree';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 
 interface Data { label: string }
@@ -18,7 +18,7 @@ const POSE: Pose = { x: 0, y: 0, width: 10, height: 10 };
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function labelDraw(node: { data: Data }, _pose: Pose): DrawCommand[] {
-  return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: node.data.label } }];
+  return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: node.data.label } } }];
 }
 
 describe('buildSceneTree', () => {

@@ -1,10 +1,7 @@
-export { mirrorPose } from './mirrorPose';
-export { jointAxes, skeletonAxes } from './skeletonAxes';
 export { bindRig, rigidRigApply } from './bindRig';
 export type { BindRigOptions, Rig, RigApply, RigApplyContext, RigScene } from './bindRig';
-export { resolveSkeleton } from './resolveSkeleton';
-export { solveIk } from './solveIk';
-export type { IkLimit, IkPoint, IkResult, SolveIkOptions } from './solveIk';
 export { useRig } from './useRig';
-export { IDENTITY_JOINT } from './types';
-export type { Joint, JointTransform, Pose, Skeleton } from './types';
+export { placeSkeleton, rigFromNode, unplaceSkeleton, useRigNode } from './rigNode';
+export type { RigNodeData, RigNodeParts, RigNodeSource, UseRigNodeOptions } from './rigNode';
+export { dataRestPath } from './skinBinding';
+export type { RestPath } from './skinBinding';

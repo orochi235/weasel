@@ -44,13 +44,20 @@ function generatedColors({ generate: g }: GeneratedColors): readonly string[] {
   return colors;
 }
 
-/** A ramp's step names, from the nearest theme in the chain that declares it. */
-export function rampSteps(theme: Theme, ramp: string): readonly string[] {
+/** `rampSteps`, answering `undefined` for a ramp the chain lacks. */
+export function findRampSteps(theme: Theme, ramp: string): readonly string[] | undefined {
   for (const t of themeChain(theme).reverse()) {
     const steps = t.ramps?.[ramp];
     if (steps) return steps;
   }
-  throw new Error(`Theme "${theme.name}" has no ramp "${ramp}"`);
+  return undefined;
+}
+
+/** A ramp's step names, from the nearest theme in the chain that declares it. */
+export function rampSteps(theme: Theme, ramp: string): readonly string[] {
+  const steps = findRampSteps(theme, ramp);
+  if (!steps) throw new Error(`Theme "${theme.name}" has no ramp "${ramp}"`);
+  return steps;
 }
 
 /** The tone list a theme declares, from the nearest theme in its chain that has one. */
@@ -60,7 +67,7 @@ export function themeTones(theme: Theme): ColorList {
 }
 
 let fallback: ColorContext | undefined;
-const defaultContext = () => (fallback ??= { theme: weaselTheme, resolved: resolveTheme(weaselTheme) });
+export const defaultContext = () => (fallback ??= { theme: weaselTheme, resolved: resolveTheme(weaselTheme) });
 
 function pickStep(list: RampColors, i: number, theme: Theme): string {
   const steps = rampSteps(theme, list.ramp);

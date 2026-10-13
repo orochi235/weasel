@@ -6,12 +6,13 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas } from './SceneCanvas';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));
 
-vi.mock('../renderer/WeaselRenderer', () => ({
+vi.mock('@weasel-js/renderer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
   WeaselRenderer: class {
     render(commands: readonly unknown[]): void { painted.commands = commands; }
     resize(): void {}
@@ -41,7 +42,7 @@ const LAYERS = {
     drawOne: (n: Node<D, L, P>, p: P): DrawCommand[] => [{
       kind: 'path',
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-      fill: { color: n.data.color },
+      fill: { paint: { color: n.data.color } },
     }],
   },
 };
@@ -52,7 +53,7 @@ function colors(): string[] {
     for (const c of list as DrawCommand[]) {
       if (c.kind === 'group') walk((c as GroupDrawCommand).children ?? []);
       else {
-        const color = (c as { fill?: { color?: string } }).fill?.color;
+        const color = (c as { fill?: { paint?: { color?: string } } }).fill?.paint?.color;
         if (color) out.push(color);
       }
     }
@@ -82,9 +83,20 @@ describe('<SceneCanvas> scene layers changed after mount', () => {
       scene.addLayer({ id: 'fx', name: 'Effects' });
       scene.add({ kind: 'leaf', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 20, y: 0, width: 10, height: 10 } });
     });
-    // The frame that finds the list changed rebuilds the layers; the next paints them.
-    await nextFrame();
+    // One frame: the canvas hears of the change from the adapter, not from a paint.
     await nextFrame();
     expect(colors()).toEqual([BASE, FX]);
+  });
+
+  it('stops painting a layer removed after mount', async () => {
+    const scene = mount();
+    act(() => {
+      scene.addLayer({ id: 'fx', name: 'Effects' });
+      scene.add({ kind: 'leaf', id: asNodeId('b'), layer: 'fx', data: { color: FX }, pose: { x: 20, y: 0, width: 10, height: 10 } });
+    });
+    await nextFrame();
+    act(() => { scene.removeLayer('fx'); });
+    await nextFrame();
+    expect(colors()).toEqual([BASE]);
   });
 });

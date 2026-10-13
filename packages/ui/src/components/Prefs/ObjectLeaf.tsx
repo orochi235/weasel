@@ -54,6 +54,7 @@ export function ObjectLeaf({
       disabledAt: ctx.disabledAt,
       hidden: ctx.hidden === true || ctx.hiddenAt?.(path) === true,
       hiddenAt: ctx.hiddenAt,
+      entryAt: ctx.entryAt,
     };
   };
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: PrefRenderContext }> = {

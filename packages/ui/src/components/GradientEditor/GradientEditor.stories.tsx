@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { FillStyle, GradientFill } from '@weasel-js/core';
+import type { Paint, GradientPaint } from '@weasel-js/core';
 import { seedMeshPatch } from '@weasel-js/core/mesh';
 import { GradientEditor } from './GradientEditor';
 
@@ -24,13 +24,13 @@ type Story = StoryObj<typeof GradientEditor>;
 
 type LiveArgs = Omit<Parameters<typeof GradientEditor>[0], 'value' | 'onChange' | 'onInput'>;
 
-function Live({ initial, ...args }: LiveArgs & { initial: FillStyle }) {
+function Live({ initial, ...args }: LiveArgs & { initial: Paint }) {
   const [value, setValue] = useState(initial);
   return <GradientEditor {...args} value={value} onInput={setValue} onChange={setValue} />;
 }
 
-const linear = (stops: GradientFill['stops']): GradientFill =>
-  ({ fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops }) as GradientFill;
+const linear = (stops: GradientPaint['stops']): GradientPaint =>
+  ({ kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops }) as GradientPaint;
 
 /** Stops at 0 and 1 sit flush with the ends of the track, and every stop sits
  *  over its own offset in the painted ramp — the 30% stop over the ramp's 30%
@@ -52,7 +52,7 @@ export const StopsAtTheEnds: Story = {
  *  carries the colors: a stop list becomes one mesh band per gap, and a mesh
  *  reads back as the ramp across its top edge. */
 export const Mesh: Story = {
-  render: (args) => <Live {...args} initial={seedMeshPatch('#3a7bd5ff') as unknown as FillStyle} />,
+  render: (args) => <Live {...args} initial={seedMeshPatch('#3a7bd5ff') as unknown as Paint} />,
 };
 
 /** `svg` keeps to what an SVG file carries natively: linear and radial,
@@ -64,7 +64,7 @@ export const Svg: Story = {
     <Live
       {...args}
       initial={{
-        fill: 'conic-gradient',
+        kind: 'conic-gradient',
         center: { x: 0.5, y: 0.5 },
         angle: 0,
         units: 'bounds',

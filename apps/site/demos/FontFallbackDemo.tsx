@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene } from '@weasel-js/core';
-import type { FillStyle } from '@weasel-js/core';
+import type { Fill } from '@weasel-js/core';
 import type { TextStyle } from '@weasel-js/text';
 import {
   getFontFallbackPolicy, setFontFallbackPolicy,
@@ -34,14 +34,14 @@ const POLICIES: { value: FontFallbackPolicy; label: string }[] = [
   { value: 'none', label: 'none' },
 ];
 
-interface NodeData { text: string; style: TextStyle; fill: FillStyle }
+interface NodeData { text: string; style: TextStyle; fill: Fill }
 
 const NODES = ROWS.map((r, i) => ({
   kind: 'leaf' as const,
   layer: 'default' as const,
   id: asNodeId(r.family),
   pose: { x: 16, y: 12 + i * ROW, width: W - 32, height: 44 },
-  data: { text: SAMPLE, style: { fontSize: 32, fontFamily: r.family }, fill: INK },
+  data: { text: SAMPLE, style: { fontSize: 32, fontFamily: r.family }, fill: { paint: INK } },
 }));
 
 /** Where a family's glyphs come from, in the words the readout shows. */

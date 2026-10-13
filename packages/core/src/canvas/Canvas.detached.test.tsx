@@ -149,6 +149,71 @@ describe('<Canvas> detached client→world', () => {
   });
 });
 
+describe('<Canvas> detached focus', () => {
+  it('reports focus and blur of the input element', async () => {
+    const shared = document.createElement('canvas');
+    const input = document.createElement('div');
+    input.tabIndex = 0;
+    document.body.append(shared, input);
+    const onFocus = vi.fn();
+    const onBlur = vi.fn();
+    await act(async () => {
+      render(
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          paintInto={{ canvas: shared, x: 0, y: 0 }}
+          inputElement={input}
+          onFocus={onFocus}
+          onBlur={onBlur}
+        />,
+      );
+    });
+
+    input.focus();
+    expect(onFocus).toHaveBeenCalledTimes(1);
+    expect(onFocus.mock.calls[0]![0].target).toBe(input);
+    input.blur();
+    expect(onBlur).toHaveBeenCalledTimes(1);
+
+    shared.remove();
+    input.remove();
+  });
+
+  it('stops listening to an input element it is moved off', async () => {
+    const shared = document.createElement('canvas');
+    const first = document.createElement('div');
+    const second = document.createElement('div');
+    first.tabIndex = 0;
+    second.tabIndex = 0;
+    document.body.append(shared, first, second);
+    const onFocus = vi.fn();
+    const pane = (input: HTMLElement) => (
+      <Canvas
+        width={200}
+        height={200}
+        layers={{}}
+        paintInto={{ canvas: shared, x: 0, y: 0 }}
+        inputElement={input}
+        onFocus={onFocus}
+      />
+    );
+    let rerender!: (ui: React.ReactElement) => void;
+    await act(async () => { ({ rerender } = render(pane(first))); });
+    await act(async () => { rerender(pane(second)); });
+
+    first.focus();
+    expect(onFocus).not.toHaveBeenCalled();
+    second.focus();
+    expect(onFocus).toHaveBeenCalledTimes(1);
+
+    shared.remove();
+    first.remove();
+    second.remove();
+  });
+});
+
 describe('<Canvas> HUDs when detached', () => {
   it('renders the cursor-coords HUD even with no canvas of its own', async () => {
     const shared = document.createElement('canvas');

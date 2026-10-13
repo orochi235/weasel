@@ -3,30 +3,34 @@ import {
   asNodeId,
   easeInOutSine,
   effectivePose,
-  jointAxes,
   mat3,
   RECT_POSE_DESCRIPTOR,
-  resolveSkeleton,
   rigidRigApply,
-  sampleTrack,
   SceneCanvas,
   solid,
-  solveIk,
-  useAnimator,
   useRig,
   useScene,
 } from '@weasel-js/core';
+import {
+  jointAxes,
+  resolveSkeleton,
+  sampleTrack,
+  solveIk,
+  useAnimator,
+} from '@weasel-js/animator';
 import type {
-  FillStyle,
-  HoldHandle,
   NodeId,
-  Pose,
   RectPose,
   RigApply,
+  TextStyle,
+  Fill,
+} from '@weasel-js/core';
+import type {
+  HoldHandle,
+  Pose,
   SampledTrack,
   Skeleton,
-  TextStyle,
-} from '@weasel-js/core';
+} from '@weasel-js/animator';
 import num from '@weasel-js/theme/numeric.module.css';
 
 const W = 600, H = 340;
@@ -71,7 +75,7 @@ const POSE_B: Pose = {
 };
 
 type Layer = 'bones' | 'joints' | 'labels' | 'target';
-type Data = { shape: 'rect'; fill: FillStyle } | { text: string; style: TextStyle; fill: FillStyle };
+type Data = { shape: 'rect'; fill: Fill } | { text: string; style: TextStyle; fill: Fill };
 interface NodeSpec { id: NodeId; kind: 'leaf'; layer: Layer; pose: RectPose; data: Data }
 
 const LABEL_STYLE: TextStyle = { fontFamily: 'sans-serif', fontSize: 10 };
@@ -105,17 +109,17 @@ function figure(prefix: string, rootX: number, color: string): Figure {
           x: (ox + tx) / 2 - bone.length / 2, y: (oy + ty) / 2 - BONE_WIDTH / 2,
           width: bone.length, height: BONE_WIDTH, rotation: Math.atan2(ty - oy, tx - ox),
         },
-        data: { shape: 'rect', fill: solid(color) },
+        data: { shape: 'rect', fill: { paint: solid(color) } },
       },
       {
         id: ids[1], kind: 'leaf', layer: 'joints',
         pose: { x: ox - JOINT_SIZE / 2, y: oy - JOINT_SIZE / 2, width: JOINT_SIZE, height: JOINT_SIZE },
-        data: { shape: 'rect', fill: solid('#f0e4cc') },
+        data: { shape: 'rect', fill: { paint: solid('#f0e4cc') } },
       },
       {
         id: ids[2], kind: 'leaf', layer: 'labels',
         pose: { x: ox + 8, y: oy - 14, width: 60, height: 12 },
-        data: { text: bone.name, style: LABEL_STYLE, fill: solid('#a89878') },
+        data: { text: bone.name, style: LABEL_STYLE, fill: { paint: solid('#a89878') } },
       },
     );
     bindings[bone.name] = ids;
@@ -129,7 +133,7 @@ const BY_TRACK = figure('track', 430, '#d4a574');
 const caption = (id: string, x: number, text: string, color: string): NodeSpec => ({
   id: asNodeId(id), kind: 'leaf', layer: 'labels',
   pose: { x, y: 292, width: 220, height: 14 },
-  data: { text, style: CAPTION_STYLE, fill: solid(color) },
+  data: { text, style: CAPTION_STYLE, fill: { paint: solid(color) } },
 });
 
 const TARGET = asNodeId('slider:target');
@@ -143,7 +147,7 @@ const INITIAL: NodeSpec[] = [
   {
     id: TARGET, kind: 'leaf', layer: 'target',
     pose: { x: 235 - TARGET_SIZE / 2, y: 150 - TARGET_SIZE / 2, width: TARGET_SIZE, height: TARGET_SIZE },
-    data: { shape: 'rect', fill: solid('#e06c75') },
+    data: { shape: 'rect', fill: { paint: solid('#e06c75') } },
   },
   ...BY_SLIDER.nodes,
   ...BY_TRACK.nodes,

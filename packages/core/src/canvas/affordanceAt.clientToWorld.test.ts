@@ -1,30 +1,12 @@
 /**
- * affordanceAt + clientToWorld regression.
- *
- * A prior audit flagged: "correct at scale=1/view.x=0; non-unit-scale needs audit."
- *
- * This suite exercises the `clientToWorld` formula used in `GestureDispatcherMounter`
- * and verifies that `buildAffordanceAt` / `buildClassifyTarget` hit-test correctly at:
- *   - scale=1, pan=(0,0)  — baseline
- *   - scale=2, pan=(0,0)  — zoomed in
- *   - scale=2, pan=(10,5) — zoomed in + panned
- *
- * The `clientToWorld` formula from `SceneCanvas.tsx`:
- *   worldX = (clientX - rect.left) / view.scale.x + view.x
- *   worldY = (clientY - rect.top)  / view.scale.y + view.y
- *
- * This matches the `View` spec from `view.ts`:
- *   screenX = (worldX - view.x) * view.scale.x   →   worldX = screenX / scale.x + view.x
- *   where screenX = clientX - rect.left
+ * `buildAffordanceAt` / `buildClassifyTarget` hit-test correctly at non-unit
+ * scale and non-zero pan, fed through a local copy of the client → world
+ * conversion.
  */
 
 import { describe, it, expect } from 'vitest';
 import { buildAffordanceAt, buildClassifyTarget, type AnchorState } from './affordanceAt';
 import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
-
-// ---------------------------------------------------------------------------
-// Helper: replicate the clientToWorld formula from GestureDispatcherMounter.
-// ---------------------------------------------------------------------------
 
 function clientToWorld(
   clientX: number,
@@ -37,10 +19,6 @@ function clientToWorld(
     y: (clientY - rect.top) / view.scale.y + view.y,
   };
 }
-
-// ---------------------------------------------------------------------------
-// clientToWorld formula
-// ---------------------------------------------------------------------------
 
 /** Identity view — hit radii are screen px, so scale 1 makes them world px. */
 const UNIT_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -59,9 +37,6 @@ describe('clientToWorld formula', () => {
   });
 
   it('scale=2, pan=(10,5) — world origin shifted by pan', () => {
-    // At pan (10,5), the world point (10,5) maps to screen origin (0,0).
-    // So screen (0,0) → world (10,5).
-    // screen (100,80) → world (100/2 + 10, 80/2 + 5) = (60, 45).
     const view = { x: 10, y: 5, scale: { x: 2, y: 2 } };
     const rect = { left: 0, top: 0 };
     expect(clientToWorld(100, 80, rect, view)).toEqual({ x: 60, y: 45 });
@@ -87,16 +62,7 @@ describe('clientToWorld formula', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// buildClassifyTarget at non-unit scale
-// ---------------------------------------------------------------------------
-
 describe('buildClassifyTarget at scale=2 with non-zero pan', () => {
-  // Node in world space: {x:10, y:10, w:30, h:30}.
-  // At scale=2, pan=(0,0): node appears at screen (20,20)-(80,80).
-  // Body center world=(25,25) → client=(50,50).
-  // Outside world=(60,60) → client=(120,120).
-
   const view = { x: 0, y: 0, scale: { x: 2, y: 2 } };
   const rect = { left: 0, top: 0 };
 
@@ -126,11 +92,6 @@ describe('buildClassifyTarget at scale=2 with non-zero pan', () => {
 });
 
 describe('buildClassifyTarget with canvas at non-zero rect offset', () => {
-  // Canvas rect starts at CSS (100, 50). Scale=1, pan=0.
-  // Node at world (0,0,50,50).
-  // Body center world=(25,25) → client=(125, 75).
-  // Outside world=(100,100) → client=(200, 150).
-
   const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
   const rect = { left: 100, top: 50 };
 
@@ -153,16 +114,7 @@ describe('buildClassifyTarget with canvas at non-zero rect offset', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// buildAffordanceAt at scale=2 with non-zero pan
-// ---------------------------------------------------------------------------
-
 describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
-  // Node selected: {x:20, y:20, w:40, h:40}. Corner handles at world corners.
-  // Top-left handle: world (20, 20).
-  // At scale=2, pan=(0,0): client (40, 40).
-  // Hit radius = 8 world-units → squared = 64.
-
   const view = { x: 0, y: 0, scale: { x: 2, y: 2 } };
   const rect = { left: 0, top: 0 };
 
@@ -195,11 +147,6 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
   });
 
   it('with pan=(10,5): client (60,45) → world (25+10=35?, 22.5+5=27.5) — verify formula', () => {
-    // view.x=10 means world origin is at client (10*scale, 5*scale) = (20, 10).
-    // clientToWorld(60, 45) with view.x=10, scale=2:
-    //   worldX = (60 - 0) / 2 + 10 = 30 + 10 = 40
-    //   worldY = (45 - 0) / 2 + 5  = 22.5 + 5 = 27.5
-    // Node at (20,20,40,40) → center (40,40). (40,27.5) is inside the node bounds.
     const pannedView = { x: 10, y: 5, scale: { x: 2, y: 2 } };
     const wp = clientToWorld(60, 45, rect, pannedView);
     expect(wp.x).toBeCloseTo(40);
@@ -243,10 +190,6 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// buildAffordanceAt — anchor and control-handle hit-testing
-// ---------------------------------------------------------------------------
-
 /** Build a simple triangle PolygonPath: M(0,0) L(10,0) L(5,10) Z
  *  Anchors: index 0 at (0,0), index 1 at (10,0), index 2 at (5,10). */
 function makeTriangle(): PolygonPath {
@@ -258,9 +201,8 @@ function makeTriangle(): PolygonPath {
   };
 }
 
-/** Build a two-point bezier path: M(0,0) C(5,-5, 5,15, 10,10) Z
- *  enumerateAnchors → anchor 0 at (0,0), anchor 1 at (10,10).
- *  anchor 0 controlOut at (5,-5); anchor 1 controlIn at (5,15). */
+/** A two-point bezier path: anchor 0 at (0,0) with controlOut at (5,-5),
+ *  anchor 1 at (10,10) with controlIn at (5,15). */
 function makeBezierPath(): PolygonPath {
   return {
     kind: 'polygon',
@@ -359,9 +301,8 @@ describe('buildAffordanceAt — anchor hits on selected polygon paths', () => {
       getView: () => UNIT_VIEW,
       getAnchorState: () => noEditAnchorState,
     });
-    // controlOut of anchor 0 is at (5,-5). Outside edit mode, only anchor
-    // points are tested. dist(5,-5 → 0,0) ≈ 7.07 < 8 so anchor:0 should hit
-    // rather than controlOut:0.
+    // (5,-5) is anchor 0's controlOut, and ≈ 7.07 < 8 from anchor 0 itself,
+    // so outside edit mode anchor:0 takes the hit.
     const hit = afAt({ x: 5, y: -5 });
     expect(hit?.kind).toBe('anchor:0');
   });
@@ -398,15 +339,9 @@ describe('buildAffordanceAt — control-handle hits when in edit mode', () => {
   });
 
   it('pointer near anchor 1 (10,10) when not near any control returns anchor:1', () => {
-    // anchor 1 is at (10,10). Its controlIn is at (5,15) — dist ≈ 7.07 < 8.
-    // hitAnchor prefers controls, so test from exact anchor 1 position:
-    // dist(10,10 → anchor1) = 0, dist(10,10 → controlIn(5,15)) = sqrt(25+25) ≈ 7.07.
-    // controlIn wins since controls are preferred. Use a point right-of anchor 1
-    // where only the anchor is in range, not the control.
-    // Anchor 1 at (10,10). controlIn at (5,15): offset (-5,+5) from anchor.
-    // Move in direction (+5, -5) from anchor 1: world (15,5).
-    // dist(15,5 → anchor1(10,10)) = sqrt(25+25) ≈ 7.07 < 8 → anchor in range.
-    // dist(15,5 → controlIn(5,15)) = sqrt(100+100) ≈ 14 > 8 → control NOT in range.
+    // Controls win over anchors, and anchor 1's controlIn (5,15) is within
+    // radius of the anchor itself. (15,5) is ≈ 7.07 from the anchor and ≈ 14
+    // from the control, so only the anchor is in range.
     const hit = affordanceAt({ x: 15, y: 5 });
     expect(hit).not.toBeNull();
     expect(hit?.kind).toBe('anchor:1');

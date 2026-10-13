@@ -144,6 +144,19 @@ describe('createPrefsStore', () => {
     expect(heard).toEqual([[{ path: 'view.density', value: 288, origin: 'local' }]]);
   });
 
+  it('tells the subscribers after one that throws', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { store } = make();
+    const heard: PrefChange[][] = [];
+    store.subscribe(() => {
+      throw new Error('boom');
+    });
+    store.subscribe((c) => heard.push(c));
+    expect(() => store.set('view.density', 2)).not.toThrow();
+    expect(heard).toHaveLength(1);
+    error.mockRestore();
+  });
+
   it('hears a remote change through the cache', () => {
     const backing = new Map<string, unknown>();
     const { store } = make([], backing);

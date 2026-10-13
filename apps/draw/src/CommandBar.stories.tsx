@@ -40,6 +40,7 @@ function Actions({ selected, compound, children }: { selected: number; compound:
     canReleaseCompound: compound,
     releaseCompound: noop,
     openPrefs: noop,
+    openPalette: noop,
   };
   useDepSource('appCommands', () => commands);
   useAction(toggleGridAction);
@@ -54,6 +55,7 @@ const noop = () => {};
 const baseArgs: CommandBarProps = {
   onSaveSvg: noop,
   onOpenSvg: noop,
+  onImportSvg: noop,
   onNew: noop,
 };
 

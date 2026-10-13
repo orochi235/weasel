@@ -5,8 +5,8 @@ import type {
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns, pathFromD, parseColor, pastDragThreshold } from '@weasel-js/core';
 import { clampRectWithin } from '@weasel-js/geom';
-import { dashForStrokeStyle, mixOklab } from '@weasel-js/paint';
-import { resolveCurrentColor, resolveStanceSlots, type Stance } from '@weasel-js/theme';
+import { dashForStrokeStyle, mixOklab, type ColorSource } from '@weasel-js/paint';
+import { resolveCurrentColor, resolveStanceSlots, TONE_REF, type Stance } from '@weasel-js/theme';
 import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
@@ -30,8 +30,8 @@ export interface WindowOptions {
    *  as they do a DOM panel's. */
   stance?: Stance;
   /** Which of its peers the window is: an index into the theme's tone list,
-   *  or a color. Mixed into the fill at the stance's `tone-mix`. */
-  tone?: number | string;
+   *  or a color source. Mixed into the fill at the stance's `tone-mix`. */
+  tone?: number | ColorSource;
   /** Paints the interior. Drawn beneath every widget frame, clipped to
    *  `contentRect`. Receives the scene data and view the hud layer was
    *  handed — the one place hud sees either. */
@@ -70,7 +70,7 @@ export interface WindowWidget extends Widget {
   setHidden(hidden: boolean): void;
   setTitle(title: string): void;
   setStance(stance: Stance | undefined): void;
-  setTone(tone: number | string | undefined): void;
+  setTone(tone: number | ColorSource | undefined): void;
   dispose(): void;
 }
 
@@ -98,7 +98,7 @@ function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
       d += `M ${px} ${py} A ${r} ${r} 0 1 0 ${px + 2 * r} ${py} A ${r} ${r} 0 1 0 ${px} ${py} Z `;
     }
   }
-  return { kind: 'path', path: pathFromD(d), fill: { fill: 'solid', color } };
+  return { kind: 'path', path: pathFromD(d), fill: { paint: { kind: 'solid', color } } };
 }
 
 export function createWindow(opts: WindowOptions): WindowWidget {
@@ -201,7 +201,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         'title-case': 'none',
       }, { stance });
       look['title-color'] = resolveCurrentColor(look['title-color'], ctx.tokens['--wzl-fg']);
-      const named = typeof tone === 'number' ? ctx.toneAt(tone) : tone;
+      const named = tone === undefined ? undefined : ctx.color(typeof tone === 'number' ? { ref: TONE_REF, index: tone } : tone);
       const band = named === undefined && stance === undefined
         ? look.surface
         : mixTone(named ?? look.tone, look['tone-mix'], look.surface);
@@ -214,7 +214,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         { x: x + m.edge, y: y + h - m.edge, width: w - m.edge * 2, height: m.edge },
       ];
       for (const r of rects) {
-        out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { fill: 'solid', color: band } });
+        out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { paint: { kind: 'solid', color: band } } });
       }
 
       // Border ring: a stroked rect, no fill, so the interior stays a hole
@@ -227,7 +227,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         const ring: PathDrawCommand = {
           kind: 'path',
           path: { kind: 'rect', x, y, width: w, height: h },
-          stroke: { paint: { fill: 'solid', color: look['border-color'] }, width: ringW, ...(dash ? { dash } : {}) },
+          stroke: { paint: { kind: 'solid', color: look['border-color'] }, width: ringW, ...(dash ? { dash } : {}) },
         };
         out.push(ring);
       }
@@ -237,7 +237,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
       out.push(textCommandFromRuns(
         x + m.edge + 2, y,
-        [{ text: casedTitle(title, look['title-case']), fill: { fill: 'solid', color: look['title-color'] } }],
+        [{ text: casedTitle(title, look['title-case']), fill: { paint: { kind: 'solid', color: look['title-color'] } } }],
         {
           fontFamily: ctx.defaultFont,
           fontSize: 12,
@@ -256,7 +256,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       out.push({
         kind: 'path',
         path: pathFromD(`M ${x0} ${y0} L ${x1} ${y1} M ${x1} ${y0} L ${x0} ${y1}`),
-        stroke: { paint: { fill: 'solid', color: look['title-color'] }, width: 1.5, cap: 'round' },
+        stroke: { paint: { kind: 'solid', color: look['title-color'] }, width: 1.5, cap: 'round' },
       });
 
       return out;

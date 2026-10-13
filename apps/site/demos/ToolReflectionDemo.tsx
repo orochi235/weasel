@@ -15,8 +15,8 @@ import {
   findConflicts,
   type RegistryEntry,
   type Conflict,
-} from '@weasel-js/core/routing';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+} from '@weasel-js/routing';
+import type { DrawCommand } from '@weasel-js/renderer';
 import styles from './ToolReflectionDemo.module.css';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -74,7 +74,7 @@ function ToolReflectionDemoInner() {
                 drawOne: (n, p): DrawCommand[] => [{
                   kind: 'path',
                   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { color: (n.data as Rect).color },
+                  fill: { paint: { color: (n.data as Rect).color } },
                 }],
               },
             }}

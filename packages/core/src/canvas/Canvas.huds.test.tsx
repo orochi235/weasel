@@ -1,29 +1,15 @@
 /**
- * Canvas HUDs and backgroundFill prop coverage
+ * Canvas HUDs and the backgroundFill prop.
  *
- * Tests for Canvas-owned surface-layer concerns:
- *   - backgroundFill layer composition
- *   - cursorCoordsHud / pickHud
- *
- * Test approach for layer composition: `debug={{ layers: true }}` + `debugSinkRef`
- * gives us snapshot().layers which lists every layer id Canvas built.  This is
- * the same pattern used in Canvas.test.tsx (see "records layer metadata" test).
- * We verify `scene-background-fill` appears BEFORE `scene` in the layer list.
- *
- * Pixel-level assertions are not possible under jsdom's GL stub — the WebGL
- * branch early-returns before `draw` fires.  The debug-snapshot approach is
- * mid-tier coverage: it proves the layer was registered and ordered, but not
- * that the pixels are correct.
+ * Layer composition is read from the debug snapshot's layer list. Under
+ * jsdom's GL stub the WebGL branch early-returns before `draw` fires, so this
+ * proves at most that a layer was registered and ordered, never its pixels.
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { Canvas } from './Canvas';
 import type { CanvasDebugSink } from '../debug/types';
-
-// ---------------------------------------------------------------------------
-// jsdom canvas setup
-// ---------------------------------------------------------------------------
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -44,10 +30,6 @@ beforeAll(() => {
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
-
-// ---------------------------------------------------------------------------
-// <Canvas> backgroundFill prop
-// ---------------------------------------------------------------------------
 
 describe('<Canvas> backgroundFill prop', () => {
   it('mounts without error when backgroundFill is supplied', () => {
@@ -79,10 +61,8 @@ describe('<Canvas> backgroundFill prop', () => {
     );
 
     const snap = sinkRef.current?.snapshot();
-    // debug snapshot only populated when WebGL branch runs; under jsdom it
-    // early-returns and the snapshot is empty.  So we assert the _prop_ is
-    // accepted (no TS error above) and that if the snapshot IS populated the
-    // ordering invariant holds.
+    // Under jsdom the snapshot is empty, so the ordering is asserted only if
+    // it IS populated.
     if (snap && snap.layers.length > 0) {
       const ids = snap.layers.map((l) => l.id);
       const bgIdx = ids.indexOf('scene-background-fill');
@@ -116,20 +96,11 @@ describe('<Canvas> backgroundFill prop', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// <Canvas> cursorCoordsHud / pickHud props
-// ---------------------------------------------------------------------------
-
 describe('<Canvas> HUDs', () => {
-  // CursorCoordsHud returns null until `getBoundingClientRect` runs in a
-  // useEffect and populates `anchor`. Under jsdom getBoundingClientRect returns
-  // all-zero rects, so anchor.top=0 / anchor.right=0, which is NOT null — the
-  // HUD *will* render after effects fire. We use `act` to flush effects.
+  // CursorCoordsHud returns null until its useEffect populates `anchor`, so
+  // each render is wrapped in `act` to flush effects.
 
   it('renders CursorCoordsHud DOM element when cursorCoordsHud is true', async () => {
-    // CursorCoordsHud returns null until its useEffect fires and populates
-    // `anchor`. Under jsdom getBoundingClientRect() returns all-zero rects
-    // (top=0, right=0) which is NOT null, so the HUD renders after effects.
     let container!: HTMLElement;
     await act(async () => {
       ({ container } = render(

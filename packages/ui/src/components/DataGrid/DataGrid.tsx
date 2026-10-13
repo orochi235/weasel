@@ -1,19 +1,13 @@
 /**
- * Lightweight sortable data grid. Use for inspector tables — action
- * registries, route maps, telemetry rows. Intentionally narrow:
- *
- * - Sortable columns (click header to cycle asc → desc → none)
- * - Custom cell render via per-column `render`
- * - Optional drag handles for row reordering (when `onReorder` is set)
- * - Per-row class, row activation, and expandable full-width detail rows
- *
+ * Lightweight sortable data grid for inspector tables. Intentionally narrow.
  * Not: virtual scrolling, column resizing, multi-column sort, filtering,
- * inline editing. Reach for a real grid library when you need those.
+ * inline editing.
  */
 import { Fragment, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { useReorderDragList } from '../../useReorderDragList';
 import { Disclosure } from '../Disclosure';
+import { ReorderHandle } from './ReorderHandle';
 import s from './DataGrid.module.css';
 
 /**
@@ -45,6 +39,9 @@ export interface DataGridProps<Row extends { id: string }> {
   /** Enable drag handles in a leading column. Receives the reorder spec
    *  (the existing `useReorderDragList` semantics — see weasel-ui). */
   onReorder?: (ids: string[], targetIndex: number) => void;
+  /** What a row is called, for its drag handle's accessible name ("Reorder
+   *  <label>"). Without it a handle is named for the row's position. */
+  rowLabel?: (row: Row) => string;
   /** Empty-state row text. Default `'—'`. */
   empty?: ReactNode;
   className?: string;
@@ -92,7 +89,7 @@ function fromControl(e: MouseEvent | KeyboardEvent): boolean {
  */
 export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) {
   const {
-    rows, columns, defaultSort, onReorder, empty = '—', className,
+    rows, columns, defaultSort, onReorder, rowLabel, empty = '—', className,
     rowClassName, onRowClick, renderDetail, rowExpandable, expandedIds, defaultExpandedIds, onExpandedChange,
   } = props;
   const [sort, setSort] = useState<SortState>(defaultSort ?? null);
@@ -134,9 +131,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
     });
   };
 
-  // Drag handles via useReorderDragList. Adapter: the hook expects
-  // `{ id, label }`-shaped items; we map our rows to that shape (label
-  // unused — the hook only uses id and locked).
+  // `label` is unused: the hook only reads id and locked.
   const drag = useReorderDragList({
     items: sortedRows.map((r) => ({ id: r.id, label: '' })),
     selectedIds: [],
@@ -216,12 +211,11 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                   } : undefined}
                 >
                   {dragEnabled && (
-                    <td
-                      className={s.handleCell}
-                      onPointerDown={(e) => drag.rowProps(row.id, i).onPointerDown(e)}
-                    >
-                      <span aria-hidden="true">⋮⋮</span>
-                    </td>
+                    <ReorderHandle
+                      label={rowLabel?.(row) ?? `row ${i + 1}`}
+                      onPointerDown={drag.rowProps(row.id, i).onPointerDown}
+                      onNudge={(delta) => drag.nudge(row.id, i, delta)}
+                    />
                   )}
                   {detailEnabled && (
                     <td className={s.detailCell}>

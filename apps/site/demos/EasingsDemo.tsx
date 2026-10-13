@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { EASINGS, PATH_M, PATH_L, type EasingName } from '@weasel-js/geom';
 import {
   SceneCanvas,
-  useAnimator,
   useScene,
   asNodeId,
   textCommandFromRuns,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Slider } from '@weasel-js/ui';
@@ -97,7 +97,7 @@ export function EasingsDemo() {
         cmds.push(textCommandFromRuns(
           TRACK_LEFT - 8 - name.length * charW,
           y,
-          [{ text: name, fill: { fill: 'solid', color: '#a89878' } }],
+          [{ text: name, fill: { paint: { kind: 'solid', color: '#a89878' } } }],
           { fontFamily: 'sans-serif', fontSize: 11 },
         ));
         // Track line as 2-point polygon path stroke.
@@ -178,7 +178,7 @@ export function EasingsDemo() {
             drawOne: (_n, p): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: (p as Marker).color },
+              fill: { paint: { color: (p as Marker).color } },
             }],
           },
           selectionOverlay: null,

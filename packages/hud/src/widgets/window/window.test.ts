@@ -6,7 +6,7 @@ import { DEFAULT_WINDOW_METRICS as M } from './zones';
 
 const ctx = {
   dims: { width: 800, height: 600 },
-  defaultFont: 'D', toneAt: () => '#000000',
+  defaultFont: 'D', color: () => '#000000',
   tokens: resolveTheme(weaselTheme, { mode: 'dark' }),
 };
 
@@ -52,8 +52,8 @@ describe('window widget', () => {
   describe('stance and tone', () => {
     type Cmd = ReturnType<ReturnType<typeof createWindow>['draw']>[number];
     const bandColor = (cmds: Cmd[]) => {
-      const c = cmds.find((c) => c.kind === 'path' && c.fill !== undefined) as { fill: { color: string } };
-      return c.fill.color;
+      const c = cmds.find((c) => c.kind === 'path' && c.fill !== undefined) as { fill: { paint: { color: string } } };
+      return c.fill.paint.color;
     };
     const ring = (cmds: Cmd[]) =>
       cmds.find((c) => c.kind === 'path' && c.stroke !== undefined && c.path.kind === 'rect') as
@@ -88,12 +88,19 @@ describe('window widget', () => {
       expect(ring(createWindow({ ...opts, stance: 'debug' }).draw(ctx))?.stroke.dash?.length).toBeGreaterThan(0);
     });
 
-    it('resolves a numeric tone through the draw context, and takes a color as given', () => {
-      const toneAt = vi.fn(() => '#d94a3f');
-      const indexed = bandColor(createWindow({ ...opts, tone: 3 }).draw({ ...ctx, toneAt }));
-      expect(toneAt).toHaveBeenCalledWith(3);
-      expect(bandColor(createWindow({ ...opts, tone: '#d94a3f' }).draw(ctx))).toBe(indexed);
+    it('resolves a tone through the draw context: an index as the tone ref, a color source as given', () => {
+      const color = vi.fn(() => '#d94a3f');
+      const indexed = bandColor(createWindow({ ...opts, tone: 3 }).draw({ ...ctx, color }));
+      expect(color).toHaveBeenCalledWith({ ref: 'tone', index: 3 });
+      const accent = { ref: 'accent' };
+      expect(bandColor(createWindow({ ...opts, tone: accent }).draw({ ...ctx, color }))).toBe(indexed);
+      expect(color).toHaveBeenLastCalledWith(accent);
       expect(indexed).not.toBe(ctx.tokens['--wzl-surface-raised']);
+    });
+
+    it('draws a tone nothing answers as no tone', () => {
+      const plain = bandColor(createWindow(opts).draw(ctx));
+      expect(bandColor(createWindow({ ...opts, tone: { ref: 'nope' } }).draw({ ...ctx, color: () => undefined }))).toBe(plain);
     });
 
     it('redraws on setStance and setTone', () => {

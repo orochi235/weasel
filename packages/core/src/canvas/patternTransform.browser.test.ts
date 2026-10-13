@@ -4,21 +4,20 @@
  * of the output is one value along x. Unturned, no row is.
  */
 import { describe, it, expect } from 'vitest';
-import type { FillStyle, PatternTransform } from '@weasel-js/paint';
+import type { Paint, PatternTransform } from '@weasel-js/paint';
 import { composePatternTransform } from '@weasel-js/paint';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
-import { resolveFillPattern } from 'renderer/patterns/resolveSpec';
+import { resolveFillPattern } from '@weasel-js/renderer';
 import { renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 const W = 64;
 const H = 48;
 
 function render(transform: PatternTransform | undefined): RasterImage {
-  const paint: FillStyle = {
-    fill: 'pattern',
-    pattern: { tile: 'hatch', color: '#ffffff', size: 8, lineWidth: 2 },
+  const paint: Paint = {
+    kind: 'hatch', color: '#ffffff', size: 8, lineWidth: 2,
     units: 'world',
     transform,
   };
@@ -26,7 +25,7 @@ function render(transform: PatternTransform | undefined): RasterImage {
   const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill,
+    fill: { paint: fill },
   } as DrawCommand];
   const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: W, height: H }, data: null });

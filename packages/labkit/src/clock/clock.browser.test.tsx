@@ -88,10 +88,11 @@ test('a timed layer repaints as the clock plays, and holds once it pauses', asyn
   // A frame queued before the click still paints; wait until one has painted
   // the time the clock stopped at.
   await expect.poll(() => painted.at(-1), POLL).toBe(pausedAt);
-  const held = red();
-  expect(held).toBe(shade(pausedAt));
+  // Polled, as above: a late layout pass resizes the canvas, which wipes it
+  // until the next frame repaints.
+  await expect.poll(red, POLL).toBe(shade(pausedAt));
   const since = painted.length;
   await frames(20);
   expect(painted.slice(since).every((e) => e === pausedAt)).toBe(true);
-  expect(red()).toBe(held);
+  await expect.poll(red, POLL).toBe(shade(pausedAt));
 });

@@ -8,7 +8,7 @@ import type { RectPose } from 'core/scene/composePose';
 import { renderDebugSnapshot } from './renderDebugSnapshot';
 import { rasterToPng } from './rasterToPng';
 import { createDebugSink } from '../debug/createDebugSink';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RasterImage } from './renderSceneToPixels';
 
 function px(img: RasterImage, x: number, y: number): [number, number, number, number] {
@@ -25,7 +25,7 @@ function fixture() {
   const drawOne = (_n: unknown, p: RectPose): DrawCommand[] => [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill: { fill: 'solid', color: '#ff0000' },
+    fill: { paint: { kind: 'solid', color: '#ff0000' } },
   }];
   return { scene, debug: sink.snapshot(), drawOne };
 }
@@ -52,6 +52,28 @@ describe('renderDebugSnapshot', () => {
     expect(b).toBeLessThan(100);
     // Outside both: the background.
     expect(px(img, 5, 5)).toEqual([0, 0, 0, 255]);
+  });
+
+  it('rasterizes a y-up view, with larger world y nearer the top', () => {
+    const { scene, debug, drawOne } = fixture();
+    const img = renderDebugSnapshot({
+      scene, drawOne, debug,
+      config: { bounds: true },
+      // World y = 40 is the top row and y = 0 the bottom one.
+      view: { x: 0, y: 40, scale: { x: 1, y: -1 } },
+      size: { width: 40, height: 40 },
+      pixelRatio: 2,
+      background: '#000000',
+    });
+    expect([img.width, img.height]).toEqual([80, 80]);
+    // The square spans world y 10–20: CSS rows 20–30, output rows 40–60.
+    expect(px(img, 30, 50)).toEqual([255, 0, 0, 255]);
+    expect(px(img, 30, 30)).toEqual([0, 0, 0, 255]);
+    expect(px(img, 30, 70)).toEqual([0, 0, 0, 255]);
+    const [r, g, b] = px(img, 20, 50);
+    expect(r).toBeGreaterThan(200);
+    expect(g).toBeGreaterThan(200);
+    expect(b).toBeLessThan(100);
   });
 
   it('encodes a raster as a PNG', async () => {

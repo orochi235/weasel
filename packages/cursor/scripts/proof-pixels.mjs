@@ -8,7 +8,7 @@
 //
 // 1x and 2x disagree and neither is the answer on its own: at 1x a 16px glyph
 // gets 16 device pixels and fine detail collapses; at 2x the same drawing
-// resolves. Both rows ship here for that reason.
+// resolves.
 //
 // Requires resvg and ImageMagick on PATH.
 

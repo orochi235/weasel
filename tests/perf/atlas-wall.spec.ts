@@ -1,38 +1,26 @@
 /**
  * A wall of atlas cells: where the per-command cost steps, and what steps it.
  *
- * The shape comes from a consumer drawing a corpus wall — a grid of thumbnails,
- * each cell a ground rect under one atlas quad — through `renderSceneToCanvas`
- * with the whole list as `extraCommands`. Measured there, per-command cost was
- * flat at ~1.3 us up to ~800 commands and flat at ~7.3 us past ~1,400, with
- * nothing in between: a step, not a curve. A step reads as a limit being
- * crossed rather than as fill rate.
- *
- * That ladder walked two things at once, because it shrank the cell to fit more
- * on screen: the command count rose, and the tile the cell samples changed with
- * it. This separates them. Every rung holds the painted area constant (the grid
- * fills one 1200x900 viewport whatever the cell size), and the variants differ
- * only in what each cell samples:
+ * Each cell is a ground rect under one atlas quad. Every rung holds the painted
+ * area constant (the grid fills one 1200x900 viewport whatever the cell size),
+ * and the variants differ only in what each cell samples:
  *
  *   - `rect`      — ground rects alone. The batched floor.
  *   - `img-1x`    — atlas quads alone, tile size == cell size.
- *   - `wall-1x`   — ground rect + quad per cell, tile == cell. The wall's shape
- *                   with sampling held at 1:1, so only N varies down the ladder.
+ *   - `wall-1x`   — ground rect + quad per cell, tile == cell.
  *   - `wall-mag`  — the same, sampling an 8px tile into every cell.
  *   - `wall-min`  — the same, sampling a 56px tile into every cell.
  *
- * `mag` and `min` run under both filters, because the consumer also measured
- * `sampling: 'nearest'` costing several times `'linear'` on a minified draw.
+ * `mag` and `min` run under both filters.
  *
  * Draw calls are counted in an untimed pass, so a variant whose run stopped
  * coalescing is visible as a count rather than inferred from a time.
  *
- * Our sheets are 16x16 tiles, the largest under 1MB. Three knobs reach the
- * consumer's instead:
+ * Sheets are 16x16 tiles unless a knob says otherwise:
  *
- *   - `WEASEL_PERF_SHEET`    — every sheet this many px square (theirs was
- *                              5652, ~122MB), tiles kept at their size and
- *                              cells sampling tiles spread across all of it.
+ *   - `WEASEL_PERF_SHEET`    — every sheet this many px square, tiles kept at
+ *                              their size and cells sampling tiles spread
+ *                              across all of it.
  *   - `WEASEL_PERF_CELLS`    — the rung ladder, e.g. `56,42,28` for 1:1,
  *                              1.33:1 and 2:1 under `wall-min`.
  *   - `WEASEL_PERF_VARIANTS` — the variants to run; only their sheets are built.
@@ -142,7 +130,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       }).__wallReport;
 
       const base = `/weasel/@fs${root}`;
-      const rendererMod = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
+      const rendererMod = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
       const { WeaselRenderer } = rendererMod;
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
 
@@ -220,7 +208,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
             out.push({
               kind: 'path',
               path: { kind: 'rect', x, y, width: cellPx, height: cellPx },
-              fill: { fill: 'solid', color: GROUNDS[i % GROUNDS.length] },
+              fill: { paint: { kind: 'solid', color: GROUNDS[i % GROUNDS.length] } },
             });
           }
           if (withImage) {
@@ -282,8 +270,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       }
 
       // One-time costs — program links, texture uploads, batch buffer growth —
-      // paid before the first timed block, so no cell is charged for the
-      // feature it happened to reach first.
+      // paid before the first timed block.
       for (const [, cmds] of pools) renderer.render(cmds, identity);
       gl.finish();
 

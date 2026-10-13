@@ -5,9 +5,9 @@
 // workspace package resolves to, exactly as a consumer's bundler would.
 //
 // Core's source tree-shakes cleanly; what breaks is the packaging. A chunked
-// build put every module in one file, where a single top-level registration
-// call kept all of it alive, and `import { asNodeId }` shipped ~630 kB while
-// every in-repo test (which resolves source) stayed green.
+// build puts every module in one file, where a single top-level registration
+// call keeps all of it alive, while every in-repo test (which resolves source)
+// stays green.
 //
 // Bundled twice: with rolldown, which is what vite ships a consumer's
 // production build with, and with esbuild with code splitting on. esbuild makes
@@ -31,7 +31,7 @@ const PROBES = ['asNodeId', 'unionBounds', 'screenToWorld', 'VERSION'];
 // leave it in a dynamic chunk, while importing from `@weasel-js/core/mesh` must
 // carry its registration, so an app using mesh code never draws a blank first
 // frame.
-const MESH_MODULE = /renderer\/meshPaint\//;
+const MESH_MODULE = /renderer\/(dist\/mesh\.|src\/meshPaint\/)|core\/paint\/meshKind/;
 const MESH_REGISTRATION = /label:\s*(`Mesh`|"Mesh")/;
 
 const entryCode = (symbol, from) => `import { ${symbol} } from '${from}';\nconsole.log(${symbol});\n`;

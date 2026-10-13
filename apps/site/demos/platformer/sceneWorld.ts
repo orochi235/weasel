@@ -1,8 +1,14 @@
 // apps/site/demos/platformer/sceneWorld.ts
 import { asNodeId, solid } from '@weasel-js/core';
 import type {
-  FillStyle, NodeId, Pose, RectPose, Scene, TextStyle, TextVerticalAlign,
+  NodeId,
+  RectPose,
+  Scene,
+  TextStyle,
+  TextVerticalAlign,
+  Fill,
 } from '@weasel-js/core';
+import type { Pose } from '@weasel-js/animator';
 import { boneLocalPoses } from './boneRig';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
 import { BALL_R, flagY, POLE_WIDTH, type Flagpole } from './flagpole';
@@ -14,9 +20,9 @@ import { POLE, type GameRefs } from './world';
 /** The node payloads this demo uses, all of them shapes the kit's built-in
  *  painters already know how to draw. */
 export type WorldData =
-  | { shape: 'rect' | 'ellipse'; fill: FillStyle }
-  | { shape: 'polygon'; fill: FillStyle; sides: number }
-  | { text: string; style: TextStyle; fill: FillStyle; verticalAlign?: TextVerticalAlign };
+  | { shape: 'rect' | 'ellipse'; fill: Fill }
+  | { shape: 'polygon'; fill: Fill; sides: number }
+  | { text: string; style: TextStyle; fill: Fill; verticalAlign?: TextVerticalAlign };
 
 export type WorldLayer = 'tiles' | 'entities' | 'player';
 
@@ -69,27 +75,27 @@ export function tileNodes(level: Level): WorldNodeSpec[] {
       const y = cy * TILE;
       const id = `tile:${cx}:${cy}`;
       if (t === SOLID) {
-        out.push(leaf(id, 'tiles', { x, y, width: TILE, height: TILE }, { shape: 'rect', fill: solid(COLORS.solid) }));
+        out.push(leaf(id, 'tiles', { x, y, width: TILE, height: TILE }, { shape: 'rect', fill: { paint: solid(COLORS.solid) } }));
         if (tileAt(level, cx, cy - 1) !== SOLID) {
-          out.push(leaf(`${id}:cap`, 'tiles', { x, y, width: TILE, height: TILE * 0.16 }, { shape: 'rect', fill: solid(COLORS.solidTop) }));
+          out.push(leaf(`${id}:cap`, 'tiles', { x, y, width: TILE, height: TILE * 0.16 }, { shape: 'rect', fill: { paint: solid(COLORS.solidTop) } }));
         }
       } else if (t === ONEWAY) {
-        out.push(leaf(id, 'tiles', { x, y, width: TILE, height: TILE * 0.22 }, { shape: 'rect', fill: solid(COLORS.oneway) }));
+        out.push(leaf(id, 'tiles', { x, y, width: TILE, height: TILE * 0.22 }, { shape: 'rect', fill: { paint: solid(COLORS.oneway) } }));
       } else if (t === QUESTION) {
-        out.push(leaf(id, 'tiles', { x, y, width: TILE, height: TILE }, { shape: 'rect', fill: solid(COLORS.question) }));
+        out.push(leaf(id, 'tiles', { x, y, width: TILE, height: TILE }, { shape: 'rect', fill: { paint: solid(COLORS.question) } }));
         out.push(leaf(`${id}:mark`, 'tiles',
           { x, y, width: TILE, height: TILE },
           {
             text: '?',
             style: { fontFamily: 'sans-serif', fontSize: QUESTION_FONT, align: 'center' },
-            fill: { fill: 'solid', color: COLORS.questionMark },
+            fill: { paint: { kind: 'solid', color: COLORS.questionMark } },
             verticalAlign: 'center',
           },
         ));
       } else if (t === SPIKE) {
         out.push(leaf(id, 'tiles',
           { x, y: y + TILE * 0.15, width: TILE, height: TILE * 0.85 },
-          { shape: 'polygon', fill: solid(COLORS.spike), sides: 3 },
+          { shape: 'polygon', fill: { paint: solid(COLORS.spike) }, sides: 3 },
         ));
       }
     }
@@ -103,13 +109,13 @@ export function flagpoleNodes(pole: Flagpole): WorldNodeSpec[] {
   return [
     leaf('pole', 'entities',
       { x: pole.x - POLE_WIDTH / 2, y: pole.topY, width: POLE_WIDTH, height: pole.baseY - pole.topY },
-      { shape: 'rect', fill: solid(COLORS.pole) }),
+      { shape: 'rect', fill: { paint: solid(COLORS.pole) } }),
     leaf('pole:ball', 'entities',
       { x: pole.x - BALL_R, y: pole.topY - BALL_R * 1.4, width: BALL_R * 2, height: BALL_R * 2 },
-      { shape: 'ellipse', fill: solid(COLORS.poleBall) }),
+      { shape: 'ellipse', fill: { paint: solid(COLORS.poleBall) } }),
     leaf('flag', 'entities',
       { x: pole.x - TILE * 0.9, y: top, width: TILE * 0.9, height: TILE * 0.62 },
-      { shape: 'polygon', fill: solid(COLORS.goal), sides: 3 }),
+      { shape: 'polygon', fill: { paint: solid(COLORS.goal) }, sides: 3 }),
   ];
 }
 
@@ -117,14 +123,14 @@ export function entityNodes(coins: Coin[], enemies: Enemy[]): WorldNodeSpec[] {
   return [
     ...coins.map((c, i) => leaf(`coin:${i}`, 'entities',
       { x: c.x - COIN_R, y: c.y - COIN_R, width: COIN_R * 2, height: COIN_R * 2 },
-      { shape: 'ellipse', fill: solid(COLORS.coin) })),
+      { shape: 'ellipse', fill: { paint: solid(COLORS.coin) } })),
     ...enemies.flatMap((e, i) => [
       leaf(`enemy:${i}`, 'entities',
         { x: e.x - ENEMY_W / 2, y: e.y - ENEMY_H / 2, width: ENEMY_W, height: ENEMY_H },
-        { shape: 'ellipse', fill: solid(COLORS.enemy) }),
+        { shape: 'ellipse', fill: { paint: solid(COLORS.enemy) } }),
       leaf(`enemy:${i}:eye`, 'entities',
         { x: e.x, y: e.y, width: EYE, height: EYE },
-        { shape: 'ellipse', fill: solid(COLORS.enemyEye) }),
+        { shape: 'ellipse', fill: { paint: solid(COLORS.enemyEye) } }),
     ]),
   ];
 }
@@ -152,7 +158,7 @@ export function boneNodes(): WorldNodeSpec[] {
     pose: { x: 0, y: 0, width: BONE_LENGTH[j.name], height: BONE_WIDTH[j.name], rotation: 0 },
     data: {
       shape: j.name === 'head' ? ('ellipse' as const) : ('rect' as const),
-      fill: solid(boneColor(j.name)),
+      fill: { paint: solid(boneColor(j.name)) },
     },
     ...(j.parent != null ? { parent: boneId(j.parent) } : {}),
     ...(hasChild.has(j.name) ? { clipFromPose: () => null } : {}),

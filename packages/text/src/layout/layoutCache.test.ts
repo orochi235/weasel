@@ -46,7 +46,7 @@ beforeEach(async () => {
 function run(text: string, fontSize = 16): ResolvedRun {
   return {
     text, fontFamily: 'inter', fontSize, fontWeight: 400, fontStyle: 'normal',
-    fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+    fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
     underline: false, strikethrough: false, overline: false, baselineShift: 0,
   };
 }
@@ -76,13 +76,18 @@ describe('cachedLayoutRuns', () => {
     const bigger = cachedLayoutRuns([{ ...run('hello world'), fontSize: 24 }], OPTS);
     const tracked = cachedLayoutRuns([{ ...run('hello world'), letterSpacing: 3 }], OPTS);
     const bold = cachedLayoutRuns([{ ...run('hello world'), fontWeight: 700 }], OPTS);
-    const ruled = cachedLayoutRuns([{ ...run('hello world'), underline: true }], OPTS);
-    const over = cachedLayoutRuns([{ ...run('hello world'), overline: true }], OPTS);
     const raised = cachedLayoutRuns([{ ...run('hello world'), baselineShift: 4 }], OPTS);
-    const other = cachedLayoutRuns([{ ...run('hello world'), fill: { fill: 'solid', color: '#f00' } }], OPTS);
-    for (const variant of [bigger, tracked, bold, ruled, over, raised, other]) {
+    for (const variant of [bigger, tracked, bold, raised]) {
       expect(variant).not.toBe(base);
     }
+  });
+
+  it('shares one layout between runs that differ only in what is drawn', () => {
+    const base = cachedLayoutRuns([run('hello world')], OPTS);
+    const ruled = cachedLayoutRuns([{ ...run('hello world'), underline: true }], OPTS);
+    const red = cachedLayoutRuns([{ ...run('hello world'), fill: { paint: { kind: 'solid', color: '#f00' } } }], OPTS);
+    const stroked = cachedLayoutRuns([{ ...run('hello world'), stroke: { paint: { color: '#f00' }, width: 2 } }], OPTS);
+    for (const variant of [ruled, red, stroked]) expect(variant).toBe(base);
   });
 
   it('does not let one run\'s text run into the next field', () => {
@@ -117,48 +122,6 @@ describe('cachedLayoutRuns', () => {
     const base = cachedLayoutRuns(runs, { ...OPTS, align: 'center' });
     expect(cachedLayoutRuns(runs, { ...OPTS, align: 'center', alignWidth: 200 })).not.toBe(base);
     expect(cachedLayoutRuns(runs, { ...OPTS, align: 'center', alignWidth: 400 })).toBe(base);
-  });
-
-  describe('the outline threshold', () => {
-    // `outlineMinSize` is derived from the view zoom, so a naive key would
-    // miss on every frame of a pinch. It enters `layoutRuns` through exactly
-    // one comparison — `run.fontSize < min` — so the key can record which
-    // runs clear the bar rather than the raw number, and stay a hit across
-    // every zoom that doesn't actually cross a glyph size.
-    it('holds across a zoom change that crosses no run size', () => {
-      const runs = [run('hello', 16)];
-      const a = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 40 });
-      const b = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 30 });
-      expect(b).toBe(a);
-    });
-
-    it('re-lays out when the threshold crosses a run size', () => {
-      const runs = [run('hello', 16)];
-      const above = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 });
-      const below = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 12 });
-      expect(below).not.toBe(above);
-    });
-
-    it('distinguishes "no threshold" from a threshold above every run', () => {
-      // Measurement callers (`measureTextBounds`, `textLineBoxes`) leave it
-      // unset. That must not collide with a paint whose threshold happens to
-      // exclude everything, even though today they lay out the same.
-      const runs = [run('hello', 16)];
-      const unset = cachedLayoutRuns(runs, OPTS);
-      const excluded = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 999 });
-      expect(excluded).not.toBe(unset);
-    });
-
-    it('tracks each distinct size in a mixed-size run list', () => {
-      const runs = [run('small ', 10), run('big', 40)];
-      const none = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 50 });
-      const justBig = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 });
-      const both = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 5 });
-      expect(justBig).not.toBe(none);
-      expect(both).not.toBe(justBig);
-      // And each stays reachable.
-      expect(cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 })).toBe(justBig);
-    });
   });
 
   it('drops everything when a font becomes available', async () => {

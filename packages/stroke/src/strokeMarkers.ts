@@ -10,7 +10,7 @@
  * package to consume — the same split `PaintKindEntry` uses.
  */
 
-import type { FillStyle, MarkerKey, Stroke } from '@weasel-js/paint';
+import type { Paint, MarkerKey, Stroke } from '@weasel-js/paint';
 import type { Path } from '@weasel-js/geom';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { BUILTIN_MARKERS } from './strokeMarkerShapes';
@@ -27,7 +27,7 @@ export interface MarkerCtx {
 
 /** `'line'` means the stroke's own paint — SVG 2's `context-stroke`, as the
  *  default rather than an opt-in. */
-export type MarkerPaint = FillStyle | 'line' | 'none';
+export type MarkerPaint = Paint | 'line' | 'none';
 
 /** A stroke-marker registry entry: a terminator's geometry, paint and inset. */
 export interface MarkerEntry {

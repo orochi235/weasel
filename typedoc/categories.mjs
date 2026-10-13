@@ -11,7 +11,7 @@ export const RULES = [
 
   ['packages/core/src/features/paths', 'Paths & geometry'],
   ['packages/core/src/features/text', 'Text'],
-  ['packages/core/src/renderer/patterns', 'Paint & fills'],
+  ['packages/renderer/src/patterns', 'Paint & fills'],
   ['packages/core/src/features/selection', 'Selection & actions'],
   ['packages/core/src/features/ingestion', 'Extension points'],
 
@@ -24,7 +24,7 @@ export const RULES = [
   ['packages/core/src/core/units', 'Extension points'],
   ['packages/core/src/core/stylus', 'Tools & gestures'],
 
-  ['packages/core/src/renderer', 'Rendering'],
+  ['packages/renderer/src', 'Rendering'],
   ['packages/core/src/canvas', 'Rendering'],
 
   ['packages/core/src/tools', 'Tools & gestures'],
@@ -70,6 +70,8 @@ export const RULES = [
   ['packages/routing/src/eligibility', 'Extension points'],
   ['packages/routing/src/ingestion', 'Extension points'],
   ['packages/routing/src/dlog', 'Extension points'],
+  ['packages/routing/src/ambient/SelectionContext', 'Selection & actions'],
+  ['packages/routing/src/ambient', 'Extension points'],
   ['packages/routing/src/index', 'Selection & actions'],
   ['packages/routing/src/vocabulary', 'Tools & gestures'],
 ];

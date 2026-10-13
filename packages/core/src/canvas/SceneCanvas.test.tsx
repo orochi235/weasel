@@ -121,7 +121,7 @@ describe('SceneCanvas defaults', () => {
         kind: 'leaf' as const,
         layer: 'default',
         pose: { x: 1, y: 2, width: 3, height: 4 },
-        data: { fill: { color: '#abc' } },
+        data: { fill: { paint: { color: '#abc' } } },
         parent: null,
       };
       const cmds = defaultDrawOne(node as never, node.pose);
@@ -129,7 +129,7 @@ describe('SceneCanvas defaults', () => {
         {
           kind: 'path',
           path: { kind: 'rect', x: 1, y: 2, width: 3, height: 4 },
-          fill: { color: '#abc' },
+          fill: { paint: { color: '#abc' } },
         },
       ]);
     });
@@ -141,7 +141,7 @@ describe('SceneCanvas defaults', () => {
         data: {}, parent: null,
       };
       const cmds = defaultDrawOne(node as never, node.pose);
-      const fill = (cmds[0] as { fill: { color: string } }).fill;
+      const fill = (cmds[0] as { fill: { paint: { color: string } } }).fill.paint;
       expect(fill.color).toBe('#888');
     });
 
@@ -152,7 +152,7 @@ describe('SceneCanvas defaults', () => {
         data: null as never, parent: null,
       };
       const cmds = defaultDrawOne(node as never, node.pose);
-      const fill = (cmds[0] as { fill: { color: string } }).fill;
+      const fill = (cmds[0] as { fill: { paint: { color: string } } }).fill.paint;
       expect(fill.color).toBe('#888');
     });
   });

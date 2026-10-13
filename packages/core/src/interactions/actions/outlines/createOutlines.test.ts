@@ -59,14 +59,14 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
   return { scene, adapter, add, select };
 }
 
-const RED = { fill: 'solid', color: '#c00' } as const;
-const BLUE = { fill: 'solid', color: '#00c' } as const;
-const STROKE = { width: 3, paint: { fill: 'solid', color: '#000' } } as const;
-const TEXT: Data = { text: 'Hi', style: { fontFamily: 'co-inter', fontSize: 100 }, fill: RED, stroke: STROKE };
+const RED = { kind: 'solid', color: '#c00' } as const;
+const BLUE = { kind: 'solid', color: '#00c' } as const;
+const STROKE = { width: 3, paint: { kind: 'solid', color: '#000' } } as const;
+const TEXT: Data = { text: 'Hi', style: { fontFamily: 'co-inter', fontSize: 100 }, fill: { paint: RED }, stroke: STROKE };
 /** 'Hi' with a blue 'i': two paints, three runs. */
 const TWO_PAINT: Data = {
   ...TEXT, stroke: undefined, text: 'Hil',
-  runs: [{ text: 'H' }, { text: 'i', fill: BLUE }, { text: 'l' }],
+  runs: [{ text: 'H' }, { text: 'i', fill: { paint: BLUE } }, { text: 'l' }],
 };
 const RECT: Data = { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } };
 
@@ -89,7 +89,7 @@ describe('applyCreateOutlines', () => {
     const [id] = result.resultIds;
     const node = scene.get(asNodeId(id))!;
     const data = node.data as Data;
-    expect(data.fill).toEqual(RED);
+    expect(data.fill).toEqual({ paint: RED });
     expect(data.stroke).toEqual(STROKE);
     // The 'H' stem, near the left edge of the text box, is filled geometry.
     const b = boundsOfPath(data.path!);
@@ -160,7 +160,7 @@ describe('applyCreateOutlines', () => {
     expect(scene.get(asNodeId(gid))!.kind).toBe('container');
     expect(scene.roots).toEqual([asNodeId('below'), asNodeId(gid), asNodeId('above')]);
     const kids = scene.childrenOf(asNodeId(gid)).map((id) => scene.get(id)!.data as Data);
-    expect(kids.map((d) => d.fill)).toEqual([RED, BLUE]);
+    expect(kids.map((d) => d.fill)).toEqual([{ paint: RED }, { paint: BLUE }]);
     expect([...scene.getSelection()]).toEqual([asNodeId(gid)]);
 
     scene.undo();
@@ -179,7 +179,7 @@ describe('applyCreateOutlines', () => {
     if (result.kind !== 'applied') throw new Error(result.kind);
     const [red, blue] = result.resultIds.map(asNodeId);
     expect(scene.roots).toEqual([asNodeId('below'), red, blue, asNodeId('above')]);
-    expect([red, blue].map((id) => (scene.get(id!)!.data as Data).fill)).toEqual([RED, BLUE]);
+    expect([red, blue].map((id) => (scene.get(id!)!.data as Data).fill)).toEqual([{ paint: RED }, { paint: BLUE }]);
     expect([...scene.getSelection()]).toEqual([asNodeId('below'), red, blue]);
 
     scene.undo();

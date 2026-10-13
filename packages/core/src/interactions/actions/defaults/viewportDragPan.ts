@@ -1,47 +1,9 @@
-/**
- * `viewportDragPanAction` — ongoing Action descriptor for drag-to-pan the viewport.
- *
- * ## Bindings
- * None of its own. The hand tool binds a drag to it, and a canvas that pans on
- * any unclaimed drag adds `dragPanContribution`.
- *
- * ## Design notes
- * The drag delta from the dispatcher is in screen space (pixels). The pan
- * formula converts screen pixels to world units by dividing by zoom:
- *
- *   newView.x = startView.x - screenDx / startView.scale.x
- *   newView.y = startView.y - screenDy / startView.scale.y
- *
- * where `screenDx` / `screenDy` are the screen-space pixel deltas from the
- * drag origin. This ensures that at any zoom level, the drag behavior is
- * consistent: 1 screen pixel always pans the same amount relative to the
- * viewport's zoom (e.g., at 1x zoom: 100px → 100 world units; at 2x zoom:
- * 100px → 50 world units). The camera moves opposite to the drag direction
- * so that the scene content appears to follow the pointer.
- *
- * The descriptor captures `startView` in its own scratch at `start` time,
- * parallel to `useHandTool`'s `startView` capture in its scratch object.
- *
- * ## Axis locking and inertia
- * Both are read from the binding's `params` at `start`, so any consumer
- * binding this action gets them — not just `useHandTool`. `axis` drops one
- * component of every pan delta. `inertia` coasts the view after release,
- * through the optional `view.decay` dep; with no such dep wired the pan
- * simply lands, which is what an unconfigured consumer already expects.
- *
- * @see useHandTool — the React hook this descriptor parallels.
- */
-
 import type { Action } from '@weasel-js/routing';
 import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOpts } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import { createVelocityTracker, type VelocityTracker } from 'core/viewport/createVelocityTracker';
-
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
 
 interface DragPanScratch {
   startView: View;
@@ -85,39 +47,28 @@ function sameCamera(a: View, b: View): boolean {
     || (a.x === b.x && a.y === b.y && a.scale.x === b.scale.x && a.scale.y === b.scale.y);
 }
 
-/** Binding params `viewport.dragPan` understands. `useHandTool` supplies both;
- *  a bare binding supplies neither and pans both axes with no coasting. */
+/** Binding params `viewport.dragPan` understands, read at `start`. A bare
+ *  binding pans both axes with no coasting. `inertia` coasts the view after
+ *  release through the optional `view.decay` dep; with none wired the pan
+ *  simply lands. `true` coasts with the kit defaults. */
 export interface DragPanParams {
   axis?: 'both' | 'x' | 'y';
-  inertia?: false | InertiaConfig;
+  inertia?: boolean | InertiaConfig;
 }
-
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
 
 /**
  * @experimental
- * Static descriptor for the `viewport.dragPan` Action.
- *
- * Requires dep-schema entry: `view`.
- *
  * Translates the viewport by the screen-space drag delta so the canvas content
  * follows the pointer. Produces no scene ops — view changes are not undoable.
+ * It has no binding of its own: the hand tool binds a drag to it, and a canvas
+ * that pans on any unclaimed drag adds `dragPanContribution`.
  */
 // No `eligible` field → viewport pan is always eligible across all modes.
 export const viewportDragPanAction: Action & { requires: string[] } = {
   id: 'viewport.dragPan',
   label: 'Drag to pan viewport',
   group: 'viewport',
-  // Hover hint: when this action would win the drag at the hovered point
-  // (e.g. empty canvas with no marquee-capable tool ahead of it), the
-  // hover-cursor pump shows the open hand.
   cursor: 'grab',
-  // ...and the closed hand once the pan is actually running. This was
-  // `useHandTool`'s `engaged: { cursor: 'grabbing' }` — a phase-table entry
-  // on a tool, which meant a consumer who bound `viewport.dragPan` without
-  // the hand tool got no state cursor at all.
   activeCursor: 'grabbing',
   requires: ['view', 'debug'],
   invoker: {
@@ -127,12 +78,11 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
       if (!view) return {};
 
       const startView = view.get();
-      // Gesture-driven ongoing actions never see `ctx.params` — the dispatcher
-      // hands the binding's unresolved `opts` here and nowhere else, and pumps
-      // `onMove` / `onEnd` with an empty deps bag. Everything the gesture needs
-      // has to be captured now.
+      // The dispatcher hands the binding's unresolved `opts` here and nowhere
+      // else, and pumps `onMove` / `onEnd` with an empty deps bag. Everything
+      // the gesture needs has to be captured now.
       const params = (resolveParams(opts?.params) ?? {}) as DragPanParams;
-      const inertia = params.inertia === false ? undefined : params.inertia;
+      const inertia = params.inertia === true ? {} : params.inertia || undefined;
       const scratch: DragPanScratch = {
         startView,
         base: startView,
@@ -154,11 +104,8 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
           // Use `screenDelta` (client/CSS pixels), NOT `delta` (world). Pan
-          // mutates the view itself, so world deltas are self-referential —
-          // after the first commit, `toWorld(currentClient)` returns a
-          // position offset by the just-applied pan, halving the apparent
-          // movement on every subsequent pointermove. Screen coords come
-          // straight from the DOM event and don't drift.
+          // mutates the view itself, so world deltas are self-referential and
+          // halve the apparent movement on every pointermove after the first.
           const screen = moveCtx.drag.screenDelta ?? screenDeltaFromWorld(moveCtx.drag, scratch);
           // An axis lock drops the other component of the *cumulative* delta,
           // so the locked axis never moves however the pointer wanders.
@@ -178,8 +125,6 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
           }
           scratch.lastScreen = { x: screenDx, y: screenDy };
           const sv = scratch.base;
-          // 1 screen px maps to 1/scale world units (at 2x zoom, 100 px →
-          // 50 world units of pan).
           const next = {
             ...sv,
             x: sv.x - (screenDx - scratch.baseScreen.x) / sv.scale.x,

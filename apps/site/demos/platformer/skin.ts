@@ -1,5 +1,6 @@
 // apps/site/demos/platformer/skin.ts
-import { createTiledLayer, polygonFromPoints, rectPath, textCommandFromRuns } from '@weasel-js/core';
+import { polygonFromPoints, rectPath, textCommandFromRuns } from '@weasel-js/core';
+import { createTiledLayer } from '@weasel-js/parallax';
 import type { Dims, DrawCommand, RenderLayer, View } from '@weasel-js/core';
 import { calloutAge, calloutScreenPos, type Callout } from './callouts';
 
@@ -32,12 +33,12 @@ const COLORS = {
   debugEnemy: '#ff7b72',
 } as const;
 
-const solid = (color: string) => ({ fill: 'solid' as const, color });
+const solid = (color: string) => ({ kind: 'solid' as const, color });
 
 const rect = (x: number, y: number, w: number, h: number, color: string): DrawCommand => ({
   kind: 'path',
   path: rectPath(x, y, w, h),
-  fill: solid(color),
+  fill: { paint: solid(color) },
 });
 
 export type Band = 'far' | 'mid' | 'near';
@@ -72,7 +73,7 @@ export function backdropBand(band: Band): RenderLayer<unknown> {
           { x: 0, y: baseline - height },
           { x: half, y: baseline },
         ]),
-        fill: solid(color),
+        fill: { paint: solid(color) },
       },
       // Reaches a unit into the next copy so neighbors overlap rather than abut,
       // leaving no antialiased seam between them.
@@ -109,7 +110,7 @@ export function drawCallouts(callouts: Callout[], view: View, dims: Dims, now: n
       children: [textCommandFromRuns(
         pos.x,
         pos.y - u * CALLOUT_RISE,
-        [{ text: c.text, fill: solid(COLORS.callout) }],
+        [{ text: c.text, fill: { paint: solid(COLORS.callout) } }],
         style,
       )],
     };
@@ -144,7 +145,7 @@ export function drawEnding(
         textCommandFromRuns(
           dims.width / 2,
           0,
-          [{ text, fill: solid(won ? COLORS.endingWon : COLORS.endingLost) }],
+          [{ text, fill: { paint: solid(won ? COLORS.endingWon : COLORS.endingLost) } }],
           {
             fontFamily: 'Georgia, "Times New Roman", serif',
             fontSize: size,

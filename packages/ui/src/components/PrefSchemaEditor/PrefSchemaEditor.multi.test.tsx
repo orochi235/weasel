@@ -131,6 +131,18 @@ describe('PrefSchemaEditor with several nodes selected', () => {
     expect(item('snap')).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('takes the preview rows from the first selected to the one pressed with Shift held', () => {
+    render(<Live />);
+    fireEvent.click(row('grid'));
+    fireEvent.pointerDown(previewRow('Zoom'), { shiftKey: true });
+    for (const key of ['grid', 'snap', 'zoom']) expect(item(key)).toHaveAttribute('aria-selected', 'true');
+    // The first selected stays the end the next range runs from.
+    fireEvent.pointerDown(previewRow('Snap'), { shiftKey: true });
+    expect(item('grid')).toHaveAttribute('aria-selected', 'true');
+    expect(item('snap')).toHaveAttribute('aria-selected', 'true');
+    expect(item('zoom')).toHaveAttribute('aria-selected', 'false');
+  });
+
   it('offers only what every kind has when the kinds differ', () => {
     render(<Live />);
     fireEvent.click(row('zoom'));

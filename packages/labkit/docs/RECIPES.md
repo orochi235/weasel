@@ -30,7 +30,7 @@ store and only mounts inside a `<Lab>`.
 
 ### Expanding a tile to fill the window
 
-Every `<Workspace>` tile is already wrapped in a `<Lightbox>`, with a small
+Every `<Workspace>` tile is wrapped in a `<Lightbox>`, with a small
 expand button in its top-right corner. The tile's element is lifted into the
 browser's top layer, not remounted, so size the content from a
 `ResizeObserver` and it follows.
@@ -162,9 +162,9 @@ Two prefixes, and they are not interchangeable:
 - **`--wzl-*`** — design tokens: color, spacing, type, motion.
 
 So `var(--lk-border, #333)` is the trap. No `--lk-*` custom property is ever
-declared, and a `var()` fallback exists precisely to be silent, so every rule
-written that way takes its fallback and nothing warns. The usual symptom is a
-panel that looks right in the mode you built in and wrong in the other one.
+declared, so every rule written that way takes its fallback and nothing warns.
+The usual symptom is a panel that looks right in the mode you built in and
+wrong in the other one.
 
 Style against tokens rather than your own constants, so your surfaces follow
 the theme the lab is in:
@@ -306,7 +306,7 @@ const Viz = defineInstrument<{ data: number[] }, ConfigOf<typeof vizConfig>>({
 
 Users can hide individual layers via the sidebar's `<LayerList>` and reorder them by dragging the handle. The canvas redraws only the dirty layers on each frame.
 
-To pin a layer (always visible, not reorderable), the wiring currently reads `LayerDescriptor.alwaysOn` — set it on the descriptor passed to `<LayerList>`. (For now, layers are derived from `instrument.layers.ids`; fork the trial if you need per-id `alwaysOn` configuration.)
+To pin a layer (always visible, not reorderable), give `layers.ids` a `LayerDescriptor` in place of the bare id: `{ id: "axes", label: "Axes", alwaysOn: true }`.
 
 ### Add a custom undoable action via `ctx.emit(...)`
 
@@ -524,7 +524,7 @@ order; `end` pushes a contribution and its group to the far end of the region.
 on an id that is not there.
 
 Supplying `render: (ctx) => ReactNode` instead of `item` opts out of the
-region's layout. It is deliberate, and visible in the declaration. `ctx` is the
+region's layout. `ctx` is the
 `TrialChromeContext`: the trial's id, zoom, undo bindings, resolved config,
 snapshots, tool slot, and the trial operations.
 

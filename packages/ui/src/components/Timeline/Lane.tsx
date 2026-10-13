@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { openPointerSession, pastDragThreshold, type EventTrack, type Keyframe, type PointerSession, type SampledTrack, type TimelineTrack } from '@weasel-js/core';
+import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
 import { createTimeScale, spanPercent, toPercent, type TimeWindow } from './timeScale';

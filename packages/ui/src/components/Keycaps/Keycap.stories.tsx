@@ -244,24 +244,10 @@ export const KeyboardLayouts: Story = {
 };
 
 function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend: LegendStyle; font?: string }): ReactElement {
-  // ANSI TKL layout.
-  //
-  // Geometry: 1u is the keycap rank itself, so the layout follows density; the
-  // flex row carries `gap: 3px` between siblings. A n-unit key's width
-  // is `n * U + (n - 1) * GAP` — that's the formula `unit(n)`. Using
-  // it for both KeyCaps AND Spacers makes every element occupy exactly
-  // n slots of horizontal space, so rows of equal slot-count line up
-  // perfectly regardless of which specific keys they contain.
-  //
-  // Slot accounting per row (all should sum to 15 slots for the main
-  // block, 3 slots for the right cluster):
-  //   fn row:   1 + 1.0 + 4×1 + 0.5 + 4×1 + 0.5 + 4×1 = 15  ✓
-  //   numbers:  13×1 + 2 = 15                              ✓
-  //   qwerty:   1.5 + 12×1 + 1.5 = 15                      ✓
-  //   home:     1.75 + 11×1 + 2.25 = 15                    ✓
-  //   bottom:   2.25 + 10×1 + 2.75 = 15                    ✓
-  //   modifier: 7×1.25 + 6.25 = 15 (ANSI Win/Linux)        ✓
-  //             — macOS: trailing spacer pads the short row to 15
+  // ANSI TKL layout. A n-unit key's width is `n * U + (n - 1) * GAP`, for
+  // KeyCaps and Spacers alike, so rows of equal slot-count line up. Every
+  // main-block row sums to 15 slots and every right-cluster row to 3; on
+  // macOS a trailing spacer pads the short modifier row to 15.
   const GAP = 3;
   const unit = (n: number) => `calc(${n} * var(--wzl-control-h-xs) + ${(n - 1) * GAP}px)`;
 
@@ -276,11 +262,8 @@ function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend
   const esc = keySpecFromKey('Escape', { platform, legend }).label;
   const del = keySpecFromKey('Delete', { platform, legend }).label;
 
-  // Force a chip to a precise slot-width regardless of how `inferKeycapKind`
-  // would have classified its label. Multi-char labels (F1, Esc, Caps, …)
-  // default to `wide` kind (min-width 32px); without this override they'd
-  // break the slot accounting. Padding tightens so longer labels still fit
-  // their unit-cell.
+  // Multi-char labels (F1, Esc, Caps, …) default to `wide` kind (min-width
+  // 32px); without this override they'd break the slot accounting.
   const cap = (label: string, n = 1) => (
     <KeyCap
       label={label}
@@ -359,8 +342,6 @@ function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend
 
   // ── Right cluster: 3-slot rows ────────────────────────────────────
   // Each cluster row aligns vertically with the corresponding main row.
-  // Empty slots use Spacers of the same slot-width so alignment is
-  // pixel-perfect.
   const clusterRows: ReactElement[][] = [
     // Function row alignment: PrtSc / ScrLk / Pause.
     [<span key="prtsc">{cap('PrtSc')}</span>, <span key="scrlk">{cap('ScrLk')}</span>, <span key="pause">{cap('Pause')}</span>],

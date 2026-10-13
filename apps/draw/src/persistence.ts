@@ -1,35 +1,24 @@
 // Shared serialization helpers for WeaselDraw's localStorage persistence.
 //
-// PolygonPath stores `commands` as Uint8Array and `coords` as Float32Array.
-// JSON.stringify renders typed arrays as `{"0":1,"1":2,...}` plain objects —
-// the painter then sees a non-iterable shape and silently fails to draw. We
-// tag typed arrays on save and reconstruct them on load (with tolerance for
-// older saves that wrote the broken numeric-key object shape).
-//
-// These helpers are shared by both the scene snapshot and the undo-history
-// snapshot (whose serialized op payloads also carry path poses), so they live
-// outside App's component module to stay independently testable.
+// A path keeps its commands and coords in typed arrays, which `JSON.stringify`
+// writes as `{"0":1,"1":2,...}`. Saves tag them with `@weasel-js/geom`'s
+// encoding; loads read the tags back, and also the untagged shapes older saves
+// wrote, which is why the walk here is draw's own.
 
 import type { AddNodeSpec, SerializedScene } from '@weasel-js/core';
 import { asNodeId, solid } from '@weasel-js/core';
-
-type TaggedTypedArray = { __ta: 'u8' | 'f32'; data: number[] };
+import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
 
 /** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip. */
-export function serializeReplacer(_key: string, value: unknown): unknown {
-  if (value instanceof Uint8Array) return { __ta: 'u8', data: Array.from(value) } satisfies TaggedTypedArray;
-  if (value instanceof Float32Array) return { __ta: 'f32', data: Array.from(value) } satisfies TaggedTypedArray;
-  return value;
-}
+export const serializeReplacer = typedArrayReplacer;
 
 /** Walk a parsed snapshot and rebuild any tagged / numeric-key typed arrays in
  *  place. Returns the same node for call-site convenience. */
 export function reviveTypedArrays<T>(node: T): T {
   if (node == null || typeof node !== 'object') return node;
+  const tagged = untagTypedArray(node);
+  if (tagged) return tagged as unknown as T;
   const obj = node as Record<string, unknown>;
-  const tag = obj.__ta;
-  if (tag === 'u8' && Array.isArray(obj.data)) return Uint8Array.from(obj.data as number[]) as unknown as T;
-  if (tag === 'f32' && Array.isArray(obj.data)) return Float32Array.from(obj.data as number[]) as unknown as T;
   for (const k of Object.keys(obj)) {
     if (k === 'commands' || k === 'coords') {
       const v = obj[k];
@@ -49,16 +38,18 @@ export function reviveTypedArrays<T>(node: T): T {
         continue;
       }
     } else {
-      reviveTypedArrays(obj[k]);
+      obj[k] = reviveTypedArrays(obj[k]);
     }
   }
   return node;
 }
 
-/** The `FillStyle` discriminant values. A paint in the current shape carries
- *  one of these under `fill`, so "a string under `fill`" is not on its own a
- *  legacy color — it is the tag. */
-const FILL_KINDS = new Set(['solid', 'pattern', 'linear-gradient', 'radial-gradient', 'conic-gradient']);
+/** The `Paint` discriminant values as they were written before 2026-10-12,
+ *  when the tag sat under `fill` rather than `kind`. A string under `fill`
+ *  naming one of these is that old tag, not a legacy color. */
+const LEGACY_KIND_TAGS = new Set([
+  'solid', 'pattern', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'mesh-gradient',
+]);
 
 /** A string paint that means "no paint at all" rather than a color. */
 const NO_PAINT = new Set(['none', 'transparent']);
@@ -67,11 +58,22 @@ function paintFromLegacy(color: string): { color: string; opacity?: number } | n
   return NO_PAINT.has(color.toLowerCase()) ? null : solid(color) as { color: string; opacity?: number };
 }
 
+/** Whether `value` is a paint sitting where a `Fill` belongs, as a `fill`
+ *  slot held one until 2026-10-12. A `Fill` has a `paint` and none of a
+ *  paint's own keys, and so does an `SvgPaint` gradient. */
+function isBarePaint(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  if ('paint' in value) return false;
+  return 'color' in value || 'kind' in value || 'stops' in value;
+}
+
 /**
  * Rewrite the pre-2026-08-26 string paint forms — `fill: '#abc'`,
- * `stroke: '#abc'` with a sibling `strokeWidth` — into the `FillStyle` and
- * `Stroke` objects every reader now expects. Walks in place and returns the
- * same node, like `reviveTypedArrays`.
+ * `stroke: '#abc'` with a sibling `strokeWidth` — into the `Fill` and
+ * `Stroke` objects every reader now expects, a paint's tag from `fill` to
+ * `kind`, a pattern's tile up into the paint, and a paint held directly under
+ * `fill` into a `Fill`. Walks in place and returns the same node, like
+ * `reviveTypedArrays`.
  *
  * Applied to node data and to the node data copied inside a history
  * snapshot's op payloads, so an undo after a reload cannot write a string
@@ -85,8 +87,14 @@ export function migrateLegacyPaint<T>(node: T): T {
   }
   const obj = node as Record<string, unknown>;
 
-  if (typeof obj.fill === 'string' && !FILL_KINDS.has(obj.fill)) {
-    obj.fill = paintFromLegacy(obj.fill);
+  if (typeof obj.fill === 'string') {
+    if (LEGACY_KIND_TAGS.has(obj.fill)) {
+      obj.kind = obj.fill;
+      delete obj.fill;
+    } else {
+      const paint = paintFromLegacy(obj.fill);
+      obj.fill = paint === null ? null : { paint };
+    }
   }
   if (typeof obj.stroke === 'string') {
     const paint = paintFromLegacy(obj.stroke);
@@ -94,9 +102,31 @@ export function migrateLegacyPaint<T>(node: T): T {
     obj.stroke = paint === null ? null : { paint, width };
   }
   if ('strokeWidth' in obj) delete obj.strokeWidth;
+  liftLegacyPattern(obj);
 
   for (const k of Object.keys(obj)) migrateLegacyPaint(obj[k]);
+  // After the walk, so a paint still wearing its old tag has become one first.
+  if (isBarePaint(obj.fill)) obj.fill = { paint: obj.fill };
   return node;
+}
+
+/**
+ * A pattern paint held its tile one level down until 2026-10-12, as
+ * `{ kind: 'hatch', … }`. Each tile is now its own
+ * kind with its fields beside the placement, and a consumer-built handle is a
+ * `texture` paint.
+ */
+function liftLegacyPattern(obj: Record<string, unknown>): void {
+  const payload = obj.pattern;
+  if (obj.kind !== 'pattern' || typeof payload !== 'object' || payload === null) return;
+  delete obj.pattern;
+  if ('tile' in payload) {
+    const { tile, ...rest } = payload as Record<string, unknown>;
+    Object.assign(obj, rest, { kind: tile });
+  } else {
+    obj.kind = 'texture';
+    obj.texture = payload;
+  }
 }
 
 /**

@@ -17,6 +17,7 @@ const items: ButtonBarItem[] = [
 
 export const Default: Story = { args: { items } };
 export const Minimal: Story = { args: { items, variant: 'minimal' } };
+export const Flat: Story = { args: { items, variant: 'flat' } };
 
 /** `shortcut` shows in each button's tooltip as `Name (key)`. */
 export const Tooltips: Story = {

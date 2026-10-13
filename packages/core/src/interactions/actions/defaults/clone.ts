@@ -1,31 +1,25 @@
 /**
- * `cloneAction` — ongoing Action descriptor for alt-drag clone.
- *
- * `start` captures the world pose of every node the copy will hold, `onMove`
- * tracks the drag delta and previews the copies, and `onEnd('commit')` inserts
- * them as one batch — through the consumer `applyOps` hook when present, else
- * `scene.applyBatch`. Nothing is written before the commit, so a cancel only
- * clears the preview.
+ * `cloneAction` — ongoing Action descriptor for alt-drag clone. Nothing is
+ * written before the commit, so a cancel only clears the preview.
  *
  * The action does not gate on a modifier: it runs whenever the dispatcher
  * routes to it, and the binding that names it carries the `alt` requirement.
  */
 
 import type { Action } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
+import { startCloneBehaviors, type CloneBehaviors } from '../clone/behaviors';
+import type { SelectionApi } from 'core/selection/useSelection';
 import { copySelection } from './copySubtree';
 import { selectedRoots, translateTargets } from '../selectionSubtree';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
-
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
 
 interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
@@ -48,23 +42,50 @@ interface CloneScratch {
   /** Preview poses keyed by the original's id: the copies have no ids yet. */
   previews: Map<NodeId, unknown>;
   /** Optional consumer commit hook captured at gesture start. When present,
-   *  the insert ops route through it (consumer history) instead of
-   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+   *  the insert ops route through it instead of `scene.applyBatch`. */
   applyOps?: (ops: Op[], label: string) => void;
 }
 
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
+/** Where the copy of `id` lands for a drag of `(dx, dy)`, as stored. */
+function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unknown {
+  const origin = scratch.originPoses.get(id);
+  const node = scratch.scene.get(id);
+  if (origin === undefined || !node) return undefined;
+  const d = scratch.descriptorOf(id);
+  const moved = translatePoseViaDescriptor(origin, dx, dy, d);
+  return scratch.frame.local(id, carryPose(d, moved, planeOf(scratch.view, node.layer)));
+}
+
+/** Commit the drag: a behavior's ops when one claims it, else the copies,
+ *  which become the selection. Returns whether anything was committed. */
+function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection: SelectionApi): boolean {
+  const { dx, dy } = scratch.currentDelta;
+  const apply = (ops: Op[]): void => {
+    if (scratch.applyOps) scratch.applyOps(ops, 'Clone');
+    else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selection.adapterMethods));
+  };
+  const answer = behaviors.end(scratch.currentDelta);
+  if (answer === null) return false;
+  if (answer !== undefined) {
+    if (answer.length > 0) apply(answer);
+    return true;
+  }
+  const { ops, copies } = copySelection(
+    scratch.scene,
+    scratch.ids,
+    (id, node) => (scratch.originPoses.has(id) ? landed(scratch, id, dx, dy) : node.pose),
+    'Clone',
+  );
+  if (ops.length === 0) return false;
+  apply(ops);
+  selection.set(copies);
+  return true;
+}
 
 /**
  * @experimental
- * Static descriptor for the `clone` Action.
- *
- * Requires dep-schema entries: `selection`, `scene`.
- *
- * Copies each selected node, with its subtree, to where the drag left it.
- * One undo entry.
+ * Static descriptor for the `clone` Action. Copies each selected node, with
+ * its subtree, to where the drag left it. One undo entry.
  */
 export const cloneAction: Action & { requires: string[] } = inPlane({
   id: 'clone',
@@ -72,16 +93,15 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   // No default binding: a bare `{ kind: 'drag' }` would clone a non-empty
   // selection on any drag no tool claimed. Alt-drag on a body binds it
   // (`selectionMoveBindings`, the `move` preset).
-  // The platform's duplicate cursor, and the whole reason this field is
-  // modifier-aware: the select tool binds clone behind `mods: { alt: true }`,
-  // so the pump predicts it — and shows this — only while Alt is down.
+  // The platform's duplicate cursor. The select tool binds clone behind
+  // `mods: { alt: true }`, so the pump shows this only while Alt is down.
   cursor: 'copy',
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, _opts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection;
       const scene = ctx.deps.scene;
       const applyOps = ctx.deps.applyOps;
@@ -92,7 +112,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       if (ids.length === 0) return {};
 
       // Capture origin poses once at drag start.
-      const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
+      const frame = scenePoseFrame(scene);
       const originPoses = new Map<NodeId, unknown>();
       const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(ctx.deps.poseDescriptor));
       for (const id of translateTargets(scene, frame, ids)) {
@@ -115,62 +135,32 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
         previews: new Map<NodeId, unknown>(),
         applyOps,
       };
-
-      /** Where the copy of `id` lands for a drag of `(dx, dy)`, as stored. */
-      const landed = (id: NodeId, dx: number, dy: number): unknown => {
-        const origin = scratch.originPoses.get(id);
-        const node = scratch.scene.get(id);
-        if (origin === undefined || !node) return undefined;
-        const d = scratch.descriptorOf(id);
-        const moved = translatePoseViaDescriptor(origin, dx, dy, d);
-        return scratch.frame.local(id, carryPose(d, moved, planeOf(scratch.view, node.layer)));
-      };
+      const behaviors = startCloneBehaviors(ctx, opts, scene, scratch.ids, originPoses, descriptorOf);
 
       return {
         kind: 'clone',
-        // Clone: source stays visible at its committed pose; the ghost
-        // (rendered via previewIds/previewPose below) appears at the
-        // drag target. Opt out of the default "hide source" behavior
-        // move/resize/rotate use.
+        // The source stays visible at its committed pose; the ghost appears
+        // at the drag target.
         previewHidesSource: false,
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
-          scratch.currentDelta = {
-            dx: moveCtx.drag.delta.x,
-            dy: moveCtx.drag.delta.y,
-          };
-          // Preview: paint each original's silhouette at the translated pose.
-          // The original stays at its committed location (we don't hide it);
-          // the ghost overlay shows where the new copy will land on commit.
+          scratch.currentDelta = behaviors.shape(moveCtx, { dx: moveCtx.drag.delta.x, dy: moveCtx.drag.delta.y });
           scratch.previews.clear();
           const { dx, dy } = scratch.currentDelta;
           if (dx === 0 && dy === 0) return;
-          for (const id of scratch.originPoses.keys()) scratch.previews.set(id, landed(id, dx, dy)!);
+          for (const id of scratch.originPoses.keys()) scratch.previews.set(id, landed(scratch, id, dx, dy)!);
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-          if (reason === 'cancel') {
+          let committed = false;
+          try {
+            const { dx, dy } = scratch.currentDelta;
+            // A zero-delta drag makes no clone, so its behaviors are canceled.
+            if (reason === 'commit' && (dx !== 0 || dy !== 0)) committed = commitClone(scratch, behaviors, selection);
+            else runBehaviorCancel(behaviors.list, behaviors.gctx);
+          } finally {
             scratch.previews.clear();
-            return;
+            runBehaviorSettled(behaviors.list, behaviors.gctx, committed);
           }
-          const { dx, dy } = scratch.currentDelta;
-          // Zero-delta drag — no clone.
-          if (dx === 0 && dy === 0) {
-            scratch.previews.clear();
-            return;
-          }
-
-          const { ops, copies } = copySelection(
-            scratch.scene,
-            scratch.ids,
-            (id, node) => (scratch.originPoses.has(id) ? landed(id, dx, dy) : node.pose),
-            'Clone',
-          );
-          if (ops.length > 0) {
-            if (scratch.applyOps) scratch.applyOps(ops, 'Clone');
-            else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selection.adapterMethods));
-            selection.set(copies);
-          }
-          scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
         previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,

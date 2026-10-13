@@ -57,7 +57,7 @@ export function createCornerResizeAffordance(
   const paint = {
     kind: 'square' as const,
     sizePx: handleSize,
-    fill: { color: fill },
+    fill: { paint: { color: fill } },
     stroke: { paint: { color: stroke }, width: 1 },
   };
 

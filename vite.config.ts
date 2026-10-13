@@ -75,12 +75,7 @@ export default defineConfig({
   base: '/weasel/',
   publicDir: resolve(import.meta.dirname, 'assets/fonts'),
   resolve: {
-    alias: weaselAliases(import.meta.dirname, [
-      {
-        find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(import.meta.dirname, 'packages/theme/src/generated/tokens.css'),
-      },
-    ]),
+    alias: weaselAliases(import.meta.dirname),
   },
   plugins: [
     react(),

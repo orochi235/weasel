@@ -1,0 +1,43 @@
+.demo {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  width: 720px;
+  align-items: start;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+}
+
+.table {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th {
+  text-align: start;
+  font-weight: 500;
+  color: var(--wzl-fg-muted);
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+}
+
+.table td {
+  padding: 3px var(--wzl-space-4);
+}
+
+.path {
+  color: var(--wzl-fg-muted);
+}
+
+.unset {
+  color: var(--wzl-fg-subtle);
+}
+
+.actions {
+  display: flex;
+  gap: var(--wzl-space-4);
+}

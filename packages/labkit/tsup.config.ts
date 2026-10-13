@@ -21,13 +21,10 @@ export default defineConfig({
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
-  // tsup's built-in dts can't resolve the root-package core `@weasel-js/core`
-  // (it follows node_modules symlinks but the monorepo core is the repo ROOT,
-  // which has none) and ignores the tsconfig `paths` that tsc honors — so types
-  // drifted to `never`. .d.ts emission is therefore handled by a dedicated
-  // pipeline: see scripts/build-dts.mts, wired as the `build:dts` step after
-  // this build. Unlike the JS here, it imports the weasel siblings rather than
-  // inlining them; see the comment on `external` there.
+  // .d.ts emission is handled by a dedicated pipeline: see
+  // scripts/build-dts.mts, wired as the `build:dts` step after this build.
+  // Unlike the JS here, it imports the weasel siblings rather than inlining
+  // them; see the comment on `external` there.
   dts: false,
   sourcemap: true,
   clean: true,
@@ -44,8 +41,9 @@ export default defineConfig({
     /^@weasel-js\/core\//,
     '@weasel-js/theme',
     /^@weasel-js\/theme\//,
+    '@weasel-js/animator',
   ],
-  // Bundle labkit's weasel siblings into its dist — but never core or theme.
+  // Bundle labkit's weasel siblings into its dist — but never core, theme, or the animator.
   //
   // Core owns module-global registries (content handlers, paint kinds, shape
   // painters, markers, programs). Inlining it ships a second set, and a consumer
@@ -62,11 +60,14 @@ export default defineConfig({
   // theme — and where `adoptedStyleSheets` is missing, both copies append their
   // own `<style id="wzl-themes">`.
   //
+  // The animator keeps what it knows of each target in a module-scoped map, which core's
+  // pose targets are read through: a second copy would not know core's targets.
+  //
   // The lookahead has to cover subpaths as well as the bare specifier: the
   // bundled siblings import `@weasel-js/core/patterns-builtin` and labkit
   // imports `@weasel-js/theme/react`, and matching only the bare names would
   // inline those.
-  noExternal: [/^@weasel-js\/(?!(?:core|theme)(?:$|\/))/],
+  noExternal: [/^@weasel-js\/(?!(?:core|theme|animator)(?:$|\/))/],
   splitting: true,
   treeshake: true,
 });

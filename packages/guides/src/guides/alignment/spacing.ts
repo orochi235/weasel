@@ -35,7 +35,7 @@ function hitsStrip(g: SpacingGap, b: Bounds, span: [number, number]): boolean {
  * long as no third box stands in the strip between them. These are the gaps an
  * equal-spacing snap can reproduce.
  */
-export function measureGaps(targets: readonly Bounds[], axis: Axis): SpacingGap[] {
+export function measureGaps(targets: readonly Bounds[], axis: 'x' | 'y'): SpacingGap[] {
   return measure(targets, axis).map((m) => m.gap);
 }
 

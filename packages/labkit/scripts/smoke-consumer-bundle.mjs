@@ -22,8 +22,7 @@
 //      neither the repo tsconfig `paths` nor the workspace-linked sub-packages
 //      are discoverable — exactly a third party's situation. If a bundled
 //      sibling's specifier leaked into the emitted JS, esbuild fails to resolve
-//      it and this exits non-zero. (Mirrors the core's
-//      scripts/smoke-consumer-bundle.mjs.)
+//      it and this exits non-zero.
 //
 //   2. No `@weasel-js` specifier other than a peer's survives in dist `.js`, none
 //      but a peer's or a declared dependency's survives in `.d.ts`, and every
@@ -39,7 +38,7 @@
 //      weasel-ui components are styled by CSS modules, whose scoped names come
 //      out of THAT package's build. Ship the bundle without its stylesheet — or
 //      against a stale one — and the consumer gets a component whose class names
-//      match nothing, with no error anywhere. That shipped in 0.1.0.
+//      match nothing, with no error anywhere.
 //
 // Genuine third-party deps/peers are marked external (a real consumer installs
 // them); we only care that no path-alias / bare-workspace specifier leaks.
@@ -87,9 +86,7 @@ async function walk(dir) {
  *
  * A leak is a specifier something *resolves* — esbuild, tsc, a consumer's
  * bundler. Prose never is. Without this, a JSDoc example naming a package
- * fails the check: `SvgIngestOptions.unpack` in core documents itself with a
- * fenced ```import { unpackSvgFiles } from '@weasel-js/svg'``` block, exactly
- * as it should, and that comment rides into labkit's bundled `.d.ts`.
+ * fails the check when that comment rides into labkit's bundled `.d.ts`.
  *
  * Deliberately not a parser. The one thing it gets wrong is a `//` inside a
  * string literal, which truncates the rest of that line and could hide a real
@@ -198,10 +195,6 @@ const jsEntries = Object.entries(pkg.exports)
  * bundled, and their absence from dist is the thing under test. `@weasel-js/core`
  * is external because it is a peer the consumer installs — check 2 above is what
  * holds it to that.
- *
- * Read off package.json rather than listed: this array was hand-maintained until
- * `windease` was added as a dependency without being added here, and the check
- * failed on a bundle that was correct.
  */
 const thirdPartyExternals = Object.keys({
   ...pkg.dependencies,
@@ -261,8 +254,7 @@ try {
 // The hash identifies the source file, so it is what gets asserted: an empty rule
 // (`.paletteBtn {}`) is dropped by the minifier and a `@keyframes` name is never
 // a selector, but either way its file's OTHER names are in the stylesheet. What
-// this catches is a whole module's CSS going missing, which is the failure that
-// shipped: a component styled by names that match nothing anywhere.
+// this catches is a whole module's CSS going missing.
 const SCOPED_CLASS_RE = /"(_[A-Za-z][\w-]*_([a-z0-9]{4,})_\d+)"/g;
 const stylesheet = await readFile(join(distDir, 'styles.css'), 'utf8');
 const missing = new Map();

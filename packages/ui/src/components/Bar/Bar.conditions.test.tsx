@@ -70,3 +70,25 @@ describe('Bar conditions', () => {
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
   });
 });
+
+describe('Bar conditions that read the entry', () => {
+  const held = { from: 'item', path: 'held' } as const;
+  const stops: PrefGroup = {
+    name: 'Stops',
+    as: 'bar',
+    children: {
+      held: flag('Held'),
+      stops: {
+        kind: 'list', name: 'Stops', description: '', default: [],
+        item: { kind: 'object', name: 'Stop', description: '', default: {}, children: { held: flag('Stop held'), hold: num('Hold', { showIf: held }), gain: num('Gain', { enableIf: held }) } },
+      } as PrefLeaf,
+    },
+  };
+
+  it('hides and disables a field in each entry of a list a bar opens, by that entry', () => {
+    render(<Bar schema={stops} values={{ held: false, stops: [{ held: true }, { held: false }] }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Stops' }));
+    expect(screen.getAllByRole('spinbutton', { name: 'Hold' })).toHaveLength(1);
+    expect(screen.getAllByRole('spinbutton', { name: 'Gain' }).map((g) => (g as HTMLInputElement).disabled)).toEqual([false, true]);
+  });
+});

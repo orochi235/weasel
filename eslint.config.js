@@ -5,10 +5,9 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import noRenderRefWrite from './scripts/eslint/no-render-ref-write.mjs';
 
 /**
- * Core's internal path aliases, read off the root tsconfig rather than
- * hand-listed. Every package whose tsconfig extends root without overriding
- * `paths` resolves all of them, so every one is a reach-back a leaf-purity
- * rule has to catch. Hand-listing is how you end up checking five of seven.
+ * Core's internal path aliases, read off the root tsconfig rather than hand-listed. Every package
+ * whose tsconfig extends root without overriding `paths` resolves all of them, so every one is a
+ * reach-back a leaf-purity rule has to catch.
  */
 const CORE_ALIASES = (() => {
   const raw = readFileSync(new URL('./tsconfig.json', import.meta.url), 'utf8')
@@ -20,23 +19,18 @@ const CORE_ALIASES = (() => {
 /**
  * ESLint flat config: architectural boundaries, then a correctness baseline.
  *
- * No formatting rules and no type-aware rules — `tsc --noEmit` covers types,
- * and nothing here should have an opinion about layout. The scoped blocks
- * below carry the dependency arrows the type system can't express; the
- * baseline block near the bottom carries rules that catch bugs.
+ * No formatting rules and no type-aware rules — `tsc --noEmit` covers types, and nothing here
+ * should have an opinion about layout.
  *
- * Deliberately off, and why — eslint-plugin-react-hooks v7's compiler rules,
- * evaluated one at a time on 2026-10-07:
- *   - `refs`: 387 reports across 103 files, because reading a ref during
- *     render is how a canvas library gets at mutable frame state. It cannot
- *     be narrowed to writes, so render-time ref writes are the local
+ * Deliberately off — eslint-plugin-react-hooks v7's compiler rules:
+ *   - `refs`: reading a ref during render is how a canvas library gets at mutable frame state.
+ *     It cannot be narrowed to writes, so render-time ref writes are the local
  *     `weasel/no-render-ref-write` instead.
- *   - `immutability`: 52 reports, none a defect. A `useVisibleRaf` callback
- *     re-requesting its own loop reads as use-before-declare, and assigning to
- *     a forwarded ref, a mutable engine object or a DOM node reads as
- *     mutating a hook's value.
- *   - `preserve-manual-memoization`: reports where React Compiler would skip
- *     a component, and nothing here is compiled.
+ *   - `immutability`: a `useVisibleRaf` callback re-requesting its own loop reads as
+ *     use-before-declare, and assigning to a forwarded ref, a mutable engine object, or a DOM
+ *     node reads as mutating a hook's value.
+ *   - `preserve-manual-memoization`: reports where React Compiler would skip a component, and
+ *     nothing here is compiled.
  */
 
 const languageOptions = {
@@ -74,12 +68,8 @@ export default [
      * duplicating a module — and a duplicated registry is a silent, total
      * failure rather than a loud one.
      *
-     * The arrow holds for type imports too: core named three upper-layer types
-     * (`Path`, `RectPose`, `ModifierState`) until 2026-08-08, when they moved
-     * down to `core/geometry/path.ts`, `core/scene/types.ts` and
-     * `core/modifierState.ts` with re-exports left at their old addresses. An
-     * erased import can't form the bundler cycle this rule mainly guards, but
-     * nothing needs the exemption now, so it isn't granted.
+     * The arrow holds for type imports too. An erased import can't form the bundler cycle this
+     * rule mainly guards, but nothing needs the exemption, so it isn't granted.
      */
     files: ['packages/core/src/core/**/*.{ts,tsx}'],
     languageOptions,
@@ -105,9 +95,8 @@ export default [
      * duplication failure as above, and worse to diagnose — a duplicated font
      * registry renders no glyphs at all.
      *
-     * `scripts/` is deliberately out of scope: `gen-font.ts` is a build-time
-     * CLI, outside `files` in package.json and never bundled into `dist`, so
-     * it can't trigger the failure this guards.
+     * `scripts/` is deliberately out of scope: `gen-font.ts` is a build-time CLI, never bundled
+     * into `dist`, so it can't trigger the failure this guards.
      */
     files: ['packages/font/src/**/*.{ts,tsx}'],
     languageOptions,
@@ -131,7 +120,7 @@ export default [
   },
   {
     /**
-     * `@weasel-js/text` is a leaf: core's renderer depends on it (its
+     * `@weasel-js/text` is a leaf: the renderer depends on it (its
      * `DrawCommand` names `ResolvedRun`), never the reverse. A reach back into
      * core would duplicate the layout module the renderer caches against.
      */
@@ -147,6 +136,26 @@ export default [
               group: ['@weasel-js/core', '@weasel-js/core/*', ...CORE_ALIASES],
               message:
                 '@weasel-js/text is a leaf package and must not import from core.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    /** `@weasel-js/renderer` draws commands and sits under core, never over it. */
+    files: ['packages/renderer/src/**/*.{ts,tsx}'],
+    languageOptions,
+    plugins,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@weasel-js/core', '@weasel-js/core/*', ...CORE_ALIASES],
+              message:
+                '@weasel-js/renderer sits under core and must not import from it.',
             },
           ],
         },
@@ -221,6 +230,13 @@ export default [
       'react-hooks/use-memo': 'error',
       'react-hooks/globals': 'error',
       'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/set-state-in-render': 'error',
+      'react-hooks/purity': 'error',
+      'react-hooks/error-boundaries': 'error',
+      'react-hooks/component-hook-factories': 'error',
+      'react-hooks/void-use-memo': 'error',
+      'react-hooks/unsupported-syntax': 'error',
+      'react-hooks/incompatible-library': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',
@@ -231,20 +247,15 @@ export default [
       // A library warning its own consumer is a feature — 80 `console.warn`
       // and 21 `console.error` calls are that. `log` and `debug` are residue.
       'no-console': ['error', { allow: ['warn', 'error'] }],
-      // `ignoreReadBeforeAssign` spares the case where a closure built before
-      // the assignment reads the binding — `const` there is a TDZ crash, not a
-      // tidy-up. `Toast/queue.ts` needs the key inside an `onClose` it must
-      // pass to the very call that returns that key.
+      // `ignoreReadBeforeAssign` spares the case where a closure built before the assignment
+      // reads the binding — `const` there is a TDZ crash, not a tidy-up.
       'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
       'no-var': 'error',
-      // `== null` is the idiomatic nullish check and the only loose comparison
-      // in the tree — all 317 reports were that one shape, so the exception is
-      // the rule's whole content here.
+      // `== null` is the idiomatic nullish check and the only loose comparison in the tree.
       eqeqeq: ['error', 'always', { null: 'ignore' }],
-      // A leading underscore is how this repo already spells "declared and
-      // deliberately not read": a positional parameter before the one that is
-      // used, a destructured field being dropped, a caught error nobody
-      // inspects. 135 of the 136 reports were that.
+      // A leading underscore is how this repo spells "declared and deliberately not read": a
+      // positional parameter before the one that is used, a destructured field being dropped,
+      // a caught error nobody inspects.
       '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
@@ -254,13 +265,12 @@ export default [
   },
   {
     /**
-     * `any` in a test is usually the point: reaching past a type to build a
-     * malformed input, or asserting on a private field. The rule earns its
-     * keep on shipped surface, where an `any` is a hole in the contract.
+     * `any` in a test is usually the point: reaching past a type to build a malformed input, or
+     * asserting on a private field.
      *
-     * A probe component writing what it rendered into a ref or an outer
-     * variable is how a test observes a render, so render-time ref writes and
-     * `react-hooks/globals` are the point here too.
+     * A probe component writing what it rendered into a ref or an outer variable is how a test
+     * observes a render, so render-time ref writes and `react-hooks/globals` are the point here
+     * too.
      */
     files: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/testing/**/*.{ts,tsx}'],
     rules: {
@@ -283,21 +293,14 @@ export default [
   },
   {
     /**
-     * A CSF story's `render` is not a component, so every hook it calls reads
-     * as a violation. The 27 reports here were all that shape.
-     *
-     * Stories aren't shipped, and a handler that logs is how you see a story
-     * fire — `no-console` has nothing to protect here either.
+     * A CSF story's `render` is not a component, so every hook it calls reads as a violation.
+     * Stories aren't shipped, and a handler that logs is how you see a story fire.
      */
     files: ['**/*.stories.{ts,tsx}'],
     rules: { 'react-hooks/rules-of-hooks': 'off', 'no-console': 'off' },
   },
   {
-    /**
-     * Build-time CLIs, where stdout is the interface: what got baked, how many
-     * themes were emitted, whether the prefix check passed. A tool that runs
-     * for minutes in silence is indistinguishable from a hung one.
-     */
+    /** Build-time CLIs, where stdout is the interface. */
     files: ['**/scripts/**/*.{ts,tsx,js,mjs}'],
     rules: { 'no-console': 'off' },
   },

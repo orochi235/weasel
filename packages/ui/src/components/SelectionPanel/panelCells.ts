@@ -3,6 +3,8 @@
  * and the control it draws in a row or in a bar.
  */
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
+import type { PrefAliasTargets } from '@weasel-js/prefs';
+import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
 import { MIXED, absentValue, aggregateValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf, type PanelRow } from './model';
@@ -20,12 +22,17 @@ export interface PanelCellScope {
   absentAt: (path: string) => unknown;
   disabled: ReadonlySet<string>;
   hidden: ReadonlySet<string>;
+  entryAt?: EntryAt;
+  /** The schema the panel's aliases point into, where that is not a kind's own: what is inside an alias's row answers to it. */
+  targets?: PrefAliasTargets;
 }
 
 function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRenderContext {
   const { nodes, commit, selectionKey, fields, absentAt, disabled, hidden } = scope;
   const { path, leaf } = panelLeaf;
   const absent = absentValue(leaf);
+  const inside = panelLeaf.own === undefined ? undefined : scope.targets;
+  const entryAt = inside?.entryAt ?? scope.entryAt;
   const aggregated = aggregateValue(nodes, path, absent);
   const mixed = aggregated === MIXED;
   return {
@@ -47,9 +54,10 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
     selectionKey,
     fields,
     disabled: disabled.has(panelLeafKey(panelLeaf)),
-    disabledAt: (at) => disabled.has(at),
+    disabledAt: inside?.disabledAt ?? ((at) => disabled.has(at)),
     hidden: hidden.has(panelLeafKey(panelLeaf)),
-    hiddenAt: (at) => hidden.has(at),
+    hiddenAt: inside?.hiddenAt ?? ((at) => hidden.has(at)),
+    ...(entryAt ? { entryAt } : {}),
   };
 }
 

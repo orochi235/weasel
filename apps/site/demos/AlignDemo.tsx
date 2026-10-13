@@ -13,7 +13,7 @@ const SCENE = {
   version: 1,
   systemLayers: [{ id: 'default' }],
   nodes: RECTS.map(({ id, color, ...pose }) => ({
-    id, kind: 'leaf', layer: 'default', pose, data: { fill: { color } },
+    id, kind: 'leaf', layer: 'default', pose, data: { fill: { paint: { color } } },
   })),
 };
 
@@ -51,6 +51,7 @@ export function AlignDemo() {
       scene={SCENE}
       features={['pick', 'move', 'transform', 'arrange']}
       actions={ACTIONS}
+      claimKeys
       selectionOptions={{ mode: 'multi', initial: RECTS.map((r) => asNodeId(r.id)) }}
     />
   );

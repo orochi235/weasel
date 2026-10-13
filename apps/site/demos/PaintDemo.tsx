@@ -4,8 +4,8 @@ import {
   contrastLineColor,
   dashForStrokeStyle,
   oklchDegToHex,
-  type FillStyle,
   type Stroke,
+  type Fill,
 } from '@weasel-js/paint';
 import styles from './PaintDemo.module.css';
 
@@ -16,37 +16,37 @@ const TEAL = oklchDegToHex(0.7, 0.12, 190);
 const PLUM = oklchDegToHex(0.55, 0.18, 330);
 const SAND = oklchDegToHex(0.86, 0.08, 85);
 
-interface Paint { fill?: FillStyle; stroke?: Stroke }
+interface SwatchPaint { fill?: Fill; stroke?: Stroke }
 
-const SWATCHES: { id: string; label: string; path: Path; paint: Paint }[] = [
+const SWATCHES: { id: string; label: string; path: Path; paint: SwatchPaint }[] = [
   { id: 'solid', label: 'solid, color from oklchDegToHex', path: BOX, paint: {
-    fill: { color: TEAL },
+    fill: { paint: { color: TEAL } },
   } },
   { id: 'linear', label: "linear gradient through 'oklch'", path: BOX, paint: {
-    fill: {
-      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+    fill: { paint: {
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#e0303a' }, { offset: 1, color: '#3050e0' }],
       units: 'bounds', interpolate: 'oklch',
-    },
+    } },
   } },
   { id: 'radial', label: 'radial gradient', path: BOX, paint: {
-    fill: {
-      fill: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.6,
+    fill: { paint: {
+      kind: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.6,
       stops: [{ offset: 0, color: SAND }, { offset: 1, color: PLUM }],
       units: 'bounds',
-    },
+    } },
   } },
   { id: 'conic', label: 'conic gradient', path: BOX, paint: {
-    fill: {
-      fill: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0,
+    fill: { paint: {
+      kind: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0,
       stops: [
         { offset: 0, color: TEAL }, { offset: 0.5, color: PLUM }, { offset: 1, color: TEAL },
       ],
       units: 'bounds',
-    },
+    } },
   } },
   { id: 'pattern', label: 'built-in tile, named as data', path: BOX, paint: {
-    fill: { fill: 'pattern', pattern: { tile: 'hatch', color: PLUM, size: 10, lineWidth: 2 }, units: 'bounds' },
+    fill: { paint: { kind: 'hatch', color: PLUM, size: 10, lineWidth: 2, units: 'bounds' } },
   } },
   { id: 'dashed', label: "dashForStrokeStyle('dashed', 6)", path: ZIGZAG, paint: {
     stroke: {
@@ -55,7 +55,7 @@ const SWATCHES: { id: string; label: string; path: Path; paint: Paint }[] = [
     },
   } },
   { id: 'edge', label: 'stroke from contrastLineColor', path: BOX, paint: {
-    fill: { color: SAND },
+    fill: { paint: { color: SAND } },
     stroke: { paint: { color: contrastLineColor(SAND, 0.35) }, width: 8, join: 'bevel', align: 'inner' },
   } },
 ];
@@ -64,15 +64,15 @@ const SWATCHES: { id: string; label: string; path: Path; paint: Paint }[] = [
  * Each canvas is handed a JSON round-trip of its paint, not the object
  * itself — so what renders is exactly the text printed beside it.
  */
-function Swatch({ path, paint }: { path: Path; paint: Paint }) {
-  const scene = useScene<Paint & { path: Path }, 'default'>({
+function Swatch({ path, paint }: { path: Path; paint: SwatchPaint }) {
+  const scene = useScene<SwatchPaint & { path: Path }, 'default'>({
     systemLayers: [{ id: 'default' }],
     initial: [{
       kind: 'leaf',
       layer: 'default',
       id: asNodeId('swatch'),
       pose: { x: 14, y: 14, width: 112, height: 72 },
-      data: { path, ...(JSON.parse(JSON.stringify(paint)) as Paint) },
+      data: { path, ...(JSON.parse(JSON.stringify(paint)) as SwatchPaint) },
     }],
   });
   return (

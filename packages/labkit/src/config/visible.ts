@@ -1,17 +1,56 @@
 import {
   applyPrefConditions,
+  applyPrefEntryConditions,
   PREF_SCOPE,
-  type PrefConditionJudge,
+  type PrefAlias,
+  type PrefAliasTargets,
+  type PrefEntryApplied,
+  type PrefGroup,
   type PrefLeaf,
   type PrefScope,
-  prefConditionHolds,
+  type PrefSection,
+  prefAliasTargets,
   prefJudge,
   prefLeafAt,
+  prefReader,
+  prefSchemaHolding,
   prefScopeAt,
   prefScopeUnder,
 } from '@weasel-js/prefs';
 import { schemaNodeAtPath, valueAtPath } from './path';
 import type { ConfigEntry, ResolvedConfig } from './types';
+
+/**
+ * The schema a panel's aliases point into, as its conditions leave it:
+ * `over`, or the panel's own. A config holds a value for every leaf of its
+ * own schema and none for another's, so `over` is read with its defaults.
+ */
+export function aliasTargetsOf(
+  resolved: ResolvedConfig,
+  config: Record<string, unknown>,
+  over?: PrefGroup | PrefSection,
+): PrefAliasTargets {
+  const of = over ?? resolved.group;
+  const read = over ? prefReader(over, config) : (at: string): unknown => valueAtPath(config, at);
+  return prefAliasTargets(of, (entry) => prefJudge(of, read, entry), { showHidden: true });
+}
+
+/**
+ * Reads a value a condition of a panel's own schema names: what `config`
+ * holds, and for a path only `over` holds, that leaf's default where
+ * `config` holds nothing.
+ */
+function conditionReader(
+  resolved: ResolvedConfig,
+  config: Record<string, unknown>,
+  over: PrefGroup | PrefSection | undefined,
+): (at: string) => unknown {
+  const beyond = over && prefReader(over, config);
+  return (at) =>
+    beyond && prefSchemaHolding(resolved.group, at, over) === over
+      ? beyond(at)
+      : valueAtPath(config, at);
+}
 
 /**
  * Whether the node at a dotted path is shown and enabled, with every group
@@ -23,18 +62,26 @@ function scopeAt(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
+  over?: PrefGroup | PrefSection,
 ): PrefScope {
+  const targets = aliasTargetsOf(resolved, config, over);
   const data = prefScopeAt(
     resolved.group,
     path,
-    prefJudge(resolved.group, (at) => valueAtPath(config, at)),
+    prefJudge(resolved.group, conditionReader(resolved, config, over), undefined, over),
+    { aliasOver: over ?? resolved.group, aliasHolds: targets.holds },
   );
   let { shown, enabled } = data;
-  const steps = path.split('.');
-  for (let i = 1; i <= steps.length; i += 1) {
-    const at = steps.slice(0, i).join('.');
-    shown &&= resolved.showIf.get(at)?.(config) ?? true;
-    enabled &&= resolved.enableIf?.get(at)?.(config) ?? true;
+  // An alias answers for the leaf it shows as well, as `prefScopeAt` has it for the data conditions.
+  const leaf = prefLeafAt(resolved.group, path);
+  const target = leaf?.kind === 'alias' ? targets.shown(leaf as PrefAlias) : undefined;
+  for (const asked of target ? [path, target.path] : [path]) {
+    const steps = asked.split('.');
+    for (let i = 1; i <= steps.length; i += 1) {
+      const at = steps.slice(0, i).join('.');
+      shown &&= resolved.showIf.get(at)?.(config) ?? true;
+      enabled &&= resolved.enableIf?.get(at)?.(config) ?? true;
+    }
   }
   return { shown, enabled };
 }
@@ -43,62 +90,83 @@ function scopeAt(
  * Whether the row at a dotted path should be drawn right now: its `showIf`
  * holds, as a condition or a function, and so does that of every group above
  * it. `hidden` is the node's own static flag. Both are presentational — a
- * hidden leaf keeps its value and the instrument still reads it.
+ * hidden leaf keeps its value and the instrument still reads it. `over` is
+ * the schema the panel's aliases point into, where that is not its own.
  */
 export function isLeafVisible(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
   showHidden = false,
+  over?: PrefGroup | PrefSection,
 ): boolean {
   const node = schemaNodeAtPath(resolved.group, path);
   if (node && 'hidden' in node && node.hidden === true && !showHidden) return false;
-  return scopeAt(resolved, path, config).shown;
+  return scopeAt(resolved, path, config, over).shown;
 }
 
 /**
  * Whether the row at a dotted path takes input right now: its `enableIf`
- * holds, and so does that of every group above it.
+ * holds, and so does that of every group above it. `over` is the schema
+ * the panel's aliases point into, where that is not its own.
  */
 export function isLeafEnabled(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
+  over?: PrefGroup | PrefSection,
 ): boolean {
-  return scopeAt(resolved, path, config).enabled;
+  return scopeAt(resolved, path, config, over).enabled;
 }
 
 /**
  * A leaf whose value is made of others', as its dialog draws it: `leaf`
  * without the fields a `showIf` hides, in an object, a union's variants, and a
  * list's or a map's item, and `disabledAt`, which says whether an `enableIf`
- * disables the field at a path under it. The functions beside the tree place
- * rows only, so the data conditions are all there is to ask inside a leaf.
+ * disables the field at a path under it. `entryAt` answers the conditions
+ * that read an entry of a list or a map (`from: 'item'`), for the entry it is
+ * given. The functions beside the tree place rows only, so the data
+ * conditions are all there is to ask inside a leaf. `over` is the schema the
+ * panel is drawn over, which a condition may read a setting of.
  */
 export function conditionedLeaf(
   resolved: ResolvedConfig,
   path: string,
   leaf: PrefLeaf,
   config: Record<string, unknown>,
-): { leaf: PrefLeaf; disabledAt: (at: string) => boolean } {
-  const judge = prefJudge(resolved.group, (at) => valueAtPath(config, at));
+  over?: PrefGroup | PrefSection,
+): {
+  leaf: PrefLeaf;
+  disabledAt: (at: string) => boolean;
+  entryAt: (item: PrefLeaf, at: string, value: unknown) => PrefEntryApplied;
+} {
+  const read = conditionReader(resolved, config, over);
+  const judge = prefJudge(resolved.group, read, undefined, over);
   const { shown, disabled } = applyPrefConditions(resolved.group, judge, { keepEmpty: true });
   const drawn = shown === null ? undefined : prefLeafAt(shown, path);
   // An alias draws its target under its own name, which the tree does not hold.
   const own =
     drawn?.kind === leaf.kind ? { ...drawn, name: leaf.name, description: leaf.description } : leaf;
-  return { leaf: own, disabledAt: (at) => disabled.has(at) };
+  return {
+    leaf: own,
+    disabledAt: (at) => disabled.has(at),
+    entryAt: (item, at, value) =>
+      applyPrefEntryConditions(item, at, prefJudge(resolved.group, read, { item, value }, over)),
+  };
 }
 
 /**
- * Whether a node of a schema not yet resolved is drawn by its own `showIf`,
- * as a condition or a function. It answers for the node alone: a walk that
- * skips what is under a node not shown counts the nesting. With no resolved
- * schema to read a leaf's `encoding` from, a condition compares stored values.
+ * Whether a node met on a walk of a schema's own shape is drawn by its own
+ * `showIf`, as a condition or a function. It answers for the node alone: a
+ * walk that skips what is under a node not shown counts the nesting. `schema`
+ * is that schema resolved, which a condition reads each leaf's `encoding` from.
  */
-export function isEntryShown(entry: ConfigEntry, config: Record<string, unknown>): boolean {
-  const judge: PrefConditionJudge = (condition) =>
-    prefConditionHolds(condition, (at) => valueAtPath(config, at));
+export function isEntryShown(
+  entry: ConfigEntry,
+  config: Record<string, unknown>,
+  schema: PrefGroup | PrefSection,
+): boolean {
+  const judge = prefJudge(schema, (at) => valueAtPath(config, at));
   if (!prefScopeUnder(PREF_SCOPE, entry.annotations, judge).shown) return false;
   return entry.options.showIf?.(config) ?? true;
 }

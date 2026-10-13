@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { cssColorLiteral } from '@weasel-js/paint';
 import { assert, describe, expect, it, vi } from 'vitest';
 
 // CurveEditor uses weasel's own bundled React and fails in jsdom.
@@ -77,7 +78,7 @@ describe('CurveField', () => {
         step={0.01}
         width={200}
         height={110}
-        marks={[{ kind: 'band', x: [0.2, 0.4], color: '#ffcc00' }]}
+        marks={[{ kind: 'band', x: [0.2, 0.4], color: cssColorLiteral('#ffcc01') }]}
         onChange={() => {}}
       />,
     );
@@ -88,7 +89,7 @@ describe('CurveField', () => {
     // x = 0.2 * 200 = 40; width = (0.4 - 0.2) * 200 = 40.
     expect(rect.getAttribute('x')).toBe('40');
     expect(rect.getAttribute('width')).toBe('40');
-    expect(rect.getAttribute('fill')).toBe('#ffcc00');
+    expect(rect.getAttribute('fill')).toBe('#ffcc01');
   });
 
   it('renders a line mark as a positioned line', () => {
@@ -100,15 +101,15 @@ describe('CurveField', () => {
         step={0.01}
         width={200}
         height={110}
-        marks={[{ kind: 'line', x: 0.7, color: '#ffcc00' }]}
+        marks={[{ kind: 'line', x: 0.7, color: { ref: 'accent' } }]}
         onChange={() => {}}
       />,
     );
     const line = container.querySelector(`.${s.marks} line`);
     assert(line);
+    expect(line.getAttribute('stroke')).toBe('var(--wzl-accent)');
     expect(line.getAttribute('x1')).toBe('140');
     expect(line.getAttribute('x2')).toBe('140');
-    expect(line.getAttribute('stroke')).toBe('#ffcc00');
   });
 
   it('omits the marks overlay when marks is undefined', () => {

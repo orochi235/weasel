@@ -104,13 +104,13 @@ export const PREFS = {
           kind: 'boolean',
           name: 'Show grid',
           description: 'Display the grid overlay on the canvas.',
-          default: true,
+          default: false,
         },
         gridDensity: {
           kind: 'number',
           name: 'Grid density',
-          description: 'Spacing between grid lines, in document units (one inch = 72 at the default unit).',
-          default: 72,
+          description: 'Spacing between grid lines, in document units (72 to the inch). Snap to grid uses the same spacing.',
+          default: 20,
           min: 4,
           max: 288,
           step: 4,
@@ -149,6 +149,23 @@ export const PREFS = {
           options: [
             { value: 'nonzero', label: 'Nonzero (SVG default)' },
             { value: 'evenodd', label: 'Even-odd' },
+          ],
+        },
+      },
+    },
+    recording: {
+      name: 'Input recording',
+      description: 'The recorder behind Record and Play in the command bar.',
+      children: {
+        profile: {
+          kind: 'enum',
+          name: 'Pointer movement kept',
+          description: 'Which pointer moves a recording keeps. Presses, releases, wheel, and keys are always kept.',
+          default: 'gesture-only',
+          options: [
+            { value: 'gesture-only', label: 'During a gesture' },
+            { value: 'full', label: 'All of it' },
+            { value: 'events-only', label: 'None' },
           ],
         },
       },

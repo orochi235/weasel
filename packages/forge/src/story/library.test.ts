@@ -5,7 +5,7 @@ const UI = '/repo/packages/ui/src/components/Button/Button.stories.tsx';
 
 describe('librariesFrom', () => {
   const libraries = librariesFrom([
-    { path: '/packages/ui/', label: 'ui', tone: 'tomato' },
+    { path: '/packages/ui/', label: 'ui', tone: { ref: 'swatch-red' } },
     { path: '/packages/labkit/', label: 'labkit' },
   ]);
 
@@ -20,7 +20,7 @@ describe('librariesFrom', () => {
   });
 
   it('tones a library that names a tone', () => {
-    expect(libraries.toneOf('ui')).toBe('tomato');
+    expect(libraries.toneOf('ui')).toEqual({ ref: 'swatch-red' });
     expect(libraries.toneOf('labkit')).toBeUndefined();
     expect(libraries.toneOf('Notes')).toBeUndefined();
   });

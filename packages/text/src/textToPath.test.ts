@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 import { registerFont, registerFontOutlines, loadFontOutlines, type OutlineFace } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { layoutTextPose, type TextPose } from '@weasel-js/text';
+import { layoutTextPose, paintRuns, textPoseLayoutInput, type TextPose } from '@weasel-js/text';
 import { boundsOfPath, pointInPath, pathFromD, PATH_C, PATH_Q, type Path } from '@weasel-js/geom';
 import {
   textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError, type TextOutlineSource,
@@ -163,7 +163,7 @@ describe('textToPath', () => {
     const src = { text: 'B', style: { fontFamily: 'squares', fontSize: 100, strikethrough: true } };
     const tp: TextPose = { ...POSE, text: src.text, style: src.style };
     const { laid, x, y } = layoutTextPose(tp);
-    const [rule] = laid.decorations;
+    const [rule] = paintRuns(laid, textPoseLayoutInput(tp).runs).decorations;
     const path = textToPath(src, POSE);
     expect(pointInPath(path, x + 25, y + (rule.y0 + rule.y1) / 2)).toBe(true);
   });
@@ -182,7 +182,7 @@ describe('textToPath', () => {
     const ruled = textToPath(text('p', { underline: true }), POSE);
     const tp: TextPose = { ...POSE, text: 'p', style: text('p', { underline: true }).style };
     const { laid, x, y } = layoutTextPose(tp);
-    const [rule] = laid.decorations;
+    const [rule] = paintRuns(laid, textPoseLayoutInput(tp).runs).decorations;
     expect(rule).toBeDefined();
     // Probe inside the band where rule and glyph overlap: the font's own rule
     // can straddle the descender's tip, which a probe at the rule's center misses.
@@ -213,7 +213,7 @@ describe('textToPath', () => {
     const src = text('H');
     const tp: TextPose = { ...POSE, text: src.text, style: src.style };
     const { laid, x, y } = layoutTextPose(tp);
-    const g = laid.groups[0].glyphs[0];
+    const g = paintRuns(laid, textPoseLayoutInput(tp).runs).groups[0].glyphs[0];
     const em = boundsOfPath(pathFromD(g.d));
     const b = boundsOfPath(textToPath(src, POSE));
     expect(b.x).toBeCloseTo(x + g.x + em.x * g.scale, 3);
@@ -271,9 +271,9 @@ describe('textToPath failures', () => {
 });
 
 describe('textToPathsByPaint', () => {
-  const RED = { fill: 'solid', color: '#c00' } as const;
-  const BLUE = { fill: 'solid', color: '#00c' } as const;
-  const OUTLINE = { width: 2, paint: { fill: 'solid', color: '#0c0' } } as const;
+  const RED = { kind: 'solid', color: '#c00' } as const;
+  const BLUE = { kind: 'solid', color: '#00c' } as const;
+  const OUTLINE = { width: 2, paint: { kind: 'solid', color: '#0c0' } } as const;
 
   /** Whether `p` covers `(x, y)` in any of `paths` — their union, sampled. */
   const inAny = (paths: readonly Path[], x: number, y: number) => paths.some((p) => pointInPath(p, x, y));
@@ -281,11 +281,11 @@ describe('textToPathsByPaint', () => {
   it('splits a node into one path per paint, whose union is the whole outline', () => {
     const src: TextOutlineSource = {
       ...text(''),
-      runs: [{ text: 'He' }, { text: 'll', fill: BLUE }, { text: 'o', underline: true }],
-      fill: RED,
+      runs: [{ text: 'He' }, { text: 'll', fill: { paint: BLUE } }, { text: 'o', underline: true }],
+      fill: { paint: RED },
     };
     const groups = textToPathsByPaint(src, POSE);
-    expect(groups.map((g) => g.fill)).toEqual([RED, BLUE]);
+    expect(groups.map((g) => g.fill)).toEqual([{ paint: RED }, { paint: BLUE }]);
     expect(groups.every((g) => g.stroke === undefined)).toBe(true);
 
     const whole = textToPath(src, POSE);
@@ -311,19 +311,19 @@ describe('textToPathsByPaint', () => {
     const src: TextOutlineSource = {
       ...text(''),
       runs: [{ text: 'A' }, { text: 'B', stroke: OUTLINE }, { text: 'C' }],
-      fill: RED,
+      fill: { paint: RED },
     };
     const groups = textToPathsByPaint(src, POSE);
     expect(groups).toHaveLength(2);
-    expect(groups[0]).toMatchObject({ fill: RED });
+    expect(groups[0]).toMatchObject({ fill: { paint: RED } });
     expect(groups[0]!.stroke).toBeUndefined();
-    expect(groups[1]).toMatchObject({ fill: RED, stroke: OUTLINE });
+    expect(groups[1]).toMatchObject({ fill: { paint: RED }, stroke: OUTLINE });
   });
 
   it('gives plain text one group in the default text fill, and outlines unfilled text too', () => {
     const plain = textToPathsByPaint(text('Hi'), POSE);
     expect(plain).toHaveLength(1);
-    expect(plain[0]!.fill).toEqual({ fill: 'solid', color: '#000' });
+    expect(plain[0]!.fill).toEqual({ paint: { kind: 'solid', color: '#000' } });
 
     const unfilled = textToPathsByPaint({ ...text('Hi'), fill: null }, POSE);
     expect(unfilled).toHaveLength(1);
@@ -332,7 +332,7 @@ describe('textToPathsByPaint', () => {
   });
 
   it('leaves out a paint whose runs have no ink', () => {
-    const src: TextOutlineSource = { ...text(''), runs: [{ text: 'Hi' }, { text: '  ', fill: BLUE }] };
+    const src: TextOutlineSource = { ...text(''), runs: [{ text: 'Hi' }, { text: '  ', fill: { paint: BLUE } }] };
     expect(textToPathsByPaint(src, POSE)).toHaveLength(1);
     expect(textToPathsByPaint(text('   '), POSE)).toEqual([]);
   });

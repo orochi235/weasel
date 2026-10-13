@@ -88,17 +88,17 @@ describe('effectiveRangeStyle', () => {
   });
 
   it("takes the node's fill from its paint, and omits it for an unfilled node", () => {
-    const fill = { color: '#ff0000ff' };
+    const fill = { paint: { color: '#ff0000ff' } };
     expect(effectiveRangeStyle(null, {}, { fill }).fill).toBe(fill);
     expect('fill' in effectiveRangeStyle(null, {}, { fill: null })).toBe(false);
   });
 
   it("reads an unfilled range as null over a filled node", () => {
-    expect(effectiveRangeStyle({ fill: null }, {}, { fill: { color: '#ff0000ff' } }).fill).toBeNull();
+    expect(effectiveRangeStyle({ fill: null }, {}, { fill: { paint: { color: '#ff0000ff' } } }).fill).toBeNull();
   });
 
   it("lets a run's fill override the node's", () => {
-    const fill = { color: '#00ff00ff' };
-    expect(effectiveRangeStyle({ fill }, {}, { fill: { color: '#ff0000ff' } }).fill).toBe(fill);
+    const fill = { paint: { color: '#00ff00ff' } };
+    expect(effectiveRangeStyle({ fill }, {}, { fill: { paint: { color: '#ff0000ff' } } }).fill).toBe(fill);
   });
 });

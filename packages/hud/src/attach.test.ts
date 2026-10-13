@@ -194,8 +194,8 @@ describe('attachHud', () => {
       hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
       const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
-      const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
-      expect(buttonBody.fill.color).toBe('#123456');
+      const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { paint: { color: string } } };
+      expect(buttonBody.fill.paint.color).toBe('#123456');
     } finally {
       canvas.remove();
     }
@@ -208,8 +208,8 @@ describe('attachHud', () => {
     hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
     const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
     const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
-    const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
-    expect(buttonBody.fill.color).toBe(resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface-raised']);
+    const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { paint: { color: string } } };
+    expect(buttonBody.fill.paint.color).toBe(resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-surface-raised']);
   });
 
   it('draws content beneath frames, clipped to contentRect', () => {
@@ -223,7 +223,7 @@ describe('attachHud', () => {
       content: () => [{
         kind: 'path',
         path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 },
-        fill: { fill: 'solid', color: '#f00' },
+        fill: { paint: { kind: 'solid', color: '#f00' } },
       }],
     });
 
@@ -246,7 +246,7 @@ describe('attachHud', () => {
     const painter = () => [{
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
-      fill: { fill: 'solid' as const, color: '#f00' },
+      fill: { paint: { kind: 'solid' as const, color: '#f00' } },
     }];
     hud.window({ id: 'a', x: 10, y: 10, w: 100, h: 80, title: 'A', content: painter });
     hud.window({ id: 'b', x: 200, y: 10, w: 100, h: 80, title: 'B', content: painter });
@@ -295,6 +295,36 @@ describe('attachHud claims', () => {
     attachHud(api, hud);
     hud.add(widgetAt('under'));
     hud.add(widgetAt('decoration', []));
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
+  });
+
+  it('reads a widget’s claims at each hit-test, so a getter can change them', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    let interactive = false;
+    hud.add(widgetAt('under'));
+    hud.add({
+      ...widgetAt('modal'),
+      get claims(): readonly ClaimableGesture[] { return interactive ? ['pointer'] : []; },
+    });
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
+    interactive = true;
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('modal');
+    expect(hitAt(api)?.claimedKinds).toEqual(['pointer']);
+  });
+
+  it('a kit rect stops the walk once setClaims gives it something to consume', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('under'));
+    const scrim = hud.rect({ id: 'scrim', x: 0, y: 0, w: 50, h: 50, fill: '#000' });
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
+    scrim.setClaims(['pointer', 'wheel']);
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('scrim');
+    expect(hitAt(api)?.claimedKinds).toEqual(['pointer', 'wheel']);
+    scrim.setClaims([]);
     expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
   });
 

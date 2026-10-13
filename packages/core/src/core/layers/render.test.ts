@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer } from './render';
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 describe('drawLayers', () => {
   it('returns concatenated DrawCommands from each visible layer in order', () => {
     // Use screen-space layers so commands pass through unwrapped — this
     // test exercises iteration order, not the world-space auto-wrap.
-    const aCmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } };
-    const bCmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 1, width: 1, height: 1 }, fill: { fill: 'solid', color: '#000' } };
+    const aCmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
+    const bCmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 1, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#000' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', draw: () => [aCmd] };
     const b: RenderLayer<unknown> = { id: 'b', label: 'B', space: 'screen', draw: () => [bCmd] };
     const out = drawLayers([a, b], null, {}, undefined, undefined, { width: 10, height: 10 });
@@ -15,7 +15,7 @@ describe('drawLayers', () => {
   });
 
   it('reports each layer\'s slice of the output, and a group run as one slice', () => {
-    const cmd = (): DrawCommand => ({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } });
+    const cmd = (): DrawCommand => ({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } });
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', draw: () => [cmd(), cmd()] };
     const empty: RenderLayer<unknown> = { id: 'empty', label: 'E', space: 'screen', draw: () => [] };
     const b: RenderLayer<unknown> = { id: 'b', label: 'B', space: 'screen', draw: () => [cmd()] };
@@ -35,14 +35,14 @@ describe('drawLayers', () => {
 
   it('honors the order array', () => {
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', draw: () => [{ kind: 'group', children: [] }] };
-    const b: RenderLayer<unknown> = { id: 'b', label: 'B', space: 'screen', draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } }] };
+    const b: RenderLayer<unknown> = { id: 'b', label: 'B', space: 'screen', draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } }] };
     const out = drawLayers([a, b], null, {}, ['b', 'a'], undefined, { width: 10, height: 10 });
     expect(out[0].kind).toBe('path');
     expect(out[1].kind).toBe('group');
   });
 
   it('skips layers whose visibility is false', () => {
-    const draw = vi.fn(() => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } }] as DrawCommand[]);
+    const draw = vi.fn(() => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } }] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
     const out = drawLayers([a], null, { a: false }, undefined, undefined, { width: 10, height: 10 });
     expect(out).toEqual([]);
@@ -67,14 +67,14 @@ describe('drawLayers', () => {
   });
 
   it('always draws alwaysOn layers regardless of visibility map', () => {
-    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } };
+    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', alwaysOn: true, draw: () => [cmd] };
     const out = drawLayers([a], null, { a: false }, undefined, undefined, { width: 10, height: 10 });
     expect(out).toEqual([cmd]);
   });
 
   it('wraps world-space layer output in a group with viewToMat3 transform', () => {
-    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } };
+    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => [cmd] };
     const out = drawLayers([a], null, {}, undefined, { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 10, height: 10 });
     expect(out.length).toBe(1);
@@ -86,14 +86,14 @@ describe('drawLayers', () => {
   });
 
   it('treats unset space as world (auto-wraps)', () => {
-    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } };
+    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => [cmd] }; // no `space`
     const out = drawLayers([a], null, {}, undefined, undefined, { width: 10, height: 10 });
     expect(out[0].kind).toBe('group');
   });
 
   it('passes screen-space layer output through unchanged', () => {
-    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } };
+    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } };
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', space: 'screen', draw: () => [cmd] };
     const out = drawLayers([a], null, {}, undefined, undefined, { width: 10, height: 10 });
     expect(out).toEqual([cmd]);
@@ -148,7 +148,7 @@ function countingLayer(id: string, calls: { n: number }): RenderLayer<{ v: numbe
         {
           kind: 'path',
           path: { kind: 'rect', x: data.v, y: 0, width: 1, height: 1 },
-          fill: { fill: 'solid', color: '#fff' },
+          fill: { paint: { kind: 'solid', color: '#fff' } },
         },
       ];
     },
@@ -242,7 +242,7 @@ describe('a layer that throws', () => {
   const PATH_CMD: DrawCommand = {
     kind: 'path',
     path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-    fill: { fill: 'solid', color: '#fff' },
+    fill: { paint: { kind: 'solid', color: '#fff' } },
   };
   const boom = (): DrawCommand[] => {
     throw new Error('layer is broken');
@@ -296,7 +296,7 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 describe('RenderLayer.effects', () => {
   const cmds: DrawCommand[] = [
-    { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { color: '#f00' } },
+    { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { color: '#f00' } } },
   ];
   const fx = [{ program: { id: 'test:fx' } }];
 
@@ -337,7 +337,7 @@ describe('RenderLayer.effects', () => {
 describe('layer groups', () => {
   const fx = [{ program: { id: 'test:fx' } }];
   const cmd = (color: string): DrawCommand =>
-    ({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { color } });
+    ({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { color } } });
 
   /** Screen-space so a layer's own commands pass through unwrapped and the
    *  only group in the output is the one under test. */

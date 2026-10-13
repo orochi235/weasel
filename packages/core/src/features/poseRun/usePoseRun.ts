@@ -1,28 +1,19 @@
 /**
  * A pose run: poses published per frame, committed once.
  *
- * The frames go to `scene.overrides` — the ephemeral table a drag publishes to,
- * which `effectivePose`, the derived-geometry lookup and the pick source
- * already read. So an edge follows a node the run is moving with nothing added,
- * and the whole run lands as one undo entry when it settles.
- *
- * It knows nothing about layout. Each frame it asks `step` for poses and
- * whether it is finished; a relaxation, an eased transition to a target, and a
- * scrubbed timeline are all the same shape to it.
+ * The frames go to `scene.overrides` — the ephemeral table a drag publishes
+ * to — so an edge follows a node the run is moving, and the whole run lands as
+ * one undo entry when it settles.
  *
  * **A node another gesture owns is pinned, not driven.** The run publishes
- * entries it holds by reference, so an override it did not put there belongs to
+ * through a hold of its own, so an override it did not put there belongs to
  * somebody else — a drag, a resize. It never writes that id, never commits it,
  * and hands it to `step` as pinned so the producer can hold its neighbors
  * against it.
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
-import {
-  dropPreviewOverrides,
-  syncPreviewOverrides,
-} from '../../interactions/actions/previewOverrides';
-import type { NodeId, Scene } from '../../core/scene/types';
+import type { NodeId, PoseHold, Scene } from '../../core/scene/types';
 
 /** What a producer is told before it is asked for a frame. */
 export interface PoseRunCtx<TPose> {
@@ -37,8 +28,7 @@ export interface PoseRunCtx<TPose> {
 export interface PoseRunStep<TPose> {
   /** Where the nodes it drives are this frame — the whole picture, not a
    *  delta. An id the frame omits stops being published, which is how a node
-   *  leaves the run's hands: a producer that drops a grabbed box and its rows
-   *  from one frame has released them by the next. */
+   *  leaves the run's hands. */
   poses: Iterable<readonly [NodeId, TPose]>;
   /** Whether the run is finished. The frame is published either way, and a
    *  finished run commits. */
@@ -70,8 +60,6 @@ export interface PoseRun {
   isRunning(): boolean;
 }
 
-const EMPTY: ReadonlyMap<NodeId, unknown> = new Map<NodeId, unknown>();
-
 /**
  * Drive node poses frame by frame through `scene.overrides`, committing them as
  * one undo entry when `step` reports done or `stop` is called. Idle until
@@ -80,12 +68,10 @@ const EMPTY: ReadonlyMap<NodeId, unknown> = new Map<NodeId, unknown>();
 export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
   const optsRef = useLatest(opts);
 
-  /** This frame's poses, and the entries published for them. Held by
-   *  reference so a frame mutates in place rather than re-notifying per node. */
-  const state = useRef({
-    previews: new Map<NodeId, unknown>(),
-    overrideEntries: new Map<NodeId, { pose: unknown }>(),
-  });
+  /** This frame's poses. */
+  const previews = useRef(new Map<NodeId, TPose>());
+  /** The hold the run publishes through, and the scene it was taken from. */
+  const held = useRef<{ scene: Scene<unknown, string, TPose>; hold: PoseHold<TPose> } | null>(null);
   const running = useRef(false);
   const frame = useRef(0);
   const mounted = useRef(true);
@@ -97,49 +83,37 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     cancelFrame: opts.cancelFrame,
   });
 
-  /** The scene as the previous frame left it, for `syncPreviewOverrides`. */
-  const syncState = useCallback((): {
-    scene: Scene<unknown, string, unknown>;
-    previews: Map<NodeId, unknown>;
-    overrideEntries: Map<NodeId, { pose: unknown }>;
-  } => ({
-    scene: optsRef.current.scene,
-    previews: state.current.previews,
-    overrideEntries: state.current.overrideEntries,
-  }), [optsRef]);
-
-  /** Overrides somebody else published, and the pose each carries. */
-  const pinnedNow = (): ReadonlyMap<NodeId, TPose> => {
-    const { overrides } = optsRef.current.scene;
-    let pinned: Map<NodeId, TPose> | undefined;
-    for (const id of overrides.ids()) {
-      const entry = overrides.get(id);
-      if (entry === undefined || entry === state.current.overrideEntries.get(id)) continue;
-      if (entry.pose === undefined) continue;
-      (pinned ??= new Map()).set(id, entry.pose);
+  /** The hold on the scene the options name now. A run handed a different
+   *  scene mid-flight lets go of the old one's nodes. */
+  const holdNow = useCallback((): PoseHold<TPose> => {
+    const { scene } = optsRef.current;
+    if (held.current?.scene !== scene) {
+      held.current?.hold.drop();
+      held.current = { scene, hold: scene.overrides.hold() };
     }
-    return pinned ?? (EMPTY as ReadonlyMap<NodeId, TPose>);
-  };
+    return held.current.hold;
+  }, [optsRef]);
+
+  const release = useCallback((): void => {
+    held.current?.hold.drop();
+    previews.current.clear();
+  }, []);
 
   const commit = (): void => {
-    const { previews } = state.current;
     const scene = optsRef.current.scene;
     let moved = 0;
     try {
-      if (previews.size > 0) {
+      if (previews.current.size > 0) {
         scene.batch(optsRef.current.label ?? 'Layout', () => {
-          for (const [id, pose] of previews) {
+          for (const [id, pose] of previews.current) {
             if (scene.get(id) === undefined || scene.isLocked(id)) continue;
-            scene.setPose(id, pose as TPose);
+            scene.setPose(id, pose);
             moved++;
           }
         });
       }
     } finally {
-      // After the ops land: dropping first leaves a window in which the scene
-      // answers with the pre-run pose.
-      dropPreviewOverrides(syncState());
-      previews.clear();
+      release();
     }
     optsRef.current.onCommit?.(moved);
   };
@@ -151,19 +125,16 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
 
   const tick = (): void => {
     if (!mounted.current || !running.current) return;
-    const pinned = pinnedNow();
+    const hold = holdNow();
+    const pinned = hold.others();
     const { poses, done } = optsRef.current.step({ pinned, frame: frame.current });
     frame.current++;
-    // Each frame replaces the last: an id this one omits — a node just
-    // grabbed, or a row under one — stops being published, rather than being
-    // held at a pose from before the press while the gesture carries it
-    // somewhere else.
-    state.current.previews.clear();
+    previews.current.clear();
     for (const [id, pose] of poses) {
       if (pinned.has(id)) continue;
-      state.current.previews.set(id, pose);
+      previews.current.set(id, pose);
     }
-    syncPreviewOverrides(syncState());
+    hold.set(previews.current);
     if (done) {
       halt();
       commit();
@@ -174,16 +145,14 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
 
   useEffect(() => {
     mounted.current = true;
-    const { previews } = state.current;
     return () => {
       mounted.current = false;
       loop.cancel();
       // Teardown is not a decision: an unmounted run abandons its frames
       // rather than writing them.
-      dropPreviewOverrides(syncState());
-      previews.clear();
+      release();
     };
-  }, [loop, syncState]);
+  }, [loop, release]);
 
   return useMemo<PoseRun>(() => ({
     start() {
@@ -199,8 +168,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     },
     cancel() {
       halt();
-      dropPreviewOverrides(syncState());
-      state.current.previews.clear();
+      release();
     },
     isRunning: () => running.current,
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -12,3 +12,16 @@
 .lk-split .windease-affordance-hit:focus-visible {
   outline: none;
 }
+
+// The strip sets the sidebar pane's width, so the pane can be asked how wide it
+// is. Under 200px a pair of label-beside-value rows no longer fits one line,
+// and the value runs out of its cell and under the next label.
+.lk-split [data-node='lk-split-sidebar'] {
+  container: lk-split-sidebar / inline-size;
+}
+
+@container lk-split-sidebar (max-width: 199.98px) {
+  .lk-split [data-node='lk-split-sidebar'] > * {
+    --wzl-prop-columns: minmax(0, 1fr);
+  }
+}

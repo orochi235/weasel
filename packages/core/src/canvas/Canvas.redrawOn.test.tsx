@@ -12,7 +12,7 @@ import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { Canvas } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { defineTool, useTools } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
 
@@ -44,7 +44,7 @@ function probeLayer(draw: () => void, extra: Partial<RenderLayer<unknown>> = {})
     space: 'screen',
     draw: () => {
       draw();
-      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } }];
+      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } }];
     },
     ...extra,
   };

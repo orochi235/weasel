@@ -4,7 +4,7 @@ import type { Stroke, MarkerRef } from './paint';
 describe('marker fields on Stroke', () => {
   it('accepts a bare key and survives a JSON round-trip', () => {
     const stroke: Stroke = {
-      paint: { fill: 'solid', color: '#000' },
+      paint: { kind: 'solid', color: '#000' },
       width: 2,
       markerEnd: 'arrow',
     };
@@ -20,7 +20,7 @@ describe('marker fields on Stroke', () => {
 
   it('accepts all three positions and a consumer key', () => {
     const stroke: Stroke = {
-      paint: { fill: 'solid', color: '#000' },
+      paint: { kind: 'solid', color: '#000' },
       markerStart: 'circle',
       markerMid: { key: 'app:tick' },
       markerEnd: 'arrow',

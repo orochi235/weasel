@@ -1,3 +1,4 @@
+import { cssColorLiteral } from '@weasel-js/paint';
 import { render } from '@testing-library/react';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { describe, expect, it } from 'vitest';
@@ -30,10 +31,24 @@ describe('PropertyPanel stance and tone', () => {
   });
 
   it('takes a color given directly, with no stance', () => {
-    const { container } = render(<PropertyPanel tone="#224a63">x</PropertyPanel>);
+    const { container } = render(<PropertyPanel tone={cssColorLiteral('#224a63')}>x</PropertyPanel>);
     const panel = panelOf(container);
     expect(panel.hasAttribute('data-stance')).toBe(false);
     expect(panel.style.getPropertyValue('--wzl-tone')).toBe('#224a63');
+  });
+
+  it('takes a color named in the theme, as its custom property', () => {
+    const { container } = render(<PropertyPanel tone={{ ref: 'accent' }}>x</PropertyPanel>);
+    const panel = panelOf(container);
+    expect(panel.hasAttribute('data-tone')).toBe(true);
+    expect(panel.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-accent)');
+  });
+
+  it('takes no tone from a name nothing answers', () => {
+    const { container } = render(<PropertyPanel tone={{ ref: 'nope' }}>x</PropertyPanel>);
+    const panel = panelOf(container);
+    expect(panel.hasAttribute('data-tone')).toBe(false);
+    expect(panel.style.getPropertyValue('--wzl-tone')).toBe('');
   });
 
   it('reads tones from the nearest provider', () => {

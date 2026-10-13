@@ -8,7 +8,7 @@
  * (`buildSceneViewCommands`) so a scene painted off-screen matches the same
  * scene painted on it.
  */
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { wrapWithPoseRotation } from './poseRotation';
 
 /** Rotate `cmds` about the pose's AABB center and multiply by `alpha`.

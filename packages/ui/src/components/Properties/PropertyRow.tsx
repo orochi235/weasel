@@ -122,7 +122,7 @@ export function PropertyRow({
   const head = (
     <span className={s.rowLabel} ref={labelRef}>
       {onAutoChange ? (
-        <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} />
+        <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} disabled={disabled} />
       ) : (
         label
       )}
@@ -205,26 +205,29 @@ function AutoToggle({
   auto,
   label,
   onChange,
+  disabled,
 }: {
   auto: boolean;
   label: ReactNode;
   onChange: (next: boolean) => void;
+  disabled: boolean;
 }) {
   const name = typeof label === 'string' ? label : 'this setting';
   const toggle = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
     // The wrapping <label> would otherwise actuate the row's control.
     e.preventDefault();
     e.stopPropagation();
-    onChange(!auto);
+    if (!disabled) onChange(!auto);
   };
   return (
     // A span, not a button: a <button> is a labelable element, so inside the
     // row's <label> it would take the row's name off the actual control.
     <span
       role="button"
-      tabIndex={0}
+      tabIndex={disabled ? undefined : 0}
       className={s.autoToggle}
       aria-pressed={!auto}
+      aria-disabled={disabled || undefined}
       aria-label={`Pin ${name}`}
       onClick={toggle}
       onKeyDown={(e) => {

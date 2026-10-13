@@ -234,8 +234,8 @@ describe('useTiledSurface', () => {
     expect(frames[0]?.dpr).toBe(2);
   });
 
-  // jsdom has no `matchMedia`, so the stand-in below is what fires; that a real display
-  // change fires the query is the browser's to prove.
+  // jsdom has no `matchMedia`, so the stand-in below is what fires; `Lab.density.browser.test`
+  // has a real one.
   it('repaints every tile when the dpr changes and nothing resized', () => {
     vi.stubGlobal('devicePixelRatio', 1);
     const density = stubDensityQuery();

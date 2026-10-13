@@ -1,24 +1,16 @@
 /**
  * The outline text tier, in real GL.
  *
- * No committed baseline, and deliberately so. The comparison this demo exists
- * to make has the canvas-SDF tier on one side of it, and that tier rasterizes
- * through `fillText` — platform text rendering, which differs by OS, by
- * version, and by whether a machine has subpixel positioning on. A committed
- * PNG would encode one machine's rasterizer.
- *
- * What is portable is the *structure* of the claim, and it happens to be the
- * two things worth pinning anyway:
+ * No committed baseline: the canvas-SDF tier rasterizes through `fillText` —
+ * platform text rendering, which differs by OS, by version, and by whether a
+ * machine has subpixel positioning on. Two structural claims instead:
  *
  *   1. The tier engages — flipping it changes pixels. A wiring regression
- *      that quietly left every glyph on the SDF tier would still produce a
- *      perfectly good-looking canvas, and a tolerance-based baseline would
- *      pass it.
+ *      that left every glyph on the SDF tier would still look good, and a
+ *      tolerance-based baseline would pass it.
  *   2. The tier is metric-neutral — flipping it does *not* move anything.
  *      That invariant is what lets the threshold depend on zoom: cross it
- *      while reading and text must not reflow. It is also the assertion most
- *      likely to catch a real mistake, since an em-space placement bug lands
- *      as a shifted or mis-scaled glyph rather than as an ugly one.
+ *      while reading and text must not reflow.
  */
 import { test, expect, type Page } from '@playwright/test';
 
@@ -35,8 +27,7 @@ async function inkStats(page: Page) {
     for (let y = 0; y < c.height; y++) {
       for (let x = 0; x < c.width; x++) {
         // Well inside the glyph, not on its antialiased edge: the two tiers
-        // resolve edges differently by construction, and a threshold near the
-        // edge would measure that rather than where the glyph sits.
+        // resolve edges differently by construction.
         if (data[(y * c.width + x) * 4] < 64) {
           ink++;
           if (x < minX) minX = x;
@@ -73,28 +64,19 @@ test('the outline tier engages, and does not move the text it replaces', async (
   const withSdf = await inkStats(page);
   expect(withSdf.ink).toBeGreaterThan(1000);
 
-  // 1. Something actually changed. Coverage is the cheapest signal that
-  //    survives a platform rasterizer difference — a distance field
-  //    reconstructed from a 48px bake and magnified 4× does not lay down the
-  //    same number of interior pixels as exact geometry.
+  // 1. Something actually changed: a distance field reconstructed from a 48px
+  //    bake and magnified 4× does not lay down the same number of interior
+  //    pixels as exact geometry.
   const coverageDelta = Math.abs(withOutlines.ink - withSdf.ink) / withSdf.ink;
   expect(coverageDelta).toBeGreaterThan(0.001);
 
-  // 2. And nothing moved — to within one bake texel.
-  //
-  //    The tolerance is not slop, it is the resolution of the thing being
-  //    compared against. The dynamic tier's glyph rects come out of a 48px
-  //    raster and are stored as integers (`yoffset = base - raster.top` in
-  //    `dynamicAtlas.ts`), so its *ink edge* is quantized to that grid and
-  //    then scaled up with everything else: the 96px line drawn at 4× is 8
-  //    device pixels per bake texel. The outline tier has no such grid, so a
-  //    disagreement of one texel is the SDF tier's rounding, not a placement
-  //    error — and metric neutrality is a claim about pen positions and line
-  //    boxes, which `layoutRuns.test.ts` pins exactly and to the float.
-  //
-  //    What survives here is the class of bug that misses by glyph heights:
-  //    a wrong scale, a missing baseline, an em-space sign flip. None of
-  //    those fit inside a texel.
+  // 2. And nothing moved — to within one bake texel. The dynamic tier's glyph
+  //    rects come out of a 48px raster and are stored as integers, so its ink
+  //    edge is quantized to that grid and then scaled up: the 96px line drawn
+  //    at 4× is 8 device pixels per bake texel. The outline tier has no such
+  //    grid, so a disagreement of one texel is the SDF tier's rounding. A
+  //    wrong scale, a missing baseline, or an em-space sign flip misses by
+  //    glyph heights.
   const scale = withOutlines.width / 600;          // device px per CSS px
   const bakeTexel = (96 / 48) * 4 * scale;          // 96px line, 48px bake, 4× zoom
   const slack = Math.ceil(bakeTexel) + 2;
@@ -109,8 +91,6 @@ test('zoom pulls small text across the threshold without moving it', async ({ pa
   await expect(page.getByTestId('outline-status')).toContainText('ready', { timeout: 15_000 });
 
   // At 1× only the 96px line is past the 48px threshold; at 4× every line is.
-  // The rule is on-screen size, so the *same* document renders through
-  // different tiers at different zooms — and still has to lay out identically.
   await setZoom(page, 1);
   const near = await inkStats(page);
   expect(near.ink).toBeGreaterThan(500);

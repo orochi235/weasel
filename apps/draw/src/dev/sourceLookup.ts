@@ -5,19 +5,8 @@ export interface ExportInfo {
 }
 
 /** Locate the line that exports `symbol` in the supplied source string and
- *  return the JSDoc block (if any) immediately above it. Returns null if no
- *  matching export is found.
- *
- *  Recognized forms:
- *    export function NAME
- *    export const NAME
- *    export class NAME
- *    export type NAME
- *    export interface NAME
- *    export enum NAME
- *    export { NAME [as ALIAS] }
- *
- *  Line-based and intentionally simple — not a full TypeScript parser. */
+ *  return the JSDoc block (if any) immediately above it, or null if no
+ *  matching export is found. Line-based — not a full TypeScript parser. */
 export function extractExportInfo(source: string, symbol: string): ExportInfo | null {
   const lines = source.split('\n');
   const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -66,12 +55,11 @@ function readJsdocAbove(lines: string[], exportLineIndex: number): string | null
 type RawSourceMap = Record<string, string>;
 
 // Tests and stories are excluded: they export no symbol the inspector can
-// resolve, and they were a third of what this embedded.
+// resolve.
 //
 // Both arguments must be inline literals. `import.meta.glob` is resolved by
 // static analysis, so hoisting the patterns or the options into a `const`
-// leaves vite unable to read them — it silently drops `eager`, and every
-// matched file becomes its own dynamic chunk (87 preloads instead of 1).
+// silently drops `eager`, and every matched file becomes its own dynamic chunk.
 let rawSources: RawSourceMap = {};
 if (typeof (import.meta as { glob?: unknown }).glob === 'function') {
   rawSources = {

@@ -12,23 +12,16 @@
 import type { ReactElement } from 'react';
 import {
   DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, mergeAlphaFromPrev, useOngoingAction,
-  type FillStyle,
+  type Paint,
 } from '@weasel-js/core';
-import { FillStrokeSwatch } from '@weasel-js/ui';
+import { FillStrokeSwatch, solidColorOf } from '@weasel-js/ui';
 import { useColorContext } from './tools/colorContext';
 
-export type ActivePaint =
-  | { kind: 'solid'; color: string }
-  | { kind: 'none' }
-  | { kind: 'transparent' };
+/** The paint a new shape takes, as a node holds one: `null` is none. */
+export type ActivePaint = Paint | null;
 
 export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: DEFAULT_FILL_COLOR };
 export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR };
-
-function toFillStyle(p: ActivePaint): FillStyle | null {
-  if (p.kind === 'none') return null;
-  return { fill: 'solid', color: p.kind === 'solid' ? p.color : '#00000000' };
-}
 
 export function ActiveSwatches(): ReactElement {
   const colors = useColorContext();
@@ -37,8 +30,7 @@ export function ActiveSwatches(): ReactElement {
   // The native picker has no alpha, so a pick keeps the paint's own.
   const withAlpha = (slot: 'fill' | 'stroke', color: string): string => {
     const cur = slot === 'fill' ? colors.fill : colors.stroke;
-    const prev = cur.kind === 'solid' ? cur.color
-      : slot === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR;
+    const prev = solidColorOf(cur) ?? (slot === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR);
     return mergeAlphaFromPrev(color, prev);
   };
   const pick = (slot: 'fill' | 'stroke', color: string): string => {
@@ -51,8 +43,8 @@ export function ActiveSwatches(): ReactElement {
   return (
     <FillStrokeSwatch
       className="wd-active-swatches"
-      fill={toFillStyle(colors.fill)}
-      stroke={toFillStyle(colors.stroke)}
+      fill={colors.fill}
+      stroke={colors.stroke}
       focused={colors.focused}
       onFocusChange={colors.setFocus}
       onInput={(slot, color) => edits[slot].input({ color: pick(slot, color) })}
@@ -64,7 +56,7 @@ export function ActiveSwatches(): ReactElement {
         colors.setFocus(slot);
         const set = slot === 'fill' ? colors.setFill : colors.setStroke;
         const cur = slot === 'fill' ? colors.fill : colors.stroke;
-        set(cur.kind === 'none' ? (slot === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : { kind: 'none' });
+        set(cur === null ? (slot === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : null);
       }}
       onSwap={colors.swap}
       shortcuts={{ none: '/', swap: 'X' }}

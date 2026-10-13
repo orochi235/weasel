@@ -9,7 +9,7 @@ import { weaselAliases } from '../../../../../scripts/vite-aliases';
 import { forge } from '../../vite/plugin';
 
 const REPO = resolve(__dirname, '../../../../..');
-const SOURCE_SHIM = resolve(REPO, 'packages/forge/src/preview-api.ts');
+const SOURCE_SHIM = resolve(REPO, 'packages/forge/src/csf/shims/preview-api.ts');
 const BUILT_PLUGIN = resolve(REPO, 'packages/forge/dist/vite/index.js');
 const BUILT_SHIM = resolve(REPO, 'packages/forge/dist/csf/preview-api.js');
 

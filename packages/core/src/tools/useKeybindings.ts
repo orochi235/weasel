@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
+import { eligibleForMode, type ModeRegistry } from '@weasel-js/modes';
 import {
   makeToolActivateAction,
   buildToolActivateBindings,
@@ -19,15 +20,15 @@ export interface UseKeybindingsOptions {
    *  tool). Pass `null` to disable Escape-returns-to-default behavior. */
   defaultTool?: string | null;
   /**
-   * Gate for keyboard tool activation: return false to refuse a tool the
-   * active mode doesn't allow. `<SceneCanvas>` wires this from
-   * its `modes` registry + each tool's `eligibility.capabilities`, using the same predicate
-   * `ToolPalette` uses to grey a button out — so the grey-out becomes a
-   * guarantee rather than a hint.
+   * The modes that gate keyboard tool activation: a key is refused when the
+   * active mode does not allow every tag in the tool's
+   * `eligibility.capabilities` — the predicate `ToolPalette` greys a button
+   * out by, so the grey-out is a guarantee rather than a hint. `<SceneCanvas>`
+   * passes its `modes` prop, whoever built the `ToolsApi`.
    *
    * Omit for consumers with no mode registry: every tool stays activatable.
    */
-  isToolEligible?: (toolId: string) => boolean;
+  modes?: ModeRegistry;
 }
 
 /** Wire the single-key tool-activation shortcuts (V, P, T, …) and Escape to
@@ -83,7 +84,12 @@ export function useKeybindings(
       const bindings = buildToolActivateBindings(specs);
       unregisters.push(registry.register(makeToolActivateAction(
         bindings,
-        (toolId) => optionsRef.current.isToolEligible?.(toolId) ?? true,
+        (toolId) => {
+          const modes = optionsRef.current.modes;
+          if (!modes) return true;
+          const tags = toolsRef.current.registry[toolId]?.eligibility.capabilities;
+          return eligibleForMode(modes.current(), tags ?? []);
+        },
       )));
     }
 

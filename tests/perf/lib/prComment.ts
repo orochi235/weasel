@@ -14,7 +14,7 @@ export function commentBody(report: string, shas: { base: string; head: string }
     COMMENT_MARKER,
     '### Benchmarks',
     '',
-    `a is the base, \`${shas.base.slice(0, 10)}\`; b is this pull request, \`${shas.head.slice(0, 10)}\`. ` +
+    `a is the commit this branch forked from, \`${shas.base.slice(0, 10)}\`; b is this pull request, \`${shas.head.slice(0, 10)}\`. ` +
       'Both ran back to back on the same machine. Nothing here gates the build: read a ratio against ' +
       'the spread of its neighbors before believing it (`tests/perf/README.md`).',
     '',

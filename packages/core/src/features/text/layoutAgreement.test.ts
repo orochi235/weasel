@@ -2,13 +2,6 @@
  * One string, one style, three consumers — the paint, the silhouette and the
  * caret — asked to agree.
  *
- * Until this landed they were three walks: `drawText` through
- * `cachedLayoutRuns`, `textLineBoxes` through a bare `layoutRuns`, and
- * `caretIndexAt` through `ctx.measureText`. The first two differed only in
- * cost; the third differed in answer, because per-character measurement
- * cannot see a kerning pair and never looked at `runs` at all. Nothing
- * compared them, so the gap was invisible.
- *
  * The `inter` fixture is baked at size 32 with two glyphs — `A` (advance 23),
  * `B` (advance 22) — and one kerning pair, `A→B` at -1. At `fontSize: 32`
  * those are world units, so the pen puts `B` at x = 22 and an unkerned walk
@@ -18,12 +11,14 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { cachedLayoutRuns, resolveTextStyle, textLineBoxes, type TextPose, caretIndexAt } from '@weasel-js/text';
-import type { DrawCommand, TextDrawCommand } from '../../renderer/DrawCommand';
+import {
+  cachedLayoutRuns, paintRuns, resolveTextStyle, textLineBoxes, type TextPose, caretIndexAt,
+} from '@weasel-js/text';
+import type { DrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import { findNodeShape } from '../../canvas/NodeShape';
 import { createTextLayer } from './textLayer';
-import { textCommandFromRuns } from 'renderer/textCommand';
+import { textCommandFromRuns } from '@weasel-js/renderer';
 
 const SIZE = 32;
 const STYLE = { fontFamily: 'inter', fontSize: SIZE };
@@ -55,10 +50,14 @@ beforeEach(async () => {
 
 /** What the renderer would lay out for `POSE`, through the command builder
  *  every text painter uses. */
-function painted() {
-  const cmd = textCommandFromRuns(
+function command(): TextDrawCommand {
+  return textCommandFromRuns(
     POSE.x, POSE.y, RUNS, STYLE, POSE.width, POSE.height,
   ) as TextDrawCommand;
+}
+
+function painted() {
+  const cmd = command();
   return cachedLayoutRuns(cmd.runs, {
     maxWidth: cmd.maxWidth ?? Infinity,
     lineHeight: 1.2,
@@ -90,7 +89,7 @@ describe('the paint, the silhouette and the caret', () => {
 
   it('put the caret boundary on the pen position the paint used', () => {
     const laid = painted();
-    const quads = laid.groups.flatMap((g) => g.quads);
+    const quads = paintRuns(laid, command().runs).groups.flatMap((g) => g.quads);
     expect(quads).toHaveLength(2);
     // A quad's left edge is the pen plus the glyph's `xoffset`, scaled; both
     // fixture glyphs sit at the size their run asked for.

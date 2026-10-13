@@ -1,5 +1,6 @@
-import type { DrawCommand, GroupDrawCommand } from '../../renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { drawOneLayer, subscribeToSources, type Dims, type RenderLayer } from 'core/layers/render';
+import { backgroundFillCommands } from 'core/layers/backgroundFill';
 import { normalizeView, type View } from 'core/viewport/view';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { ResolvableView } from './viewResolver';
@@ -9,19 +10,13 @@ import type { ResolvableView } from './viewResolver';
  *
  * A "viewport node" — a screen-space rectangle on the outer canvas that
  * re-renders one or more `source` layers through an *inner* `View`, then
- * clips them to its rect.
- *
- * Use cases: picture-in-picture, minimap, scrolling container, multi-angle
- * preview. The same source layer can be rendered through multiple viewports
- * (different inner views) without duplicating data — viewports are pure
- * lenses on the source.
+ * clips them to its rect. The same source layer can be rendered through
+ * multiple viewports without duplicating data.
  *
  * **Inner view semantics.** The source layers draw as if the inner view
- * filled the screen at world-origin — each is wrapped in `viewToMat3(view)`
- * by the same `drawOneLayer` the outer canvas uses. The viewport then
- * translates the result so that the inner view's origin lands at `bounds.x,
- * bounds.y` and clips to `(bounds.w, bounds.h)`. Caller chooses
- * `innerView.{x,y,scale}` to control which slice of source-world is shown.
+ * filled the screen at world-origin. The viewport then translates the result
+ * so that the inner view's origin lands at `bounds.x, bounds.y` and clips to
+ * `(bounds.w, bounds.h)`.
  *
  * **This layer paints; it does not take input.** `<CanvasView>` is built on
  * it and routes the pointer stream through the kit's gesture dispatcher —
@@ -44,11 +39,9 @@ export interface CreateViewportLayerOpts<TData, TSource = TData> {
   source: readonly RenderLayer<TSource>[] | (() => readonly RenderLayer<TSource>[]);
   /**
    * The `data` the source layers receive, derived from what the outer canvas
-   * passed down. Omit and they get the outer canvas's own.
-   *
-   * A viewport showing the same scene through a second camera wants its own
-   * per-view helpers here — selection, chrome state and gesture previews that
-   * belong to *this* view rather than the one hosting it.
+   * passed down. Omit and they get the outer canvas's own. A viewport showing
+   * the same scene through a second camera wants its own per-view helpers
+   * here — selection, chrome state and gesture previews.
    */
   data?: (outer: TData) => TSource;
   /**
@@ -61,12 +54,9 @@ export interface CreateViewportLayerOpts<TData, TSource = TData> {
    */
   view: View | ((outer: View, dims: Dims) => View);
   /** Where on the outer canvas this viewport is painted, in screen-space
-   *  CSS pixels. Recomputed every frame so the rect can track an outer
-   *  pose, follow a corner, etc. */
+   *  CSS pixels. Recomputed every frame. */
   bounds: (outer: View, dims: Dims) => { x: number; y: number; w: number; h: number };
-  /** Optional opaque background painted before the source layers. Useful
-   *  to keep the underlying outer canvas from showing through when the
-   *  inner view leaves part of the viewport empty. */
+  /** Optional opaque background painted before the source layers. */
   background?: string;
 }
 
@@ -110,15 +100,10 @@ export function createViewportLayer<TData, TSource = TData>(
       const b = bounds(outerView, dims);
       // Inner content drawn through `view`, then translated so the inner
       // view's screen origin lines up with the viewport top-left.
-      const children: DrawCommand[] = [];
-      if (background) {
-        children.push({
-          kind: 'path',
-          path: { kind: 'rect', x: 0, y: 0, width: b.w, height: b.h },
-          fill: { fill: 'solid', color: background },
-        });
-      }
       const innerDims = { width: b.w, height: b.h };
+      const children: DrawCommand[] = background
+        ? backgroundFillCommands({ kind: 'solid', color: background }, innerDims)
+        : [];
       // The cast holds up because `TSource` defaults to `TData`: without a
       // thunk the two are the same type by construction.
       const innerData = sourceData ? sourceData(data) : (data as unknown as TSource);

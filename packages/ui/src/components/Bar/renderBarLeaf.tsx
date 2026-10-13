@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { prefIsCompound, type PrefAction, type PrefLeaf } from '@weasel-js/prefs';
-import { Icon } from '../../icons/Icon';
-import { ICON_PATHS, type IconName } from '../../icons/paths';
+import { namedGlyph } from '../../icons/namedGlyph';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import { BarAction } from './BarAction';
 import { BarField, BarLabel, barLabels } from './BarField';
@@ -35,7 +34,7 @@ export interface BarLeaf {
 export function renderBarLeaf({ leaf, path, name, field, disabled, row }: BarLeaf): ReactNode {
   if (field !== null) {
     // A flag's icon is already its button's face.
-    const icon = field.kind === 'boolean' ? undefined : glyphOf(leaf);
+    const icon = field.kind === 'boolean' ? undefined : namedGlyph(leaf.icon);
     return <BarField {...field} name={name} short={leaf.short} icon={icon} />;
   }
   if (leaf.kind === 'action') return <BarAction leaf={leaf as PrefAction} path={path} disabled={disabled} />;
@@ -43,7 +42,7 @@ export function renderBarLeaf({ leaf, path, name, field, disabled, row }: BarLea
   const body = row();
   if (body == null || !prefIsCompound(leaf)) return body;
   return (
-    <BarPopover label={leaf.name} icon={glyphOf(leaf)}>
+    <BarPopover label={leaf.name} icon={namedGlyph(leaf.icon)}>
       {body}
     </BarPopover>
   );
@@ -58,12 +57,8 @@ export function withBarLabel(leaf: PrefLeaf, control: ReactNode): ReactNode {
   if (!barLabels(leaf.kind)) return control;
   return (
     <>
-      <BarLabel name={leaf.name} short={leaf.short} icon={glyphOf(leaf)} />
+      <BarLabel name={leaf.name} short={leaf.short} icon={namedGlyph(leaf.icon)} />
       {control}
     </>
   );
-}
-
-function glyphOf(leaf: PrefLeaf): ReactNode {
-  return leaf.icon && leaf.icon in ICON_PATHS ? <Icon name={leaf.icon as IconName} size={14} /> : undefined;
 }

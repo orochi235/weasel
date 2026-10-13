@@ -5,12 +5,8 @@
  *
  *   /*#__PURE__\*\/ Object.assign(<fn>, { __source: { file, line, col } })
  *
- * so the dev inspector (RegistryDetail) can render an "open in editor" link
- * pointing at the exact authoring site of each callback. Plain runtime
- * behavior is unaffected — callers still invoke `fn(...)` as before.
- *
- * Strictly opt-in via `include` (callback-dense source folders only) and
- * skipped entirely in production builds via `apply: 'serve'`.
+ * so the dev inspector can render an "open in editor" link pointing at the
+ * authoring site of each callback.
  */
 import { parseAst, type Plugin } from 'vite';
 import MagicString from 'magic-string';
@@ -70,25 +66,21 @@ export function callbackSourcePlugin(opts: Options): Plugin {
             if (node.kind !== 'init') return;
             if ((node as { method?: boolean }).method) return;
             // Computed keys are tagged too: route sub-tables key on
-            // `[mods('shift')]`, and skipping those left every modifier
-            // variant in the inspector without a source link.
+            // `[mods('shift')]`.
             tag(v);
             return;
           }
           // Named handler consts (`const collapseDeferredClick = (ctx) => …`)
-          // referenced from a route table by identifier. Without this the
-          // property rule above sees an Identifier, not a function, and the
-          // route's source column comes up blank — which is most of what
-          // `useSelectTool` does.
+          // referenced from a route table by identifier, where the property
+          // rule above sees an Identifier, not a function.
           if (node.type === 'VariableDeclarator') {
             const init = node.init;
             if (!init) return;
             if (init.type !== 'FunctionExpression' && init.type !== 'ArrowFunctionExpression') return;
             if (node.id.type !== 'Identifier') return;
-            // Capitalized names are React components by convention, and
-            // react-refresh only registers those. Wrapping one in
-            // `Object.assign(...)` hides the declaration from Fast Refresh and
-            // downgrades the module to a full reload — not worth a source link.
+            // Capitalized names are React components by convention. Wrapping one
+            // in `Object.assign(...)` hides the declaration from Fast Refresh
+            // and downgrades the module to a full reload.
             if (!/^[a-z_$]/.test(node.id.name)) return;
             tag(init);
           }

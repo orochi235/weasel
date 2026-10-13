@@ -4,8 +4,15 @@ import type { PoseCascade } from '../animation/poseTarget';
 
 /** The part of a scene a container's cascade reads. */
 interface CascadeScene<TPose> {
-  get(id: NodeId): { pose: TPose } | undefined;
+  get(id: NodeId): { pose: TPose; kind?: 'leaf' | 'container' } | undefined;
   childrenOf(id: NodeId): readonly NodeId[];
+}
+
+/** The part of a scene a cascading `setPose` writes. */
+interface CascadeTarget<TPose> extends CascadeScene<TPose> {
+  setPose(id: NodeId, pose: TPose): void;
+  carry(id: NodeId, pose: TPose): void;
+  batch<T>(label: string, fn: () => T): T;
 }
 
 /** Every node under `id`, each after its parent. */
@@ -46,5 +53,33 @@ export function containerCascade<TPose>(
         yield [child, translatePoseViaDescriptor(n.pose, to.x - from.x, to.y - from.y, poseDescriptorForNode(d, n))];
       }
     },
+  };
+}
+
+/**
+ * `setPose` for a scene of absolute poses: posing a container moves every
+ * descendant by as much, in one undo step.
+ */
+export function cascadingSetPose<TPose>(
+  scene: CascadeTarget<TPose>,
+  d: PoseDescriptor<TPose>,
+): (id: NodeId, pose: TPose) => void {
+  return (id, pose) => {
+    const node = scene.get(id);
+    if (!node || node.kind !== 'container') return scene.setPose(id, pose);
+    const g = poseDescriptorForNode(d, node);
+    const from = g.getBounds(node.pose);
+    const to = g.getBounds(pose);
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    if (dx === 0 && dy === 0) return scene.setPose(id, pose);
+    scene.batch('move container', () => {
+      scene.setPose(id, pose);
+      for (const child of descendantsOf(scene, id)) {
+        const n = scene.get(child);
+        if (!n) continue;
+        scene.carry(child, translatePoseViaDescriptor(n.pose, dx, dy, poseDescriptorForNode(d, n)));
+      }
+    });
   };
 }

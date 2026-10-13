@@ -1,9 +1,9 @@
 import { useId, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { useAnimator } from '../../animation/useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { easeOutCubic } from '@weasel-js/geom';
-import type { Animator, EasingSpec, InterpolatorFactory } from '../../animation/types';
-import { createTarget, type Target, type TargetAxes } from '../../animation/target';
+import type { Animator, EasingSpec, InterpolatorFactory } from '@weasel-js/animator';
+import { createTarget, type Target, type TargetAxes } from '@weasel-js/animator';
 import { interpolateView } from './interpolateView';
 import { fitViewToBounds } from './fitViewToBounds';
 import type { Bounds, FitViewToBoundsOptions, ViewportDims } from './fitViewToBounds';
@@ -66,8 +66,16 @@ export interface ViewAnimationApi {
 /** A `View` as the four numbers an animation moves: `x`, `y`, `scale.x`, `scale.y`. */
 export const viewAxes: TargetAxes<View> = {
   count: 4,
+  names: ['x', 'y', 'scale.x', 'scale.y'],
   to: (v) => [v.x, v.y, v.scale.x, v.scale.y],
   from: (a) => ({ x: a[0]!, y: a[1]!, scale: { x: a[2]!, y: a[3]! } }),
+  add: (v, d) => ({ x: v.x + d[0]!, y: v.y + d[1]!, scale: { x: v.scale.x + d[2]!, y: v.scale.y + d[3]! } }),
+  write: (v, out, at) => {
+    out[at] = v.x;
+    out[at + 1] = v.y;
+    out[at + 2] = v.scale.x;
+    out[at + 3] = v.scale.y;
+  },
 };
 
 /**

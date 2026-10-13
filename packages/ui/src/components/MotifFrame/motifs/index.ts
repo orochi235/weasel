@@ -12,3 +12,4 @@ export type { StereoParams } from './stereo';
 export { stereo } from './stereo';
 export type { TabParams } from './tab';
 export { tab } from './tab';
+export { titlebar } from './titlebar';

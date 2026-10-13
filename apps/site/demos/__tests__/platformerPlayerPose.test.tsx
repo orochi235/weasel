@@ -1,10 +1,11 @@
 // apps/site/demos/__tests__/platformerPlayerPose.test.tsx
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { createTarget, skeletonAxes, sampleTrack, useAnimator } from '@weasel-js/core';
-import type { Pose } from '@weasel-js/core';
+import { bindClip, createTarget, skeletonAxes, sampleTrack, useAnimator } from '@weasel-js/animator';
+import type { Pose, SampledTrack } from '@weasel-js/animator';
+import { createScene } from '@weasel-js/core';
 import { FADE_MS, createAnimState, nextAnimState, type AnimCtx, type AnimState } from '../platformer/animState';
-import { CLIPS, clipTrack, type ClipName } from '../platformer/clips';
+import { CLIPS, type ClipName } from '../platformer/clips';
 import { createPlayerPose } from '../platformer/playerPose';
 import { PLAYER_SKELETON } from '../platformer/skeleton';
 
@@ -13,7 +14,8 @@ const RISING: AnimCtx = { onGround: false, vx: 0, vy: -300, hurt: false };
 const DT = 1 / 60;
 
 const scratch = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(PLAYER_SKELETON) });
-const clipAt = (name: ClipName, t: number): Pose => sampleTrack(clipTrack(CLIPS[name], scratch), t)!;
+const clipAt = (name: ClipName, t: number): Pose =>
+  sampleTrack(bindClip(CLIPS[name], { target: () => scratch, weight: () => () => 1 }).tracks[0] as SampledTrack<Pose>, t)!;
 
 /** A player pose on an animator the test steps. `show` is one frame of the demo's loop: the
  *  animator's frame, then the state put on the target, as its `onTick` does. */
@@ -25,7 +27,7 @@ function setup() {
     requestFrame: (cb) => { cbs.push(cb); return cbs.length; },
     cancelFrame: () => {},
   }));
-  const player = createPlayerPose(result.current);
+  const player = createPlayerPose(result.current, createScene({ systemLayers: [{ id: 'main' }] }));
   const show = (s: AnimState): Pose => {
     act(() => {
       now += DT * 1000;

@@ -1,6 +1,6 @@
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint } from '@weasel-js/paint';
 import type { FontRequest } from '@weasel-js/font';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 /** What drawing a command list loads on demand: the faces its text is set in
  *  and the paint kinds its fills and strokes name. */
@@ -23,20 +23,20 @@ export interface RenderNeeds {
 export function renderNeeds(commands: readonly DrawCommand[]): RenderNeeds {
   const fonts = new Map<string, FontRequest>();
   const kinds = new Set<string>();
-  const paint = (p: FillStyle | null | undefined) => {
-    if (p) kinds.add(p.fill ?? 'solid');
+  const paint = (p: Paint | null | undefined) => {
+    if (p) kinds.add(p.kind ?? 'solid');
   };
   const walk = (list: readonly DrawCommand[]) => {
     for (const c of list) {
       if (c.kind === 'group') walk(c.children);
       else if (c.kind === 'path') {
-        paint(c.fill);
+        paint(c.fill?.paint);
         paint(c.stroke?.paint);
       } else if (c.kind === 'text') {
         for (const r of c.runs) {
           const key = `${r.fontFamily}|${r.fontWeight}|${r.fontStyle}`;
           if (!fonts.has(key)) fonts.set(key, { family: r.fontFamily, weight: r.fontWeight, style: r.fontStyle });
-          paint(r.fill);
+          paint(r.fill?.paint);
           paint(r.stroke?.paint);
         }
       }

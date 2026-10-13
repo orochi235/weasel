@@ -11,10 +11,10 @@
 import { describe, expect, it } from 'vitest';
 import { findShapeBounds, findNodeShape } from './NodeShape';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
-import { cullDrawCommands } from '../renderer/cullDrawCommands';
+import { cullDrawCommands } from '@weasel-js/renderer';
 import { mat3, PATH_C, PATH_L, PATH_M, PATH_Z, boundsOfPath } from '@weasel-js/geom';
 import { solid, strokeOf } from '../util/paint';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 
@@ -37,12 +37,12 @@ const CURVE = {
 };
 
 const CASES: Array<[string, Record<string, unknown>]> = [
-  ['a stroked rect shape', { shape: 'rect', fill: solid('#f00'), stroke: SPIKY }],
+  ['a stroked rect shape', { shape: 'rect', fill: { paint: solid('#f00') }, stroke: SPIKY }],
   ['a stroked star', { shape: 'star', stroke: SPIKY }],
   ['an ellipse', { shape: 'ellipse' }],
   ['a curved path with an arrowhead', { path: CURVE, stroke: { ...strokeOf('#000', 4), markerEnd: 'arrow' } }],
   ['an image placeholder', { image: { src: 'data:image/png;base64,' } }],
-  ['a rect-fallback node', { fill: solid('#0f0') }],
+  ['a rect-fallback node', { fill: { paint: solid('#0f0') } }],
 ];
 
 const tightened = (c: DrawCommand): DrawCommand =>

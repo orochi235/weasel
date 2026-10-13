@@ -1,15 +1,7 @@
 /**
- * SceneCanvas — auto-mounted gesture dispatcher.
- *
- * Verifies that <SceneCanvas> auto-mounts `useGestureDispatcher` so
- * registered actions with a `defaultBinding` fire on window keydown,
- * and that `enableGestureDispatcher={false}` opts out cleanly.
- *
- * Safety tests: confirm delete/duplicate/nudge/undo keybindings fire
- * through the dispatcher path.
- *
- * insertDep tests: insertDep wired — drag on empty space with a shape tool
- * active inserts a node into the scene end-to-end.
+ * <SceneCanvas> auto-mounts the gesture dispatcher, so registered actions with
+ * a `defaultBinding` fire on window keydown, and `enableGestureDispatcher={false}`
+ * opts out. Also covers the `insert` dep's wiring.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
@@ -101,14 +93,8 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', bubbles: true }));
     });
 
-    // Dispatcher opted out — action has no `defaultBinding`, so legacy path also
-    // skips it. The spy must not have been called.
     expect(spy).not.toHaveBeenCalled();
   });
-
-  // -------------------------------------------------------------------------
-  // Safety: verify delete/duplicate/nudge/undo fire via dispatcher.
-  // -------------------------------------------------------------------------
 
   type D8 = { kind: 'rect' };
   type L8 = 'main';
@@ -232,27 +218,11 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// insertDep end-to-end — drag on empty canvas inserts a node
-// ---------------------------------------------------------------------------
-
 describe('insertDep wired in SceneCanvas', () => {
   /**
-   * These tests verify that SceneCanvas's `StandardActionsRegistrar` correctly
-   * wires the `insert` dep and that the dep's `commit` function creates scene
-   * nodes when called directly.
-   *
-   * Full end-to-end drag coverage (pointerdown → insertAction → InsertDep.commit
-   * via gesture dispatcher) is in:
-   *   `src/interactions/dispatcher/insert.integration.test.tsx`
-   *
-   * These SceneCanvas-level tests focus on the dep wiring: that `commit()`
-   * receives the correct args and inserts a node into the scene with the right
-   * data + pose shape.
-   *
-   * Implementation: a child component placed inside `<SceneCanvas>` accesses
-   * the dep registry via `useDepRegistry()` and calls the `insert` dep's
-   * `commit` method directly, then we assert the scene node was created.
+   * These call the `insert` dep's `commit` directly, from a child inside
+   * `<SceneCanvas>`, and assert the scene node it creates. The drag that
+   * reaches `commit` through the gesture dispatcher is not exercised here.
    */
 
   type D14 = { path: unknown; fill: string };
@@ -263,12 +233,7 @@ describe('insertDep wired in SceneCanvas', () => {
     return createScene<D14, L14, P14>({ systemLayers: [{ id: 'main' }] });
   }
 
-  /**
-   * A child component rendered inside SceneCanvas that reads the dep registry
-   * at effect time and exposes the `insert` dep's commit function via callback.
-   * Renders inside SceneCanvas's `<DepRegistryProvider>` so `useDepRegistry()`
-   * is in scope.
-   */
+  /** Reads the dep registry at effect time and hands out the `insert` dep's commit. */
   function DepHarness({ onDepReady }: { onDepReady: (commit: InsertDep['commit']) => void }) {
     const registry = useDepRegistry();
     const notified = useRef(false);

@@ -1,14 +1,9 @@
 import { useMemo, useRef, createElement } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { SelectIcon } from '../../../icons';
-import { pathContainsPoint } from '@weasel-js/geom';
-import { shapeCoversPoint } from 'canvas/NodeShape';
-import { pickWalk, adapterPickSource, ownClipOf, scenePlaneOf, type PickQuery } from 'canvas/pickWalk';
-import { toPlane } from 'core/viewport/parallax';
-import { meanScale } from '@weasel-js/geom';
+import { pickWalk, adapterPickSource, scenePlaneOf } from 'canvas/pickWalk';
 import type { View } from 'core/viewport/view';
 import type { LayerEnumerableAdapter } from 'core/adapters/types';
-import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
@@ -17,9 +12,9 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
-import { onEmptyCanvas } from './selectionContributions';
-import { hitPredicate } from '@weasel-js/gestures';
-import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
+import { adapterPointQuery } from './adapterPointQuery';
+import { onBody, onEmptyCanvas } from './selectionContributions';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
@@ -49,8 +44,8 @@ export interface UseSelectToolOptions<TPose> {
    * How the default `pickEvery` decides a **leaf** node covers the pointer.
    * Ignored when `pickEvery` is supplied.
    *
-   * - `'aabb'` (default) — the pose rect. Cheap, and the historical behavior:
-   *   a click anywhere in the bounding box selects the node.
+   * - `'aabb'` (default) — the pose rect: a click anywhere in the bounding
+   *   box selects the node.
    * - `'silhouette'` — the pose rect as a pre-test, then the ink the painter
    *   lays down: `findShapeSilhouette` filled or not per the painter's `ink`,
    *   plus its outline widened by the stroke half-width and `pickTolerance`.
@@ -60,10 +55,8 @@ export interface UseSelectToolOptions<TPose> {
    *   shape hits.
    *
    * Container nodes already consult their silhouette unconditionally (it is
-   * how their clip is derived); this extends the same test to leaves. Not the
-   * default because it changes what a click selects for every existing
-   * consumer, and a painter with no `silhouette` is unaffected either way —
-   * it falls back to the AABB.
+   * how their clip is derived). A painter with no `silhouette` falls back to
+   * the AABB.
    */
   leafPicking?: 'aabb' | 'silhouette';
   /**
@@ -95,7 +88,7 @@ export interface UseSelectToolOptions<TPose> {
    * Shift-click means "add this anchor to the anchor selection". Without
    * the lock the same click also toggles the edited node out of the node
    * selection, and the `editAnchors` dep treats that as the edit target
-   * disappearing — so multi-selecting anchors silently exited edit mode.
+   * disappearing.
    *
    * Only extend-clicks are locked. A plain click still re-selects, so
    * clicking a different node exits edit mode as usual.
@@ -115,10 +108,7 @@ export type SelectAdapter<TNode extends { id: string }, TPose> =
  * `select.collapseDeferred` (click) and to the tool's cursor.
  *
  * This is tool-local bookkeeping between two dispatches of the same gesture,
- * so it lives in a ref the tool owns rather than in dispatcher state. It used
- * to be the tool's `SelectScratch`, held by the tool-routing dispatcher, and
- * carried an `ids` list that nothing ever read — `moveAction` computes its own
- * ids from the live selection.
+ * so it lives in a ref the tool owns rather than in dispatcher state.
  *
  * @internal
  */
@@ -135,8 +125,6 @@ interface PressClassification {
 }
 
 
-/** A press that landed on the scene rather than on chrome over it. */
-const offChrome = hitPredicate((hit) => hit == null);
 
 /** Active-slot Tool:
  *  - `select.pick` classifies the press (pointerDown) — it runs the tool's own
@@ -157,60 +145,15 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // from `adapter.getNodes()` + `adapter.getPose(id)` + the descriptor.
   const d = (options.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const preciseLeaves = options.leafPicking === 'silhouette';
-  // World units here, not screen: this hook has no view. `<SceneCanvas>`
-  // converts from screen px on its own pick path; a bare `useSelectTool`
-  // consumer that zooms should pass `pickTolerance` from its own scale.
   const tolerance = options.pickTolerance ?? 0;
   const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
-    /** A point query at (px, py) with `t` world units of slop. AABB first
-     *  (cheap), then the painter's ink when asked for and available. A painter
-     *  with no `silhouette` — or one that returns null, as `kit:text` does for
-     *  an empty node — keeps the AABB answer.
-     *
-     *  The AABB pre-filter is grown by the slop for the same reason
-     *  `<SceneCanvas>`'s is: a shape's outline, and the slop around it, reach
-     *  outside the shape's own bounds, and an un-grown pre-filter would
-     *  discard those hits before the refinement could claim them. */
-    const pointQuery = (px: number, py: number, t: number): PickQuery<TPose> => {
-      const covers = (node: unknown, pose: TPose, b: Bounds): boolean => {
-        const slop = preciseLeaves ? t : 0;
-        if (!(px >= b.x - slop && px <= b.x + b.width + slop
-              && py >= b.y - slop && py <= b.y + b.height + slop)) {
-          return false;
-        }
-        if (!preciseLeaves) return true;
-        return shapeCoversPoint(
-          node as Node<unknown, string, TPose>, pose, px, py, { tolerance: t },
-        );
-      };
-      return {
-        hits: (node, pose) => {
-          const b = poseDescriptorForNode(d, node).getBounds(pose);
-          if (node.kind !== 'container') return covers(node, pose, b);
-          // A container's own clip *is* its hit shape — it is picked where it
-          // paints, and it paints only inside its clip. Ancestor clips are the
-          // walk's business; this one is not.
-          const inAabb = px >= b.x && px <= b.x + b.width
-            && py >= b.y && py <= b.y + b.height;
-          if (!inAabb) return false;
-          const own = ownClipOf(node, pose);
-          return own === null || pathContainsPoint(own, px, py);
-        },
-        clipAdmits: (clip) => pathContainsPoint(clip, px, py),
-        inPlane: (m) => {
-          const p = toPlane(m, { x: px, y: py });
-          return pointQuery(p.x, p.y, t * meanScale(m.scale));
-        },
-      };
-    };
-
     const camera = options.getView?.() ?? null;
     const planeOf = camera ? scenePlaneOf(adapter.getLayers?.(), camera) : null;
     return pickWalk<TPose>(adapterPickSource(adapter as never, {
       ...(options.alphaOf ? { alphaOf: options.alphaOf } : {}),
       ...(options.layerIsPainted ? { layerIsPainted: options.layerIsPainted } : {}),
       ...(planeOf ? { planeOf } : {}),
-    }), pointQuery(worldX, worldY, tolerance));
+    }), adapterPointQuery(d, preciseLeaves)(worldX, worldY, tolerance));
   });
 
   const pickEveryRef = useLatest(pickEveryFn);
@@ -231,12 +174,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
    * unselected node must highlight it while the button is still down, and any
    * drag that follows has to start from the updated selection (both
    * `moveAction` and `cloneAction` read `selection.get()` in their `start`).
-   *
-   * Eligibility replaces the `selectionAllowed` option the audit added as an
-   * interim per-route patch: this action carries the same
-   * `creates-selection` capability rule the `clearSelection` binding declares,
-   * so a mode that forbids selection now gates both halves of the tool by one
-   * mechanism instead of by which dispatcher the route happened to live on.
    */
   const pickAction = useMemo<Action>(() => ({
     id: 'select.pick',
@@ -272,17 +209,9 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
         const hitAlreadySelected = sel.includes(top as NodeId);
         const isExtend = mods.shift || mods.meta;
-        // While a path is in anchor-edit mode, an extend-click belongs to the
-        // anchor selection, not the node selection. Letting it through would
-        // toggle the edited node out of the node selection, which the
-        // `editAnchors` dep reads as "the edit target is gone" — so
-        // shift-clicking a second anchor silently tore down edit mode.
-        // Plain clicks still fall through: clicking a different node exits
-        // edit mode, which is what you'd expect.
-        //
-        // This stays an option rather than becoming `Action.enabled` because
-        // it only applies to *extend* presses, and `enabled` is evaluated
-        // without the event's modifiers.
+        // See `extendClickLocked`. An option rather than `Action.enabled`
+        // because it only applies to *extend* presses, and `enabled` is
+        // evaluated without the event's modifiers.
         const extendLocked = isExtend && opts.extendClickLocked?.() === true;
         const deferClick = hitAlreadySelected && sel.length > 1 && !isExtend;
         if (!deferClick && !extendLocked) {
@@ -306,11 +235,9 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     eligible: { capability: 'creates-selection' },
     requires: ['selection'],
     // Declining when there is nothing deferred is what keeps this binding
-    // from swallowing every click. It is bound with no target (any click can
-    // in principle be the release of a deferred press) at ACTIVE scope, so
+    // from swallowing every click on a node. It is bound at ACTIVE scope, so
     // without the gate it would outrank ambient click bindings like
-    // `selectAnchor` and silently break anchor selection. Same fall-through
-    // contract `clearSelection.enabled` relies on.
+    // `selectAnchor` and silently break anchor selection.
     enabled: () =>
       pressRef.current.deferredClickId !== null
         ? true
@@ -341,10 +268,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         keybinding: { key: 'V' },
         capabilities: ['creates-selection'],
         hookName: 'useSelectTool',
-        // A plain string: the mid-gesture cursors this used to compute from
-        // gesture scratch now live on the actions that own those gestures
-        // (`moveAction.activeCursor`, `areaSelectAction.activeCursor`), so
-        // they apply to any consumer binding them, not just this tool.
+        // The mid-gesture cursors live on the actions that own those gestures
+        // (`moveAction.activeCursor`, `areaSelectAction.activeCursor`).
         cursor: 'default',
         presentation: {
           label: 'Select',
@@ -363,11 +288,10 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         // bindings owned by the selection (`selectionContributions.ts`), so
         // they run under any tool that leaves the gesture unclaimed.
         bindings: [
-          // Every press that landed on the scene rather than on chrome. This
-          // is the former `initial.pointerDown['*']` route: it classifies the
-          // press and applies the selection change, and it does not consume
-          // the gesture — the same press goes on to open a drag or synthesize
-          // a click.
+          // Every press that landed on the scene rather than on chrome. It
+          // classifies the press and applies the selection change, and it does
+          // not consume the gesture — the same press goes on to open a drag or
+          // synthesize a click.
           //
           // The no-affordance target is load-bearing twice over. A press on a
           // resize handle, a rotate ring, a path anchor, or a registered
@@ -376,27 +300,24 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // because it is expressed in the SPEC rather than as an early
           // return in the action, the press falls through to whatever owns
           // that chrome instead of being consumed here — which is how an
-          // ambient binding (`@weasel-js/hud`) gets to see it at all. The old
-          // pipeline got both properties by construction: affordance hits
-          // bypassed the active tool entirely.
+          // ambient binding (`@weasel-js/hud`) gets to see it at all.
           //
           // Modifiers are all `'optional'` because they are *data* here
-          // (forwarded to `SelectionApi.applyClick`, which resolves them
-          // against the host's configured extend key) rather than a route.
+          // (forwarded to `SelectionApi.applyClick`) rather than a route.
           {
             spec: {
               kind: 'pointerDown' as const,
-              target: { kindOf: offChrome },
+              target: { kindOf: onBody },
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.pick',
           },
-          // Release half of the deferred multi-click. Same `'optional'`
-          // modifiers, same reason.
+          // Release half of the deferred multi-click, modifiers as above. On a node
+          // only: a drag leaves a deferral unspent, and a click on empty must clear.
           {
             spec: {
               kind: 'click' as const,
-              target: { kindOf: offChrome },
+              target: { kindOf: onBody },
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.collapseDeferred',

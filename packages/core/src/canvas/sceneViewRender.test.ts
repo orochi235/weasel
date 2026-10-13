@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { Scene, Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import {
   buildSceneViewCommands,
@@ -28,8 +28,9 @@ const renderMock = vi.fn<(commands: DrawCommand[]) => void>();
 const resizeMock = vi.fn<(dims: { width: number; height: number; dpr: number }) => void>();
 const ctorSpy = vi.fn<(opts: unknown) => void>();
 
-vi.mock('../renderer/WeaselRenderer', () => {
+vi.mock('@weasel-js/renderer', async (importOriginal) => {
   return {
+    ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
     // Sizes the buffer as the real one does: the lease reads it back.
     WeaselRenderer: class {
       private canvas: HTMLCanvasElement;
@@ -83,7 +84,7 @@ function makeScene(): Scene<D, L, P> {
 const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { fill: 'solid', color: node.data.color },
+  fill: { paint: { kind: 'solid', color: node.data.color } },
 }];
 
 const identityView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -151,7 +152,7 @@ describe('buildSceneViewCommands', () => {
     const extra: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 },
-      stroke: { paint: { fill: 'solid', color: '#fff' }, width: 1 },
+      stroke: { paint: { kind: 'solid', color: '#fff' }, width: 1 },
     }];
 
     const commands = buildSceneViewCommands(scene, identityView, drawOne, extra);
@@ -225,18 +226,18 @@ function makeNestedScene(): {
 const nestedDrawOne = (n: Node<NestedD, NestedL, P>, pose: P, _v: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { fill: 'solid', color: n.data.color },
+  fill: { paint: { kind: 'solid', color: n.data.color } },
 }];
 
-/** Every `fill.color` reachable from `cmds`, in emission order. */
+/** Every `fill.paint.color` reachable from `cmds`, in emission order. */
 function paintedColors(cmds: readonly DrawCommand[]): string[] {
   const out: string[] = [];
   const walk = (list: readonly DrawCommand[]): void => {
     for (const c of list) {
       if (c.kind === 'group') walk((c as GroupDrawCommand).children ?? []);
       else {
-        const fill = (c as { fill?: { color?: string } }).fill;
-        if (fill?.color) out.push(fill.color);
+        const paint = (c as { fill?: { paint?: { color?: string } } }).fill?.paint;
+        if (paint?.color) out.push(paint.color);
       }
     }
   };
@@ -446,7 +447,7 @@ describe('renderSceneToCanvas', () => {
     const extra: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { fill: 'solid', color: '#000' },
+      fill: { paint: { kind: 'solid', color: '#000' } },
     }];
 
     renderSceneToCanvas({
@@ -517,7 +518,7 @@ describe('buildSceneViewCommands — per-view layer visibility', () => {
     scene: ReturnType<typeof makeNestedScene>['scene'],
     layers: { layerVisibility?: Record<string, boolean>; layerOrder?: readonly string[] },
   ) => paintedColors(
-    buildSceneViewCommands(scene, identityView, nestedDrawOne, undefined, undefined, undefined, layers),
+    buildSceneViewCommands(scene, identityView, nestedDrawOne, undefined, undefined, layers),
   );
 
   it('skips a layer this view hides', () => {

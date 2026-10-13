@@ -59,6 +59,22 @@ describe('layoutMarkdown', () => {
     expect('smallCaps' in ello).toBe(false);
   });
 
+  it('runs a tab to the next stop and places what follows there', () => {
+    const [line] = layoutMarkdown([{ text: 'ab\tcd' }, { text: 'e\tf', bold: true }], Infinity, 13, mockMeasure).lines;
+    expect(line.runs.map((r) => [r.text, r.x, r.width])).toEqual([
+      ['ab', 0, 20], ['\t', 20, 60], ['cd', 80, 20], ['e', 100, 10], ['\t', 110, 50], ['f', 160, 10],
+    ]);
+    expect(line.width).toBe(170);
+  });
+
+  it('takes its stops from the tab size, and wraps by the width a tab takes', () => {
+    const four = layoutMarkdown([{ text: 'ab\tcd' }], Infinity, 13, mockMeasure, 1.3, undefined, 4);
+    expect(four.lines[0].runs[2].x).toBe(40);
+    // Read as one space the line is 90 wide and fits; set to its stop, `gh` ends at 100.
+    const wrapped = layoutMarkdown([{ text: 'abcdef\tgh' }], 95, 13, mockMeasure);
+    expect(wrapped.lines.map((l) => l.runs.map((r) => r.text).join(''))).toEqual(['abcdef', 'gh']);
+  });
+
   it('breaks on newline', () => {
     const runs = markdownToRuns('a\nb');
     const result = layoutMarkdown(runs, Infinity, 13, mockMeasure);
@@ -279,6 +295,14 @@ function makeRecordingCtx(init: { textBaseline?: CanvasTextBaseline; textAlign?:
   };
   return { ctx: ctx as unknown as CanvasRenderingContext2D, raw: ctx, texts, rects };
 }
+
+describe('createMarkdownRenderer tabs', () => {
+  it('takes its tab size from the font options', () => {
+    const { ctx } = makeMockCtx();
+    expect(createMarkdownRenderer(ctx, 'ab\tcd', 13).width).toBe(100);
+    expect(createMarkdownRenderer(ctx, 'ab\tcd', 13, Infinity, { tabSize: 4 }).width).toBe(60);
+  });
+});
 
 describe('layoutMarkdown run widths', () => {
   it('records each positioned run\'s measured width', () => {

@@ -1,16 +1,13 @@
 /**
  * Visual regression spec: text-nodes demo.
  *
- * The only spec that paints `data.text` nodes through the default node painter
- * (`kit:text` in `NodeShape.ts`). The `text` demo draws through
- * `createTextLayer`, and `text-outlines` / `render-to-pixels` build text
- * commands by hand, so none of them reach it.
+ * Paints `data.text` nodes through the default node painter (`kit:text`).
  *
  * The baseline alone cannot guard the painter. MSDF edges differ per GL driver,
  * so it takes `text.spec.ts`'s 5% tolerance, and all of this demo's glyph ink is
- * about 2% of the canvas: measured, the painter drawing nothing diffs 2.09% and
- * every glyph moved down 4px diffs 2.80%. Both pass the baseline. The probes
- * below assert what the painter owns in terms no driver difference can move.
+ * about 2% of the canvas: the painter drawing nothing passes the baseline. The
+ * probes below assert what the painter owns in terms no driver difference can
+ * move.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { resolve } from 'node:path';
@@ -145,8 +142,7 @@ test(`${DEMO_ID} — kit:text paints each node where its data says`, async ({ pa
   }
 
   // `pose.y` is the top of the first line box, not a baseline: nothing above
-  // the box, and ink starts in its upper half. The old `p.y + fontSize` origin
-  // put the first ink a full em lower.
+  // the box, and ink starts in its upper half.
   expect(s.aboveLarge.ink).toBe(0);
   expect(s.large.firstRow).toBeLessThan(LARGE.y0 + 12);
 
@@ -162,9 +158,7 @@ test(`${DEMO_ID} — kit:text paints each node where its data says`, async ({ pa
   expect(s.rotatedRight.ink).toBeGreaterThan(50);
   expect(s.rotatedLeft.meanY - s.rotatedRight.meanY).toBeGreaterThan(8);
 
-  // `align` resolves within the pose width, not about `pose.x`. Anchored on
-  // `pose.x`, centered text straddles the box's left edge and right-aligned
-  // text ends at it.
+  // `align` resolves within the pose width, not about `pose.x`.
   expect(s.center.ink).toBeGreaterThan(50);
   expect(s.center.outside).toBe(0);
   const leftGap = s.center.minX - CENTER.x0;

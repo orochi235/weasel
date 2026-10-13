@@ -48,7 +48,8 @@ the right place despite the name.
 | `defaults.ts` | The kit's shipped rules table. Written as literal trees so each rule's inputs are visible at a glance. |
 | `resolve.ts` | Merges consumer rules over defaults and closes over ctx → `(id) => boolean`. |
 | `types.ts` | `ChromeId`, `VisibilityRules`, `Condition`, and the legacy `ChromeCtx` alias. |
-| `buildChromeCtx.ts` | Assembles a `ChromeCtx` from canvas state. |
+| `buildChromeCtx.ts` | Assembles the legacy `ChromeCtx`. Exported; nothing in the kit calls it. |
+| `useChromeCaps.ts` | `surfaceRuleCtx` assembles a `RuleCtx` from what belongs to the surface (mode, focus, hover, device, anchor editing, the resizable predicate) and what belongs to one view (selection, camera, in-flight action). `useChromeCaps` is the hook `<SceneCanvas>` holds one through. |
 | `useHoverTracking.ts` | Ref-based last-hovered-node tracker feeding the `hovering` atoms. Deliberately doesn't re-render. Takes its element through the `canvasRef` callback it returns. |
 
 ## Two ways to write a rule
@@ -120,8 +121,8 @@ their own ids and gate their own overlays through the same table.
 - **An empty capability set is not a safe default.** "No modes wired" means
   *everything the default mode permits*; the empty set would make every
   `capability:` rule false and silently hide the chrome it gates. Both
-  fallback paths (`resolve.ts` for legacy `ChromeCtx`, `SceneCanvas` when
-  `modes` is absent) use `DEFAULT_ALLOWED_CAPABILITIES`. Keep it that
+  fallback paths (`resolve.ts` for legacy `ChromeCtx`, `surfaceRuleCtx` when
+  the surface has no mode) use `DEFAULT_ALLOWED_CAPABILITIES`. Keep it that
   way when adding a third.
 - **`when` is the escape hatch, not the default.** Its closure is opaque to
   introspection, which costs the Bundle Inspector and any future rule-diffing
@@ -133,8 +134,8 @@ their own ids and gate their own overlays through the same table.
 - **No memoization.** Predicates are O(1) and run once per chrome id per frame.
   Profile before adding any.
 - **`ChromeCtx` is legacy.** It's `RuleCtx` minus `mode` / `allowedCapabilities`;
-  `resolveVisibility` fills in `mode: 'normal'` and an empty capability set for
-  callers still in that shape. New code should build a `RuleCtx`.
+  `resolveVisibility` fills in `mode: 'normal'` and `DEFAULT_ALLOWED_CAPABILITIES`
+  for callers still in that shape. New code should build a `RuleCtx`.
 - **`selectionResizable` absent means resizable.** Only an explicit `false` opts
   a selection out of resize handles — back-compat for ctx builders predating
   the flag.

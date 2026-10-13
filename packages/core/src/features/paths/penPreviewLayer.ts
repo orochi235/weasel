@@ -1,6 +1,6 @@
 /**
- * Screen-space preview layer for `usePenTool`. Reads the tool's
- * persistent scratch each frame and renders the in-progress path: finished
+ * Screen-space preview layer for `usePenTool`. Reads the pen's state each
+ * frame and renders the in-progress path: finished
  * subpaths (faded), the current subpath (bright + anchor dots + handles),
  * a rubber-band segment from the latest anchor to the cursor, and a
  * close-hint ring on the first anchor when the tool flags it as hot.
@@ -10,9 +10,8 @@
  * argument.
  */
 
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import type { Tool } from '../../tools/overlayBinding';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
 import { PATH_C, PATH_L, PATH_M, type PolygonPath, anchorsToPath, circlePath } from '@weasel-js/geom';
 
@@ -28,9 +27,9 @@ export interface PenPreviewStyle {
 
 /** Options for `createPenPreviewLayer`. */
 export interface CreatePenPreviewLayerOptions {
-  /** The Tool returned by usePenTool. The layer reads its scratch via
-   *  `tool.initScratch()` (the hook is contracted to return a stable ref). */
-  penTool: Tool<PenScratch>;
+  /** The pen's state. One object for the pen's life, changed in place, so
+   *  the layer reads the same one on every frame. */
+  state: PenScratch;
   style?: PenPreviewStyle;
 }
 
@@ -83,15 +82,13 @@ export function createPenPreviewLayer(
   opts: CreatePenPreviewLayerOptions,
 ): RenderLayer<unknown> {
   const style = { ...DEFAULT_STYLE, ...(opts.style ?? {}) };
-  // Stable scratch ref — the pen tool contract guarantees identity stability.
-  const getScratch = (): PenScratch => opts.penTool.initScratch!();
+  const s = opts.state;
 
   return {
     id: 'penPreview',
     label: 'Pen preview',
     space: 'screen',
     draw: (_data, view) => {
-      const s = getScratch();
       const out: DrawCommand[] = [];
 
       // (1) Finished subpaths — faded outline.
@@ -101,7 +98,7 @@ export function createPenPreviewLayer(
         out.push({
           kind: 'path',
           path,
-          stroke: { paint: { fill: 'solid', color: style.finishedSubpathStroke }, width: 1 },
+          stroke: { paint: { kind: 'solid', color: style.finishedSubpathStroke }, width: 1 },
         });
       }
 
@@ -115,7 +112,7 @@ export function createPenPreviewLayer(
           out.push({
             kind: 'path',
             path,
-            stroke: { paint: { fill: 'solid', color: style.rubberBandStroke }, width: 1 },
+            stroke: { paint: { kind: 'solid', color: style.rubberBandStroke }, width: 1 },
           });
         }
       }
@@ -146,7 +143,7 @@ export function createPenPreviewLayer(
         out.push({
           kind: 'path',
           path,
-          stroke: { paint: { fill: 'solid', color: style.rubberBandStroke }, width: 1 },
+          stroke: { paint: { kind: 'solid', color: style.rubberBandStroke }, width: 1 },
         });
       }
 
@@ -158,8 +155,8 @@ export function createPenPreviewLayer(
           out.push({
             kind: 'path',
             path: approximateCircle(ax, ay, ANCHOR_RADIUS_PX),
-            fill: { fill: 'solid', color: style.anchorFill },
-            stroke: { paint: { fill: 'solid', color: style.anchorStroke }, width: 1 },
+            fill: { paint: { kind: 'solid', color: style.anchorFill } },
+            stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
           });
           // Handle line + dot (only the latest anchor, per spec).
           if (i === cur.anchors.length - 1 && a.outHandle) {
@@ -173,12 +170,12 @@ export function createPenPreviewLayer(
             out.push({
               kind: 'path',
               path: linePath,
-              stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
+              stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
             });
             out.push({
               kind: 'path',
               path: approximateCircle(hx, hy, HANDLE_DOT_RADIUS_PX),
-              fill: { fill: 'solid', color: style.handleStroke },
+              fill: { paint: { kind: 'solid', color: style.handleStroke } },
             });
             const inSide = a.inHandle;
             if (inSide) {
@@ -192,12 +189,12 @@ export function createPenPreviewLayer(
               out.push({
                 kind: 'path',
                 path: inLine,
-                stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
+                stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
               });
               out.push({
                 kind: 'path',
                 path: approximateCircle(mx, my, HANDLE_DOT_RADIUS_PX),
-                fill: { fill: 'solid', color: style.handleStroke },
+                fill: { paint: { kind: 'solid', color: style.handleStroke } },
               });
             }
           }
@@ -210,7 +207,7 @@ export function createPenPreviewLayer(
           out.push({
             kind: 'path',
             path: approximateCircle(fx, fy, CLOSE_HINT_RADIUS_PX),
-            stroke: { paint: { fill: 'solid', color: style.closeHintFill }, width: 1.5 },
+            stroke: { paint: { kind: 'solid', color: style.closeHintFill }, width: 1.5 },
           });
         }
       }

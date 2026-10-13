@@ -32,16 +32,11 @@ export interface DispatcherViewTarget {
    * The deps this view answers for itself — its camera, its selection, and
    * whatever else is per-view rather than per-canvas. Read per event; every
    * name it does not carry still resolves through the canvas registry.
-   *
-   * This is why a view does not get a `DepRegistryProvider` of its own. The
-   * registry is where a consumer registers *sources*, and one per view would
-   * fragment that: a consumer overriding `insert` would have to know how many
-   * views exist and override each. An overlay keeps one place to register and
-   * one authority per dep, with the view claiming only what is genuinely its.
-   *
    * Without this a gesture inside a panel pans the whole canvas and selects
-   * into the canvas's selection — correct coordinates alone do not make
-   * routing correct.
+   * into the canvas's selection.
+   *
+   * A view gets no `DepRegistryProvider` of its own: a consumer overriding
+   * `insert` would have to know how many views exist and override each.
    */
   deps?: () => Partial<DepSchema>;
   /**
@@ -87,7 +82,7 @@ export interface DispatcherChannels {
 }
 
 /** Options for `useGestureDispatcher`: the element to listen on, the actions
- *  and tools in play, and the hooks that turn raw DOM events into the world
+ *  and entries in play, and the hooks that turn raw DOM events into the world
  *  coordinates and hit targets bindings match against. */
 export interface UseGestureDispatcherOptions {
   /**
@@ -101,7 +96,8 @@ export interface UseGestureDispatcherOptions {
   canvasRef: RefObject<HTMLElement | null>;
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
-  /** Tool definitions keyed by id. Typically passes an empty Map. */
+  /** Every entry in play, keyed by id: tools and any other contribution
+   *  whose bindings this dispatcher routes. */
   entriesById: ReadonlyMap<string, Contribution<unknown>>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
@@ -110,13 +106,9 @@ export interface UseGestureDispatcherOptions {
    * world coordinates. Runs BEFORE the event is dispatched and independently
    * of which binding (if any) handles it.
    *
-   * This is deliberately not an Action. `<SceneCanvas onDoubleClick>` is a
-   * notification — "the user double-clicked, here's what they hit" — and a
-   * notification must not compete with behavior for the gesture. As a binding
-   * it would lose to `enterPathEdit` on any body hit and silently never fire.
-   * Routing it here keeps a single definition of "double click" (the point of
-   * consolidating the kit's three detectors) without giving it
-   * first-match-wins semantics it shouldn't have.
+   * Deliberately not an Action: a notification must not compete with behavior
+   * for the gesture. As a binding it would lose to `enterPathEdit` on any
+   * body hit and silently never fire.
    */
   onDoubleClick?: (world: { x: number; y: number }) => void;
   /**
@@ -130,8 +122,7 @@ export interface UseGestureDispatcherOptions {
    * Default true. Set false to leave the window `keydown`/`keyup` listeners
    * unattached so keyboard-bound actions never dispatch — pointer, wheel, and
    * contextmenu channels stay live. `<SceneCanvas>` wires this to
-   * `enableKeybindings`, so opting out of keybindings disables the modern
-   * dispatcher key path as well as the legacy `useKeybindings` hook.
+   * `enableKeybindings`.
    *
    * Every dispatcher hears keys on `window`, and a keystroke one of them
    * claims — or anything else calls `preventDefault` on — is not dispatched by
@@ -143,19 +134,14 @@ export interface UseGestureDispatcherOptions {
   /**
    * Optional affordance classifier. Called with the **world** coordinates of
    * the pointer — this hook applies the routed view's `clientToWorld` before
-   * calling it, the same conversion that produces `InputEvent.x`/`y`, so a
-   * consumer hit-tests in one space. Returns an `AffordanceHit` when the
-   * pointer lands on a known affordance (resize handle, rotate handle, etc.)
-   * or `null` when the pointer hit open canvas.
+   * calling it, so a consumer hit-tests in one space. Returns an
+   * `AffordanceHit` when the pointer lands on a known affordance (resize
+   * handle, rotate handle, etc.) or `null` when the pointer hit open canvas.
    *
    * The hit is packed into `InputEvent.pointerdown.affordance` and flows
-   * through into `InvocationCtx.drag.affordance`. Action invokers that require
-   * a specific affordance (e.g. `resizeAction` requires `handle:*`) use this
-   * field as a guard in their `start` body.
-   *
-   * When omitted, `affordance` is always `undefined` — meaning only consumers
-   * that explicitly wire a classifier get affordance-gated behavior.
-   * `<SceneCanvas>` wires the full chrome→dispatcher bridge.
+   * through into `InvocationCtx.drag.affordance`. When omitted, `affordance`
+   * is always `undefined`. `<SceneCanvas>` wires the full chrome→dispatcher
+   * bridge.
    */
   affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
 
@@ -165,17 +151,10 @@ export interface UseGestureDispatcherOptions {
    * `bodyTarget` + `bodyKind`, which `matchTarget` reads to resolve the
    * string-form `TargetSpec` values in `Tool.bindings`.
    *
-   * `body` is `'empty'` when nothing is under the pointer, `'selected-body'`
-   * when the topmost hit belongs to the current selection, or
-   * `'unselected-body'` when it belongs to a node that isn't selected. `kind`
-   * is the hit node's semantic kind, when the scene can name it.
-   *
    * When omitted, every body-derived target form (`'empty'`,
    * `'selected-body'`, `'unselected-body'`, `kind:<k>`, `kind:<k>:selected`)
    * never matches — bindings using those specs are silently skipped.
    * `<SceneCanvas>` wires this.
-   *
-   * World coordinates, on every path, for the same reason as `affordanceAt`.
    */
   classifyTarget?: (worldPoint: { x: number; y: number }) => BodyClassification;
 
@@ -194,32 +173,18 @@ export interface UseGestureDispatcherOptions {
    *
    * Without this, `ctx.world` is populated with the raw client coords, which
    * silently breaks any action whose overlay/output uses absolute world
-   * positions (marquee, lasso polyline, world-space affordances). Actions
-   * that only read `drag.delta` are unaffected because client→world deltas
-   * are equal at scale 1, but as soon as a consumer pans/zooms the view the
-   * deltas diverge too.
-   *
+   * positions (marquee, lasso polyline, world-space affordances).
    * `<SceneCanvas>` always wires this via its canvas rect + current view.
-   * Tests / harnesses without a view can omit it and continue passing raw
-   * coordinates as before.
    */
   clientToWorld?: (clientX: number, clientY: number) => { x: number; y: number };
 
   /**
-   * Invoked once per pump event (`pointermove`, `pointerup`, `pointercancel`,
-   * `key-held` up-phase, `multitouch` move) when a dispatcher-side handle is
-   * in flight. Lets the host canvas schedule a redraw so dispatcher-only
-   * overlays (marquee, lasso, preview-ghost) repaint on each frame.
-   *
-   * Required because dispatcher actions don't go through the legacy
-   * `tools.dispatcher.onGestureChange` redraw bump that ambient tool drags
-   * relied on. Without it, the overlay layer's `draw` never runs between
-   * pointerdown and pointerup, and the chrome flashes once at gesture start
-   * and then sits frozen until the gesture ends.
-   *
-   * `<SceneCanvas>` wires this to the canvas's `requestRedraw`. Test
-   * harnesses can omit it; their dispatchers won't paint between events but
-   * that's already the test contract.
+   * Called whenever one of this hook's dispatchers notifies its subscribers:
+   * once for each input event, cancel, or UI-driven step that found or left a
+   * gesture in flight. Lets the host canvas schedule a redraw, so
+   * dispatcher-only overlays (marquee, lasso, preview-ghost) follow the
+   * gesture and clear when it ends, however it ends. `<SceneCanvas>` wires
+   * this to the canvas's `requestRedraw`.
    */
   requestRedraw?: () => void;
   /**
@@ -249,12 +214,10 @@ export interface UseGestureDispatcherOptions {
    * defaults to `true`; naming a channel `false` leaves its listeners
    * unattached, so the element behaves as if the dispatcher were not there.
    *
-   * A mount that binds two gestures should not also have to take the rest of
-   * the pipeline's side effects: `contextMenu` suppresses the native menu
-   * unconditionally, and `ingest` makes the element a valid drop target and
-   * styles it while an OS drag hovers. `@weasel-js/labkit`'s loupe mounts on
-   * a lab's own canvas host for a wheel and a held key, and turning the other
-   * three off is what keeps right-click and file drops working there.
+   * `contextMenu` suppresses the native menu unconditionally, and `ingest`
+   * hears every paste on the window and probes the bindings on each
+   * `dragover`, so a mount that binds only a wheel or a key turns those off
+   * to keep right-click and file drops working.
    *
    * The window keyboard channel is `keyboard` instead of an entry here,
    * because `<SceneCanvas enableKeybindings>` drives it.

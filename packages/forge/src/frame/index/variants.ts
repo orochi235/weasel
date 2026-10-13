@@ -1,4 +1,4 @@
-import { type ConfigSchema, type ConfigShape, isConfigBranch, isEntryShown, titleCase } from '@weasel-js/labkit/config';
+import { type ConfigSchema, type ConfigShape, isConfigBranch, isEntryShown, resolveConfigSchema, titleCase } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 
 export interface VariantValue {
@@ -27,12 +27,13 @@ const labelOf = (key: string, name: string | undefined): string => name ?? title
  */
 export function variantRows(schema: ConfigSchema<unknown>): VariantRow[] {
   const defaults = schema.defaults() as Record<string, unknown>;
+  const { group } = resolveConfigSchema(schema);
   const rows: VariantRow[] = [];
   const walk = (shape: ConfigShape, at: string): void => {
     for (const [key, entry] of Object.entries(shape)) {
       if (rows.length >= MAX_ROWS) return;
       const path = at === '' ? key : `${at}.${key}`;
-      if (!isEntryShown(entry, defaults)) continue;
+      if (!isEntryShown(entry, defaults, group)) continue;
       if (isConfigBranch(entry)) {
         walk(entry.children, path);
         continue;

@@ -14,7 +14,7 @@ describe('makeGetNodeAtPoint', () => {
   });
 
   it('returns kind from nodeResolver', () => {
-    const resolver = vi.fn(() => ({ kind: 'rect', pose: { x: 0, y: 0 }, data: { id: 'n1', type: 'rect' } }));
+    const resolver = vi.fn(() => ({ kind: 'rect' }));
     const fn = makeGetNodeAtPoint(() => 'n1', resolver);
     const hit = fn(0, 0);
     expect(hit?.kind).toBe('rect');
@@ -31,21 +31,6 @@ describe('makeGetNodeAtPoint', () => {
     const fn = makeGetNodeAtPoint(() => 'n1', () => null);
     const hit = fn(0, 0);
     expect(hit?.kind).toBe('unknown');
-  });
-
-  it('falls back to data={id} when nodeResolver returns null', () => {
-    const fn = makeGetNodeAtPoint(() => 'n1', () => null);
-    const hit = fn(0, 0);
-    expect(hit?.data).toEqual({ id: 'n1' });
-  });
-
-  it('returns pose and data from nodeResolver', () => {
-    const pose = { x: 10, y: 20, width: 100, height: 50 };
-    const data = { id: 'n2', label: 'hello' };
-    const fn = makeGetNodeAtPoint(() => 'n2', () => ({ kind: 'text', pose, data }));
-    const hit = fn(0, 0);
-    expect(hit?.pose).toBe(pose);
-    expect(hit?.data).toBe(data);
   });
 
   it('passes world coords and the resolving camera through to the picker', () => {

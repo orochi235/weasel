@@ -1,10 +1,12 @@
+import type { ColorSource } from '@weasel-js/paint';
+import { useColorCss } from '@weasel-js/theme/react';
 import type { EffectModule } from '../bases/types';
 
 export interface OutlineEffectParams {
   /** Stroke width in CSS px. */
   width?: number;
   /** Stroke color. */
-  color?: string;
+  color?: ColorSource;
   /** Optional SVG dasharray (e.g. "4 2"). */
   dash?: string;
   /** CSS mix-blend-mode: 'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten',
@@ -16,7 +18,7 @@ export interface OutlineEffectParams {
 
 const DEFAULTS: Required<OutlineEffectParams> = {
   width: 1,
-  color: 'var(--badge-edge)',
+  color: { ref: '--badge-edge' },
   dash: '',
   blendMode: 'normal',
   opacity: 1,
@@ -25,6 +27,7 @@ const DEFAULTS: Required<OutlineEffectParams> = {
 const Outline: EffectModule<OutlineEffectParams> = {
   Component: ({ sampler, boxW, boxH, params }) => {
     const cfg = { ...DEFAULTS, ...params };
+    const css = useColorCss();
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const widthVb = cfg.width * Math.max(sx, sy);
@@ -32,7 +35,7 @@ const Outline: EffectModule<OutlineEffectParams> = {
       <path
         d={sampler.bodyPath}
         fill="none"
-        stroke={cfg.color}
+        stroke={css(cfg.color)}
         strokeWidth={widthVb}
         strokeDasharray={cfg.dash || undefined}
         strokeOpacity={cfg.opacity}

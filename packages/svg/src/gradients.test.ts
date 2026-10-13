@@ -121,7 +121,7 @@ describe('gradient serialization', () => {
     return [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
-      fill: { kind: 'gradient', paint: asPaint({ fill: 'mesh-gradient' }) },
+      fill: { kind: 'gradient', paint: asPaint({ kind: 'mesh-gradient' }) },
     }];
   }
 
@@ -129,7 +129,7 @@ describe('gradient serialization', () => {
     const dispose = registerPaintKind({
       id: 'mesh-gradient',
       label: 'Mesh',
-      seed: (color) => asPaint({ fill: 'mesh-gradient', color }),
+      seed: (color) => asPaint({ kind: 'mesh-gradient', color }),
       colorOf: () => undefined,
     });
     try {
@@ -149,7 +149,7 @@ describe('gradient serialization', () => {
     serializeSvg([{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
-      fill: { kind: 'gradient', paint: asPaint({ fill: 'test-unloaded' }) },
+      fill: { kind: 'gradient', paint: asPaint({ kind: 'test-unloaded' }) },
     }], { onWarn: (m) => warnings.push(m) });
     expect(warnings.join(' ')).toMatch(/test-unloaded.*not registered.*warmSvg/);
   });
@@ -158,7 +158,7 @@ describe('gradient serialization', () => {
     const dispose = registerPaintKind({
       id: 'mesh-gradient',
       label: 'Mesh',
-      seed: (color) => asPaint({ fill: 'mesh-gradient', color }),
+      seed: (color) => asPaint({ kind: 'mesh-gradient', color }),
       colorOf: () => '#c04a3f',
       toSvg: (id) => `<wzl:meshGradient id="${id}"/>`,
     });

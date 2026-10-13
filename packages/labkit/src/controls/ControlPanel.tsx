@@ -1,3 +1,4 @@
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import {
   type CollapseProps,
   type PropertyAlign,
@@ -20,6 +21,7 @@ import type { ConfigField } from './types';
 
 export type { ControlPack } from './controlPack';
 
+/** Props for {@link ControlPanel}. */
 export interface ControlPanelProps<TC extends Record<string, unknown>> extends StanceProps {
   /** The instrument's resolved config schema. */
   schema?: ResolvedConfig;
@@ -35,6 +37,17 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
    * the row; entries override the built-in rows on collision.
    */
   renderers?: Record<string, ControlRenderer>;
+  /**
+   * The schema this one's aliases point into. Default: this schema itself. A
+   * panel drawn from a schema of aliases into another passes that other: each
+   * alias row is drawn as the leaf of it at the alias's path, reads and writes
+   * `config` at that path, and is hidden and disabled by that leaf's
+   * conditions as well as its own. Those conditions read `config`, and that
+   * schema's defaults where `config` holds nothing. A condition of this
+   * schema's own may read a setting of that one the same way: hand
+   * `resolveConfigSchema` that schema too, or it refuses the condition.
+   */
+  over?: PrefGroup | PrefSection;
   /** How rows pack into the two-column grid. Defaults to `'pairs'`. */
   pack?: ControlPack;
   /**
@@ -90,6 +103,35 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
 
 const NO_AUTO: ReadonlySet<string> = new Set();
 
+/**
+ * Which rows are unpinned, and what hands one to its resolver or takes it
+ * back. An owner that tracks the set decides what a dot means; one that does
+ * not gets a panel that decides for itself, because the alternative is handing
+ * it a sentinel it would write into the config as though it were a value.
+ */
+function usePanelAuto(
+  given: ReadonlySet<string> | undefined,
+  setConfig: (path: string, value: unknown) => void,
+) {
+  const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(NO_AUTO);
+  const setRowAuto = (path: string, next: boolean, value: unknown): void => {
+    if (given) {
+      setConfig(path, next ? autoValue : value);
+      return;
+    }
+    setOwnAuto((prev) => {
+      const now = new Set(prev);
+      if (next) now.add(path);
+      else now.delete(path);
+      return now;
+    });
+    // Pinning keeps whatever the row was showing, the same value the controlled
+    // path writes back.
+    if (!next) setConfig(path, value);
+  };
+  return { auto: given ?? ownAuto, setRowAuto };
+}
+
 /** Render an instrument's config schema as a stack of controls, each writing
  *  back through `setConfig`. Built on the property rows, so a lab's controls
  *  are the same aligned, themed rows the rest of the kit uses. */
@@ -99,6 +141,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   config,
   setConfig,
   renderers,
+  over,
   pack = 'pairs',
   layout,
   density,
@@ -119,26 +162,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
   const choices = useFieldChoicesOf(resolved.group);
 
-  // An owner that tracks the set decides what a dot means; one that does not
-  // gets a panel that decides for itself, because the alternative is handing it
-  // a sentinel it would write into the config as though it were a value.
-  const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(NO_AUTO);
-  const auto = given ?? ownAuto;
-  const setRowAuto = (path: string, next: boolean, value: unknown): void => {
-    if (given) {
-      setConfig(path, next ? autoValue : value);
-      return;
-    }
-    setOwnAuto((prev) => {
-      const now = new Set(prev);
-      if (next) now.add(path);
-      else now.delete(path);
-      return now;
-    });
-    // Pinning keeps whatever the row was showing, the same value the controlled
-    // path writes back.
-    if (!next) setConfig(path, value);
-  };
+  const { auto, setRowAuto } = usePanelAuto(given, setConfig);
 
   // What the instrument is reading. A row draws and reports from this rather
   // than calling its own resolver against the raw config, which would disagree
@@ -172,6 +196,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     shown,
     setConfig,
     renderers,
+    over,
     showHidden,
     density,
     align,

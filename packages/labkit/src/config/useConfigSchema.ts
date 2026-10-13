@@ -1,6 +1,6 @@
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { Instrument } from '../instrument/types';
-import { LabContext } from '../lab/LabContext';
+import { useLabCommandsOptional } from '../lab/LabContext';
 import { fromConfigFields } from './fromConfigField';
 import { resolveConfigSchema } from './resolve';
 import type { ResolvedConfig } from './types';
@@ -18,7 +18,7 @@ export function useConfigSchema(
   // biome-ignore lint/suspicious/noExplicitAny: instruments are stored contravariantly; see InstrumentList
   instrument: Instrument<any, any, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
 ): ResolvedConfig {
-  const lab = useContext(LabContext);
+  const lab = useLabCommandsOptional();
   const rules = lab?.configRules ?? NO_RULES;
   return useMemo(
     () =>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DrawCommand, PathDrawCommand } from '../../renderer';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createChildrenLayer } from './children';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -117,14 +117,14 @@ describe('createChildrenLayer', () => {
         {
           kind: 'path',
           path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-          fill: { fill: 'solid', color: id === 'a' ? '#f00' : '#0f0' },
+          fill: { paint: { kind: 'solid', color: id === 'a' ? '#f00' : '#0f0' } },
         },
       ],
     });
     const tree = layer.draw(undefined, VIEW, DIMS);
     expect(tree).toHaveLength(2);
-    expect((tree[0] as PathDrawCommand).fill).toMatchObject({ color: '#f00' });
-    expect((tree[1] as PathDrawCommand).fill).toMatchObject({ color: '#0f0' });
+    expect((tree[0] as PathDrawCommand).fill).toMatchObject({ paint: { color: '#f00' } });
+    expect((tree[1] as PathDrawCommand).fill).toMatchObject({ paint: { color: '#0f0' } });
   });
 
   it('drawChild receives id, data, and view passthroughs', () => {

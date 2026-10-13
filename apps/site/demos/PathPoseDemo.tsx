@@ -84,7 +84,7 @@ export function PathPoseDemo() {
             drawOne: (_o, p): DrawCommand[] => [{
               kind: 'path',
               path: p,
-              fill: { color: '#7fb069' },
+              fill: { paint: { color: '#7fb069' } },
               stroke: { paint: { color: '#1a130d' }, width: 1.5 },
             }],
           },

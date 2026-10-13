@@ -29,7 +29,7 @@ export const PREF_SCHEMA_EDITOR_PREFS = {
         sidebarWidth: { kind: 'number', name: 'sidebarWidth', description: '', default: 240, hidden: true },
         previewWidth: { kind: 'number', name: 'previewWidth', description: '', default: 800, hidden: true },
         unplacedHeight: { kind: 'number', name: 'unplacedHeight', description: '', default: 180, hidden: true },
-        actionsHeight: { kind: 'number', name: 'actionsHeight', description: '', default: 160, hidden: true },
+        shelfHeight: { kind: 'number', name: 'shelfHeight', description: '', default: 180, hidden: true },
       },
     },
   },
@@ -37,7 +37,7 @@ export const PREF_SCHEMA_EDITOR_PREFS = {
 
 type Schema = typeof PREF_SCHEMA_EDITOR_PREFS;
 /** A prefs store opened over {@link PREF_SCHEMA_EDITOR_PREFS}. */
-export type PrefSchemaEditorPrefs = PrefsStore<Schema>;
+export type PrefSchemaEditorPrefs = PrefsStore<typeof PREF_SCHEMA_EDITOR_PREFS>;
 
 /** What the editor reads its settings through. */
 export interface EditorPrefs {

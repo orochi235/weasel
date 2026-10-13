@@ -1,18 +1,10 @@
 /**
- * Z-ordered child renderer — replaces the manual `for (id of getChildren()) ...`
- * pattern with a `RenderLayer` factory that consumes an `OrderedAdapter`.
- *
- * Children are drawn in z-order (forward iteration: index 0 = bottom). The
- * caller supplies a `drawChild` callback that emits `DrawCommand[]` for one
- * object; this layer is the boilerplate-free way to plug a scene graph's
- * z-order into the layer composition system.
- *
- * If the adapter doesn't implement `getChildren` (it's optional on
- * `OrderedAdapter`), the layer is a silent no-op — adopt z-order incrementally
- * without breaking existing layers.
+ * Z-ordered child renderer: a `RenderLayer` factory over an `OrderedAdapter`.
+ * Children are drawn in z-order (index 0 = bottom). If the adapter doesn't
+ * implement `getChildren`, the layer is a silent no-op.
  */
 
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import type { OrderedAdapter } from 'core/adapters/types';

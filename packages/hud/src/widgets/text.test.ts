@@ -4,7 +4,7 @@ import type { TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
 const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, { mode: 'dark' });
-const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'Default', toneAt: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS };
+const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'Default', color: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS };
 
 describe('text widget', () => {
   it('emits a TextDrawCommand using the supplied style', () => {
@@ -50,7 +50,7 @@ describe('text widget', () => {
     };
     const cmds = t.draw(customCtx);
     const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
-    expect(fill).toEqual({ fill: 'solid', color: '#facade' });
+    expect(fill).toEqual({ paint: { kind: 'solid', color: '#facade' } });
   });
 
   it('respects explicit opts.color over theme', () => {
@@ -61,6 +61,6 @@ describe('text widget', () => {
     };
     const cmds = t.draw(customCtx);
     const fill = (cmds[0] as TextDrawCommand).runs[0].fill;
-    expect(fill).toEqual({ fill: 'solid', color: '#ff0000' });
+    expect(fill).toEqual({ paint: { kind: 'solid', color: '#ff0000' } });
   });
 });

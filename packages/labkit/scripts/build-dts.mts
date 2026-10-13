@@ -96,9 +96,14 @@ function requireBuilt(entries: ReturnType<typeof weaselDtsAliases>): void {
 }
 
 // labkit's own modules must reach each other through source, not through the
-// `.d.ts` this build is producing; core and theme are excluded because they
-// are peers, resolved once at the consumer.
-const DTS_EXCLUDE = ['@weasel-js/labkit', '@weasel-js/core', '@weasel-js/theme'];
+// `.d.ts` this build is producing; core, theme, and the animator are excluded
+// because they are peers, resolved once at the consumer.
+const DTS_EXCLUDE = [
+  '@weasel-js/labkit',
+  '@weasel-js/core',
+  '@weasel-js/theme',
+  '@weasel-js/animator',
+];
 
 // Only packages labkit's manifests reach: a package built after labkit (forge
 // depends on labkit) would otherwise be required before it can exist.

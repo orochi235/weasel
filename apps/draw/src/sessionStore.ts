@@ -5,17 +5,17 @@ type Entry = readonly [key: string, json: string];
  * history that fails to save after its scene did is removed along with the
  * other stacks, because an older stack would replay against the wrong scene.
  * When the scene itself fails, the previous scene and its stacks stay as
- * they are.
+ * they are. Answers whether the scene was saved.
  */
 export function writeSession(
   storage: Pick<Storage, 'setItem' | 'removeItem'>,
   scene: Entry,
   histories: readonly Entry[],
-): void {
+): boolean {
   try {
     storage.setItem(scene[0], scene[1]);
   } catch {
-    return;
+    return false;
   }
   try {
     for (const [key, json] of histories) storage.setItem(key, json);
@@ -24,4 +24,5 @@ export function writeSession(
       try { storage.removeItem(key); } catch { /* best-effort */ }
     }
   }
+  return true;
 }

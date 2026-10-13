@@ -5,10 +5,10 @@ import {
   PATH_M,
   SceneCanvas,
   textCommandFromRuns,
-  useAnimator,
   useScene,
   useSelection,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import type { DrawCommand, RenderLayer } from '@weasel-js/core';
 import {
   createAudioEngine, createDelayEffect, createFilterEffect, createPatternPlayer,
@@ -238,11 +238,11 @@ export function AudioDemo() {
         {
           kind: 'path',
           path: { kind: 'rect', x: LISTENER.x - 9, y: LISTENER.y - 9, width: 18, height: 18 },
-          fill: { color: '#d4c4a8' },
+          fill: { paint: { color: '#d4c4a8' } },
         },
         textCommandFromRuns(
           LISTENER.x + 14, LISTENER.y + 4,
-          [{ text: 'listener', fill: { fill: 'solid', color: '#a89878' } }],
+          [{ text: 'listener', fill: { paint: { kind: 'solid', color: '#a89878' } } }],
           { fontFamily: 'sans-serif', fontSize: 11 },
         ),
       ];
@@ -252,7 +252,7 @@ export function AudioDemo() {
         cmds.push({
           kind: 'path',
           path: { kind: 'rect', x: i * barW + 2, y: H - h, width: barW - 4, height: h },
-          fill: { color: '#7fb069' },
+          fill: { paint: { color: '#7fb069' } },
         });
       }
       return cmds;
@@ -286,7 +286,7 @@ export function AudioDemo() {
               drawOne: (_n, p): DrawCommand[] => [{
                 kind: 'path',
                 path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: '#d4a574' },
+                fill: { paint: { color: '#d4a574' } },
               }],
             },
             selectionOverlay: { handles: false },

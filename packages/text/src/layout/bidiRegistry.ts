@@ -49,3 +49,62 @@ export function paragraphDirection(
   }
   return directionOfLevel(engine.baseLevel(engine.analyze(cps, 'auto')));
 }
+
+/**
+ * Code point blocks whose letters read right-to-left.
+ *
+ * A heuristic on purpose: the real answer is `Bidi_Class`, which lives in
+ * `@weasel-js/bidi` and is exactly what the caller has not installed when this
+ * matters. It can miss a script, and it still counts a combining mark from
+ * these blocks as a letter. What it leaves out is carved out below: code
+ * points that sit in these blocks and read the same without an engine.
+ */
+const RTL_BLOCKS: ReadonlyArray<readonly [number, number]> = [
+  [0x0590, 0x05ff], [0x0600, 0x07bf], [0x0860, 0x08ff],
+  [0xfb1d, 0xfdff], [0xfe70, 0xfeff],
+  [0x10800, 0x10fff], [0x1e800, 0x1efff],
+];
+
+/** Digits and number signs inside those blocks. They keep their written order
+ *  in any paragraph, so a string of them is laid out correctly as it is. */
+const RTL_BLOCK_NUMBERS: ReadonlyArray<readonly [number, number]> = [
+  [0x0600, 0x0605], [0x0660, 0x066c], [0x06dd, 0x06dd], [0x06f0, 0x06f9],
+  [0x08e2, 0x08e2], [0x10d30, 0x10d39], [0x10e60, 0x10e7e],
+];
+
+/** The Arabic comma, the ornate parentheses, and the byte order mark: no
+ *  direction of their own, so they take their neighbors'. */
+const RTL_BLOCK_NEUTRALS: ReadonlyArray<readonly [number, number]> = [
+  [0x060c, 0x060c], [0xfd3e, 0xfd3f], [0xfeff, 0xfeff],
+];
+
+const within =(ranges: ReadonlyArray<readonly [number, number]>, cp: number): boolean =>
+  ranges.some(([lo, hi]) => cp >= lo && cp <= hi);
+
+let warnedLogicalRtl = false;
+
+/**
+ * Warn, once per process, when `codePoints` hold right-to-left letters and
+ * there is no engine to reorder them.
+ */
+export function warnRtlWithoutEngine(codePoints: Iterable<number>): void {
+  if (warnedLogicalRtl) return;
+  for (const cp of codePoints) {
+    if (!within(RTL_BLOCKS, cp) || within(RTL_BLOCK_NUMBERS, cp) || within(RTL_BLOCK_NEUTRALS, cp)) continue;
+    warnedLogicalRtl = true;
+    console.warn(
+      // Naming the import in `from "<pkg>"` form would trip labkit's
+      // consumer smoke test, which greps dist for that exact shape.
+      'weasel layoutRuns: this text contains right-to-left characters but no ' +
+      '`bidi` engine is registered, so it is being laid out in logical order — ' +
+      'the glyphs will appear reversed. Import `bidi` out of the ' +
+      '`@weasel-js/bidi` package and call `registerBidi(bidi)` once at startup.',
+    );
+    return;
+  }
+}
+
+/** Test helper. Do not call from product code. */
+export function _resetBidiWarningForTests(): void {
+  warnedLogicalRtl = false;
+}

@@ -31,7 +31,7 @@ describe('AssetEditor under a host that changes an asset between steps', () => {
     fireEvent.keyDown(structure(), { key: 'Delete' });
     fireEvent.click(screen.getByRole('button', { name: 'Lock the panel' }));
     const locked = () => {
-      expect(within(asset('Code panel')).getByRole('img', { name: 'Read-only' })).toBeInTheDocument();
+      expect(within(asset('Code panel')).getByRole('img', { name: 'Dynamic' })).toBeInTheDocument();
       expect(latest.assets[1]).toMatchObject({ id: 'code', readOnly: true, label: 'Code panel' });
     };
     locked();

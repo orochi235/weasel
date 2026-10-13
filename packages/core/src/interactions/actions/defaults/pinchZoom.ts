@@ -1,35 +1,3 @@
-/**
- * `pinchZoomAction` — ongoing Action descriptor for two-finger pinch zoom
- * and pan. The id and label stay `pinchZoom` / `Pinch Zoom`.
- *
- * ## Status: REAL
- *
- * Implements pinch-zoom via the multi-touch pointer stream:
- *   - `start`: captures startSpread from `ctx.multiTouch.pinch.startSpread`
- *     (or falls back to `ctx.multiTouch.spread`). Records the initial centroid.
- *   - `onMove`: computes zoom factor = currentSpread / startSpread, anchors
- *     `zoomAt` on the previous centroid, then translates by the centroid
- *     delta. Together those pin the world point under the gesture midpoint
- *     as the midpoint moves, so the same gesture zooms and pans.
- *   - `onEnd`: no-op — zoom is already applied each frame.
- *
- * ## Dispatcher extensions required
- *
- * - `InvocationCtx.multiTouch.pinch`: the dispatcher
- *   populates it on every multitouch move-pump event. `startSpread` is
- *   captured once when the handle opens; `currentSpread` updates each frame.
- * - `InputEvent.multitouch.centroid / spread`:
- *   `useGestureDispatcher` synthesizes updated geometry on `pointermove`
- *   when a multitouch handle is in flight.
- *
- * ## Graceful degradation
- *
- * If `ctx.multiTouch.pinch` is absent (e.g. old dispatcher without these
- * extensions), `start` returns an empty handle — no-op, no crash.
- *
- * @see zoomAt — fixed-point zoom primitive from `core/viewport/zoomAt`.
- */
-
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
@@ -38,19 +6,11 @@ import { viewToTransform } from 'core/viewport/view';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
-
 interface PinchScratch {
   view: ViewApi;
   startSpread: number;
   centroid: { x: number; y: number };
 }
-
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
 
 /**
  * @experimental
@@ -66,11 +26,7 @@ export interface PinchZoomOptions {
 /**
  * @experimental
  * Build a `viewport.pinchZoom` Action descriptor with a configurable scale
- * clamp. The binding (two-finger multitouch) is fixed; only the clamp varies.
- *
- * Requires dep-schema entries: `view`.
- *
- * The invoker is `ongoing`. Zoom is applied per-frame via `view.set(zoomAt(...))`.
+ * clamp. The same two-finger gesture zooms and pans, applied each frame.
  */
 // No `eligible` field → pinch zoom is always eligible across all modes.
 export function makePinchZoomAction(
@@ -92,8 +48,6 @@ export function makePinchZoomAction(
         const multiTouch = ctx.multiTouch;
         if (!multiTouch) return {};
 
-        // On start, spread comes from the initial multitouch event.
-        // The pinch field may not be set yet on start (it's populated on moves).
         const startSpread = multiTouch.spread > 0 ? multiTouch.spread : 1;
 
         const scratch: PinchScratch = { view, startSpread, centroid: multiTouch.centroid };
@@ -109,8 +63,7 @@ export function makePinchZoomAction(
             const { currentSpread, centroid } = mt.pinch;
             if (currentSpread <= 0 || scratch.startSpread <= 0) return;
             const factor = currentSpread / scratch.startSpread;
-            // Update startSpread each frame so the factor is incremental.
-            // This avoids drift accumulation across many frames.
+            // Rebase each frame so the factor is incremental.
             scratch.startSpread = currentSpread;
             const prev = scratch.centroid;
             scratch.centroid = centroid;
@@ -128,7 +81,6 @@ export function makePinchZoomAction(
             scratch.view.set(next);
             debug?.recordViewport('zoom', startView, next, { x: ax, y: ay });
           },
-          // onEnd: nothing to do — zoom was applied each frame.
         };
       },
     },

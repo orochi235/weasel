@@ -4,10 +4,8 @@
  * baseline to its top edge (y grows down) and a script's `shift` positive
  * for a rise.
  *
- * Both glyph tiers carry the same record — an atlas bakes it into its JSON,
- * a parsed face reads it off the font's tables — and both derive it through
- * {@link faceMetricsFromTables}, so one font yields one set of numbers
- * whichever tier ends up serving a run.
+ * Both glyph tiers derive the record through {@link faceMetricsFromTables},
+ * so one font yields one set of numbers whichever tier serves a run.
  */
 import type { ResolveResult } from './registerFont';
 
@@ -79,12 +77,10 @@ const USE_TYPO_METRICS = 1 << 7;
  * positive downward.
  *
  * The OpenType rule: `OS/2` `sTypoAscender`/`sTypoDescender` when the font
- * sets `USE_TYPO_METRICS`, otherwise `hhea`. It is the browser's rule rather
- * than a typographer's because the DOM edit overlay stands in for the canvas
- * and can only ever get the browser's numbers. Firefox, and every engine on
+ * sets `USE_TYPO_METRICS`, otherwise `hhea`. Firefox, and every engine on
  * Linux, follow it; Chromium and WebKit on macOS read `hhea` even when the
- * flag is set, and the overlay's measured baseline correction absorbs the
- * difference there. `verticalMetrics.browser.test.ts` pins both.
+ * flag is set, and the DOM edit overlay's measured baseline correction
+ * absorbs the difference there.
  *
  * Falls back to the typo pair, then the win pair, when `hhea` is absent or
  * zero.
@@ -110,9 +106,8 @@ export function verticalMetricsFromTables(t: FaceMetricTables): { ascent: number
  * `post.underlinePosition` and `OS/2.yStrikeoutPosition` are the rule's top
  * edge, positive above the baseline. `ySubscriptYOffset` is positive
  * *downward*, unlike its superscript twin. A zero weight or size is a font
- * that left the field blank, not one asking for an invisible rule, so that
- * entry is dropped and the caller's default applies — which is also how an
- * `OS/2` table older than version 2 reads, since it has no heights at all.
+ * that left the field blank, so that entry is dropped and the caller's
+ * default applies.
  */
 export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefined {
   const upem = t.unitsPerEm;
@@ -150,9 +145,8 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
 }
 
 /**
- * Validate an atlas JSON's `faceMetrics` block. Absent is fine — atlases
- * baked before the block existed carry none. Present and malformed throws,
- * naming the entry, as the rest of `parseBmFont` does.
+ * Validate an atlas JSON's `faceMetrics` block. Absent is fine. Present and
+ * malformed throws, naming the entry.
  */
 export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
   if (raw === undefined) return undefined;
@@ -190,9 +184,8 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
 
 /**
  * The face metrics behind a resolved run — the outline face's on the outline
- * tier, the atlas's on the atlas tier. The canvas tier rasterizes through
- * `CanvasRenderingContext2D`, which exposes no font tables, so it has none
- * and callers fall back to their defaults.
+ * tier, the atlas's on the atlas tier. The canvas tier has none, so callers
+ * fall back to their defaults.
  */
 export function faceMetricsOf(result: ResolveResult): FaceMetrics | undefined {
   return result.outlineFace?.faceMetrics ?? result.entry?.font.faceMetrics;

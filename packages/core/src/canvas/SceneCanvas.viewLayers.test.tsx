@@ -13,14 +13,15 @@ import { useEffect, type ReactNode } from 'react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { SceneCanvas } from './SceneCanvas';
 
 const painted = vi.hoisted(() => new Map<unknown, readonly unknown[]>());
 
-vi.mock('../renderer/WeaselRenderer', () => ({
+vi.mock('@weasel-js/renderer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
   WeaselRenderer: class {
     private readonly target: unknown;
     constructor(opts: { canvas?: unknown }) { this.target = opts.canvas; }
@@ -62,7 +63,7 @@ const LAYERS = {
     drawOne: (n: Node<D, L, P>, p: P): DrawCommand[] => [{
       kind: 'path',
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-      fill: { color: n.data.color },
+      fill: { paint: { color: n.data.color } },
     }],
   },
 };
@@ -75,7 +76,7 @@ function colorsIn(cmds: readonly unknown[] | undefined): string[] {
     for (const c of list as DrawCommand[]) {
       if (c.kind === 'group') walk((c as GroupDrawCommand).children ?? []);
       else {
-        const color = (c as { fill?: { color?: string } }).fill?.color;
+        const color = (c as { fill?: { paint?: { color?: string } } }).fill?.paint?.color;
         if (color) out.push(color);
       }
     }

@@ -7,7 +7,20 @@ import {
   COMPOSITE_FEATURES,
   resolveFeatures,
   featureActionIds,
+  featureAmbient,
+  featureChromeRules,
+  featureToolIds,
+  FEATURE_PRESETS,
+  type BaseFeature,
+  type FeaturePreset,
 } from './features';
+import { BUILTIN_TOOL_IDS } from './props';
+import { defaultVisibilityRules, never } from 'features/chrome-caps';
+import {
+  SELECTION_MOVE_ID,
+  SELECTION_RESIZE_ID,
+  SELECTION_ROTATE_ID,
+} from 'tools/builtin/select/selectionContributions';
 
 describe('FEATURE_ACTION_IDS', () => {
   it('places every kit-standard action under exactly one preset, or leaves it to its tools', () => {
@@ -63,5 +76,70 @@ describe('resolveFeatures', () => {
     expect(ids.has('align.left')).toBe(true);
     expect(ids.has('delete')).toBe(false);
     expect(ids.has('areaSelect')).toBe(false);
+  });
+});
+
+describe('FEATURE_PRESETS', () => {
+  const rows = Object.entries(FEATURE_PRESETS) as [BaseFeature, FeaturePreset][];
+  const all = new Set(rows.map(([id]) => id));
+
+  it('has one row for every preset that abbreviates nothing', () => {
+    const bases = SCENE_CANVAS_FEATURES.filter((f) => !(f in COMPOSITE_FEATURES));
+    expect([...all].sort()).toEqual([...bases].sort());
+    for (const named of Object.values(COMPOSITE_FEATURES)) {
+      for (const f of named) expect(all.has(f), f).toBe(true);
+    }
+  });
+
+  it('is where the action table comes from', () => {
+    for (const [id, row] of rows) expect(FEATURE_ACTION_IDS[id]).toBe(row.actions);
+  });
+
+  it('names only built-in tools, and only chrome the kit has a rule for', () => {
+    for (const [id, row] of rows) {
+      for (const tool of row.tools ?? []) expect(BUILTIN_TOOL_IDS, id).toContain(tool);
+      for (const chrome of row.chrome ?? []) expect(Object.keys(defaultVisibilityRules), id).toContain(chrome);
+    }
+  });
+
+  it('binds, from a row, only actions that row registers', () => {
+    for (const [id, row] of rows) {
+      const bound = (row.ambient?.({}).bindings ?? []).map((b) => b.actionId);
+      for (const actionId of bound) expect(row.actions, id).toContain(actionId);
+    }
+  });
+
+  it("mounts each preset's tools and no other", () => {
+    for (const [id, row] of rows) {
+      expect([...featureToolIds(new Set([id]))], id).toEqual([...(row.tools ?? [])]);
+    }
+    expect([...featureToolIds(all)].sort()).toEqual(['hand', 'select']);
+  });
+
+  it("installs each preset's ambient entry alone, and handles ahead of the body when together", () => {
+    for (const [id, row] of rows) {
+      const entries = featureAmbient(new Set([id]), {});
+      expect(entries.map((e) => e.id), id).toEqual(row.ambient ? [row.ambient({}).id] : []);
+    }
+    expect(featureAmbient(all, {}).map((e) => e.id)).toEqual([
+      SELECTION_RESIZE_ID, SELECTION_ROTATE_ID, SELECTION_MOVE_ID,
+    ]);
+  });
+
+  it('hands the move and rotate options to the entries they configure', () => {
+    const [, rotate, move] = featureAmbient(all, { move: { dragThresholdPx: 9 }, rotate: { rotateLabel: 'Spin' } });
+    expect(move.bindings!.find((b) => b.actionId === 'move')!.opts!.params).toMatchObject({ dragThresholdPx: 9 });
+    expect(rotate.bindings![0].opts!.params).toMatchObject({ label: 'Spin' });
+  });
+
+  it('hides the chrome of every preset that is off, and of none that is on', () => {
+    const owned = rows.flatMap(([, row]) => row.chrome ?? []);
+    expect(Object.keys(featureChromeRules(new Set())).sort()).toEqual([...owned].sort());
+    expect(featureChromeRules(all)).toEqual({});
+    for (const [id, row] of rows) {
+      const hidden = featureChromeRules(new Set([id]));
+      expect(Object.keys(hidden).sort(), id).toEqual(owned.filter((c) => !(row.chrome ?? []).includes(c)).sort());
+      for (const rule of Object.values(hidden)) expect(rule).toBe(never);
+    }
   });
 });

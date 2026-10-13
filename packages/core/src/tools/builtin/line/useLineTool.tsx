@@ -9,16 +9,12 @@ import { cursorFor } from '@weasel-js/cursor';
 export interface LinePoint { x: number; y: number }
 
 /**
- * Click-down → drag → release line tool. The `drag` binding routes to
- * `insertAction`, which owns the live preview and commits through the
- * `insert` dep with `{ kind: 'line', a, b }` endpoints (not the AABB
- * diagonal), so the drag direction is preserved.
+ * Drag-to-draw line tool. The `drag` binding routes to `insertAction`, which
+ * commits through the `insert` dep with `{ kind: 'line', a, b }` endpoints
+ * (not the AABB diagonal), so the drag direction is preserved.
  *
- * Modifiers are applied by `insertAction`:
- *   - shift: constrain to 15° increments
- *   - alt: mirror the end around the start (the drag is treated as a
- *     half-line) — the line-specific reading of the action's
- *     corner ⇄ center origin toggle
+ * Shift constrains to 15° increments; alt mirrors the end around the start
+ * (the drag is treated as a half-line).
  */
 export function useLineTool(options: InsertToolOptions = {}): Tool<null> {
   const { behaviors } = options;

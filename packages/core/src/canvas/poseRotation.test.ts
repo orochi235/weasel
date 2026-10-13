@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { rotateAroundAABBCenter, wrapWithPoseRotation } from './poseRotation';
-import type { DrawCommand, GroupDrawCommand } from '../renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 
 describe('rotateAroundAABBCenter', () => {
   it('returns an identity-like matrix when rotation is zero', () => {
@@ -29,7 +29,7 @@ describe('wrapWithPoseRotation', () => {
   const RECT_CMD: DrawCommand = {
     kind: 'path',
     path: { kind: 'rect', x: 10, y: 20, width: 80, height: 40 },
-    fill: { color: '#abc' },
+    fill: { paint: { color: '#abc' } },
   };
 
   it('returns the input untouched when pose.rotation is zero', () => {
@@ -64,7 +64,7 @@ describe('wrapWithPoseRotation', () => {
     const customCmds: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 10, y: 20, width: 80, height: 40 },
-      fill: { color: '#f00' },
+      fill: { paint: { color: '#f00' } },
     }];
     const pose = { x: 10, y: 20, width: 80, height: 40, rotation: Math.PI / 4 };
     const out = wrapWithPoseRotation(customCmds, pose);

@@ -4,49 +4,30 @@
  *
  * ### What this tier is for
  *
- * A distance field is a *sampled* representation. The baked MSDF atlas is
- * generated from outlines and holds up well; the dynamic canvas-SDF tier
+ * A distance field is a *sampled* representation: the dynamic canvas-SDF tier
  * (`../dynamic/`) reconstructs its field from a 48px raster, so magnifying it
- * past a few times the bake size exposes the raster as contour wobble — bumps
- * one bake-texel apart, ±2–3px at 8×. No bake size fixes that, it only moves
- * the size at which it appears (`glyphRasterizer.ts` measures the tradeoff:
- * error is *minimized at* the bake size, so raising it spoils the 12–32px
- * range where most text lives).
+ * past a few times the bake size exposes the raster as contour wobble. Above a
+ * size threshold the glyph's outline goes to the path renderer instead, which
+ * is exact at every zoom and takes strokes and non-solid fills.
  *
- * Above a size threshold the answer is to stop sampling: parse the font, take
- * the glyph's outline, and hand it to the path renderer the kit already has.
- * Exact at every zoom, and — because a glyph becomes an ordinary path — it
- * takes strokes and non-solid fills for free.
- *
- * Below the threshold the atlas still wins, and not narrowly: outlines carry
- * no hinting and no stem darkening, so body text at 12–16px rendered from
- * them looks *worse* than a platform rasterizer that puts stems on the pixel
- * grid. Two tiers with a size threshold is the standard hybrid, not a
- * compromise.
+ * Below the threshold the atlas still wins: outlines carry no hinting and no
+ * stem darkening, so body text at 12–16px rendered from them looks *worse*
+ * than a platform rasterizer that puts stems on the pixel grid.
  *
  * ### Metric neutrality (the load-bearing invariant)
  *
  * This tier replaces how a glyph is *painted*, never where it sits. Advances,
- * kerning, line breaking and baselines all keep coming from whichever tier
- * resolved the run — the baked atlas or the canvas face. That is what lets
- * the threshold be a rendering decision: zooming past it swaps glyph geometry
- * with the layout untouched, so text cannot reflow under the user's cursor,
- * and `measureTextBounds` / `textLineBoxes` need to know nothing about
- * outlines at all.
- *
- * The cost is that a face whose real advances disagree with the atlas's
- * inherits the atlas's. For the bundled Inter that is exact (the subset ships
- * from the same source the atlas was baked from), and for a machine font the
- * outline bytes and the canvas metrics come from the same file.
+ * kerning, line breaking, and baselines all keep coming from whichever tier
+ * resolved the run, so zooming past the threshold cannot reflow text. The cost
+ * is that a face whose real advances disagree with the atlas's inherits the
+ * atlas's.
  *
  * ### Availability
  *
- * Everything here degrades rather than blocks. Bytes arrive over `fetch` or
- * `queryLocalFonts` — asynchronous, and in the local case gated behind a
- * permission the user can refuse — so `glyphOutline` answers `null` until a
- * face is loaded and forever if it failed, and the caller falls back down the
- * ladder to SDF. A family must never render *nothing* because the outline
- * tier could not get bytes.
+ * Bytes arrive asynchronously, and in the local case behind a permission the
+ * user can refuse, so `glyphOutline` answers `null` until a face is loaded and
+ * forever if it failed, and the caller falls back to SDF. A family must never
+ * render *nothing* because the outline tier could not get bytes.
  */
 
 import { createReflectable, type Reflection } from '@weasel-js/registry';
@@ -57,10 +38,7 @@ import { openTypeParser } from './opentypeParser';
 
 /**
  * Where a face's bytes come from. A URL is fetched; a buffer or blob is used
- * as-is; a thunk is called at first use, which is what lets `queryLocalFonts`
- * results be registered eagerly and read lazily — the permission prompt and
- * the (potentially many megabytes of) blob only happen for a family the
- * document actually sets text in.
+ * as-is; a thunk is called at first use.
  */
 export type OutlineSource =
   | string
@@ -108,8 +86,7 @@ interface FaceSlot extends OutlineFaceInfo {
   status: OutlineStatus;
   face: OutlineFace | null;
   /** Memoized `glyphD` answers, including the `null` misses — a codepoint the
-   *  face lacks is asked for on every frame that draws it, and re-deriving
-   *  the miss means re-running the cmap lookup forever. */
+   *  face lacks is asked for on every frame that draws it. */
   glyphs: Map<number, string | null>;
   /** The in-flight or settled load, so every caller waiting on it shares one parse. */
   load: Promise<void> | null;
@@ -134,13 +111,12 @@ function normalize(v: OutlineVariant): { weight: number; style: FontStyle } {
  *
  * Registration is cheap and synchronous: nothing is fetched, and the parser
  * is not even imported, until a frame actually asks for a glyph from this
- * face. Registering a face that is never drawn large costs one map entry.
+ * face.
  *
  * The variant must match exactly what the layout tier resolved — this is
  * deliberately *not* a fallback chain. Painting 400-weight outlines at
- * 700-weight advances, or upright outlines where the shader was going to
- * fake an oblique, looks worse than the SDF it replaced; a miss here falls
- * back down the ladder instead, which is always safe.
+ * 700-weight advances looks worse than the SDF it replaced; a miss falls back
+ * to SDF instead.
  */
 export function registerFontOutlines(
   family: string,
@@ -168,16 +144,13 @@ export function registerFontOutlines(
  *  plain path data — but nothing further resolves from this face. */
 export function unregisterFontOutlines(family: string, variant: OutlineVariant = {}): void {
   const { weight, style } = normalize(variant);
-  // Only when something was actually dropped: `disableMachineFontOutlines`
-  // sweeps every weight/style pair, and a miss must not invalidate any layout.
+  // Only when something was actually dropped: a miss must not invalidate any layout.
   if (slots.delete(slotKey(family, weight, style))) notifyGlyphReady();
 }
 
 /**
  * Is an outline face registered for this exact variant? Answers `true` while
- * the bytes are still loading — the question is "could this face serve
- * outlines", which is what a caller deciding whether to *ask* wants; use
- * `outlineStatus` for the narrower "can it right now".
+ * the bytes are still loading; use `outlineStatus` for "can it right now".
  */
 export function hasFontOutlines(
   family: string, weight = 400, style: FontStyle = 'normal',
@@ -202,31 +175,13 @@ export function listFontOutlines(): readonly OutlineFaceInfo[] {
 }
 
 /**
- * Em-space SVG path data for one glyph, or `null` when this tier cannot serve
- * it — no registration, bytes still loading, load failed, no such glyph, or a
- * glyph with no contours.
- *
- * Synchronous by construction: it is called from the per-frame glyph walk, so
- * it can only ever report what is already in hand. The first call for an
- * unloaded face starts the load and returns `null`; when the load lands,
- * `notifyGlyphReady` asks the canvas to draw again and the second frame gets
- * the outline. Same shape as the dynamic tier's deferred bakes.
- */
-/**
  * Close every contour of a glyph's path data.
  *
- * A glyph contour is closed by definition — neither TrueType nor CFF has any
- * other kind — but not every serializer writes the `Z` that says so, and the
- * omission is invisible until someone *strokes* the outline: a fill closes the
- * contour implicitly (earcut joins last point to first), while a stroke
- * follows exactly the path it is handed and leaves the closing edge unpainted,
- * with a cap at each loose end. That showed up as glyphs missing part of their
- * outline along long straight edges, which is where a contour's seam usually
- * falls.
- *
- * Normalized here rather than in one parser because the same hole is open to
- * every consumer-supplied `OutlineParser`, and a contract that says "closed"
- * is cheaper to guarantee than to document.
+ * A glyph contour is closed by definition, but not every serializer writes
+ * the `Z` that says so, and the omission is invisible until someone *strokes*
+ * the outline: a fill closes the contour implicitly, while a stroke leaves the
+ * closing edge unpainted, with a cap at each loose end. Normalized here rather
+ * than in one parser so it covers every consumer-supplied `OutlineParser`.
  */
 export function closeContours(d: string): string {
   let out = '';
@@ -249,12 +204,12 @@ function closeOne(contour: string): string {
 
 /**
  * Em-space SVG path data for one glyph of a registered outline face, or `null`
- * when there is nothing to draw.
+ * when this tier cannot serve it — no registration, bytes still loading, load
+ * failed, no such glyph, or a glyph with no contours.
  *
- * Synchronous and non-throwing by design: a face that has not been parsed yet
- * starts loading and answers `null` for now, so a renderer can call this every
- * frame and simply fall through to another text tier until the outline
- * arrives. Results are cached per codepoint.
+ * Synchronous and non-throwing: a face that has not been parsed yet starts
+ * loading and answers `null` for now, so a renderer can call this every frame
+ * and fall through to another text tier until the outline arrives.
  */
 export function glyphOutline(
   family: string,
@@ -291,15 +246,12 @@ export function glyphOutline(
  * Metrics for a registered outline face, or `null` when this tier cannot
  * supply them yet — nothing registered, bytes still loading, or a failed load.
  *
- * The face is the *only* metrics source for a family that has no atlas, which
- * is the case this exists for: without it such a family cannot lay out at all.
- * It does not disturb metric neutrality — a family that has an atlas resolves
- * to the atlas long before anything asks here, so registering outlines still
- * cannot move text that was already rendering.
+ * The face is the *only* metrics source for a family that has no atlas. A
+ * family that has an atlas resolves to the atlas before anything asks here,
+ * so registering outlines cannot move text that was already rendering.
  *
- * Starts the load on a first call and answers `null` for now, exactly like
- * `glyphOutline`, so a per-frame caller falls through and picks it up on the
- * frame after the bytes land.
+ * Starts the load on a first call and answers `null` for now, like
+ * `glyphOutline`.
  */
 export function outlineMetrics(
   family: string,
@@ -318,12 +270,8 @@ export function outlineMetrics(
 /**
  * Load a registered face's bytes now and resolve with its settled status:
  * `'ready'`, `'failed'`, or `null` when nothing is registered for the
- * variant. Never rejects — a failed load is a status, the same one
- * `outlineStatus` reports.
- *
- * The per-frame readers start a load and answer `null` until it lands, which
- * suits a renderer and nothing that needs the geometry in one go: converting
- * text to paths awaits this first.
+ * variant. Never rejects — a failed load is a status. For a caller that needs
+ * the geometry in one go, such as converting text to paths.
  */
 export async function loadFontOutlines(
   family: string, variant: OutlineVariant = {},
@@ -349,9 +297,8 @@ async function runLoad(slot: FaceSlot): Promise<void> {
     slot.face = await slot.parser(bytes);
     slot.status = 'ready';
     slots.bump();
-    // The frame that asked for these glyphs has long since drawn. Without
-    // this the outlines sit in memory until something else invalidates the
-    // canvas, which on a static document is "never".
+    // The frame that asked for these glyphs has long since drawn, and on a
+    // static document nothing else invalidates the canvas.
     notifyGlyphReady();
   } catch (err) {
     slot.status = 'failed';

@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
-  MinimapCanvas,
   PointerContextProvider,
   SceneCanvas,
-  createMinimapContribution,
   dragPanContribution,
   useScene,
   useSelection,
   type SceneViewDrawOne,
 } from '@weasel-js/core';
+import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
 import styles from './MinimapDemo.module.css';
@@ -64,7 +63,7 @@ export function MinimapDemo() {
     (n, p) => [{
       kind: 'path',
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-      fill: { fill: 'solid', color: n.data.color },
+      fill: { paint: { kind: 'solid', color: n.data.color } },
     }],
     [],
   );
@@ -98,7 +97,7 @@ export function MinimapDemo() {
                 drawOne: (n, p): DrawCommand[] => [{
                   kind: 'path',
                   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { color: n.data.color },
+                  fill: { paint: { color: n.data.color } },
                 }],
               },
             }}

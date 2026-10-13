@@ -1,8 +1,8 @@
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { documentPose, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
-import { axesOf } from './engine/axes';
-import { createTarget, stateOf, type Target, type TargetAxes } from './target';
+import { axesOf } from '@weasel-js/animator';
+import { createTarget, type Target, type TargetAxes } from '@weasel-js/animator';
 
 /** What {@link createPoseTarget} takes. */
 export interface PoseTargetOptions<TPose> {
@@ -69,7 +69,22 @@ export function liveAxes<TPose>(
     }
     return axes!;
   };
-  return { count, angles, to: (p) => current().to(p), from: (a) => current().from(a) };
+  return {
+    count,
+    angles,
+    to: (p) => current().to(p),
+    from: (a) => current().from(a),
+    add: axes.add && ((p, d) => {
+      const now = current();
+      if (now.add) return now.add(p, d);
+      return now.from(now.to(p).map((n, i) => n + d[i]!));
+    }),
+    write: axes.write && ((p, out, at) => {
+      const now = current();
+      if (now.write) now.write(p, out, at);
+      else now.to(p).forEach((n, i) => { out[at + i] = n; });
+    }),
+  };
 }
 
 /** How a container's pose target carries its descendants, for {@link scenePoseTarget}. */
@@ -196,7 +211,7 @@ export function scenePoseTarget<TPose>(
   const held = made.get(id) as Target<TPose> | undefined;
   // A pose that has changed shape at rest, a polygon given more points, needs axes made for it.
   const fits = !held || held.active || !node
-    || poseAxes(by, documentPose(scene, node))?.count === stateOf(held).axes.count;
+    || poseAxes(by, documentPose(scene, node))?.count === held.axisCount;
   if (held && fits) return held;
   if (!node) return undefined;
   // A node removed mid-flight keeps answering with the last pose it had.

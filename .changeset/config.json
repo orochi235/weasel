@@ -16,6 +16,7 @@
       "@weasel-js/quantity",
       "@weasel-js/simulation",
       "@weasel-js/stroke",
+      "@weasel-js/renderer",
       "@weasel-js/storage",
       "@weasel-js/prefs",
       "@weasel-js/select",
@@ -34,6 +35,9 @@
       "@weasel-js/audio",
       "@weasel-js/cursor",
       "@weasel-js/kernel3d",
+      "@weasel-js/parallax",
+      "@weasel-js/animator",
+      "@weasel-js/minimap",
       "@weasel-js/forge",
       "@weasel-js/routing"
     ]

@@ -6,15 +6,22 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
-  ActionsProvider, SceneCanvas, asNodeId, inferredNodeProperties,
-  paintAlpha, solid, useScene, useSelection,
-  type FillStyle, type View,
+  ActionsProvider,
+  SceneCanvas,
+  asNodeId,
+  inferredNodeProperties,
+  paintAlpha,
+  solid,
+  useScene,
+  useSelection,
+  type View,
+  type Fill,
 } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import { WD_RENDERERS } from '../paintRenderers';
 import { useOpacityScrub } from './useOpacityScrub';
 
-type D = { fill?: FillStyle | null; text?: string };
+type D = { fill?: Fill | null; text?: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
@@ -35,7 +42,7 @@ const ID = asNodeId('a');
 // The fixture has no `path`, so classify it as one outright to get draw's schema.
 const PANEL_ROUTING = [{ name: 'path', matches: () => true }];
 
-function setup({ selected = true, data = { fill: solid('#ff0000') } as D } = {}) {
+function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } as D } = {}) {
   const onViewChange = vi.fn();
   let api!: {
     scene: ReturnType<typeof useScene<D, L, P>>;
@@ -88,7 +95,7 @@ function setup({ selected = true, data = { fill: solid('#ff0000') } as D } = {})
   });
   const alpha = () => {
     const fill = (api.scene.get(ID)!.data as D).fill;
-    return Math.round(paintAlpha(fill!) * 100);
+    return Math.round(paintAlpha(fill!.paint) * 100);
   };
   return { onViewChange, wheel, key, alpha, fillSlider, api: () => api };
 }
@@ -152,7 +159,7 @@ describe('opacity scrub', () => {
     t.key('keydown');
     expect(t.api().percent).toBe(100);
     t.wheel();
-    expect((t.api().scene.get(ID)!.data as D).fill).toMatchObject({ color: '#000', opacity: 0.95 });
+    expect((t.api().scene.get(ID)!.data as D).fill).toMatchObject({ paint: { color: '#000', opacity: 0.95 } });
     expect('stroke' in (t.api().scene.get(ID)!.data as object)).toBe(false);
   });
 

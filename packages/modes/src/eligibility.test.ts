@@ -21,8 +21,9 @@ describe('eligibleTool', () => {
     expect(eligibleTool(r2, { id: 'sel', capabilities: ['creates-selection'] })).toBe(false);
   });
 
-  it('untagged tools are ineligible everywhere except modes that allow []', () => {
-    expect(eligibleTool(reg, { id: 'mystery' })).toBe(false);
-    expect(eligibleTool(reg, { id: 'mystery', capabilities: [] })).toBe(false);
+  it('an untagged tool is eligible in every mode', () => {
+    const r2 = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    expect(eligibleTool(r2, { id: 'mystery' })).toBe(true);
+    expect(eligibleTool(r2, { id: 'mystery', capabilities: [] })).toBe(true);
   });
 });

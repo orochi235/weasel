@@ -27,7 +27,7 @@ const DASHES: Record<string, number[] | undefined> = {
 };
 
 /** Hand-written from `Stroke` in `@weasel-js/core` (paint-types.ts). Two of its
- *  fields have no control kind to map onto: `paint` is a `FillStyle` union, and
+ *  fields have no control kind to map onto: `paint` is a `Paint` union, and
  *  `dash` is a `number[]` — a preset list stands in for the latter. */
 const STROKE_SCHEMA: ConfigField[] = [
   { key: 'color', label: 'Paint', type: 'color', default: '#a48bd4' },

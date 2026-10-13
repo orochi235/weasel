@@ -6,9 +6,7 @@
  * glyphs — `A` (advance 23) and `B` (advance 22) — plus one kerning pair,
  * `A→B` at -1. At `fontSize: 32` the scale is 1, so those are world units.
  * There is no space glyph, so a space takes the `fontSize * 0.25` fallback
- * advance (8). These tests used to run against a stub where every character
- * measured 10 wide, which is why nothing here caught that the box disagreed
- * with the paint by a kern on every pair.
+ * advance (8).
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
@@ -94,15 +92,13 @@ describe('fitTextPose', () => {
   });
 
   it('sizes by the kerned width, not the sum of the advances', () => {
-    // The regression the 10px-per-char stub could never show: summing per
-    // character gives 23 + 22 = 45, and the painted line is 44.
+    // Summing per character gives 23 + 22 = 45, and the painted line is 44.
     const fit = fitTextPose(textPose({ text: 'AB' }), { axis: 'both' });
     expect(fit.width).toBe(44);
   });
 
   it('measures per-run sizes, which the pose-level style alone cannot', () => {
-    // A second run at double the size is twice as wide; the old path read
-    // `pose.text` and the node style only, so both runs measured at 32.
+    // A second run at double the size is twice as wide.
     const plain = fitTextPose(textPose({ text: 'AB' }), { axis: 'both' });
     const mixed = fitTextPose(
       textPose({ text: 'AB', runs: [{ text: 'A' }, { text: 'B', fontSize: SIZE * 2 }] }),

@@ -9,6 +9,7 @@ import {
 import { commitLeaf } from './commitLeaf';
 import type { PropertyRenderer } from './renderContext';
 import { absentValue, classifyKind, kindBreakdown, type AnyNode } from './model';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { conditionedSections } from './conditions';
 import type { MarkHiddenProps } from '../Prefs/hidden';
 import { prefFieldChoices } from '../Prefs/schema';
@@ -38,6 +39,18 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    *  A renderer returning `null` collapses its leaf (and the row, when
    *  every leaf in it collapses). */
   renderers?: Record<string, PropertyRenderer>;
+  /**
+   * The schema the properties schemas' `alias` leaves point into. Default:
+   * each kind's own. A panel drawn from layouts of aliases into another
+   * schema passes that other: each alias row is drawn as the leaf of it at
+   * the alias's path, reads that path of every selected node and writes
+   * there, and is hidden and disabled by that leaf's conditions as well as
+   * its own. A `PrefGroup`'s keys are steps of the node path (`data`, then
+   * `fill`); a `PrefSection`'s leaf keys are whole node paths. A condition
+   * of a kind's own schema may read a setting of that one too: a path no
+   * leaf of the kind holds is read there.
+   */
+  over?: PrefGroup | PrefSection;
   /** Kind → header label. Default: capitalized kind name. */
   kindLabel?: (kind: string) => string;
   /** Rendered when the selection is empty. */
@@ -93,7 +106,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
 
   const kinds = nodes.map((n) => classifyKind(n, routing));
   const selectionKey = nodes.map((n) => n.id).join(',');
-  const scope = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined, props.markHidden === true);
+  const scope = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined, props.markHidden === true, props.over);
   const { sections } = scope;
   const leaves = new Map(
     sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const))),
@@ -104,7 +117,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     const leaf = leaves.get(path);
     return leaf && absentValue(leaf);
   };
-  const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS);
+  const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
   const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
 
@@ -121,6 +134,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     absentAt,
     disabled: scope.disabled,
     hidden: scope.hidden,
+    entryAt: scope.entryAt,
+    targets: scope.targets,
   };
 
   return (

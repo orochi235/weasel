@@ -1,21 +1,17 @@
 /**
- * Content-handler registry — the "registry out" half of external-content
- * ingestion (spec: docs/superpowers/specs/2026-07-03-content-ingestion-design.md).
+ * Content-handler registry for external-content ingestion.
  *
  * All three arrival paths (OS drop, clipboard paste, file picker /
- * `CanvasExtensionApi.ingest`) converge here: the `ingest` action calls
- * `runIngest(items, ctx)`, which partitions the items across registered
- * handlers in priority order — the first matching handler takes every item
- * it matches; leftovers continue down the list. Same per-trait registry
- * idiom as `NodeShape` / `NodeRouting`. The `clipboard.pasteEvent` action
- * calls it too, with `RunIngestOptions.handlers` naming the one handler it
- * accepts.
+ * `CanvasExtensionApi.ingest`) converge here: `runIngest(items, ctx)`
+ * partitions the items across registered handlers in priority order — the
+ * first matching handler takes every item it matches; leftovers continue
+ * down the list.
  *
  * MIME matching delegates to `mimeMatchesGlob` from `@weasel-js/gestures` —
  * the SAME matcher the binding-level `types` filter uses, so a binding that
  * matched can never disagree with the registry about what a glob means.
  */
-import { mimeMatchesGlob } from '@weasel-js/gestures';
+import { mimeMatchesGlob, UNKNOWN_MIME } from '@weasel-js/gestures';
 import { dwarn } from '../../debug';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -54,12 +50,10 @@ export interface IngestCtx {
    *  only match-level misses flow on to other handlers. */
   clipboard?: ClipboardIngestCtx;
   /** Set to `true` by the kit weasel-JSON handler when it successfully
-   *  pastes a payload in this event. The `ctx` object is shared across all
-   *  handlers in one `runIngest` call, and higher-priority handlers' `handle`
-   *  bodies run (synchronously) before lower ones — so `kit:svg`'s
-   *  `text/plain` SVG fallback reads this to decline the SVG flavor of a copy
-   *  whose canonical weasel-JSON flavor already ingested (avoids a
-   *  double-paste when both flavors ride one clipboard event). */
+   *  pastes a payload in this event. `kit:svg`'s `text/plain` SVG fallback
+   *  reads this to decline the SVG flavor of a copy whose weasel-JSON flavor
+   *  already ingested (avoids a double-paste when both flavors ride one
+   *  clipboard event). */
   consumedWeaselPayload?: boolean;
   /** Full action-deps bag, for consumer handlers that need more. */
   deps: ActionDeps;
@@ -74,6 +68,11 @@ export interface ContentHandlerEntry {
   id: string;
   /** MIME glob(s) (`'image/*'`, `'text/csv'`) or an item predicate. */
   match: string | string[] | ((item: IngestItem) => boolean);
+  /** For a predicate `match`: the MIME globs it could say yes to. A drag
+   *  still in flight shows its MIMEs and no contents, so a predicate cannot be
+   *  asked about it; this is what it is asked instead. Without it, no drag
+   *  can be refused while this handler is registered. */
+  types?: readonly string[];
   /** Higher runs earlier. Kit defaults register at -100 so any consumer
    *  handler (default 0) beats them. */
   priority?: number;
@@ -106,8 +105,7 @@ export interface RunIngestOptions {
   /**
    * The handlers to route through, in place of the registry. The registry is
    * shared by every canvas on the page, so this is how one arrival path
-   * accepts a narrower set of content than the page has handlers for: the
-   * `clipboard.pasteEvent` action passes the kit's node-payload handler alone.
+   * accepts a narrower set of content than the page has handlers for.
    * Ordered by `priority` like registered handlers; an item none of them
    * matches is ignored.
    */
@@ -126,6 +124,27 @@ function entryMatches(entry: ContentHandlerEntry, item: IngestItem): boolean {
   }
   const globs = Array.isArray(match) ? match : [match];
   return globs.some((g) => mimeMatchesGlob(item.mime, g));
+}
+
+/**
+ * Whether some handler could claim one of `items`: the registry's, or
+ * `handlers`. An item with contents is put to each handler's `match`. One
+ * with a MIME alone, from a drag still in flight, is answered from the globs
+ * and a predicate's declared `types`; it is never refused when its MIME is
+ * `UNKNOWN_MIME`, or while a predicate handler declares no types.
+ */
+export function couldClaim(
+  items: readonly IngestItem[],
+  handlers: readonly ContentHandlerEntry[] = HANDLERS,
+): boolean {
+  return items.some((item) => {
+    if ((item as { kind?: string }).kind !== undefined) return handlers.some((h) => entryMatches(h, item));
+    if (item.mime === UNKNOWN_MIME) return true;
+    return handlers.some((h) => {
+      const globs = typeof h.match === 'function' ? h.types : [h.match].flat();
+      return globs === undefined || globs.some((g) => mimeMatchesGlob(item.mime, g));
+    });
+  });
 }
 
 /**

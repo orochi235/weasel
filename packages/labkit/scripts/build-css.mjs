@@ -18,8 +18,7 @@
 //   4. labkit's own `.lk-*` chrome, last, so it overrides what it wraps.
 //
 // A consumer installs none of those packages, so whatever is missing here is
-// missing from their page with no error anywhere — which is how 1 and 2 went
-// unnoticed through a release. The consumer smoke test now checks layer 2.
+// missing from their page with no error anywhere.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';

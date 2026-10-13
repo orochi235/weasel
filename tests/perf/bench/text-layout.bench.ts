@@ -2,18 +2,13 @@
  * Text layout: `layoutRuns` against glyph count, run count and wrapping, plus
  * the `layoutCache` hit/miss split.
  *
- * `layoutRuns` walks every codepoint, resolves a face per run, kerns,
- * measures, wraps, aligns and emits a quad. It is the derivation the layout
- * cache exists to avoid, so both sides of that cache are measured here.
- *
  * The font is the repo's BMFont fixture, registered once at module load
  * against a stubbed fetch. Absolute numbers therefore describe the fixture's
- * glyph set, not any particular shipped face; the shape of the curve against
- * glyph count is the portable part.
+ * glyph set, not any particular shipped face.
  */
 import { group } from './group';
 import { registerFont } from '@weasel-js/font';
-import { layoutRuns, cachedLayoutRuns } from '@weasel-js/text';
+import { layoutRuns, cachedLayoutRuns, paintRuns } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { alternatingRuns, benchFontJson, plainRun, proseOf } from './fixtures';
 
@@ -44,11 +39,11 @@ const WRAP = { maxWidth: 400, lineHeight: 1.2, align: 'left' as const };
 
 const single = new Map(GLYPH_COUNTS.map((n) => [n, [plainRun(proseOf(n))]]));
 
-// Guards the fixture, not the code under test. An atlas that failed to
-// register lays out no quads, and every number below would silently be a
-// measurement of `resolveGlyph`'s missing-glyph path instead of layout.
+// Guards the fixture: an atlas that failed to register lays out no quads, and
+// every number below would measure the missing-glyph path instead of layout.
 {
-  const probe = layoutRuns([plainRun('Ag')], NO_WRAP);
+  const runs = [plainRun('Ag')];
+  const probe = paintRuns(layoutRuns(runs, NO_WRAP), runs);
   const quads = probe.groups.reduce((n, g) => n + g.quads.length, 0);
   if (quads !== 2) throw new Error(`bench font fixture: expected 2 quads, got ${quads}`);
 }
@@ -88,10 +83,8 @@ group('layoutCache — hit vs miss (500 glyphs, wrapped)', (bench) => {
   bench('cachedLayoutRuns hit', () => {
     cachedLayoutRuns(runs, WRAP);
   });
-  // What every measurement caller pays: a fresh array each call, so the
-  // identity WeakMap misses and the structural key is built and hit. The gap
-  // to the row above is the cost of serializing the runs; the gap to the row
-  // below is what it saves.
+  // A fresh array each call, so the identity WeakMap misses and the
+  // structural key is built and hit.
   bench('cachedLayoutRuns structural hit', () => {
     cachedLayoutRuns([...runs], WRAP);
   });
@@ -99,11 +92,8 @@ group('layoutCache — hit vs miss (500 glyphs, wrapped)', (bench) => {
     _resetLayoutCacheForTests();
     cachedLayoutRuns(runs, WRAP);
   });
-  // Dragging a node was a full miss on every frame while the cache keyed on
-  // origin. Layout is origin-relative now and `drawText` translates at
-  // upload, so this is the same call as the hit above — kept as its own row
-  // because the committed baseline still holds the pre-change number, and the
-  // collapse from one to the other is the result worth being able to see.
+  // Layout is origin-relative, so this is the same call as the hit above; the
+  // row stays because the committed baseline has a row by this name.
   bench('cachedLayoutRuns moving origin', () => {
     cachedLayoutRuns(runs, WRAP);
   });

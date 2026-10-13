@@ -1,17 +1,7 @@
 /**
- * Stress harness: drag Card 'a' in AnimationDemo 100 times.
- *
- * Goal: prove the GL renderer doesn't accumulate lag, leak GPU resources, or
- * crash across many drag-release cycles. Tweens run for ~250ms after each
- * release; the harness waits long enough for that to settle, then drives the
- * next drag.
- *
- * Failure modes this catches:
- *   - Console errors (GL errors, React errors, animator unmount tripwire)
- *   - Page errors / renderer-process crashes
- *   - Mean per-cycle wall time creeping above 600ms (rAF starvation, GC pauses,
- *     unbounded animation maps, etc.)
- *   - Canvas going entirely black (renderer broken / context lost).
+ * Stress harness: drag Card 'a' in AnimationDemo 100 times, to show the GL
+ * renderer doesn't accumulate lag, leak GPU resources, or crash across many
+ * drag-release cycles.
  */
 import { test, expect } from '@playwright/test';
 import { browserFingerprint } from './lib/fingerprint';
@@ -41,9 +31,8 @@ test('animation demo: 100 drag-release cycles without lag or crash', async ({ pa
   const box = await canvas.boundingBox();
   if (!box) throw new Error('canvas has no bounding box');
 
-  // AnimationDemo INITIAL has card 'a' at world (100,100) size 80x60. The
-  // demo canvas is 600x400 with 1:1 mapping, so card 'a' center in canvas-
-  // local coords ≈ (140, 130). Translate to viewport coords.
+  // AnimationDemo INITIAL has card 'a' at world (100,100) size 80x60, mapped
+  // 1:1, so its center in canvas-local coords ≈ (140, 130).
   const startCx = box.x + 140;
   const startCy = box.y + 130;
   let curX = startCx;
@@ -76,11 +65,8 @@ test('animation demo: 100 drag-release cycles without lag or crash', async ({ pa
   }
   const totalMs = Date.now() - t0;
 
-  // Confirm rendering still works by counting non-zero pixels across the
-  // whole canvas. A single center sample is unreliable because momentum
-  // drift may push cards away from the center over 100 cycles, but a fully
-  // zero buffer is the symptom we actually care about (broken renderer /
-  // lost context).
+  // Count non-zero pixels across the whole canvas: a single center sample is
+  // unreliable because momentum drift may push cards away from the center.
   const nonZeroCount = await page.evaluate(() => {
     const c = document.querySelector('canvas') as HTMLCanvasElement;
     const gl = c.getContext('webgl2') as WebGL2RenderingContext | null;

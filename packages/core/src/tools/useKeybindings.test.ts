@@ -12,6 +12,11 @@ import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { useRef } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { createModeRegistry, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
+
+const mode = (id: string, allows: string[]): ModeDefinition => ({ id, kind: 'soft', allows, scoping: false });
+const modesAllowing = (allows: string[]): ModeRegistry =>
+  createModeRegistry({ modes: [mode('only', allows)], initial: 'only' });
 
 function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
   document.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
@@ -362,29 +367,41 @@ describe('useKeybindings', () => {
     });
   });
 
-  describe('isToolEligible gate', () => {
+  describe('modes gate', () => {
     // `ToolDef.capabilities` used to describe an intent the runtime never
     // enforced: `ToolPalette` greyed an ineligible tool's button while its
     // keyboard shortcut still activated it, and once active its routes ran
     // unfiltered (audit 3.10). Activation now consults the same predicate.
-    function setup(isToolEligible?: (id: string) => boolean) {
+    function setup(modes?: ModeRegistry) {
       const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
-      const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
+      const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, capabilities: ['creates-paths'] });
       return renderHook(() => {
         const tools = useTools({ active: 'select', registry: { select, pen } });
-        useKeybindings(tools, isToolEligible ? { isToolEligible } : {});
+        useKeybindings(tools, modes ? { modes } : {});
         return tools;
       }, { wrapper: makeWrapper('select', true) });
     }
 
     it('refuses activation when the tool is ineligible', () => {
-      const { result } = setup((id) => id !== 'pen');
+      const { result } = setup(modesAllowing([]));
       act(() => press('p'));
       expect(result.current.active).toBe('select');
     });
 
     it('allows activation when the tool is eligible', () => {
-      const { result } = setup((id) => id === 'pen');
+      const { result } = setup(modesAllowing(['creates-paths']));
+      act(() => press('p'));
+      expect(result.current.active).toBe('pen');
+    });
+
+    it('reads the mode at the keypress, not at mount', () => {
+      const modes = createModeRegistry({
+        modes: [mode('look', []), mode('draw', ['creates-paths'])], initial: 'look',
+      });
+      const { result } = setup(modes);
+      act(() => press('p'));
+      expect(result.current.active).toBe('select');
+      act(() => { modes.setMode('draw'); });
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
     });
@@ -396,24 +413,26 @@ describe('useKeybindings', () => {
     });
   });
 
-  it('gates on the committed isToolEligible, not an abandoned render\'s', () => {
+  it('gates on the committed modes, not an abandoned render\'s', () => {
     const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
     const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
     const Wrapper = makeWrapper('select', true);
-    const committed = vi.fn(() => true);
-    const abandoned = vi.fn(() => true);
-    function Probe({ isToolEligible }: { isToolEligible: (id: string) => boolean }) {
+    const committed = modesAllowing([]);
+    const abandoned = modesAllowing([]);
+    const committedRead = vi.spyOn(committed, 'current');
+    const abandonedRead = vi.spyOn(abandoned, 'current');
+    function Probe({ modes }: { modes: ModeRegistry }) {
       const tools = useTools({ active: 'select', registry: { select, pen } });
-      useKeybindings(tools, { isToolEligible });
+      useKeybindings(tools, { modes });
       return null;
     }
-    renderThenAbandon<(id: string) => boolean>(
+    renderThenAbandon<ModeRegistry>(
       committed,
       abandoned,
-      (isToolEligible) => createElement(Wrapper, null, createElement(Probe, { isToolEligible })),
+      (modes) => createElement(Wrapper, null, createElement(Probe, { modes })),
     );
     act(() => press('p'));
-    expect(abandoned).not.toHaveBeenCalled();
-    expect(committed).toHaveBeenCalledWith('pen');
+    expect(abandonedRead).not.toHaveBeenCalled();
+    expect(committedRead).toHaveBeenCalled();
   });
 });

@@ -16,6 +16,7 @@ const SPEC_KIND_TO_GESTURE: Record<SpecKind, GestureName | undefined> = {
   longPress: 'longPress',
   drag: 'drag',
   pointerDown: 'pointerDown',
+  hover: 'hover',
   multiTouch: 'multiTouch',
   multiTouchTap: 'multiTouchTap',
   drop: 'drop',

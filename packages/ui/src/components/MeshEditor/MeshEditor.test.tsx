@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { FillStyle } from '@weasel-js/core';
-import { seedMeshPatch, type MeshGradientFill } from '@weasel-js/core/mesh';
+import type { Paint } from '@weasel-js/core';
+import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { MeshEditor } from './MeshEditor';
 import { PaintInput } from '../PaintInput';
 
-const MESH = seedMeshPatch('#ff0000ff') as MeshGradientFill;
+const MESH = seedMeshPatch('#ff0000ff') as MeshGradientPaint;
 
 describe('MeshEditor', () => {
   it('renders one swatch per corner, numbered in the patch walk order', () => {
@@ -23,7 +23,7 @@ describe('MeshEditor', () => {
     fireEvent.blur(swatch);
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    const next = onChange.mock.calls[0][0] as MeshGradientFill;
+    const next = onChange.mock.calls[0][0] as MeshGradientPaint;
     expect(next.patches[0].colors[1]).toBe('#00ff00ff');
     expect(next.patches[0].colors[0]).toBe(MESH.patches[0].colors[0]);
     expect(next.patches[0].points).toEqual(MESH.patches[0].points);
@@ -37,7 +37,7 @@ describe('MeshEditor', () => {
   });
 
   it('numbers the patches when there is more than one', () => {
-    const two: MeshGradientFill = { ...MESH, patches: [MESH.patches[0], MESH.patches[0]] };
+    const two: MeshGradientPaint = { ...MESH, patches: [MESH.patches[0], MESH.patches[0]] };
     render(<MeshEditor value={two} onChange={() => {}} />);
     expect(screen.getByLabelText('Patch 2 corner 1')).toBeInTheDocument();
   });
@@ -46,17 +46,17 @@ describe('MeshEditor', () => {
 describe('PaintInput holding a mesh', () => {
   it('edits it as a mesh rather than flattening it to a solid', () => {
     const onChange = vi.fn();
-    render(<PaintInput value={MESH as unknown as FillStyle} onChange={onChange} aria-label="Fill" />);
+    render(<PaintInput value={MESH as unknown as Paint} onChange={onChange} aria-label="Fill" />);
     const swatch = screen.getByLabelText('Patch 1 corner 1');
     fireEvent.input(swatch, { target: { value: '#0000ff' } });
     fireEvent.blur(swatch);
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0][0]).toMatchObject({ fill: 'mesh-gradient' });
+    expect(onChange.mock.calls[0][0]).toMatchObject({ kind: 'mesh-gradient' });
   });
 
   it('lights the mesh segment in the kind bar', () => {
-    render(<PaintInput value={MESH as unknown as FillStyle} onChange={() => {}} aria-label="Fill" />);
+    render(<PaintInput value={MESH as unknown as Paint} onChange={() => {}} aria-label="Fill" />);
     expect(screen.getByRole('radio', { name: 'Mesh' })).toBeChecked();
   });
 });

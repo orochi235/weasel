@@ -4,7 +4,6 @@
  */
 import { describe, it, expect } from 'vitest';
 import { cloneAction } from './clone';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
@@ -33,7 +32,6 @@ function ctxAt(
     deps: {
       selection: { get: () => selected, set: () => {} },
       scene,
-      poseComposition: RIGID_POSE_COMPOSITION,
     },
     drag: { start: { x: 0, y: 0 }, current: { x: dx, y: dy }, delta: { x: dx, y: dy } },
   } as unknown as InvocationCtx;

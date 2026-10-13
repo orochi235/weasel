@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { BarPopover } from './BarPopover';
 import s from './Bar.module.css';
 
@@ -10,6 +10,24 @@ export type BarOrientation = 'horizontal' | 'vertical';
 export interface BarLeafNode {
   path: string;
   leaf: PrefLeaf;
+  /** Where the leaf's value lives when that is not `path`: the leaf is the one an alias at `path` shows. */
+  at?: string;
+}
+
+/** What a bar calls a leaf: its name, and for an alias no surface resolved, what an alias of nothing is called. */
+export function barLeafName(leaf: PrefLeaf): string {
+  return leaf.kind === 'alias' ? prefAliasName(leaf as PrefAlias) : leaf.name;
+}
+
+/**
+ * `nodes` with each leaf as `shown` hands it back, in every run: how a surface puts the leaf an alias shows in
+ * the alias's place, so the bar names and draws that leaf.
+ */
+export function shownBarNodes(nodes: readonly BarNode[], shown: (node: BarLeafNode) => BarLeafNode): BarNode[] {
+  return nodes.map((node) => {
+    if (node.kind === 'leaf') return { kind: 'leaf', ...shown(node) };
+    return node.kind === 'run' ? { ...node, nodes: shownBarNodes(node.nodes, shown) } : node;
+  });
 }
 
 /**
@@ -75,7 +93,7 @@ export function BarLayout(props: BarLayoutProps) {
             if (node.leaf.kind === 'action') return cells([node]);
             const body = row(node);
             if (body == null) return [];
-            return [{ path: node.path, content: <BarPopover label={node.leaf.name}>{body}</BarPopover> }];
+            return [{ path: node.path, content: <BarPopover label={barLeafName(node.leaf)}>{body}</BarPopover> }];
           })
         : cells(pending);
       for (const cell of drawn) items.push({ path: cell.path, leaf: true, content: cell.content });

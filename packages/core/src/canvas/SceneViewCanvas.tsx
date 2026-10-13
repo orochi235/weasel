@@ -2,31 +2,10 @@
  * `<SceneViewCanvas>` — pointer-inert, read-only render of a `Scene` at a
  * given `View` into its own `<canvas>` DOM element.
  *
- * The component:
- *   - mounts its own `<canvas>`,
- *   - subscribes to the scene via `useSyncExternalStore(scene.subscribe,
- *     scene.getVersion)` so any scene mutation triggers a re-render,
- *   - subscribes to `scene.overrides` as well, since override writes never
- *     bump the scene version — without this the view would paint document
- *     poses while `<SceneCanvas>` paints overridden ones,
- *   - paints through `useFrameLoop` rather than from React, so both a render
- *     (prop change or version bump) and an override commit just mark the
- *     surface dirty and one `requestAnimationFrame` coalesces them. The mount
- *     paint is synchronous so the first frame the user sees is the scene, not
- *     a blank canvas, and nothing paints while the canvas is off screen or the
- *     tab is hidden,
- *   - attaches **no** event listeners (consumers attach their own via
- *     `canvasRef`),
- *   - frees its renderer and every GL object it owns on unmount
- *     (`useCanvasRenderer`).
- *
- * Sizing follows `<SceneCanvas>`'s convention: the consumer passes `width` /
- * `height` in CSS pixels. The HTML `width` / `height` attributes of the
- * `<canvas>` (drawing-buffer size) are set to `width × dpr` and `height × dpr`
- * by the canvas renderer (via the underlying renderer's `resize`), which also
- * writes the element's inline `width` and `height` style in CSS pixels. That
- * beats a size set through `className`, so the class positions the canvas and
- * the `width` / `height` props size it.
+ * It paints through `useFrameLoop` rather than from React: a render and an
+ * override commit both just mark the surface dirty. The mount paint is
+ * synchronous, so the first frame the user sees is the scene, and nothing
+ * paints while the canvas is off screen or the tab is hidden.
  */
 import {
   useCallback,
@@ -36,22 +15,20 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
-import { assignRef, useLatest } from '@weasel-js/react';
-import { useFrameLoop } from './useFrameLoop';
-import { useLateContentRedraw } from './useLateContentRedraw';
-import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
+import { assignRef } from '@weasel-js/react';
+import { useCanvasSurface } from './useCanvasSurface';
+import type { CanvasRendererLease } from './canvasRenderer';
 import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
-import type { Animator } from '../animation/types';
+import type { Animator } from '@weasel-js/animator';
 
 /** Props for `<SceneViewCanvas>`. */
 export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
-  /** Scene to render. Must be the same `Scene` instance passed to whoever
-   *  is mutating it; the component subscribes to its version stream and
-   *  repaints when the version advances. */
+  /** Scene to render. The component subscribes to it and repaints when it
+   *  changes. */
   scene: Scene<TData, TLayer, TPose>;
   /** Camera. Applied to scene + `extraCommands` via the renderer's group
    *  transform. */
@@ -65,9 +42,7 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
    *  responsible for what gets painted — there is no AABB-fill default. */
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
   /** Optional extra commands appended after scene commands, inside the same
-   *  view transform. Used by `<MinimapCanvas>` for its visible-window
-   *  indicator; available to other consumers that want to overlay a
-   *  world-space annotation. */
+   *  view transform — a world-space annotation over the scene. */
   extraCommands?: ReadonlyArray<DrawCommand>;
   /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
    *  `alphaFor`. Pass the same function the main canvas uses to keep a
@@ -118,12 +93,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     assignRef(canvasRef, el);
   }, [canvasRef]);
 
-  // The frame loop paints, not React — so an override commit can repaint
-  // without a render. The thunk defers to `paintRef`, which every committed
-  // render republishes from an insertion effect — ahead of the layout effect
-  // below, and never from a render React abandoned.
-  const lease = useCanvasRenderer();
-  const paint = (): boolean => {
+  const paint = (lease: CanvasRendererLease): boolean => {
     const canvas = localRef.current;
     if (!canvas) return false;
     const commands = sceneViewFrame({
@@ -142,22 +112,15 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     });
     return lease.paint(canvas, commands, view, { width, height });
   };
-  const paintRef = useLatest(paint);
+  const { lease, requestRedraw } = useCanvasSurface(paint, { target: localRef });
 
-  const { requestRedraw } = useFrameLoop(
-    useCallback(() => paintRef.current(), [paintRef]),
-    { target: localRef },
-  );
-
-  // Every render — a prop change or a scene-version bump — marks the surface
-  // dirty. No dependency array: the paint reads all of them.
-  //
-  // The mount paint is the exception: it runs here, in the caller's stack, so
-  // the first frame the user sees is the scene rather than a blank canvas.
+  // Every render marks the surface dirty. No dependency array: the paint
+  // reads all of them. The mount paint is the exception: it runs here, in the
+  // caller's stack.
   const paintedRef = useRef(false);
   useLayoutEffect(() => {
     if (paintedRef.current) { requestRedraw(); return; }
-    paintedRef.current = paintRef.current();
+    paintedRef.current = paint(lease);
     if (!paintedRef.current) requestRedraw();
   });
 
@@ -165,9 +128,6 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   // above cannot see them.
   useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
-  useLateContentRedraw(requestRedraw);
-  useRedrawOnRestore(lease, requestRedraw);
-  useRedrawOnDensityChange(requestRedraw);
 
   // A remount (StrictMode) paints its first frame in place again.
   useEffect(() => () => { paintedRef.current = false; }, []);
@@ -183,12 +143,10 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
 }
 
 /**
- * Pointer-inert read-only scene view. See `SceneViewCanvasProps` for the
- * full surface and the module docstring for the rendering model.
- *
- * `forwardRef` is not used because the component is generic over `<TData,
- * TLayer, TPose>` and React's `forwardRef` erases generics. The
- * `canvasRef` prop is the plain-prop equivalent (the spec calls it out as
- * the public surface).
+ * Pointer-inert read-only scene view. It attaches no event listeners;
+ * consumers attach their own through `canvasRef`, a plain prop because
+ * `forwardRef` erases the component's generics. `width` and `height` are CSS
+ * pixels, which the renderer writes as inline style, so `className` can
+ * position the canvas and cannot resize it.
  */
 export const SceneViewCanvas = SceneViewCanvasInner;

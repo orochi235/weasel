@@ -7,19 +7,10 @@
  * ctrl+wheel — is only reachable here.
  *
  * jsdom reports `navigator.platform === ''`, so the platform branch is chosen
- * from the user agent. The stub below is installed before the dispatcher module
- * is imported, because `IS_MAC` is a module-level constant.
+ * from the user agent, which the dispatcher reads when it mounts.
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-
-vi.hoisted(() => {
-  Object.defineProperty(globalThis.navigator, 'userAgent', {
-    value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
-    configurable: true,
-  });
-});
-
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
@@ -34,6 +25,10 @@ import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 
 beforeAll(() => {
+  Object.defineProperty(globalThis.navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
+    configurable: true,
+  });
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
     setPointerCapture: (...args: unknown[]) => void;
@@ -43,10 +38,6 @@ beforeAll(() => {
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
-
-// ---------------------------------------------------------------------------
-// Harness
-// ---------------------------------------------------------------------------
 
 function makeViewApi(initial: View): ViewApi & { current: View } {
   const api = {
@@ -130,10 +121,6 @@ function fireKey(key: string, opts: { ctrlKey?: boolean; metaKey?: boolean } = {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Platform branch
-// ---------------------------------------------------------------------------
-
 describe('mac platform branch', () => {
   it('resolves `mod` to metaKey: Cmd+= zooms in and Ctrl+= does not', () => {
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
@@ -150,10 +137,6 @@ describe('mac platform branch', () => {
     expect(viewApi.current.scale).toEqual({ x: 1.25, y: 1.25 });
   });
 });
-
-// ---------------------------------------------------------------------------
-// Trackpad pinch — the browser delivers it as ctrl+wheel
-// ---------------------------------------------------------------------------
 
 describe('mac trackpad pinch (ctrl+wheel)', () => {
   it('zooms the view and prevents the browser default', () => {

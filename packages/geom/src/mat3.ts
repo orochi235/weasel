@@ -4,14 +4,9 @@
  *   y' = b·x + d·y + f
  * Represented as a readonly 6-tuple (f64). The affine tier of the kernel.
  *
- * Convention alignment: `glMat3.ts` beside this file holds the renderer's
- * matrix. That one is a 9-element column-major
- * array (a full 3×3) laid out for `uniformMatrix3fv` — a deliberately
- * different *representation* for the WebGL upload path. Its *logical element
- * order* is identical to ours: `create(a, b, c, d, tx, ty)` maps
- * `x' = a·x + c·y + tx`, `y' = b·x + d·y + ty` (canvas/DOMMatrix a,b,c,d,e,f).
- * We keep the pure 6-tuple form here (the kernel form); the 9-element form
- * is for the renderer. No second logical convention is created.
+ * `glMat3.ts` beside this file holds the renderer's matrix: a 9-element
+ * column-major array (a full 3×3) laid out for `uniformMatrix3fv`. Its
+ * *logical element order* is identical to ours.
  */
 import { SINGULAR_RATIO } from './scalar';
 

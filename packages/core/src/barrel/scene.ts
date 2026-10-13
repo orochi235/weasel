@@ -9,6 +9,7 @@ export type { Mixed } from '@weasel-js/registry';
 
 // ─── Group/parent composition: world pose, rebase, ordered groups ───────────
 export {
+  composesFrames,
   composeWorldPose,
   composeRectPose,
   decomposeRectPose,
@@ -71,7 +72,7 @@ export type { UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose,
-  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs,
+  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneUnitScopes,
 } from '../core/scene';
 export type { PoseSource, PosedNode } from '../core/scene';
 export type {
@@ -92,6 +93,7 @@ export type {
   NodeId,
   PoseFeed,
   PoseOverride,
+  PoseHold,
   PoseOverrides,
   RegisteredOp,
   Scene,

@@ -12,7 +12,8 @@ export type ButtonStatus = 'neutral' | 'muted' | 'accent' | 'success' | 'warn' |
 /** Button height and type scale. */
 export type ButtonSize = 'sm' | 'md';
 
-type ButtonBase = {
+/** What every {@link Button} takes. */
+export type ButtonBase = {
   variant?: ButtonVariant;
   size?: ButtonSize;
   /** Text color of the `link` variant, which is `accent` unless told
@@ -36,12 +37,14 @@ type ButtonBase = {
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
 } & StanceProps & SegmentTooltipFields;
 
-type ButtonRegular = ButtonBase & {
+/** A button with a visible label, which names it. */
+export type ButtonRegular = ButtonBase & {
   iconOnly?: false;
   ariaLabel?: string;
 };
 
-type ButtonIconOnly = ButtonBase & {
+/** A button showing only its icon, which `ariaLabel` has to name. */
+export type ButtonIconOnly = ButtonBase & {
   iconOnly: true;
   ariaLabel: string;
 };

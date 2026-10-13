@@ -5,11 +5,14 @@
  * Mount one inside `<SceneCanvas>`, or declare the same thing through the
  * surface's `views` prop, which renders one of these per descriptor.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState,
+  type Ref,
+} from 'react';
+import type { CanvasViewCamera } from './canvasExtension';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
-import { clampView } from 'core/viewport/clampView';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createViewportLayer } from 'features/viewports/viewportLayer';
 import { createDispatcher } from '@weasel-js/routing';
@@ -19,7 +22,8 @@ import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
-import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
+import { useCanvasView } from './useCanvasView';
+import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, layerAffordance } from './affordanceAt';
 import { pathFromPlane } from './planeClips';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
@@ -29,7 +33,7 @@ import {
   createDispatcherPreviewSources,
 } from './SceneCanvas/dispatcherGestureBounds';
 import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
-import { createSceneLayerGate, paintedLayers } from './sceneLayerPaint';
+import { createSceneLayerGate, viewPaintedLayers } from './sceneLayerPaint';
 import {
   useOptionalViewRegistry,
   IDENTITY_VIEW,
@@ -61,6 +65,8 @@ export interface CanvasViewProps {
   /** Pan limits, applied to every camera change the same way `<Canvas>`
    *  applies its own. */
   viewBounds?: Bounds;
+  /** Receives this view's camera, to read, drive, and watch from outside it. */
+  cameraRef?: Ref<CanvasViewCamera>;
   /** Which of the surface's layers this view paints. Defaults to all of them —
    *  the same content through a second camera. */
   layers?: (surface: readonly RenderLayer<unknown>[]) => readonly RenderLayer<unknown>[];
@@ -124,6 +130,8 @@ const NO_INPUTS: Omit<SurfaceViewInputs, 'selectionApi'> = {
 
 const ALWAYS_VISIBLE = (): boolean => true;
 
+const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
+
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
 /**
@@ -139,7 +147,7 @@ const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<un
 export function CanvasView(props: CanvasViewProps): null {
   const {
     id, bounds, view: viewProp, defaultView, onViewChange, viewBounds,
-    layers = ALL_LAYERS, layerVisibility, layerOrder, background, order = Infinity, label,
+    layers = ALL_LAYERS, layerVisibility, layerOrder, background, order = Infinity, label, cameraRef,
     selection: selectionProp, selectionOptions, interactive = true, paint = true,
   } = props;
 
@@ -152,11 +160,6 @@ export function CanvasView(props: CanvasViewProps): null {
   const ownSelection = useSelection(selectionOptions);
   const viewSelection = selectionProp ?? (selectionOptions ? ownSelection : undefined);
 
-  // The uncontrolled camera lives in a ref, as `<Canvas>`'s does: a write is
-  // readable at once, so a second one before React commits builds on the first.
-  const [initialView] = useState<View>(() => normalizeView(defaultView ?? IDENTITY_VIEW));
-  const internalViewRef = useRef(initialView);
-
   const inputs = useOptionalViewInputs();
   // The selection this view acts on: its own when it has one, the surface's
   // otherwise.
@@ -166,8 +169,7 @@ export function CanvasView(props: CanvasViewProps): null {
   // is registered once and must not churn, but what it answers with has to be
   // the last committed render's.
   const live = useLatest({
-    bounds, layers, layerVisibility, layerOrder, onViewChange, viewBounds, viewProp,
-    viewSelection, selection,
+    bounds, layers, layerVisibility, layerOrder, viewProp, viewSelection, selection,
   });
 
   const rectAt = useCallback((outer: View, dims: Dims): ViewRect => {
@@ -182,20 +184,37 @@ export function CanvasView(props: CanvasViewProps): null {
     return rectAt(surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS);
   }, [registry, rectAt]);
 
-  const cameraAt = useCallback((outer: View, dims: Dims): View => {
-    const v = live.current.viewProp ?? internalViewRef.current;
-    return normalizeView(typeof v === 'function' ? v(outer, dims) : v);
-  }, [live]);
+  const {
+    getView: camera, setView, setViewFromInput, subscribeView,
+    adoptControlled, announceControlled, clearSubscribers,
+  } = useCanvasView({
+    view: typeof viewProp === 'function'
+      ? () => {
+        const surface = registry?.surface();
+        return viewProp(surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS);
+      }
+      : viewProp,
+    defaultView,
+    onViewChange,
+    viewBounds,
+    dims: () => sizeOf(rectNow()),
+    requestRedraw: () => registry?.surface()?.requestRedraw(),
+  });
+  useInsertionEffect(adoptControlled);
+  useLayoutEffect(announceControlled);
+  useEffect(() => clearSubscribers, [clearSubscribers]);
+  useImperativeHandle(cameraRef, () => ({ getView: camera, setView, subscribeView }), [camera, setView, subscribeView]);
 
-  /** The camera for the surface's current frame. */
-  const camera = useCallback((): View => {
-    const surface = registry?.surface();
-    return cameraAt(surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS);
-  }, [registry, cameraAt]);
+  /** The camera for a frame the caller names. A derived camera is asked for
+   *  that frame; any other is the same whatever the surface is doing. */
+  const cameraAt = useCallback((outer: View, dims: Dims): View => {
+    const v = live.current.viewProp;
+    return typeof v === 'function' ? normalizeView(v(outer, dims)) : camera();
+  }, [live, camera]);
 
   /** The surface's layers this view draws, in the order it draws them. */
   const drawnLayers = useCallback((): readonly RenderLayer<unknown>[] => (
-    paintedLayers(registry?.surface()?.layers() ?? [], live.current)
+    viewPaintedLayers(registry?.surface()?.layers() ?? [], live.current)
   ), [registry, live]);
 
   const [sceneLayerGate] = useState(createSceneLayerGate);
@@ -204,25 +223,12 @@ export function CanvasView(props: CanvasViewProps): null {
     sceneLayerGate(registry?.surface()?.layers() ?? [], live.current)(layerId)
   ), [registry, sceneLayerGate, live]);
 
-  const setView = useCallback((next: View) => {
-    const { viewBounds: vb, onViewChange: cb, viewProp: controlled } = live.current;
-    const rect = rectNow();
-    const valid = normalizeView(next);
-    const clamped = vb ? clampView(valid, vb, { width: rect.w, height: rect.h }) : valid;
-    if (controlled === undefined) internalViewRef.current = clamped;
-    cb?.(clamped);
-    registry?.surface()?.requestRedraw();
-  }, [registry, rectNow, live]);
-
   const viewApi = useMemo<ViewApi>(() => ({
     get: camera,
-    set: setView,
-    hostSize: () => {
-      const rect = rectNow();
-      return { width: rect.w, height: rect.h };
-    },
+    set: setViewFromInput,
+    hostSize: () => sizeOf(rectNow()),
     layerIsPainted,
-  }), [camera, rectNow, setView, layerIsPainted]);
+  }), [camera, rectNow, setViewFromInput, layerIsPainted]);
 
   // Paste placement is a camera question, so it is this view's when the paste
   // routed here. The rest of the dep — `resolveSrc`, `svg`, `clipboard` — is
@@ -230,10 +236,7 @@ export function CanvasView(props: CanvasViewProps): null {
   const ingestionApi = useMemo<IngestionDep>(() => {
     const base = (): IngestionDep | undefined => depRegistryRef.current?.get('ingestion');
     return {
-      viewportWorldRect: () => {
-        const rect = rectNow();
-        return viewportWorldRect(camera(), { width: rect.w, height: rect.h });
-      },
+      viewportWorldRect: () => viewportWorldRect(camera(), sizeOf(rectNow())),
       get resolveSrc() { return base()?.resolveSrc; },
       get svg() { return base()?.svg; },
       get clipboard() { return base()?.clipboard; },
@@ -325,24 +328,10 @@ export function CanvasView(props: CanvasViewProps): null {
       // A registered layer this view paints gets first refusal, on this
       // view's frame and envelope. One painted over the surface already had
       // its chance: it occludes the view before routing reaches here.
-      const rect = rectNow();
-      const surface = registry?.surface();
-      const extra = surface?.hitTestExtras(
-        world.x, world.y, camera(), { width: rect.w, height: rect.h },
-        helpersRef.current, drawnLayers(),
+      const extra = registry?.surface()?.hitTestExtras(
+        world.x, world.y, camera(), sizeOf(rectNow()), helpersRef.current, drawnLayers(),
       );
-      if (extra) {
-        const claim = extra.hit;
-        return {
-          kind: `layer:${extra.layerId}`,
-          owner: extra.layerId,
-          strength: claim.strength ?? 'shared',
-          ...(claim.claimedKinds !== undefined ? { claimedKinds: claim.claimedKinds } : {}),
-          ...(claim.cursor !== undefined ? { cursor: claim.cursor } : {}),
-          ...(claim.initialScratch !== undefined ? { payload: claim.initialScratch } : {}),
-        };
-      }
-      return inner(world);
+      return extra ? layerAffordance(extra.layerId, extra.hit) : inner(world);
     };
   }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, helpersRef]);
 

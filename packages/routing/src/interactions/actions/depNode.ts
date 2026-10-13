@@ -1,18 +1,7 @@
 /**
- * Dep registry for registry unification.
- *
- * Holds named "live source" thunks. Actions declare `requires: ['selection']`;
- * the dispatcher calls `registry.get('selection')` at invocation time to
- * build a typed Deps bag.
- *
- * `DepSchema` — the map of dep name → value type — is the single source of
- * truth for what `requires`/`register`/`get` accept. Its concrete fields live
- * in `./depSchema` (co-located with the dep value types). It is declared there
- * as a plain `export interface` rather than via a cross-module
- * `declare module './depRegistry'` augmentation: that augmentation does NOT
- * merge once rollup-plugin-dts flattens both files into one `.d.ts` chunk,
- * which silently emptied `DepSchema` for consumers. Consumers still extend it
- * via `declare module '@weasel-js/core'` augmentation.
+ * The dep registry: named "live source" thunks. Actions declare
+ * `requires: ['selection']`; the dispatcher calls `registry.get('selection')`
+ * at invocation time to build a typed Deps bag.
  */
 import type { DepSchema, DepName } from '../../index';
 import { ScopeNode } from './scopeNode';

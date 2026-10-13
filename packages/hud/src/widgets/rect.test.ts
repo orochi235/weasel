@@ -7,11 +7,11 @@ const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, { mode: 'dark' });
 describe('rect widget', () => {
   it('emits a path DrawCommand for its bounds', () => {
     const r = createRect({ id: 'r1', x: 10, y: 20, w: 30, h: 40, fill: '#abcdef' });
-    const cmds = r.draw({ dims: { width: 100, height: 100 }, defaultFont: 'x', toneAt: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
+    const cmds = r.draw({ dims: { width: 100, height: 100 }, defaultFont: 'x', color: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
     expect(cmds).toHaveLength(1);
     const cmd = cmds[0];
     expect(cmd.kind).toBe('path');
-    expect((cmd as { fill?: { color: string } }).fill?.color).toBe('#abcdef');
+    expect((cmd as { fill?: { paint?: { color: string } } }).fill?.paint?.color).toBe('#abcdef');
   });
 
   it('hitTest is true inside the rect, false outside', () => {
@@ -36,6 +36,15 @@ describe('rect widget', () => {
   it('claims nothing, so the hit walk descends past it', () => {
     const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#fff' });
     expect(r.claims).toEqual([]);
+  });
+
+  it('claims what it is created with, and what setClaims gives it after', () => {
+    const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#fff', claims: ['pointer'] });
+    expect(r.claims).toEqual(['pointer']);
+    r.setClaims([]);
+    expect(r.claims).toEqual([]);
+    r.dispose();
+    expect(() => r.setClaims(['pointer'])).toThrow();
   });
 
   it('onChange fires when state mutates', () => {

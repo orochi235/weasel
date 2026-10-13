@@ -34,7 +34,7 @@ describe('region picks over parallax layers', () => {
   });
 
   it('reads the camera off the asking view', () => {
-    const opts = regionPickOptions({ get: () => CAMERA }, undefined, undefined);
+    const opts = regionPickOptions({ get: () => CAMERA }, undefined);
     expect(opts.camera).toBe(CAMERA);
   });
 });

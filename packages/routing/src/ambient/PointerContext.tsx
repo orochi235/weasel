@@ -4,14 +4,12 @@
  * view it is over, refreshed on every `pointermove` and cleared on
  * `pointerleave`.
  *
- * It is an external store rather than React state: cursor moves fire dozens of
- * times per second, and a consumer that only reads on demand (paste at the
- * pointer) must not re-render for each one. Readers that do need to follow it
- * — a linked cursor — subscribe, or use `usePointerPosition()`.
+ * It is an external store rather than React state, so a consumer that only
+ * reads on demand (paste at the pointer) does not re-render on every move.
+ * Readers that need to follow it subscribe, or use `usePointerPosition()`.
  *
  * `<SceneCanvas>` publishes automatically, and defers to a provider already in
- * scope, so several surfaces under one provider share one pointer: a detached
- * minimap and its main canvas each see where the other's pointer is.
+ * scope, so several surfaces under one provider share one pointer.
  */
 import {
   createContext, useContext, useState, useSyncExternalStore, type ReactNode,
@@ -68,13 +66,10 @@ const PointerContext = createContext<PointerContextValue | null>(null);
 
 /**
  * @experimental
- * Wrap the part of the React tree that should share one pointer. Usually at
- * the app root, alongside `<ActionsProvider>` and `<SelectionContextProvider>`.
- *
- * Most consumers don't need to mount this directly — `<SceneCanvas>` mounts
- * one when none is in scope. Mount it yourself when two surfaces should share
- * a pointer. Pass `store` to publish into one you hold elsewhere
- * (`createPointerStore()`).
+ * Wrap the part of the React tree that should share one pointer.
+ * `<SceneCanvas>` mounts one when none is in scope, so mount it yourself only
+ * when two surfaces should share a pointer. Pass `store` to publish into one
+ * you hold elsewhere (`createPointerStore()`).
  */
 export function PointerContextProvider(
   { children, store }: { children: ReactNode; store?: PointerContextValue },

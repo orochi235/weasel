@@ -2,12 +2,12 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import {
   PathBuilder, SceneCanvas, WeaselProvider, commandFill, sceneFromJSON, useSelection,
 } from '@weasel-js/core';
-import type { FillStyle, Path, SceneCanvasApi, SerializedScene, View } from '@weasel-js/core';
+import type { Path, SceneCanvasApi, SerializedScene, View, Fill } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { createLoupe } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 
-interface NodeData { fill: FillStyle; ring?: boolean }
+interface NodeData { fill: Fill; ring?: boolean }
 interface Pose { x: number; y: number; width: number; height: number }
 
 const SURFACE_W = 820;
@@ -42,6 +42,7 @@ function PaneLoupe({ api, onColor }: {
       region: a.getSurfaceRect,
       source: [],
       requestRedraw: () => a.requestRedraw(),
+      contentVersion: () => a.getPaintedVersion(),
       mode: 'pixel',
       titlebar: false,
       bounds: LOUPE_BOUNDS,
@@ -71,12 +72,12 @@ const paneScene = (fill: string): SerializedScene<NodeData, string, Pose> => ({
   systemLayers: [{ id: 'default' }],
   nodes: [
     { id: 'box', kind: 'leaf', layer: 'default',
-      pose: { x: 40, y: 40, width: 100, height: 80 }, data: { fill: { color: fill } } },
+      pose: { x: 40, y: 40, width: 100, height: 80 }, data: { fill: { paint: { color: fill } } } },
     { id: 'mark', kind: 'leaf', layer: 'default',
-      pose: { x: 180, y: 150, width: 60, height: 60 }, data: { fill: { color: '#c0392b' } } },
+      pose: { x: 180, y: 150, width: 60, height: 60 }, data: { fill: { paint: { color: '#c0392b' } } } },
     { id: 'ring', kind: 'leaf', layer: 'default',
       pose: { x: 40, y: 180, width: 100, height: 100 },
-      data: { fill: { color: '#6b4c9a' }, ring: true } },
+      data: { fill: { paint: { color: '#6b4c9a' } }, ring: true } },
   ],
 } as unknown as SerializedScene<NodeData, string, Pose>);
 

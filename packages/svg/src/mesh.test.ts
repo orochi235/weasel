@@ -37,7 +37,7 @@ describe('mesh gradients in SVG', () => {
 
   it('round-trips every point and color', () => {
     const back = paintOf(serializeSvg(meshSquare())) as unknown as typeof MESH;
-    expect(back.fill).toBe('mesh-gradient');
+    expect(back.kind).toBe('mesh-gradient');
     expect(back.units).toBe('bounds');
     expect(back.patches).toHaveLength(1);
     expect(back.patches[0].colors).toEqual(MESH.patches[0].colors);

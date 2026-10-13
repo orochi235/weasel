@@ -1,11 +1,11 @@
 /**
  * SVG-style command-stream encoding — the kit's single declaration of the path
- * opcodes. `Path` (`./path`) wraps this with `kind` + `fillRule`.
+ * opcodes.
  *
  * The codes index a `Uint8Array` command stream whose coords live in a
  * parallel float array, so a code declared anywhere but `PATH_COMMANDS` makes
  * every walker that doesn't know it misread the coord stream from that command
- * on — silently, for every path. Derive, never restate.
+ * on — silently, for every path.
  */
 
 /** Opcode table: command code and the float coords it consumes. */
@@ -55,18 +55,15 @@ export function pathCommandCoordCount(cmd: number): number {
 
 /**
  * Visit each command with its coord offset and the pen position BEFORE the
- * command consumes its coords (the segment start). The callback receives
- * (cmd, coordIndex, penX, penY, commandIndex) and stops the walk by returning
- * `false`. The pen advances to the command's last coord pair afterward; `Z`
- * returns it to the subpath's opening `M`, so a command following a `Z`
- * without an intervening `M` starts where SVG says it does.
+ * command consumes its coords (the segment start). The callback stops the
+ * walk by returning `false`. `Z` returns the pen to the subpath's opening `M`.
  *
- * Such a command opens a new subpath at the pen, as does a drawing command
- * no `M` precedes at all. The visitor is told with `opensSubpath`, and has to
- * start its contour at `(penX, penY)` then: there is no `M` to do it.
+ * A command following a `Z` without an intervening `M` opens a new subpath at
+ * the pen, as does a drawing command no `M` precedes at all. The visitor is
+ * told with `opensSubpath`, and has to start its contour at `(penX, penY)`
+ * then: there is no `M` to do it.
  *
- * A code `PATH_COMMANDS` does not declare throws once the visitor has seen it,
- * since the walker cannot tell how many coords it consumes.
+ * A code `PATH_COMMANDS` does not declare throws once the visitor has seen it.
  */
 export function forEachSegment(
   commands: ArrayLike<number>,

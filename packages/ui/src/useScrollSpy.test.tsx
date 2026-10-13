@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import { useRef } from 'react';
 import { pickActiveSection, useScrollSpy } from './useScrollSpy';
@@ -108,6 +108,49 @@ describe('useScrollSpy scrollTo', () => {
     const before = screen.getByRole('status').textContent;
     act(() => screen.getByRole('button').click());
     expect(screen.getByRole('status').textContent).toBe(before);
+    view.unmount();
+  });
+
+  function Held() {
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const spy = useScrollSpy({ rootRef, ids: ['a', 'b'] });
+    return (
+      <div ref={rootRef} data-testid="root">
+        <section data-spy-section="a" />
+        <section data-spy-section="b" ref={(el) => { if (el) el.getBoundingClientRect = () => ({ top: 500 }) as DOMRect; }} />
+        <output>{spy.active ?? 'none'}</output>
+        <button type="button" onClick={() => spy.scrollTo('b')}>go</button>
+      </div>
+    );
+  }
+
+  // jsdom lays nothing out, so `b` is pinned 500px down: whenever the spy measures, it answers `a`.
+  it('holds the section it was sent to while the container is still scrolling, however long that takes', () => {
+    vi.useFakeTimers();
+    const view = render(<Held />);
+    const root = screen.getByTestId('root');
+    const active = () => screen.getByRole('status').textContent;
+    act(() => screen.getByRole('button').click());
+    expect(active()).toBe('b');
+    for (let i = 0; i < 4; i++) {
+      act(() => {
+        vi.advanceTimersByTime(400);
+        root.dispatchEvent(new Event('scroll'));
+      });
+    }
+    expect(active()).toBe('b');
+    act(() => void vi.advanceTimersByTime(2000));
+    expect(active()).toBe('a');
+    view.unmount();
+    vi.useRealTimers();
+  });
+
+  it('lets go of the held section when the scroll ends', () => {
+    const view = render(<Held />);
+    act(() => screen.getByRole('button').click());
+    expect(screen.getByRole('status').textContent).toBe('b');
+    act(() => void screen.getByTestId('root').dispatchEvent(new Event('scrollend')));
+    expect(screen.getByRole('status').textContent).toBe('a');
     view.unmount();
   });
 });

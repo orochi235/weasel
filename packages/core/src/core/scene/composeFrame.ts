@@ -1,8 +1,4 @@
-/**
- * Folding a node's pose up its parent chain to world, and back down. Lives
- * under `core/` so the scene can lay out in world without reaching up into
- * `features/`; `composePose.ts` beside it re-exports all of it.
- */
+/** Folding a node's pose up its parent chain to world, and back down. */
 
 /** Minimal adapter needed by `composeWorldPose` and friends — pose lookup plus parent walk. */
 export interface PoseAdapter<TPose> {
@@ -20,10 +16,6 @@ export interface PoseAdapter<TPose> {
  * that means an anisotropically scaled parent turns a rotated child into a
  * parallelogram, which `{x, y, width, height, rotation}` cannot hold, so the
  * shear is dropped.
- *
- * Measured over 50,000 random parent/child pairs: rotation and translation
- * compose to within 5.7e-13, anisotropic scale to a right-angle error of 0.99.
- * See `docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
  */
 export type PoseClosure = 'identity' | 'translation' | 'rigid';
 
@@ -32,31 +24,30 @@ export type PoseClosure = 'identity' | 'translation' | 'rigid';
  *  is its inverse. Default is IDENTITY — an absolute-pose scene where every
  *  node already stores world coords (parent is grouping-only, no transform). */
 export interface PoseComposition<TPose> {
-  compose: (parent: TPose, child: TPose) => TPose;
-  decompose: (parent: TPose, world: TPose) => TPose;
+  compose(parent: TPose, child: TPose): TPose;
+  decompose(parent: TPose, world: TPose): TPose;
   closure: PoseClosure;
 }
 
-/** Default pose-composition strategy: IDENTITY. Both `compose` and
- *  `decompose` return the child/world pose unchanged, modeling an
- *  absolute-pose scene where every node stores world coords and parents are
- *  grouping-only (no transform). With this strategy `composeWorldPose`
- *  returns a node's own raw pose and `rebaseLocalPose` is a no-op. */
+/** Default pose-composition strategy: IDENTITY, an absolute-pose scene. */
 export const IDENTITY_POSE_COMPOSITION: PoseComposition<unknown> = {
   compose: (_parent, child) => child,
   decompose: (_parent, world) => world,
   closure: 'identity',
 };
 
+/** Whether `composition` makes a container's pose a frame, so a stored pose
+ *  is local to it. False for the absolute-pose model. */
+export function composesFrames(composition: { closure: PoseClosure }): boolean {
+  return composition.closure !== 'identity';
+}
+
 /**
- * Walk `id`'s parent chain (root first to id last) and fold local poses into
- * a world pose via `compose`. Returns the world pose for `id`. Cycle-safe:
- * a visited-set guard breaks if the chain ever loops back to itself.
+ * Walk `id`'s parent chain and fold local poses into a world pose via
+ * `compose`. Cycle-safe.
  *
  * `compose(parent, child)` interprets `child` as expressed *in `parent`'s
- * local frame* and returns the equivalent pose in the next frame up. For a
- * standard translation-only rect: `world = { x: p.x + c.x, y: p.y + c.y,
- * width: c.width, height: c.height }`.
+ * local frame* and returns the equivalent pose in the next frame up.
  */
 export function composeWorldPose<TPose>(
   adapter: PoseAdapter<TPose>,
@@ -82,15 +73,11 @@ export function composeWorldPose<TPose>(
 
 /**
  * Convert `worldPose` into a local pose expressed under `newParentId`'s
- * frame. Used when reparenting so the child's visual world position is
- * preserved despite the change of frame. Inverse of one `compose` step.
+ * frame, so a reparented child keeps its visual world position.
  *
  * `decompose(parent, world)` returns the local pose `child` such that
- * `compose(parent, child) === world`. For axis-aligned rects:
- * `child = { ...world, x: world.x - parent.x, y: world.y - parent.y }`.
- *
- * Pass `newParentId === null` for the root frame; the function returns
- * `worldPose` unchanged.
+ * `compose(parent, child) === world`. Pass `newParentId === null` for the
+ * root frame; the function returns `worldPose` unchanged.
  */
 export function rebaseLocalPose<TPose>(
   adapter: PoseAdapter<TPose>,

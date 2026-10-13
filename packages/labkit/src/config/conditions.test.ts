@@ -142,35 +142,34 @@ describe('isLeafVisible and isLeafEnabled', () => {
 });
 
 describe('isEntryShown', () => {
-  it('answers a node of an unresolved schema by its own showIf, in either form', () => {
+  it("answers a node of a schema's own shape by its own showIf, in either form", () => {
     const { cellSize, seed, grid, showGrid } = schema().nodes;
-    expect(isEntryShown(cellSize, { showGrid: true })).toBe(true);
-    expect(isEntryShown(cellSize, { showGrid: false })).toBe(false);
-    expect(isEntryShown(seed, { mode: 'row' })).toBe(true);
-    expect(isEntryShown(seed, { mode: 'column' })).toBe(false);
-    expect(isEntryShown(grid, { mode: 'column' })).toBe(false);
-    expect(isEntryShown(showGrid, {})).toBe(true);
+    const { group } = resolveConfigSchema(schema(), []);
+    expect(isEntryShown(cellSize, { showGrid: true }, group)).toBe(true);
+    expect(isEntryShown(cellSize, { showGrid: false }, group)).toBe(false);
+    expect(isEntryShown(seed, { mode: 'row' }, group)).toBe(true);
+    expect(isEntryShown(seed, { mode: 'column' }, group)).toBe(false);
+    expect(isEntryShown(grid, { mode: 'column' }, group)).toBe(false);
+    expect(isEntryShown(showGrid, {}, group)).toBe(true);
   });
 });
 
 describe('resolveConfigSchema', () => {
-  it('warns of a condition its schema cannot answer', () => {
+  it('throws on a condition its schema cannot answer, naming each node and what is wrong', () => {
+    const bad = f.schema({
+      mode: f.enum('row', ['row', 'column']),
+      size: f.number(1).showIf({ path: 'mode', is: 'diagonal' }),
+      grid: f.group({ color: f.color('#fff').enableIf({ path: 'nowhere' }) }),
+    });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      resolveConfigSchema(
-        f.schema({
-          mode: f.enum('row', ['row', 'column']),
-          size: f.number(1).showIf({ path: 'mode', is: 'diagonal' }),
-        }),
-        [],
-      );
-      expect(warn.mock.calls).toEqual([
+      expect(() => resolveConfigSchema(bad, [])).toThrow(
         [
           `[labkit] showIf of "size": "mode" never holds 'diagonal': its options are 'row', 'column'`,
-        ],
-      ]);
-      warn.mockClear();
-      resolveConfigSchema(schema(), []);
+          `[labkit] enableIf of "grid.color": no leaf holds a value at "nowhere"`,
+        ].join('\n'),
+      );
+      expect(() => resolveConfigSchema(schema(), [])).not.toThrow();
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();

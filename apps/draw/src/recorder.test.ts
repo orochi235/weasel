@@ -54,9 +54,8 @@ describe('createRecorder', () => {
   it("captures a scene snapshot at start() via snapshotScene", () => {
     let calls = 0;
     const fakeSnap = {
-      version: 1 as const,
-      items: [],
-      doc: { size: { width: 100, height: 100 } },
+      version: 2 as const,
+      scene: { version: 1, nodes: [] },
       view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     };
     const rec = createRecorder({ canvas: () => canvas });
@@ -264,5 +263,34 @@ describe('createRecorder', () => {
     canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
     const out = rec.stop();
     expect(out.events.map((e) => e.type)).toEqual(['pointerup']);
+  });
+
+  it('hears pointer and wheel input on its surface only, and keys anywhere', () => {
+    const sidebar = document.createElement('button');
+    document.body.appendChild(sidebar);
+    const rec = createRecorder({ canvas: () => canvas, surface: () => canvas });
+    rec.start();
+    sidebar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    sidebar.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: 3 }));
+    sidebar.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
+    expect(rec.stop().events.map((e) => e.type)).toEqual(['pointerdown', 'wheel', 'keydown']);
+
+    // And stop() takes the surface's listeners off again.
+    rec.start();
+    rec.stop();
+    rec.start();
+    canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    expect(rec.stop().events).toHaveLength(1);
+  });
+
+  it('leaves out a key the host says is its own', () => {
+    const rec = createRecorder({ canvas: () => canvas, skipKey: (e) => e.key === 'F9' });
+    rec.start();
+    document.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'F9' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'F9' }));
+    expect(rec.stop().events.map((e) => e.key)).toEqual(['a']);
   });
 });

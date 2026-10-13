@@ -5,10 +5,7 @@
  * The sibling of `resolvePreviews`: that one answers for the ghosts of scene
  * nodes a gesture is displacing, this one for the chrome a gesture draws that
  * is no node at all — a marquee rect, a lasso trail, the outline of a shape
- * being dragged out. `<SceneCanvas>`'s `useDispatcherOverlayLayer` used to be
- * the only thing that knew how to read an `OngoingOverlay`, and it read one
- * straight into `DrawCommand`s, so a consumer with its own renderer got
- * nothing. None of the normalizing is about drawing.
+ * being dragged out.
  *
  * What stays out, as in `resolvePreviews`: no view, no screen projection, no
  * `DrawCommand`, no style, no React, no dispatcher. World coordinates only.
@@ -127,10 +124,8 @@ export function resolveOverlays(overlays: Iterable<OngoingOverlay>): ResolvedOve
         out.push({
           kind: 'insertPreview',
           visibilityId: 'action.insert-preview',
-          // Routing types the insert shape as an open string: a
-          // consumer-defined kind is legal there and simply gets no live
-          // preview. This narrows to the kinds the kit's overlay draws —
-          // the `break` above has already rejected everything else.
+          // Routing types the insert shape as an open string; a
+          // consumer-defined kind is legal there.
           shape: ov.shape as KitInsertShape,
           bounds,
           geometry,

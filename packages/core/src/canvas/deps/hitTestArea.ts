@@ -1,14 +1,10 @@
 /**
- * Shared, silhouette-aware area hit-test used by both `areaSelect` (marquee)
- * and `lassoSelect` dep sources, and by `sceneToAdapter`.
+ * Silhouette-aware area hit-test for marquee and lasso selection.
  *
- * The per-node decision is `regionTakes` (`core/geometry/regionHit`), which
- * `arrayAdapter` shares. This module supplies the scene walk — layers, clips,
- * pose composition, containers — and the node's drawn outline: the painter's
- * world-frame silhouette (`findShapeSilhouette`), which is what reaches the
- * kit's own inserted shapes, whose geometry sits on `node.data` behind a bare
- * `{x,y,w,h}` pose. With no painter the outline is the pose rect, rotated if
- * the pose is.
+ * The per-node decision is `regionTakes` (`core/geometry/regionHit`). This
+ * module supplies the scene walk and the node's drawn outline: the painter's
+ * world-frame silhouette (`findShapeSilhouette`), or with no painter the pose
+ * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
 import { pathIntersectsRect } from '@weasel-js/geom';
@@ -29,8 +25,7 @@ import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 export { hiddenLayerIds } from 'canvas/pickWalk';
 import type { HitTestView } from 'interactions/actions/depSchema';
-import type { PoseComposition } from 'core/scene/composePose';
-import { findShapeSilhouette } from 'canvas/NodeShape';
+import { findShapeInk, findShapeSilhouette } from 'canvas/NodeShape';
 import {
   polygonRegion,
   poseOutline,
@@ -58,16 +53,13 @@ export interface RegionQueryOptions {
 
 
 /** The pick options a region dep hands the shared walk: the asking view's
- *  layer gate and camera, the surface's alpha, and the scene's pose
- *  composition. */
+ *  layer gate and camera, and the surface's alpha. */
 export function regionPickOptions(
   view: HitTestView | undefined,
   alphaOf: ((id: string) => number) | undefined,
-  poseComposition: PoseComposition<unknown> | undefined,
 ): ScenePickSourceOptions<unknown> {
   const camera = view?.get?.();
   return {
-    ...(poseComposition ? { poseComposition } : {}),
     ...(alphaOf ? { alphaOf } : {}),
     ...(view?.layerIsPainted ? { layerIsPainted: (layer: string) => view.layerIsPainted!(layer) } : {}),
     ...(camera ? { camera } : {}),
@@ -124,6 +116,13 @@ export function hitTestLassoPolygon(
   return region ? walkArea(scene, region, mode, opts, descriptor, query) : [];
 }
 
+/** `shape` as a region reads it: a polygon path's open subpaths enclose
+ *  nothing when the node's painter lays down no fill. */
+function asInked<T>(node: unknown, pose: unknown, shape: T): T {
+  if ((shape as { kind?: unknown } | null)?.kind !== 'polygon') return shape;
+  return findShapeInk(node as never, pose)?.filled === false ? { ...shape, openFill: 'none' } : shape;
+}
+
 /** The walk every region query shares: skip containers unless asked, gate on
  *  the clip, and let `regionTakes` decide each node. */
 function walkArea(
@@ -146,8 +145,8 @@ function walkArea(
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
       const b = regionBoundsOf(node as object, pose, g);
-      return regionTakes(r, mode, pose, b, () =>
-        findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b));
+      return regionTakes(r, mode, asInked(node, pose, pose), b, () =>
+        asInked(node, pose, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)));
     },
     inPlane: (m) => regionQuery(regionInPlane(r, m)),
   });

@@ -14,7 +14,8 @@ const PARAGRAPHS: Record<string, string> = {
   hyphenated: 'a well-known, hand-made, state-of-the-art text for every-day, run-of-the-mill use',
   CJK: '漢字仮名交じり文は、漢字と仮名で書く日本語の文章です。「括弧」も句読点も行頭に来ない。',
   'punctuation-heavy': '"Wait—what?!" she said (quietly); then: «no…» [really] {ok} 50% $20/h, e.g. 3.14.',
-  'hard-broken': 'one two three four five\r\nsix\u000bseven\u000ceight\u0085nine\rten\n\r\neleven',
+  tabbed: 'name\tvalue\tnotes on it\tx\ty and\tmore words to wrap\ton a tab\tor two',
+  'hard-broken':'one two three four five\r\nsix\u000bseven\u000ceight\u0085nine\rten\n\r\neleven',
   combining: 'café résumé naïve crème brûlée fiancée',
 };
 
@@ -50,10 +51,10 @@ beforeEach(async () => {
 const canvasLines = (text: string, maxWidth: number, letterSpacing: number): string[] =>
   layoutRuns([{
     text, fontFamily: 'inter', fontSize: SIZE, fontWeight: 400, fontStyle: 'normal',
-    fill: { fill: 'solid', color: '#000' }, letterSpacing,
+    fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing,
     underline: false, strikethrough: false, overline: false, baselineShift: 0,
   } satisfies ResolvedRun], { align: 'left', maxWidth, lineHeight: 1.2 }).lines
-    .map((l) => String.fromCodePoint(...l.cells.map((c) => c.cp)).replace(/ +$/, ''));
+    .map((l) => String.fromCodePoint(...l.cells.map((c) => c.cp)).replace(/[ \t]+$/, ''));
 
 const measuredLines = (text: string, maxWidth: number, letterSpacing: number): string[] =>
   measureText(ctx, text, maxWidth, { ...DEFAULT_TEXT_STYLE, fontSize: SIZE, letterSpacing }).lines;

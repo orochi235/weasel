@@ -1,8 +1,6 @@
 /**
  * What an image quad costs, and how much of it is the geometry it mints.
  *
- * Two halves, and they answer different questions.
- *
  * **`renderer`** is the headline: image commands per frame through the real
  * renderer. `image`, `atlas` and `sprites` all stage into one batched run;
  * `unmerged` puts each image in a group whose color matrix alternates, so every
@@ -12,31 +10,12 @@
  *
  * **`raw`** attributes that gap without the renderer in the way: N small quads
  * per frame through one trivial program, differing only in how the vertices
- * reach the GPU.
+ * reach the GPU. The variants separate the object lifecycle from the write, and
+ * the write from where it lands; the report table says what each does.
  *
- *   - `churn` — a VAO and two buffers created, filled, drawn and deleted per
- *     quad. What `drawImage` did before images joined the batch.
- *   - `subdata` — one persistent VAO and buffer, rewritten at offset 0 per
- *     quad. Removes the object lifecycle, keeps the write.
- *   - `arena` — one persistent buffer holding every quad, written at a rising
- *     offset and drawn from there. No draw ever reads bytes a later write
- *     touches.
- *   - `uniform` — a unit quad uploaded once; position comes from a `vec4`
- *     uniform. No buffer write at all.
- *   - `orphan` — one persistent buffer, respecified per quad rather than
- *     updated, which tells the driver the old contents are dead.
- *   - `ring` — separate persistent buffers cycled per quad, so a write lands
- *     `RING` draws behind the one that read that buffer last.
- *
- * Ordered that way they separate the object lifecycle from the write, and the
- * write from where it lands — which is the same question the solid batch's flush
- * raises, since that flush rewrites one buffer from offset 0 every time it
- * happens. `ring` and `orphan` are the two escapes from a stalling write.
- *
- * Timed in blocks of frames, `subdata`, `orphan` and `uniform` once read 0.05
- * us in one run and 55 in the next. One frame a task (`lib/frameTiming.ts`),
- * on teitou in 2026-10, they hold within about 30% across runs, and a ring
- * costs more than rewriting one buffer — see `docs/TODO.md`.
+ * Time these one frame a task (`lib/frameTiming.ts`): timed in blocks of
+ * frames, `subdata`, `orphan`, and `uniform` read 0.05 us in one run and 55 in
+ * the next.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -115,7 +94,7 @@ test('image quad: geometry cost per draw', async ({ page, browser, browserName }
 
       const base = `/weasel/@fs${root}`;
       const { WeaselRenderer, registerTexture, SPRITE_STRIDE } = await import(
-        /* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`
+        /* @vite-ignore */ `${base}/packages/renderer/src/index.ts`
       );
       const { checkerBitmap, imageBitmaps } = await import(
         /* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`
@@ -143,8 +122,6 @@ test('image quad: geometry cost per draw', async ({ page, browser, browserName }
 
       const px = (i: number) => 20 + ((i * 37) % (W - 160));
       const py = (i: number) => 20 + ((i * 53) % (H - 160));
-
-      // ─── raw GL: four ways to get a quad's vertices to the GPU ──────────
 
       const RAW_VERT = `#version 300 es
 in vec2 a_position;
@@ -262,9 +239,8 @@ void main() { outColor = u_color; }`;
         ringVbos.push(vbo);
       }
 
-      /** Fresh VAO and buffers around one draw, then freed — what `drawImage`
-       *  does. `verts` decides whether the position comes from the buffer or
-       *  from `u_quad`. */
+      /** Fresh VAO and buffers around one draw, then freed. `verts` decides
+       *  whether the position comes from the buffer or from `u_quad`. */
       function churnDraw(verts: Float32Array): void {
         const vao = gl.createVertexArray()!;
         gl.bindVertexArray(vao);
@@ -285,10 +261,8 @@ void main() { outColor = u_color; }`;
 
       /**
        * ARRAY_BUFFER is not VAO state, so binding a VAO restores the index
-       * buffer and nothing else. Leaving the array binding to whatever the
-       * previous variant left wrote vertices into someone else's buffer and
-       * drew nothing — which the paint probe caught and a timing table would
-       * not have.
+       * buffer and nothing else. Every variant binds its array buffer itself,
+       * or it writes vertices into the previous variant's buffer and draws nothing.
        */
       function rawFrame(variant: string): void {
         gl.useProgram(rawProg);
@@ -338,9 +312,8 @@ void main() { outColor = u_color; }`;
             return;
 
           case 'orphan':
-            // Respecify rather than update: `bufferData` says the old contents
-            // are dead, which lets the driver hand back fresh storage instead
-            // of waiting for the draw that is still reading the old.
+            // `bufferData` says the old contents are dead, so the driver can hand
+            // back fresh storage instead of waiting for the draw still reading the old.
             gl.bindVertexArray(oneVao);
             gl.bindBuffer(gl.ARRAY_BUFFER, oneVbo);
             for (let i = 0; i < n; i++) {
@@ -386,8 +359,6 @@ void main() { outColor = u_color; }`;
         }
       }
 
-      // ─── the real renderer ──────────────────────────────────────────────
-
       const renderer = new WeaselRenderer({ gl, canvas, width: W, height: H, dpr: 1 });
       const bitmaps = await imageBitmaps(6);
       const patternHandle = registerTexture(await checkerBitmap());
@@ -420,7 +391,7 @@ void main() { outColor = u_color; }`;
         patternCmds.push({
           kind: 'path',
           path: { kind: 'rect', x: px(i), y: py(i), width: SIZE, height: SIZE },
-          fill: { fill: 'pattern', pattern: patternHandle, origin: { x: i % 8, y: i % 8 } },
+          fill: { paint: { kind: 'texture', texture: patternHandle, origin: { x: i % 8, y: i % 8 } } },
         });
       }
       // The same quads as `atlas`, packed — so the gap between the two is the
@@ -438,8 +409,6 @@ void main() { outColor = u_color; }`;
       const rendererCmds: Record<string, unknown[]> = {
         image: imageCmds, unmerged: unmergedCmds, atlas: atlasCmds, sprites: spriteCmds, pattern: patternCmds,
       };
-
-      // ─── timing ─────────────────────────────────────────────────────────
 
       const frameFor = (group: string, variant: string): (() => void) =>
         group === 'raw'
@@ -521,8 +490,6 @@ void main() { outColor = u_color; }`;
       rawVariants: [...RAW_VARIANTS], rendererVariants: [...RENDERER_VARIANTS],
     },
   );
-
-  // ─── analysis ──────────────────────────────────────────────────────────
 
   const runs = Array.from({ length: RUNS }, (_, i) => i + 1);
   const med = (xs: number[]) => [...xs].sort((x, y) => x - y)[Math.floor(xs.length / 2)];

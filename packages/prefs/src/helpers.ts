@@ -186,25 +186,23 @@ function prefLeafMatches(pref: PrefLeaf, path: string, query: string): boolean {
 
 /**
  * Drop every leaf that does not answer to `query`, pruning groups left empty.
- * A group whose own name matches keeps all of its leaves — a reader who typed
- * the group's name is asking for the group, not for leaves repeating it.
- *
- * An empty or whitespace query matches everything, so a cleared field restores
- * the tree rather than emptying it.
+ * A group whose own name matches keeps all of its leaves. An empty or
+ * whitespace query matches everything.
  *
  * An alias answers as the row it draws: its target's name and description
- * where it gives none. `leafAt` finds that target, and defaults to looking in
- * `node`; pass one over the whole schema when `node` is a part of it.
+ * where it gives none. That target is looked for in `over`, and in `node`
+ * without it; pass the whole schema when `node` is a part of it.
  */
 export function filterPrefSubtree<T extends PrefLeaf | PrefGroup>(
   node: T,
   query: string,
   path = '',
-  leafAt?: (path: string) => PrefLeaf | undefined,
+  over?: PrefGroup | PrefSection,
 ): T | null {
   const q = query.trim().toLowerCase();
   if (q === '') return node;
-  const find = leafAt ?? ((p: string) => (isPrefLeaf(node) ? undefined : prefLeafAt(node as PrefGroup, p)));
+  const within = over ?? (isPrefLeaf(node) ? undefined : (node as PrefGroup));
+  const find = (p: string): PrefLeaf | undefined => within && prefLeafAt(within, p);
   if (isPrefLeaf(node)) {
     const target = node.kind === 'alias' ? prefAliasTarget(node as PrefAlias, find) : undefined;
     const drawn = target ? prefAliasedLeaf(node as PrefAlias, target.leaf) : node;
@@ -214,7 +212,7 @@ export function filterPrefSubtree<T extends PrefLeaf | PrefGroup>(
   if (group.name.toLowerCase().includes(q)) return node;
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const [key, child] of Object.entries(group.children)) {
-    const kept = filterPrefSubtree(child, q, path === '' ? key : `${path}.${key}`, find);
+    const kept = filterPrefSubtree(child, q, path === '' ? key : `${path}.${key}`, within);
     if (kept) children[key] = kept;
   }
   if (Object.keys(children).length === 0) return null;

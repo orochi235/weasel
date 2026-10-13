@@ -4,12 +4,7 @@
  * Velocity-Verlet over a pluggable force list, contract-compatible with
  * d3-force so d3's own bundled forces drop in untranslated. Nothing here
  * advances time: `tick()` is the only thing that moves a node, and the caller
- * decides how often to call it. `useSimulation` calls it once a frame; a
- * layout pass calls it a few hundred times in one go and reads the result.
- *
- * Splitting it out is what lets a *pure* function run a relaxation — a React
- * hook cannot, and the alternative was a second integrator drifting away from
- * this one.
+ * decides how often to call it.
  */
 import {
   DEFAULT_ALPHA_DECAY,

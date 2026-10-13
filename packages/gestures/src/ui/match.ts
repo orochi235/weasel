@@ -1,50 +1,14 @@
-/**
- * Pure gesture matcher — no React, no state, no DOM.
- *
- * The kit's dispatcher orchestrator wraps these primitives with its
- * actions-layer concerns (BindingScope, ScopedBinding, MatchResult, matchBest).
- *
- * ## key-held phase decision
- * `matchSpec` returns `true` only for `phase: 'down'`, not `phase: 'up'`.
- * The dispatcher tracks the held key independently and handles the `up` phase
- * itself; the matcher never sees an "un-match" it needs to distinguish.
- * This keeps the matcher's output a simple boolean and avoids a three-valued
- * return type.
- *
- * ## TargetSpec string forms
- * Every form `TargetSpec` declares is resolved here, each from a different
- * field the dispatcher packs onto the event:
- *
- * | Form | Read from | Supplied by |
- * | --- | --- | --- |
- * | `'empty'` / `'selected-body'` / `'unselected-body'` | `bodyTarget` | the `classifyTarget` thunk |
- * | `kind:<k>` / `kind:<k>:selected` | `bodyKind` + `bodyTarget` | the `classifyTarget` thunk's node-kind resolver |
- * | `affordance:<k>` | the raw target's `.kind` | the `affordanceAt` thunk |
- * | `{ kindOf }` | the raw target + `bodyTarget` | both |
- *
- * A form whose source field is absent does not match — an unwired
- * `classifyTarget` makes every `bodyTarget`/`bodyKind` form `false` rather
- * than a silent wildcard. That is deliberate: a binding that can't be
- * evaluated should stay out of the way of one that can.
- */
+/** Pure gesture matcher — no React, no state, no DOM. */
 
 import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec, TargetPredicate } from './spec';
 import type { InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
-
-// ---------------------------------------------------------------------------
-// matchModifiers
-// ---------------------------------------------------------------------------
+import { matchIngestTypes } from './ingestTypes';
 
 /** The modifier-state fields `matchModifiers` reads. Structural, so a DOM
  *  `KeyboardEvent` or `PointerEvent` satisfies it directly. */
 export type ModifiersEvent = { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
 
-/** Per-physical-key requirement resolved from a `ModSpec`:
- *  - `'required'`  — the key MUST be held
- *  - `'forbidden'` — the key MUST NOT be held
- *  - `'optional'`  — either is accepted
- */
 type KeyRequirement = 'required' | 'forbidden' | 'optional';
 
 function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequirement {
@@ -56,15 +20,12 @@ function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequireme
 /**
  * Strict modifier match.
  *
- * - Omitted modifier MUST NOT be held.
- * - `true`       MUST be held.
- * - `false`      MUST NOT be held (same as omitted; both forms accepted for clarity).
- * - `'optional'` accepts either held or unheld. Supported on every modifier
- *   (`alt`, `ctrl`, `meta`, `mod`, `shift`).
- * - `mod` is platform-aware: matches `metaKey` on mac, `ctrlKey` elsewhere.
- *   When `mod` is set, the corresponding `meta`/`ctrl` field is implied AND
- *   the *other* platform key is forbidden. Callers should not combine `mod`
- *   with `meta`/`ctrl`.
+ * - Omitted or `false`: MUST NOT be held.
+ * - `true`: MUST be held.
+ * - `'optional'`: accepts either held or unheld.
+ * - `mod` is platform-aware: matches `metaKey` on mac, `ctrlKey` elsewhere,
+ *   and the *other* platform key is forbidden. Callers should not combine
+ *   `mod` with `meta`/`ctrl`.
  */
 export function matchModifiers(
   e: ModifiersEvent,
@@ -107,10 +68,6 @@ function checkKey(req: KeyRequirement, held: boolean): boolean {
   return true;
 }
 
-// ---------------------------------------------------------------------------
-// matchKey
-// ---------------------------------------------------------------------------
-
 /** Case-insensitive key match; supports string or string[] (any-of). */
 export function matchKey(eventKey: string, specKey: string | string[]): boolean {
   const lower = eventKey.toLowerCase();
@@ -130,10 +87,6 @@ function matchKeyOrCode(
   return matchKey(e.key, spec.key);
 }
 
-// ---------------------------------------------------------------------------
-// matchTarget
-// ---------------------------------------------------------------------------
-
 /** Read a `.kind` string off an affordance hit, or `undefined` when the hit
  *  is absent or shaped differently. */
 function affordanceKindOf(target: unknown): string | undefined {
@@ -144,12 +97,9 @@ function affordanceKindOf(target: unknown): string | undefined {
 
 /**
  * A {@link TargetSpec} resolved to its form, with the parts each form encodes
- * in its string pulled out.
- *
- * This is the one enumeration of the target forms. Three sites act on it and
- * each does something different — `matchTarget` below, and `targetRank` /
- * `targetConsultsAffordance` in `@weasel-js/core`'s dispatcher matcher — so
- * they switch on `form` exhaustively rather than re-deriving the prefixes.
+ * in its string pulled out. This is the one enumeration of the target forms:
+ * sites that act on it switch on `form` exhaustively rather than re-deriving
+ * the prefixes.
  */
 export type TargetSpecForm =
   | { form: 'body'; body: 'empty' | 'selected-body' | 'unselected-body' }
@@ -200,16 +150,13 @@ export function parseTargetSpec(spec: TargetSpec): TargetSpecForm | null {
 /**
  * Match a target value + event against a TargetSpec.
  *
- * - `{ kindOf: predicate }` — calls the predicate with the raw target value
- *   (affordance hit on pointerdown; event.target otherwise) AND the
- *   `bodyTarget` string. Predicates that only need the target can ignore
- *   the second arg.
+ * - `{ kindOf: predicate }` — calls the predicate with the affordance hit and
+ *   the `bodyTarget` string.
  * - `'empty'`, `'selected-body'`, `'unselected-body'` — compared against
- *   `bodyTarget` on the event (populated by `useGestureDispatcher` when a
- *   `classifyTarget` thunk is supplied).
+ *   `bodyTarget` on the event.
  * - `kind:<k>` — compared against `bodyKind`, the *semantic* kind of the node
- *   body under the point (`'text'`, `'rect'`, an app's own `'app:note'`), as
- *   resolved by `classifyTarget`. Selection-agnostic.
+ *   body under the point (`'text'`, `'rect'`, an app's own `'app:note'`).
+ *   Selection-agnostic.
  * - `kind:<k>:selected` — the same, and additionally requires the body to be
  *   in the current selection. Only the final `:selected` is a suffix, so a
  *   kind may itself contain colons.
@@ -260,20 +207,11 @@ export function matchTarget(
   }
 }
 
-// ---------------------------------------------------------------------------
-// matchPhase
-// ---------------------------------------------------------------------------
-
-/** Per-tool gesture-lifecycle state at match time.
- *
- *  - `selfChannel` is the tool id `'&'` resolves to — i.e., the tool that
- *    owns the binding being evaluated. `null` for bindings without an
- *    owning tool (e.g. ambient actions registered without scope ties); in
- *    that case any `phase: '&'` atom can't match.
- *  - `engagedChannels` is the set of tool ids that currently have an
- *    in-flight handle. Derived by the dispatcher from its `inFlight()`
- *    map keyed by tool id at match time.
- */
+/** Per-tool gesture-lifecycle state at match time. `selfChannel` is the tool
+ *  id `'&'` resolves to — the tool that owns the binding being evaluated — or
+ *  `null` for a binding without an owning tool, in which case no `'&'` atom
+ *  can match. `engagedChannels` is the set of tool ids that currently have an
+ *  in-flight handle. */
 export interface PhaseContext {
   selfChannel: string | null;
   engagedChannels: ReadonlySet<string>;
@@ -319,34 +257,6 @@ function matchPhaseAtom(a: PhaseAtom, ctx: PhaseContext): boolean {
   return a.phase === 'engaged' ? isEngaged : !isEngaged;
 }
 
-// ---------------------------------------------------------------------------
-// matchIngestTypes
-// ---------------------------------------------------------------------------
-
-/** MIME-glob match: `'image/*'` prefix-matches the major type; anything
- *  else is an exact (case-insensitive) match; bare `'*'` or `'*\/*'` matches all. */
-export function mimeMatchesGlob(mime: string, glob: string): boolean {
-  const m = mime.toLowerCase();
-  const g = glob.toLowerCase();
-  if (g === '*' || g === '*/*') return true;
-  if (g.endsWith('/*')) return m.startsWith(g.slice(0, -1));
-  return m === g;
-}
-
-/** True if ANY item's MIME matches ANY of the `types` globs.
- *  `types: []` (empty) ≡ omitted = match any. */
-export function matchIngestTypes(
-  items: readonly { mime: string }[],
-  types: string[] | undefined,
-): boolean {
-  if (!types || types.length === 0) return true;
-  return items.some((it) => types.some((g) => mimeMatchesGlob(it.mime, g)));
-}
-
-// ---------------------------------------------------------------------------
-// matchSpec
-// ---------------------------------------------------------------------------
-
 /**
  * Match a single GestureSpec against an InputEvent.
  *
@@ -359,10 +269,8 @@ export function matchSpec(
   isMac: boolean,
   phaseCtx?: PhaseContext,
 ): boolean {
-  // Phase gate runs first — cheaper than the per-kind logic, and a failed
-  // phase rules the spec out regardless of event shape. With no phase ctx
-  // nothing is engaged and the spec has no owner: an any-channel `initial`
-  // matches, and an own-channel (`&`) atom cannot.
+  // With no phase ctx nothing is engaged and the spec has no owner: an
+  // any-channel `initial` matches, and an own-channel (`&`) atom cannot.
   if (spec.phase !== undefined) {
     const ctx: PhaseContext = phaseCtx ?? { selfChannel: null, engagedChannels: EMPTY_ENGAGED };
     if (!matchPhase(spec.phase, ctx)) return false;
@@ -404,10 +312,8 @@ export function matchSpec(
       if (e.kind !== 'click') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
       // A `kindOf` predicate gets the affordance the press landed on — the
-      // same value it would get on a drag — NOT the DOM target. That
-      // symmetry is what lets one predicate describe "this piece of chrome"
-      // for both gestures, and what lets `hit == null` mean "not chrome".
-      // String-form specs read `bodyTarget` and don't look at either.
+      // same value it would get on a drag — NOT the DOM target, which is what
+      // lets `hit == null` mean "not chrome".
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
@@ -417,17 +323,14 @@ export function matchSpec(
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
-    case 'contextMenu': {
-      if (e.kind !== 'contextmenu') return false;
+    // Each happens at a point, so its target is what the event classified
+    // there: for a long-press, the affordance its press landed on.
+    case 'contextMenu':
+    case 'longPress':
+    case 'hover': {
+      if (e.kind !== 'contextmenu' && e.kind !== 'longpress' && e.kind !== 'hover') return false;
+      if (e.kind !== spec.kind.toLowerCase()) return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
-    }
-
-    case 'longPress': {
-      if (e.kind !== 'longpress') return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
-      // A long-press begins as a press, so its target is what was under the
-      // finger in scene terms: the affordance the press classified.
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 

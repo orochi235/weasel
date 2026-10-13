@@ -1,20 +1,12 @@
 /**
  * "A glyph the renderer asked for can now paint" — the redraw signal shared
- * by every asynchronous glyph source.
- *
- * Both lazy tiers land their work *after* the frame that asked for it: the
- * dynamic canvas-SDF atlas defers bakes past a per-frame budget, and the
- * outline tier has to fetch and parse font bytes. Neither can paint anything
- * on the frame that first requests a glyph, so both have to tell the canvas
- * to draw again.
- *
- * One subscriber set, not one per tier: a consumer wiring "redraw when text
- * becomes drawable" should not have to know how many tiers exist, or grow a
- * second subscription every time one is added. `<SceneCanvas>` subscribes
- * once and both tiers reach it.
+ * by every asynchronous glyph source. Both lazy tiers land their work after
+ * the frame that asked for it, so both have to tell the canvas to draw again.
  */
 
-const subscribers = new Set<() => void>();
+import { createEmitter } from '@weasel-js/registry';
+
+let ready = createEmitter();
 
 /** Advanced by every `notifyGlyphReady`, so state can be checked rather than
  *  listened for. See {@link glyphGeneration}. */
@@ -22,15 +14,9 @@ let generation = 0;
 
 /**
  * How many times glyph availability has changed — the pull-based companion to
- * {@link subscribeGlyphReady}.
- *
- * For caches that cannot hold a subscription. Subscribing at module load is a
- * side effect that reaches across a package boundary: it makes importing the
- * module that holds the cache require this package's whole surface, so a
- * consumer partially mocking `@weasel-js/font` breaks at import rather than at
- * use, and import order starts to matter. Comparing a counter has neither
- * problem, and costs a field read on a path that was going to check a cache
- * key anyway.
+ * {@link subscribeGlyphReady}, for caches that cannot hold a subscription.
+ * Subscribing at module load makes a consumer partially mocking
+ * `@weasel-js/font` break at import rather than at use.
  *
  * Callers keep the last value they saw and compare; any difference means
  * anything derived from font metrics is stale. The absolute value carries no
@@ -48,19 +34,39 @@ export function glyphGeneration(): number {
  * either way. Returns an unsubscribe.
  */
 export function subscribeGlyphReady(cb: () => void): () => void {
-  subscribers.add(cb);
-  return () => {
-    subscribers.delete(cb);
-  };
+  return ready.subscribe(cb);
 }
 
-/** @internal Fired by a glyph source once newly-available glyphs can paint. */
+/** Advanced by every `notifyGlyphReady` and by no `notifyGlyphBaked`. */
+let faces = 0;
+
+/**
+ * How many times the faces themselves have changed: a registration, a load
+ * landing or failing, a fallback policy, a canvas face measured again or its
+ * pages emptied. Unlike {@link glyphGeneration} it holds still when a deferred
+ * bake lands, which fills in an atlas rect and moves no pen — so text measured
+ * under one value is still measured right while the value stands. Compare
+ * with `!==`.
+ */
+export function faceGeneration(): number {
+  return faces;
+}
+
+/** @internal Fired by a glyph source when what it measures or serves changed. */
 export function notifyGlyphReady(): void {
   generation++;
-  for (const cb of subscribers) cb();
+  faces++;
+  ready.emit();
+}
+
+/** @internal Fired when deferred bakes land: glyphs already measured can now
+ *  paint, and nothing about their faces changed. */
+export function notifyGlyphBaked(): void {
+  generation++;
+  ready.emit();
 }
 
 /** @internal Test seam — the subscriber set is module state. */
 export function _clearGlyphReadySubscribers(): void {
-  subscribers.clear();
+  ready = createEmitter();
 }

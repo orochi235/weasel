@@ -14,9 +14,9 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { createScene } from 'core/scene/scene';
 import type { Node, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { SceneViewCanvas } from './SceneViewCanvas';
-import { registerPaintKind, getPaintKind } from 'renderer/paintKinds';
+import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
 
 // ---------------------------------------------------------------------------
 // Mock WeaselRenderer
@@ -26,8 +26,9 @@ const renderMock = vi.fn<(commands: DrawCommand[]) => void>();
 const resizeMock = vi.fn<(dims: { width: number; height: number; dpr: number }) => void>();
 const ctorSpy = vi.fn<(opts: unknown) => void>();
 
-vi.mock('../renderer/WeaselRenderer', () => {
+vi.mock('@weasel-js/renderer', async (importOriginal) => {
   return {
+    ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
     WeaselRenderer: class {
       constructor(opts: unknown) { ctorSpy(opts); }
       render(commands: DrawCommand[]): void { renderMock(commands); }
@@ -72,7 +73,7 @@ function makeScene(): Scene<D, L, P> {
 const drawOne = (node: Node<D, L, P>, pose: P, _view: View): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-  fill: { fill: 'solid', color: node.data.color },
+  fill: { paint: { kind: 'solid', color: node.data.color } },
 }];
 
 const identityView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -176,12 +177,12 @@ describe('<SceneViewCanvas>', () => {
     const extraA: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { fill: 'solid', color: '#aaa' },
+      fill: { paint: { kind: 'solid', color: '#aaa' } },
     }];
     const extraB: DrawCommand[] = [{
       kind: 'path',
       path: { kind: 'rect', x: 5, y: 5, width: 2, height: 2 },
-      stroke: { paint: { fill: 'solid', color: '#000' }, width: 1 },
+      stroke: { paint: { kind: 'solid', color: '#000' }, width: 1 },
     }];
 
     const { rerender } = render(

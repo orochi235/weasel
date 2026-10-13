@@ -1,15 +1,14 @@
 import {
   boundsOfPath
 } from '@weasel-js/geom';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
-import { commandFill, commandStroke } from 'renderer/patterns/commandPaint';
-import type { DrawCommand } from '../../renderer';
+import { commandFill, commandStroke } from '@weasel-js/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { derivesPath } from './memo';
 import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';
 
-// ─── Built-in painters ─────────────────────────────────────────────────
 /**
  * Built-in painter for nodes whose geometry is computed from other nodes'
  * poses. The path itself arrives on the paint context — see
@@ -39,7 +38,7 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     const path = ctx?.derivedPath;
     if (path == null) return [];
     const box = boundsOfPath(path);
-    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null; vertexColors?: number[] } | null;
+    const d = node.data as { fill?: Fill | null; stroke?: Stroke | null; vertexColors?: number[] } | null;
     const strokeSpec = resolveNodeStroke(d?.stroke);
     const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
     const fill = declared && commandFill(declared, box);
@@ -59,7 +58,7 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
   // opinion": picking then falls back to that zero-sized pose.
   silhouette: (_node, _pose, ctx) => ctx?.derivedPath ?? null,
   ink: (node, _pose, ctx) => {
-    const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null } | null;
+    const d = node.data as { fill?: Fill | null; stroke?: Stroke | null } | null;
     const stroke = resolveNodeStroke(d?.stroke);
     return {
       filled: resolveNodeFill(d?.fill, stroke === null ? DEFAULT_SHAPE_FILL : null) !== null,

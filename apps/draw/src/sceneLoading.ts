@@ -40,7 +40,7 @@ export function loadInitial(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, Weas
     pose: { x: 80, y: 80, width: 160, height: 100 },
     data: {
       path: rectPath(80, 80, 160, 100),
-      fill: solid('#7ab8d4'),
+      fill: { paint: solid('#7ab8d4') },
       stroke: strokeOf('#0a3654', 2),
       label: 'Welcome',
     },

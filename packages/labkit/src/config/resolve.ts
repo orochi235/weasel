@@ -1,4 +1,9 @@
-import { checkPrefConditions, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import {
+  checkPrefConditions,
+  type PrefGroup,
+  type PrefLeaf,
+  type PrefSection,
+} from '@weasel-js/prefs';
 import { isConfigBranch } from './builder';
 import { applyRules, builtinRules, titleCase } from './rules';
 import type {
@@ -45,6 +50,7 @@ interface Sink {
 export function resolveConfigSchema<TC>(
   schema: ConfigSchema<TC>,
   rules: readonly ConfigRule[] = [],
+  over?: PrefGroup | PrefSection,
 ): ResolvedConfig {
   const sink: Sink = {
     sections: [],
@@ -56,8 +62,13 @@ export function resolveConfigSchema<TC>(
     chain: [...rules, ...builtinRules],
   };
   const group = resolveShape(schema.nodes, '', '', sink);
-  for (const { field, at, problem } of checkPrefConditions(group)) {
-    console.warn(`[labkit] ${field} of "${at}": ${problem}`);
+  const problems = checkPrefConditions(group, over);
+  if (problems.length > 0) {
+    throw new Error(
+      problems
+        .map(({ field, at, problem }) => `[labkit] ${field} of "${at}": ${problem}`)
+        .join('\n'),
+    );
   }
   return {
     group,

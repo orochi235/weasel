@@ -1,22 +1,40 @@
 /** @weasel-js/paint — the kit's paint vocabulary. Plain data, no renderer. */
 export type { TextureHandle } from './texture';
-export type { CommandFill, CommandPaintUnits, CommandStroke, PosedFill, SolidFill } from './commandPaint';
 export type {
-  FillStyle,
-  GradientUnits,
-  TilePatternSpec,
+  CommandFill, CommandPaint, CommandPaintUnits, CommandStroke, InCommandUnits, PosedPaint, SolidPaint,
+} from './commandPaint';
+export { isSolidPaint } from './commandPaint';
+export { paintKey, strokeKey, fillHasInk, strokeHasInk } from './paintKey';
+export type {
+  Paint,
+  PaintUnits,
   GradStop,
-  GradientFill,
+  GradientPaint,
   GradientKind,
   StrokeAlign,
   KitMarkerKey,
   MarkerKey,
   MarkerRef,
+  Fill,
   Stroke,
   StrokeDashStyle,
   Region,
   ScreenLength,
 } from './paint';
+export {
+  TILE_KINDS,
+  isPatternPaint,
+  isTileKind,
+  isTilePaint,
+  patternPlacementOf,
+  tileSpecOf,
+  type PatternPaint,
+  type PatternPlacement,
+  type TexturePaint,
+  type TileKind,
+  type TilePaint,
+  type TilePatternSpec,
+} from './patternPaint';
 export {
   composePatternTransform,
   decomposePatternTransform,
@@ -65,7 +83,7 @@ export {
   rgbaToHex,
 } from './color';
 export {
-  isGradientFill,
+  isGradientPaint,
   resolveGradientStops,
   sampleResolvedStops,
   sampleGradientStops,
@@ -77,7 +95,9 @@ export {
 export {
   resolvePaletteColor,
   resolvePaletteColors,
+  colorLiteralToCss,
   colorLiteralToHex,
+  cssColorLiteral,
   hexToColorLiteral,
   type ColorLiteral,
   type ColorRef,

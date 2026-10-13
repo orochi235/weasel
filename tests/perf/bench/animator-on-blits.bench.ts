@@ -11,11 +11,11 @@
  * - **blits, voice per animation** — the literal port: each call cues its own
  *   voice, reaching its one node either by a `target` predicate or by naming
  *   it in `subjects`.
- * - **blits, one voice** — every node on one voice reading its own endpoints,
- *   the way step 2's override table is one voice. For tweens that is an `fn`
- *   patch, and, where blits has its `tween` motion form, also **one tween
- *   voice** carrying each node's endpoints as data. Where blits has
- *   `mix.pull`, each one-voice shape also reads every node in one call.
+ * - **blits, one voice** — every node on one voice reading its own endpoints.
+ *   For tweens that is an `fn` patch, and, where blits has its `tween` motion
+ *   form, also **one tween voice** carrying each node's endpoints as data.
+ *   Where blits has `mix.pull`, each one-voice shape also reads every node in
+ *   one call.
  *
  * Nothing finishes inside a run: tweens last far longer than any run, and
  * springs are undamped, so they oscillate for good.
@@ -31,7 +31,7 @@ import { renderHook } from '@testing-library/react';
 import { easeOut } from '@weasel-js/geom';
 import * as blits from '@msb235/blits';
 import { keys, kit, mix, patch, spring, sum, vec, type Mix } from '@msb235/blits';
-import { createTarget, useAnimator, type Animator } from '@weasel-js/core';
+import { createTarget, useAnimator, type Animator } from '@weasel-js/animator';
 import { group } from './group';
 
 type Pt = { x: number; y: number };
@@ -351,6 +351,12 @@ for (const n of [1000, 10000]) {
         bench('on targets', () => {
           onTargets.frame();
           for (let i = 0; i < n; i++) oc.sink[i] = targets[i]!.read();
+        });
+        // The same targets read as numbers into one buffer, with no value built for each.
+        const flat = new Float64Array(n * targets[0]!.axisCount);
+        bench('on targets, readInto', () => {
+          onTargets.frame();
+          for (let i = 0; i < n; i++) targets[i]!.readInto(flat, i * targets[i]!.axisCount);
         });
       }
 

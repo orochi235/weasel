@@ -1,7 +1,7 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { poseLinearOf } from '@weasel-js/geom';
-import type { TargetAxes } from '../../animation/target';
+import type { TargetAxes } from '@weasel-js/animator';
 
 /** `Bounds` with a required rotation angle (radians). Pivot is the AABB
  *  center of the unrotated `{x, y, width, height}`. */
@@ -10,16 +10,13 @@ export interface RotatedPose extends Bounds {
 }
 
 /**
- * Bridges arbitrary `TPose` shapes into the resize hook's bounds-driven math.
- * The hook reads bounds via `getBounds`, runs anchor-relative math on those
- * bounds, then asks `remapBounds` to project the result back into TPose.
+ * Bridges arbitrary `TPose` shapes into the kit's bounds-driven math: bounds
+ * are read via `getBounds`, and `remapBounds` projects a result back into
+ * TPose.
  *
- * `remapBounds(pose, src, dst)` is a single operation that subsumes both
- * "set my own AABB to dst" (single-leaf resize) and "scale me as a leaf
- * inside parent's src→dst rect" (group resize) — they're the same affine
- * map. For rect-shaped poses the default geometry interprets the pose as
- * its own bounds; for Path or polygon poses the consumer supplies a
- * projection that knows how to read and rewrite the underlying geometry.
+ * `remapBounds(pose, src, dst)` subsumes both "set my own AABB to dst"
+ * (single-leaf resize) and "scale me as a leaf inside parent's src→dst rect"
+ * (group resize) — they're the same affine map.
  */
 export interface PoseDescriptor<TPose, TNode = unknown> {
   getBounds(pose: TPose): Bounds;
@@ -39,33 +36,23 @@ export interface PoseDescriptor<TPose, TNode = unknown> {
    *  descriptor cannot map; absent, a pose animates by its flat numeric fields. */
   axes?(like: TPose): TargetAxes<TPose> | null;
   /** Read the pose's rotation in radians. Pivot is the AABB center
-   *  (`getBounds(pose)` center). Default 0 when omitted — descriptor
-   *  declares "this pose has no rotation." When supplied and non-zero,
-   *  `useResize` projects the drag delta into the leaf's local frame,
-   *  runs anchor math there, and translates the resulting pose so the
-   *  diagonally opposite world-space corner is pinned. */
+   *  (`getBounds(pose)` center). Default 0 when omitted. */
   getRotation?(pose: TPose): number;
-  /** True iff this pose shape can carry a rotation. Consulted by the
-   *  rotation affordance to decide whether to render the rotate cursor /
-   *  drag-band over a selection. When omitted, the kit assumes `true` for
-   *  back-compat — descriptors whose poses lack `x/y/width/height/rotation`
-   *  fields (e.g. polygon Paths) should return `false` so the affordance
-   *  hides instead of exposing a non-functional rotate cursor. */
+  /** True iff this pose shape can carry a rotation; the rotation affordance
+   *  hides when it is `false`. When omitted, the kit assumes `true`, so a
+   *  descriptor whose poses cannot rotate (e.g. polygon Paths) should
+   *  return `false`. */
   supportsRotation?(pose: TPose): boolean;
   /** Write a rotation (radians) into the pose, bounds unchanged. Absent means
    *  the pose cannot carry one, and the rotate action leaves it alone. */
   withRotation?(pose: TPose, rotation: number): TPose;
   /**
    * A descriptor specialized to one node. Every other method here sees only
-   * the pose, so shapes sharing a pose type — a sphere and a box both posed by
-   * position/rotation/scale — are indistinguishable to them. Implement this to
-   * read `node.data` once and hand back a descriptor that knows which shape it
-   * is describing.
-   *
-   * Callers reach it through {@link poseDescriptorForNode}, at whichever site
-   * holds the node; the specialized descriptor then travels into the bounds and
-   * hit-test helpers in place of this one. Sites with only an id keep using the
-   * unspecialized descriptor, which is why this is optional on both ends.
+   * the pose, so shapes sharing a pose type are indistinguishable to them.
+   * Implement this to read `node.data` once and hand back a descriptor that
+   * knows which shape it is describing. Callers reach it through
+   * {@link poseDescriptorForNode}; sites with only an id keep using the
+   * unspecialized descriptor.
    */
   forNode?(node: TNode): PoseDescriptor<TPose, TNode>;
 }
@@ -108,6 +95,7 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
     if (!flat.every((n) => typeof n === 'number')) return null;
     return {
       count: 5,
+      names: ['x', 'y', 'width', 'height', 'rotation'],
       angles: [4],
       to: (p) => [p.x, p.y, p.width, p.height, p.rotation ?? 0],
       from: (a) => {
@@ -115,21 +103,29 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
         if (like.rotation !== undefined || a[4] !== 0) pose.rotation = a[4]!;
         return pose;
       },
+      add: (p, d) => {
+        const pose = { ...p, x: p.x + d[0]!, y: p.y + d[1]!, width: p.width + d[2]!, height: p.height + d[3]! };
+        const rotation = (p.rotation ?? 0) + d[4]!;
+        if (p.rotation !== undefined || rotation !== 0) pose.rotation = rotation;
+        return pose;
+      },
+      write: (p, out, at) => {
+        out[at] = p.x;
+        out[at + 1] = p.y;
+        out[at + 2] = p.width;
+        out[at + 3] = p.height;
+        out[at + 4] = p.rotation ?? 0;
+      },
     };
   },
-  // `Bounds` carries an optional `rotation`, and `withRotation` writes into
-  // it — so reading it back has to be the same channel, or a pose reports
-  // itself unrotated to `useResize` and to port placement while painting
-  // rotated.
+  // `withRotation` writes into `Bounds`' optional `rotation`, so this reads
+  // the same channel, or a pose reports itself unrotated while painting rotated.
   getRotation: (p) => p.rotation ?? 0,
   withRotation: (p, rotation) => ({ ...p, rotation }),
 };
 
-/** Identity geometry for `RotatedPose`. Inherits rect-shape projection
- *  from `RECT_POSE_DESCRIPTOR` (the `RotatedPose extends Bounds`
- *  subtype lets the rect descriptor's methods apply directly; `remapBounds`
- *  preserves the `rotation` field via `...p` spread). Adds `getRotation` so
- *  `useResize` knows to take the rotation-aware math path. */
+/** Identity geometry for `RotatedPose`: `RECT_POSE_DESCRIPTOR`'s projection,
+ *  with a required `rotation`. */
 export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
   getBounds: RECT_POSE_DESCRIPTOR.getBounds as PoseDescriptor<RotatedPose>['getBounds'],
   remapBounds: RECT_POSE_DESCRIPTOR.remapBounds as PoseDescriptor<RotatedPose>['remapBounds'],
@@ -146,21 +142,15 @@ export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
  *
  * The naive `remapBounds` scales a leaf's axis-aligned `width`/`height` by the
  * group's per-axis factors and carries `rotation` through untouched. That is
- * right when `src`/`dst` are already expressed in the leaf's own frame — the
- * single-leaf resize path, where the drag delta was projected into that frame
- * before the anchor math ran. In a group resize they are world-frame, so the
- * leaf's local axes do not line up with the axes being scaled: at 90° a
- * horizontal stretch should grow the leaf's `height`, and the naive map grows
- * its `width`.
+ * right when `src`/`dst` are expressed in the leaf's own frame. In a group
+ * resize they are world-frame: at 90° a horizontal stretch should grow the
+ * leaf's `height`, and the naive map grows its `width`.
  *
  * What this computes is the group affine applied to the leaf's local frame,
- * with the shear dropped — the pose model is `{x, y, width, height, rotation}`
- * and cannot represent the parallelogram a non-uniform scale of a rotated box
- * actually produces. The center moves exactly; each local axis takes the
- * length of its own image; the rotation follows the image of the local x-axis.
- *
- * Degenerates to the naive map at `rotation === 0`, and to a plain uniform
- * scale when `sx === sy`, both exactly.
+ * with the shear dropped — the pose model cannot represent the parallelogram
+ * a non-uniform scale of a rotated box produces. The center moves exactly;
+ * each local axis takes the length of its own image; the rotation follows the
+ * image of the local x-axis.
  */
 export function remapRotatedLeaf<TPose extends RotatedPose>(
   pose: TPose,

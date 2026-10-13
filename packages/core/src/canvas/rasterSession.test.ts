@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { createRasterSession, renderSceneToPixels, type HeadlessCanvasLike } from './renderSceneToPixels';
-import { makeGLRecorder, type GLRecorder } from '../renderer/test-utils/glRecorder';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node, Scene } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 
@@ -18,6 +19,7 @@ function fakeScene(nodes: Node<unknown, 'default', RectPose>[]): Scene<unknown, 
     roots: nodes.map((n) => n.id),
     renderOrder: () => nodes.map((n) => n.id),
     renderOrderNodes: () => nodes,
+    composition: IDENTITY_POSE_COMPOSITION,
     get: (id: string) => byId.get(id as never),
     overrides: createPoseOverrides<RectPose>((id) => byId.get(id as never)),
   } as unknown as Scene<unknown, 'default', RectPose>;
@@ -42,13 +44,13 @@ const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [
     },
     stroke: {
       paint: {
-        fill: 'radial-gradient', center: { x: p.x, y: p.y }, radius: p.width,
+        kind: 'radial-gradient', center: { x: p.x, y: p.y }, radius: p.width,
         stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
       },
       width: 2,
     },
   },
-  { kind: 'path', path: { kind: 'rect', x: p.x, y: p.y, width: 4, height: 4 }, fill: { fill: 'solid', color: '#00ff00' } },
+  { kind: 'path', path: { kind: 'rect', x: p.x, y: p.y, width: 4, height: 4 }, fill: { paint: { kind: 'solid', color: '#00ff00' } } },
 ] as DrawCommand[];
 
 const SCENE_A = fakeScene([leaf('a', { x: 0, y: 0, width: 20, height: 10 })]);

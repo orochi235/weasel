@@ -23,7 +23,11 @@ const without = (local: LocalArgs, keys: string[]): LocalArgs =>
  * A value a MessagePort would not deliver intact, such as a function, a React element or a class
  * instance, stays in the frame.
  */
-export function useArgs(): [Args, (patch: Args) => void, (argNames?: string[]) => void] {
+export function useArgs(): [
+  Record<string, unknown>,
+  (patch: Record<string, unknown>) => void,
+  (argNames?: string[]) => void,
+] {
   const scope = useContext(ArgsContext);
   if (!scope) throw new Error('useArgs must be called inside a CSF story loaded by forge');
   const { args, config, defaults, original, setConfig, setLocal } = scope;

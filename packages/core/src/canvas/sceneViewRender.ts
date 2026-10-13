@@ -2,24 +2,13 @@
  * `renderSceneToCanvas` — substrate for detached, read-only scene views
  * (`<SceneViewCanvas>` / `<MinimapCanvas>`). Given a `<canvas>`, a `Scene`,
  * a `View`, and a per-node `drawOne`, render one frame.
- *
- * The full `<SceneCanvas>` render pipeline does much more than this (slots, layer
- * ordering, debug sinks, tool overlays). The helper deliberately re-implements
- * the small subset needed for a non-interactive scene view rather than
- * refactoring `<SceneCanvas>` to share code — the spec calls for that
- * dedupe as a follow-up.
- *
- * Note: this duplicates `<SceneCanvas>`'s GL setup + view-wrap pattern in
- * miniature. When `<SceneCanvas>` is eventually migrated onto this helper,
- * the duplication collapses; until then, keep the two render paths
- * in sync by hand where it matters (DPR handling, viewToMat3 wrap).
  */
 
-import type { WeaselRenderer } from '../renderer/WeaselRenderer';
+import type { WeaselRenderer } from '@weasel-js/renderer';
 import { cachedCanvasRenderer, paintCanvas } from './canvasRenderer';
-import type { PoseComposition } from 'core/scene/composePose';
+import { composesFrames } from 'core/scene/composePose';
 import { viewToMat3 } from '@weasel-js/geom';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
@@ -27,10 +16,10 @@ import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { effectivePose } from 'core/scene/effectivePose';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
-import type { ColorOverrideRegistry } from '../animation/colorRegistry';
+import type { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
-import { cullDrawCommands } from '../renderer/cullDrawCommands';
+import { cullDrawCommands } from '@weasel-js/renderer';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { paintBoundsFor } from './defaultDrawOne';
 
@@ -60,31 +49,23 @@ export interface SceneViewCull<TData, TLayer extends string, TPose> {
 /** What to draw into an existing canvas: the scene, the view, and the same
  *  painting hooks `<SceneCanvas>` takes. */
 export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
-  /** The DOM canvas to paint into. The helper owns its WebGL2 context: the
-   *  first call on a given canvas creates a renderer and stashes it; subsequent
-   *  calls reuse the same renderer (and resize the drawing buffer on dim
-   *  changes). `releaseCanvasRenderer(canvas)` frees it. */
+  /** The DOM canvas to paint into. The first call on a given canvas creates
+   *  its renderer and later calls reuse it;
+   *  `releaseCanvasRenderer(canvas)` frees it. */
   canvas: HTMLCanvasElement;
-  /** Scene to walk. `scene.renderOrder()` provides the per-node order. */
   scene: Scene<TData, TLayer, TPose>;
-  /** Camera view applied to scene + extras (both ride the same world→screen
-   *  transform; extras living in screen space should be supplied via a
-   *  separately-prepared `extraCommands` group or rendered outside this
-   *  helper). */
+  /** Camera view applied to scene and `extraCommands` alike. */
   view: View;
   /** CSS-pixel size. The drawing buffer is set to `width × dpr` and
    *  `height × dpr`; CSS size to `width` / `height`. */
   width: number;
   height: number;
-  /** Per-node draw callback. */
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
-  /** Optional commands appended after the scene-node output. Used for the
-   *  minimap's visible-window indicator. Wrapped in the same view transform
-   *  as scene commands. */
+  /** Commands appended after the scene-node output, wrapped in the same view
+   *  transform as scene commands. */
   extraCommands?: DrawCommand[];
-  /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
-   *  `alphaFor`. Pass the same function the main canvas uses to keep a
-   *  scoping-dim treatment consistent across both. Defaults to `() => 1`. */
+  /** Per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
+   *  `alphaFor`. Defaults to `() => 1`. */
   alphaFor?: (id: string) => number;
   /** Per-view layer visibility. See {@link SceneViewLayers}. */
   layerVisibility?: SceneViewLayers['layerVisibility'];
@@ -101,8 +82,8 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   /** Where `drawOne`'s output for a node can reach, as on the scene slot.
    *  Defaults to `defaultPaintBounds` when `drawOne` is `defaultDrawOne`. */
   paintBounds?: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>;
-  /** Optional device-pixel ratio. Defaults to `window.devicePixelRatio || 1`
-   *  when available, otherwise 1. Tests typically pin this to 1 or 2. */
+  /** Device-pixel ratio. Defaults to `window.devicePixelRatio || 1` when
+   *  available, otherwise 1. */
   dpr?: number;
 }
 
@@ -138,28 +119,17 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
 }
 
 /**
- * Build the DrawCommand list that `renderSceneToCanvas` would dispatch.
+ * Build the DrawCommand list that `renderSceneToCanvas` would dispatch, in
+ * screen space. Pure — no GL, no DOM. Walks the scene through `buildSceneTree`,
+ * the same walk `<SceneCanvas>` uses, which is what keeps hidden layers
+ * unpainted and container clips applied here.
  *
- * Pure — no GL, no DOM, no side effects. Walks the scene through
- * `buildSceneTree` — the same walk `<SceneCanvas>`'s `buildSceneLayer` uses —
- * appends any `extraCommands`, and wraps the result in a single
- * `{ kind: 'group', transform: viewToMat3(view) }` so the output is in screen
- * space. Sharing the walk is what keeps hidden layers unpainted and container
- * clips applied here; a hand-rolled `renderOrder()` loop silently dropped both.
+ * Each node's commands go through `wrapNodeOutput` — pose rotation, then the
+ * `alphaFor` multiplier — so a `drawOne` that rotates its own output rotates
+ * twice; emit unrotated geometry and let the pose drive it.
  *
- * Each node's commands additionally go through `wrapNodeOutput` — pose
- * rotation, then the `alphaFor` multiplier — exactly as `buildSceneLayer`
- * does, so a `drawOne` shared between the two paints the same thing in both.
- * A `drawOne` that rotates its own output will therefore rotate twice here;
- * emit unrotated geometry and let the pose drive it.
- *
- * Output shape follows `buildSceneTree`: one group per **visible** layer, in
- * scene-layer order (or `layers.layerOrder`), each holding one group per node
- * on that layer.
- *
- * Exported for tests and for callers that want to render into something
- * other than a real `<canvas>` (e.g. an offscreen renderer or a
- * snapshot fixture).
+ * Output is one group per **visible** layer, in scene-layer order (or
+ * `layers.layerOrder`), each holding one group per node on that layer.
  */
 export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -167,9 +137,6 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
   extraCommands?: ReadonlyArray<DrawCommand>,
   alphaFor?: (id: string) => number,
-  /** How a child's stored pose folds into its parent's frame. Omit for the
-   *  absolute-pose model. */
-  poseComposition?: PoseComposition<TPose>,
   /** This view's own layer visibility and order. */
   layers?: SceneViewLayers,
   /** Animated vertex colors to paint, typically an animator's `colorOverrides`. */
@@ -178,12 +145,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
    *  `RenderSceneToCanvasArgs.cull`. Omit to paint every node. */
   cull?: SceneViewCull<TData, TLayer, TPose>,
 ): DrawCommand[] {
-  // The scene is in scope here, so this is where the override's alpha and the
-  // derived paths are applied on the headless path; `SceneCanvas` does the same
-  // for the live one. `Canvas` itself never sees a scene, so it can't and doesn't.
-  const derivedOnly = withDerivedPaths(scene, drawOne, undefined, poseComposition);
+  const derivedOnly = withDerivedPaths(scene, drawOne);
   const derived = colorOverrides ? withColorOverrides(colorOverrides, derivedOnly) : derivedOnly;
-  const derivedPathOf = sceneDerivedPathOf(scene, undefined, poseComposition);
+  const derivedPathOf = sceneDerivedPathOf(scene);
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
     pose: TPose,
@@ -197,9 +161,8 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     );
   };
 
-  const composes = poseComposition !== undefined && poseComposition.closure !== 'identity';
-  const hierarchy = composes
-    ? { ...sceneAsHierarchy(scene, layers), composePose: poseComposition!.compose }
+  const hierarchy = composesFrames(scene.composition)
+    ? { ...sceneAsHierarchy(scene, layers), composePose: scene.composition.compose }
     : sceneAsHierarchy(scene, layers);
 
   const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
@@ -236,19 +199,15 @@ export function sceneViewFrame<TData, TLayer extends string, TPose>(
     colorOverrides, cull,
   } = args;
   return buildSceneViewCommands(
-    scene, view, drawOne, extraCommands, alphaFor, undefined, { layerVisibility, layerOrder }, colorOverrides,
+    scene, view, drawOne, extraCommands, alphaFor, { layerVisibility, layerOrder }, colorOverrides,
     cull ? { width, height, paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
   );
 }
 
 /**
- * Render one frame of `scene` at `view` into `canvas`. See module docstring
- * for the design context.
- *
- * Paints through `paintCanvas` (`./canvasRenderer`): one renderer per canvas,
- * created on the first call and resized when `width` / `height` / `dpr`
- * change. Where no WebGL2 context is available (jsdom) the call paints
- * nothing. The renderer lives until `releaseCanvasRenderer(canvas)`.
+ * Render one frame of `scene` at `view` into `canvas`. Where no WebGL2
+ * context is available (jsdom) the call paints nothing. The canvas's renderer
+ * lives until `releaseCanvasRenderer(canvas)`.
  */
 export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
   args: RenderSceneToCanvasArgs<TData, TLayer, TPose>,

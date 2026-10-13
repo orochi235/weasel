@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import { FillStrokeSwatch, type FillStrokeSwatchProps } from './FillStrokeSwatch';
 
-const RED: FillStyle = { fill: 'solid', color: '#ff0000ff' };
-const BLUE: FillStyle = { fill: 'solid', color: '#0000ffff' };
+const RED: Paint = { kind: 'solid', color: '#ff0000ff' };
+const BLUE: Paint = { kind: 'solid', color: '#0000ffff' };
 
 function mount(over: Partial<FillStrokeSwatchProps> = {}) {
   const props: FillStrokeSwatchProps = {
@@ -123,8 +123,8 @@ describe('FillStrokeSwatch', () => {
   });
 
   it('opens the picker on a non-solid paint at the slot fallback', () => {
-    const grad: FillStyle = {
-      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+    const grad: Paint = {
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
       stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1, color: '#0000ffff' }], units: 'bounds',
     };
     mount({ fill: grad, stroke: null });

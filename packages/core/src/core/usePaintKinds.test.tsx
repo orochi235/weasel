@@ -1,14 +1,13 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
-import {
-  _resetPaintKindsForTests, asPaint, registerPaintKind, registerPaintKindLoader, type PaintKindEntry,
-} from 'renderer/paintKinds';
+import { _resetPaintKindsForTests, registerPaintKind, registerPaintKindLoader } from 'core/paint/paintKinds';
+import { asPaint, type PaintKindEntry } from 'core/paint/paintKindEntry';
 import { useGradientKinds, usePaintKind, usePaintKinds } from './usePaintKinds';
 
 const noise = (): PaintKindEntry => ({
   id: 'test-noise',
   label: 'Noise',
-  seed: (color) => asPaint({ fill: 'test-noise', color }),
+  seed: (color) => asPaint({ kind: 'test-noise', color }),
   colorOf: () => undefined,
 });
 

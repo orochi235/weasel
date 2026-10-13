@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { Icon } from './Icon';
 import { CheckIcon, DeleteIcon, RedoIcon, UndoIcon } from './index';
 import { isFillable } from './Icon';
-import { ICON_FILLS, ICON_GROUPS, ICON_PATHS, MARK_ICONS, type IconName } from './paths';
+import { ICON_GROUPS, MARK_ICONS } from './groups';
+import { ICON_FILLS, ICON_PATHS, type IconName } from './paths';
 
 const NAMES = Object.keys(ICON_PATHS) as IconName[];
 

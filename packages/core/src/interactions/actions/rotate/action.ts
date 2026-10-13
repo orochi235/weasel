@@ -1,0 +1,57 @@
+import type { Action } from '@weasel-js/routing';
+import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { NodeId } from 'core/scene/types';
+import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
+import { inPlane, selectionLayer } from '../planeInput';
+import { commitRotate } from './commit';
+import { nextFrame } from './frame';
+import { beginRotate, type RotateFrame } from './session';
+
+/**
+ * @experimental
+ * Pointer-driven rotation of the selection, committed as one undo entry.
+ *
+ * A pose whose descriptor has no `withRotation`, or reports
+ * `supportsRotation` false, is left alone. Behaviors (`opts.behaviors`) see
+ * the first rotated node's turned pose; a pose one returns from `onMove` sets
+ * the rotation for the whole selection.
+ */
+export const rotateAction: Action & { requires: string[] } = inPlane({
+  id: 'rotate',
+  label: 'Rotate',
+  // No default binding: a bare `{ kind: 'drag' }` makes any drag no active
+  // tool claimed rotate a non-empty selection. The rotation handle binds it
+  // (`selectionRotateBindings`).
+  eligible: { capability: 'transforms-selection' },
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view'],
+  invoker: {
+    timing: 'ongoing',
+    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+      const begun = beginRotate(ctx, opts);
+      if (!begun) return {};
+      const { session, readers } = begun;
+      const hold = session.scene.overrides.hold();
+      let frame: RotateFrame = { delta: 0, previews: new Map() };
+      session.lifecycle.start(session.gestureCtx.draggedIds);
+      return {
+        kind: 'rotate',
+        onMove(moveCtx: InvocationCtx): void {
+          frame = nextFrame(session, readers, moveCtx);
+          hold.set(frame.previews);
+        },
+        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          let committed = false;
+          try {
+            if (reason === 'commit') committed = commitRotate(session, frame);
+            else runBehaviorCancel(session.behaviors, session.gestureCtx);
+          } finally {
+            closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
+          }
+        },
+        previewIds: () => frame.previews.keys(),
+        previewPose: (id: string) => frame.previews.get(id as NodeId) ?? null,
+      };
+    },
+  },
+  enabled: () => true,
+}, selectionLayer);

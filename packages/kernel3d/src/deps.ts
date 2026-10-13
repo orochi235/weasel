@@ -1,14 +1,9 @@
 /**
  * The kit's deps, implemented against a 3D world.
  *
- * Every one of these takes its camera from a thunk rather than an argument.
- * That is the kernel's central claim in code: the dispatcher keeps handing
- * actions two numbers, and what makes them mean something in 3D is the camera
- * each dep already closes over. `InvocationCtx` needs no widening, and none of
- * these needs a ray passed in.
- *
- * Where a kit contract cannot be honored, the implementation throws rather than
- * guessing. A guess would report a fit the kernel does not have.
+ * Every one of these takes its camera from a thunk rather than an argument:
+ * the dispatcher keeps handing actions two numbers, and what makes them mean
+ * something in 3D is the camera each dep already closes over.
  */
 
 import type {
@@ -68,11 +63,9 @@ export type Scene3d<TData, TLayer extends string> = Scene<TData, TLayer, Pose3>;
 export type Node3d<TData, TLayer extends string> = SceneNode<TData, TLayer, Pose3>;
 
 /**
- * The world box a node occupies. The kernel cannot answer this, and the reason
- * is sharper than "it does not know the mesh": a sphere's box is the same under
- * every rotation, and no transform of a local box reproduces that — rotate a
- * cube and it widens. Asking for the world box directly is what lets a
- * primitive answer for its own symmetry.
+ * The world box a node occupies, rather than a local box to transform: a
+ * sphere's box is the same under every rotation, and no transform of a local
+ * box reproduces that — rotate a cube and it widens.
  *
  * Omitted, a node is a unit cube carried by its pose.
  */
@@ -260,9 +253,9 @@ export interface Footprint {
  * implies is the consumer's answer — the kernel does not know what it is
  * inserting.
  *
- * The kit's `InsertDep.commit` hands over a screen-space AABB and nothing else,
- * which turns out to be enough: the depth the 2D contract cannot express comes
- * from the plane, not from the caller.
+ * The kit's `InsertDep.commit` hands over a screen-space AABB and nothing else:
+ * the depth the 2D contract cannot express comes from the plane, not from the
+ * caller.
  */
 export function createInsert(opts: {
   viewport: ViewportSource;
@@ -321,19 +314,16 @@ export function createInsert(opts: {
 
 /**
  * `PoseDescriptor` over a 3D pose, with `Bounds` read as the screen box the
- * node covers. Chrome and marquee math work unchanged; the two methods that
- * run the other way cannot.
+ * node covers.
  *
- * `forNode` is what lets a sphere bound itself as a sphere: every node is a
- * `Pose3`, so the shape lives on `node.data` and nothing but the node can say
- * which one this is. Unspecialized — the kit calling with only a pose in hand —
+ * `forNode` is what lets a sphere bound itself as a sphere: the shape lives
+ * on `node.data`. Unspecialized — the kit calling with only a pose in hand —
  * it answers with the default local box, which is the looser of the two.
  *
- * The two methods that run the other way — `remapBounds` and `fromBounds` —
- * take a screen rectangle, which names a pose only once something supplies a
- * depth. Both resolve it against the plane through the pose they were handed,
- * facing the camera, so nothing they produce changes depth. See
- * `viewPlaneAt`.
+ * `remapBounds` and `fromBounds` take a screen rectangle, which names a pose
+ * only once something supplies a depth. Both resolve it against the plane
+ * through the pose they were handed, facing the camera, so nothing they
+ * produce changes depth.
  */
 export function createPoseDescriptor<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
@@ -456,11 +446,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         };
       },
 
-      /**
-       * Screen-space deltas resolve against the plane the node already sits on,
-       * so the two numbers the kit passes are enough: the camera that turns
-       * them into a world position is the one this dep closed over.
-       */
+      /** Screen-space deltas resolve against the plane the node already sits on. */
       translate(pose, dx, dy) {
         const vp = castableViewport();
         if (!vp) return pose;

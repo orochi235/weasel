@@ -162,7 +162,7 @@ describe('collectPropertiesTrait', () => {
     // the leaf itself is the container, and the pane lists what is editable.
     expect(rect!.leafPaths).toEqual([
       'pose.x', 'pose.y', 'pose.width', 'pose.height', 'pose.rotation',
-      'data.fill',
+      'data.fill.paint',
       'data.stroke.width', 'data.stroke.paint', 'data.stroke.cap',
       'data.stroke.join', 'data.stroke.align', 'data.stroke.dash',
       'data.stroke.markerStart', 'data.stroke.markerMid', 'data.stroke.markerEnd',

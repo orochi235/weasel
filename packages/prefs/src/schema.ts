@@ -18,11 +18,8 @@ import type { Display, InfinityText } from '@weasel-js/quantity';
 export type PrefKind =
   | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'list' | 'map' | 'union' | 'field' | 'action' | 'alias' | 'label' | 'separator';
 
-/**
- * Leaves that share one row in a compact property UI (weasel-ui
- * `SelectionPanel`, labkit's `ControlPanel`), declared on the first of them.
- * Purely presentational.
- */
+/** Leaves that share one row in a compact property UI, declared on the first
+ *  of them. Purely presentational. */
 export interface PrefPair {
   /** The other leaves on the row, by the full path their values are read and
    *  written at (`'pose.y'`, `'camera.type'`), in order. Each must follow the
@@ -140,8 +137,7 @@ export interface PrefString extends PrefBase<'string', string> {
  *
  * A dash array is the case that needs it: `Stroke.dash` stores lengths, and
  * the thing a person chooses is a style. The presets scale by the stroke's
- * width, so both directions are given the object's other fields — a style is
- * meaningless without the width it is a multiple of.
+ * width, so both directions are given the object's other fields.
  */
 export interface PrefEnumEncoding<T extends string = string> {
   /**
@@ -207,14 +203,13 @@ export interface PrefColor extends PrefBase<'color', string> {
 
 /**
  * Open leaf: any node with a `kind` outside the built-ins. Schema-driven
- * UIs (weasel-ui `PrefsForm` / `SelectionPanel`) dispatch it to an
- * app-supplied renderer. Deliberately NOT index-signatured so concrete
- * app interfaces stay assignable. Mirrors weasel-ui's `PrefCustom`.
+ * UIs dispatch it to an app-supplied renderer. Deliberately NOT
+ * index-signatured so concrete app interfaces stay assignable.
  */
 export type PrefCustom = PrefBase<string, unknown>;
 
 /**
- * A whole `FillStyle`, not a color inside one. Use it wherever the value is
+ * A whole `Paint`, not a color inside one. Use it wherever the value is
  * the tagged paint union — a solid color, a pattern, a gradient — rather
  * than a hex string.
  *
@@ -230,21 +225,16 @@ export interface PrefPaint extends PrefBase<'paint', unknown> {
 }
 
 /**
- * A leaf whose value is one object, with its own fields hanging off it.
- *
- * A compound value — a stroke, a shadow, a pattern spec — could be described
- * as several sibling leaves addressing into it (`data.stroke.width`,
- * `data.stroke.cap`). It shouldn't be: each control would then write one field
- * of a value it can only half see, and writing into something that is not an
- * object yet corrupts it. Here the fields are `children` of one leaf, and
- * every edit commits the parent object whole.
+ * A leaf whose value is one object, with its own fields hanging off it as
+ * `children`; every edit commits the parent object whole. Sibling leaves
+ * addressing into the value (`data.stroke.width`, `data.stroke.cap`) would
+ * each write one field of a value they can only half see, and writing into
+ * something that is not an object yet corrupts it.
  *
  * `children` paths are relative to the object. They are ordinary leaves, so a
  * field that is itself a union (a stroke's `paint`) declares the kind that
  * edits that union. A child may also be a {@link PrefSection}, which
- * organizes the fields under a heading without contributing to the path. A
- * `TextStyle` needs it: its character and paragraph fields belong to one
- * value but read as two lists.
+ * organizes the fields under a heading without contributing to the path.
  */
 export interface PrefObject extends PrefBase<'object', unknown> {
   children: Record<string, PrefLeaf | PrefSection>;
@@ -298,8 +288,7 @@ void _builtinKindsExact;
 /**
  * The built-in kinds, as a table. A kind added to {@link PrefKind} is a
  * compile error here, and from here it is one in every renderer's `never`
- * guard — the only thing standing between a new kind and rendering as
- * nothing in four places at once.
+ * guard.
  */
 export const PREF_KINDS: Record<PrefKind, true> = {
   number: true,

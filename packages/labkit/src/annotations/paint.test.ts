@@ -191,7 +191,7 @@ describe('markCommands styling', () => {
 
   it("colors a text mark's glyphs too, not only the outlines", () => {
     const [cmd] = markCommands(mark('text', { title: 'x' }), { color: '#30a46c' });
-    const runs = (cmd as { runs: { fill?: { color?: string } }[] }).runs;
-    expect(runs[0]?.fill?.color).toBe('#30a46c');
+    const runs = (cmd as { runs: { fill?: { paint?: { color?: string } } }[] }).runs;
+    expect(runs[0]?.fill?.paint?.color).toBe('#30a46c');
   });
 });

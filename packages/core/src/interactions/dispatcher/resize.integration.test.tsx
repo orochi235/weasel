@@ -1,30 +1,6 @@
 /**
- * End-to-end integration test for resizeAction via dispatcher.
- *
- * Validates the full affordance→InvocationCtx→invoker→scene-mutation chain:
- *
- *   pointerdown (with affordance hit) → affordanceAt thunk called → affordance
- *   packed into InputEvent → dispatcher builds InvocationCtx with
- *   drag.affordance → resizeAction.invoker.start guards pass → onMove called
- *   on pointermove → scene node bounds updated → pointerup → onEnd('commit').
- *
- * Also validates:
- *   - pointerdown without a matching affordance → resizeAction bails (other
- *     bindings can claim the drag; here nothing else is registered so the
- *     drag is a no-op).
- *   - pointercancel → onEnd('cancel') → poses restored to origin.
- *
- * ## Provider tree
- *
- * DepRegistryProvider > ActiveToolContextProvider
- *   > ActionsProvider > [MountDispatcher + RegisterDeps + RegisterResize]
- *
- * `resizeAction` is registered with `enabled: () => true` to bypass the
- * `ActionDisabledReason.SelectionRequired` placeholder.
- *
- * `affordanceAt` is supplied as a stub thunk: if the pointerdown x coordinate
- * equals a sentinel value (999), return a `handle:bottom-right` hit with
- * fixedPoint {x:0, y:0}; otherwise return null.
+ * End-to-end integration test for resizeAction via the dispatcher: the
+ * affordance→InvocationCtx→invoker→scene-mutation chain.
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
@@ -35,7 +11,7 @@ import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import '../actions/depSchema'; // augments DepSchema with 'selection' and 'scene'
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
-import { resizeAction } from '../actions/defaults/resize';
+import { resizeAction } from '../actions/resize/action';
 import { SELECTION_TRANSFORM_ID, selectionTransformContribution } from '../../tools/builtin/select/selectionContributions';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
@@ -43,17 +19,9 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { AffordanceHit } from '@weasel-js/routing';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 type D = { kind: 'rect' };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
-
-// ---------------------------------------------------------------------------
-// Canvas mock (required for JSDOM which lacks canvas context)
-// ---------------------------------------------------------------------------
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -66,15 +34,6 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-// ---------------------------------------------------------------------------
-// Stub affordanceAt thunk
-// ---------------------------------------------------------------------------
-
-/**
- * Returns a `handle:bottom-right` hit when `clientX === HANDLE_X` (the
- * sentinel that means "pointer landed on the bottom-right handle").
- * Returns `null` for any other coordinate (open canvas).
- */
 const HANDLE_X = 999; // sentinel clientX that means "on handle"
 
 function makeAffordanceAt(
@@ -93,10 +52,6 @@ function makeAffordanceAt(
     return null;
   };
 }
-
-// ---------------------------------------------------------------------------
-// Test harness components
-// ---------------------------------------------------------------------------
 
 /** Mounts the gesture dispatcher on the canvas element with the stub thunk. */
 function MountDispatcher({
@@ -172,10 +127,6 @@ function fire(canvas: HTMLElement, type: string, coords: { clientX?: number; cli
   );
 }
 
-// ---------------------------------------------------------------------------
-// Full harness factory
-// ---------------------------------------------------------------------------
-
 function buildHarness(
   scene: Scene<D, L, P>,
   selection: SelectionApi,
@@ -204,10 +155,6 @@ function buildHarness(
   return Harness;
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 describe('resizeAction integration via gesture dispatcher', () => {
   it('drag on handle pointerdown→move→up resizes selected node', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
@@ -234,9 +181,6 @@ describe('resizeAction integration via gesture dispatcher', () => {
     const pose = node.pose as P;
 
     // bottom-right handle: anchor = {x:'min', y:'min'} → right/bottom edges dragged.
-    // dx = +20 → width = 100 + 20 = 120
-    // dy = +10 → height = 100 + 10 = 110
-    // x and y stay fixed (they're on the 'min' side).
     expect(pose.x).toBeCloseTo(0);
     expect(pose.y).toBeCloseTo(0);
     expect(pose.width).toBeCloseTo(120);

@@ -1,5 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
+import { cssColorLiteral } from '@weasel-js/paint';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MotifFrame } from './MotifFrame';
 import { notch, plaque, stereo, tab } from './motifs';
@@ -144,7 +145,7 @@ describe('ink', () => {
     'a plaque toned %s draws its title at 4.5:1 or better',
     (tone) => {
       render(
-        <MotifFrame title="View" motif={plaque()} tone={tone}>
+        <MotifFrame title="View" motif={plaque()} tone={typeof tone === 'number' ? tone : cssColorLiteral(tone)}>
           x
         </MotifFrame>,
       );
@@ -156,7 +157,7 @@ describe('ink', () => {
 
   it.each([...GRAYS, ...HUES].map((t) => [t] as const))('a stereo bar toned %s draws its title at 4.5:1 or better', (tone) => {
     render(
-      <MotifFrame title="IN" motif={stereo()} tone={tone}>
+      <MotifFrame title="IN" motif={stereo()} tone={cssColorLiteral(tone)}>
         x
       </MotifFrame>,
     );

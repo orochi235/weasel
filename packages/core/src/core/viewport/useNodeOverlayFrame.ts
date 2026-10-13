@@ -3,12 +3,6 @@
  * scene node needs: the node's world box, the projection from that box's
  * frame into overlay pixels, and the overlay's measured size.
  *
- * This is the frame half of `subscribeView`'s "DOM pinned to world
- * coordinates" case. Consumers positioning chrome over a node — gradient
- * handles, a badge, a caret — otherwise re-derive it, and the
- * translate-and-scale inverse that derivation usually reaches for drops
- * `pose.rotation`, so the chrome sits where the node would be unrotated.
- *
  * `toScreen` maps the node's **unrotated world box** frame, which is the
  * frame `fillInPoseFrame` resolves a `units: 'bounds'` paint into and the
  * one `pathInPoseFrame` projects geometry into. Rotation lives in this hook,
@@ -50,10 +44,9 @@ export interface NodeOverlayFrame {
 export interface UseNodeOverlayFrameOptions<TPose> {
   /**
    * Current viewport. A thunk is re-read on every projection, which is what
-   * an uncontrolled `SceneCanvas` needs — its camera lives in a ref and moves
-   * without a render, so pass the handle's `getView`. A plain `View` is the
-   * value from the render that supplied it, correct for a controlled
-   * consumer. Omit it and world units are handed through as screen pixels.
+   * an uncontrolled `SceneCanvas` needs — its camera moves without a render,
+   * so pass the handle's `getView`. Omit it and world units are handed
+   * through as screen pixels.
    */
   view?: View | (() => View);
   /** Fold a child pose into its parent's frame. Default `composeRectPose`. */
@@ -66,8 +59,7 @@ export interface UseNodeOverlayFrameOptions<TPose> {
  * projection to land.
  *
  * Returns `null` when there is no node under `nodeId`, when the container has
- * not been measured, or when the view collapses an axis to zero — the three
- * states in which an overlay has nothing to draw.
+ * not been measured, or when the view collapses an axis to zero.
  */
 export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends RectPose>(
   scene: Scene<TData, TLayer, TPose>,

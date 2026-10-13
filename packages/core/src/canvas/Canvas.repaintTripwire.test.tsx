@@ -16,7 +16,7 @@ import { Canvas } from './Canvas';
 import type { SelectionApi } from '../core/selection/useSelection';
 import { asNodeId, type NodeId } from '../core/scene/types';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();
@@ -38,7 +38,7 @@ function probeLayer(draw: () => void): RenderLayer<unknown> {
     space: 'screen',
     draw: () => {
       draw();
-      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } }];
+      return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: { kind: 'solid', color: '#fff' } } }];
     },
   };
 }

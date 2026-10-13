@@ -1,4 +1,5 @@
-export { createScene, sceneFromJSON, sceneSelectionStore } from './scene';
+export { createScene, sceneFromJSON } from './scene';
+export { sceneSelectionStore } from './sceneSelection';
 export { useScene } from './useScene';
 export { asNodeId } from './types';
 export type {
@@ -16,6 +17,7 @@ export type {
   Node,
   NodeId,
   PoseOverride,
+  PoseHold,
   PoseOverrides,
   RegisteredOp,
   Scene,
@@ -31,6 +33,7 @@ export type {
 } from './types';
 export { createPoseOverrides } from './poseOverrides';
 export { reconcileSpecs } from './reconcileSpecs';
+export { sceneUnitScopes } from './unitScopes';
 export { SceneArrivalRefused } from './arrivals';
 export { definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';

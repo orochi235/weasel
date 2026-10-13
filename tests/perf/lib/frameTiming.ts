@@ -2,22 +2,14 @@
  * Frame timing for specs whose frames break the batch, imported into the page
  * (`/weasel/@fs…/tests/perf/lib/frameTiming.ts`) rather than by the spec.
  *
- * **One frame per task.** Measured on teitou, 2026-10-04
- * (`flush-noise.spec.ts`, `yield` phase): a frame of 512 one-rect flushes costs
- * 0.5–0.8 ms when the page yields to the event loop between frames, as a real
- * frame loop does. Run back to back inside one task, the first eight still cost
- * that and every one after costs 3–9 ms, in plateaus that shift from round to
- * round, with occasional single frames stalling 0.15–3.7 s inside the GPU
- * process. A block of 80 frames timed in one task measured that regime, not
- * the renderer — which is how a per-flush figure read 5 us one round and 29
- * the next. Each sample here runs a frame in a task of its own and ends in a
- * one-pixel `readPixels`.
+ * **One frame per task.** A frame costs several times more run back to back
+ * inside one task than when the page yields to the event loop between frames,
+ * as a real frame loop does, with occasional single frames stalling for
+ * seconds inside the GPU process. Each sample here runs a frame in a task of
+ * its own and ends in a one-pixel `readPixels`.
  *
- * **Not `finish`, which does not wait for the GPU.** On teitou, 2026-10-05
- * (`fill-rate.spec.ts`'s probe), 432M fragments timed 0.03 ms through `finish`
- * and 3.6 ms through a one-pixel `readPixels`, which cannot return before the
- * draws behind it have run. The figures specs took through `finish` before
- * then leave out the GPU's own time.
+ * **Not `finish`, which does not wait for the GPU.** A one-pixel `readPixels`
+ * cannot return before the draws behind it have run.
  *
  * A sample is the frame's latency through that read: the page's JS, the GPU
  * process and the GPU in series, plus one small readback. A frame loop overlaps
@@ -122,10 +114,9 @@ export interface Timed {
 
 /**
  * Per-variant ms per frame. `leastFrame` is timed in every round beside the
- * variants, because on teitou (2026-10-05, `atlas-wall`) any frame that draws
- * costs about 1.3 ms more than one that does not — more than the work of 7,500
- * batched rects — and a per-command figure divided out of a frame that still
- * holds it is mostly that fixed price.
+ * variants, because any frame that draws costs a fixed price over one that
+ * does not, and a per-command figure divided out of a frame that still holds
+ * it is mostly that price.
  */
 export async function timeInterleaved(
   gl: WebGL2RenderingContext,

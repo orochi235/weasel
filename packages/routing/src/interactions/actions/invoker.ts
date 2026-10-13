@@ -4,9 +4,6 @@
  * An Action's `invoker` field describes how it's run. `immediate` invokers
  * fire once (delete, align, undo). `ongoing` invokers open a phase machine
  * driven by the dispatcher (move, resize, pinch-zoom).
- *
- * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md`
- * § "Types" for the full design.
  */
 
 import type { ModifierState, ResizeAnchor } from '../../vocabulary';
@@ -24,31 +21,20 @@ export interface Point2 {
 }
 
 /**
- * Information about which UI affordance was hit at pointerdown.
- *
- * Populated by the dispatcher when the `affordanceAt` thunk is provided to
- * `useGestureDispatcher`. Tools / action invokers that only fire on a specific
- * affordance (e.g. a resize handle) use this field as a guard — if the
- * affordance is absent or is the wrong kind, they return `{}` and let other
- * bindings handle the drag.
+ * Which UI affordance was hit at pointerdown. Populated by the dispatcher when
+ * the `affordanceAt` thunk is provided to `useGestureDispatcher`.
  *
  * `kind` is a discriminator string:
  *   - `'handle:top-left'` / `'handle:top-right'` / `'handle:bottom-left'` /
  *     `'handle:bottom-right'` — corner resize handles.
  *   - `'rotate-handle'` — the rotation affordance.
  *   - `'anchor:N'` — a path anchor at index N.
- *
- * `fixedPoint` is the world-space point that should remain stationary during
- * the gesture. For resize handles this is the opposite (diagonally fixed)
- * corner; for rotate it is the pivot.
- *
- * `targetIds` are the node ids this affordance belongs to.
  */
 export interface AffordanceHit {
   /** Discriminator string, e.g. `'handle:bottom-right'`. */
   kind: string;
   /** Id of whatever produced this hit — a kit affordance's `id`, or the
-   *  registered layer's id. Read only by the dispatcher's dead-claim warning today. */
+   *  registered layer's id. */
   owner?: string;
   /** `'exclusive'` means no binding may act on this point unless its target
    *  consults the affordance. `'shared'` (the default) competes on scope and
@@ -60,25 +46,18 @@ export interface AffordanceHit {
   fixedPoint?: { x: number; y: number };
   /** Which nodes this affordance belongs to. */
   targetIds?: string[];
-  /** Set when `kind` matches `'handle:*'`. Identifies which corner stays
-   *  fixed during a resize so consumers (resizeAction) don't re-parse `kind`.
-   *  Other affordance kinds (rotate-handle, anchor:N, controlIn:N, controlOut:N)
-   *  leave this undefined. */
+  /** Set only when `kind` matches `'handle:*'`: which corner stays fixed
+   *  during a resize. */
   anchor?: ResizeAnchor;
-  /** Cursor to show while the pointer hovers this affordance (no
-   *  gesture in flight). Consumed by the hover-cursor pump in
-   *  `useGestureDispatcher`; unset = the pump falls through to
-   *  action-cursor prediction, then to the active tool's cursor. */
+  /** Cursor to show while the pointer hovers this affordance (no gesture in
+   *  flight). Unset falls through to action-cursor prediction, then to the
+   *  active tool's cursor. */
   cursor?: CursorSpec;
   /**
    * Free-form payload from whatever produced the hit, carried through to the
-   * matching action untouched.
-   *
-   * Kit affordances describe themselves fully in the fields above and leave
-   * this unset. It exists for affordances the kit doesn't know the shape of —
+   * matching action untouched. Kit affordances leave it unset; it exists for
    * a registered layer's own chrome, where the hit-test already resolved
-   * *which* of its pieces was hit and the action would otherwise have to
-   * redo that work. `@weasel-js/hud` passes the hit widget here.
+   * *which* of its pieces was hit.
    */
   payload?: unknown;
 }
@@ -88,9 +67,7 @@ export interface AffordanceHit {
  * stylus state the originating `PointerEvent` carried.
  *
  * The stylus fields are absent for mouse/touch on browsers that don't report
- * them, and for synthetic events. Consumers that want pressure-driven output
- * (e.g. `Stroke.vertexWidths` from a pencil stroke) read them off the samples
- * their `insert` dep receives — see `apps/site/demos/StrokeAndFillDemo.tsx`.
+ * them, and for synthetic events.
  */
 export interface DragSample extends Point2 {
   /** 0..1. Mouse/touch report 0.5 while a button is held, per the spec. */
@@ -129,23 +106,19 @@ export interface InvocationCtx {
      * mutates the viewport itself (pan, view-zoom), because world-space
      * deltas become self-referential as the view shifts mid-drag.
      *
-     * Populated when the dispatcher received `clientX`/`clientY` on the
-     * underlying pointer events. Absent for legacy callers that don't
-     * provide them.
+     * Absent when the underlying pointer events carried no
+     * `clientX`/`clientY`.
      */
     screenDelta?: Point2;
     affordance?: AffordanceHit;
     /**
      * Full pointermove history for the current drag, in world space, with
      * per-sample stylus state when the browser reported it.
-     * Accumulated by the dispatcher on every `pointermove` pump event.
      * Available only during `onMove` and `onEnd` calls (not on `start`).
      *
      * During `onMove` this is the dispatcher's live accumulator, and it grows
      * under you — read it, don't retain it. On `onEnd` it is a snapshot, so
      * that is where an action that keeps the trail should take it.
-     * Used by `lassoSelectAction` to build its polygon vertex list and by
-     * `insertAction`'s pencil kind to carry the freehand stroke.
      */
     points?: DragSample[];
   };
@@ -162,10 +135,8 @@ export interface InvocationCtx {
     spread: number;
     rotation: number;
     /**
-     * Pinch-zoom geometry. Populated by the dispatcher when a multitouch
-     * handle is in flight and a pointermove-pump fires.
+     * Pinch-zoom geometry, populated while a multitouch handle is in flight.
      * `startSpread` is the spread at the moment the gesture began.
-     * `currentSpread` is the spread at the current frame.
      */
     pinch?: {
       startSpread: number;
@@ -183,34 +154,28 @@ export interface InvocationCtx {
   viewId?: string | null;
   /**
    * Per-invocation parameters. Populated by `ActionsRegistry.begin()` for
-   * UI-driven ongoing actions (color picker, opacity slider) so handles can
-   * read the current value on `start` and updated values on `onMove`. The
-   * gesture dispatcher does not populate this field; gesture-driven actions
-   * receive params via `BindingOpts.params` on `start` (the `opts` arg).
+   * UI-driven ongoing actions (color picker, opacity slider). The gesture
+   * dispatcher does not populate this field; gesture-driven actions receive
+   * params via `BindingOpts.params` on `start` (the `opts` arg).
    */
   params?: Record<string, unknown>;
 }
 
 /** Per-invocation options the dispatcher reads from a `GestureBinding`'s
- *  `opts` field and passes to `OngoingInvoker.start`. Today carries
- *  behaviors; extensible. */
+ *  `opts` field and passes to `OngoingInvoker.start`. */
 export interface BindingOpts {
   /** Gesture behaviors the action's own invoker runs. Routing carries the
    *  array to the action and never reads an element, so the element type is
-   *  open here; `@weasel-js/core` narrows it to `ActionBehavior<unknown,
-   *  unknown, unknown>[]`, which is what a behavior is authored against. */
+   *  open here; `@weasel-js/core` narrows it. */
   behaviors?: unknown[];
-  /** Per-binding action parameters. The action's invoker reads
-   *  these via the second arg to `run` (or via InvocationCtx for ongoing
-   *  invokers, when needed). Loose typing (Record<string, unknown>) for
-   *  now; consider per-action typing later via BindingOpts<A>.
+  /** Per-binding action parameters, which an immediate invoker reads via the
+   *  second arg to `run`.
    *
-   *  params may also be a thunk evaluated each time the
-   *  dispatcher (or invoker) needs the value. Thunks let tools close over
-   *  refs that mutate during a gesture (e.g. polygon `sides` adjusted
-   *  mid-drag via ArrowUp). For ongoing invokers that want the latest
-   *  values at commit, the invoker can re-call the thunk inside `onEnd`
-   *  via `resolveParams(opts?.params)`. */
+   *  May also be a thunk evaluated each time the value is needed, so a tool
+   *  can close over refs that mutate during a gesture (e.g. polygon `sides`
+   *  adjusted mid-drag via ArrowUp). An ongoing invoker that wants the latest
+   *  values at commit re-calls it inside `onEnd` via
+   *  `resolveParams(opts?.params)`. */
   params?: Record<string, unknown> | (() => Record<string, unknown>);
   /**
    * The views this binding is live in, by id, where `null` is the surface's
@@ -263,12 +228,10 @@ export type OverlayRole =
  * `OngoingHandle.overlay()` — a marquee rect, a lasso trail, the outline of a
  * shape being dragged out, the line a slice would cut along.
  *
- * Every variant is world geometry and nothing else. No `DrawCommand`, no
- * color, no coordinate space to choose: an action that reached for any of
- * those would be publishing core's own 2D vocabulary, and a surface rendering
- * the same gesture some other way could not read it. `resolveOverlays`
- * normalizes this into `ResolvedOverlay`, which is what a painter consumes —
- * `useDispatcherOverlayLayer` is core's, and it owns every style decision.
+ * Every variant is world geometry and nothing else — no `DrawCommand`, no
+ * color, no coordinate space to choose — so a surface rendering the same
+ * gesture some other way can still read it. The painter owns every style
+ * decision.
  */
 export type OngoingOverlay =
   | {
@@ -285,13 +248,9 @@ export type OngoingOverlay =
     }
   | {
       /**
-       * An open run of world points the gesture is proposing — the slice
-       * action's cut line, `@weasel-js/diagram`'s routed connector.
-       *
-       * Geometry only, like every other variant: `role` is the whole of what
-       * an action says about appearance, and the painting surface is what
-       * turns it into a stroke. An action that picked its own color would be
-       * unpaintable by any renderer but the one it had in mind.
+       * An open run of world points the gesture is proposing — a cut line, a
+       * routed connector. `role` is the whole of what an action says about
+       * appearance.
        */
       kind: 'polyline';
       /** At least two points. Anything shorter is dropped in resolution. */
@@ -301,19 +260,14 @@ export type OngoingOverlay =
     }
   | {
       /**
-       * Live insert-drag preview — dispatched by `insertAction` while the
-       * user is dragging out a new shape. Pre-commit there is no scene node
-       * to ghost via `previewIds()`/`previewPose()`, so insert paints its
-       * preview through the dispatcher overlay layer instead.
+       * Live insert-drag preview. Pre-commit there is no scene node to ghost
+       * via `previewIds()`/`previewPose()`, so insert paints its preview
+       * through the overlay instead.
        *
-       * `shape` is the kit's built-in insert kind. `bounds` is the AABB of
-       * the current drag (start/current normalized). `extras` is the
-       * per-kind extras the action already collected — the overlay
-       * renderer rebuilds the shape using the same path builders the
-       * commit factory uses, so the preview matches the eventual node.
-       *
-       * `extras` is opaque (`unknown`) at the union level; the overlay
-       * renderer narrows on `shape` and casts the field shape it expects.
+       * `bounds` is the AABB of the current drag (start/current normalized).
+       * `extras` is the per-kind extras the action already collected; the
+       * overlay renderer narrows on `shape` and casts the field shape it
+       * expects.
        */
       kind: 'insertPreview';
       /** Which preview the dispatcher's overlay draws. The kit's own shape
@@ -322,11 +276,9 @@ export type OngoingOverlay =
       shape: string;
       bounds: { x: number; y: number; width: number; height: number };
       extras: unknown;
-      /** World-space point to paint a small "anchor" dot at. Sells the
-       *  click point as the drag's anchor — particularly useful for
-       *  radial shapes (polygon/star) where no vertex sits on the
-       *  click point, and for any shape in center mode where the dot
-       *  marks the center the shape grows around. */
+      /** World-space point to paint a small "anchor" dot at, marking the
+       *  click point — for radial shapes (polygon/star), where no vertex
+       *  sits on it, and for any shape in center mode. */
       anchorPoint?: { x: number; y: number };
     };
 
@@ -337,20 +289,11 @@ export type OngoingOverlay =
 export interface OngoingHandle {
   /**
    * Optional logical action kind — a stable, human-readable tag the
-   * dispatcher exposes via `getActiveAction()` for chrome-visibility
-   * rules and any other surface that wants to react to "what action
-   * is currently in flight" without inspecting handles directly.
+   * dispatcher exposes via `getActiveAction()`, e.g. `'marquee'`, `'move'`,
+   * `'resize'`, `'pan'`.
    *
-   * Examples: `'marquee'`, `'lasso'`, `'move'`, `'resize'`, `'rotate'`,
-   * `'pan'`, `'pinch'`.
-   *
-   * Distinct from the dispatcher's internal `gestureId` (`pointer-mouse`,
-   * `key-held-Space`, etc.) which keys per-pointer state and is not
-   * meaningful to consumers.
-   *
-   * When omitted, the action is "anonymous" — `getActiveAction().kind`
-   * reports `null` even though a handle is in flight. This is fine for
-   * actions that don't have visible chrome of their own.
+   * When omitted, `getActiveAction().kind` reports `null` even though a
+   * handle is in flight.
    */
   kind?: string;
 
@@ -358,23 +301,13 @@ export interface OngoingHandle {
   onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void;
 
   /**
-   * Optional preview surface — dispatcher-side ghost overlay.
+   * Optional preview surface: the in-flight state the canvas's preview-ghost
+   * layer renders on top of the committed scene during the gesture.
    *
-   * An ongoing-action implementation may populate `previewIds()` +
-   * `previewPose(id)` to expose its in-flight preview state for the
-   * canvas's preview-ghost layer (`usePreviewGhostLayer`) to render on
-   * top of the committed scene during the gesture.
-   *
-   * Returning `null` (or omitting the method entirely) means "no preview
-   * this gesture" — the canvas will skip this handle as a source.
-   *
-   * Semantics mirror the tool-side `Tool.previewIds` / `Tool.previewPose`
-   * pair: `previewIds()` enumerates the displaced node ids; `previewPose(id)`
-   * returns the interim pose for one of those ids (shape opaque — the
-   * canvas casts to its `TPose` parameter). The preview-ghost layer
-   * merges all sources via first-non-null semantics, with tool-side
-   * previews taking precedence over dispatcher-side (preserves
-   * backwards-compat during the registry-unification migration).
+   * `previewIds()` enumerates the displaced node ids; `previewPose(id)`
+   * returns the interim pose for one of them (shape opaque — the canvas
+   * casts to its `TPose` parameter). Returning `null`, or omitting the
+   * method, means "no preview this gesture".
    */
   previewIds?(): Iterable<string> | null;
   previewPose?(id: string): unknown | null;
@@ -389,42 +322,24 @@ export interface OngoingHandle {
   previewOpaqueIds?(): Iterable<string> | null;
 
   /**
-   * When `false`, the preview-ghost layer paints the ghost AND the
-   * source node stays visible at its committed pose. Defaults to
-   * `true` (move/resize/rotate semantics: ghost replaces the source
-   * during the gesture). Clone overrides to `false` so the original
-   * stays put and the ghost appears at the drag target.
+   * When `false`, the preview-ghost layer paints the ghost AND the source
+   * node stays visible at its committed pose, as a clone wants. Defaults to
+   * `true`: the ghost replaces the source during the gesture.
    */
   previewHidesSource?: boolean;
 
   /**
-   * Optional per-id preview *data*. Falls back to the committed
-   * `node.data` when null/absent. Use when the gesture mutates
-   * `node.data` (e.g. anchor-edit on nodes that store the polygon on
-   * `data.path`) rather than (or in addition to) the pose. The preview-
-   * ghost layer assembles a synthetic node from `{ ...node, pose:
-   * previewPose ?? node.pose, data: previewData ?? node.data }` before
-   * calling the scene slot's `drawOne`.
-   *
-   * Sources compose first-non-null per axis: an action can emit only
-   * `previewPose` (translation), only `previewData` (data-only edit),
-   * or both (pose + data both change, e.g. anchor drag on a data.path
-   * node where the bounds shift).
+   * Optional per-id preview *data*, for a gesture that mutates `node.data`
+   * (e.g. anchor-edit on nodes that store the polygon on `data.path`) rather
+   * than, or in addition to, the pose. Falls back to the committed
+   * `node.data` when null/absent.
    */
   previewData?(id: string): unknown | null;
 
   /**
-   * Optional chrome surface — dispatcher-side overlay layer.
-   *
-   * An ongoing-action implementation may populate `overlay()` to expose a
-   * non-ghost visual (marquee rectangle, lasso polyline) for the canvas's
-   * `useDispatcherOverlayLayer` to paint while the gesture is in flight.
-   * Returning `null` (or omitting the method) means "no overlay this
-   * gesture" — the canvas will skip this handle as a chrome source.
-   *
-   * Distinct from the `previewIds()`/`previewPose(id)` ghost surface,
-   * which paints displaced scene-node silhouettes. Marquee and lasso
-   * gestures don't displace any node, but still need on-screen feedback.
+   * Optional chrome surface: a non-ghost visual (marquee rectangle, lasso
+   * polyline) painted while the gesture is in flight. Returning `null`, or
+   * omitting the method, means "no overlay this gesture".
    */
   overlay?(): OngoingOverlay | null;
 }
@@ -446,7 +361,5 @@ export interface OngoingInvoker {
   start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle;
 }
 
-/** Pluggable invocation strategy for an Action. Future variants
- *  (`longPress`, `twoStage`, `modal`) extend this union without touching
- *  the `Action` type. */
+/** Pluggable invocation strategy for an Action. */
 export type Invoker = ImmediateInvoker | OngoingInvoker;

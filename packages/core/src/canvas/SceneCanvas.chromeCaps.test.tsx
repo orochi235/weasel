@@ -1,14 +1,7 @@
 /**
- * End-to-end smoke for the chrome-caps wiring:
- *
- *   chromeVisibility prop → SceneCanvas builds getIsVisibleForCanvas →
- *   Canvas threads it into helpersForLayers.getIsVisible →
- *   composeAffordanceLayer / createSelectionOverlayLayer gate on the
- *   per-id predicate.
- *
- * Renders a `<SceneCanvas>` and reads `helpersRef.current.getIsVisible()`
- * to assert the resolver actually merges the consumer override with the
- * kit defaults and reflects the live ChromeCtx (selection, gesture).
+ * Chrome-caps wiring: reads `helpersRef.current.getIsVisible()` off a rendered
+ * `<SceneCanvas>` to assert the resolver merges the `chromeVisibility` override
+ * with the kit defaults and reflects the live selection and gesture.
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
@@ -108,7 +101,6 @@ describe('SceneCanvas — chrome-caps wiring', () => {
     const { helpersRef } = renderWith(scene, [firstId(scene)], undefined);
     act(() => {});
     const isVisible = helpersRef.current!.getIsVisible();
-    // With one selection, no gesture: outline + resize-handles visible.
     // rotation-handle requires focused=true; SceneCanvas defaults focused
     // to true when no getFocused is wired.
     expect(isVisible('selection.outline')).toBe(true);

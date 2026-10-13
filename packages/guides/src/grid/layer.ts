@@ -13,9 +13,9 @@ import {
   type RenderLayer,
   type CommandStroke,
   resolveStrokeWidth,
-  resolveUnit,
-  type UnitSystem,
-  type UnitValue,
+  resolveAxes,
+  type PlaneUnits,
+  type PlaneValue,
   pxExtent,
 } from '@weasel-js/core';
 import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
@@ -26,17 +26,18 @@ export interface GridLayerOpts {
    * Distance between adjacent grid lines (also known as grid pitch),
    * in world (base) units. Accepts a bare number or a tagged
    * `{ value, unit }`. Tagged values require `unitSystem` to be supplied.
+   * Either may be per axis — `{ x, y }`.
    */
-  spacing: UnitValue;
+  spacing: PlaneValue;
   /** Optional unit system for resolving tagged `spacing` values. */
-  unitSystem?: UnitSystem;
+  unitSystem?: PlaneUnits;
   /** Bounds of the area to cover, in world units. */
   bounds: () => { x: number; y: number; width: number; height: number };
   /** Lines every N cells get the accent style. 0/undef = no accent. */
   accentEvery?: number;
   /** Optional finer subdivisions per cell. e.g. 4 -> 4 sub-lines per cell. */
   subdivisions?: number;
-  /** Per-band stroke styles. Each is a FillStyle+width (etc.) — see `Stroke`. */
+  /** Per-band stroke styles. Each is a Paint+width (etc.) — see `Stroke`. */
   style?: {
     line?: CommandStroke;
     accent?: CommandStroke;
@@ -49,15 +50,15 @@ export interface GridLayerOpts {
 // gray; consumer apps may use cream / dark / themed surfaces). Override
 // per-canvas via `style.{line,accent,sub}.paint` if a hard color is needed.
 const DEFAULT_LINE: CommandStroke = {
-  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.08)' },
+  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.08)' },
   width: 1,
 };
 const DEFAULT_ACCENT: CommandStroke = {
-  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.16)' },
+  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.16)' },
   width: 1,
 };
 const DEFAULT_SUB: CommandStroke = {
-  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.04)' },
+  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.04)' },
   width: 1,
 };
 
@@ -75,7 +76,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       if (b.width <= 0 || b.height <= 0) return [];
 
       const { accentEvery, subdivisions } = opts;
-      const spacing = resolveUnit(opts.spacing, opts.unitSystem);
+      const spacing = resolveAxes(opts.spacing, opts.unitSystem);
       const x0 = b.x;
       const y0 = b.y;
       const x1 = b.x + b.width;
@@ -103,14 +104,15 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
 
       // Sub-lines (drawn first so cell lines paint on top).
       if (subdivisions && subdivisions > 1) {
-        const step = spacing / subdivisions;
-        for (let x = x0; x <= x1 + 1e-9; x += step) {
-          const k = Math.round((x - x0) / step);
+        const stepX = spacing.x / subdivisions;
+        for (let x = x0; x <= x1 + 1e-9; x += stepX) {
+          const k = Math.round((x - x0) / stepX);
           if (k % subdivisions === 0) continue;
           pushSegment(x, y0, x, y1, sub);
         }
-        for (let y = y0; y <= y1 + 1e-9; y += step) {
-          const k = Math.round((y - y0) / step);
+        const stepY = spacing.y / subdivisions;
+        for (let y = y0; y <= y1 + 1e-9; y += stepY) {
+          const k = Math.round((y - y0) / stepY);
           if (k % subdivisions === 0) continue;
           pushSegment(x0, y, x1, y, sub);
         }
@@ -118,13 +120,13 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
 
       // Cell lines (skip ones that will become accents).
       let idx = 0;
-      for (let x = x0; x <= x1 + 1e-9; x += spacing) {
+      for (let x = x0; x <= x1 + 1e-9; x += spacing.x) {
         const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
         if (!isAccent) pushSegment(x, y0, x, y1, line);
         idx++;
       }
       idx = 0;
-      for (let y = y0; y <= y1 + 1e-9; y += spacing) {
+      for (let y = y0; y <= y1 + 1e-9; y += spacing.y) {
         const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
         if (!isAccent) pushSegment(x0, y, x1, y, line);
         idx++;
@@ -133,12 +135,12 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       // Accent lines on top.
       if (accentEvery && accentEvery > 0) {
         idx = 0;
-        for (let x = x0; x <= x1 + 1e-9; x += spacing) {
+        for (let x = x0; x <= x1 + 1e-9; x += spacing.x) {
           if (idx % accentEvery === 0) pushSegment(x, y0, x, y1, accent);
           idx++;
         }
         idx = 0;
-        for (let y = y0; y <= y1 + 1e-9; y += spacing) {
+        for (let y = y0; y <= y1 + 1e-9; y += spacing.y) {
           if (idx % accentEvery === 0) pushSegment(x0, y, x1, y, accent);
           idx++;
         }

@@ -2,13 +2,8 @@
  * The lab's central claim, under test: core's dispatcher drives a 3D viewport
  * unchanged, because `clientToWorld` is the only place 2D-ness enters.
  *
- * Pattern from `packages/core/src/tools/integration.test.tsx` — providers, the
- * real `useGestureDispatcher`, synthesized pointer events.
- *
  * There is no GL here and jsdom measures every element as zero, so the viewport
- * size is supplied rather than measured. That is the point of the seam: the deps
- * take their camera and size from a thunk, and nothing about the dispatcher path
- * knows the difference.
+ * size is supplied rather than measured.
  */
 
 import { describe, it, expect, vi } from 'vitest';

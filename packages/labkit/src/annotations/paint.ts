@@ -126,7 +126,7 @@ export function markCommands(
           undefined,
           undefined,
           {
-            fill: { color },
+            fill: { paint: { color } },
           },
         ),
       ];

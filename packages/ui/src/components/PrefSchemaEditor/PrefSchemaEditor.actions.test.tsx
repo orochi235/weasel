@@ -40,7 +40,15 @@ describe('PrefSchemaEditor actions', () => {
     expect(within(actions()).getByText('Edit')).toBeInTheDocument();
     expect(within(actions()).getByText('(edit.redo)')).toBeInTheDocument();
     expect(within(actions()).getByText('(view.snap)')).toBeInTheDocument();
-    expect(within(actions()).getByText('⌘Z')).toBeInTheDocument();
+    // Its shortcut as keycaps, a key to a cap.
+    expect(within(actions()).getByText('⌘')).toBeInTheDocument();
+    expect(within(actions()).getByText('Z')).toBeInTheDocument();
+  });
+
+  it('lists them in the shelf beside the export, not under the structure tree', () => {
+    render(<Live actions={ACTIONS} />);
+    expect(screen.getByRole('region', { name: 'Structure' })).not.toContainElement(actions());
+    expect(screen.getByRole('region', { name: 'Export' }).parentElement).toContainElement(actions());
   });
 
   it('lists what the registry above it can fire from a button, when given none', () => {

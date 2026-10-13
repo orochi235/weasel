@@ -1,12 +1,9 @@
 /**
  * Bezier flattening — subdivide cubic and quadratic segments into polyline
- * approximations within a flatness tolerance. Used by hit-testing and
- * (eventually) any kernel that doesn't want to special-case curves.
+ * approximations within a flatness tolerance.
  *
- * The flatness metric is the maximum perpendicular distance from any
- * control point to the chord between endpoints. When that distance falls
- * below `tolerance`, the segment is "flat enough" and emitted as a single
- * line segment.
+ * The flatness metric is the maximum distance from any control point to the
+ * chord between endpoints.
  *
  * Tolerance is in world units. 0.5 is a sensible default for screen-rate
  * rendering at 1× zoom; consumers that zoom in heavily should pass a
@@ -138,16 +135,10 @@ function flattenQuadraticRec(
 }
 
 /**
- * Like `flattenCubic` but also appends, for each new flattened point, its
- * arc-length fraction `t` (relative to the polyline distance accumulated so
- * far inside this curve) to `arcOut`. Caller then post-processes the segment's
- * `arcOut` range by dividing each by the segment's total flattened arc length
- * to yield t ∈ (0, 1].
- *
- * The returned values are *cumulative distance from the segment start*, not
- * normalized fractions. Two-pass design (accumulate, then divide) keeps the
- * recursive splitter simple — it doesn't need to know the total length up
- * front.
+ * Like `flattenCubic` but also appends to `arcOut`, for each new flattened
+ * point, its *cumulative distance from the segment start* — not a normalized
+ * fraction. The caller divides each by the segment's total flattened arc
+ * length to yield t ∈ (0, 1].
  */
 export function flattenCubicWithArcLen(
   x0: number, y0: number,

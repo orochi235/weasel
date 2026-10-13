@@ -1,14 +1,14 @@
 import { type ReactElement, type ReactNode } from 'react';
 import {
-  isGradientFill,
+  isGradientPaint,
   sampleGradientStops,
   switchGradientKind,
   useGradientKinds,
   usePaintKind,
   type ColorSpace,
-  type FillStyle,
+  type Paint,
   type GradStop,
-  type GradientFill,
+  type GradientPaint,
   type PaintKind,
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
@@ -35,16 +35,16 @@ const MIN_STOPS = 2;
 export interface GradientEditorProps {
   /** The gradient being edited: a paint of any gradient kind — one that
    *  `listGradientKinds` returns. */
-  value: FillStyle;
+  value: Paint;
   /**
    * Live value during a gesture — a stop drag, a color-picker scrub. Wire
    * it for preview; it fires many times per gesture and must not be
    * written to history.
    */
-  onInput?: (next: FillStyle) => void;
+  onInput?: (next: Paint) => void;
   /** Committed value: one call per completed gesture. Pair with an
    *  undoable write. */
-  onChange: (next: FillStyle) => void;
+  onChange: (next: Paint) => void;
   /** Show the kind switch — every registered gradient kind. Default true;
    *  turn it off when the surrounding UI already owns the kind. */
   kindSwitch?: boolean;
@@ -72,19 +72,16 @@ type StopThumb = Thumb & { color: string };
  * `Editor`. Switching kind goes through `switchGradientKind`, so the colors
  * carry across.
  *
- * Geometry (`from`/`to`, `center`, `radius`, `angle`) is deliberately not
- * edited here — on a canvas that belongs on the artwork, via
- * `<GradientHandles>`. This component owns the parts with no spatial
- * meaning, so it composes into a properties panel at any width.
+ * Geometry (`from`/`to`, `center`, `radius`, `angle`) is not edited here — on
+ * a canvas that belongs on the artwork, via `<GradientHandles>`.
  *
  * Stops are addressed by their position in `value.stops`, which is never
- * reordered — dragging one stop past another leaves both indices alone, so
- * a drag can cross a neighbour without the two swapping under the pointer.
- * Rendering sorts a copy.
+ * reordered, so a drag can cross a neighbor without the two swapping under
+ * the pointer.
  */
 export function GradientEditor(props: GradientEditorProps): ReactElement {
   const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, className } = props;
-  const kind: PaintKind = value.fill ?? 'solid';
+  const kind: PaintKind = value.kind ?? 'solid';
   const space: ColorSpace = (value as { interpolate?: ColorSpace }).interpolate ?? 'rgb';
 
   const entry = usePaintKind(kind);
@@ -121,7 +118,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         value={space}
         size="sm"
         ariaLabel="Blend space"
-        onChange={(next) => next && onChange({ ...value, interpolate: next } as FillStyle)}
+        onChange={(next) => next && onChange({ ...value, interpolate: next } as Paint)}
       />
     );
     // A registered `Editor` wins even for a built-in id, as it does in `PaintInput`.
@@ -129,7 +126,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
       const Editor = entry.Editor;
       return <><Editor value={value} onInput={onInput} onChange={onChange} />{spaceBar}</>;
     }
-    if (isGradientFill(value)) {
+    if (isGradientPaint(value)) {
       return <StopsBody value={value} spaceBar={spaceBar} onInput={onInput} onChange={onChange} />;
     }
     if (isMeshPaint(value)) {
@@ -141,16 +138,16 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
 
 /** The stop slider and swatch row of a linear, radial or conic gradient. */
 function StopsBody(props: {
-  value: GradientFill;
+  value: GradientPaint;
   spaceBar: ReactNode;
-  onInput?: (next: FillStyle) => void;
-  onChange: (next: FillStyle) => void;
+  onInput?: (next: Paint) => void;
+  onChange: (next: Paint) => void;
 }): ReactElement {
   const { value, spaceBar, onInput, onChange } = props;
   const stops = value.stops;
   const space = value.interpolate ?? 'rgb';
 
-  const withStops = (next: GradStop[]): GradientFill => ({ ...value, stops: next });
+  const withStops = (next: GradStop[]): GradientPaint => ({ ...value, stops: next });
 
   const thumbs: StopThumb[] = stops.map((stop) => ({ value: stop.offset, color: stop.color }));
 

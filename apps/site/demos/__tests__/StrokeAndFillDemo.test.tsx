@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { FillStyle, Stroke } from '@weasel-js/core';
+import type { Stroke, Fill } from '@weasel-js/core';
 import { StrokeAndFillDemo } from '../StrokeAndFillDemo';
 
 // jsdom's canvas rect is all zeros and the view is identity, so client coords
@@ -12,7 +12,7 @@ function click(canvas: HTMLCanvasElement, x: number, y: number) {
   });
 }
 
-function data(id: string): { fill?: FillStyle; stroke?: Stroke; vertexColors?: number[] } {
+function data(id: string): { fill?: Fill; stroke?: Stroke; vertexColors?: number[] } {
   return window.__weaselTest!.getScene().nodes.find((n) => n.id === id)!.data as never;
 }
 

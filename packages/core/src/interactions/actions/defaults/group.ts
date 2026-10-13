@@ -16,12 +16,8 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
 /**
  * @experimental
- * Static descriptor for the `group` Action.
- *
- * "Group" here means a structural `ContainerNode` — the real group that
- * round-trips to SVG `<g>` — not the legacy membership-list. `run` creates a
- * fresh container and reparents the current selection under it as a single
- * undoable batch.
+ * Creates a structural `ContainerNode` and reparents the current selection
+ * under it as a single undoable batch.
  *
  * Grouping never moves a member on screen. The container takes the world
  * envelope of its members' ink; each member is then re-expressed in that
@@ -29,11 +25,9 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
  * identity.
  *
  * Under identity the container's pose is also *derived* from its members, so
- * it tracks one that moves later instead of freezing at the moment the group
- * was made. Under any other composition that derivation is circular — the
- * members' poses are expressed in the container's own frame — so the container
- * keeps the authored envelope instead. Making it track its members again needs
- * its own decision; see the group-as-frame design doc.
+ * it tracks one that moves later. Under any other composition that derivation
+ * is circular — the members' poses are expressed in the container's own
+ * frame — so the container keeps the authored envelope instead.
  */
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
@@ -42,7 +36,7 @@ export const groupAction: Action & { requires: string[] } = {
   group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor', 'poseComposition'],
+  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -54,7 +48,6 @@ export const groupAction: Action & { requires: string[] } = {
       const ids = selection.get();
       if (ids.length === 0) return;
 
-      // Resolve nodes; drop any that have gone missing.
       const nodes = ids
         .map((id) => scene.get(id as NodeId))
         .filter((n): n is NonNullable<typeof n> => n !== undefined);
@@ -69,11 +62,10 @@ export const groupAction: Action & { requires: string[] } = {
       const parents = new Set(nodes.map((n) => n.parent));
       const parent = parents.size === 1 ? nodes[0]!.parent : null;
 
-      // The container takes the world envelope of its members' ink. The
-      // authored pose is only the fallback (an emptied group, a lost registry
-      // key); under identity the derived union is what the scene shows.
+      // Under identity the authored pose is only the fallback (an emptied
+      // group, a lost registry key); the derived union is what the scene shows.
       const d = poseDescriptorOf(deps.poseDescriptor);
-      const frame = scenePoseFrame(scene, deps.poseComposition);
+      const frame = scenePoseFrame(scene);
       const worlds = new Map<NodeId, unknown>();
       for (const node of nodes) worlds.set(node.id, frame.world(node.id));
       // Visual, not stored, bounds: a turned member's ink reaches outside its
@@ -83,21 +75,11 @@ export const groupAction: Action & { requires: string[] } = {
         ? nodes[0]!.pose
         : d.fromBounds(union, nodes[0]!.pose);
       const pose = frame.localUnder(parent, containerWorldPose);
-      // Under identity the container is an envelope that tracks its members;
-      // under a composing strategy it is a frame they are re-expressed in.
       const absolutePoses = frame.pc.closure === 'identity';
       const derive = scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren;
 
-      // Build ops mirroring the old direct mutations, in the same order the
-      // `scene.batch('Group', …)` body produced them:
-      //   1. insert the fresh container, under an id minted first so the
-      //      insert op carries a whole node;
-      //   2. reparent each selected id under the new container, in selection
-      //      order, capturing each node's PRE-mutation parent as `from`
-      //      (the op captures the sibling slot itself, on apply).
       // The container must exist before any child reparents into it, so the
-      // insert op is emitted first. A member's pose then follows its reparent,
-      // re-expressed in the container's frame so the member does not move.
+      // insert op is emitted first.
       const containerId = scene.mintId();
       const ops: Op[] = [
         createInsertOp<Node<unknown, string, unknown>>({
@@ -129,17 +111,9 @@ export const groupAction: Action & { requires: string[] } = {
         }));
       }
 
-      // Route the batch through the consumer `applyOps` hook when present (so
-      // an app with its own history captures the group as a single undo
-      // entry); otherwise commit straight to the scene's own history via
-      // `scene.applyBatch`. One applyOps / applyBatch call = one undo entry,
-      // matching the prior single `scene.batch('Group', …)`.
       if (applyOps) applyOps(ops, 'Group');
       else scene.applyBatch(ops, 'Group', defaultCommitAdapter(scene, selection.adapterMethods));
 
-      // Selection update is selection state, not a scene op — set it after the
-      // commit regardless of which path ran (the old code set it inside the
-      // batch; it was never an undoable scene mutation).
       selection.set([containerId]);
     },
   },
@@ -148,16 +122,11 @@ export const groupAction: Action & { requires: string[] } = {
 
 /**
  * @experimental
- * Static descriptor for the `ungroup` Action.
- *
- * "Group" here means a structural `ContainerNode`. `run` dissolves each
- * selected container by reparenting its children up to the container's own
- * parent (preserving z-order) and removing the now-empty container, as a single
- * undoable batch. Selected non-container nodes are ignored. The freed children
- * become the new selection.
- *
- * A child's pose is expressed in the container's frame, so each one is
- * re-expressed in the frame it lands in and nothing moves on screen.
+ * Dissolves each selected container by reparenting its children up to the
+ * container's own parent (preserving z-order) and removing the now-empty
+ * container, as a single undoable batch. Selected non-container nodes are
+ * ignored. The freed children become the new selection, and nothing moves on
+ * screen.
  */
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
@@ -166,7 +135,7 @@ export const ungroupAction: Action & { requires: string[] } = {
   group: 'structure',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'poseComposition'],
+  requires: ['scene', 'selection'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -180,7 +149,7 @@ export const ungroupAction: Action & { requires: string[] } = {
       const containers = ids.filter((id) => scene.get(id as NodeId)?.kind === 'container');
       if (containers.length === 0) return;
 
-      const frame = scenePoseFrame(scene, deps.poseComposition);
+      const frame = scenePoseFrame(scene);
       const absolutePoses = frame.pc.closure === 'identity';
 
       scene.batch('Ungroup', () => {

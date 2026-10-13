@@ -8,9 +8,9 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { Canvas } from './Canvas';
-import { WeaselRenderer } from '../renderer/WeaselRenderer';
-import { registerProgram } from '../renderer';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { WeaselRenderer } from '@weasel-js/renderer';
+import { registerProgram } from '@weasel-js/renderer';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();

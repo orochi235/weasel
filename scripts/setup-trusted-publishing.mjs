@@ -1,15 +1,9 @@
 // One-time (per package) setup for npm OIDC trusted publishing.
 //
-// npm revoked all classic tokens on 2025-12-09, and granular tokens now cap at a
-// 90-day lifetime — so any token-based release is a rotation treadmill that will
-// break again on a schedule. Trusted publishing stores no credential at all: the
-// release job mints a short-lived one from its `id-token: write` permission,
-// scoped to that single run.
-//
-// The catch is that npm holds trust config per package, with no org-wide switch,
-// so all thirteen workspaces have to be registered individually. `npm trust`
-// (npm >= 11.10.0) makes that scriptable instead of thirteen trips through the
-// website.
+// Trusted publishing stores no credential: the release job mints a short-lived
+// one from its `id-token: write` permission, scoped to that single run. npm
+// holds trust config per package, with no org-wide switch, so every workspace
+// has to be registered individually with `npm trust` (npm >= 11.10.0).
 //
 // Usage:
 //   node scripts/setup-trusted-publishing.mjs                     # every package
@@ -18,14 +12,12 @@
 //   node scripts/setup-trusted-publishing.mjs --dry-run           # print, don't call
 //   node scripts/setup-trusted-publishing.mjs --list kernel3d     # show current config
 //
-// Name packages when you are seeding one — a first publish needs exactly one
-// registration, and the full sweep is 20 more `npm trust` calls, each with its
-// own 2FA challenge and rate-limit pause. The scope is optional: `kernel3d` and
-// `@weasel-js/kernel3d` both work.
+// Name packages when you are seeding one — the full sweep is one `npm trust`
+// call per package, each with its own 2FA challenge and rate-limit pause.
 //
 // The first call prompts for 2FA. The npm web page shown during that prompt
 // offers "skip 2FA for the next 5 minutes" — enable it, and the rest run
-// unattended. The 2s pause between calls is npm's own rate-limit guidance.
+// unattended.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -42,12 +34,7 @@ function repoSlug() {
   return match[1];
 }
 
-/**
- * Whether this npm knows `--allow-publish`.
- *
- * The permission flags arrived with staged publishing, after `npm trust` itself
- * — npm 11.13.0 has the command but rejects the flag as unknown.
- */
+/** Whether this npm knows `--allow-publish`: npm 11.13.0 has `npm trust` but rejects the flag as unknown. */
 function supportsPermissionFlags() {
   try {
     const help = execFileSync('npm', ['trust', 'github', '--help'], { encoding: 'utf8' });
@@ -60,14 +47,11 @@ function supportsPermissionFlags() {
 /**
  * How to invoke npm, given the flags the local one supports.
  *
- * Omitting the permission flag is not a graceful degradation — the registry has
- * required a config to name at least one permitted action since 2026-05-20, and
+ * The registry requires a config to name at least one permitted action, and
  * rejects a request without one as a bare `400 Bad Request`, no body, from
- * inside npm's 2FA wrapper. It reads like an auth failure and is not one.
- *
- * So an npm too old to send permissions is not usable here at all, and we fetch
- * one that is rather than fail. This deliberately does not touch the globally
- * installed npm: this script is the only thing that needs the newer CLI.
+ * inside npm's 2FA wrapper. It reads like an auth failure and is not one. So an
+ * npm too old to send permissions is replaced by `npx npm@latest`, leaving the
+ * globally installed npm alone.
  */
 function npmCommand() {
   if (supportsPermissionFlags()) return { bin: 'npm', prefix: [], via: 'npm (local)' };
@@ -75,12 +59,9 @@ function npmCommand() {
 }
 
 /**
- * The packages named on the command line, or all of them when none are.
- *
- * A bare `kernel3d` resolves against the scoped names, so the caller does not
- * have to type `@weasel-js/` — but an unknown name stops the run rather than
- * being skipped. Silently configuring nothing looks identical to success, and
- * the thing this sets up is only noticed when a release fails weeks later.
+ * The packages named on the command line, or all of them when none are. A bare
+ * `kernel3d` resolves against the scoped names. An unknown name stops the run:
+ * silently configuring nothing looks identical to success.
  */
 function selectPackages(all, named) {
   if (named.length === 0) return all;
@@ -105,8 +86,7 @@ const args = new Set(argvIn);
 const dryRun = args.has('--dry-run');
 const listOnly = args.has('--list');
 // `--otp=123456` skips the interactive 2FA prompt. A code is good for ~30s, so
-// it will not carry all twelve packages on its own — its real use is retrying
-// the tail after the 5-minute skip window lapsed.
+// it will not carry a full sweep on its own.
 const otp = argvIn.find((a) => a.startsWith('--otp='));
 const all = publishablePackageNames();
 const packages = selectPackages(all, argvIn.filter((a) => !a.startsWith('--')));
@@ -150,17 +130,15 @@ for (const [i, pkg] of packages.entries()) {
 
   console.log(`→ ${pkg}`);
   try {
-    // Fully inherited stdio, deliberately. npm's 2FA challenge is interactive —
-    // capturing its output to prettify this loop swallows the prompt, and the
-    // run stalls looking like a hang. Legible progress is not worth that.
+    // Fully inherited stdio: npm's 2FA challenge is interactive, and capturing
+    // its output swallows the prompt, so the run stalls looking like a hang.
     execFileSync(npmCmd.bin, argv, { stdio: 'inherit' });
   } catch {
     failed += 1;
     console.error(`✗ ${pkg} failed (see npm output above)`);
   }
 
-  // Rate limiting, per npm's bulk-configuration guidance. Skipped after the last
-  // package so the script doesn't idle on the way out.
+  // Rate limiting, per npm's bulk-configuration guidance.
   if (i < packages.length - 1) {
     execFileSync(process.execPath, ['-e', 'setTimeout(()=>{},2000)']);
   }

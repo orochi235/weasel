@@ -1,17 +1,13 @@
 /**
- * Shared tsup configuration for the pure-TypeScript weasel packages
- * (Tier A leaves: geom, gestures, history, modes; Tier B: svg, d3, diagram, guides).
+ * Shared tsup configuration for the pure-TypeScript weasel packages.
  *
- * Packages that ship assets — theme (raw CSS), ui (41 CSS Modules), hud
- * (`?url` font imports) — deliberately do NOT use this. esbuild can't handle
- * Vite's `?url` suffix and treats CSS Modules awkwardly, so those build with
- * Vite library mode instead. The split runs along "ships assets / doesn't".
+ * Packages that ship assets — raw CSS, CSS Modules, `?url` font imports — do
+ * NOT use this: esbuild can't handle Vite's `?url` suffix and treats CSS
+ * Modules awkwardly, so those build with Vite library mode instead.
  *
  * Nothing here sets `noExternal`. Every `@weasel-js/*` dependency is declared
  * in the consuming package's `dependencies`, and tsup externalizes deps +
- * peerDeps by default for both the JS bundle and the .d.ts — which is the
- * whole point of the packaging change. See
- * docs/superpowers/specs/2026-07-26-subpackage-publishing-design.md.
+ * peerDeps by default for both the JS bundle and the .d.ts.
  */
 import type { Options } from 'tsup';
 
@@ -35,10 +31,8 @@ export function packagePreset({ entry, external = [] }: PackagePresetOptions): O
     treeshake: true,
     sourcemap: true,
     target: 'es2022',
-    // Shared modules collapse into one chunk rather than being duplicated per
-    // entry point. Core learned this the hard way: with splitting off, a
-    // module-level registry reachable from two entries becomes two distinct
-    // instances. Same hazard applies to any multi-entry package here.
+    // With splitting off, a module-level registry reachable from two entries
+    // becomes two distinct instances.
     splitting: true,
     external: [...ALWAYS_EXTERNAL, ...external],
   };

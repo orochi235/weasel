@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useAnimator, useScene, linear } from '@weasel-js/core';
-import type { Animator } from '@weasel-js/core';
+import { useScene, linear } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
+import type { Animator } from '@weasel-js/animator';
 import { d3Bind } from './bind';
 
 interface Datum {

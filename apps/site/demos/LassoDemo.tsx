@@ -27,7 +27,7 @@ const INITIAL = (() => {
         layer: 'default' as const,
         parent: null,
         pose: { x, y, width, height },
-        data: { path: rectPath(x, y, width, height), fill: solid(PALETTE[i % PALETTE.length]) },
+        data: { path: rectPath(x, y, width, height), fill: { paint: solid(PALETTE[i % PALETTE.length]) } },
       });
       i++;
     }

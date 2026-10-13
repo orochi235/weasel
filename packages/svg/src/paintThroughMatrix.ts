@@ -2,7 +2,7 @@
  * Take a paint or stroke that SVG states in user space through the matrix its
  * element's geometry was baked with, so the two stay registered.
  */
-import type { FillStyle } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
 import type { Matrix, SvgPaint, SvgStroke } from './types';
 import { applyMatrix } from './transform';
 import { scaleStroke } from './metricScale';
@@ -22,16 +22,17 @@ export function isNonUniform(m: Matrix): boolean {
     || Math.abs(Math.hypot(a, b) - Math.hypot(c, d)) > 1e-4 * n;
 }
 
-/** A `units: 'world'` gradient with its geometry mapped through `m`. A
- *  `'bounds'` one follows the box by itself and passes through. */
-export function fillThroughMatrix(fill: FillStyle, m: Matrix): FillStyle {
-  if (!('units' in fill) || fill.units !== 'world') return fill;
+/** A gradient placed in coordinates (`units: 'world'`, or `'local'` to its
+ *  node) with its geometry mapped through `m`. A `'bounds'` one follows the
+ *  box by itself and passes through. */
+export function fillThroughMatrix(fill: Paint, m: Matrix): Paint {
+  if (!('units' in fill) || (fill.units !== 'world' && fill.units !== 'local')) return fill;
   const at = (p: { x: number; y: number }): { x: number; y: number } => applyMatrix(m, p.x, p.y);
-  if (fill.fill === 'linear-gradient') return { ...fill, from: at(fill.from), to: at(fill.to) };
-  if (fill.fill === 'radial-gradient') {
+  if (fill.kind === 'linear-gradient') return { ...fill, from: at(fill.from), to: at(fill.to) };
+  if (fill.kind === 'radial-gradient') {
     return { ...fill, center: at(fill.center), radius: fill.radius * uniformScaleOf(m) };
   }
-  if (fill.fill === 'conic-gradient') return { ...fill, center: at(fill.center) };
+  if (fill.kind === 'conic-gradient') return { ...fill, center: at(fill.center) };
   return fill;
 }
 

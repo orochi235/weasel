@@ -1,23 +1,14 @@
 /**
- * `useBooleans` — selection-driven Boolean ops on path layers.
- *
- * Returns six imperative callables (`union` / `intersect` / `subtract` /
- * `exclude` / `divide` / `crop`). Each reads the current selection,
- * performs the op in world space, and dispatches a single batch through
- * the adapter's `applyOps` (one undo step).
- *
- * Adapter shape: see `BooleansAdapter` in `./booleans.ts`. Consumers
- * supply how to read selection, fetch the world-space `Path` for an id,
- * compare ids by stacking order, and mint a node from a result `Path`.
- *
- * No-ops are silent in production; in dev, `subtract` with < 2 selected
- * paths emits a `console.warn`.
+ * `useBooleans` — selection-driven Boolean ops on path layers. No-ops are
+ * silent in production; in dev, `subtract` with < 2 selected paths emits a
+ * `console.warn`.
  */
 import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { applyBooleanOp, type BooleansAdapter, type BooleanOp } from './booleans';
+import type { BooleanOpOptions } from './operands';
 
-/** The six Boolean path operations, each acting on the current selection and
+/** The Boolean path operations, each acting on the current selection and
  *  committing as one undo step. */
 export interface UseBooleansReturn {
   union(): void;
@@ -26,12 +17,14 @@ export interface UseBooleansReturn {
   exclude(): void;
   divide(): void;
   crop(): void;
+  trim(): void;
+  merge(): void;
 }
 
 /** Options for `useBooleans`. */
-export interface UseBooleansOptions {
-  /** No-op. Retained for source-compatibility; auto-registration is now
-   *  handled by `useStandardActions` via the Pathfinder descriptors. */
+export interface UseBooleansOptions extends BooleanOpOptions {
+  /** No-op. Retained for source-compatibility; `useStandardActions`
+   *  registers the actions. */
   enableActions?: boolean;
 }
 
@@ -42,16 +35,17 @@ const isDev = typeof import.meta !== 'undefined'
  *  selection, fetch world-space paths and mint result nodes. */
 export function useBooleans(
   adapter: BooleansAdapter,
-  _options: UseBooleansOptions = {},
+  options: UseBooleansOptions = {},
 ): UseBooleansReturn {
   const adapterRef = useLatest(adapter);
+  const optionsRef = useLatest(options);
 
   const run = useCallback((op: BooleanOp) => {
-    const result = applyBooleanOp(adapterRef.current, op);
+    const result = applyBooleanOp(adapterRef.current, op, optionsRef.current);
     if (isDev && result.kind === 'noop' && result.reason === 'too-few-for-subtract') {
       console.warn('[useBooleans] subtract requires at least 2 selected paths');
     }
-  }, [adapterRef]);
+  }, [adapterRef, optionsRef]);
 
   return {
     union: useCallback(() => run('union'), [run]),
@@ -60,5 +54,7 @@ export function useBooleans(
     exclude: useCallback(() => run('exclude'), [run]),
     divide: useCallback(() => run('divide'), [run]),
     crop: useCallback(() => run('crop'), [run]),
+    trim: useCallback(() => run('trim'), [run]),
+    merge: useCallback(() => run('merge'), [run]),
   };
 }

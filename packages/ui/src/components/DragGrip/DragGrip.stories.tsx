@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { DragGrip } from './DragGrip';
 
 const meta: Meta<typeof DragGrip> = {
-  title: 'weasel-ui/DragGrip',
+  title: 'ui/DragGrip',
   component: DragGrip,
 };
 export default meta;

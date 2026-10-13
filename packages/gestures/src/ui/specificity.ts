@@ -25,9 +25,7 @@ function modsCount(mods: ModSpec | undefined): number {
  *    0 — no target
  *
  * A predicate stays at 1 because its narrowness is unknowable statically —
- * `hit == null` and `isRotateHandle` are the same shape here. That is also
- * what keeps this addition from reordering any binding that existed before
- * the `kind:`/`affordance:` forms resolved: every one of them ranks 0 or 1.
+ * `hit == null` and `isRotateHandle` are the same shape here.
  */
 function targetRank(target: TargetSpec | undefined): number {
   if (target === undefined) return 0;
@@ -67,13 +65,6 @@ function specTargetOf(spec: GestureSpec): TargetSpec | undefined {
  *
  * An atom list is a union (`matchPhase` returns true when ANY atom matches),
  * so the list is as broad as its broadest atom and takes the **minimum**.
- *
- * Compat: every phase-bearing spec in the tree keeps its score or rises, and
- * none reorders. The four ambient actions (`escape`, `delete`,
- * `anchorEditing`, `cancelGesture`) all declare `{ channel: '*', phase:
- * <concrete> }` and stay at 1; the polygon and star tools' `phase: 'engaged'`
- * wheel bindings desugar to a concrete `&` atom and rise 1 → 2, which only
- * widens a gap they already won. Nothing in the tree declares `*:*`.
  */
 function phaseRank(spec: PhaseSpec | undefined): number {
   if (spec === undefined) return 0;
@@ -100,7 +91,7 @@ function phaseRank(spec: PhaseSpec | undefined): number {
  *                 non-empty `types` MIME filter, else 1.
  *
  *  Identical tuples fall back to registration order in the matcher's
- *  stable sort, preserving the pre-specificity tiebreaker. */
+ *  stable sort. */
 export function specificity(
   spec: GestureSpec,
 ): readonly [number, number, number, number] {
@@ -108,9 +99,8 @@ export function specificity(
   const mods = ('mods' in spec ? spec.mods : undefined) as ModSpec | undefined;
   const m = modsCount(mods);
   const p = phaseRank(('phase' in spec ? spec.phase : undefined) as PhaseSpec | undefined);
-  // Per-kind tiebreak: a MIME-typed drop/paste spec beats an untyped one
-  // in the same scope (a consumer's `types: ['text/csv']` binding should
-  // win over the kit's catch-all ingest binding).
+  // A consumer's `types: ['text/csv']` binding should win over the kit's
+  // catch-all ingest binding.
   const typed =
     (spec.kind === 'drop' || spec.kind === 'paste') &&
     spec.types !== undefined && spec.types.length > 0

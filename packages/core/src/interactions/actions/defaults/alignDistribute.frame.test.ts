@@ -8,7 +8,6 @@
 import { describe, it, expect } from 'vitest';
 import { alignLeftAction } from './align';
 import { distributeHorizontalAction } from './distribute';
-import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import {
   makeFrameFixture,
   expectSamePose,
@@ -47,7 +46,7 @@ function selectionOf(ids: NodeId[]) {
 
 function run(action: typeof alignLeftAction, scene: Scene<unknown, string, unknown>, ids: NodeId[]) {
   (action.invoker as ImmediateInvoker).run(
-    { selection: selectionOf(ids), scene, poseComposition: RIGID_POSE_COMPOSITION } as never,
+    { selection: selectionOf(ids), scene } as never,
   );
 }
 

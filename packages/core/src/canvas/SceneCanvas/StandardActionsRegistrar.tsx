@@ -30,7 +30,6 @@ import {
   useLassoSelectDepSource,
   useLayoutDepSource,
   useNodeAtPointDepSource,
-  usePoseCompositionDepSource,
   usePoseDescriptorDepSource,
   useSliceDepSource,
   useSnapDepSource,
@@ -77,7 +76,6 @@ export function StandardActionsRegistrar({
   viewAnimation,
   editAnchorsExternalState,
   anchorEditingAllowed,
-  poseComposition,
   layouts,
   layoutDropTarget,
   reflowTransition,
@@ -94,7 +92,6 @@ export function StandardActionsRegistrar({
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
   adapter: BridgeAdapter;
-  actionDefaults?: SceneCanvasProps<unknown, string, unknown>['actionDefaults'];
   actions?: ActionsProp;
   /** Kit-standard action ids this canvas's presets and tools leave out. */
   excludeActions: readonly string[];
@@ -156,9 +153,6 @@ export function StandardActionsRegistrar({
   layouts?: SceneCanvasProps<unknown, string, unknown>['layouts'];
   layoutDropTarget?: LayoutDropTargetMode;
   reflowTransition?: ReflowTransition<unknown> | null;
-  /** Forwarded from `SceneCanvasProps` so the marquee and lasso dep sources
-   *  test where a node is drawn rather than where its pose is stored. */
-  poseComposition?: SceneCanvasProps<unknown, string, unknown>['poseComposition'];
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
@@ -244,24 +238,23 @@ export function StandardActionsRegistrar({
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  useAreaSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
+  useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, layouts, layoutDropTarget, reflowTransition);
-  useLayoutArrivals(scene, { layouts, poseDescriptor, poseComposition });
+  useLayoutArrivals(scene, { layouts, poseDescriptor });
   useInsertDepSource(scene, adapter, insertNodeFactories, insertPaint);
-  useSliceDepSource(scene, selection, adapter, poseComposition, poseDescriptor);
+  useSliceDepSource(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
-  useLassoSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
+  useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, {
     anchorEditingAllowed,
   });
   useDispatcherDepSource(dispatcher);
   usePoseDescriptorDepSource(poseDescriptor);
-  usePoseCompositionDepSource(poseComposition);
 
   // Keyed on the exclusion too: a re-registration of the standard set would
   // otherwise land over the overrides applied on top of it.

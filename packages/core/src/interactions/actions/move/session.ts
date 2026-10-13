@@ -3,8 +3,8 @@ import { DRAG_THRESHOLD_PX, isAnchorOrControl, resolveParams } from '@weasel-js/
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
-import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
+import type { PoseComposition } from 'core/scene/composePose';
+import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { LayoutDep, NodeAtPointDep } from '../depSchema';
 import type { GeometryProjection } from '../geometryProjection';
@@ -80,11 +80,6 @@ export interface MoveGesture {
   frame(): MoveFrame;
 }
 
-export interface MoveReaders {
-  view: () => GestureContext<unknown>['view'];
-  plane: () => GestureContext<unknown>['plane'];
-}
-
 /** Capture a drag at press. Null when there is nothing to move. Runs each
  *  behavior's `onStart`. `frame` reads the drag's latest frame, for the
  *  behaviors appended to the binding's own. */
@@ -92,21 +87,16 @@ export function beginMove(
   ctx: InvocationCtx,
   opts: BindingOpts | undefined,
   frame: () => MoveFrame,
-): { session: MoveSession; readers: MoveReaders } | null {
+): { session: MoveSession; readers: GestureReaders } | null {
   const selection = ctx.deps.selection;
   const scene = ctx.deps.scene;
   const projection = poseDescriptorOf(ctx.deps.poseDescriptor);
   const layout = ctx.deps.layout;
   const applyOps = ctx.deps.applyOps;
   const geometryProjection = ctx.deps.geometryProjection;
-  // Pose-composition strategy: how the consumer's scene folds local poses
-  // up to world (and back). Absent → IDENTITY (absolute-pose: nodes store
-  // world coords, parents are grouping-only). Local-pose consumers supply
-  // { compose: composeRectPose, decompose: decomposeRectPose }.
-  const pc = ctx.deps.poseComposition
-    ?? IDENTITY_POSE_COMPOSITION;
 
   if (!selection || !scene) return null;
+  const pc = scene.composition;
   // Anchors sit on the selected body, and this binding ties editAnchors' on
   // specificity; with no mode registry to filter move out, declining is what lets it through.
   if (isAnchorOrControl(ctx.drag?.affordance)) return null;
@@ -119,7 +109,7 @@ export function beginMove(
 
   const reflow = layout?.reflow ?? null;
   const { startPoses, cascadeIds, caught } = captureStartPoses(scene, ids, reflow, projection);
-  const { carried, frames } = captureFrames(scene, startPoses, pc);
+  const { carried, frames } = captureFrames(scene, ids, startPoses);
 
   // Everything a move does beyond translating is a behavior: the binding's
   // own, then the layout drop, then reparent-on-drop. On release the first to
@@ -136,9 +126,9 @@ export function beginMove(
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
-    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops));
-  const readers: MoveReaders = { view: gestureViewReader(ctx.deps), plane: gesturePlaneReader(ctx.deps) };
-  const gestureCtx = buildGestureContext(ctx, ids, startPoses, adapter, readers);
+    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops), selection.adapterMethods);
+  const readers = gestureReaders(ctx.deps);
+  const gestureCtx = buildGestureContext(ctx, scene, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);
 
   const session: MoveSession = {

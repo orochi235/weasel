@@ -1,30 +1,18 @@
 /**
  * Pose composition for hierarchical scene graphs.
  *
- * As of the nesting change, `getPose(id)` on adapters returns the
- * **local** pose — relative to the object's direct parent. Anything in the
- * kit that needs to draw, hit-test, snap, or otherwise reason about world
- * coordinates routes through `composeWorldPose`, which walks the parent
- * chain and folds local poses together via a consumer-supplied `compose`.
- *
- * Pose shape is generic, so the compose strategy is too. For the common
- * `{x, y, width, height}` axis-aligned rect, use `composeRectPose` —
- * translation only, child dimensions preserved. Custom pose shapes (paths,
- * matrix transforms) supply their own.
- *
- * The inverse — `rebaseLocalPose` — converts a world-space pose into a
- * local pose under a target parent. Used when reparenting so the visual
- * world position of a child is preserved across the parent change.
+ * `getPose(id)` on adapters returns the **local** pose — relative to the
+ * object's direct parent. Anything in the kit that needs world coordinates
+ * routes through `composeWorldPose`, which folds local poses together via a
+ * consumer-supplied `compose`.
  */
 
-/** Re-exported; the declaration lives in `core/scene/types.ts`, which names
- *  it and may not import from features. */
 import type { RectPose } from 'core/scene/types';
 export type { RectPose };
 
-/** Re-exported from `core/scene/composeFrame.ts`, for the same reason. */
 import {
   IDENTITY_POSE_COMPOSITION,
+  composesFrames,
   composeWorldPose,
   frameAtOrAbove,
   rebaseLocalPose,
@@ -32,17 +20,12 @@ import {
   type PoseClosure,
   type PoseComposition,
 } from 'core/scene/composeFrame';
-export { IDENTITY_POSE_COMPOSITION, composeWorldPose, frameAtOrAbove, rebaseLocalPose };
+export { IDENTITY_POSE_COMPOSITION, composesFrames, composeWorldPose, frameAtOrAbove, rebaseLocalPose };
 export type { PoseAdapter, PoseClosure, PoseComposition };
 
 /**
- * Default `compose` for axis-aligned rectangles. Adds translation; preserves
- * child width/height. Treat as the canonical compose for any
- * `{x, y, width, height}` pose under a translation-only hierarchy.
- *
- * Generic over the concrete pose type so callers with a wider pose
- * (e.g. `RectPose & { rotation }`) can pass it through; the extra fields
- * are taken from the child unchanged.
+ * `compose` for axis-aligned rectangles under a translation-only hierarchy.
+ * Adds translation; every other field is taken from the child unchanged.
  */
 export function composeRectPose<TPose extends RectPose>(parent: TPose, child: TPose): TPose {
   return {
@@ -52,11 +35,7 @@ export function composeRectPose<TPose extends RectPose>(parent: TPose, child: TP
   };
 }
 
-/**
- * Translate a `RectPose`-shaped pose by `(dx, dy)`. Suitable as the default
- * `translatePose` for `useMove` when poses carry top-level `x`/`y`. Other
- * fields (width/height, plus any extra props on `TPose`) are preserved.
- */
+/** Translate a `RectPose`-shaped pose by `(dx, dy)`; other fields are preserved. */
 export function translateRectPose<TPose extends RectPose>(pose: TPose, dx: number, dy: number): TPose {
   return { ...pose, x: pose.x + dx, y: pose.y + dy };
 }
@@ -82,11 +61,9 @@ function turn(cx: number, cy: number, r: number, x: number, y: number): [number,
  * pose is offset into the parent's unrotated box, then the whole thing is
  * turned about the parent's center. Rotations add; the child keeps its size.
  *
- * Reduces to `composeRectPose` when the parent is upright, so a scene that
- * never rotates a container behaves identically under either strategy.
- *
- * Exact for translation and rotation. A parent carrying scale is outside what
- * this can express — see `PoseClosure`.
+ * Reduces to `composeRectPose` when the parent is upright. Exact for
+ * translation and rotation; a parent carrying scale is outside what this can
+ * express — see `PoseClosure`.
  */
 export function composeRigidPose<TPose extends RectPose>(parent: TPose, child: TPose): TPose {
   const pr = parent.rotation ?? 0;
@@ -141,10 +118,8 @@ export const RIGID_POSE_COMPOSITION: PoseComposition<RectPose> = {
 };
 
 /**
- * Build a `(id) => world pose | null` callback over a `PoseAdapter`.
- * Convenience for RenderLayers that take a `getPose` callback (selection
- * overlays, debug layers, etc.) so consumers don't hand-write a
- * `composeWorldPose` call per layer.
+ * Build a `(id) => world pose | null` callback over a `PoseAdapter`, for
+ * RenderLayers that take a `getPose` callback.
  *
  * Returns `null` when `adapter.getPose` or `adapter.getParent` throws — the
  * common case is an id removed mid-render between selection state and the

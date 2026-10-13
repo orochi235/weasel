@@ -1,5 +1,6 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { ClaimableGesture, View } from '@weasel-js/core';
+import type { ColorSource } from '@weasel-js/paint';
 import type { ResolvedTheme } from '@weasel-js/theme';
 
 /** A widget's rectangle, in screen-space CSS pixels relative to the canvas. */
@@ -22,16 +23,13 @@ export interface HudDrawCtx {
    *  caller rather than read back off the DOM, so a HUD drawn headlessly is
    *  themed the same way one drawn in a browser is. */
   tokens: ResolvedTheme;
-  /** The `i`th color of the theme's tone list, wrapping — what a widget's
-   *  numeric `tone` names. */
-  toneAt(i: number): string;
+  /** A color source as a hex, resolved against the theme, tone list, and
+   *  palette the hud was attached with; `undefined` for one nothing answers. */
+  color(source: ColorSource): string | undefined;
 }
 
-/**
- * Input to a widget's optional `content` painter — the one place hud sees
- * the scene. `HudDrawCtx` stays data-free so widgets stay renderable
- * headlessly; this is an explicit opt-in on the composite instead.
- */
+/** Input to a widget's optional `content` painter — the one place hud sees
+ *  the scene. */
 export interface HudContentCtx {
   /** Scene data the hud layer was handed. Opaque here; painters that need
    *  it cast to a known shape, as tools do with `ToolCtx.adapter`. */
@@ -46,7 +44,7 @@ export interface HudContentCtx {
   rect: WidgetBounds;
   defaultFont: string;
   tokens: ResolvedTheme;
-  toneAt(i: number): string;
+  color(source: ColorSource): string | undefined;
 }
 
 /**
@@ -172,7 +170,8 @@ export interface Widget {
   /** Which gestures this widget consumes. Absent means
    *  {@link DEFAULT_WIDGET_CLAIMS}; `[]` is decoration, and the hit-test walk
    *  descends past it to whatever lies beneath. Anything not listed falls
-   *  through to the scene. */
+   *  through to the scene. Read at every hit-test, so a getter may answer
+   *  differently from one press to the next. */
   readonly claims?: readonly ClaimableGesture[];
   /** CSS cursor for a point inside this widget, in screen space. Resolved per
    *  point rather than read off hover state, because the layer's `hitTest`

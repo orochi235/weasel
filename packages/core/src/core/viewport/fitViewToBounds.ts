@@ -1,9 +1,6 @@
 import type { View } from './view';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, normalizeZoom } from './zoomBounds';
 
-/** `Bounds` is declared in `@weasel-js/routing`, which is typed in it
- *  throughout — every area-select, resize and preview surface names one.
- *  Re-exported here, where core's call sites have always looked. */
 import type { Bounds } from '@weasel-js/routing';
 export type { Bounds };
 
@@ -17,15 +14,9 @@ export interface ViewportDims {
 export interface FitViewToBoundsOptions {
   /** Inset (in CSS px) around the bounds. Default 16. */
   padding?: number;
-  /**
-   * Override the kit's system max scale. Defaults to the kit-wide max zoom
-   * used by `computeWheelAction` (`DEFAULT_MAX_ZOOM`).
-   */
+  /** Defaults to the kit-wide max zoom (`DEFAULT_MAX_ZOOM`). */
   maxScale?: number;
-  /**
-   * Override the kit's system min scale. Defaults to the kit-wide min zoom
-   * used by `computeWheelAction` (`DEFAULT_MIN_ZOOM`).
-   */
+  /** Defaults to the kit-wide min zoom (`DEFAULT_MIN_ZOOM`). */
   minScale?: number;
   /**
    * Fit mode:
@@ -49,15 +40,8 @@ export interface FitViewToBoundsOptions {
  * uniform padding on all sides; the resulting scale is clamped to the
  * configured min/max.
  *
- * View semantics: `view.x` / `view.y` is the world point currently drawn at
- * the canvas top-left, and `view.scale.{x,y}` is pixels per world unit on
- * each axis (see `view.ts`). So:
- *   screenX = (worldX - view.x) * view.scale.x
- *   screenY = (worldY - view.y) * view.scale.y
- *
  * Empty / zero-sized bounds or viewports cannot be fit — in that case this
- * returns `currentView` unchanged and logs a `console.warn`. Callers that
- * want to no-op silently can detect zero area themselves before calling.
+ * returns `currentView` unchanged and logs a `console.warn`.
  */
 export function fitViewToBounds(
   bounds: Bounds,
@@ -105,9 +89,7 @@ export function fitViewToBounds(
   const scaleX = normalizeZoom(Math.min(maxScale, Math.max(minScale, rawX)));
   const scaleY = normalizeZoom(Math.min(maxScale, Math.max(minScale, rawY)));
 
-  // Center bounds in the viewport. With view-as-camera semantics:
-  //   screenCenter = (worldCenter - view.x) * scale
-  //   view.x = worldCenter - viewportCenter / scale
+  // screenCenter = (worldCenter - view.x) * scale, solved for view.x.
   const place = (start: number, size: number, avail: number, viewport: number, scale: number) =>
     opts.anchor === 'start' && size * scale > avail + 1e-9
       ? start - padding / scale

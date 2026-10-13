@@ -1,28 +1,16 @@
 /**
- * Tiger-SVG repro for the delete/undo z-order regression (TODO entry
- * cleared in the same change that fixed the bug at the op-batch layer).
+ * Delete-batch undo must restore paint order: open a multi-path SVG, select
+ * all, delete, undo, and compare the canvas before and after.
  *
- * Flow:
- *   1. Open WeaselDraw
- *   2. Inject a multi-path SVG via the "Open" file picker
- *   3. Screenshot the canvas (bufBefore)
- *   4. Cmd/Ctrl+A → Delete → Cmd/Ctrl+Z → Escape (deselect)
- *   5. Screenshot the canvas (bufAfter)
- *   6. Assert bufBefore ≈ bufAfter — if delete-batch undo restores paint
- *      order correctly, the two screenshots are pixel-identical (modulo
- *      tiny AA variance). If the regression returns, the topmost paths
- *      shuffle and the pixel diff is huge.
- *
- * Manual-run only; not wired into CI or prepublishOnly. Invoke via
+ * Manual-run only; not wired into CI. Invoke via
  *   npm run test:e2e:draw
  */
 import { test, expect } from '@playwright/test';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 
-/** Synthetic SVG with N overlapping rects in a deliberate z-stack. Distinct
- *  fills + offset positions mean any reshuffling of paint order produces a
- *  large pixel diff at the overlap regions. */
+/** N overlapping rects with distinct fills, so any reshuffling of paint order
+ *  produces a large pixel diff at the overlaps. */
 function makeStackedSvg(): string {
   const N = 24;
   const W = 600, H = 400;
@@ -97,13 +85,10 @@ test('multi-delete + undo preserves paint order', async ({ page }) => {
 
   const canvasHost = page.locator('.wd-canvas-host');
   const canvasEl = canvasHost.locator('canvas').first();
-  // Dev HUDs (DispatchTracePanel, CursorCoordsHud, ModeStatusIndicator,
-  // pick-every overlay) are positioned over the canvas and their contents
-  // change between dispatches — Playwright element screenshots are
-  // pixel-clips of the viewport so they get captured regardless of DOM
-  // nesting. Hide every non-canvas sibling inside `.wd-canvas-host`, and
-  // the dispatch trace which lives elsewhere but is positioned over the
-  // canvas via fixed/absolute coords.
+  // Dev HUDs sit over the canvas and change between dispatches, and a
+  // Playwright element screenshot is a pixel-clip of the viewport, so it
+  // captures them regardless of DOM nesting. Hide every non-canvas sibling
+  // inside `.wd-canvas-host`, and the dispatch trace, which lives elsewhere.
   await page.evaluate(() => {
     const host = document.querySelector('.wd-canvas-host');
     if (host) {
@@ -151,9 +136,6 @@ test('multi-delete + undo preserves paint order', async ({ page }) => {
 
   const bufAfter = await canvasEl.screenshot();
 
-  // Pixel diff via pixelmatch. Tight tolerance — the fixed code should
-  // round-trip perfectly; the regression shifts whole shapes around so
-  // even a loose ratio catches it.
   const before = PNG.sync.read(bufBefore);
   const after = PNG.sync.read(bufAfter);
   expect(after.width).toBe(before.width);

@@ -81,6 +81,7 @@ export type {
   PointerIdentity,
   PointerDownEvent,
   PointerMoveEvent,
+  HoverEvent,
   PointerUpEvent,
   PointerCancelEvent,
   ClickEvent,
@@ -92,12 +93,13 @@ export type {
   DropEvent,
   PasteEvent,
 } from './ui/inputEvent';
+export { stylusOf } from './ui/stylus';
 
 // GestureSpec union + sub-types + ModSpec + TargetSpec + PhaseSpec
 export type {
   GestureSpec,
   KeySpec, KeyHeldSpec, WheelSpec, PinchSpec, ClickSpec, DoubleClickSpec, DragSpec,
-  PointerDownSpec, LongPressSpec,
+  PointerDownSpec, HoverSpec, LongPressSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
   DropSpec, PasteSpec,
   ModSpec, TargetSpec, TargetPredicate, PhaseSpec,
@@ -105,13 +107,34 @@ export type {
 export { hitPredicate, bodyPredicate } from './ui/spec';
 
 // Pure matcher functions
-export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, mimeMatchesGlob, matchIngestTypes, parseTargetSpec } from './ui/match';
+export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, parseTargetSpec } from './ui/match';
+export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
 export { isApplePlatform } from './ui/platform';
+export { fixedSeat, nearestPortalHost } from './ui/fixedSeat';
+export type { FixedSeat } from './ui/fixedSeat';
 
 // Binding precedence
 export { specificity } from './ui/specificity';
 
 // Click-vs-drag travel
 export { DRAG_THRESHOLD_PX, pastDragThreshold } from './ui/dragThreshold';
+export {
+  DOUBLE_CLICK_MAX_MS, DOUBLE_CLICK_MAX_PX, LONG_PRESS_MS, TAP_THRESHOLD_PX,
+} from './recognizer/thresholds';
+
+// ─── recognizer ───────────────────────────────────────────────────────────
+
+// Pointer samples in, InputEvents out. No DOM: the host supplies the clock.
+export { createPointerRecognizer } from './recognizer/pointerRecognizer';
+export type {
+  PointerRecognizer, PointerRecognizerOptions, RecognizerObserver, RecognizerSink,
+} from './recognizer/pointerRecognizer';
+export type { PointerSample, PressSample } from './recognizer/samples';
+export type { HeldPress, RecognizerClock } from './recognizer/longPressHold';
+export type { ClickMemory, ClickObserver, ReleaseOutcome } from './recognizer/click';
+export { multiTouchGeometry } from './recognizer/multiTouch';
+export { clickEvents, longPressEvents } from './recognizer/pressFacts';
+export type { PressFacts, ReleaseFacts } from './recognizer/pressFacts';
 export { CONTROL_SELECTOR, isInControlWithin } from './ui/controlTarget';
+export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from './ui/keyOwner';

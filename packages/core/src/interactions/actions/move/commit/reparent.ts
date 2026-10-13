@@ -7,7 +7,7 @@ import { planeToPlane } from 'core/viewport/parallax';
 import { rebaseLocalPose } from 'core/scene/composePose';
 import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import { carryPose, planeOf } from '../../planeInput';
-import { draggedWorldPose } from '../delta';
+import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession, ReparentOnDrop } from '../session';
 import { translateOps } from '../translate';
 
@@ -75,7 +75,7 @@ export function reparentOps(
     const crossing = node.layer !== target.newLayer;
     const world = carryPose(
       session.descriptorOf(id),
-      draggedWorldPose(session, adapter, id, delta),
+      draggedWorldPose(session, grabbedPoseAdapter(session, adapter), id, delta),
       crossing ? planeToPlane(planeOf(view, node.layer), planeOf(view, target.newLayer)) : null,
     );
     const to = rebaseLocalPose(adapter, world, target.newParent as string | null, pc.compose, pc.decompose);

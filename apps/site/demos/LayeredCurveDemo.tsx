@@ -8,20 +8,11 @@ import {
 } from '@weasel-js/ui';
 
 /**
- * Demo for the `LayeredCurveEditor`.
- *
- * Reconstructs the rim → contour curve from a beveled solid of
- * revolution. Two function layers share a 1D plot whose x axis spans
- * 0..halfWidth (half the object's width):
- *
- *   • bevel  (goldenrod, filled under the curve) covers x ∈ [0, b]
- *   • spline (purple, plain catmull-rom)        covers x ∈ [b, half]
- *
- * b is the bevel width — the seam between the two layers. The two
- * curves are held C0 continuous: the bevel's last anchor and the
- * spline's first anchor share their y, kept in sync inside the
- * consumer's `onLayerChange`. A third draggable handle layer lets the
- * user adjust b live; the toolbar slider sets its initial value.
+ * The rim → contour curve of a beveled solid of revolution, as two function
+ * layers on one plot: the bevel covers x ∈ [0, b] and the spline x ∈ [b, half].
+ * The curves are held C0 continuous at the seam b — the bevel's last anchor and
+ * the spline's first share their y, kept in sync in `onLayerChange`. A third
+ * layer is the draggable handle for b.
  */
 
 const HALF_WIDTH = 1.0;

@@ -10,9 +10,9 @@ import { planPixelRender } from './renderSceneToPixels';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type DerivedDep, type Node, type NodeId, type RectPose } from 'core/scene/types';
 import { type Path, linePath } from '@weasel-js/geom';
-import type { FillStyle } from '@weasel-js/paint';
+import type { Paint, Fill } from '@weasel-js/paint';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 /** No node in these fixtures uses `dependsOn: 'children'`. */
 const NO_CHILDREN = (): readonly NodeId[] => [];
@@ -39,7 +39,7 @@ const dep = (p: RectPose | undefined): DerivedDep<RectPose> | undefined => {
 };
 
 type Data = { label?: string };
-type GradientData = { fill: FillStyle };
+type GradientData = { fill: Fill };
 
 function makeNode(derivePath: DerivePath): Node<Data, 'main', RectPose> {
   return {
@@ -97,6 +97,10 @@ function pathCommands(cmds: readonly DrawCommand[]): { kind: 'path'; path: Path 
   return out;
 }
 
+/** The poses of the dependencies `derivePath` was last handed. */
+const handedPoses = (derivePath: { mock: { calls: unknown[][] } }): unknown[] =>
+  (derivePath.mock.calls.at(-1)![1] as ({ pose: unknown } | undefined)[]).map((d) => d?.pose);
+
 describe('resolveDerivedPath', () => {
   it('returns null for a node that derives from nothing', () => {
     const plain: Node<Data, 'main', RectPose> = {
@@ -110,7 +114,7 @@ describe('resolveDerivedPath', () => {
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)], [asNodeId('b'), pose(100)]]);
     resolveDerivedPath(node, (id) => dep(poses.get(id)), NO_CHILDREN);
-    expect(derivePath).toHaveBeenCalledWith(node, [dep(pose(0)), dep(pose(100))]);
+    expect(handedPoses(derivePath)).toEqual([pose(0), pose(100)]);
   });
 
   it('passes undefined for a dependency that no longer resolves', () => {
@@ -118,7 +122,7 @@ describe('resolveDerivedPath', () => {
     const node = makeNode(derivePath);
     const poses = new Map([[asNodeId('a'), pose(0)]]);
     resolveDerivedPath(node, (id) => dep(poses.get(id)), NO_CHILDREN);
-    expect(derivePath).toHaveBeenCalledWith(node, [dep(pose(0)), undefined]);
+    expect(handedPoses(derivePath)).toEqual([pose(0), undefined]);
   });
 
   it('memoizes — a second call with unchanged poses does not re-derivePath', () => {
@@ -292,20 +296,20 @@ describe('kit:derived painter', () => {
       id: asNodeId('edge-grad'), kind: 'leaf', layer: 'main', parent: null,
       pose: { x: 0, y: 0, width: 0, height: 0 },
       data: {
-        fill: {
-          fill: 'linear-gradient',
+        fill: { paint: {
+          kind: 'linear-gradient',
           from: { x: 0, y: 0 },
           to: { x: 1, y: 0 },
           stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
           units: 'bounds',
-        },
+        } },
       },
       dependsOn: [asNodeId('a'), asNodeId('b')],
       derivePath: () => null,
     };
     const path = linePath({ x: 20, y: 0 }, { x: 120, y: 0 });
     const cmds = defaultDrawOne(node, node.pose, VIEW, { derivedPath: path });
-    const fill = (cmds[0] as { fill: Extract<FillStyle, { fill: 'linear-gradient' }> }).fill;
+    const fill = (cmds[0] as { fill: { paint: Extract<Paint, { kind: 'linear-gradient' }> } }).fill.paint;
     expect(fill.from).toEqual({ x: 20, y: 0 });
     expect(fill.to).toEqual({ x: 120, y: 0 });
   });

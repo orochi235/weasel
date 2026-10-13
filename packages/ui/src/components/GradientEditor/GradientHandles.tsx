@@ -1,7 +1,8 @@
 import { type ReactElement, type ReactNode } from 'react';
-import { gradientGeometry, type GradientFill } from '@weasel-js/core';
+import { gradientGeometry, type GradientPaint } from '@weasel-js/core';
 import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
 import s from './handleOverlay.module.css';
+import { handleHalf } from '../../handles';
 
 /**
  * Props for {@link GradientHandles}. `onInput` fires throughout a drag and
@@ -19,7 +20,7 @@ export interface GradientHandlesProps {
    * `fillInPoseFrame(fill, box)` and convert edits back with
    * `fillToBoundsFrame(next, box)`.
    */
-  value: GradientFill;
+  value: GradientPaint;
   /**
    * Gradient space → overlay pixels. For a `units: 'local'` gradient this
    * is the node's local-to-screen transform; for `'world'`, the view.
@@ -28,9 +29,9 @@ export interface GradientHandlesProps {
   /** Overlay pixels → gradient space. Must invert `toScreen`. */
   toLocal: (p: Point) => Point;
   /** Live during a drag — wire for preview, do not write to history. */
-  onInput?: (next: GradientFill) => void;
+  onInput?: (next: GradientPaint) => void;
   /** Committed at drag end: one call per gesture. */
-  onChange: (next: GradientFill) => void;
+  onChange: (next: GradientPaint) => void;
   /** A drag was abandoned (the pointer was canceled). Its last `onInput` put
    *  the value back where the drag began; an owner that opened an edit on
    *  `onInput` ends it here without keeping it. */
@@ -46,9 +47,9 @@ export interface GradientHandlesProps {
  * overlay above a canvas: endpoints for linear, center and radius for
  * radial, center and angle arm for conic.
  *
- * Positioning is entirely the consumer's `toScreen` / `toLocal` — this
- * component never sees a view or a scene node, so the same handles serve a
- * node-local gradient, a world-space one, and a plain unzoomed preview.
+ * Positioning is entirely the consumer's `toScreen` / `toLocal`, so the same
+ * handles serve a node-local gradient, a world-space one, and a plain
+ * unzoomed preview.
  *
  * The overlay ignores pointer events except on the handles themselves, so
  * it can sit over live canvas content without swallowing tool input.
@@ -64,18 +65,18 @@ export function GradientHandles(props: GradientHandlesProps): ReactElement {
 }
 
 function renderForKind(
-  value: GradientFill,
+  value: GradientPaint,
   toScreen: (p: Point) => Point,
   toLocal: (p: Point) => Point,
-  onInput: ((next: GradientFill) => void) | undefined,
-  onChange: (next: GradientFill) => void,
+  onInput: ((next: GradientPaint) => void) | undefined,
+  onChange: (next: GradientPaint) => void,
 ): ReactNode {
-  const emit = (next: GradientFill, phase: EditPhase): void => {
+  const emit = (next: GradientPaint, phase: EditPhase): void => {
     if (phase === 'input') onInput?.(next);
     else onChange(next);
   };
 
-  if (value.fill === 'linear-gradient') {
+  if (value.kind === 'linear-gradient') {
     const from = toScreen(value.from);
     const to = toScreen(value.to);
     return (
@@ -97,7 +98,7 @@ function renderForKind(
     );
   }
 
-  if (value.fill === 'radial-gradient') {
+  if (value.kind === 'radial-gradient') {
     const center = toScreen(value.center);
     // The radius handle rides the +x axis of gradient space, so it stays on
     // the drawn circle under a rotated or anisotropic transform.
@@ -158,4 +159,4 @@ function renderForKind(
 /** A radius of zero divides by zero in the shader's `t`; keep it off the floor. */
 const MIN_RADIUS = 1;
 
-const HANDLE_RADIUS = 7;
+const HANDLE_RADIUS = handleHalf('--wzl-handle-size-lg');

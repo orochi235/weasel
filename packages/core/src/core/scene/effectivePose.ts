@@ -3,11 +3,10 @@
  *
  * Three answers, in order: the ephemeral override a gesture published, the
  * pose the node derives from its dependencies, or the pose the document
- * stores. Reading `node.pose` directly is how the render and hit-test paths
- * came to disagree about where a node is, and a derived pose widens that gap
- * from "mid-drag" to "always".
+ * stores. A reader of `node.pose` disagrees with the render about where a
+ * dragged or derived node is.
  */
-import { recordDeps, sameDeps, type DepRecord } from './depMemo';
+import { deriveRecorded, emptyDepRecord, sameDeps, type DepRecord } from './depMemo';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
@@ -101,14 +100,13 @@ function derivedPoseIn<TPose>(
   const hitsBefore = cycleHits;
   try {
     const depOf = (id: NodeId) => depIn(source, id, reading);
-    // Keyed on the authored pose, which is what `dropPoseKeyedMemoSlots`
-    // clears. That key only sees a change someone pushed, so the record also
-    // carries what the derivation read and re-checks it by value on a hit —
-    // see `depMemo.ts`.
+    // Keyed on the authored pose, which only sees a change someone pushed, so
+    // the record also carries what the derivation read and re-checks it by
+    // value on a hit — see `depMemo.ts`.
     let computed = false;
     const record = nodeMemo<PoseMemo<TPose>>(node, POSE_SLOT[reading], node.pose, () => {
       computed = true;
-      return run(node, derive, ids.map(depOf), { nodes: [], poses: [], value: null });
+      return run(node, derive, ids.map(depOf), { ...emptyDepRecord<TPose>(), value: null });
     });
     // Mutating the record in place is what updates the memo slot, which holds
     // this object.
@@ -129,8 +127,7 @@ function run<TPose>(
   deps: readonly (DerivedDep<TPose> | undefined)[],
   into: PoseMemo<TPose>,
 ): PoseMemo<TPose> {
-  into.value = derive(node as never, deps);
-  recordDeps(into, deps);
+  into.value = deriveRecorded(into, deps, (handed) => derive(node as never, handed));
   return into;
 }
 
@@ -207,11 +204,8 @@ function poseIn<TPose>(
  * dependency chain — a derived node's document pose holds still while
  * something it derives from is being dragged.
  *
- * For a reader that must not see an in-flight gesture — an action capturing
- * the `from` of a transform op, a placement computed against a sibling, the
- * minimap's framing. A derived pose belongs here and an override does not:
- * derivation is what the document means, an override is what one gesture is
- * currently showing.
+ * For a reader that must not see an in-flight gesture, such as an action
+ * capturing the `from` of a transform op.
  */
 export function documentPose<TPose>(
   source: PoseSource<TPose>,
@@ -221,10 +215,8 @@ export function documentPose<TPose>(
 }
 
 /**
- * The pose to draw, pick and measure `node` at.
- *
- * The one rule. Every pose a reader acts on comes from here: the three render
- * walks, the pick walk, the adapters tools and actions commit through.
+ * The pose to draw, pick and measure `node` at. Every pose a reader acts on
+ * comes from here.
  */
 export function effectivePose<TPose>(
   source: PoseSource<TPose>,

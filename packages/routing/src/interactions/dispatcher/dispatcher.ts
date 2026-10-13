@@ -1,11 +1,6 @@
 /**
  * Dispatcher orchestrator — pure module, no React, no DOM.
  *
- * Assembles `ScopedBinding[]` from the actions registry, active tool, and
- * hotkey stack; matches input events via `matchSorted`; gates each candidate
- * on `enabled()`; then invokes `immediate` or `ongoing` invokers and tracks
- * in-flight handles.
- *
  * ## Precedence and fall-through
  * An exclusive affordance claim first bars every binding that does not
  * consult the affordance. The rest are ranked, best first, by:
@@ -20,31 +15,23 @@
  * Candidates whose `eligible` rule is false are dropped first. The dispatcher
  * walks the rest and fires the first action whose `enabled()` returns
  * `true`. If every candidate's `enabled()` returns a disabled reason, the
- * event is unhandled. This mirrors CSS-style specificity matching with a
- * `:not(:disabled)` filter, and lets a tool declare a high-specificity
- * binding (e.g. drag-on-empty → areaSelect) that gracefully falls through
- * to a lower-specificity ambient binding (e.g. drag → viewport.dragPan)
- * when its required deps aren't wired.
+ * event is unhandled.
  *
  * ## gestureId scheme
  * - `key-held` ongoing actions: `key-held-<code>` (`key-held-Space`), so two
  *   keys that share a `key`, such as the two Shifts, hold separately. An event
  *   with no code keys by `key`.
- *   Chosen because key-held gestures are identified by the held key alone.
  * - `pointerdown` / drag ongoing actions: `pointer-<pointerId>`, taken from
- *   the originating DOM `PointerEvent`. Each physical pointer — mouse, each
- *   touch, the stylus — gets its own handle slot. Events with no
- *   `pointerId` (synthesized probes, programmatic drags, most tests) key to
- *   `pointer-mouse`, so a single synthetic pointer behaves as it always has.
+ *   the originating DOM `PointerEvent`. Events with no `pointerId`
+ *   (synthesized probes, programmatic drags, most tests) key to
+ *   `pointer-mouse`.
  * - `multitouch` ongoing actions: `multitouch-<fingers>`.
  * - Fallback for any other kind that triggers an ongoing invoker: `ongoing-<kind>`.
  *
  * ## Action-lookup miss behavior
  * When the walk reaches a binding whose `actionId` has no entry in
  * `ctx.actions.list()`, the dispatcher emits `console.warn` and returns
- * `'unhandled'`. The user's input gesture falls through as if unmatched.
- * This preserves input flow (nothing is swallowed silently) while flagging
- * the misconfiguration at dev time.
+ * `'unhandled'`, so the gesture falls through as if unmatched.
  */
 
 
@@ -58,9 +45,10 @@ import type { InputEvent, BindingScope, MatchResult, ScopedBinding } from './mat
 import { matchSortedWithBarred, specificity } from './matcher';
 import type { DispatchRecord, WalkStep } from './dispatchRecord';
 import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
+import { stylusOf } from '@weasel-js/gestures';
 import { buildDispatchRecord } from './buildDispatchRecord';
 import { DEV, recordTrace } from './dispatchTrace';
-import { modifiersOf, worldPointOf } from './inputFacts';
+import { carriedBy, immediateParams, worldPointOf } from './inputFacts';
 import {
   describeEligible, isEligible, liveInView, preferContextual, preferViewScoped, ruleCtxOf,
   type Ranking, type Walked,
@@ -76,13 +64,9 @@ export type { ModeSwitchLogEntry, TraceLogEntry } from './dispatchTrace';
 export { filterEligible, preferContextual } from './ranking';
 
 /**
- * The in-flight handle slot a pointer's gestures key into.
- *
- * Exported because the React seam (`useGestureDispatcher`) has to name the
- * same slot when it asks `dispatcher.inFlight()` whether a given pointer is
- * mid-drag. That used to be the string literal `'pointer-mouse'` on both
- * sides, which was correct only because `gestureIdFor` ignored the pointer id
- * entirely — the two lies cancelled out.
+ * The in-flight handle slot a pointer's gestures key into. Exported because
+ * the React seam (`useGestureDispatcher`) has to name the same slot when it
+ * asks `dispatcher.inFlight()` whether a given pointer is mid-drag.
  *
  * @param pointerId - `PointerEvent.pointerId`, or `undefined` for a
  *   synthesized event with no originating DOM pointer.
@@ -91,9 +75,10 @@ export function pointerGestureId(pointerId: number | undefined): string {
   return `pointer-${pointerId ?? 'mouse'}`;
 }
 
-// ---------------------------------------------------------------------------
-// createDispatcher
-// ---------------------------------------------------------------------------
+/** The in-flight handle slot a multitouch gesture of `fingers` fingers keys into. */
+export function multiTouchGestureId(fingers: number): string {
+  return `multitouch-${fingers}`;
+}
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
 
@@ -113,20 +98,12 @@ export function createDispatcher(opts?: {
    *  here WOULD be. See `Action.activeCursor`. */
   const inFlightActions = new Map<string, Action>();
 
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
-
   /**
-   * Per-gesture drag origin, keyed by gestureId.
-   * Set when an ongoing drag handle is opened; used to compute deltas for
-   * `pointermove` pump events.
-   *
-   * Stores both world (`x`/`y`) and client/screen (`clientX`/`clientY`)
-   * coordinates so we can produce both `drag.delta` (world) and
-   * `drag.screenDelta` (client). View-mutating drag actions (pan, etc.)
-   * must consume `screenDelta` — world deltas are self-referential when
-   * the action itself shifts the view.
+   * Per-gesture drag origin, keyed by gestureId, in both world (`x`/`y`) and
+   * client/screen (`clientX`/`clientY`) coordinates so we can produce both
+   * `drag.delta` (world) and `drag.screenDelta` (client). View-mutating drag
+   * actions (pan, etc.) must consume `screenDelta` — world deltas are
+   * self-referential when the action itself shifts the view.
    */
   const dragOrigins = new Map<string, { x: number; y: number; clientX?: number; clientY?: number }>();
 
@@ -144,20 +121,12 @@ export function createDispatcher(opts?: {
 
   /**
    * Per-gesture pointermove history (world-space points), keyed by gestureId.
-   * Accumulated on every `pointermove` pump event. Passed as
-   * `InvocationCtx.drag.points` so invokers that need the full path
-   * (e.g. `lassoSelectAction`) can consume it.
-   *
-   * Samples carry the originating event's stylus fields (pressure / tilt)
-   * when present, so pressure-aware invokers — `insertAction`'s pencil
-   * kind — get per-sample data without their own pointer plumbing.
+   * Passed as `InvocationCtx.drag.points`. Samples carry the originating
+   * event's stylus fields (pressure / tilt) when present.
    */
   const dragPoints = new Map<string, DragSample[]>();
 
-  /**
-   * Pinch-zoom start spread, keyed by multitouch gestureId.
-   * Captured when the multitouch ongoing handle first opens.
-   */
+  /** Pinch-zoom start spread, keyed by multitouch gestureId. */
   const pinchStartSpreads = new Map<string, number>();
 
   /** Monotonic counter for synthesizing unique gestureIds for UI-driven
@@ -206,8 +175,7 @@ export function createDispatcher(opts?: {
     };
 
     // The pointer in client pixels, where the event carries it. Not every kind
-    // does, which is why `ctx.screen` is optional — filling it from the world
-    // point instead is how it came to be screen-space in name only.
+    // does, which is why `ctx.screen` is optional.
     const clientPoint = (ev: InputEvent): Point2 | undefined => {
       const cx = (ev as { clientX?: number }).clientX;
       const cy = (ev as { clientY?: number }).clientY;
@@ -309,7 +277,7 @@ export function createDispatcher(opts?: {
       return pointerGestureId(event.pointerId);
     }
     if (event.kind === 'multitouch') {
-      return `multitouch-${event.fingers}`;
+      return multiTouchGestureId(event.fingers);
     }
     return `ongoing-${event.kind}`;
   }
@@ -362,10 +330,6 @@ export function createDispatcher(opts?: {
     return map;
   }
 
-  // -------------------------------------------------------------------------
-  // handleInput
-  // -------------------------------------------------------------------------
-
   function runOnEnd(
     gestureId: string,
     handle: OngoingHandle,
@@ -404,12 +368,9 @@ export function createDispatcher(opts?: {
       return endGesture(gestureId, event, 'commit') ? 'handled' : 'unhandled';
     }
 
-    // --- Pump: key-held DOWN re-dispatch for an already-engaged key is a
-    //     no-op. This is the dispatcher-side defense against autorepeat
-    //     keydowns (and any caller that re-dispatches) firing `start()`
-    //     again — each start pushes a offhand hotkey, only one keyup ever
-    //     fires onEnd, so the stack would leak. Treat as handled (we ARE
-    //     holding the key) without re-invoking. ---
+    // Pump: a key-held DOWN for an already-engaged key is a no-op. Autorepeat
+    // keydowns would otherwise fire `start()` again — each start pushes an
+    // offhand hotkey, only one keyup ever fires onEnd, so the stack would leak.
     if (event.kind === 'key-held' && event.phase === 'down') {
       const gestureId = gestureIdFor(event);
       if (inFlightHandles.has(gestureId)) {
@@ -428,13 +389,7 @@ export function createDispatcher(opts?: {
       // every vertex rather than the press point alone.
       const pts = dragPoints.get(gestureId);
       if (pts) {
-        pts.push({
-          x: event.x,
-          y: event.y,
-          ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
-          ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
-          ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
-        });
+        pts.push({ x: event.x, y: event.y, ...stylusOf(event) });
       }
       if (handle.onMove) {
         const moveCtx = buildInvocationCtx(event, {}, gestureId);
@@ -467,9 +422,6 @@ export function createDispatcher(opts?: {
     }
 
     // --- Pump: multitouch move → onMove on the in-flight multitouch handle ---
-    // When a multitouch event arrives with centroid/spread data AND a handle is
-    // already in flight, route it to the handle's onMove. When no handle is in
-    // flight, fall through to scope assembly so the event can start a new handle.
     if (event.kind === 'multitouch' && event.centroid !== undefined) {
       const gestureId = gestureIdFor(event);
       const handle = inFlightHandles.get(gestureId);
@@ -485,16 +437,28 @@ export function createDispatcher(opts?: {
       for (const id of [...inFlightHandles.keys()]) {
         if (id.startsWith('multitouch-') && id !== gestureId) endGesture(id, event, 'cancel');
       }
-      // No in-flight handle → fall through to scope assembly + match below.
-      // This allows the initial multitouch event (which carries centroid/spread)
-      // to start a new ongoing handle on first dispatch.
+      // No in-flight handle → fall through to scope assembly + match below,
+      // so the initial multitouch event can start one.
     }
+
+    if (event.kind === 'hover') return hover(event, ctx);
 
     const r = rank(event, ctx, DEV);
     const walked = walk(r, event, ctx, (match, action, deps) => invoke(event, match, action, deps), false);
     const outcome: 'handled' | 'unhandled' = walked.stop === 'fired' ? 'handled' : 'unhandled';
     if (DEV) recordTrace(buildDispatchRecord(r, walked, event, ctx, false, outcome));
     return outcome;
+  }
+
+  /** A hover claims nothing, so the walk goes on past each binding it fires.
+   *  Untraced: one arrives per mouse event. */
+  function hover(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
+    let fired = false;
+    walk(rank(event, ctx, false), event, ctx, (match, action, deps) => {
+      if (invoke(event, match, action, deps) === 'fired') fired = true;
+      return 'empty-handle';
+    }, false);
+    return fired ? 'handled' : 'unhandled';
   }
 
   /** Run the winning candidate. `'fired'` ends the walk; `'empty-handle'`
@@ -507,78 +471,7 @@ export function createDispatcher(opts?: {
   ): 'fired' | 'empty-handle' | 'misbound' {
     if (action.invoker?.timing === 'immediate') {
       try {
-        // For wheel / click / doubleclick bindings, merge event-time
-        // delta/position data into params so the immediate invoker
-        // sees both binding-declared params (e.g. `kind: 'wheel'`)
-        // and runtime event data. Option (a) from the design doc —
-        // simpler than extending InvocationCtx for immediate invokers.
-        const resolved = resolveParams(match.binding.opts?.params);
-        let params: Record<string, unknown> | undefined;
-        if (event.kind === 'wheel') {
-          params = {
-            deltaX: event.deltaX,
-            deltaY: event.deltaY,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            affordance: event.affordance,
-            ...resolved,
-          };
-        } else if (event.kind === 'pinch') {
-          params = {
-            scale: event.scale,
-            rotation: event.rotation,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            affordance: event.affordance,
-            ...resolved,
-          };
-        } else if (event.kind === 'click' || event.kind === 'doubleclick') {
-          params = {
-            worldX: event.x,
-            worldY: event.y,
-            affordance: event.affordance,
-            // Press point as well as release point — an action that places
-            // geometry at the click wants the former. See `ClickEvent`.
-            ...(event.kind === 'click'
-              ? { pressX: event.pressX, pressY: event.pressY }
-              : {}),
-            mods: modifiersOf(event),
-            ...resolved,
-          };
-        } else if (event.kind === 'contextmenu' || event.kind === 'longpress') {
-          params = {
-            worldX: event.x,
-            worldY: event.y,
-            affordance: event.affordance,
-            bodyTarget: event.bodyTarget,
-            mods: modifiersOf(event),
-            ...resolved,
-          };
-        } else if (event.kind === 'pointerdown') {
-          // Only `stage: 'press'` events reach an immediate invoker — the
-          // buffered copy matches `drag` specs, which are ongoing.
-          params = {
-            worldX: event.x,
-            worldY: event.y,
-            affordance: event.affordance,
-            bodyTarget: event.bodyTarget,
-            mods: modifiersOf(event),
-            ...resolved,
-          };
-        } else if (event.kind === 'drop' || event.kind === 'paste') {
-          // External-content events: forward the materialized items and,
-          // for drops, the world-space arrival point.
-          params = {
-            items: event.items,
-            via: event.kind,
-            ...(event.kind === 'drop' && event.x !== undefined
-              ? { worldX: event.x, worldY: event.y }
-              : {}),
-            ...resolved,
-          };
-        } else {
-          params = resolved;
-        }
+        const params = immediateParams(event, resolveParams(match.binding.opts?.params));
         action.invoker.run(deps, params);
       } catch (err) {
         console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
@@ -590,14 +483,12 @@ export function createDispatcher(opts?: {
       // A `pointerDown` binding fires at press time, on the same
       // `pointer-<id>` gesture id the drag will use. Letting an ongoing
       // action open its handle here would make the drag's own dispatch find
-      // a handle already in flight and silently no-op. `PointerDownSpec`
-      // documents itself as immediate-only; enforce it rather than let the
-      // collision happen quietly.
-      if (event.kind === 'pointerdown' && event.stage === 'press') {
+      // a handle already in flight and silently no-op.
+      if (event.kind === 'hover' || (event.kind === 'pointerdown' && event.stage === 'press')) {
+        const spec = event.kind === 'hover' ? 'hover spec, which has no press to own' : 'pointerDown spec, which fires at press time';
         console.error(
           `weasel dispatcher: action "${action.id}" has an ongoing invoker but is bound to a `
-          + `pointerDown spec, which fires at press time. Bind it to a drag spec, or give the `
-          + `action an immediate invoker.`,
+          + `${spec}. Bind it to a drag spec, or give the action an immediate invoker.`,
         );
         return 'misbound';
       }
@@ -611,13 +502,7 @@ export function createDispatcher(opts?: {
           ...(event.clientY !== undefined ? { clientY: event.clientY } : {}),
         });
         // Initialize empty drag-points history for the new gesture.
-        dragPoints.set(gestureId, [{
-          x: event.x ?? 0,
-          y: event.y ?? 0,
-          ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
-          ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
-          ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
-        }]);
+        dragPoints.set(gestureId, [{ x: event.x ?? 0, y: event.y ?? 0, ...stylusOf(event) }]);
       }
       // Record start spread for pinch-zoom gestures.
       if (event.kind === 'multitouch' && event.spread !== undefined) {
@@ -731,7 +616,7 @@ export function createDispatcher(opts?: {
       // winner's invoke reuses the same bag. Shared with
       // `ActionsRegistry.trigger`, including the dev undeclared-read guard.
       const deps = buildDepsFromRequires(action, ctx.depRegistry);
-      const enabled = action.enabled ? action.enabled(deps, worldPointOf(event)) : true;
+      const enabled = action.enabled ? action.enabled(deps, worldPointOf(event), carriedBy(event)) : true;
       if (enabled !== true) { push({ kind: 'declined', reason: String(enabled) }); continue; }
       if (stop !== 'exhausted') { push({ kind: 'outranked' }); continue; }
       if (!attempt) {
@@ -830,10 +715,6 @@ export function createDispatcher(opts?: {
     return buildDispatchRecord(r, walked, event, ctx, true, walked.winner ? 'handled' : 'unhandled');
   }
 
-  // -------------------------------------------------------------------------
-  // cancelAll
-  // -------------------------------------------------------------------------
-
   function cancelAll(reason: 'commit' | 'cancel'): void {
     const stubCtx: InvocationCtx = {
       world: { x: 0, y: 0 },
@@ -850,10 +731,6 @@ export function createDispatcher(opts?: {
     pinchStartSpreads.clear();
     for (const [gestureId, handle] of ending) runOnEnd(gestureId, handle, stubCtx, reason);
   }
-
-  // -------------------------------------------------------------------------
-  // inFlight
-  // -------------------------------------------------------------------------
 
   function inFlight(): ReadonlyMap<string, OngoingHandle> {
     return inFlightHandles;
@@ -888,10 +765,8 @@ export function createDispatcher(opts?: {
   }
 
   function getActiveAction(): { kind: string | null; id: string | null } {
-    // The most-recently-started in-flight handle wins. `Map` preserves
-    // insertion order; each gestureId is set exactly once (any pump
-    // events `set` only on the initial `start`, and `delete` on end),
-    // so iterating to the last entry gives us the latest start.
+    // The most-recently-started in-flight handle wins: `Map` preserves
+    // insertion order and each gestureId is set exactly once.
     let lastId: string | null = null;
     let lastHandle: OngoingHandle | null = null;
     for (const [id, handle] of inFlightHandles) {
@@ -955,9 +830,8 @@ export function createDispatcher(opts?: {
     const gestureId = `ui-${actionId}-${++uiOngoingSeq}`;
     let handle: OngoingHandle;
     try {
-      // Pass params via BOTH ctx.params (the UI-driven channel) AND BindingOpts.params
-      // (the gesture-driven channel). Color/opacity actions read ctx.params; future
-      // ongoing actions migrated to UI-driven invocation can rely on either.
+      // Pass params via BOTH ctx.params (the UI-driven channel) AND
+      // BindingOpts.params (the gesture-driven channel).
       handle = action.invoker.start(buildUiInvocationCtx(deps, params), { params });
     } catch (e) {
       console.error(`weasel dispatcher: action "${actionId}" threw on start`, e);

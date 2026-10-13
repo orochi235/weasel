@@ -1,8 +1,7 @@
 /**
- * SVG transform attribute helpers. Parses a `transform` list (`matrix`,
- * `translate`, `scale`, `rotate`, `skewX`, `skewY`) into a single 2x3 affine
- * matrix, and exposes the point/path mappers we need to collapse `transform=`
- * onto leaf geometry at parse time.
+ * SVG transform attribute helpers: parses a `transform` list into a single 2x3
+ * affine matrix, and exposes the mappers that collapse `transform=` onto leaf
+ * geometry at parse time.
  */
 
 import { invert, multiply } from '@weasel-js/geom';
@@ -46,13 +45,10 @@ function readNumbers(s: string): number[] {
 }
 
 /**
- * Parse an SVG `transform="..."` string into a single 2x3 matrix.
- * Functions compose right-to-left in SVG's coordinate model: in
+ * Parse an SVG `transform="..."` string into a single 2x3 matrix. In
  * `transform="A B"`, the rightmost function is applied first to a point's
- * local coordinates. We accumulate accordingly: `result = result * fn`.
- *
- * Unrecognized functions emit a warning via the optional callback and are
- * skipped (the rest of the transform list still applies).
+ * local coordinates. Unrecognized functions warn and are skipped; the rest of
+ * the transform list still applies.
  */
 export function parseTransform(
   attr: string | null | undefined,
@@ -129,9 +125,6 @@ export function rebaseTransform(ctm: Matrix, local: Matrix): Matrix | null {
  *  Pure rotation about (cx, cy) has the matrix form:
  *    [ cos  -sin   cx - cx*cos + cy*sin ]
  *    [ sin   cos   cy - cx*sin - cy*cos ]
- *  i.e. m[0] = m[3] = cos, m[1] = -m[2] = sin, with a translation that
- *  equals the pivot's "rotate-then-translate-back" residue. We reconstruct
- *  theta from atan2(m[1], m[0]) and verify the rest.
  */
 export function decomposeRotation(
   m: Matrix,
@@ -156,21 +149,16 @@ export function decomposeRotation(
 }
 
 /** Best-effort rotational-component extraction for a general matrix (any
- *  scale + rotation, ignoring translation). Used for parse-time warnings
- *  on un-decomposable matrices: we can detect "there is a rotation here"
- *  even if we won't preserve it as `node.rotation`. For a non-uniform
- *  matrix the "rotation" is ambiguous; we report atan2(b, a) which
- *  corresponds to where the +x basis vector points.
+ *  scale + rotation, ignoring translation). For a non-uniform matrix the
+ *  "rotation" is ambiguous; we report atan2(b, a) which corresponds to where
+ *  the +x basis vector points.
  */
 export function rotationComponent(m: Matrix): number {
   return Math.atan2(m[1], m[0]);
 }
 
-/**
- * Format a matrix as an SVG `matrix(a b c d e f)` value. Returns `null`
- * when `m` is (effectively) the identity, so the caller can omit the
- * attribute entirely.
- */
+/** Format a matrix as an SVG `matrix(a b c d e f)` value, or `null` when `m`
+ *  is (effectively) the identity, so the caller can omit the attribute. */
 export function formatMatrix(m: Matrix): string | null {
   if (isIdentity(m)) return null;
   return `matrix(${m.map((n) => trimNumber(n)).join(' ')})`;

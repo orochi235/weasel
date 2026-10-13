@@ -2,24 +2,22 @@
  * `<DrawCanvas>` — a sized, DPR-correct WebGL2 surface that paints a list of
  * draw commands, with no scene, tools or dispatcher behind it.
  *
- * It paints through the same per-canvas renderer as `<SceneViewCanvas>`
- * (`useCanvasRenderer`), on a `useFrameLoop` that stops while the canvas is off
- * screen or the tab is hidden. Like `<SceneViewCanvas>` it attaches no event
+ * It paints through the same surface hook as `<SceneViewCanvas>`
+ * (`useCanvasSurface`), whose frame loop stops while the canvas is off screen
+ * or the tab is hidden. Like `<SceneViewCanvas>` it attaches no event
  * listeners. Its size is `width` × `height`, which the renderer writes as
  * inline style, so `className` positions the element and cannot resize it.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { commandFill } from 'renderer/patterns/commandPaint';
 import type { Ref } from 'react';
-import { assignRef, useLatest } from '@weasel-js/react';
-import type { FillStyle } from '@weasel-js/paint';
-import { useFrameLoop } from './useFrameLoop';
-import { useLateContentRedraw } from './useLateContentRedraw';
-import { useRedrawOn } from './useRedrawOn';
-import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
+import { assignRef } from '@weasel-js/react';
+import type { Paint } from '@weasel-js/paint';
+import { useCanvasSurface } from './useCanvasSurface';
+import type { CanvasRendererLease } from './canvasRenderer';
 import { viewToMat3 } from '@weasel-js/geom';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RedrawSource } from '../core/layers/render';
+import { backgroundFillCommands } from '../core/layers/backgroundFill';
 import { normalizeView, type View } from '../core/viewport/view';
 
 /** What a `<DrawCanvas>` paints: a command list, or a function returning one
@@ -43,7 +41,7 @@ export interface DrawCanvasProps {
   view?: View;
   /** Fills the whole surface beneath `draw`, in screen space. The canvas is
    *  transparent without it. */
-  background?: FillStyle;
+  background?: Paint;
   /** External state a `draw` function reads. Each source is subscribed while
    *  mounted and repaints the canvas when it notifies. */
   redrawOn?: readonly RedrawSource[];
@@ -73,36 +71,24 @@ export function DrawCanvas(props: DrawCanvasProps) {
     assignRef(canvasRef, el);
   }, [canvasRef]);
 
-  const lease = useCanvasRenderer();
-  const paint = (): boolean => {
+  const paint = (lease: CanvasRendererLease): boolean => {
     const el = canvasElRef.current;
     if (!el) return false;
     const content = typeof draw === 'function' ? draw({ width, height }) : draw;
-    const commands: DrawCommand[] = [];
-    const fill = background && commandFill(background, { x: 0, y: 0, width, height });
-    if (fill) commands.push({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width, height }, fill });
+    const commands: DrawCommand[] = background ? backgroundFillCommands(background, { width, height }) : [];
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
     return lease.paint(el, commands, view, { width, height, dpr });
   };
-  const paintRef = useLatest(paint);
-  const { requestRedraw } = useFrameLoop(
-    useCallback(() => paintRef.current(), [paintRef]),
-    { target: canvasElRef },
-  );
+  const { lease, requestRedraw } = useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn });
 
   // Every committed render marks the surface dirty; the first paints in place
   // so the first frame shown is the content rather than a blank canvas.
   const paintedRef = useRef(false);
   useLayoutEffect(() => {
     if (paintedRef.current) { requestRedraw(); return; }
-    paintedRef.current = paintRef.current();
+    paintedRef.current = paint(lease);
     if (!paintedRef.current) requestRedraw();
   });
-
-  useLateContentRedraw(requestRedraw);
-  useRedrawOnRestore(lease, requestRedraw);
-  useRedrawOnDensityChange(requestRedraw, dpr);
-  useRedrawOn(redrawOn, requestRedraw);
 
   // `useCanvasRenderer` frees the renderer on unmount; a remount (StrictMode)
   // paints its first frame in place again.

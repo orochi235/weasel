@@ -1,52 +1,21 @@
-/**
- * `viewportWheelPanAction` — immediate Action descriptor for wheel-based viewport pan.
- *
- * ## Bindings
- * - Plain wheel (no mod) → pan by deltaX/deltaY
- * - Shift+wheel → horizontal pan (mouse-wheel users get a horizontal axis
- *   without a horizontal scroll device). Implemented by routing deltaY into
- *   the x axis when the spec carries `params.swapAxis: true`.
- *
- * ## Design notes
- * The dispatcher merges wheel event data (deltaX, deltaY, clientX, clientY)
- * into params at dispatch time. The invoker reads them from the params bag
- * and defers to `wheelPan` (`core/viewport/wheelHandler`), the kit's one
- * statement of the wheel convention — which divides the delta by `view.scale`
- * so one screen-pixel scroll is one screen-pixel pan at any zoom.
- *
- * `axis` locks the pan to one axis, matching `viewport.dragPan`'s param of
- * the same name, so a consumer that wants a single-axis viewport can say so
- * once per action instead of clamping every committed view. An axis lock
- * outranks `swapAxis`: a shift-wheel routed into a barred axis moves nothing.
- */
-
 import type { Action } from '@weasel-js/routing';
 import { wheelPan } from 'core/viewport/wheelHandler';
 
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
-
 /**
  * @experimental
- * Static descriptor for the `viewport.wheelPan` Action.
- *
- * Companion to `viewport.dragPan` (drag-to-pan via the hand tool /
- * space-held). This one is the wheel/trackpad path; both share the
- * same `view` dep but fire on different gesture kinds, so they
- * coexist without competing.
- *
- * Requires dep-schema entry: `view`.
+ * Wheel and trackpad pan. Shift+wheel pans horizontally, by routing deltaY
+ * into the x axis (`params.swapAxis`). `params.axis` locks the pan to one
+ * axis, and outranks `swapAxis`: a shift-wheel routed into a barred axis
+ * moves nothing.
  */
 export const viewportWheelPanAction: Action & { requires: string[] } = {
   id: 'viewport.wheelPan',
   label: 'Pan (wheel)',
   group: 'viewport',
   /**
-   * Plain wheel → pan; Shift+wheel → horizontal pan (axis swap).
-   * Cmd+wheel is claimed by `viewportZoomAction`. The matcher's strict
-   * modifier check keeps the bindings exclusive: omitting `mods` forbids
-   * any modifier, and `mods: { shift: true }` forbids the others.
+   * The matcher's strict modifier check keeps the bindings exclusive, and
+   * leaves Cmd+wheel to `viewportZoomAction`: omitting `mods` forbids any
+   * modifier, and `mods: { shift: true }` forbids the others.
    */
   defaultBinding: [
     { spec: { kind: 'wheel' }, opts: {} },
@@ -72,9 +41,7 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
 
 /** Tuning for {@link makeViewportWheelPanAction}. */
 export interface WheelPanOptions {
-  /** Lock the pan to one axis. Default `'both'`. Mirrors `viewport.dragPan`'s
-   *  `axis` param, so a single-axis viewport is declared once per action
-   *  rather than clamped on every committed view. */
+  /** Lock the pan to one axis. Default `'both'`. */
   axis?: 'both' | 'x' | 'y';
 }
 

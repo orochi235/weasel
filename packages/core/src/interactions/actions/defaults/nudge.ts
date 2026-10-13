@@ -16,17 +16,8 @@ import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudge
 
 /**
  * Apply a translation of (dx, dy) to the selected nodes and the descendants
- * that do not ride on one of them, by building one `createTransformOp` per
- * node (from = pre-mutation pose, to = nudged pose) and routing the batch
- * through the consumer commit hook. Translates through the `poseDescriptor`
- * dep, so any pose shape moves.
- *
- * Mirrors `moveAction`'s `commitOps` helper: when `deps.applyOps` is present
- * the ops route through the consumer's history (one undo entry there);
- * otherwise they apply straight to the scene's own history via
- * `scene.applyBatch` + `defaultCommitAdapter`. Either way the whole nudge is a
- * single batch → one undo entry, preserving the old `scene.batch('Nudge', …)`
- * semantics exactly.
+ * that do not ride on one of them, as one undo entry. Translates through the
+ * `poseDescriptor` dep, so any pose shape moves.
  */
 function nudgeSelection(
   selection: SelectionApi,
@@ -36,19 +27,16 @@ function nudgeSelection(
   applyOps: ((ops: Op[], label: string) => void) | undefined,
   geometryProjection: GeometryProjection | undefined,
   d: PoseDescriptor<unknown>,
-  poseComposition: unknown,
 ): void {
   const descriptorOf = nodeDescriptors(scene, d);
   const ids = translateTargets(
-    scene, scenePoseFrame(scene, poseComposition), moveSources(scene, selection.get()),
+    scene, scenePoseFrame(scene), moveSources(scene, selection.get()),
   );
   if (ids.length === 0) return;
-  // Pure translation by the nudge step. Pushed alongside each transform op so
-  // a wired geometryProjection mirrors the node's data-held geometry too.
+  // Pushed alongside each transform op so a wired geometryProjection moves
+  // the node's data-held geometry too.
   const m: Mat3 = [1, 0, 0, 1, dx, dy];
 
-  // Read poses BEFORE building ops so each op's `from` is the pre-mutation
-  // value (the same value the old direct mutation captured implicitly).
   const ops: Op[] = [];
   for (const id of ids) {
     const node = scene.get(id);
@@ -75,11 +63,8 @@ function nudgeSelection(
 
 /**
  * @experimental
- * Build one static nudge descriptor for the given direction. Each descriptor
- * carries two parametric bindings: bare arrow (magnitude='small') and
+ * The nudge descriptor for one direction: bare arrow (magnitude='small') and
  * Shift+arrow (magnitude='big').
- *
- * Requires dep-schema entries: `selection`, `scene`.
  */
 function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
   return {
@@ -91,7 +76,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'poseComposition'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -101,7 +86,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
         const applyOps = deps.applyOps;
         const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
-        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition);
+        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor));
       },
     },
     enabled: requiresSelection,

@@ -4,7 +4,7 @@ import type { DataNode, DiagramViewProps, NodeMove } from '@weasel-js/diagram';
 
 export const FONT = { fontFamily: 'sans-serif', fontSize: 13 } as const;
 
-export const PORTS: DiagramViewProps['portOptions'] = { fill: { color: '#e0913f' }, cursor: 'crosshair' };
+export const PORTS: DiagramViewProps['portOptions'] = { fill: { paint: { color: '#e0913f' } }, cursor: 'crosshair' };
 
 /** `nodes` with each moved one standing where it was moved to. Enough under
  *  `layout: 'none'`; a diagram that lays itself out also pins them. */

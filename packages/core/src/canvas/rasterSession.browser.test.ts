@@ -7,14 +7,14 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import { createRasterSession, renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 interface Box { color: string }
 
 const drawOne = (node: { data: Box }, p: RectPose): DrawCommand[] => [{
   kind: 'path',
   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-  fill: { fill: 'solid', color: node.data.color },
+  fill: { paint: { kind: 'solid', color: node.data.color } },
 } as DrawCommand];
 
 function sceneOf(boxes: Array<RectPose & Box>) {

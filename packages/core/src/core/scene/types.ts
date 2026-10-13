@@ -1,18 +1,19 @@
 import type { Path } from '@weasel-js/geom';
 import type { History, SerializedHistory } from '@weasel-js/history';
 import type { ParallaxOpts } from '../viewport/parallax';
-import type { ContainerBounds, LayoutStrategy } from '../../layout/types';
+import type { UnitScope } from '@weasel-js/quantity';
+import type { LayoutStrategy } from '../../layout/types';
+import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
 import type { PoseLinear } from '@weasel-js/geom';
+import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
+import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
+
+export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
 
 /**
- * Axis-aligned rectangle pose with optional rotation. The canonical pose
- * shape used by `composeRectPose` and the `unionBounds` helper. Rotation is
- * in radians, pivoted on the unrotated AABB center; absent === 0. Kit-side
- * code that consumes rotation already reads `pose.rotation ?? 0`
- * (`wrapNodeOutput`, `rotate/handle.ts`, `pathInWorld.ts`), so
- * the slot exists on every default scene whether or not the consumer
- * populates it.
+ * Axis-aligned rectangle pose with optional rotation. Rotation is in
+ * radians, pivoted on the unrotated AABB center; absent === 0.
  */
 export interface RectPose {
   x: number;
@@ -29,50 +30,25 @@ export interface RectPose {
 /**
  * # SceneNode — the thing in the scene
  *
- * A `SceneNode` is the single canonical unit of a weasel scene. Everything
- * the user sees on the canvas — a shape, a group, an annotation, a tile —
- * is one of these. Containers and leaves are both nodes; the kit has no
+ * Everything the user sees on the canvas — a shape, a group, an annotation,
+ * a tile — is a node. Containers and leaves are both nodes; the kit has no
  * other concept of "scene element."
- *
- * ## Three orthogonal slots
  *
  * Every node carries three independent slots, plus its tree position:
  *
  *   - **`data: TData`** — app-defined payload. The kit never inspects it.
- *     Color, label, kind, glyph, sample-rate, whatever the app's domain
- *     calls for. Mutated via `Scene.update(id, { data })`.
- *
  *   - **`pose: TPose`** — local transform, relative to the node's direct
- *     parent (or world, for root nodes). Default `RectPose` is
- *     `{ x, y, width, height }`, but `TPose` is fully generic so apps can
- *     use rotated rects, paths, ellipses, etc. The kit composes world
- *     poses via `composeWorldPose` when rendering / hit-testing / snapping.
- *
+ *     parent (or world, for root nodes).
  *   - **`layer: TLayer`** — a string tag associating the node with a
  *     visual `RenderLayer` at draw time. Separate from `LayerRecord` (the
  *     per-layer visible/locked metadata held by the `Scene`).
  *
- * Tree position lives on the node itself: every node has a `parent` (or
- * `null` for roots), and `ContainerNode` adds an ordered `children: NodeId[]`.
- *
- * ## Identity is by `NodeId`, not by reference
- *
- * Nodes are addressed by `NodeId` everywhere outside the scene tree:
- * selection is `NodeId[]`, ops reference `NodeId`s, adapter methods accept
- * `string` ids and look up the node on demand. The `Node` object itself is
- * a snapshot of current state — don't hold references to it across scene
- * updates; look up by id when you need the latest.
- *
- * Picking helpers (`pickBest`, `pickEvery`) likewise return ids, not nodes —
- * they're hit-testing primitives that stay ignorant of node payload shape.
- *
- * ## Vocabulary
+ * Nodes are addressed by `NodeId` everywhere outside the scene tree. Don't
+ * hold references to a `Node` object across scene updates; look up by id
+ * when you need the latest.
  *
  * The kit-internal name is `Node`; the public re-export is `SceneNode`
- * (avoids collision with DOM `Node` at call sites). Adapter methods speak
- * the same vocabulary: `getNode`, `getNodes`, `insertNode`, `removeNode`,
- * `cloneNode`, `addNode`. Older code, demos, and comments may still say
- * "object" or "item" — those are historical aliases for the same concept.
+ * (avoids collision with DOM `Node` at call sites).
  */
 
 /** Opaque branded id. Treat as opaque outside the kit. */
@@ -88,10 +64,7 @@ export const asNodeId = (s: string): NodeId => s as NodeId;
  *
  * The node comes along because a connector legitimately reads more than a box
  * — an edge that thickens with its endpoint's weight, or routes only to nodes
- * on a given layer, is answering off `data` and `layer`. The scene already
- * invalidates dependents on `kit:setData` and `kit:setLayer` for exactly that,
- * so handing over only the pose made the invalidation pay for a read nothing
- * could perform.
+ * on a given layer, is answering off `data` and `layer`.
  */
 export interface DerivedDep<TPose, TData = unknown, TLayer extends string = string> {
   node: Node<TData, TLayer, TPose>;
@@ -100,11 +73,8 @@ export interface DerivedDep<TPose, TData = unknown, TLayer extends string = stri
   pose: TPose;
   /** The path it derives, or `null` when it derives none. Read it to place
    *  something *along* a dependency rather than beside it — a label on a
-   *  routed edge, a tick on a curve.
-   *
-   *  Resolved on first read and memoized on the dependency, so a route costs
-   *  the same whether one node reads it or five, and a dependency nobody asks
-   *  about costs nothing. */
+   *  routed edge, a tick on a curve. Resolved on first read and memoized on
+   *  the dependency. */
   readonly path: Path | null;
 }
 
@@ -155,18 +125,15 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  behind — normally its own container.
    *
    *  For content a container owns rather than content the user selects on its
-   *  own: the label inside a box, a body's rows. Without it the innermost hit
-   *  wins, and dragging a labeled box moves the label out of the box. It does
-   *  not hide the node from anything else — it still paints, still clips, and
-   *  a consumer can still select it by id. */
+   *  own: the label inside a box, a body's rows. It does not hide the node
+   *  from anything else — it still paints, still clips, and a consumer can
+   *  still select it by id. */
   pickable?: boolean;
   /** Computes this node's path from its dependencies, in `dependsOn` order —
    *  each one the node and the pose it is painted at.
    *  A dependency that has been removed arrives as `undefined`.
    *  Returning `null` means "nothing to draw right now". Re-evaluated when a
-   *  dependency's world pose changes, never authored. Absolute-pose `Scene`
-   *  makes that the dependency's own pose, and an ancestor's move reaches it as
-   *  a `setPose` of its own from the container cascade. */
+   *  dependency's world pose changes, never authored. */
   derivePath?: DerivePathFn<TPose, TData, TLayer>;
   /** Computes this node's pose from its dependencies' poses, the same way
    *  `derivePath` computes its path — same `dependsOn` list, same
@@ -175,8 +142,7 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  Where a derived path is resolved at paint time and reaches only the
    *  painter, a derived pose is what the node *is* at: it feeds bounds,
    *  hit-testing, selection chrome, snapping and layout, and every reader
-   *  gets it through `effectivePose`. A pose override still wins over it —
-   *  that is what lets a drag preview a node the document says is elsewhere.
+   *  gets it through `effectivePose`. A pose override still wins over it.
    *
    *  Returning `null` means "I have nothing to derive from right now", and
    *  the node falls back to its authored `pose`. `setPose` on a derived node
@@ -199,9 +165,7 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
   children: NodeId[];
   /** Optional clip-path source. Re-evaluated each render. Returning `null`
    *  means "no clip for this container right now"; an empty / zero-area path
-   *  means "clip everything out" (children render nowhere). When set, the
-   *  renderer rasterizes the returned path into the stencil buffer and
-   *  paints descendants only where it covers. */
+   *  means "clip everything out" (children render nowhere). */
   clipFromPose?: ClipFromPoseFn<TPose>;
   /** How this container arranges its children. Whenever the container's
    *  child set or order changes, or its bounds change size, the scene hands
@@ -210,28 +174,10 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  undo entry as the change. A drag reads it too: it is the layout `move`
    *  reflows and drops against. */
   layout?: LayoutStrategy<TPose>;
-}
-
-/** A pose a container's layout wrote — reported by {@link Scene.onReflow} —
- *  in the node's stored frame. */
-export interface LayoutMove<TPose> {
-  id: NodeId;
-  from: TPose;
-  to: TPose;
-}
-
-/** How a scene reads a laid-out container's bounds and folds poses to the
- *  world frame a {@link LayoutStrategy} works in. */
-export interface LayoutFrame<TPose> {
-  /** The container's bounds, from its world pose. Default: the pose's own
-   *  `x`/`y`/`width`/`height`; a pose without them is not laid out. */
-  bounds?(pose: TPose): ContainerBounds | null;
-  /** `pose` resized from bounds `from` to `to`, for a layout that grows its
-   *  container. Default: `to`'s fields written over the pose. */
-  remap?(pose: TPose, from: ContainerBounds, to: ContainerBounds): TPose;
-  /** Omit for the absolute-pose model. A scene whose canvas composes poses
-   *  (`<SceneCanvas poseComposition>`) passes the same strategy here. */
-  composition?: PoseComposition<TPose>;
+  /** The unit system this container's contents are written in, and what one
+   *  of its base units is worth in the enclosing scope's. It covers the
+   *  children, not the container; `sceneUnitScopes` reads the chain. */
+  units?: UnitScope;
 }
 
 /** A node in the scene tree: either a leaf or a container. Re-exported
@@ -296,6 +242,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   derivePose?: DerivePoseFn<TPose, TData, TLayer>;
   /** Mirrors `ContainerNode.layout`; ignored for leaves. */
   layout?: LayoutStrategy<TPose>;
+  /** Mirrors `ContainerNode.units`; ignored for leaves. */
+  units?: UnitScope;
 }
 
 /** A custom scene mutation registered with `Scene.registerOp`: how to apply
@@ -334,54 +282,6 @@ export interface AddLayerSpec<TLayer extends string> {
   parallax?: ParallaxOpts;
   /** Render-stack position. Default: top of stack (highest render index). */
   index?: number;
-}
-
-/** One layer as it appears in a snapshot. A snapshot written before layer
- *  kind was serialized carries neither field, and loads as a system layer —
- *  which is what every layer in such a snapshot was. */
-export interface SerializedLayer<TLayer extends string>
-  extends SystemLayerSpec<TLayer> {
-  kind?: 'system' | 'user';
-  /** Present on a user layer, absent on a system one. */
-  name?: string;
-}
-
-/** JSON-serializable shape of a Scene's current state. Produced by
- *  `scene.toJSON()`; consumed by `sceneFromJSON()`. Function fields
- *  (e.g., `clipFromPose`) appear as string keys (`clipFromPoseKey`) and
- *  are resolved through `SceneRegistry` at load time. */
-export interface SerializedScene<TData, TLayer extends string, TPose> {
-  version: 1;
-  /** The whole layer stack, system and user alike — the name predates user
-   *  layers and is kept so existing snapshots still parse. */
-  systemLayers: readonly SerializedLayer<TLayer>[];
-  nodes: readonly SerializedNode<TData, TLayer, TPose>[];
-}
-
-/** JSON-serializable shape of a single node. Mirrors `AddNodeSpec` but
- *  with function fields replaced by registry keys. */
-export interface SerializedNode<TData, TLayer extends string, TPose> {
-  id: string;
-  kind: 'leaf' | 'container';
-  layer: TLayer;
-  pose: TPose;
-  data: TData;
-  /** Parent id; omitted for roots. */
-  parent?: string;
-  /** Registry key for the container's clip-path factory.
-   *  Containers only; omitted when the container has no clip. */
-  clipFromPoseKey?: string;
-  /** Ids this node's geometry derives from, or `'children'`. Omitted when it
-   *  derives from nothing. */
-  dependsOn?: readonly string[] | 'children';
-  /** Mirrors `SceneNode.pickable`. Omitted when the node is pickable. */
-  pickable?: boolean;
-  /** Registry key for the node's `derivePath` function. Omitted when it has none. */
-  derivePathKey?: string;
-  /** Registry key for the node's `derivePose` function. Omitted when it has none. */
-  derivePoseKey?: string;
-  /** Registry key for the container's layout strategy. Omitted when it has none. */
-  layoutKey?: string;
 }
 
 /** Per-scene registry mapping string keys to live function references.
@@ -444,84 +344,23 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
    *  Required only when serializing/deserializing scenes that use function fields. */
   registry?: SceneRegistry<TPose, TData, TLayer>;
+  /** How a child's pose folds into its container's. Default: it does not, and every pose is world. */
+  composition?: PoseComposition<TPose>;
   /** How laid-out containers are measured. See {@link LayoutFrame}. */
   layoutFrame?: LayoutFrame<TPose>;
-  /** When supplied, `scene.applyOps(ops, label)` consults this on every call.
-   *  If it returns a non-null `Journal`, ops are routed to the journal's
-   *  `applyBatch` instead of recording a new parent-history entry. The journal
-   *  drives adapter mutation internally (via `op.apply(adapter)`), so the
-   *  scene state changes as normal; only the history tracking differs.
+  /** When supplied, `scene.applyBatch` consults this on every call. If it
+   *  returns a non-null `Journal`, ops are routed to the journal's
+   *  `applyBatch` instead of recording a new parent-history entry. The scene
+   *  state changes as normal; only the history tracking differs.
    *
-   *  The accessor is called on every `applyOps` invocation so the caller can
-   *  swap the active journal in and out by updating the closure's reference
-   *  (e.g., an app's mode machine holds `let activeJournal: Journal | null`
-   *  and the accessor reads that variable).
-   *
-   *  When the accessor isn't known at scene-construction time (typical for
-   *  mode machines that depend on `scene.history`), pass nothing here and
-   *  wire it after construction via `scene.setActiveJournalAccessor(fn)`. */
+   *  When the accessor isn't known at scene-construction time, wire it after
+   *  construction via `scene.setActiveJournalAccessor(fn)`. */
   getActiveJournal?: () => import('@weasel-js/history').Journal | null;
   /** Re-render the host on every scene mutation. Default `true`. Set `false`
    *  when the scene is read by a frame loop rather than by a render — a game
    *  loop, a simulation — and nothing in the host's DOM derives from it.
    *  Read by `useScene`; `createScene` ignores it. */
   subscribe?: boolean;
-}
-
-/**
- * One node's ephemeral presentation override — what a frame loop wants to say
- * about a node without saying it about the document.
- *
- * Not document content: never recorded in history, never in `toJSON`, and
- * writing one does not bump `Scene.getVersion()`. Hoist one entry per node and
- * mutate it in place on a frame loop; `PoseOverrides.commit()` is what makes a
- * mutation visible.
- */
-export interface PoseOverride<TPose> {
-  /** Replaces the node's document pose everywhere the render and hit-test
-   *  paths read one, including the clip a container derives from its pose, and
-   *  winning over a `derivePose`. Resolved by `effectivePose` — reading
-   *  `node.pose` directly is how those paths came to disagree about where a
-   *  node is. */
-  pose?: TPose;
-  /** Multiplied into the node's painted alpha, on top of any `alphaFor`. */
-  alpha?: number;
-}
-
-/**
- * The scene's ephemeral per-node overrides — see {@link PoseOverride}.
- *
- * The intended shape of a frame is: `set` each node once, mutate the entries
- * in place per frame, `commit()` once. `commit` is not optional bookkeeping —
- * the painter memo keys on pose *reference*, so a mutation without a commit
- * paints the previous frame with no error.
- *
- * To promote a frame to document state (dropping a drag, baking an animation),
- * write it once through `Scene.setPose` and `clear` the override.
- */
-export interface PoseOverrides<TPose> {
-  /** Store `entry` for `id` **by reference**; the caller keeps mutating it. */
-  set(id: NodeId, entry: PoseOverride<TPose>): void;
-  /** The entry `set` stored, by reference — what a writer checks to know
-   *  whether its own entry is still installed. Painting reads `read`. */
-  get(id: NodeId): PoseOverride<TPose> | undefined;
-  /** What the node is drawn and picked with: every source of overrides for
-   *  it folded into one, as of the last write or `commit()`. `undefined` for
-   *  a node nothing overrides. The object is reused per node. */
-  read(id: NodeId): PoseOverride<TPose> | undefined;
-  has(id: NodeId): boolean;
-  /** The overridden ids, as a snapshot array. */
-  ids(): readonly NodeId[];
-  clear(id: NodeId): void;
-  clearAll(): void;
-  /** Publish this frame's in-place mutations: invalidate the painter memo for
-   *  every overridden node, then notify subscribers. */
-  commit(): void;
-  /** Notified after every write. The canvas uses this to repaint without a
-   *  scene version bump. */
-  subscribe(fn: () => void): () => void;
-  /** Monotonic write counter. A snapshot for observers that poll. */
-  getGeneration(): number;
 }
 
 /**
@@ -544,6 +383,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** The registry this scene resolves node functions against — the consumer's
    *  entries over the kit's. */
   readonly registry: SceneRegistry<TPose, TData, TLayer>;
+  /** See {@link UseSceneOptions.composition}. */
+  readonly composition: PoseComposition<TPose>;
   get(id: NodeId): Node<TData, TLayer, TPose> | undefined;
   /** A token for the node `id` names right now, for telling one node from a
    *  later one that reuses its id. It holds for as long as the node stays in
@@ -557,16 +398,13 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   renderOrder(): Iterable<NodeId>;
   /** The same layer-major sequence as {@link Scene.renderOrder}, as the nodes
    *  themselves. Prefer this wherever the ids are only going to be resolved
-   *  back to nodes: the traversal already holds them, and re-looking each one
-   *  up was ~40% of the area hit-test's per-node cost. Cached until a
-   *  structural edit, so repeat calls hand back the same array — a snapshot,
-   *  not a live view, and not yours to mutate. */
+   *  back to nodes. Cached until a structural edit, so repeat calls hand back
+   *  the same array — a snapshot, not a live view, and not yours to mutate. */
   renderOrderNodes(): readonly Node<TData, TLayer, TPose>[];
   /** The nodes on one layer, in render order. Cached alongside
-   *  {@link Scene.renderOrderNodes} until a structural edit, so a caller that
-   *  only cares about one layer pays the tree walk once rather than once per
-   *  call. A snapshot, not a live view, and not yours to mutate. An unknown
-   *  layer id yields an empty array. */
+   *  {@link Scene.renderOrderNodes} until a structural edit. A snapshot, not
+   *  a live view, and not yours to mutate. An unknown layer id yields an
+   *  empty array. */
   nodesOnLayer(layer: TLayer): readonly Node<TData, TLayer, TPose>[];
 
   /** A fresh id from this scene's `generateId`, or the kit default: the id
@@ -591,15 +429,19 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   removeMany(ids: readonly NodeId[]): void;
   /** Every node {@link removeMany} would take if given `ids`: each id, its
    *  subtree, everything deriving from any of those, and those nodes' subtrees
-   *  in turn. The authoritative answer — the cascade relations live here, and
-   *  a caller reconstructing them from `dependsOn` and `children` drifts the
-   *  moment a third one is added. Ids not in the scene come back unchanged.
+   *  in turn. Ids not in the scene come back unchanged.
    *
    *  A set, not a restore order: a dependent can be reached before the parent
    *  it sits under, which is also in the closure. */
   removalClosure(ids: readonly NodeId[]): readonly NodeId[];
   update(id: NodeId, patch: { data: TData }): void;
   setPose(id: NodeId, pose: TPose): void;
+  /** Write a pose on behalf of the op now applying, one the op's own inverse
+   *  will not put back: the op records it, and undoing the op restores it.
+   *  For an adapter that moves more than it was asked to, such as one that
+   *  moves a container's descendants with it. Outside an op it is `setPose`;
+   *  while an op that recorded its carried poses replays, it does nothing. */
+  carry(id: NodeId, pose: TPose): void;
   /** Retag `id` to `layer`. On a **container this cascades**: every descendant
    *  is moved to the same layer, recorded as a **single** undo step.
    *
@@ -680,13 +522,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   registerOp<P>(kind: string, handler: RegisteredOp<P>): void;
   recordOp<P>(op: { kind: string; payload: P }): void;
 
-  /** Install (or clear) the active-journal accessor after scene construction.
-   *  Useful when the journal source (typically a mode machine) is built
-   *  with `scene.history` as a dependency — a chicken-and-egg situation
-   *  where the accessor can't be passed in via `UseSceneOptions`.
-   *
-   *  Pass `null` to detach. Overrides any `getActiveJournal` set in
-   *  `UseSceneOptions`. */
+  /** Install (or clear with `null`) the active-journal accessor after scene
+   *  construction, for a journal source built with `scene.history` as a
+   *  dependency. Overrides any `getActiveJournal` set in `UseSceneOptions`. */
   setActiveJournalAccessor(
     fn: (() => import('@weasel-js/history').Journal | null) | null,
   ): void;
@@ -722,7 +560,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  (see `CanvasView.selection`). Not document content: it never appears
    *  in `toJSON`. It does ride on history entries, so undo and redo put
    *  back the selection an edit was made under; changing it is never an
-   *  undo step of its own. */
+   *  undo step of its own. Removing a node deselects it. */
   getSelection(): readonly NodeId[];
   setSelection(ids: readonly NodeId[]): void;
 
@@ -735,9 +573,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   readonly overrides: PoseOverrides<TPose>;
 
   // History
-  /** The scene's undo/redo engine, in the shape `@weasel-js/history` defines —
-   *  what the kit's `undo` / `redo` actions resolve their `history` dep to, and
-   *  what a mode machine opens journals against. Mutating members route through
+  /** The scene's undo/redo engine, in the shape `@weasel-js/history` defines.
+   *  Mutating members route through
    *  the scene's own wrappers, so an undo driven through this bumps
    *  {@link Scene.getVersion} and notifies subscribers exactly as
    *  {@link Scene.undo} does; `getVersion` / `subscribe` on it report the
@@ -751,6 +588,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** The layout container `id` declares, or `null` for a leaf or a
    *  container that declares none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
+  /** Declare the unit scope of container `id`, or clear it with `null`. */
+  setUnits(id: NodeId, units: UnitScope | null): void;
   /** Called with the poses each live edit's layout pass wrote, after the
    *  edit lands — never for an undo or redo, which restore poses rather than
    *  arrange them. What a reflow animation glides from. */
@@ -771,8 +610,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** Index of the "current state". Equals the count of applied entries;
    *  `0` means "nothing applied" (initial). */
   historyIndex(): number;
-  /** Jump to the given history index by calling undo/redo repeatedly.
-   *  Clamps to [0, total]. Returns true if any movement occurred. */
+  /** Jump to the given history index, clamped to [0, total]. Returns true
+   *  if any movement occurred. */
   jumpToHistoryIndex(index: number): boolean;
 
   // History persistence
@@ -817,8 +656,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  ids the snapshot does not hold leave the selection, and every pose
    *  override is cleared.
    *
-   *  Throws inside `batch` or `untracked`, which revert to a state this
-   *  replaces. Throws on an unsupported version or unknown registry/layer ids; on a
+   *  Throws inside any other edit — `batch`, `untracked`, `applyBatch`, an
+   *  undo — which would revert to a state this replaces. Throws on an unsupported version or unknown registry/layer ids; on a
    *  malformed snapshot the scene is left empty or partially populated (callers should treat a
    *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
    *  always well-formed. */

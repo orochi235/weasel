@@ -16,24 +16,22 @@ import {
   type FrameFixtureLayer,
 } from 'core/scene/frameFixture';
 import {
+  IDENTITY_POSE_COMPOSITION,
   RIGID_POSE_COMPOSITION,
   RECT_POSE_COMPOSITION,
+  type PoseComposition,
 } from 'core/scene/composePose';
 import type { RectPose, Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+const UNCOMPOSED = IDENTITY_POSE_COMPOSITION as PoseComposition<RectPose>;
 
 /** Run the walk and record the pose each node's painter was handed. */
-function posesSeenByPainter(
-  composition: typeof RIGID_POSE_COMPOSITION | undefined,
-): Map<string, RectPose> {
-  const scene = makeFrameFixture();
-  const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(
-    scene,
-    composition ? { poseComposition: composition } : {},
-  );
+function posesSeenByPainter(composition: PoseComposition<RectPose>): Map<string, RectPose> {
+  const scene = makeFrameFixture(composition);
+  const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
   const seen = new Map<string, RectPose>();
   const drawOne = (node: Node<FrameFixtureData, FrameFixtureLayer, RectPose>, pose: RectPose): DrawCommand[] => {
     seen.set(node.id, pose);
@@ -55,7 +53,7 @@ describe('buildSceneTree composes the parent frame', () => {
   });
 
   it('is the local pose when no strategy is configured', () => {
-    const seen = posesSeenByPainter(undefined);
+    const seen = posesSeenByPainter(UNCOMPOSED);
     expectSamePose(seen.get(FRAME_FIXTURE_IDS.upright)!, FRAME_FIXTURE_LOCAL.a);
     expectSamePose(seen.get(FRAME_FIXTURE_IDS.turned)!, FRAME_FIXTURE_LOCAL.b);
   });
@@ -68,10 +66,8 @@ describe('buildSceneTree composes the parent frame', () => {
   });
 
   it('a translation-only strategy moves children but does not turn them', () => {
-    const scene = makeFrameFixture();
-    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(
-      scene, { poseComposition: RECT_POSE_COMPOSITION },
-    );
+    const scene = makeFrameFixture(RECT_POSE_COMPOSITION);
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
     const seen = new Map<string, RectPose>();
     buildSceneTree(
       adapter as unknown as Parameters<typeof buildSceneTree>[0],
@@ -87,9 +83,7 @@ describe('buildSceneTree composes the parent frame', () => {
 describe('the two world-pose resolvers agree', () => {
   it('getWorldPose matches what the walk hands the painter', () => {
     const scene = makeFrameFixture();
-    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(
-      scene, { poseComposition: RIGID_POSE_COMPOSITION },
-    );
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
     const seen = posesSeenByPainter(RIGID_POSE_COMPOSITION);
     for (const id of Object.values(FRAME_FIXTURE_IDS)) {
       expectSamePose(adapter.getWorldPose(id), seen.get(id)!);
@@ -97,42 +91,45 @@ describe('the two world-pose resolvers agree', () => {
   });
 
   it('getWorldPose is getPose when nothing composes', () => {
-    const scene = makeFrameFixture();
-    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene, {});
+    const scene = makeFrameFixture(UNCOMPOSED);
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
     for (const id of Object.values(FRAME_FIXTURE_IDS)) {
       expect(adapter.getWorldPose(id)).toEqual(adapter.getPose(id));
     }
   });
 });
 
-describe('a frame and the absolute-pose cascade contradict', () => {
-  it('refuses both at once rather than moving descendants twice', () => {
+describe('a container move carries its children one way, never both', () => {
+  const MOVED: RectPose = { x: 7, y: 0, width: 100, height: 100, rotation: Math.PI / 2 };
+
+  it('leaves the stored child poses alone under a frame, which moves them by itself', () => {
     const scene = makeFrameFixture();
-    expect(() =>
-      sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene, {
-        poseComposition: RIGID_POSE_COMPOSITION,
-        cascadeContainerPose: true,
-      }),
-    ).toThrow(/contradict/);
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
+    adapter.setPose(FRAME_FIXTURE_IDS.group, MOVED);
+    expectSamePose(scene.get(FRAME_FIXTURE_IDS.upright)!.pose, FRAME_FIXTURE_LOCAL.a);
+    expectSamePose(scene.get(FRAME_FIXTURE_IDS.turned)!.pose, FRAME_FIXTURE_LOCAL.b);
+    expectSamePose(adapter.getWorldPose(FRAME_FIXTURE_IDS.upright), {
+      ...FRAME_FIXTURE_WORLD.a, x: FRAME_FIXTURE_WORLD.a.x + 7,
+    });
   });
 
-  it('allows the cascade alongside an explicitly identity strategy', () => {
-    const scene = makeFrameFixture();
-    expect(() =>
-      sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene, {
-        poseComposition: { compose: (_p, c) => c, decompose: (_p, w) => w, closure: 'identity' },
-        cascadeContainerPose: true,
-      }),
-    ).not.toThrow();
+  it('translates the stored child poses when nothing composes', () => {
+    const scene = makeFrameFixture(UNCOMPOSED);
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
+    adapter.setPose(FRAME_FIXTURE_IDS.group, MOVED);
+    expectSamePose(scene.get(FRAME_FIXTURE_IDS.upright)!.pose, {
+      ...FRAME_FIXTURE_LOCAL.a, x: FRAME_FIXTURE_LOCAL.a.x + 7,
+    });
+    expectSamePose(scene.get(FRAME_FIXTURE_IDS.turned)!.pose, {
+      ...FRAME_FIXTURE_LOCAL.b, x: FRAME_FIXTURE_LOCAL.b.x + 7,
+    });
   });
 });
 
 describe('the clipboard captures a framed root in world coordinates', () => {
   it('a copied child does not jump by its old parent frame', () => {
     const scene = makeFrameFixture();
-    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(
-      scene, { poseComposition: RIGID_POSE_COMPOSITION },
-    );
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
     const snap = adapter.snapshotSelection([FRAME_FIXTURE_IDS.upright]);
     const item = (snap.items as { id: string; pose: RectPose }[])[0];
     // Pasting re-roots it, so the captured pose has to be where it was drawn.
@@ -140,8 +137,8 @@ describe('the clipboard captures a framed root in world coordinates', () => {
   });
 
   it('keeps the stored pose when nothing composes', () => {
-    const scene = makeFrameFixture();
-    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene, {});
+    const scene = makeFrameFixture(UNCOMPOSED);
+    const adapter = sceneToAdapter<FrameFixtureData, FrameFixtureLayer, RectPose>(scene);
     const snap = adapter.snapshotSelection([FRAME_FIXTURE_IDS.upright]);
     const item = (snap.items as { id: string; pose: RectPose }[])[0];
     expectSamePose(item.pose, FRAME_FIXTURE_LOCAL.a);

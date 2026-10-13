@@ -33,7 +33,7 @@ function worstStray(
 ): number {
   const path = pathFromD(d);
   const mesh = tessellateStroke(path, {
-    paint: { fill: 'solid', color: '#000' },
+    paint: { kind: 'solid', color: '#000' },
     width: WIDTH,
     ...(opts.join ? { join: opts.join } : {}),
     ...(opts.miterLimit !== undefined ? { miterLimit: opts.miterLimit } : {}),

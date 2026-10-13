@@ -14,8 +14,10 @@ export {
 export {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
+  pathfinderTrimAction, pathfinderMergeAction,
 } from './booleans';
 export { createOutlinesAction } from './createOutlines';
+export { outlineStrokeAction } from './outlineStroke';
 export { deleteAction } from './delete';
 export { groupAction, ungroupAction } from './group';
 export {
@@ -34,10 +36,10 @@ export {
   type ToolActivateBindingSpec,
 } from './toolActivate';
 export { moveAction } from '../move/action';
-export { resizeAction } from './resize';
-export { rotateAction } from './rotate';
+export { resizeAction } from '../resize/action';
+export { rotateAction } from '../rotate/action';
 export { areaSelectAction } from './areaSelect';
-export { insertAction } from './insert';
+export { insertAction } from '../insert/action';
 export { cloneAction } from './clone';
 export { editAnchorsAction } from './editAnchors';
 export { lassoSelectAction } from './lassoSelect';

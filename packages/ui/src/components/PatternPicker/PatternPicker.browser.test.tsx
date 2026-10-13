@@ -4,7 +4,8 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { decomposePatternTransform } from '@weasel-js/core';
-import { PatternPicker, seedPattern, type PatternFill } from './PatternPicker';
+import type { PatternPaint as PatternFill } from '@weasel-js/core';
+import { PatternPicker, seedPattern } from './PatternPicker';
 
 afterEach(cleanup);
 

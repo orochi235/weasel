@@ -11,9 +11,11 @@
 import { describe, it, expect } from 'vitest';
 import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { hitTestArea, hitTestLassoPolygon } from './hitTestArea';
+import { registerNodeShape } from 'canvas/NodeShape';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 /** The hand-rolled scenes below stand in for a real `Scene`, which always
  *  carries an overrides map; `hitTestArea` resolves poses through it. */
@@ -35,6 +37,7 @@ function triangleScene(): Scene<unknown, string, unknown> {
     layers: [{ id: 'default' }],
     renderOrder: () => ['t'] as NodeId[],
     renderOrderNodes: () => [...nodes.values()],
+    composition: IDENTITY_POSE_COMPOSITION,
     get: (id: NodeId) => nodes.get(id as string) as never,
     overrides: NO_OVERRIDES,
   } as unknown as Scene<unknown, string, unknown>;
@@ -63,6 +66,7 @@ describe('hitTestArea — silhouette awareness', () => {
       layers: [{ id: 'default' }],
       renderOrder: () => ['m'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
+      composition: IDENTITY_POSE_COMPOSITION,
       get: (id: NodeId) => nodes.get(id as string) as never,
       overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
@@ -98,6 +102,7 @@ describe('hitTestArea — geometry held on node.data', () => {
       layers: [{ id: 'default' }],
       renderOrder: () => ['t'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
+      composition: IDENTITY_POSE_COMPOSITION,
       get: (id: NodeId) => nodes.get(id as string) as never,
       overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
@@ -123,6 +128,7 @@ describe('hitTestArea — geometry held on node.data', () => {
       layers: [{ id: 'default' }],
       renderOrder: () => ['p'] as NodeId[],
       renderOrderNodes: () => [...nodes.values()],
+      composition: IDENTITY_POSE_COMPOSITION,
       get: (id: NodeId) => nodes.get(id as string) as never,
       overrides: NO_OVERRIDES,
     } as unknown as Scene<unknown, string, unknown>;
@@ -363,25 +369,53 @@ describe('intersect flattens curves', () => {
 });
 
 /**
- * An open subpath encloses nothing — the kit's `pointInPath` convention — so
- * a lasso meets it only by touching the stroke. The V below opens at the top:
- * its phantom closing edge would run along y = 0.
+ * An open subpath encloses what its path's `openFill` says it does. The V
+ * below opens at the top: its closing edge would run along y = 0, and
+ * `between` sits in the empty space under that edge, touching neither arm.
  */
-describe('intersect reads an open subpath as a polyline', () => {
+describe('intersect reads an open subpath by whether it fills', () => {
   const vee: PolygonPath = {
     kind: 'polygon',
     commands: Uint8Array.of(PATH_M, PATH_L, PATH_L),
     coords: Float32Array.of(0, 0, 50, 100, 100, 0),
     fillRule: 'nonzero',
   };
-  const veeScene = () => createScene<unknown, string, unknown>({
+  const sceneOf = (pose: unknown, data: unknown = null) => createScene<unknown, string, unknown>({
     systemLayers: [{ id: 'default' }],
-    initial: [{ id: 'vee' as NodeId, kind: 'leaf' as const, layer: 'default', pose: vee, data: null }],
+    initial: [{ id: 'vee' as NodeId, kind: 'leaf' as const, layer: 'default', pose, data }],
+  });
+  const veeScene = () => sceneOf(vee);
+  const between = [{ x: 45, y: -5 }, { x: 55, y: -5 }, { x: 50, y: 10 }];
+
+  it('a lasso between the arms takes a path a fill closes', () => {
+    expect(hitTestLassoPolygon(veeScene(), between, 'intersect')).toEqual(['vee']);
   });
 
-  it('a lasso between the arms, across the missing closing edge, misses it', () => {
-    const between = [{ x: 45, y: -5 }, { x: 55, y: -5 }, { x: 50, y: 10 }];
-    expect(hitTestLassoPolygon(veeScene(), between, 'intersect')).toEqual([]);
+  it('a lasso between the arms misses a path no fill closes', () => {
+    const scene = sceneOf({ ...vee, openFill: 'none' });
+    expect(hitTestLassoPolygon(scene, between, 'intersect')).toEqual([]);
+  });
+
+  it('a lasso between the arms misses a node painted with no fill', () => {
+    const stroke = { paint: { kind: 'solid', color: '#000000' }, width: 2 };
+    const scene = sceneOf({ x: 0, y: 0, width: 100, height: 100 }, { path: vee, fill: null, stroke });
+    expect(hitTestLassoPolygon(scene, between, 'intersect')).toEqual([]);
+    const arm = [{ x: 10, y: 20 }, { x: 40, y: 20 }, { x: 25, y: 40 }];
+    expect(hitTestLassoPolygon(scene, arm, 'intersect')).toEqual(['vee']);
+  });
+
+  it('a lasso between the arms misses a path-shaped pose painted with no fill', () => {
+    const drop = registerNodeShape({
+      id: 'test:wire',
+      matches: (n) => (n.data as { wire?: boolean } | null)?.wire === true,
+      paint: () => [],
+      ink: () => ({ filled: false, outset: 1, inset: 1 }),
+    }, { priority: 'high' });
+    try {
+      expect(hitTestLassoPolygon(sceneOf(vee, { wire: true }), between, 'intersect')).toEqual([]);
+    } finally {
+      drop();
+    }
   });
 
   it('a lasso across one arm takes it', () => {

@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { createPenPreviewLayer } from './penPreviewLayer';
-import { usePenTool, type PenScratch } from 'tools/builtin/pen';
-import { renderHook } from '@testing-library/react';
+import type { PenScratch } from 'tools/builtin/pen';
 import { type PolygonPath, anchorsToPath } from '@weasel-js/geom';
 
 const DIMS = { width: 400, height: 400 };
 
 function setup() {
-  const { result } = renderHook(() => usePenTool());
-  const tool = result.current;
-  const scratch = tool.initScratch!() as PenScratch;
-  const layer = createPenPreviewLayer({ penTool: tool });
-  return { tool, scratch, layer };
+  const scratch: PenScratch = {
+    finishedSubpaths: [],
+    current: null,
+    cursor: null,
+    draggingHandleAt: null,
+    closeHintActive: false,
+    continuing: null,
+  };
+  const layer = createPenPreviewLayer({ state: scratch });
+  return { scratch, layer };
 }
 
 describe('createPenPreviewLayer', () => {

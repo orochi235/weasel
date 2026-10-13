@@ -1,14 +1,9 @@
 /**
- * Smoke test for `packages/font/scripts/gen-font.ts`. Lives under this
- * package's `src/` (rather than next to the script) because `scripts/` isn't
- * covered by any vitest project — the `weasel-ui` project's include glob is
- * `packages/**\/*.test.{ts,tsx}`
- * (see `vitest.config.ts`). Runs the real script as a child process (bakes
- * an actual MSDF atlas), then round-trips the emitted JSON through
- * `parseBmFont`.
+ * Smoke test for `packages/font/scripts/gen-font.ts`: runs the real script as
+ * a child process, then round-trips the emitted JSON through `parseBmFont`.
  *
- * Skipped when the fixture font isn't present (CI portability — the font
- * is a macOS system font, not vendored).
+ * Skipped when the fixture font isn't present: it is a macOS system font, not
+ * vendored.
  */
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';

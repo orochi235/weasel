@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { Bar } from '../Bar/Bar';
@@ -10,16 +10,12 @@ export interface ToolOptionsBarProps {
   /**
    * Context label for the row — e.g. the active tool's name. Rendered
    * before the children and doubles as the toolbar's `aria-label`. Omit
-   * it and the row still renders (it's a permanently reserved slot), just
-   * without an accessible name.
+   * it and the row still renders, just without an accessible name.
    *
    * Using `label` for both the visible text and `aria-label` means a
-   * screen reader announces it twice when landing on the toolbar ("Text,
-   * toolbar", then "Text" again when browsing into the visible span).
+   * screen reader announces it twice when landing on the toolbar.
    * `aria-labelledby` would avoid the echo at the cost of id plumbing and
-   * an awkward no-`id`-to-point-at case when `label` is omitted. The
-   * double-announcement is common enough for labeled landmark regions
-   * that it's left as-is — considered, not missed.
+   * an awkward no-`id`-to-point-at case when `label` is omitted.
    */
   label?: string;
   /**
@@ -36,6 +32,8 @@ export interface ToolOptionsBarProps {
   mixed?: ReadonlySet<string>;
   /** Control overrides, by dotted path or by leaf kind, as the panel takes. */
   renderers?: Record<string, PropertyRenderer>;
+  /** The schema `schema`'s `alias` leaves point into, handed to the `Bar`. Default: `schema` itself. */
+  over?: PrefGroup | PrefSection;
   children?: ReactNode;
   className?: string;
 }
@@ -53,12 +51,11 @@ export interface ToolOptionsBarProps {
  * `role="toolbar"` without roving tabindex: the ARIA authoring practices
  * expect arrow-key roving focus across a toolbar's items, but a bar of
  * compound controls (`NumberField`, `Select`, `ColorField`) must leave the
- * arrow keys to them — they edit their own value with them. That is true of
- * schema-drawn controls as much as of arbitrary children, so the bar keeps
- * plain DOM tab order and `useRovingTabIndex` documents this as its opt-out.
+ * arrow keys to them — they edit their own value with them. So the bar keeps
+ * plain DOM tab order.
  */
 export function ToolOptionsBar(props: ToolOptionsBarProps) {
-  const { label, schema, values, onChange, mixed, renderers, children, className } = props;
+  const { label, schema, values, onChange, mixed, renderers, over, children, className } = props;
   const cls = [s.root, className].filter(Boolean).join(' ');
   // Every label on the line shortens together before the strip scrolls.
   const controls = useRef<HTMLDivElement>(null);
@@ -69,7 +66,7 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
       <div className={s.controls} ref={controls}>
         <FitScope value={fit}>
           {schema !== undefined && (
-            <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} onChange={onChange} />
+            <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} over={over} onChange={onChange} />
           )}
           {children}
         </FitScope>

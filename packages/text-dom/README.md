@@ -22,6 +22,11 @@ While an edit is open the hook reports the selection's shared style
 (`MIXED` where the selected runs disagree) and applies a style or a flag such
 as bold to the selected range.
 
+A paste or a drop goes in as runs, never as the clipboard's markup: its blocks
+become lines, its table cells are set apart by tabs, and it keeps its bold,
+italic, underline, strikethrough, overline, and super- and subscript. Face,
+size, and color come from the text it lands in.
+
 `runsToDom` and `domToRuns` are the conversion between runs and the overlay's
 DOM, and `charOffsetToDomPosition` / `domPositionToCharOffset` map a character
 offset in the text to a DOM position and back.

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { ActionDisabledReason, asNodeId, defineTool, paintAlpha, resolveTextStyle, useLatest } from '@weasel-js/core';
-import type { Action, FillStyle, Stroke, TextStyle } from '@weasel-js/core';
+import type { Action, Stroke, TextStyle, Fill } from '@weasel-js/core';
 import {
   computeScrubbedPaints,
   type PaintSnapshot,
@@ -52,20 +52,20 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       const node = sceneRef.current.get(asNodeId(id));
       if (!node) return null;
       const data = (node.data ?? {}) as {
-        fill?: FillStyle | null; stroke?: Stroke | null; text?: string; style?: TextStyle;
+        fill?: Fill | null; stroke?: Stroke | null; text?: string; style?: TextStyle;
       };
       // Text with no fill of its own paints the resolved default, so that is
       // what the scrub scales.
       const fill = data.fill === undefined && data.text !== undefined
         ? resolveTextStyle(data.style, { fill: undefined }).fill
         : data.fill;
-      if (!fill && !data.stroke?.paint) return null;
+      if (!fill?.paint && !data.stroke?.paint) return null;
       return { fill, stroke: data.stroke };
     }
 
     function brightestAlphaOf(snap: PaintSnapshot): number {
       return Math.max(
-        snap.fill ? paintAlpha(snap.fill) : 0,
+        snap.fill?.paint ? paintAlpha(snap.fill.paint) : 0,
         snap.stroke?.paint ? paintAlpha(snap.stroke.paint) : 0,
       );
     }

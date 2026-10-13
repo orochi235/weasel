@@ -1,11 +1,5 @@
-import type {
-  Animator,
-  AnimationHandle,
-  EasingFn,
-  NodeId,
-  PoseDescriptor,
-  Scene,
-} from '@weasel-js/core';
+import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
+import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
 import type { D3Transition } from './types';
 
 interface TransitionCtx<TData, TPose> {
@@ -29,31 +23,9 @@ interface CustomTween<TData> {
   apply: (d: TData, id: NodeId, value: unknown) => void;
 }
 
-/**
- * Build a transition handle. The transition is *lazy*: tweens don't spawn
- * until `.end()` is called on it or on a transition chained to it. This lets
- * the consumer chain `.duration().ease().delay()...` after `.transition()`
- * without having to declare them in advance.
- *
- * For each selected node, the first transition in a chain spawns one pose tween
- * from `priorPoses[id]` → the joined pose (or its `.pose()` target); a chained
- * transition tweens from wherever the previous one left the node, and only
- * when it has a `.pose()`. Custom `.tween()` declarations spawn one extra tween
- * per node per declaration, using the kit's animator factory-interpolator
- * slot when an `interpolate` factory is provided.
- *
- * `interrupt()` cancels via the kit's `animator.cancelKey`. The cancelKey
- * format is `d3-transition:<name>:<nodeId>` for pose tweens and
- * `d3-transition:<name>:<nodeId>:<tweenName>` for custom tweens.
- * `animator.cancelKey` matches a key exactly, so a selection-level
- * `.interrupt(name)` cannot reach the custom keys by prefix — live custom
- * keys are tracked in `LIVE_CUSTOM_KEYS` and read back by `takeCustomKeys`.
- */
-
-/** Live custom-tween cancelKeys, grouped by their pose-tween namespace
- *  (`d3-transition:<name>:<nodeId>`). Populated on spawn and drained on
- *  completion or cancel, so a selection-level interrupt can find the keys a
- *  prefix match would otherwise have given it. */
+/** Live custom-tween cancelKeys, grouped by their pose-tween namespace.
+ *  `animator.cancelKey` matches a key exactly, so a selection-level interrupt
+ *  finds them here rather than by prefix. */
 const LIVE_CUSTOM_KEYS = new Map<string, Set<string>>();
 
 function trackCustomKey(ns: string, key: string): void {
@@ -107,9 +79,7 @@ function unregisterRemoval(scene: object, id: NodeId, cancel: () => void): void 
 
 /**
  * @internal Stop every transition chain that would remove `id` when it ends,
- * for that node only, so the node stays in the scene. The join calls this for
- * a key that re-enters while its node is still exiting (d3's rebinding of an
- * exiting element).
+ * for that node only, so the node stays in the scene.
  */
 export function cancelPendingRemoval(scene: object, id: NodeId): void {
   const set = PENDING_REMOVALS.get(scene)?.get(id);
@@ -131,6 +101,16 @@ interface Stage {
   cancelItem(i: number): void;
 }
 
+/**
+ * A transition is *lazy*: tweens don't spawn until `.end()` is called on it or
+ * on a transition chained to it. The first transition in a chain tweens each
+ * node from `priorPoses[id]` → the joined pose (or its `.pose()` target); a
+ * chained one tweens from wherever the previous one left the node, and only
+ * when it has a `.pose()`.
+ *
+ * The cancelKey is `d3-transition:<name>:<nodeId>` for pose tweens and
+ * `d3-transition:<name>:<nodeId>:<tweenName>` for custom tweens.
+ */
 export function createTransition<TData, TPose>(
   ctx: TransitionCtx<TData, TPose>,
 ): D3Transition<TData, TPose> {

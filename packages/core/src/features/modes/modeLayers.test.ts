@@ -27,24 +27,24 @@ describe('workspaceTintLayer', () => {
     const [cmd, ...rest] = draw(workspaceTintLayer({ registry }));
     expect(rest).toEqual([]);
     expect(cmd!.path).toMatchObject({ x: 0, y: 0, width: 200, height: 100 });
-    expect(cmd!.fill).toMatchObject({ fill: 'solid', color: '#ff0000', opacity: 0.5 });
+    expect(cmd!.fill).toMatchObject({ paint: { kind: 'solid', color: '#ff0000', opacity: 0.5 } });
   });
 
   it('fades by the declared gradient direction, defaulting intensity to 0.12', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'rise' });
     const layer = workspaceTintLayer({ registry });
     const [rise] = draw(layer);
-    expect(rise!.fill).toMatchObject({ fill: 'linear-gradient', from: { x: 0, y: 100 }, to: { x: 0, y: 0 }, opacity: 0.12 });
+    expect(rise!.fill).toMatchObject({ paint: { kind: 'linear-gradient', from: { x: 0, y: 100 }, to: { x: 0, y: 0 }, opacity: 0.12 } });
 
     registry.setMode('fall');
     const [fall] = draw(layer);
-    expect(fall!.fill).toMatchObject({ from: { x: 0, y: 0 }, to: { x: 0, y: 100 }, opacity: 0.3 });
+    expect(fall!.fill).toMatchObject({ paint: { from: { x: 0, y: 0 }, to: { x: 0, y: 100 }, opacity: 0.3 } });
   });
 
   it('lets the caller override every mode intensity', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'wash' });
     const [cmd] = draw(workspaceTintLayer({ registry, intensity: 0.4 }));
-    expect(cmd!.fill).toMatchObject({ opacity: 0.4 });
+    expect(cmd!.fill).toMatchObject({ paint: { opacity: 0.4 } });
   });
 
   it('leaves the page uncovered, tinting the four strips around it', () => {

@@ -1,18 +1,12 @@
 /**
- * Shape-kind extractor.
+ * Produces a `ShapeSchema` per member of `KIT_SHAPE_KINDS`. Each kit shape is
+ * created via `makeLeaf(idCall, poseLiteral, dataLiteral)`: we find the
+ * `const <id> =` binding that synthesizes the tool and walk its initializer
+ * for the first `makeLeaf(...)` call.
  *
- * Reads `packages/core/src/canvas/SceneCanvas/useBuiltinShapeTools.tsx` and produces a
- * `ShapeSchema` per member of `KIT_SHAPE_KINDS`. Each kit shape is created
- * via `makeLeaf(idCall, poseLiteral, dataLiteral)`. We find the `const <id> =`
- * binding that synthesizes the tool and walk its initializer for the first
- * `makeLeaf(...)` call; the second and third arguments yield the pose and
- * data property lists respectively.
- *
- * The pose/data literals are not always plain object literals (pencil uses
- * helper `boundsOfPath`, pen wraps the bounds in a carrier, polygon/star are
- * synthesized inside `useInsertDepSource`). In those cases we fall back to
- * walking the closest object literal we can find in the initializer, and tag
- * the schema with a short note so consumers know why the picture is partial.
+ * The pose/data arguments are not always plain object literals. In those
+ * cases we fall back to the closest object literal in the initializer, and tag
+ * the schema with a short note saying the picture is partial.
  */
 import {
   Node,
@@ -28,10 +22,7 @@ import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
 
 const SOURCE = 'packages/core/src/canvas/SceneCanvas/useBuiltinShapeTools.tsx';
 
-/** Map from binding identifier inside the hook to public shape-kind id. They
- *  happen to match for every kind except `pen` (whose binding destructures
- *  `tool: pen` from `usePenTool({...})`); the explicit map insulates us from
- *  future renames. */
+/** Map from binding identifier inside the hook to public shape-kind id. */
 const BINDING_TO_KIND: Record<string, string> = {
   rect: 'rect',
   ellipse: 'ellipse',

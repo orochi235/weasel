@@ -2,10 +2,9 @@
  * Is the dev server serving your edit? — a three-layer staleness probe.
  *
  *   node scripts/is-it-stale.mjs <module-path> <needle> [origin]
- *   node scripts/is-it-stale.mjs packages/core/src/renderer/draw.ts u_tileOrigin
+ *   node scripts/is-it-stale.mjs packages/renderer/src/draw.ts u_tileOrigin
  *
- * "My change isn't taking effect" is three different failures wearing one
- * costume. This separates them:
+ * "My change isn't taking effect" is three different failures:
  *
  *   DISK    the file on disk contains <needle>
  *   SERVER  the dev server's transform output for that module contains it
@@ -40,13 +39,9 @@ const onDisk = existsSync(abs) && readFileSync(abs, 'utf8').includes(needle);
 results.push(['DISK', onDisk, abs]);
 
 // ─── SERVER ──────────────────────────────────────────────────────────────────
-// Vite serves transformed source at the module's path. `?t=` busts its own
-// HTTP cache without busting the transform cache — which is exactly the
-// distinction we're trying to measure, so it is deliberately omitted.
 // `/@fs/<absolute path>` is the form that reliably returns a module rather
-// than the SPA fallback, and it sidesteps having to guess how the repo path
-// maps onto the served path. A configured `base` still prefixes it, so try
-// the origin as given and then walk its path prefix off.
+// than the SPA fallback. A configured `base` still prefixes it, so try the
+// origin as given and then walk its path prefix off.
 const candidates = [];
 {
   const u = new URL(origin);
@@ -66,8 +61,7 @@ for (const url of candidates) {
     if (!res.ok) continue;
     const body = await res.text();
     // A dev server with SPA fallback answers 200 with index.html for paths it
-    // doesn't recognize. Scoring that as "needle absent" reads as staleness
-    // and sends you restarting a server that was fine.
+    // doesn't recognize; that is not "needle absent".
     if (/^\s*<!doctype html/i.test(body)) continue;
     reachable = true;
     served = body.includes(needle);

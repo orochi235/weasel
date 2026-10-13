@@ -15,12 +15,11 @@ one.
 **Nothing here gates CI.** `.github/workflows/perf.yml` runs `test:perf`
 nightly on a self-hosted machine with a real GPU and keeps the result files as
 an artifact; read those as a trend, never as pass/fail on a change.
-`.github/workflows/perf-pr.yml` runs everything on a pull request's base and on
+`.github/workflows/perf-pr.yml` runs everything on a pull request's merge base and on
 its head, on that same machine, and posts the comparison below as a comment; it
 cannot fail the checks. Shared
 runners are noisy enough that an honest threshold would have to be loose enough
-to miss real regressions, and a benchmark that fails at random gets disabled
-within a month. The Playwright specs do assert, but only that a measurement
+to miss real regressions. The Playwright specs do assert, but only that a measurement
 means something — a variant that paints nothing, a sweep that got cheaper as it
 grew — never that it is fast enough.
 
@@ -119,8 +118,7 @@ document with no text never fetches it — the `empty` row's 212,015 fewer bytes
 
 When a bundle looks too big, divide its bytes by its module count first. A
 ratio far above normal points at data compiled in as code rather than at
-dependency bloat — how both apps were found embedding their own source as
-strings for a viewer panel.
+dependency bloat.
 
 ## HUD text against a DOM overlay
 
@@ -220,8 +218,7 @@ What the numbers say:
   ranges separate: from 1,000 glyphs up the HUD's compositor runs 0.20–0.30 ms
   a frame against the DOM's 0.51–0.76, and at 5,000 glyphs the GPU process
   runs 1.85–2.03 against 2.61–2.69. The all-thread totals lean the same way,
-  but their ranges overlap except under the pan. The first run, on a contended
-  node, put this lean at 2–3 ms; on an idle one it is about 1 ms. The HUD's
+  but their ranges overlap except under the pan. The HUD's
   text adds little GPU time: `EXT_disjoint_timer_query_webgl2`
   timed the canvas at 0.35 ms with a 5,000-glyph readout against 0.31 for the
   scene alone.
@@ -383,7 +380,7 @@ needs recovering by subtraction.
 
 Fixtures are in `bench/fixtures.ts`, all seeded through `mulberry32` — no bare
 `Math.random()`, so two runs on the same machine are comparable. Two fixture
-details are load-bearing and easy to get wrong again:
+details are load-bearing:
 
 - **Curve fixtures must not self-intersect.** Independent random radii around
   a circle fold through themselves once the angular step drops below the

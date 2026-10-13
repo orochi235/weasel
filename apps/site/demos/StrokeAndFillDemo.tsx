@@ -16,13 +16,14 @@ import {
   useScene,
   useSelection,
   type DragSample,
-  type FillStyle,
-  type GradientFill,
+  type Paint,
+  type GradientPaint,
   type Path,
   type Scene,
   type Stroke,
   type ToolsApi,
   type View,
+  type Fill,
 } from '@weasel-js/core';
 import {
   ColorField,
@@ -40,7 +41,7 @@ const W = 600, H = 420;
  *  anchor of `path`; `stroke.vertexWidths` is one width per anchor. */
 interface PaintedData {
   path: Path;
-  fill?: FillStyle | null;
+  fill?: Fill | null;
   stroke?: Stroke | null;
   vertexColors?: number[];
 }
@@ -54,8 +55,8 @@ const RIBBON = asNodeId('ribbon');
 /** `units: 'bounds'` stores the geometry as fractions of the node's own box,
  *  so the paint survives pan, zoom and resize — and is the frame
  *  `SceneGradientHandles` resolves against. */
-const GRADIENT: GradientFill = {
-  fill: 'linear-gradient',
+const GRADIENT: GradientPaint = {
+  kind: 'linear-gradient',
   from: { x: 0.1, y: 0.1 },
   to: { x: 0.9, y: 0.9 },
   stops: [
@@ -125,13 +126,13 @@ function StrokeAndFill() {
     systemLayers: [{ id: 'default' }],
     initial: [
       leaf(SWATCH, pathFromD('M40 40 H280 V210 H40 Z'), {
-        fill: GRADIENT,
+        fill: { paint: GRADIENT },
         stroke: strokeOf('#1d2733ff', 6),
       }),
       leaf(PETAL, heptagon(430, 125, 85), {
         // A placeholder fill: the renderer only enters the per-vertex shader
         // path for a command that has one, and the vertex colors win in it.
-        fill: solid('#ffffffff'),
+        fill: { paint: solid('#ffffffff') },
         vertexColors: RAINBOW.flat(),
       }),
       leaf(RIBBON, polyline(TAPER_POINTS), {
@@ -227,7 +228,7 @@ function PaintPanel({
   // `setFill` / `setStroke` paint the selection, so the panel commits through
   // them rather than writing `data` itself: one undo entry, and the same path
   // a color picker or a keybinding takes.
-  const paint = (which: PaintSlot, next: FillStyle | null): void => {
+  const paint = (which: PaintSlot, next: Paint | null): void => {
     actions?.begin(which === 'fill' ? 'setFill' : 'setStroke', { paint: next })?.end('commit');
   };
   const write = (data: PaintedData): void => {
@@ -275,7 +276,7 @@ function PaintPanel({
             <div className="ckd-field" onFocusCapture={() => onFocusSlot('fill')}>
               <span>Fill</span>
               <PaintField
-                value={data.fill ?? null}
+                value={data.fill?.paint ?? null}
                 aria-label="Fill"
                 onChange={(next) => paint('fill', next)}
               />

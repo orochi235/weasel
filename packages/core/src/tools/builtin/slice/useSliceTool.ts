@@ -3,7 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { RenderLayer } from 'core/layers/render';
-import type { DrawCommand } from '../../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { Action, ActionDeps, InvocationCtx, ToolKeybinding } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { createPointerFollower } from '../shared/pointerFollower';
@@ -39,8 +39,7 @@ const VERTEX_RADIUS_PX = 3;
  * is released instead of cutting on its own.
  *
  * Every cut goes to the `slice` dep, which decides what it does to the scene.
- * `<SceneCanvas>` publishes one that cuts every path the cut crosses. The pending cut paints through
- * `Tool.overlay`, trailing to the pointer when the host publishes one.
+ * `<SceneCanvas>` publishes one that cuts every path the cut crosses.
  */
 export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
   const scratchRef = useRef<SliceScratch>({ points: [] });
@@ -195,7 +194,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
             width: VERTEX_RADIUS_PX * 2,
             height: VERTEX_RADIUS_PX * 2,
           }),
-          fill: stroke.paint,
+          fill: { paint: stroke.paint },
         });
       }
       return out;

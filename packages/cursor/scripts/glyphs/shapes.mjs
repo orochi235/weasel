@@ -1,14 +1,9 @@
-// Shape-tool cursor glyphs: a crosshair with a badge naming the shape.
-//
-// rect, ellipse, line, star and polygon are all bare `crosshair` today, so the
-// five tools are indistinguishable while you are using them. The crosshair is
-// what stays the same — it is still the thing you aim with, and its centre is
-// still the hotspot — and the badge is what tells them apart.
+// Shape-tool cursor glyphs: a crosshair, whose center is the hotspot, with a
+// badge naming the shape.
 //
 // The badge is a filled silhouette, not an outline. At true cursor size it is
 // about 8 device pixels across; an outline at that size is a ring of single
-// pixels around a hole, and the shapes stop being distinguishable from each
-// other before they stop being visible.
+// pixels around a hole.
 //
 // Geometry is computed, not eyeballed — see CLAUDE.md ("Drawing icons").
 

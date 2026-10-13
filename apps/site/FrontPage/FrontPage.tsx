@@ -1,6 +1,8 @@
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { DEMOS_ID, GET_STARTED_ID, RELEASES_ID } from '../routes';
 import { projectTheme } from './projectTheme';
+import { TAGLINE } from './tagline';
+import { VersionPill } from './VersionPill';
 import { Wordmark } from './Wordmark';
 import s from './FrontPage.module.css';
 
@@ -20,10 +22,13 @@ export function FrontPage() {
   return (
     <ThemeProvider theme={projectTheme} selection={DARK} className={s.page}>
       <main className={s.pitch}>
-        <h1 className={s.title}>
-          <Wordmark />
-        </h1>
-        <p className={s.tagline}>A 2D scene-graph canvas engine for React.</p>
+        <div className={s.masthead}>
+          <h1 className={s.title}>
+            <Wordmark />
+          </h1>
+          <VersionPill className={s.version} />
+        </div>
+        <p className={s.tagline}>{TAGLINE}</p>
         <code className={s.install}>npm i @weasel-js/core</code>
         <nav className={s.links} aria-label="Sections">
           {LINKS.map((link) => (

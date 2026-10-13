@@ -7,9 +7,6 @@
  *   [m00, m10, 0,
  *    m01, m11, 0,
  *    tx,  ty,  1]
- *
- * `apply(m, x, y)` returns `[m * (x, y, 1)] = [m00*x + m01*y + tx,
- *                                              m10*x + m11*y + ty]`.
  */
 
 import { invert as invertAffine, type Mat3 as Affine } from './mat3';
@@ -69,15 +66,12 @@ function scaled(m: GlMat3, sx: number, sy: number): GlMat3 {
 }
 
 /** This layout read as the kernel's 6-element affine. The two carry the same
- *  logical order, so the conversion is a repack and nothing else — it exists
- *  so the repack has a name instead of appearing inline at each crossing. */
+ *  logical order, so the conversion is a repack and nothing else. */
 function toAffine(m: GlMat3): Affine {
   return [m[0], m[1], m[3], m[4], m[6], m[7]];
 }
 
-/** The kernel's affine in this layout. The inverse of {@link toAffine}, and
- *  what an `SvgGroupNode.transform` (also a kernel affine) becomes on its way
- *  to a `GroupDrawCommand`. */
+/** The kernel's affine in this layout. The inverse of {@link toAffine}. */
 function fromAffine(a: Affine): GlMat3 {
   return create(a[0], a[1], a[2], a[3], a[4], a[5]);
 }
@@ -136,9 +130,8 @@ function minScaleOf(m: GlMat3): number {
 }
 
 /** The renderer's 3x3 matrix operations, as one namespace. These work on the
- *  9-element form the GL uniform upload wants — distinct from
- *  `@weasel-js/geom`'s 6-element affine `GlMat3`, though the logical element
- *  order is the same. */
+ *  9-element form the GL uniform upload wants — distinct from the 6-element
+ *  affine `Mat3`, though the logical element order is the same. */
 export const mat3 = {
   identity,
   toAffine,

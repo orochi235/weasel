@@ -7,7 +7,7 @@
  * to its last — including a rank in between that holds none of its members, or
  * an outsider would land inside the box there. Groups keep one cross position
  * across every rank, so two groups' columns never cross and their boxes never
- * overlap. Ungrouped nodes pack around the columns rank by rank, as before.
+ * overlap. Ungrouped nodes pack around the columns rank by rank.
  *
  * A group may be a member of another: its column then sits inside its parent's.
  */

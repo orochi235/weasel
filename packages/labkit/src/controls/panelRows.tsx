@@ -1,4 +1,10 @@
-import { isPrefLeaf, type PrefGroup, type PrefLeaf, pairRowsOf } from '@weasel-js/prefs';
+import {
+  isPrefLeaf,
+  type PrefGroup,
+  type PrefLeaf,
+  type PrefSection,
+  pairRuns,
+} from '@weasel-js/prefs';
 import {
   type CollapseProps,
   GroupTabs,
@@ -43,6 +49,8 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
   renderers: Record<string, ControlRenderer> | undefined;
+  /** The schema the panel's aliases point into, where that is not `resolved`'s. */
+  over: PrefGroup | PrefSection | undefined;
   showHidden: boolean;
   density: PropertyDensity | undefined;
   align: PropertyAlign | undefined;
@@ -64,6 +72,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     shown,
     setConfig,
     renderers,
+    over,
     showHidden,
     density,
     align,
@@ -73,7 +82,9 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   } = source;
 
   const enabled = (path: string): boolean =>
-    isLeafEnabled(resolved, path, config as Record<string, unknown>);
+    isLeafEnabled(resolved, path, config as Record<string, unknown>, over);
+  const visible = (path: string): boolean =>
+    isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden, over);
 
   /** A group's paths that no section inside it claims, in schema order. */
   const loosePaths = (group: PrefGroup, at: string): string[] => {
@@ -89,10 +100,9 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     const found = headingLeaf(resolved, heading, paths, renderers);
     if (!found) return { path: undefined, control: undefined };
     const { path, leaf } = found;
-    const visible = isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden);
     return {
       path,
-      control: visible ? (
+      control: visible(path) ? (
         <BareControl
           leaf={leaf}
           value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
@@ -108,7 +118,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const node = (path: string, rows: Rows): ReactNode => {
     const found = schemaNodeAtPath(resolved.group, path);
     if (!found) return null;
-    if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden)) return null;
+    if (!visible(path)) return null;
     if (isPrefLeaf(found)) {
       return (
         <ControlRow
@@ -125,6 +135,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           auto={auto}
           setRowAuto={setRowAuto}
           disabled={!enabled(path)}
+          over={over}
         />
       );
     }
@@ -134,16 +145,11 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           key={path}
           group={found}
           path={path}
-          visible={(p) => isLeafVisible(resolved, p, config as Record<string, unknown>, showHidden)}
+          visible={visible}
           enabled={enabled}
           value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
           write={setConfig}
-          custom={(p, leaf) =>
-            (renderers?.[p] ??
-              resolved.renderers[p] ??
-              resolved.dialogs[p] ??
-              renderers?.[leaf.kind]) !== undefined
-          }
+          custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
           row={(p) => (
             <PropertyList pack={rows.grid} density={density} align={align}>
               {node(p, rows)}
@@ -210,55 +216,62 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
    * presentational, so a leaf whose control the lab draws itself, or one whose
    * control needs the whole row, keeps its own row instead.
    */
-  const pairable = (
-    path: string,
-    pairs: ReadonlyMap<string, { key: string; label: string }>,
-  ): { leaf: PrefLeaf; pair: { key: string; label: string } } | undefined => {
+  const pairable = (path: string): readonly [path: string, leaf: PrefLeaf] | undefined => {
     const found = schemaNodeAtPath(resolved.group, path);
     if (!found || !isPrefLeaf(found)) return undefined;
-    const pair = pairs.get(path);
-    if (pair === undefined) return undefined;
-    if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden))
-      return undefined;
-    if (
-      renderers?.[path] ??
-      resolved.renderers[path] ??
-      resolved.dialogs[path] ??
-      renderers?.[found.kind]
-    )
-      return undefined;
+    if (!visible(path)) return undefined;
+    if (drawsOwn(resolved, renderers, path, found)) return undefined;
     // A cell is one bare control, so a leaf with no one field keeps its row.
     if (isSliderLeaf(found) || labField(found, undefined, unwritten, NO_CHOICES) === null)
       return undefined;
-    return { leaf: found, pair };
+    return [path, found];
   };
 
   /** A run of sibling paths as rows, merging each leaf a `pair` names into
    *  the row of the leaf naming it, where they run adjacent. */
   const rowsFor = (paths: readonly string[], rows: Rows): ReactNode[] => {
-    const pairs = pairRowsOf(
-      paths.flatMap((p) => {
-        const found = schemaNodeAtPath(resolved.group, p);
-        return found && isPrefLeaf(found) ? [[p, found as PrefLeaf] as const] : [];
-      }),
-    );
+    const runs = pairRuns(paths, pairable);
     const out: ReactNode[] = [];
-    for (let i = 0; i < paths.length; ) {
-      // A run of groups drawn as tabs shares one strip.
+    for (let i = 0; i < runs.length; ) {
+      const { items, pair } = runs[i]!;
+      if (pair) {
+        const cells = items.map((path) => ({
+          path,
+          leaf: schemaNodeAtPath(resolved.group, path) as PrefLeaf,
+          disabled: !enabled(path),
+        }));
+        out.push(
+          <PairedRow
+            key={items[0]}
+            label={pair.label}
+            cells={cells}
+            shown={shown}
+            setConfig={setConfig}
+            layout={rows.layout}
+            // A segmented cell carries every choice at once, so a pair holding
+            // one needs the whole row the way a segmented row of its own does.
+            span={cells.some(({ leaf }) => extra<string>(leaf, 'control') === 'radio')}
+          />,
+        );
+        i += 1;
+        continue;
+      }
+      // A run of groups drawn as tabs shares one strip. A group is never paired, so each is a run of its own.
       const run: Array<{ path: string; name: string }> = [];
       let past = i;
-      for (; past < paths.length; past += 1) {
-        const found = schemaNodeAtPath(resolved.group, paths[past]!);
+      for (; past < runs.length; past += 1) {
+        const path = runs[past]!.items[0]!;
+        const found = schemaNodeAtPath(resolved.group, path);
         if (!found || isPrefLeaf(found) || found.as !== 'tab') break;
-        if (isLeafVisible(resolved, paths[past]!, config as Record<string, unknown>, showHidden)) {
-          run.push({ path: paths[past]!, name: found.name });
+        if (visible(path)) {
+          run.push({ path, name: found.name });
         }
       }
       if (past > i) {
         if (run.length > 0) {
           out.push(
             <GroupTabs
-              key={paths[i]}
+              key={items[0]}
               className="lk-control-tabs"
               tabs={run.map(({ path, name }) => ({
                 id: path,
@@ -275,34 +288,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
         i = past;
         continue;
       }
-      const head = pairable(paths[i], pairs);
-      if (!head) {
-        out.push(node(paths[i], rows));
-        i += 1;
-        continue;
-      }
-      const { pair } = head;
-      const cells = [{ path: paths[i], leaf: head.leaf, disabled: !enabled(paths[i]) }];
-      let j = i + 1;
-      for (; j < paths.length; j += 1) {
-        const next = pairable(paths[j], pairs);
-        if (!next || next.pair.key !== pair.key) break;
-        cells.push({ path: paths[j], leaf: next.leaf, disabled: !enabled(paths[j]) });
-      }
-      out.push(
-        <PairedRow
-          key={paths[i]}
-          label={pair.label}
-          cells={cells}
-          shown={shown}
-          setConfig={setConfig}
-          layout={rows.layout}
-          // A segmented cell carries every choice at once, so a pair holding
-          // one needs the whole row the way a segmented row of its own does.
-          span={cells.some(({ leaf }) => extra<string>(leaf, 'control') === 'radio')}
-        />,
-      );
-      i = j;
+      out.push(node(items[0]!, rows));
+      i += 1;
     }
     return out;
   };
@@ -339,6 +326,21 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   };
 
   return { body, lift, loosePaths };
+}
+
+/** Whether the lab or the instrument draws the control of the leaf at `path` itself: by path, in a dialog, or by kind. */
+function drawsOwn(
+  resolved: ResolvedConfig,
+  renderers: Record<string, ControlRenderer> | undefined,
+  path: string,
+  leaf: PrefLeaf,
+): boolean {
+  const own =
+    renderers?.[path] ??
+    resolved.renderers[path] ??
+    resolved.dialogs[path] ??
+    renderers?.[leaf.kind];
+  return own !== undefined;
 }
 
 /** What a section says of its own frame. */
