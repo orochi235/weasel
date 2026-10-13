@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 import { registerFont, registerFontOutlines, loadFontOutlines, type OutlineFace } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { layoutTextPose, type TextPose } from '@weasel-js/text';
+import { layoutTextPose, paintRuns, textPoseLayoutInput, type TextPose } from '@weasel-js/text';
 import { boundsOfPath, pointInPath, pathFromD, PATH_C, PATH_Q, type Path } from '@weasel-js/geom';
 import {
   textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError, type TextOutlineSource,
@@ -163,7 +163,7 @@ describe('textToPath', () => {
     const src = { text: 'B', style: { fontFamily: 'squares', fontSize: 100, strikethrough: true } };
     const tp: TextPose = { ...POSE, text: src.text, style: src.style };
     const { laid, x, y } = layoutTextPose(tp);
-    const [rule] = laid.decorations;
+    const [rule] = paintRuns(laid, textPoseLayoutInput(tp).runs).decorations;
     const path = textToPath(src, POSE);
     expect(pointInPath(path, x + 25, y + (rule.y0 + rule.y1) / 2)).toBe(true);
   });
@@ -182,7 +182,7 @@ describe('textToPath', () => {
     const ruled = textToPath(text('p', { underline: true }), POSE);
     const tp: TextPose = { ...POSE, text: 'p', style: text('p', { underline: true }).style };
     const { laid, x, y } = layoutTextPose(tp);
-    const [rule] = laid.decorations;
+    const [rule] = paintRuns(laid, textPoseLayoutInput(tp).runs).decorations;
     expect(rule).toBeDefined();
     // Probe inside the band where rule and glyph overlap: the font's own rule
     // can straddle the descender's tip, which a probe at the rule's center misses.
@@ -213,7 +213,7 @@ describe('textToPath', () => {
     const src = text('H');
     const tp: TextPose = { ...POSE, text: src.text, style: src.style };
     const { laid, x, y } = layoutTextPose(tp);
-    const g = laid.groups[0].glyphs[0];
+    const g = paintRuns(laid, textPoseLayoutInput(tp).runs).groups[0].glyphs[0];
     const em = boundsOfPath(pathFromD(g.d));
     const b = boundsOfPath(textToPath(src, POSE));
     expect(b.x).toBeCloseTo(x + g.x + em.x * g.scale, 3);

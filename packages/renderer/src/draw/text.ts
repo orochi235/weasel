@@ -5,6 +5,7 @@ import {
   type LaidOutDecoration,
   verticalAlignOffset,
   cachedLayoutRuns,
+  cachedPaintRuns,
 } from '@weasel-js/text';
 import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
@@ -77,12 +78,13 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     : undefined;
 
   const laid = cachedLayoutRuns(cmd.runs, {
-    maxWidth, alignWidth: cmd.width, lineHeight, align, direction, tabSize: style.tabSize, justify: cmd.justify, outlineMinSize,
+    maxWidth, alignWidth: cmd.width, lineHeight, align, direction, tabSize: style.tabSize, justify: cmd.justify,
   });
+  const { groups, decorations } = cachedPaintRuns(laid, cmd.runs, { outlineMinSize });
   // Decorations are checked too: text whose glyphs are all ink-free — every
   // one still awaiting a dynamic-atlas bake, say — produces no groups at all
   // while still carrying a rule that has to be drawn.
-  if (laid.groups.length === 0 && laid.decorations.length === 0) return;
+  if (groups.length === 0 && decorations.length === 0) return;
 
   // `laid` is origin-relative, so this is the command's position plus the
   // verticalAlign shift. Applied at upload time, not baked in: a cached layout
@@ -91,12 +93,12 @@ export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const dx = cmd.x;
   const dy = cmd.y + verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
 
-  for (const group of laid.groups) {
+  for (const group of groups) {
     if (group.source === 'outline') drawTextOutlineGroup(ctx, group, dx, dy);
     else drawTextGroup(ctx, group, dx, dy);
   }
 
-  drawTextDecorations(ctx, laid.decorations, dx, dy);
+  drawTextDecorations(ctx, decorations, dx, dy);
 }
 
 /**
@@ -211,7 +213,8 @@ function drawTextGroup(
   if (!fieldScale) return;
   const bold = group.synthetic.bold ? SYNTH_BOLD_AMOUNT : 0;
   const tanItalic = group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
-  const fill = group.fill?.paint ?? null;
+  const fill = group.fill?.paint;
+  if (fill === undefined) return;
   const paintKind = glyphPaintKindOf(fill);
   if (paintKind !== null) {
     drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic, fieldScale);
@@ -253,8 +256,8 @@ function drawTextGroup(
 
 /** Which glyph-paint program `fill` needs, or `null` for a paint the batch
  *  draws as one color. */
-function glyphPaintKindOf(fill: Paint | null): GlyphPaintKind | null {
-  const kind = fill?.kind ?? 'solid';
+function glyphPaintKindOf(fill: Paint): GlyphPaintKind | null {
+  const kind = fill.kind ?? 'solid';
   if (kind === 'texture') return 'pattern';
   if (kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'conic-gradient') {
     return 'gradient';

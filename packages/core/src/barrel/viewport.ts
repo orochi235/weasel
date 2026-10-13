@@ -96,6 +96,7 @@ export { useViewAnimation, useViewAnimationOn, viewAxes, VIEW_ANIMATION_KEY } fr
 // canvases below, which each own their own context.
 export { CanvasView } from '../canvas/CanvasView';
 export type { CanvasViewProps, ViewRect } from '../canvas/CanvasView';
+export type { CanvasViewCamera } from '../canvas/canvasExtension';
 
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a

@@ -67,6 +67,11 @@ export function claimFallbackWarning(key: string): boolean {
   return true;
 }
 
+/** @internal Whether `key` has been claimed since the last reset. */
+export function fallbackWarningClaimed(key: string): boolean {
+  return warnedFallbacks.has(key);
+}
+
 /** @internal Also called by `_resetFontRegistryForTests`: dropping the fonts
  *  a warning was about has to drop the warning too. */
 export function _clearFallbackWarnings(): void {

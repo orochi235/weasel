@@ -98,7 +98,8 @@ interface Held {
   shaderKey: string;
 }
 
-const shaderKeyOf = (shaders: readonly ShaderProgramHandle[] | undefined): string =>
+/** Identifies a set of custom programs by their ids, in order. */
+export const shaderKeyOf = (shaders: readonly ShaderProgramHandle[] | undefined): string =>
   shaders?.map((h) => h.id).join('|') ?? '';
 
 function registerShaders(renderer: WeaselRenderer, shaders: readonly ShaderProgramHandle[] | undefined): void {

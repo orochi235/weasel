@@ -97,13 +97,44 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) The pointer channel is still one closure.**
-  `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` (about 1,150 lines) keeps
-  pointer and multitouch synthesis, click and double-click, long-press, the hover-cursor pump, and
-  tool lifecycle in one effect. They share the held-pointer map and the last hover position, so
-  splitting them means deciding who owns each. `dispatcher.ts` (about 970 lines) is
-  `createDispatcher`: per-kind context building, the walk, and UI-driven handles, which share its
-  in-flight maps.
+- **(P3) `createDispatcher` is still one closure.**
+  `packages/routing/src/interactions/dispatcher/dispatcher.ts` (about 900 lines) holds per-kind
+  context building, the walk, and UI-driven handles, which share its in-flight maps. The hook
+  beside it is down to listener wiring; pointer recognition is `packages/gestures/src/recognizer/`.
+
+- **(P3) What the pointer recognizer's extraction left.**
+  - Three `pointermove` hover channels listen on one canvas element and each tracks "is a button
+    down" its own way: the dispatcher's hover pump (`channels/hoverCursor.ts`), `useSurfaceInput`
+    in core's canvas, and `PointerPublisher` in `PointerProviderIfRoot.tsx`.
+  - The hover pump and `Canvas.tsx` each turn a resolved cursor into a `style.cursor` write plus a
+    painted-cursor write. One cursor sink beside `PaintedCursorState` would serve both.
+  - A long-press timer fires on whichever view was routed last, not the view the press went down
+    in (`channels/pointer.ts`).
+  - `InvocationCtx.multiTouch.rotation` is hard-coded to 0 and read nowhere; making it real needs
+    an angle on `MultiTouchEvent`.
+  - `useGestureDispatcher.listeners.test.tsx`: "does NOT cancel on initial mount" cannot fail,
+    since nothing is ever in flight in it.
+
+- **(P3) What the text layout split left.**
+  - `packages/text/src/layout/paintRuns.ts`: a zero-advance atlas glyph gets no quad, against the
+    `LaidOutCell.drawsInk` doc ("a combining mark inks without advancing").
+  - `paintRuns.ts`, `glyphOutlineD`: a code point no tier could serve still gets outline geometry
+    above the outline threshold when the outline face has it, drawn on top of its neighbor.
+  - No renderer-level test drives `fill: {}` through an SDF-tier draw; the no-ink rule is pinned
+    at the text layer only.
+  - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
+    which included grouping, need re-recording.
+
+- **(P3) Two browser tests share the machine's clipboard and fail when they overlap.**
+  `packages/text-dom/src/overlayTyping.browser.test.tsx` ("reads a page's markup as runs") and
+  `packages/core/src/interactions/actions/clipboard/clipboardOps.browser.test.tsx` ("leaves the
+  previous clipboard whole when every flavor rejects") each write the real OS clipboard and read
+  it back. In a fleet run on 2026-10-12 each read the other's text (`'before'` and `'PQ'`); both
+  pass alone. Two fleet runs on one node would collide the same way. They need to run serially,
+  or one of them needs a clipboard of its own.
+
+- **(P3) `DrawCanvas.tsx` and `SceneViewCanvas.tsx` each carry the same first-paint block**
+  (`paintedRef` plus a layout effect). It belongs in `useCanvasSurface`.
 
 - **(P3) Rotate has no angle snap.** Nothing under
   `packages/core/src/interactions/actions/rotate/` quantizes the angle, with Shift or otherwise, and
@@ -295,7 +326,7 @@ Priority tags:
   ±0.45, which is unexplained. The `super`/`sub` 12px rows of
   `npx vitest run -c scripts/measure-overlay-alignment.config.ts` show both.
 
-- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` looks
+- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutEntries.ts` looks
   glyphs up one code point at a time and applies kerning pairs: sufficient for Latin, Cyrillic,
   Greek, and CJK ideographs, wrong for Arabic, Devanagari, Thai, and any script needing contextual
   shaping. The fix is a HarfBuzz WASM build (harfbuzzjs, ~1MB) behind a feature flag, so consumers

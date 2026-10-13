@@ -15,10 +15,9 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
-import { assignRef, useLatest } from '@weasel-js/react';
-import { useFrameLoop } from './useFrameLoop';
-import { useLateContentRedraw } from './useLateContentRedraw';
-import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
+import { assignRef } from '@weasel-js/react';
+import { useCanvasSurface } from './useCanvasSurface';
+import type { CanvasRendererLease } from './canvasRenderer';
 import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -94,11 +93,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     assignRef(canvasRef, el);
   }, [canvasRef]);
 
-  // The thunk defers to `paintRef`, which every committed render republishes
-  // from an insertion effect — ahead of the layout effect below, and never
-  // from a render React abandoned.
-  const lease = useCanvasRenderer();
-  const paint = (): boolean => {
+  const paint = (lease: CanvasRendererLease): boolean => {
     const canvas = localRef.current;
     if (!canvas) return false;
     const commands = sceneViewFrame({
@@ -117,12 +112,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     });
     return lease.paint(canvas, commands, view, { width, height });
   };
-  const paintRef = useLatest(paint);
-
-  const { requestRedraw } = useFrameLoop(
-    useCallback(() => paintRef.current(), [paintRef]),
-    { target: localRef },
-  );
+  const { lease, requestRedraw } = useCanvasSurface(paint, { target: localRef });
 
   // Every render marks the surface dirty. No dependency array: the paint
   // reads all of them. The mount paint is the exception: it runs here, in the
@@ -130,7 +120,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   const paintedRef = useRef(false);
   useLayoutEffect(() => {
     if (paintedRef.current) { requestRedraw(); return; }
-    paintedRef.current = paintRef.current();
+    paintedRef.current = paint(lease);
     if (!paintedRef.current) requestRedraw();
   });
 
@@ -138,9 +128,6 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   // above cannot see them.
   useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
-  useLateContentRedraw(requestRedraw);
-  useRedrawOnRestore(lease, requestRedraw);
-  useRedrawOnDensityChange(requestRedraw);
 
   // A remount (StrictMode) paints its first frame in place again.
   useEffect(() => () => { paintedRef.current = false; }, []);

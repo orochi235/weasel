@@ -1,11 +1,11 @@
 /**
  * Text as path geometry: the glyph outlines a text node draws, placed in
- * world space and composed into one `Path`. The walk is `layoutRuns`', so the
- * glyphs land exactly where the renderer's outline tier puts them, with the
- * tier forced on for every glyph whatever its size.
+ * world space and composed into one `Path`. The glyphs are the ones
+ * `layoutRuns` placed, so they land exactly where the renderer's outline tier
+ * puts them, with the tier forced on for every glyph whatever its size.
  */
 
-import { isSolidPaint, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
+import { paintKey, strokeKey, type Stroke, type Fill } from '@weasel-js/paint';
 
 import {
   loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle,
@@ -14,7 +14,9 @@ import {
   PATH_L, PATH_M, PATH_Z, pathFromD, pathSignedArea, poseFrameOf, reversePath,
   transformPath, type Mat3, type PathInWorldPose, type PolygonPath,
 } from '@weasel-js/geom';
+import { lineDecorations } from './layout/decorationMetrics';
 import { layoutRuns } from './layout/layoutRuns';
+import { glyphOutlineD, glyphQuad, runFaces } from './layout/paintRuns';
 import { textPoseLayoutInput } from './layout/textPoseLayout';
 import { verticalAlignOffset, type TextVerticalAlign } from './measure/verticalAlign';
 import type { TextPose } from './pose';
@@ -183,16 +185,11 @@ function ruleContour(x0: number, y0: number, x1: number, y1: number): PolygonPat
   };
 }
 
-/** Paint identity for grouping. Paint is plain data, so structural equality
- *  is exact — a gradient set on two runs separately is still one paint. */
-function paintKey(fill: Paint | null, stroke: Stroke | undefined): string {
-  return JSON.stringify([fill, stroke ?? null]);
-}
-
 /**
- * The one glyph walk behind both entry points. Each resolved run is repainted
- * with an opaque solid whose color is its paint group's index, so the layout's
- * own groups and decoration rules come back labeled with it.
+ * The one glyph walk behind both entry points: every placed glyph's outline
+ * and every decoration rule, gathered by the paint its run wears. Paint
+ * decides only which path a contour lands in, so an unfilled run's glyphs and
+ * rules are geometry like any other.
  */
 function walkOutlines(
   data: TextOutlineSource,
@@ -208,55 +205,55 @@ function walkOutlines(
     fill: data.fill,
     stroke: data.stroke,
   };
-  const { runs: resolved, opts: layoutOpts } = textPoseLayoutInput(textPose, opts.scale ?? 1);
-  for (const run of resolved) assertOutlinable(run);
+  const { runs, opts: layoutOpts } = textPoseLayoutInput(textPose, opts.scale ?? 1);
+  for (const run of runs) assertOutlinable(run);
 
   const paints: { fill: Fill | null; stroke?: Stroke }[] = [];
   const indexOf = new Map<string, number>();
-  const runs = resolved.map((run): ResolvedRun => {
-    const key = paintKey((run.fill?.paint ?? null), run.stroke);
+  const paintOf = runs.map((run): number => {
+    const key = `${paintKey(run.fill?.paint)}|${strokeKey(run.stroke)}`;
     let i = indexOf.get(key);
     if (i === undefined) {
       i = paints.length;
       indexOf.set(key, i);
       paints.push(run.stroke !== undefined ? { fill: run.fill, stroke: run.stroke } : { fill: run.fill });
     }
-    const { stroke: _stroke, ...rest } = run;
-    return { ...rest, fill: { paint: { kind: 'solid', color: `#${i.toString(16).padStart(6, '0')}` } } };
+    return i;
   });
-  const groupOf = (fill: Paint | null): number =>
-    isSolidPaint(fill) ? parseInt(fill.color.slice(1), 16) : 0;
 
-  const laid = layoutRuns(runs, { ...layoutOpts, outlineMinSize: 0 });
-  // A code point the run's own face lacks escalates to a fallback face, which
-  // the per-run check above never saw.
-  for (const g of laid.groups) {
-    if (g.source !== 'outline' && g.quads.length > 0) {
-      throw new TextOutlinesError('no-outlines', g.family, g.weight, g.style,
-        'a fallback face serving some of the text\'s characters has no outlines registered.');
-    }
-  }
-
+  const laid = layoutRuns(runs, layoutOpts);
   const dx = pose.x;
   const dy = pose.y + verticalAlignOffset(data.verticalAlign, pose.height, laid.bounds.height);
   const parts: PolygonPath[][] = paints.map(() => []);
-  for (const g of laid.groups) {
-    const out = parts[groupOf((g.fill?.paint ?? null))]!;
-    const shear = g.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
-    for (const glyph of g.glyphs) {
-      const s = glyph.scale;
+  const rules: PolygonPath[][] = paints.map(() => []);
+  const faceOf = runFaces(runs);
+  for (const line of laid.lines) {
+    for (const g of line.glyphs) {
+      const d = glyphOutlineD(g, runs[g.run], 0);
+      if (d === null) {
+        // A code point the run's own face lacks escalates to a fallback face,
+        // which the per-run check above never saw.
+        if (glyphQuad(g) !== null) {
+          const { family, weight, style } = g.resolved.resolved;
+          throw new TextOutlinesError('no-outlines', family, weight, style,
+            'a fallback face serving some of the text\'s characters has no outlines registered.');
+        }
+        continue;
+      }
+      const s = g.fontSize;
+      const shear = g.resolved.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
       // The renderer's placement (`mergeGlyphMeshes`): x = pen + (ex - ey·shear)·s.
-      const m: Mat3 = [s, 0, -shear * s, s, glyph.x + dx, glyph.baselineY + dy];
-      out.push(transformPath(emGlyph(glyph.d), m) as PolygonPath);
+      const m: Mat3 = [s, 0, -shear * s, s, g.x + dx, g.baselineY + dy];
+      parts[paintOf[g.run]]!.push(transformPath(emGlyph(d), m) as PolygonPath);
     }
-  }
-  for (const r of laid.decorations) {
-    parts[groupOf(r.fill.paint ?? null)]!.push(ruleContour(r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy));
+    for (const r of lineDecorations(line.glyphs, runs, faceOf, (run) => String(paintOf[run]))) {
+      rules[paintOf[r.run]]!.push(ruleContour(r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy));
+    }
   }
 
   const frame = poseFrameOf(pose);
-  const paths = parts.map((p) => {
-    const path = concat(p);
+  const paths = parts.map((glyphs, i) => {
+    const path = concat([...glyphs, ...rules[i]!]);
     if (!frame || path.commands.length === 0) return path;
     return transformPath(path, frame) as PolygonPath;
   });

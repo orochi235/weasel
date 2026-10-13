@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { watchDevicePixelRatio } from '../core/device/watchDevicePixelRatio';
-import { leaseCanvasRenderer, type CanvasRendererLease } from './canvasRenderer';
+import { getProgramSource, programSourceRegistry, type ShaderProgramHandle } from '@weasel-js/renderer';
+import { leaseCanvasRenderer, shaderKeyOf, type CanvasRendererLease } from './canvasRenderer';
 
 /**
  * The React lifetime of `leaseCanvasRenderer`: a stable lease for the
@@ -27,4 +28,27 @@ export function useRedrawOnRestore(lease: CanvasRendererLease, requestRedraw: ()
 export function useRedrawOnDensityChange(requestRedraw: () => void, dpr?: number): void {
   const ambient = dpr === undefined;
   useEffect(() => (ambient ? watchDevicePixelRatio(() => requestRedraw()) : undefined), [ambient, requestRedraw]);
+}
+
+/**
+ * Repaint a surface when one of its custom programs is re-registered with new
+ * source. The renderer recompiles on the frame that draws it, and nothing else
+ * asks for that frame.
+ */
+export function useRedrawOnShaderSource(
+  shaders: readonly ShaderProgramHandle[] | undefined,
+  requestRedraw: () => void,
+): void {
+  const key = shaderKeyOf(shaders);
+  useEffect(() => {
+    if (!key) return;
+    const ids = key.split('|');
+    let seen = ids.map(getProgramSource);
+    return programSourceRegistry.subscribe(() => {
+      const now = ids.map(getProgramSource);
+      const changed = now.some((src, i) => src !== seen[i]);
+      seen = now;
+      if (changed) requestRedraw();
+    });
+  }, [key, requestRedraw]);
 }

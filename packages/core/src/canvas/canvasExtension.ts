@@ -25,6 +25,15 @@ export interface CanvasViewHandle {
 }
 
 /**
+ * A `<CanvasView>`'s camera, as its `cameraRef` receives it: the members a
+ * canvas's own handle carries for its camera, with the same contract. A camera
+ * derived by a thunk reads fresh but tells no subscriber when it moves;
+ * subscribe to the canvas it derives from.
+ * @experimental
+ */
+export type CanvasViewCamera = Pick<CanvasExtensionApi, 'getView' | 'setView' | 'subscribeView'>;
+
+/**
  * The **base imperative ref handle** shared by the canvas components. For
  * `<SceneCanvas>` refs use {@link SceneCanvasApi} (this type plus the
  * scene-level surfaces, e.g. a non-optional `ingest`).

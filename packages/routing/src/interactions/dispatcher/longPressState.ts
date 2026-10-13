@@ -4,6 +4,7 @@
  * any binding would fire on it. Feedback — a filling ring, a haptic — reads
  * this; nothing here decides what the feedback looks like.
  */
+import { LONG_PRESS_MS } from '@weasel-js/gestures';
 
 /** A press being held toward a long-press. */
 export interface PendingLongPress {
@@ -51,8 +52,10 @@ export interface LongPressStore extends LongPressState {
   set(next: PendingLongPress | null): void;
 }
 
-/** How long a touch or pen press is held before it fires `longPress`, in ms. */
-export const LONG_PRESS_MS = 500;
+export { LONG_PRESS_MS };
+
+/** How long a handled long-press vibrates for, in ms. */
+export const LONG_PRESS_HAPTIC_MS = 15;
 
 /** How `useGestureDispatcher` times, publishes and signals a long-press. */
 export interface LongPressOptions {

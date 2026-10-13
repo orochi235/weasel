@@ -103,7 +103,7 @@ export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand'
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
 export {
-  pointerGestureId, recordModeSwitch, createDispatcher,
+  multiTouchGestureId, pointerGestureId, recordModeSwitch, createDispatcher,
 } from './interactions/dispatcher/dispatcher';
 export type {
   ModeSwitchLogEntry, TraceLogEntry, DispatcherContext, UiOngoingControl,

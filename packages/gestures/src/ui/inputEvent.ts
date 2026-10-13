@@ -282,16 +282,14 @@ export interface MultiTouchEvent extends EventModifiers {
    * which is the space `zoomAt` anchors in. Not client coords, and not world:
    * calling `clientToWorld` on it subtracts the canvas origin a second time.
    *
-   * Populated by `useGestureDispatcher` on the pointermove-pump of a running
-   * multitouch handle (updated each frame). Absent on the initial
-   * pointerdown-triggered multitouch event.
+   * Present on the event a finger landing produces and on each move of a
+   * running gesture; absent on the one that ends it.
    */
   centroid?: { x: number; y: number };
   /**
    * Distance between the two primary pointers, in CSS pixels. A distance is
    * origin-free, so it reads the same in client and canvas-local space.
-   * Populated on move-pump events alongside `centroid`. Absent on the initial
-   * event.
+   * Present and absent alongside `centroid`.
    */
   spread?: number;
   /**
