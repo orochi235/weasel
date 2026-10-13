@@ -66,7 +66,7 @@ import {
   marqueeAnchorsAction,
   selectAnchorAction,
 } from './defaults/anchorEditing';
-import { lassoSelectAction } from './defaults/lassoSelect';
+import { lassoSelectAction } from './lasso-select/action';
 import { pinchZoomAction } from './defaults/pinchZoom';
 import { viewportDragPanAction } from './defaults/viewportDragPan';
 import { enterTextEditAction } from './defaults/enterTextEdit';

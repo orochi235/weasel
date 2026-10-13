@@ -38,7 +38,7 @@ export {
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
-export { lassoSelectAction } from '../interactions/actions/defaults/lassoSelect';
+export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {
   pinchZoomAction,

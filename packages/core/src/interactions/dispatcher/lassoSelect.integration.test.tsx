@@ -8,7 +8,7 @@ import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import '../actions/depSchema';
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
-import { lassoSelectAction } from '../actions/defaults/lassoSelect';
+import { lassoSelectAction } from '../actions/lasso-select/action';
 import type { LassoSelectDep } from '../actions/depSchema';
 import type { Contribution } from '../../tools/overlayBinding';
 

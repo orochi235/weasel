@@ -42,7 +42,7 @@ export { areaSelectAction } from './areaSelect';
 export { insertAction } from '../insert/action';
 export { cloneAction } from '../clone/action';
 export { editAnchorsAction } from '../edit-anchors/action';
-export { lassoSelectAction } from './lassoSelect';
+export { lassoSelectAction } from '../lasso-select/action';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
 export { viewportZoomAction, makeViewportZoomAction, type ViewportZoomOptions } from './viewportZoom';

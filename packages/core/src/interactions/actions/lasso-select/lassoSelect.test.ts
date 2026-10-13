@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lassoSelectAction } from './lassoSelect';
+import { lassoSelectAction } from './action';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { LassoSelectDep } from '../depSchema';
 import { getScratch } from '@weasel-js/routing';
@@ -7,7 +7,7 @@ import type { LassoSelectBehavior, LassoSelectProposed } from '../../gestures/ty
 import {
   LASSO_VERTICES,
   selectFromLasso,
-} from '../lasso-select/behaviors/selectFromLasso';
+} from './behaviors/selectFromLasso';
 import { createSetSelectionOp } from 'core/ops/select';
 import type { NodeId } from 'core/scene/types';
 

@@ -642,11 +642,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   returns `[]` when no swatch is free, so `generate` reports `feasible: true` with no gate measured
   against the anchors. Whether all-pinned colors should be checked at all is the open question.
 
-- **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
-  sibling `actions/<name>/` (lasso-select) holds its options, geometry, and gesture adapter. One
-  directory per action would hold both, the way `actions/move/` and `actions/flip/` do with their
-  `action.ts`.
-
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
