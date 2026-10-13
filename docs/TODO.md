@@ -96,11 +96,6 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) `createDispatcher` is still one closure.**
-  `packages/routing/src/interactions/dispatcher/dispatcher.ts` (about 900 lines) holds per-kind
-  context building, the walk, and UI-driven handles, which share its in-flight maps. The hook
-  beside it is down to listener wiring; pointer recognition is `packages/gestures/src/recognizer/`.
-
 - **(P3) What the pointer recognizer's extraction left.**
   - Three `pointermove` hover channels listen on one canvas element and each tracks "is a button
     down" its own way: the dispatcher's hover pump (`channels/hoverCursor.ts`), `useSurfaceInput`
