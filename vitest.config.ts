@@ -235,6 +235,9 @@ export default defineConfig({
             provider: playwright(),
             commands: browserCommands,
             headless: true,
+            // The forced re-scan above bundles every dependency before the page can load, which on a
+            // busy node outlasts the default minute.
+            connectTimeout: 180_000,
             instances: [{ browser: 'chromium' }],
           },
         },
