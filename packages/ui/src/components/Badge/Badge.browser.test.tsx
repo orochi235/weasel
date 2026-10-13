@@ -172,6 +172,61 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
   });
 });
 
+// Pinned against the text itself, not against another badge: a rule meant for a removable badge
+// that reaches this one widens both alike, and a comparison between them stays green.
+describe('a badge with no remove control and no action', () => {
+  const PLAIN_SHAPES: readonly BadgeShape[] = ['pill', 'plain', 'square', 'notched', 'hexagon', 'shield', 'starburst', 'ribbon'];
+  for (const shape of PLAIN_SHAPES) {
+    for (const size of ['xs', 'sm', 'md'] as const) {
+      test(`${shape} ${size}: is as wide as its text, padding, and border, and no wider`, () => {
+        const { container } = render(
+          <Surface mode="light">
+            <p><Badge shape={shape} size={size} status="muted">hidden</Badge></p>
+          </Surface>,
+        );
+        const badge = container.querySelector<HTMLElement>('[data-status]')!;
+        const label = [...badge.querySelectorAll('span')].find((el) => el.children.length === 0 && el.textContent === 'hidden')!;
+        const range = document.createRange();
+        range.selectNodeContents(label.firstChild!);
+        const text = range.getBoundingClientRect();
+        const box = badge.getBoundingClientRect();
+        const inner = label.getBoundingClientRect();
+        const cs = getComputedStyle(badge);
+        const px = (v: string) => parseFloat(v) || 0;
+        const edges = px(cs.paddingLeft) + px(cs.paddingRight) + px(cs.borderLeftWidth) + px(cs.borderRightWidth);
+
+        expect(inner.width, 'the label is its text').toBeCloseTo(text.width, 1);
+        expect(inner.left).toBeCloseTo(text.left, 1);
+        expect(box.width, 'the badge is its text and its edges').toBeCloseTo(text.width + edges, 1);
+        expect(inner.left - box.left, 'the label starts after the left edge').toBeCloseTo(px(cs.paddingLeft) + px(cs.borderLeftWidth), 1);
+        expect(getComputedStyle(label, '::after').content, 'nothing is added after the label').toBe('none');
+      });
+    }
+  }
+});
+
+// Fitting must only ever add: where a base's declared insets already clear the outline, the
+// badge is the size those insets make it.
+describe('a fitted base with content its declared insets already clear', () => {
+  for (const base of ['quatrefoil', 'octant-spline', 'octant-bspline', 'puzzle'] as const) {
+    for (const size of ['xs', 'sm', 'md'] as const) {
+      test(`${base} ${size}: pads by its declared insets`, async () => {
+        const { container } = render(
+          <Surface mode="light">
+            <p><Badge base={base} size={size} status="muted">ab</Badge></p>
+          </Surface>,
+        );
+        const badge = container.querySelector<HTMLElement>('[data-status]')!;
+        await waitFor(() => expect(badge.querySelector('.badge-stroke')).not.toBeNull());
+        const declared = BASES[base].insets as { top: number; right: number; bottom: number; left: number };
+        for (const side of ['top', 'right', 'bottom', 'left'] as const) {
+          expect(badge.style.getPropertyValue(`--badge-inset-${side}`), side).toBe(`${declared[side]}px`);
+        }
+      });
+    }
+  }
+});
+
 // A base's outline is stretched to the badge's box, so one that dips inward dips further the
 // longer the label is. The content has to stay inside it at any length.
 describe('a base holds its content inside its outline', () => {

@@ -37,25 +37,47 @@ describe('inscribedRect', () => {
 
 describe('fitInsets', () => {
   const none = { top: 0, right: 0, bottom: 0, left: 0 };
+  const diamond = outlineOf([[50, 0], [100, 50], [50, 100], [0, 50]]);
+  /** The content's rectangle, in viewBox terms, inside the box `insets` make around it. */
+  const held = (content: { w: number; h: number }, insets: typeof none) => {
+    const w = content.w + insets.left + insets.right;
+    const h = content.h + insets.top + insets.bottom;
+    return { left: (insets.left / w) * 100, right: ((insets.left + content.w) / w) * 100, top: (insets.top / h) * 100, bottom: ((insets.top + content.h) / h) * 100 };
+  };
+  const pointsInside = (points: readonly (readonly [number, number])[], r: ReturnType<typeof held>) =>
+    points.filter(([x, y]) => x > r.left && x < r.right && y > r.top && y < r.bottom).length;
 
-  it('pads the content out until the rectangle holds it and no more', () => {
-    // The content is half the box's width and half its height.
-    const insets = fitInsets({ left: 25, top: 10, right: 75, bottom: 60 }, { w: 100, h: 20 }, none);
-    expect(insets).toEqual({ top: 4, right: 50, bottom: 16, left: 50 });
+  it('returns the floor itself while the floor keeps the content clear', () => {
+    const floor = { top: 20, right: 60, bottom: 20, left: 60 };
+    expect(fitInsets(diamond, { w: 40, h: 10 }, floor)).toBe(floor);
   });
 
-  it('keeps a side at its floor when the outline asks for less', () => {
-    const insets = fitInsets({ left: 25, top: 0, right: 100, bottom: 100 }, { w: 90, h: 20 }, { top: 6, right: 8, bottom: 6, left: 4 });
-    // 25% of a box of 90 + 8 + left is left: 32.67.
-    expect(insets).toEqual({ top: 6, right: 8, bottom: 6, left: 32.67 });
+  it('pads a diamond until the content is clear of it, in about the smallest box that is', () => {
+    const content = { w: 100, h: 20 };
+    const insets = fitInsets(diamond, content, none);
+    expect(pointsInside(diamond, held(content, insets))).toBe(0);
+    // A rectangle in a diamond takes at best half its box each way: 200 by 40.
+    const area = (content.w + insets.left + insets.right) * (content.h + insets.top + insets.bottom);
+    expect(area).toBeGreaterThanOrEqual(200 * 40);
+    expect(area).toBeLessThan(200 * 40 * 1.05);
   });
 
-  it('holds the content inside the rectangle with the floor applied', () => {
-    const rect = { left: 17, top: 0, right: 70, bottom: 100 };
-    const content = { w: 120, h: 14 };
-    const insets = fitInsets(rect, content, { top: 12, right: 16, bottom: 12, left: 16 });
-    const width = content.w + insets.left + insets.right;
-    expect(insets.left).toBeGreaterThanOrEqual((rect.left / 100) * width - 0.01);
-    expect(insets.left + content.w).toBeLessThanOrEqual((rect.right / 100) * width + 0.01);
+  it('never goes under the floor on any side', () => {
+    const floor = { top: 12, right: 2, bottom: 12, left: 2 };
+    const insets = fitInsets(diamond, { w: 100, h: 20 }, floor);
+    expect(insets.top).toBeGreaterThanOrEqual(12);
+    expect(insets.bottom).toBeGreaterThanOrEqual(12);
+    expect(insets.left).toBeGreaterThan(2);
+    expect(pointsInside(diamond, held({ w: 100, h: 20 }, insets))).toBe(0);
+  });
+
+  it.each(['quatrefoil', 'octant-spline', 'octant-bspline', 'puzzle'] as const)('clears the %s outline at any content length', (key) => {
+    const base = BASES[key];
+    const points = outlinePoints(base.build(base.defaults, 100, 100));
+    const floor = base.insets as typeof none;
+    for (const w of [10, 40, 90, 200, 600]) {
+      const content = { w, h: 14 };
+      expect(pointsInside(points, held(content, fitInsets(points, content, floor))), `content ${w} wide`).toBe(0);
+    }
   });
 });

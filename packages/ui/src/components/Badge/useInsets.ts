@@ -1,9 +1,10 @@
 import { useLayoutEffect, useMemo, useState, type RefObject } from 'react';
 import type { ShapeInsets } from './types';
 import type { BaseModule } from './bases/types';
-import { clearRect, fitInsets } from './bases/inscribedRect';
+import { fitInsets, outlinePoints } from './bases/inscribedRect';
 
 const NONE: ShapeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+const SIDES = ['top', 'right', 'bottom', 'left'] as const;
 
 interface InsetSource<P> {
   insets?: ShapeInsets | ((params: P) => ShapeInsets);
@@ -11,14 +12,36 @@ interface InsetSource<P> {
   build?: BaseModule<P>['build'];
 }
 
-/** `ref`'s layout size in CSS px, or null until it has one. */
-function useElementSize(ref: RefObject<HTMLElement | null>, enabled: boolean): { w: number; h: number } | null {
-  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+/** The content's layout size, and the padding its badge has apart from the insets, in CSS px. */
+interface Measured { w: number; h: number; pad: ShapeInsets }
+
+const same = (a: Measured, b: Measured) =>
+  a.w === b.w && a.h === b.h && SIDES.every((side) => a.pad[side] === b.pad[side]);
+
+/** The padding of `badge` that its `--badge-inset-*` properties did not put there. */
+function ownPadding(badge: HTMLElement): ShapeInsets {
+  const cs = getComputedStyle(badge);
+  const px = (v: string) => parseFloat(v) || 0;
+  const side = (name: typeof SIDES[number], computed: string) =>
+    Math.max(0, px(computed) - px(badge.style.getPropertyValue(`--badge-inset-${name}`)));
+  return {
+    top: side('top', cs.paddingTop),
+    right: side('right', cs.paddingRight),
+    bottom: side('bottom', cs.paddingBottom),
+    left: side('left', cs.paddingLeft),
+  };
+}
+
+function useMeasured(ref: RefObject<HTMLElement | null>, enabled: boolean): Measured | null {
+  const [measured, setMeasured] = useState<Measured | null>(null);
   useLayoutEffect(() => {
     const el = enabled ? ref.current : null;
-    if (!el) return;
+    const badge = el?.parentElement;
+    if (!el || !badge) return;
     const set = (w: number, h: number) => {
-      if (w > 0 && h > 0) setSize((was) => (was && was.w === w && was.h === h ? was : { w, h }));
+      if (w <= 0 || h <= 0) return;
+      const next = { w, h, pad: ownPadding(badge) };
+      setMeasured((was) => (was && same(was, next) ? was : next));
     };
     const r = el.getBoundingClientRect();
     set(r.width, r.height);
@@ -31,23 +54,34 @@ function useElementSize(ref: RefObject<HTMLElement | null>, enabled: boolean): {
     ro.observe(el);
     return () => ro.disconnect();
   }, [ref, enabled]);
-  return enabled ? size : null;
+  return enabled ? measured : null;
 }
 
 /**
  * The padding a shape or base adds around the badge's content. A base that `fitsContent` has
  * an outline that dips inside its box by a share of the box, so its declared `insets`
- * grow by whatever share of the content at `contentRef` keeps that content inside the outline.
+ * stand while they keep the content at `contentRef` clear of the outline, and grow when they do not.
  */
 export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefObject<HTMLElement | null>): ShapeInsets {
   const fits = source.fitsContent === true && source.build !== undefined;
-  const size = useElementSize(contentRef, fits);
+  const measured = useMeasured(contentRef, fits);
   const key = fits ? JSON.stringify(params) : '';
-  const rect = useMemo(
-    () => (fits ? clearRect(source.build!(params, 100, 100)) : null),
+  const points = useMemo(
+    () => (fits ? outlinePoints(source.build!(params, 100, 100)) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `params` is a fresh object every render; `key` is its value.
     [fits, source, key],
   );
   const declared = (typeof source.insets === 'function' ? source.insets(params) : source.insets) ?? NONE;
-  return rect && size ? fitInsets(rect, size, declared) : declared;
+  const { top, right, bottom, left } = declared;
+  const fitted = useMemo(() => {
+    if (!points || !measured) return null;
+    // The badge's own padding counts toward clearing the outline, so it is fitted with the insets and taken back out.
+    const { pad } = measured;
+    const floor = { top: top + pad.top, right: right + pad.right, bottom: bottom + pad.bottom, left: left + pad.left };
+    const all = fitInsets(points, measured, floor);
+    if (all === floor) return null;
+    const less = (a: number, b: number) => Math.round((a - b) * 100) / 100;
+    return { top: less(all.top, pad.top), right: less(all.right, pad.right), bottom: less(all.bottom, pad.bottom), left: less(all.left, pad.left) };
+  }, [points, measured, top, right, bottom, left]);
+  return fitted ?? declared;
 }

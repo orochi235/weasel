@@ -210,7 +210,7 @@ a.badge {
    last word, that holds room for the control and the badge's closing edge, and the control
    backs up into it so that it and the edge add nothing to the line. On a label that acts, the
    tail is also the click target from the label to the badge's end. */
-.badge:is([data-shape='pill'], [data-shape='plain']) .content > :not(.remove)::after {
+.badge:is([data-shape='pill'], [data-shape='plain']) .content > :has(+ .remove)::after {
   content: '\2060';
   padding-right: calc(var(--wzl-space-1) + var(--_remove-size) + var(--_hit-right));
 }
