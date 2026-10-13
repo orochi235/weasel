@@ -1,7 +1,6 @@
 /**
- * Paint identity as a string: two paints that draw the same share a key,
- * however they were built. Paint is plain data, so the comparison is
- * structural; the key is kept per object, so asking again costs a lookup.
+ * Paint identity as a string: paints with equal keys draw the same, however
+ * they were built. Paint is plain data, so the comparison is structural.
  */
 
 import { isSolidPaint } from './commandPaint';
@@ -19,22 +18,26 @@ function canonical(value: unknown): string {
   return `{${fields.join(',')}}`;
 }
 
-const paintKeys = new WeakMap<object, string>();
-const strokeKeys = new WeakMap<object, string>();
+const structuralKeys = new WeakMap<object, string>();
+const strokeShapeKeys = new WeakMap<object, string>();
 
 /**
- * A key equal for exactly the paints that draw the same. No paint at all is
- * `'none'`. A paint object is read once, so one changed in place keeps the
- * key it had.
+ * A key two paints share only if they draw the same. No paint at all is
+ * `'none'`. Two solids that draw the same always share one. A gradient or
+ * pattern keys by its fields as written, so one that spells out a default
+ * (`opacity: 1`, `units`) keys apart from one that omits it: that splits a
+ * group, where merging two that differ would draw one with the other's paint.
+ *
+ * A gradient or pattern is read once: changed in place after its first use,
+ * it keeps the key it had. A solid is read on every call.
  */
 export function paintKey(paint: Paint | null | undefined): string {
   if (paint == null) return 'none';
-  let key = paintKeys.get(paint);
+  if (isSolidPaint(paint)) return `solid:${paint.color}:${paint.opacity ?? 1}`;
+  let key = structuralKeys.get(paint);
   if (key === undefined) {
-    key = isSolidPaint(paint)
-      ? `solid:${paint.color}:${paint.opacity ?? 1}`
-      : canonical(paint);
-    paintKeys.set(paint, key);
+    key = canonical(paint);
+    structuralKeys.set(paint, key);
   }
   return key;
 }
@@ -53,18 +56,21 @@ export function strokeHasInk(stroke: Stroke | null | undefined): stroke is Strok
 }
 
 /**
- * A key equal for exactly the strokes that draw the same ribbon over the same
+ * A key two strokes share only if they draw the same ribbon over the same
  * geometry. Every stroke that puts no ink down is `'none'`. A `{ px }` width
  * keys apart from the equal world-unit number, which is a different ribbon.
+ *
+ * Everything but the paint is read once: a stroke whose width, dash, or other
+ * shape is changed in place keeps the key it had. Its paint is keyed on every
+ * call, as {@link paintKey} keys it.
  */
 export function strokeKey(stroke: Stroke | null | undefined): string {
   if (!strokeHasInk(stroke)) return 'none';
-  let key = strokeKeys.get(stroke);
-  if (key === undefined) {
-    const { paint, width, join, cap, miterLimit, align, dash, ...rest } = stroke;
-    key = canonical({
+  let shape = strokeShapeKeys.get(stroke);
+  if (shape === undefined) {
+    const { paint: _paint, width, join, cap, miterLimit, align, dash, ...rest } = stroke;
+    shape = canonical({
       ...rest,
-      paint: paintKey(paint),
       width: width ?? 1,
       join: join ?? 'miter',
       cap: cap ?? 'butt',
@@ -72,7 +78,7 @@ export function strokeKey(stroke: Stroke | null | undefined): string {
       align: align ?? 'center',
       dash: dash ?? [],
     });
-    strokeKeys.set(stroke, key);
+    strokeShapeKeys.set(stroke, shape);
   }
-  return key;
+  return `${shape}|${paintKey(stroke.paint)}`;
 }

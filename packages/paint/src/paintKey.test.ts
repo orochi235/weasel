@@ -29,6 +29,15 @@ describe('paintKey', () => {
     expect(paintKey({ color: '#abc' })).not.toBe(paintKey({ color: '#abc', opacity: 0.5 }));
   });
 
+  it('reads a solid again on every call, so one recolored in place takes its new key', () => {
+    const paint = { color: 'red' };
+    const red = paintKey(paint);
+    paint.color = 'blue';
+    expect(paintKey(paint)).toBe(paintKey({ color: 'blue' }));
+    expect(paintKey({ color: 'red' })).toBe(red);
+    expect(paintKey(paint)).not.toBe(red);
+  });
+
   it('keys no paint apart from every paint', () => {
     expect(paintKey(null)).toBe(paintKey(undefined));
     expect(paintKey(null)).not.toBe(paintKey({ color: 'none' }));
@@ -74,6 +83,14 @@ describe('strokeKey', () => {
 
   it('keys a screen-pixel width apart from the same number of world units', () => {
     expect(strokeKey({ ...red, width: { px: 2 } })).not.toBe(strokeKey(red));
+  });
+
+  it('reads a solid paint again on every call, so a stroke recolored in place takes its new key', () => {
+    const stroke = { paint: { color: 'red' }, width: 2 };
+    const before = strokeKey(stroke);
+    stroke.paint.color = 'blue';
+    expect(strokeKey(stroke)).toBe(strokeKey({ paint: { color: 'blue' }, width: 2 }));
+    expect(strokeKey(stroke)).not.toBe(before);
   });
 
   it('tells apart strokes that differ in paint, shape, or dash', () => {
