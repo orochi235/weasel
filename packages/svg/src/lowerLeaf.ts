@@ -7,6 +7,7 @@ import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath, parsePoints, polylineToPath,
   polygonToPath,
 } from './shapes';
+import { hasOpenSubpath } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { readLength } from './lengths';
 
@@ -36,7 +37,7 @@ export function lowerLeaf(
   if (tag === 'circle') return circleToPath(x('cx'), y('cy'), r('r'), m);
   if (tag === 'ellipse') return ellipseToPath(x('cx'), y('cy'), x('rx'), y('ry'), m);
   if (tag === 'line') return lineToPath(x('x1'), y('y1'), x('x2'), y('y2'), m);
-  if (tag === 'polyline') return polylineToPath(parsePoints(el.getAttribute('points') ?? ''), m);
+  if (tag === 'polyline') return svgFilled(polylineToPath(parsePoints(el.getAttribute('points') ?? ''), m));
   if (tag === 'polygon') return polygonToPath(parsePoints(el.getAttribute('points') ?? ''), m);
   if (tag === 'path') {
     const d = el.getAttribute('d') ?? '';
@@ -52,9 +53,14 @@ export function lowerLeaf(
       const rect = polygonToRectIfAxisAligned(transformed);
       if (rect) return rect;
     }
-    return transformed;
+    return svgFilled(transformed);
   }
   return null;
+}
+
+/** SVG closes an open subpath to fill it, whatever the engine's default says. */
+function svgFilled(path: Path): Path {
+  return hasOpenSubpath(path) ? { ...(path as PolygonPath), openFill: 'close' } : path;
 }
 
 /**

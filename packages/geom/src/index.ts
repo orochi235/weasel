@@ -30,6 +30,7 @@ export { translatePath, scalePathToBounds } from './paths/transform';
 export { transformPath } from './paths/transformPath';
 export { composePath, decomposePath } from './paths/compose';
 export { splitSubpaths } from './paths/splitSubpaths';
+export { hasOpenSubpath, splitByClosure } from './paths/splitByClosure';
 export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';

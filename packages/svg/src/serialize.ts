@@ -6,12 +6,14 @@
 import { escapeAttr, escapeText } from './xmlEscape';
 import type { FontRequest, Stroke, StrokeAlign } from '@weasel-js/core';
 import { isSolidPaint, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
+import { metaAttrsXml, metaElementsXml, namespacedElementXml } from './metaXml';
 import type {
-  NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
+  SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
   ScreenLength,
 } from './types';
 import { serializePathD } from './path-serializer';
+import { withOpenSubpathsUnfilled } from './openSubpathFill';
 import { formatMatrix, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { anchorOffset, svgDirection } from './textAnchor';
@@ -82,49 +84,6 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
   return `<svg ${rootAttrs.join(' ')}>${titleXml}${defsXml}${docMetaXml}${bodyXml}</svg>`;
 }
 
-function namespacedElementXml(prefix: string, localName: string, el: NamespacedElement): string {
-  const attrs: string[] = [];
-  for (const [name, value] of Object.entries(el.attrs)) {
-    attrs.push(`${name}="${escapeAttr(value)}"`);
-  }
-  const head = attrs.length > 0 ? `<${prefix}:${localName} ${attrs.join(' ')}>` : `<${prefix}:${localName}>`;
-  let body = '';
-  if (el.children) {
-    for (const [childName, list] of Object.entries(el.children)) {
-      for (const child of list) body += namespacedElementXml(prefix, childName, child);
-    }
-  } else if (el.text != null) {
-    body = escapeText(el.text);
-  }
-  return `${head}${body}</${prefix}:${localName}>`;
-}
-
-function metaAttrsXml(meta: NamespaceMeta | undefined, namespaces: Record<string, string>): string {
-  if (!meta) return '';
-  const parts: string[] = [];
-  for (const prefix of Object.keys(namespaces)) {
-    const bucket = meta[prefix];
-    if (!bucket?.attrs) continue;
-    for (const [name, value] of Object.entries(bucket.attrs)) {
-      parts.push(`${prefix}:${name}="${escapeAttr(value)}"`);
-    }
-  }
-  return parts.length > 0 ? ` ${parts.join(' ')}` : '';
-}
-
-function metaElementsXml(meta: NamespaceMeta | undefined, namespaces: Record<string, string>): string {
-  if (!meta) return '';
-  let out = '';
-  for (const prefix of Object.keys(namespaces)) {
-    const bucket = meta[prefix];
-    if (!bucket?.elements) continue;
-    for (const [localName, list] of Object.entries(bucket.elements)) {
-      for (const el of list) out += namespacedElementXml(prefix, localName, el);
-    }
-  }
-  return out;
-}
-
 export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintServerRegistry): void {
   for (const n of nodes) {
     if (n.kind === 'group') {
@@ -181,7 +140,8 @@ function kindXml(
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn);
   if (node.kind === 'text') return textXml(node, registry, namespaces, warn);
   if (node.kind === 'image') return imageXml(node, namespaces);
-  return pathXml(node, registry, namespaces, warn);
+  const drawn = withOpenSubpathsUnfilled(node);
+  return drawn.kind === 'group' ? groupXml(drawn, registry, namespaces, warn) : pathXml(drawn, registry, namespaces, warn);
 }
 
 /** SVG 1.1 has no stroke alignment; SVG 2's `stroke-alignment` never shipped

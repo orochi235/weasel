@@ -231,17 +231,12 @@ Priority tags:
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
   - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
 
-- **(P3) Under `openFill: 'none'`, SVG import and export and the booleans still close an open
-  subpath.** A path says whether a fill closes its open subpaths (`PolygonPath.openFill`, or
-  `setDefaultOpenFill` for a path that names none). SVG always closes one, so these disagree with a
-  path that says `'none'`: `packages/svg/src/lowerLeaf.ts` imports a filled `<polyline>` without
-  stamping `openFill: 'close'`, so it stops painting under a `'none'` default, and the SVG writer
-  emits an unfilled open subpath with its node's fill, which a browser then paints. The export half
-  has to split a path that mixes closed and open subpaths. The booleans close every open contour
-  whatever the path says (`packages/geom/src/booleans/contours.ts`, `implicitClose`). Also: a mesh
-  the renderer cached keeps the rule it was built under when the default changes
-  (`packages/renderer/src/cache/cache.ts` keys on the path), so the default has to be set before
-  the first paint.
+- **(P3) svg export: a path split for `openFill: 'none'` writes its stroke markers on both
+  halves.** A path that mixes closed and open subpaths under a fill that does not close the open
+  ones is written as a `<g>` of two `<path>`s (`packages/svg/src/openSubpathFill.ts`), each with
+  the node's whole stroke. SVG draws `marker-start` and `marker-end` once per `<path>`, so a
+  marked stroke gets one pair per half. Not compared with what the renderer draws for the one
+  path.
 
 - **(P3) `arrayAdapter` selects a closed outline with no fill from inside it.** A marquee or lasso
   in `intersect` mode drawn wholly inside an unfilled closed shape takes it. `regionTakes`
