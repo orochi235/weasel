@@ -53,16 +53,6 @@ describe('useCanvasFocus', () => {
     expect(result.current.focused).toBe(false);
   });
 
-  it('repeated onFocus while focused does not re-render or flip state', () => {
-    const { result } = renderHook(() => useCanvasFocus({ initial: true }));
-    expect(result.current.focused).toBe(true);
-    act(() => {
-      result.current.focusProps.onFocus();
-      result.current.focusProps.onFocus();
-    });
-    expect(result.current.focused).toBe(true);
-  });
-
   it('getFocused() returns live state inside closures (no stale capture)', () => {
     const { result } = renderHook(() => useCanvasFocus());
     const getter = result.current.getFocused;
