@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { CloseButton } from '../CloseButton';
@@ -123,11 +123,8 @@ export function AssetEditor(
     view.stepped(before, doc.current());
   };
 
-  const changedAssets = useAssetChanges(base, workspace, same);
+  const changedAssets = useAssetChanges(base, workspace, same, onChangedAssets);
   const changes = changedAssets.of(assetId);
-  const changedIds = changedAssets.ids;
-  const reportChanged = useLatest(onChangedAssets);
-  useEffect(() => reportChanged.current?.(changedIds), [changedIds, reportChanged]);
   // The document packs every asset as sent, so every changed one is handed over, whichever is shown.
   const submit: SubmitChanges | undefined = onSubmit && (() => doc.send(() => onSubmit(changedAssets.sent(types))));
   const changed = useMemo(() => changedPaths(changes), [changes]);

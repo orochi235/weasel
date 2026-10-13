@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLatest } from '@weasel-js/core';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import type { PrefTypes } from './types';
 import { assetOf, type Asset, type Workspace } from './workspace';
@@ -38,13 +39,16 @@ function changesText(workspace: Workspace, each: readonly AssetChanges[]): strin
 
 /**
  * The changes from `base` to `workspace`. A workspace `same` as the last one is not looked at again, so what the
- * panes are handed keeps its identity under a host that makes its workspace anew each time it draws.
+ * panes are handed keeps its identity under a host that makes its workspace anew each time it draws. `report` is
+ * called with the changed assets' ids on mount, and again whenever the set is another one.
  */
-export function useAssetChanges(base: Workspace, workspace: Workspace, same: (a: Workspace, b: Workspace) => boolean): WorkspaceChanges {
+export function useAssetChanges(
+  base: Workspace, workspace: Workspace, same: (a: Workspace, b: Workspace) => boolean, report?: (ids: ReadonlySet<string>) => void,
+): WorkspaceChanges {
   const [held, setHeld] = useState(workspace);
   const current = held === workspace || same(held, workspace) ? held : workspace;
   if (current !== held) setHeld(current);
-  return useMemo(() => {
+  const changes = useMemo<WorkspaceChanges>(() => {
     const each = workspaceChanges(base, current);
     const by = new Map(each.map((c) => [c.id, c.changes]));
     return {
@@ -58,4 +62,8 @@ export function useAssetChanges(base: Workspace, workspace: Workspace, same: (a:
       }),
     };
   }, [base, current]);
+  const reported = useLatest(report);
+  const { ids } = changes;
+  useEffect(() => reported.current?.(ids), [ids, reported]);
+  return changes;
 }

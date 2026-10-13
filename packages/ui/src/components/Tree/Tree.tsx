@@ -33,8 +33,7 @@ export interface TreeNode {
   label: ReactNode;
   /** What type-ahead matches against. Defaults to `label` when that is a string. */
   textValue?: string;
-  /** Decoration before the label — an icon. Not a control. `--wzl-tree-leading-size` on the tree sets every one
-   *  in a square of that side. */
+  /** Decoration before the label — an icon, not a control. `--wzl-tree-leading-size` sets each in a square of that side. */
   leading?: ReactNode;
   /** Decoration after the label — a count badge. Not a control. Read as part
    *  of the row's accessible name. */
