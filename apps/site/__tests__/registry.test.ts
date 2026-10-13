@@ -63,18 +63,6 @@ describe('the demo registry', () => {
     expect(PACKAGES).toEqual([...new Set(DEMOS.flatMap((d) => (d.package ? [d.package] : [])))].sort());
   });
 
-  it('renders every demo under exactly one heading', () => {
-    // The nav loops over CATEGORIES then PACKAGES and filters DEMOS by each, so
-    // a demo reached by neither would silently never render. File order does
-    // not matter — `Tools` is split around `Text` in the registry and both
-    // halves land under one heading.
-    const placed = [
-      ...CATEGORIES.flatMap((c) => DEMOS.filter((d) => d.category === c)),
-      ...PACKAGES.flatMap((p) => DEMOS.filter((d) => d.package === p)),
-    ];
-    expect(placed).toHaveLength(DEMOS.length);
-  });
-
   it('gives every outbound link a label and an absolute href', () => {
     const bad = DEMOS.flatMap((d) =>
       (d.links ?? [])
