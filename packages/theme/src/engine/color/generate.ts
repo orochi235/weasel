@@ -228,7 +228,6 @@ function searchHues(c: Constraints): number[] | null {
   const anchorHexes = c.anchors.map(toHexPreview);
   const freeCount = c.count - c.anchors.length;
   if (freeCount < 0) return null;
-  if (freeCount === 0) return [];
 
   // Hue is an integer 0-359 and the constraints are fixed for one call, so the
   // placed color, its realized hue and its contrast are each computed once.
@@ -325,6 +324,7 @@ function searchHues(c: Constraints): number[] | null {
     const m = metaFor(free);
     return m.reduce((sum, x) => sum + x.chroma, 0) / m.length;
   };
+  if (freeCount === 0) return penalty([]) > 0 ? null : [];
 
   const seeds: number[][] = [];
   const seedStep = Math.max(6, Math.round(freeCount * 1.6));

@@ -149,6 +149,18 @@ describe('perceptual gates', () => {
     expect(onPaper({ minContrast: 1.6 }).feasible).toBe(false);
   });
 
+  it('measures the gates against a palette that is all anchors', () => {
+    const pinned = (over: Partial<Constraints>) =>
+      generate(withC({ count: 2, hueFloor: 0, minDistance: 0, minContrast: 0, minSurfaceDistance: 0, ...over }));
+    const apart = [YELLOW_ANCHOR, { name: 'violet', hue: 292, lightness: 0.53 }];
+    const crowded = [YELLOW_ANCHOR, { name: 'lime', hue: YELLOW_ANCHOR.hue + 5, lightness: YELLOW_ANCHOR.lightness }];
+
+    expect(pinned({ anchors: apart, hueFloor: 0.5 }).feasible).toBe(true);
+    expect(pinned({ anchors: crowded, hueFloor: 0.5 }).feasible).toBe(false);
+    expect(pinned({ anchors: crowded, minDistance: 0.2 }).feasible).toBe(false);
+    expect(pinned({ anchors: apart, surface: '#f5f5f6', minContrast: 1.6 }).feasible).toBe(false);
+  });
+
   it('scales the hue floor with the set size', () => {
     const eight = generate(withC({ count: 8, hueFloor: 0.9, minContrast: 0, minDistance: 0, minSurfaceDistance: 0 }));
     const sixteen = generate(withC({ count: 16, hueFloor: 0.9, minContrast: 0, minDistance: 0, minSurfaceDistance: 0 }));
