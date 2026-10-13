@@ -11,6 +11,7 @@ import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
+import { browserDeps } from './scripts/vitest-browser-deps.ts';
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -31,10 +32,14 @@ const shared = {
 // in the repo and fails on the apps' virtual modules; a scan that worked would pre-bundle react and vitest.
 const vm = { environments: { __vitest_vm__: { optimizeDeps: { noDiscovery: true, include: [] } } } };
 
-const FORGE_NODE = [
+const BROWSER_TESTS = ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'];
+const BROWSER_SETUP = './vitest.browser.setup.ts';
+
+const VITE_SERVER_TESTS = [
   'packages/forge/src/csf/shims/alias.test.ts',
   'packages/forge/src/vite/plugin.test.ts',
   'packages/forge/src/vite/replacedFile.test.ts',
+  'scripts/vitest-browser-deps.vite.test.ts',
 ];
 
 export default defineConfig({
@@ -149,7 +154,7 @@ export default defineConfig({
           // A test that mounts the whole workshop takes ~1 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
           include: ['packages/forge/src/**/*.test.{ts,tsx}', 'apps/forge/*.test.{ts,tsx}'],
-          exclude: [...FORGE_NODE, '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
+          exclude: [...VITE_SERVER_TESTS, '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       {
@@ -162,7 +167,7 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 20_000,
-          include: FORGE_NODE,
+          include: VITE_SERVER_TESTS,
         },
       },
       {
@@ -191,7 +196,7 @@ export default defineConfig({
             'apps/shared/**/*.test.{ts,tsx}',
             'scripts/**/*.test.ts',
           ],
-          exclude: ['**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
+          exclude: [...VITE_SERVER_TESTS, '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
       },
       // The typecheck, lint, and check:* steps CI runs, as tests, so a fleet
@@ -210,20 +215,20 @@ export default defineConfig({
       // resolves none of. Headless Chromium, like forge-stories below.
       {
         ...shared,
-        // A dependency met mid-run makes vite re-optimize and reload the page under the suites. The scan
-        // of `entries` prevents that only on a cold cache, and a fleet node keeps its cache between
-        // runs, so `include` names what it has missed. `force: true` stops the browser connecting.
+        // A dependency met mid-run makes vite re-optimize and reload the page under the suites, and a
+        // node's warm cache skips the scan that would have found it. `optimizeDeps.force` is not the
+        // fix: with it the browser session never connected on two fleet nodes.
         optimizeDeps: {
-          entries: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'],
-          include: ['zustand/react/shallow'],
+          entries: BROWSER_TESTS,
+          include: browserDeps(import.meta.dirname, { entries: BROWSER_TESTS, setupFiles: [BROWSER_SETUP] }),
         },
         test: {
           name: 'browser',
-          include: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'],
+          include: BROWSER_TESTS,
           // The default second is not enough on a fleet node running eight other projects: a smooth
           // scroll or a dialog's close outlasts it there, and a poll that is going to pass costs nothing.
           expect: { poll: { timeout: 5000 } },
-          setupFiles: ['./vitest.browser.setup.ts'],
+          setupFiles: [BROWSER_SETUP],
           // After every other project, not beside them: a browser test's clicks and screenshots
           // stall when the node's cores are taken, and time out.
           sequence: { groupOrder: 1 },
