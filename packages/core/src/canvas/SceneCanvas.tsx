@@ -12,7 +12,6 @@ import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import { InputScope } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
-import type { InsertAdapter } from 'core/adapters/types';
 import { sceneFromJSON } from 'core/scene/scene';
 import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import { readOnlySelection } from 'core/selection/readOnlySelection';
@@ -22,12 +21,7 @@ import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { normalizeView, type View } from 'core/viewport/view';
 import { never, useHoverTracking } from 'features/chrome-caps';
 import { useChromeCaps, type ViewRuleInputs } from 'features/chrome-caps/useChromeCaps';
-import {
-  acquireKitContentHandlers,
-  itemsFromFiles,
-  registerContentHandler,
-  type IngestItem
-} from 'features/ingestion';
+import { useCanvasIngestion } from 'features/ingestion/useCanvasIngestion';
 import { isSelectedNode } from 'features/paths/pathEditState';
 import { usePathEditOverlayLayer, usePathEditState } from 'features/paths/usePathEdit';
 import {
@@ -35,7 +29,6 @@ import {
   rotationBadgeOf,
 } from 'features/selection/overlay';
 import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
-import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
@@ -44,7 +37,6 @@ import type React from 'react';
 import { forwardRef, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { createNodeRouting } from '../core/scene/NodeRouting';
-import { dwarn } from '../debug';
 import { dlog } from '../debug/flag';
 import type { DebugConfig } from '../debug/types';
 import { createLongPressFeedbackContribution } from '../features/longPress/longPressFeedback';
@@ -205,15 +197,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     dlog('scene-canvas', 'mount');
     return () => dlog('scene-canvas', 'unmount');
   }, []);
-
-  // The kit's default content handlers are refcounted across mounted SceneCanvases; consumer
-  // handlers from the `ingestion` prop live for this canvas's lifetime.
-  const consumerHandlers = ingestion?.handlers;
-  useEffect(() => {
-    const disposers = [acquireKitContentHandlers()];
-    for (const h of consumerHandlers ?? []) disposers.push(registerContentHandler(h));
-    return () => disposers.forEach((d) => d());
-  }, [consumerHandlers]);
 
   // Redraw on every active animator frame so `drawOne` functions reading
   // `animator.colorOverrides` (or any other non-scene channel) reflect the latest values.
@@ -714,44 +697,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(slopsOn ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
   }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, slopsOn, slopsLayer]);
 
-  // `CanvasExtensionApi.ingest` is routed through `registry.trigger('ingest', …)` so the
-  // action's `requires` deps are resolved exactly as on the dispatcher path.
   // `StandardActionsRegistrar` stashes the registry into this ref.
   const actionsRegistryRef = useRef<ActionsRegistry | null>(null);
 
-  // Clipboard-paste ctx for the kit weasel-JSON content handler, built from THIS canvas's
-  // adapter so OS-arriving pastes re-materialize through the same `commitPaste` path
-  // `useClipboardOps` uses. Absent (⇒ the handler declines) when the consumer set
-  // `ingestion.clipboard.enabled: false` or the adapter lacks `commitPaste`.
-  const ingestionClipboardReviver = ingestion?.clipboard?.reviver;
-  const ingestionClipboardEnabled = ingestion?.clipboard?.enabled !== false;
-  const ingestionClipboardOmitted = useLatest(ingestion?.clipboard?.onOmitted);
-  const ingestionClipboard = useMemo<ClipboardIngestCtx | undefined>(() => {
-    if (!ingestionClipboardEnabled || !adapter?.commitPaste) return undefined;
-    return {
-      adapter: adapter as unknown as InsertAdapter<{ id: string }>,
-      ...(ingestionClipboardReviver ? { reviver: ingestionClipboardReviver } : {}),
-      onOmitted: (omitted) => ingestionClipboardOmitted.current?.(omitted),
-    };
-  }, [adapter, ingestionClipboardEnabled, ingestionClipboardReviver, ingestionClipboardOmitted]);
-  const ingestImpl = useCallback(
-    (input: File[] | IngestItem[], point?: { x: number; y: number }) => {
-      const items: IngestItem[] = (input as (File | IngestItem)[]).map((entry) =>
-        entry instanceof File ? itemsFromFiles([entry])[0] : entry,
-      );
-      if (items.length === 0) return false;
-      if (!actionsRegistryRef.current) {
-        // The registry is stashed by a descendant effect — a consumer calling
-        // ingest() from its own ref callback / layout effect lands here.
-        dwarn('ingest', 'CanvasExtensionApi.ingest called before the action registry mounted — call ignored. Defer to an effect or event handler.');
-        return false;
-      }
-      const params = { items, ...(point ? { worldX: point.x, worldY: point.y } : {}) };
-      const ran = actionsRegistryRef.current.trigger('ingest', params);
-      if (!ran) dwarn('ingest', 'CanvasExtensionApi.ingest ran nothing: this canvas has no `ingest` action. Add `ingest` to `features`.');
-      return ran;
-    },
-    [],
+  const { ingest, clipboard: ingestionClipboard } = useCanvasIngestion(
+    adapter, () => actionsRegistryRef.current, ingestion,
   );
 
   // Views added through the handle rather than declared as props or children.
@@ -776,7 +726,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const extended: SceneCanvasApi | null = node
         ? {
             ...node,
-            ingest: ingestImpl,
+            ingest,
             animateView: viewAnimation.animate,
             stopViewAnimation: viewAnimation.stop,
             isViewAnimating: viewAnimation.isAnimating,
@@ -788,7 +738,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       setCanvasReady(extended !== null);
       assignRef(ref, extended);
     },
-    [ref, ingestImpl, viewAnimation, camera, addView, trackHoverOn],
+    [ref, ingest, viewAnimation, camera, addView, trackHoverOn],
   );
 
   // What a view needs to build its own overlay-aware state. `geometry` is the

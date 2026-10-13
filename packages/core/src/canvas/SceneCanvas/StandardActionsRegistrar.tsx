@@ -167,8 +167,8 @@ export function StandardActionsRegistrar({
    *  options (`unpack`). */
   ingestionSvg?: SvgIngestOptions;
   /** Clipboard-paste ctx (this canvas's adapter + the consumer's reviver)
-   *  for the kit weasel-JSON handler — built in SceneCanvasInner where the
-   *  typed adapter is in scope; absent when disabled. */
+   *  for the kit weasel-JSON handler, from `useCanvasIngestion`; absent
+   *  when disabled. */
   ingestionClipboard?: ClipboardIngestCtx;
   /** Populated with the live registry so `CanvasExtensionApi.ingest`
    *  (assembled in SceneCanvasInner, OUTSIDE the actions provider) can call
