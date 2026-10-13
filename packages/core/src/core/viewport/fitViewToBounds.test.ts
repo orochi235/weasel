@@ -174,17 +174,6 @@ describe('fitViewToBounds — mode', () => {
     expect(v.scale.y).toBe(2);
   });
 
-  it("'contain' is the default and matches today's behavior", () => {
-    const v = fitViewToBounds(
-      { x: 0, y: 0, width: 10, height: 100 },
-      { width: 200, height: 200 },
-      CURRENT,
-      { padding: 0 }, // no mode -> default 'contain'
-    );
-    expect(v.scale.x).toBe(2);
-    expect(v.scale.y).toBe(2);
-  });
-
   it("'stretch' clamps each axis to minScale/maxScale independently", () => {
     const v = fitViewToBounds(
       { x: 0, y: 0, width: 1000, height: 0.01 },

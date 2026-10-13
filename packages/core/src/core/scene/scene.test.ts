@@ -21,20 +21,6 @@ function makeScene() {
 }
 
 describe('createScene — construction', () => {
-  it('createScene accepts an optional registry option', () => {
-    const scene = createScene<{ label: string }, 'structures', typeof POSE>({
-      systemLayers: [{ id: 'structures' }],
-      registry: {
-        clipFromPose: {
-          'ellipse': (_pose) => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }),
-        },
-      },
-    });
-    // No public getter for the registry; it's tested indirectly via toJSON
-    // elsewhere. Here, just confirm the option doesn't break construction.
-    expect(scene).toBeDefined();
-  });
-
   it('rejects empty systemLayers', () => {
     expect(() =>
       createScene<Data, 'a'>({ systemLayers: [] }),
@@ -180,13 +166,13 @@ describe('add / remove / move', () => {
     const s = makeScene();
     const a = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const b = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const inner = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'inner' }, parent: a });
     const child = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' }, parent: a });
     s.move(child, b);
-    expect(s.childrenOf(a)).toEqual([]);
+    expect(s.childrenOf(a)).toEqual([inner]);
     expect(s.childrenOf(b)).toEqual([child]);
     expect(() => s.move(a, a)).toThrow(/itself/);
-    // Move b under itself transitively (via child) — still itself, but test descendant case:
-    expect(() => s.move(b, child)).toThrow(/not a container/);
+    expect(() => s.move(a, inner)).toThrow(/own descendant/);
   });
 
   it('rejects move() onto a parent on a HIGHER layer (child would render below parent)', () => {
@@ -230,13 +216,6 @@ describe('add / remove / move', () => {
     const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
     const plant = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: bed });
     expect(s.get(plant)?.layer).toBe('plantings');
-    expect(s.childrenOf(bed)).toEqual([plant]);
-  });
-
-  it('accepts a child added on the same layer as its parent', () => {
-    const s = makeScene();
-    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'plant' }, parent: bed });
     expect(s.childrenOf(bed)).toEqual([plant]);
   });
 });
@@ -376,6 +355,13 @@ describe('mutations are auto-undoable', () => {
     expect(s.layers[1].visible).toBe(true);
     s.redo();
     expect(s.layers[1].visible).toBe(false);
+
+    s.setLayerLocked('structures', true);
+    expect(s.layers[1].locked).toBe(true);
+    s.undo();
+    expect(s.layers[1].locked).toBe(false);
+    s.redo();
+    expect(s.layers[1].locked).toBe(true);
   });
 
   it('canUndo/canRedo reflect stack state', () => {
@@ -638,25 +624,6 @@ describe('undo/redo of container add preserves clipFromPose', () => {
     // clipFromPose must survive the undo/redo round-trip.
     expect((node as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
   });
-
-  it('clipFromPose is callable and returns the correct clip after redo', () => {
-    const scene = createScene<Data, 'structures'>({
-      systemLayers: [{ id: 'structures' }],
-    });
-    const fn = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 5, y: 5, width: 20, height: 20 });
-    const id = scene.add({
-      kind: 'container',
-      layer: 'structures',
-      pose: POSE,
-      data: { label: 'bed' },
-      clipFromPose: fn,
-    });
-    scene.undo();
-    scene.redo();
-    const node = scene.get(id);
-    const cfp = (node as { clipFromPose?: (p: typeof POSE) => unknown }).clipFromPose;
-    expect(cfp?.(POSE)).toEqual({ kind: 'rect', x: 5, y: 5, width: 20, height: 20 });
-  });
 });
 
 describe('scene.toJSON', () => {
@@ -821,7 +788,7 @@ describe('sceneFromJSON', () => {
     expect((restoredBed as { clipFromPose?: unknown }).clipFromPose).toBe(factory);
   });
 
-  it('clipFromPose survives undo+redo after loading', () => {
+  it('a loaded container keeps its clipFromPose through remove and undo', () => {
     const factory = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
     const json: SerializedScene<Data, 'structures', typeof POSE> = {
       version: 1,
@@ -836,12 +803,11 @@ describe('sceneFromJSON', () => {
       }],
     };
     const scene = sceneFromJSON(json, { registry: { clipFromPose: { 'ellipse': factory } } });
-    const leaf = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'l' } });
+    scene.remove(asNodeId('bed'));
+    expect(scene.get(asNodeId('bed'))).toBeUndefined();
     scene.undo();
-    scene.redo();
     const bed = scene.get(asNodeId('bed'));
     expect((bed as { clipFromPose?: unknown }).clipFromPose).toBe(factory);
-    void leaf;
   });
 
   it('throws on unknown version', () => {

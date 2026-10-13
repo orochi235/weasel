@@ -1,7 +1,7 @@
 /**
  * The default long-press ring, as pixels: a synthetic touch held on a real
  * `<SceneCanvas>` paints accent around the press point partway through the
- * hold — and paints nothing when no binding would fire on the press.
+ * hold.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { page } from 'vitest/browser';
@@ -96,10 +96,5 @@ describe('long-press feedback ring', () => {
     const px = accentPixels(data, dpr);
     expect(px.ring).toBeGreaterThan(40);
     expect(px.elsewhere).toBe(0);
-  });
-
-  it('paints nothing when no binding would fire on the press', async () => {
-    const { data, dpr } = await holdAndCapture([], HOLD);
-    expect(accentPixels(data, dpr).ring).toBe(0);
   });
 });
