@@ -1,5 +1,14 @@
 # @weasel-js/registry
 
+## 1.10.0
+
+### Patch Changes
+
+- 27b827e: text: the run algebra lives here now: `styleAtRange`, `applyStyleToRange`, `patchRangeStyle`, `effectiveRangeStyle`, `rangeWeight`, `setFlagOverRange`, `nodeHasFlag`, and `unboldPatch`, with the `RangeStyle`, `RunStylePatch`, `StyleKey`, `FlagKey`, and `SetFlagResult` types. `runsCarryStyling` and `supersededKey` are exported beside them. None of them needed a scene. The `MIXED` sentinel and its `Mixed` type moved to `@weasel-js/registry`, and text exports them too. `@weasel-js/core` still exports every name it did before.
+- ee08fa5: Adds API: `Reflectable.release(key, registrant)` removes exactly one registrant from a key's stack, live or shadowed, whether `push` or `set` wrote it, and returns whether it was there. Removing the live one uncovers the one beneath. It shares one removal path with the function `push` returns, so releasing by either makes the other a no-op.
+  
+  Adds API: `ReflectedEntry.live` is the registrant holding the key. It is the same frozen object in every snapshot, and the one `shadowed` lists once something displaces it, so a row drawn from `reflection.entries()` can hand any registrant it shows straight to `release`. `value` and `source` stay on the entry as they were.
+
 ## 1.9.4
 
 ### Patch Changes

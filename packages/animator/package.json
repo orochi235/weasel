@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/animator",
-  "version": "1.9.4",
+  "version": "1.10.0",
   "description": "The weasel animator: tweens, springs, holds, staggers, and timelines that combine on targets, run by one frame loop. Needs no scene.",
   "license": "MIT",
   "type": "module",
@@ -38,10 +38,10 @@
   },
   "dependencies": {
     "@msb235/blits": "0.10.0",
-    "@weasel-js/geom": "1.9.4",
-    "@weasel-js/paint": "1.9.4",
-    "@weasel-js/react": "1.9.4",
-    "@weasel-js/registry": "1.9.4"
+    "@weasel-js/geom": "1.10.0",
+    "@weasel-js/paint": "1.10.0",
+    "@weasel-js/react": "1.10.0",
+    "@weasel-js/registry": "1.10.0"
   },
   "peerDependencies": {
     "react": ">=18"

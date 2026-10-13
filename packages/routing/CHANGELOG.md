@@ -1,5 +1,150 @@
 # @weasel-js/routing
 
+## 1.10.0
+
+### Minor Changes
+
+- 9f5cdb2: A binding can say it is declared ahead of another on the same input on purpose: `opts: { yields: true }`. The route-conflict check does not report a pair whose earlier binding yields. The dispatcher already fired the next binding when an action declined through `enabled()`; this only tells the check that the order is the design. The slice tool's point drag and the keys `modeShortcuts` binds use it, so a tool set with slice in it, or a mode entered on a key another mode commits on, no longer warns. An entry key shared that way is still reported when `modeShortcuts` is given no `canEnter`, since nothing then keeps it from firing inside the other mode.
+  
+  <!-- bump-approved: minor: maintainer — 1.10.0 release requested 2026-10-13 -->
+
+### Patch Changes
+
+- cd8cbbd: Fixes: a key typed with AltGr could not match a key binding. A layout that types `[` with AltGr reports Ctrl and Alt held with it, and the strict modifier match read that as a chord. The dispatcher still tries the chord as reported first, so a binding that names Ctrl+Alt keeps it; when nothing takes it and the browser reports AltGraph, it tries again without Ctrl and Alt. A key that reports its own letter or digit is left a chord, because Firefox on Windows reports AltGraph for a plain Ctrl+Alt as well. Checked in jsdom only, not on a Windows browser.
+- 1f7548d: routing: the pointer store and the selection context live in `@weasel-js/routing/react` now. That is `PointerContextProvider`, `createPointerStore`, `usePointerContext`, `usePointerPosition`, `SelectionContextProvider`, `SelectionContextProviderIfRoot`, `useSelectionContext`, and `usePublishSelection`, with the `PointerContextValue`, `PointerWorldPos`, and `SelectionContextValue` types. `@weasel-js/core` still exports every one of them.
+- de60e10: Adds API: range selection on the canvas. `useSelection({ mode: 'multi', range: 'shift', extend: 'meta' })` selects everything from the last pressed id through the one clicked, and `<SceneCanvas selectionOptions>` takes the same options. The hook now keeps an anchor: a plain or toggling click moves it, a range leaves it where it is, and a selection set by anything else ranges from its last id.
+  
+  `order` names the sequence a range walks, for a host with one of its own, such as a layer panel's rows. Decided on an agent's judgment: with no `order`, a hook bound to a scene walks the order the scene paints in (`scene.renderOrder()`), and a hook with neither replaces on the range key. Nothing ranges unless `range` is set, so existing callers are unchanged.
+- e80de55: Fixes: the selection outline, the corner handles, and the rotate badge were drawn on the unskewed box of a node whose pose carries a `transform`. They are drawn on the shape as `poseFrameOf` draws it.
+  
+  Adds API: `Bounds` carries an optional `transform` beside its `rotation`, and the bounds a canvas hands its chrome carry the pose's. `rotationHandle` reads it.
+- 329f658: Fixes a tool's cursor disappearing after a hover cursor: with a tool that declares a `cursor`, moving over something that shows a cursor of its own and off again left the canvas with no cursor until the tool changed. `SceneCanvas.toolCursor.test.tsx` shows it with a registered layer's hit claim. The tool's cursor and the hover cursor were written to the same inline `cursor` style by two writers, and clearing the second removed the first.
+  
+  Adds API: `createCursorSink({ element, painted })` in `@weasel-js/cursor`, also exported from `@weasel-js/core`, is one writer for both. It holds a base cursor and an override, writes the element's `cursor` style and the painted-cursor state, and puts the base back when the override clears. A canvas makes one and exposes it as `CanvasExtensionApi.cursorSink`; `useGestureDispatcher` takes it as the `cursorSink` option, and without one behaves as before. A hand-built `CanvasExtensionApi` now needs the `cursorSink` field.
+- 7063584: Fixes: a canvas with no binding for a drop was still a drop target. An OS drag over a `<SceneCanvas>` without the `ingest` preset showed the copy cursor and the `weasel-dropover` class, and the drop was swallowed with nothing inserted. `useGestureDispatcher` now asks its bindings on each `dragover` whether one would take a drop of what the drag carries, and only then cancels the event and adds the class. A drag nothing would take is left to the page.
+  
+  This is a behavior change, decided on an agent's judgment: the question is answered per drag, by the bindings, with no new channel flag. A consumer's own `drop` binding makes the canvas a drop target without the `ingest` preset, and a binding typed `drop(image/*)` refuses a drag of plain text. A file whose type the browser withholds until the drop (Firefox names it `application/x-moz-file`) is accepted while it hovers.
+  
+  Adds API: `UNKNOWN_MIME` in `@weasel-js/gestures`, the MIME of an item whose type is not known yet, which `matchIngestTypes` lets through every glob; and `itemTypesFromDataTransfer` in `@weasel-js/routing`, what a drag in flight says it carries.
+  
+  Changes API: `SceneCanvasApi.ingest()` returns a boolean, where it returned nothing. `false` means the canvas had no `ingest` action to run, which was a silent no-op before; it also warns under the `ingest` debug namespace.
+- 229ee1c: Breaking: `ToolBounds` is gone from `@weasel-js/routing`. It was an alias of `Bounds` kept for `Tool.previewBounds`, which was removed earlier; import `Bounds` instead.
+- c5a7bd3: A subscriber that throws no longer stops the subscribers after it, or throws into whatever caused the notify, in `createPointerStore`, `createLongPressStore`, and a dispatcher's `subscribe`. Each now notifies through `createEmitter`, as do the actions, dep, and active-tool registries, which already kept going; the error goes to `console.error` as `weasel: a subscriber threw`. A subscriber added during a notify now waits for the next one. `@weasel-js/routing` now depends on `@weasel-js/registry`.
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- a275f78: Adds API: a `hover` gesture, the pointer moving with no button pressed. `{ kind: 'hover', target?, mods?, phase? }` (`HoverSpec`) binds an immediate action that runs on every such move with `worldX` / `worldY`, `clientX` / `clientY`, `affordance`, `bodyTarget`, and `mods` in its params; `hover` is a route-grammar gesture name, and `HoverEvent` joins `InputEvent`. A coordinate readout, an eyedropper preview, or a ruler can follow the pointer through the dispatcher, with its modifiers, targets, modes, and views, where each used to attach its own `pointermove` listener.
+  
+  A hover binding claims nothing, a rule chosen on an agent's judgment: every live `hover` binding that matches a move runs, the move is never canceled, and it still reaches the hover-cursor pump. An ongoing action bound to `hover` is refused with a console error, since there is no press for it to own. A held pointer's moves are its drag's and fire no hover. The gesture reports motion only; it does not say when the pointer leaves.
+  
+  Adding a member to `GestureSpec`, `InputEvent`, and `GestureName` breaks a consumer's exhaustive `switch` or `Record` over any of them.
+- 6bb8035: A canvas refuses a drag no content handler would claim, and leaves a paste none claims to the page. The `ingest` action asks the handler registry before it takes a drop or a paste; `clipboard.pasteEvent` asks its one handler, so on a canvas that edits and does not ingest, pasted text that is no copied node is no longer swallowed.
+  
+  New API. `Action.enabled` takes a third argument, `carried`: the items of the drop or paste being routed, which the dispatcher passes in prediction and in dispatch. `ContentHandlerEntry.types` lets a handler with a predicate `match` say which MIMEs it could claim; a drag still in flight shows its MIMEs and no contents, so a predicate cannot be asked about it.
+  
+  Behavior change for a consumer handler: while a registered handler has a predicate `match` and no `types`, no drag with a known MIME is refused, since it might take anything. Declare `types` to let the canvas refuse the rest. The kit's handlers declare theirs.
+- 1ce19c9: Fixes: a tool hotkey fired while a `<select>` had focus, under the select's own type-ahead. The dispatcher now leaves a select its printable characters and its arrow, Home, End, and Page keys, and still takes Delete, Escape, and every modifier chord typed on one, so Cmd+Z works with focus resting on a select.
+  
+  Changes behavior: `BandEditor` and `Timeline` asked their own question about a key's target, which counted a `<select>` as a text field. They now ask the dispatcher's, so Delete on a select inside a band merges the band, and Delete on a select inside a `Timeline` deletes the selected key. `x` and `l` on a select in a band are still the select's. This rule for `<select>` was chosen on an agent's judgment.
+  
+  Adds API: `focusedControlOwnsKey(e)`, exported from `@weasel-js/gestures`, `@weasel-js/routing`, and `@weasel-js/core`: whether a key belongs to the control it was typed on. `isEditableTarget` and `activatesFocusedControl` now live in `@weasel-js/gestures` and are re-exported where they were.
+- 5c7d50f: Fixes: a long-press on a canvas with several views fired on whichever view had last taken input, not the view the press went down in. A touch held in one view while a mouse moved over another ran its `longPress` or `contextMenu` binding against the wrong view's dispatcher and context. The hold now fires on its own view, from its timer and from the `contextmenu` a platform sends for a hold.
+- be611ae: Fixes: "is this tool allowed in this mode" had two answers. `ToolPalette` and a tool's activation key allowed a tool when any one of its capability tags was allowed and refused a tool with no tags, while the dispatcher required every tag and let an untagged tool through. A tool tagged `['navigation', 'creates-shapes']` in a mode without `creates-shapes` showed enabled, activated, and then had every binding dropped; an untagged tool was grayed out yet live once active.
+  
+  Changes behavior, on the dispatcher's rule: a tool or contribution is allowed when the mode allows every one of its tags, and one with no tags is allowed in every mode. So `eligibleForMode`, `eligibleTool`, and `eligibleContribution` now return `true` for an empty tag list and `false` for a list with one disallowed tag, and `ToolPalette` and the activation keys follow. Which rule wins was chosen on an agent's judgment: a tag names something the tool does, so one refused tag refuses the tool.
+  
+  Adds API: `capabilitiesAllowed(allowed, tags)` in `@weasel-js/modes`, the one predicate the palette, the activation keys, and the dispatcher all ask.
+- b3d4383: Additive: `InvocationCtx.multiTouch.rotation` is real. It was always 0; it is now the degrees the two primary fingers have turned since the gesture began, clockwise positive, and it keeps counting past a half turn. `MultiTouchEvent` carries the `angle` it is computed from, and `multiTouchGeometry` returns it beside the centroid and spread. An action that read `rotation` and relied on the 0 now sees the turn.
+- 6b11cac: Fixes: a browser that sends its own `contextmenu` on a touch hold could run a `contextMenu` binding twice, once from the native event and once from the long-press `useGestureDispatcher` synthesizes. A `contextmenu` that arrives while a touch or pen hold is in progress now stands for that hold's long-press: it fires the pending long-press at once, `longPress` bindings first and the `contextMenu` fallback after, and is dropped when the long-press has already fired. The press is spent either way, so its release does not also click.
+  
+  Behavior change, made on an agent's judgment and tested only against a hand-sent event in jsdom: a right-click from a mouse while a finger or pen is resting on the same canvas no longer opens the menu.
+- 54b013c: Removes what was left of tools running their own gestures. A tool declares bindings to actions, and nothing called these any more.
+  
+  Breaking, for code that used them:
+  
+  - `ToolCtx` is gone from `@weasel-js/routing` and `@weasel-js/core`. An action reads its `InvocationCtx`.
+  - A function passed as `Tool.cursor` or `ToolDef.cursor` takes no argument: the type is `CursorSpec | (() => CursorSpec)`. A cursor that depends on the tool's state closes over that state. Before, the function was handed a context whose pointer position was always `0, 0` and whose modifiers were always up.
+  - `Tool.previewPose`, `Tool.previewBounds`, and `Tool.previewIds` are gone, and a canvas no longer asks its tools for a preview. An in-flight preview comes from the action's `OngoingHandle` (`previewIds`, `previewPose`, `previewData`), which is where the kit's actions publish theirs. `CanvasHelpers.getPreviewSources()` returns those handles alone.
+  - `Tool.initScratch` and `ToolDef.initScratch` are gone, and so is `ToolLifecycleCtx`. `onActivate` and `onDeactivate` take no argument; before, they were handed `{ scratch }`, the value `initScratch()` returned. A tool that keeps state between gestures holds it itself and closes over it, as the pen does.
+  - `Tool`, `ToolDef`, and `defineTool` lose their scratch type parameter. In `@weasel-js/core` none of them takes a type argument: `Tool<null>` becomes `Tool`, and `defineTool<null>({ … })` becomes `defineTool({ … })`. In `@weasel-js/routing` the one parameter left is the overlay type: `Tool<TOverlay>`, `ToolDef<TOverlay>`, `defineTool<TOverlay>`.
+  - `AnyToolOf<TOverlay>` is gone from `@weasel-js/routing`; `Tool<TOverlay>` is the same type.
+  - `ToolPresentation` takes no type parameter, and a function passed as `presentation.icon` takes no argument. The palette only ever called it with `undefined`.
+  
+  Adds API: `CanvasExtensionApi.clientToWorld(clientX, clientY)` converts a client point to the canvas's world the way the canvas itself does, through the `clientToWorld` prop when one was given. Fixes a `<Canvas>` given that prop disagreeing with itself: hover used the override, and the test for whether a registered layer covers a point inside a `<CanvasView>` did not.
+- 1c8c3fc: Pointer gesture recognition moved out of `useGestureDispatcher`'s effect into `createPointerRecognizer` in `@weasel-js/gestures`. It takes pointer samples and a clock, and emits `InputEvent`s to a sink: the press and the drag it becomes past `DRAG_THRESHOLD_PX`, click, double click, long-press with its contextmenu fallback, and multitouch start, move, end, and tap. It has no DOM, so its timings can be tested with a fake clock.
+  
+  Additive in `@weasel-js/gestures`: `createPointerRecognizer` and its types, `clickEvents`, `longPressEvents`, `multiTouchGeometry`, `stylusOf`, and the thresholds `LONG_PRESS_MS`, `DOUBLE_CLICK_MAX_MS`, `DOUBLE_CLICK_MAX_PX`, and `TAP_THRESHOLD_PX`. `@weasel-js/routing` still exports `LONG_PRESS_MS`, and adds `multiTouchGestureId` beside `pointerGestureId`.
+  
+  What a consumer of `useGestureDispatcher` can observe:
+  
+  - `requestRedraw` follows the dispatcher's own notifications. It now also fires when a gesture in flight is ended or stepped by something other than an input event through the hook: the cancel a tool switch makes, `Dispatcher.cancelAll`, a UI-driven ongoing action. A canceled marquee no longer stays painted until the next redraw.
+  - A double click is timed on `performance.now()`, as long-press and multitouch tap already were, where it used `Date.now()`.
+  - The platform that decides whether `mod` means Command is read when the hook mounts, not when the module loads.
+  - The hover cursor's `keydown`/`keyup` listeners on `window` attach only when the pointer channel is on.
+  - A click is decided by whether the press crossed the drag threshold. The hook used to also ask whether a `pointer-<id>` handle was in flight; nothing the hook does opens one before the threshold, so only code calling `handleInput` on the hook's dispatcher with its own pointerdown could have seen the difference.
+  
+  Tool `onActivate` / `onDeactivate` run from their own hook beside the tool registry, in the same order as before: the outgoing tool's `onDeactivate`, the cancel of in-flight gestures, then the incoming tool's `onActivate`.
+- 813aea2: Fixes: the route-conflict check never compared `mod` with the key it resolves to, so `mods: { mod: true }` on one binding and `mods: { ctrl: true }` on another went unreported though both match Ctrl off a Mac, and likewise `mod` against `meta` on one. The check now buckets bindings once per platform, reading `mod` as `meta` on a Mac and `ctrl` elsewhere.
+  
+  Changes behavior: a consumer whose bindings tie this way will see a new `[weasel] route conflict` warning in development. Two bindings of one action with equal `params` that tie on one platform only are not reported, since whichever fires does the same thing; `viewport.zoom` binds its wheel to both `mod` and `ctrl` that way. The same pair tying on both platforms is still reported as a duplicate. That exemption was chosen on an agent's judgment.
+  
+  Adds API: `RegistryEntry.params`, the binding's `opts.params` as declared.
+- b75cc8e: `ActionsRegistry.trigger` asks the action's `enabled` first, and returns `false` without running an action that refuses. It used to run a disabled action, so a caller that did not check `evaluateEnabled` itself fired one the same keystroke would not. This changes behavior: a `trigger` on a disabled action is now a no-op. `enabled` is called with the deps `run` gets and no point.
+- Updated dependencies [a86d79f]
+- Updated dependencies [1837952]
+- Updated dependencies [126116b]
+- Updated dependencies [b3f1e4a]
+- Updated dependencies [329f658]
+- Updated dependencies [7063584]
+- Updated dependencies [3bacb3e]
+- Updated dependencies [b260415]
+- Updated dependencies [a275f78]
+- Updated dependencies [1ce19c9]
+- Updated dependencies [be611ae]
+- Updated dependencies [c0f1190]
+- Updated dependencies [b3d4383]
+- Updated dependencies [54b013c]
+- Updated dependencies [a8ef308]
+- Updated dependencies [5996856]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [335f192]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [1c8c3fc]
+- Updated dependencies [ea54a64]
+- Updated dependencies [955defa]
+- Updated dependencies [27b827e]
+- Updated dependencies [ee08fa5]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [90f8ec4]
+- Updated dependencies [a297730]
+- Updated dependencies [1d34f51]
+- Updated dependencies [80b29f6]
+  - @weasel-js/geom@1.10.0
+  - @weasel-js/history@1.10.0
+  - @weasel-js/cursor@1.10.0
+  - @weasel-js/gestures@1.10.0
+  - @weasel-js/react@1.10.0
+  - @weasel-js/modes@1.10.0
+  - @weasel-js/registry@1.10.0
+  - @weasel-js/select@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

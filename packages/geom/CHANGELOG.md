@@ -1,5 +1,45 @@
 # @weasel-js/geom
 
+## 1.10.0
+
+### Patch Changes
+
+- a86d79f: geom: the anchor-set edits live here now (`editAnchorSet`, `translateAnchorBy`, `moveHandleTo`, `insertAnchorOnSegment`, `deleteAnchorsAt`, `openSubpathAt`, `segmentAt`, `anchorsInRect`, `anchorAt`, `anchorCount`, `locateAnchor`, `flatAnchorIndex`, with `AnchorSet`, `AnchorRect`, and `SegmentHit`), beside `pathInWorld`, `pathInPoseFrame`, `worldEditToStorage`, and `PathInWorldPose`. `nearestPathAnchor`, `reverseAnchors`, and `PathAnchorHit` are exported here; they were not exports of `@weasel-js/core` before.
+  
+  text: `textToPath`, `textToPathsByPaint`, `loadTextOutlines`, and `TextOutlinesError` live here now, with `TextOutlineSource`, `TextNodeSource`, `TextPaintPath`, `TextToPathOptions`, and `TextOutlinesFailure`. `SYNTHETIC_ITALIC_RADIANS`, the lean a faked italic takes, is exported here; it was not an export of `@weasel-js/core` before.
+  
+  `@weasel-js/core` still exports every name it did before.
+- 1837952: Adds API: `pathDividePieces` and `pathCropPieces` in `@weasel-js/geom/booleans`, which return each result path as a `BooleanPiece` with the `sources` it came from: the indices of the inputs covering a Divide region, ascending, and the one input a Crop piece was clipped from. `pathDivide` and `pathCrop` return the same paths in the same order and are now those pieces without their sources.
+- 126116b: A clip can hold a path. `toClip` used to throw on a key whose value has a typed array in it, which is every `Path`. It now writes each one as its type's tag and its numbers, `{ __ta: 'f32', data: [...] }`, at any depth of the value, and `bindClip` makes it the typed array again, so a track tweening a path-shaped pose goes through `JSON.stringify` and `JSON.parse` and back. An event's `data` is passed as written, as before.
+  
+  Changed behavior: `bindClip` now copies each key's value where it used to share it with the clip, so a plain object in a key's value that has `__ta` and `data` members of that shape is read as a typed array.
+  
+  Adds API in `@weasel-js/geom`, where the encoding lives: `tagTypedArrays(value)` and `reviveTypedArrays(value)` copy a value with its typed arrays tagged or made again, `typedArrayReplacer` is the first as a `JSON.stringify` replacer, and `tagTypedArray` and `untagTypedArray` do one array. Every number array type is covered: `Int8Array` through `Float64Array`, `Uint8ClampedArray` included. The types are `TaggedTypedArray`, `TypedArrayTag`, and `NumberTypedArray`.
+- b260415: geom: `mat3`, the `GlMat3` type, and `viewToMat3` live here now, moved from core's renderer. `@weasel-js/core/renderer` still exports all three. `mat3` works on the nine-element column-major matrix a GL uniform takes; geom's `Mat3` type and its free functions (`identity`, `multiply`, `invert`) remain the six-number affine.
+- 54174b6: Fixes: SVG import and export, the booleans, and the renderer's mesh cache disagreed with a path whose open subpaths no fill closes (`openFill: 'none'`, or `setDefaultOpenFill('none')`).
+  
+  - `parseSvg` stamps `openFill: 'close'` on a `<polyline>` or `<path>` with an open subpath, since SVG always closes one to fill it. Such a path now carries a field it did not, and keeps painting under a `'none'` default.
+  - `serializeSvg` writes open subpaths no fill closes with `fill="none"`. A path mixing closed and open subpaths is written as a `<g>` of two `<path>`s, the group carrying the node's opacity, rotation, and metadata, so it reads back as a group of two.
+  - `pathUnion`, `pathIntersect`, `pathSubtract`, `pathExclude`, `pathDivide`, and the slice cuts leave such an open subpath out of the region. This changes their result for a path that says `'none'`.
+  - A mesh the renderer cached under one default rule is rebuilt after `setDefaultOpenFill` changes it, so the default no longer has to be set before the first paint.
+  
+  Adds API: `splitByClosure(path)` and `hasOpenSubpath(path)` in `@weasel-js/geom`, re-exported from `@weasel-js/core`.
+- 4edad85: Fixes: a filled path with an open subpath painted and could not be clicked. `tessellate` and `pathSignedArea` closed the subpath, and `pointInPath`, `pathContainsRect`, `pathIntersectsRect`, and the polygon tests ignored it. All of them now ask the path.
+  
+  Adds API: `PolygonPath.openFill`, `'close'` (a fill closes an open subpath with a straight edge back to its start, as SVG and canvas do) or `'none'` (an open subpath never fills), and `setDefaultOpenFill(rule)` / `defaultOpenFill()` in `@weasel-js/geom` for a path that names neither; the default starts at `'close'`. `fillsOpenSubpaths(path)` is the one answer. Set the default before anything is painted: a mesh already built keeps the rule it was built under.
+  
+  Changes behavior: the filled-region hit tests now count an open subpath of three or more points as closed, so such a path is picked across the area its ends enclose. A node whose painter reports unfilled ink is still picked on its outline only. A marquee or lasso reads that ink too: it meets the open subpaths of a node painted with no fill only where it touches the stroke.
+  
+  Fixes: `editAnchorSet` returned a path with `fillRule: 'nonzero'` whatever the path it was given said. It, `reversePath`, `splitSubpaths`, the path transforms, the pen's continue and join, and the rig's skinned path now hand back a path with the fields of the one they were given. `anchorsToPath` takes that path as an optional third argument.
+- 335f192: geom: the path anchor model and the small shape builders live here now. That is `pathToAnchors`, `anchorsToPath`, `countPathAnchors`, `isAnchorSmooth`, `nearestSegmentT`, and the `PenAnchor` type, plus `circlePath`, `squarePath`, `rectMarkerPath`, and `roundRectPath`. `@weasel-js/core` still exports every one of them. New from geom: `segmentEnds` and `isStraightSegment`.
+- 7b9de2d: Adds API: `pathTrim` and `pathMerge` in `@weasel-js/geom/booleans`. `pathTrim(...paths)` removes from each path what the paths after it cover, so given back to front every piece is the part of its input left showing, and an input wholly hidden gives none. `pathMerge(paths, keyOf)` trims, then unites the pieces of the inputs `keyOf` gives the same key, which a caller keys by paint. Both return `BooleanPiece`s naming the inputs each piece came from. Uniting same-key pieces that do not touch into one path of several contours, where Illustrator's Merge leaves them apart, was an agent's judgment. No Boolean action runs either one yet.
+- ea54a64: geom: the box-pose frame math lives here now: `poseFrameOf`, `poseFrameInverseOf`, `poseLinearOf`, `pathThroughPoseFrame`, `poseRotationOf`, and `rotatePathAround`, with the `PoseLinear` and `PoseRotation` types. They read a pose as plain numbers and need no scene. `@weasel-js/core` still exports every one of them.
+- 955defa: geom: the screen-pixel helpers live here now: `pxExtent`, `scaleDelta`, `screenAngleOf`, `standoff`, `withinPxBox`, `withinPxRadius`, and `meanScale`, with the `Scale2` type. They take a view's scale as two numbers and need nothing else from core. `@weasel-js/core` still exports every one of them.
+- 46fcc7e: Adds API: `TYPED_ARRAY_CONSTRUCTORS`, the constructor of each typed array `tagTypedArray` can write, under the tag it writes it by. `TypedArrayTag` is its keys and `NumberTypedArray` an instance of any of them, as before; the table they are read from is now exported with them.
+- a297730: Fixes: a marquee or lasso in `intersect` mode drawn wholly inside a closed shape with no fill selected it, though a click there did not. A region now takes an unfilled shape only where it meets the outline or encloses it. This changes what a marquee selects: one drawn inside a stroke-only rect to reach the nodes within it no longer takes the rect too.
+  
+  Adds API: `polygonIntersectsPath(polygon, path, { filled: false })` in `@weasel-js/geom` reads a closed subpath as a line, and `regionTakes` takes a sixth argument, `filled`, a thunk asked only when the bounds cannot decide. Both default to filled.
+
 ## 1.9.4
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @weasel-js/storage
 
+## 1.10.0
+
+### Patch Changes
+
+- 09755da: Adds API: the `CreateRecordCacheOptions` type, what `createRecordCache` takes: `RecordCacheOptions` plus `initial`, the records the cache opens holding, and `writable`, which opens it with writing off when false.
+
 ## 1.9.4
 
 ### Patch Changes

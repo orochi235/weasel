@@ -1,5 +1,63 @@
 # @weasel-js/gestures
 
+## 1.10.0
+
+### Patch Changes
+
+- 7063584: Fixes: a canvas with no binding for a drop was still a drop target. An OS drag over a `<SceneCanvas>` without the `ingest` preset showed the copy cursor and the `weasel-dropover` class, and the drop was swallowed with nothing inserted. `useGestureDispatcher` now asks its bindings on each `dragover` whether one would take a drop of what the drag carries, and only then cancels the event and adds the class. A drag nothing would take is left to the page.
+  
+  This is a behavior change, decided on an agent's judgment: the question is answered per drag, by the bindings, with no new channel flag. A consumer's own `drop` binding makes the canvas a drop target without the `ingest` preset, and a binding typed `drop(image/*)` refuses a drag of plain text. A file whose type the browser withholds until the drop (Firefox names it `application/x-moz-file`) is accepted while it hovers.
+  
+  Adds API: `UNKNOWN_MIME` in `@weasel-js/gestures`, the MIME of an item whose type is not known yet, which `matchIngestTypes` lets through every glob; and `itemTypesFromDataTransfer` in `@weasel-js/routing`, what a drag in flight says it carries.
+  
+  Changes API: `SceneCanvasApi.ingest()` returns a boolean, where it returned nothing. `false` means the canvas had no `ingest` action to run, which was a silent no-op before; it also warns under the `ingest` debug namespace.
+- a275f78: Adds API: a `hover` gesture, the pointer moving with no button pressed. `{ kind: 'hover', target?, mods?, phase? }` (`HoverSpec`) binds an immediate action that runs on every such move with `worldX` / `worldY`, `clientX` / `clientY`, `affordance`, `bodyTarget`, and `mods` in its params; `hover` is a route-grammar gesture name, and `HoverEvent` joins `InputEvent`. A coordinate readout, an eyedropper preview, or a ruler can follow the pointer through the dispatcher, with its modifiers, targets, modes, and views, where each used to attach its own `pointermove` listener.
+  
+  A hover binding claims nothing, a rule chosen on an agent's judgment: every live `hover` binding that matches a move runs, the move is never canceled, and it still reaches the hover-cursor pump. An ongoing action bound to `hover` is refused with a console error, since there is no press for it to own. A held pointer's moves are its drag's and fire no hover. The gesture reports motion only; it does not say when the pointer leaves.
+  
+  Adding a member to `GestureSpec`, `InputEvent`, and `GestureName` breaks a consumer's exhaustive `switch` or `Record` over any of them.
+- 1ce19c9: Fixes: a tool hotkey fired while a `<select>` had focus, under the select's own type-ahead. The dispatcher now leaves a select its printable characters and its arrow, Home, End, and Page keys, and still takes Delete, Escape, and every modifier chord typed on one, so Cmd+Z works with focus resting on a select.
+  
+  Changes behavior: `BandEditor` and `Timeline` asked their own question about a key's target, which counted a `<select>` as a text field. They now ask the dispatcher's, so Delete on a select inside a band merges the band, and Delete on a select inside a `Timeline` deletes the selected key. `x` and `l` on a select in a band are still the select's. This rule for `<select>` was chosen on an agent's judgment.
+  
+  Adds API: `focusedControlOwnsKey(e)`, exported from `@weasel-js/gestures`, `@weasel-js/routing`, and `@weasel-js/core`: whether a key belongs to the control it was typed on. `isEditableTarget` and `activatesFocusedControl` now live in `@weasel-js/gestures` and are re-exported where they were.
+- c0f1190: Adds API: the `MultiTouchGeometry` type, which `multiTouchGeometry` already returned: the pointers' centroid, and the first two's spread and angle.
+- b3d4383: Additive: `InvocationCtx.multiTouch.rotation` is real. It was always 0; it is now the degrees the two primary fingers have turned since the gesture began, clockwise positive, and it keeps counting past a half turn. `MultiTouchEvent` carries the `angle` it is computed from, and `multiTouchGeometry` returns it beside the centroid and spread. An action that read `rotation` and relied on the 0 now sees the turn.
+- 54b013c: Removes what was left of tools running their own gestures. A tool declares bindings to actions, and nothing called these any more.
+  
+  Breaking, for code that used them:
+  
+  - `ToolCtx` is gone from `@weasel-js/routing` and `@weasel-js/core`. An action reads its `InvocationCtx`.
+  - A function passed as `Tool.cursor` or `ToolDef.cursor` takes no argument: the type is `CursorSpec | (() => CursorSpec)`. A cursor that depends on the tool's state closes over that state. Before, the function was handed a context whose pointer position was always `0, 0` and whose modifiers were always up.
+  - `Tool.previewPose`, `Tool.previewBounds`, and `Tool.previewIds` are gone, and a canvas no longer asks its tools for a preview. An in-flight preview comes from the action's `OngoingHandle` (`previewIds`, `previewPose`, `previewData`), which is where the kit's actions publish theirs. `CanvasHelpers.getPreviewSources()` returns those handles alone.
+  - `Tool.initScratch` and `ToolDef.initScratch` are gone, and so is `ToolLifecycleCtx`. `onActivate` and `onDeactivate` take no argument; before, they were handed `{ scratch }`, the value `initScratch()` returned. A tool that keeps state between gestures holds it itself and closes over it, as the pen does.
+  - `Tool`, `ToolDef`, and `defineTool` lose their scratch type parameter. In `@weasel-js/core` none of them takes a type argument: `Tool<null>` becomes `Tool`, and `defineTool<null>({ … })` becomes `defineTool({ … })`. In `@weasel-js/routing` the one parameter left is the overlay type: `Tool<TOverlay>`, `ToolDef<TOverlay>`, `defineTool<TOverlay>`.
+  - `AnyToolOf<TOverlay>` is gone from `@weasel-js/routing`; `Tool<TOverlay>` is the same type.
+  - `ToolPresentation` takes no type parameter, and a function passed as `presentation.icon` takes no argument. The palette only ever called it with `undefined`.
+  
+  Adds API: `CanvasExtensionApi.clientToWorld(clientX, clientY)` converts a client point to the canvas's world the way the canvas itself does, through the `clientToWorld` prop when one was given. Fixes a `<Canvas>` given that prop disagreeing with itself: hover used the override, and the test for whether a registered layer covers a point inside a `<CanvasView>` did not.
+- a8ef308: The three drag ghosts mount in one place. `fixedSeat(from)` in `@weasel-js/gestures` answers where a `position: fixed` element following the pointer mounts (the nearest themed or `data-wzl-portal-host` ancestor of `from`, else the body) and the client point its corner lands on when that host contains its fixed descendants. `nearestPortalHost` moved there from ui, which still exports it.
+  
+  - core: the default `useDragHandle` ghost mounts in the source's host, where it mounted on the body, so it resolves the source's theme and draws in its font.
+  - ui: `<DragGhost>`'s `at.width` is optional; with none the ghost is as wide as what it holds.
+  - labkit: a palette drag's ghost is ui's `<DragGhost>`, so it takes the lab's theme. **Breaking:** `DragState` and `DragGhostProps` gain a required `from`, the element the drag began on, and the ghost loses its own border.
+- 1c8c3fc: Pointer gesture recognition moved out of `useGestureDispatcher`'s effect into `createPointerRecognizer` in `@weasel-js/gestures`. It takes pointer samples and a clock, and emits `InputEvent`s to a sink: the press and the drag it becomes past `DRAG_THRESHOLD_PX`, click, double click, long-press with its contextmenu fallback, and multitouch start, move, end, and tap. It has no DOM, so its timings can be tested with a fake clock.
+  
+  Additive in `@weasel-js/gestures`: `createPointerRecognizer` and its types, `clickEvents`, `longPressEvents`, `multiTouchGeometry`, `stylusOf`, and the thresholds `LONG_PRESS_MS`, `DOUBLE_CLICK_MAX_MS`, `DOUBLE_CLICK_MAX_PX`, and `TAP_THRESHOLD_PX`. `@weasel-js/routing` still exports `LONG_PRESS_MS`, and adds `multiTouchGestureId` beside `pointerGestureId`.
+  
+  What a consumer of `useGestureDispatcher` can observe:
+  
+  - `requestRedraw` follows the dispatcher's own notifications. It now also fires when a gesture in flight is ended or stepped by something other than an input event through the hook: the cancel a tool switch makes, `Dispatcher.cancelAll`, a UI-driven ongoing action. A canceled marquee no longer stays painted until the next redraw.
+  - A double click is timed on `performance.now()`, as long-press and multitouch tap already were, where it used `Date.now()`.
+  - The platform that decides whether `mod` means Command is read when the hook mounts, not when the module loads.
+  - The hover cursor's `keydown`/`keyup` listeners on `window` attach only when the pointer channel is on.
+  - A click is decided by whether the press crossed the drag threshold. The hook used to also ask whether a `pointer-<id>` handle was in flight; nothing the hook does opens one before the threshold, so only code calling `handleInput` on the hook's dispatcher with its own pointerdown could have seen the difference.
+  
+  Tool `onActivate` / `onDeactivate` run from their own hook beside the tool registry, in the same order as before: the outgoing tool's `onDeactivate`, the cancel of in-flight gestures, then the incoming tool's `onActivate`.
+- 90f8ec4: Adds API: types that documented exports already named, and that a consumer could not import, are now exported. `@weasel-js/core`: `CameraProps`, `CanvasViewState`, `CanvasLayers`, `SceneSlotLayers`, and `OpsApplier`. `@weasel-js/animator`: `Naming`. `@weasel-js/gestures`: `Point`. `@weasel-js/ui`: `LiveControl`, `OnTokenChange`, and `OptionKey`, the `string | number` a `Select`, a `ComboBox`, and `useAsyncOptions` each declared privately as `Key`.
+  
+  Adds API: `strokeRegion` in `@weasel-js/core`, the region a stroke covers along a path, which `applyOutlineStroke`'s documentation pointed at and `StrokeRegionOptions` already described.
+
 ## 1.9.4
 
 ### Patch Changes

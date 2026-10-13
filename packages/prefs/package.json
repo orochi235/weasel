@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/prefs",
-  "version": "1.9.4",
+  "version": "1.10.0",
   "description": "A preferences schema, a store that loads, validates, migrates and persists values against it, and React hooks over the store.",
   "license": "MIT",
   "type": "module",
@@ -41,9 +41,9 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/quantity": "1.9.4",
-    "@weasel-js/registry": "1.9.4",
-    "@weasel-js/storage": "1.9.4"
+    "@weasel-js/quantity": "1.10.0",
+    "@weasel-js/registry": "1.10.0",
+    "@weasel-js/storage": "1.10.0"
   },
   "peerDependencies": {
     "react": ">=18"

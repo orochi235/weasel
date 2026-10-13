@@ -1,5 +1,226 @@
 # @weasel-js/diagram
 
+## 1.10.0
+
+### Patch Changes
+
+- 96a63de: add `@weasel-js/animator`: the animator moved out of core. `useAnimator`, `createTarget`, `createTargetTable`, the timeline tracks and `sampleTrack`, the skeleton math (`resolveSkeleton`, `skeletonAxes`, `jointAxes`, `solveIk`, `mirrorPose`, `IDENTITY_JOINT`), the vertex-color helpers and `ColorOverrideRegistry`, `createSlew`, and every animator type (`Animator`, `AnimationHandle`, `TimelineHandle`, `Target`, and the rest) are exported from it and no longer from `@weasel-js/core`. Breaking: import those names from `@weasel-js/animator`. It needs geom, paint, react, and registry, and nothing of the scene.
+  
+  core keeps what moves a scene with it: `tweenPose`, `springPose`, `staggerSpringPose`, `createPoseTarget`, `momentum`, the `animate*` adapter wrappers, `useAnimatedReflow`, `bindRig`, and `useRig`, and still exports the easings from geom. The animator also exports `axesOf`, which gives the axes of a number, an array of numbers, or an object of numeric fields.
+  
+  `@weasel-js/ui`, `@weasel-js/diagram`, `@weasel-js/d3`, `@weasel-js/minimap`, and `@weasel-js/labkit` take the animator as a peer beside core. labkit leaves it out of its bundle, as it does core: the animator keeps its record of each target in module scope, so an app has to hold one copy.
+- 3603da3: The force layout takes `createSimulation` and its types from `@weasel-js/simulation`, where they live, and no longer through `@weasel-js/core/math`. `@weasel-js/simulation` is a new peer dependency of `@weasel-js/diagram`.
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- 3a92afc: Breaking: the paint model's serialized shape changed in three ways, and its type names in two. Nothing reads the old shapes.
+  
+  **A fill is a record holding a paint, as a stroke is.** Every `fill` slot now takes a `Fill`, `{ paint?: Paint }`, where it took a bare paint: node data, draw commands (`CommandFill`), text styles and runs, and the affordance and overlay paint options. `fill: { color: '#abc' }` becomes `fill: { paint: { color: '#abc' } }`, beside `stroke: { paint: { color: '#000' }, width: 2 }`. `fill: null` still means no fill, and a fill with no `paint` paints nothing. `commandFill(fill, box)` resolves a node's fill for a draw command the way `commandStroke` resolves its stroke; resolving a bare paint is `commandPaint`.
+  
+  **A paint names its variant under `kind`, not `fill`.** `{ fill: 'linear-gradient', … }` becomes `{ kind: 'linear-gradient', … }`, the word the paint-kind registry already used. A solid still omits it. `asPaint` takes `{ kind: string }`.
+  
+  **Each built-in tile is its own paint kind.** `{ fill: 'pattern', pattern: { tile: 'hatch', color, lineWidth }, units }` becomes `{ kind: 'hatch', color, lineWidth, units }`, and likewise `crosshatch`, `dots`, and `chunks`. A tile a consumer rasterized itself is `{ kind: 'texture', texture: handle }`. `TilePatternSpec` is now a union keyed on `kind`, so a tile's own fields are checked instead of being optional on every tile. An SVG exported before this change carries its tiles in the old shape and loses them on import, with a warning.
+  
+  Follows from the fill record: `DEFAULT_SHAPE_FILL` is a `Fill`, `createPathLayer`'s `getFill` returns a `CommandFill`, `setFill` and `setFillOpacity` write the record, and the default node properties describe `data.fill` as an object with one `paint` field, as `data.stroke` is. A node whose `fill` is a string or a bare paint now paints no fill. `SelectionPanel` built from those default properties no longer offers "None" for a fill, since it offers none for a paint nested in a record; clearing one goes through the `setFill` action.
+  
+  A tile paint has a `color`, so `'color' in paint` no longer means solid. `isSolidPaint(paint)` answers that.
+  
+  Renames: `FillStyle` is `Paint`, and `GradientUnits` is `PaintUnits`. The paint types named as fills are named as paints: `GradientPaint`, `MeshGradientPaint`, `CommandPaint`, `PosedPaint`, and `SolidPaint`, with `isGradientPaint` and `isMeshGradientPaint`. `isPatternSpec` is gone; `isTilePaint` and `isPatternPaint` replace it.
+  
+  Adds API: `Fill`, `CommandFill`, `commandFill`, `PatternPaint`, `TilePaint`, `TexturePaint`, `TileKind`, `PatternPlacement`, `TILE_KINDS`, `isTileKind`, `isTilePaint`, `isPatternPaint`, `isSolidPaint`, `tileSpecOf`, `patternPlacementOf`, and `seedTile`. A paint kind can name a `family` (`PaintKindFamily`); kinds sharing one are a single segment in `PaintInput`'s kind bar, and the built-in tiles and `texture` share `patternFamily`.
+- Updated dependencies [dfc0dda]
+- Updated dependencies [cd8cbbd]
+- Updated dependencies [1f7548d]
+- Updated dependencies [a86d79f]
+- Updated dependencies [ad15c29]
+- Updated dependencies [90eae1c]
+- Updated dependencies [96a63de]
+- Updated dependencies [7140b5a]
+- Updated dependencies [8e00180]
+- Updated dependencies [fc267f3]
+- Updated dependencies [9f5cdb2]
+- Updated dependencies [b9fb732]
+- Updated dependencies [67f4d79]
+- Updated dependencies [d137eaf]
+- Updated dependencies [1837952]
+- Updated dependencies [99553f7]
+- Updated dependencies [5149cce]
+- Updated dependencies [2c6246d]
+- Updated dependencies [de60e10]
+- Updated dependencies [2892438]
+- Updated dependencies [b310df0]
+- Updated dependencies [2a5d8ef]
+- Updated dependencies [3994be7]
+- Updated dependencies [e80de55]
+- Updated dependencies [b3ba3d9]
+- Updated dependencies [126116b]
+- Updated dependencies [9296fb4]
+- Updated dependencies [6ba0496]
+- Updated dependencies [0e46e02]
+- Updated dependencies [dee0a3b]
+- Updated dependencies [b1f7521]
+- Updated dependencies [e77f185]
+- Updated dependencies [d675fed]
+- Updated dependencies [d635e84]
+- Updated dependencies [dc1f09c]
+- Updated dependencies [2ed751e]
+- Updated dependencies [b3f1e4a]
+- Updated dependencies [329f658]
+- Updated dependencies [0449330]
+- Updated dependencies [4878967]
+- Updated dependencies [2a141ac]
+- Updated dependencies [7063584]
+- Updated dependencies [06003a5]
+- Updated dependencies [da0335e]
+- Updated dependencies [7bac60f]
+- Updated dependencies [fb715f4]
+- Updated dependencies [3777548]
+- Updated dependencies [de319ce]
+- Updated dependencies [3a92afc]
+- Updated dependencies [1bd7fdc]
+- Updated dependencies [87dd1ad]
+- Updated dependencies [3bacb3e]
+- Updated dependencies [6b03b7e]
+- Updated dependencies [b260415]
+- Updated dependencies [66d5455]
+- Updated dependencies [d58d2e8]
+- Updated dependencies [eb7f534]
+- Updated dependencies [3adb0d9]
+- Updated dependencies [7548e82]
+- Updated dependencies [eb3114f]
+- Updated dependencies [0a37db1]
+- Updated dependencies [a275f78]
+- Updated dependencies [605ace8]
+- Updated dependencies [0db7e81]
+- Updated dependencies [6bb8035]
+- Updated dependencies [5d82ef9]
+- Updated dependencies [bc15034]
+- Updated dependencies [1ce19c9]
+- Updated dependencies [7d94bbb]
+- Updated dependencies [1c9bc4e]
+- Updated dependencies [525800f]
+- Updated dependencies [dcf0554]
+- Updated dependencies [5c7d50f]
+- Updated dependencies [bb3e633]
+- Updated dependencies [be611ae]
+- Updated dependencies [ca09ae2]
+- Updated dependencies [33c90ed]
+- Updated dependencies [8d0498c]
+- Updated dependencies [b3d4383]
+- Updated dependencies [a6dff38]
+- Updated dependencies [27c1c86]
+- Updated dependencies [54b013c]
+- Updated dependencies [a8ef308]
+- Updated dependencies [5996856]
+- Updated dependencies [0d1c052]
+- Updated dependencies [71512af]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [bb53d86]
+- Updated dependencies [18920a4]
+- Updated dependencies [9b8bd89]
+- Updated dependencies [efc1205]
+- Updated dependencies [b4227bc]
+- Updated dependencies [6139898]
+- Updated dependencies [335f192]
+- Updated dependencies [f3b977a]
+- Updated dependencies [df159bc]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [485bb80]
+- Updated dependencies [21b6db7]
+- Updated dependencies [970f489]
+- Updated dependencies [af48ee3]
+- Updated dependencies [1c8c3fc]
+- Updated dependencies [4d4d81c]
+- Updated dependencies [ea54a64]
+- Updated dependencies [8524e05]
+- Updated dependencies [8ac6236]
+- Updated dependencies [eafd001]
+- Updated dependencies [1956417]
+- Updated dependencies [955defa]
+- Updated dependencies [27b827e]
+- Updated dependencies [d02d059]
+- Updated dependencies [74f364f]
+- Updated dependencies [01d6e4e]
+- Updated dependencies [32b3cc9]
+- Updated dependencies [70413dd]
+- Updated dependencies [fcf44fa]
+- Updated dependencies [a91e5cd]
+- Updated dependencies [91a479a]
+- Updated dependencies [7afbc13]
+- Updated dependencies [8f38287]
+- Updated dependencies [936679d]
+- Updated dependencies [813aea2]
+- Updated dependencies [42f24c8]
+- Updated dependencies [499af9b]
+- Updated dependencies [8cc746f]
+- Updated dependencies [a21947b]
+- Updated dependencies [de07db0]
+- Updated dependencies [4d3ff3f]
+- Updated dependencies [85cb886]
+- Updated dependencies [aed6320]
+- Updated dependencies [9d11828]
+- Updated dependencies [37463b5]
+- Updated dependencies [3558fbb]
+- Updated dependencies [fa0ecbe]
+- Updated dependencies [bffba0a]
+- Updated dependencies [efc5cea]
+- Updated dependencies [32e243f]
+- Updated dependencies [233f856]
+- Updated dependencies [c9b9598]
+- Updated dependencies [4b0a7d7]
+- Updated dependencies [2705878]
+- Updated dependencies [f59e769]
+- Updated dependencies [5c9d69f]
+- Updated dependencies [bbb538e]
+- Updated dependencies [e69e97f]
+- Updated dependencies [9c19d5e]
+- Updated dependencies [0e1f269]
+- Updated dependencies [5b1a788]
+- Updated dependencies [d3b9057]
+- Updated dependencies [b8eba2f]
+- Updated dependencies [4fe6756]
+- Updated dependencies [9fa373d]
+- Updated dependencies [b76089a]
+- Updated dependencies [54242f0]
+- Updated dependencies [ad10f82]
+- Updated dependencies [222fd80]
+- Updated dependencies [4042637]
+- Updated dependencies [70cf20d]
+- Updated dependencies [6073365]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [90f8ec4]
+- Updated dependencies [a297730]
+- Updated dependencies [38fd203]
+- Updated dependencies [9ad34e0]
+- Updated dependencies [1d34f51]
+- Updated dependencies [80b29f6]
+- Updated dependencies [0cef6a3]
+- Updated dependencies [6941e0c]
+- Updated dependencies [98ec291]
+- Updated dependencies [0d1c052]
+  - @weasel-js/core@1.10.0
+  - @weasel-js/geom@1.10.0
+  - @weasel-js/animator@1.10.0
+  - @weasel-js/font@1.10.0
+  - @weasel-js/simulation@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

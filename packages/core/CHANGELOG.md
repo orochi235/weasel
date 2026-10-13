@@ -1,5 +1,755 @@
 # Changelog
 
+## 1.10.0
+
+### Patch Changes
+
+- dfc0dda: Fixes: on a node whose pose carries a `transform`, the corner handles, the rotate ring, and the rotate badge took presses where they would sit on the unskewed box. Each is hit and painted where the node is drawn, and a corner-resize hit names its fixed corner there.
+  
+  Breaking: `TargetTransform` is the target's frame as two matrices, `{ identity, toWorld, toLocal }`, where it was a pivot with a cosine and a sine, and `annulusSemiAxes` takes one as its third argument where it took a rotation in radians. An `AffordanceRegion`'s local frame is its target bounds' `rotation` and `transform` together.
+- cd8cbbd: Fixes: a key typed with AltGr could not match a key binding. A layout that types `[` with AltGr reports Ctrl and Alt held with it, and the strict modifier match read that as a chord. The dispatcher still tries the chord as reported first, so a binding that names Ctrl+Alt keeps it; when nothing takes it and the browser reports AltGraph, it tries again without Ctrl and Alt. A key that reports its own letter or digit is left a chord, because Firefox on Windows reports AltGraph for a plain Ctrl+Alt as well. Checked in jsdom only, not on a Windows browser.
+- 1f7548d: routing: the pointer store and the selection context live in `@weasel-js/routing/react` now. That is `PointerContextProvider`, `createPointerStore`, `usePointerContext`, `usePointerPosition`, `SelectionContextProvider`, `SelectionContextProviderIfRoot`, `useSelectionContext`, and `usePublishSelection`, with the `PointerContextValue`, `PointerWorldPos`, and `SelectionContextValue` types. `@weasel-js/core` still exports every one of them.
+- a86d79f: geom: the anchor-set edits live here now (`editAnchorSet`, `translateAnchorBy`, `moveHandleTo`, `insertAnchorOnSegment`, `deleteAnchorsAt`, `openSubpathAt`, `segmentAt`, `anchorsInRect`, `anchorAt`, `anchorCount`, `locateAnchor`, `flatAnchorIndex`, with `AnchorSet`, `AnchorRect`, and `SegmentHit`), beside `pathInWorld`, `pathInPoseFrame`, `worldEditToStorage`, and `PathInWorldPose`. `nearestPathAnchor`, `reverseAnchors`, and `PathAnchorHit` are exported here; they were not exports of `@weasel-js/core` before.
+  
+  text: `textToPath`, `textToPathsByPaint`, `loadTextOutlines`, and `TextOutlinesError` live here now, with `TextOutlineSource`, `TextNodeSource`, `TextPaintPath`, `TextToPathOptions`, and `TextOutlinesFailure`. `SYNTHETIC_ITALIC_RADIANS`, the lean a faked italic takes, is exported here; it was not an export of `@weasel-js/core` before.
+  
+  `@weasel-js/core` still exports every name it did before.
+- ad15c29: Animations can move a target, and several on one target add. This is new API; nothing existing changes.
+  
+  `createTarget({ get, set, axes?, show? })` wraps one value: `get` and `set` read and write what is committed, the value that shows when nothing is animating. `tween`, `spring`, `physics`, and `decay` take `target` in place of `onTick`. An animation on a target commits its destination as it starts and contributes only what it has left to travel, so a second one started mid-flight bends the motion toward its own destination and neither cancels the other. `target.read()` is the value to show, and `show` is handed it once a frame while the target moves.
+  
+  - `from` defaults to the committed value, so the value on screen does not move as an animation starts.
+  - Canceling commits where the animation was. A coast (`decay`, or `physics` with `to: null`) commits where it stops.
+  - Under one `cancelKey` the new animation still interrupts the old. A spring interrupting an animation on the same target starts at that one's velocity unless given its own.
+  - `axes.angles` names axes that are angles in radians; an animation takes the short way round on them.
+  - A target is moved by one animator at a time; a second throws.
+- 90eae1c: `animateOnSetPose` and `animateLifecycle` take any adapter with the methods they use, and return the adapter they were given with those methods replaced. The adapter `sceneToAdapter` and `useSceneAdapter` build now passes without a cast, and keeps its own type on the way out. Adds API: `LifecycleAdapter`, the part of an adapter `animateLifecycle` reads.
+  
+  Breaking for a call that passes type arguments: `animateOnSetPose<TNode, TPose>` is now `animateOnSetPose<TPose, A>`, and `animateLifecycle<TNode, TPose>` gains the adapter's type as a third. A call that leaves them to inference is unaffected, except that a cast to `never` on the adapter now makes the result `never`: drop the cast.
+- 96a63de: add `@weasel-js/animator`: the animator moved out of core. `useAnimator`, `createTarget`, `createTargetTable`, the timeline tracks and `sampleTrack`, the skeleton math (`resolveSkeleton`, `skeletonAxes`, `jointAxes`, `solveIk`, `mirrorPose`, `IDENTITY_JOINT`), the vertex-color helpers and `ColorOverrideRegistry`, `createSlew`, and every animator type (`Animator`, `AnimationHandle`, `TimelineHandle`, `Target`, and the rest) are exported from it and no longer from `@weasel-js/core`. Breaking: import those names from `@weasel-js/animator`. It needs geom, paint, react, and registry, and nothing of the scene.
+  
+  core keeps what moves a scene with it: `tweenPose`, `springPose`, `staggerSpringPose`, `createPoseTarget`, `momentum`, the `animate*` adapter wrappers, `useAnimatedReflow`, `bindRig`, and `useRig`, and still exports the easings from geom. The animator also exports `axesOf`, which gives the axes of a number, an array of numbers, or an object of numeric fields.
+  
+  `@weasel-js/ui`, `@weasel-js/diagram`, `@weasel-js/d3`, `@weasel-js/minimap`, and `@weasel-js/labkit` take the animator as a peer beside core. labkit leaves it out of its bundle, as it does core: the animator keeps its record of each target in module scope, so an app has to hold one copy.
+- 7140b5a: Adds API: a hold or a timeline track names the axes it holds. `HoldOptions.axes` and `SampledTrack.axes` take a name wherever they took an index: a plain object's field, `animator.hold({ target, value, axes: ['y'] })`, a rig's joint, `axes: ['armL']`, or one axis of a joint, `axes: ['armL.rotation']`. Names are typed against the target's value where it has fixed fields, and one the target has no axis for throws as the hold starts.
+  
+  A target's axes carry the names: `TargetAxes.names` is one name per axis, where a dot makes a path that a shorter name reaches as a whole. `axesOf` names a plain object's axes by its fields and `skeletonAxes` names a pose's `<joint>.<field>`; axes written by hand name theirs by setting `names`. `target.axisIndexes(['y'])` answers the indexes for a caller that wants the numbers, and `jointAxes` goes through the same lookup. `AxisName` and `AxisRef` are the types.
+  
+  Adds API: the stagger builder moves targets. `.tween` and a new `.spring` move each item where the items are targets, `animator.stagger(targets, 80).spring({ to: (target) => ..., preset: 'wobbly' })`, or the target a `target` option names for the item, one for them all or a function of the item. Both keep the form that hands values to `onTick`, and `.tween` there takes an `interpolator`. The option types are `StaggerTargetTweenOptions`, `StaggerTargetSpringOptions`, and `StaggerSpringOptions`.
+  
+  Breaking, within this unreleased surface: a clip's axis names no longer go through the binder. `ClipBinder.axes`, `SampledTrack.axisNames`, and `sceneClipAxes` in `@weasel-js/core` are gone, since a rig's target answers its own joint names; drop `axes` from a binder and a clip naming joints plays as before. `bindClip` now also throws on a numeric axis out of the target's range, where that used to wait for the playhead to reach the track.
+- 8e00180: A node that derives its path is drawn and picked where the path is on a canvas with no scene behind it. `dependsOn` and `derivePath` used to resolve only where a `Scene` was in scope, so through a bare adapter such a node answered from its own placeholder pose: `drawOne` got no `derivedPath`, a derived container imposed no clip, and `useSelectTool`'s default `pickEvery` tested a zero-sized box. Deriving reads a dependency's node and where it is drawn, which every adapter already answers through `getNode` and `getPose` (`getWorldPose` and `getChildren` where it has them), so the scene layer and `adapterPickSource` now resolve the path from those. Nothing pushes an invalidation on that path: the memo re-checks what the adapter answers each time it is read. The default pick tests a derived leaf against the box of its path, grown by `pickTolerance`, and against its ink under `leafPicking: 'silhouette'`. A `drawOne` on a bare `<Canvas>` now receives a fourth `ctx` argument for a derived node.
+- fc267f3: A gesture behavior can do three more things. Two existing things change with them:
+  
+  - Code that calls a `MoveBehavior`'s `onEnd` directly, such as a consumer's own test, must now pass a `MoveEnd` as the second argument: `{ answered, translateOps }`.
+  - For the dragged nodes `snapToContainer` has no slot for, the committed ops now come from the move's default translate. They carry the move's label where they carried the behavior's `moveLabel`, and include the geometry data op when `geometryProjection` is wired.
+  
+  A move behavior that claims the commit can ask for the default translate of the nodes it did not place. Its `onEnd` is handed a `MoveEnd`, and `end.translateOps(ids)` returns the ops the action would have written for those dragged roots and the descendants that follow them, by the drag as the behaviors shaped it. `ActionBehavior` takes the type of that second argument as a fourth parameter, `BehaviorEnd` unless an action says otherwise. `snapToContainer` commits the nodes it has no slot for this way, which fixes undo for a derived node among them: undoing the drop left its authored pose at the derived one.
+  
+  A behavior can act once the gesture's result is in the document. `onSettled(ctx, committed)` runs once per gesture, after the commit's ops have applied or the cancel has run, and after the preview overrides are dropped. `committed` is false when the gesture was canceled, aborted by a behavior, or released with nothing to commit, and true otherwise: the action or a behavior made the commit, a behavior claiming it with no ops included. For move, resize, and rotate it is the value `onGestureEnd` receives. Move, resize, rotate, insert, and lasso-select all call it, and still do when the commit throws. Every behavior's `onSettled` runs even when an earlier one throws, and the same now holds for `onCancel`; the first error is rethrown once all have run.
+  
+  A move behavior can preview a node the drag does not move, and say which previews paint settled. `BehaviorResult.poses` was honored only for dragged ids; a pose for any other id now enters the gesture's previews too, in that node's stored frame, for the frame that returns it. Committing such a node is the behavior's job. `BehaviorResult.opaque` names ids whose preview paints at full opacity that frame, which the move action reports through `previewOpaqueIds` beside the siblings a layout drop reflows.
+- 9f5cdb2: A binding can say it is declared ahead of another on the same input on purpose: `opts: { yields: true }`. The route-conflict check does not report a pair whose earlier binding yields. The dispatcher already fired the next binding when an action declined through `enabled()`; this only tells the check that the order is the design. The slice tool's point drag and the keys `modeShortcuts` binds use it, so a tool set with slice in it, or a mode entered on a key another mode commits on, no longer warns. An entry key shared that way is still reported when `modeShortcuts` is given no `canEnter`, since nothing then keeps it from firing inside the other mode.
+  
+  <!-- bump-approved: minor: maintainer — 1.10.0 release requested 2026-10-13 -->
+- b9fb732: core: depends on `@msb235/blits` 0.10.0, up from 0.8.1. Nothing the animator shows changes: tweens, springs, paths, and holds read the same on both.
+- 67f4d79: Adds API: `useBoneTool({ scene, rig })`, a tool that draws and edits the skeleton in a node's `data.skeleton` on the canvas. `rig` answers the node to edit, usually from the selection; a node with no skeleton gets one when the first bone is drawn. A drag on a joint moves it with the joints under it. A drag from anywhere else draws a bone, from the active joint if there is one and from the press if not. A click picks the active joint or clears it, Delete removes it and everything under it, taking those joints' weights out of every `data.skin` beneath the rig node, and Escape clears it. Each edit is one undo entry. The tool edits the bind pose; its key is J. Mount it with `tools={{ bone }}`.
+  
+  `createRigEditState()` holds the active joint, to share between this tool and the weight tool. `placeSkeleton(skeleton, pose)` and `unplaceSkeleton` carry a skeleton between a rig node's data and the scene's space, and `createBoneOverlay` is the layer that draws one.
+- d137eaf: Each piece of a Divide or a Crop stands in for its own source. `applyBooleanOp` hands `createPathNode` the topmost source a piece was cut from, where it passed the topmost selected one for every piece, so a Crop's pieces no longer take the mask's paint and parent. A `paint` argument is that source's too.
+  
+  Results are placed per parent: those whose sources share a parent land as one block in the slot of the topmost source there. A selection inside one parent lands where it did before.
+  
+  Behavior change for a `BooleansAdapter`: `createPathNode`'s `sourceId` varies between the pieces of one call. An adapter that painted every result from the topmost selected node should read `sourceId`.
+- 99553f7: Fixes: the canvas-2D text paths read a tab as one space, where `layoutRuns` runs it to the next stop. `measureText` and `layoutMarkdown` now measure and wrap a tab to its stop, `tabSize` spaces apart (default 8), so both end a line where the GL tier does. This changes behavior, on an agent's judgment: the alternative was to keep the canvas's own reading of a tab.
+  
+  - `layoutMarkdown` returns a tab as a `PositionedRun` of its own, as wide as its advance, so `createMarkdownRenderer` paints what follows at the stop and a rule runs across it. It takes `tabSize` as a seventh argument, and `MarkdownFontOptions` gains `tabSize`.
+  - Adds API: `MeasuredText.spans`, each line's text split at its tabs with the x every piece starts at (type `MeasuredSpan`). `fillText` still draws a tab as a space, so a painter that fills `lines[i]` whole misplaces what follows a tab; fill each span at its `x` instead.
+- 5149cce: Fixes: a canvas font registered while its web font was still loading kept the fallback face's shapes and advances for the session. Measured in Chromium: a canvas draws a family it has not loaded in a fallback, and its `W` at 48px is more than a pixel off the real face's. The canvas tier now listens to `document.fonts` for `loadingdone` and measures the loaded families' faces again, in place, then signals `subscribeGlyphReady` so the text lays out again. The listener is added when the tier makes its first face.
+  
+  Adds API: `refreshCanvasFont(family?)` does the same on request, for one family or for all of them. A `FontFace` loaded before it is added to `document.fonts` is never announced by the document, so that case needs the call.
+- 2c6246d: Breaking, in types only: `CanvasProps` takes one type argument, the pose, where it took the node type and the pose. Its `adapter` is now typed as what the canvas reads of it, `getPose` and an optional `getWorldPose`; it was typed as the move, resize, and rotate adapters together, so an adapter with only pose lookups needed a cast. Write `CanvasProps<TPose>` where you wrote `CanvasProps<TNode, TPose>`. `SceneCanvasProps` is unchanged.
+- de60e10: Adds API: range selection on the canvas. `useSelection({ mode: 'multi', range: 'shift', extend: 'meta' })` selects everything from the last pressed id through the one clicked, and `<SceneCanvas selectionOptions>` takes the same options. The hook now keeps an anchor: a plain or toggling click moves it, a range leaves it where it is, and a selection set by anything else ranges from its last id.
+  
+  `order` names the sequence a range walks, for a host with one of its own, such as a layer panel's rows. Decided on an agent's judgment: with no `order`, a hook bound to a scene walks the order the scene paints in (`scene.renderOrder()`), and a hook with neither replaces on the range key. Nothing ranges unless `range` is set, so existing callers are unchanged.
+- 2892438: Breaking: `WeaselRenderer` no longer writes `width` and `height` as inline style on a canvas it is given, at construction or in `resize`. It sets the drawing buffer and nothing else, so a caller that hands it a canvas, or calls `renderSceneToCanvas`, sizes the element itself.
+  
+  Breaking: `<SceneCanvas>`, `<SceneViewCanvas>`, `<DrawCanvas>`, and `<MinimapCanvas>` size their canvas through a class in `@weasel-js/core/style.css`, which a page now has to import for a canvas to be the right size. Without it the element is as large as its drawing buffer: twice too large at a device pixel ratio of 2. The class has no specificity, so a `className` whose rule sets `width` or `height` now resizes the element, where the inline style used to win. A rule that was written that way and never took effect starts to.
+- b310df0: Several things `<Canvas>` did inline now have one owner each, shared with the other surfaces that did the same thing by hand. Most of it cannot be seen from outside; what can is listed here.
+  
+  Adds API: `<CanvasView>` takes `cameraRef`, which receives `getView`, `setView`, and `subscribeView` for that view's camera (`CanvasViewCamera`), with the contract `<SceneCanvas>`'s own handle keeps: `setView` accepts an updater, subscribers hear every camera change, and an imperative `setView` on a controlled view is forwarded to `onViewChange`, not applied, and warns once. A pan or zoom made by input inside a controlled view is forwarded without the warning, as before. A view's camera is now the same implementation as the canvas's.
+  
+  Changes: a `<CanvasView>` switched from controlled to uncontrolled continues from the last controlled camera, where it used to return to the last camera it held uncontrolled. A view controlled by a plain `view` value no longer repaints on a write it only forwarded; it repaints when the prop changes.
+  
+  Breaking: `onFocus` and `onBlur` on `<SceneCanvas>` are called with the DOM `FocusEvent`, not React's synthetic one, and are typed `(event: FocusEvent) => void`. A handler typed against `React.FocusEvent` needs its parameter type changed; one that reads `event.target` or takes no argument is unaffected.
+  
+  Fixes: `onFocus` and `onBlur` did nothing on a canvas given `paintInto`. They now report focus of its `inputElement`. `className`, `style`, and `tabIndex` still apply only to a canvas element the component renders, and their docs now say so.
+  
+  Changes: the press that focuses the canvas, hover delivery to layers, and context-menu suppression are DOM listeners on the canvas element where they were React handlers, so they run when the event reaches the element instead of when it reaches React's root. A canvas given `paintInto` already worked this way.
+  
+  Fixes: the debug overlay's frame-rate panel lost its history and showed no rate for a frame whenever a layer or a view was registered or removed.
+  
+  Fixes: a `<Canvas>` with no `<SceneCanvas>` around it now repaints when an image finishes decoding, a glyph bake lands, or a paint kind registers late, as `<DrawCanvas>` and `<SceneViewCanvas>` already did.
+  
+  Fixes: a canvas that unmounted left its handle in the view registry around it.
+  
+  Changes: `decorationLayer` is composed as a `layers` entry keyed `decorationLayer` with no anchor, so another custom layer can anchor `before` or `after` it. It paints where it did, except that it now sits beneath a custom layer whose anchor names nothing or forms a cycle, which already warns. Its docs and `backgroundFill`'s described a draw order the code never had: the background sits beneath everything, the grid included, and the decoration layer sits above every slot and custom layer and beneath a tool's `'top'` overlays.
+- 2a5d8ef: core: a batch that posed a container and also its descendants through a cascading adapter (`sceneToAdapter(scene, { cascadeContainerPose: true })`, what `<SceneCanvas>` uses without a composing strategy) came back wrong on undo, because each container's inverse cascaded a second time: A, B, and C at x = 0, 100, and 200 moved by 5 undid to 0, 95, and 190. The scene now records, with each op, every pose that op changed when it carried any for another node, and replaying the op in either direction puts those poses back without working the cascade out again. This holds for `adapter.applyOps`, for ops handed straight to `scene.applyBatch`, and for a history serialized and restored.
+  
+  Additive: `Scene.carry(id, pose)` writes a pose on behalf of the op now applying, for an adapter that moves more than it was asked to. Outside an op it is `setPose`.
+  
+  Changes what a snapshot holds: an op that carried poses serializes as `{ name: 'carry', args: { op, poses } }` around the op it stands for. An op that carried nothing serializes as before, and a snapshot written before this change restores and replays the way it did, the wrong undo of a mixed batch included.
+- 3994be7: Adds: a No fill chip beside the character strip's Color field. On, it sends `{ fill: null }` through `CharacterOptions`' `onPatch`, so it unfills the selected range, or arms no fill for the next character at a caret. It is lit over a range whose fill is `null` and over an unfilled node's, which `effectiveRangeStyle` reports as no `fill` at all, and unlit over a mixed range.
+  
+  Adds API: `useTextTool.options` gains a `noFill` leaf, the one key of that group that is not a `StyledRun` field. A host drawing the group itself maps it to `fill: null`.
+  
+  Fixes: `CharacterOptions` threw on a range style whose `fill` was `null`.
+  
+  Two calls here were made on an agent's judgment and no browser has drawn the chip. Turning it off fills the range with the color the Color field shows beside it, which is that leaf's default (`#000000`) while the range is unfilled, where taking the run's fill off would do nothing over an unfilled node. And the chip is a leaf of the tool's options, drawn by the bar as the Bold and Italic toggles are, with the `paintNone` glyph.
+- e80de55: Fixes: the selection outline, the corner handles, and the rotate badge were drawn on the unskewed box of a node whose pose carries a `transform`. They are drawn on the shape as `poseFrameOf` draws it.
+  
+  Adds API: `Bounds` carries an optional `transform` beside its `rotation`, and the bounds a canvas hands its chrome carry the pose's. `rotationHandle` reads it.
+- b3ba3d9: Fixes: a `clientToWorld` override on the canvas was ignored by `<SceneCanvas>`'s own pointer handling. Gesture dispatch, the pointer store, and hover now convert through the canvas handle, so the override applies to all three.
+  
+  Breaking: `CanvasExtensionApi.clientToWorld` is required where it was optional. It only affects code that builds a handle by hand, such as a test fake.
+  
+  Removes: `canvas/toolPreview.ts`, which had no caller once tools stopped publishing previews.
+- 9296fb4: Adds API: a clip can name the part of a target a track holds. `ClipSampledTrack.axes` takes names as well as numbers, `axes: ['armL', 'foreL']`, which the track's target resolves against its own axes, so a track over some of a rig's joints holds the same joints after the skeleton's joint order changes. The live track carries the names as its `axes`, and `toClip` writes them back. `bindClip` throws when a track names axes and has no target, or names one its target does not have.
+  
+  Numbers go on working as positions in the target's axes, for a target that has no names, and a clip written with them binds as before.
+- 0e46e02: The `clone` action runs the behaviors on its binding, as move, rotate, and insert do. A `CloneBehavior<TPose>` is told the originals, reshapes the drag's translation from `onMove`, and may claim or abort the commit from `onEnd`; `onCancel` and `onSettled` run as they do for a move. A move behavior that only reshapes the translation works as one, so `behaviors: [snap(strategy)]` on the alt-drag binding lands the copy on the grid.
+  
+  Breaking: `CloneBehavior` is that `ActionBehavior` now, not the `{ id, activates, onEnd(pose, { adapter }) }` shape no action had read since `useClone` was removed. `cloneByAltDrag`, `ClonePose`, and `CloneLayer` are gone: the binding's `mods: { alt: true }` is what gates the clone. `CloneBehaviorResult` is new. `@weasel-js/core/clone` still resolves and now exports those two types and no values. Built on an agent's judgment, over deleting the contract.
+- dee0a3b: A `tweenPose` or `springPose` of a node that `momentum` is coasting no longer makes it jump. The coast still ends, and the distance it had traveled now springs to nothing from the coast's speed, under the node's `pose:<id>` key, where it used to vanish in one frame.
+- b1f7521: paint: the CSS color parser and the gradient helpers live here now. `parseColor`, `parseColorToRgba255`, `resolveColor`, `normalizeHex`, `hexToRgba`, `rgbaToHex`, `isGradientFill`, `sampleGradientStops`, `withGradientKind`, `gradientGeometry`, and `gradientForBounds` moved from `@weasel-js/core`, which still exports every one of them. New from paint: `resolveGradientStops` and `sampleResolvedStops`, with the `ResolvedGradientStop` type.
+- e77f185: The camera and the vertex color helpers run on animation targets, so another animation on the same view or the same node's colors adds to them.
+  
+  **Camera.** `useViewAnimation` and `useViewAnimationOn` return a new `viewTarget`, the view as a `Target<View>`. Run a shake or a nudge on it with the animator the hook was given, without the hook's cancel key, and it adds to a camera animation in flight. `stop()` and an outside write to the view cancel the hook's own animation and leave that one running; after an outside write it carries on from where the writer put the view. `viewAxes` is exported for building a view target of your own. `animate`, `animateToBounds`, `stop`, `target`, and `isAnimating` behave as before, and the channel still reads the live view mid-flight. A `<SceneCanvas>` keeps its camera animator private, so its `animateView` gains nothing new here.
+  
+  **Colors.** `animator.colorOverrides.target(id, channel, length)` is the target for one node's colors on one channel; every caller gets the same one. `release(id, channel)` drops the colors a finished or canceled animation left painted. `tweenVertexColors`, `springVertexColors`, and `staggerVertexColors` move that target. What a consumer would notice:
+  
+  - Breaking: a second `tweenVertexColors` or `staggerVertexColors` on a node and channel no longer cancels the first. Both run and add, which can paint colors outside 0..1 while they overlap.
+  - Breaking: `springVertexColors` springs each number on its own and drops its `interpolation` and `interpolate` options. An underdamped spring now overshoots `to` where it was clamped before. It still interrupts what is running, and now starts at the velocity of what it interrupts.
+  - A color animation over an override stored with `colorOverrides.set` (a `cycleVertexColors`, or your own array or function) adds what it has left to travel on top of the override and no longer replaces it. When it finishes, the override is still there.
+  - `colorOverrides.get` answers the colors a target is painting where `set` stored nothing, so reading mid-animation works as before. Nothing is stored with `set` by these helpers any more.
+  - As before, the painted colors are dropped when the animation finishes, and a canceled one holds its colors until `colorOverrides.clear`.
+  
+  Animations on a target take `interrupt: false` to join their `cancelKey` without canceling whoever holds it, so one key can group animations that add.
+- d635e84: Fixes: a combining mark was never drawn from an atlas. A glyph with a rect and no advance, which is what a combining accent is, was given no quad, so `e` followed by U+0301 painted a bare `e`. It is drawn now, where its offsets put it.
+- dc1f09c: A container can declare the unit system its contents are written in. `ContainerNode.units` holds a `UnitScope` from `@weasel-js/quantity`: set it on the spec passed to `scene.add`, or later with `scene.setUnits(id, scope)`, which is one undo step and clears the scope when passed `null`. It rides through `toJSON` and `sceneFromJSON`, undo of a removal, copy and paste, and `reconcileSpecs`, which writes a changed scope in place. `sceneUnitScopes(scene, id, root)` returns the scopes enclosing a node, outermost first, which is what `resolveScoped` and `formatScoped` take; before this a consumer kept each scope beside the scene and handed `scopesOf` its own lookup. This adds API. Nothing in the kit reads the scope yet: grids and property fields still resolve against the one unit system they are given. `LayoutMove` and `LayoutFrame` moved to their own module and are exported from the same places.
+- 2ed751e: The package description on npm says what core is now: a scene-graph engine rendered on WebGL2, where it said hooks over a canvas.
+- b3f1e4a: history: `swapOp` builds an op that swaps one whole value for another and carries both as `args`, so a serialized history can rebuild the step. `@weasel-js/core` re-exports it with `SwapArgs` and `SwapOpOptions`. `PrefSchemaEditor`'s own swap is now a call to it.
+  
+  forge: the CSS Vars panel keeps an undo history of a trial's edits. Undo and Redo sit beside the filter, and Mod+Z / Shift+Mod+Z step from anywhere in the panel except the filter's text. Typing a value is one step, and so is a scale edit with every token it regenerates. The steps are kept with the trial, so they outlive a reload, held to the last 100. Saving scales into the theme forgets them. A trial's scale edits are kept with the trial now (`fg-css-vars-scales` was lab-wide), so a scale edited in one trial no longer shows in another.
+- 329f658: Fixes a tool's cursor disappearing after a hover cursor: with a tool that declares a `cursor`, moving over something that shows a cursor of its own and off again left the canvas with no cursor until the tool changed. `SceneCanvas.toolCursor.test.tsx` shows it with a registered layer's hit claim. The tool's cursor and the hover cursor were written to the same inline `cursor` style by two writers, and clearing the second removed the first.
+  
+  Adds API: `createCursorSink({ element, painted })` in `@weasel-js/cursor`, also exported from `@weasel-js/core`, is one writer for both. It holds a base cursor and an override, writes the element's `cursor` style and the painted-cursor state, and puts the base back when the override clears. A canvas makes one and exposes it as `CanvasExtensionApi.cursorSink`; `useGestureDispatcher` takes it as the `cursorSink` option, and without one behaves as before. A hand-built `CanvasExtensionApi` now needs the `cursorSink` field.
+- 0449330: Fixes: the debug overlay drew the hitbox of a rect or ring affordance region as a turned rect on a target whose bounds carry a `transform`. Such a region is recorded as the quad it lands on; a target that is only turned still records the unturned box and its rotation.
+- 4878967: A derived path or pose notices more of what changed in a dependency without being told. The memo behind `derivePath` and `derivePose` used to re-check only each dependency's pose, so a derivation reading a dependency's `data`, its `layer`, or its `path` went stale unless the scene pushed an invalidation. It now re-checks all three; a dependency's path is compared only where the derivation read it, so one that never asks still costs no route. What a derivation may read of a dependency without a push is its node, `pose`, `data`, `layer`, and `path`. Replacing `data` rather than mutating it in place is what the check relies on, as the rest of the kit already does. The dependencies a derivation is handed are now wrappers over the ones the lookup answered, with the same three fields.
+- 2a141ac: Fixes: a `useDragHandle` drag that was aborted while the button was still down, as when the component holding the hook unmounts mid-drag, then released over its source element, delivered a click to that element. The click guard now stays until the pointer is released, canceled, or pressed again. A drag the browser cancels still drops the guard at once, since no release follows it.
+- 7063584: Fixes: a canvas with no binding for a drop was still a drop target. An OS drag over a `<SceneCanvas>` without the `ingest` preset showed the copy cursor and the `weasel-dropover` class, and the drop was swallowed with nothing inserted. `useGestureDispatcher` now asks its bindings on each `dragover` whether one would take a drop of what the drag carries, and only then cancels the event and adds the class. A drag nothing would take is left to the page.
+  
+  This is a behavior change, decided on an agent's judgment: the question is answered per drag, by the bindings, with no new channel flag. A consumer's own `drop` binding makes the canvas a drop target without the `ingest` preset, and a binding typed `drop(image/*)` refuses a drag of plain text. A file whose type the browser withholds until the drop (Firefox names it `application/x-moz-file`) is accepted while it hovers.
+  
+  Adds API: `UNKNOWN_MIME` in `@weasel-js/gestures`, the MIME of an item whose type is not known yet, which `matchIngestTypes` lets through every glob; and `itemTypesFromDataTransfer` in `@weasel-js/routing`, what a drag in flight says it carries.
+  
+  Changes API: `SceneCanvasApi.ingest()` returns a boolean, where it returned nothing. `false` means the canvas had no `ingest` action to run, which was a silent no-op before; it also warns under the `ingest` debug namespace.
+- da0335e: A scene subscriber that throws no longer stops the subscribers after it, or throws into the mutation that caused the notify. The scene's change notice, its selection, and `createPathEditState` now notify through `createEmitter`, so the error goes to `console.error` as `weasel: a subscriber threw`. A subscriber added during a notify now waits for the next one; the scene used to call it in the same pass.
+- fb715f4: A listener that throws no longer stops the listeners after it, or throws into whatever caused the notify, in these stores: `createRigEditState`, the bone, weight, and slice tools' overlays, the view registry, a canvas renderer lease's `subscribeRestored`, and the animator's `onTick`. Each now notifies through `createEmitter`, so the error goes to `console.error` as `weasel: a subscriber threw`; `onTick` already kept going, and its message changes to that one. A listener added during a notify now waits for the next one.
+- 3777548: Fixes: a character the layout had no glyph for was drawn on top of the next one once text grew past the outline threshold. With the fallback policy set to `'none'`, a code point missing from the atlas gets an empty, zero-width slot; above `outlineMinSize` the painter still asked the outline face for it and drew what it found there. An empty slot now draws nothing at any size.
+- de319ce: Types a public signature names are exported now, so a consumer can write them down and the API reference links to them. All additions; nothing is renamed or removed.
+  
+  - core: `ViewLike`, `TargetTransform`, `WeightEnv`.
+  - diagram: `DiagramRouter`, `DiagramTextStyle`, `DiagramDerivePose`, `Forest`.
+  - font: `DynamicFace`.
+  - forge: `ArgCondition`, `ComponentHistory`, `StoryGlobals`, `StoryLayout`, `StoryViewport`, `TimelineSpan`; from `/frame`, `Channel`, `ToFrame`, `FromFrame`, `ConfigAnswers`, `FaultPhase`; from `/shell`, `StoryRegistryOptions`, `StoryChanges`, `IndexEntry`, `CssVarReport`, `TrialFrameCalls`, `Libraries`, `SchemaDescription`, `DescribedShape`, `DescribedEntry`, `SectionDescription`.
+  - guides: `SnapToGuidesInsertArgs`, `SnapToGuidesMoveArgs`, and `SnapToGuidesResizeArgs`, each from its own subpath.
+  - hud: `AttachHudOptions`, `SourceRect`, `LoupeBaseOptions`.
+  - labkit: `MarkPose`, `AnnotationStorage`, `PaintedMark`, `ControlPanelProps`, `ControlPack`, `LoupeBindings`; from `/state`, `InstrumentHooks`; from `/config`, `Branching`, `Fields`, `FieldValues`, `Variants`, `VariantValues`.
+  - paint: `InCommandUnits`, `WithPatternHandle`.
+  - quantity: `FractionOptions`.
+  - renderer: `ShaderStage`, `UniformArray`.
+  - routing: `ToolScopes`.
+  - svg: `SvgDraftPose`.
+  - text-dom: `OverlayRunBase`.
+  - theme: `DtcgDocument`; from `/engine`, `SemanticCommon`, `DtcgGroup`, `DtcgAxesExtension`, `DtcgLayer`.
+  - ui: `ButtonBase`, `ButtonRegular`, `ButtonIconOnly`, `ToggleBarCommonProps`, `ToastFn`, `Fold`, `DistributiveOmit`, `WalkCtx`, `OverlayPoint`, `DocumentCodec`, `OpenedDocument`, `SchemaRoot`, `AnyNode`, `CurveSamplePoint`.
+  
+  The names for types that had none of their own to export under (`StoryGlobals`, `TimelineSpan`, `CurveSamplePoint`, the `Diagram*` three, `ShaderStage`, `DtcgGroup`, `ToggleBarCommonProps`) were chosen by an agent.
+- 3a92afc: Breaking: the paint model's serialized shape changed in three ways, and its type names in two. Nothing reads the old shapes.
+  
+  **A fill is a record holding a paint, as a stroke is.** Every `fill` slot now takes a `Fill`, `{ paint?: Paint }`, where it took a bare paint: node data, draw commands (`CommandFill`), text styles and runs, and the affordance and overlay paint options. `fill: { color: '#abc' }` becomes `fill: { paint: { color: '#abc' } }`, beside `stroke: { paint: { color: '#000' }, width: 2 }`. `fill: null` still means no fill, and a fill with no `paint` paints nothing. `commandFill(fill, box)` resolves a node's fill for a draw command the way `commandStroke` resolves its stroke; resolving a bare paint is `commandPaint`.
+  
+  **A paint names its variant under `kind`, not `fill`.** `{ fill: 'linear-gradient', … }` becomes `{ kind: 'linear-gradient', … }`, the word the paint-kind registry already used. A solid still omits it. `asPaint` takes `{ kind: string }`.
+  
+  **Each built-in tile is its own paint kind.** `{ fill: 'pattern', pattern: { tile: 'hatch', color, lineWidth }, units }` becomes `{ kind: 'hatch', color, lineWidth, units }`, and likewise `crosshatch`, `dots`, and `chunks`. A tile a consumer rasterized itself is `{ kind: 'texture', texture: handle }`. `TilePatternSpec` is now a union keyed on `kind`, so a tile's own fields are checked instead of being optional on every tile. An SVG exported before this change carries its tiles in the old shape and loses them on import, with a warning.
+  
+  Follows from the fill record: `DEFAULT_SHAPE_FILL` is a `Fill`, `createPathLayer`'s `getFill` returns a `CommandFill`, `setFill` and `setFillOpacity` write the record, and the default node properties describe `data.fill` as an object with one `paint` field, as `data.stroke` is. A node whose `fill` is a string or a bare paint now paints no fill. `SelectionPanel` built from those default properties no longer offers "None" for a fill, since it offers none for a paint nested in a record; clearing one goes through the `setFill` action.
+  
+  A tile paint has a `color`, so `'color' in paint` no longer means solid. `isSolidPaint(paint)` answers that.
+  
+  Renames: `FillStyle` is `Paint`, and `GradientUnits` is `PaintUnits`. The paint types named as fills are named as paints: `GradientPaint`, `MeshGradientPaint`, `CommandPaint`, `PosedPaint`, and `SolidPaint`, with `isGradientPaint` and `isMeshGradientPaint`. `isPatternSpec` is gone; `isTilePaint` and `isPatternPaint` replace it.
+  
+  Adds API: `Fill`, `CommandFill`, `commandFill`, `PatternPaint`, `TilePaint`, `TexturePaint`, `TileKind`, `PatternPlacement`, `TILE_KINDS`, `isTileKind`, `isTilePaint`, `isPatternPaint`, `isSolidPaint`, `tileSpecOf`, `patternPlacementOf`, and `seedTile`. A paint kind can name a `family` (`PaintKindFamily`); kinds sharing one are a single segment in `PaintInput`'s kind bar, and the built-in tiles and `texture` share `patternFamily`.
+- 87dd1ad: Fixes: `renderDebugSnapshot` threw "sourceRect.height must be a positive finite number" for a y-up view (`view.scale.y < 0`), so a flipped canvas could not be rasterized headlessly. It now renders what that canvas showed.
+  
+  Changes behavior: `renderSceneToPixels`, `planPixelRender`, and a raster session's `render` take a negative `scale` axis, where they used to throw. A negative axis is flipped: the output is sized from the scale's magnitude, and the source rect's far edge on that axis lands on the output's top or left. `sourceRect` is unchanged, a positive-size rect either way, and a zero or non-finite scale still throws.
+- 3bacb3e: Adds API: `useFrameClock(options?)` in `@weasel-js/react`, re-exported from `@weasel-js/core`. It returns a stable `{ seconds(), subscribe }` driven by `useVisibleRaf`: each frame notifies the subscribers and sets no React state, so a shader uniform or a procedural layer animates without its owner re-rendering. It has `subscribe`, so a `RenderLayer` names it as its redraw source (`subscribe: clock.subscribe`) and reads `clock.seconds()` in `draw`. The clock runs only while it has a subscriber, and leaves out time spent hidden or `paused`; `start` sets what it reads before the first frame. Added on an agent's judgment, to take the hand-written elapsed-time loop out of the custom shader demo.
+- 6b03b7e: A behavior can do frame math. `GestureContext.frames` (`GestureFrames<TPose>`, new) takes a pose between the frame a node stores it in and world: `toWorld(id, pose)`, `toLocal(id, worldPose)`, `world(id)` for the pose the scene shows now, and `planeOf(layer)` for the parallax plane a layer is stored in. Move, resize, rotate, and clone set it; an insert and a lasso, whose poses belong to no node, leave it absent.
+  
+  A move's `ctx.current` is the pose each dragged node would store, so `frames.toWorld(id, ctx.current.get(id))` is where it is in world. It used to be the stored pose shifted by the world drag, which is a different value for a node inside a turned or scaled frame, and a node carried by a frame that is itself dragged now reads its unchanged stored pose. Under the default composition, where stored and world are one value, nothing changes.
+- b260415: geom: `mat3`, the `GlMat3` type, and `viewToMat3` live here now, moved from core's renderer. `@weasel-js/core/renderer` still exports all three. `mat3` works on the nine-element column-major matrix a GL uniform takes; geom's `Mat3` type and its free functions (`identity`, `multiply`, `invert`) remain the six-number affine.
+- 66d5455: A group can join what is under it by any Porter-Duff operator. `GroupDrawCommand.composite` and `LayerGroup.composite` are new API, taking a canvas 2D operator name (`xor`, `destination-out`, `source-in`, `lighter`, `copy`, and the rest of that family) or a `{ source, destination }` pair of blend factors for an operator with no name. The types `CompositeOp`, `BlendFactor`, and `BlendFactors` are exported from `@weasel-js/renderer` and from core's barrel. A group with an operator other than `source-over` is isolated: its children draw into a buffer of their own and the operator applies once, to the finished surface, across the whole target inside the enclosing clip. The culler keeps such a group even when every child is off screen, because an empty source still changes the destination. The operator set and the factor-pair form were chosen on an agent's judgment.
+- eb7f534: A hold can cover some of a target's axes. `animator.hold({ target, value, weight, axes })` holds only the axes it names; the rest are left to the target's other holds and its committed value, and releasing it commits only those. `SampledTrack.axes` does the same for a timeline track, and `jointAxes(skeleton, names)` answers the axes of a rig's joints, so an arm solved by IK can be held at full strength beside clips holding the body.
+  
+  Each axis is shared among the holds that cover it: weights are summed and capped per axis, where they were summed across the whole value.
+- 7548e82: Fixes: `useHostAnchor` did not follow a host that moved without resizing. It recomputed on scroll, on window resize, and on a size change of the host or the panel, so a sibling collapsing beside the host shifted it with none of those firing, and the dev HUDs stayed where the host had been. It now also watches the host's box for a move, with an `IntersectionObserver` framed around it.
+- eb3114f: Fixes: a panel held by `useHostAnchor` could be left behind for good when its host moved several times in quick succession, or moved while wholly outside the viewport. After each move the hook rebuilds the frame it watches the host through, and a move that landed before the rebuilt frame's first report was taken for a host partly off screen and never reported. That first report is now checked against the box the frame was built around.
+- 0a37db1: Fixes: a panel held by `useHostAnchor` stopped following a host that had no width or height when the hook began watching it. The watch now starts once the host has a size.
+- a275f78: Adds API: a `hover` gesture, the pointer moving with no button pressed. `{ kind: 'hover', target?, mods?, phase? }` (`HoverSpec`) binds an immediate action that runs on every such move with `worldX` / `worldY`, `clientX` / `clientY`, `affordance`, `bodyTarget`, and `mods` in its params; `hover` is a route-grammar gesture name, and `HoverEvent` joins `InputEvent`. A coordinate readout, an eyedropper preview, or a ruler can follow the pointer through the dispatcher, with its modifiers, targets, modes, and views, where each used to attach its own `pointermove` listener.
+  
+  A hover binding claims nothing, a rule chosen on an agent's judgment: every live `hover` binding that matches a move runs, the move is never canceled, and it still reaches the hover-cursor pump. An ongoing action bound to `hover` is refused with a console error, since there is no press for it to own. A held pointer's moves are its drag's and fire no hover. The gesture reports motion only; it does not say when the pointer leaves.
+  
+  Adding a member to `GestureSpec`, `InputEvent`, and `GestureName` breaks a consumer's exhaustive `switch` or `Record` over any of them.
+- 605ace8: The image cache holds a byte budget and drops what it can once a load takes it past. It kept every decoded bitmap, keyed by `src`, until `releaseImage` was called, and the kit never called it. It now holds 256MB of decoded RGBA by default: when a bitmap lands and the total is over, the least recently read images are released along with their GL textures. An image a live renderer drew in its latest frame is never dropped, nor one read since the previous bitmap landed, so a scene showing more than the budget stays over it instead of reloading on every paint. A dropped image loads again on its next read, which shows as one frame of placeholder for an image that scrolls back into view. `setImageCacheBudget(bytes)` is new API, exported from `@weasel-js/renderer` and core's barrel; it returns the previous value, and `Infinity` restores the old behavior. The default and the two exemptions were chosen on an agent's judgment.
+- 0db7e81: Fixes: a translucent image was multiplied by its alpha twice. A half-transparent white bitmap on a cleared canvas read back as `(64, 64, 64, 128)` where `(128, 128, 128, 128)` is right, so every PNG with soft edges drew a dark fringe. A pattern tile registered from an `ImageBitmap`, which every built-in tile is, had the same fault, and one registered from an `<img>` painted differently from the same picture registered as an `ImageBitmap`.
+  
+  Every image texture now holds premultiplied texels: an image command's bitmap, and a texture from `registerTexture`, whatever it was made from. The kit's shaders divide the alpha back out before a color matrix runs. Measured in headless Chromium by reading the framebuffer (`packages/renderer/src/imageAlpha.browser.test.ts`).
+  
+  Breaking, in two places:
+  
+  - A custom shader sampling a texture registered from an `HTMLImageElement` used to read straight texels and now reads premultiplied ones, as it always did for an `ImageBitmap`. Write `outColor = texture(u_image, uv)` where it had `vec4(c.rgb * c.a, c.a)`.
+  - An `ImageBitmap` handed to an image command or to `registerTexture` must hold premultiplied pixels, which is what `createImageBitmap` makes by default. One made with `premultiplyAlpha: 'none'` used to be the only kind that drew right and now draws too bright wherever it is translucent: the browser uploads a bitmap as it stands, and nothing reports which kind it is.
+  
+  Opaque images are unchanged.
+- 6bb8035: A canvas refuses a drag no content handler would claim, and leaves a paste none claims to the page. The `ingest` action asks the handler registry before it takes a drop or a paste; `clipboard.pasteEvent` asks its one handler, so on a canvas that edits and does not ingest, pasted text that is no copied node is no longer swallowed.
+  
+  New API. `Action.enabled` takes a third argument, `carried`: the items of the drop or paste being routed, which the dispatcher passes in prediction and in dispatch. `ContentHandlerEntry.types` lets a handler with a predicate `match` say which MIMEs it could claim; a drag still in flight shows its MIMEs and no contents, so a predicate cannot be asked about it.
+  
+  Behavior change for a consumer handler: while a registered handler has a predicate `match` and no `types`, no drag with a known MIME is refused, since it might take anything. Declare `types` to let the canvas refuse the rest. The kit's handlers declare theirs.
+- 5d82ef9: `InsertPaint` may name a fill rule. This adds API: the object an `insertPaint` callback returns takes an optional `fillRule`, and a pencil trail, a pen path, a polygon, or a star inserted through it is built with that rule where it was always nonzero. A rect or an ellipse carries no rule and is unchanged, and a callback that names none behaves as before. Added on an agent's judgment, so WeaselDraw's "Path fill rule" preference has something to set.
+- bc15034: A group command can be isolated, and a `LayerGroup` with `alpha` now fades as one surface. `GroupDrawCommand.isolate` is new API: the children draw into a buffer of their own and are composited once, so the group's `alpha` and `colorMatrix` apply to the finished picture and overlapping children no longer show through each other. A `LayerGroup` with an `alpha` under 1 or a `colorMatrix` and no `effects` is drawn that way, which is what its documentation already said; before, each member was faded on its own. This changes the pixels of any such group whose members overlap, and costs it a device-resolution buffer and one full-screen composite.
+- 1ce19c9: Fixes: a tool hotkey fired while a `<select>` had focus, under the select's own type-ahead. The dispatcher now leaves a select its printable characters and its arrow, Home, End, and Page keys, and still takes Delete, Escape, and every modifier chord typed on one, so Cmd+Z works with focus resting on a select.
+  
+  Changes behavior: `BandEditor` and `Timeline` asked their own question about a key's target, which counted a `<select>` as a text field. They now ask the dispatcher's, so Delete on a select inside a band merges the band, and Delete on a select inside a `Timeline` deletes the selected key. `x` and `l` on a select in a band are still the select's. This rule for `<select>` was chosen on an agent's judgment.
+  
+  Adds API: `focusedControlOwnsKey(e)`, exported from `@weasel-js/gestures`, `@weasel-js/routing`, and `@weasel-js/core`: whether a key belongs to the control it was typed on. `isEditableTarget` and `activatesFocusedControl` now live in `@weasel-js/gestures` and are re-exported where they were.
+- 7d94bbb: Adds API: `kitTextHandler`, a content handler that turns pasted or dropped plain text into a text node. The node's box is the string's laid-out size at the default text style, placed where the image handler places an image: on the drop point, or centered in the viewport for a paste. It runs below every other kit handler, so SVG markup and a copied node payload arriving as plain text still go to the handlers that read them.
+  
+  No canvas registers it by default. Opt in with `<SceneCanvas ingestion={{ handlers: [kitTextHandler] }}>`. Sizing the box by measuring the string, and leaving the handler off by default, were decided on an agent's judgment.
+- 1c9bc4e: Every overlay takes its `z-index` from the theme's layer ladder. Adds tokens: `--wzl-z-hud` (900), `--wzl-z-toast` (1100), `--wzl-z-popover` (1200), and `--wzl-z-drag` (10000). `Dialog`, `Toast`, `Tooltip`, `Callout`, core's debug HUDs, and labkit's drag ghost read a rung where each held a literal of the same value, and core's rungs carry that value as a fallback for a page with no theme.
+  
+  Breaking: `--wzl-z-modal` is 1000, where it was 30 and below every dialog. labkit's lightbox, its one reader, rises with it. `DragGhost` in `@weasel-js/ui` moves from `--wzl-z-overlay` (20) to `--wzl-z-drag`, so a row dragged out of a list inside a `Dialog` draws over the dialog; the ghost `useDragHandle` clones reads the same rung.
+- 525800f: Fixes: a line drawn with the line tool was inserted with a fill beside its stroke, so the Pathfinder actions, which count an operand as its stroke only when it has no fill, read it as its bare path: Unite of a rect and a line across it gave back the rect alone.
+  
+  Changes behavior: a line is inserted with `fill: null`, as an open pen path already was, whatever the `insertPaint` option gives it. `paletteInsertPaint` now answers a stroke alone for a line.
+- dcf0554: Fixes: `scene.loadState` kept a selected node the loaded snapshot puts on a locked layer, so `getSelection()` answered with a node `isLocked` called locked. It drops such ids now, as every other selection write does.
+- 5c7d50f: Fixes: a long-press on a canvas with several views fired on whichever view had last taken input, not the view the press went down in. A touch held in one view while a mouse moved over another ran its `longPress` or `contextMenu` binding against the wrong view's dispatcher and context. The hold now fires on its own view, from its timer and from the `contextmenu` a platform sends for a hold.
+- bb3e633: minimap: a new package over core, holding the minimap in both its forms. `createMinimapContribution` and `createLinkedCursorContribution` are the ambient entries; `<MinimapCanvas>` is the detached canvas; `minimapCenterAction`, `minimapPanAction`, `centerRootOn`, `MINIMAP_CENTER`, and `MINIMAP_PAN` are the actions both run; `createIndicatorLayer`, `createLinkedCursorLayer`, `crosshairRects`, and `CROSSHAIR_HALO` are the chrome; `computeFitView`, `computeIndicatorCommand`, and `FALLBACK_FIT_VIEW` are the fit math. It depends on `@weasel-js/react` and `@weasel-js/routing`, with `@weasel-js/core` and `react` as peers.
+  
+  **Breaking for `@weasel-js/core`:** `MinimapCanvas`, `createMinimapContribution`, `createLinkedCursorContribution`, `minimapCenterAction`, `minimapPanAction`, `centerRootOn`, `MINIMAP_CENTER`, `MINIMAP_PAN`, `crosshairRects`, `CROSSHAIR_HALO`, `computeFitView`, `computeIndicatorCommand`, and `FALLBACK_FIT_VIEW`, with their types (`MinimapCanvasProps`, `MinimapContributionOptions`, `LinkedCursorOptions`, `CrosshairRect`, `ComputeFitViewOptions`, `IndicatorStyle`, `MinimapFit`), are no longer exports of `@weasel-js/core`. Import them from `@weasel-js/minimap`. `@weasel-js/labkit/weasel-canvas` still re-exports the ones it did.
+  
+  core: `accentColorOf` and `FALLBACK_ACCENT` are exported. `accentColorOf(el)` reads `--wzl-accent` off an element, where the theme cascade lands on a canvas.
+- be611ae: Fixes: "is this tool allowed in this mode" had two answers. `ToolPalette` and a tool's activation key allowed a tool when any one of its capability tags was allowed and refused a tool with no tags, while the dispatcher required every tag and let an untagged tool through. A tool tagged `['navigation', 'creates-shapes']` in a mode without `creates-shapes` showed enabled, activated, and then had every binding dropped; an untagged tool was grayed out yet live once active.
+  
+  Changes behavior, on the dispatcher's rule: a tool or contribution is allowed when the mode allows every one of its tags, and one with no tags is allowed in every mode. So `eligibleForMode`, `eligibleTool`, and `eligibleContribution` now return `true` for an empty tag list and `false` for a list with one disallowed tag, and `ToolPalette` and the activation keys follow. Which rule wins was chosen on an agent's judgment: a tag names something the tool does, so one refused tag refuses the tool.
+  
+  Adds API: `capabilitiesAllowed(allowed, tags)` in `@weasel-js/modes`, the one predicate the palette, the activation keys, and the dispatcher all ask.
+- ca09ae2: A `modifierHeld` rule now matches on a `<SceneCanvas>`. The canvas reported no modifier key as held, whatever the keyboard said, so a `chromeVisibility` rule or an action's eligibility written with `modifierHeld('shift')` never applied. It now reads the keys held anywhere in the window, a focused text field included, and repaints when one goes down or up.
+- 33c90ed: A layout drop and reparent-on-drop are now move behaviors. The move action builds both for each drag and runs them after the binding's own: the layout drop when the `layout` dep is present, then reparent-on-drop. Neither is exported; a layout is still configured on its container and reparenting by the binding's `reparentOnDrop` param. `docs/extending.md` ("Move behaviors") lists the whole chain.
+  
+  What a consumer can observe:
+  
+  - `MoveEnd` gains `pointer`: where the pointer was let go, in world coordinates, or the last move's point when the release carries none. Code that calls a `MoveBehavior`'s `onEnd` directly, such as a consumer's own test, must now pass it: `{ answered, translateOps, pointer }`. `ctx.pointer` still holds the last move's point.
+  - A layout strategy that throws mid-drag drops that frame, the way a throwing binding behavior does. The release then commits the last frame that held, as a plain move. It used to commit the throwing frame's position.
+  - With a reflow transition, a binding behavior's `onSettled` now runs before the layout drop settles its glides, where it ran after.
+  - Every behavior's `onEnd` now runs even when an earlier one throws, for move, resize, rotate, insert, and lasso-select: the same guarantee `onSettled` and `onCancel` have. The ones after the throw are told `end.answered`, nothing commits, and the first error is rethrown once all have run. A behavior that releases something in `onEnd` used to be skipped.
+  
+  `committed`, as `onGestureEnd` and `onSettled` report it, now says whether the ops landed, wherever a gesture commits ops: every commit of a move, resize, or rotate, and an insert whose behavior answered with ops. An insert no behavior claims still commits through the `insert` dep, and reports whether that minted a node.
+  
+  - `scene.applyBatch` returns a boolean: `false` when a container's layout refused what the batch dropped into it, which reverts the batch and records nothing. That holds while a journal is taking the scene's batches. Inside `scene.batch` it returns `true`, since the enclosing batch owns the outcome and may still refuse.
+  - A layout drop the destination refuses reports `committed = false`. It reported `true`, and threw `SceneArrivalRefused` out of the gesture when the move was transient.
+  - A refused arrival on the transient route no longer throws `SceneArrivalRefused`: not out of a transient move, resize, or rotate, not out of an insert's behavior-answered commit, and not out of a move behavior's own later `ctx.adapter.applyOps`, such as `momentum` landing its coast. It lands nothing and returns.
+  - A consumer `applyOps` hook is still taken at its word: a commit handed to it reports `true`.
+  
+  Fixed: a layout container inside the dragged subtree no longer takes the drop. A short drag of a group holding one could pick it, since it is tested where the document still holds it, and the commit then tried to reparent the group under its own descendant.
+- 8d0498c: A move with `reparentOnDrop` now commits as ops (`reparent`, `setLayer`, `transform`) like every
+  other move commit, so it reaches a consumer's `applyOps` hook and history. It used to write to the
+  scene directly and bypass both. A consumer with its own history that relied on reparent drops
+  landing in the scene's history will now receive them instead.
+- b3d4383: Additive: `InvocationCtx.multiTouch.rotation` is real. It was always 0; it is now the degrees the two primary fingers have turned since the gesture began, clockwise positive, and it keeps counting past a half turn. `MultiTouchEvent` carries the `angle` it is computed from, and `multiTouchGeometry` returns it beside the centroid and spread. An action that read `rotation` and relied on the 0 now sees the turn.
+- a6dff38: Adds API, and breaks one read: a number leaf's `unit` may be data. `PrefLinearUnit` is `{ suffix?, scale, offset?, accepts?, precision? }`, where `stored = display * scale + offset`, the direction a `UnitEntry` runs toward its base, and `{ scale: 1 }` changes nothing. `PrefFunctionUnit` is the `toDisplay`/`fromDisplay` form, kept for a conversion that is not linear, and `PrefNumberUnit` is either. `resolvePrefUnit(unit)` gives `toDisplay`, `fromDisplay`, and `format` for both, and `isPrefLinearUnit` tells them apart.
+  
+  Breaking: `prefUnit` now returns the data form, so `prefUnit(...).toDisplay` and `rotationDegreesUnit.toDisplay` are gone, and reading `leaf.unit.toDisplay` no longer typechecks. Call `resolvePrefUnit(leaf.unit).toDisplay` instead. `prefDisplayBounds`, `prefFieldProps`, and with them `PrefsForm`, `SelectionPanel`, and labkit's `ControlPanel` already do.
+  
+  A data unit prints in `printSchema`'s literal in full, where a unit of functions prints as `KEEP_FROM_SOURCE`, and a draft keeps one set on a leaf the source schema does not hold. `PrefSchemaEditor` offers it on a number, and on a list's number entry, as a Unit attribute: suffix, scale, offset, places, and the suffixes it also takes. A unit of functions is still listed there as code.
+- 27c1c86: Canceling a tween, spring, or coast on a target that has a hold no longer moves the value on screen. What the canceled animation had left to travel was added to the committed value, which a hold stands in front of, so at full weight it vanished. It now stays on screen beside the hold. It is committed when the target's last hold is released, taken up by the next tween or spring given a destination, and dropped by `target.stop({ commit: false })`.
+  
+  **This changes when `set` is called**: for an animation canceled under a hold, the target's `set` runs as the last hold leaves, not at the cancel.
+- 54b013c: Removes what was left of tools running their own gestures. A tool declares bindings to actions, and nothing called these any more.
+  
+  Breaking, for code that used them:
+  
+  - `ToolCtx` is gone from `@weasel-js/routing` and `@weasel-js/core`. An action reads its `InvocationCtx`.
+  - A function passed as `Tool.cursor` or `ToolDef.cursor` takes no argument: the type is `CursorSpec | (() => CursorSpec)`. A cursor that depends on the tool's state closes over that state. Before, the function was handed a context whose pointer position was always `0, 0` and whose modifiers were always up.
+  - `Tool.previewPose`, `Tool.previewBounds`, and `Tool.previewIds` are gone, and a canvas no longer asks its tools for a preview. An in-flight preview comes from the action's `OngoingHandle` (`previewIds`, `previewPose`, `previewData`), which is where the kit's actions publish theirs. `CanvasHelpers.getPreviewSources()` returns those handles alone.
+  - `Tool.initScratch` and `ToolDef.initScratch` are gone, and so is `ToolLifecycleCtx`. `onActivate` and `onDeactivate` take no argument; before, they were handed `{ scratch }`, the value `initScratch()` returned. A tool that keeps state between gestures holds it itself and closes over it, as the pen does.
+  - `Tool`, `ToolDef`, and `defineTool` lose their scratch type parameter. In `@weasel-js/core` none of them takes a type argument: `Tool<null>` becomes `Tool`, and `defineTool<null>({ … })` becomes `defineTool({ … })`. In `@weasel-js/routing` the one parameter left is the overlay type: `Tool<TOverlay>`, `ToolDef<TOverlay>`, `defineTool<TOverlay>`.
+  - `AnyToolOf<TOverlay>` is gone from `@weasel-js/routing`; `Tool<TOverlay>` is the same type.
+  - `ToolPresentation` takes no type parameter, and a function passed as `presentation.icon` takes no argument. The palette only ever called it with `undefined`.
+  
+  Adds API: `CanvasExtensionApi.clientToWorld(clientX, clientY)` converts a client point to the canvas's world the way the canvas itself does, through the `clientToWorld` prop when one was given. Fixes a `<Canvas>` given that prop disagreeing with itself: hover used the override, and the test for whether a registered layer covers a point inside a `<CanvasView>` did not.
+- a8ef308: The three drag ghosts mount in one place. `fixedSeat(from)` in `@weasel-js/gestures` answers where a `position: fixed` element following the pointer mounts (the nearest themed or `data-wzl-portal-host` ancestor of `from`, else the body) and the client point its corner lands on when that host contains its fixed descendants. `nearestPortalHost` moved there from ui, which still exports it.
+  
+  - core: the default `useDragHandle` ghost mounts in the source's host, where it mounted on the body, so it resolves the source's theme and draws in its font.
+  - ui: `<DragGhost>`'s `at.width` is optional; with none the ghost is as wide as what it holds.
+  - labkit: a palette drag's ghost is ui's `<DragGhost>`, so it takes the lab's theme. **Breaking:** `DragState` and `DragGhostProps` gain a required `from`, the element the drag began on, and the ghost loses its own border.
+- 5996856: core: an undo entry now holds the scene's own ops whichever way the edit was made. `scene.applyBatch`, `scene.history.apply`, and a scene journal record the `kit:*` ops their ops caused, and beside them any op that wrote no scene state, such as a selection change. Undo and redo of such an entry restore what was written and no longer call the adapter the batch was applied with.
+  
+  Breaking:
+  
+  - `scene.carry` is removed. A pose an adapter writes beside the one it was asked for is an ordinary `scene.setPose`, and the entry holds it.
+  - `scene.applyBatch` inside `scene.batch` joins that batch's entry. It used to push an entry of its own ahead of the batch's.
+  - A journal opened on a history other than the scene's reverts in place. Its undo, redo, and cancel used to replay through the adapter and leave `setPose` and `update` entries on the scene's undo stack.
+  - `scene.serializeHistory()` returns a `SerializedSceneHistory`, which carries `form: 2`, and `scene.restoreHistory` drops a snapshot without it. A history persisted by an earlier version is not restored.
+  
+  history: an `Op` may define `caused()`, which names the ops its entry records in its place once it has applied. An entry's `touchedIds` now also reads `args.nodes[].id`.
+- 0d1c052: The scene's adapter is the only adapter the kit builds. A flat list of items is a scene (`useScene({ items })`), read and written through `useSceneAdapter(scene)` like any other, so the separate array adapter is gone.
+  
+  **Breaking:**
+  
+  - `arrayAdapter`, `useArrayAdapter`, and the types `ArrayAdapter`, `ArrayAdapterConfig`, `ArrayPoseTargets`, and `UseArrayAdapterOptions` are removed. Replace `useArrayAdapter({ items, setItems, toPose })` with `useScene({ items })` and `useSceneAdapter(scene, { selection })`. The scene owns the list from then on: read it from `scene`, and what is written through the adapter is undoable. For a store the kit cannot own, write the adapter by hand against the slices its readers take (`docs/adapters.md`), with `createWrittenPoseTarget` for its `poseTarget`.
+  - The `SceneAdapter` interface is removed. Nothing implemented it: it required a `hitTest` no adapter had. Name the slice a reader takes (`MoveAdapter`, `PoseAnimationAdapter`, …), or `SceneCanvasAdapter` for the whole of what `sceneToAdapter` returns.
+  - The scene slot always paints the adapter's tree, one canvas layer per scene layer. It no longer falls back to painting `getNodes()` flat for an adapter without `getLayers`, `getNode`, and `getChildren`, and `CanvasProps['adapter']` requires all three. `SceneSlotConfig.objects` still paints a list of your own in place of the tree.
+- 71512af: Changes behavior: a controlled `<SceneCanvas view viewBounds>` now hands `onViewChange` a view clamped to `viewBounds`, as an uncontrolled one already did. It used to report the raw view for a pan, zoom, or animation frame, leaving the consumer to clamp. The canvas now holds its view in one place; it kept a second copy with a hand-written controlled fork that skipped the clamp.
+  
+  Also changes: a controlled view repaints when its numbers change, not when the `view` object's identity does, and a write to an uncontrolled view made before the canvas mounts is applied.
+  
+  Breaking: `SceneCanvasProps` loses `previewIdsExtra` and `pickBest`, which were never `<SceneCanvas>`'s own and were reachable only through the internal canvas's prop type. `CanvasProps`, the prop type of that unexported component, takes a required `viewState` and already-built `layers`, and drops `view`, `defaultView`, `onViewChange`, `viewBounds`, `pickEvery`, `pickBest`, `previewIdsExtra`, and the three dev HUD flags. The HUD flags on `<SceneCanvas>` work as before.
+- 54174b6: Fixes: SVG import and export, the booleans, and the renderer's mesh cache disagreed with a path whose open subpaths no fill closes (`openFill: 'none'`, or `setDefaultOpenFill('none')`).
+  
+  - `parseSvg` stamps `openFill: 'close'` on a `<polyline>` or `<path>` with an open subpath, since SVG always closes one to fill it. Such a path now carries a field it did not, and keeps painting under a `'none'` default.
+  - `serializeSvg` writes open subpaths no fill closes with `fill="none"`. A path mixing closed and open subpaths is written as a `<g>` of two `<path>`s, the group carrying the node's opacity, rotation, and metadata, so it reads back as a group of two.
+  - `pathUnion`, `pathIntersect`, `pathSubtract`, `pathExclude`, `pathDivide`, and the slice cuts leave such an open subpath out of the region. This changes their result for a path that says `'none'`.
+  - A mesh the renderer cached under one default rule is rebuilt after `setDefaultOpenFill` changes it, so the default no longer has to be set before the first paint.
+  
+  Adds API: `splitByClosure(path)` and `hasOpenSubpath(path)` in `@weasel-js/geom`, re-exported from `@weasel-js/core`.
+- 4edad85: Fixes: a filled path with an open subpath painted and could not be clicked. `tessellate` and `pathSignedArea` closed the subpath, and `pointInPath`, `pathContainsRect`, `pathIntersectsRect`, and the polygon tests ignored it. All of them now ask the path.
+  
+  Adds API: `PolygonPath.openFill`, `'close'` (a fill closes an open subpath with a straight edge back to its start, as SVG and canvas do) or `'none'` (an open subpath never fills), and `setDefaultOpenFill(rule)` / `defaultOpenFill()` in `@weasel-js/geom` for a path that names neither; the default starts at `'close'`. `fillsOpenSubpaths(path)` is the one answer. Set the default before anything is painted: a mesh already built keeps the rule it was built under.
+  
+  Changes behavior: the filled-region hit tests now count an open subpath of three or more points as closed, so such a path is picked across the area its ends enclose. A node whose painter reports unfilled ink is still picked on its outline only. A marquee or lasso reads that ink too: it meets the open subpaths of a node painted with no fill only where it touches the stroke.
+  
+  Fixes: `editAnchorSet` returned a path with `fillRule: 'nonzero'` whatever the path it was given said. It, `reversePath`, `splitSubpaths`, the path transforms, the pen's continue and join, and the rig's skinned path now hand back a path with the fields of the one they were given. `anchorsToPath` takes that path as an optional third argument.
+- bb53d86: Outline Stroke, and Boolean operations that can count an operand's stroke.
+  
+  Adds API: the `outlineStroke` action (`outlineStrokeAction`, in the `pathfinder` group, part of the `paths` feature) and `applyOutlineStroke` replace each selected stroked path with the region its stroke covers, filled in the stroke's paint; a node that is also filled keeps its fill as a path of its own underneath, grouped with the outline when the adapter mints containers. It runs through the `createOutlinesAdapter` dep, which gains optional `getWorldPath` and `getPaint`; an adapter without them leaves the action disabled.
+  
+  Adds API: `applyBooleanOp` and `useBooleans` take `strokes`: `'ignore'` (the default, and what every operation did before), `'unfilled'` (an operand with a stroke and no fill is the region its stroke covers), or `'include'` (every operand is what it paints, fill and stroke together). `BooleansAdapter` gains optional `getPaint`, which either mode needs, and `createPathNode` is passed a fourth argument, `paint`, when the topmost source's stroke went into the result's shape: the result must wear that paint and not the source's stroke again. Changes behavior: the built-in Pathfinder actions pass `'unfilled'`, so a line or an open pencil stroke with no fill is now an operand by the ink it draws, where it used to be the unseen region its path encloses; an adapter without `getPaint` behaves as before.
+  
+  Adds API: `PathPaint` and `pathPaintOf`, the resolved fill and stroke of a node that keeps them in `data.fill` and `data.stroke`, as the built-in path painter reads them.
+  
+  Changes API: `CreateOutlinesAdapter.createPathNode` is passed a `Path` where it was passed a `PolygonPath`, since a filled node's own path can be a rect.
+- 18920a4: Outline Stroke works on stroked text. A selected text node that wears a stroke, its own or one of its runs', is replaced by its glyph outlines by paint, with each stroke as a path of its own over the glyphs it outlined, where it used to be passed over until Create Outlines had run. Text with no stroke stays text. The action is enabled on stroked text, and waits for a face's outlines to load as Create Outlines does.
+  
+  New in the API: `applyOutlineStroke` can answer `{ kind: 'failed', reason: 'text-outlines', error }` when a stroked text's face has no outlines, changing nothing, so a `switch` over `OutlineStrokeResult` has one more case.
+- 9b8bd89: Fixes: `useNodeOverlayFrame` applied a pose's rotation and left out its `transform`, so DOM chrome over a skewed or stretched node, the gradient handles among them, sat on the unstretched box. `toScreen` and `toLocal` now go through the pose's whole frame, and the hook answers `null` for a pose whose `transform` is singular, which draws nothing.
+- efc1205: Adds API: a pose override can carry a `path`. `scene.overrides.set(id, { pose, path })` makes the node paint and be picked by that path in place of the one in its data, with no document write, as an override's `pose` and `alpha` already work. `kit:path` and `kit:derived` nodes honor it, and an override path wins over a derived one. The path is in the frame a painter draws in, so give `pose` beside it as the path's bounds with no rotation. A view painting through its own `toPose` does not see it.
+- b4227bc: core: a paint kind's draw slots are their own type now. `PaintDrawKind` holds `id`, `bind`, `inPoseFrame`, `toBoundsFrame`, and `programs`, and `PaintKindEntry` extends it with the slots an editor and a serializer read. `registerPaintKind` takes the same single object as before, and every other paint-kind export keeps its name and shape.
+- 6139898: parallax: a new package over core, holding the paint-side parallax and tiling layers. `createParallaxLayer` draws render layers through a derived view, `createParallaxPlane` is the live plane a camera or an animator drives, and `createTiledLayer` with `tiledProject` repeats its sources across a period. It depends on `@weasel-js/registry`, with `@weasel-js/core` as a peer, and has no React.
+  
+  **Breaking for `@weasel-js/core`:** `createParallaxLayer`, `createParallaxPlane`, `createTiledLayer`, and `tiledProject`, with their types (`CreateParallaxLayerOpts`, `ParallaxSource`, `ParallaxPlane`, `CreateTiledLayerOpts`, `TileBleed`, `TilePeriod`, `TileRange`), are no longer exports of `@weasel-js/core`. Import them from `@weasel-js/parallax`.
+  
+  The parallax math stays in core, which a scene layer's own `parallax` uses: `deriveParallaxView`, `planeMap`, `toPlane`, `fromPlane`, `rectToPlane`, `rectFromPlane`, `planeToPlane`, `planeMatrix`, and the types `ParallaxOpts`, `ScalarOrXY`, and `PlaneMap`.
+- 335f192: geom: the path anchor model and the small shape builders live here now. That is `pathToAnchors`, `anchorsToPath`, `countPathAnchors`, `isAnchorSmooth`, `nearestSegmentT`, and the `PenAnchor` type, plus `circlePath`, `squarePath`, `rectMarkerPath`, and `roundRectPath`. `@weasel-js/core` still exports every one of them. New from geom: `segmentEnds` and `isStraightSegment`.
+- f3b977a: `<SceneCanvas pathEdit>` hands which path is being anchor-edited to the host. This adds API: the `pathEdit` prop and its `PathEditHost` type, `{ editingId(), setEditingId(id) }`. Given one, the canvas keeps no editing id of its own. It reads `editingId()` wherever it needs the open path, and the `enterPathEdit` and `exitPathEdit` actions call `setEditingId`. A host whose own state already names the open path, such as a mode machine holding a path-edit mode's target, passes it so the two cannot disagree. Without the prop the canvas owns the id as before. Added on an agent's judgment.
+- df159bc: Fixes: deselecting or deleting a node while its anchors were being edited left the anchors drawn but ungrabbable, kept shift-click from extending the selection, and made a drag on an anchor move the whole node. Whether a node is in anchor editing is now decided in one place: it exists, it is selected, and the mode allows it. The overlay, the selection outline, the chrome rules' `editingAnchors`, hit-testing, and the shift-click lock all read that answer. Selecting the node again resumes editing.
+  
+  Changes behavior: an editing id supplied through `pathEdit` is held to the same rule, including the mode check, which the canvas used to skip for a host's id.
+- 485bb80: Trim and Merge are Boolean operations. Trim cuts each selected shape back to the part of it left showing under the shapes in front; Merge does the same, then unites the pieces whose sources wear the same fill. New API: `'trim'` and `'merge'` in `BooleanOp`, `trim()` and `merge()` on `useBooleans`, the `pathfinder.trim` and `pathfinder.merge` actions (`pathfinderTrimAction`, `pathfinderMergeAction`, registered with the `paths` feature and shown in the `pathfinder` action group), and `TrimIcon` and `MergeIcon`.
+  
+  Each result is minted from its own source, as a Divide's pieces are. Merge compares fills as `BooleansAdapter.getPaint` reports them, or the stroke's paint for an operand whose stroke was counted in; an operand the adapter reports no paint for is united with nothing, so Merge on an adapter without `getPaint` is a Trim. Strokes are otherwise left as the adapter paints them: unlike Illustrator's, this Trim does not strip them.
+  
+  A `Record<BooleanOp, …>` in consumer code needs the two new keys. The two glyphs were drawn on an agent's judgment.
+- 21b6db7: Adds API: a plane's axes can carry different units. `resolveAxes(value, units)` in `@weasel-js/quantity` resolves one value for both axes, or `{ x, y }`, against one `UnitSystem` or one per axis (`PlaneUnits`), and `formatAxes` writes a base-unit point back out with each axis in its own display unit. `axisUnits`, `PerAxis`, `PlaneUnits`, and `PlaneValue` are exported beside them, and all are re-exported from `@weasel-js/core`.
+  
+  `gridSnapStrategy`, `pointToGridCell`, `createGridLayer`, `createCellHighlightLayer`, and `useGridCellHover` take a per-axis `spacing` and `unitSystem`, so a grid can be 1s wide and 5mV tall. A single value still means a square grid.
+- 970f489: Fixes: picking a node whose pose carries a `transform` measured the grab tolerance in the node's own frame, so a node stretched four times as wide could be picked four times as far from its edge, and a screen slop was stretched the same way. A world tolerance, the default path slop, and a screen slop are now all measured where they are stated, through the node's whole frame. A `PoseSlop`'s `reach` stays in the node's frame, where the stroke it stands for is drawn.
+- af48ee3: A behavior's `ctx.pointer.clientX` / `clientY` are the client point of the event, where every default action used to fill them with `0`. Move, resize, rotate, insert, and lasso-select read them from `InvocationCtx.screen`.
+  
+  Breaking for a behavior that read them as numbers: `PointerState.clientX` and `clientY` are optional now, absent when the event carried no client point (a keystroke, a UI-driven trigger, a synthetic probe). Chosen on an agent's judgment over removing the fields.
+- 1c8c3fc: Pointer gesture recognition moved out of `useGestureDispatcher`'s effect into `createPointerRecognizer` in `@weasel-js/gestures`. It takes pointer samples and a clock, and emits `InputEvent`s to a sink: the press and the drag it becomes past `DRAG_THRESHOLD_PX`, click, double click, long-press with its contextmenu fallback, and multitouch start, move, end, and tap. It has no DOM, so its timings can be tested with a fake clock.
+  
+  Additive in `@weasel-js/gestures`: `createPointerRecognizer` and its types, `clickEvents`, `longPressEvents`, `multiTouchGeometry`, `stylusOf`, and the thresholds `LONG_PRESS_MS`, `DOUBLE_CLICK_MAX_MS`, `DOUBLE_CLICK_MAX_PX`, and `TAP_THRESHOLD_PX`. `@weasel-js/routing` still exports `LONG_PRESS_MS`, and adds `multiTouchGestureId` beside `pointerGestureId`.
+  
+  What a consumer of `useGestureDispatcher` can observe:
+  
+  - `requestRedraw` follows the dispatcher's own notifications. It now also fires when a gesture in flight is ended or stepped by something other than an input event through the hook: the cancel a tool switch makes, `Dispatcher.cancelAll`, a UI-driven ongoing action. A canceled marquee no longer stays painted until the next redraw.
+  - A double click is timed on `performance.now()`, as long-press and multitouch tap already were, where it used `Date.now()`.
+  - The platform that decides whether `mod` means Command is read when the hook mounts, not when the module loads.
+  - The hover cursor's `keydown`/`keyup` listeners on `window` attach only when the pointer channel is on.
+  - A click is decided by whether the press crossed the drag threshold. The hook used to also ask whether a `pointer-<id>` handle was in flight; nothing the hook does opens one before the threshold, so only code calling `handleInput` on the hook's dispatcher with its own pointerdown could have seen the difference.
+  
+  Tool `onActivate` / `onDeactivate` run from their own hook beside the tool registry, in the same order as before: the outgoing tool's `onDeactivate`, the cancel of in-flight gestures, then the incoming tool's `onActivate`.
+- 4d4d81c: Adds axis names to the kit's own targets, so a hold or a track on one can say `axes: ['y']` where it had to say `axes: [1]`. A rect pose's axes are `x`, `y`, `width`, `height`, and `rotation`; a rect path pose's are the first four; the view's are `x`, `y`, `scale.x`, and `scale.y`, so `'scale'` names both. A polygon path pose's axes are its coordinates and stay indexes.
+- ea54a64: geom: the box-pose frame math lives here now: `poseFrameOf`, `poseFrameInverseOf`, `poseLinearOf`, `pathThroughPoseFrame`, `poseRotationOf`, and `rotatePathAround`, with the `PoseLinear` and `PoseRotation` types. They read a pose as plain numbers and need no scene. `@weasel-js/core` still exports every one of them.
+- 8524e05: core: `scene.overrides.hold()` hands out a `PoseHold`, a writer's claim on some nodes' pose overrides. `hold.set(poses)` publishes a whole frame with one notification and releases any id the frame leaves out, `hold.others()` answers the poses other writers are publishing, and `hold.drop()` releases what the hold still owns, leaving alone an entry another writer has since replaced. Move, rotate, resize, and `usePoseRun` publish their previews through it. `PoseHold` is exported, and `PoseOverrides` gains the `hold` method, so a hand-written `PoseOverrides` has to supply one; `createPoseOverrides` builds a complete table.
+- 8ac6236: Two moves on one node now combine. `tweenPose`, `springPose`, `animateOnSetPose`, `animateLifecycle`, the reflow glide, and `momentum` move the node's pose target, where they used to each write a pose every frame and the last writer won.
+  
+  **This changes behavior on a scene-backed adapter** (`sceneToAdapter`, `useSceneAdapter`, the one `<SceneCanvas>` builds):
+  
+  - `tweenPose` and `springPose` write the destination to the scene as the move starts. The scene's pose is the destination for the whole move, and the node on screen travels there through `scene.overrides`. `setPose` is no longer called each frame, so the scene's version and history do not change per frame. Read the pose on screen with `effectivePose(scene, node)`.
+  - A second `tweenPose` on a node no longer cancels the first. Both run under `pose:<id>` and add. `springPose` interrupts every move on its node and starts at their combined velocity.
+  - Canceling a move leaves the scene at the pose the node was shown at, not at the destination.
+  - A move undone mid-flight ends there: at the next frame the node shows the undone pose and nothing is left running. The same goes for anything else that writes a node's pose while it is moving.
+  - `target.stop({ commit? })` stops every animation on a target. By default each commits where it was; `commit: false` leaves the committed value as it stands.
+  - `animateOnSetPose`: the scene takes each written pose at once. A second write to a node mid-glide bends the glide (or, with `spring`, carries its velocity) where it used to end the glide and snap.
+  - `animateLifecycle`: the enter pose is shown and never written, and a node shrunk out is removed at the pose it had, so undoing the removal restores it whole.
+  - Reflow glides: a timed retarget adds to the glide still running, and no longer restarts from the pose on screen. A `spring` retarget keeps the node's velocity.
+  - `momentum` coasts on the node's pose target. The document still takes the flick as one transform when it comes to rest.
+  
+  An adapter without `poseTarget`, and a pose its descriptor gives no axes for, behave as before: `setPose` each frame, and a new move cancels the one running. `pathPoseDescriptor` and `AUTO_POSE_DESCRIPTOR` give a `Path` pose axes, a polygon's being its coordinates, so a path moves on its target between two shapes with as many points.
+  
+  A container under `cascadeContainerPose` moves on its target too. Its descendants' poses are written with it as the move starts, and each is shown traveling beside it through an override of its own; `scenePoseTarget` takes a `cascade` (`PoseCascade`) that says how.
+  
+  New API:
+  
+  - `createPoseTarget({ id, get, set, overrides, descriptor? })` makes the target for one node's pose, and `scenePoseTarget(scene, id, descriptor?)` returns the one a scene keeps per node. Animations given it as `target` add to everything else moving that node.
+  - `MoveAdapter.poseTarget?(id, descriptor?)` is how an adapter hands that target to the helpers.
+  - `PoseDescriptor.axes?(like)` says how a pose maps to numbers and which are angles. `RECT_POSE_DESCRIPTOR` maps `x`, `y`, `width`, `height`, and `rotation` as an angle, so a rotation tweens the short way round.
+  - `interrupt: false` on a targeted `tween`, `spring`, `physics`, or `decay` takes a `cancelKey` without canceling the animations holding it.
+  - `publish` on `createTarget`: called once a frame for all the targets sharing it. A target's `show` is now also called as an animation starts on it.
+  - `tweenPose` takes `from`, where the move appears to start. `tweenPose` and `springPose` accept any adapter with `getPose` and `setPose` (`PoseAnimationAdapter`), so the adapter from `useSceneAdapter` needs no cast.
+- eafd001: Fixes: a pre-built layer (`{ layer }`) in `<SceneCanvas layers>`'s `selectionOverlay` slot typechecked and was never painted; the kit's own overlay was built from the defaults instead. It now paints in the overlay's place, with no rotate badge of the kit's.
+  
+  Adds API: the `scene` slot takes a pre-built layer too, which paints the scene in place of the per-layer canvas layers the kit builds, under the `scene` anchor. A gesture in flight draws no ghost over it, since the ghost is painted with the slot's `drawOne`. `mergeLayersWithDefaults` leaves a pre-built layer in either slot as it was given.
+- 1956417: `previewBooleanOp(adapter, op, opts)` answers what `applyBooleanOp` would make of the selection, each piece with the source it stands in for and the paint a counted stroke leaves it, without minting a node or committing anything. It is what a live preview of a Pathfinder operation draws from. New API: `previewBooleanOp`, `BooleanOpPreview`, and `BooleanPreviewPiece`. The two functions share one resolution, so a preview and the commit that follows cannot disagree.
+- 955defa: geom: the screen-pixel helpers live here now: `pxExtent`, `scaleDelta`, `screenAngleOf`, `standoff`, `withinPxBox`, `withinPxRadius`, and `meanScale`, with the `Scale2` type. They take a view's scale as two numbers and need nothing else from core. `@weasel-js/core` still exports every one of them.
+- 27b827e: text: the run algebra lives here now: `styleAtRange`, `applyStyleToRange`, `patchRangeStyle`, `effectiveRangeStyle`, `rangeWeight`, `setFlagOverRange`, `nodeHasFlag`, and `unboldPatch`, with the `RangeStyle`, `RunStylePatch`, `StyleKey`, `FlagKey`, and `SetFlagResult` types. `runsCarryStyling` and `supersededKey` are exported beside them. None of them needed a scene. The `MIXED` sentinel and its `Mixed` type moved to `@weasel-js/registry`, and text exports them too. `@weasel-js/core` still exports every name it did before.
+- 74f364f: Removing a node takes it out of the scene's selection. `scene.getSelection()` used to keep the id of a node `scene.remove` had taken, so every reader guarded `scene.get(id)`. Undo puts the node and its selection back. `reconcileSpecs` carries the selection across a node it replaces by removing and re-adding the id, and deselects one it drops. `setSelection` still accepts an id no node has. This is a behavior change, made on an agent's judgment: a consumer that read a removed id back out of the selection no longer finds it.
+- 01d6e4e: renderer: a new package holding the WebGL2 renderer, moved out of core. `WeaselRenderer` draws a `DrawCommand[]`; `cullDrawCommands` drops what cannot reach a rectangle; `registerProgram`, `registerTexture`, and `registerEffect` add shaders, textures, and full-screen passes. It depends on `@weasel-js/geom`, `@weasel-js/paint`, `@weasel-js/registry`, `@weasel-js/stroke`, and `@weasel-js/text`, with `@weasel-js/font` as a peer, and has no scene and no React.
+  
+  Everything `@weasel-js/core/renderer` exported is exported from `@weasel-js/renderer`. So are `isPaintKindKnown` and `warmPaintKinds`, `fillInPoseFrame` and `fillToBoundsFrame`, `commandFill` and `commandStroke`, `createTilePattern`, `resolvePatternSpec`, `resolveFillPattern`, `isPatternSpec`, the image cache (`getImageBitmap`, `imageStatus`, `releaseImage`, `retryImage`, `subscribeImageReady`, `isVectorImageSrc`), and `textCommand`, `textCommandFromRuns`, and `textCommandFromPose`.
+  
+  These were not exports of `@weasel-js/core` before and are additions: `getProgramSource`, `strokeReachAt`, `boundsMissRect`, and the draw-kind registry a paint kind's draw slots live in (`registerPaintDrawKind`, `registerPaintDrawKindLoader`, `getPaintDrawKind`, `paintDrawKindRegistry`).
+  
+  The mesh gradient is at `@weasel-js/renderer/mesh`, the named pattern tiles at `@weasel-js/renderer/patterns-builtin`, the recording WebGL2 stand-in at `@weasel-js/renderer/testing/glRecorder`, and the reset seams at `@weasel-js/renderer/test-seams`.
+  
+  `@weasel-js/core`, `@weasel-js/core/renderer`, `@weasel-js/core/mesh`, and `@weasel-js/core/patterns-builtin` still export every name they did before.
+- 32b3cc9: core: a node grabbed while a reflow transition was still gliding it, then dropped onto another node with `reparentOnDrop` on, landed where its document pose plus the drag put it, off from where the drag showed it by however far the glide had left to go. It now lands where it was shown. Not breaking.
+- 70413dd: Fixes: resizing a node whose pose carries a `transform` took the drag in the unskewed box's axes, so the dragged corner left the pointer and the opposite corner slid. The drag is taken in the frame the node is drawn in: the dragged corner follows the pointer and the opposite one stays where it is drawn. A resize still writes the box and keeps the `transform`. A point snap is told where the corners are drawn, and lands the drawn corner on the point it names.
+- fcf44fa: A pose move can rewind when it is undone. `tweenPose`, `springPose`, and `staggerSpringPose` take `rewind: true`: undone mid-flight, a tween travels back to where it began along the positions it passed, at the pace it passed them, and a spring springs back from where it is at the speed it has; redone on the way back, either turns forward again. `onDone` is called only when the move arrives at its destination. Without `rewind` a move undone mid-flight comes to rest on the undone pose at once, as before, and any write that is not the move's own undo or redo still wins at once either way. It needs an adapter with `poseTarget`, which every scene adapter has.
+  
+  This adds API, and its shape was chosen on an agent's judgment: an option per move, off by default, and a rewind that turns on the frame after the undo.
+- a91e5cd: Adds API: a rig can live in the scene. `rigFromNode(scene, id)` reads a skeleton from a node's `data.skeleton`, with its joints relative to that node's box and turned as the node is, and gathers from every node under it a `data.skin` (a path that bends) or a `data.joint` (a node that rides that joint whole). It answers the `skeleton`, `bindings`, and `skins` `bindRig` takes. `useRigNode({ scene, node })` binds that rig for a component's lifetime and binds it again when the rig node or anything under it changes its pose or data; an edit elsewhere in the scene leaves the rig, and its `target`, alone.
+- 91a479a: `useRigNode` keeps its rig's `target` when it binds again. A change to the rig node or anything under it, a painted weight included, used to make a new rig with a new target, which dropped every animation running on the old one and left the nodes at rest. The rig returned is still a new object, but its `target`, its committed pose, and its placement carry over, and it shows the pose that was on screen as it binds. This is a behavior change: a rig posed with `rig.pose` used to go back to the bind pose when it bound again, and now stays posed. Adding, removing, renaming, or reordering a joint still makes a new target at the bind pose. `bindRig` and `useRig` are unchanged.
+- 7afbc13: A rig is an animation target, and `blendPoses` is removed. Breaking for anything that called `blendPoses`.
+  
+  `Rig.target` is a `Target<Pose>`: its committed value starts as `{}`, the bind pose, and each frame the rig is posed with what the target shows. A clip is a `SampledTrack<Pose>` with `target: rig.target`. Two clips on one rig crossfade by their `weight`s, weights that sum to less than 1 leave the rest to the committed pose, and a `spring` or `tween` on the target adds on top. `rig.pose(pose, root)` still writes at once, and now commits `pose` as well. `rig.place(root)` sets the root transform without a pose; a `pose` called with no `root` keeps the last one given, where it used to drop it.
+  
+  `skeletonAxes(skeleton)` is the axes a pose target uses: five per joint in skeleton order, every rotation an angle. Pass it to `createTarget` for a pose target that is not bound to scene nodes.
+  
+  A `SampledTrack` with a `target` no longer needs `interpolate` for a value that is not plain numbers. It is sampled in the target's axes, the short way round between neighboring keys on an angle axis, and every sample, a key's own included, is a value the axes built. An `interpolate` or `interpolator` on the track still wins.
+  
+  What replaces each use of `blendPoses`:
+  
+  - **A track's `interpolate`** (`blendPoses([a, b], [1 - u, u])`): give the track `target: rig.target` and drop `interpolate`.
+  - **Blending poses by weight**: `animator.hold({ target: rig.target, value: pose, weight })`, one per pose.
+  - **Weighting IK against animation** (`blendPoses([anim, solved], [1 - w, w])`): hold the solved pose at `w` beside the clip at `1 - w`.
+  - **A blended pose as a value**: `sampleTrack` on a targeted track whose two keys are the poses.
+  
+  Where the result differs from `blendPoses`:
+  
+  - Weights are not normalized. `[0.3, 0.3]` is an even mix at 60% strength over the committed pose; weights summing past 1 share full strength, so `[1, 1]` is still an even mix.
+  - Rotations meet at their average direction by weight, where `blendPoses` turned each pose in order from the first. Two poses give the same answer; three or more spread around the circle can differ. At weights short of 1 the joint turns the short way from the committed pose toward that meeting point.
+  - A pose read back names every joint of the skeleton in full.
+  
+  Also fixed: a frame the animator requested from inside its own ticks ran ahead of the paint a canvas requests from `onTick`, which cost one painted frame each time a track took hold of its target or an `onDone` started another animation. The request now waits until after `onTick`.
+- 8f38287: Adds API: a rig skins paths. `bindRig` and `useRig` take `skins`, a map from node id to a `Skin`, beside `bindings`, which is now optional. A bound node moves whole with one joint; a skinned node's path bends, each point following its own joints by weight, so one outline flexes at a joint. The rig shows the bent path through the node's pose override, posed at the path's bounds with no rotation, so paint, picking, and the selection box all follow it. `bake` writes the bent path into the node's `data.path` and its bounds into the pose, in the same undo entry as the bound nodes. A node cannot be both bound and skinned.
+  
+  The rest path is read once, when the rig is bound, from the node's `data.path` carried through its pose. `restPath` reads it from elsewhere, and `dataRestPath` is the default.
+  
+  Breaking for a hand-written `RigScene`: it now needs `update(id, { data })`, which `bake` uses for a skinned node, and its `get` may answer `data`. A `Scene` already has both.
+- 936679d: Additive, with one behavior change: rotating with Shift held snaps the angle to 15 degree steps. `snapRotationWithModifier({ key, step })` is the behavior, and a rotate binding that names no `behaviors` gets it through `DEFAULT_ROTATE_BEHAVIORS`, the way a resize gets the Shift aspect lock. What snaps is the angle the first rotated node ends at; the rest of a multi-selection turns by the same amount. Pass `rotate: { behaviors: [] }` to `selectionRotateContribution` or `selectionTransformContribution` to turn it off; an empty list used to be dropped there and now reaches the binding.
+  
+  A `RotateBehavior.onMove` may return `{ rotation }` in radians where it only changes the angle, in place of a whole pose.
+  
+  Making Shift snap by default was a judgment call, taken from how resize already treats Shift.
+- 813aea2: Fixes: the route-conflict check never compared `mod` with the key it resolves to, so `mods: { mod: true }` on one binding and `mods: { ctrl: true }` on another went unreported though both match Ctrl off a Mac, and likewise `mod` against `meta` on one. The check now buckets bindings once per platform, reading `mod` as `meta` on a Mac and `ctrl` elsewhere.
+  
+  Changes behavior: a consumer whose bindings tie this way will see a new `[weasel] route conflict` warning in development. Two bindings of one action with equal `params` that tie on one platform only are not reported, since whichever fires does the same thing; `viewport.zoom` binds its wheel to both `mod` and `ctrl` that way. The same pair tying on both platforms is still reported as a duplicate. That exemption was chosen on an agent's judgment.
+  
+  Adds API: `RegistryEntry.params`, the binding's `opts.params` as declared.
+- 42f24c8: core: the canvas adapter (`sceneToAdapter`), `defaultCommitAdapter`, and the adapter the move action hands its behaviors now share one set of scene mutators, so an op applies the same way through all three. Not breaking. What that changes:
+  
+  - `sceneToAdapter` has `setLayer`. A `setLayer` op applied through it, such as the one a cross-layer reparent-on-drop sends to a consumer's `applyOps`, used to throw.
+  - `defaultCommitAdapter().setChildOrder` called outside a batch records one undo step instead of one per sibling it moved.
+  - A move behavior that answers with a delete op now gets the node's dependents back on undo, as rotate's already did. A `setLayout` or `setSelection` op from a move behavior applies instead of throwing.
+- 499af9b: `SceneCanvasApi.camera` hands out the canvas's camera as an animation target, with the animator that moves it: `{ target, animator }`. An animation started on that animator with that target adds to an `animateView` glide in flight, so a shake or a nudge no longer needs a camera of its own.
+- 8cc746f: Breaking: `<SceneCanvas>` no longer takes `insertTool`. It set `commitInsert` on the adapter, which nothing in the kit calls: the insert action mints nodes through the `insert` dep, so override that dep (`useDepSource('insert', …)` or `insertNodeFactories`) instead.
+- a21947b: `<SceneCanvas>` reads what each `features` preset turns on (its actions, tools, ambient bindings, and chrome) from one table, and `features/chrome-caps` builds the rule context the canvas used to assemble inline.
+  
+  Changes behavior: `FEATURE_ACTION_IDS` and `COMPOSITE_FEATURES.draw` list `move` after `rotate`; the order is the order ambient bindings are matched in. The rule context `<SceneCanvas>` hands to chrome rules no longer carries an untyped `view` property; read `zoom`.
+- de07db0: Breaking: `<SceneCanvas>` no longer takes `actionDefaults`. Nothing had read it since the legacy action bridge was removed.
+  
+  Fixes: a bare `<SceneCanvas>` registered three sets of pointer and hover media-query listeners. `useDeviceProfile` watched the device even when a `<DeviceProfileProvider>` above it already answered, so every reader under a provider added a set; it now watches nothing under a provider.
+- 4d3ff3f: Fixes: a shape kind added to `KIT_SHAPE_KINDS` did not get a built-in tool on `<SceneCanvas>`, because the canvas spelled the kinds out by hand. It now resolves its built-in tools from `BUILTIN_TOOL_IDS` in one place.
+  
+  Breaking: `createPenPreviewLayer` takes the pen's `state` (a `PenScratch`) where it took `penTool`. The pen tool now declares the preview as its own overlay, so `<SceneCanvas>` no longer builds it and the layers map has no `penPreview` key. A pen passed through a `tools` takeover, or a consumer's own `usePenTool`, draws its preview without being wired to one.
+  
+  Changes behavior: the pen's preview sits directly beneath the selection overlay, and it is hidden while a mode forbids the pen's capabilities, as the tool's other chrome is. The path in progress is kept and shows again when the mode allows it. Holding a hotkey tool mid-draw still shows it.
+  
+  Breaking: `useKeybindings` takes `modes` where it took `isToolEligible`, and asks the mode registry about each tool's own capability tags.
+  
+  Adds API: `inertia: true` on `useHandTool` and on the `viewport.dragPan` action's params means the kit's default inertia, as it already does on `<SceneCanvas viewport>`.
+- 85cb886: Adds API: `Bivariant` and `ScopedScene` are exported from `@weasel-js/core`. `DerivePathFn`, `DerivePoseFn`, and `ClipFromPoseFn` are written in terms of the first, and `sceneUnitScopes` takes the second, so a consumer can now name both.
+- aed6320: Breaking: a scene's pose composition is the scene's own. Pass it once, as `useScene({ composition: RIGID_POSE_COMPOSITION })` (or `createScene`, `sceneFromJSON`), and read it as `scene.composition`; a scene given none answers `IDENTITY_POSE_COMPOSITION`. The canvas, the adapter, the layout pass, picking, the headless renders, and every built-in action read it from the scene.
+  
+  Removed, each replaced by the scene option: the `<SceneCanvas poseComposition>` prop; `sceneToAdapter`'s `poseComposition` and `cascadeContainerPose` options; `LayoutFrame.composition`; the `poseComposition` option of `scenePickSource` and `useLayoutArrivals` / `layoutArrivalHandler`; the `poseComposition` routing dep and `usePoseCompositionDepSource`; and the composition parameter of `buildSceneViewCommands`.
+  
+  Changes behavior: `sceneToAdapter(scene)` on an absolute-pose scene now always carries a container's descendants when the container is posed, where it did so only under `cascadeContainerPose: true`. `renderSceneToPixels`, `renderSceneToCanvas`, and `<SceneViewCanvas>` now compose poses for a scene that has a composition, where they painted every node at its stored pose.
+  
+  Adds API: `composesFrames(composition)`, whether a composition makes a container's pose a frame.
+- 9d11828: `TimelineHandle.seek` samples the timeline's sampled tracks at once. A target a track holds reads the seeked value straight away, where it used to read the old one until the animator's next frame, so a simulation that seeks a clip and draws in the same frame no longer draws a frame behind. A track's `onTick` is called from the seek as well as from the next frame. Events still wait for playback to advance. `TimelineHandle.edit` samples at once in the same way.
+- 37463b5: Fixes: an always-live `pointerDown` binding never fired on empty canvas while the select tool was active. `select.pick` matched every press off chrome, found nothing to pick there, and still took the press at the active tier. Its binding, and `select.collapseDeferred`'s, now match a press on a node only, so a press on empty canvas reaches the binding a tier below.
+  
+  Behavior change, made on an agent's judgment: a consumer whose own always-live `pointerDown` binding has no target now sees presses on empty canvas under the select tool, where it saw none. A press on a node still goes to the tool. A bare `useSelectTool` with no `classifyTarget` wired has no body class to read and behaves as before.
+- 3558fbb: Adds API: a timeline can be saved and loaded. A `Clip` is a timeline as data: `{ version: 1, tracks, duration? }` with keys, easings by built-in name or bezier points, and names wherever a live timeline holds a function or a target. `bindClip(clip, binder)` answers the `{ tracks, duration }` `animator.timeline` takes, resolving each sampled track's `target` and `interpolate` and each event's `name` through the binder, and throws on a name the binder does not know. `toClip({ tracks, duration })` reads a live timeline back into a clip, `handle.tracks()` included, so an animation changed in `<AnimatedTimeline>` can be saved.
+  
+  A live track now says what it is as well as what it does: `SampledTrack` has `targetName` and `interpolateName`, and `TimelineEvent` has `name` and `data`. `bindClip` sets them and a track written by hand can set them too. `toClip` throws, naming the track, on what a clip cannot hold: a target or `interpolate` with no name, an `onTick`, an `interpolator`, a function for `weight`, a function easing that is not a built-in, or a value JSON would not read back, such as a typed array.
+  
+  In `@weasel-js/core`, `sceneClipTargets(scene, { rigs })` is a binder's `target` for a scene: `pose:<node id>` is that node's pose target and `rig:<name>` the target of the rig given under that name.
+- bffba0a: `ShaderDrawCommand`, the module-level `registerProgram`, and `WeaselRenderer.registerProgram` are no longer marked `@experimental`, and a shader command's program compiles on the first frame that draws it. Before, a renderer drew a shader command only if the program had been compiled on it first, through `<Canvas shaders>` or `renderer.registerProgram(handle)`, so a custom `RenderLayer` had no way to draw one without reaching the renderer. Now a layer emits the command with the handle `registerProgram()` returned and nothing else: the renderer compiles it through the path effects and paint kinds already use. `shaders` and `renderer.registerProgram` remain, for compiling ahead of the first frame and for catching `ShaderCompileError`. A command whose id was never registered, or whose source does not compile, draws nothing and warns once, where it warned on every frame. Dropping the tag was done on an agent's judgment; `registerEffect` keeps its own.
+- efc5cea: simulation: a new package holding the N-body integrator that lived in core. `createSimulation`, its types, and the `DEFAULT_ALPHA_DECAY`, `DEFAULT_ALPHA_MIN`, and `DEFAULT_VELOCITY_DECAY` constants are the root entry, which needs no React and no DOM. `useSimulation` is in `@weasel-js/simulation/react`. `@weasel-js/core` and `@weasel-js/core/math` still export what they did.
+- 32e243f: Adds API, in `@weasel-js/animator`: pure edits to a `Skeleton`, each answering a new one. `moveJoint(skeleton, name, x, y)` rests a joint at a point, worked back through its parent's frame, and the joints under it move along. `addJoint(skeleton, parent, x, y, name?)` adds a joint at a point under a parent or as a root. `removeJoint(skeleton, name)` removes a joint and everything under it and says which names went, and `dropSkinJoints(skin, names)` takes those joints' weights out of a skin. `jointPositions(skeleton)` answers where each joint rests and `jointAt(skeleton, x, y, reach)` the joint nearest a point.
+- 233f856: Adds API, in `@weasel-js/animator`: the first piece of skinning, where one path bends with a skeleton. `skinPath(path, skin, motions)` moves each point of a path to where its joints' motions since the bind pose would carry it, averaged by weight, and answers a new path. A `Skin` is one weight array per joint name, indexed by point: every coordinate pair of a polygon path's `coords`, curve handles included, or a rect's four corners. `motionsFromRest(skeleton, world)` turns the joint world transforms `resolveSkeleton` or `Rig.world()` answers into those motions. `autoSkin(path, skeleton, { power, max })` makes a skin from each point's distance to the bones at the bind pose; a joint with no child gets no weight, so a limb needs an end joint.
+  
+  Nothing draws a skinned path yet: these are the pure functions the rig will call.
+- c9b9598: labkit's stylesheets, core's debug HUDs, and forge's shell and story frame take every `gap`, `padding`, and `margin` that has a rung from the `--wzl-space-*` ladder, where each held the same px as a literal. Core, which draws on a page that may load no theme, keeps that px as the `var()` fallback, so nothing moves there.
+- 2705878: `animator.stagger(items, delay).springPose(adapter, poseFn, opts)` is gone, and `staggerSpringPose(animator, adapter, { items, delay, to, ...opts })` replaces it, beside `springPose` and `tweenPose`. Breaking: a caller of the builder method moves to the function, and `poseFn` becomes the `to` option. The stagger builder keeps `.each` and `.tween`. This takes the animator's last reference to a scene adapter out of it.
+- f59e769: Fixes: undo got stuck on an entry naming a node an untracked edit had removed. `scene.add(n)`, `scene.setPose(n, p)`, then `scene.untracked(() => scene.remove(n))`, which is what `reconcileSpecs` does when outside data drops a node, left `scene.undo()` throwing `unknown node id "n"` with the entry still on top, so nothing beneath it could be undone. A replayed op whose node is gone is now skipped, and the rest of its entry applies; so is one that would restore a node an untracked edit already added back under that id, which used to overwrite the live node. The inverse of a skipped op is skipped too, so undo then redo leaves the scene as it was. This covers the scene's own edits and ops applied through `scene.applyBatch` or `scene.history`. A first apply still throws on an unknown id. The skip rule was chosen on an agent's judgment over dropping the entries or clearing history.
+- e69e97f: Outline Stroke and a Boolean operation that counts strokes outline each stroke in the frame the canvas draws it in. A `{ px }` width is measured on screen, so under a view that scales its axes apart a line across the page and a line down it get different world widths, where both took the mean scale. A world width is skewed and stretched with its node when the adapter says how the node is drawn.
+  
+  New API: `getStrokeFrame(id)` on `BooleansAdapter` and `CreateOutlinesAdapter`, optional, answering the node's `poseFrameOf` to world. `BooleanOpOptions.scale` and `applyOutlineStroke`'s `scale` take the view's per-axis scale as well as a number (`StrokeRegionOptions`). The built-in Pathfinder and Outline Stroke actions pass the view's scale per axis.
+  
+  `applyOutlineStroke` no longer takes `StrokeToPathOptions`: a `frame` passed there is ignored, and `getStrokeFrame` is how a node's frame is given.
+- 9c19d5e: stroke: a new package holding a stroke as geometry, moved out of core. `tessellateStroke` and `resolveStrokeWidth` build the ribbon mesh; `registerMarker`, `getMarker`, `listMarkers`, `markerRegistry`, `markerGeneration`, and `BUILTIN_MARKERS` are the marker registry; `markerSites`, `markerHeads`, `markerInset`, `markerKeyOf`, `resolveMarkerSize`, `strokeInsets`, and `markerReach` place and measure marker heads; `strokeToPath` outlines the whole stroke as a path. It depends on `@weasel-js/geom`, `@weasel-js/paint`, and `@weasel-js/registry`, and has no scene and no React.
+  
+  The stroke metric functions the renderer uses are exported here too (`strokeSpaceOf`, `polylineIntoMetric`, `coordsOutOfMetric`, and the rest, with `StrokeMetric`, `ScreenSpace`, and `StrokeSpaces`), as are `splitForDash`, `populatePolylineWidths`, `trimInSpace`, `markerHeads`, `markerReadsKey`, and `markerReach`. These were not exports of `@weasel-js/core` before; they are additions. `_resetMarkersForTests` is at `@weasel-js/stroke/test-seams`.
+  
+  `@weasel-js/core` still exports every name it did before.
+- 0e1f269: A canvas hears of a scene-layer change from its adapter instead of polling for one at paint. `LayerEnumerableAdapter` gains an optional `subscribeLayers(listener)`, which the adapter `<SceneCanvas>` builds implements, and a layer added, removed, or reordered now paints on the next frame; the poll skipped one. This adds API. A hand-written adapter that implements `getLayers` and changes the list after mount has to implement `subscribeLayers` too, or the canvas keeps the list it mounted with. That trade was made on an agent's judgment.
+- 5b1a788: A `Target` answers its committed value with `committed()`, writes it with `commit(value)`, and carries its `axes`. Additive. Core's pose helpers, coast, and lifecycle wrapper read the committed pose through these, where they reached the animator's private state for it.
+- d3b9057: A target can be read as numbers. `target.readInto(out, at?)` writes the value on screen as its axes into a `Float64Array`, `Float32Array`, or array the caller owns, `target.axisCount` numbers from `at`, with no value built: for a painter reading thousands of targets a frame.
+  
+  `TargetAxes` takes two optional functions that make reads cheaper. `add(value, delta)` answers the value with a delta applied axis by axis, and `read()` uses it to skip the array of axes it used to build. `write(value, out, at)` puts a value's axes straight into a buffer, for `readInto`. Every axes mapping the kit supplies defines both: the default for a number, an array, or an object of numbers, `RECT_POSE_DESCRIPTOR`, `pathPoseDescriptor`, `viewAxes`, and `skeletonAxes`. Axes without them work as before.
+- 4fe6756: `createTargetTable({ axes })` keeps many like values as rows of numbers an animator can move: particles, dots, vertex colors. `table.add(value)` answers a row, `table.target(row)` is that row as a `Target`, so it tweens, springs, coasts, and holds like any other, and `table.shown` is every row's value on screen in one `Float64Array`, filled by the animator once a frame. `table.committed` holds the values the rows rest at, `table.set(row, value)` writes one, and `table.remove(row)` frees a row for the next `add`.
+  
+  Reading 10,000 moving values through a target apiece costs about 140 ns each; the table's pass over them costs 3 to 4 ns a row, and the same at 100,000. A row with a hold on it is part of that pass too, unless a tween or spring with a destination is running under the hold.
+- 9fa373d: text-dom: a new package holding in-place text editing, moved out of core. `useTextEdit` mounts a contenteditable overlay over a box on screen and commits styled runs; `runsToDom`, `domToRuns`, `charOffsetToDomPosition`, and `domPositionToCharOffset` convert between runs and the overlay's DOM. The types `TextEditScreenPose`, `TextEditClipRect`, `TextEditCommit`, `TextEditSelection`, `StartEditOptions`, `UseTextEditOptions`, `UseTextEditReturn`, and `StyleToggle` come with it, as does `TEXT_EDIT_FONT_HOLD`. It depends on `@weasel-js/text`, `@weasel-js/font`, `@weasel-js/paint`, and `@weasel-js/react`, needs React, and has no scene.
+  
+  The `text-dom@1.9.4` seeded on npm exports `overlayTop` and `baselineDrop`, which are internal; this release takes them off the entry. `@weasel-js/core` still exports every name it did before, and `useSceneTextEdit` stays in core.
+- b76089a: text: `pointInTextPose`, `caretIndexAt`, `fitTextPose`, `renderLabel`, `defaultLabelTextRenderer`, and `isTextData` live here now, with the `PointInTextPoseOpts`, `FitTextPoseOptions`, and `LabelOptions` types. None of them needed a scene. `@weasel-js/core` still exports every one of them.
+- 54242f0: Breaking: `layoutRuns` no longer returns `groups` or `decorations`, and no longer takes `outlineMinSize`. It places glyphs and reads no paint; `paintRuns(laid, runs, { outlineMinSize })` derives what to draw for a layout and returns `{ groups, decorations }`.
+  
+  ```ts
+  const laid = layoutRuns(runs, opts);
+  const { groups, decorations } = paintRuns(laid, runs, { outlineMinSize });
+  ```
+  
+  `cachedPaintRuns` is the memoized form, beside `cachedLayoutRuns`. A layout's lines each carry `glyphs`, one `PlacedGlyph` per code point in visual order, which is what `paintRuns` and `textToPath` read. The `LaidOutGroup`, `LaidOutQuad`, `LaidOutOutlineGlyph`, and `LaidOutDecoration` shapes are unchanged, and groups still come in the order their first glyph appears.
+  
+  The layout cache no longer keys on a run's fill, stroke, or decorations, or on the outline threshold, so two runs arrays that differ only there share one layout. It also survives a dynamic glyph bake landing: `faceGeneration()` in `@weasel-js/font` advances when faces change and holds still for a bake, where `glyphGeneration()` advances for both.
+  
+  Paint identity is structural, and has one definition. `paintKey`, `strokeKey`, `fillHasInk`, and `strokeHasInk` are new in `@weasel-js/paint`. Two equal gradients built separately are one paint, so text runs filled with them share a group where each used to get its own. `textToPathsByPaint` now groups a zero-width or unpainted stroke with no stroke.
+  
+  `@weasel-js/font` gains `metricsOf(resolved)`, the advances, kerning, and baseline of whichever tier a face resolved to, and `glyphIn` / `resolveGlyph`, which find one code point's glyph in that tier and then in the dynamic tier. Layout's missing-glyph and no-metrics warnings moved there and read `weasel:` where they read `weasel layoutRuns:`; `_resetFontRegistryForTests` and `_resetFallbackForTests` clear them. `@weasel-js/text/test-seams` gains `_resetBidiWarningForTests`.
+  
+  Fixes:
+  
+  - A run whose fill holds no paint (`fill: {}`) drew black from an atlas or the canvas tier. It now draws nothing, as `fill: null` does.
+  - A run set in a canvas-tier family reported `drawsInk: true`, with no warning, for a code point its face could not rasterize. It now reports `false` and warns once, as an atlas run that escalates to the canvas tier does.
+  - A default-ignorable code point (a joiner, a variation selector, a zero-width space) that the canvas tier serves as no advance and no ink is a glyph, not a miss. An atlas run that escalated one warned that it had no glyph and dropped the letter spacing of the cluster it closed; it now does neither.
+  - A zero-advance glyph that escalated to the canvas tier was reported as missing until its bake landed.
+  - A family the registry had already warned "will not render at all" about got a second, no-metrics warning from layout.
+  - Text made only of Arabic-Indic digits or Arabic number signs triggered the "right-to-left characters but no `bidi` engine" warning, though it lays out the same with an engine. So did left-to-right text holding a byte order mark, an Arabic comma, or an ornate parenthesis.
+  
+  Adds to the `@weasel-js/core` barrel: `paintRuns`, `cachedPaintRuns`, and the types `LaidOutCell`, `PlacedGlyph`, `PaintRunsOpts`, and `PaintedRuns`.
+- ad10f82: Fixes: editing a text node whose pose is turned or carries a `transform` put the edit overlay on the node's unturned, unskewed box, and a double-click opened the editor from that box where no text is drawn. `useSceneTextEdit` hands the overlay the frame the node is drawn in, and takes a double-click back through it before testing it against the text.
+  
+  Adds API: `TextEditScreenPose.frame`, the linear part `[a, b, c, d]` of the frame a text box is drawn in, applied about the box's center. `useTextEdit` writes it into the overlay's CSS transform with the `zoom`.
+- 4042637: A timeline track can move a target, a value can be held on one, and an animation's clock now starts with its frame.
+  
+  - `animator.hold({ target, value, weight? })` shows `value` on a target in place of its committed value until canceled or released: a drag preview, a value driven from outside. `value` and `weight` are plain or functions read each frame; the handle's `touch()` says a function's answer changed between frames. Animations on the target add on top of a hold. Several holds on one target show their weighted average, and whatever their weights leave short of 1 goes to the committed value. Canceling or `release()` commits what the hold was showing, so the target stays put; `release({ commit: false })` lets it fall back. A hold of plain values does not keep the frame loop running. `'hold'` is a new `AnimationKind`.
+  - `SampledTrack` takes `target` and `weight`, and `onTick` is now optional. While the playhead is within the track's keys the target shows the sampled value, the same frame the playhead moves, including after a seek and across a loop seam. Past its last key, or when the timeline finishes or is canceled, the target keeps the value it was showing. Before its first key the track leaves the target alone.
+  - **Behavior change:** an animation started while the animator is already running counts its time from the last frame, not from the moment of the call. Its first frame then advances by the whole frame, as the value it shows always did, so a tween's end, a timeline's playhead, and its events line up frame for frame. An animation started between frames reaches a given time up to one frame sooner than before. Starting on an idle animator is unchanged.
+- 90f8ec4: Adds API: types that documented exports already named, and that a consumer could not import, are now exported. `@weasel-js/core`: `CameraProps`, `CanvasViewState`, `CanvasLayers`, `SceneSlotLayers`, and `OpsApplier`. `@weasel-js/animator`: `Naming`. `@weasel-js/gestures`: `Point`. `@weasel-js/ui`: `LiveControl`, `OnTokenChange`, and `OptionKey`, the `string | number` a `Select`, a `ComboBox`, and `useAsyncOptions` each declared privately as `Key`.
+  
+  Adds API: `strokeRegion` in `@weasel-js/core`, the region a stroke covers along a path, which `applyOutlineStroke`'s documentation pointed at and `StrokeRegionOptions` already described.
+- a297730: Fixes: a marquee or lasso in `intersect` mode drawn wholly inside a closed shape with no fill selected it, though a click there did not. A region now takes an unfilled shape only where it meets the outline or encloses it. This changes what a marquee selects: one drawn inside a stroke-only rect to reach the nodes within it no longer takes the rect too.
+  
+  Adds API: `polygonIntersectsPath(polygon, path, { filled: false })` in `@weasel-js/geom` reads a closed subpath as a line, and `regionTakes` takes a sixth argument, `filled`, a thunk asked only when the bounds cannot decide. Both default to filled.
+- 38fd203: Adds API: arithmetic across units. `resolveUnitExpr('50% + 2ft', { unitSystem, percentOf })` returns base units, and `parseUnitExpr` returns the expression as plain data (`UnitExpr`), so a stored one resolves again when the length its percentage is measured against changes. It reads `+ - * /`, parentheses, and adjacent terms as one compound value (`5ft 3in`). Both are re-exported from `@weasel-js/core`.
+  
+  Decided on an agent's judgment: a bare number beside `+` or `-` is base units and beside `*` or `/` a scalar; a measure over a measure is a scalar; a product of two measures, a scalar over a measure, and a unit with an offset (degC) anywhere inside arithmetic all throw; `%` resolves against `percentOf` unless the unit system defines a `%` unit of its own.
+- 9ad34e0: Adds API: a unit system nested in another. A `UnitScope` is a `UnitSystem` plus the `scale` one of its base units is worth in the scope around it, so a sub-assembly drawn in millimeters can sit in a scene measured in inches. `resolveScoped(value, scopes)` reads a value against the innermost scope and returns the outermost scope's base units, converting at each boundary; `toRoot` and `fromRoot` convert a bare measure each way; `formatScoped` writes a root measure in an inner unit; and `scopesOf(id, root, tree)` collects the chain for a node from a `parentOf` and a `scopeOf`. All are re-exported from `@weasel-js/core`.
+  
+  Decided on an agent's judgment: a value is resolved only against the innermost scope's units, so `ft` inside a metric scope throws; and a node's own scope covers its children, not the node, unless `scopesOf` is asked to be `inclusive`.
+- 1d34f51: react: `useCanvasFocus` lives here now, with `UseCanvasFocusOptions` and `CanvasFocusReturn`. `@weasel-js/core` still exports all three.
+- 80b29f6: react: `useVisibleRaf` lives here now, with its `VisibleRaf`, `VisibleRafOptions`, and `VisibleRafTarget` types, so a package below core can run a frame loop behind the visibility gate. `@weasel-js/core` still exports all four.
+- 6941e0c: A stroke of the weight tool can bend the path as it is painted. This is additive, with one breaking edge for anyone who wrote a `RigEditState` by hand.
+  
+  - `RigEditState` now also holds the weights a stroke has painted and not yet written: `painted()` and `paint(next)`, with `listen` told of both. `createRigEditState()` makes one as before; an object written by hand to that interface needs the two new members.
+  - `useRigNode` takes `painting`, anything with `painted()` and `listen()` (the new `PaintedSkins` type). Give it the `RigEditState` the weight tool has and the rig binds the painted weights in place of each node's `data.skin` while the stroke runs, so a bent arm moves under the brush. Without `painting` a stroke shows on the path when it ends, as before.
+  - The document is still written once, as the stroke ends, and a canceled stroke leaves the rig on the document's weights.
+- 98ec291: Adds API: `useWeightTool({ scene, rig })`, a tool that paints bone weights on the canvas. It works on every path under the rig node and writes each one's `data.skin`. A click on a joint makes it the active one. A drag is a round brush: points under it follow the active joint more, the nearer the brush's center, and their other joints give way so each point still sums to 1. With Alt held they follow it less. A click away from any joint is one dab. Every point, curve handles included, shows as a dot colored by the active joint's share of it, with the skeleton drawn over them. A stroke is one undo entry. Its key is W; mount it with `tools={{ weight }}`, and hand it the same `createRigEditState()` as the bone tool so both act on one joint.
+  
+  `setWeights(skin, count, joint, weights)` and `brushWeights(coords, x, y, radius, current, mode)` are the pure edits behind it, in `@weasel-js/animator`.
+  
+  The rig in view is bound from the document, so a stroke bends the path when it ends, not while it is painted.
+- 0d1c052: `createWrittenPoseTarget({ read, write, descriptor?, onRest? })` makes a pose target over a store that holds one pose per node and has no overrides table, such as a hand-written adapter's. It keeps the committed pose while the node moves and writes the store the pose on screen each frame. Hand it back from the adapter's `poseTarget(id)` and moves on one node add: a second `tweenPose` no longer cancels the first, and `springPose` starts at their combined velocity. Canceling a move leaves the store at the pose on screen. A write to a moving node's pose from somewhere else is overwritten at the next frame.
+- Updated dependencies [a695295]
+- Updated dependencies [122a09c]
+- Updated dependencies [bc7cd74]
+- Updated dependencies [cd8cbbd]
+- Updated dependencies [1f7548d]
+- Updated dependencies [a86d79f]
+- Updated dependencies [96a63de]
+- Updated dependencies [7140b5a]
+- Updated dependencies [89a2c50]
+- Updated dependencies [9f5cdb2]
+- Updated dependencies [1837952]
+- Updated dependencies [99553f7]
+- Updated dependencies [5149cce]
+- Updated dependencies [de60e10]
+- Updated dependencies [2892438]
+- Updated dependencies [b3dec78]
+- Updated dependencies [e80de55]
+- Updated dependencies [126116b]
+- Updated dependencies [9296fb4]
+- Updated dependencies [6ba0496]
+- Updated dependencies [b1f7521]
+- Updated dependencies [d675fed]
+- Updated dependencies [67b7639]
+- Updated dependencies [18547a3]
+- Updated dependencies [d635e84]
+- Updated dependencies [d9620a2]
+- Updated dependencies [bc9f367]
+- Updated dependencies [a15b3f8]
+- Updated dependencies [95c01e4]
+- Updated dependencies [b3f1e4a]
+- Updated dependencies [329f658]
+- Updated dependencies [7063584]
+- Updated dependencies [229ee1c]
+- Updated dependencies [06003a5]
+- Updated dependencies [c5a7bd3]
+- Updated dependencies [7bac60f]
+- Updated dependencies [fb715f4]
+- Updated dependencies [3777548]
+- Updated dependencies [de319ce]
+- Updated dependencies [3a92afc]
+- Updated dependencies [1bd7fdc]
+- Updated dependencies [3bacb3e]
+- Updated dependencies [b260415]
+- Updated dependencies [66d5455]
+- Updated dependencies [d58d2e8]
+- Updated dependencies [3adb0d9]
+- Updated dependencies [a275f78]
+- Updated dependencies [605ace8]
+- Updated dependencies [82cc3fa]
+- Updated dependencies [0db7e81]
+- Updated dependencies [2425281]
+- Updated dependencies [6bb8035]
+- Updated dependencies [bc15034]
+- Updated dependencies [6273d6c]
+- Updated dependencies [38866bc]
+- Updated dependencies [1ce19c9]
+- Updated dependencies [5c7d50f]
+- Updated dependencies [7f8ab55]
+- Updated dependencies [be611ae]
+- Updated dependencies [c0f1190]
+- Updated dependencies [b3d4383]
+- Updated dependencies [6b11cac]
+- Updated dependencies [a6dff38]
+- Updated dependencies [54b013c]
+- Updated dependencies [a8ef308]
+- Updated dependencies [5996856]
+- Updated dependencies [54174b6]
+- Updated dependencies [4edad85]
+- Updated dependencies [a428b54]
+- Updated dependencies [94f353d]
+- Updated dependencies [56da358]
+- Updated dependencies [335f192]
+- Updated dependencies [7b9de2d]
+- Updated dependencies [21b6db7]
+- Updated dependencies [1c8c3fc]
+- Updated dependencies [ea54a64]
+- Updated dependencies [c4209cb]
+- Updated dependencies [6ea5171]
+- Updated dependencies [a071085]
+- Updated dependencies [505a75f]
+- Updated dependencies [143613a]
+- Updated dependencies [d7af897]
+- Updated dependencies [955defa]
+- Updated dependencies [1ee5335]
+- Updated dependencies [27b827e]
+- Updated dependencies [d02d059]
+- Updated dependencies [ee08fa5]
+- Updated dependencies [01d6e4e]
+- Updated dependencies [813aea2]
+- Updated dependencies [3558fbb]
+- Updated dependencies [fa0ecbe]
+- Updated dependencies [bffba0a]
+- Updated dependencies [efc5cea]
+- Updated dependencies [32e243f]
+- Updated dependencies [233f856]
+- Updated dependencies [4b0a7d7]
+- Updated dependencies [5c9d69f]
+- Updated dependencies [bbb538e]
+- Updated dependencies [9c19d5e]
+- Updated dependencies [bf9a262]
+- Updated dependencies [b8eba2f]
+- Updated dependencies [9fa373d]
+- Updated dependencies [ded9e52]
+- Updated dependencies [28f1f55]
+- Updated dependencies [b2a1c61]
+- Updated dependencies [b76089a]
+- Updated dependencies [54242f0]
+- Updated dependencies [ad10f82]
+- Updated dependencies [222fd80]
+- Updated dependencies [70cf20d]
+- Updated dependencies [b75cc8e]
+- Updated dependencies [6073365]
+- Updated dependencies [46fcc7e]
+- Updated dependencies [90f8ec4]
+- Updated dependencies [a297730]
+- Updated dependencies [38fd203]
+- Updated dependencies [9ad34e0]
+- Updated dependencies [1d34f51]
+- Updated dependencies [534c866]
+- Updated dependencies [80b29f6]
+- Updated dependencies [0cef6a3]
+- Updated dependencies [98ec291]
+  - @weasel-js/prefs@1.10.0
+  - @weasel-js/routing@1.10.0
+  - @weasel-js/geom@1.10.0
+  - @weasel-js/text@1.10.0
+  - @weasel-js/animator@1.10.0
+  - @weasel-js/font@1.10.0
+  - @weasel-js/renderer@1.10.0
+  - @weasel-js/text-dom@1.10.0
+  - @weasel-js/paint@1.10.0
+  - @weasel-js/history@1.10.0
+  - @weasel-js/cursor@1.10.0
+  - @weasel-js/gestures@1.10.0
+  - @weasel-js/quantity@1.10.0
+  - @weasel-js/react@1.10.0
+  - @weasel-js/modes@1.10.0
+  - @weasel-js/registry@1.10.0
+  - @weasel-js/simulation@1.10.0
+  - @weasel-js/stroke@1.10.0
+  - @weasel-js/select@1.10.0
+
 ## 1.9.4
 
 ### Patch Changes

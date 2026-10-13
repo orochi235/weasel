@@ -1,5 +1,25 @@
 # @weasel-js/audio
 
+## 1.10.0
+
+### Patch Changes
+
+- 6ceb6b2: Adds API, on an agent's judgment: `onLate(lateMs, when)` on `createAudioEngine` and `createScheduler`. It is called for each voice or scheduled callback that came due after its time because the main thread stalled for longer than the lookahead, with how late it was, in ms on the audio clock. An event booked inside the lookahead, or for a time already past, is not reported: no pass was meant to catch it.
+- c461587: Adds API: generative scoring from a mood, designed on an agent's judgment and checked only against a fake audio context. Nobody has listened to it yet.
+  
+  - `createScore(engine, { mood, tonic?, bus?, gain?, seed?, onBar? })` plays music written a bar at a time from a `ScoreMood`: `valence` (-1 to 1), `tension` and `urgency` (0 to 1). `setMood` lands on the next bar line, tempo included. `state()` and `onBar` report the cue in force, each cue's share of the mood, and every parameter the bar was written from, so a consumer can show what is being applied.
+  - `scoreParams(mood)` resolves a mood to `ScoreParams`. Each parameter follows one axis: valence sets the mode, register and spread; tension the harmony and layer count; urgency the tempo, pulse density, articulation, harmonic rhythm and attack.
+  - `scoreCues` lists the four named devices (`dread`, `investigation`, `wonder`, `urgency`) with the mood that produces each and a sentence on what it does; `readScoreCue(mood)` names the nearest and weighs the rest.
+  - `scoreChord` and `scoreBar` write a chord as MIDI notes and a bar as pattern events, for a `createPatternPlayer` of `SCORE_BAR_STEPS` steps. `scoreModes` holds the scales.
+- fe70fd8: Fixes: a pattern event on a fractional `step` never played, because the player looked events up by whole step. It is booked with the step it sits in and sounds that fraction of a step later, so `{ step: 2.25 }` is a hit that drags a quarter of a step, and the default pattern length counts it by the step it sits in.
+  
+  Adds API, on an agent's judgment:
+  
+  - `PatternPlayerOptions.detune` and `PatternPlayer.setDetune`: cents added to every event's own `detune`, as a number or a function of the event's step (`PatternDetune`), for a loop that drifts in pitch. A new value takes effect from the next step not yet booked.
+  - `patternVoicePeaks(events, opts)`: the most voices a pattern holds at once on each bus, to set against `voiceLimit`. It counts a note through its gate and release, a voice from one lookahead before it sounds (when the engine takes its slot), and a loop's tail against the start of the next pass.
+  - `patternLength(events, stepsPerBeat?)`: the length a player gives a pattern that names none.
+- ebc8afa: Fixes: a pattern player driven from its own `onStep` ran two sequences at once. `setTempo` called there booked a next step, and the step that was firing then booked another, so every later step played twice, once at each tempo. `stop` called there left one booking behind, which a later `start` picked up as a second sequence. A tempo set from inside `onStep` now starts with the step after the one reported, which keeps the length its events were gated by, and a step stopped from inside `onStep` books nothing.
+
 ## 1.9.4
 
 ### Patch Changes
