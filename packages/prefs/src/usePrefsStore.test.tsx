@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { createMemoryAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import { StrictMode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from './groups';
 import { usePrefsStore } from './react';
 import { recordValue } from './stamp';
@@ -125,6 +125,26 @@ describe('usePrefsStore', () => {
     unmount();
     await settle();
     expect(seen.live).toBe(0);
+  });
+
+  it('warns when a second mounted caller takes the prefix with another schema, and not when one caller changes its own', async () => {
+    const wider = { name: 'Test', children: { density: { ...SCHEMA.children.density, max: 1000 } } } satisfies PrefGroup;
+    const { storage } = counted();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const first = renderHook(
+      ({ schema }: { schema: typeof SCHEMA }) => usePrefsStore(schema, { storage, prefix: 'p.' }),
+      { initialProps: { schema: SCHEMA } },
+    );
+    first.rerender({ schema: wider });
+    expect(warn).not.toHaveBeenCalled();
+    const second = renderHook(() => usePrefsStore(SCHEMA, { storage, prefix: 'p.' }));
+    expect(warn).toHaveBeenCalledWith(
+      '[prefs] two mounted usePrefsStore callers name the prefix "p." with different schemas; the store one of them holds is now closed',
+    );
+    warn.mockRestore();
+    first.unmount();
+    second.unmount();
+    await settle();
   });
 
   it('replaces the store when the schema changes, the old one flushed first', async () => {
