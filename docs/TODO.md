@@ -244,11 +244,6 @@ Priority tags:
   the scene walk passes the painter's ink, but `arrayAdapter` has only its `silhouette` config and
   nothing that says how an item is inked.
 
-- **(P3) WeaselDraw: no browser has drawn an imported clipped group.** A `<g clip-path>` reaches
-  the scene as a container whose `data` is the clip, and the unit tests stop at that data. What is
-  left is a `*.browser.test` that opens one and reads a pixel inside the group's box and outside
-  the clip's outline.
-
 - **(P3) svg import: `<tspan>` glyph positioning is not read.** `dx`, `rotate`, and list-valued
   per-glyph `x` / `y` are not applied; each warns, on `<text>` and `<tspan>` alike
   (`packages/svg/src/tspanLines.ts`). Kerned text exported as one `<tspan>` per glyph run imports
