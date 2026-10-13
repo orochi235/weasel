@@ -426,23 +426,6 @@ const NO_SELECTION: SelectionApi['current'] = [];
 
 const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
 
-/** The origin a canvas-local point is measured from. */
-const CANVAS_ORIGIN = { left: 0, top: 0 };
-
-/** Client coords to world, through the `clientToWorld` prop when one is
- *  supplied and the canvas rect otherwise. Every pointer path in this file
- *  goes through here so the two cannot drift. */
-function toWorld(
-  canvas: HTMLElement,
-  clientX: number,
-  clientY: number,
-  view: View,
-  override: CanvasProps<never, never>['clientToWorld'],
-): [number, number] {
-  if (override) return override(canvas, clientX, clientY);
-  return clientToWorldHelper(clientX, clientY, canvas.getBoundingClientRect(), view);
-}
-
 function CanvasInner<TNode extends { id: string }, TPose>(
   props: CanvasProps<TNode, TPose>,
   ref: React.ForwardedRef<CanvasExtensionApi>,
@@ -599,6 +582,18 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     helpersForLayersRef.current,
   ), [hitTestExtrasIn, dimsRef, viewRef]);
 
+  // The one client→world conversion: hover, the HUDs, the view registry and
+  // both handles answer with it, so a `clientToWorld` override reaches all of
+  // them or none.
+  const clientToWorldRef = useLatest(clientToWorld);
+  const toWorld = useCallback((clientX: number, clientY: number): [number, number] => {
+    const el = canvasRef.current;
+    if (!el) return [clientX, clientY];
+    const override = clientToWorldRef.current;
+    if (override) return override(el, clientX, clientY);
+    return clientToWorldHelper(clientX, clientY, el.getBoundingClientRect(), viewRef.current);
+  }, [clientToWorldRef, viewRef]);
+
   useLayoutEffect(() => {
     const element = canvasRef.current;
     if (!element) return;
@@ -630,6 +625,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     element: detached ? inputElement ?? null : canvasRef.current,
     surface: detached ? paintInto?.canvas ?? null : ownCanvasRef.current,
     getSurfaceRect,
+    clientToWorld: toWorld,
     requestRedraw,
     subscribeFrame,
     subscribeBeforePaint,
@@ -643,7 +639,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     paintedCursor,
     getDebug,
   }), [canvasRef, ownCanvasRef, detached, inputElement, paintInto?.canvas,
-       getSurfaceRect, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume,
+       getSurfaceRect, toWorld, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume,
        registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,
        paintedCursor, getDebug]);
@@ -673,12 +669,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
     [pickBestRef],
   );
-  const clientToWorldRef = useLatest(clientToWorld);
-  const toWorldForHud = useCallback((clientX: number, clientY: number): [number, number] => {
-    const el = canvasRef.current;
-    if (!el) return [clientX, clientY];
-    return toWorld(el, clientX, clientY, viewRef.current, clientToWorldRef.current);
-  }, [clientToWorldRef, viewRef]);
   const selectedIdsForWiring = selection?.current ?? NO_SELECTION;
 
   // One view's overlay-aware state. A hook, so N views are N components each
@@ -798,13 +788,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       requestRedraw,
       chromeState: () => helpersForLayersRef.current!.getChromeState(),
       hitTestExtras: hitTestExtrasIn,
+      clientToWorld: toWorld,
       claimsAbove: (x, y) => {
-        const view = viewRef.current;
-        const [worldX, worldY] = clientToWorldHelper(x, y, CANVAS_ORIGIN, view);
-        return hitTestExtrasIn(worldX, worldY, view, dimsRef.current, helpersForLayersRef.current) !== null;
+        const corner = canvasRef.current?.getBoundingClientRect();
+        const [worldX, worldY] = toWorld(x + (corner?.left ?? 0), y + (corner?.top ?? 0));
+        return hitTestExtrasIn(worldX, worldY, viewRef.current, dimsRef.current, helpersForLayersRef.current) !== null;
       },
     });
-  }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef]);
+  }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef, toWorld]);
 
   const layersWithDebug = useMemo(() => {
     // Views paint through the surface's own stack, so they sit above it and
@@ -946,9 +937,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     focusOnPress: autoFocusOnPointerDown,
     onFocus,
     onBlur,
-    onHover: (el, e) => {
+    onHover: (_el, e) => {
       const view = viewRef.current;
-      const [worldX, worldY] = toWorld(el, e.clientX, e.clientY, view, clientToWorld);
+      const [worldX, worldY] = toWorld(e.clientX, e.clientY);
       const visibility = layerVisibility ?? NO_LAYER_VISIBILITY;
       // Same gate as `hitTestExtrasIn`: a layer nobody can see takes no input.
       for (const layer of layersWithDebug) {
@@ -976,7 +967,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           canvasRef={canvasRef}
           {...(detached ? { anchorRef: canvasRef } : {})}
           viewRef={viewRef}
-          toWorld={toWorldForHud}
+          toWorld={toWorld}
         />
       )}
       {pickHud && (
@@ -984,7 +975,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           canvasRef={canvasRef}
           {...(detached ? { anchorRef: canvasRef } : {})}
           viewRef={viewRef}
-          toWorld={toWorldForHud}
+          toWorld={toWorld}
           pickEvery={stablePickEveryForHud}
           pickBest={stablePickBestForHud}
         />
