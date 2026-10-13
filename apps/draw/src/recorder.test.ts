@@ -83,20 +83,16 @@ describe('createRecorder', () => {
     expect(byType['pointermove']).toBe('other');
   });
 
-  it('t is monotonic and starts near 0', async () => {
-    const rec = createRecorder({ canvas: () => canvas });
+  it('stamps each event with the clock time since start', () => {
+    let t = 1000;
+    const rec = createRecorder({ canvas: () => canvas, clock: () => t });
     rec.start();
     canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-    // Yield to give performance.now() some room to advance.
-    await new Promise((r) => setTimeout(r, 5));
+    t += 7;
     canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
-    await new Promise((r) => setTimeout(r, 5));
+    t += 12;
     canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-    const out = rec.stop();
-    expect(out.events).toHaveLength(3);
-    expect(out.events[0].t).toBeLessThan(50); // near zero
-    expect(out.events[0].t).toBeLessThanOrEqual(out.events[1].t);
-    expect(out.events[1].t).toBeLessThanOrEqual(out.events[2].t);
+    expect(rec.stop().events.map((e) => e.t)).toEqual([0, 7, 19]);
   });
 
   it('default gesture-only profile drops pointermove outside an active gesture', () => {

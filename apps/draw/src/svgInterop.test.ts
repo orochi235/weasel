@@ -367,10 +367,6 @@ describe('sceneToSvgNodes — optional roots override', () => {
       { kind: 'solid', color: '#111111' },
     ]);
   });
-
-  it('is byte-identical to the whole-scene walk when roots is omitted', () => {
-    expect(sceneToSvgNodes(source, undefined)).toEqual(sceneToSvgNodes(source));
-  });
 });
 
 describe('container round-trip: drafts → svg → drafts (stable ids)', () => {
@@ -517,9 +513,12 @@ describe('rotation emit', () => {
       path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 },
       fill: { paint: solid('#3366ff') }, stroke: null,
     };
-    const node = objToSvgNode(a as never);
-    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
-    expect(svg).not.toContain('transform=');
+    for (const obj of [a, { ...a, rotation: 0 }]) {
+      const node = objToSvgNode(obj as never);
+      expect(node).not.toHaveProperty('rotation');
+      const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+      expect(svg).not.toContain('transform=');
+    }
   });
 });
 

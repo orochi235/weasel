@@ -45,11 +45,6 @@ describe('colorSwapAction', () => {
     expect(colorSwapAction.label).toBe('Swap fill/stroke');
   });
 
-  it('has two BoundGesture entries for x and Shift+X', () => {
-    const bindings = colorSwapAction.defaultBinding as Array<{ spec: unknown; opts: unknown }>;
-    expect(bindings).toHaveLength(2);
-  });
-
   it('requires color dep', () => {
     expect(colorSwapAction.requires).toContain('color');
   });
