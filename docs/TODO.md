@@ -1072,10 +1072,6 @@ only story runner in the repo.
   `tests/perf/draw-loop.spec.ts` on 2026-10-13 printed -0.15 ms for `scene` and -0.07 ms for
   `rotated` in the 100-command row. Not investigated.
 
-- **(P3) `watchElementMove` stops watching a host that is zero-sized when a frame is built.**
-  `packages/core/src/canvas/watchElementMove.ts`. `useHostAnchor`'s `ResizeObserver` recomputes
-  when the host gains size, but the position watch does not restart. Read from the code, not tested.
-
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
   failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a
   `locator.screenshot` timeout, and passed in the runs around it:
