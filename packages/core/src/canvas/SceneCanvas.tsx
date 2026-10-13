@@ -536,21 +536,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [featuresKey, hasViewport],
   );
 
-  const inertiaEnabled = !!viewport?.inertia;
-  const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
-  // `inertia: true` means "on with kit defaults", so an enabled-but-objectless
-  // config still has to reach the tool — an empty object, not `undefined`,
-  // which the tool reads as off.
-  const handToolInertia = inertiaEnabled
-    ? {
-        friction: inertiaObj?.friction,
-        minSpeed: inertiaObj?.minSpeed,
-        boundary: inertiaObj?.boundary,
-        bounds: inertiaObj?.bounds,
-      }
-    : undefined;
   // Always called per rules-of-hooks; only registered below when requested.
-  const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
+  const handTool = useHandTool({ inertia: viewport?.inertia });
 
   // Built-ins to mount: what `defaultTools` lists, plus the tool each preset
   // brings — `select` the select tool, `view` the hand.
