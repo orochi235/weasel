@@ -52,7 +52,7 @@ import { insertAction } from './insert/action';
 import { insertRotateAction } from './insert/rotateAction';
 import { clearSelectionAction } from './defaults/clearSelection';
 import { cloneAction } from './clone/action';
-import { editAnchorsAction } from './defaults/editAnchors';
+import { editAnchorsAction } from './edit-anchors/action';
 import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';

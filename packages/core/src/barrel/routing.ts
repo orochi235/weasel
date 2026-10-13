@@ -37,7 +37,7 @@ export {
   makeViewportWheelPanAction,
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
-export { editAnchorsAction } from '../interactions/actions/defaults/editAnchors';
+export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
 export { lassoSelectAction } from '../interactions/actions/defaults/lassoSelect';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {

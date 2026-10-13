@@ -18,7 +18,7 @@ import { rotateAction } from './rotate/action';
 import { cloneAction } from './clone/action';
 import { insertAction } from './insert/action';
 import { nudgeRightAction } from './defaults/nudge';
-import { editAnchorsAction } from './defaults/editAnchors';
+import { editAnchorsAction } from './edit-anchors/action';
 import { selectAnchorAction, marqueeAnchorsAction } from './defaults/anchorEditing';
 import { makeEditAnchorsDep } from './testUtils';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';

@@ -41,7 +41,7 @@ export { rotateAction } from '../rotate/action';
 export { areaSelectAction } from './areaSelect';
 export { insertAction } from '../insert/action';
 export { cloneAction } from '../clone/action';
-export { editAnchorsAction } from './editAnchors';
+export { editAnchorsAction } from '../edit-anchors/action';
 export { lassoSelectAction } from './lassoSelect';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
