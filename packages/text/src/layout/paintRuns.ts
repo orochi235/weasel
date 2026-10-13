@@ -122,6 +122,9 @@ export function glyphOutlineD(g: PlacedGlyph, run: ResolvedRun, minSize: number 
   // rendering for another; here there is no other, so gating would paint
   // nothing at all.
   if (g.resolved.source === 'outline') return glyphOutline(family, weight, style, g.cp);
+  // A slot the layout left empty has no width to draw in: an outline there
+  // would land on top of its neighbor.
+  if (g.glyph === null) return null;
   if (minSize === undefined) return null;
   // A stroked run ignores the size gate: the SDF tiers have no geometry to
   // stroke, so leaving it below the threshold drops the outline asked for.

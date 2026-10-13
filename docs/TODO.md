@@ -107,8 +107,6 @@ Priority tags:
   - `layoutEntries.ts` kerns each code point against the one before it, so a combining mark
     between two letters takes their pair's kerning away: `A`, U+0301, `B` sets the `B` where an
     unkerned one goes. Seen in `combiningMarkQuad.test.ts`'s fixture, where the pair kerns by 1.
-  - `paintRuns.ts`, `glyphOutlineD`: a code point no tier could serve still gets outline geometry
-    above the outline threshold when the outline face has it, drawn on top of its neighbor.
   - No renderer-level test drives `fill: {}` through an SDF-tier draw; the no-ink rule is pinned
     at the text layer only.
   - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
