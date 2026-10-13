@@ -987,18 +987,15 @@ only story runner in the repo.
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
 
-- **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips
+- **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
   `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
-  a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time,
-  which `@weasel-js/svg` does not have. A justified node is written at its start edge with
+  a wrapped node as one line per hard break. Exporting the laid-out lines needs fonts at serialize
+  time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
-  need per-word `x` placement too, since `text-anchor` has no justify. A hard line break is one
-  line too, and that half needs no fonts: `textXml` (`serialize.ts`) writes a `\n` as a literal
-  newline under `xml:space="preserve"`, which SVG draws as a space (by the spec; not checked in a
-  browser), where the importer already reads a `<tspan x dy>` per line (`LineTracker`). Undecided:
-  browsers ignore an empty `<tspan dy>`, so a blank line either folds into the next line's `dy`
-  and reads back as an uneven pitch, or is lost; and a styled run spanning a break comes back as
-  two runs.
+  need per-word `x` placement too, since `text-anchor` has no justify. The hard-break lines are
+  pitched at the node's font size times its line height (`linesXml` in `tspanLines.ts`), which is
+  where the layout puts them only when no run on the line is larger; a line holding a larger run
+  needs the same fonts. How a browser draws the `<tspan x dy>` lines has not been looked at in one.
 
 - **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
   wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a

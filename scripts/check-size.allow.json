@@ -294,9 +294,6 @@
   "packages/svg/src/parse.ts": {
     "longestFunction": 129
   },
-  "packages/svg/src/serialize.ts": {
-    "lines": 521
-  },
   "packages/text-dom/src/domRuns.ts": {
     "lines": 474
   },

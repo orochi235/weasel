@@ -3,7 +3,8 @@ import {
 } from '@weasel-js/core';
 import type { SvgNode } from './types';
 import { PaintServerRegistry } from './gradients';
-import { registerPaintServers, scriptSizeFace } from './serialize';
+import { registerPaintServers } from './serialize';
+import { scriptSizeFace } from './serializeText';
 
 /**
  * What `serializeSvg(nodes)` reads that loads on demand: the paint kind of
