@@ -682,6 +682,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   nothing. Both sizes are 20px high at the `sm` font size, where `default` is 32px and 22px
   and `flat` 28px and 20px.
 
+- **(P3) A host cannot tell which assets a stored draft changed.** `AssetEditor` reports its
+  changed assets through `onChangedAssets` only once it is mounted, so a host that shows one
+  editor at a time and lists the others' assets as `elsewhere` marks nothing for a source whose
+  draft has not been opened since the page loaded. The draft's text is the editor's own format.
+  Left: a public function that reads a stored draft (its storage, key, codec, and the original
+  workspace) and returns the ids of the assets it changes.
+
 - **(P3) Loose ends of the condition work.** `PrefSchemaEditor` edits an entry's own
   `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
   `{ from: 'item' }` condition is written in code. labkit's `ControlRow` draws a list of plain
