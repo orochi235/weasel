@@ -115,7 +115,7 @@
   grid-row: 4;
   block-size: var(--shelf-h);
   display: flex;
-  gap: var(--wzl-space-3);
+  gap: var(--wzl-space-6);
   min-height: 0;
 }
 /* The structure pane draws its lists into the slot, and they sit in the shelf's row as the export does. */
