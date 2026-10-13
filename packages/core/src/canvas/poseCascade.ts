@@ -11,7 +11,6 @@ interface CascadeScene<TPose> {
 /** The part of a scene a cascading `setPose` writes. */
 interface CascadeTarget<TPose> extends CascadeScene<TPose> {
   setPose(id: NodeId, pose: TPose): void;
-  carry(id: NodeId, pose: TPose): void;
   batch<T>(label: string, fn: () => T): T;
 }
 
@@ -78,7 +77,7 @@ export function cascadingSetPose<TPose>(
       for (const child of descendantsOf(scene, id)) {
         const n = scene.get(child);
         if (!n) continue;
-        scene.carry(child, translatePoseViaDescriptor(n.pose, dx, dy, poseDescriptorForNode(d, n)));
+        scene.setPose(child, translatePoseViaDescriptor(n.pose, dx, dy, poseDescriptorForNode(d, n)));
       }
     });
   };

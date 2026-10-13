@@ -10,6 +10,8 @@
  */
 import type { History, Journal } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
+import { dwarn } from 'debug/flag';
+import { SCENE_HISTORY_FORM, type SerializedSceneHistory } from './historyForm';
 import type { Scene } from './types';
 
 /** What the facade needs from the scene it fronts. */
@@ -19,9 +21,9 @@ export interface SceneHistoryEnv {
   /** Run a step that applies ops through an engine: all-or-nothing, with
    *  scene-side recording suppressed. */
   applying(step: () => void): void;
-  /** An op as the stack should hold it: one whose replay skips a node an
-   *  untracked edit took. */
-  tolerant(op: Op): Op;
+  /** An op as the engine applies it: its entry records the kit ops it
+   *  caused. */
+  causing(op: Op): Op;
   /** Run a step that replays recorded ops: an undo, a redo, a cancel. */
   replay(step: () => void): void;
   notify(): void;
@@ -47,7 +49,7 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv): Journal {
     forkedAtEntryId: raw.forkedAtEntryId,
     applyBatch(ops, label) {
       env.runArrivalEdit(ops, (all) => {
-        env.applying(() => raw.applyBatch(all.map(env.tolerant), label));
+        env.applying(() => raw.applyBatch(all.map(env.causing), label));
         notify();
       });
     },
@@ -110,8 +112,12 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
       const target = Math.max(0, Math.min(total, index));
       return step(() => target !== engine.undoDepth(), () => engine.goto(target));
     },
-    serializeHistory: () => engine.serialize(),
+    serializeHistory: () => ({ ...engine.serialize(), form: SCENE_HISTORY_FORM }),
     restoreHistory(snapshot) {
+      if ((snapshot as Partial<SerializedSceneHistory>).form !== SCENE_HISTORY_FORM) {
+        dwarn('scene', 'restoreHistory: snapshot is not in the current recorded form — dropped');
+        return;
+      }
       // Only the stacks are rebuilt: no op applies.
       engine.restore(snapshot);
       notify();
@@ -124,8 +130,8 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
       refuseUntracked('history.apply');
       runArrivalEdit([op], (all) => {
         const run = () => (all.length === 1
-          ? engine.apply(env.tolerant(op), label)
-          : engine.applyOps(all.map(env.tolerant), label ?? op.label ?? ''));
+          ? engine.apply(env.causing(op), label)
+          : engine.applyOps(all.map(env.causing), label ?? op.label ?? ''));
         env.applying(run);
         notify();
       });
@@ -133,7 +139,7 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
     applyOps(ops, label) {
       refuseUntracked('history.applyOps');
       runArrivalEdit(ops, (all) => {
-        env.applying(() => engine.applyOps(all.map(env.tolerant), label));
+        env.applying(() => engine.applyOps(all.map(env.causing), label));
         notify();
       });
     },

@@ -17,6 +17,11 @@ export interface Op {
    *  no-op. For an op an owner appends to every edit in case it is needed:
    *  left in, it would stop the edit coalescing with one that needed none. */
   elideNoop?: boolean;
+  /** What the entry records in this op's place once it has applied: the ops
+   *  that replay what it did. For an op whose effect is decided as it runs,
+   *  so that undo and redo return to what it wrote rather than working it out
+   *  again. Read once, after the batch's first apply; never on a replay. */
+  caused?(): Op[];
   label?: string;
   coalesceKey?: string;
   /** Stable factory name for op-registry lookup. Kit-emitted ops always

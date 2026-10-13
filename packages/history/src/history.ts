@@ -1,85 +1,12 @@
 import type { Op } from './op';
 import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
+import {
+  rebuilt, snapshot, touchedIdsFromOps,
+  type Entry, type HistoryLogger, type SerializedHistory,
+} from './serialized';
 
-interface Entry {
-  /** Monotonic id assigned at first push. Stable across coalesce merges
-   *  (a merged entry keeps the original id) so UI lists keyed on `id` don't
-   *  flicker when the underlying entry mutates. */
-  id: number;
-  /** Forward ops — applied on redo, reflect the latest to-state after any
-   *  coalescing. Diverges from `baseOps` only after a coalesce. */
-  forwardOps: Op[];
-  /** Original ops at first push — their `.invert()` is what undo replays.
-   *  Preserved across coalesces so undo always returns to the original
-   *  pre-edit state, no matter how many coalesces happened. */
-  baseOps: Op[];
-  label: string;
-  /** `now()` at last push or coalesce: gates the coalesce window, and is the
-   *  entry's place in time for `depthAt` and `prune`. */
-  timestamp: number;
-  /** See `HistoryEntry.pushes`. */
-  pushes: number;
-  /** Node ids touched by ops in this entry. See `HistoryEntry.touchedIds`. */
-  touchedIds: ReadonlySet<string>;
-  /** Selection as of just before this entry's ops ran; restored by undo.
-   *  Undefined when nothing supplied one (no `selection` option, or a
-   *  `recordEntry` call that captured none). */
-  selectionBefore?: readonly string[];
-  /** Selection as of just before this entry was last undone; restored by
-   *  redo. Written on the way past, so it reflects where the user actually
-   *  was rather than where the entry's ops left them. */
-  selectionAfter?: readonly string[];
-}
-
-/** Wire form of a single op inside a serialized history. The pair
- *  `(name, args)` reconstructs a live `Op` via the op-factory registry. */
-export interface SerializedOp {
-  name: string;
-  args: unknown;
-}
-
-/** Wire form of one history entry. `forwardOps` / `baseOps` mirror the
- *  in-memory entry's fields (see `Entry` above) but only carry the
- *  serializable `(name, args)` projection of each op. */
-export interface SerializedHistoryEntry {
-  id: number;
-  label: string;
-  forwardOps: SerializedOp[];
-  baseOps: SerializedOp[];
-  /** See `HistoryEntry.pushes`. Absent in snapshots that predate it; read as 1. */
-  pushes?: number;
-  /** See `HistoryEntry.timestamp`. Absent in snapshots that predate it; read as 0. */
-  timestamp?: number;
-  selectionBefore?: readonly string[];
-  selectionAfter?: readonly string[];
-}
-
-/** Snapshot of an entire `History` instance. Designed to live alongside the
- *  scene snapshot so a reload restores the undo / redo stacks to exactly
- *  where they were. Op `args` are carried by reference, so the snapshot is
- *  as serializable as they are: JSON drops a function an op's args hold,
- *  where a structured clone (IndexedDB, `postMessage`) throws on it. */
-export interface SerializedHistory {
-  version: 1;
-  undoStack: SerializedHistoryEntry[];
-  /** Stored newest-first, mirroring the in-memory stack so a deserialized
-   *  history matches the original's `entries().redo` ordering. */
-  redoStack: SerializedHistoryEntry[];
-  nextEntryId: number;
-  /** Futures kept by a branching history, each under the id of the entry it
-   *  forks from (`floor`'s for the oldest reachable state), entries in time
-   *  order. Absent when none. */
-  branches?: { at: number; entries: SerializedHistoryEntry[] }[];
-  /** The id naming the state beneath the undo stack: that of the last undo
-   *  entry evicted or left out of the snapshot. Absent, and read as 0, when
-   *  the stack reaches back to the start. */
-  floor?: number;
-  /** Entries left out: those with an op lacking a `name`, which can't
-   *  round-trip through the op-factory registry, and those only reachable
-   *  across one. Always present (zero when nothing was dropped) so callers
-   *  can detect loss without parsing the debug log. */
-  droppedEntries: number;
-}
+export { touchedIdsFromOps } from './serialized';
+export type { HistoryLogger, SerializedHistory, SerializedHistoryEntry, SerializedOp } from './serialized';
 
 /** Snapshot of an entry handed to `onEvict` when it permanently leaves the
  *  reachable stacks. Ops are live references — read `name`/`args`, don't
@@ -299,14 +226,6 @@ export interface CreateHistoryOptions {
    *  `createHistory` wrapper routes these into its `debug/flag` namespace, which
    *  is what makes `DEBUG=history` work for kit consumers. */
   debug?: HistoryLogger;
-}
-
-/** Diagnostics sink for {@link CreateHistoryOptions.debug}. Messages arrive
- *  pre-formatted and unconditional; deciding whether to emit them is the
- *  caller's job. */
-export interface HistoryLogger {
-  log(message: string): void;
-  warn(message: string): void;
 }
 
 /** What a journal needs from a history beyond its public surface: both halves
@@ -544,7 +463,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     const selectionBefore = readSelection();
     const idle = new Set<Op>();
     const anyMutated = applyAllOrNothing(applied, undefined, idle);
-    const ops = idle.size === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.has(op)));
+    const ops = (idle.size === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.has(op))))
+      .flatMap((op) => op.caused?.() ?? [op]);
     if (!anyMutated) {
       // Every op reported `false`/`'noop'`. Skip the push so undo stays
       // tied to real state changes. Surfaced through the kit's debug
@@ -557,6 +477,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       );
       return;
     }
+    if (ops.length === 0) return;
     const incoming = touchedIdsFromOps(ops);
     const top = undoStack[undoStack.length - 1];
     if (top && canCoalesce(top, ops)) {
@@ -720,53 +641,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       listeners.add(listener);
       return () => { listeners.delete(listener); };
     },
-    serialize(): SerializedHistory {
-      let total = 0;
-      const project = (entries: readonly Entry[]): (SerializedHistoryEntry | null)[] => {
-        total += entries.length;
-        return entries.map((e) => entryToSerial(e, logger));
-      };
-      // Both stacks keep the entries nearest the current state at their end,
-      // so what survives a nameless entry is whatever follows the last one.
-      const nearest = (stack: readonly Entry[]): SerializedHistoryEntry[] => {
-        const serial = project(stack);
-        return serial.slice(serial.lastIndexOf(null) + 1) as SerializedHistoryEntry[];
-      };
-      const undo = nearest(undoStack);
-      const redo = nearest(redoStack);
-
-      // Cutting the undo stack raises the snapshot's floor to the last entry cut.
-      const floor = undo.length === undoStack.length ? floorId : undoStack[undoStack.length - undo.length - 1]!.id;
-      const reachable = new Set<number>([floor, ...[...undo, ...redo].map((e) => e.id)]);
-      let pending = [...forks].flatMap(([at, kept]) => kept.map((b) => {
-        const serial = project(b);
-        const cut = serial.indexOf(null);
-        return { at, entries: (cut < 0 ? serial : serial.slice(0, cut)) as SerializedHistoryEntry[] };
-      })).filter((b) => b.entries.length > 0);
-      const branches: { at: number; entries: SerializedHistoryEntry[] }[] = [];
-      for (let grew = true; grew; ) {
-        grew = false;
-        const waiting: typeof pending = [];
-        for (const b of pending) {
-          if (!reachable.has(b.at)) { waiting.push(b); continue; }
-          branches.push(b);
-          for (const e of b.entries) reachable.add(e.id);
-          grew = true;
-        }
-        pending = waiting;
-      }
-
-      const carried = undo.length + redo.length + branches.reduce((n, b) => n + b.entries.length, 0);
-      return {
-        version: 1,
-        undoStack: undo,
-        redoStack: redo,
-        ...(branches.length > 0 ? { branches } : {}),
-        ...(floor !== 0 ? { floor } : {}),
-        nextEntryId,
-        droppedEntries: total - carried,
-      };
-    },
+    serialize: () => snapshot({ undoStack, redoStack, forks, floorId, nextEntryId }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       record(ops, ops, label, options);
     },
@@ -801,30 +676,14 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       _resumeJournalInternal(journal);
       activeJournal = journal;
     },
-    restore(snapshot: SerializedHistory): void {
-      undoStack.length = 0;
-      redoStack.length = 0;
-      for (const se of snapshot.undoStack) {
-        undoStack.push(serialToEntry(se, customRebuild, logger));
-      }
-      for (const se of snapshot.redoStack) {
-        redoStack.push(serialToEntry(se, customRebuild, logger));
-      }
+    restore(serialized: SerializedHistory): void {
+      const next = rebuilt(serialized, customRebuild, logger);
+      undoStack.splice(0, undoStack.length, ...next.undoStack);
+      redoStack.splice(0, redoStack.length, ...next.redoStack);
       forks.clear();
-      floorId = snapshot.floor ?? 0;
-      for (const b of snapshot.branches ?? []) {
-        const entries = b.entries.map((se) => serialToEntry(se, customRebuild, logger));
-        const kept = forks.get(b.at);
-        if (kept) kept.push(entries);
-        else forks.set(b.at, [entries]);
-      }
-      // Seed nextEntryId from the snapshot, then defensively bump past any
-      // restored id — a malformed snapshot with duplicate or out-of-range
-      // ids should never produce a collision with future entries.
-      nextEntryId = snapshot.nextEntryId;
-      for (const e of undoStack) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
-      for (const e of redoStack) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
-      for (const kept of forks.values()) for (const b of kept) for (const e of b) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
+      for (const [at, kept] of next.forks) forks.set(at, kept);
+      floorId = next.floorId;
+      nextEntryId = next.nextEntryId;
       bump();
     },
   };
@@ -836,112 +695,4 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     record,
   });
   return history;
-}
-
-/** Extract node ids from an op's `args`. Handles the common patterns:
- *  - `args.id` (string) — transform, setPath, reparent
- *  - `args.node.id` (string) — insert, delete
- *  Ops that don't match either pattern contribute nothing.
- *  Exported for in-package test use; not part of the published package API. */
-export function touchedIdsFromOps(ops: Op[]): ReadonlySet<string> {
-  const ids = new Set<string>();
-  for (const op of ops) {
-    if (op.args === null || typeof op.args !== 'object') continue;
-    const a = op.args as Record<string, unknown>;
-    if (typeof a['id'] === 'string') {
-      ids.add(a['id']);
-    } else if (a['node'] !== null && typeof a['node'] === 'object') {
-      const n = a['node'] as Record<string, unknown>;
-      if (typeof n['id'] === 'string') ids.add(n['id']);
-    }
-  }
-  return ids;
-}
-
-/** Project an `Op` to its `(name, args)` wire form. Returns `null` for ops
- *  missing `name` — the caller drops the containing entry. */
-function opToSerial(op: Op): SerializedOp | null {
-  if (typeof op.name !== 'string') return null;
-  return { name: op.name, args: op.args };
-}
-
-/** Project a runtime entry to its serialized form, or `null` if any op in
- *  the entry can't be serialized (we drop the whole entry then — a partially
- *  serializable entry would invert against the wrong baseline on undo). */
-function entryToSerial(e: Entry, logger: HistoryLogger): SerializedHistoryEntry | null {
-  const forwardOps: SerializedOp[] = [];
-  for (const op of e.forwardOps) {
-    const s = opToSerial(op);
-    if (s === null) {
-      logger.log(`serialize: dropping entry id=${e.id} "${e.label}" — forwardOp without name`);
-      return null;
-    }
-    forwardOps.push(s);
-  }
-  const baseOps: SerializedOp[] = [];
-  for (const op of e.baseOps) {
-    const s = opToSerial(op);
-    if (s === null) {
-      logger.log(`serialize: dropping entry id=${e.id} "${e.label}" — baseOp without name`);
-      return null;
-    }
-    baseOps.push(s);
-  }
-  return {
-    id: e.id, label: e.label, forwardOps, baseOps, pushes: e.pushes, timestamp: e.timestamp,
-    ...(e.selectionBefore ? { selectionBefore: e.selectionBefore } : {}),
-    ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
-  };
-}
-
-/** Placeholder op used when the registry lacks the requested name. Stable
- *  identity (each placeholder is its own invert) keeps undo/redo plumbing
- *  happy without performing any adapter mutation. */
-function placeholderOp(name: string, args: unknown, label?: string): Op {
-  const op: Op = {
-    name,
-    args,
-    label,
-    apply: () => 'noop' as const,
-    invert: () => op,
-  };
-  return op;
-}
-
-/** Signature of a per-instance op rebuilder (`CreateHistoryOptions.rebuildOp`). */
-type CustomRebuild = (name: string, args: unknown) => Op | null;
-
-/** Rebuild a single serialized op via `custom` (if provided), falling back to
- *  a no-op placeholder.
- *
- *  This engine deliberately knows nothing about any op registry: hydrating a
- *  `(name, args)` pair back into an op is the caller's concern, injected
- *  through `CreateHistoryOptions.rebuildOp`. `@weasel-js/core`'s
- *  `createHistory` wrapper supplies its global op-factory registry as that
- *  hook, so core consumers see unchanged behavior. */
-function rebuildSerialOp(so: SerializedOp, label: string, custom: CustomRebuild | undefined, logger: HistoryLogger): Op {
-  const viaCustom = custom ? custom(so.name, so.args) : null;
-  if (viaCustom !== null) return viaCustom;
-  logger.log(`restore: unknown op name "${so.name}" — substituting no-op placeholder`);
-  return placeholderOp(so.name, so.args, label);
-}
-
-/** Rebuild a runtime entry from its serialized form. Unknown op names become
- *  no-op placeholders so the entry still occupies its slot in the stack. */
-function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undefined, logger: HistoryLogger): Entry {
-  const forwardOps = se.forwardOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
-  const baseOps = se.baseOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
-  return {
-    id: se.id,
-    label: se.label,
-    forwardOps,
-    baseOps,
-    timestamp: se.timestamp ?? 0,
-    pushes: se.pushes ?? 1,
-    // Re-derive touchedIds from the rebuilt ops rather than trying to
-    // round-trip the Set through the serialized form (Sets aren't JSON-safe).
-    touchedIds: touchedIdsFromOps(forwardOps),
-    ...(se.selectionBefore ? { selectionBefore: [...se.selectionBefore] } : {}),
-    ...(se.selectionAfter ? { selectionAfter: [...se.selectionAfter] } : {}),
-  };
 }

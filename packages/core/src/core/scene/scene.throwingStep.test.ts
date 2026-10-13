@@ -69,7 +69,7 @@ describe('Scene — a history step that throws', () => {
     expect(scene.getVersion()).toBeGreaterThan(versionBefore);
   });
 
-  it('undo reverts the scene writes of an op that threw partway through its own', () => {
+  it('undo of an applyBatch entry restores what its op wrote without running the op', () => {
     const { scene, add, depths, armed } = makeScene();
     add('b');
     const move = (to: number, from: number): Op => ({
@@ -84,10 +84,10 @@ describe('Scene — a history step that throws', () => {
     scene.setSelection([]);
     armed.on = true;
 
-    expect(() => scene.undo()).toThrow('refused');
-    expect(scene.get(B)!.pose.x).toBe(9);
-    expect(scene.getSelection()).toEqual([]);
-    expect(depths()).toEqual([2, 0]);
+    expect(scene.undo()).toBe(true);
+    expect(scene.get(B)!.pose.x).toBe(0);
+    expect(scene.getSelection()).toEqual([B]);
+    expect(depths()).toEqual([1, 1]);
   });
 
   it('redo keeps the entry and the state when it throws', () => {

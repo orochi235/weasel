@@ -160,9 +160,10 @@ describe('sceneToAdapter cascade — undo outside adapter.applyOps', () => {
     expect(xs()).toEqual([0, 100, 200, 300]);
   });
 
-  it('leaves an op that carried nothing serialized under its own name', () => {
-    const { scene, adapter, leaf, move } = fixture();
-    adapter.applyOps([move(leaf, 300, 305)], 'Move');
-    expect(scene.serializeHistory().undoStack.at(-1)!.forwardOps.map((op) => op.name)).toEqual(['transform']);
+  it('serializes a container move as every pose write the cascade made', () => {
+    const { scene, adapter, c, leaf, move } = fixture();
+    adapter.applyOps([move(c, 200, 205)], 'Move');
+    const ops = scene.serializeHistory().undoStack.at(-1)!.forwardOps;
+    expect(ops.map((op) => [op.name, (op.args as { id: string }).id])).toEqual([['kit:setPose', c], ['kit:setPose', leaf]]);
   });
 });

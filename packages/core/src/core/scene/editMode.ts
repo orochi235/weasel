@@ -3,9 +3,10 @@
  *
  * A bare call records itself. Inside a `batch` the batch records it; while a
  * history engine applies or replays ops the engine's entry already holds it;
- * and inside `untracked` nothing does.
+ * inside `untracked` nothing does; and `own` is the scene handing a bare call's
+ * op to its engine, which records it.
  */
-export type EditDriver = 'batch' | 'engine' | 'untracked';
+export type EditDriver = 'batch' | 'engine' | 'untracked' | 'own';
 
 export interface EditMode {
   /** Whether any driver is running, so a scene call is part of its edit
@@ -20,10 +21,10 @@ export interface EditMode {
 }
 
 export function createEditMode(): EditMode {
-  const depth: Record<EditDriver, number> = { batch: 0, engine: 0, untracked: 0 };
+  const depth: Record<EditDriver, number> = { batch: 0, engine: 0, untracked: 0, own: 0 };
 
   return {
-    open: () => depth.batch + depth.engine + depth.untracked > 0,
+    open: () => depth.batch + depth.engine + depth.untracked + depth.own > 0,
     records: () => depth.engine + depth.untracked === 0,
     untracked: () => depth.untracked > 0,
     during(driver, fn) {

@@ -1,7 +1,7 @@
 /**
- * What `scene.applyBatch` records, and how that differs from a direct scene
- * call: which stack an edit lands on while a journal is open, what coalesces,
- * what a batch inside a batch does, and what an undo replays through.
+ * What `scene.applyBatch` records, beside a direct scene call: which stack an
+ * edit lands on while a journal is open, what coalesces, what a batch inside
+ * a batch does, and what an undo replays.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHistory } from '@weasel-js/history';
@@ -78,7 +78,7 @@ describe('Scene — which stack an edit lands on while a journal is open', () =>
     expect(x(B)).toBe(150);
   });
 
-  it('a journal opened on another history replays through the scene as fresh edits', () => {
+  it('a journal opened on another history reverts in place, and leaves the scene stack alone', () => {
     const { scene, adapter, move, x, labels } = fixture();
     const outside = createHistory(adapter);
     const journal = outside.beginJournal({ label: 'mode' });
@@ -90,27 +90,26 @@ describe('Scene — which stack an edit lands on while a journal is open', () =>
     expect(labels()).toEqual([]);
     expect(notified).toBe(1);
 
-    // Nothing of the scene's drives this undo, so the pose write it makes is
-    // an edit like any other: it notifies, and it lands on the scene's stack.
+    // Nothing of the scene's drives this undo: the kit op it replays still
+    // notifies, and records nothing.
     journal.undo();
     expect(x()).toBe(0);
-    expect(labels()).toEqual(['setPose']);
+    expect(labels()).toEqual([]);
     expect(notified).toBe(2);
 
     journal.redo();
     expect(x()).toBe(5);
-    expect(labels()).toEqual(['setPose', 'setPose']);
+    expect(labels()).toEqual([]);
 
     journal.commit('Mode');
     expect(outside.entries().undo.map((e) => e.label)).toEqual(['Mode']);
-    expect(labels()).toEqual(['setPose', 'setPose']);
 
     outside.undo();
     expect(x()).toBe(0);
-    expect(labels()).toEqual(['setPose', 'setPose', 'setPose']);
+    expect(labels()).toEqual([]);
   });
 
-  it('canceling such a journal rewinds the scene and leaves one scene entry per write', () => {
+  it('canceling such a journal rewinds the scene and leaves no scene entry', () => {
     const { scene, adapter, move, x, labels } = fixture();
     const journal = createHistory(adapter).beginJournal({ label: 'mode' });
     scene.setActiveJournalAccessor(() => (journal.isActive() ? journal : null));
@@ -119,7 +118,7 @@ describe('Scene — which stack an edit lands on while a journal is open', () =>
     scene.applyBatch([move(A, 5, 9)], 'Move', adapter);
     journal.cancel();
     expect(x()).toBe(0);
-    expect(labels()).toEqual(['setPose', 'setPose']);
+    expect(labels()).toEqual([]);
   });
 });
 
@@ -174,17 +173,42 @@ describe('Scene — what an applyBatch entry coalesces with', () => {
 
 describe('Scene — applyBatch inside scene.batch', () => {
   // As of 2026-10-12. "One recorded form for a scene edit" makes this one entry.
-  it('pushes an entry of its own, ahead of the batch it is in', () => {
+  it('joins the entry of the batch it is in', () => {
     const { scene, adapter, move, x, labels } = fixture();
+    const { cell, set } = cellOps();
     scene.batch('outer', () => {
       scene.setPose(A, at(5));
-      scene.applyBatch([move(B, 100, 140)], 'inner', adapter);
+      scene.applyBatch([move(B, 100, 140), set(0, 7)], 'inner', adapter);
     });
-    expect(labels()).toEqual(['inner', 'outer']);
+    expect(labels()).toEqual(['outer']);
     scene.undo();
-    expect([x(), x(B)]).toEqual([0, 140]);
+    expect([x(), x(B), cell.value]).toEqual([0, 100, 0]);
+    scene.redo();
+    expect([x(), x(B), cell.value]).toEqual([5, 140, 7]);
+  });
+
+  it('takes back its own ops when one throws, and leaves the batch to go on', () => {
+    const { scene, adapter, move, x, labels } = fixture();
+    const { cell, set } = cellOps();
+    const boom: Op = { apply: () => { throw new Error('boom'); }, invert: () => boom };
+    scene.batch('outer', () => {
+      scene.setPose(A, at(5));
+      expect(() => scene.applyBatch([set(0, 7), move(B, 100, 140), boom], 'inner', adapter)).toThrow('boom');
+    });
+    expect([x(), x(B), cell.value]).toEqual([5, 100, 0]);
+    expect(labels()).toEqual(['outer']);
     scene.undo();
-    expect([x(), x(B)]).toEqual([0, 100]);
+    expect(x()).toBe(0);
+  });
+
+  it('has its hand-rolled op taken back when the batch throws after it', () => {
+    const { scene, adapter } = fixture();
+    const { cell, set } = cellOps();
+    expect(() => scene.batch('outer', () => {
+      scene.applyBatch([set(0, 7)], 'inner', adapter);
+      throw new Error('later');
+    })).toThrow('later');
+    expect(cell.value).toBe(0);
   });
 });
 
@@ -239,7 +263,7 @@ describe('Scene — undo and redo of an applyBatch', () => {
     expect([cell.value, x()]).toEqual([7, 5]);
   });
 
-  it('replays through the adapter the batch was applied with', () => {
+  it('replays the scene writes the batch made, not the adapter it was applied with', () => {
     const { scene, move, x } = fixture();
     const base = commitAdapter(scene);
     const writes: number[] = [];
@@ -254,7 +278,7 @@ describe('Scene — undo and redo of an applyBatch', () => {
     scene.undo();
     scene.redo();
     expect(x()).toBe(5);
-    expect(writes).toEqual([5, 0, 5]);
+    expect(writes).toEqual([5]);
   });
 });
 
@@ -265,11 +289,28 @@ describe('Scene — what an applyBatch entry holds', () => {
     expect([...(scene.history.entries().undo[0]!.touchedIds ?? [])]).toEqual([A]);
   });
 
-  it('serializes the ops it was given, not the scene calls they made', () => {
+  it('serializes the scene writes its ops made, as a direct call does', () => {
     const { scene, adapter, move } = fixture();
     scene.applyBatch([move(A, 0, 5)], 'Move', adapter);
     scene.setPose(B, at(140));
-    const names = scene.serializeHistory().undoStack.map((e) => e.forwardOps.map((op) => op.name));
-    expect(names).toEqual([['transform'], ['kit:setPose']]);
+    const snapshot = scene.serializeHistory();
+    expect(snapshot.undoStack.map((e) => e.forwardOps.map((op) => op.name))).toEqual([['kit:setPose'], ['kit:setPose']]);
+    expect(snapshot.form).toBe(2);
+  });
+
+  it('serializes an op that wrote no scene state as itself', () => {
+    const { scene, adapter, move } = fixture();
+    scene.applyBatch([move(A, 0, 5), createSetSelectionOp({ from: [], to: [A] })], 'Move', adapter);
+    const [entry] = scene.serializeHistory().undoStack;
+    expect(entry!.forwardOps.map((op) => op.name)).toEqual(['kit:setPose', 'setSelection']);
+  });
+
+  it('is not restored from a snapshot in another form', () => {
+    const { scene, adapter, move, labels } = fixture();
+    scene.applyBatch([move(A, 0, 5)], 'Move', adapter);
+    const { form: _form, ...old } = scene.serializeHistory();
+    scene.history.clear();
+    scene.restoreHistory(old);
+    expect(labels()).toEqual([]);
   });
 });
