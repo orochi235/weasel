@@ -264,18 +264,6 @@ export default [
   },
   {
     /**
-     * The reports left. `longPress` lists `longPressOpts?.duration` and `?.haptics` where the
-     * compiler infers `longPressOpts`, and `pickers` is a latest-ref the compiler only takes for
-     * a ref under a name ending in `Ref`. Delete this block with the fixes.
-     */
-    files: [
-      'packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx',
-      'packages/core/src/canvas/SceneCanvas/DevHuds.tsx',
-    ],
-    rules: { 'react-hooks/preserve-manual-memoization': 'off' },
-  },
-  {
-    /**
      * `any` in a test is usually the point: reaching past a type to build a malformed input, or
      * asserting on a private field.
      *

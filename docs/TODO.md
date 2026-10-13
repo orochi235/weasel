@@ -1093,13 +1093,6 @@ only story runner in the repo.
     `useVisibleRaf` loops re-requesting themselves, and writes to forwarded
     refs, DOM nodes, and mutable engine objects.
 
-- **(P3) `preserve-manual-memoization` is off for two files under `canvas/SceneCanvas/`.** Neither
-  report is a stale closure. `GestureDispatcherMounter.tsx` memoizes `longPress` on
-  `longPressOpts?.duration` and `?.haptics` where the compiler infers `longPressOpts`: read the two
-  fields into locals first. `DevHuds.tsx` reads a `useLatest` ref named `pickers`, which the
-  compiler takes for a ref only under a name ending in `Ref`. Fix both and delete the override
-  block in `eslint.config.js`.
-
 ---
 
 ## Release-gate & build hygiene

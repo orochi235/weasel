@@ -40,7 +40,7 @@ export function GestureDispatcherMounter({
   chromeAffordancesRef,
   onDoubleClick,
   onClick,
-  longPress: longPressOpts,
+  longPress: { duration: longPressDuration, haptics: longPressHaptics } = {},
 }: {
   canvasRef: React.RefObject<HTMLElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
@@ -229,9 +229,9 @@ export function GestureDispatcherMounter({
   const [longPressState] = useState(createLongPressStore);
   const longPress = useMemo(() => ({
     state: longPressState,
-    ...(longPressOpts?.duration !== undefined ? { duration: longPressOpts.duration } : {}),
-    ...(longPressOpts?.haptics !== undefined ? { haptics: longPressOpts.haptics } : {}),
-  }), [longPressState, longPressOpts?.duration, longPressOpts?.haptics]);
+    ...(longPressDuration !== undefined ? { duration: longPressDuration } : {}),
+    ...(longPressHaptics !== undefined ? { haptics: longPressHaptics } : {}),
+  }), [longPressState, longPressDuration, longPressHaptics]);
 
   // Input routing to registered views. Rebuilt per event from the registry, so
   // a view that mounts or moves mid-session is routable on the next event; with
