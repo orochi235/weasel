@@ -23,9 +23,12 @@
 }
 
 /* `pack="pairs"` flips that: every row auto-places into the 2-col grid two
-   per row, and explicit full-width children opt in via the span helper class. */
+   per row, and explicit full-width children opt in via the span helper class.
+   The two rows of a pair set their labels on one line, whatever each holds: a
+   row stretched to the pair's height centers or sinks its label instead. */
 .listPairs > * {
   min-width: 0;
+  align-self: first baseline;
 }
 
 .listPairs > .span,

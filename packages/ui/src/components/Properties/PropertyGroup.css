@@ -24,9 +24,6 @@
   grid-template-columns: var(--wzl-prop-columns, 1fr 1fr);
   column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-row-gap, 4px);
-  /* Stretch so paired rows match in height — slider rows then bottom-align
-     their tracks (via `margin-top: auto`) and stay lined up even when one
-     sibling's label wraps to two lines. */
   align-items: stretch;
 }
 
@@ -36,6 +33,8 @@
 
 .groupPairs .groupBody > * {
   grid-column: auto;
+  /* As a paired list's rows: see `.listPairs`. */
+  align-self: first baseline;
 }
 
 .groupPairs .groupBody > h3,
