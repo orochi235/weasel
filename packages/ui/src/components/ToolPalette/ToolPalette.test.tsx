@@ -87,22 +87,29 @@ describe('ToolPalette — grouping', () => {
       fakeTool('pen', 'draw'),
     ]);
     render(<ToolPalette tools={tools} />);
-    const buttons = screen.getAllByRole('button');
-    // select first, hand last
-    expect(buttons[0].textContent).toContain('select');
-    expect(buttons[buttons.length - 1].textContent).toContain('hand');
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
+      expect.stringContaining('select'),
+      expect.stringContaining('rect'),
+      expect.stringContaining('pen'),
+      expect.stringContaining('text'),
+      expect.stringContaining('hand'),
+    ]);
   });
 
   it('puts tools with unknown groups after known ones but before misc', () => {
     const tools = fakeTools([
       fakeTool('select', 'select'),
+      { id: 'orphan', presentation: { label: 'Orphan' } } as AnyTool,
       fakeTool('weird', 'experimental'),
       fakeTool('hand', 'view'),
     ]);
     render(<ToolPalette tools={tools} />);
-    const buttons = screen.getAllByRole('button');
-    // weird (unknown group) is last because there's no misc bucket here
-    expect(buttons[buttons.length - 1].textContent).toContain('weird');
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
+      expect.stringContaining('select'),
+      expect.stringContaining('hand'),
+      expect.stringContaining('weird'),
+      expect.stringContaining('Orphan'),
+    ]);
   });
 
   it('tools without presentation.group go into the implicit misc bucket (last)', () => {

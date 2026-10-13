@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { Powerline } from './Powerline';
+import { Powerline, type PowerlineSegment } from './Powerline';
 import * as PkgRoot from '../../index';
+
+function fills(segments: PowerlineSegment[]) {
+  const { container, unmount } = render(<Powerline variant="solid" segments={segments} />);
+  const ds = [...container.querySelectorAll('.badge-fill')].map((path) => path.getAttribute('d'));
+  unmount();
+  return ds;
+}
 
 describe('Powerline', () => {
   it('renders one element per segment', () => {
@@ -18,18 +25,10 @@ describe('Powerline', () => {
   });
 
   it('threads endCap of segment N to leftEdge of segment N+1', () => {
-    const { container } = render(
-      <Powerline
-        startCap="flat"
-        segments={[
-          { text: 'a', endCap: 'chevron' },
-          { text: 'b', endCap: 'slant' },
-          { text: 'c' },
-        ]}
-      />
-    );
-    const badges = container.querySelectorAll('[data-shape="compose"]');
-    expect(badges.length).toBe(3);
+    const [, afterChevron] = fills([{ text: 'a', endCap: 'chevron' }, { text: 'b' }]);
+    const [, afterFlat] = fills([{ text: 'a' }, { text: 'b' }]);
+    expect(afterChevron).toBeTruthy();
+    expect(afterChevron).not.toBe(afterFlat);
   });
 
   it('applies row-level variant defaults and per-segment status', () => {
@@ -80,15 +79,10 @@ describe('Powerline', () => {
 
   it('accepts a custom EdgeProfile function as a cap', () => {
     const custom = (t: number, d: number) => Math.sin(t * Math.PI * 4) * d * 0.5;
-    const { container } = render(
-      <Powerline
-        segments={[
-          { text: 'x', endCap: custom },
-          { text: 'y' },
-        ]}
-      />
-    );
-    expect(container.querySelectorAll('[data-shape="compose"]').length).toBe(2);
+    const [capped] = fills([{ text: 'x', endCap: custom }, { text: 'y' }]);
+    const [flat] = fills([{ text: 'x', endCap: 'flat' }, { text: 'y' }]);
+    expect(capped).toBeTruthy();
+    expect(capped).not.toBe(flat);
   });
 });
 

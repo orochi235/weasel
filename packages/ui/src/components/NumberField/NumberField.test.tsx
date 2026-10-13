@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { useState } from 'react';
 import { NumberField } from './NumberField';
 import s from './NumberField.module.css';
 
@@ -23,13 +22,11 @@ describe('NumberField', () => {
     expect(onChange).toHaveBeenCalledWith(42);
   });
 
-  it('supports controlled value', () => {
-    function Wrap() {
-      const [v, setV] = useState(10);
-      return <NumberField label="Q" value={v} onChange={setV} />;
-    }
-    const { container } = render(<Wrap />);
+  it('follows a controlled value when it changes', () => {
+    const { container, rerender } = render(<NumberField label="Q" value={10} onChange={() => {}} />);
     expect(getInput(container).value).toBe('10');
+    rerender(<NumberField label="Q" value={42} onChange={() => {}} />);
+    expect(getInput(container).value).toBe('42');
   });
 
   it('renders increment and decrement buttons by default', () => {

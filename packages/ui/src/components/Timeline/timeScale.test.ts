@@ -53,7 +53,7 @@ describe('zoomWindow', () => {
   it('refuses to collapse below the minimum span', () => {
     let w = { from: 0, to: 1000 };
     for (let i = 0; i < 50; i++) w = zoomWindow(w, 500, 0.5, { from: 0, to: 1000 });
-    expect(w.to - w.from).toBeGreaterThan(0);
+    expect(w.to - w.from).toBeCloseTo(1, 9);
   });
 });
 

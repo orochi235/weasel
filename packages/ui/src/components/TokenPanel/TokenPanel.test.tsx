@@ -231,9 +231,16 @@ describe('TokenPanel', () => {
   });
 
   it('picks a font weight from the nine CSS weights', () => {
-    render(<TokenPanel tokens={tokens} onChange={() => {}} />);
+    const onChange = vi.fn();
+    render(<TokenPanel tokens={tokens} onChange={onChange} />);
     const row = within(screen.getByRole('group', { name: '--wzl-font-weight-bold' }));
-    expect(row.getByRole('button', { name: /--wzl-font-weight-bold/ })).toHaveTextContent('400');
+    const button = row.getByRole('button', { name: /--wzl-font-weight-bold/ });
+    expect(button).toHaveTextContent('400');
+    fireEvent.click(button);
+    expect(screen.getAllByRole('option').map((o) => o.textContent))
+      .toEqual(['100', '200', '300', '400', '500', '600', '700', '800', '900']);
+    fireEvent.click(screen.getByRole('option', { name: '700' }));
+    expect(onChange).toHaveBeenCalledWith('--wzl-font-weight-bold', '700');
   });
 
   it('draws an easing’s curve beside its value', () => {

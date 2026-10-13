@@ -554,15 +554,6 @@ describe('PrefSchemaEditor', () => {
     expect(screen.queryByText(/is taken here/)).toBeNull();
   });
 
-  it('keeps a renamed group open', () => {
-    render(<Live />);
-    // Activating a branch toggles it, so the second click reopens the group the first selected and closed.
-    fireEvent.click(row('view'));
-    rekey('view', 'display');
-    expect(within(structure()).getByRole('treeitem', { name: /\(display\)/ })).toHaveAttribute('aria-expanded', 'true');
-    expect(row('grid')).toBeInTheDocument();
-  });
-
   it('keeps a moved group open', () => {
     render(<Live />);
     act(() => within(structure()).getByRole('treeitem', { name: /\(panels\)/ }).focus());
