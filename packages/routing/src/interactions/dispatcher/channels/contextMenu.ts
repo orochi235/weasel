@@ -1,6 +1,7 @@
 /** The contextmenu channel: a right-click. */
 import type { DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
+import { underPointer } from '../underPointer';
 
 /**
  * `takeNativeHold` answers whether a touch or pen hold is in progress, firing
@@ -19,22 +20,14 @@ export function contextMenuInput(core: DispatchCore, takeNativeHold: () => boole
     const w = toWorld(e.clientX, e.clientY);
     // A secondary button never reaches `onPointerDown`, so unlike click and
     // long-press there is no press to replay the classification from.
-    const affordance = target().affordanceAt?.(w) ?? undefined;
-    const menuBody = target().classifyTarget?.(w);
     const ev: InputEvent = {
       kind: 'contextmenu',
       target: e.target,
-      altKey: e.altKey,
-      ctrlKey: e.ctrlKey,
-      metaKey: e.metaKey,
-      shiftKey: e.shiftKey,
       x: w.x,
       y: w.y,
       clientX: e.clientX,
       clientY: e.clientY,
-      ...(affordance !== undefined ? { affordance } : {}),
-      ...(menuBody?.body !== undefined ? { bodyTarget: menuBody.body } : {}),
-      ...(menuBody?.kind !== undefined ? { bodyKind: menuBody.kind } : {}),
+      ...underPointer(target(), e, w),
     };
     dispatch(ev);
   };

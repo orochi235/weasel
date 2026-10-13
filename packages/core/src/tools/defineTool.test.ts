@@ -2,10 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defineTool } from './overlayBinding';
 import type { RenderLayer } from '../core/layers/render';
-import { defineTool as routingDefineTool, type ToolCtx } from '@weasel-js/routing';
 import type { AnyTool, Tool } from './overlayBinding';
-
-const CTX = { scratch: null } as unknown as ToolCtx<null>;
 
 /**
  * `defineTool` used to be a compiler: it translated `initial` / `engaged`
@@ -27,30 +24,19 @@ describe('defineTool', () => {
   });
 
   it('normalizes a string cursor to the function form', () => {
-    const tool = defineTool<null>({ id: 'test', cursor: 'crosshair' });
+    const tool = defineTool({ id: 'test', cursor: 'crosshair' });
     expect(typeof tool.cursor).toBe('function');
-    expect((tool.cursor as (c: ToolCtx<null>) => string)(CTX)).toBe('crosshair');
+    expect((tool.cursor as () => string)()).toBe('crosshair');
   });
 
   it('passes a function cursor through', () => {
-    const tool = defineTool<null>({ id: 'test', cursor: () => 'grab' });
-    expect((tool.cursor as (c: ToolCtx<null>) => string)(CTX)).toBe('grab');
+    const tool = defineTool({ id: 'test', cursor: () => 'grab' });
+    expect((tool.cursor as () => string)()).toBe('grab');
   });
 
   it('resolves to the empty string when no cursor is declared', () => {
-    const tool = defineTool<null>({ id: 'test' });
-    expect((tool.cursor as (c: ToolCtx<null>) => string)(CTX)).toBe('');
-  });
-
-  it('forwards def.initScratch onto Tool.initScratch', () => {
-    const scratch = { seen: true };
-    const tool = defineTool({ id: 'test', initScratch: () => scratch });
-    expect(tool.initScratch!()).toBe(scratch);
-  });
-
-  it('defaults initScratch to a null thunk', () => {
-    const tool = defineTool<null>({ id: 'test' });
-    expect(tool.initScratch!()).toBeNull();
+    const tool = defineTool({ id: 'test' });
+    expect((tool.cursor as () => string)()).toBe('');
   });
 
   it('forwards bindings, actions and overlay', () => {
@@ -85,19 +71,9 @@ describe('defineTool', () => {
 });
 
 // One definition: core's `defineTool` is routing's, and routing's builds a tool
-// the canvas takes. It used to return `Tool<S, unknown>`, which a `tools` prop
-// typed for `RenderLayer` overlays rejected (TS2322) — the root typecheck is
-// what fails on the assignments below.
-const layer = {} as RenderLayer<unknown>;
-const tools: AnyTool[] = [
-  routingDefineTool({ id: 'bare' }),
-  routingDefineTool<null>({ id: 'scratch', cursor: 'crosshair' }),
-  routingDefineTool<null>({ id: 'drawn', overlay: layer }),
-];
-const typed: Tool<null> = routingDefineTool<null>({ id: 'typed', overlay: [layer] });
-void tools;
-void typed;
-
+// the canvas takes. It used to return a tool with `unknown` overlays, which a
+// `tools` prop typed for `RenderLayer` overlays rejected (TS2322) — the root
+// typecheck is what fails on the assignments below.
 describe('defineTool — one definition across routing and core', () => {
   it('is routing’s own function', async () => {
     const routing = await import('@weasel-js/routing');
@@ -105,4 +81,15 @@ describe('defineTool — one definition across routing and core', () => {
     expect(core.defineTool).toBe(routing.defineTool);
     // Importing core's whole barrel can pass 5s on a loaded machine.
   }, 30_000);
+
+  it('builds tools the canvas accepts, with or without an overlay', async () => {
+    const { defineTool: routingDefineTool } = await import('@weasel-js/routing');
+    const layer = {} as RenderLayer<unknown>;
+    const tools: AnyTool[] = [
+      routingDefineTool({ id: 'bare' }),
+      routingDefineTool({ id: 'drawn', overlay: layer }),
+    ];
+    const typed: Tool = routingDefineTool({ id: 'typed', overlay: [layer] });
+    expect([...tools, typed].map((t) => t.id)).toEqual(['bare', 'drawn', 'typed']);
+  });
 });

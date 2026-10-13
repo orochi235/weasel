@@ -23,16 +23,16 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 1209,
-    "longestFunction": 746
+    "lines": 1022,
+    "longestFunction": 584
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 424,
-    "longestFunction": 286
+    "lines": 412,
+    "longestFunction": 267
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 1339,
-    "longestFunction": 1157
+    "lines": 1166,
+    "longestFunction": 998
   },
   "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
     "longestFunction": 276
@@ -61,9 +61,6 @@
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 162
   },
-  "packages/core/src/canvas/useViewHelpers.ts": {
-    "longestFunction": 146
-  },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 236
   },
@@ -87,7 +84,7 @@
     "longestFunction": 123
   },
   "packages/core/src/features/paths/penPreviewLayer.ts": {
-    "longestFunction": 140
+    "longestFunction": 138
   },
   "packages/core/src/features/selection/overlay.ts": {
     "lines": 756
@@ -105,8 +102,8 @@
     "lines": 580
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
-    "lines": 689,
-    "longestFunction": 461
+    "lines": 684,
+    "longestFunction": 456
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
     "longestFunction": 124
@@ -279,12 +276,11 @@
     "longestFunction": 144
   },
   "packages/routing/src/interactions/dispatcher/dispatcher.ts": {
-    "lines": 904,
-    "longestFunction": 824
+    "lines": 898,
+    "longestFunction": 812
   },
   "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx": {
-    "lines": 1029,
-    "longestFunction": 933
+    "longestFunction": 160
   },
   "packages/simulation/src/useSimulation.ts": {
     "longestFunction": 130
@@ -317,10 +313,6 @@
   "packages/text-dom/src/useTextEdit.ts": {
     "lines": 749,
     "longestFunction": 381
-  },
-  "packages/text/src/layout/layoutRuns.ts": {
-    "lines": 1172,
-    "longestFunction": 617
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 174

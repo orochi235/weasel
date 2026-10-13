@@ -75,8 +75,7 @@ Priority tags:
   3D kernel does not declare. `snap`, `lassoSelect`, `poseDescriptor`, `slice`, and `ingestion` are
   satisfiable as typed, because every coordinate in them is a screen point under the identity
   `clientToWorld` a 3D host passes. `pointer` has not been re-measured since it became the pointer
-  store (`PointerContextValue`). In the routing package, `ToolCtx` (`tools/types.ts`) still names
-  `View`, and only `<Canvas>` builds one.
+  store (`PointerContextValue`).
 
 - **(P3) `geometryProjection` cannot hold a 3D transform.** `transform(node, m: Mat3)` names a
   plane in its signature, so a kernel with a camera has nothing to implement it with. Core builds
@@ -97,13 +96,68 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) The pointer channel is still one closure.**
-  `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` (about 1,150 lines) keeps
-  pointer and multitouch synthesis, click and double-click, long-press, the hover-cursor pump, and
-  tool lifecycle in one effect. They share the held-pointer map and the last hover position, so
-  splitting them means deciding who owns each. `dispatcher.ts` (about 970 lines) is
-  `createDispatcher`: per-kind context building, the walk, and UI-driven handles, which share its
-  in-flight maps.
+- **(P3) `createDispatcher` is still one closure.**
+  `packages/routing/src/interactions/dispatcher/dispatcher.ts` (about 900 lines) holds per-kind
+  context building, the walk, and UI-driven handles, which share its in-flight maps. The hook
+  beside it is down to listener wiring; pointer recognition is `packages/gestures/src/recognizer/`.
+
+- **(P3) What the pointer recognizer's extraction left.**
+  - Three `pointermove` hover channels listen on one canvas element and each tracks "is a button
+    down" its own way: the dispatcher's hover pump (`channels/hoverCursor.ts`), `useSurfaceInput`
+    in core's canvas, and `PointerPublisher` in `PointerProviderIfRoot.tsx`.
+  - The hover pump and `Canvas.tsx` each turn a resolved cursor into a `style.cursor` write plus a
+    painted-cursor write. One cursor sink beside `PaintedCursorState` would serve both.
+  - A long-press timer fires on whichever view was routed last, not the view the press went down
+    in (`channels/pointer.ts`).
+  - `InvocationCtx.multiTouch.rotation` is hard-coded to 0 and read nowhere; making it real needs
+    an angle on `MultiTouchEvent`.
+  - `useGestureDispatcher.listeners.test.tsx`: "does NOT cancel on initial mount" cannot fail,
+    since nothing is ever in flight in it.
+
+- **(P3) What the text layout split left.**
+  - `packages/text/src/layout/paintRuns.ts`: a zero-advance atlas glyph gets no quad, against the
+    `LaidOutCell.drawsInk` doc ("a combining mark inks without advancing").
+  - `paintRuns.ts`, `glyphOutlineD`: a code point no tier could serve still gets outline geometry
+    above the outline threshold when the outline face has it, drawn on top of its neighbor.
+  - No renderer-level test drives `fill: {}` through an SDF-tier draw; the no-ink rule is pinned
+    at the text layer only.
+  - `tests/perf/bench/text-layout.bench.ts` times layout alone now, so `BASELINE.md`'s numbers,
+    which included grouping, need re-recording.
+
+- **(P3) Two browser tests share the machine's clipboard and fail when they overlap.**
+  `packages/text-dom/src/overlayTyping.browser.test.tsx` ("reads a page's markup as runs") and
+  `packages/core/src/interactions/actions/clipboard/clipboardOps.browser.test.tsx` ("leaves the
+  previous clipboard whole when every flavor rejects") each write the real OS clipboard and read
+  it back. In a fleet run on 2026-10-12 each read the other's text (`'before'` and `'PQ'`); both
+  pass alone. Two fleet runs on one node would collide the same way. They need to run serially,
+  or one of them needs a clipboard of its own.
+
+- **(P3) What removing the old tool design left.** `ToolCtx`, the cursor function's argument, and
+  `Tool.previewPose` / `previewBounds` / `previewIds` are gone. Still to go:
+  - `AnyTool` in `@weasel-js/core` is now the same type as `Tool`: it existed to hold tools of
+    mixed scratch types, and a tool no longer has one. Used across `canvas/SceneCanvas/` and
+    `ToolPalette` in `packages/ui`.
+  - `toolPreviewSources` and `canvas/toolPreview.ts`: no production caller. One test in
+    `SceneCanvas/usePreviewGhostLayer.test.tsx` plants a preview on a fake tool and imports it.
+  - `SurfaceViewInputs.tools` (`viewInputs.tsx`): read by nothing, still supplied by
+    `SceneCanvas.tsx`.
+  - `ToolBounds` (`routing/src/tools/types.ts`) existed only for `previewBounds`.
+  - `CanvasExtensionApi.clientToWorld` is optional only because test fakes of the handle omit
+    it (`SceneCanvas.derivedPath.test.tsx` and four in `packages/hud`). The dispatcher mounter,
+    `PointerProviderIfRoot.tsx`, and hover tracking in `SceneCanvas.tsx` still convert with the
+    bare rect helper and ignore a canvas's `clientToWorld` override; so do `CanvasView.tsx` and
+    `features/viewports/viewResolver.ts`, which need a client-to-canvas-local conversion the
+    override does not provide.
+  - `Canvas`'s `adapter` prop is typed as the Move, Resize, and Rotate adapters together, though
+    Canvas reads only poses, nodes, layers, and children.
+
+- **(P3) `packages/ui/src/components/Badge/Badge.stories.tsx` is 2,200 lines, 750 of them one
+  function.** `ComposeLabView` and the `OctantSplineEditor` it uses cannot move to a second
+  stories file, because forge lists every named export of one as a story, and in a plain module
+  both break the 120-line function cap. Breaking `ComposeLabView` up comes first.
+
+- **(P3) `DrawCanvas.tsx` and `SceneViewCanvas.tsx` each carry the same first-paint block**
+  (`paintedRef` plus a layout effect). It belongs in `useCanvasSurface`.
 
 - **(P3) Rotate has no angle snap.** Nothing under
   `packages/core/src/interactions/actions/rotate/` quantizes the angle, with Shift or otherwise, and
@@ -295,7 +349,7 @@ Priority tags:
   ±0.45, which is unexplained. The `super`/`sub` 12px rows of
   `npx vitest run -c scripts/measure-overlay-alignment.config.ts` show both.
 
-- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` looks
+- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutEntries.ts` looks
   glyphs up one code point at a time and applies kerning pairs: sufficient for Latin, Cyrillic,
   Greek, and CJK ideographs, wrong for Arabic, Devanagari, Thai, and any script needing contextual
   shaping. The fix is a HarfBuzz WASM build (harfbuzzjs, ~1MB) behind a feature flag, so consumers
@@ -1424,9 +1478,18 @@ only story runner in the repo.
   `scripts/check-spacing.ts` skips `apps/site/CommandPalette/`, which now contains only
   `useCommandPaletteShortcut.ts`. Drop the exemption and the comment above it.
 
-- **(P3) `SceneCanvasInner` is one 1,157-line function.** It is most of the 1,339-line
+- **(P3) `useHostAnchor.browser.test.tsx` fails under load.** "follows a host that a collapsing sibling
+  moves" failed once in a fleet run of main at `d5a9d4943` (2026-10-12) with `expected 80 to be close to
+  +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
+  observer that moves it has fired; it wants to wait on the position rather than read it once.
+
+- **(P3) `SceneCanvasInner` is one 998-line function.** It is most of the 1,166-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
-  owner; its dead-code pass landed 2026-10-12. Left open by that pass: `actionDefaults` is a public
+  owner; its dead-code pass and its sections on the built-in tool registry, the preset table, and
+  the chrome-caps rule context landed 2026-10-12. Left open by those last two, and described in the
+  audit: `selectTool.rotate === false` is still decided in three places that do not agree, and the
+  `modifierHeld` condition can never match on a `<SceneCanvas>`, which always reports no modifier
+  held. Left open by the dead-code pass: `actionDefaults` is a public
   prop nothing reads, kept only because `SceneCanvas.actions.test.tsx` passes it at 13 sites; and
   `<DeviceProfileProvider>` resolves the profile a second time beside `SceneCanvasInner`'s own
   `useDeviceProfile`, so the media-query listeners are doubled. The provider is public and its

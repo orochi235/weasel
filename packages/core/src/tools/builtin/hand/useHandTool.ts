@@ -11,8 +11,9 @@ export type { InertiaConfig };
  *  binding params; momentum additionally needs a `view` dep publishing
  *  `decay`, which `<SceneCanvas>` wires. */
 export interface UseHandToolOptions {
-  /** Momentum after release. Omit or pass `false` for none. */
-  inertia?: false | InertiaConfig;
+  /** Momentum after release: `true` for the kit defaults, or the settings.
+   *  Omit or pass `false` for none. */
+  inertia?: boolean | InertiaConfig;
   /**
    * Which axes the drag responds to. Default `'both'`.
    *
@@ -34,14 +35,14 @@ export interface UseHandToolOptions {
  * `viewport.dragPan` action, which owns the gesture, the view writes, and
  * the grabbing cursor. The tool only passes `axis` and `inertia` along.
  */
-export function useHandTool(opts: UseHandToolOptions = {}): Tool<null> {
+export function useHandTool(opts: UseHandToolOptions = {}): Tool {
   // Read through a ref from a params thunk rather than closing over the
   // values: a consumer passing `inertia={{ friction: 0.9 }}` inline would
   // otherwise mint a new tool identity on every render.
   const optsRef = useLatest(opts);
   return useMemo(
     () =>
-      Object.assign(defineTool<null>({
+      Object.assign(defineTool({
         id: 'hand',
         keybinding: { key: 'H' },
         capabilities: ['navigation'],
@@ -68,7 +69,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<null> {
             }),
           },
         }],
-      }) as Tool<null>,
+      }) as Tool,
     [optsRef],
   );
 }

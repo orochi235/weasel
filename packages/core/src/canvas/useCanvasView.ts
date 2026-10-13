@@ -1,6 +1,7 @@
 /**
- * A `<Canvas>`'s view: held in a ref when uncontrolled, taken from the `view`
- * prop when controlled, with one `setView` and one subscriber list over both.
+ * A camera: held in a ref when uncontrolled, taken from the `view` option when
+ * controlled, with one write path and one subscriber list over both. `<Canvas>`
+ * keeps its own through this, and so does each `<CanvasView>`.
  */
 import { useCallback, useRef, type MutableRefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
@@ -9,82 +10,103 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { clampView } from 'core/viewport/clampView';
 import { normalizeView, type View } from 'core/viewport/view';
 
-/** Inputs to {@link useCanvasView}: the canvas's view props and what a view
- *  write needs from the canvas around it. */
+/** Inputs to {@link useCanvasView}: the camera's view props and what a write
+ *  needs from whatever the camera looks through. */
 export interface CanvasViewOptions {
-  view: View | undefined;
+  /** Supplied, the camera is controlled. A thunk is a camera derived from
+   *  something else, read fresh at every {@link CanvasViewState.getView}. */
+  view: View | (() => View) | undefined;
   defaultView: View | undefined;
   onViewChange: ((next: View) => void) | undefined;
   viewBounds: Bounds | undefined;
-  dimsRef: { readonly current: Dims };
+  /** The size the camera looks through, which `viewBounds` clamps against. */
+  dims: () => Dims;
   requestRedraw: () => void;
 }
 
-/** What {@link useCanvasView} hands back. The canvas decides when in a commit
+/** What {@link useCanvasView} hands back. The owner decides when in a commit
  *  the two controlled steps run, since they have to sit among its own effects. */
 export interface CanvasViewState {
-  /** The view in effect. Written by `setView` when uncontrolled and by
-   *  `adoptControlled` when controlled. */
+  /** The view in effect. Written by a write when uncontrolled and by
+   *  `adoptControlled` when controlled. A camera derived by a thunk is not
+   *  kept here: read `getView`. */
   viewRef: MutableRefObject<View>;
-  /** The normalized `view` prop, or undefined when uncontrolled. */
-  controlledView: View | undefined;
+  /** The imperative write. Controlled, it is forwarded to `onViewChange`
+   *  instead of applied, and says so once per mount. */
   setView: (next: View | ((current: View) => View)) => void;
+  /** The write input makes. Controlled, forwarding it to `onViewChange` is how
+   *  the owner hears of a pan at all, so nothing is warned. */
+  setViewFromInput: (next: View) => void;
   getView: () => View;
   subscribeView: (fn: (v: View) => void) => () => void;
   /** Take this render's controlled view into `viewRef`. Call from an insertion effect. */
   adoptControlled: () => void;
   /** Tell subscribers of a controlled view that moved since the last call.
-   *  A controlled view reaches the ref with no `setView`, so this is where
-   *  they hear of it. Call from a layout effect. */
+   *  A controlled view reaches the ref with no write, so this is where they
+   *  hear of it. Call from a layout effect. */
   announceControlled: () => void;
   /** Drop every subscriber, on unmount. */
   clearSubscribers: () => void;
 }
 
+const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
 export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
-  const { view: viewProp, defaultView, onViewChange, viewBounds, dimsRef, requestRedraw } = opts;
+  const { view: viewProp, defaultView, onViewChange, viewBounds, dims, requestRedraw } = opts;
+  const derived = typeof viewProp === 'function' ? viewProp : undefined;
+  const controlledView = viewProp === undefined || derived ? undefined : normalizeView(viewProp as View);
   // The uncontrolled view lives in a ref, not `useState`, so a camera moving
   // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
-  const viewRef = useRef<View>(normalizeView(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } }));
-  const isControlled = viewProp !== undefined;
-  const controlledView = isControlled ? normalizeView(viewProp) : undefined;
+  const viewRef = useRef<View>(controlledView ?? normalizeView(defaultView ?? IDENTITY));
   const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
-  const onViewChangeRef = useLatest(onViewChange);
-  const viewBoundsRef = useLatest(viewBounds);
-  const isControlledRef = useLatest(isControlled);
+  const live = useLatest({
+    controlled: viewProp !== undefined, derived, onViewChange, viewBounds, dims, requestRedraw,
+  });
   const controlledWarnedRef = useRef(false);
 
-  const setView = useCallback((next: View | ((current: View) => View)) => {
-    const resolved = normalizeView(typeof next === 'function' ? next(viewRef.current) : next);
-    const bounds = viewBoundsRef.current;
-    const clamped = bounds ? clampView(resolved, bounds, dimsRef.current) : resolved;
-    if (isControlledRef.current) {
+  const getView = useCallback((): View => {
+    const thunk = live.current.derived;
+    return thunk ? normalizeView(thunk()) : viewRef.current;
+  }, [live]);
+
+  const write = useCallback((next: View, imperative: boolean): void => {
+    const {
+      controlled, derived, onViewChange: forward, viewBounds: bounds, dims: size, requestRedraw: redraw,
+    } = live.current;
+    const valid = normalizeView(next);
+    const clamped = bounds ? clampView(valid, bounds, size()) : valid;
+    if (controlled) {
       // The prop is the authority; writing the ref would put pixels and props
       // out of step with nothing to reconcile them.
-      const forward = onViewChangeRef.current;
-      if (!controlledWarnedRef.current) {
+      if (imperative && !controlledWarnedRef.current) {
         controlledWarnedRef.current = true;
         console.warn(forward
           ? '[weasel] setView not applied locally: this canvas is controlled by its `view` prop. The value was forwarded to `onViewChange` — update the prop from there, or drop it to take the imperative path.'
           : '[weasel] setView ignored: this canvas is controlled by its `view` prop and has no `onViewChange`, so the value has nowhere to go. Update the prop, or drop it to take the imperative path.');
       }
       forward?.(clamped);
+      // A derived camera has no prop to change, so nothing else repaints it.
+      if (derived) redraw();
       return;
     }
     viewRef.current = clamped;
     for (const fn of viewSubsRef.current) fn(clamped);
-    onViewChangeRef.current?.(clamped);
-    requestRedraw();
-  }, [requestRedraw, dimsRef, isControlledRef, onViewChangeRef, viewBoundsRef]);
+    forward?.(clamped);
+    redraw();
+  }, [live]);
 
-  const getView = useCallback(() => viewRef.current, []);
+  const setView = useCallback((next: View | ((current: View) => View)) => {
+    write(typeof next === 'function' ? next(getView()) : next, true);
+  }, [write, getView]);
+  const setViewFromInput = useCallback((next: View) => { write(next, false); }, [write]);
+
   const subscribeView = useCallback((fn: (v: View) => void) => {
     viewSubsRef.current.add(fn);
     return () => { viewSubsRef.current.delete(fn); };
   }, []);
 
   const controlledMovedRef = useRef(false);
-  // A closure over this render's prop, not a ref read: the canvas calls it
+  // A closure over this render's prop, not a ref read: the owner calls it
   // from the same render's insertion effect.
   const adoptControlled = (): void => {
     if (!controlledView) return;
@@ -101,7 +123,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   const clearSubscribers = useCallback(() => { viewSubsRef.current.clear(); }, []);
 
   return {
-    viewRef, controlledView, setView, getView, subscribeView,
+    viewRef, setView, setViewFromInput, getView, subscribeView,
     adoptControlled, announceControlled, clearSubscribers,
   };
 }

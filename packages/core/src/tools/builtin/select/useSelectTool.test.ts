@@ -85,7 +85,7 @@ describe('useSelectTool', () => {
     const tool = mount();
     expect(tool.id).toBe('select');
     const cursor = tool.cursor;
-    expect(typeof cursor === 'function' ? cursor({} as never) : cursor).toBe('default');
+    expect(typeof cursor === 'function' ? cursor() : cursor).toBe('default');
   });
 
   it('declares its whole input surface as bindings', () => {

@@ -2,7 +2,7 @@
 import { useCallback, useMemo } from 'react';
 import type { ModeRegistry } from '@weasel-js/modes';
 import { dlog } from '../dlog';
-import type { AnyTool, AnyToolOf } from './types';
+import type { AnyTool, Tool } from './types';
 import type { HotkeyTrigger } from '../contributions/types';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useContributions } from '../contributions/useContributions';
@@ -19,7 +19,7 @@ export interface UseToolsOptions<TOverlay = KernelOverlay> {
   /** Tools eligible for the active slot or hotkey slot. The keys are the
    *  tool ids; the values are the tool records. A tool with `hotkey` set
    *  is wired into the hotkey slot whenever the engagement state matches. */
-  registry: Record<string, AnyToolOf<TOverlay>>;
+  registry: Record<string, Tool<TOverlay>>;
   /** Always-on entries — tools or other contributions, live regardless of
    *  the active slot. */
   ambient?: readonly Contribution<TOverlay>[];
@@ -45,7 +45,7 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
   /** All always-on entries, in registration order. */
   ambient: readonly Contribution<TOverlay>[];
   /** Full registry — for userland UI (palette buttons, etc.). */
-  registry: Readonly<Record<string, AnyToolOf<TOverlay>>>;
+  registry: Readonly<Record<string, Tool<TOverlay>>>;
   /** Returns true if a tool with the given id is in the registry or ambient list. */
   has(id: string): boolean;
   /** Overlay layers from currently-engaged tools that declare `position`.
@@ -121,7 +121,7 @@ export function useTools<TOverlay = KernelOverlay>(
   // every render, while a tool redefined under an existing id must replace it.
   const sources = useStableSources(opts.registry, opts.ambient);
   const slotted = useMemo(() => {
-    const registry: Record<string, AnyToolOf<TOverlay>> = {};
+    const registry: Record<string, Tool<TOverlay>> = {};
     for (const [id, tool] of Object.entries(sources.registry)) {
       registry[id] = declareSlot(tool, 'focus');
     }

@@ -42,7 +42,7 @@ function setup() {
     label: 'Scrub',
     invoker: { timing: 'immediate', run: (_deps, params) => scrub(params) },
   };
-  const tool = defineTool<null>({
+  const tool = defineTool({
     id: 'scrub',
     hotkey: 'o',
     actions: [action],
@@ -161,11 +161,5 @@ describe('tool lifecycle', () => {
     t.key('keydown', { key: 'o', code: 'KeyO' });
     t.unmount();
     expect(t.onDeactivate).toHaveBeenCalledTimes(1);
-  });
-
-  it('hands the callbacks the tool scratch', () => {
-    const t = setup();
-    t.key('keydown', { key: 'o', code: 'KeyO' });
-    expect(t.onActivate).toHaveBeenCalledWith({ scratch: null });
   });
 });

@@ -108,7 +108,7 @@ export interface PointerSample {
   event: PointerEvent;
 }
 
-/** Context for `forEachCoalesced` — the kit's `ToolCtx` satisfies this. */
+/** Context for `forEachCoalesced`: the canvas's client rect and its view. */
 export interface CoalescedCtx {
   canvasRect: { left: number; top: number };
   view: { x: number; y: number; scale: { x: number; y: number } };

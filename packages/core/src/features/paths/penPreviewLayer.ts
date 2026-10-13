@@ -1,6 +1,6 @@
 /**
- * Screen-space preview layer for `usePenTool`. Reads the tool's
- * persistent scratch each frame and renders the in-progress path: finished
+ * Screen-space preview layer for `usePenTool`. Reads the pen's state each
+ * frame and renders the in-progress path: finished
  * subpaths (faded), the current subpath (bright + anchor dots + handles),
  * a rubber-band segment from the latest anchor to the cursor, and a
  * close-hint ring on the first anchor when the tool flags it as hot.
@@ -12,7 +12,6 @@
 
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import type { Tool } from '../../tools/overlayBinding';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
 import { PATH_C, PATH_L, PATH_M, type PolygonPath, anchorsToPath, circlePath } from '@weasel-js/geom';
 
@@ -28,9 +27,9 @@ export interface PenPreviewStyle {
 
 /** Options for `createPenPreviewLayer`. */
 export interface CreatePenPreviewLayerOptions {
-  /** The Tool returned by usePenTool. The layer reads its scratch via
-   *  `tool.initScratch()` (the hook is contracted to return a stable ref). */
-  penTool: Tool<PenScratch>;
+  /** The pen's state. One object for the pen's life, changed in place, so
+   *  the layer reads the same one on every frame. */
+  state: PenScratch;
   style?: PenPreviewStyle;
 }
 
@@ -83,15 +82,13 @@ export function createPenPreviewLayer(
   opts: CreatePenPreviewLayerOptions,
 ): RenderLayer<unknown> {
   const style = { ...DEFAULT_STYLE, ...(opts.style ?? {}) };
-  // Stable scratch ref — the pen tool contract guarantees identity stability.
-  const getScratch = (): PenScratch => opts.penTool.initScratch!();
+  const s = opts.state;
 
   return {
     id: 'penPreview',
     label: 'Pen preview',
     space: 'screen',
     draw: (_data, view) => {
-      const s = getScratch();
       const out: DrawCommand[] = [];
 
       // (1) Finished subpaths — faded outline.

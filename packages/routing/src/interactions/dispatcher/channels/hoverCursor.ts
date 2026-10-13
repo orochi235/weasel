@@ -1,0 +1,151 @@
+/**
+ * The hover half of the pointer channel: a `hover` event for each move of an
+ * unpressed pointer, and the cursor shown for what a press there would do.
+ */
+import { resolveCursorTier, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
+import type { EventModifiers } from '@weasel-js/gestures';
+import type { DispatchCore } from '../dispatchCore';
+import { DEV, publishLiveDispatch } from '../dispatchTrace';
+import type { InputEvent } from '../matcher';
+import { underPointer, type UnderPointer } from '../underPointer';
+
+type Hover = EventModifiers & { clientX: number; clientY: number };
+
+const hoverOf = (e: Hover): Hover => ({
+  clientX: e.clientX, clientY: e.clientY,
+  altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+});
+
+/**
+ * The cursor override, written as an inline style on purpose: clearing it
+ * restores the React-managed `Tool.cursor` with no effect churn.
+ */
+function cursorOverride(canvas: HTMLElement | null, painted: () => PaintedCursorState | undefined): {
+  apply(spec: CursorSpec | null): void;
+  clear(): void;
+} {
+  let overridden = false;
+  const clear = (): void => {
+    painted()?.setOverride(null);
+    if (overridden && canvas) {
+      canvas.style.cursor = '';
+      overridden = false;
+    }
+  };
+  const apply = (spec: CursorSpec | null): void => {
+    const tier = spec === null ? null : resolveCursorTier(spec);
+    // A painted cursor is two writes: the native cursor gets out of the way
+    // and the layer is told what to draw. Only the first is no cursor at all.
+    const cursor = tier === null ? '' : tier.kind === 'css' ? tier.css : 'none';
+    if (!tier || !canvas || !cursor) {
+      clear();
+      return;
+    }
+    // A CSS cursor silences the layer too, or a painted tool cursor keeps
+    // drawing under the native one.
+    painted()?.setOverride(tier.kind === 'painted' ? tier : 'none');
+    canvas.style.cursor = cursor;
+    overridden = true;
+  };
+  return { apply, clear };
+}
+
+export interface HoverCursorInput {
+  /** A pointer moved, and its move has been dispatched. */
+  moved(e: PointerEvent): void;
+  /** A pointer was released: re-resolve where it let go. */
+  released(e: PointerEvent): void;
+  onLeave(): void;
+  /** A modifier or hotkey changed, which re-routes the predicted drag with no pointer movement. */
+  onKey(e: KeyboardEvent): void;
+  clear(): void;
+}
+
+/**
+ * Idle, the cursor is the first of: an affordance hit's `cursor`; the
+ * `Action.cursor` of the action a drag from here would route to; that of the
+ * action a click here would route to; no override. Mid-gesture it is the
+ * in-flight action's `activeCursor`.
+ */
+export function hoverCursorInput(
+  core: DispatchCore,
+  paintedCursor: () => PaintedCursorState | undefined,
+  pointersHeld: () => number,
+): HoverCursorInput {
+  const { canvas, routeAt, toWorld, target, dispatch, dispatcherNow, ctxNow } = core;
+  const override = cursorOverride(canvas, paintedCursor);
+  let last: Hover | null = null;
+  /** What the last move found under the pointer, so its hover and its cursor hit-test once. */
+  let facts: { at: Hover; where: UnderPointer } | null = null;
+
+  const resolve = (): void => {
+    if (!canvas || !last) return;
+    if (pointersHeld() > 0 || dispatcherNow().inFlight().size > 0) {
+      override.apply(dispatcherNow().inFlightCursor());
+      return;
+    }
+    const h = last;
+    // Only idle: mid-gesture the branch above returned, so a pinned pointer
+    // is never unpinned by a hover refresh.
+    routeAt(null, h.clientX, h.clientY);
+    const w = toWorld(h.clientX, h.clientY);
+    const where = facts?.at === h ? facts.where : underPointer(target(), h, w);
+    if (where.affordance?.cursor) {
+      override.apply(where.affordance.cursor);
+      return;
+    }
+    const ctx = ctxNow();
+    const d = dispatcherNow();
+    const press: InputEvent = { kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where };
+    if (DEV) publishLiveDispatch(() => d.explain(press, ctx));
+    const click: InputEvent = { kind: 'click', x: w.x, y: w.y, pressX: w.x, pressY: w.y, ...where };
+    const cursor = d.resolveOnly(press, ctx)?.action.cursor ?? dispatcherNow().resolveOnly(click, ctx)?.action.cursor;
+    override.apply(cursor ?? null);
+  };
+
+  const refresh = (): void => {
+    resolve();
+    // After the cursor is resolved, not before: on the move that first selects
+    // a painted cursor, a position written ahead of the decision is discarded.
+    // Guarded on `active()`, so a CSS cursor costs no layout read per move.
+    const painted = paintedCursor();
+    if (!painted?.active() || !canvas || !last) return;
+    const local = core.toCanvasLocal(last.clientX, last.clientY);
+    painted.setPointer(local.x, local.y);
+  };
+  // A tick later, so state the event changed (hotkey stack, active tool,
+  // selection) has committed before the prediction reruns.
+  const refreshSoon = (): void => {
+    setTimeout(() => { if (!core.disposed()) refresh(); }, 0);
+  };
+
+  return {
+    moved(e) {
+      last = hoverOf(e);
+      // A held pointer's moves are its drag's; an unpressed one's are a hover.
+      if (pointersHeld() === 0) {
+        const w = toWorld(e.clientX, e.clientY);
+        const where = underPointer(target(), last, w);
+        facts = { at: last, where };
+        dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY, ...where });
+      }
+      refresh();
+    },
+    released(e) {
+      last = hoverOf(e);
+      refreshSoon();
+    },
+    onLeave() {
+      last = null;
+      if (DEV) publishLiveDispatch(null);
+      paintedCursor()?.clearPointer();
+      override.clear();
+    },
+    onKey(e) {
+      if (!last) return;
+      last = { ...last, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey };
+      refreshSoon();
+    },
+    clear: override.clear,
+  };
+}

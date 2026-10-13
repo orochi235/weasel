@@ -14,7 +14,6 @@ import type {
   ContributionChrome as RoutingContributionChrome,
   Tool as RoutingTool,
   ToolDef as RoutingToolDef,
-  AnyToolOf,
 } from '@weasel-js/routing';
 import type {
   ToolsApi as RoutingToolsApi,
@@ -35,11 +34,11 @@ export type Contribution = RoutingContribution<Overlay>;
 /** Routing's `ContributionChrome`, with overlays typed as `RenderLayer`. */
 export type ContributionChrome = RoutingContributionChrome<Overlay>;
 /** Routing's `Tool`, with overlays typed as `RenderLayer`. */
-export type Tool<TScratch = unknown> = RoutingTool<TScratch, Overlay>;
-/** A `Tool` of any scratch type: the element type for a list of mixed tools. */
-export type AnyTool = AnyToolOf<Overlay>;
+export type Tool = RoutingTool<Overlay>;
+/** The element type for a list of mixed tools. */
+export type AnyTool = Tool;
 /** Routing's `ToolDef` (what `defineTool` takes), with overlays typed as `RenderLayer`. */
-export type ToolDef<TScratch = void> = RoutingToolDef<TScratch, Overlay>;
+export type ToolDef = RoutingToolDef<Overlay>;
 /** Routing's `ToolsApi`, with overlays typed as `RenderLayer`. */
 export type ToolsApi = RoutingToolsApi<Overlay>;
 /** Routing's `UseToolsOptions`, with overlays typed as `RenderLayer`. */

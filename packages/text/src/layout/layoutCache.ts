@@ -4,11 +4,10 @@
  * behind picking, and caret hit-testing all answer from this.
  *
  * `layoutRuns` is the most expensive derivation in the kit — it walks every
- * codepoint, resolves a face per run, measures, wraps, aligns, and places a
- * quad or an outline glyph for each — and `drawText` ran it per text command
- * per frame. Measured: 2.0 ms/frame for 200 short labels, 9.3 for 1000, and
- * 25.9 for 200 wrapped paragraphs. That last figure is the entire frame
- * budget spent before a single triangle is drawn.
+ * codepoint, resolves a face per run, measures, wraps, aligns, and places
+ * every glyph — and `drawText` ran it per text command per frame. Measured,
+ * when it also built the draw groups: 2.0 ms/frame for 200 short labels, 9.3
+ * for 1000, and 25.9 for 200 wrapped paragraphs.
  *
  * ### Two keys, tried in order
  *
@@ -26,30 +25,23 @@
  * second: an identity hit never pays for it.
  *
  * Under either, one entry per distinct `(maxWidth, alignWidth, lineHeight,
- * align, outline threshold, direction, bidi engine, tab size)`. Position is deliberately absent: `layoutRuns` emits
- * origin-relative geometry and `drawText` translates at upload, so a text node
- * dragged across the page keeps hitting the same entry.
- *
- * ### The outline threshold
- *
- * `outlineMinSize` is derived from the view scale, so recording it literally
- * would miss on every frame of a zoom. It reaches `layoutRuns` through exactly
- * one comparison (`run.fontSize < min`, in `outlineFor`), so what the layout
- * actually depends on is *which runs clear the bar* — and since the test is a
- * plain `>=` on size, that set is pinned by how many of the distinct run sizes
- * clear it. Recording that count is exact, not a quantization: the entry stays
- * valid across every zoom that doesn't cross a glyph size, and is dropped the
- * moment one does.
+ * align, direction, bidi engine, tab size)`. Position is deliberately absent:
+ * `layoutRuns` emits origin-relative geometry and `drawText` translates at
+ * upload, so a text node dragged across the page keeps hitting the same entry.
+ * So is everything that only changes what is drawn — a run's fill, stroke and
+ * decorations, the outline threshold — which `cachedPaintRuns` keys on
+ * instead. Two runs arrays that differ only there share one layout.
  *
  * ### What the keys cannot see
  *
  * The font set. A face landing changes metrics with no change to the runs, so
- * every lookup compares `glyphGeneration()` — advanced by the dynamic SDF
- * atlas, by the outline registry, and by `registerFont` — and drops
- * everything when it moves. That is the same escape hatch `nodeMemo`'s
- * generation counter provides, for the same class of failure. Polled rather
- * than subscribed: a module-load subscription is a cross-package side effect
- * that makes importing this package require the font package's whole surface.
+ * every lookup compares `faceGeneration()` — advanced by a registration, a
+ * load, a fallback policy, and the dynamic atlas measuring a face again or
+ * emptying its pages — and drops everything when it moves. A deferred bake
+ * landing does not advance it: that fills in a glyph record the layout
+ * already holds, and moves no pen. Polled rather than subscribed: a
+ * module-load subscription is a cross-package side effect that makes importing
+ * this package require the font package's whole surface.
  *
  * ### Bounds
  *
@@ -60,12 +52,11 @@
  * so it is a real LRU with a hard entry count.
  */
 
-import { isSolidPaint, type Paint, type Stroke } from '@weasel-js/paint';
-import { glyphGeneration } from '@weasel-js/font';
+import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { layoutRuns, type LaidOutRuns, type LayoutRunsOpts } from './layoutRuns';
+import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
+import { layoutRuns, type LaidOutRuns } from './layoutRuns';
 import { refId } from './refId';
-import { registeredBidi } from './bidiRegistry';
 
 /** Distinct option combinations held for one runs array before the whole set
  *  is dropped. Sized for "a few views onto the same text". */
@@ -85,70 +76,23 @@ let cache = new WeakMap<readonly ResolvedRun[], Entry>();
 let structural = new Map<string, LaidOutRuns>();
 let structuralGeneration = -1;
 
-/**
- * How many of the distinct font sizes present in `runs` reach `min`. Equal
- * counts mean the same set of runs cleared the threshold, since the count is
- * monotonic in `min` over a fixed `runs` — which is what makes this a key.
- * Stroked runs need no term of their own: a stroke pulls its run onto the
- * outline tier at every `min`, so it cannot distinguish two of them.
- *
- * Returns `-1` for an absent threshold, which must stay distinct from "a
- * threshold no run reaches": measurement callers leave it unset, and
- * conflating the two would let a measurement answer a paint.
- */
-function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): number {
-  if (min === undefined) return -1;
-  const sizes = new Set<number>();
-  for (const r of runs) sizes.add(r.fontSize);
-  let n = 0;
-  for (const size of sizes) if (size >= min) n++;
-  return n;
-}
-
-function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string {
-  const alignWidth = opts.alignWidth ?? opts.maxWidth;
-  const justify = opts.justify === true || opts.align === 'justify';
-  const bidi = opts.bidi ?? registeredBidi();
-  return `${opts.maxWidth}|${alignWidth}|${opts.lineHeight}|${opts.align}|${justify ? 'j' : ''}|${outlineBucket(runs, opts.outlineMinSize)}`
-    + `|${opts.direction ?? ''}|${bidi ? refId(bidi) : ''}|${opts.tabSize ?? ''}`;
-}
-
-/**
- * A paint's contribution to the key. Solid paints compare by value, so two
- * runs set to the same colour share a layout; gradients and patterns get a
- * per-object id, because they have no cheap structural equality and a false
- * positive would hand back groups carrying the wrong paint.
- */
-function paintKey(p: Paint | null): string {
-  if (p === null) return 'none';
-  return isSolidPaint(p) ? `s${p.color}:${p.opacity ?? 1}` : `#${refId(p)}`;
-}
-
-function strokeKey(s: Stroke | undefined): string {
-  // A stroke with no paint draws nothing, so it keys as no stroke at all.
-  if (!s?.paint) return '-';
-  const width = s.width ?? 1;
-  return [
-    paintKey(s.paint), typeof width === 'number' ? width : `px${width.px}`,
-    s.join ?? 'miter', s.cap ?? 'butt',
-    s.miterLimit ?? '', s.align ?? 'center', (s.dash ?? []).join(','),
-  ].join(':');
+function variantKey(opts: LayoutRunsOpts): string {
+  const o = resolveLayoutOpts(opts);
+  return `${o.maxWidth}|${o.alignWidth}|${o.lineHeight}|${o.align}|${o.justify ? 'j' : ''}`
+    + `|${o.direction}|${o.bidi ? refId(o.bidi) : ''}|${o.tabSize}`;
 }
 
 /**
  * Everything about `runs` that changes the layout. The two author-supplied
  * strings are length-prefixed so neither can forge a neighbouring field by
- * containing a separator; every other term is a number, an enum, or a paint
- * already escaped by `paintKey`.
+ * containing a separator; every other term is a number or an enum.
  */
 function runsKey(runs: readonly ResolvedRun[]): string {
   let out = '';
   for (const r of runs) {
     out += `${r.text.length}:${r.text}|${r.fontFamily.length}:${r.fontFamily}`
       + `|${r.fontSize}|${r.fontWeight}|${r.fontStyle}|${r.letterSpacing}`
-      + `|${r.underline ? 1 : 0}${r.strikethrough ? 1 : 0}${r.overline ? 1 : 0}`
       + `|${r.baselineShift}|${r.strutSize ?? ''}`
-      + `|${paintKey((r.fill?.paint ?? null))}|${strokeKey(r.stroke)}`
       // Ends follow from starts and the length, so the two pin the cells.
       + `|${r.srcMap ? `${r.srcMap.length}:${r.srcMap.starts.join(',')}` : ''}`
       + `|${r.sizeMap ? r.sizeMap.join(',') : ''}|`;
@@ -169,11 +113,7 @@ export function cachedLayoutRuns(
   runs: readonly ResolvedRun[],
   opts: LayoutRunsOpts,
 ): LaidOutRuns {
-  // Polled, not subscribed. A module-level `subscribeGlyphReady` would be a
-  // load-time side effect reaching into another package — it made importing
-  // the renderer require the font package's whole surface, breaking any
-  // consumer that partially mocks it.
-  const fonts = glyphGeneration();
+  const fonts = faceGeneration();
   let entry = cache.get(runs);
   if (entry === undefined) {
     entry = { generation: fonts, byVariant: new Map() };
@@ -183,7 +123,7 @@ export function cachedLayoutRuns(
     entry.byVariant.clear();
   }
 
-  const key = variantKey(runs, opts);
+  const key = variantKey(opts);
   const hit = entry.byVariant.get(key);
   if (hit !== undefined) return hit;
 
@@ -191,7 +131,7 @@ export function cachedLayoutRuns(
     structural.clear();
     structuralGeneration = fonts;
   }
-  const structuralK = `${runsKey(runs)} ${key}`;
+  const structuralK = `${runsKey(runs)}\0${key}`;
   let laid = structural.get(structuralK);
   if (laid !== undefined) {
     // Re-insert to move it to the young end; `Map` iterates in insertion order,

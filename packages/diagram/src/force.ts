@@ -14,7 +14,7 @@
  * `tolerance` option are what keep a second pass from scrambling a settled
  * diagram.
  */
-import { createSimulation, type SimulationForce, type SimulationNode } from '@weasel-js/core/math';
+import { createSimulation, type SimulationForce, type SimulationNode } from '@weasel-js/simulation';
 import type { Graph } from './graph';
 import { groupCohesion, separateGroups } from './forceGroups';
 import {

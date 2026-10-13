@@ -50,10 +50,10 @@ function sameCamera(a: View, b: View): boolean {
 /** Binding params `viewport.dragPan` understands, read at `start`. A bare
  *  binding pans both axes with no coasting. `inertia` coasts the view after
  *  release through the optional `view.decay` dep; with none wired the pan
- *  simply lands. */
+ *  simply lands. `true` coasts with the kit defaults. */
 export interface DragPanParams {
   axis?: 'both' | 'x' | 'y';
-  inertia?: false | InertiaConfig;
+  inertia?: boolean | InertiaConfig;
 }
 
 /**
@@ -82,7 +82,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
       // else, and pumps `onMove` / `onEnd` with an empty deps bag. Everything
       // the gesture needs has to be captured now.
       const params = (resolveParams(opts?.params) ?? {}) as DragPanParams;
-      const inertia = params.inertia === false ? undefined : params.inertia;
+      const inertia = params.inertia === true ? {} : params.inertia || undefined;
       const scratch: DragPanScratch = {
         startView,
         base: startView,

@@ -69,8 +69,8 @@ export const dollyAction: Action = {
 
 /** A tool that binds drag to `camera.orbit`. Register `orbitAction` alongside
  *  it; the tool only declares the binding. */
-export function useOrbitTool(): Tool<null> {
-  return useMemo(() => defineTool<null>({
+export function useOrbitTool(): Tool {
+  return useMemo(() => defineTool({
     id: 'orbit',
     hookName: 'useOrbitTool',
     cursor: 'grab',

@@ -8,7 +8,7 @@
  */
 import { group } from './group';
 import { registerFont } from '@weasel-js/font';
-import { layoutRuns, cachedLayoutRuns } from '@weasel-js/text';
+import { layoutRuns, cachedLayoutRuns, paintRuns } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { alternatingRuns, benchFontJson, plainRun, proseOf } from './fixtures';
 
@@ -42,7 +42,8 @@ const single = new Map(GLYPH_COUNTS.map((n) => [n, [plainRun(proseOf(n))]]));
 // Guards the fixture: an atlas that failed to register lays out no quads, and
 // every number below would measure the missing-glyph path instead of layout.
 {
-  const probe = layoutRuns([plainRun('Ag')], NO_WRAP);
+  const runs = [plainRun('Ag')];
+  const probe = paintRuns(layoutRuns(runs, NO_WRAP), runs);
   const quads = probe.groups.reduce((n, g) => n + g.quads.length, 0);
   if (quads !== 2) throw new Error(`bench font fixture: expected 2 quads, got ${quads}`);
 }

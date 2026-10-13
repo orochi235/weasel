@@ -199,9 +199,6 @@ export function drawLayers<TData>(
   spans?: LayerDrawSpan[],
 ): DrawCommand[] {
   const layerById = new Map(layers.map((l) => [l.id, l]));
-  const sequence = order
-    ? order.map((id) => layerById.get(id)).filter((l): l is RenderLayer<TData> => l !== undefined)
-    : layers;
   const v = view ?? IDENTITY_VIEW;
   const out: DrawCommand[] = [];
 
@@ -224,11 +221,7 @@ export function drawLayers<TData>(
     run = null;
   };
 
-  for (const layer of sequence) {
-    // `order` is already applied by `sequence`; passing it again would be a
-    // second, redundant lookup for the same answer.
-    if (!isLayerVisible(layer, visibility)) continue;
-
+  for (const layer of paintedLayers(layers, visibility, order)) {
     const t0 = spans ? clockMs() : 0;
     const cmds = drawOneLayer(layer, data, v, dims, cache, onLayerError);
     const buildMs = spans ? clockMs() - t0 : 0;
@@ -279,8 +272,8 @@ export function isLayerVisible<TData>(
 }
 
 /**
- * Does this layer reach the screen at all — both gates, in the order
- * `drawLayers` applies them.
+ * Does this layer reach the screen at all — membership of
+ * {@link paintedLayers}, asked of one layer.
  *
  * **A listed `order` is the whole list**, so omission from it drops a layer
  * that `visibility` would have shown, and `alwaysOn` does not rescue it.
@@ -289,10 +282,27 @@ export function isLayerVisible<TData>(
 export function isLayerPainted<TData>(
   layer: RenderLayer<TData>,
   visibility: Record<string, boolean>,
-  order: string[] | undefined,
+  order: readonly string[] | undefined,
 ): boolean {
   if (order && !order.includes(layer.id)) return false;
   return isLayerVisible(layer, visibility);
+}
+
+/**
+ * The layers that reach the screen, in the order they are drawn: `order`
+ * sequences them and drops what it leaves out, then `visibility` drops what is
+ * hidden. What `drawLayers` paints, and what a view narrows its stack with.
+ */
+export function paintedLayers<TData>(
+  layers: readonly RenderLayer<TData>[],
+  visibility: Record<string, boolean>,
+  order: readonly string[] | undefined,
+): RenderLayer<TData>[] {
+  if (!order) return layers.filter((l) => isLayerVisible(l, visibility));
+  const byId = new Map(layers.map((l) => [l.id, l]));
+  return order
+    .map((id) => byId.get(id))
+    .filter((l): l is RenderLayer<TData> => l !== undefined && isLayerVisible(l, visibility));
 }
 
 /**

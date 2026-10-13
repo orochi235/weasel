@@ -38,7 +38,7 @@ function fire(el: Element, type: string, init: PointerEventInit = {}) {
  *  the hotkey-engaged eyedropper first. */
 const RIVAL_ID = 'rival';
 
-function makeRival(): Tool<null> {
+function makeRival(): Tool {
   return {
     id: RIVAL_ID,
     eligibility: { focus: true },

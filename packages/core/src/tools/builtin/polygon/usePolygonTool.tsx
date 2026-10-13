@@ -34,7 +34,7 @@ const MAX_SIDES = 32;
  */
 export function usePolygonTool<TNode extends { id: string } = { id: string }>(
   options: UsePolygonToolOptions = {},
-): Tool<null> {
+): Tool {
   const { sides: initialSides = 6, label = 'Polygon', behaviors } = options;
   // Side count in a ref so keyDown / wheel mutations are visible
   // synchronously to the insert binding's thunked params (re-resolved
@@ -83,7 +83,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
 
   return useMemo(
     () =>
-      defineTool<null>({
+      defineTool({
         id: 'polygon',
         keybinding: { key: 'G' },
         capabilities: ['creates-shapes'],

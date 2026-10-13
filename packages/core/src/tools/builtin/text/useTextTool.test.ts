@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useTextTool } from './useTextTool';
-import { makeCtx } from '../testUtils';
 
 /**
  * useTextTool is now a thin declarative wrapper. The
@@ -18,7 +17,7 @@ describe('useTextTool surface', () => {
     // keybinding field removed from ToolDef; key activation is now registered
     // as a `tool.shortcut.text` action via useKeybindings.
     const cursor = typeof result.current.cursor === 'function'
-      ? (result.current.cursor as (c: unknown) => string)(makeCtx())
+      ? result.current.cursor()
       : result.current.cursor;
     expect(cursor).toBe('text');
   });

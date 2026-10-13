@@ -1,13 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds, toolPreviewSources } from './toolPreview';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { NodeId } from 'core/scene/types';
-import type { ToolsApi } from '../tools/overlayBinding';
 import type { DebugSink } from '../debug/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
@@ -76,9 +74,8 @@ export interface CanvasViewHelpers<TPose> {
    *  state for affordances and custom layers. */
   getChromeState(): ChromeState;
   /**
-   * Everything publishing an in-flight preview for this view, in resolution
-   * order: tool-side first (hotkey → active → registry → ambient), then the
-   * handles in flight on this view's dispatcher. Readers take the first
+   * Everything publishing an in-flight preview for this view: the handles in
+   * flight on its dispatcher, in dispatch order. Readers take the first
    * non-null answer per id.
    *
    * A ghost layer must read this off its draw envelope rather than close over
@@ -132,7 +129,6 @@ export interface UseViewHelpersOpts<TPose> {
    *  node somewhere its pose does not say — a parallax plane. */
   boundsOfPose?: ((id: string, pose: TPose) => Bounds | null) | undefined;
   selection: readonly NodeId[];
-  tools: ToolsApi | undefined;
   gestureSource: GestureSource | undefined;
   /** Dispatcher-published preview overlays, read through a ref so a change
    *  mid-gesture doesn't rebuild the memos that depend on them. */
@@ -149,8 +145,6 @@ export interface ViewHelpersBundle<TPose> {
   committedPoseOf(id: string): TPose | null;
   /** Bounds resolver after the `boundsOf` / adapter fallback, before previews. */
   effectiveBoundsOf: ((id: string) => Bounds | null) | undefined;
-  previewToolPose(id: string): TPose | null;
-  previewToolBounds(id: string): Bounds | null;
   /** Live dispatcher preview extras, for callers outside this bundle. */
   previewExtraRef: React.MutableRefObject<{
     previewPoseExtra: ((id: string) => unknown) | undefined;
@@ -176,7 +170,7 @@ export function useViewHelpers<TPose>(
   opts: UseViewHelpersOpts<TPose>,
 ): ViewHelpersBundle<TPose> {
   const {
-    adapter, geometry, boundsOf, boundsOfPose, selection, tools, gestureSource,
+    adapter, geometry, boundsOf, boundsOfPose, selection, gestureSource,
     previewPoseExtra, previewIdsExtra, getIsVisible,
   } = opts;
   const boxOf = useCallback(
@@ -217,34 +211,14 @@ export function useViewHelpers<TPose>(
 
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
 
-  // The live overlay a gesture proposes for `id`: the active tool's published
-  // preview first, then the dispatcher's preview extras.
-  const previewToolPose = useCallback((id: string): TPose | null => {
-    if (tools) {
-      const p = firstPreviewPose(tools, id);
-      if (p != null) return p as TPose;
-    }
-    const extra = previewExtraRef.current.previewPoseExtra;
-    if (extra) {
-      const p = extra(id);
-      if (p != null) return p as TPose;
-    }
-    return null;
-  }, [tools, previewExtraRef]);
-  const previewToolBounds = useCallback((id: string): Bounds | null => {
-    if (tools) {
-      const b = firstPreviewBounds(tools, id);
-      if (b) return b;
-      const p = firstPreviewPose(tools, id);
-      if (p != null) return boxOf(id, p as TPose);
-    }
-    const extra = previewExtraRef.current.previewPoseExtra;
-    if (extra) {
-      const p = extra(id);
-      if (p != null) return boxOf(id, p as TPose);
-    }
-    return null;
-  }, [tools, boxOf, previewExtraRef]);
+  const previewPoseOf = useCallback((id: string): TPose | null => {
+    const p = previewExtraRef.current.previewPoseExtra?.(id);
+    return p != null ? (p as TPose) : null;
+  }, [previewExtraRef]);
+  const previewBoundsOf = useCallback((id: string): Bounds | null => {
+    const p = previewPoseOf(id);
+    return p != null ? boxOf(id, p) : null;
+  }, [previewPoseOf, boxOf]);
 
   /**
    * Bounds for `id` with any in-flight gesture folded in — what the user can
@@ -253,10 +227,10 @@ export function useViewHelpers<TPose>(
    * away from the shape they belong to.
    */
   const boundsWithPreview = useCallback((id: string): Bounds | null => {
-    const previewed = previewToolBounds(id);
+    const previewed = previewBoundsOf(id);
     if (previewed) return previewed;
     return effectiveBoundsOf ? effectiveBoundsOf(id) : null;
-  }, [previewToolBounds, effectiveBoundsOf]);
+  }, [previewBoundsOf, effectiveBoundsOf]);
 
   const chromeState: ChromeState = useMemo(
     () => buildChromeState({
@@ -278,20 +252,14 @@ export function useViewHelpers<TPose>(
 
   const helpers: CanvasViewHelpers<TPose> = {
     getEffectivePose: (id: string): TPose | null => {
-      const tp = previewToolPose(id);
-      if (tp != null) return tp;
-      return committedPoseOf(id);
+      return previewPoseOf(id) ?? committedPoseOf(id);
     },
     getEffectiveBounds: boundsWithPreview,
     getGestureBounds: (): Bounds | null => {
       // The same id sets the ghost layer walks, so this cannot disagree with
       // what the user sees ghosted.
-      const ids = aggregatePreviewIds(tools);
-      const extraIds = gestureSource?.ids();
-      if (extraIds) for (const id of extraIds) ids.add(id);
-
       const parts: (Bounds | null)[] = [];
-      for (const id of ids) parts.push(previewToolBounds(id));
+      for (const id of new Set(gestureSource?.ids() ?? [])) parts.push(previewBoundsOf(id));
       const extraBounds = gestureSource?.bounds();
       if (extraBounds) for (const b of extraBounds) parts.push(b);
       return unionAABB(parts);
@@ -300,10 +268,7 @@ export function useViewHelpers<TPose>(
       gestureSource?.subscribe(fn) ?? noOpUnsubscribe,
     getGestureVersion: (): number => gestureSource?.getVersion() ?? 0,
     getChromeState: () => chromeState,
-    getPreviewSources: (): readonly GesturePreviewSource[] => [
-      ...toolPreviewSources(tools),
-      ...(gestureSource?.previewSources() ?? []),
-    ],
+    getPreviewSources: (): readonly GesturePreviewSource[] => gestureSource?.previewSources() ?? [],
     getGestureOverlays: (): readonly OngoingOverlay[] => gestureSource?.overlays() ?? [],
     getIsVisible: (): ((id: string) => boolean) => getIsVisible?.() ?? alwaysVisible,
   };
@@ -313,8 +278,6 @@ export function useViewHelpers<TPose>(
     chromeState,
     committedPoseOf,
     effectiveBoundsOf,
-    previewToolPose,
-    previewToolBounds,
     previewExtraRef,
   };
 }

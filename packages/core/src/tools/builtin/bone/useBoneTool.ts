@@ -32,7 +32,7 @@ export interface UseBoneToolOptions {
  * weights out of every skin beneath the rig node, and Escape clears it. Each edit is one undo
  * entry.
  */
-export function useBoneTool(options: UseBoneToolOptions): Tool<null> {
+export function useBoneTool(options: UseBoneToolOptions): Tool {
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
   const opts = useLatest({ scene: options.scene, rig: options.rig, reach: options.reach ?? 10 });
@@ -69,7 +69,7 @@ export function useBoneTool(options: UseBoneToolOptions): Tool<null> {
   }), [env, state]);
 
   const { keybinding } = options;
-  return useMemo(() => defineTool<null>({
+  return useMemo(() => defineTool({
     id: 'bone',
     capabilities: ['edits-page'],
     hookName: 'useBoneTool',

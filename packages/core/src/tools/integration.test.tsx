@@ -17,13 +17,13 @@ function fire(el: Element, type: string, init: PointerEventInit = {}) {
 }
 
 /** A tool whose entire surface is one drag binding to an action it owns. */
-function dragTool(id: string, key: string, spy: () => void): Tool<null> {
+function dragTool(id: string, key: string, spy: () => void): Tool {
   const action: Action = {
     id: `${id}.drag`,
     label: id,
     invoker: { timing: 'ongoing', start: () => { spy(); return { onMove: () => {}, onEnd: () => {} }; } },
   };
-  return defineTool<null>({
+  return defineTool({
     id,
     keybinding: { key },
     actions: [action],

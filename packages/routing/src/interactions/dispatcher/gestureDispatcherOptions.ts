@@ -82,7 +82,7 @@ export interface DispatcherChannels {
 }
 
 /** Options for `useGestureDispatcher`: the element to listen on, the actions
- *  and tools in play, and the hooks that turn raw DOM events into the world
+ *  and entries in play, and the hooks that turn raw DOM events into the world
  *  coordinates and hit targets bindings match against. */
 export interface UseGestureDispatcherOptions {
   /**
@@ -96,7 +96,8 @@ export interface UseGestureDispatcherOptions {
   canvasRef: RefObject<HTMLElement | null>;
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
-  /** Tool definitions keyed by id. Typically passes an empty Map. */
+  /** Every entry in play, keyed by id: tools and any other contribution
+   *  whose bindings this dispatcher routes. */
   entriesById: ReadonlyMap<string, Contribution<unknown>>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
@@ -178,13 +179,12 @@ export interface UseGestureDispatcherOptions {
   clientToWorld?: (clientX: number, clientY: number) => { x: number; y: number };
 
   /**
-   * Invoked once per pump event (`pointermove`, `pointerup`, `pointercancel`,
-   * `key-held` up-phase, `multitouch` move) when a dispatcher-side handle is
-   * in flight. Lets the host canvas schedule a redraw so dispatcher-only
-   * overlays (marquee, lasso, preview-ghost) repaint on each frame; without
-   * it the chrome flashes once at gesture start and then sits frozen until
-   * the gesture ends. `<SceneCanvas>` wires this to the canvas's
-   * `requestRedraw`.
+   * Called whenever one of this hook's dispatchers notifies its subscribers:
+   * once for each input event, cancel, or UI-driven step that found or left a
+   * gesture in flight. Lets the host canvas schedule a redraw, so
+   * dispatcher-only overlays (marquee, lasso, preview-ghost) follow the
+   * gesture and clear when it ends, however it ends. `<SceneCanvas>` wires
+   * this to the canvas's `requestRedraw`.
    */
   requestRedraw?: () => void;
   /**

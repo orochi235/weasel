@@ -136,7 +136,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       },
     };
 
-    return defineTool<null>({
+    return defineTool({
       id: 'opacityScrub',
       hotkey: 'o',
       presentation: { label: 'Opacity scrub', hide: true },

@@ -518,8 +518,7 @@ Don't name a field `gesture` if its values are action-shaped (`'move'`/`'marquee
 
 ## Key concepts
 
-- **Tools** handle gestures. They read `ToolCtx` (world coords, modifiers, selection, view) and either mutate the viewport (`ctx.setView`) or write to the scene (`ctx.applyBatch` + ops).
+- **Tools** declare bindings from a gesture to an action and handle nothing themselves. The action reads its `InvocationCtx` (world and screen point, modifiers, deps) and either moves the viewport or writes to the scene with ops.
 - **Ops** are the scene-mutation primitive (`createInsertOp`, `createDeleteOp`, `createSetPoseOp`, etc.). Always prefer ops over direct adapter calls so changes are undoable.
-- **`adapter: unknown`** in `ToolCtx` is intentionally opaque. Cast only when necessary; prefer ops.
 - **`useDragRect`** is a spatial input primitive (user draws a rectangle). It is not an insert mechanism — tools decide what to do with the bounds.
-- **Scene vs adapter**: `Scene<TData, TLayer, TPose>` is the kit-owned tree. `adapter` is the low-level contract tools use for mutation. `SceneCanvas` synthesizes an adapter from the scene so you rarely touch the adapter directly.
+- **Scene vs adapter**: `Scene<TData, TLayer, TPose>` is the kit-owned tree. `adapter` is the low-level contract actions use for mutation. `SceneCanvas` synthesizes an adapter from the scene so you rarely touch the adapter directly.

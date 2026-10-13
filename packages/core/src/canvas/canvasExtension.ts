@@ -25,6 +25,15 @@ export interface CanvasViewHandle {
 }
 
 /**
+ * A `<CanvasView>`'s camera, as its `cameraRef` receives it: the members a
+ * canvas's own handle carries for its camera, with the same contract. A camera
+ * derived by a thunk reads fresh but tells no subscriber when it moves;
+ * subscribe to the canvas it derives from.
+ * @experimental
+ */
+export type CanvasViewCamera = Pick<CanvasExtensionApi, 'getView' | 'setView' | 'subscribeView'>;
+
+/**
  * The **base imperative ref handle** shared by the canvas components. For
  * `<SceneCanvas>` refs use {@link SceneCanvasApi} (this type plus the
  * scene-level surfaces, e.g. a non-optional `ingest`).
@@ -62,6 +71,18 @@ export interface CanvasExtensionApi {
    * Read live: the value is the one the next paint uses.
    */
   getSurfaceRect(): { x: number; y: number; width: number; height: number };
+  /**
+   * A client point in this canvas's world: through the `clientToWorld`
+   * override when the canvas was given one, and through {@link element}'s
+   * rect and the current view otherwise. It is the conversion the canvas
+   * makes for hover and for its registered layers' hit-tests, so a point
+   * converted here lands where the canvas says it does. Before the canvas
+   * mounts there is nothing to measure and the point comes back unchanged.
+   *
+   * Every canvas component supplies it. It is declared optional only for
+   * hand-built handles that predate it.
+   */
+  clientToWorld?(clientX: number, clientY: number): [number, number];
   requestRedraw(): void;
   /**
    * Run `fn` after every paint, on the frame that painted — for chrome that

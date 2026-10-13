@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
-  subscribeGlyphReady, glyphGeneration, notifyGlyphReady,
+  subscribeGlyphReady, glyphGeneration, faceGeneration, notifyGlyphReady, notifyGlyphBaked,
 } from './glyphReady';
 
 describe('glyphGeneration', () => {
@@ -16,6 +16,18 @@ describe('glyphGeneration', () => {
     notifyGlyphReady();
     notifyGlyphReady();
     expect(glyphGeneration()).toBe(start + 2);
+  });
+
+  it('tells a bake landing from a change to the faces', () => {
+    const cb = vi.fn();
+    const unsubscribe = subscribeGlyphReady(cb);
+    const [glyphs, faces] = [glyphGeneration(), faceGeneration()];
+    notifyGlyphBaked();
+    expect([glyphGeneration(), faceGeneration()]).toEqual([glyphs + 1, faces]);
+    notifyGlyphReady();
+    expect([glyphGeneration(), faceGeneration()]).toEqual([glyphs + 2, faces + 1]);
+    expect(cb).toHaveBeenCalledTimes(2);
+    unsubscribe();
   });
 
   it('still drives push subscribers', () => {

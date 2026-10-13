@@ -6,9 +6,9 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
 
 /**
- * A source of in-flight preview state — a tool from the tools registry, or an
- * `OngoingHandle` from the dispatcher's in-flight map. Readers merge several
- * with first-non-null semantics.
+ * A source of in-flight preview state — an `OngoingHandle` from the
+ * dispatcher's in-flight map. Readers merge several with first-non-null
+ * semantics.
  *
  * @public
  */

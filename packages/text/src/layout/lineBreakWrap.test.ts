@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { layoutRuns, type LayoutRunsOpts } from './layoutRuns';
+import { layoutRuns } from './layoutRuns';
+import type { LayoutRunsOpts } from './layoutOpts';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 // FIXTURE_FONT at fontSize 32 (scale 1) — A 23, B 22, A→B kerning -1, space

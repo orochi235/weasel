@@ -37,8 +37,31 @@ export function subscribeGlyphReady(cb: () => void): () => void {
   return ready.subscribe(cb);
 }
 
-/** @internal Fired by a glyph source once newly-available glyphs can paint. */
+/** Advanced by every `notifyGlyphReady` and by no `notifyGlyphBaked`. */
+let faces = 0;
+
+/**
+ * How many times the faces themselves have changed: a registration, a load
+ * landing or failing, a fallback policy, a canvas face measured again or its
+ * pages emptied. Unlike {@link glyphGeneration} it holds still when a deferred
+ * bake lands, which fills in an atlas rect and moves no pen — so text measured
+ * under one value is still measured right while the value stands. Compare
+ * with `!==`.
+ */
+export function faceGeneration(): number {
+  return faces;
+}
+
+/** @internal Fired by a glyph source when what it measures or serves changed. */
 export function notifyGlyphReady(): void {
+  generation++;
+  faces++;
+  ready.emit();
+}
+
+/** @internal Fired when deferred bakes land: glyphs already measured can now
+ *  paint, and nothing about their faces changed. */
+export function notifyGlyphBaked(): void {
   generation++;
   ready.emit();
 }

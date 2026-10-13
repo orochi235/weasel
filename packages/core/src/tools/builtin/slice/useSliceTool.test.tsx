@@ -122,7 +122,7 @@ describe('useSliceTool — click-by-click cut', () => {
     const s = setup();
     s.click(10, 10);
     s.click(50, 10);
-    act(() => { s.tool().onDeactivate?.({ scratch: null } as never); });
+    act(() => { s.tool().onDeactivate?.(); });
     expect(s.fire('slice.finish')).toBe(false);
   });
 

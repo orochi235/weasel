@@ -5,7 +5,7 @@ import type { Contribution } from './overlayBinding';
 
 describe('Tool.bindings (additive)', () => {
   it('bindings field is optional and typed when present', () => {
-    const t: Pick<Tool<null>, 'id' | 'bindings'> = {
+    const t: Pick<Tool, 'id' | 'bindings'> = {
       id: 'demo',
       bindings: [
         { spec: { kind: 'key', key: 'a' }, actionId: 'select-all' },
@@ -26,7 +26,7 @@ describe('Tool.eligibility.capabilities', () => {
 
 describe('Tool is a Contribution', () => {
   it('accepts a focus-declaring tool wherever a contribution is wanted', () => {
-    const t: Tool<null> = {
+    const t: Tool = {
       id: 'rect',
       eligibility: { focus: true, capabilities: ['creates-shapes'] },
       bindings: [],
@@ -36,7 +36,7 @@ describe('Tool is a Contribution', () => {
   });
 
   it('accepts a bindings-only entry as a contribution without casting', () => {
-    // `createHudContribution` used `as unknown as Tool<null>` to get here.
+    // `createHudContribution` used `as unknown as Tool` to get here.
     const c: Contribution = { id: 'weasel-hud', eligibility: { claimed: true }, bindings: [] };
     expect(c.eligibility.claimed).toBe(true);
   });

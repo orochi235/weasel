@@ -11,11 +11,11 @@ import { cursorFor } from '@weasel-js/cursor';
  * through the `insert` dep. Alt toggles from-corner ⇄ from-center
  * mid-drag via the action's live modifier read.
  */
-export function useEllipseTool(options: InsertToolOptions = {}): Tool<null> {
+export function useEllipseTool(options: InsertToolOptions = {}): Tool {
   const { behaviors } = options;
   return useMemo(
     () =>
-      defineTool<null>({
+      defineTool({
         id: 'ellipse',
         keybinding: { key: 'E' },
         capabilities: ['creates-shapes'],

@@ -51,7 +51,7 @@ const INITIAL: Board = {
 const NO_DEPS = createDepRegistry();
 const UNLOCKED: Rule = { mode: { not: 'locked' } };
 
-const HAND = defineTool<unknown>({ id: 'hand', bindings: [{ spec: { kind: 'drag' }, actionId: 'pan' }] });
+const HAND = defineTool({ id: 'hand', bindings: [{ spec: { kind: 'drag' }, actionId: 'pan' }] });
 const TOOLS: ReadonlyMap<string, Tool> = new Map([[HAND.id, HAND]]);
 
 function boxAt(b: Board, x: number, y: number): Box | undefined {

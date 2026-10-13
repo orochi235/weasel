@@ -6,7 +6,7 @@
  * Picking, marquee and select-all ask about scene layers, so this is where one
  * namespace is read in terms of the other.
  */
-import { isLayerVisible, type RenderLayer } from 'core/layers/render';
+import { paintedLayers, type RenderLayer } from 'core/layers/render';
 
 /** The render-layer id a scene layer paints under. */
 export function sceneLayerKey(layerId: string): string {
@@ -21,21 +21,14 @@ export interface ViewLayerPaint {
   layerOrder?: readonly string[];
 }
 
-/** The layers a view draws, in the order it draws them — the two gates
- *  `drawLayers` applies, over whatever `layers` narrowed to. */
-export function paintedLayers(
+/** The layers a view draws, in the order it draws them: what `drawLayers`
+ *  would paint of whatever `layers` narrowed to. */
+export function viewPaintedLayers(
   surface: readonly RenderLayer<unknown>[],
   view: ViewLayerPaint,
 ): readonly RenderLayer<unknown>[] {
   const narrowed = view.layers ? view.layers(surface) : surface;
-  const order = view.layerOrder;
-  const sequence = order
-    ? order
-      .map((id) => narrowed.find((l) => l.id === id))
-      .filter((l): l is RenderLayer<unknown> => l !== undefined)
-    : narrowed;
-  const visibility = view.layerVisibility ?? {};
-  return sequence.filter((l) => isLayerVisible(l, visibility));
+  return paintedLayers(narrowed, view.layerVisibility ?? {}, view.layerOrder);
 }
 
 /**
@@ -57,7 +50,7 @@ export function createSceneLayerGate(): (
     const inputs = [surface, view.layers, view.layerVisibility, view.layerOrder];
     if (last && last.inputs.every((v, i) => v === inputs[i])) return last.gate;
     const byId = new Map(surface.map((l) => [l.id, l]));
-    const drawn = new Set(paintedLayers(surface, view));
+    const drawn = new Set(viewPaintedLayers(surface, view));
     const gate = (layerId: string): boolean => {
       const carrier = byId.get(sceneLayerKey(layerId)) ?? byId.get('scene');
       return carrier === undefined || drawn.has(carrier);

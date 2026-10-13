@@ -48,7 +48,6 @@ export function makePinchZoomAction(
         const multiTouch = ctx.multiTouch;
         if (!multiTouch) return {};
 
-        // `multiTouch.pinch` may not be set yet on start; it is populated on moves.
         const startSpread = multiTouch.spread > 0 ? multiTouch.spread : 1;
 
         const scratch: PinchScratch = { view, startSpread, centroid: multiTouch.centroid };

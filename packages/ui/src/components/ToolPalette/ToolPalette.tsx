@@ -48,7 +48,7 @@ function orderedGroupKeys(
 function resolveIcon(tool: AnyTool): ReactNode {
   const rawIcon = tool.presentation?.icon;
   if (rawIcon == null) return <UnknownIcon />;
-  if (typeof rawIcon === 'function') return rawIcon(undefined);
+  if (typeof rawIcon === 'function') return rawIcon();
   return rawIcon;
 }
 

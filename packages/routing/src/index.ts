@@ -103,7 +103,7 @@ export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand'
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
 export {
-  pointerGestureId, recordModeSwitch, createDispatcher,
+  multiTouchGestureId, pointerGestureId, recordModeSwitch, createDispatcher,
 } from './interactions/dispatcher/dispatcher';
 export type {
   ModeSwitchLogEntry, TraceLogEntry, DispatcherContext, UiOngoingControl,
@@ -140,7 +140,7 @@ export type { ModeShortcutHandlers } from './contributions/modeShortcuts';
 
 // ─── tools ────────────────────────────────────────────────────────────────
 export type {
-  Tool, AnyTool, AnyToolOf, ToolCtx, ToolLifecycleCtx, ToolBounds, ToolModifiers, ToolKeybinding, ToolSlot,
+  Tool, AnyTool, ToolBounds, ToolModifiers, ToolKeybinding, ToolSlot,
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';

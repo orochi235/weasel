@@ -34,11 +34,11 @@ export interface PencilPoint {
  * `{ kind: 'pencil', samples }`. The kit's default `insert` dep runs
  * `schneiderFit` over the samples to produce a cubic-Bezier path.
  */
-export function usePencilTool(options: InsertToolOptions = {}): Tool<null> {
+export function usePencilTool(options: InsertToolOptions = {}): Tool {
   const { behaviors } = options;
   return useMemo(
     () =>
-      defineTool<null>({
+      defineTool({
         id: 'pencil',
         keybinding: { key: 'N' },
         capabilities: ['creates-paths'],

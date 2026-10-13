@@ -462,7 +462,7 @@ declare module '@weasel-js/routing' {
      *  `<SceneCanvas>` from `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;
     /**
-     * The canvas's debug sink — the one tools reach as `ToolCtx.debug`.
+     * The canvas's debug sink.
      * Sourced by `<SceneCanvas>`; absent while its `debug` overlay is off.
      * Actions report what they did here, and the overlay draws it.
      */

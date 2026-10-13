@@ -2,10 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
-import { layoutRuns, _resetBidiWarningForTests, type LayoutRunsOpts } from './layoutRuns';
+import { layoutRuns } from './layoutRuns';
+import type { LayoutRunsOpts } from './layoutOpts';
 import { cachedLayoutRuns, _resetLayoutCacheForTests } from './layoutCache';
 import { layoutTextPose } from './textPoseLayout';
-import { registerBidi, paragraphDirection } from './bidiRegistry';
+import { registerBidi, paragraphDirection, _resetBidiWarningForTests } from './bidiRegistry';
 import type { BidiResolver } from './bidiSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
@@ -69,6 +70,35 @@ describe('registerBidi', () => {
     unregister();
     expect(visual(layoutRuns([RUN(HEBREW)], OPTS))).toEqual([0, 1, 2]);
     expect(warn.mock.calls[0][0]).toContain('registerBidi');
+    warn.mockRestore();
+  });
+
+  it('says nothing about digits, which read left to right with or without an engine', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const digits = ['\u0661\u0662\u0663', '\u06f1\u06f2\u06f3', '\u{10d31}\u{10d32}', '\u{10e60}\u{10e61}', '\u0600\u066b\u066c'];
+    for (const text of digits) {
+      layoutRuns([RUN(text)], OPTS);
+      // The premise: an engine leaves them in the order they were written.
+      const levels = bidi.reorder(bidi.analyze([...text].map((c) => c.codePointAt(0)!), 'auto'), 0, [...text].length).levels;
+      expect(Array.from(levels).every((l) => l % 2 === 0), text).toBe(true);
+    }
+    expect(warn).not.toHaveBeenCalled();
+    layoutRuns([RUN('\u0627\u0661')], OPTS);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it.each([
+    ['a byte order mark', [0x41, 0xfeff, 0x42]],
+    ['an Arabic comma', [0x41, 0x060c, 0x42]],
+    ['ornate parentheses', [0xfd3e, 0x41, 0x42, 0xfd3f]],
+  ])('says nothing about %s in left-to-right text', (_name, cps) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    layoutRuns([RUN(String.fromCodePoint(...cps))], OPTS);
+    // The premise: an engine leaves what it keeps in the order it was written.
+    const { order } = bidi.reorder(bidi.analyze(cps, 'auto'), 0, cps.length);
+    expect([...order]).toEqual([...order].sort((a, b) => a - b));
+    expect(warn.mock.calls.filter(([message]) => String(message).includes('right-to-left'))).toEqual([]);
     warn.mockRestore();
   });
 

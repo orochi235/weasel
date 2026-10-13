@@ -32,7 +32,7 @@ export interface HudDrawCtx {
  *  the scene. */
 export interface HudContentCtx {
   /** Scene data the hud layer was handed. Opaque here; painters that need
-   *  it cast to a known shape, as tools do with `ToolCtx.adapter`. */
+   *  it cast to a known shape. */
   data: unknown;
   /** The outer view. A painter deriving an inner view starts from this. */
   view: View;

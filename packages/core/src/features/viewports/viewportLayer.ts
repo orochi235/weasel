@@ -1,5 +1,6 @@
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { drawOneLayer, subscribeToSources, type Dims, type RenderLayer } from 'core/layers/render';
+import { backgroundFillCommands } from 'core/layers/backgroundFill';
 import { normalizeView, type View } from 'core/viewport/view';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { ResolvableView } from './viewResolver';
@@ -99,15 +100,10 @@ export function createViewportLayer<TData, TSource = TData>(
       const b = bounds(outerView, dims);
       // Inner content drawn through `view`, then translated so the inner
       // view's screen origin lines up with the viewport top-left.
-      const children: DrawCommand[] = [];
-      if (background) {
-        children.push({
-          kind: 'path',
-          path: { kind: 'rect', x: 0, y: 0, width: b.w, height: b.h },
-          fill: { paint: { kind: 'solid', color: background } },
-        });
-      }
       const innerDims = { width: b.w, height: b.h };
+      const children: DrawCommand[] = background
+        ? backgroundFillCommands({ kind: 'solid', color: background }, innerDims)
+        : [];
       // The cast holds up because `TSource` defaults to `TData`: without a
       // thunk the two are the same type by construction.
       const innerData = sourceData ? sourceData(data) : (data as unknown as TSource);

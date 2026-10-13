@@ -39,7 +39,7 @@ describe('useEyedropperTool', () => {
     // `defineTool` wraps a string cursor in a resolver. jsdom draws no cursor,
     // so this checks the string handed to the host, not what renders.
     const cursor = typeof result.current.cursor === 'function'
-      ? result.current.cursor({} as never)
+      ? result.current.cursor()
       : result.current.cursor;
     expect(cursor).toMatch(/^url\("data:image\/svg\+xml,/);
     expect(cursor).toMatch(/, crosshair$/);
@@ -145,7 +145,7 @@ describe('useEyedropperTool', () => {
   it('picks through the committed callbacks, not an abandoned render\'s', () => {
     const committed = vi.fn();
     const abandoned = vi.fn();
-    let tool = null as Tool<null> | null;
+    let tool = null as Tool | null;
     function Probe({ onPick }: { onPick: (c: string | null) => void }) {
       tool = useEyedropperTool({ onPick, colorOf: () => '#abc' });
       return null;

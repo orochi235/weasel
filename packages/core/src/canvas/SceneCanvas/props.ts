@@ -9,7 +9,7 @@ import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
-import type { PanBounds } from 'core/viewport/useDecayLoop';
+import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
 import type {
   ContentHandlerEntry
@@ -484,7 +484,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after
      *    this. */
     viewport?: {
-      inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
+      inertia?: boolean | InertiaConfig;
       /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
        *  clamp; `false` disables. An object sets the scale clamp. */
       pinchZoom?: boolean | PinchZoomOptions;

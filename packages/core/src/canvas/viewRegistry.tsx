@@ -22,8 +22,12 @@ import { createViewResolver, type ViewResolver } from 'features/viewports/viewRe
  * @internal Attached by the surface, read by `<CanvasView>`.
  */
 export interface SurfaceHandle {
-  /** Client-space origin of the canvas element. */
+  /** Client-space origin of the canvas element. A rect fact: it knows nothing
+   *  of a `clientToWorld` override, so convert with {@link clientToWorld}. */
   origin(): { left: number; top: number };
+  /** A client point in the surface's own world — the conversion the surface
+   *  itself makes, its `clientToWorld` override included. */
+  clientToWorld(clientX: number, clientY: number): [number, number];
   /** The outer camera. */
   view(): View;
   /** The canvas's CSS-pixel size. */
@@ -99,7 +103,8 @@ export interface ViewRegistry {
   readonly resolver: ViewResolver;
   /** The hosting surface, or `null` before one attaches. */
   surface(): SurfaceHandle | null;
-  attachSurface(handle: SurfaceHandle): void;
+  /** Returns a detach, which leaves a handle attached since alone. */
+  attachSurface(handle: SurfaceHandle): () => void;
 }
 
 const ViewRegistryContext = createContext<ViewRegistry | null>(null);
@@ -146,7 +151,10 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
         return () => { listenersRef.current.delete(fn); };
       },
       surface: () => surfaceRef.current,
-      attachSurface: (handle) => { surfaceRef.current = handle; },
+      attachSurface: (handle) => {
+        surfaceRef.current = handle;
+        return () => { if (surfaceRef.current === handle) surfaceRef.current = null; };
+      },
     };
   }, []);
 
