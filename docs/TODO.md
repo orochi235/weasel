@@ -1108,14 +1108,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) No package but core passes `tsc -p` on its own tsconfig.** The other 34 set
-  `"rootDir": "src"` and inherit the root's `paths`, which send every sibling import to that
-  sibling's source, outside `src`. `tsc -p packages/routing/tsconfig.json` reports 109 `TS6059`
-  and 2 `TS2352` (run 2026-10-13; the others were not run). Nothing runs these, since
-  `npm run typecheck` uses the root config, but each package's `tsup` reads the file for its
-  declaration build. Core's was fixed by setting `rootDir` to the repo root; doing the same here
-  needs each package's built declarations compared before and after, and the two `TS2352` read.
-
 - **(P2) A new dependency in browser-tested code fails the first fleet run that meets it.** A node
   keeps `node_modules/.vite` between runs, and with a cache in place vite skips the scan of
   `optimizeDeps.entries`. A dependency first imported since the cache was written is then found

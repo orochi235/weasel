@@ -228,9 +228,9 @@ Typecheck is `npm run typecheck`. It runs two programs: the root `tsconfig.json`
 `packages/tsconfig.json` for every `*.browser.test.*` file, which the root one excludes because
 those use `@vitest/browser`'s matchers and the rest use jest-dom's — the two declare
 `toHaveTextContent` incompatibly, and in one program load order picks the winner. A bare
-`npx tsc --noEmit` checks only the first. `tsc -p packages/core/tsconfig.json`
-checks core alone and reads every sibling from source. The other packages' own configs do not
-pass that way: see "Release-gate & build hygiene" in `docs/TODO.md`.
+`npx tsc --noEmit` checks only the first. `npm run typecheck:packages`
+typechecks each package alone under its own `tsconfig.json`, every sibling read from source: the
+program an editor shows for a file in that package. Name packages after `--` to check only those.
 
 ## Traps
 

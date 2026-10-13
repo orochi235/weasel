@@ -1,3 +1,4 @@
+/// <reference path="../css-modules.d.ts" />
 /**
  * Dev HUD reporting the modality state: active mode, active-slot tool, and
  * the hotkey-engaged tool stack. Anchors below `PickHud` in the canvas's

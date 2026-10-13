@@ -1,3 +1,4 @@
+/// <reference path="../css-modules.d.ts" />
 /**
  * Fixed-position dev HUD that shows the cursor's current viewport
  * (client) coords next to the equivalent canvas (world) coords. Pins to the

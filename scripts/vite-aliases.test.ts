@@ -23,12 +23,12 @@ const inRepo = (specifier: string) => {
 };
 
 /** `compilerOptions` from the tsconfig in `dir`, which allows comments. */
-function compilerOptions(dir: string): { paths: Record<string, string[]>; rootDir?: string } {
+function compilerOptions(dir: string): { paths: Record<string, string[]>; rootDir?: string } | undefined {
   const raw = readFileSync(join(REPO, dir, 'tsconfig.json'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
   return JSON.parse(raw).compilerOptions;
 }
 
-const tsconfigPaths = (dir = '.') => compilerOptions(dir).paths;
+const tsconfigPaths = (dir = '.') => compilerOptions(dir)!.paths;
 
 /** Where TypeScript's `paths` sends a specifier: an exact key, else the wildcard key with the longest prefix. */
 function viaPaths(paths: Record<string, string[]>, specifier: string): string | null {
@@ -127,6 +127,19 @@ describe('the root tsconfig paths', () => {
   });
 });
 
+describe('rootDir', () => {
+  // A config's `paths` reach into sibling packages, and TS 6 defaults `rootDir` to the config's own directory.
+  it('is the repo root for every package, so one typechecked alone has no TS6059', () => {
+    expect(compilerOptions('.')?.rootDir).toBe('.');
+    const own = readdirSync(join(REPO, 'packages'))
+      .filter((name) => existsSync(join(REPO, 'packages', name, 'tsconfig.json')))
+      .map((name) => [name, compilerOptions(join('packages', name))?.rootDir])
+      .filter(([, rootDir]) => rootDir !== undefined);
+    // Core restates it: tsup resolves an inherited `rootDir` against the package.
+    expect(own).toEqual([['core', '../..']]);
+  });
+});
+
 describe("core's tsconfig paths", () => {
   it('are what `npm run gen:tsconfig-paths` writes', () => {
     expect(tsconfigPaths('packages/core')).toEqual(coreTsconfigPaths(REPO));
@@ -136,15 +149,6 @@ describe("core's tsconfig paths", () => {
     const paths = tsconfigPaths('packages/core');
     expect(viaPaths(paths, '@weasel-js/geom/mat3')).toBeNull();
     expect(viaPaths(paths, '@weasel-js/core/nothing')).toBeNull();
-  });
-
-  it('name no file outside its rootDir, which fails a standalone `tsc -p packages/core` with TS6059', () => {
-    const { paths, rootDir = '.' } = compilerOptions('packages/core');
-    const root = resolve(REPO, 'packages/core', rootDir);
-    const outside = Object.values(paths)
-      .map(([target]) => resolve(REPO, 'packages/core', target))
-      .filter((file) => relative(root, file).startsWith('..'));
-    expect(outside).toEqual([]);
   });
 
   it('send each entry they map to the file the root paths send it to', () => {
