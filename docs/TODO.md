@@ -496,11 +496,6 @@ Priority tags:
 
 ### Timelines and rigging
 
-- **(P3) A paused looping timeline seeked to its `duration` shows its start** — the next frame
-  wraps a playhead at `duration` to 0 and counts a lap, paused or not (`tick` in
-  `packages/animator/src/timeline/createTimeline.ts`). In the timeline demo, dragging **scrub**
-  to its right end shows t = 0: the readout says `3000 / 3000 ms`, then `0 / 3000 ms` a frame
-  later.
 - **(P3) A pose typed by an interface is not a `ClipValue`** — `ClipValue`'s object arm is an
   index signature, which an interface such as `RectPose` does not satisfy, so
   `{ t: 0, value: pose }` is a type error for a `pose: RectPose` and fine for the same object

@@ -45,6 +45,15 @@ function tracksEnd(tracks: Track[], explicit?: number): number {
   return max;
 }
 
+/** Hands `take` the laps a playhead at or past `duration` has crossed, of those left: one
+ *  at a time under a lap count, and all at once under an endless loop, where a far seek
+ *  can skip a billion laps of a short duration. */
+function crossLaps(playhead: number, duration: number, loopsLeft: number, take: (laps: number) => void): void {
+  if (duration <= 0 || playhead < duration) return;
+  if (loopsLeft === Infinity) { take(Math.floor(playhead / duration)); return; }
+  for (let at = playhead, left = loopsLeft; at >= duration && left > 0; at -= duration, left -= 1) take(1);
+}
+
 function notify(set: Set<() => void>): void {
   for (const cb of set) {
     try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
@@ -115,31 +124,22 @@ export function createTimeline(
 
   const tick = (virtualNow: number, scale?: number): boolean => {
     lastVirtual = virtualNow;
-    playhead = virtualNow + offset;
     const rate = scale ?? (base.isPaused() ? 0 : base.timeScale());
     held = rate === 0;
-
-    // A far seek can skip a billion laps of a short duration, so an endless
-    // loop takes them in one modulo rather than one iteration each.
-    if (duration > 0 && playhead >= duration) {
-      if (loopsLeft === Infinity) {
-        const laps = Math.floor(playhead / duration);
+    // A held playhead a seek left on the seam is the end of its lap until it plays.
+    const parked = held && duration > 0 && playhead === duration && loopsLeft > 0;
+    if (!parked) {
+      playhead = virtualNow + offset;
+      crossLaps(playhead, duration, loopsLeft, (laps) => {
+        loopsLeft -= laps;
         offset -= laps * duration;
         playhead -= laps * duration;
         lap += laps;
         onWrap();
-      } else {
-        while (playhead >= duration && loopsLeft > 0) {
-          loopsLeft -= 1;
-          offset -= duration;
-          playhead -= duration;
-          lap += 1;
-          onWrap();
-        }
-      }
+      });
     }
 
-    const finished = playhead >= duration;
+    const finished = playhead >= duration && !parked;
     playhead = Math.min(playhead, duration);
 
     // Sampled before fired, so a handler reads the current frame's values.
@@ -154,7 +154,7 @@ export function createTimeline(
     if (finished && !done) { done = true; opts.onDone?.(); playbackChanged(); }
     // Re-read: `onDone` may have seeked back or extended the duration, and
     // retiring the entry would strand the replay its own handler just started.
-    if (playhead < duration) return false;
+    if (playhead < duration || parked) return false;
     live = false;
     sampler.release();
     return true;
