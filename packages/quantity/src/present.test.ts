@@ -179,7 +179,7 @@ describe.each(PARSES)('parsing %o', (display, typed, value) => {
   });
 });
 
-it('refuses a constant on a mixed fraction, which has no honest text form', () => {
+it('refuses, in its type, a constant on a mixed fraction, which has no honest text form', () => {
   // @ts-expect-error — `1 1/2π` reads as 1 + ½π.
   fraction({ of: 'π', mixed: true });
 });

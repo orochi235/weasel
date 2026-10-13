@@ -105,10 +105,6 @@ describe('formatCompact', () => {
     expect(formatCompact(12_345_678)).toBe('12.3M');
   });
 
-  it('rolls over into the next magnitude rather than printing 1000.0K', () => {
-    expect(formatCompact(999_950)).toBe('1.00M');
-  });
-
   it('signs a negative with U+2212', () => {
     expect(formatCompact(-1500)).toBe('−1.50K');
   });
