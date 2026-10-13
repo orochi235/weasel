@@ -23,12 +23,12 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 1209,
-    "longestFunction": 746
+    "lines": 1118,
+    "longestFunction": 646
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 424,
-    "longestFunction": 286
+    "lines": 413,
+    "longestFunction": 267
   },
   "packages/core/src/canvas/SceneCanvas.tsx": {
     "lines": 1339,
@@ -279,12 +279,11 @@
     "longestFunction": 144
   },
   "packages/routing/src/interactions/dispatcher/dispatcher.ts": {
-    "lines": 904,
-    "longestFunction": 824
+    "lines": 898,
+    "longestFunction": 812
   },
   "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx": {
-    "lines": 1029,
-    "longestFunction": 933
+    "longestFunction": 160
   },
   "packages/simulation/src/useSimulation.ts": {
     "longestFunction": 130
@@ -317,10 +316,6 @@
   "packages/text-dom/src/useTextEdit.ts": {
     "lines": 749,
     "longestFunction": 381
-  },
-  "packages/text/src/layout/layoutRuns.ts": {
-    "lines": 1172,
-    "longestFunction": 617
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 174
