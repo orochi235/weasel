@@ -2,8 +2,8 @@
  * Preview-ghost render layer for `<SceneCanvas>`. Renders in-flight gesture
  * poses on top of the committed scene by reusing the scene slot's `drawOne`.
  * Which ids are displaced (`previewIds`) and where (`previewPose`) comes from
- * the drawing view's preview sources on the draw envelope — tools first, then
- * that view's in-flight handles.
+ * the drawing view's preview sources on the draw envelope: that view's
+ * in-flight handles.
  *
  * This replaces the per-tool `drawGhost` fold-in — a single SceneCanvas
  * concern instead of every consumer wiring it.
