@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_SHAPES } from '../shapes';
-import { defaultParamsFor } from '../shapeControls';
-import { changedShapeParams, composeSnippet, shapeParamsSnippet, type ShapeParamSets } from './snippets';
-
-const defaults = (): ShapeParamSets =>
-  Object.fromEntries(ALL_SHAPES.map((shape) => [shape, defaultParamsFor(shape)])) as ShapeParamSets;
+import { changedShapeParams, composeSnippet, defaultShapeParams, shapeParamsSnippet } from './snippets';
 
 describe('composeSnippet', () => {
   it('writes the base, its params, each effect, and the appearance props', () => {
@@ -44,12 +39,12 @@ describe('composeSnippet', () => {
 
 describe('shape params', () => {
   it('reports nothing while every shape sits at its defaults', () => {
-    expect(changedShapeParams(defaults())).toEqual({});
-    expect(shapeParamsSnippet(defaults())).toBe('// (no changes from defaults)');
+    expect(changedShapeParams(defaultShapeParams())).toEqual({});
+    expect(shapeParamsSnippet(defaultShapeParams())).toBe('// (no changes from defaults)');
   });
 
   it('lists only the params that moved, in shape order', () => {
-    const all = defaults();
+    const all = defaultShapeParams();
     all.ribbon = { ...all.ribbon, left: 'flat' };
     all.square = { ...all.square, erosion: 0.5 };
     expect(changedShapeParams(all)).toEqual({ square: { erosion: 0.5 }, ribbon: { left: 'flat' } });

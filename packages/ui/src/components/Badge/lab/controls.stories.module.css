@@ -47,6 +47,20 @@
   font-size: 10px;
 }
 
+.button {
+  font-size: 11px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.snippet {
+  font-family: var(--wzl-font-mono);
+  font-size: 11px;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .dense.row {
   grid-template-columns: 70px 1fr 36px;
   gap: 6px;

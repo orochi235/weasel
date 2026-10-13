@@ -64,10 +64,10 @@ export function ComposeLabView(args: LabArgs) {
         <div className={s.stack}>
           <Preview lab={lab} onZoom={(zoom) => change({ zoom })} />
           <div className={s.actions}>
-            <button className={s.button} onClick={copySnippet}>Copy snippet</button>
-            <button className={s.button} onClick={() => { change(resetPatch()); setSnippet(null); }}>Reset</button>
+            <button className={controls.button} onClick={copySnippet}>Copy snippet</button>
+            <button className={controls.button} onClick={() => { change(resetPatch()); setSnippet(null); }}>Reset</button>
           </div>
-          {snippet && <textarea readOnly className={s.snippet} value={snippet} rows={Math.min(20, snippet.split('\n').length + 1)} />}
+          {snippet && <textarea readOnly className={controls.snippet} value={snippet} rows={Math.min(20, snippet.split('\n').length + 1)} />}
           <section className={s.section}>
             <label className={`${controls.row} ${controls.wide2}`}>
               <span className={s.baseLabel}>base</span>

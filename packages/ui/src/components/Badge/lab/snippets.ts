@@ -1,5 +1,5 @@
 import { ALL_SHAPES } from '../shapes';
-import { SHAPE_CONTROLS } from '../shapeControls';
+import { SHAPE_CONTROLS, defaultParamsFor } from '../shapeControls';
 import type { BadgeShape } from '../types';
 import { isColorParam } from './controls';
 import type { LabParams, LabSnapshot } from './snapshot';
@@ -36,6 +36,10 @@ export function composeSnippet(lab: Composed): string {
 }
 
 export type ShapeParamSets = Record<BadgeShape, LabParams>;
+
+export function defaultShapeParams(): ShapeParamSets {
+  return Object.fromEntries(ALL_SHAPES.map((shape) => [shape, defaultParamsFor(shape)])) as ShapeParamSets;
+}
 
 /** Each shape's params that differ from its controls' defaults; a shape with none is left out. */
 export function changedShapeParams(all: ShapeParamSets): Record<string, LabParams> {

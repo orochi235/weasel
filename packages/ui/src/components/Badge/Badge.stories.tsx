@@ -1,11 +1,10 @@
-import { useState, type CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Badge } from './Badge';
-import { ALL_SHAPES, SHAPES } from './shapes';
-import type { BadgeShape, BadgeStatus, BadgeVariant } from './types';
-import { quatrefoilRadius, type QuatrefoilParams } from './bases/Quatrefoil';
-import { SHAPE_CONTROLS, defaultParamsFor } from './shapeControls';
+import { ALL_SHAPES } from './shapes';
+import type { BadgeStatus, BadgeVariant } from './types';
 import { ComposeLabView } from './lab/ComposeLabView';
+import { QuatrefoilOctantSweeps } from './lab/QuatrefoilOctants';
+import { ShapeGallery } from './lab/ShapeGallery';
 import { BADGE_STATUS_ICONS } from './statusIcons';
 import { BADGE_VARIANT_ICONS } from './variantIcons';
 
@@ -59,217 +58,6 @@ type Story = StoryObj<typeof Badge>;
 
 export const Default: Story = {};
 
-function ShapeCard({ shape, status, variant, label, params, onChange }: {
-  shape: BadgeShape;
-  status: BadgeStatus;
-  variant: BadgeVariant;
-  label: string;
-  params: Record<string, number | string>;
-  onChange: (key: string, value: number | string) => void;
-}) {
-  const controls = SHAPE_CONTROLS[shape] ?? [];
-  const setParams = (updater: (p: Record<string, number | string>) => Record<string, number | string>) => {
-    const next = updater(params);
-    for (const k of Object.keys(next)) {
-      if (next[k] !== params[k]) onChange(k, next[k]);
-    }
-  };
-  const labelStyle: CSSProperties = { fontSize: 9, opacity: 0.7 };
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, borderRadius: 6, background: 'rgba(255,255,255,0.02)', minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', minHeight: 56 }}>
-        <Badge shape={shape} status={status} variant={variant} shapeParams={params as never}>{label}</Badge>
-      </div>
-      <code style={{ fontSize: 10, opacity: 0.85, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-        {shape}
-        {SHAPES[shape]?.compose === undefined && shape !== 'pill' && shape !== 'plain' && (
-          <span title="Legacy: rendered via custom Component, not the compose pipeline" style={{ fontSize: 8, padding: '1px 4px', borderRadius: 3, background: 'rgba(212, 165, 116, 0.18)', color: '#d4a574', letterSpacing: '0.08em' }}>LEGACY</span>
-        )}
-      </code>
-      {controls.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {controls.map((c) => {
-            if (c.kind === 'header') {
-              return (
-                <div key={`__header__${c.key}`} style={{ fontSize: 9, opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 4 }}>
-                  {c.label}
-                </div>
-              );
-            }
-            return (
-            <label key={c.key} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 36px', alignItems: 'center', gap: 6 }}>
-              <span style={labelStyle}>{c.key}</span>
-              {c.kind === 'range' ? (
-                <>
-                  <input
-                    type="range"
-                    min={c.min}
-                    max={c.max}
-                    step={c.step}
-                    value={params[c.key] as number}
-                    onChange={(e) => setParams((p) => ({ ...p, [c.key]: Number(e.target.value) }))}
-                    style={{ width: '100%' }}
-                  />
-                  <span style={labelStyle}>{params[c.key]}</span>
-                </>
-              ) : c.kind === 'select' ? (
-                <>
-                  <select
-                    value={params[c.key] as string}
-                    onChange={(e) => setParams((p) => ({ ...p, [c.key]: e.target.value }))}
-                    style={{ width: '100%', fontSize: 10 }}
-                  >
-                    {c.options.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                  <span />
-                </>
-              ) : c.kind === 'color' ? (
-                <>
-                  <input
-                    type="color"
-                    value={typeof params[c.key] === 'string' && /^#[0-9a-fA-F]{6}$/.test(params[c.key] as string) ? (params[c.key] as string) : c.default}
-                    onChange={(e) => setParams((p) => ({ ...p, [c.key]: e.target.value }))}
-                    style={{ width: '100%', height: 20, padding: 0, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, cursor: 'pointer' }}
-                  />
-                  <span />
-                </>
-              ) : (
-                <>
-                  <input
-                    type="text"
-                    value={params[c.key] as string}
-                    onChange={(e) => setParams((p) => ({ ...p, [c.key]: e.target.value }))}
-                    style={{ width: '100%', fontSize: 10, padding: '2px 4px' }}
-                  />
-                  <span />
-                </>
-              )}
-            </label>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const SHAPE_CATEGORIES: { title: string; shapes: BadgeShape[] }[] = [
-  {
-    title: 'Basic',
-    shapes: ['pill', 'plain', 'square', 'notched', 'hexagon', 'ribbon'],
-  },
-  {
-    title: 'Detailed',
-    shapes: ['shield', 'scalloped', 'perforated', 'postage', 'starburst', 'sparkler', 'plaque'],
-  },
-  {
-    title: 'Themed',
-    shapes: ['house', 'cloud', 'beavis', 'crest', 'urn', 'coffin', 'receipt', 'wood', 'quatrefoil'],
-  },
-];
-
-function buildExport(allParams: Record<BadgeShape, Record<string, number | string>>) {
-  // Only include shapes that have non-default values.
-  const diff: Record<string, Record<string, number | string>> = {};
-  for (const shape of ALL_SHAPES) {
-    const current = allParams[shape];
-    const controls = SHAPE_CONTROLS[shape] ?? [];
-    if (!current || controls.length === 0) continue;
-    const changed: Record<string, number | string> = {};
-    for (const c of controls) {
-      if (c.kind === 'header') continue;
-      if (current[c.key] !== c.default) changed[c.key] = current[c.key];
-    }
-    if (Object.keys(changed).length > 0) diff[shape] = changed;
-  }
-  return diff;
-}
-
-function formatExportAsTs(diff: Record<string, Record<string, number | string>>) {
-  const lines: string[] = ['// Drop into SHAPE_CONTROLS as new defaults:'];
-  for (const [shape, params] of Object.entries(diff)) {
-    lines.push(`${shape}: {`);
-    for (const [k, v] of Object.entries(params)) {
-      lines.push(`  ${k}: ${typeof v === 'string' ? JSON.stringify(v) : v},`);
-    }
-    lines.push('},');
-  }
-  return lines.join('\n');
-}
-
-function AllShapesView({ status, variant, label }: {
-  status: BadgeStatus;
-  variant: BadgeVariant;
-  label: string;
-}) {
-  const [allParams, setAllParams] = useState<Record<BadgeShape, Record<string, number | string>>>(() => {
-    const init: Record<string, Record<string, number | string>> = {};
-    for (const shape of ALL_SHAPES) init[shape] = defaultParamsFor(shape);
-    return init as Record<BadgeShape, Record<string, number | string>>;
-  });
-  const [exportText, setExportText] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  const handleExport = () => {
-    const diff = buildExport(allParams);
-    const text = Object.keys(diff).length === 0
-      ? '// (no changes from defaults)'
-      : formatExportAsTs(diff);
-    setExportText(text);
-    setCopied(false);
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => setCopied(true)).catch(() => {});
-    }
-  };
-
-  const handleReset = () => {
-    const init: Record<string, Record<string, number | string>> = {};
-    for (const shape of ALL_SHAPES) init[shape] = defaultParamsFor(shape);
-    setAllParams(init as Record<BadgeShape, Record<string, number | string>>);
-    setExportText(null);
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button onClick={handleExport} style={{ fontSize: 11, padding: '6px 12px', cursor: 'pointer' }}>
-          Export non-default params
-        </button>
-        <button onClick={handleReset} style={{ fontSize: 11, padding: '6px 12px', cursor: 'pointer' }}>
-          Reset all
-        </button>
-        {copied && <span style={{ fontSize: 10, opacity: 0.7 }}>copied to clipboard</span>}
-      </div>
-      {exportText !== null && (
-        <textarea
-          readOnly
-          value={exportText}
-          rows={Math.min(20, Math.max(4, exportText.split('\n').length + 1))}
-          style={{ fontFamily: 'var(--wzl-font-mono)', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
-        />
-      )}
-      {SHAPE_CATEGORIES.map((cat) => (
-        <section key={cat.title}>
-          <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 12px' }}>{cat.title}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, alignItems: 'start' }}>
-            {cat.shapes.map((shape) => (
-              <ShapeCard
-                key={shape}
-                shape={shape}
-                status={status}
-                variant={variant}
-                label={label}
-                params={allParams[shape] ?? defaultParamsFor(shape)}
-                onChange={(key, value) => setAllParams((prev) => ({ ...prev, [shape]: { ...prev[shape], [key]: value } }))}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-  );
-}
-
 export const AllShapes: Story = {
   tags: ['gallery'],
   args: {
@@ -282,8 +70,8 @@ export const AllShapes: Story = {
     shapeParams: { table: { disable: true } },
   },
   render: (args) => (
-    <AllShapesView
-           status={args.status ?? 'accent'}
+    <ShapeGallery
+      status={args.status ?? 'accent'}
       variant={args.variant ?? 'outline'}
       label={typeof args.children === 'string' ? args.children : 'LABEL'}
     />
@@ -563,56 +351,6 @@ export const SlotPillReplica: Story = {
   ),
 };
 
-// --- Quatrefoil octant explorer ------------------------------------------------
-
-function OctantCell({ params, label }: { params: QuatrefoilParams; label: string }) {
-  const radiusAt = quatrefoilRadius(params);
-  const N = 96;
-  // Octant arc from θ=0 (cardinal, east) to θ=π/4 (diagonal, NE). SVG y is flipped so we
-  // negate y to draw the diagonal going up-right.
-  const pts: string[] = [];
-  for (let i = 0; i <= N; i++) {
-    const θ = (i / N) * (Math.PI / 4);
-    const s = Math.sin(2 * θ);
-    const r = radiusAt(s);
-    const x = r * Math.cos(θ);
-    const y = -r * Math.sin(θ);
-    pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
-  }
-  // Coordinate frame: -5..80 horizontal, -80..5 vertical. Pad a bit for the diagonal end.
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <svg viewBox="-5 -80 90 85" width={100} height={100} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 4 }}>
-        {/* Reference axes */}
-        <line x1="0" y1="0" x2="75" y2="0" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" strokeDasharray="2 2" />
-        <line x1="0" y1="0" x2={(75 * Math.cos(Math.PI / 4)).toFixed(2)} y2={(-75 * Math.sin(Math.PI / 4)).toFixed(2)} stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" strokeDasharray="2 2" />
-        {/* Curve */}
-        <polyline points={pts.join(' ')} fill="rgba(127,176,105,0.18)" stroke="#7fb069" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
-        <circle cx="0" cy="0" r="1.2" fill="rgba(255,255,255,0.3)" />
-      </svg>
-      <code style={{ fontSize: 9, opacity: 0.7 }}>{label}</code>
-    </div>
-  );
-}
-
-function ParamSweep({ title, paramKey, values, fmt }: {
-  title: string;
-  paramKey: keyof QuatrefoilParams;
-  values: number[];
-  fmt?: (v: number) => string;
-}) {
-  return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.75, margin: 0 }}>{title}</h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-        {values.map((v) => (
-          <OctantCell key={`${String(paramKey)}-${v}`} params={{ [paramKey]: v } as QuatrefoilParams} label={`${String(paramKey)} = ${fmt ? fmt(v) : v}`} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export const QuatrefoilOctants: Story = {
   name: 'Quatrefoil octants',
   args: { children: 'OCTANT' },
@@ -624,26 +362,7 @@ export const QuatrefoilOctants: Story = {
     crawl: { table: { disable: true } }, bloat: { table: { disable: true } },
     padding: { table: { disable: true } },
   },
-  render: () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, padding: 16 }}>
-      <p style={{ fontSize: 12, opacity: 0.7, margin: 0, maxWidth: 760, lineHeight: 1.5 }}>
-        One octant of the quatrefoil curve. The horizontal dashed line is the cardinal axis (s = 0);
-        the 45° dashed line is the diagonal axis (s = 1). All other params default; only the
-        labeled param varies. Green polyline traces r(s) from cardinal to diagonal.
-      </p>
-      <ParamSweep title="spikeCurvature" paramKey="spikeCurvature" values={[0.4, 0.7, 1, 1.5, 2.5, 4]} />
-      <ParamSweep title="spikeBend" paramKey="spikeBend" values={[-0.8, -0.4, 0, 0.4, 0.8]} fmt={(v) => v.toFixed(2)} />
-      <ParamSweep title="spikeTipErosion" paramKey="spikeTipErosion" values={[0, 0.2, 0.4, 0.6, 0.85]} fmt={(v) => v.toFixed(2)} />
-      <ParamSweep title="valleyAt" paramKey="valleyAt" values={[0.15, 0.3, 0.5, 0.7, 0.85]} fmt={(v) => v.toFixed(2)} />
-      <ParamSweep title="valleyR" paramKey="valleyR" values={[5, 15, 25, 35, 45]} />
-      <ParamSweep title="valleySmooth" paramKey="valleySmooth" values={[0, 1.5, 3, 6, 12]} />
-      <ParamSweep title="lobeCurvature" paramKey="lobeCurvature" values={[0.4, 0.7, 1, 1.5, 2.5, 4]} />
-      <ParamSweep title="lobeBend" paramKey="lobeBend" values={[-0.8, -0.4, 0, 0.4, 0.8]} fmt={(v) => v.toFixed(2)} />
-      <ParamSweep title="lobeTipErosion" paramKey="lobeTipErosion" values={[0, 0.2, 0.4, 0.6, 0.85]} fmt={(v) => v.toFixed(2)} />
-      <ParamSweep title="lobeR (peak radius)" paramKey="lobeR" values={[25, 42, 55, 65, 70]} />
-      <ParamSweep title="spikeR (tip radius)" paramKey="spikeR" values={[15, 25, 35, 45, 50]} />
-    </div>
-  ),
+  render: () => <QuatrefoilOctantSweeps />,
 };
 
 export const ComposeLab: Story = {
