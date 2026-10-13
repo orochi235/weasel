@@ -229,9 +229,8 @@ Typecheck is `npm run typecheck`. It runs two programs: the root `tsconfig.json`
 those use `@vitest/browser`'s matchers and the rest use jest-dom's — the two declare
 `toHaveTextContent` incompatibly, and in one program load order picks the winner. A bare
 `npx tsc --noEmit` checks only the first. `tsc -p packages/core/tsconfig.json`
-exits 1 with a couple of hundred pre-existing `TS6059` errors on a clean tree — core's `outDir`
-pins `rootDir` to `packages/core` while its `paths` reach into sibling packages. A sibling whose
-`dist` is older than its source adds a few `TS2305` and `TS2339` beside them. None are yours.
+checks core alone and reads every sibling from source. The other packages' own configs do not
+pass that way: see "Release-gate & build hygiene" in `docs/TODO.md`.
 
 ## Traps
 

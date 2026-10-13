@@ -33,26 +33,16 @@ export function tsconfigPaths(repoRoot) {
 }
 
 /**
- * The siblings core's own tsconfig resolves to source. Its other dependencies
- * resolve to their built `dist`, and `tsup` reads that file for core's
- * declaration build.
- */
-const CORE_FROM_SOURCE = ['geom', 'gestures', 'history', 'modes', 'react', 'registry', 'routing', 'select', 'simulation', 'svg'];
-
-/**
  * @param {string} repoRoot the directory containing `packages/`
- * @returns {Record<string, string[]>} `packages/core/tsconfig.json`'s `paths`: the root's entries for core and
- *   the siblings it reads from source, relative to core. Paths resolve against the file that declares them, so
- *   core cannot inherit the root's.
+ * @returns {Record<string, string[]>} `packages/core/tsconfig.json`'s `paths`: the root's, relative to core.
+ *   `tsup` reads that file for core's declaration build and resolves inherited `paths` against core's
+ *   directory, so core cannot inherit the root's.
  */
 export function coreTsconfigPaths(repoRoot) {
   const coreDir = join(repoRoot, 'packages', 'core');
-  const mapped = new Set(['core', ...CORE_FROM_SOURCE].map((name) => `@weasel-js/${name}`));
-  const owner = (specifier) => specifier.split('/').slice(0, 2).join('/');
   /** @type {Record<string, string[]>} */
   const paths = {};
   for (const [specifier, [target]] of Object.entries(tsconfigPaths(repoRoot))) {
-    if (specifier.startsWith('@') && !mapped.has(owner(specifier))) continue;
     const local = relative(coreDir, join(repoRoot, target));
     paths[specifier] = [local.startsWith('.') ? local : `./${local}`];
   }

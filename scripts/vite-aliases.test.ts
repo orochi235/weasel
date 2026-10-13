@@ -22,11 +22,13 @@ const inRepo = (specifier: string) => {
   return hit === null ? null : relative(REPO, hit);
 };
 
-/** `paths` from the tsconfig in `dir`, which allows comments. */
-function tsconfigPaths(dir = '.'): Record<string, string[]> {
+/** `compilerOptions` from the tsconfig in `dir`, which allows comments. */
+function compilerOptions(dir: string): { paths: Record<string, string[]>; rootDir?: string } {
   const raw = readFileSync(join(REPO, dir, 'tsconfig.json'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
-  return JSON.parse(raw).compilerOptions.paths;
+  return JSON.parse(raw).compilerOptions;
 }
+
+const tsconfigPaths = (dir = '.') => compilerOptions(dir).paths;
 
 /** Where TypeScript's `paths` sends a specifier: an exact key, else the wildcard key with the longest prefix. */
 function viaPaths(paths: Record<string, string[]>, specifier: string): string | null {
@@ -134,6 +136,15 @@ describe("core's tsconfig paths", () => {
     const paths = tsconfigPaths('packages/core');
     expect(viaPaths(paths, '@weasel-js/geom/mat3')).toBeNull();
     expect(viaPaths(paths, '@weasel-js/core/nothing')).toBeNull();
+  });
+
+  it('name no file outside its rootDir, which fails a standalone `tsc -p packages/core` with TS6059', () => {
+    const { paths, rootDir = '.' } = compilerOptions('packages/core');
+    const root = resolve(REPO, 'packages/core', rootDir);
+    const outside = Object.values(paths)
+      .map(([target]) => resolve(REPO, 'packages/core', target))
+      .filter((file) => relative(root, file).startsWith('..'));
+    expect(outside).toEqual([]);
   });
 
   it('send each entry they map to the file the root paths send it to', () => {
