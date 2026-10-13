@@ -40,3 +40,6 @@ packages/cursor/scripts/probe/warp
 /.onto-out/
 dist-theme-editor
 __pycache__/
+
+# Written by typedoc/packageOptions.mjs each time the API reference builds
+packages/*/tsconfig.docs.json
