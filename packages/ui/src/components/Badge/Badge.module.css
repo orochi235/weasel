@@ -147,6 +147,10 @@
   -webkit-box-decoration-break: slice;
   box-decoration-break: slice;
 }
+/* Plain paints no fill, so there is none for solid's ink to flip against: every variant takes
+   the ink outline has, the one made to be read on whatever is behind the badge. */
+.badge[data-shape='plain'] { --badge-fg: var(--badge-edge); }
+.badge[data-shape='plain'][data-status='neutral'] { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
 .badge[data-shape='plain'][data-focused='true'] {
   outline: 2px solid color-mix(in oklab, var(--badge-edge) 60%, transparent);
   outline-offset: 3px;

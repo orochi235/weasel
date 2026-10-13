@@ -74,6 +74,9 @@ async function paint(root: HTMLElement, badge: HTMLElement) {
 }
 
 const STATUSES: readonly BadgeStatus[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
+// What the lightest status inks reach on the light surface: info 2.00, warn 2.04, success 2.11.
+// An ink computed for a fill that is not there lands near 1.1.
+const PLAIN_INK_FLOOR = 1.9;
 
 
 describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
@@ -112,6 +115,40 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
       );
       const { text, fill } = await paint(container, container.querySelector<HTMLElement>('[data-status]')!);
       expect(contrast(text, fill), `text ${text.map(Math.round)} on fill ${fill.map(Math.round)}`).toBeGreaterThanOrEqual(3);
+    });
+  }
+
+  // A plain badge paints no fill, so in every variant its ink is read against whatever is behind it.
+  for (const variant of ['outline', 'solid', 'subtle'] as const) {
+    test(`a ${variant} plain badge's ink is legible on the surface behind it`, () => {
+      const { container } = render(
+        <Surface mode={mode}>
+          {STATUSES.map((status) => (
+            <p key={status}>
+              <Badge shape="plain" status={status} variant="outline" onRemove={() => {}}>label</Badge>{' '}
+              <Badge shape="plain" status={status} variant={variant} onRemove={() => {}}>label</Badge>
+            </p>
+          ))}
+        </Surface>,
+      );
+      const surface = container.querySelector<HTMLElement>('[data-testid="surface"]')!;
+      surface.style.background = 'var(--wzl-surface)';
+      // The muted inks follow the text color in effect, which a themed page sets.
+      surface.style.color = 'var(--wzl-fg)';
+      const ground = getComputedStyle(surface).backgroundColor;
+      const seen = (css: string): Rgba => [...painted(css, ground), 1];
+      const badges = [...container.querySelectorAll<HTMLElement>('[data-status]')];
+      for (let i = 0; i < badges.length; i += 2) {
+        const [outline, badge] = [badges[i], badges[i + 1]];
+        expect(getComputedStyle(badge).backgroundColor, 'paints no fill').toBe('rgba(0, 0, 0, 0)');
+        for (const part of ['span', 'button'] as const) {
+          const ink = getComputedStyle(badge.querySelector(part)!).color;
+          const ratio = contrast(seen(ink), seen(ground));
+          expect(ratio, `${badge.dataset.status} ${part}: ${ink} on ${ground}`).toBeGreaterThanOrEqual(PLAIN_INK_FLOOR);
+          // The outline ink is the one chosen to be read with no fill under it.
+          expect(seen(ink), `${badge.dataset.status} ${part}`).toEqual(seen(getComputedStyle(outline.querySelector(part)!).color));
+        }
+      }
     });
   }
 
