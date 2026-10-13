@@ -386,7 +386,10 @@ does not say:
     `serializeSvg`'s `pretty` now indents; `splitByClosure` and `hasOpenSubpath` are new geom API.
   - Animation: a rig posed with `rig.pose` stays posed across a `useRigNode` rebind;
     `RigEditState` gained `painted()` and `paint(next)`; a spring or coast with no `onTick` is not
-    ticked every frame; a paused looping timeline seeked to its `duration` stays at the end.
+    ticked every frame; a paused looping timeline seeked to its `duration` stays at the end; a
+    skinned path's weights are spliced through anchor edits, not weighed again with `autoSkin`
+    (`EditAnchorsDep.applyEdit` takes `origins`); `DerivedDep.path` answers a pose override's
+    path ahead of a derived one. Neither is seen in a browser.
   - ui and prefs: "None" is offered on every paint nested in an object leaf, and a record with no
     `paint` reads as None; a `ColorList` item may be a `ColorSource` (strings stay legal); a closed
     `PrefsStore` warns on its first write; a band's `aria-label` carries its range; the bevel
@@ -434,8 +437,8 @@ does not say:
     a split SVG path; whether an image color scale past 1 folds into the batch.
   - Tools: Shift-snaps-rotate by default or opt-in; whether a binding can say it yields when its
     action declines (draw's two route-conflict warnings).
-  - Animation: `ClipKey` generic over its value; spliced weights or `autoSkin` after a skinned
-    path's points are edited; events on laps a frame skips; `Naming` as a public name.
+  - Animation: `ClipKey` generic over its value; events on laps a frame skips; `Naming` as a
+    public name.
   - Build: whether a kit canvas should need core's stylesheet or core should adopt the rule
     itself; labkit's bundled siblings as externals; fewer workers for the `browser` project on the
     fleet; a curated exports inventory for the Bundle Inspector.
