@@ -30,8 +30,9 @@ Priority tags:
   from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
   (`apps/draw/src/modality/doubleClickEntry.ts`), not from the `'double-click-target'` the
   definitions in `packages/modes/src/presets/default.ts` declare. Binding it means a double-click
-  entry beside the kit's own `enterPathEdit` binding, so it is the same work as "draw: two owners
-  for "is a text edit open"".
+  entry beside the kit's own `enterPathEdit` binding, and a definition does not say which hits it
+  takes (draw's table does), so it waits on the same ruling as "draw: two owners for "is a text
+  edit open"" under Demos, where the question is written out.
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -1054,6 +1055,18 @@ only story runner in the repo.
   the kit's `enterPathEdit` binding and the app's `onDoubleClick` observer; they reach the same
   machine call and the second is a no-op. `apps/draw/src/App.browser.test.tsx` drives both modes
   through the machine in a browser, and fails when either effect is removed.
+
+  The two states can also disagree outright: the text tool's `enterTextEdit` binding and a newly
+  inserted text node both start an edit through the `textEdit` dep, which never enters the mode,
+  so an edit is open while the machine says `normal` (read from `TextEditDepPublisher.tsx`, not
+  driven in a browser).
+
+  Not ruled, and it is one question with "Nothing reads a mode's `entry.trigger`" under Tools:
+  which side owns the open edit? Either `useSceneTextEdit` takes a host the way the canvas takes
+  `pathEdit` (`editingId()` and `setEditingId(id, { caret })`, so every way in enters the mode and
+  every end leaves it, and the kit binds `'double-click-target'` once for paths, groups, and text,
+  which needs a mode definition to say which hits it takes), or the hook stays the owner and
+  reports `onStart` / `onEnd`, with the mode following it and the trigger staying unread.
 
 ---
 
