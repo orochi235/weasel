@@ -446,11 +446,6 @@ Priority tags:
 
 ## Animation
 
-- **(P3) Timeline: a frame that skips whole laps fires them under `loop: n` and not under
-  `loop: true`.** `tick` in `packages/animator/src/timeline/createTimeline.ts` fires every
-  skipped lap's events under `loop: n` but none under `loop: true`, where `booking.ts` says
-  crossings fire "nothing of the laps in between". Which of the two is meant is undecided.
-
 ### Timelines and rigging
 
 - **(P3) A pose typed by an interface is not a `ClipValue`** — `ClipValue`'s object arm is an
