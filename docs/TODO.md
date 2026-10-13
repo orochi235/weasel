@@ -1106,7 +1106,10 @@ only story runner in the repo.
   collapsing sibling moves" left the panel 80px from its host (teitou). Neither commit changes
   anything under `packages/core`, and the file passed in a full run of `main` the same evening.
   Both are assertion failures after `settled()`, not timeouts, so the panel had not followed the
-  host by the time the test read it. Not reproduced, and not run alone.
+  host by the time the test read it. The second also failed once in a fleet run of `main` at
+  `d5a9d4943` and passed on that commit in the run before. Not reproduced, and not run alone. The
+  assertion reads the anchor before the observer that moves it has fired; it wants to wait on the
+  position rather than read it once.
 
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
   failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a
@@ -1527,11 +1530,6 @@ only story runner in the repo.
 - **(P3) `check:spacing` exempts a directory that holds no stylesheet.** `isStylesheet` in
   `scripts/check-spacing.ts` skips `apps/site/CommandPalette/`, which now contains only
   `useCommandPaletteShortcut.ts`. Drop the exemption and the comment above it.
-
-- **(P3) `useHostAnchor.browser.test.tsx` fails under load.** "follows a host that a collapsing sibling
-  moves" failed once in a fleet run of main at `d5a9d4943` (2026-10-12) with `expected 80 to be close to
-  +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
-  observer that moves it has fired; it wants to wait on the position rather than read it once.
 
 - **(P3) `SceneCanvasInner` is one 717-line function.** It is most of the 870-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
