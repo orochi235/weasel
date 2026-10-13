@@ -9,7 +9,6 @@ import { SceneArrivalRefused } from './arrivals';
 import { asNodeId, type NodeId, type SceneArrivalHandler } from './types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
-import { rebuildOp } from 'core/ops/registry';
 
 type Pose = { x: number; y: number; width: number; height: number };
 const POSE: Pose = { x: 0, y: 0, width: 10, height: 10 };
@@ -183,15 +182,12 @@ describe('Scene — arrival handler', () => {
     expect(first).not.toHaveBeenCalled();
   });
 
-  it('the arrangement op rebuilds from its serialized form', () => {
+  it('the arrangement is recorded as the pose writes it made', () => {
     const { scene, adapter } = setup(placeAll);
     scene.applyBatch([createInsertOp({ node: leaf('kid', 'box') })], 'Insert', adapter);
     const snapshot = scene.serializeHistory();
     const entry = snapshot.undoStack[snapshot.undoStack.length - 1];
-    const arrange = entry.baseOps.find((o) => o.name === 'arrange')!;
-    const rebuilt = rebuildOp(arrange.name, arrange.args)!;
-    const writes: [string, unknown][] = [];
-    rebuilt.invert().apply({ setPose: (id: string, pose: unknown) => writes.push([id, pose]) });
-    expect(writes).toEqual([['kid', POSE]]);
+    expect(entry.baseOps.map((o) => o.name)).toEqual(['kit:add', 'kit:setPose']);
+    expect(entry.baseOps[1].args).toMatchObject({ id: 'kid', from: POSE });
   });
 });

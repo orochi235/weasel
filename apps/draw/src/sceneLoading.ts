@@ -2,7 +2,9 @@ import {
   type AddNodeSpec,
   asNodeId,
   rectPath,
+  SCENE_HISTORY_FORM,
   type SerializedScene,
+  type SerializedSceneHistory,
   solid,
   strokeOf
 } from '@weasel-js/core';
@@ -68,14 +70,15 @@ export const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
 
 /** Read the persisted SCENE undo/redo snapshot (the scene's own history
  *  engine, distinct from the modality history above). Best-effort; on
- *  absent/corrupt/mismatched data returns null AND removes the key so a
- *  broken snapshot can't wedge every boot. */
-export function loadSceneHistory(): SerializedHistory | null {
+ *  absent/corrupt/mismatched data, or a snapshot in an older recorded form,
+ *  returns null AND removes the key so a broken snapshot can't wedge every
+ *  boot. */
+export function loadSceneHistory(): SerializedSceneHistory | null {
   try {
     const raw = localStorage.getItem(SCENE_HISTORY_KEY);
     if (raw) {
-      const snap = JSON.parse(raw) as SerializedHistory;
-      if (snap && snap.version === 1) return reviveSnapshot(snap);
+      const snap = JSON.parse(raw) as SerializedSceneHistory;
+      if (snap && snap.version === 1 && snap.form === SCENE_HISTORY_FORM) return reviveSnapshot(snap);
     }
   } catch {
     // fall through to wipe

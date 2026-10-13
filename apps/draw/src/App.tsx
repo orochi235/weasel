@@ -112,9 +112,8 @@ export function App(): ReactElement {
 
   const modality = useModality(scene);
 
-  // Restored external-op history entries replay against this adapter after a reload. It has to be
-  // `defaultCommitAdapter`: the canvas adapter lacks `setData` and `setLayer`, so a restored
-  // nudge's geometry-projection setData op would fail against it.
+  // After a reload, a restored entry's ops that wrote no scene state (a selection change) replay
+  // against this adapter.
   useEffect(() => {
     const a = defaultCommitAdapter(scene);
     scene.setHistoryAdapter(() => a);

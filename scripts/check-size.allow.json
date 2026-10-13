@@ -71,11 +71,11 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/scene.ts": {
-    "lines": 611,
-    "longestFunction": 519
+    "lines": 606,
+    "longestFunction": 514
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 670
+    "lines": 669
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -171,8 +171,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 947,
-    "longestFunction": 508
+    "lines": 698,
+    "longestFunction": 448
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 162

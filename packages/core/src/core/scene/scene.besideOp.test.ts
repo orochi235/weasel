@@ -19,7 +19,7 @@ function fixture() {
     setPose(id: string, pose: Pose) {
       const dx = pose.x - scene.get(asNodeId(id))!.pose.x;
       scene.setPose(asNodeId(id), pose);
-      if (id === A) scene.carry(B, at(scene.get(B)!.pose.x + dx));
+      if (id === A) scene.setPose(B, at(scene.get(B)!.pose.x + dx));
     },
   };
   const move = (from: number, to: number) => createTransformOp<Pose>({ id: A, from: at(from), to: at(to) });
@@ -27,16 +27,8 @@ function fixture() {
   return { scene, adapter, move, xs };
 }
 
-describe('Scene.carry', () => {
-  it('is setPose outside an op', () => {
-    const { scene, xs } = fixture();
-    scene.carry(B, at(140));
-    expect(xs()).toEqual([0, 140]);
-    scene.undo();
-    expect(xs()).toEqual([0, 100]);
-  });
-
-  it('is restored by the undo of the op it was written for', () => {
+describe('Scene — a pose an adapter writes beside the one an op asked for', () => {
+  it('is restored by the undo of that op', () => {
     const { scene, adapter, move, xs } = fixture();
     scene.applyBatch([move(0, 5)], 'Move', adapter);
     expect(xs()).toEqual([5, 105]);
@@ -46,7 +38,7 @@ describe('Scene.carry', () => {
     expect(xs()).toEqual([5, 105]);
   });
 
-  it('puts a carried pose back where the op found it, whatever moved it since', () => {
+  it('goes back where the op found it, whatever moved it since', () => {
     const { scene, adapter, move, xs } = fixture();
     scene.applyBatch([move(0, 5), createTransformOp<Pose>({ id: B, from: at(100), to: at(150) })], 'Move', adapter);
     expect(xs()).toEqual([5, 150]);
@@ -56,12 +48,12 @@ describe('Scene.carry', () => {
     expect(xs()).toEqual([5, 150]);
   });
 
-  it('does not carry again when the op replays', () => {
+  it('is not worked out again when the op replays', () => {
     const { scene, move } = fixture();
     const C = asNodeId('c');
     const last = { setPose(id: string, pose: Pose) {
       scene.setPose(asNodeId(id), pose);
-      scene.carry(scene.roots.at(-1)!, at(-1));
+      scene.setPose(scene.roots.at(-1)!, at(-1));
     } };
     scene.applyBatch([move(0, 5)], 'Move', last);
     scene.untracked(() => scene.add({ id: C, kind: 'leaf', layer: 'main', data: {}, pose: at(500) }));
@@ -70,19 +62,14 @@ describe('Scene.carry', () => {
     expect(scene.get(B)!.pose.x).toBe(100);
   });
 
-  it('serializes the op with the poses it changed, and replays them once restored', () => {
+  it('is serialized as a pose write of its own, and replays once restored with no adapter', () => {
     const { scene, adapter, move, xs } = fixture();
     scene.applyBatch([move(0, 5)], 'Move', adapter);
     const snapshot = JSON.parse(JSON.stringify(scene.serializeHistory()));
-    expect(snapshot.undoStack[0].forwardOps).toEqual([{
-      name: 'carry',
-      args: {
-        id: 'a',
-        op: { name: 'transform', args: expect.objectContaining({ id: 'a' }) },
-        poses: [{ id: 'a', from: at(0), to: at(5) }, { id: 'b', from: at(100), to: at(105) }],
-      },
-    }]);
-    scene.setHistoryAdapter(() => adapter);
+    expect(snapshot.undoStack[0].forwardOps).toEqual([
+      { name: 'kit:setPose', args: { id: 'a', from: at(0), to: at(5) } },
+      { name: 'kit:setPose', args: { id: 'b', from: at(100), to: at(105) } },
+    ]);
     scene.restoreHistory(snapshot);
     scene.undo();
     expect(xs()).toEqual([0, 100]);

@@ -14,6 +14,12 @@ export interface OpTableEnv {
   /** Called after an op built by {@link OpTable.op} has applied, with the
    *  direction it ran in. */
   applied(kind: string, payload: unknown, reverted: boolean): void;
+  /** Whether an edit of the scene's is running. An op applied outside one
+   *  is a replay by a history the scene does not own: a mode journal's undo,
+   *  redo or cancel. */
+  driven(): boolean;
+  /** Run `step` as a replay step of its own, and notify. */
+  replayAlone(step: () => void): void;
 }
 
 export interface OpTable {
@@ -63,11 +69,17 @@ export function createOpTable(env: OpTableEnv): OpTable {
       args: payload,
       coalesceKey: coalesceKeyFor(kind, payload),
       apply: () => {
-        const handler = handlerFor(kind);
-        if (env.skips(kind, payload, forward)) return 'noop';
-        (forward ? handler.apply : handler.revert)(payload);
-        env.applied(kind, payload, !forward);
-        return undefined;
+        const run = (): 'noop' | undefined => {
+          const handler = handlerFor(kind);
+          if (env.skips(kind, payload, forward)) return 'noop';
+          (forward ? handler.apply : handler.revert)(payload);
+          env.applied(kind, payload, !forward);
+          return undefined;
+        };
+        if (env.driven()) return run();
+        let result: 'noop' | undefined;
+        env.replayAlone(() => { result = run(); });
+        return result;
       },
       invert: () => op(kind, payload, !forward),
     };

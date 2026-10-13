@@ -2,6 +2,8 @@ export { createScene, sceneFromJSON } from './scene';
 export { sceneSelectionStore } from './sceneSelection';
 export { useScene } from './useScene';
 export { asNodeId } from './types';
+export { SCENE_HISTORY_FORM } from './historyForm';
+export type { SerializedSceneHistory } from './historyForm';
 export type {
   AddLayerSpec,
   ClipFromPoseFn,

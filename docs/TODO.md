@@ -405,17 +405,11 @@ Priority tags:
   answers true. Every other selection write goes through `set` or `narrow` in `sceneSelection.ts`,
   which drop locked ids; `loadState` uses `replace`, which does not.
 
-- **(P2) One recorded form for a scene edit.** Decided 2026-10-12: `scene.applyBatch` becomes a
-  `scene.batch` that applies its ops and records the `kit:*` ops they caused, so the undo stack holds
-  one kind of entry. Today it holds two: `scene.setPose` and its siblings record `kit:*` ops, and
-  `applyBatch` records the outer `Op` with the kit handlers' recording switched off. The `engine`
-  driver in `editMode.ts`, adapter binding (`setHistoryAdapter`) and `scene.carry` with
-  `carriedPoses.ts` (both behind `outerOps.ts`), the two stale-replay mechanisms, and the rollback
-  nested inside `atomically` exist to keep the two in step. Needed first:
-  the history engine recording already-applied ops in a way that still coalesces, and a home for ops
-  that write non-scene state (`setSelection`, `setPath`, `setText`). `core/ops` stays for adapters that
-  are not a scene. Serialized histories change shape, so draw's persisted undo history needs a break
-  or a migration. Do it after the `scene.ts` entry above.
+- **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
+  `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
+  `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
+  Ruled 2026-10-12 to leave it for now. Routing them means `recorder.record` and the history facade
+  consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split.
 
 - **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
   the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a

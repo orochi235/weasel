@@ -83,7 +83,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   const notifier = createNotifier();
   const { notify } = notifier;
   const mode = createEditMode();
-  const stale = createStaleReplay(state.nodes, notifier.version);
+  const stale = createStaleReplay(state.nodes);
   const {
     isLocked: isLockedInternal, refuse: refuseLocked, refuseLayer: refuseLockedLayer, reachable,
     lifted: withLocksLifted,
@@ -131,6 +131,8 @@ function buildScene<TData, TLayer extends string, TPose>(
   const generateId = options.generateId ?? defaultGenerateId;
 
   const ops = createOpTable({
+    driven: mode.open,
+    replayAlone: (step) => { replay(step); notify(); },
     skips: stale.skips,
     // Only a replay is logged: a first apply is recorded by the entry it
     // creates, and reverting it would leave that entry describing nothing.
@@ -148,13 +150,9 @@ function buildScene<TData, TLayer extends string, TPose>(
     invalidateDependents,
   );
 
-  // The one place the scene's two recorded forms are reconciled: see
-  // `outerOps.ts`, and "One recorded form for a scene edit" in docs/TODO.md.
-  const outer = createOuterOps<TPose>({
+  const outer = createOuterOps({
     own: (name, args) => (ops.handlers.has(name) ? ops.op(name, args) : null),
-    tolerant: stale.tolerant,
-    has: (id) => state.nodes.has(id),
-    setPose: (id, pose) => scene.setPose(id, pose),
+    recorder: () => recorder,
     // Deferred rather than muted, so a throwing op cannot strand subscribers
     // after earlier ops in the batch already mutated state.
     driving: (step) => notifier.deferred(() => mode.during('engine', () => atomically(step, () => true))),
@@ -228,7 +226,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   const { history: sceneHistory, methods: historyMethods } = createSceneHistory({
     engine: history,
     applying: (step) => atomically(() => engineDriven(step), () => true),
-    tolerant: stale.tolerant,
+    causing: outer.causing,
     replay,
     notify,
     refuseUntracked,
@@ -386,12 +384,9 @@ function buildScene<TData, TLayer extends string, TPose>(
       const resizes = node.kind === 'container' && resized(layoutFrame, id, node.pose, pose);
       edit('setPose', resizes, () => {
         if (resizes) noteChange(id);
-        outer.wrote(id, node.pose, pose);
         record('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
       });
     },
-
-    carry: outer.carry,
 
     setLayer(id, layer) {
       requireLayerIndex(layer);

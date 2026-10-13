@@ -7,7 +7,6 @@
  * the entry on top of its stack, and every entry beneath it out of reach. The
  * inverse of a skipped op is skipped too, so undo then redo changes nothing.
  */
-import type { Op } from 'core/ops/types';
 import type { RemoveSnapshot } from './kitOps';
 import type { Node, NodeId } from './types';
 
@@ -20,14 +19,10 @@ export interface StaleReplay {
   /** Whether replaying this kit op would address a node that is gone, or
    *  restore one that is already there. Always false outside `during`. */
   skips(kind: string, payload: unknown, forward: boolean): boolean;
-  /** `op`, reporting a no-op where a replay of it fails on membership before
-   *  it has written anything. A first apply still throws. */
-  tolerant(op: Op): Op;
 }
 
 export function createStaleReplay<TData, TLayer extends string, TPose>(
   nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>,
-  version: () => number,
 ): StaleReplay {
   let replaying = 0;
   /** Kit payloads whose last replay was skipped, by the direction it ran in. */
@@ -74,31 +69,6 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
     return true;
   }
 
-  function tolerant(op: Op, mark: { skipped: boolean | null } = { skipped: null }, forward = true): Op {
-    return {
-      get name() { return op.name; },
-      get args() { return op.args; },
-      label: op.label,
-      get coalesceKey() { return op.coalesceKey; },
-      elideNoop: op.elideNoop,
-      apply(adapter) {
-        if (replaying > 0 && mark.skipped === !forward) {
-          mark.skipped = null;
-          return 'noop';
-        }
-        const before = version();
-        try {
-          return op.apply(adapter);
-        } catch (err) {
-          if (replaying === 0 || !(err instanceof SceneMembershipError)) throw err;
-          mark.skipped = version() === before ? forward : null;
-          return 'noop';
-        }
-      },
-      invert: () => tolerant(op.invert(), mark, !forward),
-    };
-  }
-
   return {
     during(step) {
       replaying++;
@@ -109,6 +79,5 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
       }
     },
     skips,
-    tolerant: (op) => tolerant(op),
   };
 }

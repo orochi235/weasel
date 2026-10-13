@@ -70,7 +70,7 @@ export type { UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 
 // ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
 export {
-  createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
+  createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose,
   UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneUnitScopes,
 } from '../core/scene';
@@ -102,6 +102,7 @@ export type {
   SerializedLayer,
   SerializedNode,
   SerializedScene,
+  SerializedSceneHistory,
   SystemLayerRecord,
   SystemLayerSpec,
   UserLayerRecord,
