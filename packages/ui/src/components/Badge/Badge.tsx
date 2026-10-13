@@ -6,7 +6,8 @@ import { useVisibleRaf } from '@weasel-js/core';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
-import { EFFECTS, type EffectSpec, type BadgeEffect } from './effects';
+import { EFFECTS, type EffectSpec } from './effects';
+import { composeOutline, offsetOutline } from './composeOutline';
 import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
 import { BadgeRemove, BadgeTarget } from './BadgeLabel';
@@ -73,6 +74,9 @@ type BadgePropsByShape = {
  * to the chosen shape's own parameters.
  */
 export type BadgeProps = BadgePropsByShape;
+
+/** CSS px between a composed badge's outline and its focus ring. */
+const FOCUS_RING_OFFSET = 2;
 
 function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
   if (props.as) return props.as;
@@ -218,69 +222,9 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     'aria-label': split ? undefined : ariaLabel,
   };
 
-  // Sample the base perimeter at COMPOSE_SAMPLES points and sum every offset-style
-  // effect's contribution at each sample, so stacked transforms compose additively.
-  const COMPOSE_SAMPLES = 600;
-  const composedSampler = (() => {
-    if (!composeBase || !sampler) return null;
-    const offsetMods = (resolvedEffects ?? [])
-      .map((eff) => {
-        const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
-        if (!mod?.offsetAt) return null;
-        const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
-        return { offsetAt: mod.offsetAt, params: effParams };
-      })
-      .filter(Boolean) as { offsetAt: NonNullable<typeof EFFECTS[BadgeEffect]['offsetAt']>; params: Record<string, unknown> }[];
-    const bloatCss = bloat ?? 0;
-    if (offsetMods.length === 0 && bloatCss === 0) return sampler;
-    const sx = 100 / box.w;
-    const sy = 100 / box.h;
-    const totalCss = sampler.totalCss;
-    const warpedXY = (sCss: number) => {
-      const sm = ((sCss % totalCss) + totalCss) % totalCss;
-      const pt = sampler.perimeterAt(sm);
-      let dx = pt.nx * bloatCss;
-      let dy = pt.ny * bloatCss;
-      for (const m of offsetMods) {
-        const o = m.offsetAt(sm, {
-          params: m.params as never,
-          phase,
-          totalCss,
-          perimeterAt: sampler.perimeterAt,
-        });
-        dx += o.dx;
-        dy += o.dy;
-      }
-      return { x: pt.x + dx * sx, y: pt.y + dy * sy };
-    };
-    let d = '';
-    for (let i = 0; i < COMPOSE_SAMPLES; i++) {
-      const sCss = (i / COMPOSE_SAMPLES) * totalCss;
-      const w = warpedXY(sCss);
-      d += (i === 0 ? `M ${w.x.toFixed(3)} ${w.y.toFixed(3)}` : ` L ${w.x.toFixed(3)} ${w.y.toFixed(3)}`);
-    }
-    d += ' Z';
-    // The normal is recomputed from the warped tangent, so decorations follow the
-    // actual bumpy outline.
-    const warpedPerimeterAt = (s: number) => {
-      const sm = ((s % totalCss) + totalCss) % totalCss;
-      const pt = warpedXY(sm);
-      const eps = totalCss / (COMPOSE_SAMPLES * 2);
-      const wA = warpedXY(sm - eps);
-      const wB = warpedXY(sm + eps);
-      // Convert finite-difference tangent back to "CSS px" by un-scaling per-axis.
-      const tx = (wB.x - wA.x) / sx;
-      const ty = (wB.y - wA.y) / sy;
-      const tl = Math.hypot(tx, ty) || 1;
-      // Outward normal: clockwise rotation of tangent (in CSS space).
-      const nxC = ty / tl;
-      const nyC = -tx / tl;
-      // Returned in CSS space: call sites multiply nx/ny by sx/sy, the convention base
-      // perimeters use.
-      return { x: pt.x, y: pt.y, nx: nxC, ny: nyC };
-    };
-    return { bodyPath: d, perimeterAt: warpedPerimeterAt, totalCss };
-  })();
+  const composedSampler = composeBase && sampler
+    ? composeOutline(sampler, resolvedEffects, bloat ?? 0, box, phase)
+    : null;
 
   const decoEffects = (resolvedEffects ?? []).filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS]?.Component);
   const backgroundDecorations = decoEffects.filter((eff) => (EFFECTS[eff.type as keyof typeof EFFECTS].zone ?? 'foreground') === 'background');
@@ -312,6 +256,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
         {(variant === 'outline' || variant === 'solid') && <path className="badge-stroke" d={composedSampler.bodyPath} />}
       </g>
       {foregroundDecorations.map(renderDecoration)}
+      {focused && <path className="badge-focus" d={offsetOutline(composedSampler, FOCUS_RING_OFFSET, box)} />}
     </svg>
   ) : shapeModule.renderMode !== 'css' && ShapeBody ? (
     <svg

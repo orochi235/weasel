@@ -134,6 +134,52 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
   });
 });
 
+// A composed badge has no CSS box to outline: its silhouette is an SVG path, and a root button
+// or link drops the browser's own outline.
+describe('a composed badge under keyboard focus', () => {
+  /** Everything that could show focus: the root's outline and whatever the outline SVG draws. */
+  const look = (badge: HTMLElement) => {
+    const cs = getComputedStyle(badge);
+    return [cs.outlineStyle, cs.outlineWidth, cs.boxShadow, badge.querySelector('svg')!.innerHTML].join('|');
+  };
+  const cases = {
+    'a base': <Badge base="rounded-rect" status="info" onClick={() => {}}>label</Badge>,
+    'a base and effects': <Badge base="chamfered-rect" effects={[{ type: 'spikes' }]} status="info" onClick={() => {}}>label</Badge>,
+    'a shape that composes': <Badge shape="hexagon" status="info" onClick={() => {}}>label</Badge>,
+    'a base and a remove control': <Badge base="rounded-rect" status="info" onClick={() => {}} onRemove={() => {}}>label</Badge>,
+  };
+
+  for (const [name, badgeEl] of Object.entries(cases)) {
+    test(`${name}: rings the composed silhouette`, async () => {
+      const { container } = render(<Surface mode="light"><p>{badgeEl}</p></Surface>);
+      const badge = container.querySelector<HTMLElement>('[data-status]')!;
+      expect(badge.dataset.shape).toBe('compose');
+      await waitFor(() => expect(badge.querySelector('.badge-stroke')).not.toBeNull());
+      const rest = look(badge);
+      await userEvent.tab();
+      expect(badge.contains(document.activeElement)).toBe(true);
+      await waitFor(() => expect(look(badge), 'nothing changed on focus').not.toBe(rest));
+
+      const ring = badge.querySelector<SVGPathElement>('.badge-focus')!;
+      const ringStyle = getComputedStyle(ring);
+      expect(ringStyle.stroke).not.toBe('none');
+      expect(Number(ringStyle.opacity)).toBeGreaterThan(0);
+      const outer = ring.getBoundingClientRect();
+      const body = badge.querySelector('.badge-stroke')!.getBoundingClientRect();
+      for (const gap of [body.left - outer.left, body.top - outer.top, outer.right - body.right, outer.bottom - body.bottom]) {
+        expect(gap).toBeGreaterThan(1);
+        expect(gap).toBeLessThan(4);
+      }
+
+      if (badge.querySelector('button')) {
+        await userEvent.tab();
+        expect(document.activeElement).toBe(badge.querySelector('button'));
+        await waitFor(() => expect(badge.querySelector('.badge-focus')).toBeNull());
+      }
+    });
+  }
+});
+
 // The remove button cannot sit inside a root button or link, so a removable badge with an
 // action moves the action onto its label. The box has to come out the same as any other badge's.
 describe('a removable badge with an action', () => {
