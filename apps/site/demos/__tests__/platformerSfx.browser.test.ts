@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AudioEngine } from '@weasel-js/audio';
 import { renderEngine } from '@weasel-js/audio/testing/renderEngine';
 import { octaveDensityDb, powerSpectrum, rms, rmsEnvelope } from '@weasel-js/audio/testing/spectrum';
-import { playSound, type PcmSoundName } from '../platformer/sfx';
-import type { SoundHandle } from '@weasel-js/audio';
+import { playSound } from '../platformer/sfx';
 
 // Step and land used to be hand-written PCM. They are engine voices now, and
 // nobody has listened to the swap: this holds the new voices to the old
@@ -99,7 +98,7 @@ const playOld = (pcm: Float32Array) => (e: AudioEngine) => {
   e.play(e.register(buffer));
 };
 const playNew = (name: 'step' | 'land') => (e: AudioEngine) => {
-  playSound(e, {} as Record<PcmSoundName, SoundHandle>, name);
+  playSound(e, name);
 };
 
 describe.each(['step', 'land'] as const)('%s as engine voices, against its old PCM', (name) => {

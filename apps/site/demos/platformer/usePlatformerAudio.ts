@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
 import { bindClip } from '@weasel-js/animator';
 import type { Animator, EventBookingHandle, TimelineHandle } from '@weasel-js/animator';
-import { createAudioEngine } from '@weasel-js/audio';
-import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
+import { createAudioEngine, createPatternPlayer } from '@weasel-js/audio';
+import type { AudioEngine, PatternPlayer } from '@weasel-js/audio';
 import { MOVE_SPEED } from './physics';
-import { playSound, registerSounds, type PcmSoundName, type SoundName } from './sfx';
+import { playSound, type SoundName } from './sfx';
+import { BED_BUS, BED_STEPS, BED_TEMPO, bedDetune, bedEvents } from './bed';
 import { CLIPS } from './clips';
 import { FOOTSTEPS, STEP } from './footsteps';
 import type { GameRefs, WorldHooks } from './world';
@@ -14,7 +15,13 @@ import type { GameRefs, WorldHooks } from './world';
  *  steady — the gap would measure speed change, not scheduling jitter. */
 const JITTER_SCALE_TOLERANCE = 0.02;
 
-type Audio = { engine: AudioEngine; sounds: Record<PcmSoundName, SoundHandle>; bed: VoiceHandle | null };
+/** Voices per bus. The bed's busiest moment has to fit under it, or its hits
+ *  steal each other's tails. */
+export const VOICE_LIMIT = 48;
+/** The music bus's level under the one-shots. */
+export const MUSIC_GAIN = 0.325;
+
+type Audio = { engine: AudioEngine; bed: PatternPlayer | null };
 
 export interface PlatformerAudio {
   /** What the world calls for sound and impact. Read it through the ref from
@@ -64,15 +71,20 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   const enableAudio = () => {
     if (typeof AudioContext === 'undefined') return;
     if (!audio.current) {
-      const engine = createAudioEngine({ buses: ['sfx', 'music'], voiceLimit: 24 });
-      audio.current = { engine, sounds: registerSounds(engine), bed: null };
+      const engine = createAudioEngine({ buses: ['sfx', BED_BUS], voiceLimit: VOICE_LIMIT });
+      engine.bus(BED_BUS).setGain(MUSIC_GAIN);
+      audio.current = { engine, bed: null };
     }
     const { engine } = audio.current;
     void engine.unlock().then(() => {
       setAudioState(engine.state() === 'running' ? 'running' : 'suspended');
       if (!audio.current!.bed) {
-        engine.bus('music').mute(!musicOn);
-        audio.current!.bed = engine.play(audio.current!.sounds.bed, { bus: 'music', loop: true, gain: 0.5 });
+        engine.bus(BED_BUS).mute(!musicOn);
+        const bed = createPatternPlayer(engine, {
+          tempo: BED_TEMPO, events: bedEvents(), length: BED_STEPS, detune: bedDetune,
+        });
+        bed.start();
+        audio.current!.bed = bed;
       }
     });
   };
@@ -81,7 +93,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
    *  one-shot that stops when you do — so it gets a switch of its own. */
   const toggleMusic = () => {
     const next = !musicOn;
-    audio.current?.engine.bus('music').mute(!next);
+    audio.current?.engine.bus(BED_BUS).mute(!next);
     setMusicOn(next);
   };
 
@@ -112,7 +124,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
       const prev = { lastAt: s.lastAt, lastScale: s.lastScale };
       s.lastAt = when;
       s.lastScale = scale;
-      const voices = playSound(a.engine, a.sounds, 'step', { bus: 'sfx', gain: 0.35, when });
+      const voices = playSound(a.engine, 'step', { bus: 'sfx', gain: 0.35, when });
       // A jump or a change of run speed retracts a step that has not
       // sounded; it is booked again wherever the cycle next reaches it.
       return {
@@ -142,7 +154,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   const fire = (name: SoundName, gain = 0.8) => {
     const a = audio.current;
     if (!a || a.engine.state() !== 'running') return;
-    playSound(a.engine, a.sounds, name, { bus: 'sfx', gain });
+    playSound(a.engine, name, { bus: 'sfx', gain });
   };
 
   /** For sounds with a place in the world — the engine spatializes against the
@@ -150,15 +162,15 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   const fireAt = (name: SoundName, position: { x: number; y: number }, gain = 0.8) => {
     const a = audio.current;
     if (!a || a.engine.state() !== 'running') return;
-    playSound(a.engine, a.sounds, name, { bus: 'sfx', gain, position });
+    playSound(a.engine, name, { bus: 'sfx', gain, position });
   };
 
   /** A hit drops the music under the hurt sound and brings it back. */
   const duckMusic = () => {
     const a = audio.current;
     if (!a) return;
-    a.engine.bus('music').setGain(0.15, 60);
-    window.setTimeout(() => a.engine.bus('music').setGain(0.5, 400), 260);
+    a.engine.bus(BED_BUS).setGain(MUSIC_GAIN * 0.3, 60);
+    window.setTimeout(() => a.engine.bus(BED_BUS).setGain(MUSIC_GAIN, 400), 260);
   };
 
   const hooks = useLatest<WorldHooks>({
@@ -177,7 +189,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
   const beginFrame = useCallback((g: GameRefs) => {
     audio.current?.engine.setListener({ x: g.player.body.x, y: g.player.body.y });
     if (cutMusicIn.current >= 0 && cutMusicIn.current-- === 0) {
-      audio.current?.bed?.stop(40);
+      audio.current?.bed?.stop();
     }
   }, []);
 
@@ -200,7 +212,7 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
     const a = audio.current;
     if (!a || a.engine.state() !== 'running') return;
     points.forEach((p, i) =>
-      playSound(a.engine, a.sounds, 'stomp', {
+      playSound(a.engine, 'stomp', {
         bus: 'sfx',
         gain: 0.2,
         position: p,

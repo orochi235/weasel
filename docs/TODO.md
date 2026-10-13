@@ -594,15 +594,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
-- **(P3) The side-scroller's music bed as engine voices.** The bed is hand-written PCM
-  (`platformer/sfx.ts`, `bed`). Its struck metal is expressible as `{ partials }`
-  and its chugs and bass as harmonic partials with a `decay`. The arrangement
-  is expressible too: a hit that lands late is a fractional `step`, the loop's
-  drift sharp and back is the player's `detune` as a function of the step, and
-  `patternVoicePeaks` says whether its busiest moment fits the music bus's
-  voice limit. What is left is the port itself, and one thing with no engine
-  equivalent: the four bars are peak-normalized together, which as voices
-  becomes a bus gain chosen by ear, or a compressor insert.
+- **(P3) The side-scroller's music bed is engine voices nobody has heard.** It plays from a
+  pattern player on the music bus (`platformer/bed.ts`). The old render was
+  peak-normalized as a whole, which voices have no equivalent of: `MUSIC_GAIN`
+  in `usePlatformerAudio.ts` is set so one pass has the old render's RMS, and
+  `platformerBed.browser.test.ts` holds it there, and each octave within 2 dB
+  of the old balance. What is left is a listening pass: the bus gain chosen by
+  ear, or a compressor insert in its place.
 
 - **(P3) Trope-aware generative scoring: unheard, and with no demo.** `createScore`
   plays a mood on three axes (valence, tension, urgency) as bars written by
