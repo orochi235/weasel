@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
+import { stutters } from '../config/stutter';
 import { ControlPanel } from './ControlPanel';
-import { stutters } from './headingControl';
 
 describe('stutters', () => {
   it.each([

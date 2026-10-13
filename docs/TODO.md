@@ -757,10 +757,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   config paths.
 
 - **(P3) `sectionTree` doesn't lift heading controls.** `ControlPanel` draws a `.heading()` leaf,
-  or a first row repeating its heading ("Pump" under "Pumping"), in the heading's title row and
-  warns about the repeat. The prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf
-  as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
-  a control in a rail item or subsection heading.
+  or a first row repeating its heading ("Pump" under "Pumping"), in the heading's title row. The
+  prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf as a row under a heading of
+  the same name, because `PrefsForm` has no slot for a control in a rail item or subsection
+  heading, and `PrefLeaf` no field saying a leaf is one: `heading` is a labkit extra. `sectionTree`
+  warns about the repeat, as the panel does.
 
 - **(P3) The desktop themes bevel some controls and have never been looked at.** Under
   `win9xTheme` and `platinumTheme` (`@weasel-js/theme/themes/*`), `Button`, the field frame,

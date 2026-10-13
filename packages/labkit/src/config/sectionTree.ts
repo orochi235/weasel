@@ -1,5 +1,6 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
-import { valueAtPath } from './path';
+import { schemaNodeAtPath, valueAtPath } from './path';
+import { stutters, warnOfStutter } from './stutter';
 import type { ResolvedConfig } from './types';
 import { isLeafVisible } from './visible';
 
@@ -20,6 +21,18 @@ export interface SectionTree {
   values: Record<string, unknown>;
   /** The config path a path within `group` stands for. */
   pathAt: (railPath: string) => string;
+}
+
+/** Warn of each section whose first row repeats its heading. A rail has no room for a control in a heading, so
+ *  the row is drawn under it either way, and one marked `.heading()` is left alone. */
+function warnOfRepeats(resolved: ResolvedConfig): void {
+  for (const section of resolved.sections) {
+    const leaves = section.paths.map((path) => schemaNodeAtPath(resolved.group, path));
+    const first = leaves[0];
+    const marked = leaves.some((leaf) => leaf && 'heading' in leaf && leaf.heading === true);
+    if (!first || !isPrefLeaf(first) || marked || !stutters(section.label, first.name)) continue;
+    warnOfStutter(resolved, section.label, section.paths[0] as string, first.name, false);
+  }
 }
 
 /** A section label as an object key: no dots, since a dotted path is how every
@@ -115,6 +128,7 @@ export function sectionTree(
   config: Record<string, unknown>,
   showHidden = false,
 ): SectionTree {
+  warnOfRepeats(resolved);
   const children: PrefGroup['children'] = {};
   const values: Record<string, unknown> = {};
   const slugs = new Set<string>();
