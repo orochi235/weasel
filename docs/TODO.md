@@ -640,10 +640,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) Nothing in `@weasel-js/ui` shows a quantity's composites or styles its parts.**
   `BandEditor` names each band with its range through `presentRange`, and that is the one caller:
-  nothing calls `presentVector`. `Slider`'s thumbs still take bare numbers where `BandEditor`'s
-  bands take tagged ones; and no ui component renders the HTML form, so no stylesheet styles its
-  `data-part` or `data-composite` spans and `PropertyField` still draws its suffix from its own
-  `unit` prop.
+  nothing calls `presentVector`. No ui component renders a quantity's HTML form, so no stylesheet
+  styles its `data-part` or `data-composite` spans and `PropertyField` still draws its suffix from
+  its own `unit` prop.
 
 - **(P2) Redesign the stop color/opacity swatches under `GradientEditor`.** Each stop gets
   a `ColorField` with an alpha slider in a row beneath the track (`GradientEditor.tsx`). The

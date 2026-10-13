@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Display } from '@weasel-js/quantity';
+import type { Display, Quantity } from '@weasel-js/quantity';
 import type { Endless } from '../../endless';
 
 /**
@@ -26,9 +26,12 @@ export type ThumbShape =
  * One handle on a {@link Slider}. `bounds` narrows the range this particular
  * thumb may move within, either fixed or computed from the current thumb
  * list.
+ *
+ * `value` is a bare number, or with `Thumb<Tagged>` a tagged one, which every
+ * edit hands back with its unit and display.
  */
-export type Thumb = {
-  value: number;
+export type Thumb<F extends Quantity = number> = {
+  value: F;
   label?: string;
   shape?: ThumbShape;
   bounds?: [number, number] | ((ctx: BoundsCtx) => [number, number]);
@@ -43,7 +46,8 @@ export type Thumb = {
 
 /**
  * Passed to a thumb's `bounds` function: the full thumb list and this thumb's
- * index in it, so a bound can be expressed relative to its neighbors.
+ * index in it, so a bound can be expressed relative to its neighbors. Each
+ * `value` here is the bare amount, whatever the thumb was given.
  */
 export type BoundsCtx = {
   thumbs: readonly Thumb[];
@@ -109,7 +113,7 @@ export type SliderStop = {
  * track's edge. `'overhang'` runs the span edge to edge and centers an end
  * thumb on the edge.
  */
-export type SliderProps<T extends Thumb = Thumb> = {
+export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
   thumbs: readonly T[];
   onInput: (next: T[]) => void;
   onChange?: (next: T[]) => void;
