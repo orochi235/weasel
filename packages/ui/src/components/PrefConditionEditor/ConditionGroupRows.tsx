@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { PrefCondition } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
@@ -21,13 +22,15 @@ export interface ConditionGroupRowsProps {
   onChange(next: ConditionGroup): void;
   /** Removes the group from the one it is in. */
   onRemove?(): void;
+  /** Drawn at the end of the group's first line, which is then drawn whatever the group holds. */
+  tools?: ReactNode;
 }
 
 /**
  * The rows of one group under its quantifier, and the controls that add to them. A row is a test, or a group
  * drawn the same way inside this one: a combinator, and any `not` no single comparison says.
  */
-export function ConditionGroupRows({ name, group, scope, onChange, onRemove }: ConditionGroupRowsProps) {
+export function ConditionGroupRows({ name, group, scope, onChange, onRemove, tools }: ConditionGroupRowsProps) {
   const { quantifier, parts } = group;
   const of = name === undefined ? '' : ` of ${name.toLowerCase()}`;
   const to = name === undefined ? '' : ` to ${name.toLowerCase()}`;
@@ -36,12 +39,15 @@ export function ConditionGroupRows({ name, group, scope, onChange, onRemove }: C
   const write = (next: readonly PrefCondition[]) => onChange({ quantifier, parts: next });
   const replace = (i: number, next: PrefCondition) => write(parts.map((p, j) => (j === i ? next : p)));
   const remove = (i: number) => write(parts.filter((_, j) => j !== i));
+  // One row under all of is that row, with no quantifier worth showing.
+  const quantified = name !== undefined || parts.length > 1 || quantifier !== 'all';
   return (
     <>
-      {(name !== undefined || parts.length > 1 || quantifier !== 'all') && (
+      {(quantified || tools) && (
         <div className={s.head}>
-          <Select className={s.quantifier} aria-label={`Which rows${of} must hold`} options={QUANTIFIERS} selectedKey={quantifier}
-            onSelectionChange={(next) => { if (next !== quantifier) onChange({ quantifier: next as Quantifier, parts }); }} />
+          {quantified && <Select className={s.quantifier} aria-label={`Which rows${of} must hold`} options={QUANTIFIERS} selectedKey={quantifier}
+            onSelectionChange={(next) => { if (next !== quantifier) onChange({ quantifier: next as Quantifier, parts }); }} />}
+          {tools}
           {onRemove && name && <CloseButton ariaLabel={`Remove ${name.toLowerCase()}`} onClick={onRemove} />}
         </div>
       )}

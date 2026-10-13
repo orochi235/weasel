@@ -3,6 +3,7 @@ import { checkPrefCondition, isPrefCondition, type PrefCondition, type PrefCondi
 import { Button } from '../Button';
 import { Code } from '../Code';
 import type { SelectOption } from '../Select';
+import { ConditionClipboard } from './ConditionClipboard';
 import { ConditionGroupRows } from './ConditionGroupRows';
 import type { ConditionScope } from './ConditionRow';
 import { rootCondition, rootGroup } from './conditionGroups';
@@ -53,6 +54,9 @@ export interface PrefConditionEditorProps {
  * holds rows of its own under its own quantifier, to any depth, and that is how an `all` inside an `any` and a
  * `not` around either are drawn. Whatever `checkPrefCondition` finds wrong with a row is said on that row. With
  * no rows left the condition is `undefined`.
+ *
+ * Copy puts the whole condition on the clipboard as JSON, and Paste replaces it with one read from there: how a
+ * condition gets from one pref to another. A pasted test that reads a pref this schema lacks says so on its row.
  */
 export function PrefConditionEditor({ value, onChange, schema, over, exclude = NO_PATHS, entryOf, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
   const leaves = useMemo(() => conditionLeaves(schema, entryOf, over), [schema, entryOf, over]);
@@ -84,10 +88,13 @@ export function PrefConditionEditor({ value, onChange, schema, over, exclude = N
     );
   }
 
+  // A page not served securely has no clipboard, and then neither button is drawn.
+  const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
   const scope: ConditionScope = { schema, over, site, leaves, prefOptions };
   return (
     <div className={classes} role="group" aria-label={ariaLabel}>
-      <ConditionGroupRows group={rootGroup(value)} scope={scope} onChange={(next) => onChange(rootCondition(next))} />
+      <ConditionGroupRows group={rootGroup(value)} scope={scope} onChange={(next) => onChange(rootCondition(next))}
+        tools={clipboard && <ConditionClipboard clipboard={clipboard} value={value} onPaste={onChange} />} />
     </div>
   );
 }

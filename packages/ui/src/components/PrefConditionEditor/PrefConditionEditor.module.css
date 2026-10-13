@@ -24,6 +24,24 @@
   gap: var(--wzl-space-2);
 }
 
+/* Copy and Paste, at the end of the editor's first line, after what the last press of either had to say. */
+.clipboard {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+  margin-inline-start: auto;
+  min-inline-size: 0;
+}
+.clipboard > button { flex: none; }
+.said {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
 /*
  * A row reads across: the pref, a comparison, the value compared against, and the button that removes it. The
  * comparison and value columns are one width in every row, so a group's rows line up down each. A second

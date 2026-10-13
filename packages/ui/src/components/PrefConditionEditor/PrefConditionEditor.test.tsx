@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefCondition, PrefGroup, PrefLeaf, PrefList } from '@weasel-js/prefs';
 import { PrefConditionEditor } from './PrefConditionEditor';
@@ -328,5 +328,59 @@ describe('PrefConditionEditor inside an entry', () => {
     cleanup();
     open({ from: 'item', path: 'mode' });
     expect(row(1)).toHaveTextContent('"mode" is read from an entry, and this is inside no list or map');
+  });
+});
+
+describe('PrefConditionEditor copy and paste', () => {
+  /** A clipboard holding `text`, in place of the one jsdom lacks. */
+  const clipboard = (text = '') => {
+    const held = { text };
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText: async (next: string) => { held.text = next; }, readText: async () => held.text } });
+    return held;
+  };
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('draws neither button where the page has no clipboard', () => {
+    open({ path: 'view.grid' });
+    expect(screen.queryByRole('button', { name: 'Copy condition' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Paste condition' })).toBeNull();
+  });
+
+  it('copies the whole condition as JSON, and has nothing to copy with no rows', async () => {
+    const held = clipboard();
+    const condition: PrefCondition = { all: [{ path: 'view.grid' }, { not: { any: [{ path: 'view.author' }] } }] };
+    const { unmount } = render(<Live start={condition} seen={{ writes: 0 }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy condition' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Copied.'));
+    expect(JSON.parse(held.text)).toEqual(condition);
+    unmount();
+    open();
+    expect(screen.getByRole('button', { name: 'Copy condition' })).toBeDisabled();
+  });
+
+  it('pastes a condition over the one it holds, and draws its rows', async () => {
+    clipboard(JSON.stringify({ any: [{ path: 'view.units', is: 'mm' }, { path: 'view.step', above: 4 }] }));
+    const seen = open({ path: 'view.grid' });
+    fireEvent.click(screen.getByRole('button', { name: 'Paste condition' }));
+    await waitFor(() => expect(seen.value).toEqual({ any: [{ path: 'view.units', is: 'mm' }, { path: 'view.step', above: 4 }] }));
+    expect(within(row(2)).getByRole('spinbutton')).toHaveValue('4');
+  });
+
+  it('says a pasted row reads a pref this schema lacks, on that row', async () => {
+    clipboard(JSON.stringify({ path: 'elsewhere.flag', is: true }));
+    open();
+    fireEvent.click(screen.getByRole('button', { name: 'Paste condition' }));
+    await waitFor(() => expect(row(1)).toHaveTextContent('no leaf holds a value at "elsewhere.flag"'));
+  });
+
+  it('writes nothing for a clipboard that holds no condition, and says so', async () => {
+    for (const text of ['not json', '{"path":"view.grid","nope":1}', '42']) {
+      clipboard(text);
+      const seen = open({ path: 'view.grid' });
+      fireEvent.click(screen.getByRole('button', { name: 'Paste condition' }));
+      await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('The clipboard holds no condition.'));
+      expect(seen.writes).toBe(0);
+      cleanup();
+    }
   });
 });
