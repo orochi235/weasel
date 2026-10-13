@@ -35,13 +35,8 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
     observer = new IntersectionObserver(
       (entries) => {
         const ratio = entries[0].intersectionRatio;
-        const now = entries[0].boundingClientRect;
-        // A frame is built a rendering step before it first reports, and the
-        // element can move in between; only the box says so.
-        const movedSinceFramed =
-          first && (now.left !== left || now.top !== top || now.width !== width || now.height !== height);
-        if (ratio !== threshold || movedSinceFramed) {
-          if (!first || movedSinceFramed) {
+        if (ratio !== threshold) {
+          if (!first) {
             onMove();
             frame(1);
             return;
