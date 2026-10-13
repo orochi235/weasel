@@ -1,10 +1,15 @@
 import type { ReactNode } from 'react';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { BarOverflow } from './BarOverflow';
 import { BarPopover } from './BarPopover';
+import { BAR_ITEM, BAR_MORE, useBarOverflow } from './useBarOverflow';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
 export type BarOrientation = 'horizontal' | 'vertical';
+
+/** What a bar does with cells its line has no room for. */
+export type BarOverflowMode = 'scroll' | 'menu';
 
 /** A leaf in a bar, by the path its surface addresses it at. */
 export interface BarLeafNode {
@@ -65,10 +70,22 @@ export interface BarLayoutProps {
   /** Draw the strip the bar sits on, for a bar set among other things with
    *  no strip of the host's under it. */
   framed?: boolean;
+  /**
+   * What happens to cells the line has no room for. `'scroll'` keeps every
+   * cell on the line, which a framed bar scrolls. `'menu'` keeps the cells
+   * that fit, in order from the first, and opens the rest from a button at
+   * the end of the line, one under another in the forms they have on it. A
+   * bar set to `'menu'` takes all the room its host has along the line, so
+   * that it can tell when a cell fits again. Default `'scroll'`.
+   */
+  overflow?: BarOverflowMode;
+  /** What the button that opens the rest is called. Default `'More'`. */
+  overflowLabel?: string;
   className?: string;
 }
 
-type Item = { divider: true } | { divider?: false; path: string; leaf: boolean; content: ReactNode };
+type Item = ({ divider: true } | { divider?: false; path: string; leaf: boolean; content: ReactNode }) & { key: string };
+type Drawn = { divider: true } | { divider?: false; path: string; leaf: boolean; content: ReactNode };
 
 /**
  * The line a bar's contents sit on, whatever surface drew them: cells in
@@ -81,8 +98,9 @@ type Item = { divider: true } | { divider?: false; path: string; leaf: boolean; 
  */
 export function BarLayout(props: BarLayoutProps) {
   const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, framed, className } = props;
+  const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const vertical = orientation === 'vertical';
-  const items: Item[] = [];
+  const items: Drawn[] = [];
 
   const walk = (list: readonly BarNode[]): void => {
     let pending: BarLeafNode[] = [];
@@ -128,28 +146,45 @@ export function BarLayout(props: BarLayoutProps) {
   walk(nodes);
 
   // A divider sets two things apart, so none opens or closes the bar and no two meet.
-  const shown = items.filter(
-    (item, i) => !item.divider || (i > 0 && i < items.length - 1 && !items[i - 1]!.divider),
-  );
+  const shown: Item[] = items
+    .filter((item, i) => !item.divider || (i > 0 && i < items.length - 1 && !items[i - 1]!.divider))
+    .map((item, i) => ({ ...item, key: item.divider ? `divider:${i}` : item.path }));
   while (shown.at(-1)?.divider) shown.pop();
+
+  const menu = overflow === 'menu';
+  const { bar, kept } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
+  const line = shown.slice(0, kept);
+  while (line.at(-1)?.divider) line.pop();
+  const rest = shown.slice(kept);
+  while (rest[0]?.divider) rest.shift();
+
+  const draw = (list: readonly Item[], across: boolean): ReactNode =>
+    list.map((item) =>
+      item.divider ? (
+        <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={s.divider} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} />
+      ) : (
+        <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={s.cell} {...attrs?.(item.path, item.leaf)}>
+          {item.content}
+        </span>
+      ),
+    );
 
   return (
     <div
       {...rootAttrs}
+      ref={bar}
       className={[s.bar, framed && s.framed, className].filter(Boolean).join(' ')}
       data-orientation={orientation}
+      data-overflow={menu ? 'menu' : undefined}
       role={label === undefined ? undefined : 'toolbar'}
       aria-label={label}
       aria-orientation={label === undefined ? undefined : orientation}
     >
-      {shown.map((item, i) =>
-        item.divider ? (
-          <span key={`divider:${i}`} className={s.divider} role="separator" aria-orientation={vertical ? 'horizontal' : 'vertical'} />
-        ) : (
-          <span key={item.path} className={s.cell} {...attrs?.(item.path, item.leaf)}>
-            {item.content}
-          </span>
-        ),
+      {draw(line, vertical)}
+      {rest.length > 0 && (
+        <span className={s.cell} {...{ [BAR_MORE]: '' }}>
+          <BarOverflow label={overflowLabel}>{draw(rest, true)}</BarOverflow>
+        </span>
       )}
     </div>
   );

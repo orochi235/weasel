@@ -724,8 +724,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
-  that prop to become icon names or `Bar` to take icon overrides by path. A bar too long for its
-  room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
+  that prop to become icon names or `Bar` to take icon overrides by path. `overflow="menu"`
+  opens the cells a line has no room for from a button at its end, on `Bar` and `BarLayout` only: a
+  bar in a `PrefsForm`, a `SelectionPanel`, an object row, or labkit's `ControlBar` has no way to ask
+  for it, and whether it becomes the default is not decided. A cell in the menu is mounted only
+  while the menu is open, so `PrefSchemaEditor`'s preview, which asks for no menu and keeps every
+  cell on the line, would lose those cells as drop targets if it did. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
 - **(P3) Two `usePrefsStore` callers with different schemas leave one holding a closed store.**

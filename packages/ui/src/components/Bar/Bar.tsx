@@ -8,7 +8,7 @@ import { pairRows } from '../SelectionPanel/model';
 import { renderCells, type LeafCell } from '../SelectionPanel/cells';
 import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/renderContext';
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
-import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation } from './BarLayout';
+import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation, type BarOverflowMode } from './BarLayout';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
 import s from './Bar.module.css';
 
@@ -42,6 +42,11 @@ export interface BarProps {
   label?: string;
   /** Draw the strip the bar sits on. Unset, the host's strip is under it. */
   framed?: boolean;
+  /** What happens to cells the line has no room for: `'scroll'` keeps them all on it, and `'menu'` opens the
+   *  ones past its end from a button there, taking all the room the host has along the line. Default `'scroll'`. */
+  overflow?: BarOverflowMode;
+  /** What the button that opens the rest is called. Default `'More'`. */
+  overflowLabel?: string;
   className?: string;
 }
 
@@ -66,6 +71,8 @@ export function Bar(props: BarProps) {
       orientation={orientation}
       label={label}
       framed={framed}
+      overflow={props.overflow}
+      overflowLabel={props.overflowLabel}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
       row={(node) => <PropertyList>{leafRow(node, draw)}</PropertyList>}
