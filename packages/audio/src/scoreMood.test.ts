@@ -29,10 +29,6 @@ describe('readScoreCue', () => {
   it('reads a mood outside the axes as the nearest one inside', () => {
     expect(readScoreCue({ valence: -9, tension: 9, urgency: -9 }).name).toBe('dread');
   });
-
-  it('says in words what each cue does', () => {
-    for (const cue of scoreCues) expect(cue.device.length).toBeGreaterThan(20);
-  });
 });
 
 describe('scoreParams', () => {

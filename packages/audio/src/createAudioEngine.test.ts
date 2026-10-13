@@ -120,6 +120,7 @@ describe('createAudioEngine', () => {
     const sound = await engine.load('/a.wav');
     engine.play(sound, { when: 10_000, cancelKey: 'late' });
     engine.stopKey('late');
+    ctx._advance(10_000);
     tick();
     expect(ctx._sources).toHaveLength(0);
   });
