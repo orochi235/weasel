@@ -9,7 +9,7 @@ import type React from 'react';
 import { useCallback, useInsertionEffect, useMemo, useState } from 'react';
 import type { Contribution } from '../../tools/overlayBinding';
 import type { ToolsApi } from '../../tools/overlayBinding';
-import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, chromeAffordances } from '../affordanceAt';
+import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, chromeAffordances, layerAffordance } from '../affordanceAt';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { pathFromPlane } from '../planeClips';
 import { useOptionalViewRegistry } from '../viewRegistry';
@@ -206,18 +206,8 @@ export function GestureDispatcherMounter({
       // whose kind names the layer, carrying whatever the layer's hit-test
       // resolved — which is how `@weasel-js/hud` routes a press on one of its
       // widgets to its own action instead of the active tool.
-      const extra = canvasApiRef?.current?.hitTestExtras?.(worldPoint.x, worldPoint.y);
-      if (extra) {
-        const claim = extra.hit;
-        return {
-          kind: `layer:${extra.layerId}`,
-          owner: extra.layerId,
-          strength: claim.strength ?? 'shared',
-          ...(claim.claimedKinds !== undefined ? { claimedKinds: claim.claimedKinds } : {}),
-          ...(claim.cursor !== undefined ? { cursor: claim.cursor } : {}),
-          ...(claim.initialScratch !== undefined ? { payload: claim.initialScratch } : {}),
-        };
-      }
+      const extra = canvasApiRef.current?.hitTestExtras?.(worldPoint.x, worldPoint.y);
+      if (extra) return layerAffordance(extra.layerId, extra.hit);
       return affordanceAt ? affordanceAt(worldPoint) : null;
     };
   }, [affordanceAt, canvasApiRef]);
@@ -225,13 +215,13 @@ export function GestureDispatcherMounter({
   // Stable callback that asks the canvas to redraw. Reads via ref so the
   // identity stays stable while the underlying API binds after mount.
   const requestRedraw = useCallback(() => {
-    canvasApiRef?.current?.requestRedraw?.();
+    canvasApiRef.current?.requestRedraw?.();
   }, [canvasApiRef]);
 
   // The painted tier's channel, read live for the same reason — the handle it
   // lives on binds after mount.
   const paintedCursor = useCallback(
-    () => canvasApiRef?.current?.paintedCursor,
+    () => canvasApiRef.current?.paintedCursor,
     [canvasApiRef],
   );
 

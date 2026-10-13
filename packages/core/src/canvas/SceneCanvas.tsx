@@ -86,7 +86,6 @@ import { createSceneLayerGate, type ViewLayerPaint } from './sceneLayerPaint';
 import { composeAlphaFor, wireSceneSlotToScene } from './sceneSlotWiring';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { useHitObserver } from './useHitObserver';
-import { useLateContentRedraw } from './useLateContentRedraw';
 import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
 import { ViewRegistryProvider, useOptionalViewRegistry } from './viewRegistry';
 export { SCENE_CANVAS_FEATURES } from './SceneCanvas/features';
@@ -224,10 +223,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     });
     return unsubscribe;
   }, [animator]);
-
-  // Late decodes, deferred glyph bakes and late paint kinds each drew nothing
-  // on the frame that asked for them.
-  useLateContentRedraw(useCallback(() => { canvasApiRef.current?.requestRedraw?.(); }, []));
 
   // Override writes deliberately don't bump the scene version — that fanout is
   // what a frame loop is trying to avoid — so the repaint has to come from
