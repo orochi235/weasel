@@ -530,20 +530,20 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  See {@link SceneArrivalHandler}. */
   setArrivalHandler(handler: SceneArrivalHandler<TPose> | null): () => void;
 
-  /** Apply a batch of ops with journal-aware routing.
+  /** Apply a batch of ops against `adapter` as one undo entry.
    *
-   *  - **Without active journal** (or no `getActiveJournal` in options):
-   *    the ops themselves are recorded as one undo entry on the scene's own
-   *    history, rebound to `adapter` — undo replays each op's `invert()`
-   *    against that same adapter. Consecutive `applyBatch` entries can
-   *    coalesce via matching op `coalesceKey`s when the scene opts into
-   *    `coalesceWindowMs`.
-   *  - **With active journal**: routes ops to `journal.applyBatch(ops, label)`.
-   *    The scene's history recording is suppressed for the duration so the
-   *    journal's inner history — not the scene's undo stack — tracks the batch.
-   *    Mutations still happen on `adapter` / scene state.
+   *  The entry holds the scene writes the ops made, as a direct call records
+   *  them, and beside them any op that wrote no scene state, bound to
+   *  `adapter`. Undo restores those writes; it does not call an op's
+   *  `invert()` or the adapter again. **What an op states is not recorded**:
+   *  one applied over a document that already holds its result, as after an
+   *  `untracked` preview, records a write from that pose to itself, and undo
+   *  goes nowhere. Put the document back first.
    *
-   *  `adapter` is the one the ops expect (typically a `SceneCanvasAdapter`).
+   *  The entry lands in the open `batch` when there is one, else on the
+   *  active journal, else on the scene's own history, where it can coalesce
+   *  under `coalesceWindowMs` with one whose ops' keys match.
+   *
    *  Returns false when the arrival handler refused the batch: it is reverted
    *  and unrecorded. Inside `batch` it is true; that batch may still refuse. */
   applyBatch(ops: import('core/ops/types').Op[], label: string, adapter: unknown): boolean;

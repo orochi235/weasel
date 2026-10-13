@@ -1054,13 +1054,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P1) Undo does not take back a momentum flick on `main`.** Two tests fail since `599685677`
-  ("record every scene edit as the kit ops it caused"), in a fleet run of `ac40cf155` and alone:
-  `momentum.targets.test.tsx` "records the whole flick as one step once it comes to rest" and
-  `move.momentum.test.ts` "records the whole flick as one entry that one undo takes back". After
-  `scene.undo()` the node is still where the coast left it. Cause not looked into; reported to the
-  session that made the commit on 2026-10-13.
-
 - **(P2) Three visual baselines were captured on macOS and have not been compared on CI.**
   `insert-rect.png`, `gestures-drag-trace.png`, and `shape-tools-three-shapes.png` under
   `tests/visual/` were written locally on 2026-10-13. Baselines belong to `visual-update.yml` on
@@ -1230,6 +1223,15 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P1) A fleet run can report green for a tree that is not the commit it names.** `npm run
+  test:fleet` on `599685677` printed `tests 20901 passed 0 failed` on 2026-10-13, and its log lists
+  `scene.carry.test.ts`, which that commit deletes, and none of the three test files it adds. Two
+  tests that fail at that commit passed. The log shows the delta sent (`delta 27 file(s), 2
+  deleted`) and then `updated weasel on teitou at c7da2a61`, the base, before the tests ran. Other
+  sessions had runs on the fleet at the time, and a node holds one tree per repository. Not looked
+  into further. Until it is, a green run is only green if its log names a test file the commit
+  added.
 
 - **(P2) Browser tests time out under fleet load, each inside a Playwright action.** Every one
   passes alone, and nobody has confirmed load is the cause:

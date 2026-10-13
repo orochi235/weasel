@@ -140,15 +140,17 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
   coasts.add(coast);
 
   function commitFlick(): void {
-    if (!coasts.delete(coast)) return;
+    if (!coasts.delete(coast) || !adapter.applyOps) return;
     const ops: Op[] = [];
     for (const r of riders.values()) {
       if (!ours(r)) continue;
       const from = ctx.origin.get(r.id) ?? r.seen;
-      ops.push(createTransformOp<TPose>({ id: r.id, from, to: r.target.committed(), label: 'flick' }));
+      const to = r.target.committed();
+      // A scene records the write it sees, not an op's `from`, so the document goes back first.
+      r.target.commit(from);
+      ops.push(createTransformOp<TPose>({ id: r.id, from, to, label: 'flick' }));
     }
-    // The document already holds each pose; this is what makes the flick one undoable step.
-    if (ops.length > 0) adapter.applyOps?.(ops, 'flick');
+    if (ops.length > 0) adapter.applyOps(ops, 'flick');
   }
 
   for (const [id, target] of targets) {
