@@ -16,18 +16,36 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
   if (typeof IntersectionObserver === 'undefined') return () => {};
   const root = element.ownerDocument.documentElement;
   let observer: IntersectionObserver | null = null;
+  let sized: ResizeObserver | null = null;
   let retry: ReturnType<typeof setTimeout> | undefined;
 
   const stop = (): void => {
     clearTimeout(retry);
     observer?.disconnect();
     observer = null;
+    sized?.disconnect();
+    sized = null;
+  };
+
+  /** A box with no area cannot be framed, so wait for it to have one. */
+  const awaitSize = (): void => {
+    if (typeof ResizeObserver === 'undefined') return;
+    sized = new ResizeObserver(() => {
+      const box = element.getBoundingClientRect();
+      if (box.width === 0 || box.height === 0) return;
+      onMove();
+      frame(1);
+    });
+    sized.observe(element);
   };
 
   const frame = (threshold: number): void => {
     stop();
     const box = element.getBoundingClientRect();
-    if (box.width === 0 || box.height === 0) return;
+    if (box.width === 0 || box.height === 0) {
+      awaitSize();
+      return;
+    }
     const insets = [
       Math.floor(box.top),
       Math.floor(root.clientWidth - box.right),

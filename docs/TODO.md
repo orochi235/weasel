@@ -549,13 +549,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P3) A removable badge's click target is its label only.** Since the nested button fix, a
-  `Badge` with `onRemove` and `onClick` or `href` has a `<span>` root, and the label inside it takes
-  the click, so the badge's padding and the gap before the remove control no longer click. Stretch
-  the label's hit area over the padding without covering the remove control.
+- **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
+  `plain` `Badge`, when the line cannot hold the last word and the control together, the control
+  breaks alone and takes its negative margin with it, so it sits left of the line's start. Measured
+  in bare markup, not on a badge. A word joiner, a non-breaking space, and `white-space: nowrap` do
+  not stop Chromium breaking before an inline-block.
 
-- **(P3) A `Badge` drawn with `base` may show no focus indicator.** Read from `Badge.module.css`
-  and not tested, clickable or not.
+- **(P3) A `Badge` padded through `style` keeps its old click target.** The label of a removable
+  `pill` or `plain` badge reaches into the padding by `--badge-pad-*`, which only the `padding`
+  prop sets. Read from the code.
+
+- **(P3) A fitted badge base ignores effects and a negative `bloat`.** `useInsets` keeps the
+  content inside the base's sampled outline, but not inside one an effect or `bloat` has pushed
+  inward. Read from the code.
 
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
@@ -971,14 +977,6 @@ only story runner in the repo.
   likeliest to differ: its whole trace is 0.31% of the canvas, so it compares at
   `maxDiffRatio: 0.0005`.
 
-- **(P3) `draw-loop` reports negative frame times at 100 commands.** A run of
-  `tests/perf/draw-loop.spec.ts` on 2026-10-13 printed -0.15 ms for `scene` and -0.07 ms for
-  `rotated` in the 100-command row. Not investigated.
-
-- **(P3) `watchElementMove` stops watching a host that is zero-sized when a frame is built.**
-  `packages/core/src/canvas/watchElementMove.ts`. `useHostAnchor`'s `ResizeObserver` recomputes
-  when the host gains size, but the position watch does not restart. Read from the code, not tested.
-
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
@@ -1174,6 +1172,11 @@ only story runner in the repo.
     `Prefs/PrefsForm.drop.browser.test.tsx` take 3.1 to 3.6 s each alone and have 60 s, and
     `AssetEditor.steps.test.tsx`, a jsdom test that timed out at 5 s, takes 0.9 to 1.4 s alone and
     has 20 s.
+  - **`LabLightbox` failed once since, and not on a timeout.** In a fleet run of `422d2bace` on
+    teitou, "an expanded trial keeps its marks over it and takes new ones" threw `Cannot read
+    properties of null (reading 'getBoundingClientRect')` at `pane.getBoundingClientRect()`: the
+    pane the test had already looked up was gone when it drew. It passed alone at that commit, which
+    changes nothing under `packages/labkit`.
   - **Running `browser` after the other projects** (`sequence.groupOrder` in `vitest.config.ts`),
     measured 2026-10-12 over nine full runs at one commit, three on each node: none of six runs
     had a timeout, and one of three baseline runs did (`overlayAlignment`, on studio). That is

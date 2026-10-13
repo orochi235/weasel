@@ -24,6 +24,13 @@ export interface BaseModule<P = Record<string, never>> {
   build: (params: P, boxW: number, boxH: number) => BaseSampler;
   defaults?: P;
   insets?: ShapeInsets | ((params: P) => ShapeInsets);
+  /**
+   * Set on a base whose outline dips inside its box and takes no size from the box, only its
+   * proportions. Fixed insets cannot hold content inside such an outline, since it dips further
+   * the longer the content is, so `insets` is then the least the base pads by: it stands while it keeps
+   * the measured content clear of the outline, and otherwise grows to the smallest box that does.
+   */
+  fitsContent?: boolean;
 }
 
 export interface EffectRenderProps<P = Record<string, never>> {

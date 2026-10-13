@@ -57,6 +57,34 @@ describe('watchElementMove', () => {
     await expect.poll(() => onMove.mock.calls.length, { timeout: 4000 }).toBeGreaterThanOrEqual(1);
   });
 
+  it('picks a move up once an element that began with no size has one', async () => {
+    const { moveTo, box } = await mount();
+    box.style.height = '0';
+    const onMove = vi.fn();
+    stop = watchElementMove(box, onMove);
+    await baseline();
+    box.style.height = '100px';
+    await baseline();
+    const before = onMove.mock.calls.length;
+    moveTo(0);
+    await expect.poll(() => onMove.mock.calls.length).toBeGreaterThan(before);
+  });
+
+  it('picks a move up once an element that lost its size mid-watch has it back', async () => {
+    const { moveTo, box } = await mount();
+    const onMove = vi.fn();
+    stop = watchElementMove(box, onMove);
+    await baseline();
+    box.style.height = '0';
+    await baseline();
+    await baseline();
+    box.style.height = '100px';
+    await baseline();
+    const before = onMove.mock.calls.length;
+    moveTo(0);
+    await expect.poll(() => onMove.mock.calls.length).toBeGreaterThan(before);
+  });
+
   it('stays quiet for a still element at a fractional, transformed position', async () => {
     const { box } = await mount();
     page!.style.cssText = 'transform: translate(3.3px, 7.7px) scale(1.37); transform-origin: 0 0';

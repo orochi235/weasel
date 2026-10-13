@@ -13,7 +13,9 @@
  *     emits and therefore what the app actually renders.
  *
  * Each cell is the median of single frames, one per task, the way a frame loop
- * draws them (`lib/frameTiming.ts`).
+ * draws them (`lib/frameTiming.ts`), less the least frame that reaches the GPU.
+ * A cell near zero is a frame that costs about that much, and can read a few
+ * hundredths of a millisecond below it.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -34,6 +36,9 @@ const VARIANTS = ['solid', 'alternating', 'stacked', 'scene', 'rotated', 'meshes
  *  last: the cell measured right after it pays for collecting its garbage. */
 const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'rotated', 'meshes', 'stroked', 'alternating'] as const;
 
+/** A batched frame of a few hundred rects costs under 0.1 ms over the least frame, so a cell is sampled until its median is known to less. */
+const SETTLE = { withinMs: 0.02, maxSamples: 150 };
+
 /** Commands in the frame whose draw calls pin what `alternating` measures. */
 const PROBE_N = 100;
 
@@ -51,7 +56,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   await page.waitForSelector('canvas');
 
   const { rows, glRenderer, patternPaints, draws, gcAvailable } = await page.evaluate(
-    async ({ root, sweep, variants, probeN }) => {
+    async ({ root, sweep, variants, probeN, settle }) => {
       const { WeaselRenderer, registerTexture } = await import(/* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`);
       const { checkerBitmap } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/kinds.ts`);
       const { frameMs } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`);
@@ -137,7 +142,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
           collect({ type: 'major', execution: 'sync' });
           collect({ type: 'major', execution: 'sync' });
         }
-        return frameMs(gl, () => renderer.render(cmds, identity), { warm: 10, samples: 15 });
+        return frameMs(gl, () => renderer.render(cmds, identity), { warm: 10, samples: 15, settle });
       }
 
       /** A row across a pattern rect. One flat color would mean the texture
@@ -184,7 +189,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         gcAvailable: typeof (globalThis as { gc?: () => void }).gc === 'function',
       };
     },
-    { root: repoRoot, sweep: SWEEP, variants: [...MEASURE_ORDER], probeN: PROBE_N },
+    { root: repoRoot, sweep: SWEEP, variants: [...MEASURE_ORDER], probeN: PROBE_N, settle: SETTLE },
   );
 
   const lines = [
@@ -220,7 +225,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   run.params({ gcAvailable, patternPaints, draws });
   for (const r of rows) {
-    const stat = 'median of 15 single frames, one per task, after 10 untimed';
+    const stat = `median of 15 to ${SETTLE.maxSamples} single frames, one per task, after 10 untimed, until known to ${SETTLE.withinMs} ms or 2%`;
     run.item(`${r.variant} n=${r.n}`, {
       perFrame: metric(r.perFrameMs, 'ms', stat),
       perCommand: metric(r.usPerCmd, 'us', stat),

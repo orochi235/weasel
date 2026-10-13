@@ -88,16 +88,37 @@ async function sampleFrame(gl: WebGL2RenderingContext, frame: () => void, sync?:
   return performance.now() - t0;
 }
 
+/** How far the median of `xs` is likely from the true one: its standard error,
+ *  from the median absolute deviation so one stalled frame does not set it. */
+export function medianError(xs: readonly number[]): number {
+  const mid = quantile(xs, 0.5);
+  const spread = 1.4826 * quantile(xs.map((x) => Math.abs(x - mid)), 0.5);
+  return (1.2533 * spread) / Math.sqrt(xs.length);
+}
+
+export interface Settle {
+  /** Keep sampling until the median is known to this many ms, or to 2% of itself if that is more. */
+  withinMs: number;
+  /** Stop here even if it is not. */
+  maxSamples: number;
+}
+
 /** Median ms of `samples` frames, each less `leastFrame` timed beside it (see
- *  `timeInterleaved`), after `warm` untimed ones, each in a task of its own. */
+ *  `timeInterleaved`), after `warm` untimed ones, each in a task of its own.
+ *  A frame that costs about what `leastFrame` does reads as noise around zero
+ *  at a few samples; `settle` takes more until the median holds still. */
 export async function frameMs(
   gl: WebGL2RenderingContext, frame: () => void,
-  { samples = 9, warm = 3 }: { samples?: number; warm?: number } = {},
+  { samples = 9, warm = 3, settle }: { samples?: number; warm?: number; settle?: Settle } = {},
 ): Promise<number> {
   assertIsolated();
   for (let i = 0; i < warm; i++) await sampleFrame(gl, frame);
   const out: number[] = [];
-  for (let i = 0; i < samples; i++) {
+  const settled = (): boolean => {
+    if (!settle || out.length >= settle.maxSamples) return true;
+    return medianError(out) <= Math.max(settle.withinMs, 0.02 * Math.abs(quantile(out, 0.5)));
+  };
+  while (out.length < samples || !settled()) {
     const floor = await sampleFrame(gl, () => leastFrame(gl));
     out.push((await sampleFrame(gl, frame)) - floor);
   }
