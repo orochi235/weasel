@@ -11,7 +11,7 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDes
 import type { SelectionApi } from 'core/selection/useSelection';
 import { nudgeRightAction } from './nudge';
 import { duplicateAction } from './duplicate';
-import { cloneAction } from './clone';
+import { cloneAction } from '../clone/action';
 import { moveAction } from '../move/action';
 import { rotateAction } from '../rotate/action';
 import { resizeAction } from '../resize/action';

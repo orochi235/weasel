@@ -5,7 +5,7 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { CloneBehavior } from '../../gestures/types';
 import { snap } from '../../gestures/shared/snap';
-import { cloneAction } from './clone';
+import { cloneAction } from './action';
 
 const MODS = { alt: true, ctrl: false, meta: false, shift: false };
 

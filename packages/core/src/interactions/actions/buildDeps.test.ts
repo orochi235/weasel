@@ -18,7 +18,7 @@ import { resizeAction } from './resize/action';
 import { flipAction } from './flip/action';
 import { rotateAction } from './rotate/action';
 import { groupAction } from './defaults/group';
-import { cloneAction } from './defaults/clone';
+import { cloneAction } from './clone/action';
 import { duplicateAction } from './defaults/duplicate';
 import { alignLeftAction } from './align/action';
 import { distributeHorizontalAction } from './distribute/action';

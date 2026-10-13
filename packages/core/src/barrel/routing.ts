@@ -21,7 +21,7 @@ export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/insert/action';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
-export { cloneAction } from '../interactions/actions/defaults/clone';
+export { cloneAction } from '../interactions/actions/clone/action';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
 export type { EditedLayerOf } from '../interactions/actions/planeInput';
 export { viewportDragPanAction } from '../interactions/actions/defaults/viewportDragPan';

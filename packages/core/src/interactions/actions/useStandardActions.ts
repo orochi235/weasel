@@ -51,7 +51,7 @@ import { areaSelectAction } from './defaults/areaSelect';
 import { insertAction } from './insert/action';
 import { insertRotateAction } from './insert/rotateAction';
 import { clearSelectionAction } from './defaults/clearSelection';
-import { cloneAction } from './defaults/clone';
+import { cloneAction } from './clone/action';
 import { editAnchorsAction } from './defaults/editAnchors';
 import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';

@@ -40,7 +40,7 @@ export { resizeAction } from '../resize/action';
 export { rotateAction } from '../rotate/action';
 export { areaSelectAction } from './areaSelect';
 export { insertAction } from '../insert/action';
-export { cloneAction } from './clone';
+export { cloneAction } from '../clone/action';
 export { editAnchorsAction } from './editAnchors';
 export { lassoSelectAction } from './lassoSelect';
 export { pinchZoomAction } from './pinchZoom';

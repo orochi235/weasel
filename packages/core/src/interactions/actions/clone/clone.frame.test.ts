@@ -3,7 +3,7 @@
  * `alignDistribute.frame.test.ts` for why the fixture is needed at all.
  */
 import { describe, it, expect } from 'vitest';
-import { cloneAction } from './clone';
+import { cloneAction } from './action';
 import {
   makeFrameFixture,
   expectSamePose,

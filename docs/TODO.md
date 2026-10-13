@@ -643,8 +643,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   against the anchors. Whether all-pinned colors should be checked at all is the open question.
 
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
-  sibling `actions/<name>/` (clone, clipboard, booleans, outlines, edit-anchors, lasso-select) holds
-  its options, geometry, and gesture adapter. One directory per action would hold both, the way
+  sibling `actions/<name>/` (clipboard, booleans, outlines, edit-anchors, lasso-select) holds its
+  options, geometry, and gesture adapter. One directory per action would hold both, the way
   `actions/move/` and `actions/flip/` do with their `action.ts`.
 
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
