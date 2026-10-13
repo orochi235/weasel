@@ -5,8 +5,6 @@
  * {@link Condition}s decide when each shows. A single rules table
  * gates both paint and hit-test so visible-is-hittable falls out by
  * construction.
- *
- * See `docs/superpowers/specs/2026-05-24-chrome-caps-design.md`.
  */
 export type {
   ChromeCtx,

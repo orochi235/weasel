@@ -33,5 +33,4 @@ den's one motivation nothing has absorbed — and it does not need a new package
 core's own workspace layout can hold them.
 
 Domain bundles are `Contribution` bundles, not packs. The diagram one is designed
-separately and ships as `@weasel-js/diagram` — see
-`docs/superpowers/specs/2026-08-28-diagram-plugin-design.md`.
+separately and ships as `@weasel-js/diagram`.

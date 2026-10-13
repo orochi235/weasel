@@ -297,7 +297,7 @@ The line where adopting three stops being cheap is picking, not math.
 it walks `Object3D`s, so using it puts three in charge of the scene graph, which
 is the one thing `Scene` owns.
 
-Its pose feed is specified in `2026-09-13-pose-feed-design.md`: the feed lives
+Its pose feed is `createPoseFeed` (`packages/core/src/core/scene/poseFeed.ts`): the feed lives
 in core rather than the kernel, publishes added / removed / changed with
 effective poses, and reads the scene's two clocks so a drag never walks the node
 map.

@@ -4,8 +4,6 @@
  * The sibling of `cache.ts` (fills) and `outlineStrokeMeshCache.ts` (glyph
  * ribbons in em space), and it inherits their contract: identity, not content.
  * A `Path` rebuilt with equal coords is a distinct entry.
- *
- * Design: `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
  */
 
 import type { Path } from '@weasel-js/geom';

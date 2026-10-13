@@ -206,8 +206,7 @@ stored pose is already world. Pass
 `useScene({ composition: RIGID_POSE_COMPOSITION })` to make a container's pose
 a frame, so rotating it rotates its contents and moving it writes one pose. The
 scene holds the strategy as `scene.composition`, and the canvas, the adapter,
-the layout pass, picking, and every built-in action read it from there. See
-`docs/superpowers/specs/2026-09-10-group-as-frame-design.md`.
+the layout pass, picking, and every built-in action read it from there.
 
 ## Pose override
 
@@ -784,7 +783,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 | **Stroke markers** | Marker id string | App (module) lifetime | Runtime-mutable; `registerMarker` returns a disposer; overrides stack | Module-global reflectable in `@weasel-js/stroke` | `markerRegistry`; `listMarkers()` | Stroke end-cap drawing, `markerCommandCache` |
 | **Textures** | Auto-assigned `tex_N` id | App (module) lifetime | Runtime-mutable; append-only, no unregister in v1 | Module-global reflectable in `registerTexture.ts` | `textureRegistry` | `GLTextureCache`, `kind: 'shader'` uniform binding |
 | **Canvas layers** | Slot name string | Component lifetime, fixed at render | Constructor-fixed (prop value at render time) | `LayersMap` prop on `<Canvas>` / `<SceneCanvas>` | Implicitly — `Object.entries` over the prop | `<Canvas>` layer compositor |
-| **Object-kind classifier** | Target kind string | — | — | — | — | Status: **in design** — see `docs/superpowers/specs/2026-05-12-declarative-tool-routing-design.md`; ships an adapter `kindOf?` hook as a temporary contract |
+| **Object-kind classifier** | Target kind string | — | — | — | — | Shipped as the routing trait: `createNodeRouting` and `NodeRoutingEntry` |
 
 **Fonts** (`packages/font/src/registerFont.ts`) use a two-level Map — outer key is the font family, inner key is `weight|style` — so `resolveFontVariant` can walk the fallback chain within a family without scanning everything. Idempotent: re-registering an existing variant is a no-op.
 

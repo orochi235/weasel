@@ -136,7 +136,7 @@ Priority tags:
 ### Cursor package follow-ups
 
 - **(P3) Cursor rasterization is unmeasured in Safari.** Chrome and headed Firefox are measured
-  (`docs/superpowers/specs/2026-09-03-cursor-system-design.md`, "Measured browser behavior"); the
+  (`packages/cursor/scripts/probe/README.md`, "Measured browser behavior"); the
   baker's plain SVG `url()` is right for both. `node probe.mjs <dir> --browser safari` in
   `packages/cursor/scripts/probe/` is the instrument, and its readings cannot be trusted yet: its
   first run drew the arrow control and then the crosshair for every case after it, and every later
@@ -145,6 +145,11 @@ Priority tags:
   under this driver, and why is the open question. A finding lands in `bake.ts`.
 
 ---
+- **(P3) A group transform is wired for a translate only.** `GroupTransform` and
+  `BehaviorResult.transform` exist (`packages/core/src/interactions/gestures/types.ts`), but the
+  resize and rotate behaviors still answer a `pose` (`ResizeMoveResult`, `RotateMoveResult`), not a
+  `scale` or `rotate` transform, and the `BehaviorResult.pose` shim they were to replace is still
+  there.
 
 ## Viewport
 
@@ -170,6 +175,9 @@ Priority tags:
   and misses a canvas in a shadow root or a second document. Not chosen yet.
 
 ---
+- **(P3) Wheel and keyboard zoom cannot be held to one axis.** `View.scale` is per axis and
+  `fitViewToBounds` has `stretch`, but `ViewportZoomOptions` (`viewportZoom.ts`) has no
+  `axis: 'both' | 'x' | 'y'`; only wheel pan and the hand tool take one.
 
 ## Paths & booleans
 
@@ -224,6 +232,10 @@ Priority tags:
 - **(P3) A group's `data.label` is not drawn on the canvas.** Outline Stroke on draw's starter rect makes a group that takes the rect's data (`drawOutlinesAdapter`, `apps/draw/src/outlinesAdapter.ts`), so the layer list still reads "Welcome", but the word the rect wore on the canvas is gone. `defaultDrawOne` does emit a container's label, but `buildSceneTree` (`packages/core/src/canvas/buildSceneTree.ts`) pushes a container's own commands before its children's, so the group's paths cover it. Drawing it on top needs the walk to paint a container a second time after its children, which `drawOne` has no way to ask for.
 
 ---
+- **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
+  line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
+  layer id on a shape, so layers are lost on reopen; export only leaves hidden layers out
+  (`svgExport.ts`). Whether a page has its own layers is undecided.
 
 ## Rendering & paint
 
@@ -521,8 +533,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   document undo onto `createHistory`. Still imported there at sherpa `7ad02eb` (2026-10-08).
 
 ## Audio
-
-Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) The side-scroller's music bed is engine voices nobody has heard.** It plays from a
   pattern player on the music bus (`platformer/bed.ts`). The old render was

@@ -34,8 +34,7 @@ function writeSelectionToHash(sel: { kind: string; id: string } | null): void {
 }
 
 /** Bundle Inspector — read-only catalog browser at `#/dev/registry`.
- *  Mounted as a sibling to ToolkitBuilder. See
- *  `docs/superpowers/specs/2026-05-16-bundle-inspector-design.md`. */
+ *  Mounted as a sibling to ToolkitBuilder. */
 export function RegistryInspector() {
   const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [], properties: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');

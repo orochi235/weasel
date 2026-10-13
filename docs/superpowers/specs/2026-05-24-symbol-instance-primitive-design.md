@@ -2,6 +2,9 @@
 
 **Status: DEFERRED — on the shelf.**
 
+The modality, WebGL transition, and nested-clipping specs named below are deleted as built; read
+the code they describe instead (`packages/modes/src/presets/default.ts` holds the stock modes).
+
 This document captures a brainstorm from 2026-05-24. It is **not** an active plan and should not be lifted directly into implementation without reassessment. When the time comes to pick this up:
 
 - Re-read the current state of the modality design (`2026-05-24-modality-design.md`). The `symbol-edit` mode here assumes a particular shape for the mode preset; if modality has shipped and the preset has evolved, reconcile.

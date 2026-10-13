@@ -281,8 +281,7 @@ is live, so one physical pinch reaches one binding.
 OS file drop and clipboard paste are gestures as well (`DropSpec` / `PasteSpec`,
 filtered by a MIME-glob `types` field) — external content *arriving* is a form of
 input like any other. Their default routing targets the ambient `ingest` action,
-which fans out to the content-handler registry. See
-`docs/superpowers/specs/2026-07-03-content-ingestion-design.md`.
+which fans out to the content-handler registry.
 
 The pointer moving with nothing pressed is a gesture too, `hover` (`HoverSpec`).
 It is the one gesture that claims nothing. It has no press to own, so it binds
@@ -831,8 +830,7 @@ sizes but world-space for object positions. See
 kit-level affordance factories (`createCornerResizeAffordance`,
 `createRotationAffordance`) render the same chrome via reusable primitives;
 `createSelectionOverlayLayer` is the legacy presentational helper, and
-the two coexist
-(spec: `docs/superpowers/specs/2026-05-10-chrome-affordances-design.md`).
+the two coexist.
 
 ---
 
@@ -844,8 +842,7 @@ Discussed but not shipped.
 
 Component-level chain-of-responsibility hooks (`onPointerDown`, `pre-render`,
 `post-render`) that would let features attach to the canvas lifecycle without
-modifying `<SceneCanvas>` directly. Discussed but explicitly not in scope per the
-feature-roles spec (`docs/superpowers/specs/2026-05-09-feature-roles-focus-grid-design.md` §Non-goals).
+modifying `<SceneCanvas>` directly. Discussed, and left out of scope when feature roles were designed.
 Distinct from gesture-level [Behaviors](#behavior) which already ship.
 
 ### Capability registry (deferred)

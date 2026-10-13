@@ -1,5 +1,10 @@
 # Mega view — an interactive surface at 10⁴–10⁶ items
 
+**Status, by a search of the tree on 2026-10-13: partly built.** The `sprites` draw command, image
+runs sharing a draw, and the `image-quad` and `atlas-wall` perf specs exist. Nothing was found of
+the rest: choosing a baked level from the camera, fetching and holding atlas pages, hysteresis on a
+level swap, a gutter-padded atlas baker, the texture-upload measurement, or a surface that hosts it.
+
 Design for a pan/zoom surface that stays interactive when the item count is far
 past what one draw call per item can carry. For whoever implements it; assumes
 familiarity with `WeaselRenderer` and its draw commands, not with level-of-detail

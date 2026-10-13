@@ -142,8 +142,7 @@ export interface History {
   currentEntryId(): number;
   /** Open a scoped sub-history. All apply/undo/redo on the returned Journal
    *  affect the same adapter; on commit, the Journal's net forward ops are
-   *  flushed to this History as one entry. See spec docs/superpowers/specs/
-   *  2026-05-24-modality-design.md for the full lifecycle. */
+   *  flushed to this History as one entry. */
   beginJournal(opts: BeginJournalOptions): Journal;
   /** Re-activate a suspended journal. Throws if the journal was committed or
    *  cancelled (those are terminal), or if a different journal is currently

@@ -2,6 +2,9 @@
 
 **Status: DEFERRED — on the shelf.**
 
+The modality, WebGL transition, and nested-clipping specs named below are deleted as built; read
+the code they describe instead (`packages/modes/src/presets/default.ts` holds the stock modes).
+
 This document captures a brainstorm from 2026-05-24. It is **not** an active plan and should not be lifted directly into implementation without reassessment. When the time comes to pick this up:
 
 - Re-read the then-current state of the WebGL renderer plan (`2026-05-08-webgl-transition-plan-design.md`) and the nested-clipping work (`2026-05-10-nested-clipping-phase-2-design.md`). FBO-based effects (shadow, glow, blur, masks) were a deferred v2 cohort at the time of this writing; if any of them have landed first, the shared infrastructure assumptions here may need restating.

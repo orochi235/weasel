@@ -5,8 +5,6 @@ renders each story in the workshop page as a labkit trial: the story's
 controls, state, undo and snapshots live in the trial, so two settings of one
 component can be compared side by side.
 
-Direction: `docs/superpowers/specs/2026-09-13-forge-design.md`.
-
 ## What the index reads
 
 The story list is read from each file's source without running it, and a

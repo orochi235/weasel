@@ -3,7 +3,6 @@
  * The actions store contract and the `actions` prop that seeds it. The
  * provider that implements this lives in `ActionsProvider.tsx`; nothing here
  * touches React.
- * Spec: docs/superpowers/specs/2026-05-09-actions-registry-design.md
  */
 import type { GestureSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { BoundGesture } from './binding';

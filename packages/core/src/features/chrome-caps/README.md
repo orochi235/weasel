@@ -3,8 +3,6 @@
 Declarative visibility for overlay chrome — and, as it turned out, the kit's
 general-purpose rule grammar.
 
-Design doc: [`docs/superpowers/specs/2026-05-24-chrome-caps-design.md`](../../../../../docs/superpowers/specs/2026-05-24-chrome-caps-design.md).
-
 ## What problem it solves
 
 "When should the rotation handle show?" used to be answered in two places: an

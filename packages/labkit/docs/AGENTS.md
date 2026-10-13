@@ -265,4 +265,3 @@ If a primitive doesn't fit your needs, copy its source into your project. Each c
 - `src/canvas/AGENTS.md` — canvas internals
 - `src/layers/AGENTS.md` — layer list internals
 - `docs/superpowers/specs/2026-04-26-labkit-design.md` — full design spec
-- `../../../docs/superpowers/specs/2026-09-02-labkit-annotations-design.md` — the annotations design, in the weasel repo root
