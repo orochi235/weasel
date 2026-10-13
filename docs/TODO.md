@@ -1302,12 +1302,15 @@ only story runner in the repo.
   - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`), 16 of it bind and draw;
     no other call in `flushBatch` moves it by more than its noise, about 1.2 us. So what remains is
     the draw count: synthetic bold and an eighth texture still break the run, and so does a color
-    matrix around an image or a gradient. A solid or a glyph under a color matrix has its color
+    matrix around a gradient, or around an image when it does more than scale channels down. A solid or a glyph under a color matrix has its color
     mapped on the CPU (`draw/foldColor.ts`), which paints the same pixel as the shader in headless
     Chromium (`colorMatrixFold.browser.test.ts`) and has not been timed. The specs that break a run
     with a matrix on solid rects (`flush-anatomy`, `clip-cost`, `flush-noise`) turn the mapping off
-    through `colorFolding`, and have not been run since that edit. An image under a diagonal matrix
-    with no bias could be mapped the same way and is not.
+    through `colorFolding`, and have not been run since that edit. An image under a matrix that only
+    scales channels, each by 0 to 1, now rides its vertices the same way (`textureTint`), checked
+    against the shader's pixel in `colorMatrixFold.browser.test.ts` and not timed;
+    `image-quad.spec.ts`'s `unmerged` frame broke its runs with such a matrix, so it now uses a bias,
+    and has not been run since.
   - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
     why a slanted edge cannot be cut). The stencil itself costs about 4.9 us a push and pop, 7.9 at

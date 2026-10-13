@@ -367,7 +367,8 @@ void main() { outColor = u_color; }`;
       const unmergedCmds: unknown[] = [];
       const atlasCmds: unknown[] = [];
       // Two color matrices, alternated, so every command ends the run before it.
-      const matrices = [0.98, 1].map((k) => [k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, 1, 0]);
+      // Each carries a bias: a plain scale rides the vertices and breaks nothing.
+      const matrices = [0.002, 0.004].map((b) => [1, 0, 0, 0, b, 0, 1, 0, 0, b, 0, 0, 1, 0, b, 0, 0, 0, 1, 0]);
       const patternCmds: unknown[] = [];
       // 4x4 cells of the first bitmap, so every quad samples one texture and
       // the run has nothing to break it — the shape the mega view draws.

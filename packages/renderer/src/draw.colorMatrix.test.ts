@@ -58,11 +58,14 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     for (const c of matrixCalls) expect((c.args[2] as Float32Array)[0]).toBe(1);
   });
 
-  it('uploads u_colorMatrix and u_colorBias during an image draw inside a group with colorMatrix', () => {
+  it('uploads u_colorMatrix during an image draw inside a group whose colorMatrix mixes channels', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    // Red takes green's value: off the diagonal, so no vertex tint stands in for it.
+    const RED_FROM_GREEN = [...NO_RED];
+    RED_FROM_GREEN[1] = 1;
     const cmd: DrawCommand = {
       kind: 'group',
-      colorMatrix: NO_RED,
+      colorMatrix: RED_FROM_GREEN,
       children: [
         { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 },
       ],
@@ -71,9 +74,25 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     const matrixCalls = recorder.calls.filter((c) => c.name === 'uniformMatrix4fv');
     const someIsColorMatrix = matrixCalls.some((c) => {
       const arr = c.args[2];
-      return arr instanceof Float32Array && arr.length === 16 && arr[0] === 0 && arr[5] === 1;
+      return arr instanceof Float32Array && arr.length === 16 && arr[0] === 0 && arr[4] === 1 && arr[5] === 1;
     });
     expect(someIsColorMatrix).toBe(true);
+  });
+
+  it('stages an image under a colorMatrix that only scales channels as a tint, leaving the uniform at identity', () => {
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    r.render([{
+      kind: 'group',
+      colorMatrix: NO_RED,
+      children: [{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }],
+    }]);
+    const upload = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+    )!;
+    expect(Array.from((upload.args[2] as Float32Array).slice(2, 6))).toEqual([0, 1, 1, 1]);
+    for (const c of recorder.calls.filter((c) => c.name === 'uniformMatrix4fv')) {
+      expect((c.args[2] as Float32Array)[0]).toBe(1);
+    }
   });
 
   it('uploads identity u_colorMatrix on text draws with no enclosing group transform', () => {

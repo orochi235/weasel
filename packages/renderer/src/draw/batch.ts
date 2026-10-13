@@ -1,6 +1,6 @@
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
-import { colorFolding, foldColor, isIdentityColorMatrix } from './foldColor';
+import { colorFolding, foldColor, isIdentityColorMatrix, stagedTint, textureTint, type Tint } from './foldColor';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { resolveColor } from '@weasel-js/paint';
 import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
@@ -80,8 +80,8 @@ function stagedStateIsLive(
   if (image !== undefined && slotForBitmap(staged, image, sampling!) < 0) return false;
   const colorMatrix = ctx.state.colorMatrix;
   if (staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix)) return true;
-  // A run drawn under identity takes any solid or glyph: `foldColor` maps its
-  // color before it is staged.
+  // A run drawn under identity takes any solid or glyph, and a textured quad
+  // under a matrix a tint can stand in for: each is mapped before it is staged.
   return folds && staged.foldsAlpha;
 }
 
@@ -177,9 +177,10 @@ export function stageSolid(ctx: DrawContext, vertices: number): StagedBatchState
 }
 
 /**
- * The staged state, opening a run if none is. `folds` says the caller's color
- * is known here, so its run draws under identity whatever the group's matrix;
- * a textured quad's is not, and its run draws under the live one.
+ * The staged state, opening a run if none is. `folds` says the caller maps its
+ * own color, so its run draws under identity whatever the group's matrix; a
+ * textured quad under a matrix no tint expresses cannot, and its run draws
+ * under the live one.
  */
 function openRun(ctx: DrawContext, folds = false): StagedBatchState {
   if (ctx.batchState === undefined) {
@@ -206,19 +207,20 @@ function openRun(ctx: DrawContext, folds = false): StagedBatchState {
  */
 export function stageImage(
   ctx: DrawContext, image: ImageBitmap, sampling: 'linear' | 'nearest',
-): { staged: StagedBatchState; slot: number } {
+): { staged: StagedBatchState; slot: number; tint: Tint } {
+  const tint = colorFolding.enabled ? textureTint(ctx.state.colorMatrix) : null;
   if (ctx.batchState !== undefined
-      && !stagedStateIsLive(ctx, ctx.batchState, image, sampling)) {
+      && !stagedStateIsLive(ctx, ctx.batchState, image, sampling, 0, tint !== null)) {
     flushBatch(ctx);
   }
   if (ctx.drawBatch.wouldOverflow(4)) flushBatch(ctx);
-  const staged = openRun(ctx);
+  const staged = openRun(ctx, tint !== null);
   let slot = slotForBitmap(staged, image, sampling);
   if (slot > staged.textures.length) {
     staged.textures.push({ kind: 'bitmap', image, sampling });
     slot = staged.textures.length;
   }
-  return { staged, slot };
+  return { staged, slot, tint: stagedTint(staged, tint) };
 }
 
 /**

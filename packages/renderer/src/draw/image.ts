@@ -37,7 +37,7 @@ export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
     const sh = cmd.source?.h ?? cmd.image.height;
     if (isMinified(minifiedLimits(ctx), sw, sh, cmd.w, cmd.h)) ctx.imageCache.buildMipmaps(cmd.image);
   }
-  const { staged, slot } = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
+  const { staged, slot, tint } = stageImage(ctx, cmd.image, cmd.sampling ?? 'linear');
 
   // Sampling window: the whole bitmap unless `source` narrows it, with the
   // flips applied by swapping the ends rather than moving the quad.
@@ -57,8 +57,8 @@ export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
     // Group alpha rides the vertices only where it rode the solid colors too:
     // with a real color matrix in the run it is `u_alpha`, and folding it here
     // as well would apply it twice.
-    (cmd.opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1),
-    slot,
+    (cmd.opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1) * tint[3],
+    slot, tint[0], tint[1], tint[2],
   )) retryUncut(ctx, cmd, undefined, drawImage);
 }
 
@@ -85,35 +85,35 @@ export function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
     }
   }
   const sampling = cmd.sampling ?? 'linear';
-  let { staged, slot } = stageImage(ctx, cmd.image, sampling);
+  let { staged, slot, tint } = stageImage(ctx, cmd.image, sampling);
 
   const batch = ctx.drawBatch;
   const m = ctx.state.transform;
-  let groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
+  let groupAlpha = (staged.foldsAlpha ? ctx.state.alpha : 1) * tint[3];
   const tw = cmd.image.width;
   const th = cmd.image.height;
 
   for (let s = 0, i = 0; s < count; s++, i += SPRITE_STRIDE) {
     if (batch.wouldOverflow(4)) {
       flushBatch(ctx);
-      ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
-      groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
+      ({ staged, slot, tint } = stageImage(ctx, cmd.image, sampling));
+      groupAlpha = (staged.foldsAlpha ? ctx.state.alpha : 1) * tint[3];
     }
     const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
     let cut: ClipRect | null | undefined;
     while (!batch.pushQuad(
       data[i], data[i + 1], data[i + 2], data[i + 3], m,
       sx / tw, sy / th, (sx + sw) / tw, (sy + sh) / th,
-      data[i + 8] * groupAlpha, slot,
+      data[i + 8] * groupAlpha, slot, tint[0], tint[1], tint[2],
     )) {
       cut = enterUncut(ctx);
-      ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
-      groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
+      ({ staged, slot, tint } = stageImage(ctx, cmd.image, sampling));
+      groupAlpha = (staged.foldsAlpha ? ctx.state.alpha : 1) * tint[3];
     }
     if (cut !== undefined) {
       leaveUncut(ctx, cut);
-      ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
-      groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
+      ({ staged, slot, tint } = stageImage(ctx, cmd.image, sampling));
+      groupAlpha = (staged.foldsAlpha ? ctx.state.alpha : 1) * tint[3];
     }
   }
 }

@@ -104,6 +104,48 @@ describe('renderer — a group color matrix and the run', () => {
     expect(biasAtDraws()).toEqual([0, 0.25, 0]);
   });
 
+  /** Scales red by a half and green by a quarter, and halves alpha: no bias, nothing off the diagonal. */
+  const SCALED = ((): number[] => {
+    const cm = new Array<number>(20).fill(0);
+    cm[0] = 0.5; cm[6] = 0.25; cm[12] = 1; cm[18] = 0.5;
+    return cm;
+  })();
+
+  /** The after-the-matrix alpha factor of the first vertex of each quad in the first upload. */
+  const quadPosts = (): number[] => {
+    const upload = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+    )!;
+    const verts = upload.args[2] as Float32Array;
+    const out: number[] = [];
+    for (let i = 0; i < (upload.args[4] as number); i += 4 * FLOATS_PER_VERTEX) out.push(verts[i + 8]);
+    return out;
+  };
+
+  it('keeps an image under a matrix that only scales channels down in the run, as a vertex tint', () => {
+    r.render([img(0), group({ colorMatrix: SCALED, alpha: 0.5 }, [img(20)]), img(40)]);
+    expect(draws()).toEqual([18]);
+    expect(quadColors()).toEqual([[1, 1, 1, 1], [0.5, 0.25, 1, 1], [1, 1, 1, 1]]);
+    // The matrix's alpha scale and the group's alpha both ride the vertex.
+    expect(quadPosts()).toEqual([1, 0.25, 1]);
+  });
+
+  it('tints packed sprites the same way', () => {
+    const sprites = new Float32Array([0, 0, 16, 16, 0, 0, 16, 16, 1]);
+    r.render([img(0), group({ colorMatrix: SCALED }, [{ kind: 'sprites', image: atlas, sprites }])]);
+    expect(draws()).toEqual([12]);
+    expect(quadColors()[1]).toEqual([0.5, 0.25, 1, 1]);
+    expect(quadPosts()[1]).toEqual(0.5);
+  });
+
+  it('still breaks for an image under a scale past 1, which the shader clamps after the texel', () => {
+    const bright = [...SCALED];
+    bright[0] = 2;
+    r.render([img(0), group({ colorMatrix: bright }, [img(20)]), img(40)]);
+    expect(draws()).toEqual([6, 6, 6]);
+    expect(quadColors()).toEqual([[1, 1, 1, 1]]);
+  });
+
   it('keeps alpha a uniform, and a barrier, in a run drawn under a matrix', () => {
     // `a = clamp(CM * src + bias).a * u_alpha`: with a real matrix between
     // them, an alpha multiplied onto an image vertex is a different number.

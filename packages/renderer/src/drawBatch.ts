@@ -218,8 +218,8 @@ export class DrawBatch {
   /**
    * Append one image quad: the destination rect `(x, y, w, h)` mapped through
    * `m`, sampling `(u0, v0)`-`(u1, v1)`, every corner carrying `post` as the
-   * after-the-color-matrix alpha factor. `slot` is the texture unit the corners
-   * sample.
+   * after-the-color-matrix alpha factor and `rgb` as the scale on its texel.
+   * `slot` is the texture unit the corners sample.
    *
    * Corners wind top-left, top-right, bottom-right, bottom-left — the same
    * winding `pushRect` uses, which is what lets a run of mixed rects and quads
@@ -228,7 +228,7 @@ export class DrawBatch {
   pushQuad(
     x: number, y: number, w: number, h: number, m: GlMat3,
     u0: number, v0: number, u1: number, v1: number,
-    post: number, slot: number,
+    post: number, slot: number, r = 1, g = 1, b = 1,
   ): boolean {
     this.reserve(4, 6);
     let i = this.nVerts * FLOATS_PER_VERTEX;
@@ -240,10 +240,10 @@ export class DrawBatch {
     const cx = ma * x1 + mc * y1 + mtx, cy = mb * x1 + md * y1 + mty;
     const dx = ma * x + mc * y1 + mtx,  dy = mb * x + md * y1 + mty;
     const P = packSlot(slot, PAINT_MODE_IMAGE);
-    i = this.writeVertex(i, ax, ay, 1, 1, 1, 1, u0, v0, post, P);
-    i = this.writeVertex(i, bx, by, 1, 1, 1, 1, u1, v0, post, P);
-    i = this.writeVertex(i, cx, cy, 1, 1, 1, 1, u1, v1, post, P);
-    this.writeVertex(i, dx, dy, 1, 1, 1, 1, u0, v1, post, P);
+    i = this.writeVertex(i, ax, ay, r, g, b, 1, u0, v0, post, P);
+    i = this.writeVertex(i, bx, by, r, g, b, 1, u1, v0, post, P);
+    i = this.writeVertex(i, cx, cy, r, g, b, 1, u1, v1, post, P);
+    this.writeVertex(i, dx, dy, r, g, b, 1, u0, v1, post, P);
     this.pushQuadIndices();
     return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
   }
