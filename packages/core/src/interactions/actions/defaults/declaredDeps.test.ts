@@ -16,7 +16,7 @@ import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
 import { alignLeftAction, alignCenterYAction } from '../align/action';
-import { distributeHorizontalAction, distributeVerticalAction } from './distribute';
+import { distributeHorizontalAction, distributeVerticalAction } from '../distribute/action';
 import { pathfinderUnionAction, pathfinderExcludeAction } from './booleans';
 
 const IDS = ['a', 'b', 'c'];

@@ -10,7 +10,7 @@ export {
 } from '../align/action';
 export {
   distributeHorizontalAction, distributeVerticalAction,
-} from './distribute';
+} from '../distribute/action';
 export {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,

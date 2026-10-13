@@ -21,7 +21,7 @@ import { groupAction } from './defaults/group';
 import { cloneAction } from './defaults/clone';
 import { duplicateAction } from './defaults/duplicate';
 import { alignLeftAction } from './align/action';
-import { distributeHorizontalAction } from './defaults/distribute';
+import { distributeHorizontalAction } from './distribute/action';
 import {
   nudgeUpAction,
   nudgeDownAction,

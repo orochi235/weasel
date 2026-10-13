@@ -14,7 +14,7 @@ import { resizeAction } from '../resize/action';
 import { rotateAction } from '../rotate/action';
 import { flipAction } from '../flip/action';
 import { alignRightAction } from '../align/action';
-import { distributeHorizontalAction } from './distribute';
+import { distributeHorizontalAction } from '../distribute/action';
 
 type Pose = RectPose & { rotation?: number };
 

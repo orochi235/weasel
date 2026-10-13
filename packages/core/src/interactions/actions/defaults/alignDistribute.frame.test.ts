@@ -7,7 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { alignLeftAction } from '../align/action';
-import { distributeHorizontalAction } from './distribute';
+import { distributeHorizontalAction } from '../distribute/action';
 import {
   makeFrameFixture,
   expectSamePose,

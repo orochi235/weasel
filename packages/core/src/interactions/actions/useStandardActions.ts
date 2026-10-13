@@ -36,7 +36,7 @@ import {
 } from './align/action';
 import {
   distributeHorizontalAction, distributeVerticalAction,
-} from './defaults/distribute';
+} from './distribute/action';
 import {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,

@@ -4,7 +4,7 @@ import { stubDeps } from '../testUtils';
 import {
   distributeHorizontalAction,
   distributeVerticalAction,
-} from './distribute';
+} from './action';
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { NodeId } from 'core/scene/types';

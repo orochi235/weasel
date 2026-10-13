@@ -5,7 +5,7 @@ import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import { flipAction } from '../flip/action';
 import { nudgeRightAction } from './nudge';
 import { alignLeftAction } from '../align/action';
-import { distributeHorizontalAction } from './distribute';
+import { distributeHorizontalAction } from '../distribute/action';
 import { duplicateAction } from './duplicate';
 import { cloneAction } from './clone';
 import { rotateAction } from '../rotate/action';
