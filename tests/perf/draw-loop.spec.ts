@@ -5,8 +5,8 @@
  * produces numbers that say nothing about a GPU.
  *
  * The variants:
- *   - `alternating` — solid and linear-gradient alternating. Both join one
- *     batched run, so this prices the gradient fill, not a program switch.
+ *   - `alternating` — solid and pattern fill alternating. A pattern never
+ *     joins the batched run, so every command flushes it and switches program.
  *   - `stacked` — every rect at the same spot: the same number of draw calls
  *     over a fraction of the fragments.
  *   - `scene` — each command in its own group, which is what `buildSceneTree`
@@ -34,6 +34,9 @@ const VARIANTS = ['solid', 'alternating', 'stacked', 'scene', 'rotated', 'meshes
  *  last: the cell measured right after it pays for collecting its garbage. */
 const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'rotated', 'meshes', 'stroked', 'alternating'] as const;
 
+/** Commands in the frame whose draw calls pin what `alternating` measures. */
+const PROBE_N = 100;
+
 test.setTimeout(300_000);
 
 test('draw loop: frame cost vs commands per frame', async ({ page, browser, browserName }) => {
@@ -47,9 +50,10 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
-  const { rows, glRenderer, gradientRamps, gcAvailable } = await page.evaluate(
-    async ({ root, sweep, variants }) => {
-      const { WeaselRenderer } = await import(/* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`);
+  const { rows, glRenderer, patternPaints, draws, gcAvailable } = await page.evaluate(
+    async ({ root, sweep, variants, probeN }) => {
+      const { WeaselRenderer, registerTexture } = await import(/* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`);
+      const { checkerBitmap } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/kinds.ts`);
       const { frameMs } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`);
 
       const W = 800;
@@ -70,11 +74,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
       const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
       const solidFill = (i: number) => ({ kind: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
-      const gradFill = {
-        kind: 'linear-gradient' as const,
-        from: { x: 100, y: 100 }, to: { x: 200, y: 200 },
-        stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
-      };
+      const patternFill = { kind: 'texture' as const, texture: registerTexture(await checkerBitmap()) };
 
       const M = 0, L = 1, Z = 4; // PathVerb
       /** An octagon, so the command is a tessellated mesh rather than a rect.
@@ -104,7 +104,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
             path: variant === 'meshes'
               ? octagon(x + 18, y + 18, 18)
               : { kind: 'rect', x, y, width: 36, height: 36 },
-            fill: { paint: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i) },
+            fill: { paint: variant === 'alternating' && i % 2 === 1 ? patternFill : solidFill(i) },
           };
           if (variant === 'stroked') cmd.stroke = { width: 2, paint: { color: '#222222' } };
           if (variant === 'rotated') {
@@ -140,23 +140,33 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         return frameMs(gl, () => renderer.render(cmds, identity), { warm: 10, samples: 15 });
       }
 
-      /** Two points at opposite ends of a gradient rect. Equal values would
-       *  mean the gradient never painted, which would make it look free. */
-      function checkGradientRamps(): boolean {
+      /** A row across a pattern rect. One flat color would mean the texture
+       *  never painted, which would make the switch look free. */
+      function checkPatternPaints(): boolean {
         renderer.render([{
           kind: 'path',
           path: { kind: 'rect', x: 100, y: 100, width: 100, height: 100 },
-          fill: { paint: gradFill },
+          fill: { paint: patternFill },
         }], identity);
         gl.finish();
-        const a = new Uint8Array(4);
-        const b = new Uint8Array(4);
-        gl.readPixels(110, H - 110, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, a);
-        gl.readPixels(190, H - 190, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, b);
-        return Math.abs(a[0] - b[0]) > 20;
+        const row = new Uint8Array(64 * 4);
+        gl.readPixels(110, H - 150, 64, 1, gl.RGBA, gl.UNSIGNED_BYTE, row);
+        let lo = 255;
+        let hi = 0;
+        for (let i = 0; i < row.length; i += 4) {
+          lo = Math.min(lo, row[i]);
+          hi = Math.max(hi, row[i]);
+        }
+        return hi - lo > 100;
       }
 
-      const ramps = checkGradientRamps();
+      const drawsFor = (variant: string): number => {
+        renderer.render(build(probeN, variant), identity);
+        return renderer.lastFrameStats().drawCalls;
+      };
+
+      const paints = checkPatternPaints();
+      const draws = { solid: drawsFor('solid'), alternating: drawsFor('alternating') };
       const rows: Array<{ variant: string; n: number; perFrameMs: number; usPerCmd: number }> = [];
       for (const variant of variants) {
         for (const { n } of sweep) {
@@ -170,17 +180,18 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         }
       }
       return {
-        rows, glRenderer, gradientRamps: ramps,
+        rows, glRenderer, patternPaints: paints, draws,
         gcAvailable: typeof (globalThis as { gc?: () => void }).gc === 'function',
       };
     },
-    { root: repoRoot, sweep: SWEEP, variants: [...MEASURE_ORDER] },
+    { root: repoRoot, sweep: SWEEP, variants: [...MEASURE_ORDER], probeN: PROBE_N },
   );
 
   const lines = [
     '',
     `Draw loop — 800x600, dpr 1, on ${glRenderer}`,
-    `gradient fills actually ramp: ${gradientRamps}`,
+    `pattern fills actually paint: ${patternPaints}`,
+    `draw calls at ${PROBE_N} commands: solid ${draws.solid}, alternating ${draws.alternating}`,
     `collected between measurements: ${gcAvailable}`,
     '',
     `| commands | ${VARIANTS.map((v) => `${v} (ms/frame · us/cmd)`).join(' | ')} |`,
@@ -196,8 +207,10 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   console.log(lines.join('\n'));
 
   expect(errors).toEqual([]);
-  // A gradient that silently draws nothing would read as a free fill kind.
-  expect(gradientRamps, 'gradient fill did not ramp').toBe(true);
+  // A pattern that silently draws nothing would read as a free program switch.
+  expect(patternPaints, 'pattern fill did not paint').toBe(true);
+  expect(draws.solid, 'solid rects should share one batched run').toBeLessThan(PROBE_N / 10);
+  expect(draws.alternating, 'every alternating command should break the run').toBeGreaterThanOrEqual(PROBE_N);
   for (const v of VARIANTS) {
     const gr = rows.filter((r) => r.variant === v).sort((a, b) => a.n - b.n);
     expect(gr[gr.length - 1].perFrameMs, `${v}: more commands should cost more`)
@@ -205,7 +218,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   }
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
-  run.params({ gcAvailable, gradientRamps });
+  run.params({ gcAvailable, patternPaints, draws });
   for (const r of rows) {
     const stat = 'median of 15 single frames, one per task, after 10 untimed';
     run.item(`${r.variant} n=${r.n}`, {
