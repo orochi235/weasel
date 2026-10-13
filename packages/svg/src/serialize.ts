@@ -19,6 +19,7 @@ import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { anchorOffset, svgDirection } from './textAnchor';
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
+import { prettyXml } from './prettyXml';
 
 /**
  * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
@@ -55,17 +56,8 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
     }
   }
 
-  // documentMeta elements after <defs>, before geometry body.
-  let docMetaXml = '';
-  if (opts.documentMeta) {
-    for (const prefix of Object.keys(namespaces)) {
-      const bucket = opts.documentMeta[prefix];
-      if (!bucket?.elements) continue;
-      for (const [localName, list] of Object.entries(bucket.elements)) {
-        for (const el of list) docMetaXml += namespacedElementXml(prefix, localName, el);
-      }
-    }
-  }
+  // After <defs>, before the geometry.
+  const docMetaXml = metaElementsXml(opts.documentMeta, namespaces);
 
   const defsXml = registry.toDefsXml(opts.onWarn);
   // Once per message: a hundred inner-aligned strokes are one fact.
@@ -81,7 +73,8 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
     ? `<title>${escapeText(opts.title)}</title>`
     : '';
 
-  return `<svg ${rootAttrs.join(' ')}>${titleXml}${defsXml}${docMetaXml}${bodyXml}</svg>`;
+  const xml = `<svg ${rootAttrs.join(' ')}>${titleXml}${defsXml}${docMetaXml}${bodyXml}</svg>`;
+  return opts.pretty ? prettyXml(xml) : xml;
 }
 
 export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintServerRegistry): void {

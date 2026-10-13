@@ -64,6 +64,7 @@ export {
   rotationDegreesUnit,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
 export type { CanvasProps } from '../canvas/Canvas';
+export type { CameraProps, CanvasViewState } from '../canvas/useCanvasView';
 export type { CanvasHelpers, CanvasViewHelpers, CanvasSurfaceHelpers } from '../canvas/useViewHelpers';
 export type { StandardSlotName, CustomLayerEntry } from '../canvas/layerSlots';
 export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from '../canvas/canvasExtension';

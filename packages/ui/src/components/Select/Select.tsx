@@ -32,6 +32,7 @@ import listbox from '../listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 import { Caret } from '../Caret';
+import type { OptionKey } from '../../optionKey';
 
 /** One option in a {@link Select}'s `options` list. */
 export type SelectOption = {
@@ -50,14 +51,13 @@ export type SelectOption = {
 };
 
 /** A titled group of options in a {@link Select}'s `options` list. */
-export type SelectOptionGroup<T extends Key = string> = {
+export type SelectOptionGroup<T extends OptionKey = string> = {
   title: ReactNode;
   options: ReadonlyArray<SelectOption & { value: T }>;
 };
 
-type Key = string | number;
 
-function isGroup<T extends Key>(
+function isGroup<T extends OptionKey>(
   entry: (SelectOption & { value: T }) | SelectOptionGroup<T>,
 ): entry is SelectOptionGroup<T> {
   return 'options' in entry;
@@ -73,7 +73,7 @@ export type SelectPopup = 'over' | 'below';
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
   label?: ReactNode;
   /**
    * `'stacked'` (the default) puts the label above the trigger; `'row'` sets it
@@ -137,7 +137,7 @@ export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, '
  * `aria-label` or a string `label`, as `Button` does; `tooltip` replaces that
  * text.
  */
-export function Select<T extends Key = string>(props: SelectProps<T>) {
+export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const {
     label,
     orientation = 'stacked',
@@ -394,7 +394,7 @@ function CheckMark() {
   );
 }
 
-function renderOption<T extends Key>(o: SelectOption & { value: T }) {
+function renderOption<T extends OptionKey>(o: SelectOption & { value: T }) {
   return (
     <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled} icon={o.icon} textValue={o.textValue}>
       {o.label}
@@ -408,7 +408,7 @@ function renderOption<T extends Key>(o: SelectOption & { value: T }) {
  * `SelectSection`.
  */
 function optionLabels(
-  options: ReadonlyArray<SelectOption | SelectOptionGroup<Key>> | undefined,
+  options: ReadonlyArray<SelectOption | SelectOptionGroup<OptionKey>> | undefined,
   children: ReactNode,
 ): ReactNode[] {
   if (options !== undefined)

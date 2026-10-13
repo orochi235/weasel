@@ -304,7 +304,7 @@
     "longestFunction": 129
   },
   "packages/svg/src/serialize.ts": {
-    "lines": 528
+    "lines": 521
   },
   "packages/text-dom/src/domRuns.ts": {
     "lines": 474

@@ -125,6 +125,8 @@ export type {
 export { createPaintedCursorLayer, PAINTED_CURSOR_LAYER_ID } from '../canvas/paintedCursorLayer';
 export type {
   LayersMap,
+  CanvasLayers,
+  SceneSlotLayers,
   SelectionOverlaySlotConfig,
   LayerSlotValue,
   StandardSlotConfig,

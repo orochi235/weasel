@@ -1039,15 +1039,11 @@ only story runner in the repo.
   `packages/core/src/canvas/watchElementMove.ts`. `useHostAnchor`'s `ResizeObserver` recomputes
   when the host gains size, but the position watch does not restart. Read from the code, not tested.
 
-- **(P3) `forge/src/vite/plugin.test.ts` fails when the dev server does not follow a rewritten
-  file.** Every failure is a test that writes a file and waits 15 to 20 s for the server to follow
-  it, among them "serves the component graph from source, and pushes it again when a component file
-  changes" and "titles a native story by its meta when forge's meta reaches it through a helper
-  module, and re-decides when the helper changes". It has failed in fleet runs on studio and
-  teitou, and alone on orochi, where it is not load from the suite: 2 of 3 runs failed at
-  `af9f3db6b`, up to five tests each, and 1 of 2 at `29dfa85eb`. A site dev server on orochi that
-  evening also served a file as it was before an edit, and a `touch` did not wake it, so there the
-  watcher missed the write.
+- **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
+  as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
+  reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
+  7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
+  measured.
 
 - **(P2) A docs minisite per package: overview, guides, and demos.** `npm run build:api` documents
   every published package in one TypeDoc site at `/api/`. Still to design: an overview and
@@ -1055,18 +1051,19 @@ only story runner in the repo.
   demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
   site's own shell is the route that puts all four in one place.
 
-- **(P2) The API reference build still reports 12 warnings.** `docs/conventions.md` says
+- **(P2) The API reference build still reports 8 warnings.** `docs/conventions.md` says
   `npx typedoc` reports none. Each is a documented export naming a type its barrel does not export:
-  - `Bivariant` (`packages/core/src/core/scene/types.ts`), `OpsApplier` (`canvas/deps/slice.ts`),
-    `XY` (geom's `pathHitTest.ts`), and `OnTokenChange` (ui's `TokenPanel/tokenTypes.ts`): a
-    one-line export each.
+  - `Bivariant` (`packages/core/src/core/scene/types.ts`) and `ScopedScene`
+    (`core/scene/unitScopes.ts`): each needs `export` on its declaration and a line in core's
+    scene barrel.
+  - `CONSTRUCTORS` in geom's `typedArrayJson.ts`: `NumberTypedArray` is
+    `InstanceType<(typeof CONSTRUCTORS)[TypedArrayTag]>`, so the reference names a private
+    constant. Writing the union out by hand lists the nine array types twice.
   - `LabBaseProps` (labkit's `Lab.tsx`) and `CreateOptions` (storage's `records.ts`): an exported
     type needs a doc line, and both files sit at their `check:size` cap, so each wants its split
     first.
   - `BadgePropsByShape` in ui: exporting it surfaces `BadgeBaseProps`, `BadgeShapeParams`, and
     about thirty per-shape, per-base, and per-effect parameter types behind them.
-  - `Key` (`string | number`), declared three times in ui: `useAsyncOptions.ts`, `ComboBox.tsx`,
-    and `Select.tsx`. It wants one exported definition.
   - `DepSchema` and `OverlaySchema` in routing, which its root does export. core merges into both
     with `declare module`, and TypeDoc appears to file the merged interface under another symbol
     than the one `DepName` and `KernelOverlay` reference (read from the warning, not traced).
@@ -1077,10 +1074,6 @@ only story runner in the repo.
   which `@weasel-js/svg` does not have. A justified node is written at its start edge with
   `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
   need per-word `x` placement too, since `text-anchor` has no justify.
-
-- **(P3) `SerializeOptions.pretty` does nothing.** `packages/svg/src/types.ts` declares it and
-  nothing in `packages/svg/src` reads it, so the serializer's output is the same either way.
-  Implement it or remove the option.
 
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
@@ -1093,15 +1086,23 @@ only story runner in the repo.
   its buttons call `scene.setPose` / `scene.add`. A button's `scene.setPose` never reaches the
   canvas's adapter, so the seat has to say where a scene-level write gets animated.
 
-- **(P3) draw warns of two route conflicts every time it loads.** In the console of the dev build,
-  each "two bindings declare the same (phase, gesture, arg, target, modifiers) tuple in the same
-  scope, so declaration order alone decides which one fires":
-  `[*:*] drag ?shift ?alt — declared by slice, slice`, which is `useSliceTool`'s
-  `slice.dragPoint` binding (shift and alt optional) against its own plain `slice` drag
-  (`packages/core/src/tools/builtin/slice/useSliceTool.ts`), and
-  `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
-  mode.crop.commit`. Not looked into further: whether each is a real ambiguity, or bindings the
-  check cannot tell apart because a predicate or a mode keeps them from being live together.
+- **(P3) draw warns of two route conflicts every time it loads, and both are a binding that
+  declines through `enabled()` so the next one fires.** `findScopedConflicts`
+  (`packages/routing/src/tools/routing/reflection/conflicts.ts`) cannot see that, since it does not
+  evaluate actions, so it reports each as "declaration order alone decides which one fires":
+  - `[*:*] drag ?shift ?alt — declared by slice, slice`. `useSliceTool` lists `slice.dragPoint`
+    ahead of its plain `slice` drag, and `slice.dragPoint` is enabled only while points are placed.
+    Read from the code: the order is the design, and a comment on the binding says so.
+  - `[initial] keyDown(Enter) — declared by mode.path-edit.entry, mode.free-transform.commit,
+    mode.crop.commit`. `modeShortcuts` (`packages/routing/src/contributions/modeShortcuts.ts`)
+    gives every entry key the rule `{ mode: { not: <its mode> } }`, which holds inside any other
+    mode, so path-edit's entry ties with each other mode's commit. draw keeps entry to normal mode
+    in `canEnter` (`apps/draw/src/modality/shortcuts.ts`), which the check cannot read. The two
+    commits do not tie with each other; they share a line because each ties with the entry.
+
+  Not chosen yet: a way for a binding to say it yields when its action declines, so the check
+  skips the pair, or a way for `modeShortcuts` to take the modes an entry key works from as a rule,
+  which settles the second and leaves the first.
 
 - **(P3) draw: two owners for "is a text edit open".** The kit's `useSceneTextEdit` holds
   `editingId`; the app's mode machine (`apps/draw/src/modality/machine.ts`) holds a `text-edit` mode

@@ -44,7 +44,7 @@ export interface CanvasViewOptions {
   requestRedraw: () => void;
 }
 
-/** What {@link useCanvasView} hands back. The owner decides when in a commit
+/** What `useCanvasView` hands back. The owner decides when in a commit
  *  the two controlled steps run, since they have to sit among its own effects. */
 export interface CanvasViewState {
   /** The view in effect. Written by a write when uncontrolled and by

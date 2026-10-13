@@ -1,8 +1,8 @@
+import type { Rect } from '@weasel-js/geom';
 import type { ContainerBounds, LayoutChild, LayoutSnap, LayoutStrategy } from '@weasel-js/core';
 import { nearest } from '../snaps';
 import { sequenceLayout } from './sequence';
 
-type Rect = { x: number; y: number; width: number; height: number };
 
 /**
  * What `pack` does when its shelves run past the container's height.

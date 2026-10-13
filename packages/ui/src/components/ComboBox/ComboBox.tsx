@@ -17,6 +17,7 @@ import {
 import type { FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
+import type { OptionKey } from '../../optionKey';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './ComboBox.module.css';
@@ -33,7 +34,6 @@ export type ComboBoxOption = {
   isDisabled?: boolean;
 };
 
-type Key = string | number;
 
 /**
  * How the typed text narrows the options.
@@ -46,7 +46,7 @@ type Key = string | number;
 export type ComboBoxFilter = 'contains' | 'none' | ((textValue: string, inputValue: string) => boolean);
 
 /** What the user committed: an option they picked, or text they typed. */
-export type ComboBoxCommit<T extends Key = string> =
+export type ComboBoxCommit<T extends OptionKey = string> =
   | { source: 'option'; key: T }
   | { source: 'text'; text: string };
 
@@ -56,7 +56,7 @@ const admitEverything = () => true;
  * Props for {@link ComboBox}, on top of React Aria's `ComboBox` props, with
  * the selection key narrowed to the option value type.
  */
-export type ComboBoxProps<T extends Key = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
+export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
   label?: ReactNode;
   /**
    * `'stacked'` (the default) puts the label above the field; `'row'` sets it
@@ -107,7 +107,7 @@ export type ComboBoxProps<T extends Key = string> = Omit<RACComboBoxProps<object
  * type to filter; selection commits to `onSelectionChange`. When no value
  * is in the input, selection clears (key becomes null).
  */
-export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
+export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) {
   const {
     label,
     orientation = 'stacked',
