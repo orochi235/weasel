@@ -564,7 +564,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       layerStack.reset(json.systemLayers.map(layerFromSerialized));
       history.clear();
       construct(specs);
-      selection.replace(selection.get().filter((id) => state.nodes.has(id)));
+      selection.replace(reachable(selection.get().filter((id) => state.nodes.has(id))));
       notify();
     },
 

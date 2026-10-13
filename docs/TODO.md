@@ -405,12 +405,6 @@ Priority tags:
   moving them out as they stand hands one module all of those at once. The wiring shrinks when the
   entry below lands and `outerOps.ts` goes.
 
-- **(P3) `loadState` can leave a locked node selected.** It keeps the selected ids the loaded
-  snapshot still holds and does not ask whether a lock now covers them, so a selected node the
-  snapshot puts on a locked layer stays selected: `getSelection()` answers with it and `isLocked`
-  answers true. Every other selection write goes through `set` or `narrow` in `sceneSelection.ts`,
-  which drop locked ids; `loadState` uses `replace`, which does not.
-
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.

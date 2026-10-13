@@ -54,4 +54,20 @@ describe('Scene — loadState', () => {
     expect(scene.getSelection()).toEqual([asNodeId('a')]);
     expect(scene.overrides.ids()).toEqual([]);
   });
+
+  it('drops a selected id the loaded document puts on a locked layer', () => {
+    const scene = createScene<{ label: string }, 'base' | 'art'>({ systemLayers: [{ id: 'base' }, { id: 'art' }] });
+    const add = (id: string, layer: 'base' | 'art') =>
+      scene.add({ id: asNodeId(id), kind: 'leaf', layer, pose: { ...POSE }, data: { label: id } });
+    add('free', 'base');
+    add('art', 'art');
+    scene.setLayerLocked('art', true);
+    const locked = scene.toJSON();
+    scene.setLayerLocked('art', false);
+    scene.setSelection([asNodeId('free'), asNodeId('art')]);
+
+    scene.loadState(locked);
+    expect(scene.isLocked(asNodeId('art'))).toBe(true);
+    expect(scene.getSelection()).toEqual([asNodeId('free')]);
+  });
 });
