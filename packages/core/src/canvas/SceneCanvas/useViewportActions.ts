@@ -71,3 +71,17 @@ export function useViewportActions(args: {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- configs tracked via zoomKey / pinchKey
   }, [panKey, zoomKey, pinchKey]);
 }
+
+/**
+ * `viewport.zoom` with `viewport.animatedZoom` folded in as the zoom action's
+ * `animate` option, the way `pinchZoom` carries the pinch tool's clamp.
+ */
+export function viewportZoomOption(
+  zoom: boolean | ViewportZoomOptions | undefined,
+  animatedZoom: ViewportZoomOptions['animate'] | undefined,
+): boolean | ViewportZoomOptions {
+  if (zoom === false) return false;
+  const base = typeof zoom === 'object' ? zoom : {};
+  if (!animatedZoom) return base;
+  return { ...base, animate: animatedZoom === true ? {} : animatedZoom };
+}

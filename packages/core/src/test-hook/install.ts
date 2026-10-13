@@ -7,7 +7,7 @@ const live: WeaselTestHook[] = [];
 
 /** Make a hook for this canvas and return it iff
  *    - `process.env.NODE_ENV !== 'production'` (never in production consumer
- *      builds — paired with a call-site gate in SceneCanvas so the entire
+ *      builds — paired with a call-site gate in `useTestHook` so the entire
  *      module DCEs out), AND
  *    - the URL contains `?test=1`, AND
  *    - `window.__weaselTest` is not held by something other than a canvas.
