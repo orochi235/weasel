@@ -4,14 +4,14 @@ import { ResizeHandle } from '../ResizeHandle';
 import { ActionList } from './ActionList';
 import type { EditorAction } from './editorActions';
 import { useEditorSize } from './editorPrefs';
-import { PaneHeader } from './PaneHeader';
+import { ListPane } from './PaneHeader';
 import type { SchemaRoot } from './schemaEdit';
 import { SettingsTree } from './SettingsTree';
 import s from './PrefSchemaEditor.module.css';
 
 /**
- * The row under the attributes and the preview, at a height the reader drags and the editor's prefs keep: what it
- * is given, then whatever is drawn into `slot`.
+ * The row under the attributes and the preview, at a height the reader drags and the editor's prefs keep:
+ * whatever is drawn into `slot`, then what it is given.
  */
 export function Shelf({ slot, children }: { slot(el: HTMLDivElement | null): void; children: ReactNode }) {
   const height = useEditorSize('shelfHeight');
@@ -19,19 +19,10 @@ export function Shelf({ slot, children }: { slot(el: HTMLDivElement | null): voi
     <>
       <ResizeHandle className={s.shelfHandle} orientation="horizontal" invert {...height} min={80} max={600} ariaLabel="Resize shelf" />
       <div className={s.shelf} style={{ '--shelf-h': `${height.value}px` } as CSSProperties}>
-        {children}
         <div className={s.shelfSlot} ref={slot} />
+        {children}
       </div>
     </>
-  );
-}
-
-function ShelfPane({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className={s.shelfPane}>
-      <PaneHeader title={title} />
-      {children}
-    </div>
   );
 }
 
@@ -48,8 +39,8 @@ export function ShelfLists({ slot, over, layout, actions, ...drag }: ListDrag & 
   if (!slot) return null;
   return createPortal(
     <>
-      {over !== undefined && <ShelfPane title="Settings"><SettingsTree over={over} layout={layout} {...drag} /></ShelfPane>}
-      {actions !== undefined && actions.length > 0 && <ShelfPane title="Actions"><ActionList actions={actions} {...drag} /></ShelfPane>}
+      {over !== undefined && <ListPane title="Settings" className={s.shelfPane}><SettingsTree over={over} layout={layout} {...drag} /></ListPane>}
+      {actions !== undefined && actions.length > 0 && <ListPane title="Actions" className={s.shelfPane}><ActionList actions={actions} {...drag} /></ListPane>}
     </>,
     slot,
   );
