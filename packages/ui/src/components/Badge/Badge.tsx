@@ -5,10 +5,11 @@ import {
 import { useVisibleRaf } from '@weasel-js/core';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
-import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
+import type { BadgeBase, BadgeBaseParams } from './bases';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
-import { composeOutline, offsetOutline } from './composeOutline';
-import { paddingStyle } from './paddingSides';
+import { composeOutline, inwardReach, offsetOutline } from './composeOutline';
+import { resolveCompose } from './composeSpec';
+import { liftPadding, paddingStyle } from './paddingSides';
 import { useInsets } from './useInsets';
 import type { BadgeShape, BadgeStatus, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
@@ -174,23 +175,20 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
 
   // Compose-mode: explicit `base` prop wins; otherwise the shape may declare its own
   // `compose()` spec.
-  const shapeComposeSpec = !base && shapeModule.compose ? shapeModule.compose(params) : null;
-  const resolvedBaseKey = base ?? (shapeComposeSpec?.base as BadgeBase | undefined);
-  const composeBase = resolvedBaseKey ? BASES[resolvedBaseKey] : null;
-  const resolvedBaseParams = base
-    ? baseParams
-    : (shapeComposeSpec?.baseParams as BadgeBaseParams[BadgeBase] | undefined);
-  const resolvedEffects: BadgeEffectSpec[] | undefined = base
-    ? effects
-    : (shapeComposeSpec?.effects as BadgeEffectSpec[] | undefined) ?? effects;
-  const composeBaseParams = composeBase ? { ...(composeBase.defaults ?? {}), ...(resolvedBaseParams ?? {}) } : null;
+  const { base: composeBase, baseParams: composeBaseParams, effects: resolvedEffects } =
+    resolveCompose(shapeModule, params, { base, baseParams, effects });
   const decoRef = useRef<SVGSVGElement>(null);
   const box = useSvgBox(decoRef, composeBase);
 
   const sampler = composeBase ? composeBase.build(composeBaseParams, box.w, box.h) : null;
 
   const contentRef = useRef<HTMLSpanElement>(null);
-  const insets = useInsets<unknown>(composeBase ?? shapeModule, composeBase ? composeBaseParams : params, contentRef);
+  // In half pixels, so the insets hold still while the outline's length, which sets how many
+  // times an effect repeats along it, changes with the insets.
+  const clear = composeBase?.fitsContent && sampler
+    ? Math.ceil(inwardReach(sampler, resolvedEffects, bloat ?? 0) * 2) / 2
+    : 0;
+  const insets = useInsets<unknown>(composeBase ?? shapeModule, composeBase ? composeBaseParams : params, contentRef, clear);
   const style: CSSProperties = {
     ...stanced.style,
     ['--badge-inset-top' as never]: `${insets.top}px`,
@@ -202,7 +200,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
       boxDecorationBreak: breakStyle,
       WebkitBoxDecorationBreak: breakStyle,
     }),
-    ...styleOverride,
+    ...liftPadding(styleOverride),
   };
 
   const commonProps = {
