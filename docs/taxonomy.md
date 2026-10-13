@@ -135,8 +135,9 @@ itself, not because of which argument a consumer passed it in.
 
 A `Tool<TScratch>` is the **focus-declaring case** of a Contribution: it adds
 the fields that only mean something for a mode the user switches into —
-`initScratch`, `onActivate`/`onDeactivate`, the preview hooks, a `cursor`
-closing over its own scratch. The lifecycle pair brackets the time a tool is
+`initScratch`, `onActivate`/`onDeactivate`, a `cursor`. A tool publishes no
+preview of its own: what a gesture proposes comes from the in-flight action's
+handle (see [Gesture overlay](#gesture-overlay)). The lifecycle pair brackets the time a tool is
 *live* — in the active slot, held by its `hotkey`, or both — and receives only
 `{ scratch }`. Distinct from [Gesture hooks](#gesture) in that a
 Tool is a stateful mode while a gesture hook is a direct binding to a pointer

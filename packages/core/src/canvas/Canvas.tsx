@@ -32,7 +32,6 @@ export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { registerMountedCanvas } from './mountedCanvases';
 import type { ToolsApi } from '../tools/overlayBinding';
-import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
 import { useSurfaceInput } from './useSurfaceInput';
@@ -268,8 +267,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   autoFocusOnPointerDown?: boolean;
 
-  /** The tool set. Canvas reads the active tool's cursor, its overlays, and
-   *  its in-flight preview ids and poses; it dispatches nothing to a tool. */
+  /** The tool set. Canvas reads the active tool's cursor and its overlays;
+   *  it dispatches nothing to a tool. */
   tools?: import('../tools/overlayBinding').ToolsApi;
 
   /** Controlled viewport. When supplied, Canvas does not own the value —
@@ -322,16 +321,14 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   shaders?: ShaderProgramHandle[];
 
   /**
-   * Extra source of ids whose committed paint should be suppressed during the current frame,
-   * in addition to those reported by the tools' `previewIds()`. `<SceneCanvas>` wires it to
-   * the gesture dispatcher's in-flight handles.
+   * Ids whose committed paint is suppressed during the current frame. `<SceneCanvas>` wires
+   * it to the gesture dispatcher's in-flight handles.
    */
   previewIdsExtra?: () => Iterable<string> | null;
 
   /**
-   * Extra preview-pose lookup checked after the active tool's `previewPose` misses, so
-   * selection chrome tracks the ghost during dispatcher-driven drags. Returns `null` /
-   * `undefined` when no preview is in flight.
+   * Preview-pose lookup, so selection chrome tracks the ghost during dispatcher-driven
+   * drags. Returns `null` / `undefined` when no preview is in flight.
    */
   previewPoseExtra?: (id: string) => unknown;
 
@@ -772,7 +769,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     boundsOf,
     boundsOfPose,
     selection: selectedIdsForWiring,
-    tools,
     gestureSource,
     previewPoseExtra,
     previewIdsExtra,
@@ -813,11 +809,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         debugSink,
         effectiveBoundsOf,
         () => {
-          const ids = aggregatePreviewIds(tools);
-          const extra = previewExtraRef.current.previewIdsExtra?.();
-          if (extra) {
-            for (const id of extra) ids.add(id);
-          }
+          const ids = new Set(previewExtraRef.current.previewIdsExtra?.() ?? []);
           return ids.size > 0 ? ids : null;
         },
       );

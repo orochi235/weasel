@@ -31,7 +31,7 @@ export interface PreviewNode<TData, TLayer extends string, TPose> {
   children: PreviewNode<TData, TLayer, TPose>[];
 }
 
-/** First non-null answer across sources: tool-side before dispatcher-side. */
+/** First non-null answer across sources, in the order given. */
 function firstNonNull<T>(
   sources: readonly GesturePreviewSource[],
   id: string,

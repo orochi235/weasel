@@ -71,15 +71,13 @@ export interface ToolLifecycleCtx<TScratch = unknown> {
   scratch: TScratch;
 }
 
-/** World-space AABB shape used by `previewBounds`. Alias of the kit-wide
- *  `Bounds` type — the optional `rotation` field carries through so a tool
- *  can report an oriented preview rect (e.g. mid-rotate). */
+/** Alias of the kit-wide `Bounds` type. */
 export type ToolBounds = Bounds;
 
 /**
  * The focus-declaring case of a `Contribution`: a mode the user switches
  * into, plus the hooks that only make sense for one (`initScratch`,
- * activate/deactivate, live preview, `cursor`). Everything else — bindings,
+ * activate/deactivate, `cursor`). Everything else — bindings,
  * actions, overlay, presentation — is inherited.
  */
 export interface Tool<TScratch = unknown, TOverlay = KernelOverlay> extends Contribution<TOverlay> {
@@ -95,28 +93,11 @@ export interface Tool<TScratch = unknown, TOverlay = KernelOverlay> extends Cont
   onActivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
   /** The tool stopped being live in both slots, or its canvas unmounted. */
   onDeactivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
-  /** Returns the in-flight preview pose for `id` if this tool is mid-gesture
-   *  on it; otherwise `null`. Lets `Canvas.helpersRef.getEffectivePose`
-   *  reflect live gesture state without reaching into hook internals. The
-   *  return type is `unknown` here because the Tool interface is pose-agnostic;
-   *  callers that know the pose shape (e.g. Canvas typed by `TPose`) cast at
-   *  the use site. */
-  previewPose?: (id: string) => unknown;
-  /** Returns the in-flight preview bounds for `id` if this tool is mid-gesture
-   *  on it; otherwise `null`. Optional companion to `previewPose` for tools that
-   *  can compute bounds without round-tripping through a geometry adapter. */
-  previewBounds?: (id: string) => ToolBounds | null;
-  /** Returns ids whose committed scene-render should be suppressed while this
-   *  tool is mid-gesture (e.g. cascade move's dragged + descendant ids whose
-   *  preview ghosts replace the committed pose). The standard scene slot
-   *  consults this alongside `previewPose` to avoid double-rendering. Returns
-   *  `null` when no gesture is in flight. */
-  previewIds?: () => Iterable<string> | null;
 }
 
 /** Whether `entry` is a tool: a contribution that can hold focus, chosen from
  *  a palette or held on a key. Only a tool's focus hooks (`initScratch`,
- *  `cursor`, `onActivate`, the previews) ever run. */
+ *  `cursor`, `onActivate`) ever run. */
 export function isTool<TOverlay>(entry: Contribution<TOverlay>): entry is Tool<unknown, TOverlay> {
   return !!(entry.eligibility?.focus || entry.eligibility?.offhand);
 }

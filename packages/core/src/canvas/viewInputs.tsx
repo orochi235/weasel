@@ -1,12 +1,13 @@
 /**
  * What {@link useViewHelpers} needs that belongs to the surface rather than to
- * one view: the adapter, the geometry, the bounds resolver and the tools.
+ * one view: the adapter, the geometry and the bounds resolver.
  *
  * These are read during a view's render, so they travel as context rather than
  * on the `SurfaceHandle`, which is not attached until an effect runs.
  */
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOpts } from './useViewHelpers';
+import type { ToolsApi } from '../tools/overlayBinding';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
@@ -34,7 +35,9 @@ export interface ViewRuleInputs {
  * the asking view's own dispatcher, not from here.
  */
 export interface SurfaceViewInputs
-  extends Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry' | 'tools'> {
+  extends Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry'> {
+  /** Read by nothing. Declared while `<SceneCanvas>` still supplies it. */
+  tools?: ToolsApi | undefined;
   /** A node's box for chrome, drawn under `view` — the camera of the view
    *  asking, since a node on a parallax plane lands somewhere else in each. */
   boundsOf: ((id: string, view?: View | null) => Bounds | null) | undefined;
