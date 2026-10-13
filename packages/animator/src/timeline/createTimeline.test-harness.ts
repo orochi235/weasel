@@ -15,6 +15,8 @@ export interface TimelineTestHandle {
    *  nothing has re-registered it — mirroring a real animator, which drops a
    *  finished entry from its active set instead of ticking it forever. */
   advance: (virtualNow: number) => boolean;
+  /** Tick the timeline whether or not it has parked, as a driver that never drops it would. */
+  tickParked: (virtualNow: number) => boolean;
   isCancelled: () => boolean;
   isPaused: () => boolean;
 }
@@ -62,6 +64,7 @@ export function makeTimeline(opts: MakeTimelineOptions): TimelineTestHandle {
       if (lastFinished) active = false;
       return lastFinished;
     },
+    tickParked: (virtualNow: number): boolean => tick!(virtualNow, paused ? 0 : scale),
     isCancelled: () => cancelled,
     isPaused: () => paused,
   };

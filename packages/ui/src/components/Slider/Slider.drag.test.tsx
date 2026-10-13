@@ -81,19 +81,22 @@ describe('Slider drag teardown', () => {
     expect(onInput).toHaveBeenCalledTimes(1);
   });
 
-  it('unmounting mid-drag detaches the document listeners', () => {
+  it('unmounting mid-drag ends the drag without committing it', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
     const { container, unmount } = render(
-      <Slider min={0} max={1} thumbs={[{ value: 0.5 }]} onInput={() => {}} />,
+      <Slider min={0} max={1} thumbs={[{ value: 0.5 }]} onInput={onInput} onChange={onChange} />,
     );
     const thumb = container.querySelector<HTMLElement>('[role="slider"]')!;
     stubRect(thumb.parentElement!, { left: 0, width: 200 });
     fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
-    const remove = vi.spyOn(document, 'removeEventListener');
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 12, pointerId: 1 });
+    expect(onInput).toHaveBeenCalledTimes(1);
     unmount();
-    const removed = remove.mock.calls.map((c) => c[0]);
-    expect(removed).toContain('pointermove');
-    expect(removed).toContain('pointerup');
-    remove.mockRestore();
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 12, pointerId: 1 });
+    fireEvent.pointerUp(document, { clientX: 160, clientY: 12, pointerId: 1 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('a press focuses the thumb so the arrow keys reach it', () => {

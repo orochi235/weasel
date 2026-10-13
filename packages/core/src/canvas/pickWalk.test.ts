@@ -67,16 +67,6 @@ describe('pickWalk — alpha', () => {
     // A second view over the same scene is unaffected.
     expect(pickAt(scene, 5, 5)).toEqual(['a']);
   });
-
-  it('multiplies the two sources the way the painter does', () => {
-    const scene = rectScene();
-    scene.overrides.set(asNodeId('a'), { alpha: 0 });
-    scene.overrides.commit();
-    // alphaFor says 1, the override says 0 — the product is 0.
-    expect(pickAt(scene, 5, 5, {
-      alphaOf: (id) => 1 * (scene.overrides.get(asNodeId(id))?.alpha ?? 1),
-    })).toEqual([]);
-  });
 });
 
 describe('pickWalk — pickable', () => {

@@ -12,7 +12,7 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
 }
 
 describe('useEditAnchorsDepSource', () => {
-  it('editingId starts empty; setEditingId(id) drives it; getEditablePath reads + setPreviewPath wins', () => {
+  it('editingId starts empty; setEditingId(id) drives it; getEditablePath reads', () => {
     const polyPath = {
       kind: 'polygon',
       commands: new Uint8Array([0, 1, 1]), // M L L

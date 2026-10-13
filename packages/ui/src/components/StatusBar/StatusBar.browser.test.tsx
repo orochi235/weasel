@@ -51,3 +51,14 @@ test('a bar too narrow for its readouts clips them rather than spilling past its
   expect(getComputedStyle(bar).overflowX).toBe('hidden');
   expect(bar.getBoundingClientRect().width).toBeLessThanOrEqual(200);
 });
+
+test('a titled item shows the help cursor, and a plain one does not', () => {
+  render(
+    <StatusBar>
+      <StatusBarItem>plain</StatusBarItem>
+      <StatusBarItem title="full detail">short</StatusBarItem>
+    </StatusBar>,
+  );
+  expect(getComputedStyle(screen.getByText('short')).cursor).toBe('help');
+  expect(getComputedStyle(screen.getByText('plain')).cursor).not.toBe('help');
+});

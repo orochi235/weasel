@@ -36,7 +36,9 @@ describe('stepCallouts', () => {
   });
 
   it('drops every expired callout, keeping only the survivors in order', () => {
-    expect(stepCallouts([a, b], 1.6)).toEqual([]);
+    const c: Callout = { text: 'c', anchor: { kind: 'screen' }, bornAt: 0.2, ttl: 1 };
+    const d: Callout = { text: 'd', anchor: { kind: 'screen' }, bornAt: 0.9, ttl: 1 };
+    expect(stepCallouts([b, a, c, d], 1.3)).toEqual([b, d]);
   });
 });
 

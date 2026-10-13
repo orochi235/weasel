@@ -125,6 +125,7 @@ describe('layoutRuns — decoration geometry', () => {
       OPTS,
       );
     expect(out.decorations).toHaveLength(2);
+    expect(out.decorations[0].y1 - out.decorations[0].y0).toBeCloseTo(0.05 * 32, 6);
     expect(out.decorations[1].y1 - out.decorations[1].y0).toBeCloseTo(0.05 * 16, 6);
     // Mixed sizes share a line but not a baseline: base is 29 at scale 1,
     // 14.5 at scale 0.5.
@@ -190,20 +191,6 @@ describe('layoutRuns — decoration geometry', () => {
     expect(out.decorations).toHaveLength(1);
     // Shared baseline 58, plus the 0.10-em underline offset at fontSize 32.
     expect(out.decorations[0].y0).toBeCloseTo(58 + 32 * 0.1, 6);
-  });
-
-  it('does not merge across a font-size change at equal baseline', async () => {
-    await registerFixture('inter', [{}]);
-    await registerTallFont();
-    // Same baseline now by construction; the sizes still differ, and offset
-    // and thickness both scale with size, so the two rules stay separate.
-    const out = layoutAndPaint(
-      [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall', fontSize: 16 }],
-      OPTS,
-      );
-    expect(out.decorations).toHaveLength(2);
-    expect(out.decorations[0].y1 - out.decorations[0].y0).toBeCloseTo(0.05 * 32, 6);
-    expect(out.decorations[1].y1 - out.decorations[1].y0).toBeCloseTo(0.05 * 16, 6);
   });
 
   it('emits nothing for a span that advances nowhere', async () => {

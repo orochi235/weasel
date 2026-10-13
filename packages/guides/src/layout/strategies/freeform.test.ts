@@ -95,8 +95,8 @@ describe('freeform', () => {
     expect(setPose).toHaveBeenCalledWith('d', { x: 20, y: 20, width: 10, height: 10 });
   });
 
-  it('accepts a snap override', () => {
-    const layout = freeform<P>({ snap: nearestWithin({ tolerance: 1 }) });
-    expect(layout.snap.pickTarget([], { x: 0, y: 0 })).toBeNull();
+  it('uses a snap override in place of its default', () => {
+    const snap = nearestWithin<P>({ tolerance: 1 });
+    expect(freeform<P>({ snap }).snap).toBe(snap);
   });
 });

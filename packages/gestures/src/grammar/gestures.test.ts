@@ -29,10 +29,6 @@ describe('GESTURE_DESCRIPTORS', () => {
     expect(d.arg?.default).toBe('*');
   });
 
-  it('keyDown has no target', () => {
-    expect(getGestureDescriptor('keyDown').hasTarget).toBe(false);
-  });
-
   it('keyDown has no target and a free-form key arg', () => {
     const d = getGestureDescriptor('keyDown');
     expect(d.hasTarget).toBe(false);
@@ -69,10 +65,5 @@ describe('GESTURE_DESCRIPTORS', () => {
       hasTarget: false,
       arg: { name: 'key', values: 'free' },
     });
-  });
-
-  it('keyHeld appears in GESTURE_DESCRIPTORS exactly once', () => {
-    const matches = GESTURE_DESCRIPTORS.filter((d) => d.name === 'keyHeld');
-    expect(matches).toHaveLength(1);
   });
 });

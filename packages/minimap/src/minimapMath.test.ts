@@ -375,7 +375,9 @@ it('frames circles through the descriptor', () => {
   const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
   scene.add({ kind: 'leaf', layer: 'main', pose: circle(50, 50, 50), data: {} });
   const view = computeFitView(scene, { width: 100, height: 100 }, 'scene', CIRCLE_POSE_DESCRIPTOR);
-  expect(Number.isFinite(view.x) && Number.isFinite(view.scale.x)).toBe(true);
+  expect(view.scale.x).toBeCloseTo(84 / 100, 6);
+  expect(view.x + 100 / (2 * view.scale.x)).toBeCloseTo(50, 6);
+  expect(view.y + 100 / (2 * view.scale.y)).toBeCloseTo(50, 6);
 });
 
 describe('computeFitView — fit="live"', () => {

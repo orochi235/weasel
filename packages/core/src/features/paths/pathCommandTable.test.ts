@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   PATH_CMD_LENGTHS as GEOM_PATH_CMD_LENGTHS,
-  PATH_CMD_LENGTHS,
   PATH_M,
   PATH_L,
   PATH_C,
@@ -12,6 +11,7 @@ import {
 } from '@weasel-js/geom';
 import { rotatePathAround } from '@weasel-js/geom';
 import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
+import { PATH_CMD_LENGTHS } from './index';
 
 /** One command of every code the table declares, with distinct nonzero coords. */
 function pathOverEveryCommand(): PolygonPath {

@@ -175,7 +175,7 @@ describe('fromBounds / withRotation', () => {
   const box = { x: 1, y: 2, width: 30, height: 40 };
 
   it('RECT builds a plain rect and drops the template rotation', () => {
-    expect(RECT_POSE_DESCRIPTOR.fromBounds(box, { x: 9, y: 9, width: 1, height: 1 }))
+    expect(RECT_POSE_DESCRIPTOR.fromBounds(box, { x: 9, y: 9, width: 1, height: 1, rotation: 1 }))
       .toEqual(box);
   });
 

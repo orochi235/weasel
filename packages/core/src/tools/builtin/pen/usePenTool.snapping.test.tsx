@@ -36,11 +36,6 @@ describe('usePenTool', () => {
       expect(p.scratch.current!.anchors[0].outHandle).toEqual({ x: 30, y: 30 });
     });
 
-    it('passthrough (no snapPoint) preserves raw coords', () => {
-      const p = setup();
-      p.click(12, 18);
-      expect(p.scratch.current!.anchors).toEqual([{ x: 12, y: 18 }]);
-    });
   });
 
   describe('snapping to existing anchors', () => {

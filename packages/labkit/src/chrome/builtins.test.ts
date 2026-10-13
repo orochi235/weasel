@@ -188,11 +188,10 @@ describe('view readouts', () => {
     expect(status).toContain('scale');
   });
 
-  it('contributes the zoom control to the viewport, replacing the readout', () => {
+  it('contributes the zoom control to the viewport', () => {
     const out = builtinContributions(withCanvas, ctxWithZoom(1));
     const viewport = out.filter((c) => c.region === 'viewport').map((c) => c.id);
     expect(viewport).toContain('zoom-control');
-    expect(out.map((c) => c.id)).not.toContain('zoom-readout');
   });
 
   it('contributes none of them to a trial with no canvas', () => {

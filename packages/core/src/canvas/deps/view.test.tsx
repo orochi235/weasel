@@ -6,7 +6,7 @@ import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { View } from 'core/viewport/view';
 
 describe('useViewDepSource', () => {
-  it('returns a stable-identity ViewApi that reads/writes through the supplied ref + callback', () => {
+  it('reads through the ref and writes through the callback', () => {
     let capturedView: any = null;
     const onChange = vi.fn();
     const v1: View = { x: 0, y: 0, scale: 1 } as unknown as View;
@@ -17,7 +17,6 @@ describe('useViewDepSource', () => {
       return null;
     }
     render(<Wire />);
-    expect(capturedView).toBeDefined();
     expect(capturedView.get()).toBe(v1);
     const v2: View = { x: 5, y: 5, scale: 2 } as unknown as View;
     capturedView.set(v2);
@@ -80,17 +79,6 @@ describe('useViewDepSource with a camera runner', () => {
     expect(runner.stop).toHaveBeenCalledOnce();
 
     expect(result.current.animationTarget!()).toEqual({ x: 1, y: 2, scale: { x: 3, y: 3 } });
-  });
-
-  it('keeps one stable ViewApi identity across renders', () => {
-    const ref = { current: HOME };
-    const runner = fakeRunner();
-    const { result, rerender } = renderHook(() =>
-      useViewDepSource(ref, vi.fn(), undefined, undefined, runner),
-    );
-    const first = result.current;
-    rerender();
-    expect(result.current).toBe(first);
   });
 });
 

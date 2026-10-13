@@ -1,6 +1,5 @@
-import { describe, it, expect, expectTypeOf } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { Tool } from './overlayBinding';
-import type { GestureBinding } from '@weasel-js/routing';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { Contribution } from './overlayBinding';
 
@@ -13,14 +12,6 @@ describe('Tool.bindings (additive)', () => {
       ],
     };
     expect(t.bindings?.length).toBe(1);
-  });
-
-  it('bindings accepts an array of GestureBinding', () => {
-    const bindings: GestureBinding[] = [
-      { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'move' },
-      { spec: { kind: 'drag', target: 'affordance:handle:bottom-right' }, actionId: 'resize' },
-    ];
-    expectTypeOf(bindings).toMatchTypeOf<GestureBinding[]>();
   });
 });
 

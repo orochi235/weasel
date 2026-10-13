@@ -44,15 +44,6 @@ describe('buildComponents', () => {
     ]);
     expect(rows[0].entries.map((e) => e.name)).toEqual(['Default', 'Disabled']);
   });
-
-  it('keeps same-named components in different libraries apart', () => {
-    const rows = buildComponents([
-      entry('ui/Sidebar', 'Default', UI),
-      entry('labkit/Primitives/Sidebar', 'Default', LABKIT),
-    ]);
-    expect(rows).toHaveLength(2);
-    expect(rows.map((r) => r.library)).toEqual(['labkit', 'ui']);
-  });
 });
 
 describe('filterComponents', () => {

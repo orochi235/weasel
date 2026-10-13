@@ -44,8 +44,14 @@ describe('Bar', () => {
   it('draws leaves in their bar forms, in the order the group lists them', () => {
     const { container } = render(<Bar schema={schema} values={{ size: 12 }} label="Text" />);
     const bar = screen.getByRole('toolbar', { name: 'Text' });
-    expect(within(bar).getByLabelText('Size')).toBeInTheDocument();
     expect(container.querySelector('[data-bar-label]')).toHaveTextContent('Size');
+    const cells = [
+      within(bar).getByLabelText('Size'),
+      ...['Bold', 'Italic', 'Undo', 'Spacing'].map((name) => within(bar).getByRole('button', { name })),
+    ];
+    for (let i = 1; i < cells.length; i++) {
+      expect(cells[i - 1].compareDocumentPosition(cells[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
   });
 
   it('sets a nested section apart with a divider on each side, and no heading', () => {

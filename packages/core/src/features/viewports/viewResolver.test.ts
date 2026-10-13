@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { createViewResolver, type ResolvableView } from './viewResolver';
-import { createViewportLayer } from './viewportLayer';
-import { clientToWorld } from 'core/viewport/clientToWorld';
-import type { RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 
 const ROOT: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -115,32 +112,5 @@ describe('gesture stickiness', () => {
     r.clear();
     expect(r.at(1, ...client(250, 50)).id).toBe('b');
     expect(r.at(2, ...client(250, 50)).id).toBe('b');
-  });
-});
-
-describe('routing a viewport layer', () => {
-  const EMPTY: RenderLayer<unknown> = { id: 'src', label: 'src', space: 'world', draw: () => [] };
-  const DIMS = { width: 600, height: 400 };
-
-  const pip = createViewportLayer<unknown>({
-    id: 'pip',
-    label: 'PiP',
-    source: [EMPTY],
-    view: { x: 250, y: 200, scale: { x: 1.6, y: 1.6 } },
-    bounds: () => ({ x: 8, y: 232, w: 240, h: 160 }),
-  });
-
-  it('lands a client point where the layer paints that world point', () => {
-    const r = createViewResolver({
-      views: () => [pip.resolvable(ROOT, DIMS)],
-      root: () => ROOT,
-      canvasOrigin: () => CANVAS,
-    });
-    const [cx, cy] = client(88, 312);
-    const t = r.at(null, cx, cy);
-    expect(t.id).toBe('pip');
-    // Canvas (88, 312) is (80, 80) into the rect; at 1.6x that is 50 world
-    // units past the inner view's (250, 200) origin.
-    expect(clientToWorld(cx, cy, t.origin, t.view)).toEqual([300, 250]);
   });
 });

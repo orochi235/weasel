@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { useState } from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { ResizeHandle } from './ResizeHandle';
@@ -54,12 +55,25 @@ describe('ResizeHandle', () => {
     expect(committed.onChange).toHaveBeenCalledWith(300);
   });
 
-  it('measures every move against the gesture origin, not the last sample', () => {
-    const { handle, onInput } = setup();
+  it('measures every move against the size the drag started at, not the size it has reached', () => {
+    const onInput = vi.fn();
+    function Host() {
+      const [value, setValue] = useState(260);
+      return (
+        <ResizeHandle
+          value={value}
+          min={200}
+          max={600}
+          onInput={(next) => { onInput(next); setValue(next); }}
+          ariaLabel="Resize sidebar"
+        />
+      );
+    }
+    const { container } = render(<Host />);
+    const handle = container.querySelector<HTMLElement>('[role="separator"]')!;
     fireEvent.pointerDown(handle, { button: 0, clientX: 500 });
     fireEvent.pointerMove(handle, { clientX: 520 });
     fireEvent.pointerMove(handle, { clientX: 540 });
-    // Not 260 + 20 + 20 applied to a moving base — both samples are absolute.
     expect(onInput).toHaveBeenLastCalledWith(300);
   });
 

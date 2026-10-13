@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { viewportWheelPanAction, makeViewportWheelPanAction } from './viewportWheelPan';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
@@ -102,10 +102,8 @@ describe('viewportWheelPanAction invoker', () => {
   });
 
   it('is a no-op when view dep is absent', () => {
-    const mockSet = vi.fn();
     const invoker = getImmediateInvoker(viewportWheelPanAction);
     expect(() => invoker.run({}, { deltaX: 10, deltaY: 10 })).not.toThrow();
-    expect(mockSet).not.toHaveBeenCalled();
   });
 });
 

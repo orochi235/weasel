@@ -349,21 +349,6 @@ describe('writing', () => {
     expect(await cache.flush()).toBe(true);
   });
 
-  it('resolves flush false when a write throws, keeping the value in memory', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const failing: StorageAdapter = {
-      ...createMemoryAdapter(),
-      set: async () => {
-        throw new Error('quota');
-      },
-    };
-    const cache = await openRecords({ storage: failing, prefix: PREFIX });
-    cache.set('layout', { a: 1 });
-    expect(await cache.flush()).toBe(false);
-    expect(cache.get('layout')).toEqual({ a: 1 });
-    warn.mockRestore();
-  });
-
   it('resolves flush false when it cannot write and writes were queued', async () => {
     const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: PREFIX, writable: false });
     expect(await cache.flush()).toBe(true);

@@ -55,8 +55,7 @@ describe('built-in actions read the poseDescriptor dep', () => {
     const d = deps(s, [a]);
     run(duplicateAction, d);
     const copy = [...s.nodes.values()].find((n) => n.id !== a)!;
-    expect(Object.keys(copy.pose).sort()).toEqual(['cx', 'cy', 'r']);
-    expect(Number.isFinite(copy.pose.cx)).toBe(true);
+    expect(copy.pose).toEqual(circle(22, 22, 5));
   });
 
   it('rotate leaves a pose that cannot rotate untouched', () => {

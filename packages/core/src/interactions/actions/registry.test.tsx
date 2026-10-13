@@ -5,7 +5,6 @@ import type { ActionsRegistry } from '@weasel-js/routing';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
-import type { GestureSpec } from '../gestures/spec';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;
@@ -81,25 +80,6 @@ describe('ActionsRegistry — full coverage', () => {
     act(() => { reg.register(second); });
     act(() => { dropFirst!(); });
     expect(reg.list().map((a) => a.label)).toEqual(['Second']);
-  });
-
-  it('after unregister, register(default) restores the default', () => {
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    const def: Action = { id: 'x', label: 'Default', invoker: { timing: 'immediate' as const, run: vi.fn() } };
-    const tool: Action = { id: 'x', label: 'Tool', invoker: { timing: 'immediate' as const, run: vi.fn() } };
-    act(() => { reg.register(def); });
-    let unregTool: (() => void) | undefined;
-    act(() => { unregTool = reg.register(tool); });
-    expect(reg.list()[0].label).toBe('Tool');
-    act(() => { unregTool!(); reg.register(def); });
-    expect(reg.list()[0].label).toBe('Default');
-  });
-
-  it('unregister(id) for an absent id is a no-op', () => {
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    expect(() => act(() => { reg.unregister('missing'); })).not.toThrow();
   });
 
   it('trigger(id) calls run and returns true', () => {
@@ -256,58 +236,4 @@ describe('ActionsRegistry — full coverage', () => {
   // coverage lives in the gesture dispatcher's tests
   // (`src/interactions/dispatcher/`) which is now the sole keystroke path
   // for registered actions with `defaultBinding`.
-});
-
-describe('Action with new invoker / GestureSpec fields (additive)', () => {
-  it('accepts an immediate invoker', () => {
-    const action: Action = {
-      id: 'demo.immediate',
-      label: 'Demo immediate',
-      invoker: {
-        timing: 'immediate',
-        run: (_deps) => {},
-      },
-    };
-    expect(action.invoker?.timing).toBe('immediate');
-  });
-
-  it('accepts an ongoing invoker', () => {
-    const action: Action = {
-      id: 'demo.ongoing',
-      label: 'Demo ongoing',
-      invoker: {
-        timing: 'ongoing',
-        start: () => ({}),
-      },
-    };
-    expect(action.invoker?.timing).toBe('ongoing');
-  });
-
-  it('accepts a GestureSpec on defaultBinding', () => {
-    const gestureSpec: GestureSpec = { kind: 'wheel', mods: { ctrl: true } };
-    const action: Action = {
-      id: 'demo.wheel',
-      label: 'Demo wheel',
-      defaultBinding: gestureSpec,
-      invoker: { timing: 'immediate', run: () => {} },
-    };
-    expect(action.defaultBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
-  });
-
-  // REMOVED: 'legacy KeyBinding shape on defaultBinding
-  // still compiles'. The `Action.defaultBinding` field has been deleted; all
-  // bindings live on `defaultBinding` (read by the dispatcher).
-
-  it('accepts an array of GestureSpec on defaultBinding (multi-binding actions)', () => {
-    const action: Action = {
-      id: 'demo.multi',
-      label: 'Demo multi',
-      defaultBinding: [
-        { kind: 'key', key: 'z', mods: { mod: true } },
-        { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
-      ],
-      invoker: { timing: 'immediate', run: () => {} },
-    };
-    expect(Array.isArray(action.defaultBinding)).toBe(true);
-  });
 });

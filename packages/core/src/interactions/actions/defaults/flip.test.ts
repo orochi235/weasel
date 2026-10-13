@@ -205,16 +205,17 @@ describe('flipAction (axis param)', () => {
     expect(scene.poses.get('b')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
   });
 
-  it('defaults to axis "x" when no params are supplied', () => {
-    const scene = makeStubScene({ a: { x: 0, y: 0, width: 10, height: 10 } });
-    const selection = makeSelection(['a']);
-    const applyOps = vi.fn();
+  it('defaults to axis "x" when no axis is supplied', () => {
+    const scene = makeStubScene({
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 90, y: 40, width: 10, height: 10 },
+    });
+    const selection = makeSelection(['a', 'b']);
 
-    runFlip({ selection, scene, applyOps }, undefined);
+    runFlip({ selection, scene }, { pivot: 'union' });
 
-    expect(applyOps).toHaveBeenCalledOnce();
-    const [, label] = applyOps.mock.calls[0] as [unknown, string];
-    expect(label).toBe('Flip');
+    expect(scene.poses.get('a')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
+    expect(scene.poses.get('b')).toEqual({ x: 0, y: 40, width: 10, height: 10 });
   });
 
   it('invoker.run no-ops when selection is empty', () => {

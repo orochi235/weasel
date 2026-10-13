@@ -114,15 +114,27 @@ describe('<Lab> with a storageKey', () => {
 
   it('warns when its storageKey changes after mount, and keeps the first', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const storage = createMemoryAdapter();
+    const backing = new Map<string, unknown>();
+    const storage = createMemoryAdapter(backing);
     const view = render(
-      <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="one" storage={storage} />,
+      <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="one" storage={storage}>
+        <CaptureLab />
+      </Lab>,
     );
     await screen.findByTestId('stub-content');
     view.rerender(
-      <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="two" storage={storage} />,
+      <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="two" storage={storage}>
+        <CaptureLab />
+      </Lab>,
     );
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('`storageKey`'));
+    await screen.findByTestId('stub-content');
+    act(() => labRef?.setMode('light'));
+    view.unmount();
+    await waitFor(() =>
+      expect(backing.get(`${labPrefix('one')}meta`)).toMatchObject({ mode: 'light' }),
+    );
+    expect([...backing.keys()].filter((key) => key.startsWith(labPrefix('two')))).toEqual([]);
   });
 
   it('closes the lab on unmount, sending what was queued', async () => {

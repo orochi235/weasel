@@ -38,18 +38,7 @@ describe('History.recordEntry', () => {
     expect(h.canUndo()).toBe(true);
   });
 
-  it('the recorded entry is undoable — invert rolls the scene back', () => {
-    const adapter = makeArrayAdapter();
-    const h = createHistory(adapter);
-    const op = pushOp(42);
-    op.apply(adapter);
-    h.recordEntry([op], 'manual');
-    h.undo();
-    expect(adapter.values).toEqual([]);
-    expect(h.canRedo()).toBe(true);
-  });
-
-  it('the recorded entry is redoable — re-applying restores state', () => {
+  it('undo rolls a recorded entry back and redo re-applies it', () => {
     const adapter = makeArrayAdapter();
     const h = createHistory(adapter);
     const op = pushOp(7);
@@ -57,6 +46,7 @@ describe('History.recordEntry', () => {
     h.recordEntry([op], 'manual');
     h.undo();
     expect(adapter.values).toEqual([]);
+    expect(h.canRedo()).toBe(true);
     h.redo();
     expect(adapter.values).toEqual([7]);
   });

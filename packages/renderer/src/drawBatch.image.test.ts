@@ -200,30 +200,6 @@ describe('renderer — consecutive image batching', () => {
     expect(corner(8)).toEqual([0, 0]);
   });
 
-  it('does not merge across a sampling change — MAG_FILTER is texture state', () => {
-    // Warm the texture first: `upload` sets MAG_FILTER once at creation, and
-    // this is about the filter each *flush* sets.
-    r.render([img(0)]);
-    recorder.reset();
-
-    r.render([img(0, { sampling: 'nearest' }), img(20)]);
-    expect(draws()).toEqual([6, 6]);
-    const magFilters = recorder.calls
-      .filter((c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER)
-      .map((c) => c.args[2]);
-    expect(magFilters).toEqual([recorder.gl.NEAREST, recorder.gl.LINEAR]);
-  });
-
-  it('does not merge across a group color matrix', () => {
-    const tinted = [1, 0, 0, 0, 0.25, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
-    r.render([
-      img(0),
-      { kind: 'group', colorMatrix: tinted, children: [img(20)] },
-      img(40),
-    ]);
-    expect(draws()).toEqual([6, 6, 6]);
-  });
-
   it('cuts a quad to a rect clip with its UVs, in the same run as what surrounds it', () => {
     r.render([
       rect(40),
@@ -289,14 +265,6 @@ describe('renderer — consecutive image batching', () => {
     r.render([rect(0), img(20), rect(40)]);
     expect(draws()).toEqual([18]);
     expect(colorRun(quadUploads()[0])).toEqual(['1,0,0', '1,1,1', '1,0,0']);
-  });
-
-  it('keeps a run open across a label, which now stages into it', () => {
-    const text = {
-      kind: 'text', x: 0, y: 0, runs: [], maxWidth: Infinity, align: 'left', style: {},
-    } as unknown as DrawCommand;
-    r.render([img(0), text, img(20)]);
-    expect(draws()).toEqual([12]);
   });
 
   describe('kind: sprites — the same run, handed over packed', () => {

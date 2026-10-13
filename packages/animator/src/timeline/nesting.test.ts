@@ -88,16 +88,6 @@ describe('nested timelines', () => {
     expect(fired).toEqual([]);
   });
 
-  it('rejects parent-only options on a nested child', () => {
-    const child: TimelineTrack = {
-      kind: 'timeline',
-      at: 0,
-      // @ts-expect-error a child is a NestedTimeline: tracks and duration only.
-      timeline: { tracks: [], loop: true },
-    };
-    expect(child.at).toBe(0);
-  });
-
   it('rebases a child event onto the parent clock', () => {
     const h = harness();
     const fired: string[] = [];

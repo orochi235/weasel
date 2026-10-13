@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { EasingPicker } from './EasingPicker';
+import { EASING_NAMES } from './easingSpec';
 
 describe('EasingPicker', () => {
   it('shows linear when there is no easing', () => {
@@ -15,7 +16,8 @@ describe('EasingPicker', () => {
 
   it('offers every built-in name', () => {
     render(<EasingPicker value={undefined} onChange={() => {}} />);
-    expect(screen.getByRole('option', { name: 'easeInOutCubic' })).toBeInTheDocument();
+    expect(screen.getAllByRole('option').map((o) => o.textContent))
+      .toEqual(['linear', ...EASING_NAMES.filter((n) => n !== 'linear')]);
   });
 
   it('writes a name when one is chosen', () => {
@@ -47,7 +49,11 @@ describe('EasingPicker', () => {
 
   it('draws the curve it is showing', () => {
     render(<EasingPicker value="easeInQuad" onChange={() => {}} />);
-    const pts = screen.getByTestId('easing-preview').querySelector('polyline')!.getAttribute('points')!;
-    expect(pts.split(' ').length).toBeGreaterThan(4);
+    const pts = screen.getByTestId('easing-preview').querySelector('polyline')!.getAttribute('points')!
+      .split(' ').map((p) => p.split(',').map(Number));
+    const inner = pts.slice(1, -1);
+    expect(inner.length).toBeGreaterThan(2);
+    // An ease-in runs under the diagonal: y grows downward, so each sample sits below 100 - x.
+    for (const [x, y] of inner) expect(y).toBeGreaterThan(100 - x);
   });
 });

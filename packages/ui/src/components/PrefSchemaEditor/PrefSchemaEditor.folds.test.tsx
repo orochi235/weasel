@@ -32,7 +32,7 @@ describe('PrefSchemaEditor folds across undo', () => {
     const key = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' });
     fireEvent.change(key, { target: { value: 'display' } });
     fireEvent.blur(key);
-    expect(row('display')).not.toBeNull();
+    expect(within(structure()).getByRole('treeitem', { name: /\(display\)/ })).toHaveAttribute('aria-expanded', 'true');
     expect(row('grid')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(row('view')).not.toBeNull();

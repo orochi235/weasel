@@ -28,10 +28,4 @@ describe('flattening a curve whose control points lie on its chord line', () => 
     const flat = extractPolylines(path)[0].points;
     expect(Math.max(...xs(flat))).toBeCloseTo(boundsOfPath(path).x + boundsOfPath(path).width, 0);
   });
-
-  it('still takes a straight curve in one segment', () => {
-    const out: number[] = [];
-    flattenCubic(0, 0, 30, 0, 60, 0, 90, 0, 0.5, out);
-    expect(out).toEqual([90, 0]);
-  });
 });

@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { mergeContributions } from '@weasel-js/core';
 import { CONNECT_ACTION_ID, createDiagramContribution } from './contribution';
 import { PORT_AFFORDANCE_KIND } from './portAffordance';
 
@@ -43,11 +42,6 @@ describe('createDiagramContribution', () => {
   it('is ambient — a port is grabbable whatever tool is active', () => {
     const c = createDiagramContribution<Rect>({ participants: PARTICIPANTS });
     expect(c.eligibility).toEqual({ claimed: true });
-  });
-
-  it('composes with other bundles', () => {
-    const c = createDiagramContribution<Rect>({ participants: PARTICIPANTS });
-    expect(mergeContributions([c], [])).toHaveLength(1);
   });
 
   it('declares no overlay — a painted layer is never hit-tested', () => {

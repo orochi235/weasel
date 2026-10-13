@@ -19,6 +19,12 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P3) Two tools engaging on the same held key may share one dispatcher slot.** Read from the
+  code and never run: a key-held engagement is stored under `key-held-<key>`, so a second tool on
+  that key would overwrite the first's owner, and releasing the key would restore only one channel.
+  The only record of this was a comment on a skipped test that asserted nothing, deleted in the
+  2026-10-12 test audit. Write the test first; it either fails or retires this entry.
+
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -630,6 +636,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P2) A `Badge` with both `onClick` and `onRemove` renders a `<button>` inside a `<button>`.**
+  `Badge.tsx` wraps its content in a `<button>` when it is clickable and draws the remove control as
+  a second `<button>` inside it. React logs "<button> cannot contain a nested <button>" when
+  `Badge.test.tsx` "fires onRemove without firing wrapper onClick" runs, and no test marks it. The
+  fix moves the click target off the outer element (a `role="button"` wrapper beside the remove
+  control), which changes the badge's box and needs a browser to check.
+
+- **(P3) A palette whose every swatch is an anchor is reported feasible without a check.** Read
+  from the code and not tested: `searchHues` in `packages/theme/src/engine/color/generate.ts`
+  returns `[]` when no swatch is free, so `generate` reports `feasible: true` with no gate measured
+  against the anchors. Whether all-pinned colors should be checked at all is the open question.
+
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (flip, align, distribute, clone, clipboard, booleans, outlines,
   edit-anchors, lasso-select) holds its options, geometry, and gesture adapter. One directory per
@@ -700,6 +718,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   cursor from its own `onPointerMove`. Wants a leave signal (and a decision on whether crossing
   between targets is one), then the loupe's aim and the demo's cursor-following panels moved onto
   bindings. Only jsdom has run a hover binding.
+
+- **(P3) Two `Workspace` tests from the 2026-10-12 test audit are still open.** They were held
+  back because the `tile-grip` branch rewrites `packages/labkit/src/lab/Workspace.test.tsx`; do
+  them once it is on `main`. "reports the order a drop would produce instead of applying it" never
+  drops anything: it asserts that `onReorder` was not called and that the DOM order is unchanged,
+  both true of a grid whose `onReorder` is never wired. Drive a drag of `a` past `b` and assert
+  `onReorder` got `['b', 'a']` with the DOM still `['a', 'b']`; from reading windease, a drop can
+  be driven in jsdom if `getBoundingClientRect` is stubbed to each tile's inline rect. And
+  `Workspace.surface.test.tsx` "renders unchanged with no surface above it" repeats "renders all
+  children" in `Workspace.test.tsx`; delete it if that test survives the rewrite.
 
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap, and loupe route through weasel's dispatcher (`CameraInput`),
@@ -968,6 +996,11 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P3) `PAGE_RULES` names 8 axe rules and turning them off removes 7.** Measured in the
+  2026-10-12 test audit: with `page: false` axe runs 7 fewer rules than with `page: true`, so one
+  id in `packages/forge/src/frame/a11y.ts` is not a rule axe runs by default. Which one is not
+  known.
+
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
@@ -1058,6 +1091,32 @@ only story runner in the repo.
 ---
 
 ## Demos & visual regression
+
+- **(P2) Six visual specs and one perf spec were edited in the 2026-10-12 test audit and have not
+  been run.** No browser was available to the audit. `tests/visual/params-labels.spec.ts` and
+  `panel-stances.spec.ts` mounted `Properties.module.css` raw, which has held only `@import` lines
+  since that sheet was split, and now read it through `readModuleCss`. `loupe.spec.ts` passed on an
+  empty lens and now also requires the scanline to cross the magnified rules. `insert.spec.ts`,
+  `gestures.spec.ts`, and `shape-tools.spec.ts` were retitled, and `tests/perf/draw-loop.spec.ts`
+  had comments corrected. Run the visual project and fix what the new assertions find.
+
+- **(P3) Three visual baselines are of an empty canvas.** `tests/visual/insert.spec.ts`,
+  `gestures.spec.ts`, and `shape-tools.spec.ts` each screenshot the canvas at mount, before any
+  gesture, so none can catch a change to what its name says it covers. They are titled "mounts an
+  empty canvas" now. Drive one insert or shape drag in each and capture a baseline after it.
+
+- **(P3) `draw-loop`'s `alternating` variant no longer times a program switch.** Gradients join
+  the batched run now, so the variant in `tests/perf/draw-loop.spec.ts` that alternated a solid
+  with a gradient measures one program. A pattern fill still breaks the run; replace the variant
+  with one, and count draws to pin the premise.
+
+- **(P2) `useHostAnchor.browser.test.tsx` fails on the fleet about every other run.** Two full
+  runs on 2026-10-12 each failed one test in it, a different one each time: "keeps following
+  through a second move" read 0 where it expected 140 (studio), and "follows a host that a
+  collapsing sibling moves" left the panel 80px from its host (teitou). Neither commit changes
+  anything under `packages/core`, and the file passed in a full run of `main` the same evening.
+  Both are assertion failures after `settled()`, not timeouts, so the panel had not followed the
+  host by the time the test read it. Not reproduced, and not run alone.
 
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Each of these has
   failed once or twice in a full run on studio, teitou, or msb-uai with a 15 s test timeout or a

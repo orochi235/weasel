@@ -40,6 +40,9 @@ describe('EDGE_PROFILES', () => {
       const v = EDGE_PROFILES.scallop(i / 10, 10);
       expect(Math.abs(v)).toBeLessThanOrEqual(10 * 0.4 + 1e-9);
     }
+    expect(EDGE_PROFILES.scallop(1 / 6, 10)).toBeCloseTo(4);
+    expect(EDGE_PROFILES.scallop(0.5, 10)).toBeCloseTo(-4);
+    expect(EDGE_PROFILES.scallop(5 / 6, 10)).toBeCloseTo(4);
   });
 });
 

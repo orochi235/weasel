@@ -4,66 +4,18 @@ import {
   getTexture,
   _resetTextureRegistryForTests,
 } from '../textures/registerTexture';
+import {
+  installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas, type FakeOffscreenState,
+} from './test-utils/fakeOffscreenCanvas';
 
-interface OffCall { fn: string; args: unknown[] }
-
-function makeOffCtx(): { ctx: CanvasRenderingContext2D; calls: OffCall[] } {
-  const calls: OffCall[] = [];
-  const state = { strokeStyle: '', fillStyle: '', lineWidth: 0 };
-  const rec = (fn: string) =>
-    vi.fn((...args: unknown[]) => { calls.push({ fn, args }); });
-  const ctx = {
-    get strokeStyle() { return state.strokeStyle; },
-    set strokeStyle(v: string) { state.strokeStyle = v; },
-    get fillStyle() { return state.fillStyle; },
-    set fillStyle(v: string) { state.fillStyle = v; },
-    get lineWidth() { return state.lineWidth; },
-    set lineWidth(v: number) { state.lineWidth = v; },
-    beginPath: rec('beginPath'),
-    moveTo: rec('moveTo'),
-    lineTo: rec('lineTo'),
-    stroke: rec('stroke'),
-    arc: rec('arc'),
-    fill: rec('fill'),
-    fillRect: rec('fillRect'),
-  } as unknown as CanvasRenderingContext2D;
-  return { ctx, calls };
-}
-
-let lastOffCanvas: { width: number; height: number; ctx: CanvasRenderingContext2D } | null = null;
-
-class FakeOffscreenCanvas {
-  width: number;
-  height: number;
-  private _ctx: CanvasRenderingContext2D;
-
-  constructor(width: number, height: number) {
-    this.width = width;
-    this.height = height;
-    const made = makeOffCtx();
-    this._ctx = made.ctx;
-    // Expose canvas back-reference on the ctx so consumers can read
-    // `oc.canvas.width` / `oc.canvas.height`.
-    (this._ctx as unknown as { canvas: FakeOffscreenCanvas }).canvas = this;
-    lastOffCanvas = { width, height, ctx: this._ctx };
-  }
-  getContext(type: string): CanvasRenderingContext2D | null {
-    return type === '2d' ? this._ctx : null;
-  }
-  transferToImageBitmap(): ImageBitmap {
-    return { width: this.width, height: this.height, close: () => {} } as unknown as ImageBitmap;
-  }
-}
+let fake: FakeOffscreenState;
 
 beforeEach(() => {
-  lastOffCanvas = null;
-  (globalThis as unknown as { OffscreenCanvas: typeof FakeOffscreenCanvas }).OffscreenCanvas = FakeOffscreenCanvas;
+  fake = installFakeOffscreenCanvas();
   _resetTextureRegistryForTests();
 });
 
-afterEach(() => {
-  delete (globalThis as unknown as { OffscreenCanvas?: unknown }).OffscreenCanvas;
-});
+afterEach(uninstallFakeOffscreenCanvas);
 
 describe('createTilePattern', () => {
   it('invokes the draw callback exactly once with a 2D ctx and the size', () => {
@@ -78,9 +30,7 @@ describe('createTilePattern', () => {
 
   it('creates the OffscreenCanvas at the requested size', () => {
     createTilePattern({ size: 8, draw: () => {} });
-    expect(lastOffCanvas).not.toBeNull();
-    expect(lastOffCanvas!.width).toBe(8);
-    expect(lastOffCanvas!.height).toBe(8);
+    expect(fake.last).toMatchObject({ width: 8, height: 8 });
   });
 
   it('returns a TextureHandle ({ id: string }) on success', () => {
@@ -98,7 +48,7 @@ describe('createTilePattern', () => {
   });
 
   it('returns null when neither OffscreenCanvas nor a usable canvas fallback is available', () => {
-    delete (globalThis as unknown as { OffscreenCanvas?: unknown }).OffscreenCanvas;
+    uninstallFakeOffscreenCanvas();
     // jsdom's HTMLCanvasElement.getContext is not implemented; stub it to
     // return null so the fallback path observes "no 2D ctx" cleanly without
     // jsdom logging a not-implemented warning to stderr.

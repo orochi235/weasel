@@ -31,6 +31,8 @@ describe('rect widget', () => {
     const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#fff' });
     r.setBounds({ x: 5, y: 5, w: 20, h: 20 });
     expect(r.bounds).toEqual({ x: 5, y: 5, w: 20, h: 20 });
+    const [cmd] = r.draw({ dims: { width: 100, height: 100 }, defaultFont: 'x', color: () => '#000000', tokens: DEFAULT_RESOLVED_TOKENS });
+    expect(cmd).toMatchObject({ path: { x: 5, y: 5, width: 20, height: 20 } });
   });
 
   it('claims nothing, so the hit walk descends past it', () => {
@@ -67,12 +69,6 @@ describe('rect widget', () => {
     expect(() => r.setFill('#fff')).toThrow();
     expect(() => r.setBounds({ x: 0, y: 0, w: 5, h: 5 })).toThrow();
     expect(() => r.setHidden(true)).toThrow();
-  });
-
-  it('dispose() is idempotent — calling twice does not throw', () => {
-    const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
-    r.dispose();
-    expect(() => r.dispose()).not.toThrow();
   });
 
   it('dispose() calls removeFromHud', () => {

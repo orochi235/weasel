@@ -480,17 +480,5 @@ describe('keyHeld engagement', () => {
     dispatcher.handleInput(keyHeldUp('a'), ctx);
     expect(dispatcher.inFlight().size).toBe(0);
   });
-
-  // -------------------------------------------------------------------------
-  // Known limitation: two tools holding the SAME key
-  //
-  // The dispatcher's inFlightOwners map is keyed by gestureId — for a held
-  // key, that's `key-held-<key>`. Two tools both engaging on the same key
-  // alias to one slot; whichever engages second overwrites the first's
-  // owner, and releasing the key only restores one channel.
-  // -------------------------------------------------------------------------
-  it.skip('two tools both holding Space engage independently', () => {
-    // Intentionally unimplemented — see comment above.
-  });
 });
 

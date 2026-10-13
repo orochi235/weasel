@@ -6,8 +6,8 @@
  * hit radius lives in `affordances/cornerResize` / `canvas/affordanceAt`, and
  * before this they were five independent literal `8`s. Scaling one of them
  * for a coarse pointer and missing another is a silent, touch-only bug — and
- * one no assertion on a single constant can catch, so the last test here
- * reads the paint size and the hit radius off the *same* emitted region.
+ * one no assertion on a single constant can catch, so one test here takes
+ * the paint size and the hit radius from their two call sites at one scale.
  */
 import { describe, it, expect } from 'vitest';
 import { HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from '../core/device/targets';
@@ -15,7 +15,7 @@ import { COARSE_TARGET_SCALE, resolveDeviceProfile } from '@weasel-js/routing';
 import { DEFAULT_HANDLE_SIZE, mergeLayersWithDefaults } from './SceneCanvas';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from '../interactions/actions/rotate';
 import { createCornerResizeAffordance } from '../affordances/cornerResize';
-import { buildAffordanceAt } from './affordanceAt';
+import { buildAffordanceAt, chromeAffordances } from './affordanceAt';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
 
@@ -45,33 +45,27 @@ describe('device-scaled chrome sizing', () => {
     expect(coarse.targetScale).toBe(COARSE_TARGET_SCALE);
   });
 
-  it('the default selection-overlay layer paints handles at the scaled size', () => {
-    // The slot is a union with `CustomLayerEntry`; only the overlay arm has
-    // `handles`, and the defaults branch always produces that arm.
-    const handleSizeOf = (targetScale?: number): unknown =>
-      (mergeLayersWithDefaults(undefined, targetScale)
-        .selectionOverlay as { handles?: { size?: number } } | null | undefined)
-        ?.handles?.size;
+  // The slot is a union with `CustomLayerEntry`; only the overlay arm has
+  // `handles`, and the defaults branch always produces that arm.
+  const handleSizeOf = (targetScale?: number): unknown =>
+    (mergeLayersWithDefaults(undefined, targetScale)
+      .selectionOverlay as { handles?: { size?: number } } | null | undefined)
+      ?.handles?.size;
 
+  it('the default selection-overlay layer paints handles at the scaled size', () => {
     expect(handleSizeOf()).toBe(HANDLE_BASE_PX);
     expect(handleSizeOf(coarse.targetScale)).toBe(14);
   });
 
-  // The regression guard this whole task exists for. Visual size and hit
-  // radius are computed in different files; if they ever diverge you get
-  // chrome you can see but cannot grab. Read both off one emitted region.
   it('paint size and hit radius agree under a coarse profile', () => {
-    const scaled = HANDLE_BASE_PX * coarse.targetScale;
-    const regions = createCornerResizeAffordance({
-      handleSize: scaled,
-      handleHitRadius: scaled,
-    }).regions(singleSelection());
+    const painted = handleSizeOf(coarse.targetScale);
+    const corners = chromeAffordances({ targetScale: coarse.targetScale })
+      .find((a) => a.id === 'selection.resize-handles')!
+      .regions(singleSelection());
 
-    expect(regions).toHaveLength(4);
-    for (const r of regions) {
-      expect(r.paint).toMatchObject({ sizePx: scaled });
-      expect(r.shape).toMatchObject({ hitRadiusPx: scaled });
-    }
+    expect(painted).toBeGreaterThan(HANDLE_BASE_PX);
+    expect(corners).toHaveLength(4);
+    for (const r of corners) expect(r.shape).toMatchObject({ hitRadiusPx: painted });
   });
 
   it('a caller passing neither option gets an agreeing unscaled pair', () => {

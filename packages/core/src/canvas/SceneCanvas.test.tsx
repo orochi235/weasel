@@ -1,7 +1,8 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
+import { createScene } from 'core/scene/scene';
 import {
   DEFAULT_HANDLE_SIZE,
   defaultDrawOne,
@@ -59,51 +60,35 @@ describe('SceneCanvas', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
   });
 
-  it('mounts with no layers prop and uses defaults', () => {
-    function Harness() {
-      const scene = useScene<{ color: string }, 'default', { x: number; y: number; width: number; height: number }>({
-        systemLayers: [{ id: 'default' }],
-        initial: [{
-          id: 'a' as never,
-          kind: 'leaf',
-          layer: 'default',
-          pose: { x: 10, y: 20, width: 30, height: 40 },
-          data: { color: '#f00' },
-        }],
-      });
-      return <SceneCanvas width={200} height={200} scene={scene} />;
-    }
-    const { container } = render(<Harness />);
-    const canvas = container.querySelector('canvas')!;
-    expect(canvas).toBeTruthy();
-  });
-
-  it('selectTool.handleHitRadius defaults to DEFAULT_HANDLE_SIZE when not provided', () => {
-    function Harness() {
-      const scene = useScene<{ color: string }, 'default', { x: number; y: number; width: number; height: number }>({
-        systemLayers: [{ id: 'default' }],
-      });
-      return <SceneCanvas width={200} height={200} scene={scene} />;
-    }
-    const { container } = render(<Harness />);
-    expect(container.querySelector('canvas')).toBeTruthy();
-    expect(DEFAULT_HANDLE_SIZE).toBe(8);
-  });
-
-  it('selectTool.handleHitRadius override wins over the default', () => {
-    function Harness() {
-      const scene = useScene<{ color: string }, 'default', { x: number; y: number; width: number; height: number }>({
-        systemLayers: [{ id: 'default' }],
-      });
-      return (
+  it('selectTool.handleHitRadius widens the corner handle past the default radius', () => {
+    type Pose = { x: number; y: number; width: number; height: number };
+    const START: Pose = { x: 100, y: 100, width: 80, height: 60 };
+    // Presses 12px left of the top-left corner and drags it out by 20px.
+    function dragNearCorner(handleHitRadius?: number): Pose {
+      const scene = createScene<{ kind: 'rect' }, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+      const id = scene.add({ kind: 'leaf', layer: 'main', pose: START, data: { kind: 'rect' } });
+      scene.setSelection([id]);
+      const { container, unmount } = render(
         <SceneCanvas
-          width={200} height={200} scene={scene}
-          selectTool={{ handleHitRadius: 16 }}
-        />
+          features={['pick', 'resize']} width={400} height={400} scene={scene}
+          {...(handleHitRadius === undefined ? {} : { selectTool: { handleHitRadius } })}
+        />,
       );
+      const canvas = container.querySelector('canvas')!;
+      const fire = (type: string, x: number, y: number) =>
+        canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+      act(() => {
+        fire('pointerdown', 88, 100);
+        fire('pointermove', 68, 80);
+        fire('pointerup', 68, 80);
+      });
+      const pose = scene.get(id)!.pose;
+      unmount();
+      return pose;
     }
-    const { container } = render(<Harness />);
-    expect(container.querySelector('canvas')).toBeTruthy();
+
+    expect(dragNearCorner()).toEqual(START);
+    expect(dragNearCorner(16)).toEqual({ x: 80, y: 80, width: 100, height: 80 });
   });
 });
 

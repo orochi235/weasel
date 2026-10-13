@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { NumberField } from './NumberField';
 import s from './NumberField.module.css';
 
+// A proxy: jsdom resolves no CSS, so these read the class the component asks for, not the painted frame.
 describe('NumberField ghost', () => {
-  it('paints the frame by default', () => {
+  it('leaves the ghost class off by default', () => {
     const { container } = render(<NumberField aria-label="n" value={1} onChange={() => {}} />);
     const frame = container.querySelector(`.${s.frame}`);
     expect(frame).not.toBeNull();

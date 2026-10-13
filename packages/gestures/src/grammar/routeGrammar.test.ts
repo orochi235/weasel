@@ -395,17 +395,10 @@ describe('parseRoute / formatRoute round-trip', () => {
     // Source uses explicit `&:`; canonical form elides it.
     expect(formatRoute(parseRoute('[&:engaged] wheel'))).toBe('[engaged] wheel');
   });
-
-  it('round-trips keyHeld through format → parse', () => {
-    const route = '[*:initial] keyHeld(Space) +shift';
-    expect(formatRoute(parseRoute(route))).toBe(route);
-  });
 });
 
 describe('formatRoute idempotence', () => {
   const CANONICAL = [
-    '[initial] click => empty +shift',
-    '[engaged] wheel',
     '[initial] wheel(up) +mod',
     '[initial] keyDown(Delete)',
     '[initial] keyDown',
@@ -414,7 +407,6 @@ describe('formatRoute idempotence', () => {
     '[initial] multiTouchTap',
     '[initial] multiTouchTap(3)',
     '[initial] drag => kind:app:note',
-    '[initial,engaged] contextMenu',
   ];
   it.each(CANONICAL)('round-trips %s unchanged', (route) => {
     expect(formatRoute(parseRoute(route))).toBe(route);

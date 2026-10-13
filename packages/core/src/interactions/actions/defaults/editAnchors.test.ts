@@ -103,17 +103,6 @@ describe('editAnchorsAction descriptor', () => {
     const handle = invoker.start(makeCtx(dep, resizeAffordance), undefined);
     expect(handle).toEqual({});
   });
-
-  it('start returns empty handle when deps are fully absent', () => {
-    const invoker = getOngoingInvoker(editAnchorsAction);
-    const handle = invoker.start({
-      world: { x: 0, y: 0 },
-      screen: { x: 0, y: 0 },
-      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: {},
-    }, undefined);
-    expect(handle).toEqual({});
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -143,62 +132,8 @@ function makeBezierPath(): PolygonPath {
   };
 }
 
-function makeRealCtx(
-  pose: PolygonPath,
-  affordanceKind: string,
-  worldX = 5,
-  worldY = 5,
-): InvocationCtx {
-  const currentPose: PolygonPath = pose;
-  const dep: EditAnchorsDep = makeEditAnchorsDep({
-      getStorageKind: () => 'pose',
-      getNodeShape: () => null,
-    getEditablePath: () => currentPose,
-    applyEdit: () => {},
-  });
-  const affordance: AffordanceHit = {
-    kind: affordanceKind,
-    targetIds: ['node-a'],
-  };
-  return {
-    world: { x: worldX, y: worldY },
-    screen: { x: worldX, y: worldY },
-    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
-    drag: {
-      start: { x: worldX, y: worldY },
-      current: { x: worldX, y: worldY },
-      delta: { x: 0, y: 0 },
-      affordance,
-    },
-  };
-}
-
 describe('editAnchorsAction — REAL invoker (anchors)', () => {
   const invoker = getOngoingInvoker(editAnchorsAction);
-
-  it('start returns onMove+onEnd when affordance is anchor:0', () => {
-    const ctx = makeRealCtx(makeTriangle(), 'anchor:0', 0, 0);
-    const handle = invoker.start(ctx, undefined);
-    expect(handle).toHaveProperty('onMove');
-    expect(handle).toHaveProperty('onEnd');
-  });
-
-  it('onMove updates the pose in world space', () => {
-    const triangle = makeTriangle();
-    const ctx = makeRealCtx(triangle, 'anchor:1', 10, 0);
-    const handle = invoker.start(ctx, undefined);
-    expect(handle.onMove).toBeDefined();
-
-    // Simulate dragging anchor 1 to (20, 5).
-    const moveCtx: InvocationCtx = {
-      ...ctx,
-      world: { x: 20, y: 5 },
-      drag: { ...ctx.drag!, current: { x: 20, y: 5 }, delta: { x: 10, y: 5 } },
-    };
-    handle.onMove!(moveCtx);
-    // onMove is a live mutation — we verify it doesn't throw and returns void.
-  });
 
   it('onEnd commit dispatches applyEdit (pose changed)', () => {
     const triangle = makeTriangle();

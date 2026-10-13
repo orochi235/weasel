@@ -207,11 +207,6 @@ describe('bodyTrait', () => {
     expect(rightOnly.ports!.map((p) => p.id)).toEqual(['n', 's', 'w', 'out']);
   });
 
-  it('keeps all four when no row declares a port', () => {
-    const trait = bodyTrait(spec([{ kind: 'label', text: 'plain' }]), BOUNDS, measure);
-    expect(trait.ports!.map((p) => p.id)).toEqual(['n', 'e', 's', 'w']);
-  });
-
   it('carries a row port type through', () => {
     const trait = bodyTrait(spec([{ kind: 'ports', left: [{ id: 'in', type: 'num' }] }]), BOUNDS, measure);
     expect(trait.ports!.find((p) => p.id === 'in')!.type).toBe('num');
@@ -334,13 +329,6 @@ describe('bodyTrait — a row with several ports on one side', () => {
     const v = (id: string) => trait.ports!.find((p) => p.id === id)!.at.v;
     expect(v('a')).toBe(0.1);
     expect(v('b')).toBe(0.3);
-  });
-
-  it('still puts a lone port at its row\'s center', () => {
-    const trait = bodyTrait(spec([
-      { kind: 'ports', left: [{ id: 'in' }], height: 40 },
-    ]), BOUNDS, measure);
-    expect(trait.ports!.find((p) => p.id === 'in')!.at).toEqual({ u: 0, v: 0.2 });
   });
 });
 

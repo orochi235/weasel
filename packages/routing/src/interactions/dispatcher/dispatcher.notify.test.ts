@@ -96,5 +96,6 @@ describe('dispatcher subscribers', () => {
     d.handleInput(pointer('pointerdown'), ctx);
     d.cancelAll('cancel');
     expect(seen).toHaveBeenCalledTimes(2);
+    expect(d.getVersion()).toBe(2);
   });
 });

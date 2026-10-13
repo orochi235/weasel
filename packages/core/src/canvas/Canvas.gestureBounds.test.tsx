@@ -168,13 +168,6 @@ describe('CanvasHelpers.getGestureBounds', () => {
     }));
     expect(helpers.getGestureBounds()).toEqual({ x: 1, y: 1, width: 2, height: 2 });
   });
-
-  it('reports the gesture, not the document — committed nodes are excluded', () => {
-    // `b` sits at (100,100) in the adapter and is never previewed; it must not
-    // appear in the union.
-    const helpers = renderHelpers(previewing({ a: { x: 0, y: 0, width: 10, height: 10 } }));
-    expect(helpers.getGestureBounds()).toEqual({ x: 0, y: 0, width: 10, height: 10 });
-  });
 });
 
 describe('CanvasHelpers.subscribeGestures / getGestureVersion', () => {

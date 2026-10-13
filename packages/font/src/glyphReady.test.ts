@@ -4,7 +4,7 @@ import {
 } from './glyphReady';
 
 describe('glyphGeneration', () => {
-  it('advances on every notification', () => {
+  it('advances whether or not anyone is subscribed', () => {
     // The pull-based companion to `subscribeGlyphReady`, for caches that
     // cannot hold a subscription. A module-level `subscribeGlyphReady(...)`
     // is a load-time side effect that reaches into another package: it makes
@@ -12,13 +12,6 @@ describe('glyphGeneration', () => {
     // consumer partially mocking `@weasel-js/font` fails at import rather
     // than at use. Reading a counter has no lifecycle and no import-order
     // hazard.
-    const before = glyphGeneration();
-    notifyGlyphReady();
-    expect(glyphGeneration()).toBeGreaterThan(before);
-  });
-
-  it('advances whether or not anyone is subscribed', () => {
-    // The whole point: a cache that only polls must still see the change.
     const start = glyphGeneration();
     notifyGlyphReady();
     notifyGlyphReady();

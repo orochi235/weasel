@@ -121,7 +121,11 @@ function paintScene(layers: CapturedLayers): DrawCommand[] {
   return layers.scene.layers.flatMap(({ layer }) => layer.draw(null, VIEW, DIMS));
 }
 
-function mount(scene: Scene<Data, 'main', RectPose>, animator?: Animator): CapturedLayers {
+function mount(
+  scene: Scene<Data, 'main', RectPose>,
+  animator?: Animator,
+  alphaFor?: (id: string) => number,
+): CapturedLayers {
   captured.layers = null;
   render(
     <SceneCanvas<Data, 'main', RectPose>
@@ -129,6 +133,7 @@ function mount(scene: Scene<Data, 'main', RectPose>, animator?: Animator): Captu
       width={300}
       height={300}
       animator={animator}
+      alphaFor={alphaFor}
     />,
   );
   if (!captured.layers) throw new Error('SceneCanvas rendered no <Canvas> layers');
@@ -146,6 +151,18 @@ describe('<SceneCanvas> installs the scene wiring', () => {
     scene.overrides.set(a, { alpha: 0.25 });
     const alphas = flat(paintScene(mount(scene))).flatMap((c) => (c.kind === 'group' ? [c.alpha] : []));
     expect(alphas.filter((alpha) => alpha !== undefined && alpha !== 1)).toEqual([0.25]);
+  });
+
+  it('multiplies a consumer alphaFor by the override alpha exactly once', () => {
+    const { scene, a } = makeEdgeScene();
+    scene.overrides.set(a, { alpha: 0.5 });
+    const alphas = flat(paintScene(mount(scene, undefined, () => 0.4)))
+      .flatMap((c) => (c.kind === 'group' && c.alpha !== undefined ? [c.alpha] : []));
+    // Paint order is scene order: `a`, then `b`, then the edge between them.
+    expect(alphas).toHaveLength(3);
+    expect(alphas[0]).toBeCloseTo(0.2);
+    expect(alphas[1]).toBeCloseTo(0.4);
+    expect(alphas[2]).toBeCloseTo(0.4);
   });
 
   it('paints its animator\'s vertex-color overrides through the scene layers', () => {

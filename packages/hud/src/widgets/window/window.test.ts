@@ -16,8 +16,10 @@ describe('window widget', () => {
   it('draws a titlebar, a border ring, a title and a close glyph', () => {
     const win = createWindow(opts);
     const cmds = win.draw(ctx);
-    expect(cmds.filter((c) => c.kind === 'path').length).toBeGreaterThanOrEqual(3);
-    expect(cmds.some((c) => c.kind === 'text')).toBe(true);
+    const stroked = cmds.filter((c) => c.kind === 'path' && c.stroke !== undefined);
+    expect(stroked.map((c) => c.kind === 'path' && c.path.kind === 'rect')).toEqual([true, false]);
+    expect(cmds.filter((c) => c.kind === 'path' && c.fill !== undefined).length).toBeGreaterThanOrEqual(1);
+    expect(cmds.filter((c) => c.kind === 'text')).toHaveLength(1);
   });
 
   it('does not fill the interior — the content hole stays open', () => {

@@ -114,13 +114,6 @@ describe('createAnalyserTap', () => {
     expect(() => tap.bands(4, new Float32Array(5))).toThrow(/@weasel-js\/audio/);
   });
 
-  it('returns bands narrowed to Float32Array<ArrayBuffer>', () => {
-    const ctx = createFakeAudioContext();
-    const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
-    const narrowed: Float32Array<ArrayBuffer> = tap.bands(4);
-    expect(narrowed).toHaveLength(4);
-  });
-
   it('throws for a band count below 1', () => {
     const ctx = createFakeAudioContext();
     const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);

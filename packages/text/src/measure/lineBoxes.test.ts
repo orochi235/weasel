@@ -88,8 +88,7 @@ describe('textLineBoxes', () => {
     const center = textLineBoxes(pose({ style: { fontSize: 20, align: 'center' } }))[0];
     const right = textLineBoxes(pose({ style: { fontSize: 20, align: 'right' } }))[0];
     expect(left.x).toBe(100);
-    expect(center.x).toBeGreaterThan(left.x);
-    expect(right.x).toBeGreaterThan(center.x);
+    expect(center.x + center.width / 2).toBeCloseTo(300);
     // Alignment moves the span; it does not resize it.
     expect(center.width).toBeCloseTo(left.width);
     expect(right.x + right.width).toBeCloseTo(500);
@@ -135,13 +134,6 @@ describe('textLineBoxes', () => {
     const wrapped = textLineBoxes(pose({ text, width: 60, style: { fontSize: 20, wrap: true } }));
     expect(unwrapped).toHaveLength(1);
     expect(wrapped.length).toBeGreaterThan(1);
-  });
-
-  it('aligns an unwrapped line within the pose width', () => {
-    const center = textLineBoxes(pose({ style: { fontSize: 20, align: 'center' } }))[0];
-    const right = textLineBoxes(pose({ style: { fontSize: 20, align: 'right' } }))[0];
-    expect(center.x + center.width / 2).toBeCloseTo(300);
-    expect(right.x + right.width).toBeCloseTo(500);
   });
 
   it('resolves start against the direction, as the painter does', () => {

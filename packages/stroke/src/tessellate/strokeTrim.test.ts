@@ -52,9 +52,10 @@ describe('inset trimming in tessellateStroke', () => {
       coords: new Float32Array([0, 0, 40, 0, 60, 0, 100, 0]),
       fillRule: 'nonzero',
     };
-    const [lo, hi] = spanX(tessellateStroke(two, BASE, { startInset: 5, endInset: 5 }));
-    expect(lo).toBeCloseTo(5, 4);
-    expect(hi).toBeCloseTo(95, 4);
+    const { vertices } = tessellateStroke(two, BASE, { startInset: 5, endInset: 5 });
+    const xs = new Set<number>();
+    for (let i = 0; i < vertices.length; i += 2) xs.add(Math.round(vertices[i] * 1e4) / 1e4);
+    expect([...xs].sort((a, b) => a - b)).toEqual([5, 35, 65, 95]);
   });
 
   it('dashes the trimmed line, so the pattern fits what is visible', () => {

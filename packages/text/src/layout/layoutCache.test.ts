@@ -99,16 +99,6 @@ describe('cachedLayoutRuns', () => {
     expect(b).not.toBe(a);
   });
 
-  it('does not key on position — the layout survives a drag', () => {
-    // The reason `layoutRuns` emits origin-relative geometry: with position in
-    // the key, every frame of a drag was a full miss (0.130 ms against a
-    // 1.7e-4 ms hit for 500 wrapped glyphs — the cost of having no cache).
-    // `drawText` translates at upload, so there is nothing here to key on.
-    const runs = [run('hello world')];
-    const a = cachedLayoutRuns(runs, OPTS);
-    for (let i = 0; i < 100; i++) expect(cachedLayoutRuns(runs, OPTS)).toBe(a);
-  });
-
   it('re-lays out when wrapping, leading or alignment change', () => {
     const runs = [run('hello world this wraps')];
     const base = cachedLayoutRuns(runs, OPTS);
@@ -138,16 +128,17 @@ describe('cachedLayoutRuns', () => {
   });
 
   it('bounds the variants held for one runs array', () => {
-    // Wholesale eviction, matching outlineMeshCache's policy: without a cap
-    // the map hanging off a live node grows with every distinct option set.
-    // The layout itself survives the clear — the structural map still holds
-    // it — so what the cap actually costs is the key build, not a re-layout.
     const runs = [run('hello world')];
     const first = cachedLayoutRuns(runs, OPTS);
     for (let i = 1; i <= LAYOUT_CACHE_VARIANT_LIMIT; i++) {
       cachedLayoutRuns(runs, { ...OPTS, maxWidth: 400 + i });
     }
-    expect(cachedLayoutRuns(runs, OPTS)).toBe(first);
+    // Push the layout out of the structural map too, so only a variant the
+    // array still held could answer with it.
+    for (let i = 0; i < LAYOUT_CACHE_STRUCTURAL_LIMIT; i++) {
+      cachedLayoutRuns([run(`text ${i}`)], OPTS);
+    }
+    expect(cachedLayoutRuns(runs, OPTS)).not.toBe(first);
   });
 
   it('bounds the structural map, evicting least-recently-used', () => {

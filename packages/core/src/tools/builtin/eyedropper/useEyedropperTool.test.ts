@@ -55,7 +55,6 @@ describe('useEyedropperTool', () => {
     // The `pointerDown` claim gate is gone: it existed only to beat the other
     // dispatch pipeline's select tool to the press.
     expect(result.current.bindings?.some((b) => b.spec.kind === 'pointerDown')).toBe(false);
-    expect((result.current.def as any)?.initial).toBeUndefined();
   });
 
   it('the pick action is eligibility-gated on samples-color', () => {

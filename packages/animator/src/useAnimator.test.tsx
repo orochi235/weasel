@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
-import { linear, SPRING_PRESETS } from '@weasel-js/geom';
+import { linear } from '@weasel-js/geom';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { Animator, UseAnimatorOptions } from './types';
 
@@ -231,9 +231,6 @@ describe('useAnimator.tween', () => {
 });
 
 describe('useAnimator.spring', () => {
-  // Reference SPRING_PRESETS so unused-import lint stays quiet across tasks.
-  void SPRING_PRESETS;
-
   it('settles at to within rest threshold', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
@@ -255,22 +252,20 @@ describe('useAnimator.spring', () => {
   });
 
   it('honors explicit stiffness/damping/mass over preset', () => {
-    const clock = makeClock();
-    const { result } = renderHook(() => useAnimator(clock));
-    const onDone = vi.fn();
-    act(() => {
-      result.current.spring<number>({
-        from: 0,
-        to: 1,
-        stiffness: 500,
-        damping: 30,
-        mass: 1,
-        onTick: () => {},
-        onDone,
+    const midFlight = (preset?: 'wobbly'): number => {
+      const clock = makeClock();
+      const { result } = renderHook(() => useAnimator(clock));
+      let last = NaN;
+      act(() => {
+        result.current.spring<number>({
+          from: 0, to: 100, preset, stiffness: 500, damping: 30, mass: 2,
+          onTick: (v) => { last = v; },
+        });
       });
-    });
-    for (let i = 0; i < 200; i++) act(() => clock.advance(16));
-    expect(onDone).toHaveBeenCalledTimes(1);
+      for (let i = 0; i < 10; i++) act(() => clock.advance(16));
+      return last;
+    };
+    expect(midFlight('wobbly')).toBeCloseTo(midFlight(), 6);
   });
 
   it('throws if T is non-numeric and vector helpers are missing', () => {
@@ -296,7 +291,7 @@ describe('useAnimator.decay', () => {
       result.current.decay<number>({
         from: 0,
         velocity: 600, // px/sec
-        friction: 0.9,
+        friction: 0.001,
         threshold: 1,
         add: (a, b) => a + b,
         scale: (v, k) => v * k,
@@ -305,11 +300,10 @@ describe('useAnimator.decay', () => {
         onDone,
       });
     });
-    // friction 0.9/sec @ v0=600 → ~4000 frames to drop below 1px/sec
-    for (let i = 0; i < 5000; i++) act(() => clock.advance(16));
+    for (let i = 0; i < 400; i++) act(() => clock.advance(16));
     expect(onDone).toHaveBeenCalledTimes(1);
-    // Last value should be greater than the first (we moved in the +x direction).
-    expect(ticks[ticks.length - 1]).toBeGreaterThan(ticks[0]);
+    // v0 over the friction's rate, less the little it had left at the threshold.
+    expect(ticks[ticks.length - 1]).toBeCloseTo(600 / -Math.log(0.001), 0);
   });
 
   it('skips immediately when initial |velocity| is below threshold', () => {

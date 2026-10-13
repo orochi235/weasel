@@ -4,6 +4,11 @@ import { createGuidesLayer } from './layer';
 import type { Guide, SpacingGap } from './types';
 
 describe('createGuidesLayer', () => {
+  const coords = (c: DrawCommand) => {
+    const p = (c as PathDrawCommand).path;
+    return p.kind === 'polygon' ? Array.from(p.coords) : [];
+  };
+
   it('exposes default id "guides", label "Guides", and screen space', () => {
     const layer = createGuidesLayer({ getGuides: () => [] });
     expect(layer.id).toBe('guides');
@@ -25,30 +30,19 @@ describe('createGuidesLayer', () => {
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 });
     expect(tree).toHaveLength(2);
 
-    const v = tree[0] as PathDrawCommand;
-    expect(v.kind).toBe('path');
-    expect(v.path.kind).toBe('polygon');
-    if (v.path.kind === 'polygon') {
-      // Vertical: same X, full canvas height.
-      expect(Array.from(v.path.coords)).toEqual([50, 0, 50, 100]);
-    }
-
-    const h = tree[1] as PathDrawCommand;
-    if (h.path.kind === 'polygon') {
-      // Horizontal: full canvas width, same Y.
-      expect(Array.from(h.path.coords)).toEqual([0, 25, 200, 25]);
-    }
+    expect(tree[0].kind).toBe('path');
+    // Vertical: same X, full canvas height.
+    expect(coords(tree[0])).toEqual([50, 0, 50, 100]);
+    // Horizontal: full canvas width, same Y.
+    expect(coords(tree[1])).toEqual([0, 25, 200, 25]);
   });
 
   it('projects world offset through the view (pan + scale)', () => {
     const guides: Guide[] = [{ id: 'vx', axis: 'x', offset: 100 }];
     const layer = createGuidesLayer({ getGuides: () => guides });
-    // view.x = 50, scale = 2 → screen x = (100 - 50) * 2 = 100.
-    const tree = layer.draw(undefined, { x: 50, y: 0, scale: { x: 2, y: 2 } }, { width: 200, height: 100 });
-    const v = tree[0] as PathDrawCommand;
-    if (v.path.kind === 'polygon') {
-      expect(Array.from(v.path.coords)).toEqual([100, 0, 100, 100]);
-    }
+    // view.x = 30, scale = 2 → screen x = (100 - 30) * 2 = 140.
+    const tree = layer.draw(undefined, { x: 30, y: 0, scale: { x: 2, y: 2 } }, { width: 200, height: 100 });
+    expect(coords(tree[0])).toEqual([140, 0, 140, 100]);
   });
 
   it('skips guides outside the visible canvas', () => {
@@ -76,10 +70,6 @@ describe('createGuidesLayer', () => {
 
   const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
   const dims = { width: 200, height: 100 };
-  const coords = (c: DrawCommand) => {
-    const p = (c as PathDrawCommand).path;
-    return p.kind === 'polygon' ? Array.from(p.coords) : [];
-  };
 
   it('draws a guide with a span as a segment with end ticks', () => {
     const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 50, span: { min: 10, max: 60 } }];

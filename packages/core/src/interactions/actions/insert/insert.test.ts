@@ -255,19 +255,6 @@ describe('insertAction descriptor', () => {
   // -------------------------------------------------------------------------
 
   describe('overlay()', () => {
-    it('returns null when the dep is absent (empty handle)', () => {
-      const invoker = getOngoingInvoker(insertAction);
-      const ctx: InvocationCtx = {
-        world: { x: 0, y: 0 },
-        screen: { x: 0, y: 0 },
-        modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-        deps: {},
-      };
-      const handle = invoker.start(ctx, undefined);
-      // No overlay method on empty handle.
-      expect(handle.overlay).toBeUndefined();
-    });
-
     it('returns an insertPreview with the current AABB after onMove', () => {
       const invoker = getOngoingInvoker(insertAction);
       const dep = makeInsertDep();

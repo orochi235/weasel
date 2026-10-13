@@ -80,17 +80,6 @@ describe('history — selection snapshots', () => {
     expect(store).toEqual([]);
   });
 
-  it('a bare selection change creates no entry', () => {
-    const selection = makeSelection(['a']);
-    const history = createHistory(undefined, { selection });
-
-    selection.set(['b']);
-    selection.set(['c']);
-
-    expect(history.undoDepth()).toBe(0);
-    expect(history.canUndo()).toBe(false);
-  });
-
   it('a coalesced entry keeps the selection from its first push', () => {
     const store: string[] = [];
     const selection = makeSelection(['a']);

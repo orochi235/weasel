@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { asNodeId, polylineFromPoints, type DerivedDep, type Path, type RectPose } from '@weasel-js/core';
-import { DIAGRAM_LABEL, diagramLabelOf, labelDerivePose } from './label';
+import {
+  asNodeId, createScene, polylineFromPoints, type DerivedDep, type Path, type RectPose,
+} from '@weasel-js/core';
+import { withDiagramRegistry } from './edge';
+import { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
 
 const box = (x: number, y: number, w = 20, h = 8): RectPose => ({ x, y, width: w, height: h });
 
@@ -74,7 +77,19 @@ describe('labelDerivePose', () => {
 });
 
 describe('registry', () => {
-  it('names the derivation so an authored label round-trips', () => {
-    expect(DIAGRAM_LABEL).toBe('diagram:label');
+  it('registers the label derivation so an authored label round-trips through toJSON', () => {
+    const scene = createScene<object, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: withDiagramRegistry<RectPose>(),
+    });
+    const edge = scene.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
+    const label = scene.add({
+      kind: 'leaf', layer: 'main', pose: box(0, 0),
+      data: { diagram: { label: { at: 'mid' } } },
+      dependsOn: [edge],
+      derivePose: LABEL_DERIVE_POSE as never,
+    });
+    const node = scene.toJSON().nodes.find((n) => n.id === (label as string))!;
+    expect(node.derivePoseKey).toBe(DIAGRAM_LABEL);
   });
 });

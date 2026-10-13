@@ -14,16 +14,16 @@ const sCurve: SharedAnchor[] = [
 const reps: CurveRepresentation[] = [bezierCubic, bezierQuadratic, nurbs, spiro];
 
 describe.each(reps)('CurveRepresentation contract: $kind', (rep) => {
-  it('evaluate(t=0) returns the first anchor (within 1px)', () => {
+  it('evaluate(t=0) returns the first anchor', () => {
     const p = rep.evaluate(sCurve, 0);
-    expect(p.x).toBeCloseTo(sCurve[0].x, 0);
-    expect(p.y).toBeCloseTo(sCurve[0].y, 0);
+    expect(p.x).toBeCloseTo(sCurve[0].x);
+    expect(p.y).toBeCloseTo(sCurve[0].y);
   });
 
-  it('evaluate(t=1) returns the last anchor (within 1px)', () => {
+  it('evaluate(t=1) returns the last anchor', () => {
     const p = rep.evaluate(sCurve, 1);
-    expect(p.x).toBeCloseTo(sCurve[sCurve.length - 1].x, 0);
-    expect(p.y).toBeCloseTo(sCurve[sCurve.length - 1].y, 0);
+    expect(p.x).toBeCloseTo(sCurve[sCurve.length - 1].x);
+    expect(p.y).toBeCloseTo(sCurve[sCurve.length - 1].y);
   });
 
   it('toPath returns a non-empty PolygonPath', () => {

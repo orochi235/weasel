@@ -34,16 +34,8 @@ describe('batch program — declaration lists match the sources', () => {
     ...declaredUniforms(BATCH_FRAG_SRC),
   ]);
 
-  it.each(BATCH_FILL_UNIFORMS)('%s is declared in at least one stage', (name) => {
-    expect(declared.has(name)).toBe(true);
-  });
-
   it('lists every uniform the stages declare', () => {
     expect([...declared].sort()).toEqual([...BATCH_FILL_UNIFORMS].sort());
-  });
-
-  it.each(BATCH_FILL_ATTRIBUTES)('%s is declared as a vertex input', (name) => {
-    expect(declaredInputs(BATCH_VERT_SRC).has(name)).toBe(true);
   });
 
   it('lists every vertex input the stage declares', () => {

@@ -119,9 +119,14 @@ describe('createPenPreviewLayer', () => {
     const { scratch, layer } = setup();
     scratch.finishedSubpaths = [
       { anchors: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }], closed: true },
+      { anchors: [{ x: 20, y: 20 }, { x: 40, y: 30 }], closed: false },
     ];
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
-    expect(tree.length).toBeGreaterThanOrEqual(1);
-    expect(tree[0].kind).toBe('path');
+    expect(tree.map((c) => c.kind)).toEqual(['path', 'path']);
+    const drawn = tree.map((c) => Array.from((c as { path: PolygonPath }).path.coords));
+    expect(drawn).toEqual(
+      scratch.finishedSubpaths.map((sp) => Array.from(anchorsToPath([sp.anchors], [sp.closed]).coords)),
+    );
+    expect(drawn[1]).toEqual([20, 20, 40, 30]);
   });
 });

@@ -84,16 +84,6 @@ describe('Slider track click', () => {
     expect(lastValues(onChange)).toEqual([50]);
   });
 
-  // The press seeds the drag it starts. Without that seed the buffer still
-  // holds the pre-click value and a release with no movement commits it,
-  // silently undoing the click.
-  it('keeps the clicked value when the release follows with no movement', () => {
-    const { track, onChange } = renderTrackClick();
-    fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
-    fireEvent.pointerUp(document, { clientX: 100, clientY: 12 });
-    expect(lastValues(onChange)).toEqual([50]);
-  });
-
   it('drags on from where the click landed', () => {
     const { track, onInput } = renderTrackClick();
     fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });

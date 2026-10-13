@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { replayRecording } from './replay';
 import type { Recording } from './recorder';
 
@@ -71,28 +71,47 @@ describe('replayRecording', () => {
     ]);
   });
 
-  it("flush mode runs faster than realtime mode for the same input", async () => {
-    // Recorded over ~120ms. realtime should take ≥ ~100ms; flush should
-    // finish in single-digit milliseconds plus a handful of rAF ticks.
+  describe('pacing', () => {
     const events: Recording['events'] = [
       { type: 'pointerdown', t: 0,   clientX: 0, clientY: 0, target: 'canvas' },
       { type: 'pointermove', t: 40,  clientX: 1, clientY: 1, target: 'canvas' },
       { type: 'pointermove', t: 80,  clientX: 2, clientY: 2, target: 'canvas' },
       { type: 'pointerup',   t: 120, clientX: 3, clientY: 3, target: 'canvas' },
     ];
+    let seen: string[];
 
-    const tFlushStart = performance.now();
-    await replayRecording(baseRecording(events), { canvas, mode: 'flush' });
-    const flushMs = performance.now() - tFlushStart;
+    beforeEach(() => {
+      seen = [];
+      for (const type of ['pointerdown', 'pointermove', 'pointerup']) {
+        canvas.addEventListener(type, () => seen.push(type));
+      }
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+        queueMicrotask(() => cb(0));
+        return 0;
+      });
+    });
 
-    const tRealStart = performance.now();
-    await replayRecording(baseRecording(events), { canvas, mode: 'realtime' });
-    const realMs = performance.now() - tRealStart;
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    });
 
-    expect(realMs).toBeGreaterThan(flushMs);
-    // Realtime should be at least near the recorded span (a little slop for
-    // setTimeout's coarse resolution).
-    expect(realMs).toBeGreaterThanOrEqual(80);
+    it('realtime mode waits out the recorded gap before each event', async () => {
+      const done = replayRecording(baseRecording(events), { canvas, mode: 'realtime' });
+      await vi.advanceTimersByTimeAsync(39);
+      expect(seen).toEqual(['pointerdown']);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(seen).toEqual(['pointerdown', 'pointermove']);
+      await vi.advanceTimersByTimeAsync(80);
+      await done;
+      expect(seen).toEqual(['pointerdown', 'pointermove', 'pointermove', 'pointerup']);
+    });
+
+    it('flush mode replays every event without waiting on the clock', async () => {
+      await replayRecording(baseRecording(events), { canvas, mode: 'flush' });
+      expect(seen).toEqual(['pointerdown', 'pointermove', 'pointermove', 'pointerup']);
+    }, 1000);
   });
 
   it('beforeFirstEvent runs exactly once, before the first event', async () => {

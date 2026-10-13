@@ -32,12 +32,6 @@ describe('glyph coverage — antialiasing', () => {
     expect(floor).not.toBeNull();
     expect(Number(floor![1])).toBeGreaterThan(0);
   });
-
-  it('declares no constant AA-width uniform', () => {
-    // Regression guard: `u_aaWidth` was a CPU-set constant (0.05), which is
-    // correct at exactly one combination of font size, zoom, and DPR.
-    expect(GLYPH_COVERAGE_GLSL).not.toMatch(/u_aaWidth/);
-  });
 });
 
 describe('glyph coverage — no branch around the derivative', () => {

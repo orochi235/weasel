@@ -87,8 +87,15 @@ describe('detached canvas renderer lifetime', () => {
         <SceneViewCanvas scene={scene} view={{ x: 0, y: 0, scale: { x: 1, y: 1 } }} width={100} height={80} drawOne={defaultDrawOne} />
       </StrictMode>,
     );
-    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+    await act(frame);
     expect(cachedCanvasRenderer(container.querySelector('canvas')!)).toBeDefined();
+
+    const before = clears();
+    act(() => { scene.add({ kind: 'leaf', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 5, height: 5 } }); });
+    await act(frame);
+    expect(clears()).toBeGreaterThan(before);
+
     unmount();
     for (const kind of KINDS) expect(live(kind), `live ${kind}s after unmount`).toEqual([]);
   });

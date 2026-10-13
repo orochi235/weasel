@@ -1,17 +1,35 @@
-import { render, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { act, cleanup, render } from '@testing-library/react';
+import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest';
 import { TransformDemo } from '../TransformDemo';
 
+beforeAll(() => {
+  window.history.replaceState(null, '', '/?test=1');
+  const proto = HTMLCanvasElement.prototype as unknown as {
+    setPointerCapture: (...args: unknown[]) => void;
+    releasePointerCapture: (...args: unknown[]) => void;
+  };
+  proto.setPointerCapture = vi.fn();
+  proto.releasePointerCapture = vi.fn();
+});
+afterEach(cleanup);
+
+function pose(id: string) {
+  return window.__weaselTest!.getScene().nodes.find((n) => n.id === id)!.pose as { x: number; y: number };
+}
+
 describe('TransformDemo', () => {
-  it('drags a rect via the select tool overlay', () => {
+  it('drags a rect by its body and lands it on the 20px grid', () => {
     const { container } = render(<TransformDemo />);
     const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = () => {};
-    // Rect 'a' starts at (50,80,90,60); center ≈ (95,110). Click to select, drag +50,+30.
-    fireEvent.pointerDown(canvas, { clientX: 95, clientY: 110, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 145, clientY: 140, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 145, clientY: 140, pointerId: 1 });
-    // Smoke-only: the canvas survives the drag without throwing and remains in the DOM.
-    expect(canvas.isConnected).toBe(true);
+    const fire = (type: string, x: number, y: number) => act(() => {
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+    });
+    expect(pose('a')).toMatchObject({ x: 50, y: 80 });
+    // Rect 'a' is 90x60 at (50, 80); press its center and drag by (+47, +33), off the grid.
+    fire('pointerdown', 95, 110);
+    fire('pointermove', 120, 130);
+    fire('pointermove', 142, 143);
+    fire('pointerup', 142, 143);
+    expect(pose('a')).toMatchObject({ x: 100, y: 120 });
   });
 });

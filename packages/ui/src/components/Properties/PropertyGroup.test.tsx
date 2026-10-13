@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertyGroup } from './PropertyGroup';
-import s from './Properties.module.css';
 
 describe('PropertyGroup', () => {
   it('renders title and children', () => {
@@ -21,15 +20,6 @@ describe('PropertyGroup', () => {
       </PropertyGroup>,
     );
     expect(container).toBeEmptyDOMElement();
-  });
-
-  it('applies subpanel class', () => {
-    const { container } = render(
-      <PropertyGroup title="Dome">
-        <div>x</div>
-      </PropertyGroup>,
-    );
-    expect(container.firstChild).toHaveClass(s.group);
   });
 });
 

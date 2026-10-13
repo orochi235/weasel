@@ -60,19 +60,17 @@ describe('migrated records', () => {
   });
 });
 
+// Checked by the compiler, never run: openPrefsSync refuses an adapter that cannot list synchronously.
+void ((): void => {
+  // @ts-expect-error urlHashAdapter cannot list synchronously
+  openPrefsSync(SCHEMA, { storage: urlHashAdapter, prefix: 'p.' });
+});
+
 describe('openPrefsSync', () => {
   it('returns a ready store from an adapter that lists synchronously', () => {
     const backing = new Map<string, unknown>([['p.density', 20]]);
     const store = openPrefsSync(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 'p.' });
     expect(store.get('density')).toBe(20);
-  });
-
-  it('refuses, at compile time, an adapter that cannot', () => {
-    const never = () => {
-      // @ts-expect-error urlHashAdapter cannot list synchronously
-      openPrefsSync(SCHEMA, { storage: urlHashAdapter, prefix: 'p.' });
-    };
-    expect(never).toBeTypeOf('function');
   });
 
   it('stops persisting when a peer migrates the store past this build', async () => {

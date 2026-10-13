@@ -1,11 +1,13 @@
 import { Profiler } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useAnimator } from '@weasel-js/animator';
 import { WeaselProvider } from '@weasel-js/core';
 import { AnimationCards, AnimationDemo } from '../AnimationDemo';
 
 describe('AnimationDemo', () => {
+  afterEach(cleanup);
+
   it('renders the canvas and the three control buttons', () => {
     const { container } = render(<AnimationDemo />);
     expect(screen.getByRole('button', { name: /Tween A/i })).toBeTruthy();
@@ -15,22 +17,14 @@ describe('AnimationDemo', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
   });
 
-  it('clicking "Add card" does not throw and the canvas remains mounted', () => {
-    const { container } = render(<AnimationDemo />);
-    const canvas = container.querySelector('canvas')!;
-    expect(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Add card/i }));
-    }).not.toThrow();
-    expect(canvas.isConnected).toBe(true);
-  });
+  const liveCount = (): number =>
+    Number(/\d+/.exec(screen.getByRole('heading', { name: /^live/ }).textContent ?? '')?.[0]);
 
-  it('clicking "Tween A" does not throw and the canvas remains mounted', () => {
-    const { container } = render(<AnimationDemo />);
-    const canvas = container.querySelector('canvas')!;
-    expect(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Tween A/i }));
-    }).not.toThrow();
-    expect(canvas.isConnected).toBe(true);
+  it.each(['Add card', 'Tween A'])('starts an animation when "%s" is clicked', (name) => {
+    render(<AnimationDemo />);
+    expect(liveCount()).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(name) }));
+    expect(liveCount()).toBe(1);
   });
 });
 
@@ -71,5 +65,6 @@ describe('AnimationCards', () => {
     const before = commits;
     for (let i = 0; i < 6; i++) step();
     expect(commits - before).toBe(0);
+    expect(queued.size).toBeGreaterThan(0);
   });
 });

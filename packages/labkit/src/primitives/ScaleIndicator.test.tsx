@@ -5,11 +5,6 @@ import { DEFAULT_FRAME } from '../canvas/worldSpec';
 import { ScaleIndicator } from './ScaleIndicator';
 
 describe('ScaleIndicator', () => {
-  test('renders the unit label', () => {
-    render(<ScaleIndicator zoom={1} pixelsPerUnit={50} unit="ft" />);
-    expect(screen.getByText(/ft/)).toBeInTheDocument();
-  });
-
   test('shows scale value scaled by zoom', () => {
     render(<ScaleIndicator zoom={2} pixelsPerUnit={50} unit="ft" />);
     expect(screen.getByText(/1\s*ft/)).toBeInTheDocument();

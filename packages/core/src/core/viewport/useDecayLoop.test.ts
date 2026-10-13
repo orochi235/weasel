@@ -44,13 +44,15 @@ describe('useDecayLoop', () => {
 
   it('stops calling onTick when speed drops below minSpeed', () => {
     const onTick = vi.fn();
+    const onEnd = vi.fn();
     const { result } = renderHook(() => useDecayLoop());
     act(() => {
-      result.current.start({ velocity: { vx: 0.001, vy: 0 }, friction: 0.5, minSpeed: 0.01, onTick });
+      result.current.start({ velocity: { vx: 1, vy: 0 }, friction: 0.5, minSpeed: 0.3, onTick, onEnd });
     });
-    // First frame: velocity 0.001 < minSpeed 0.01 → should stop immediately
-    act(() => { stepRAF(16); });
-    expect(onTick).not.toHaveBeenCalled();
+    // Speed roughly halves per frame: 1 → 0.51 (ticks) → 0.26 (below 0.3, ends).
+    for (let i = 0; i < 6; i++) act(() => { stepRAF(16); });
+    expect(onTick).toHaveBeenCalledTimes(1);
+    expect(onEnd).toHaveBeenCalledOnce();
   });
 
   it('cancel() stops the loop', () => {

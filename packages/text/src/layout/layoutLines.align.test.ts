@@ -18,8 +18,9 @@ describe('layoutRuns — word wrap', () => {
     const leftX = leftOut.groups[0].quads[0].x0;
     const centerX = centerOut.groups[0].quads[0].x0;
     const rightX = rightOut.groups[0].quads[0].x0;
-    expect(centerX).toBeGreaterThan(leftX);
-    expect(rightX).toBeGreaterThan(centerX);
+    expect(leftX).toBeCloseTo(1, 6);
+    expect(centerX).toBeCloseTo(1 + (400 - 44) / 2, 6);
+    expect(rightX).toBeCloseTo(1 + (400 - 44), 6);
   });
 
   it('anchors center/right on the line width when no maxWidth box is given', async () => {
@@ -67,13 +68,6 @@ describe('layoutRuns — reading-order alignment', () => {
     const leftRtl = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'rtl' });
     const leftLtr = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'ltr' });
     expect(xs(leftRtl)).toEqual(xs(leftLtr));
-  });
-
-  it('reads left to right when the caller omits direction and no engine is registered', async () => {
-    await registerFixture('inter', [{}]);
-    const bare = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'start' });
-    const left = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
-    expect(xs(bare)).toEqual(xs(left));
   });
 
   it('centers identically whatever the direction', async () => {

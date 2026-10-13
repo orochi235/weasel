@@ -41,13 +41,10 @@ describe('outline mesh cache', () => {
     expect(outlineMesh('k|tri', RING)).toBe(first);
   });
 
-  it('bounds itself rather than growing without limit', () => {
-    for (let i = 0; i <= OUTLINE_MESH_CACHE_LIMIT; i++) outlineMesh(`k|${i}`, TRI);
-    // The cap is a backstop for a page cycling through many faces, not
-    // expected pressure: eviction is wholesale, and refilling costs only what
-    // is actually on screen.
-    const refilled = outlineMesh('k|0', TRI);
-    expect(outlineMesh('k|0', TRI)).toBe(refilled);
+  it('drops every mesh once the cache reaches its limit', () => {
+    const first = outlineMesh('k|0', TRI);
+    for (let i = 1; i <= OUTLINE_MESH_CACHE_LIMIT; i++) outlineMesh(`k|${i}`, TRI);
+    expect(outlineMesh('k|0', TRI)).not.toBe(first);
   });
 
   it('flattens finely enough that magnification cannot show the polygon', () => {

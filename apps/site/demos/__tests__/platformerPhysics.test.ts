@@ -285,6 +285,9 @@ describe('? blocks and bonks', () => {
     let s = createBodyState({ x: 2.5 * TILE, y: 4 * TILE });
     for (let i = 0; i < 60; i++) s = stepBody(s, BONK_LEVEL, { left: false, right: false, jumpHeld: false, jumpPressed: false }, STEP);
     s = stepBody(s, BONK_LEVEL, JUMP, STEP);
+    for (let i = 0; i < 120 && !s.bonk; i++) s = stepBody(s, BONK_LEVEL, JUMP_HELD, STEP);
+    expect(s.bonk).not.toBeNull();
+    s = stepBody(s, BONK_LEVEL, JUMP_HELD, STEP);
     expect(s.bonk).toBeNull();
   });
 });

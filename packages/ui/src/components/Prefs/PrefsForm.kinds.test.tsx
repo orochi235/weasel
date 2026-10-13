@@ -276,9 +276,12 @@ describe('PrefsForm alias leaf', () => {
   });
 
   it('toggles auto at the target from the alias\'s row', () => {
-    const asked: string[] = [];
-    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} auto={new Set()} onAutoChange={(path) => asked.push(path)} canInherit={(path) => { asked.push(`can:${path}`); return true; }} />);
-    expect(asked.filter((a) => a === 'can:view.grid')).toHaveLength(3);
-    expect(asked).not.toContain('can:play.named');
+    const onAutoChange = vi.fn();
+    const canInherit = vi.fn(() => true);
+    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} auto={new Set()} onAutoChange={onAutoChange} canInherit={canInherit} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pin Grid while playing' }));
+    expect(onAutoChange.mock.calls).toEqual([['view.grid', true]]);
+    expect(canInherit).toHaveBeenCalledWith('view.grid');
+    expect(canInherit).not.toHaveBeenCalledWith('play.named');
   });
 });

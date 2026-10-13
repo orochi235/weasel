@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { useEffect, type ReactNode } from 'react';
 import { render } from '@testing-library/react';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
-import type { Action } from '@weasel-js/routing';
+import type { Action, ActionsRegistry } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import { useStandardActions, KIT_STANDARD_ACTION_IDS } from './useStandardActions';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
@@ -38,14 +38,6 @@ function ProbeIds({ onIds }: { onIds: (ids: string[]) => void }) {
   const reg = useActionsRegistry();
   useEffect(() => {
     onIds(reg ? reg.list().map((a) => a.id) : []);
-  });
-  return null;
-}
-
-function ProbeAction({ id, onAction }: { id: string; onAction: (a: Action | undefined) => void }) {
-  const reg = useActionsRegistry();
-  useEffect(() => {
-    onAction(reg?.list().find((a) => a.id === id));
   });
   return null;
 }
@@ -214,17 +206,16 @@ describe('useStandardActions', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('each registered action has an invoker (withLegacyRunBridge deleted; trigger routes via invoker.run with deps from depRegistry)', () => {
-    let actions: readonly Action[] = [];
-    render(
-      <Providers>
-        <Host />
-        <ProbeAction id="escape" onAction={(a) => { if (a) actions = [a]; }} />
-      </Providers>,
-    );
-    const escape = actions[0];
-    expect(escape).toBeDefined();
-    expect(escape?.invoker).toBeDefined();
+  it('every registered action has an invoker', () => {
+    let list: readonly Action[] = [];
+    function ProbeAll() {
+      const reg = useActionsRegistry();
+      useEffect(() => { list = reg ? reg.list() : []; });
+      return null;
+    }
+    render(<Providers><Host /><ProbeAll /></Providers>);
+    expect(list.length).toBeGreaterThan(0);
+    expect(list.filter((a) => !a.invoker).map((a) => a.id)).toEqual([]);
   });
 
   it('dep source for selection is registered and returns the provided SelectionApi', () => {
@@ -315,55 +306,22 @@ describe('useStandardActions', () => {
     expect(seen.at(-1) ?? []).toEqual([]);
   });
 
-  it('stable identity: re-rendering with the same opts does not re-register', () => {
-    let listA: readonly Action[] = [];
-    let listB: readonly Action[] = [];
-    function CaptureA() {
-      const r = useActionsRegistry();
-      useEffect(() => { if (r) listA = r.list(); });
+  it('re-rendering with the same opts does not re-register', () => {
+    let reg = null as ActionsRegistry | null;
+    function Capture() {
+      reg = useActionsRegistry();
       return null;
     }
-    function CaptureB() {
-      const r = useActionsRegistry();
-      useEffect(() => { if (r) listB = r.list(); });
-      return null;
-    }
-    const { rerender } = render(
+    const tree = () => (
       <Providers>
         <Host />
-        <CaptureA />
-      </Providers>,
+        <Capture />
+      </Providers>
     );
-    rerender(
-      <Providers>
-        <Host />
-        <CaptureB />
-      </Providers>,
-    );
-    const idsA = listA.map((a) => a.id).sort();
-    const idsB = listB.map((a) => a.id).sort();
-    expect(idsA).toEqual(idsB);
-    expect(idsA).toHaveLength(KIT_IDS.length);
-  });
-});
-
-// Minimal sanity-check that Providers supplies both registries.
-describe('useStandardActions — Providers helper', () => {
-  it('Providers renders both ActionsProvider and DepRegistryProvider', () => {
-    let sawActions = false;
-    let sawDeps = false;
-    function Probe() {
-      const r = useActionsRegistry();
-      const d = useDepRegistry();
-      useEffect(() => {
-        sawActions = r !== null;
-        sawDeps = d !== null;
-      });
-      return null;
-    }
-    render(<Providers><Probe /></Providers>);
-    expect(sawActions).toBe(true);
-    expect(sawDeps).toBe(true);
+    const { rerender } = render(tree());
+    const register = vi.spyOn(reg!, 'register');
+    rerender(tree());
+    expect(register).not.toHaveBeenCalled();
   });
 });
 

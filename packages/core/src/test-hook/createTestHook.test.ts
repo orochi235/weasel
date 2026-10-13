@@ -35,11 +35,14 @@ describe('createTestHook', () => {
     expect(() => hook.getScene()).toThrow(/scene not mounted/i);
   });
 
-  it('getSelection returns a fresh array each call', () => {
-    let ids: string[] = ['a'];
+  it('getSelection returns a copy the caller can change without touching the source', () => {
+    const ids = ['a'];
     const hook = createTestHook(refs({ getSelectionIds: () => ids }));
-    expect(hook.getSelection()).toEqual(['a']);
-    ids = ['a', 'b'];
+    const first = hook.getSelection();
+    expect(first).toEqual(['a']);
+    first.push('mine');
+    expect(ids).toEqual(['a']);
+    ids.push('b');
     expect(hook.getSelection()).toEqual(['a', 'b']);
   });
 

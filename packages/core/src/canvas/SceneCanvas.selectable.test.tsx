@@ -176,9 +176,10 @@ describe('click policy is the selection’s mode', () => {
     expect(shiftClickB('internal-multi')).toEqual([A, B]);
   });
 
-  it('the canvas takes no click policy of its own', () => {
-    const scene = makeScene();
-    // @ts-expect-error — the selection owns click policy
-    render(<SceneCanvas<D, L, P> scene={scene} width={200} height={200} selectionMode="multi" />);
-  });
 });
+
+void function selectionModeIsNotAProp() {
+  const scene = makeScene();
+  // @ts-expect-error — the selection owns click policy
+  return <SceneCanvas<D, L, P> scene={scene} width={200} height={200} selectionMode="multi" />;
+};

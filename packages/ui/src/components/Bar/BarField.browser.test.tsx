@@ -58,8 +58,18 @@ test('a number box in a bar is narrower than a text box', () => {
 
 test('no bar cell carries a class its stylesheet does not define', () => {
   const { getByTestId } = render(<Strip />);
-  const named = [...getByTestId('strip').querySelectorAll('[class]')].map((el) => el.getAttribute('class')!);
+  const strip = getByTestId('strip');
+  const named = [...strip.querySelectorAll('[class]')].map((el) => el.getAttribute('class')!);
   expect(named.filter((cls) => /\bundefined\b/.test(cls))).toEqual([]);
+  const styled = [
+    ...strip.querySelectorAll('[data-cell] > :not([hidden])'),
+    ...strip.querySelectorAll('[data-bar-label]'),
+    ...strip.querySelectorAll('[data-cell="boolean switch"] > * > :last-child, [data-cell="boolean checkbox"] > * > :last-child'),
+  ];
+  expect(styled.length).toBeGreaterThan(10);
+  for (const el of styled) {
+    expect(el.getAttribute('class'), `${el.closest('[data-cell]')?.getAttribute('data-cell')} <${el.localName}>`).toBeTruthy();
+  }
 });
 
 test('every disabled bar cell dims by the same amount', () => {

@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { Canvas } from './testing/BareCanvas';
 import type { CanvasDebugSink } from '../debug/types';
+import { waitForFrame } from './testing/stubCanvasContext';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -32,20 +33,7 @@ beforeAll(() => {
 });
 
 describe('<Canvas> backgroundFill prop', () => {
-  it('mounts without error when backgroundFill is supplied', () => {
-    expect(() => {
-      render(
-        <Canvas
-          width={200}
-          height={200}
-          layers={{}}
-          backgroundFill={{ color: '#ff0000' }}
-        />,
-      );
-    }).not.toThrow();
-  });
-
-  it('includes a scene-background-fill layer before scene in the debug snapshot', () => {
+  it('includes a scene-background-fill layer before scene in the debug snapshot', async () => {
     const sinkRef: { current: CanvasDebugSink | null } =
       { current: null };
 
@@ -59,22 +47,15 @@ describe('<Canvas> backgroundFill prop', () => {
         debugSinkRef={sinkRef}
       />,
     );
+    await waitForFrame();
 
-    const snap = sinkRef.current?.snapshot();
-    // Under jsdom the snapshot is empty, so the ordering is asserted only if
-    // it IS populated.
-    if (snap && snap.layers.length > 0) {
-      const ids = snap.layers.map((l) => l.id);
-      const bgIdx = ids.indexOf('scene-background-fill');
-      const sceneIdx = ids.indexOf('scene');
-      expect(bgIdx).toBeGreaterThanOrEqual(0);
-      expect(bgIdx).toBeLessThan(sceneIdx);
-    }
-    // Always assert the canvas mounted.
-    expect(document.querySelector('canvas')).toBeTruthy();
+    const ids = sinkRef.current!.snapshot().layers.map((l) => l.id);
+    expect(ids).toContain('scene');
+    expect(ids).toContain('scene-background-fill');
+    expect(ids.indexOf('scene-background-fill')).toBeLessThan(ids.indexOf('scene'));
   });
 
-  it('omitting backgroundFill produces no scene-background-fill layer', () => {
+  it('omitting backgroundFill produces no scene-background-fill layer', async () => {
     const sinkRef: { current: CanvasDebugSink | null } =
       { current: null };
 
@@ -82,16 +63,15 @@ describe('<Canvas> backgroundFill prop', () => {
       <Canvas
         width={200}
         height={200}
-        layers={{}}
+        layers={{ scene: { layers: [{ key: 'scene', layer: { id: 'scene', label: 'Scene', draw: () => [] } }] } }}
         debug={{ layers: true }}
         debugSinkRef={sinkRef}
       />,
     );
+    await waitForFrame();
 
-    const snap = sinkRef.current?.snapshot();
-    if (snap) {
-      expect(snap.layers.find((l) => l.id === 'scene-background-fill')).toBeUndefined();
-    }
-    expect(document.querySelector('canvas')).toBeTruthy();
+    const ids = sinkRef.current!.snapshot().layers.map((l) => l.id);
+    expect(ids).toContain('scene');
+    expect(ids).not.toContain('scene-background-fill');
   });
 });

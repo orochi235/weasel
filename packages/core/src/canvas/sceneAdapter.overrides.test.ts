@@ -94,18 +94,3 @@ describe('overrides on the walk', () => {
     expect(clips.every((c) => c.x === 200)).toBe(true);
   });
 });
-
-describe('overrides and picking', () => {
-  it('picks the node where the override draws it, not where the document says', () => {
-    const { scene, adapter, id } = setup();
-    scene.overrides.set(id, { pose: { x: 100, y: 100, width: 10, height: 10 } });
-
-    // The same read the default `pickEvery` performs (useSelectTool.ts:199).
-    const pose = adapter.getPose(id) as typeof POSE;
-    const covers = (wx: number, wy: number) =>
-      wx >= pose.x && wx <= pose.x + pose.width && wy >= pose.y && wy <= pose.y + pose.height;
-
-    expect(covers(105, 105)).toBe(true);
-    expect(covers(5, 5)).toBe(false);
-  });
-});

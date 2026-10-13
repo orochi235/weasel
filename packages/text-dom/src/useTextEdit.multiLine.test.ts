@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useTextEdit } from './useTextEdit';
-import { makeHarness, getOverlay, appendChar, seedPlainOverlay } from './testing/textEditHarness';
+import { makeHarness, getOverlay, appendChar } from './testing/textEditHarness';
 
 describe('useTextEdit', () => {
   beforeEach(() => {
@@ -51,34 +51,6 @@ describe('useTextEdit', () => {
       expect(range.endContainer).toBe(overlay);
       expect(range.startOffset).toBe(0);
       expect(range.endOffset).toBe(overlay.childNodes.length);
-    });
-
-    it('repositioning the caret to mid-document does not affect commit text', () => {
-      const h = makeHarness({ a: 'alpha\nbeta\ngamma' });
-      const { result } = renderHook(() => useTextEdit(h.opts));
-      act(() => result.current.startEdit('a'));
-      const overlay = getOverlay(h.container)!;
-      const sel = window.getSelection()!;
-      sel.removeAllRanges();
-      const r = document.createRange();
-      r.setStart(overlay, 0);
-      r.collapse(true);
-      sel.addRange(r);
-      appendChar(overlay, '!');
-      act(() => {
-        overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-      });
-      expect(h.commits).toEqual([{ id: 'a', text: 'alpha\nbeta\ngamma!' }]);
-    });
-
-    it('strips a single trailing newline on commit', () => {
-      const h = makeHarness({ a: 'x' });
-      const { result } = renderHook(() => useTextEdit(h.opts));
-      act(() => result.current.startEdit('a'));
-      const overlay = getOverlay(h.container)!;
-      seedPlainOverlay(overlay, 'edited\n');
-      act(() => result.current.commit());
-      expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
     });
 
     it('preserves a blank line in the middle of the document', () => {

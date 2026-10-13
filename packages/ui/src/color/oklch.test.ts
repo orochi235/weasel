@@ -21,11 +21,6 @@ describe('oklchToHex', () => {
     expect(r).toBeLessThan(140);
   });
 
-  it('returns a 7-char #rrggbb string', () => {
-    const hex = oklchToHex(0.7, 0.15, 30);
-    expect(hex).toMatch(/^#[0-9a-f]{6}$/);
-  });
-
   it('clamps out-of-gamut values to byte range', () => {
     const hex = oklchToHex(0.7, 0.5, 30);
     expect(hex).toMatch(/^#[0-9a-f]{6}$/);

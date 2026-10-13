@@ -43,7 +43,6 @@ describe('registerDefaultFont', () => {
     await landed;
     const fetchCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
     await registerDefaultFont();
-    // registerFont in core dedupes by family — second call should be a no-op
     expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(fetchCalls);
   });
 });

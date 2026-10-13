@@ -63,7 +63,9 @@ describe('journal exclusivity', () => {
   it('still refuses every mutating call on a committed journal', () => {
     const h = createHistory({ values: [] as number[] });
     const j = h.beginJournal({ label: 'a' });
+    j.applyBatch([pushOp(0)], 'zero');
     j.commit('a');
+    expect(j.isActive()).toBe(false);
     expect(() => h.resumeJournal(j)).toThrow(/not resumable/);
     expect(() => j.applyBatch([pushOp(1)], 'x')).toThrow(/not active/);
   });

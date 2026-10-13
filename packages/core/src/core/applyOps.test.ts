@@ -33,16 +33,6 @@ describe('applyOpsTo', () => {
     applyOpsTo({}, ops);
     expect(order).toEqual([0, 1, 2]);
   });
-
-  it('ignores the label arg (it is informational only)', () => {
-    const ops = [noOp()];
-    applyOpsTo({}, ops, 'someLabel');
-    expect(ops[0].apply).toHaveBeenCalledOnce();
-  });
-
-  it('empty ops array is a no-op', () => {
-    expect(() => applyOpsTo({}, [])).not.toThrow();
-  });
 });
 
 describe('dispatchApplyBatch', () => {

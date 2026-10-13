@@ -1,9 +1,11 @@
 import { render } from '@testing-library/react';
+import type { RecordCache } from '@weasel-js/storage';
 import { ThemeProvider, useThemeOptional } from '@weasel-js/theme/react';
 import { useContext } from 'react';
 import { describe, expect, it } from 'vitest';
-import { LabStoreContext, TrialIdContext } from '../state/context';
+import { LabStoreContext, LabStoreProvider, TrialIdContext } from '../state/context';
 import { PersistenceContext } from '../state/Persistence';
+import { createLabStore } from '../state/store';
 import { interstellarTheme } from '../theme/interstellar';
 import { LabBoundary } from './LabBoundary';
 import { LabContext, type LabContextValue } from './LabContext';
@@ -34,20 +36,24 @@ describe('LabBoundary', () => {
   it('hides the enclosing lab, trial, records and theme from its children', () => {
     const { container } = render(
       <ThemeProvider theme={interstellarTheme} selection={{ mode: 'dark' }}>
-        <LabContext.Provider value={fakeLab}>
-          <TrialIdContext.Provider value="t1">
-            <Probe />
-            <LabBoundary>
-              <Probe />
-            </LabBoundary>
-          </TrialIdContext.Provider>
-        </LabContext.Provider>
+        <LabStoreProvider store={createLabStore({})}>
+          <PersistenceContext.Provider value={{} as RecordCache}>
+            <LabContext.Provider value={fakeLab}>
+              <TrialIdContext.Provider value="t1">
+                <Probe />
+                <LabBoundary>
+                  <Probe />
+                </LabBoundary>
+              </TrialIdContext.Provider>
+            </LabContext.Provider>
+          </PersistenceContext.Provider>
+        </LabStoreProvider>
       </ThemeProvider>,
     );
     const [outside, inside] = Array.from(container.querySelectorAll('output')).map((el) =>
       JSON.parse(el.textContent ?? ''),
     );
-    expect(outside).toEqual({ lab: true, store: false, trial: 't1', records: false, theme: true });
+    expect(outside).toEqual({ lab: true, store: true, trial: 't1', records: true, theme: true });
     expect(inside).toEqual({ lab: false, store: false, trial: null, records: false, theme: false });
   });
 

@@ -213,13 +213,6 @@ describe('outline registry', () => {
       expect(glyphOutline('Two', 400, 'normal', 65))
         .toBe('M0 0L1 0L1-1ZM0.2-0.2L0.8-0.2L0.8-0.8Z');
     });
-
-    it('leaves an already-closed contour alone', async () => {
-      registerFontOutlines('Closed', {}, new ArrayBuffer(4), { parser: stubParser });
-      glyphOutline('Closed', 400, 'normal', 65);
-      await settle();
-      expect(glyphOutline('Closed', 400, 'normal', 65)).toBe('M0 0L0.5 -0.7L1 0Z');
-    });
   });
 
   it('enumerates registered faces in a stable order', () => {

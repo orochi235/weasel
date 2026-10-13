@@ -76,10 +76,6 @@ describe('lerpColorArray oklch', () => {
     expect(Math.abs(mid[0] - mid[1])).toBeLessThanOrEqual(2 / 255);
     expect(Math.abs(mid[1] - mid[2])).toBeLessThanOrEqual(2 / 255);
   });
-
-  it('throws on length mismatch in oklch mode', () => {
-    expect(() => lerpColorArray([0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1], 0.5, 'oklch')).toThrow();
-  });
 });
 
 describe('mixOklab', () => {

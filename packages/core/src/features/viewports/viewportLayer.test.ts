@@ -10,6 +10,7 @@ import { mat3, type GlMat3 } from '@weasel-js/geom';
 
 const OUTER: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 600, height: 400 };
+const CANVAS = { left: 100, top: 50 };
 
 /** Source that draws nothing — routing is pure geometry. */
 const EMPTY_SOURCE: RenderLayer<unknown> = {
@@ -29,7 +30,7 @@ function pip() {
 
 /** Where a screen point lands when `layers` are routed the way `<CanvasView>`
  *  routes them: `resolvable` fed to a view resolver, then `clientToWorld`.
- *  The canvas sits at the client origin, so client and screen coincide. */
+ *  The canvas sits off the client origin, so client and screen differ. */
 function route(
   layers: readonly ViewportLayer<unknown>[],
   screen: { x: number; y: number },
@@ -38,10 +39,12 @@ function route(
   const r = createViewResolver({
     views: () => layers.map((l) => l.resolvable(OUTER, dims)),
     root: () => OUTER,
-    canvasOrigin: () => ({ left: 0, top: 0 }),
+    canvasOrigin: () => CANVAS,
   });
-  const t = r.at(null, screen.x, screen.y);
-  const [x, y] = clientToWorld(screen.x, screen.y, t.origin, t.view);
+  const clientX = CANVAS.left + screen.x;
+  const clientY = CANVAS.top + screen.y;
+  const t = r.at(null, clientX, clientY);
+  const [x, y] = clientToWorld(clientX, clientY, t.origin, t.view);
   return { id: t.id, point: { x, y } };
 }
 

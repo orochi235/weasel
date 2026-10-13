@@ -416,14 +416,6 @@ describe('shapeCoversPoint', () => {
     expect(shapeCoversPoint(line, pose, 75, 25)).toBe(false);
     expect(shapeCoversPoint(line, pose, 50, 0)).toBe(true);
   });
-
-  it('answers true when the painter has no silhouette', () => {
-    // No opinion — the caller's own AABB test stands. Anything else would
-    // silently make whole classes of node unpickable.
-    const pose = { x: 0, y: 0, width: 10, height: 10 };
-    const n = { ...node({ shade: '#abc' }), pose }; // kit:rect-fallback
-    expect(shapeCoversPoint(n, pose, 5, 5)).toBe(true);
-  });
 });
 
 describe('data.stroke is a whole Stroke', () => {

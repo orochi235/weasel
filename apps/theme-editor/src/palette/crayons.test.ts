@@ -34,9 +34,9 @@ describe('crayons', () => {
     }
   });
 
-  it('writes a proof sheet when asked', () => {
-    const out = process.env.WZL_CRAYON_SHEET;
-    if (!out) return;
+  // A generator, not a check: skipped unless WZL_CRAYON_SHEET names a file to write.
+  it.skipIf(!process.env.WZL_CRAYON_SHEET)('writes a proof sheet to WZL_CRAYON_SHEET', () => {
+    const out = process.env.WZL_CRAYON_SHEET as string;
     const cells = Object.entries(CRAYONS)
       .map(([n, [h, l, f]]) => {
         const hex = crayonHex(n);

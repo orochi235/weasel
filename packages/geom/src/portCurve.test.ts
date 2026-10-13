@@ -27,6 +27,7 @@ describe('the port-curve rule', () => {
   it('samples without repeating the start point', () => {
     const pts = points2(0, 0, 10, 0, null, null, 4);
     expect(pts).toHaveLength(4);
+    expect(pts[0]).not.toEqual([0, 0]);
     expect(pts[3]).toEqual([10, 0]);
   });
 

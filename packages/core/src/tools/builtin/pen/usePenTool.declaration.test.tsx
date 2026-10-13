@@ -36,12 +36,6 @@ describe('usePenTool', () => {
     expect(cursor()).toMatch(/, crosshair$/);
   });
 
-  it('declares its whole input surface as bindings', () => {
-    const { tool } = setup();
-    expect((tool.def as any)?.initial).toBeUndefined();
-    expect(tool.bindings).toHaveLength(6);
-  });
-
   it('keeps one state object, and one overlay painting from it, across renders', () => {
     const before = previewLayers.mock.calls.length;
     const { result, rerender } = renderHook(() => usePenTool());

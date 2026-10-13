@@ -265,7 +265,11 @@ describe('useClipboardOps', () => {
     act(() => { result.current.paste(); });
     act(() => { result.current.paste(); });
     expect(helpers.pasteCtxLog).toHaveLength(2);
-    expect(helpers.inserts.length).toBeGreaterThanOrEqual(2);
+    const made = helpers.inserts.filter((o) => o.id.startsWith('n'));
+    expect(made.map((o) => ({ x: o.x, y: o.y }))).toEqual([
+      { x: 1, y: 1 },
+      { x: 2, y: 2 },
+    ]);
   });
 
   it('falls back to the surrounding PointerContext when no explicit getDropPoint is supplied', () => {

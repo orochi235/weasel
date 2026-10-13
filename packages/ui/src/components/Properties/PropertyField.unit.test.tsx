@@ -5,11 +5,6 @@ import { readModuleCss } from '../../testing/readModuleCss';
 import { PropertyField } from './PropertyField';
 
 describe('number field unit', () => {
-  it('renders no suffix by default', () => {
-    const { container } = render(<PropertyField kind="number" label="Width" value={20} onChange={() => {}} />);
-    expect(container.textContent).not.toContain('px');
-  });
-
   it('renders a string unit after the field', () => {
     const { container } = render(
       <PropertyField kind="number" label="Width" value={20} unit="px" onChange={() => {}} />,

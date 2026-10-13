@@ -64,10 +64,6 @@ describe('distributeHorizontalAction descriptor', () => {
     expect(distributeHorizontalAction.defaultBinding).toBeUndefined();
   });
 
-  it('has no defaultBinding', () => {
-    expect(distributeHorizontalAction.defaultBinding).toBeUndefined();
-  });
-
   it('has an icon', () => {
     expect(distributeHorizontalAction.icon).toBeDefined();
   });

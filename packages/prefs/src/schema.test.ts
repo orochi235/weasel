@@ -50,8 +50,8 @@ describe('BuiltinPref schema additions', () => {
       members: { 'pose.x': x, 'pose.rotation': rotation, 'data.fill': fill, 'data.special': custom },
     };
     const leaves: PrefLeaf[] = [fill, x, rotation, custom];
-    expect(Object.keys(section.members)).toHaveLength(4);
-    expect(leaves).toHaveLength(4);
+    expectTypeOf(section).toEqualTypeOf<PrefSection>();
+    expectTypeOf(leaves).toEqualTypeOf<PrefLeaf[]>();
   });
 });
 
@@ -62,7 +62,7 @@ describe('a clearable enum', () => {
     // @ts-expect-error a clearable enum's default is undefined
     const pair: PrefEnum = { kind: 'enum', name: 'E', description: '', default: 'a', clearable: true, options };
     const plain: PrefEnum = { kind: 'enum', name: 'E', description: '', default: 'a', options };
-    expect([cleared.default, pair.clearable, plain.default]).toEqual([undefined, true, 'a']);
+    expectTypeOf([cleared, pair, plain]).toEqualTypeOf<PrefEnum[]>();
   });
 });
 

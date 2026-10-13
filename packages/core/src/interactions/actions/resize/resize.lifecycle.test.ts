@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { resizeAction } from './action';
 import { createScene } from 'core/scene/scene';
+import { createTransformOp } from 'core/ops/transform';
 import type { NodeId } from 'core/scene/types';
 import type { ResizePolicy } from '../depSchema';
 
@@ -98,8 +99,10 @@ describe('resizeAction — lifecycle via the resizePolicy dep', () => {
   });
 
   it('a behavior onEnd returning ops commits those in place of the resize', () => {
-    const s = setup({ constraints: [{ onEnd: () => [] }] as never });
+    const marker: Pose = { x: 7, y: 7, width: 11, height: 11 };
+    const onEnd = () => [createTransformOp<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
+    const s = setup({ constraints: [{ onEnd }] as never });
     resize(s);
-    expect(s.scene.get(s.a)!.pose.width).toBe(100);
+    expect(s.scene.get(s.a)!.pose).toEqual(marker);
   });
 });

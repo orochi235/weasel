@@ -52,11 +52,6 @@ function press(target: HTMLDivElement, clientX: number, clientY: number): React.
 }
 
 describe('useHandleDrag', () => {
-  it('returns an onPointerDown handler', () => {
-    const { result } = renderHook(() => useHandleDrag({ onMove: () => {} }));
-    expect(typeof result.current.onPointerDown).toBe('function');
-  });
-
   it('reports local coords (clientX/Y minus rect origin) on move', () => {
     const onMove = vi.fn();
     const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
@@ -83,11 +78,12 @@ describe('useHandleDrag', () => {
     document.body.removeChild(target);
   });
 
-  it('calls onStart on pointerdown and onEnd on pointerup', () => {
+  it('calls onStart on pointerdown and onEnd on pointerup, and stops reporting moves after it', () => {
     const onStart = vi.fn();
     const onEnd = vi.fn();
+    const onMove = vi.fn();
     const { result } = renderHook(() =>
-      useHandleDrag<HTMLDivElement>({ onMove: () => {}, onStart, onEnd }),
+      useHandleDrag<HTMLDivElement>({ onMove, onStart, onEnd }),
     );
 
     const target = document.createElement('div');
@@ -110,10 +106,8 @@ describe('useHandleDrag', () => {
     target.dispatchEvent(makePointerEvent('pointerup'));
     expect(onEnd).toHaveBeenCalledTimes(1);
 
-    // Listeners should be cleaned up: subsequent move triggers nothing.
-    const onMoveAfter = vi.fn();
     target.dispatchEvent(makePointerEvent('pointermove', { clientX: 99, clientY: 99 }));
-    expect(onMoveAfter).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
 
     document.body.removeChild(target);
   });
@@ -228,7 +222,7 @@ describe('useHandleDrag', () => {
     document.body.removeChild(target);
   });
 
-  it('keeps driving after the handle leaves the DOM under it', () => {
+  it('cancels with lostcapture when the handle leaves the DOM mid-drag', () => {
     // The old lifecycle hung its listeners on the handle, so removing the
     // handle mid-drag stranded the gesture with no end and no cancel.
     const onCancel = vi.fn();

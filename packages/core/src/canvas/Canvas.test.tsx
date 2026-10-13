@@ -2,10 +2,6 @@ import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent, createEvent } from '@testing-library/react';
 import { createRef } from 'react';
 import { Canvas } from './testing/BareCanvas';
-import { useSelection } from 'core/selection/useSelection';
-import { useSelectTool } from 'tools/builtin/select';
-import { useTools } from '../tools/overlayBinding';
-import { WeaselProvider } from '../WeaselProvider';
 import type { RenderLayer } from 'core/layers/render';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { stubCanvasContext } from './testing/stubCanvasContext';
@@ -28,16 +24,6 @@ describe('<Canvas>', () => {
     render(<Canvas ref={ref} width={50} height={50} layers={{}} />);
     expect(typeof ref.current?.requestRedraw).toBe('function');
     expect(typeof ref.current?.registerLayer).toBe('function');
-  });
-
-  it('mounts without throwing when a custom layer is supplied', () => {
-    // Under jsdom, getContext('webgl2') returns a non-null stub and the GL
-    // branch early-returns before draw is invoked. Pixel-level dispatch is
-    // verified end-to-end by the Playwright smoke (canvas-gl.spec.ts).
-    const draw = vi.fn(() => []);
-    const layer: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
-    const { container } = render(<Canvas width={50} height={50} layers={{ extra: { layer } }} />);
-    expect(container.querySelector('canvas')).toBeTruthy();
   });
 
   // `<Canvas>` no longer carries select's routing: the tool declares bindings,
@@ -67,31 +53,6 @@ describe('<Canvas>', () => {
     expect(onFocus).toHaveBeenCalledTimes(1);
     fireEvent.blur(canvas);
     expect(onBlur).toHaveBeenCalledTimes(1);
-  });
-
-  it('integrates with useSelection through useSelectTool (smoke)', () => {
-    interface Rect { id: string; x: number; y: number; width: number; height: number }
-    interface Pose { x: number; y: number; width: number; height: number }
-    function TestHarness() {
-      const sel = useSelection({ mode: 'multi' });
-      const adapter = {
-        getNodes: () => [] as Rect[],
-        getNode: () => undefined,
-        getPose: () => ({ x: 0, y: 0, width: 0, height: 0 }) as Pose,
-        setPose: () => {},
-        ...sel.adapterMethods,
-      };
-      const select = useSelectTool<Rect, Pose>(adapter, {
-        pickEvery: () => ['a'],
-      });
-      const tools = useTools({ active: 'select', registry: { select } });
-      return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} />;
-    }
-    const { container } = render(<WeaselProvider><TestHarness /></WeaselProvider>);
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-    fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5 });
-    expect(canvas).toBeInstanceOf(HTMLCanvasElement);
   });
 
   it('layer.onUncapturedMove fires on pointermove when no gesture is captured', () => {

@@ -17,7 +17,7 @@ const BASELINE_DIR = resolve(import.meta.dirname, 'baselines');
 
 // No per-demo tolerance override; default (2%) applies.
 
-test(`${DEMO_ID} — visual baseline`, async ({ page }) => {
+test(`${DEMO_ID} — mounts an empty canvas`, async ({ page }) => {
   const png = await captureCanvas(page, `/#${DEMO_ID}`);
   assertMatchesBaseline(png, resolve(BASELINE_DIR, `${DEMO_ID}.png`));
 });

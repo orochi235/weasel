@@ -116,10 +116,13 @@ describe('createTimeline', () => {
 
   it('fires onDone once across repeated ticks past duration', () => {
     const onDone = vi.fn();
-    const { advance } = makeTimeline({ tracks: [numberTrack(() => {})], onDone });
-    advance(100);
-    advance(140);
+    const playback = vi.fn();
+    const { handle, tickParked } = makeTimeline({ tracks: [numberTrack(() => {})], onDone });
+    handle.subscribePlayback(playback);
+    tickParked(100);
+    tickParked(140);
     expect(onDone).toHaveBeenCalledTimes(1);
+    expect(playback).toHaveBeenCalledTimes(1);
   });
 
   it('samples before firing, so a handler reads the current frame', () => {

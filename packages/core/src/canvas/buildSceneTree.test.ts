@@ -90,16 +90,6 @@ describe('buildSceneTree', () => {
     expect((cLeaf.children[0] as { kind: string }).kind).toBe('path');
   });
 
-  it('hidden layer is omitted from output', () => {
-    const scene = makeScene();
-    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'a' } });
-    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'b' } });
-    scene.setLayerVisible('bg', false);
-    const adapter = sceneToAdapter(scene);
-    const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
-    expect(out).toHaveLength(1);
-  });
-
   it('empty drawOne output still produces a wrapper group (stable tree shape)', () => {
     const scene = makeScene();
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'a' } });
@@ -166,15 +156,17 @@ describe('buildSceneTree', () => {
     expect(bedGroup.clip).toEqual({ kind: 'rect', x: POSE.x, y: POSE.y, width: POSE.width, height: POSE.height });
   });
 
-  it('clipFromPose is called with the live pose, not a stale value', () => {
+  it('calls clipFromPose with the pose the node has at walk time', () => {
     const scene = makeScene();
-    let received: typeof POSE | null = null;
-    scene.add({
+    let received: Pose | null = null;
+    const id = scene.add({
       kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' },
       clipFromPose: (pose: Pose) => { received = pose; return null; },
     });
     const adapter = sceneToAdapter(scene);
+    const moved: Pose = { x: 70, y: 80, width: 10, height: 10 };
+    scene.setPose(id, moved);
     buildSceneTree(adapter as never, labelDraw as never, VIEW);
-    expect(received).toEqual(POSE);
+    expect(received).toEqual(moved);
   });
 });

@@ -165,17 +165,6 @@ describe('cloneAction descriptor', () => {
     expect(handle).toEqual({});
   });
 
-  it('start returns a handle with onMove and onEnd when selection+scene present', () => {
-    const invoker = getOngoingInvoker(cloneAction);
-    const ctx = makeCtx({
-      selectionIds: ['a'],
-      sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
-    });
-    const handle = invoker.start(ctx, undefined);
-    expect(typeof handle.onMove).toBe('function');
-    expect(typeof handle.onEnd).toBe('function');
-  });
-
   it('onMove does not write to scene', () => {
     const invoker = getOngoingInvoker(cloneAction);
     const { scene, ...ctx } = makeCtx({
@@ -416,24 +405,6 @@ describe('cloneAction descriptor', () => {
       'cancel',
     );
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
-    expect(scene.addLog).toHaveLength(0);
-  });
-
-  it('onEnd("cancel") does not add any nodes', () => {
-    const invoker = getOngoingInvoker(cloneAction);
-    const { scene, ...ctx } = makeCtx({
-      selectionIds: ['a'],
-      sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
-    });
-    const handle = invoker.start(ctx as InvocationCtx, undefined);
-    handle.onMove!({
-      ...(ctx as InvocationCtx),
-      drag: { start: { x: 0, y: 0 }, current: { x: 99, y: 99 }, delta: { x: 99, y: 99 } },
-    });
-    handle.onEnd!(
-      { ...(ctx as InvocationCtx), drag: { start: { x: 0, y: 0 }, current: { x: 99, y: 99 }, delta: { x: 99, y: 99 } } },
-      'cancel',
-    );
     expect(scene.addLog).toHaveLength(0);
   });
 });

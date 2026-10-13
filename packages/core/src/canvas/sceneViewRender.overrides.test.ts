@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { buildSceneViewCommands } from './sceneViewRender';
+import { defaultDrawOne } from './defaultDrawOne';
 import type { DrawCommand } from '@weasel-js/renderer';
 
 type Layer = 'main';
@@ -58,16 +59,32 @@ describe('buildSceneViewCommands — overrides', () => {
     expect(alphas).toContain(0.2);
   });
 
-  it('recomputes a painter after an in-place mutation is committed', () => {
-    const { scene, id } = setup();
+  it('recomputes a memoized painter after an in-place mutation is committed', () => {
+    const scene = createScene<{ text: string; style: { fontFamily: string; fontSize: number } }, Layer>({
+      systemLayers: [{ id: 'main' }],
+    });
+    const id = scene.add({
+      kind: 'leaf', layer: 'main', pose: POSE,
+      data: { text: 'Hello', style: { fontFamily: 'sans-serif', fontSize: 20 } },
+    });
+    const textX = (): number | undefined => {
+      let x: number | undefined;
+      const find = (cmd: DrawCommand): void => {
+        const c = cmd as { kind: string; x?: number; children?: DrawCommand[] };
+        if (c.kind === 'text') x = c.x;
+        for (const child of c.children ?? []) find(child);
+      };
+      for (const cmd of buildSceneViewCommands(scene, VIEW, defaultDrawOne)) find(cmd);
+      return x;
+    };
     const buffer = { x: 0, y: 0, width: 10, height: 10 };
     scene.overrides.set(id, { pose: buffer });
 
-    expect(posesSeen(scene)[0]).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+    expect(textX()).toBe(0);
 
-    buffer.x = 120;                 // same object, mutated in place
+    buffer.x = 120;
     scene.overrides.commit();
 
-    expect(posesSeen(scene)[0]).toEqual({ x: 120, y: 0, width: 10, height: 10 });
+    expect(textX()).toBe(120);
   });
 });

@@ -49,14 +49,6 @@ describe('marker parsing', () => {
     expect(warnings.join(' ')).toContain('nowhere');
     expect(markers).toBeUndefined();
   });
-
-  it('does not warn about a <marker> def on its own', () => {
-    const { warnings } = parseSvg(wrap(
-      '<defs><marker id="arrow"><path d="M0 0 L5 5"/></marker></defs>' +
-      '<line x1="0" y1="0" x2="50" y2="0" stroke="#000" marker-end="url(#arrow)"/>',
-    ));
-    expect(warnings.filter((w) => w.includes('unsupported'))).toEqual([]);
-  });
 });
 
 /** A marker's geometry at `size`, as plain rounded numbers. */

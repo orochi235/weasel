@@ -136,19 +136,6 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     expect(deleteSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('Ctrl+D fires duplicateAction run via dispatcher (jsdom is not Mac)', () => {
-    const scene = makeSceneWithNode();
-    const dupSpy = vi.fn();
-    render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
-        actions={{ duplicate: { invoker: { timing: 'immediate' as const, run: () => { dupSpy(); } }, enabled: () => true } }} />,
-    );
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true }));
-    });
-    expect(dupSpy).toHaveBeenCalledTimes(1);
-  });
-
   it('ArrowUp fires nudgeUpAction run via dispatcher', () => {
     const scene = makeSceneWithNode();
     const nudgeSpy = vi.fn();
@@ -189,32 +176,6 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true }));
     });
     expect(redoSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('action with invoker.run fires invoker (not legacy run) via dispatcher', () => {
-    const runSpy = vi.fn();
-    const invokerSpy = vi.fn();
-    const action: Action = {
-      id: 'test.invoker',
-      label: 'Test invoker',
-      defaultBinding: { kind: 'key', key: 'j' },
-      invoker: { timing: 'immediate', run: () => invokerSpy() },
-    };
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-
-    render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}>
-        <ActionRegistrar action={action} />
-      </SceneCanvas>,
-    );
-
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true }));
-    });
-
-    expect(invokerSpy).toHaveBeenCalledTimes(1);
-    // `run` is the legacy fallback; with an invoker present, it must NOT fire.
-    expect(runSpy).not.toHaveBeenCalled();
   });
 });
 

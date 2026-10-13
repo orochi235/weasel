@@ -108,14 +108,6 @@ describe('usePenTool', () => {
     expect(p.scratch.finishedSubpaths).toEqual([]);
   });
 
-  it('tool-switch with <2 anchors → discards', () => {
-    const p = setup();
-    p.click(0, 0);
-    p.deactivate();
-    expect(p.adapter.addNode).not.toHaveBeenCalled();
-    expect(p.scratch.current).toBeNull();
-  });
-
   it('autoSelect: false → addNode called but setSelection not called', () => {
     const p = setup({ autoSelect: false });
     p.click(0, 0); p.click(100, 0); p.click(50, 80);

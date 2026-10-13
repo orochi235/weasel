@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildRouteRegistry, routesForSpec, routeGestureForSpecKind, PREDICATE_TARGET, type RegistryEntry } from './registry';
+import { buildRouteRegistry, routesForSpec, PREDICATE_TARGET, type RegistryEntry } from './registry';
 import type { Tool } from '../../types';
 import { parseRoute, routeToSpec, specificity, type GestureSpec } from '@weasel-js/gestures';
 import { hitPredicate } from '@weasel-js/gestures';
@@ -126,18 +126,7 @@ describe('buildRouteRegistry', () => {
 
   describe('phase resolution', () => {
     const phaseOfBinding = (phase: unknown) =>
-      buildRouteRegistry([tool('t', [
-        { spec: phase === undefined ? { kind: 'click' } : { kind: 'click', phase }, actionId: 'a' },
-      ])])[0].phase;
-
-    it('reports an unrestricted binding as any', () => {
-      expect(phaseOfBinding(undefined)).toBe('any');
-    });
-
-    it('reports the string forms verbatim', () => {
-      expect(phaseOfBinding('initial')).toBe('initial');
-      expect(phaseOfBinding('engaged')).toBe('engaged');
-    });
+      buildRouteRegistry([tool('t', [{ spec: { kind: 'click', phase }, actionId: 'a' }])])[0].phase;
 
     it('reports the wildcard as any', () => {
       expect(phaseOfBinding('*')).toBe('any');
@@ -183,22 +172,18 @@ const SPEC_BY_KIND: Record<GestureSpec['kind'], GestureSpec> = {
   drag: { kind: 'drag' },
   pointerDown: { kind: 'pointerDown' },
   hover: { kind: 'hover' },
-  multiTouch: { kind: 'multiTouch' },
+  multiTouch: { kind: 'multiTouch', fingers: 2 },
   multiTouchTap: { kind: 'multiTouchTap', fingers: 2 },
   drop: { kind: 'drop' },
   paste: { kind: 'paste' },
-} as unknown as Record<GestureSpec['kind'], GestureSpec>;
+};
 
 describe('routesForSpec', () => {
   it('emits a route for every spec kind the grammar names', () => {
-    for (const [kind, spec] of Object.entries(SPEC_BY_KIND)) {
-      const named = routeGestureForSpecKind(kind as GestureSpec['kind']) !== undefined;
-      const routes = routesForSpec(spec);
-      expect(
-        { kind, routed: routes.length > 0 },
-        `spec kind ${kind}`,
-      ).toEqual({ kind, routed: named });
-    }
+    const unrouted = Object.entries(SPEC_BY_KIND)
+      .filter(([, spec]) => routesForSpec(spec).length === 0)
+      .map(([kind]) => kind);
+    expect(unrouted).toEqual([]);
   });
 
   it('routes the content-ingestion gestures', () => {

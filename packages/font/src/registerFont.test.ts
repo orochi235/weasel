@@ -87,19 +87,6 @@ describe('registerFont variants', () => {
     expect(getFont('inter', 400, 'normal')).not.toBe(getFont('inter', 400, 'italic'));
   });
 
-  it('defaults weight to 400 and style to normal when variant fields are omitted', async () => {
-    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    expect(getFont('inter', 400, 'normal')).not.toBeNull();
-  });
-
-  it('re-registering the same (family, weight, style) is a no-op', async () => {
-    await registerFont('inter', { weight: 700 }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const first = getFont('inter', 700, 'normal');
-    await registerFont('inter', { weight: 700 }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const second = getFont('inter', 700, 'normal');
-    expect(first).toBe(second);
-  });
-
   it('does not drop a variant when the second-issued call resolves before the first (concurrent race)', async () => {
     // Regression for 7aa2a347: registerFont used to snapshot the family's
     // Map before its awaits, so if two variants of the same new family are

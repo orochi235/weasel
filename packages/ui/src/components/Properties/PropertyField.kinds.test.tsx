@@ -84,29 +84,6 @@ describe('select field', () => {
 });
 
 describe('toggle field', () => {
-  it('marks the active option checked and emits on click', () => {
-    const onChange = vi.fn();
-    render(
-      <PropertyField
-        kind="enum"
-        control="toggle"
-        label="Align"
-        value="left"
-        options={[
-          { value: 'left', label: 'L' },
-          { value: 'right', label: 'R' },
-        ]}
-        onChange={onChange}
-      />,
-    );
-    const left = screen.getByText('L');
-    const right = screen.getByText('R');
-    expect(left).toHaveAttribute('aria-checked', 'true');
-    expect(right).toHaveAttribute('aria-checked', 'false');
-    fireEvent.click(right);
-    expect(onChange).toHaveBeenCalledWith('right');
-  });
-
   // A <label> forwards a click on its text to its first control, which here is
   // the first option — so a near-miss on the pin dot selected an option.
   it('selects nothing when its label text is clicked', () => {

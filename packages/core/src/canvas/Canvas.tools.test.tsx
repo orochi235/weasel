@@ -7,7 +7,8 @@ import { WeaselProvider } from '../WeaselProvider';
 import type { RenderLayer } from 'core/layers/render';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { defineTool } from '../tools/overlayBinding';
-import { stubCanvasContext } from './testing/stubCanvasContext';
+import type { CanvasDebugSink } from '../debug/types';
+import { stubCanvasContext, waitForFrame } from './testing/stubCanvasContext';
 
 beforeAll(stubCanvasContext);
 
@@ -91,35 +92,19 @@ describe('Canvas tools mode', () => {
   });
 
   describe('tools integration', () => {
-    it('appends tools.getActiveOverlays() to the layer pipeline (rendered last)', () => {
-      const order: string[] = [];
-      const toolOverlay: RenderLayer<unknown> = {
-        id: 'tool-ov',
-        label: 'tool overlay',
-        space: 'screen',
-        draw: () => { order.push('tool-ov'); return []; },
-      };
-      const customLayer: RenderLayer<unknown> = {
-        id: 'custom-tail',
-        label: 'custom tail',
-        space: 'screen',
-        draw: () => { order.push('custom-tail'); return []; },
-      };
-      // A custom layer with `after: 'selectionOverlay'` exercises the slot
-      // ordering: it should still render before the tool overlay (which is
-      // appended at the very end of the pipeline).
-      const afterSel: RenderLayer<unknown> = {
-        id: 'after-sel',
-        label: 'after sel',
-        space: 'screen',
-        draw: () => { order.push('after-sel'); return []; },
-      };
+    it('stacks the active tool overlay above every slotted layer', async () => {
+      const screenLayer = (id: string): RenderLayer<unknown> => ({
+        id, label: id, space: 'screen', draw: () => [],
+      });
+      const toolOverlay = screenLayer('tool-ov');
+      const customLayer = screenLayer('custom-tail');
+      const afterSel = screenLayer('after-sel');
+      const sinkRef: { current: CanvasDebugSink | null } = { current: null };
 
       function Test() {
-        const tool = defineTool({ id: 't', overlay: toolOverlay });
         const tools = useTools({
           active: 't',
-          registry: { t: tool },
+          registry: { t: defineTool({ id: 't', overlay: toolOverlay }) },
         });
         return (
           <Canvas
@@ -130,20 +115,19 @@ describe('Canvas tools mode', () => {
               afterSel: { layer: afterSel, after: 'selectionOverlay' },
             }}
             tools={tools}
+            debug={{ layers: true }}
+            debugSinkRef={sinkRef}
           />
         );
       }
 
-      // Under jsdom getContext('webgl2') returns a non-null stub and the GL
-      // branch early-returns before draw is invoked, so the `order` array
-      // stays empty here. The authoritative layer-ordering check is the
-      // Playwright smoke (canvas-gl.spec.ts). This test now just ensures the
-      // composition mounts without throwing.
-      const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
-      expect(container.querySelector('canvas')).toBeTruthy();
-      // Reference the layer objects so the `order` capture stays wired —
-      // a future test runner that does fire draw under jsdom would pick this up.
-      void order;
+      render(<WeaselProvider><Test /></WeaselProvider>);
+      await waitForFrame();
+      // The recorded stack is a proxy for paint order: jsdom has no WebGL, so no layer draws.
+      const ids = sinkRef.current!.snapshot().layers.map((l) => l.id);
+      expect(ids).toEqual(expect.arrayContaining(['custom-tail', 'after-sel', 'tool-ov']));
+      expect(ids.indexOf('tool-ov')).toBeGreaterThan(ids.indexOf('custom-tail'));
+      expect(ids.indexOf('tool-ov')).toBeGreaterThan(ids.indexOf('after-sel'));
     });
 
     it('tools.has() returns true for ids in registry and ambient', () => {

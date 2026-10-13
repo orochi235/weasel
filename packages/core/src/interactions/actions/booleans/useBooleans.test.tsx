@@ -45,16 +45,6 @@ describe('useBooleans', () => {
     expect(h.state.inserted).toHaveLength(2);
   });
 
-  it('returns five callables — one per op', () => {
-    const { adapter } = makeAdapter();
-    const { result } = renderHook(() => useBooleans(adapter));
-    expect(typeof result.current.union).toBe('function');
-    expect(typeof result.current.intersect).toBe('function');
-    expect(typeof result.current.subtract).toBe('function');
-    expect(typeof result.current.exclude).toBe('function');
-    expect(typeof result.current.divide).toBe('function');
-  });
-
   it('union dispatches one batch and inserts one node', () => {
     const h = makeAdapter();
     const { result } = renderHook(() => useBooleans(h.adapter));

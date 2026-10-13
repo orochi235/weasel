@@ -56,13 +56,15 @@ describe('useTextEdit: text that ends in a line break', () => {
     expect(h.runCommits).toEqual([[{ text: 'xa' }, { text: 'b\n', bold: true }]]);
   });
 
-  it('still drops the one newline a browser adds after a typed line break', () => {
-    const h = makeHarness('abc');
-    const { result } = renderHook(() => useTextEdit(h.opts));
-    act(() => result.current.startEdit('a'));
-    const overlay = h.container.querySelector<HTMLElement>('[contenteditable]')!;
-    overlay.textContent = 'abc\n\n';
-    act(() => result.current.commit());
-    expect(h.texts).toEqual(['abc\n']);
-  });
+  for (const [typed, kept] of [['abc\n\n', 'abc\n'], ['abcd\n', 'abcd']]) {
+    it(`still drops the one newline a browser adds after ${JSON.stringify(kept)}`, () => {
+      const h = makeHarness('abc');
+      const { result } = renderHook(() => useTextEdit(h.opts));
+      act(() => result.current.startEdit('a'));
+      const overlay = h.container.querySelector<HTMLElement>('[contenteditable]')!;
+      overlay.textContent = typed;
+      act(() => result.current.commit());
+      expect(h.texts).toEqual([kept]);
+    });
+  }
 });

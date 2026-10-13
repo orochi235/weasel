@@ -23,6 +23,7 @@ describe('findConflicts', () => {
     expect(c[0].ownerIds.sort()).toEqual(['a', 'b']);
     expect(c[0].gesture).toBe('click');
     expect(c[0].target).toBe('empty');
+    expect(c[0].phase).toBe('any');
   });
 
   it('flags a three-way conflict', () => {
@@ -126,14 +127,6 @@ describe('findConflicts', () => {
     const b = tool('b', [{ spec: { kind: 'click', target: 'empty', phase: 'initial' }, actionId: 'y' }]);
     expect(findConflicts([a, b])).toEqual([]);
   });
-
-  it('flags two any-phase bindings on the same tuple', () => {
-    const a = tool('a', [{ spec: { kind: 'click', target: 'empty' }, actionId: 'x' }]);
-    const b = tool('b', [{ spec: { kind: 'click', target: 'empty' }, actionId: 'y' }]);
-    const c = findConflicts([a, b]);
-    expect(c).toHaveLength(1);
-    expect(c[0].phase).toBe('any');
-  });
 });
 
 describe('formatConflict', () => {
@@ -225,9 +218,8 @@ describe('findScopedConflicts', () => {
   });
 
   it('accepts the registry as a record, matching useTools', () => {
-    const a = tool('a', [clickRect('x')]);
-    const b = tool('b', [clickRect('y')]);
-    expect(findScopedConflicts({ registry: { a, b } })).toEqual([]);
+    const a = tool('a', [clickRect('x'), clickRect('y')]);
+    expect(findScopedConflicts({ registry: { a } })).toHaveLength(1);
   });
 
   it('reports each conflict once even when several scopes surface it', () => {

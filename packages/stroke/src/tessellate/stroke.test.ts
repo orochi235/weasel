@@ -29,7 +29,7 @@ describe('tessellateStroke (straight, butt, no joins)', () => {
     const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
     const meshDefault = tessellateStroke(path, { paint: { color: '#000' } });
     const meshExplicit = tessellateStroke(path, { paint: { color: '#000' }, width: 1 });
-    expect(meshDefault.indices.length).toBe(meshExplicit.indices.length);
+    expect(Array.from(meshDefault.vertices)).toEqual(Array.from(meshExplicit.vertices));
   });
 });
 
@@ -141,27 +141,20 @@ describe('tessellateStroke alignment (RectPath)', () => {
       minX = Math.min(minX, meshCenter.vertices[i]);
       maxX = Math.max(maxX, meshCenter.vertices[i]);
     }
-    expect(minX).toBeLessThan(0);
-    expect(maxX).toBeGreaterThan(100);
+    expect(minX).toBeCloseTo(-5, 4);
+    expect(maxX).toBeCloseTo(105, 4);
   });
 
   it('outer alignment shifts the stroke entirely outside the rect bounds', () => {
     const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
     const meshOuter = tessellateStroke(path, { paint: { color: '#000' }, width: 10, align: 'outer' });
-    // Outer alignment: inner edge of stroke coincides with rect edge.
-    // Therefore vertices on the inside should reach exactly the rect edge,
-    // and outer vertices reach +width beyond.
     let minX = Infinity, maxX = -Infinity;
     for (let i = 0; i < meshOuter.vertices.length; i += 2) {
       minX = Math.min(minX, meshOuter.vertices[i]);
       maxX = Math.max(maxX, meshOuter.vertices[i]);
     }
-    expect(minX).toBeLessThanOrEqual(0);
-    expect(maxX).toBeGreaterThanOrEqual(100);
-    // Outer is fully outside: the innermost stroke vertex shouldn't be deeper
-    // inside the rect than the original edge.
-    expect(minX).toBeGreaterThanOrEqual(-10);
-    expect(maxX).toBeLessThanOrEqual(110);
+    expect(minX).toBeCloseTo(-10, 4);
+    expect(maxX).toBeCloseTo(110, 4);
   });
 });
 
@@ -483,10 +476,7 @@ describe('tessellateStroke — vertexWidths (per-anchor)', () => {
     expect(mesh.vertices[7]).toBeCloseTo(-4);
   });
 
-  it('rect outlines (no anchor data on interior points) keep uniform width', () => {
-    // A RectPath has 4 anchors (corners). Provide 4 widths but the rect
-    // fast-path uses width-as-uniform — vertexWidths is interpolated
-    // per-corner. Sanity: tessellation still produces a valid mesh.
+  it('tapers a rect outline between its per-corner widths', () => {
     const p: RectPath = { kind: 'rect', x: 0, y: 0, width: 50, height: 30 };
     const mesh = tessellateStroke(p, {
       paint: { color: '#fff' },
@@ -495,8 +485,7 @@ describe('tessellateStroke — vertexWidths (per-anchor)', () => {
       join: 'bevel',
       cap: 'butt',
     });
-    expect(mesh.indices.length).toBeGreaterThan(0);
-    expect(mesh.indices.length % 3).toBe(0);
+    expect(Array.from(mesh.vertices.slice(0, 8))).toEqual([0, 1, 0, -1, 50, 3, 50, -3]);
   });
 
   it('threshold = Infinity suppresses the bevel fallback (miter stays even with width discontinuity)', () => {

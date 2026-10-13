@@ -18,10 +18,10 @@ describe('useAction', () => {
       },
       { wrapper: wrap },
     );
-    expect(result.current!.list().map(a => a.id)).toEqual(['foo']);
+    const reg = result.current!;
+    expect(reg.list().map(a => a.id)).toEqual(['foo']);
     unmount();
-    // After unmount we cannot read the registry, but the unregister
-    // ran during cleanup — verifiable by the next test below.
+    expect(reg.list()).toEqual([]);
   });
 
   it('warns but does not throw when no provider is in scope', () => {

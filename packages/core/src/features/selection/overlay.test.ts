@@ -144,12 +144,6 @@ describe('composeSelectionPose with containers', () => {
     expect(resolve('c')).toBe(stub);
   });
 
-  it('container of 2 rects: union bounds is the envelope', () => {
-    const { getChildren, isContainer } = makeContainerTree({ g1: ['a', 'b'] });
-    const resolve = composeSelectionPose<Pose>({ getStoredPose, getChildren, isContainer });
-    expect(resolve('g1')).toEqual({ x: 0, y: 0, width: 70, height: 70 });
-  });
-
   it('nested container: union expands across all transitive leaves', () => {
     const { getChildren, isContainer } = makeContainerTree({
       inner: ['a', 'b'],

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { rotationDegreesUnit } from '@weasel-js/core';
 import { endless, unit } from '@weasel-js/quantity';
 import type { PrefLeaf } from '@weasel-js/prefs';
+import { FitScope } from '../FitLabel/FitLabel';
 import { prefFieldProps } from '../Prefs/prefField';
 import { PropertyControl, PropertyField, type PropertyNumberFieldProps } from './PropertyField';
 
@@ -111,10 +112,12 @@ describe('PropertyField enum choices', () => {
     );
     expect(screen.getByRole('radiogroup', { name: 'Mode' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Alpha' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'Beta' })).toHaveAttribute('aria-checked', 'false');
     fireEvent.click(screen.getByRole('radio', { name: 'Beta' }));
     expect(onChange).toHaveBeenCalledWith('b');
+    onChange.mockClear();
     fireEvent.keyDown(screen.getByRole('radio', { name: 'Alpha' }), { key: 'ArrowRight' });
-    expect(onChange).toHaveBeenLastCalledWith('b');
+    expect(onChange).toHaveBeenCalledWith('b');
   });
 
   const GLYPHED = [
@@ -151,8 +154,12 @@ describe('PropertyField enum choices', () => {
 
   it('leaves the short forms out of a select, which has room for the label', () => {
     const lettered = [{ value: 'a', label: 'Alpha', short: ['A'] }];
-    render(<PropertyField kind="enum" label="Mode" value="a" options={lettered} onChange={() => {}} />);
-    expect(screen.getByRole('button', { name: /Mode/ }).textContent).not.toContain('AAlpha');
+    render(
+      <FitScope value={{ step: 1, register: () => () => {} }}>
+        <PropertyField kind="enum" label="Mode" value="a" options={lettered} onChange={() => {}} />
+      </FitScope>,
+    );
+    expect(screen.getByRole('button', { name: /Mode/ })).toHaveTextContent('Alpha');
   });
 
   it('draws a radio as a radio group, with its disabled options', () => {

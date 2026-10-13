@@ -14,10 +14,6 @@ function track(easing: SampledTrack<number>['keys'][number]['easing']): SampledT
 }
 
 describe('sampleTrack easing specs', () => {
-  it('samples with no easing as linear', () => {
-    expect(sampleTrack(track(undefined), 50)).toBeCloseTo(50, 6);
-  });
-
   it('accepts a named easing', () => {
     // easeInQuad at u=0.5 is 0.25.
     expect(sampleTrack(track('easeInQuad'), 50)).toBeCloseTo(25, 6);

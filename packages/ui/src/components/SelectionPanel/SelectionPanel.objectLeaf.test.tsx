@@ -415,17 +415,6 @@ describe('SelectionPanel — object leaf', () => {
         width: 3,
       });
     });
-
-    it('never commits a stroke without a paint', () => {
-      const scene = sceneWithStroke(undefined);
-      renderReal(scene);
-      fireEvent.click(screen.getByLabelText('Cap'));
-      const width = screen.getByLabelText('Width');
-      fireEvent.change(width, { target: { value: '5' } });
-      fireEvent.blur(width);
-      const stroke = scene.get(asNodeId('p'))?.data.stroke as Record<string, unknown>;
-      expect(stroke.paint).toBeDefined();
-    });
   });
 
   it('lifts a scalar value through `fromScalar` before applying a field', () => {

@@ -2,17 +2,6 @@ import { afterEach, describe, it, expect } from 'vitest';
 import { act, cleanup, createEvent, fireEvent, render } from '@testing-library/react';
 import { CanvasViewDemo, makeRandomScene, pipView, PIP } from '../CanvasViewDemo';
 
-/** The world rect a viewport shows: its inner view's origin, extended by the
- *  screen bounds divided by the inner scale. */
-function pipWorldRect() {
-  const view = pipView(makeRandomScene());
-  return {
-    x0: view.x, y0: view.y,
-    x1: view.x + PIP.w / PIP.scale,
-    y1: view.y + PIP.h / PIP.scale,
-  };
-}
-
 describe('CanvasViewDemo PiP', () => {
   it('lenses a slice of the world that holds scene content', () => {
     // The scene is randomly placed on every mount, so this asserts over many
@@ -37,9 +26,9 @@ describe('CanvasViewDemo PiP', () => {
   });
 
   it('lenses a 150x100 world slice', () => {
-    const r = pipWorldRect();
-    expect(r.x1 - r.x0).toBeCloseTo(PIP.w / PIP.scale);
-    expect(r.y1 - r.y0).toBeCloseTo(PIP.h / PIP.scale);
+    const { scale } = pipView(makeRandomScene());
+    expect(PIP.w / scale.x).toBeCloseTo(150);
+    expect(PIP.h / scale.y).toBeCloseTo(100);
   });
 });
 
