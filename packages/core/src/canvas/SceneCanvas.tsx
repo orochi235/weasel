@@ -7,7 +7,7 @@
  * as-is — the internal tool registry is ignored in that case.
  */
 import type { PolygonPath } from '@weasel-js/geom';
-import { capabilitiesAllowed, getActiveModeFor } from '@weasel-js/modes';
+import { getActiveModeFor } from '@weasel-js/modes';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
@@ -559,13 +559,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const tools = toolsTakeover ?? internalTools;
   const liveToolsRef = useLatest<ToolsApi | null>(tools);
   const getActiveModeRef = useLatest(getActiveMode);
-  // Without a mode registry every tool stays activatable.
-  const isToolEligible = useCallback((toolId: string): boolean => {
-    const getMode = getActiveModeRef.current;
-    if (!getMode) return true;
-    const caps = liveToolsRef.current?.registry?.[toolId]?.eligibility.capabilities;
-    return capabilitiesAllowed(getMode().allowedCapabilities, caps);
-  }, [getActiveModeRef, liveToolsRef]);
 
   // The selection's own ambient bindings: `move`, `resize` and `rotate`. They
   // are not tools and sit outside `tools`, so they apply under a takeover too.
@@ -1175,7 +1168,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               internalTools={internalTools}
               toolsTakeover={toolsTakeover ?? undefined}
               enableKeybindings={enableKeybindings}
-              isToolEligible={isToolEligible}
+              modes={modes}
               canvasApi={canvasReady ? canvasApiRef.current : null}
               versionCheck={versionCheck}
             />
