@@ -19,8 +19,10 @@ import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
+import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
+import { poseFrameOf } from '@weasel-js/geom';
 import { caretIndexAt, pointInTextPose, isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
-import { useTextEdit, type TextEditClipRect, type UseTextEditReturn } from '@weasel-js/text-dom';
+import { useTextEdit, type TextEditClipRect, type TextEditScreenPose, type UseTextEditReturn } from '@weasel-js/text-dom';
 
 /** Shape the default projections expect `data` to satisfy. All fields
  *  optional so any object satisfies the constraint — projections fill in
@@ -209,6 +211,7 @@ export function useSceneTextEdit<
           zoom,
         ),
         zoom,
+        frame: frameLinearOf(pose),
         verticalAlign: read.verticalAlign(node.data),
       };
     },
@@ -238,8 +241,8 @@ export function useSceneTextEdit<
     // span whose box the click would be measured against as if it were a canvas.
     if (canvas.closest('[contenteditable="true"]')) return;
 
-    // `pointInTextPose` and `caretIndexAt` both work in world units, so the
-    // canvas-space click has to be un-projected before either sees it.
+    // `pointInTextPose` and `caretIndexAt` work in the node's own box: the click
+    // is un-projected here, then taken back through the frame the node is drawn in.
     const [canvasX, canvasY] = clientToCanvas(canvas, e.clientX, e.clientY);
     const root = containerRef.current;
     const view = resolveView(optsRef.current.view)
@@ -255,20 +258,19 @@ export function useSceneTextEdit<
       if (!read.isText(node.data)) continue;
       const text = read.text(node.data);
       const at = effectivePose(sceneRef.current, node);
+      const p = worldToLocal(targetTransformOf(at), cx, cy);
+      if (!p) continue;
       const pose = {
-        x: at.x,
-        y: at.y,
-        width: at.width,
-        height: at.height,
+        x: at.x, y: at.y, width: at.width, height: at.height,
         text,
         runs: read.runs(node.data) as StyledRun[] | undefined,
         style: read.style(node.data),
         verticalAlign: read.verticalAlign(node.data),
       };
-      if (!pointInTextPose(cx, cy, pose)) continue;
+      if (!pointInTextPose(p.x, p.y, pose)) continue;
 
       openedOnRef.current = canvas;
-      edit.startEdit(String(node.id), { caret: caretIndexAt(cx, cy, pose) });
+      edit.startEdit(String(node.id), { caret: caretIndexAt(p.x, p.y, pose) });
       return;
     }
   }, [edit, containerRef, optsRef, read, sceneRef]);
@@ -279,4 +281,10 @@ export function useSceneTextEdit<
   }, [read, sceneRef]);
 
   return { ...edit, onDoubleClick, isTextNode };
+}
+
+/** The linear part of the frame `pose` is drawn in, as the overlay takes it. */
+function frameLinearOf(pose: unknown): TextEditScreenPose['frame'] {
+  const m = poseFrameOf(pose);
+  return m ? [m[0], m[1], m[2], m[3]] : undefined;
 }

@@ -56,6 +56,13 @@ export interface TextEditScreenPose {
    * run-level overrides are left unscaled.
    */
   zoom?: number;
+  /**
+   * The frame the text is drawn in, when its box is turned or skewed: the
+   * linear part `[a, b, c, d]` (`x' = a·x + c·y`, `y' = b·x + d·y`) applied
+   * about the box's center. `x`, `y`, `width`, and `height` stay those of
+   * the box before it. Absent is the identity.
+   */
+  frame?: readonly [a: number, b: number, c: number, d: number];
 }
 
 /** A box in CSS pixels relative to `useTextEdit`'s `container`. */

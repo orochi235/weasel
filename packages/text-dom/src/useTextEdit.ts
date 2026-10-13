@@ -21,6 +21,7 @@ import {
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { overlayAlignEdge } from './overlayDirection';
+import { overlayTransform } from './overlayFrame';
 import { applyOverlayStyle } from './overlayStyle';
 import { seedOverlay, type CaretHolder } from './overlaySeed';
 import { readSelectionOffsets, selectOffsets, writeRunsPreservingSelection } from './overlaySelection';
@@ -711,7 +712,8 @@ function placeOverlay(
   // that anchor there and a trailing translate pulls the overlay back by that
   // fraction of its own width.
   const anchor = style.wrap ? 0 : ALIGN_ANCHOR[overlayAlignEdge(el, style)];
-  el.style.left = `${pose.x + pose.width * (pose.zoom ?? 1) * anchor - (clip?.x ?? 0)}px`;
+  const left = pose.x + pose.width * (pose.zoom ?? 1) * anchor;
+  el.style.left = `${left - (clip?.x ?? 0)}px`;
   el.style.width = style.wrap ? `${pose.width}px` : 'max-content';
   el.style.minWidth = style.wrap ? '' : `${pose.width}px`;
   // A node-level script draws the glyphs smaller and raised on the line the
@@ -729,15 +731,13 @@ function placeOverlay(
   const aligned = pose.verticalAlign !== undefined && pose.verticalAlign !== 'top';
   el.style.minHeight = aligned ? '' : `${pose.height}px`;
   const drop = baselineDrop(el, style, pose, lineHeight) - (script?.shift ?? 0) * pose.fontSize;
-  el.style.top = `${overlayTop(pose, aligned ? el.offsetHeight : pose.height, drop) - (clip?.y ?? 0)}px`;
+  const top = overlayTop(pose, aligned ? el.offsetHeight : pose.height, drop);
+  el.style.top = `${top - (clip?.y ?? 0)}px`;
   // A declared `zoom` means every size on the pose is pre-scale and the
   // overlay carries the view scale as a transform. Anchored at the top-left so
   // `left`/`top` stay screen pixels.
   el.style.transformOrigin = '0 0';
-  const transforms: string[] = [];
-  if (pose.zoom !== undefined && pose.zoom !== 1) transforms.push(`scale(${pose.zoom})`);
-  if (anchor !== 0) transforms.push(`translateX(${-anchor * 100}%)`);
-  el.style.transform = transforms.length > 0 ? transforms.join(' ') : 'none';
+  el.style.transform = overlayTransform(pose, left, top, anchor);
   // `letter-spacing` is not part of the CSS `font` shorthand. Under a
   // transform the world value is the value. Without one, `pose.fontSize` is
   // `style.fontSize * zoom`, so their ratio is the world→screen factor; run

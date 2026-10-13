@@ -178,15 +178,17 @@ Priority tags:
   `packages/geom/src/poseFrame.ts`): the skew or per-axis scale its box and rotation cannot hold.
   Ruled 2026-10-11: text and image nodes carry a full transform, and such text stays editable
   text. The selection chrome, its hit regions, and a lone node's resize and rotate read the frame
-  through `core/geometry/targetFrame.ts`; a resize writes the box and keeps the transform. What
-  still sees only the box and its rotation:
+  through `core/geometry/targetFrame.ts`, and the text edit overlay is handed it as
+  `TextEditScreenPose.frame`; a resize writes the box and keeps the transform. What still sees
+  only the box and its rotation:
   - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
     resize gives a turned leaf rather than writing it to the leaf's `transform`, and reads only
     the leaf's rotation, so a leaf that already carries a skew is remapped as if it had none. The
     chrome now follows whatever it writes.
-  - The text edit overlay and its carets are placed from the pose's `x`, `y`, `width`, and
-    `height` alone (`getScreenPose` in `features/text/useSceneTextEdit.ts`): neither the
-    rotation nor the `transform` reaches the DOM. Needs a browser to verify.
+  - `useSceneTextEdit` places the overlay, and tests a double-click, against the node's own pose
+    (`effectivePose`), not its world pose, so text under a container whose pose is a frame is
+    edited where it would sit without that container. It also scales by `view.scale.x` alone, so
+    under non-uniform zoom the overlay is stretched wrong whatever the pose carries.
   - `composeRectPose` / `composeRigidPose` (`core/scene/composePose.ts`) keep a child's own
     transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
