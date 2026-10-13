@@ -281,8 +281,7 @@
     "longestFunction": 133
   },
   "packages/storage/src/records.ts": {
-    "lines": 403,
-    "longestFunction": 281
+    "longestFunction": 197
   },
   "packages/stroke/src/tessellate/dash.ts": {
     "longestFunction": 125
