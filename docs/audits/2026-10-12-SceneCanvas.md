@@ -1,7 +1,7 @@
 > **Scaffolding for work in flight on branch `scene-splits`, 2026-10-12. Not built, and not verified:**
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
 > acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
-> C and D except for the items still listed under them, which were checked against the code and are
+> A, C, and D except for the items still listed under them, which were checked against the code and are
 > written as found. Every other section is unbuilt, and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
 > work it lists has merged; `docs/TODO.md` holds what is left.
@@ -17,24 +17,26 @@ Two facts drive most of what follows.
 
 ## Things that do not belong
 
-### A. Path editing (per-feature knowledge inline, about 110 lines)
+### A. Left over from path editing
 
-Lines 410-451, 455-461, 919-933, 961-965, 970, 991-1048, 1092.
+The state landed: `features/paths/pathEditState.ts` holds the editing id, the selected anchors, and
+the marquee, and its `getEditingId` is the one rule (the node exists, is selected, and the mode
+permits anchor editing) the dep, the anchor overlay, the suppressed set, `editingAnchors`, and the
+shift-click lock all read. `SceneCanvas.pathEditMask.test.tsx` pins it.
 
-- **What it is:** the edit-target state (`pathEditingId`, `selectedAnchorsRef`, `anchorMarqueeRef`), the host/local switch (`pathEditRef`), the mode mask (`effectivePathEditingId`), the preview-aware path resolver (`livePathFor`), the overlay layer, selection-overlay suppression, and `extendClickLocked`.
-- **Owner:** `features/paths`, as one path-edit state object with a `subscribe`. The `editAnchors` dep, the overlay layer, the chrome-caps `editingAnchors` flag, the select tool's shift-click lock, and the suppressed-id set would all read it.
-- **Duplicate masking** (evidence): `effectivePathEditingId` (428-433) applies the mode mask, then hands the result to the dep as `getEditingId` (439), and the dep masks again:
-  ```
-  canvas/deps/editAnchors.ts:130-131
-  const permitted = allowedRef.current ? allowedRef.current() : true;
-  if (!node || !inSelection || !permitted) effectiveId = '';
-  ```
-- **The two masks disagree** (inference, not run). The dep also clears the id when the node is gone or deselected; `effectivePathEditingId` does not. Hit-testing reads the dep (`anchorStateFrom`). The overlay (1027), suppression (1046), `editingAnchors` (903), and `extendClickLocked` (459) read the canvas copy. Deselecting an edited node without `exitPathEdit` should leave anchors painted but ungrabbable.
-- **`anchorEditingAllowedRef` (418, 931-933) is an ordering workaround only** (evidence). The comment at 415-417 says the predicate "needs `getActiveModeRef`", but its only real input, `getActiveMode`, exists at 239.
-- **Redraw is hand-pumped** through `canvasApiRef` (444, 449, 963-965). `RenderLayer.subscribe` (`core/layers/render.ts:116`) exists for exactly this, so the overlay layer could own its repaint.
-- **`livePathFor` (994-1023)** is an inline function that re-implements "the editable path, in the asking camera's world, preview-aware". The same projection is spelled twice more for hit-testing (`GestureDispatcherMounter.tsx:134-137`, `CanvasView.tsx:306-309`), neither preview-aware.
-- **`useEditAnchorsDepSource` keeps a dead fallback** (evidence): its `localEditingId` state runs only when `externalState` is omitted, and its one non-test caller (`StandardActionsRegistrar.tsx:254`) always passes it.
-- **Safe to move when:** the state object is created above both the dep source and the layers (the layer memo at 1025-1040 is deliberately identity-stable), and `pathEdit` hosts still override the id.
+- **The anchor hit-test is still not preview-aware.** `liveEditablePath`
+  (`features/paths/editablePath.ts`) is what the overlay draws from. The two hit-test sites,
+  `GestureDispatcherMounter.tsx` and `CanvasView.tsx`, take the committed path from the dep and call
+  `pathFromPlane` on it through `anchorStateFrom`'s `toCamera(id, path)` callback. Routing them
+  through `liveEditablePath` means changing that callback's contract in both files at once, and
+  makes a hit-test during a gesture follow the preview, which is a behavior change.
+- **A masked id is kept, not cleared** (run, not inferred). Deselect a node mid-edit and its anchors
+  go away; select it again and it is being edited again, with no second `enterPathEdit`. That is the
+  rule the dep already had. Clearing instead needs a moment to write the id, and a host's id is not
+  the canvas's to clear.
+- **`useEditAnchorsDepSource` still takes its state as an optional argument.** It is not a public
+  export, but `usePenTool.test.tsx` and `editAnchors.test.tsx` call it without one, and it then makes
+  a state of its own.
 
 ### C. `selectTool.rotate === false` is still decided three times
 
@@ -158,14 +160,9 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `canvasApiRef` | 250 | `mergedRef` | redraw effects, `handleViewChange`, path-edit setters, registrar, mounter, keybindings | Canvas → siblings (real) |
 | `canvasReady` | 253 | `mergedRef` | view subscription, 1331 | ref-attach timing |
 | `currentViewRef` | 301 | seed, insertion effect, subscription | select tool, hover, rule inputs, test hook, registrar, mounter | Canvas-owned view read above Canvas |
-| `pathEditingId` | 412 | `setEditingId` | `pathEditingIdRef`, 963 | — |
-| `pathEditingIdRef`, `pathEditRef` | 413-414 | render | `effectivePathEditingId` | dependency array |
-| `anchorEditingAllowedRef` | 418 | insertion effect 931 | `effectivePathEditingId` | declaration order only |
-| `selectedAnchorsRef`, `anchorMarqueeRef` | 436-437 | `editAnchors` dep | overlay layer | registrar child → layer |
 | `selectionRef` | 465 | render | mounter | dependency array |
 | `layerPaintRef` | 501 | render | `layerIsPainted` | dependency array |
-| `planeOfNodeRef` | 539 | render | `livePathFor`, marquee | once-built layer memo |
-| `liveToolsRef`, `getActiveModeRef` | 680-681 | render | rule ctx, 927, test hook | dependency array |
+| `liveToolsRef` | 680 | render | test hook | dependency array |
 | `onToolsCreatedRef` | 726 | render | effect 727 | dependency array |
 | `getNodeAtPointRef` | 732 | render | hit observers | dependency array |
 | `getNodeAtPointRefForHover` | 807 | render | hover | duplicate of 732 |
@@ -173,7 +170,6 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 | `dispatcherRef` | 762 | init | everything gesture-related | lazy init |
 | `committedSelectionRef` | — | render | `currentRuleInputs` | dependency array, and commit timing |
 | `chromeAffordancesRef` | 985 | mounter insertion effect | slops layer | child → parent, debug only |
-| `sceneRefForOverlay` | 970 | render | `livePathFor` | once-built layer memo |
 | `actionsRegistryRef` | 1099 | registrar effect | `ingestImpl` | provider boundary that is gone |
 | `ingestionClipboardOmitted` | 1107 | render | clipboard ctx | dependency array |
 | `addedViews` | 1137 | `addView` / `remove` | JSX | — |
@@ -185,15 +181,13 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 - **209-211:** "Resolved once here and provided to the subtree". See N.
 - **214-218:** paint, hit-test, and slops "all resolve from this one object". `chromeSizes` feeds only a dead option.
 - **453-454:** "so useSceneSelectTool always receives a concrete radius". It has no such option.
-- **415-417:** `anchorEditingAllowed` "needs `getActiveModeRef`". It needs only `getActiveMode`.
 - **463-464:** thunks "live in an effect closure". They are `useMemo`s, and `affordanceAt` never reads the selection.
 - **754-756, 1096-1098, and `StandardActionsRegistrar.tsx:179-181`:** "OUTSIDE the actions provider". See E.
-- **967-969:** the path-editing overlay comment sits over unrelated declarations, 55 lines above the layer at 1025.
 - **1223-1225 and `props.ts:168`:** both discuss `onBackgroundClick`, and say opposite things about a prop that no longer exists.
 
 ## (a) Biggest simplifications, ranked
 
-1. Path-edit state, mask, live path, and overlay to `features/paths` (A).
+1. Landed: path-edit state, mask, live path, and overlay to `features/paths` (A).
 2. Landed: chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
 3. Mounters become hooks, removing `getActionRef`, `actionsRegistryRef`, and the 37-prop call (E).
 4. One view channel shared with `<Canvas>` (F).
@@ -218,7 +212,6 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 
 - **View zero as a `CanvasView`.** I read `CanvasView.tsx` only at 245-405. If view zero could be one, most of E disappears, but that is a design question I could not settle by reading.
 - **Effect ordering.** I did not trace every dep registration to confirm that turning the registrar into a hook keeps the child-before-parent order its comment relies on.
-- **The deselect divergence in A** is reasoned from the two masks, not reproduced.
 - **Unread files.** `Canvas.tsx` was read by targeted grep, not line by line. Of the `SceneCanvas/` siblings I did not read `usePreviewGhostLayer`, `useDispatcherOverlayLayer`, `contributionFrameHooks`, `defaultNodeProperties`, `poseGeometry`, or any tests.
 - **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, `insertTool`, or `actionDefaults` are unknown.
 ## From the Canvas.tsx pass (branch `long-file-audit`), to act on after it merges

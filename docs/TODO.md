@@ -1460,11 +1460,11 @@ only story runner in the repo.
   +0`, and passed on the same commit in the run before it. The assertion reads the anchor before the
   observer that moves it has fired; it wants to wait on the position rather than read it once.
 
-- **(P3) `SceneCanvasInner` is one 998-line function.** It is most of the 1,166-line
+- **(P3) `SceneCanvasInner` is one 888-line function.** It is most of the 1,046-line
   `canvas/SceneCanvas.tsx`. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
-  owner; its dead-code pass and its sections on the built-in tool registry, the preset table, and
-  the chrome-caps rule context landed 2026-10-12. Left open by those last two, and described in the
-  audit: `selectTool.rotate === false` is still decided in three places that do not agree, and the
+  owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
+  chrome-caps rule context, and path editing landed 2026-10-12. Left open by the preset table and
+  the rule context, and described in the audit: `selectTool.rotate === false` is still decided in three places that do not agree, and the
   `modifierHeld` condition can never match on a `<SceneCanvas>`, which always reports no modifier
   held. Left open by the dead-code pass: `actionDefaults` is a public
   prop nothing reads, kept only because `SceneCanvas.actions.test.tsx` passes it at 13 sites; and
