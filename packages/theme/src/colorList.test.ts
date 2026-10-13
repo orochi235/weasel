@@ -43,6 +43,38 @@ describe('colorAt', () => {
   });
 });
 
+describe('a list of color sources', () => {
+  const palette = { entries: [{ name: 'brand', color: { space: 'srgb', coords: [1, 0, 0] } }] };
+  const list = [{ ref: 'brand' }, { ref: 'accent' }, { space: 'srgb', coords: [0, 0, 1] }, '#abc'] as const;
+
+  it('resolves an item against the palette and the theme, and passes a string through', () => {
+    const ctx = { ...dark, palette };
+    expect(colorAt(list, 0, ctx)).toBe('#ff0000');
+    expect(colorAt(list, 2, ctx)).toBe('#0000ff');
+    expect(colorAt(list, 3, ctx)).toBe('#abc');
+    expect(colorAt(list, 5, ctx)).not.toBe(colorAt(list, 5, { ...light, palette }));
+  });
+
+  it('writes a theme ref as its custom property when asked for CSS', () => {
+    const ctx = { ...dark, palette };
+    expect(colorCssAt(list, 1, ctx)).toBe('var(--wzl-accent)');
+    expect(colorCssAt(list, 0, ctx)).toBe('#ff0000');
+  });
+
+  it('takes a source from a function list', () => {
+    expect(colorAt((i) => ({ space: 'srgb', coords: [0, i, 0] }), 1)).toBe('#00ff00');
+  });
+
+  it('throws on an item nothing answers', () => {
+    expect(() => colorAt(list, 0, dark)).toThrow(/item 0/);
+    expect(() => colorCssAt(list, 0, dark)).toThrow(/item 0/);
+  });
+
+  it('counts sources as it counts strings', () => {
+    expect(colorCount(list)).toBe(4);
+  });
+});
+
 describe('themeTones', () => {
   it('is the swatch ramp for the built-in theme', () => {
     expect(themeTones(weaselTheme)).toEqual({ ramp: 'swatch' });

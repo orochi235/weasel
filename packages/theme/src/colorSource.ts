@@ -7,19 +7,22 @@ import {
   type ColorSource,
   type Palette,
 } from '@weasel-js/paint';
-import { colorAt, colorCssAt, defaultContext, findRampSteps, themeTones, type ColorContext, type ColorList } from './colorList.ts';
+import {
+  colorItemAt,
+  defaultContext,
+  findRampSteps,
+  isRamp,
+  rampProperty,
+  themeTones,
+  type ColorList,
+  type ColorSourceContext,
+} from './colorListItems.ts';
 import { resolveCurrentColor } from './currentColor.ts';
 
 /** The name the tone list answers to: `{ ref: 'tone', index: 2 }` is the third tone, wrapping. */
 export const TONE_REF = 'tone';
 
-/** What a `ColorSource` resolves against under a theme. `useTones()`'s value is one. */
-export interface ColorSourceContext extends ColorContext {
-  /** The list `{ ref: 'tone' }` indexes. Absent: the theme's own. */
-  readonly tones?: ColorList;
-  /** Names answered before the theme's. */
-  readonly palette?: Palette;
-}
+export type { ColorSourceContext };
 
 const NO_PALETTE: Palette = { entries: [] };
 
@@ -51,8 +54,17 @@ function tokenLiteral(property: string, ctx: ColorSourceContext): ColorLiteral |
   }
 }
 
-function themeLiteral(ref: ColorRef, ctx: ColorSourceContext): ColorLiteral | null {
-  if (ref.ref === TONE_REF) return parsed(colorAt(tonesOf(ctx), ref.index ?? 0, ctx));
+const isRef = (source: ColorSource): source is ColorRef => typeof source !== 'function' && 'ref' in source;
+
+function toneSource(index: number, ctx: ColorSourceContext): ColorSource | null {
+  const tones = tonesOf(ctx);
+  if (isRamp(tones)) return tokenLiteral(rampProperty(tones, index, ctx.theme), ctx);
+  const item = colorItemAt(tones, index);
+  return typeof item === 'string' ? parsed(item) : item;
+}
+
+function themeSource(ref: ColorRef, ctx: ColorSourceContext): ColorSource | null {
+  if (ref.ref === TONE_REF) return toneSource(ref.index ?? 0, ctx);
   const property = propertyOf(ref, ctx);
   return property === null ? null : tokenLiteral(property, ctx);
 }
@@ -66,7 +78,21 @@ function themeLiteral(ref: ColorRef, ctx: ColorSourceContext): ColorLiteral | nu
  * property the theme does not define.
  */
 export function colorSourceLiteral(source: ColorSource, ctx: ColorSourceContext = defaultContext()): ColorLiteral | null {
-  return resolvePaletteColor(ctx.palette ?? NO_PALETTE, source, (ref) => themeLiteral(ref, ctx));
+  return resolvePaletteColor(ctx.palette ?? NO_PALETTE, source, (ref) => themeSource(ref, ctx));
+}
+
+function literalCss(source: ColorSource, ctx: ColorSourceContext): string | null {
+  const literal = colorSourceLiteral(source, ctx);
+  return literal && colorLiteralToCss(literal);
+}
+
+function toneCss(source: ColorRef, ctx: ColorSourceContext): string | null {
+  const tones = tonesOf(ctx);
+  const index = source.index ?? 0;
+  if (isRamp(tones)) return `var(${rampProperty(tones, index, ctx.theme)})`;
+  const item = colorItemAt(tones, index);
+  if (typeof item === 'string') return item;
+  return isRef(item) && item.ref !== TONE_REF ? colorSourceCss(item, ctx) : literalCss(source, ctx);
 }
 
 /**
@@ -76,12 +102,11 @@ export function colorSourceLiteral(source: ColorSource, ctx: ColorSourceContext 
  * everything else is written as the literal it resolves to.
  */
 export function colorSourceCss(source: ColorSource, ctx: ColorSourceContext = defaultContext()): string | null {
-  if (typeof source !== 'function' && 'ref' in source && !ctx.palette?.entries.some((e) => e.name === source.ref)) {
-    if (source.ref === TONE_REF) return colorCssAt(tonesOf(ctx), source.index ?? 0, ctx);
+  if (isRef(source) && !ctx.palette?.entries.some((e) => e.name === source.ref)) {
+    if (source.ref === TONE_REF) return toneCss(source, ctx);
     const property = propertyOf(source, ctx);
     if (property === null) return null;
     return source.ref.startsWith('--') || tokenLiteral(property, ctx) ? `var(${property})` : null;
   }
-  const literal = colorSourceLiteral(source, ctx);
-  return literal && colorLiteralToCss(literal);
+  return literalCss(source, ctx);
 }

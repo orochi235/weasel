@@ -864,15 +864,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   bundled lookalike needs a face whose license allows it. And nobody has seen either theme:
   browser tests pin computed values only.
 
-- **(P2) A `ColorList` still holds CSS strings, not `ColorSource`s.** A `ColorList`
-  (`packages/theme/src/colorList.ts`) is literal strings, a ramp, a generator, or
-  `(i) => string`, read with `colorAt` / `colorCssAt`, so a theme's `tones` cannot name a palette
-  entry, and labkit's `Lab` and `nebula` and two site demos read lists as strings. Wanted: a list
-  whose items are `ColorSource`s, read through the same two functions. Two smaller gaps beside it:
-  a palette entry or a function source is written to CSS as the literal it resolves to in the
-  provider's selection, so with no `<ThemeProvider>` it does not follow a mode change the way a
-  theme ref does; and a custom `CurveLayer` has no resolver on its `LayerRenderCtx`, so one that
-  wants a color has to render a component that calls `useColorCss`, as `CurveFill` does.
+- **(P3) Two gaps beside a `ColorSource` written to CSS.** A palette entry or a function source
+  is written as the literal it resolves to in the provider's selection (`colorSourceCss`,
+  `packages/theme/src/colorSource.ts`), so with no `<ThemeProvider>` it does not follow a mode
+  change the way a theme ref does. And a custom `CurveLayer` has no resolver on its
+  `LayerRenderCtx`, so one that wants a color has to render a component that calls `useColorCss`,
+  as `CurveFill` does.
 
 - **(P3) labkit stored lab: a trial that fails to hydrate is left out with only a console warning.**
   `hydrateTrials` and `hydrateSnapshots` (`packages/labkit/src/state/hydrate.ts`) skip a trial or
