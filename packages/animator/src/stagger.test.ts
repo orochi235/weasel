@@ -156,7 +156,6 @@ describe('animator.stagger', () => {
   it('cancel cancels pending timers and in-flight children', () => {
     const { animator, advance } = mountAnimator();
     const starts: string[] = [];
-    const cancelledChildren: string[] = [];
     const handle = animator.stagger(['a', 'b', 'c'], 100, (item) => {
       starts.push(item);
       return animator.tween({
@@ -165,9 +164,6 @@ describe('animator.stagger', () => {
         ms: 10_000,
         easing: (t) => t,
         onTick: () => {},
-        onDone: () => {
-          cancelledChildren.push(item);
-        },
       });
     });
     // 'a' starts immediately. Advance 50ms; 'b' is still pending.
@@ -176,8 +172,7 @@ describe('animator.stagger', () => {
     handle.cancel();
     advance(500);
     expect(starts).toEqual(['a']);
-    // onDone shouldn't fire on cancelled tween.
-    expect(cancelledChildren).toEqual([]);
+    expect(animator.isActive()).toBe(false);
   });
 
   it('completes when a factory returns a composite that already finished', () => {

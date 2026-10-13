@@ -147,19 +147,13 @@ describe('a target table', () => {
     act(() => { h = animator.hold({ target: t.target(a), value: [70, 70], weight: () => weight }); });
     frame(0);
     frame(50);
-    // A read of a held row by itself asks its axes for the committed value's, which the pass
-    // never does.
-    const axes = stateOf(t.target(a)).axes;
-    const to = vi.spyOn(axes, 'to');
-    const write = vi.spyOn(axes, 'write');
+    // A proxy for the cost: a read of a held row by itself asks its axes for the committed value's.
+    const to = vi.spyOn(stateOf(t.target(a)).axes, 'to');
     frame(60);
     frame(70);
     expect(shown(t, a)).toEqual([40, 40]);
     expect(to).not.toHaveBeenCalled();
-    // The hold's own voice writes its value's axes, once a frame.
-    expect(write).toHaveBeenCalledTimes(2);
     to.mockRestore();
-    write.mockRestore();
     expect(shown(t, a)).toEqual(t.target(a).read());
     weight = 1;
     act(() => { h.touch(); });

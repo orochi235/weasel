@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { lerpColorArray } from '@weasel-js/paint';
 import { useAnimator } from './useAnimator';
 import type { ColorOverrideRegistry } from './colorRegistry';
 import { tweenVertexColors, springVertexColors, staggerVertexColors } from './colorHelpers';
@@ -80,7 +81,7 @@ describe('tweenVertexColors', () => {
     }).toThrow();
   });
 
-  it('uses oklab space when requested (red→green midpoint is not gray)', () => {
+  it('uses oklab space when requested', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
     act(() => {
@@ -97,7 +98,9 @@ describe('tweenVertexColors', () => {
     act(() => clock.advance(0));
     act(() => clock.advance(50));
     const mid = result.current.colorOverrides.get('a', 'fill') as number[];
-    expect(mid).not.toEqual([128, 128, 0, 255]);
+    const want = lerpColorArray([255, 0, 0, 255], [0, 255, 0, 255], 0.5, 'oklab');
+    expect(mid).toHaveLength(want.length);
+    mid.forEach((v, i) => expect(v).toBeCloseTo(want[i], 9));
   });
 
   it('uses custom interpolate when provided (overrides interpolation option)', () => {
