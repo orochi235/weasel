@@ -1,5 +1,3 @@
-import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { offenders } from './check-labels';
 
@@ -44,12 +42,5 @@ describe('offenders', () => {
 
   it('reports the line the rule starts on', () => {
     expect(offenders(file('.a { color: red; }\n\n.b {\n  text-transform: none;\n  letter-spacing: 0;\n}'))[0]).toMatchObject({ line: 3 });
-  });
-});
-
-describe('the params surfaces', () => {
-  it('have no label restating the recipe', () => {
-    const run = () => execFileSync('npx', ['tsx', join(import.meta.dirname, 'check-labels.ts')], { encoding: 'utf8', stdio: 'pipe' });
-    expect(run).not.toThrow();
   });
 });

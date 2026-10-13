@@ -58,7 +58,8 @@ describe('offenders', () => {
   });
 
   it('passes a negative or fractional length', () => {
-    expect(offenders(file('.a { height: 24.5px; }'), RANKS)).toEqual([]);
+    expect(offenders(file('.a { height: -24px; }'), RANKS)).toEqual([]);
+    expect(offenders(file('.a { height: 0.24px; }'), RANKS)).toEqual([]);
   });
 
   it('passes a box marked not-a-control, on the declaration or the line above', () => {

@@ -55,7 +55,8 @@ describe('scriptOffenders', () => {
     expect(scriptOffenders('x.tsx', "<span style={{ fontVariantNumeric: 'tabular-nums' }} />")).toHaveLength(1);
   });
 
-  it('passes a URL, which is not a comment', () => {
-    expect(scriptOffenders('x.ts', "const u = 'https://example.com';")).toEqual([]);
+  it('does not read a URL as a comment, so an offender after one is still caught', () => {
+    const line = "const u = 'https://example.com'; const s = { fontVariantNumeric: 'tabular-nums' };";
+    expect(scriptOffenders('x.ts', line)).toHaveLength(1);
   });
 });
