@@ -160,7 +160,7 @@ export interface SceneCanvasHit {
  *  turns behavior on by preset, and the rest configures what those turn on. */
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
-    CanvasProps<Node<TData, TLayer, TPose>, TPose>,
+    CanvasProps<TPose>,
     | 'adapter' | 'boundsOf' | 'selection' | 'tools'
     | 'viewState'       // SceneCanvas makes the camera from the view props below
     | 'layers'          // stripped so we can re-add as optional below

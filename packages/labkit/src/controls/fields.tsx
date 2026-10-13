@@ -5,21 +5,17 @@ import {
   PropertyControl,
   type PropertyControlProps,
   prefFieldProps,
-  withCommitPolicy,
 } from '@weasel-js/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFieldChoices } from './fieldChoices';
 
-/** Whether this leaf draws as a slider, mirroring the condition the `number`
- *  arm below branches on. A slider is the one control whose value cannot be
+const unwritten = (): void => {};
+
+/** Whether this leaf draws as a slider, the one control whose value cannot be
  *  read off the control itself. */
 export function isSliderLeaf(leaf: PrefLeaf): boolean {
-  return (
-    leaf.kind === 'number' &&
-    extra<string>(leaf, 'control') === 'slider' &&
-    extra<number>(leaf, 'min') !== undefined &&
-    extra<number>(leaf, 'max') !== undefined
-  );
+  const field = prefFieldProps(leaf, { value: undefined, setValue: unwritten }, 'lab');
+  return field?.kind === 'number' && field.control === 'slider';
 }
 
 /** Reads a labkit-only extra off a leaf. `PrefLeaf` has no field for these,
@@ -43,31 +39,13 @@ export function labField(
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
   if (leaf.kind === 'paint' || leaf.kind === 'object') return null;
-  const drawn = prefFieldProps(leaf, { value, setValue: write, fields, disabled });
-  if (drawn === null) return null;
-  const field = withCommitPolicy(drawn, 'lab');
+  const field = prefFieldProps(leaf, { value, setValue: write, fields, disabled }, 'lab');
+  if (field === null) return null;
   switch (field.kind) {
     case 'number':
       // `prefFieldProps` clamps what it stores, so an instrument is never
       // handed a value outside the range it asked for.
-      return {
-        ...field,
-        control: isSliderLeaf(leaf) ? 'slider' : 'input',
-        unit: extra<string>(leaf, 'suffix') ?? field.unit,
-      };
-    case 'boolean':
-      return {
-        ...field,
-        control: extra<string>(leaf, 'control') === 'switch' ? 'switch' : 'checkbox',
-      };
-    case 'enum':
-      // `.radio()` and `.toggle()` both ask for every option at once, which a panel draws as segments.
-      return {
-        ...field,
-        control: ['radio', 'toggle'].includes(extra<string>(leaf, 'control') ?? '')
-          ? 'toggle'
-          : 'select',
-      };
+      return { ...field, unit: extra<string>(leaf, 'suffix') ?? field.unit };
     case 'string':
       return {
         ...field,

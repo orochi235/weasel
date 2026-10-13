@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode, type RefObject } from 'react';
-import { isPrefLeaf, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefTabRuns, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
@@ -85,20 +85,16 @@ export function paneChildren(
   box?: (key: string, group: PrefGroup, path: string) => ReactNode,
 ): ReactNode[] {
   const out: ReactNode[] = [];
-  for (let i = 0; i < entries.length; i++) {
-    const [key, child] = entries[i]!;
+  for (const step of prefTabRuns(entries, ([, c]) => !isPrefLeaf(c) && c.as === 'tab')) {
+    if (step.tabs) {
+      const tabs = step.tabs.map(([k, c]): [string, PrefGroup] => [join(path, k), c as PrefGroup]);
+      out.push(<PaneTabs key={step.tabs[0]![0]} ctx={ctx} tabs={tabs} depth={depth} box={box} />);
+      continue;
+    }
+    const [key, child] = step.item;
     const p = join(path, key);
     if (isPrefLeaf(child)) {
       out.push(<PrefRow key={key} ctx={ctx} path={p} pref={child} />);
-    } else if (child.as === 'tab') {
-      const tabs: Array<[string, PrefGroup]> = [];
-      for (; i < entries.length; i++) {
-        const [k, c] = entries[i]!;
-        if (isPrefLeaf(c) || c.as !== 'tab') break;
-        tabs.push([join(path, k), c]);
-      }
-      i--;
-      out.push(<PaneTabs key={key} ctx={ctx} tabs={tabs} depth={depth} box={box} />);
     } else if (child.as === 'fragment') {
       // No box of its own (`display: contents`): its rows take their places in the rows around them, and each
       // carries the mark a hidden fragment has no box for.

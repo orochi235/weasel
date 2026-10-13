@@ -22,7 +22,9 @@ live in `@weasel-js/prefs/react`, so the main entry never loads React.
 `usePrefsStore(schema, { storage, prefix })` gives a component a store of its
 own: open from its first render, closed with its writes sent when it unmounts.
 It takes an adapter that reads synchronously, and components naming the same
-`storage` and `prefix` share one store.
+`storage`, `prefix`, and `schema` share one store. Components naming one
+`storage` and `prefix` with different schemas each get a store over the same
+records.
 
 ## Ranges
 

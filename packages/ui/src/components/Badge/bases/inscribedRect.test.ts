@@ -71,6 +71,32 @@ describe('fitInsets', () => {
     expect(pointsInside(diamond, held({ w: 100, h: 20 }, insets))).toBe(0);
   });
 
+  describe('with a clearance, for an outline an effect or a negative bloat pushes inward', () => {
+    it('keeps the content that far from the outline', () => {
+      const content = { w: 100, h: 20 };
+      const insets = fitInsets(diamond, content, none, 4);
+      const tight = fitInsets(diamond, content, none);
+      expect(insets.left).toBeGreaterThan(tight.left);
+      expect(insets.top).toBeGreaterThan(tight.top);
+      const grown = { w: content.w + 8, h: content.h + 8 };
+      const around = { top: insets.top - 4, right: insets.right - 4, bottom: insets.bottom - 4, left: insets.left - 4 };
+      expect(pointsInside(diamond, held(grown, around))).toBe(0);
+    });
+
+    it('returns the floor itself while the floor keeps the clearance too', () => {
+      const floor = { top: 20, right: 60, bottom: 20, left: 60 };
+      expect(fitInsets(diamond, { w: 40, h: 10 }, floor, 2)).toBe(floor);
+    });
+
+    it('grows a floor that clears the outline but not by the clearance', () => {
+      const content = { w: 100, h: 20 };
+      const floor = fitInsets(diamond, content, none);
+      const insets = fitInsets(diamond, content, floor, 4);
+      expect(insets).not.toBe(floor);
+      expect(insets.left).toBeGreaterThan(floor.left);
+    });
+  });
+
   it.each(['quatrefoil', 'octant-spline', 'octant-bspline', 'puzzle'] as const)('clears the %s outline at any content length', (key) => {
     const base = BASES[key];
     const points = outlinePoints(base.build(base.defaults, 100, 100));

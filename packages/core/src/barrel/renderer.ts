@@ -116,8 +116,10 @@ export type {
   ResolvedCursor,
   BakeOptions,
 } from '@weasel-js/cursor';
-export { createPaintedCursorState } from '@weasel-js/cursor';
+export { createCursorSink, createPaintedCursorState } from '@weasel-js/cursor';
 export type {
+  CursorSink,
+  CursorSinkTarget,
   PaintedCursor,
   PaintedCursorFrame,
   PaintedCursorState,

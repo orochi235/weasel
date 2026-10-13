@@ -17,6 +17,7 @@ export {
   visiblePrefSubtree,
 } from './helpers';
 export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
+export { prefTabRuns, type PrefTabRun } from './tabRuns';
 export {
   isPrefCondition,
   mapPrefConditionPaths,

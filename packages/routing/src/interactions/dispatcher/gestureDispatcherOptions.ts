@@ -4,7 +4,7 @@
  */
 import type { RefObject } from 'react';
 import type { BodyClassification } from '@weasel-js/gestures';
-import type { PaintedCursorState } from '@weasel-js/cursor';
+import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
 import type { Contribution } from '../../contributions/types';
 import type { DepSchema } from '../../index';
 import type { AffordanceHit } from '../actions/invoker';
@@ -197,6 +197,15 @@ export interface UseGestureDispatcherOptions {
    * `none` and the pointer shows nothing.
    */
   paintedCursor?: () => PaintedCursorState | undefined;
+
+  /**
+   * Where the hover cursor is written, read live like `paintedCursor`. A
+   * surface that shows a tool cursor of its own passes the sink that holds
+   * it, so a hover cursor that clears puts the tool's back. Without one the
+   * dispatcher writes the canvas element's `cursor` style and removes what
+   * it wrote.
+   */
+  cursorSink?: () => CursorSink | undefined;
 
   /** How touch and pen long-presses are timed, published and felt. */
   longPress?: LongPressOptions;

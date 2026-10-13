@@ -156,9 +156,9 @@ const badge: RenderLayer<unknown> = {
 };
 
 <SceneCanvas
+  width={640} height={480}
   scene={scene}
   layers={{
-    selectionOverlay: { handles: true },
     badge: { layer: badge, after: 'selectionOverlay' } satisfies CustomLayerEntry,
   }}
 />

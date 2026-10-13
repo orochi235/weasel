@@ -3,6 +3,7 @@
  * one strip, a `panel` in a box, and the rest as rows under their headings.
  */
 import { Fragment, type ReactNode } from 'react';
+import { prefTabRuns } from '@weasel-js/prefs';
 import { BarLayout } from '../Bar/BarLayout';
 import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
@@ -115,28 +116,25 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
 function placed(sections: readonly DrawnSection[], marks: PanelMarks): ReactNode[] {
   const { lead } = marks;
   const out: ReactNode[] = [];
-  for (let i = 0; i < sections.length; i++) {
-    const { section, content } = sections[i]!;
-    if (section.as !== 'tab') {
+  for (const step of prefTabRuns(sections, (drawn) => drawn.section.as === 'tab')) {
+    if (!step.tabs) {
+      const { section, content, hidden } = step.item;
       const cls = section.as === 'panel' ? `${s.section} ${s.sectionPanel}` : s.section;
       out.push(
         <section key={section.key} className={cls} {...(sectionNamed(section) ? selectionAttrs(section.key, selectedOnly(marks)) : {})}
-          {...hiddenAttrs(sections[i]!.hidden === true)}>
+          {...hiddenAttrs(hidden === true)}>
           {content}
         </section>,
       );
       continue;
     }
-    const run = [];
-    for (; i < sections.length && sections[i]!.section.as === 'tab'; i++) {
-      const at = sections[i]!.section;
+    const run = step.tabs.map(({ section: at, content }) => {
       const holds = at.key === lead || at.rows.some((row) => row.leaves.some((item) => pathWithin(panelLeafKey(item), lead)));
       // An open tab says so with `data-selected` of its own, so a tab is pressed as a rail entry is and the mark is its panel's.
       const [attrs, panelAttrs] = [{ [RAIL_ATTR]: at.key }, selectionAttrs(at.key, selectedOnly(marks))];
-      run.push({ id: at.key, name: at.name, content: sections[i]!.content, holds, attrs, panelAttrs });
-    }
-    i--;
-    out.push(<PanelTabs key={section.key} className={s.section} tabs={run} lead={lead} />);
+      return { id: at.key, name: at.name, content, holds, attrs, panelAttrs };
+    });
+    out.push(<PanelTabs key={step.tabs[0]!.section.key} className={s.section} tabs={run} lead={lead} />);
   }
   return out;
 }

@@ -220,10 +220,8 @@ export function GestureDispatcherMounter({
 
   // The painted tier's channel, read live for the same reason — the handle it
   // lives on binds after mount.
-  const paintedCursor = useCallback(
-    () => canvasApiRef.current?.paintedCursor,
-    [canvasApiRef],
-  );
+  const paintedCursor = useCallback(() => canvasApiRef.current?.paintedCursor, [canvasApiRef]);
+  const cursorSink = useCallback(() => canvasApiRef.current?.cursorSink, [canvasApiRef]);
 
   // The pending long-press, published as the `longPress` dep for feedback.
   const [longPressState] = useState(createLongPressStore);
@@ -261,6 +259,7 @@ export function GestureDispatcherMounter({
     clientToWorld,
     requestRedraw,
     paintedCursor,
+    cursorSink,
     getRuleCtx,
     onClick,
     onDoubleClick,

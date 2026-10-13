@@ -79,11 +79,26 @@ function fitAxis(content: number, before: number, after: number, floor: readonly
   return null;
 }
 
+const SIDES = ['top', 'right', 'bottom', 'left'] as const;
+
 /**
- * The padding, no side under `floor`, that keeps a `content`-sized box clear of the outline
- * `points` describe, in the smallest box that does. `floor` itself when that already does.
+ * The padding, no side under `floor`, that keeps a `content`-sized box `clear` px from the
+ * outline `points` describe, in the smallest box that does. `floor` itself when that already does.
  */
-export function fitInsets(points: readonly Point[], content: { w: number; h: number }, floor: ShapeInsets): ShapeInsets {
+export function fitInsets(points: readonly Point[], content: { w: number; h: number }, floor: ShapeInsets, clear = 0): ShapeInsets {
+  if (clear <= 0) return fitTouching(points, content, floor);
+  // Content `clear` from the outline is content grown by `clear` on every side that touches it.
+  const within = (n: number) => Math.max(0, n - clear);
+  const grown = fitTouching(
+    points,
+    { w: content.w + 2 * clear, h: content.h + 2 * clear },
+    { top: within(floor.top), right: within(floor.right), bottom: within(floor.bottom), left: within(floor.left) },
+  );
+  const insets = { top: grown.top + clear, right: grown.right + clear, bottom: grown.bottom + clear, left: grown.left + clear };
+  return SIDES.every((side) => Math.abs(insets[side] - floor[side]) < 1e-9) ? floor : insets;
+}
+
+function fitTouching(points: readonly Point[], content: { w: number; h: number }, floor: ShapeInsets): ShapeInsets {
   const width = content.w + floor.left + floor.right;
   const height = content.h + floor.top + floor.bottom;
   const held: ViewRect = {

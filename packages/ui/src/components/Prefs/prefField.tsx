@@ -6,7 +6,9 @@ import { stepDisplay } from '../Properties/NumberControls';
 import { namedGlyph } from '../../icons/namedGlyph';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
+import { type ParamsSurface, withCommitPolicy } from './commitPolicy';
 import { prefUnitAccepts, type PrefFieldChoice } from './schema';
+import { withSurfaceControl } from './surfaceControls';
 
 /** What {@link prefFieldProps} is told about one leaf's value. */
 export interface PrefFieldState {
@@ -45,12 +47,22 @@ export interface PrefFieldState {
  *
  * A leaf that is not a single control — an `object`, `union`, `list`, `map`,
  * `action`, or an app-defined kind — returns `null`, and the surface draws it.
- * Spread the result and add what the surface decides: `chrome`, `name`, a
- * class, a different default `control`.
+ * Spread the result and add what the caller decides: `chrome`, `name`, a class.
+ *
+ * Given a `surface`, the control is the one that surface draws for what the
+ * leaf asked for ({@link PARAMS_CONTROLS}), and it writes when that surface
+ * writes ({@link PARAMS_SETTLES}). A leaf naming no control is left without
+ * one; {@link withRowControl} fills in a row's.
  */
-export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
-  const field = enabledFieldProps(leaf, state);
-  return field !== null && state.disabled ? { ...field, disabled: true } : field;
+export function prefFieldProps(
+  leaf: PrefLeaf,
+  state: PrefFieldState,
+  surface?: ParamsSurface,
+): PropertyControlProps | null {
+  const made = enabledFieldProps(leaf, state);
+  if (made === null) return null;
+  const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface);
+  return state.disabled ? { ...field, disabled: true } : field;
 }
 
 function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {

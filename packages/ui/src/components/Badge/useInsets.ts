@@ -61,8 +61,9 @@ function useMeasured(ref: RefObject<HTMLElement | null>, enabled: boolean): Meas
  * The padding a shape or base adds around the badge's content. A base that `fitsContent` has
  * an outline that dips inside its box by a share of the box, so its declared `insets`
  * stand while they keep the content at `contentRef` clear of the outline, and grow when they do not.
+ * `clear` is how many CSS px inside that outline the drawn one runs.
  */
-export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefObject<HTMLElement | null>): ShapeInsets {
+export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefObject<HTMLElement | null>, clear = 0): ShapeInsets {
   const fits = source.fitsContent === true && source.build !== undefined;
   const measured = useMeasured(contentRef, fits);
   const key = fits ? JSON.stringify(params) : '';
@@ -78,10 +79,10 @@ export function useInsets<P>(source: InsetSource<P>, params: P, contentRef: RefO
     // The badge's own padding counts toward clearing the outline, so it is fitted with the insets and taken back out.
     const { pad } = measured;
     const floor = { top: top + pad.top, right: right + pad.right, bottom: bottom + pad.bottom, left: left + pad.left };
-    const all = fitInsets(points, measured, floor);
+    const all = fitInsets(points, measured, floor, clear);
     if (all === floor) return null;
     const less = (a: number, b: number) => Math.round((a - b) * 100) / 100;
     return { top: less(all.top, pad.top), right: less(all.right, pad.right), bottom: less(all.bottom, pad.bottom), left: less(all.left, pad.left) };
-  }, [points, measured, top, right, bottom, left]);
+  }, [points, measured, top, right, bottom, left, clear]);
   return fitted ?? declared;
 }

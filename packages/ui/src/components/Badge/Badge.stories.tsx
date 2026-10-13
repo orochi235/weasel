@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Badge } from './Badge';
+import st from './Badge.stories.module.css';
 import { ALL_SHAPES } from './shapes';
 import type { BadgeStatus, BadgeVariant } from './types';
 import { ComposeLabView } from './lab/ComposeLabView';
@@ -83,17 +84,17 @@ export const StatusVariantMatrix: Story = {
   render: (args) => {
     const label = typeof args.children === 'string' ? args.children : 'LABEL';
     return (
-      <table style={{ borderCollapse: 'separate', borderSpacing: '12px 8px' }}>
+      <table className={st.matrix}>
         <thead>
           <tr>
             <th></th>
-            {VARIANTS.map((v) => <th key={v} style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.7 }}>{v}</th>)}
+            {VARIANTS.map((v) => <th key={v} className={st.matrixHead}>{v}</th>)}
           </tr>
         </thead>
         <tbody>
           {STATUSES.map((status) => (
             <tr key={status}>
-              <td style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.7 }}>{status}</td>
+              <td className={st.matrixHead}>{status}</td>
               {VARIANTS.map((variant) => (
                 <td key={variant}>
                   <Badge
@@ -137,7 +138,7 @@ export const PeerTones: Story = {
 export const BaselineRow: Story = {
   name: 'Baseline justification',
   render: (_args) => (
-    <p style={{ fontSize: 14, lineHeight: 1.6 }}>
+    <p className={st.baselineText}>
       Inline text with{' '}
       <Badge shape="pill" status="accent" >pill</Badge>{' '}
       <Badge shape="square" status="info" >square</Badge>{' '}
@@ -154,7 +155,7 @@ export const Sizes: Story = {
   render: (args) => {
     const label = typeof args.children === 'string' ? args.children : 'LABEL';
     return (
-      <div style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}>
+      <div className={st.row}>
         <Badge size="xs" shape={args.shape as never} status={args.status} variant={args.variant}>{label} xs</Badge>
         <Badge size="sm" shape={args.shape as never} status={args.status} variant={args.variant}>{label} sm</Badge>
         <Badge size="md" shape={args.shape as never} status={args.status} variant={args.variant}>{label} md</Badge>
@@ -186,10 +187,10 @@ export const WithTooltip: Story = {
 
 export const EdgeCases: Story = {
   render: (_args) => (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>
+    <div className={`${st.row} ${st.wrappingRow}`}>
       <Badge status="info" >A very long label that tests overflow</Badge>
       <Badge shape="plain" status="warn" >
-        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'currentColor', marginRight: 4, verticalAlign: 'middle' }} />
+        <span className={st.dot} />
         live
       </Badge>
       <Badge shape="starburst" status="danger" variant="solid" >NEW</Badge>
@@ -204,15 +205,15 @@ export const EdgeCases: Story = {
 export const InlineWrapping: Story = {
   name: 'Edge case: inline wrap mid-badge',
   render: (_args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 360, lineHeight: 1.7 }}>
-      <p style={{ margin: 0 }}>
+    <div className={st.narrowColumn}>
+      <p>
         A normal paragraph that contains{' '}
         <Badge shape="pill" status="accent" >
           a sufficiently long inline badge label
         </Badge>{' '}
         and continues afterward to force the badge to be broken across two visual lines.
       </p>
-      <p style={{ margin: 0 }}>
+      <p>
         With <code>display: inline-flex</code>, badges don't fragment — they stay whole and either fit the line or push to a new one.
         Here's the same thing with a longer payload:{' '}
         <Badge shape="square" status="info" >
@@ -220,7 +221,7 @@ export const InlineWrapping: Story = {
         </Badge>{' '}
         trailing copy.
       </p>
-      <p style={{ margin: 0 }}>
+      <p>
         Constrained-width container —{' '}
         <Badge shape="ribbon" status="warn" >
           a ribbon badge that wraps because of width
@@ -236,7 +237,7 @@ export const ComposeShowcase: Story = {
   name: 'Compose: base + effects',
   args: { children: 'COMPOSE', status: 'danger', variant: 'solid' },
   render: (args) => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 24, alignItems: 'baseline' }}>
+    <div className={st.showcase}>
       <Badge
         {...args}
         base="chamfered-rect"
@@ -353,7 +354,7 @@ export const ComposeShowcase: Story = {
 export const SlotPillReplica: Story = {
   name: 'Slot pill (migration parity)',
   render: (_args) => (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+    <div className={`${st.row} ${st.tightRow}`}>
       <Badge shape="pill" status="accent" variant="outline" >active</Badge>
       <Badge shape="pill" status="warn" variant="outline" >ambient</Badge>
       <Badge shape="pill" status="info" variant="outline" >hotkey</Badge>

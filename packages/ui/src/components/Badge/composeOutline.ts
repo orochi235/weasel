@@ -15,27 +15,19 @@ function closedPath(at: (sCss: number) => { x: number; y: number }, totalCss: nu
 }
 
 /**
- * The base outline with `bloat` and every perimeter-warping effect applied. Each effect's
- * offset is summed at every sample, so stacked effects compose additively.
+ * Where `bloat` and every perimeter-warping effect move the point of `base` at arc length
+ * `s`, in CSS px, with the point itself. Each effect's offset is summed, so stacked effects
+ * compose additively. Null when nothing moves the outline.
  */
-export function composeOutline(
-  base: BaseSampler,
-  effects: readonly BadgeEffectSpec[] | undefined,
-  bloatCss: number,
-  box: Box,
-  phase: number,
-): BaseSampler {
+function displacer(base: BaseSampler, effects: readonly BadgeEffectSpec[] | undefined, bloatCss: number, phase: number) {
   const offsetMods = (effects ?? []).flatMap((eff) => {
     const mod = EFFECTS[eff.type];
     if (!mod?.offsetAt) return [];
     return [{ offsetAt: mod.offsetAt, params: { ...(mod.defaults ?? {}), ...(eff.params ?? {}) } }];
   });
-  if (offsetMods.length === 0 && bloatCss === 0) return base;
-  const sx = 100 / box.w;
-  const sy = 100 / box.h;
+  if (offsetMods.length === 0 && bloatCss === 0) return null;
   const totalCss = base.totalCss;
-  const warpedXY = (sCss: number) => {
-    const sm = ((sCss % totalCss) + totalCss) % totalCss;
+  return (sm: number) => {
     const pt = base.perimeterAt(sm);
     let dx = pt.nx * bloatCss;
     let dy = pt.ny * bloatCss;
@@ -44,6 +36,40 @@ export function composeOutline(
       dx += o.dx;
       dy += o.dy;
     }
+    return { pt, dx, dy };
+  };
+}
+
+/**
+ * How far, in CSS px, `bloat` and the effects move any point of `base`'s outline that they
+ * move inward: the clearance content needs from `base` to stay inside the composed outline.
+ */
+export function inwardReach(base: BaseSampler, effects: readonly BadgeEffectSpec[] | undefined, bloatCss: number): number {
+  const moved = displacer(base, effects, bloatCss, 0);
+  if (!moved) return 0;
+  let reach = 0;
+  for (let i = 0; i < SAMPLES; i++) {
+    const { pt, dx, dy } = moved((i / SAMPLES) * base.totalCss);
+    if (dx * pt.nx + dy * pt.ny < 0) reach = Math.max(reach, Math.hypot(dx, dy));
+  }
+  return reach;
+}
+
+/** The base outline with `bloat` and every perimeter-warping effect applied. */
+export function composeOutline(
+  base: BaseSampler,
+  effects: readonly BadgeEffectSpec[] | undefined,
+  bloatCss: number,
+  box: Box,
+  phase: number,
+): BaseSampler {
+  const moved = displacer(base, effects, bloatCss, phase);
+  if (!moved) return base;
+  const sx = 100 / box.w;
+  const sy = 100 / box.h;
+  const totalCss = base.totalCss;
+  const warpedXY = (sCss: number) => {
+    const { pt, dx, dy } = moved(((sCss % totalCss) + totalCss) % totalCss);
     return { x: pt.x + dx * sx, y: pt.y + dy * sy };
   };
   // The normal is recomputed from the warped tangent, so decorations follow the
