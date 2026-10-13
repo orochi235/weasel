@@ -37,7 +37,6 @@ import {
   type IngestItem
 } from 'features/ingestion';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
-import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import {
   createSelectionOverlayLayer,
   rotationBadgeOf,
@@ -51,7 +50,6 @@ import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions
 import type React from 'react';
 import { forwardRef, useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from 'react';
 import { useHandTool } from 'tools/builtin/hand';
-import type { PenScratch } from 'tools/builtin/pen';
 import {
   selectionMoveContribution,
   selectionResizeContribution,
@@ -65,7 +63,7 @@ import type { DebugConfig } from '../debug/types';
 import { createLongPressFeedbackContribution } from '../features/longPress/longPressFeedback';
 import type { ReflowTransition } from '../layout/types';
 import { installTestHookIfRequested, releaseTestHook } from '../test-hook/install';
-import type { AnyTool, Contribution, Tool } from '../tools/overlayBinding';
+import type { AnyTool, Contribution } from '../tools/overlayBinding';
 import { useTools, type ToolsApi } from '../tools/overlayBinding';
 import type { LayersMap, SceneSlotConfig, SelectionOverlaySlotConfig } from './Canvas';
 import { Canvas } from './Canvas';
@@ -897,16 +895,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [chromeCaps, currentRuleInputs],
   );
 
-  // Draws the pen tool's in-progress path from its persistent scratch. Null unless the pen
-  // tool is registered.
-  const wantsPen = wants('pen');
-  const penPreviewLayer = useMemo(
-    () => (wantsPen
-      ? createPenPreviewLayer({ penTool: shapeTools.pen as Tool<PenScratch> })
-      : null),
-    [shapeTools.pen, wantsPen],
-  );
-
   // The chrome layer reads `editingId` via a ref, so an edit-mode change needs an explicit
   // redraw.
   useEffect(() => {
@@ -1034,10 +1022,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       : mergedLayers.selectionOverlay === null ? null : undefined,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
-    ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(slopsOn ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, slopsOn, slopsLayer]);
+  }), [mergedLayers, sceneSlot, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, slopsOn, slopsLayer]);
 
   // `CanvasExtensionApi.ingest` is routed through `registry.trigger('ingest', …)` so the
   // action's `requires` deps are resolved exactly as on the dispatcher path.
