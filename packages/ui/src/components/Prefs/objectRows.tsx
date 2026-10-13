@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import { isPrefLeaf, type PrefLeaf, type PrefObject, type PrefSection } from '@weasel-js/prefs';
+import { isPrefLeaf, prefTabRuns, type PrefLeaf, type PrefObject, type PrefSection } from '@weasel-js/prefs';
 import { BarLayout, type BarNode } from '../Bar/BarLayout';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { GroupTabs, type GroupTab } from './GroupTabs';
@@ -40,6 +40,39 @@ export interface ObjectLeafParts<Cell> {
   frame(key: string, section: PrefSection, inner: ReactNode[], at: ObjectSectionAt): ReactNode[];
 }
 
+/** One child of an object leaf with something to draw, before it is placed among its neighbors. */
+type Drawn<Cell> =
+  | { kind: 'cell'; cell: Cell }
+  | { kind: 'bar'; key: string; section: PrefSection; nodes: BarNode[] }
+  | { kind: 'tab'; tab: ObjectTab }
+  | { kind: 'frame'; key: string; section: PrefSection; inner: ReactNode[]; labeled: boolean };
+
+/** The children that draw something, in order. */
+function drawnChildren<Cell>(children: PrefObject['children'], parts: ObjectLeafParts<Cell>): Drawn<Cell>[] {
+  const out: Drawn<Cell>[] = [];
+  for (const [key, child] of Object.entries(children)) {
+    if (isPrefLeaf(child)) {
+      out.push({ kind: 'cell', cell: parts.cell(key, child, 'row') });
+      continue;
+    }
+    if (child.as === 'bar') {
+      const nodes = barNodes(child.members, parts);
+      if (nodes.length > 0) out.push({ kind: 'bar', key, section: child, nodes });
+      continue;
+    }
+    const labeled = child.name !== '' && child.as !== 'fragment';
+    const inner = objectRows(child.members, parts, labeled && child.as !== 'tab');
+    if (inner.length === 0) continue;
+    if (child.as === 'tab') {
+      const content = [...(parts.lead?.(key, child) ?? []), ...inner];
+      out.push({ kind: 'tab', tab: { id: key, name: child.name, section: child, content } });
+    } else {
+      out.push({ kind: 'frame', key, section: child, inner, labeled });
+    }
+  }
+  return out;
+}
+
 /**
  * An object leaf's children as rows, the one walk every params surface makes: fields in runs, a `bar` section as
  * one line, neighboring `tab` sections as one set of tabs, and any other section framed by the surface. A section
@@ -52,45 +85,30 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
     if (pending.length > 0) out.push(...parts.rows(pending));
     pending = [];
   };
-  // A run of neighboring `tab` sections, held until something else ends it.
-  let tabs: ObjectTab[] = [];
-  const flushTabs = (): void => {
-    if (tabs.length > 0) {
+  for (const step of prefTabRuns(drawnChildren(children, parts), (drawn) => drawn.kind === 'tab')) {
+    if (step.tabs) {
+      const tabs = step.tabs.map((drawn) => (drawn as Extract<Drawn<Cell>, { kind: 'tab' }>).tab);
       const key = `tabs:${tabs[0]!.id}`;
-      out.push(parts.tabs ? <Fragment key={key}>{parts.tabs(tabs)}</Fragment> : <GroupTabs key={key} tabs={tabs} />);
-    }
-    tabs = [];
-  };
-  for (const [key, child] of Object.entries(children)) {
-    if (isPrefLeaf(child)) {
-      flushTabs();
-      pending.push(parts.cell(key, child, 'row'));
-      continue;
-    }
-    if (child.as === 'bar') {
-      const nodes = barNodes(child.members, parts);
-      if (nodes.length === 0) continue;
       flush();
-      flushTabs();
-      out.push(
-        <BarLayout key={`bar:${key}`} framed label={child.name === '' ? undefined : child.name}
-          nodes={nodes} cells={() => []} row={() => null} attrs={parts.barAttrs} />,
-      );
+      out.push(parts.tabs ? <Fragment key={key}>{parts.tabs(tabs)}</Fragment> : <GroupTabs key={key} tabs={tabs} />);
       continue;
     }
-    const labeled = child.name !== '' && child.as !== 'fragment';
-    const inner = objectRows(child.members, parts, labeled && child.as !== 'tab');
-    if (inner.length === 0) continue;
+    const drawn = step.item;
+    if (drawn.kind === 'cell') {
+      pending.push(drawn.cell);
+      continue;
+    }
     flush();
-    if (child.as === 'tab') {
-      tabs.push({ id: key, name: child.name, section: child, content: [...(parts.lead?.(key, child) ?? []), ...inner] });
-      continue;
+    if (drawn.kind === 'bar') {
+      out.push(
+        <BarLayout key={`bar:${drawn.key}`} framed label={drawn.section.name === '' ? undefined : drawn.section.name}
+          nodes={drawn.nodes} cells={() => []} row={() => null} attrs={parts.barAttrs} />,
+      );
+    } else if (drawn.kind === 'frame') {
+      out.push(...parts.frame(drawn.key, drawn.section, drawn.inner, { labeled: drawn.labeled, indent }));
     }
-    flushTabs();
-    out.push(...parts.frame(key, child, inner, { labeled, indent }));
   }
   flush();
-  flushTabs();
   return out;
 }
 

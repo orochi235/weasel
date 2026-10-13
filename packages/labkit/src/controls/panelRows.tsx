@@ -4,6 +4,7 @@ import {
   type PrefLeaf,
   type PrefSection,
   pairRuns,
+  prefTabRuns,
 } from '@weasel-js/prefs';
 import {
   type CollapseProps,
@@ -231,65 +232,59 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
    *  the row of the leaf naming it, where they run adjacent. */
   const rowsFor = (paths: readonly string[], rows: Rows): ReactNode[] => {
     const runs = pairRuns(paths, pairable);
+    // A run of groups drawn as tabs shares one strip. A group is never paired, so each is a run of its own.
+    const tabGroup = ({ items, pair }: (typeof runs)[number]): boolean => {
+      const found = pair ? undefined : schemaNodeAtPath(resolved.group, items[0]!);
+      return found !== undefined && !isPrefLeaf(found) && found.as === 'tab';
+    };
     const out: ReactNode[] = [];
-    for (let i = 0; i < runs.length; ) {
-      const { items, pair } = runs[i]!;
-      if (pair) {
-        const cells = items.map((path) => ({
-          path,
-          leaf: schemaNodeAtPath(resolved.group, path) as PrefLeaf,
-          disabled: !enabled(path),
-        }));
+    for (const step of prefTabRuns(runs, tabGroup)) {
+      if (step.tabs) {
+        const tabs = step.tabs.map((run) => run.items[0]!).filter(visible);
+        if (tabs.length === 0) continue;
         out.push(
-          <PairedRow
-            key={items[0]}
-            label={pair.label}
-            cells={cells}
-            shown={shown}
-            setConfig={setConfig}
-            layout={rows.layout}
-            // A segmented cell carries every choice at once, so a pair holding
-            // one needs the whole row the way a segmented row of its own does.
-            span={cells.some(({ leaf }) => extra<string>(leaf, 'control') === 'radio')}
-          />,
-        );
-        i += 1;
-        continue;
-      }
-      // A run of groups drawn as tabs shares one strip. A group is never paired, so each is a run of its own.
-      const run: Array<{ path: string; name: string }> = [];
-      let past = i;
-      for (; past < runs.length; past += 1) {
-        const path = runs[past]!.items[0]!;
-        const found = schemaNodeAtPath(resolved.group, path);
-        if (!found || isPrefLeaf(found) || found.as !== 'tab') break;
-        if (visible(path)) {
-          run.push({ path, name: found.name });
-        }
-      }
-      if (past > i) {
-        if (run.length > 0) {
-          out.push(
-            <GroupTabs
-              key={items[0]}
-              className="lk-control-tabs"
-              tabs={run.map(({ path, name }) => ({
+          <GroupTabs
+            key={step.tabs[0]!.items[0]}
+            className="lk-control-tabs"
+            tabs={tabs.map((path) => {
+              const group = schemaNodeAtPath(resolved.group, path) as PrefGroup;
+              return {
                 id: path,
-                name,
+                name: group.name,
                 content: (
                   <PropertyList pack={rows.grid} density={density} align={align}>
-                    {body(schemaNodeAtPath(resolved.group, path) as PrefGroup, path, rows)}
+                    {body(group, path, rows)}
                   </PropertyList>
                 ),
-              }))}
-            />,
-          );
-        }
-        i = past;
+              };
+            })}
+          />,
+        );
         continue;
       }
-      out.push(node(items[0]!, rows));
-      i += 1;
+      const { items, pair } = step.item;
+      if (!pair) {
+        out.push(node(items[0]!, rows));
+        continue;
+      }
+      const cells = items.map((path) => ({
+        path,
+        leaf: schemaNodeAtPath(resolved.group, path) as PrefLeaf,
+        disabled: !enabled(path),
+      }));
+      out.push(
+        <PairedRow
+          key={items[0]}
+          label={pair.label}
+          cells={cells}
+          shown={shown}
+          setConfig={setConfig}
+          layout={rows.layout}
+          // A segmented cell carries every choice at once, so a pair holding
+          // one needs the whole row the way a segmented row of its own does.
+          span={cells.some(({ leaf }) => extra<string>(leaf, 'control') === 'radio')}
+        />,
+      );
     }
     return out;
   };
