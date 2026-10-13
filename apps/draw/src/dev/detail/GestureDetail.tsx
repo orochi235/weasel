@@ -1,11 +1,11 @@
-import { Badge, Button, Code, DataGrid, type BadgeProps, type DataGridColumn } from '@weasel-js/ui';
+import { Badge, Button, Code, DataGrid, InlineMarkdown, type BadgeProps, type DataGridColumn } from '@weasel-js/ui';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import { GESTURE_BADGE_PROPS } from '../badgeTokens';
 import type { ActionEntry, GestureEntry, PhaseOutputEntry, ToolEntry } from '../registryEntries';
 import { describeGestureSpec } from './ActionDetail';
-import { EntryLink, InlineMarkdown, type Props } from './shared';
+import { EntryLink, type Props } from './shared';
 
 /** `GestureSpec.kind` → the `GestureChannels` key a tool's surface records
  *  it under. Only the hyphenated kind differs. This used to be two maps

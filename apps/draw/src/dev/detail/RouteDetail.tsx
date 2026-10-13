@@ -1,12 +1,12 @@
 import { canonicalModifiers, describeRoute, describeRouteParts, formatPhaseAtom, ROUTE_FIELD_DEFINITIONS, type RouteFieldName } from '@weasel-js/core/routing';
-import { Code, DataGrid, DetailList, DetailRow, GestureRoute } from '@weasel-js/ui';
+import { Code, DataGrid, DetailList, DetailRow, GestureRoute, InlineMarkdown } from '@weasel-js/ui';
 import { Fragment, type ReactNode } from 'react';
 import s from '../RegistryInspector.module.css';
 import { parseRoute } from '../registryData';
 import type { ActionEntry, GroupEntry, ModifierSetEntry, RouteEntry, RouteTargetEntry, SlotEntry, ToolEntry } from '../registryEntries';
 import { mergedToolColumn, toolNameColumn } from './GestureDetail';
 import { RouteBadge } from './RouteBadge';
-import { EntryLink, InlineMarkdown, type Props } from './shared';
+import { EntryLink, type Props } from './shared';
 
 export function SlotDetail({
   entry, tools, onNavigate,

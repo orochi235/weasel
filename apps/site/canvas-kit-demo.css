@@ -830,7 +830,6 @@ a:hover { text-decoration: underline; }
   font-size: var(--wzl-font-size-md);
   color: var(--wzl-fg);
 }
-.ckd-desc code,
 .ckd-release-body code {
   padding: 1px var(--wzl-space-2);
   border-radius: var(--wzl-radius-sm);

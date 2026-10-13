@@ -1,6 +1,7 @@
 import { useRef, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Focusable } from 'react-aria-components';
+import { inlineMarkdownText } from '../InlineMarkdown';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import { useRowHelp } from './rowHelp';
 import s from './PropertyHelp.module.css';
@@ -74,7 +75,7 @@ export function PropertyHelp({ label, description, autoValue, within }: Property
         typeof document !== 'undefined' &&
         createPortal(
           <span id={help.id} hidden>
-            {description}
+            {description && inlineMarkdownText(description)}
             {autoValue != null && <> auto {autoValue}</>}
           </span>,
           document.body,

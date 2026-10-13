@@ -40,6 +40,11 @@ export const Placements: Story = {
   ),
 };
 
+export const Markdown: Story = {
+  args: { children: 'Sets `fill` on **every** stop. A `*` in a glob like *.ts stays as written.' },
+  render: Basic.render,
+};
+
 export const LongContent: Story = {
   render: () => (
     <TooltipTrigger>

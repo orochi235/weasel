@@ -1,11 +1,10 @@
-import { Badge, Code, DataGrid, type BadgeProps } from '@weasel-js/ui';
+import { Badge, Code, DataGrid, InlineMarkdown, type BadgeProps } from '@weasel-js/ui';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import { TOKEN_SETS, type TokenSet } from '../badgeTokens';
 import type { MetaEntry } from '../registryEntries';
 import { RouteBadge } from './RouteBadge';
-import { InlineMarkdown } from './shared';
 
 export function MetaDetail({ entry }: { entry: MetaEntry }) {
   if (entry.id === 'tokens') return <TokensDetail />;

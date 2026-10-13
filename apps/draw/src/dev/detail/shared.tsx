@@ -1,25 +1,7 @@
-import { Badge, Button, Code, type BadgeProps } from '@weasel-js/ui';
-import { Fragment } from 'react';
+import { Badge, Button, Code, InlineMarkdown, type BadgeProps } from '@weasel-js/ui';
 import s from '../RegistryInspector.module.css';
 import { BUNDLE_BADGE_PROPS, KIND_BADGE_PROPS } from '../badgeTokens';
 import type { ActionEntry, ToolEntry, TreeCategoryNode, TreeEntry } from '../registryEntries';
-
-/** Minimal inline-markdown renderer — splits on backtick-delimited code
- *  spans and wraps each in <code>. No other markdown features. Used by every
- *  panel that renders prose strings (descriptions, JSDoc blocks, schema
- *  notes), so backticks read as code tokens instead of literal characters. */
-export function InlineMarkdown({ text }: { text: string }) {
-  const segments = text.split(/(`[^`]+`)/g);
-  return (
-    <>
-      {segments.map((seg, i) => (
-        seg.startsWith('`') && seg.endsWith('`')
-          ? <Code key={i}>{seg.slice(1, -1)}</Code>
-          : <Fragment key={i}>{seg}</Fragment>
-      ))}
-    </>
-  );
-}
 
 export function KindBadge({ label }: { label: string }) {
   return <Badge {...(KIND_BADGE_PROPS as BadgeProps)}>{label}</Badge>;

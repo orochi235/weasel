@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import {
   TooltipTrigger as RACTooltipTrigger,
   Tooltip as RACTooltip,
@@ -7,6 +7,7 @@ import {
   type TooltipTriggerComponentProps,
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { InlineMarkdown } from '../InlineMarkdown';
 import s from './Tooltip.module.css';
 
 /** Makes a non-RAC element a {@link TooltipTrigger} trigger: supplies
@@ -38,6 +39,8 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
 /** Props for {@link Tooltip}, on top of React Aria's `Tooltip` props. */
 export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children' | 'className'> &
   OverlayPortalProps & {
+    /** A string is read as inline markdown ({@link InlineMarkdown}), its links drawn as their
+     *  labels; an element is drawn as given. */
     children?: ReactNode;
     className?: string;
   };
@@ -66,7 +69,9 @@ export function Tooltip(props: TooltipProps) {
               <path d="M0 0 L4 4 L8 0" />
             </svg>
           </OverlayArrow>
-          {children}
+          {Children.map(children, (child) =>
+            typeof child === 'string' ? <InlineMarkdown text={child} links="text" /> : child,
+          )}
         </RACTooltip>
       )}
     </>

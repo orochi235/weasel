@@ -29,8 +29,7 @@ function formatRelativeOrIso(iso: string): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
-import { InlineMarkdown } from './InlineMarkdown';
-import { CommandPalette } from '@weasel-js/ui';
+import { CommandPalette, InlineMarkdown } from '@weasel-js/ui';
 import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';
 

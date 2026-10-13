@@ -1,4 +1,4 @@
-import { Button, Code, DetailList, DetailRow } from '@weasel-js/ui';
+import { Button, Code, DetailList, DetailRow, InlineMarkdown } from '@weasel-js/ui';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import { ToolIcon } from '../../ui/ToolIcon';
 import s from '../RegistryInspector.module.css';
@@ -6,7 +6,7 @@ import { SchemaTable } from '../SchemaTable';
 import type { PropertiesKindEntry, RoutingKindEntry, ShapeKindEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
 import { collectOpFactoriesTargeting } from './OpDetail';
-import { InlineMarkdown, Jsdoc, EntryLink, KindBadge, type Props } from './shared';
+import { Jsdoc, EntryLink, KindBadge, type Props } from './shared';
 import { SourceLink } from './sourceLinks';
 
 export function ShapeKindDetail({
