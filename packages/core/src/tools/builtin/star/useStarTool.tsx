@@ -37,7 +37,7 @@ const MAX_POINTS = 32;
  */
 export function useStarTool<TNode extends { id: string } = { id: string }>(
   options: UseStarToolOptions = {},
-): Tool<null> {
+): Tool {
   const {
     points: initialPoints = 5,
     innerRatio = 0.5,
@@ -80,7 +80,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
 
   return useMemo(
     () =>
-      defineTool<null>({
+      defineTool({
         id: 'star',
         capabilities: ['creates-shapes'],
         hookName: 'useStarTool',

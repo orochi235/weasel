@@ -23,7 +23,7 @@ describe('SceneCanvas tool cursor', () => {
   it('follows a same-id tool definition that changes after mount', () => {
     function Harness({ cursor }: { cursor: string }) {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
-      const tool = defineTool<null>({ id: 'cursor', cursor });
+      const tool = defineTool({ id: 'cursor', cursor });
       return (
         <SceneCanvas
           features={['draw']}

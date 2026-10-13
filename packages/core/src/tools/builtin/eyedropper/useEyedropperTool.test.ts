@@ -145,7 +145,7 @@ describe('useEyedropperTool', () => {
   it('picks through the committed callbacks, not an abandoned render\'s', () => {
     const committed = vi.fn();
     const abandoned = vi.fn();
-    let tool = null as Tool<null> | null;
+    let tool = null as Tool | null;
     function Probe({ onPick }: { onPick: (c: string | null) => void }) {
       tool = useEyedropperTool({ onPick, colorOf: () => '#abc' });
       return null;

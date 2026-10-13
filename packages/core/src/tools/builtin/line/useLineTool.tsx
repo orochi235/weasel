@@ -16,11 +16,11 @@ export interface LinePoint { x: number; y: number }
  * Shift constrains to 15° increments; alt mirrors the end around the start
  * (the drag is treated as a half-line).
  */
-export function useLineTool(options: InsertToolOptions = {}): Tool<null> {
+export function useLineTool(options: InsertToolOptions = {}): Tool {
   const { behaviors } = options;
   return useMemo(
     () =>
-      defineTool<null>({
+      defineTool({
         id: 'line',
         keybinding: { key: '\\' },
         capabilities: ['creates-shapes'],

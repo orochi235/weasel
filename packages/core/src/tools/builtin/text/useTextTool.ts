@@ -20,11 +20,11 @@ const PRESENTATION = {
  *  (`enterTextEditAction`'s contract — see
  *  `src/interactions/actions/defaults/enterTextEdit.ts`). Custom node
  *  factories and hit gating belong on those deps, not on the tool. */
-export function useTextTool(options: InsertToolOptions = {}): Tool<undefined> {
+export function useTextTool(options: InsertToolOptions = {}): Tool {
   const { behaviors } = options;
-  return useMemo<Tool<undefined>>(
+  return useMemo<Tool>(
     () =>
-      defineTool<undefined>({
+      defineTool({
         id: 'text',
         keybinding: { key: 'T' },
         capabilities: ['creates-text'],

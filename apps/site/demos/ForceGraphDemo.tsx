@@ -123,7 +123,7 @@ function usePinTool(
     },
   }), [nodesRef, sim, onPin]);
 
-  return useMemo(() => defineTool<null>({
+  return useMemo(() => defineTool({
     id: 'pin',
     hookName: 'usePinTool',
     cursor: 'grab',

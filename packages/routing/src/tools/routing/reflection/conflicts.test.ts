@@ -6,8 +6,8 @@ import { modeShortcuts } from '../../../contributions/modeShortcuts';
 import { rulesExclusive } from '../../../eligibility';
 import { hitPredicate } from '@weasel-js/gestures';
 
-function tool(id: string, bindings: unknown[]): Tool<unknown> {
-  return { id, bindings } as unknown as Tool<unknown>;
+function tool(id: string, bindings: unknown[]): Tool {
+  return { id, bindings } as unknown as Tool;
 }
 
 const clickRect = (actionId = 'x') => ({ spec: { kind: 'click', target: 'empty' }, actionId });
@@ -292,7 +292,7 @@ describe('findScopedConflicts — buckets nothing escapes', () => {
         { spec: { kind: 'drag', target: rectTarget }, actionId: `${id}.r` },
         { spec: { kind: 'drag', target: ellipseTarget }, actionId: `${id}.e` },
       ],
-    } as unknown as Tool<unknown>);
+    } as unknown as Tool);
     const c = findScopedConflicts({ registry: [], ambient: [two('a'), two('b')] });
     expect(c.filter((x) => x.target === 'predicate')).toHaveLength(2);
   });
@@ -307,7 +307,7 @@ describe('findConflicts — key alternatives', () => {
   const keyTool = (id: string, key: string | string[]) => ({
     id, eligibility: { always: true },
     bindings: [{ spec: { kind: 'key', key, mods: { shift: true } }, actionId: `${id}.go` }],
-  } as unknown as Tool<unknown>);
+  } as unknown as Tool);
 
   it('flags an alternative list against a single key it contains', () => {
     const c = findConflicts([keyTool('flip', ['h', 'H']), keyTool('mine', 'H')]);

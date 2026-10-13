@@ -28,58 +28,42 @@ export interface ToolKeybinding {
 /** Modifier-key snapshot at event dispatch time. */
 export type ToolModifiers = ModifierState;
 
-/**
- * What `onActivate` / `onDeactivate` receive: the tool's scratch, from
- * `initScratch()`. A lifecycle moment has no pointer, hit or modifier state to
- * report, so nothing else is populated; a callback needing the selection or
- * the scene closes over it, as the tool's actions do.
- */
-export interface ToolLifecycleCtx<TScratch = unknown> {
-  scratch: TScratch;
-}
-
 /** Alias of the kit-wide `Bounds` type. */
 export type ToolBounds = Bounds;
 
 /**
  * The focus-declaring case of a `Contribution`: a mode the user switches
- * into, plus the hooks that only make sense for one (`initScratch`,
- * activate/deactivate, `cursor`). Everything else — bindings,
- * actions, overlay, presentation — is inherited.
+ * into, plus the hooks that only make sense for one (activate/deactivate,
+ * `cursor`). Everything else — bindings, actions, overlay, presentation — is
+ * inherited.
  */
-export interface Tool<TScratch = unknown, TOverlay = KernelOverlay> extends Contribution<TOverlay> {
+export interface Tool<TOverlay = KernelOverlay> extends Contribution<TOverlay> {
   /** The key that activates this tool. `useKeybindings` appends a binding
    *  entry for it to the consolidated `tool.activate` action (with
    *  `opts.params.toolId` set so the invoker knows which tool to switch to).
    *  A tool with none has no activation key. */
   keybinding?: ToolKeybinding;
-  initScratch?: () => TScratch;
   cursor?: CursorSpec | (() => CursorSpec);
   /** The tool became live: it took the active slot, or its `hotkey` went
-   *  down, while it held neither. */
-  onActivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
+   *  down, while it held neither. A lifecycle moment has no pointer, hit or
+   *  modifier state to report; a callback needing the selection or the scene
+   *  closes over it, as the tool's actions do. */
+  onActivate?: () => void;
   /** The tool stopped being live in both slots, or its canvas unmounted. */
-  onDeactivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
+  onDeactivate?: () => void;
 }
 
 /** Whether `entry` is a tool: a contribution that can hold focus, chosen from
- *  a palette or held on a key. Only a tool's focus hooks (`initScratch`,
- *  `cursor`, `onActivate`) ever run. */
-export function isTool<TOverlay>(entry: Contribution<TOverlay>): entry is Tool<unknown, TOverlay> {
+ *  a palette or held on a key. Only a tool's focus hooks (`cursor`,
+ *  `onActivate`, `onDeactivate`) ever run. */
+export function isTool<TOverlay>(entry: Contribution<TOverlay>): entry is Tool<TOverlay> {
   return !!(entry.eligibility?.focus || entry.eligibility?.offhand);
 }
 
 /** Internal — which slot a tool occupies in the dispatch order. */
 export type ToolSlot = 'hotkey' | 'active' | 'ambient';
 
-/** Internal alias for "a Tool of any scratch type" — used in registries and
- *  dispatchers that hold tools of heterogeneous scratch shapes. `any` is
- *  intentional: `Tool<TScratch>` is invariant in TScratch, so `Tool<unknown>`
- *  is too strict for containers that accept any concrete `Tool<T>`. */
+/** A tool drawing any overlay type — the element type for registries and
+ *  dispatchers that never read the overlay. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyTool = Tool<any, any>;
-
-/** "A tool of any scratch type that draws `TOverlay`" — the container form for
- *  registries that hold heterogeneous scratch shapes but one overlay type. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyToolOf<TOverlay> = Tool<any, TOverlay>;
+export type AnyTool = Tool<any>;

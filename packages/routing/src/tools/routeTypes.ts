@@ -1,4 +1,4 @@
-import type { ToolKeybinding, ToolLifecycleCtx } from './types';
+import type { ToolKeybinding } from './types';
 import type { HotkeyTrigger, ToolPresentation } from '../contributions/types';
 
 import type { GestureBinding } from '../interactions/actions/binding';
@@ -16,7 +16,7 @@ import type { KernelOverlay } from '../index';
  * definition is mostly `bindings`, plus presentation and any actions the tool
  * itself introduces.
  */
-export interface ToolDef<TScratch = void, TOverlay = KernelOverlay> {
+export interface ToolDef<TOverlay = KernelOverlay> {
   id: string;
   /** Capability tags for modality eligibility. `defineTool` forwards these
    *  onto `Tool.eligibility.capabilities`, which is where every gate reads
@@ -40,7 +40,7 @@ export interface ToolDef<TScratch = void, TOverlay = KernelOverlay> {
    *  Introspection-only — do not make this load-bearing in production.
    *  Read off the def via `Tool.def` (the reflection escape hatch). */
   hookName?: string;
-  presentation?: ToolPresentation<TScratch>;
+  presentation?: ToolPresentation;
   /** Optional caller-supplied activation key. Most built-in tools have their
    *  activation key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`;
    *  this field is for tools that want their activation key to be
@@ -58,17 +58,10 @@ export interface ToolDef<TScratch = void, TOverlay = KernelOverlay> {
   hotkey?: HotkeyTrigger;
   /** Fires as the tool becomes live in the active or hotkey slot. See
    *  `Tool.onActivate`. */
-  onActivate?:   (ctx: ToolLifecycleCtx<TScratch>) => void;
+  onActivate?:   () => void;
   /** Fires as the tool stops being live in either slot. */
-  onDeactivate?: (ctx: ToolLifecycleCtx<TScratch>) => void;
+  onDeactivate?: () => void;
   cursor?: CursorSpec | (() => CursorSpec);
-  /** Override the default scratch initializer. Default is `() => null`
-   *  cast to `TScratch`, which works for tools whose scratch is fresh
-   *  every gesture. Tools that need scratch identity to survive across
-   *  gesture boundaries (e.g. the pen tool's multi-click subpath state)
-   *  pass a stable-ref-returning thunk here. The factory forwards this
-   *  onto the returned `Tool.initScratch`. */
-  initScratch?: () => TScratch;
   /** Declarative gesture bindings, forwarded onto `Tool.bindings`. The
    *  gesture dispatcher consults these at active scope while this tool is the
    *  active one, and at hotkey scope while it is held. This is the tool's
@@ -81,7 +74,7 @@ export interface ToolDef<TScratch = void, TOverlay = KernelOverlay> {
    *
    *  The layer's `draw` closure should read dynamic state through refs or
    *  closures captured in the enclosing render scope, and gate on it there —
-   *  `if (!scratch.something) return []` — rather than expecting the kit to
+   *  `if (!state.something) return []` — rather than expecting the kit to
    *  swap layers as the gesture progresses.
    *
    *  Pass an array to contribute several layers; they render in order. */

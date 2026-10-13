@@ -36,7 +36,7 @@ const NONE: ReadonlyMap<NodeId, Skin> = new Map();
  * one dab. Every point shows as a dot colored by the active joint's share of it. A stroke is
  * one undo entry.
  */
-export function useWeightTool(options: UseWeightToolOptions): Tool<null> {
+export function useWeightTool(options: UseWeightToolOptions): Tool {
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
   const opts = useLatest({
@@ -83,7 +83,7 @@ export function useWeightTool(options: UseWeightToolOptions): Tool<null> {
   ], [env, state]);
 
   const { keybinding } = options;
-  return useMemo(() => defineTool<null>({
+  return useMemo(() => defineTool({
     id: 'weight',
     capabilities: ['edits-page'],
     hookName: 'useWeightTool',

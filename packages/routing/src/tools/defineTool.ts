@@ -28,13 +28,12 @@ function validateId(id: string, kind: 'tool' | 'action'): void {
 }
 
 /**
- * Build a `Tool<TScratch>` from a declarative `ToolDef<TScratch>`: validates
- * the id, applies the `initScratch` / `cursor` defaults, and keeps the
- * authored form on `Tool.def` for reflection.
+ * Build a `Tool` from a declarative `ToolDef`: validates the id, applies the
+ * `cursor` default, and keeps the authored form on `Tool.def` for reflection.
  */
-export function defineTool<TScratch = void, TOverlay = KernelOverlay>(
-  def: ToolDef<TScratch, TOverlay>,
-): Tool<TScratch, TOverlay> {
+export function defineTool<TOverlay = KernelOverlay>(
+  def: ToolDef<TOverlay>,
+): Tool<TOverlay> {
   validateId(def.id, 'tool');
 
   const resolveCursor = (): CursorSpec => {
@@ -51,11 +50,10 @@ export function defineTool<TScratch = void, TOverlay = KernelOverlay>(
     },
     actions: def.actions,
     def,
-    presentation: def.presentation as Tool<TScratch>['presentation'],
+    presentation: def.presentation,
     keybinding: def.keybinding,
     onActivate: def.onActivate,
     onDeactivate: def.onDeactivate,
-    initScratch: def.initScratch ?? (() => null as unknown as TScratch),
     cursor: resolveCursor,
     bindings: def.bindings,
     overlay: def.overlay,
