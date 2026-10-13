@@ -40,9 +40,17 @@ describe('<Lab nebula>', () => {
 
   it('resolves a color source against the lab’s theme', async () => {
     const { container } = await renderSettled(
-      <Lab instruments={[bare]} defaultInstrument="Bare" mode="dark" nebula={[{ ref: 'swatch', index: 2 }]} />,
+      <Lab
+        instruments={[bare]}
+        defaultInstrument="Bare"
+        mode="dark"
+        nebula={[{ ref: 'swatch', index: 2 }]}
+      />,
     );
-    const ctx = { theme: interstellarTheme, resolved: resolveTheme(interstellarTheme, { mode: 'dark' }) };
+    const ctx = {
+      theme: interstellarTheme,
+      resolved: resolveTheme(interstellarTheme, { mode: 'dark' }),
+    };
     expect(backdrop(container)).toContain(`${colorAt({ ramp: 'swatch' }, 2, ctx)} 22%`);
   });
 });

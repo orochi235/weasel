@@ -370,11 +370,15 @@ function LabRuntime({
     store.getState().setInstruments(instruments);
   }, [instruments, store]);
 
-  const trialIds = useStore(store, useShallow((s) => s.trials.map((t) => t.id)));
+  const trialIds = useStore(
+    store,
+    useShallow((s) => s.trials.map((t) => t.id)),
+  );
   const [cameras] = useState(createCameraRegistry);
   const clocks = useLabClocks(clock, opened.records);
   const [focusPick, setFocusPick] = useState<string | null>(null);
-  const focusedTrialId = focusPick !== null && trialIds.includes(focusPick) ? focusPick : (trialIds[0] ?? null);
+  const focusedTrialId =
+    focusPick !== null && trialIds.includes(focusPick) ? focusPick : (trialIds[0] ?? null);
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
   const layout = useStore(store, (s) => s.layout);

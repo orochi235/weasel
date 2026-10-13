@@ -212,7 +212,12 @@ export default defineConfig({
         ...shared,
         // Scanned up front: a dependency discovered mid-run makes vite re-optimize and reload,
         // and the reloaded page gets a second React ("Invalid hook call").
-        optimizeDeps: { entries: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'] },
+        // `force`: a node keeps its dep cache between runs, and with one in place vite skips the scan,
+        // meets a newly imported dependency mid-run, and reloads the page under a dozen suites.
+        optimizeDeps: {
+          force: true,
+          entries: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'],
+        },
         test: {
           name: 'browser',
           include: ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'],
