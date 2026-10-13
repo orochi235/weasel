@@ -390,3 +390,57 @@ row's weight is exactly zero.
 - A perf spec against a dev server left running from an earlier session fails as
   `Failed to fetch dynamically imported module`, not as anything about the code.
   Kill whatever holds port 33463 first.
+
+# Retained from the animation targets, the core split, skinning, and the prefs surfaces (2026-10-11 to 2026-10-13)
+
+Where it lives now: `docs/concepts.md` ("Animation target", "Clip", "Rig and skin"),
+`packages/animator/src/`, and "Combining animations" and "Timelines and rigging" in
+`docs/TODO.md`. Calls nobody has ruled on are in `docs/unruled.md`.
+
+## Decisions made in conversation that the code does not explain
+
+- **blits stays in its own repository** (2026-10-11). Do not re-propose moving it into the
+  monorepo. What weasel learned about its costs is in `~/src/blits/NOTES-FROM-WEASEL.md`.
+- **Animation targets fold**, chosen over "steps as written", and they combine as additive
+  offsets, chosen over a crossfade between absolute values (2026-10-11). Do not re-propose a
+  crossfade. The costs of moving values onto blits were accepted on 2026-10-04 and 2026-10-08.
+- **A skin blends on the CPU over a path's own points**, not on the mesh or in a shader. A
+  skeleton lives in a node's data, and joints are not scene nodes.
+- **No color, token, or gate changes for a contrast ratio** (2026-10-12). A fix to the default
+  theme's status, code, and secondary text colors was built, shown, and reverted in both modes.
+- **The prefs editor's tree has no General branch**; a root's loose nodes are listed under
+  Unplaced (`8c830675d`, confirmed 2026-10-11).
+- **Two-column prefs rows keep the label beside the control** and wrap per row only when it does
+  not fit. Stacking every label over its control was tried first and rejected.
+- **The prefs dialog** is capped at 900px and settles at 800px, and the editor's preview starts at
+  800px. A 600px cap was tried and withdrawn. `as: 'page'` draws as the default wherever there is
+  no rail.
+- **Stored prefs records are `{ $at, value }`** (ruled 2026-10-11), so an older build reads a
+  stamped store as defaults. **Keys and paste go only to the canvas last pressed or scrolled in**
+  (ruled 2026-10-11): `claimKeys` takes them on mount.
+
+## Traps this work hit
+
+- A target is shown as an animation starts on it, not only on frames, so a test counting `show`
+  calls or `view.set` writes has to count that one. A target is moved by one animator at a time;
+  a second throws.
+- `npm run check:size -- --update` rewrites other sessions' allowlist entries. Lower your own by
+  hand.
+- A new package needs more than its directory: the `fixed` group in `.changeset/config.json`,
+  `paths` and `include` in the root `tsconfig.json`, `build:leaves` or `build:downstream` in the
+  root `package.json`, the dependents' manifests, the README table, and `package-lock.json`
+  entries. `git show 01d6e4ec0 --stat` is the list.
+- A test file that needs the scene stays in core even when what it tests moved to the animator;
+  one that needs only the animator runs under the `weasel-ui` project. `vi.mock` of a renderer or
+  animator module from core has to name the package and spread `importOriginal`.
+- The lazy mesh kind (`core/paint/meshKindLazy`) is rebuilt from the renderer's `dist`, so
+  `REGISTRY_STATE` in `packages/core/vite.config.ts` allows only `dist/mesh.js` from it. A module
+  shared between the renderer's index and its `mesh` entry becomes a shared chunk and fails core's
+  build.
+- astv reads these packages' built `dist`. Its `npm run weasel:watch` rebuilds core, ui, and
+  labkit's stylesheet only; a change in `packages/prefs` or labkit's source needs `npm run build`
+  in that package, and labkit's build empties `dist` first, blanking astv's page until it ends.
+- astv keeps its own reader for stamped records (`recordValueOf` in its
+  `packages/model/prefRecords.ts`). If the `{ $at, value }` shape changes, that copy has to follow.
+- `ui/src/components/Tabs` exists (react-aria `Tabs`, `TabList`, `Tab`, `TabPanel`), and
+  `GroupTabs` in `components/Prefs` is the one tab strip every schema surface uses.
