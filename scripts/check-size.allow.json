@@ -156,7 +156,7 @@
     "longestFunction": 183
   },
   "packages/forge/src/vite/plugin.ts": {
-    "longestFunction": 286
+    "longestFunction": 272
   },
   "packages/geom/src/tessellate/polyline.ts": {
     "longestFunction": 141

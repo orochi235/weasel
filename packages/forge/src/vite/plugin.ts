@@ -5,16 +5,17 @@ import type { DepGraph, IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
 import { createDepGraph, type DepGraphBuilder, type ResolveImport } from './depGraph.ts';
 import { createHistoryReader, type HistoryReader } from './history.ts';
-import { html } from './html.ts';
 import { foreignCallees } from './indexFile.ts';
 import { indexStory } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
 import { frameEntry, shellEntry } from './entries.ts';
 import { propControls } from './propControls.ts';
 import type { PropControlsOptions } from './propTypes.ts';
+import { servePages } from './servePages.ts';
 import { shellTitle } from './shellTitle.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
+import { warnWhenWatchIsSilent } from './watchProbe.ts';
 import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
 
 /** Options for the `forge` vite plugin. */
@@ -40,7 +41,6 @@ export interface ForgeOptions {
 const PREFIX = 'virtual:forge/';
 const MODULES = new Set(['index.js', 'importers.js', 'deps.js', 'frame-config.js', 'shell-config.js', 'shell-entry.js', 'frame-entry.js']);
 const SCRIPT = /\.[cm]?[jt]sx?$/;
-const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
 
 /**
  * The vite plugin that serves the workshop: it indexes the story files, serves the workshop at `/` and the frame
@@ -300,6 +300,7 @@ export function forge(options: ForgeOptions): Plugin[] {
       },
       configureServer(server) {
         server.watcher.add([...files().keys()]);
+        void warnWhenWatchIsSilent(server);
         for (const event of ['add', 'change', 'unlink'] as const) {
           server.watcher.on(event, (path) => {
             const file = resolve(path);
@@ -312,22 +313,7 @@ export function forge(options: ForgeOptions): Plugin[] {
             }, logError);
           });
         }
-        server.middlewares.use((req, res, next) => {
-          const url = req.url ?? '/';
-          const path = url.split('?')[0] ?? '/';
-          const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
-          const page = path === prefix ? '/' : path.startsWith(`${prefix}/`) ? path.slice(prefix.length) : null;
-          const entry = req.method === 'GET' && page !== null ? PAGES[page] : undefined;
-          if (!entry) return next();
-          server.transformIndexHtml(url, html(entry, 'serve', titleUnder(root))).then(
-            (doc) => {
-              res.statusCode = 200;
-              res.setHeader('Content-Type', 'text/html');
-              res.end(doc);
-            },
-            (err: unknown) => next(err),
-          );
-        });
+        servePages(server, base, () => titleUnder(root));
       },
     },
   ];

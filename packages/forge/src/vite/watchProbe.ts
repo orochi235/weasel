@@ -1,0 +1,69 @@
+import { mkdtempSync, rmSync, watch as fsWatch, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { ViteDevServer } from 'vite';
+
+/** Starts a watch on a directory and returns what stops it. */
+export type WatchDir = (dir: string, onEvent: () => void) => () => void;
+
+export interface FileEventsOptions {
+  /** How long to wait for the report, in milliseconds. Default 5000. */
+  waitMs?: number;
+  /** Default: `fs.watch`. */
+  watch?: WatchDir;
+}
+
+const WAIT_MS = 5000;
+const REWRITE_MS = 250;
+
+const watchDir: WatchDir = (dir, onEvent) => {
+  const watcher = fsWatch(dir, onEvent);
+  watcher.on('error', () => {});
+  watcher.unref();
+  return () => watcher.close();
+};
+
+/** Writes a file in a temp directory of its own and answers whether the OS reported the write within the wait. */
+export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEventsOptions = {}): Promise<boolean> {
+  const dir = mkdtempSync(join(tmpdir(), 'forge-watch-'));
+  return new Promise((resolve) => {
+    let settled = false;
+    let writes = 0;
+    let stop: (() => void) | undefined;
+    let rewrite: ReturnType<typeof setInterval> | undefined;
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    const settle = (arrived: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(rewrite);
+      clearTimeout(deadline);
+      stop?.();
+      rmSync(dir, { recursive: true, force: true });
+      resolve(arrived);
+    };
+    const write = () => writeFileSync(join(dir, 'probe'), String(writes++));
+    try {
+      stop = watch(dir, () => settle(true));
+      write();
+    } catch {
+      settle(false);
+      return;
+    }
+    rewrite = setInterval(write, REWRITE_MS);
+    deadline = setTimeout(() => settle(false), waitMs);
+    rewrite.unref();
+    deadline.unref();
+  });
+}
+
+const SILENT =
+  `[forge] a file written ${WAIT_MS / 1000} s ago has not been reported by the OS file watcher, so an edit will not reach the page ` +
+  'until file events arrive again. `server.watch: { usePolling: true }` serves edits without them. ' +
+  'On macOS, look for `fseventsd` held at 100% CPU.';
+
+/** Logs a warning when a dev server that relies on file events is getting none. */
+export async function warnWhenWatchIsSilent(server: ViteDevServer, probe: () => Promise<boolean> = fileEventsArrive): Promise<void> {
+  const { watch } = server.config.server;
+  if (watch === null || watch?.usePolling) return;
+  if (!(await probe())) server.config.logger.warn(SILENT);
+}

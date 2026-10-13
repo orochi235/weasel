@@ -1035,21 +1035,18 @@ only story runner in the repo.
   again (`createSplitStore`, `packages/labkit/src/primitives/Split.tsx`). The
   fix belongs in windease; the workaround goes when it lands.
 
-- **(P2) A forge dev server started with `WAKE_EXTRA` served the modules it started with, whatever
-  was edited after.** Seen on `WAKE_EXTRA=33461 npm run dev:forge`, four times in one session: after
-  an edit to `packages/labkit/src/chrome/regions/SidebarRegion.less`,
-  `/packages/labkit/src/styles.less` (which imports it) kept answering with the old rules while
-  `/@fs/…/SidebarRegion.less` asked for directly had the new ones, and a `touch` changed nothing;
-  after an edit to `packages/forge/src/shell/cssVars/CssVarsPanel.tsx` the page ran the old
-  component across reloads. No `hmr update` line reached the log, so the watcher looks dead rather
-  than one import edge untracked. A restart served the new code every time. A real vite server on
-  a temp root does not reproduce it: a file replaced whole (written beside and renamed over) is
-  served new each time, for a module and for a stylesheet another one imports
-  (`packages/forge/src/vite/replacedFile.test.ts`), and it still is with 13,000 more directories
-  under the root, about what 26 worktrees in `.claude/worktrees` add to the main checkout's watch.
-  Read, not run: nothing in wake's `WAKE_EXTRA` path or forge's plugin touches the watcher. Not
-  checked: the real server on the repo root, where it has to be watched failing, and whether the
-  server wake owns does the same.
+- **(P3) A dev server serves no edit while macOS file events are not arriving, and only forge's says so.**
+  This is what "a forge dev server started with `WAKE_EXTRA` served the modules it started with" was,
+  measured 2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached
+  neither `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the
+  file itself fired at once; a forge server on `WAKE_EXTRA` served none of three edits; and
+  `packages/forge/src/vite/replacedFile.test.ts` failed both its tests. wake, `WAKE_EXTRA`, and the
+  worktree are not part of it. That the earlier sighting had this cause is inferred from the matching
+  symptom, not measured. forge now writes a file at startup and warns when no event comes back
+  (`packages/forge/src/vite/watchProbe.ts`). Left: the site and draw servers give no such warning;
+  the forge tests that wait on a real watcher (`replacedFile.test.ts`, the `FOLLOWS` polls in
+  `plugin.test.ts`) fail in this state and read as a regression; and what holds `fseventsd` there is
+  not known.
 
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
